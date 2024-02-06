@@ -1,7 +1,8 @@
 """
 :meta private:
 """
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
+
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -56,9 +57,9 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
 
     # TODO: Implement possibility of converting plain metabolite to presystemic
 
-    clm = sympy.Symbol('CLM')
+    clm = Expr.symbol('CLM')
     model = add_individual_parameter(model, clm.name)
-    vm = sympy.Symbol('VM')
+    vm = Expr.symbol('VM')
     model = add_individual_parameter(model, vm.name)
 
     odes = model.statements.ode_system
@@ -81,10 +82,10 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     cb.add_flow(central, metacomp, ke)
     cb.remove_flow(central, output)
     if presystemic:
-        fpre = sympy.Symbol('FPRE')
+        fpre = Expr.symbol('FPRE')
         model = add_individual_parameter(model, fpre.name)
-        model = set_lower_bounds(model, {'POP_FPRE': sympy.Number(0)})
-        model = set_upper_bounds(model, {'POP_FPRE': sympy.Number(1)})
+        model = set_lower_bounds(model, {'POP_FPRE': Expr.integer(0)})
+        model = set_upper_bounds(model, {'POP_FPRE': Expr.integer(1)})
         ka = odes.get_flow(depot, central)
         cb.add_flow(depot, metacomp, fpre * ka)
         cb.remove_flow(depot, central)
@@ -107,11 +108,11 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
         model = model.update_source()
         cs = model.statements.ode_system
         bio = model.statements.ode_system.find_compartment(depot.name).bioavailability
-        conc = Assignment(sympy.Symbol('CONC_M'), amount / vm / bio)
+        conc = Assignment(Expr.symbol('CONC_M'), amount / vm / bio)
     else:
         cs = CompartmentalSystem(cb)
-        conc = Assignment(sympy.Symbol('CONC_M'), amount / vm)
-    y_m = sympy.Symbol('Y_M')
+        conc = Assignment(Expr.symbol('CONC_M'), amount / vm)
+    y_m = Expr.symbol('Y_M')
     y = Assignment(y_m, conc.symbol)
     original_y = next(iter(model.dependent_variables))
     ind = model.statements.after_odes.find_assignment_index(original_y)
@@ -158,7 +159,7 @@ def has_presystemic_metabolite(model: Model):
     CM = odes.get_flow(central, metabolite)
     DM = odes.get_flow(depot, metabolite)
 
-    if CM != sympy.Number(0) and DM != sympy.Number(0):
+    if CM != Expr.integer(0) and DM != Expr.integer(0):
         return True
     else:
         return False

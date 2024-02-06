@@ -15,15 +15,14 @@ from typing import (
 )
 
 from pharmpy.internals.immutable import Immutable, cache_method
+from pharmpy.basic import Expr
 
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
-    import sympy
 else:
     from pharmpy.deps import numpy as np
     from pharmpy.deps import pandas as pd
-    from pharmpy.deps import sympy
 
 
 class Parameter(Immutable):
@@ -71,9 +70,9 @@ class Parameter(Immutable):
     def create(
         cls,
         name: str,
-        init: Union[float, sympy.Float],
-        lower: Optional[Union[float, sympy.Float]] = None,
-        upper: Optional[Union[float, sympy.Float]] = None,
+        init: Union[float, Expr],
+        lower: Optional[Union[float, Expr]] = None,
+        upper: Optional[Union[float, Expr]] = None,
         fix: bool = False,
     ):
         """Alternative constructor for Parameter with error checking"""
@@ -117,9 +116,9 @@ class Parameter(Immutable):
         return self._fix
 
     @property
-    def symbol(self) -> sympy.Symbol:
+    def symbol(self) -> Expr:
         """Symbol representing the parameter"""
-        return sympy.Symbol(self._name)
+        return Expr.symbol(self._name)
 
     @property
     def lower(self) -> float:
@@ -237,8 +236,8 @@ class Parameters(CollectionsSequence, Immutable):
     def __len__(self):
         return len(self._params)
 
-    def _lookup_param(self, ind: Union[int, str, sympy.Symbol, Parameter]):
-        if isinstance(ind, sympy.Symbol):
+    def _lookup_param(self, ind: Union[int, str, Expr, Parameter]):
+        if isinstance(ind, Expr) and ind.is_symbol():
             ind = ind.name
         if isinstance(ind, str):
             for i, param in enumerate(self._params):
@@ -254,12 +253,12 @@ class Parameters(CollectionsSequence, Immutable):
         return ind, self._params[ind]
 
     @overload
-    def __getitem__(self, ind: Union[int, str, sympy.Symbol, Parameter]) -> Parameter:
+    def __getitem__(self, ind: Union[int, str, Expr, Parameter]) -> Parameter:
         ...
 
     @overload
     def __getitem__(
-        self, ind: Union[slice, Sequence[Union[int, str, sympy.Symbol, Parameter]]]
+        self, ind: Union[slice, Sequence[Union[int, str, Expr, Parameter]]]
     ) -> Parameters:
         ...
 
@@ -316,7 +315,7 @@ class Parameters(CollectionsSequence, Immutable):
         return [p.name for p in self._params]
 
     @property
-    def symbols(self) -> List[sympy.Symbol]:
+    def symbols(self) -> List[Expr]:
         """List of all parameter symbols"""
         return [p.symbol for p in self._params]
 

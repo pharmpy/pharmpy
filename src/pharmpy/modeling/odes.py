@@ -3,6 +3,7 @@
 """
 from typing import Literal, Mapping, Set, Union
 
+from pharmpy.basic import Expr, TExpr
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.unicode import bracket
@@ -50,7 +51,7 @@ def _extract_params_from_symb(
 ) -> Parameter:
     terms = {
         symb.name
-        for symb in statements.before_odes.full_expression(sympy.Symbol(symbol_name)).free_symbols
+        for symb in statements.before_odes.full_expression(Expr.symbol(symbol_name)).free_symbols
     }
     theta_name = terms.intersection(pset.names).pop()
     return pset[theta_name]
@@ -68,14 +69,20 @@ def _find_noncov_theta(model, paramsymb, full=False):
 
     exprs = [start_expr]
     all_popparams = set(model.parameters.symbols)
-    all_covs = set(sympy.Symbol(name) for name in model.datainfo.names)
+    all_covs = set(Expr.symbol(name) for name in model.datainfo.names)
 
     while exprs:
         nthetas = float("Inf")
         ncovs = float("Inf")
         next_expr = None
         for expr in exprs:
-            symbs = expr.free_symbols
+            if isinstance(expr, tuple):
+                # This is for Piecewise pairs
+                symbs = set()
+                for e in expr:
+                    symbs |= e.free_symbols
+            else:
+                symbs = expr.free_symbols
             curthetas = symbs & all_popparams
             ncurthetas = len(curthetas)
             curcovs = symbs & all_covs
@@ -94,7 +101,10 @@ def _find_noncov_theta(model, paramsymb, full=False):
             if nthetas == 1 and ncovs == 0:
                 return next(iter(thetas))
             else:
-                exprs = next_expr.args
+                if isinstance(next_expr, tuple):
+                    exprs = next_expr
+                else:
+                    exprs = next_expr.args
     raise ValueError(f"Could not find theta connected to {paramsymb}")
 
 
@@ -133,7 +143,7 @@ def _add_parameter(
     pops = create_symbol(model, f'POP_{name}')
     model = add_population_parameter(model, pops.name, init, lower=lower, upper=upper)
     symb = create_symbol(model, name)
-    ass = Assignment(symb, pops)
+    ass = Assignment.create(symb, pops)
     model = model.replace(statements=ass + model.statements)
     return model, symb
 
@@ -176,12 +186,12 @@ def set_first_order_elimination(model: Model):
         assert ind is not None
         clmm_assignment = model.statements[ind]
         assert isinstance(clmm_assignment, Assignment)
-        cl_ass = Assignment(sympy.Symbol('CL'), clmm_assignment.expression)
+        cl_ass = Assignment.create(Expr.symbol('CL'), clmm_assignment.expression)
         statements = model.statements[0:ind] + cl_ass + model.statements[ind + 1 :]
         odes = statements.ode_system
         assert isinstance(odes, CompartmentalSystem)
         central = odes.central_compartment
-        v = sympy.Symbol('V')
+        v = Expr.symbol('V')
         rate = odes.get_flow(central, output)
         if v not in rate.free_symbols:
             # take first parameter that starts with 'V' and is no longer than 2 characters
@@ -190,13 +200,13 @@ def set_first_order_elimination(model: Model):
                 for idx in list(map(lambda x: str(x), rate.free_symbols))
                 if idx[0] == 'V' and len(idx) <= 2
             ]
-            v = sympy.Symbol(v[0])
+            v = Expr.symbol(v[0])
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
-        cb.add_flow(central, output, sympy.Symbol('CL') / v)
+        cb.add_flow(central, output, Expr.symbol('CL') / v)
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         statements = statements.remove_symbol_definitions(
-            {sympy.Symbol('KM')}, statements.ode_system
+            {Expr.symbol('KM')}, statements.ode_system
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -204,7 +214,7 @@ def set_first_order_elimination(model: Model):
         odes = model.statements.ode_system
         assert odes is not None
         central = odes.central_compartment
-        v = sympy.Symbol('V')
+        v = Expr.symbol('V')
         rate = odes.get_flow(central, output)
         if v not in rate.free_symbols:
             v = [
@@ -212,15 +222,15 @@ def set_first_order_elimination(model: Model):
                 for idx in list(map(lambda x: str(x), rate.free_symbols))
                 if idx[0] == 'V' and len(idx) <= 2
             ]
-            v = sympy.Symbol(v[0])
+            v = Expr.symbol(v[0])
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
-        cb.add_flow(central, output, sympy.Symbol('CL') / v)
+        cb.add_flow(central, output, Expr.symbol('CL') / v)
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
         statements = statements.remove_symbol_definitions(
-            {sympy.Symbol('KM'), sympy.Symbol('CLMM')}, statements.ode_system
+            {Expr.symbol('KM'), Expr.symbol('CLMM')}, statements.ode_system
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -265,23 +275,23 @@ def add_bioavailability(model: Model, add_parameter: bool = True, logit_transfor
     if isinstance(bio, sympy.Number):
         # Bio not defined
         if add_parameter:
-            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio), upper=sympy.Number(1))
+            model, bio_symb = _add_parameter(model, 'BIO', init=float(bio), upper=1.0)
             if logit_transform:
                 model = model.replace(
                     statements=model.statements.reassign(
-                        bio_symb, sympy.log(sympy.Symbol("POP_BIO") / (1 - sympy.Symbol("POP_BIO")))
+                        bio_symb, (Expr.symbol("POP_BIO") / (1 - Expr.symbol("POP_BIO"))).log()
                     )
                 )
-                f_ass = Assignment.create(sympy.Symbol('F_BIO'), 1 / (1 + sympy.exp(-bio_symb)))
+                f_ass = Assignment(Expr.symbol('F_BIO'), 1 / (1 + (-bio_symb).exp()))
             else:
-                f_ass = Assignment.create(sympy.Symbol('F_BIO'), bio_symb)
+                f_ass = Assignment(Expr.symbol('F_BIO'), bio_symb)
 
             new_before_odes = model.statements.before_odes + f_ass
 
         else:
             # Add as a number
-            bio_ass = Assignment.create(sympy.Symbol("BIO"), sympy.Number(1))
-            f_ass = Assignment.create(sympy.Symbol("F_BIO"), bio_ass.symbol)
+            bio_ass = Assignment(Expr.symbol("BIO"), Expr.integer(1))
+            f_ass = Assignment(Expr.symbol("F_BIO"), bio_ass.symbol)
             new_before_odes = bio_ass + model.statements.before_odes + f_ass
 
         # Add statement to code
@@ -328,7 +338,7 @@ def remove_bioavailability(model: Model):
     if bio:
         symbols = bio.free_symbols
         cb = CompartmentalSystemBuilder(odes)
-        cb.set_bioavailability(dosing_comp, sympy.Integer(1))
+        cb.set_bioavailability(dosing_comp, Expr.integer(1))
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
@@ -387,7 +397,7 @@ def set_zero_order_elimination(model: Model):
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
         statements = statements.remove_symbol_definitions(
-            {sympy.Symbol('CL')}, statements.ode_system
+            {Expr.symbol('CL')}, statements.ode_system
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -435,7 +445,7 @@ def has_michaelis_menten_elimination(model: Model):
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
-    could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
+    could_be_mixed = Expr.symbol('CL') in rate.free_symbols
     return is_nonlinear and not is_zero_order and not could_be_mixed
 
 
@@ -470,7 +480,7 @@ def has_zero_order_elimination(model: Model):
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
-    could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
+    could_be_mixed = Expr.symbol('CL') in rate.free_symbols
     return is_nonlinear and is_zero_order and not could_be_mixed
 
 
@@ -505,7 +515,7 @@ def has_mixed_mm_fo_elimination(model: Model):
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
     is_zero_order = 'POP_KM' in model.parameters and model.parameters['POP_KM'].fix
-    could_be_mixed = sympy.Symbol('CL') in rate.free_symbols
+    could_be_mixed = Expr.symbol('CL') in rate.free_symbols
     return is_nonlinear and not is_zero_order and could_be_mixed
 
 
@@ -588,7 +598,7 @@ def set_michaelis_menten_elimination(model: Model):
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
         statements = statements.remove_symbol_definitions(
-            {sympy.Symbol('CL')}, statements.ode_system
+            {Expr.symbol('CL')}, statements.ode_system
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -641,10 +651,10 @@ def set_mixed_mm_fo_elimination(model: Model):
         assert rate is not None
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
-        v = sympy.Symbol('V')
+        v = Expr.symbol('V')
         if v not in rate.free_symbols:
-            v = sympy.Symbol('VC')
-        cb.add_flow(central, output, sympy.Symbol('CL') / v + rate)
+            v = Expr.symbol('VC')
+        cb.add_flow(central, output, Expr.symbol('CL') / v + rate)
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
@@ -679,7 +689,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
             model, clmm = _add_parameter(model, 'CLMM', init=clmm_init)
         else:
             model = _rename_parameter(model, 'CL', 'CLMM')
-            clmm = sympy.Symbol('CLMM')
+            clmm = Expr.symbol('CLMM')
             cl = 0
         vc = denom
     else:
@@ -728,7 +738,7 @@ def _rename_parameter(model: Model, old_name, new_name):
         if s in model.parameters:
             old_par = s
             d[model.parameters[s].symbol] = f'POP_{new_name}'
-            new_par = sympy.Symbol(f'POP_{new_name}')
+            new_par = Expr.symbol(f'POP_{new_name}')
             statements = statements.subs({old_par: new_par})
             break
     for s in a.rhs_symbols:
@@ -736,7 +746,11 @@ def _rename_parameter(model: Model, old_name, new_name):
         if s.name in iivs.names:
             cov = iivs.covariance_matrix
             ind = iivs.names.index(s.name)
-            pars = [e for e in cov[ind, :] if e.is_Symbol]
+            pars = []
+            for i in range(cov.rows):
+                e = cov[ind, i]
+                if e.is_symbol():
+                    pars.append(e)
             diag = cov[ind, ind]
             d[diag] = f'IIV_{new_name}'
             for p in pars:
@@ -905,7 +919,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             cb.add_flow(new_comp, comp, rate)
             comp = new_comp
         comp = cb.set_bioavailability(comp, dosing_comp.bioavailability)
-        dosing_comp = cb.set_bioavailability(dosing_comp, sympy.Integer(1))
+        dosing_comp = cb.set_bioavailability(dosing_comp, Expr.integer(1))
 
         if len(dosing_comp.doses) == 1 and dosing_comp.doses[0].admid == 2:
             dosing_comp = cb.set_dose(dosing_comp, dosing_comp.doses[0].replace(admid=1))
@@ -1003,19 +1017,19 @@ def _update_numerators(model: Model):
     odes = statements.ode_system
     assert odes is not None
     transits = odes.find_transit_compartments(statements)
-    new_numerator = sympy.Integer(len(transits))
+    new_numerator = Expr.integer(len(transits))
     cb = CompartmentalSystemBuilder(odes)
     for comp in transits:
         to_comp, rate = odes.get_compartment_outflows(comp)[0]
         numer, denom = rate.as_numer_denom()
-        if numer.is_Integer and numer != new_numerator:
+        if numer.is_integer() and numer != new_numerator:
             new_rate = new_numerator / denom
             cb.add_flow(comp, to_comp, new_rate)
-        elif numer.is_Symbol:
+        elif numer.is_symbol():
             ass = statements.find_assignment(numer.name)
             if ass is not None:
                 ass_numer, ass_denom = ass.expression.as_numer_denom()
-                if ass_numer.is_Integer and ass_numer != new_numerator:
+                if ass_numer.is_integer() and ass_numer != new_numerator:
                     new_rate = new_numerator / ass_denom
                     statements = statements.reassign(numer, new_rate)
     model = model.replace(
@@ -1061,16 +1075,16 @@ def add_lag_time(model: Model):
 
     # FIXME: Very temporary until new zo absorption logic is implemented
     if len(dosing_comp.doses) > 1:
-        cb.set_lag_time(dosing_comp, sympy.Symbol("lag_time"))
+        cb.set_lag_time(dosing_comp, Expr.symbol("lag_time"))
         doses = dosing_comp.sorted_doses(model)
         oral_admid = doses[0].admid
-        admid = sympy.Symbol("ADMID")
+        admid = Expr.symbol("ADMID")
         model = model.replace(
             statements=(
                 model.statements.before_odes
-                + Assignment(
-                    sympy.Symbol("lag_time"),
-                    sympy.Piecewise((mdt_symb, sympy.Eq(admid, oral_admid)), (0, sympy.true)),
+                + Assignment.create(
+                    Expr.symbol("lag_time"),
+                    Expr.piecewise((mdt_symb, sympy.Eq(admid, oral_admid)), (0, sympy.true)),
                 )
                 + CompartmentalSystem(cb)
                 + model.statements.after_odes
@@ -1124,7 +1138,7 @@ def remove_lag_time(model: Model):
     if lag_time:
         symbols = lag_time.free_symbols
         cb = CompartmentalSystemBuilder(odes)
-        cb.set_lag_time(dosing_comp, sympy.Integer(0))
+        cb.set_lag_time(dosing_comp, Expr.integer(0))
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
         )
@@ -1271,7 +1285,7 @@ def set_first_order_absorption(model: Model):
             dose_comp = cb.set_dose(
                 dose_comp, Bolus(dose_comp.doses[0].amount), admid=dose_comp.doses[0].admid
             )
-            dose_comp = cb.set_lag_time(dose_comp, sympy.Integer(0))
+            dose_comp = cb.set_lag_time(dose_comp, Expr.integer(0))
         if not depot:
             # TODO : Add another way of removing dependencies
             dose_admid = dose_comp.sorted_doses(model)[0].admid
@@ -1503,11 +1517,11 @@ def _dose_zo(model, dose):
             value = dose.duration
         else:
             value = dose.rate
-        if isinstance(value, sympy.Symbol) or isinstance(value, str):
+        if isinstance(value, str) or isinstance(value, Expr) and value.is_symbol():
             name = str(value)
             if name not in model.datainfo.names:
                 return True
-        elif isinstance(value, sympy.Expr):
+        elif isinstance(value, Expr):
             assert value is not None
             names = {symb.name for symb in value.free_symbols}
             if not all(name in model.datainfo.names for name in names):
@@ -1694,14 +1708,14 @@ def _add_first_order_absorption(
     depot = Compartment.create(
         'DEPOT',
         doses=(dose,),
-        lag_time=sympy.Integer(0) if lag_time is None else lag_time,
-        bioavailability=sympy.Integer(1) if bioavailability is None else bioavailability,
+        lag_time=Expr.integer(0) if lag_time is None else lag_time,
+        bioavailability=Expr.integer(1) if bioavailability is None else bioavailability,
     )
     cb.add_compartment(depot)
     if remove_dose:
         to_comp = cb.set_dose(to_comp, tuple())
-    to_comp = cb.set_lag_time(to_comp, sympy.Integer(0))
-    to_comp = cb.set_bioavailability(to_comp, sympy.Integer(1))
+    to_comp = cb.set_lag_time(to_comp, Expr.integer(0))
+    to_comp = cb.set_bioavailability(to_comp, Expr.integer(1))
 
     mat_assign = model.statements.find_assignment('MAT')
     if mat_assign:
@@ -1890,15 +1904,15 @@ def add_peripheral_compartment(model: Model, name: str = None):
     elimination_rate = odes.get_flow(central, output)
     assert elimination_rate is not None
     if has_mixed_mm_fo_elimination(model):
-        elimination_rate = sympy.expand(elimination_rate).args[0]
+        elimination_rate = Expr(sympy.expand(elimination_rate).args[0])
     cl, vc = elimination_rate.as_numer_denom()
-    if cl.is_Symbol and vc == 1:
+    if cl.is_symbol() and vc == 1:
         # If K = CL / V
         s = statements.find_assignment(cl.name)
         assert s is not None
         cl, vc = s.expression.as_numer_denom()
     # Heuristic to handle the MM case
-    if vc.is_Mul:
+    if vc.is_mul():
         vc = vc.args[0]
 
     cb = CompartmentalSystemBuilder(odes)
@@ -1910,9 +1924,9 @@ def add_peripheral_compartment(model: Model, name: str = None):
     if n == 1:
         if vc != 1:
             # Heuristic to handle the Mixed MM-FO case
-            if cl.is_Add:
+            if cl.is_add():
                 cl1 = cl.args[0]
-                if cl1.is_Mul:
+                if cl1.is_mul():
                     cl = cl1.args[0]
             pop_cl = _find_noncov_theta(model, cl)
             pop_vc = _find_noncov_theta(model, vc)
@@ -1926,7 +1940,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
             from_rate = odes.get_flow(per1, central)
             assert from_rate is not None
             qp1, vp1 = from_rate.as_numer_denom()
-            if qp1.is_Symbol and vc == 1:
+            if qp1.is_symbol() and vc == 1:
                 # If K = CL / V
                 s = statements.find_assignment(qp1.name)
                 assert s is not None
@@ -2039,7 +2053,7 @@ def remove_peripheral_compartment(model: Model, name: str = None):
         if len(peripherals) == 1:
             # TODO: Elimination can be zero (drug metabolite)
             elimination_rate = odes.get_flow(central, output)
-            if elimination_rate is sympy.Number(0):
+            if elimination_rate == 0:
                 pass
             else:
                 cl, vc = elimination_rate.as_numer_denom()
@@ -2178,7 +2192,7 @@ def find_clearance_parameters(model: Model):
     t = odes.t
     rate_list = _find_rate(model, sset)
     for rate in rate_list:
-        if isinstance(rate, sympy.Symbol):
+        if rate.is_symbol():
             assignment = sset.find_assignment(rate)
             assert assignment is not None
             rate = assignment.expression
@@ -2220,11 +2234,11 @@ def find_volume_parameters(model: Model):
     t = odes.t
     rate_list = _find_rate(model, sset)
     for rate in rate_list:
-        if isinstance(rate, sympy.Symbol):
+        if rate.is_symbol():
             assignment = sset.find_assignment(rate)
             assert assignment is not None
             rate = assignment.expression
-        rate = sympy.cancel(rate)
+        rate = Expr(sympy.cancel(rate))
         a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
         volume_symbols = b - a - {t}
         for volume in volume_symbols:
@@ -2250,7 +2264,7 @@ def _find_rate(model: Model, sset: Statements):
         elimination_rate = odes.get_flow(central, output)
         rate_list.append(elimination_rate)
         if has_mixed_mm_fo_elimination(model):
-            elimination_rate = sympy.expand(elimination_rate)
+            elimination_rate = Expr(sympy.expand(elimination_rate))
             rate_list.append(elimination_rate.args[0])
             rate_list.append(elimination_rate.args[1])
 
@@ -2394,7 +2408,7 @@ def has_linear_odes_with_real_eigenvalues(model: Model):
 
 def get_initial_conditions(
     model: Model, dosing: bool = False
-) -> Mapping[sympy.Function, sympy.Expr]:
+) -> Mapping[Expr, Expr]:
     """Get initial conditions for the ode system
 
     Default initial conditions at t=0 for amounts is 0
@@ -2426,10 +2440,10 @@ def get_initial_conditions(
         return d
     assert isinstance(odes, CompartmentalSystem)
     for amt in odes.amounts:
-        d[sympy.Function(amt.name)(0)] = sympy.Integer(0)
+        d[Expr.function(amt.name, 0)] = Expr.integer(0)
     for s in model.statements:
         if isinstance(s, Assignment):
-            if s.symbol.is_Function and not (s.symbol.args[0].free_symbols):
+            if s.symbol.is_function() and not (s.symbol.args[0].free_symbols):
                 d[s.symbol] = s.expression
 
     if dosing:
@@ -2440,7 +2454,7 @@ def get_initial_conditions(
                     time = comp.lag_time
                 else:
                     time = 0
-                d[sympy.Function(comp.amount.name)(time)] = comp.doses[0].amount
+                d[Expr.function(comp.amount.name, time)] = comp.doses[0].amount
 
     return d
 
@@ -2448,8 +2462,8 @@ def get_initial_conditions(
 def set_initial_condition(
     model: Model,
     compartment: str,
-    expression: Union[str, int, float, sympy.Expr],
-    time: Union[str, int, float, sympy.Expr] = sympy.Integer(0),
+    expression: TExpr,
+    time: TExpr = Expr.integer(0),
 ) -> Model:
     """Set an initial condition for the ode system
 
@@ -2462,9 +2476,9 @@ def set_initial_condition(
         Pharmpy model
     compartment : str
         Name of the compartment
-    expression : Union[str, sympy.Expr]
+    expression : Union[str, Expr]
         The expression of the initial condition
-    time : Union[str, sympy.Expr]
+    time : Union[str, Expr]
         Time point. Default 0
 
     Return
@@ -2486,10 +2500,10 @@ def set_initial_condition(
     comp = odes.find_compartment(compartment)
     if comp is None:
         raise ValueError(f"Model has no compartment named {compartment}")
-    expr = sympy.sympify(expression)
-    time = sympy.sympify(time)
-    amount = sympy.Function(comp.amount.name)(time)
-    assignment = Assignment(amount, expr)
+    expr = Expr(expression)
+    time = Expr(time)
+    amount = Expr.function(comp.amount.name, time)
+    assignment = Assignment.create(amount, expr)
     for i, s in enumerate(model.statements.before_odes):
         if s.symbol == amount:
             if time == 0 and expr == 0:
@@ -2533,7 +2547,7 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
 
 
 def set_zero_order_input(
-    model: Model, compartment: str, expression: Union[str, int, float, sympy.Expr]
+    model: Model, compartment: str, expression: Union[TExpr]
 ) -> Model:
     """Set a zero order input for the ode system
 
@@ -2545,7 +2559,7 @@ def set_zero_order_input(
         Pharmpy model
     compartment : str
         Name of the compartment
-    expression : Union[str, sympy.Expr]
+    expression : Union[str, Expr]
         The expression of the zero order input
 
     Return
@@ -2567,7 +2581,7 @@ def set_zero_order_input(
     comp = odes.find_compartment(compartment)
     if comp is None:
         raise ValueError(f"Model has no compartment named {compartment}")
-    expr = sympy.sympify(expression)
+    expr = Expr(expression)
     cb = CompartmentalSystemBuilder(odes)
     cb.set_input(comp, expr)
     cs = CompartmentalSystem(cb)
@@ -2682,7 +2696,7 @@ def solve_ode_system(model: Model):
     for s in model.statements:
         if isinstance(s, CompartmentalSystem):
             for eq in sol:
-                ass = Assignment(eq.lhs, eq.rhs)
+                ass = Assignment.create(eq.lhs, eq.rhs)
                 new.append(ass)
         else:
             new.append(s)
@@ -2701,9 +2715,9 @@ def get_central_volume_and_clearance(model: Model):
 
     Returns
     -------
-    Sympy.Symbol
+    sympy.Symbol
         Volume symbol
-    Sympy.Symbol
+    sympy.Symbol
         Clearance symbol
 
     Example
@@ -2731,7 +2745,7 @@ def get_central_volume_and_clearance(model: Model):
         assignment = sset.find_assignment(rate)
         assert assignment is not None
         rate = assignment.expression
-    rate = sympy.cancel(rate)
+    rate = Expr(sympy.cancel(rate))
     a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
     if b:
         # Get volume parameter

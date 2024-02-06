@@ -1,25 +1,45 @@
-from typing import TYPE_CHECKING, Union
+from __future__ import annotations
 
-from ..unicode import int_to_superscript
-from .parse import parse as parse_expr
-from .subs import subs
-
-if TYPE_CHECKING:
-    import sympy
-    import sympy.printing as sympy_printing
-else:
-    from pharmpy.deps import sympy, sympy_printing
+from .expr import Expr
+from pharmpy.deps import sympy
+from pharmpy.internals.unicode import int_to_superscript
+from pharmpy.deps import sympy, sympy_printing
 
 
-def parse(s: Union[str, int, float, sympy.Expr]) -> sympy.Expr:
-    if not isinstance(s, sympy.Expr):
-        return subs(parse_expr(s), _unit_subs(), simultaneous=True)
-    else:
-        return s
-    # return (
-    #    subs(parse_expr(s), _unit_subs(), simultaneous=True) if not isinstance(s, sympy.Expr) else s
-    # )
+class Unit:
+    def __init__(self, source : Union[Unit, str]):
+        if isinstance(source, Unit):
+            self._expr = source._expr
+        else:
+            self._expr = sympy.sympify(source).subs(_unit_subs())
 
+    def unicode(self):
+        printer = UnitPrinter()
+        return printer._print(self._expr)
+
+    def serialize(self):
+        return sympy.srepr(self._expr)
+
+    @classmethod
+    def deserialize(cls, s):
+        return cls(s)
+
+    @classmethod
+    def unitless(cls):
+        return cls(sympy.Integer(1))
+
+    def __eq__(self, other):
+        return isinstance(other, Unit) and self._expr == other._expr or self._expr == other
+
+    def __hash__(self):
+        return hash(self._expr)
+
+    def __repr__(self):
+        return repr(self._expr)
+
+
+# Type hint for public functions taking an expression as input
+TUnit = str | Unit
 
 _unit_subs_cache = None
 
@@ -37,9 +57,6 @@ def _unit_subs():
         _unit_subs_cache = subs
 
     return _unit_subs_cache
-
-
-# sympy_printing.str.StrPrinter._default_settings['abbrev'] = True
 
 
 class UnitPrinter(sympy_printing.str.StrPrinter):
@@ -66,8 +83,3 @@ class UnitPrinter(sympy_printing.str.StrPrinter):
             return "ml"
         else:
             return str(expr.args[1])
-
-
-def unit_string(expr: sympy.Expr) -> str:
-    printer = UnitPrinter()
-    return printer._print(expr)

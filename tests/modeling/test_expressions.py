@@ -46,7 +46,7 @@ from pharmpy.modeling import (
 
 
 def s(x):
-    return sympy.Symbol(x)
+    return Expr.symbol(x)
 
 
 def test_get_observation_expression(testdata, load_model_for_test):
@@ -144,29 +144,29 @@ $ESTIMATION METHOD=1 INTERACTION
     'statements,correct',
     [
         (
-            [Assignment.create('CL', s('THETA(1)') + s('ETA(1)'))],
+            [Assignment(s('CL'), s('THETA(1)') + s('ETA(1)'))],
             [
-                Assignment.create('mu_1', s('THETA(1)')),
-                Assignment.create('CL', s('mu_1') + s('ETA(1)')),
+                Assignment(s('mu_1'), s('THETA(1)')),
+                Assignment(s('CL'), s('mu_1') + s('ETA(1)')),
             ],
         ),
         (
             [
-                Assignment.create(
-                    'CL', s('THETA(1)') * s('AGE') ** s('THETA(2)') * sympy.exp(s('ETA(1)'))
+                Assignment(
+                    s('CL'), s('THETA(1)') * s('AGE') ** s('THETA(2)') * s('ETA(1)').exp())
                 ),
-                Assignment.create('V', s('THETA(3)') * sympy.exp(s('ETA(2)'))),
+                Assignment(s('V'), s('THETA(3)') * s('ETA(2)').exp()),
             ],
             [
-                Assignment.create('mu_1', sympy.log(s('THETA(1)') * s('AGE') ** s('THETA(2)'))),
-                Assignment.create('CL', sympy.exp(s('mu_1') + s('ETA(1)'))),
-                Assignment.create('mu_2', sympy.log(s('THETA(3)'))),
-                Assignment.create('V', sympy.exp(s('mu_2') + s('ETA(2)'))),
+                Assignment(s('mu_1'), (s('THETA(1)') * s('AGE') ** s('THETA(2)')).log()),
+                Assignment(s('CL'), (s('mu_1') + s('ETA(1)')).exp()),
+                Assignment(s('mu_2'), s('THETA(3)').log()),
+                Assignment(s('V'), (s('mu_2') + s('ETA(2)')).exp()),
             ],
         ),
         (
-            [Assignment.create('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
-            [Assignment.create('CL', s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
+            [Assignment(s('CL'), s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
+            [Assignment(s('CL'), s('THETA(1)') + s('ETA(1)') + s('ETA(2)'))],
         ),
     ],
 )
@@ -192,8 +192,8 @@ def test_mu_reference_model_generic(statements, correct):
 
 def test_simplify_expression():
     model = Model()
-    x = sympy.Symbol('x')
-    y = sympy.Symbol('y')
+    x = Expr.symbol('x')
+    y = Expr.symbol('y')
 
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9, fix=True)
@@ -211,7 +211,7 @@ def test_simplify_expression():
     p2 = Parameter('y', 9)
     pset = Parameters((p1, p2))
     model = model.replace(parameters=pset)
-    assert simplify_expression(model, sympy.Piecewise((2, sympy.Ge(x, 0)), (56, True))) == 2
+    assert simplify_expression(model, Expr.piecewise((2, sympy.Ge(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', -3, upper=-1)
     p2 = Parameter('y', 9)
@@ -223,7 +223,7 @@ def test_simplify_expression():
     p2 = Parameter('y', 9)
     pset = Parameters((p1, p2))
     model = model.replace(parameters=pset)
-    assert simplify_expression(model, sympy.Piecewise((2, sympy.Le(x, 0)), (56, True))) == 2
+    assert simplify_expression(model, Expr.piecewise((2, sympy.Le(x, 0)), (56, True))) == 2
 
     p1 = Parameter('x', 3)
     p2 = Parameter('y', 9)
@@ -234,12 +234,12 @@ def test_simplify_expression():
 
 def test_solve_ode_system(pheno):
     model = solve_ode_system(pheno)
-    assert sympy.Symbol('t') in model.statements[8].free_symbols
+    assert Expr.symbol('t') in model.statements[8].free_symbols
 
 
 def test_make_declarative(pheno):
     model = make_declarative(pheno)
-    assert model.statements[3].expression == sympy.Piecewise(
+    assert model.statements[3].expression == Expr.piecewise(
         (s('WGT') * s('PTVV') * (s('THETA_3') + 1), sympy.Lt(s('APGR'), 5)),
         (s('WGT') * s('PTVV'), True),
     )
@@ -694,17 +694,17 @@ def test_is_linearized(load_example_model_for_test):
 
 def test_get_dv_symbol(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
-    assert get_dv_symbol(model, 2) == sympy.Symbol("Y_2")
-    assert get_dv_symbol(model, "Y_1") == sympy.Symbol("Y_1")
-    assert get_dv_symbol(model, sympy.Symbol("Y_2")) == sympy.Symbol("Y_2")
-    assert get_dv_symbol(model) == sympy.Symbol("Y_1")
-    assert get_dv_symbol(model, None) == sympy.Symbol("Y_1")
+    assert get_dv_symbol(model, 2) == Expr.symbol("Y_2")
+    assert get_dv_symbol(model, "Y_1") == Expr.symbol("Y_1")
+    assert get_dv_symbol(model, Expr.symbol("Y_2")) == Expr.symbol("Y_2")
+    assert get_dv_symbol(model) == Expr.symbol("Y_1")
+    assert get_dv_symbol(model, None) == Expr.symbol("Y_1")
 
     with pytest.raises(ValueError):
         get_dv_symbol(model, 3)
     with pytest.raises(ValueError):
         get_dv_symbol(model, "FLUMOX")
     with pytest.raises(ValueError):
-        get_dv_symbol(model, sympy.Symbol("SPANNER"))
+        get_dv_symbol(model, Expr.symbol("SPANNER"))
     with pytest.raises(TypeError):
         get_dv_symbol(model, 3.4)

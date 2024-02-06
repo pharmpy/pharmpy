@@ -1,5 +1,4 @@
-import sympy
-
+from pharmpy.basic import Expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import output
 from pharmpy.modeling import add_peripheral_compartment, set_michaelis_menten_elimination
@@ -81,5 +80,5 @@ def test_des_mm(load_example_model_for_test, create_model_for_test):
     cs = model.statements.ode_system
     central = cs.central_compartment
     flow = cs.get_flow(central, output)
-    correct_flow = sympy.simplify(parse_expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))'))
+    correct_flow = Expr('CLMM*KM/(V1*(KM + A_CENTRAL(t)/V1))').simplify()
     assert flow == correct_flow

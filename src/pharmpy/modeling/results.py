@@ -215,7 +215,7 @@ def calculate_individual_shrinkage(
 def calculate_individual_parameter_statistics(
     model: Model,
     expr_or_exprs: Union[
-        Iterable[sympy.Eq], Iterable[sympy.Expr], Iterable[str], sympy.Eq, sympy.Expr, str
+        Iterable[BooleanExpr], Iterable[Expr], Iterable[str], BooleanExpr, Expr, str
     ],
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
@@ -242,7 +242,7 @@ def calculate_individual_parameter_statistics(
     covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
     expr_or_exprs : str
-        sympy expression or iterable of str or sympy expressions
+        expression or iterable of str or expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
     seed : Generator or int
@@ -271,6 +271,10 @@ def calculate_individual_parameter_statistics(
               p95         0.004907  0.000001  0.001247
     """
     rng = create_rng(seed)
+    try:
+        expr_or_exprs = [sympy.sympify(e) for e in expr_or_exprs]
+    except TypeError:
+        expr_or_exprs = sympy.sympify(expr_or_exprs)
 
     split_exprs = map(
         _split_equation,
@@ -791,10 +795,10 @@ def _is_close_to_bound(param, value=None, zero_limit=0.01, significant_digits=2)
     if value is None:
         value = param.init
     return (
-        param.lower > -sympy.oo
+        param.lower > -float("inf")
         and _is_near_target(value, param.lower, zero_limit, significant_digits)
     ) or (
-        param.upper < sympy.oo
+        param.upper < float("inf")
         and _is_near_target(value, param.upper, zero_limit, significant_digits)
     )
 

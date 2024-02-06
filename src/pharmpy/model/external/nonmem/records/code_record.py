@@ -8,6 +8,7 @@ import re
 from operator import neg, pos, sub, truediv
 from typing import Iterator, Literal, Sequence, Set, Tuple
 
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.ds.ordered_set import OrderedSet
@@ -166,14 +167,12 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
 
 def expression_to_nmtran(expr, rvs=None, trans=None):
     printer = NMTranPrinter(rvs, trans)
-    expr_str = printer.doprint(expr)
+    expr_str = printer.doprint(sympy.sympify(expr))
     return expr_str
 
 
-def nmtran_assignment_string(
-    assignment: Assignment, defined_symbols: Set[sympy.Symbol], rvs, trans
-):
-    if isinstance(assignment.expression, sympy.Piecewise):
+def nmtran_assignment_string(assignment: Assignment, defined_symbols: set[Expr], rvs, trans):
+    if assignment.expression.is_piecewise():
         return _translate_sympy_piecewise(assignment, defined_symbols, rvs, trans)
     elif re.search('sign', str(assignment.expression)):  # FIXME: Don't use re here
         return _translate_sympy_sign(assignment)
@@ -181,10 +180,8 @@ def nmtran_assignment_string(
         return f'{str(assignment.symbol).upper()} = {expression_to_nmtran(assignment.expression, rvs, trans)}'
 
 
-def _translate_sympy_piecewise(
-    statement: Assignment, defined_symbols: Set[sympy.Symbol], rvs, trans
-):
-    expression = statement.expression.args
+def _translate_sympy_piecewise(statement: Assignment, defined_symbols: set[Expr], rvs, trans):
+    expression = statement.expression._sympy_().args
     symbol = statement.symbol
     # Did we (possibly) add the default in the piecewise with 0 or symbol?
     has_added_else = expression[-1][1] is sympy.true and (
@@ -595,9 +592,9 @@ class CodeRecord(Record):
         statements = [s.subs(function_map) for s in extra]
         for i, ode in enumerate(odes):
             # For now Piecewise signals zero-order infusions, which are handled with parameters
-            ode = ode.replace(sympy.Piecewise, lambda a1, a2: 0)
-            symbol = sympy.Symbol(f'DADT({i + 1})')
-            expression = subs(ode.rhs, function_map, simultaneous=True)
+            ode = BooleanExpr(ode._sympy_().replace(sympy.Piecewise, lambda a1, a2: 0))
+            symbol = Expr.symbol(f'DADT({i + 1})')
+            expression = ode.rhs.subs(function_map)
             statements.append(Assignment(symbol, expression))
         return self.update_statements(statements)
 
@@ -667,7 +664,7 @@ def _parse_tree(tree: AttrTree):
             if node.rule == 'assignment':
                 symbol = interpreter.visit(node.subtree('assignable'))
                 expr = interpreter.visit(node.subtree('real_expr'))
-                ass = Assignment(symbol, expr)
+                ass = Assignment.create(symbol, expr)
                 s.append(ass)
                 new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'logical_if':
@@ -684,7 +681,7 @@ def _parse_tree(tree: AttrTree):
                         symbol if any(map(lambda x: x.symbol == symbol, s)) else sympy.Integer(0)
                     )
                     pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
-                    ass = Assignment(symbol, pw)
+                    ass = Assignment.create(symbol, pw)
                     s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
             elif node.rule == 'block_if':
@@ -750,10 +747,10 @@ def _parse_tree(tree: AttrTree):
 
                     if len(pairs) == 1:
                         expr = pairs[0][0]
-                        ass = Assignment(symbol, expr)
+                        ass = Assignment.create(symbol, expr)
                     else:
                         pw = sympy.Piecewise(*pairs)
-                        ass = Assignment(symbol, pw)
+                        ass = Assignment.create(symbol, pw)
                     s_block.append(ass)
 
                 s.extend(_reorder_block_statements(s_block))

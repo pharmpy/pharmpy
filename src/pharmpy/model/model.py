@@ -20,6 +20,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
 
 import pharmpy
+from pharmpy.basic import Expr, TSymbol, TExpr
 from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
@@ -33,10 +34,8 @@ from .statements import CompartmentalSystem, Statements
 
 if TYPE_CHECKING:
     import pandas as pd
-    import sympy
 else:
     from pharmpy.deps import pandas as pd
-    from pharmpy.deps import sympy
 
 
 class ModelError(Exception):
@@ -78,10 +77,10 @@ class Model(Immutable):
         statements: Statements = Statements(),
         dataset: Optional[pd.DataFrame] = None,
         datainfo: DataInfo = DataInfo(),
-        dependent_variables: frozenmapping[sympy.Symbol, int] = frozenmapping(
-            {sympy.Symbol('y'): 1}
+        dependent_variables: frozenmapping[Expr, int] = frozenmapping(
+            {Expr.symbol('y'): 1}
         ),
-        observation_transformation: Optional[frozenmapping[sympy.Symbol, sympy.Expr]] = None,
+        observation_transformation: Optional[frozenmapping[Expr, Expr]] = None,
         estimation_steps: EstimationSteps = EstimationSteps(),
         modelfit_results=None,
         parent_model: Optional[str] = None,
@@ -121,8 +120,8 @@ class Model(Immutable):
         statements: Optional[Statements] = None,
         dataset: Optional[pd.DataFrame] = None,
         datainfo: DataInfo = DataInfo(),
-        dependent_variables: Optional[Mapping[Union[str, sympy.Symbol], int]] = None,
-        observation_transformation: Optional[Mapping[Union[str, sympy.Symbol], sympy.Expr]] = None,
+        dependent_variables: Optional[Mapping[TSymbol, int]] = None,
+        observation_transformation: Optional[Mapping[TSymbol, TExpr]] = None,
         estimation_steps: Optional[EstimationSteps] = None,
         modelfit_results=None,
         parent_model: Optional[str] = None,
@@ -180,7 +179,7 @@ class Model(Immutable):
                     f"or a symbol"
                 )
             value = value.upper()
-        elif not isinstance(value, sympy.Symbol):
+        elif not (isinstance(value, Expr) and value.is_symbol()):
             raise ValueError("Can only set value_type to one of {allowed_strings} or a symbol")
         return value
 
@@ -218,7 +217,7 @@ class Model(Immutable):
             return Statements()
         if not isinstance(statements, Statements):
             raise TypeError("model.statements must be of Statements type")
-        colnames = {sympy.Symbol(colname) for colname in datainfo.names}
+        colnames = {Expr.symbol(colname) for colname in datainfo.names}
         symbs_all = rvs.free_symbols.union(params.symbols).union(colnames)
         if statements.ode_system is not None:
             symbs_all = symbs_all.union({statements.ode_system.t})
@@ -230,8 +229,8 @@ class Model(Immutable):
             symbs = statement.expression.free_symbols
             if not symbs.issubset(symbs_all):
                 # E.g. after solve_ode_system
-                if isinstance(statement.symbol, sympy.Function):
-                    symbs_all.add(sympy.Symbol(statement.symbol.func.__name__))
+                if statement.symbol.is_function():
+                    symbs_all.add(Expr.symbol(statement.symbol.name))
                     continue
 
                 for symb in symbs:
@@ -240,7 +239,7 @@ class Model(Immutable):
                     if str(symb) == 'NaN':
                         continue
                     if statements.find_assignment(symb) is None:
-                        if symb == sympy.Symbol('t'):
+                        if symb == Expr.symbol('t'):
                             # FIXME: Hack because t is not defined on model
                             continue
                         if statements.ode_system and symb in statements.ode_system.amounts:
@@ -259,37 +258,29 @@ class Model(Immutable):
 
     @staticmethod
     def _canonicalize_dependent_variables(
-        dvs: Optional[Mapping[Union[str, sympy.Symbol], int]]
-    ) -> frozenmapping[sympy.Symbol, int]:
+        dvs: Optional[Mapping[TSymbol, int]]
+    ) -> frozenmapping[Expr, int]:
         if dvs is None:
-            dvs = {sympy.Symbol('y'): 1}
+            dvs = {Expr.symbol('y'): 1}
         for key, value in dvs.items():
             if isinstance(key, str):
-                key = sympy.Symbol(key)
-            if not isinstance(key, sympy.Symbol):
-                raise TypeError("Dependent variable keys must be of string or sympy.Symbol type")
+                key = Expr.symbol(key)
+            if not key.is_symbol():
+                raise TypeError("Dependent variable keys must be a string or a symbol")
             if not isinstance(value, int):
                 raise TypeError("Dependent variable values must be of int type")
         return frozenmapping(dvs)
 
     @staticmethod
     def _canonicalize_observation_transformation(
-        obs: Optional[Mapping[Union[str, sympy.Symbol], Union[str, sympy.Expr]]],
-        dvs: frozenmapping[sympy.Symbol, int],
-    ) -> frozenmapping[sympy.Symbol, sympy.Expr]:
+        obs: Optional[Mapping[TSymbol, TExpr]],
+        dvs: frozenmapping[Expr, int],
+    ) -> frozenmapping[Expr, Expr]:
         if obs is None:
             obs = {dv: dv for dv in dvs.keys()}
         for key, value in obs.items():
-            if isinstance(key, str):
-                key = sympy.Symbol(key)
-            if isinstance(value, str):
-                value = parse_expr(value)
-            if not isinstance(key, sympy.Symbol):
-                raise TypeError(
-                    "Observation transformation keys must be of string or sympy.Symbol type"
-                )
-            if not isinstance(value, sympy.Expr):
-                raise TypeError("Observation transformation keys values must be of sympy.Expr type")
+            key = Expr(key)
+            value = Expr(value)
         return frozenmapping(obs)
 
     @staticmethod
@@ -499,7 +490,7 @@ class Model(Immutable):
             ie = None
         depvars = {str(key): val for key, val in self._dependent_variables.items()}
         obstrans = {
-            sympy.srepr(key): sympy.srepr(val)
+            key.serialize(): val.serialize()
             for key, val in self._observation_transformation.items()
         }
         return {
@@ -521,9 +512,9 @@ class Model(Immutable):
             ie = None
         else:
             ie = pd.DataFrame.from_dict(ie_dict)
-        depvars = {sympy.Symbol(key): value for key, value in d['dependent_variables'].items()}
+        depvars = {Expr.symbol(key): value for key, value in d['dependent_variables'].items()}
         obstrans = {
-            sympy.parse_expr(key): sympy.parse_expr(val)
+            Expr.deserialize(key): Expr.deserialize(val)
             for key, val in d['observation_transformation'].items()
         }
         return cls(
@@ -557,7 +548,7 @@ class Model(Immutable):
         return self._filename_extension
 
     @property
-    def dependent_variables(self) -> frozenmapping[sympy.Symbol, int]:
+    def dependent_variables(self) -> frozenmapping[Expr, int]:
         """The dependent variables of the model mapped to the corresponding DVIDs"""
         return self._dependent_variables
 
@@ -574,7 +565,7 @@ class Model(Immutable):
         return self._value_type
 
     @property
-    def observation_transformation(self) -> frozenmapping[sympy.Symbol, sympy.Expr]:
+    def observation_transformation(self) -> frozenmapping[Expr, Expr]:
         """Transformation to be applied to the observation data"""
         return self._observation_transformation
 

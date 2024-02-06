@@ -17,6 +17,7 @@ from typing import (
     Union,
 )
 
+from pharmpy.basic import Expr
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images_and_symbols
 from pharmpy.internals.expr.parse import parse as parse_expr
@@ -65,10 +66,9 @@ def get_observation_expression(model: Model):
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model, get_observation_expression
-    >>> import sympy
     >>> model = load_example_model("pheno_linear")
     >>> expr = get_observation_expression(model)
-    >>> sympy.pprint(expr)
+    >>> expr.unicode()
     D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂
     ) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """
@@ -114,11 +114,7 @@ def get_individual_prediction_expression(model: Model):
     --------
     get_population_prediction_expression : Get full symbolic epression for the population prediction
     """
-    return subs(
-        get_observation_expression(model),
-        {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
-        simultaneous=True,
-    )
+    return get_observation_expression(model).subs({Expr.symbol(eps): 0 for eps in model.random_variables.epsilons.names})
 
 
 def get_population_prediction_expression(model: Model):
@@ -148,11 +144,7 @@ def get_population_prediction_expression(model: Model):
     get_individual_prediction_expression : Get full symbolic epression for the individual prediction
     """
 
-    return subs(
-        get_individual_prediction_expression(model),
-        {sympy.Symbol(eta): 0 for eta in model.random_variables.etas.names},
-        simultaneous=True,
-    )
+    return get_individual_prediction_expression(model).subs({Expr.symbol(eta): 0 for eta in model.random_variables.etas.names})
 
 
 def calculate_eta_gradient_expression(model: Model):
@@ -182,7 +174,7 @@ def calculate_eta_gradient_expression(model: Model):
     calculate_epsilon_gradient_expression : Epsilon gradient
     """
     y = get_individual_prediction_expression(model)
-    d = [y.diff(sympy.Symbol(x)) for x in model.random_variables.etas.names]
+    d = [y.diff(Expr.symbol(x)) for x in model.random_variables.etas.names]
     return d
 
 
@@ -214,7 +206,7 @@ def calculate_epsilon_gradient_expression(model: Model):
     """
 
     y = get_observation_expression(model)
-    d = [y.diff(sympy.Symbol(x)) for x in model.random_variables.epsilons.names]
+    d = [y.diff(Expr.symbol(x)) for x in model.random_variables.epsilons.names]
     return d
 
 
@@ -266,13 +258,13 @@ def _create_symbol(statements, parameters, random_variables, datainfo, stem, for
     all_names = symbols + params + rvs + dataset_col
 
     if str(stem) not in all_names and not force_numbering:
-        return sympy.Symbol(str(stem))
+        return Expr(str(stem))
 
     i = 1
     while True:
         candidate = f'{stem}{i}'
         if candidate not in all_names:
-            return sympy.Symbol(candidate)
+            return Expr(candidate)
         i += 1
 
 
@@ -280,7 +272,7 @@ def _find_eta_assignments(model):
     # NOTE: This locates all assignment to ETAs of symbols that do not depend on
     # any other ETA
     statements = model.statements.before_odes
-    etas = {sympy.Symbol(eta) for eta in model.random_variables.etas.names}
+    etas = {Expr.symbol(eta) for eta in model.random_variables.etas.names}
     found = set()
     leafs = []
 
@@ -337,7 +329,7 @@ def mu_reference_model(model: Model):
     V = ℯ
     S₁ = V
     """
-    index = {sympy.Symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
+    index = {Expr.symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
     etas = set(index)
 
     offset = 0
@@ -346,9 +338,9 @@ def mu_reference_model(model: Model):
     for old_ind, assignment in _find_eta_assignments(model):
         # NOTE: The sequence of old_ind must be increasing
         eta = next(iter(etas.intersection(assignment.expression.free_symbols)))
-        old_def = assignment.expression
+        old_def = assignment.expression._sympy_()
         dep = old_def.as_independent(eta)[1]
-        mu = sympy.Symbol(f'mu_{index[eta]}')
+        mu = Expr.symbol(f'mu_{index[eta]}')
         if mu in old_def.free_symbols:
             # If mu reference is already used, ignore
             pass
@@ -358,8 +350,8 @@ def mu_reference_model(model: Model):
             insertion_ind = offset + old_ind
             statements = (
                 statements[0:insertion_ind]
-                + Assignment(mu, mu_expr)
-                + Assignment(assignment.symbol, new_def)
+                + Assignment.create(mu, mu_expr)
+                + Assignment.create(assignment.symbol, new_def)
                 + statements[insertion_ind + 1 :]
             )
             offset += 1  # NOTE: We need this offset because we replace one
@@ -368,7 +360,7 @@ def mu_reference_model(model: Model):
     return model
 
 
-def simplify_expression(model: Model, expr: Union[int, float, str, sympy.Expr]):
+def simplify_expression(model: Model, expr: TExpr):
     """Simplify expression given constraints in model
 
     Parameters
@@ -393,8 +385,8 @@ def simplify_expression(model: Model, expr: Union[int, float, str, sympy.Expr]):
     return _simplify_expression_from_parameters(expr, model.parameters)
 
 
-def _simplify_expression_from_parameters(expr, parameters):
-    expr = parse_expr(expr)
+def _simplify_expression_from_parameters(expr, parameters) -> Expr:
+    expr = sympy.sympify(expr)
     d = {}
     for p in parameters:
         if p.fix:
@@ -421,8 +413,8 @@ def _simplify_expression_from_parameters(expr, parameters):
             new = sympy.Symbol(s.name, real=True)
             expr = subs(expr, {s: new})
             d[new] = s
-    simp = subs(sympy.simplify(expr), d)  # Subs symbols back to non-constrained
-    return simp
+    simp = sympy.simplify(expr).subs(d)  # Subs symbols back to non-constrained
+    return Expr(simp)
 
 
 def make_declarative(model: Model):
@@ -502,11 +494,11 @@ def make_declarative(model: Model):
                 if duplicated_symbols[s.symbol]:
                     current[s.symbol] = subs(s.expression, current)
                 else:
-                    ass = Assignment(s.symbol, subs(s.expression, current))
+                    ass = Assignment.create(s.symbol, subs(s.expression, current))
                     newstats.append(ass)
                     del current[s.symbol]
         else:
-            ass = Assignment(s.symbol, subs(s.expression, current))
+            ass = Assignment.create(s.symbol, s.expression.subs(current))
             newstats.append(ass)
 
     model = model.replace(statements=Statements(newstats))
@@ -709,7 +701,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     subs = {}
     for i, theta in enumerate(get_thetas(model), start=1):
         subscript = get_subscript(theta, i, named_subscripts)
-        subs[theta.symbol] = sympy.Symbol(f"theta_{subscript}")
+        subs[theta.symbol] = Expr.symbol(f"theta_{subscript}")
     omega = model.random_variables.covariance_matrix
     for row in range(omega.rows):
         for col in range(omega.cols):
@@ -719,7 +711,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
             if elt == 0:
                 continue
             subscript = get_2d_subscript(elt, row + 1, col + 1, named_subscripts)
-            subs[elt] = sympy.Symbol(f"omega_{subscript}")
+            subs[elt] = Expr.symbol(f"omega_{subscript}")
     sigma = model.random_variables.covariance_matrix
     for row in range(sigma.rows):
         for col in range(sigma.cols):
@@ -729,13 +721,13 @@ def greekify_model(model: Model, named_subscripts: bool = False):
             if elt == 0:
                 continue
             subscript = get_2d_subscript(elt, row + 1, col + 1, named_subscripts)
-            subs[elt] = sympy.Symbol(f"sigma_{subscript}")
+            subs[elt] = Expr.symbol(f"sigma_{subscript}")
     for i, eta in enumerate(model.random_variables.etas.names, start=1):
         subscript = get_subscript(eta, i, named_subscripts)
-        subs[sympy.Symbol(eta)] = sympy.Symbol(f"eta_{subscript}")
+        subs[Expr.symbol(eta)] = Expr.symbol(f"eta_{subscript}")
     for i, epsilon in enumerate(model.random_variables.epsilons.names, start=1):
         subscript = get_subscript(epsilon, i, named_subscripts)
-        subs[sympy.Symbol(epsilon)] = sympy.Symbol(f"epsilon_{subscript}")
+        subs[Expr.symbol(epsilon)] = Expr.symbol(f"epsilon_{subscript}")
     from pharmpy.modeling import rename_symbols
 
     model = rename_symbols(model, subs)
@@ -745,7 +737,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
 def get_individual_parameters(
     model: Model,
     level: Literal['iiv', 'iov', 'random', 'all'] = 'all',
-    dv: Union[sympy.Symbol, str, int, None] = None,
+    dv: Union[TSymbol, int, None] = None,
 ) -> List[str]:
     """Retrieves all individual parameters in a :class:`pharmpy.model`.
 
@@ -760,7 +752,7 @@ def get_individual_parameters(
         Pharmpy model to retrieve the individuals parameters from
     level : {'iiv', 'iov', 'random', 'all'}
         The variability level to look for: 'iiv', 'iov', 'random' or 'all' (default)
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for all (default)
 
     Return
@@ -866,7 +858,7 @@ def _cut_partial_odes(model, g, dv):
     def dep_funcs(eq):
         from sympy.core.function import AppliedUndef
 
-        funcs = eq.atoms(AppliedUndef)
+        funcs = eq._sympy_().atoms(AppliedUndef)
         return funcs
 
     def dep_amounts(ode_deps, amounts):
@@ -1077,7 +1069,7 @@ def _find_direct_time_dependents(model):
 
 def depends_on(model: Model, symbol: str, other: str):
     return _depends_on_any_of(
-        model.statements.before_odes, sympy.Symbol(symbol), [sympy.Symbol(other)]
+        model.statements.before_odes, Expr.symbol(symbol), [Expr.symbol(other)]
     )
 
 
@@ -1281,7 +1273,7 @@ def remove_covariate_effect_from_statements(
     assert tree_node.contains_theta
 
     if tree_node.changed:
-        new_before_odes[graph_node.index] = Assignment(
+        new_before_odes[graph_node.index] = Assignment.create(
             sympy.Symbol(parameter), tree_node.expression
         )
 
@@ -1388,7 +1380,7 @@ def _remove_covariate_effect_from_statements_recursive(
                 parent,
             )
             if tree_node.changed:
-                statements[graph_node.index] = Assignment(expression, tree_node.expression)
+                statements[graph_node.index] = Assignment.create(expression, tree_node.expression)
 
             return ExpressionTreeNode(
                 expression, tree_node.changed, tree_node.constant, tree_node.contains_theta
@@ -1815,7 +1807,7 @@ def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assign
             assignments = [
                 succeeding
                 if i < substitution_starts_at_index
-                else Assignment(
+                else Assignment.create(
                     succeeding.symbol,
                     subs(
                         succeeding.expression,
@@ -1852,7 +1844,7 @@ def _dependency_graph(assignments: Sequence[Assignment]):
     return dependencies
 
 
-def is_real(model: Model, expr: Union[str, sympy.Expr]) -> Optional[bool]:
+def is_real(model: Model, expr: TExpr) -> Optional[bool]:
     """Determine if an expression is real valued given constraints of a model
 
     Parameters
@@ -1933,7 +1925,7 @@ def is_linearized(model: Model):
     return True
 
 
-def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int, None] = None) -> sympy.Symbol:
+def get_dv_symbol(model: Model, dv: Union[Expr, str, int, None] = None) -> Expr:
     """Get the symbol for a certain dvid or dv and check that it is valid
 
     Parameters
@@ -1961,8 +1953,6 @@ def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int, None] = None) 
     """
     if dv is None:
         dv = next(iter(model.dependent_variables))
-    elif isinstance(dv, str):
-        dv = sympy.Symbol(dv)
     elif isinstance(dv, int):
         for key, val in model.dependent_variables.items():
             if dv == val:
@@ -1970,13 +1960,14 @@ def get_dv_symbol(model: Model, dv: Union[sympy.Symbol, str, int, None] = None) 
                 break
         else:
             raise ValueError(f"DVID {dv} not defined in model")
-    elif isinstance(dv, sympy.Symbol):
-        pass
     else:
-        raise TypeError(
-            f"dv is of type {type(dv)} has to be one of Symbol or str representing "
-            "a dv or int representing a dvid"
-        )
+        try:
+            dv = Expr(dv)
+        except:
+            raise TypeError(
+                f"dv is of type {type(dv)} has to be one of Symbol or str representing "
+                "a dv or int representing a dvid"
+            )
     if dv not in model.dependent_variables:
         raise ValueError(f"DV {dv} not defined in model")
     return dv

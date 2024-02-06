@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from functools import partial
 from typing import TYPE_CHECKING, Iterable, List, Optional, Union
 
-from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.basic import Expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
@@ -29,9 +29,9 @@ else:
 def create_workflow(
     model: Optional[Model] = None,
     results: Optional[ModelfitResults] = None,
-    allometric_variable: Union[str, sympy.Expr] = 'WT',
-    reference_value: Union[str, int, float, sympy.Expr] = 70,
-    parameters: Optional[List[Union[str, sympy.Expr]]] = None,
+    allometric_variable: Union[str, Expr] = 'WT',
+    reference_value: Union[str, int, float, Expr] = 70,
+    parameters: Optional[List[Union[str, Expr]]] = None,
     initials: Optional[List[Union[int, float]]] = None,
     lower_bounds: Optional[List[Union[int, float]]] = None,
     upper_bounds: Optional[List[Union[int, float]]] = None,
@@ -148,7 +148,7 @@ def validate_input(
 
 
 def _parse_fs(expr: str):
-    return map(str, parse_expr(expr).free_symbols)
+    return map(str, Expr(expr).free_symbols)
 
 
 def validate_allometric_variable(model: Model, allometric_variable: str):
@@ -159,7 +159,7 @@ def validate_allometric_variable(model: Model, allometric_variable: str):
         )
 
 
-def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, sympy.Expr]]]):
+def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, Expr]]]):
     if parameters is not None:
         allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes

@@ -2,9 +2,9 @@ import warnings
 from pathlib import Path
 from typing import Callable, List, Literal, Optional, Tuple, Union
 
+from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import (
@@ -71,7 +71,7 @@ def run_amd(
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
-    allometric_variable: Optional[Union[str, sympy.Symbol]] = None,
+    allometric_variable: Optional[TSymbol] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,
@@ -1047,7 +1047,7 @@ def validate_input(
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
-    allometric_variable: Optional[Union[str, sympy.Symbol]] = None,
+    allometric_variable: Optional[TSymbol] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,

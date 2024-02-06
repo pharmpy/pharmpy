@@ -1,9 +1,8 @@
 from pathlib import Path
 
 import pytest
-import sympy
-import sympy.physics.units
 
+from pharmpy.basic import Unit
 from pharmpy.model import ColumnInfo, DataInfo
 
 
@@ -44,9 +43,9 @@ def test_columninfo_scale():
 
 def test_columninfo_unit():
     col = ColumnInfo.create("DUMMY", unit="nospecialunit")
-    assert col.unit == sympy.Symbol("nospecialunit")
+    assert col.unit == Unit("nospecialunit")
     col = ColumnInfo.create("DUMMY", unit="kg")
-    assert col.unit == sympy.physics.units.kg
+    assert col.unit.unicode() == "kg"
 
 
 def test_columninfo_continuous():

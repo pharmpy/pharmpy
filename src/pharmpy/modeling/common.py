@@ -9,6 +9,7 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Literal, Optional, Union
 
 import pharmpy.config as config
+from pharmpy.basic import Expr, TSymbol
 from pharmpy.deps import pandas
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
@@ -21,11 +22,6 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
 )
-
-if TYPE_CHECKING:
-    import sympy
-else:
-    from pharmpy.deps import sympy
 
 
 def read_model(path: Union[str, Path]):
@@ -416,7 +412,7 @@ def get_model_covariates(model: Model, strings: bool = False):
     ['APGR', 'WGT']
 
     """
-    datasymbs = {sympy.Symbol(s) for s in model.datainfo.names}
+    datasymbs = {Expr.symbol(s) for s in model.datainfo.names}
 
     odes = model.statements.ode_system
 
@@ -439,7 +435,7 @@ def get_model_covariates(model: Model, strings: bool = False):
     covs = datasymbs.intersection(ode_deps | y_deps)
 
     # Disallow ID from being a covariate
-    covs = covs - {sympy.Symbol(model.datainfo.id_column.name)}
+    covs = covs - {Expr.symbol(model.datainfo.id_column.name)}
 
     covs = list(covs)
     covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
@@ -473,20 +469,20 @@ def print_model_symbols(model: Model) -> None:
     Data columns: ID, TIME, AMT, WGT, APGR, DV, FA1, FA2
 
     """
-    etas = [sympy.pretty(sympy.Symbol(name)) for name in model.random_variables.etas.names]
-    epsilons = [sympy.pretty(sympy.Symbol(name)) for name in model.random_variables.epsilons.names]
-    omegas = [sympy.pretty(sympy.Symbol(n)) for n in model.random_variables.etas.parameter_names]
+    etas = [Expr.symbol(name).unicode() for name in model.random_variables.etas.names]
+    epsilons = [Expr.symbol(name).unicode() for name in model.random_variables.epsilons.names]
+    omegas = [Expr.symbol(n).unicode() for n in model.random_variables.etas.parameter_names]
     sigmas = [
-        sympy.pretty(sympy.Symbol(n)) for n in model.random_variables.epsilons.parameter_names
+        Expr.symbol(n).unicode() for n in model.random_variables.epsilons.parameter_names
     ]
     thetas = []
     for param in model.parameters:
         if param.name not in model.random_variables.parameter_names:
-            thetas.append(sympy.pretty(param.symbol))
+            thetas.append(param.symbol.unicode())
     variables = []
     for sta in model.statements:
         if hasattr(sta, 'symbol'):
-            variables.append(sympy.pretty(sta.symbol))
+            variables.append(sta.symbol.unicode())
     s = f'Thetas: {", ".join(thetas)}\n'
     s += f'Etas: {", ".join(etas)}\n'
     s += f'Omegas: {", ".join(omegas)}\n'
@@ -582,7 +578,7 @@ def _get_unused_parameters_and_rvs(statements, parameters, random_variables):
             names = dist.names
             for i, name in enumerate(names):
                 params = dist.variance[i, :].free_symbols
-                symb = sympy.Symbol(name)
+                symb = Expr.symbol(name)
                 if symb not in symbols and symbols.isdisjoint(params):
                     to_unjoin.append(name)
 
@@ -608,7 +604,7 @@ def _get_unused_parameters_and_rvs(statements, parameters, random_variables):
 
 
 def rename_symbols(
-    model: Model, new_names: Dict[Union[str, sympy.Symbol], Union[str, sympy.Symbol]]
+    model: Model, new_names: Dict[TSymbol, TSymbol]
 ):
     """Rename symbols in the model
 
@@ -626,12 +622,7 @@ def rename_symbols(
     Model
         Pharmpy model object
     """
-    d = {
-        (sympy.Symbol(key) if isinstance(key, str) else key): (
-            sympy.Symbol(val) if isinstance(val, str) else val
-        )
-        for key, val in new_names.items()
-    }
+    d = {Expr(key): Expr(val) for key, val in new_names.items()}
 
     new = []
     for p in model.parameters:

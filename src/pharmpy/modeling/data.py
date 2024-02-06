@@ -2,6 +2,7 @@ import re
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Union
 
+from pharmpy.basic import Expr, Unit
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -1607,7 +1608,7 @@ def remove_loq_data(
 
 def set_lloq_data(
     model: Model,
-    value: Union[str, float, sympy.Expr],
+    value: Union[str, float, Expr],
     lloq: Optional[Union[float, str]] = None,
     blq: Optional[str] = None,
 ):
@@ -1617,7 +1618,7 @@ def set_lloq_data(
     ----------
     model : Model
         Pharmpy model object
-    value : float or sympy.Expression
+    value : float or Expr
         The new dv value
     lloq : float or str
         Value or column name for lower limit of quantification.
@@ -1644,7 +1645,7 @@ def set_lloq_data(
     which_keep = _loq_mask(model, lloq=lloq, blq=blq)
     df = model.dataset.copy()
     dv = model.datainfo.dv_column.name
-    if isinstance(value, sympy.Expr) or isinstance(value, str):
+    if isinstance(value, Expr) or isinstance(value, str):
         value = df.eval(str(value))
     df[dv] = df[dv].where(which_keep, value)
     model = model.replace(dataset=df)
@@ -1768,7 +1769,7 @@ class Checker:
         return has_unit
 
     def check_is_unitless(self, code, col):
-        is_unitless = col.unit == sympy.Integer(1)
+        is_unitless = col.unit == Unit.unitless()
         self.set_result(code, test=is_unitless, violation=col.name, warn=True)
 
     def check_dimension(self, code, column, dim):

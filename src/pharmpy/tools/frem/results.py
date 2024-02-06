@@ -4,10 +4,11 @@ from itertools import product
 from pathlib import Path
 from typing import Any, Optional
 
+from pharmpy.basic import Expr
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import symengine, sympy
+from pharmpy.deps import symengine
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.math import (
     conditional_joint_normal,
@@ -546,7 +547,7 @@ def calculate_results_using_cov_sampling(
     parameters = [
         s
         for s in frem_model_results.parameter_estimates.index
-        if sympy.Symbol(s) in sigma_symb.free_symbols
+        if Expr.symbol(s) in sigma_symb.free_symbols
     ]
     parvecs = sample_parameters_from_covariance_matrix(
         frem_model,
@@ -574,7 +575,7 @@ def calculate_results_from_samples(
     parameters = [
         s
         for s in frem_model_results.parameter_estimates.index
-        if sympy.Symbol(s) in sigma_symb.free_symbols
+        if Expr.symbol(s) in sigma_symb.free_symbols
     ]
     parvecs.loc['estimates'] = frem_model_results.parameter_estimates.loc[parameters]
 
@@ -843,7 +844,7 @@ def get_params(frem_model, rvs, npars):
     symbs = []
 
     for p in param_names:
-        statement = [s for s in sset if sympy.Symbol(p) in s.rhs_symbols][0]
+        statement = [s for s in sset if Expr.symbol(p) in s.rhs_symbols][0]
         if str(statement.expression) == p:
             statement = [s for s in sset if statement.symbol in s.rhs_symbols][0]
         symbs.append(statement.symbol.name)
@@ -875,7 +876,7 @@ def _calculate_covariate_baselines(model, res, covariates):
     exprs = [
         ass.expression.args[0][0]
         for ass in model.statements
-        if sympy.Symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
+        if Expr.symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
     ]
     exprs = [
         subs(

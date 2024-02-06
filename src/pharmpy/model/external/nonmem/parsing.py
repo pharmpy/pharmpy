@@ -4,6 +4,7 @@ import warnings
 from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple
 
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
@@ -181,7 +182,7 @@ def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
 
 def parse_parameters(control_stream, statements):
     symbols = statements.free_symbols
-    all_names = {s.name for s in symbols}
+    all_names = {s.name for s in symbols if not s.is_derivative()}
     theta_names, theta_bounds, theta_inits, theta_fixs = parse_thetas(control_stream)
     abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
     theta_parameters = []
@@ -250,7 +251,7 @@ def parse_statements(
         des_assign = des_assign_statements(control_stream, des)
         if des_assign is not None:
             for s in des_assign:
-                statements += Assignment(s.lhs, s.rhs)
+                statements += Assignment.create(s.lhs, s.rhs)
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
@@ -262,14 +263,12 @@ def parse_statements(
                 rec_model = control_stream.get_records('MODEL')[0]
                 comps = [c for c, _ in rec_model.compartments()]
                 for i, c in enumerate(comps, 1):
-                    trans_amounts[sympy.Symbol(f"A({i})")] = sympy.Function(f'A_{c}')(
-                        sympy.Symbol('t')
-                    )
-                    trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(f'A_{c}')(0)
+                    trans_amounts[Expr.symbol(f"A({i})")] = Expr.function(f'A_{c}', 't')
+                    trans_amounts[Expr.symbol(f"A_0({i})")] = Expr.function(f'A_{c}', 0)
             else:
                 for i, amount in enumerate(cm.amounts, start=1):
-                    trans_amounts[sympy.Symbol(f"A({i})")] = amount
-                    trans_amounts[sympy.Symbol(f"A_0({i})")] = sympy.Function(amount.name)(0)
+                    trans_amounts[Expr.symbol(f"A({i})")] = amount
+                    trans_amounts[Expr.symbol(f"A_0({i})")] = Expr.function(amount.name, 0)
 
         statements += error.statements
         if trans_amounts:
@@ -283,8 +282,8 @@ def convert_dvs(statements, control_stream):
     # could partly be done in code_record
     after = statements.error
     kept = []
-    dvs = frozenmapping({sympy.Symbol('Y'): 1})
-    obs_trans = frozenmapping({sympy.Symbol('Y'): sympy.Symbol('Y')})
+    dvs = frozenmapping({Expr.symbol('Y'): 1})
+    obs_trans = frozenmapping({Expr.symbol('Y'): Expr.symbol('Y')})
     change = False
     yind = after.find_assignment_index('Y')
     if yind is None:
@@ -292,11 +291,11 @@ def convert_dvs(statements, control_stream):
     yind = yind - 1
     for s in after:
         expr = s.expression
-        if isinstance(expr, sympy.Piecewise) and sympy.Symbol("DVID") in expr.free_symbols:
+        if expr.is_piecewise() and Expr.symbol("DVID") in expr.free_symbols:
             cond = expr.args[0][1]
-            if cond.lhs == sympy.Symbol("DVID") and cond.rhs == 1:
-                ass1 = s.replace(symbol=sympy.Symbol('Y_1'), expression=expr.args[0][0])
-                ass2 = s.replace(symbol=sympy.Symbol('Y_2'), expression=expr.args[1][0])
+            if cond.lhs == Expr.symbol("DVID") and cond.rhs == 1:
+                ass1 = s.replace(symbol=Expr.symbol('Y_1'), expression=expr.args[0][0])
+                ass2 = s.replace(symbol=Expr.symbol('Y_2'), expression=expr.args[1][0])
                 if expr.args[0][0] not in statements.free_symbols:
                     kept.append(ass1)
                     dv_1 = 'Y_1'
@@ -307,7 +306,7 @@ def convert_dvs(statements, control_stream):
                     dv_2 = 'Y_2'
                 else:
                     dv_2 = str(expr.args[1][0])
-                dvs = frozenmapping({sympy.Symbol(dv_1): 1, sympy.Symbol(dv_2): 2})
+                dvs = frozenmapping({Expr.symbol(dv_1): 1, Expr.symbol(dv_2): 2})
                 obs_trans = frozenmapping({dv: dv for dv in dvs.keys()})
                 change = True
                 continue
@@ -352,7 +351,7 @@ def parse_value_type(control_stream, statements):
             break
     else:
         tp = 'PREDICTION'
-    f_flag = sympy.Symbol('F_FLAG')
+    f_flag = Expr.symbol('F_FLAG')
     if f_flag in statements.free_symbols:
         tp = f_flag
     return tp

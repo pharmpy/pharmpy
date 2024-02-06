@@ -19,7 +19,7 @@ def _extract_minus(expr):
         return expr
 
 
-def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
+def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     """Derive the physical unit of a variable in the model
 
     Unit information for the dataset needs to be available.
@@ -35,8 +35,8 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
 
     Returns
     -------
-    unit expression
-        A sympy physics.units expression
+    Unit
+        A unit expression
 
     Examples
     --------
@@ -98,7 +98,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
     filtered_unit_eqs = _filter_equations(unit_eqs, symbol)
     # NOTE: For some reason telling sympy to solve for "symbol" does not work
     sol = sympy.solve(filtered_unit_eqs, dict=True)
-    return sol[0][symbol]
+    return Unit(sol[0][symbol])
 
 
 def _filter_equations(

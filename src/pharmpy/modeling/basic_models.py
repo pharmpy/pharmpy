@@ -4,6 +4,7 @@
 from pathlib import Path
 from typing import Optional
 
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
@@ -94,10 +95,10 @@ def create_basic_pk_model(
     eta_vc = NormalDistribution.create(eta_vc_name, 'iiv', 0, iiv_vc.symbol)
     rvs = RandomVariables.create([eta_cl, eta_vc])
 
-    CL = sympy.Symbol('CL')
-    VC = sympy.Symbol('VC')
-    cl_ass = Assignment(CL, pop_cl.symbol * sympy.exp(sympy.Symbol(eta_cl_name)))
-    vc_ass = Assignment(VC, pop_vc.symbol * sympy.exp(sympy.Symbol(eta_vc_name)))
+    CL = Expr.symbol('CL')
+    VC = Expr.symbol('VC')
+    cl_ass = Assignment(CL, pop_cl.symbol * Expr.symbol(eta_cl_name).exp())
+    vc_ass = Assignment(VC, pop_vc.symbol * Expr.symbol(eta_vc_name).exp())
 
     cb = CompartmentalSystemBuilder()
     # FIXME: This shouldn't be used here
@@ -108,8 +109,8 @@ def create_basic_pk_model(
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 
-    ipred = Assignment(sympy.Symbol('IPRED'), central.amount / VC)
-    y_ass = Assignment(sympy.Symbol('Y'), ipred.symbol)
+    ipred = Assignment(Expr.symbol('IPRED'), central.amount / VC)
+    y_ass = Assignment(Expr.symbol('Y'), ipred.symbol)
 
     stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), ipred, y_ass])
 
@@ -180,10 +181,10 @@ def create_basic_pk_model(
             # Change bioavailability to piecewise for oral/iv doses
             model = model.replace(
                 statements=model.statements.reassign(
-                    sympy.Symbol("F_BIO"),
-                    sympy.Piecewise(
+                    Expr.symbol("F_BIO"),
+                    Expr.piecewise(
                         (
-                            1 / (1 + sympy.exp(-sympy.Symbol("BIO"))),
+                            1 / (1 + ((-Expr.symbol("BIO")).exp())),
                             sympy.Eq(sympy.Symbol('ADMID'), 1),
                         ),
                         (1, sympy.true),
@@ -194,7 +195,7 @@ def create_basic_pk_model(
         # Add covariate to error model with the following logic
         # RUV = 1 * covariate
         # Y = F + F*EPS*RUV
-        ruv_ass = Assignment(sympy.Symbol("RUV"), sympy.Number(1))
+        ruv_ass = Assignment(Expr.symbol("RUV"), Expr.integer(1))
         model = model.replace(
             statements=model.statements.before_odes
             + ruv_ass
@@ -204,7 +205,7 @@ def create_basic_pk_model(
         Y_ass = model.statements.find_assignment("Y")
         ipred = Y_ass.expression.make_args(Y_ass.expression)[0]
         error = Y_ass.expression.make_args(Y_ass.expression)[1]
-        new_Y_ass = Assignment(Y_ass.symbol, ipred + error * ruv_ass.symbol)
+        new_Y_ass = Assignment.create(Y_ass.symbol, ipred + error * ruv_ass.symbol)
 
         model = model.replace(
             statements=model.statements.reassign(Y_ass.symbol, new_Y_ass.expression)

@@ -1,5 +1,4 @@
 import pharmpy.model
-from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
 
 from .name_mangle import name_mangle
@@ -108,7 +107,7 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
                         add_ini_parameter(cg, sigma_param)
 
 
-def add_ini_parameter(cg: CodeGenerator, parameter: sympy.Symbol, boundary: bool = False) -> None:
+def add_ini_parameter(cg: CodeGenerator, parameter, boundary: bool = False) -> None:
     """
     Add a parameter to the ini block in nlmixr2. This is performed for theta
     and sigma parameter values as they are handled in the same manner.
@@ -117,7 +116,7 @@ def add_ini_parameter(cg: CodeGenerator, parameter: sympy.Symbol, boundary: bool
     ----------
     cg : CodeGenerator
         Codegenerator object holding the code to be added to.
-    parameter : sympy.Symbol
+    parameter : Parameter
         The parameter to be added. Either theta or sigma
     boundary : bool, optional
         Decide if the parameter should be added with or without parameter

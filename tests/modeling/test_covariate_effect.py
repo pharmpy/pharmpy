@@ -2,8 +2,8 @@ import re
 
 import pytest
 
+from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
-from pharmpy.deps import sympy
 from pharmpy.modeling.covariate_effect import (
     CovariateEffect,
     _choose_param_inits,
@@ -15,8 +15,8 @@ from pharmpy.modeling.covariate_effect import (
 from ..lib import diff
 
 
-def S(x: str):
-    return sympy.Symbol(x)
+def S(x):
+    return Expr.symbol(x)
 
 
 def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
@@ -446,7 +446,7 @@ def test_add_covariate_effect(
         (
             CovariateEffect.exponential(),
             S('CLWGT'),
-            sympy.exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),
+            (S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))).exp(),
         ),
         (CovariateEffect.power(), S('CLWGT'), (S('WGT') / S('WGT_MEDIAN')) ** S('COVEFF1')),
         (CovariateEffect.linear(), S('CLWGT'), 1 + S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),

@@ -3,7 +3,7 @@
 """
 from typing import Literal, Optional
 
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -75,10 +75,10 @@ def set_tmdd(
     cb = CompartmentalSystemBuilder(odes)
 
     vc, cl = get_central_volume_and_clearance(model)
-    r_0 = sympy.Symbol('R_0')
+    r_0 = Expr.symbol('R_0')
     model = add_individual_parameter(model, r_0.name)
     model = add_iiv(model, [r_0], 'exp')
-    kint = sympy.Symbol('KINT')
+    kint = Expr.symbol('KINT')
     model = add_individual_parameter(model, kint.name)
 
     y_symbol = _get_y_symbol(model)
@@ -136,19 +136,19 @@ def set_tmdd(
         model, kdc, kdeg = _create_parameters(model, ['KDC', 'KDEG'])
         target_comp = _create_compartments(cb, ['TARGET'])
 
-        kd = sympy.Symbol('KD')
+        kd = Expr.symbol('KD')
 
         ksyn, ksyn_ass = _create_ksyn()
-        kd_ass = Assignment(kd, kdc * vc)
+        kd_ass = Assignment.create(kd, kdc * vc)
 
-        lafree_symb = sympy.Symbol('LAFREE')
-        lafree_expr = sympy.Rational(1, 2) * (
+        lafree_symb = Expr.symbol('LAFREE')
+        lafree_expr = (
             central.amount
             - target_comp.amount
             - kd
-            + sympy.sqrt((central.amount - target_comp.amount - kd) ** 2 + 4 * kd * central.amount)
-        )
-        lafree_ass = Assignment(lafree_symb, lafree_expr)
+            + ((central.amount - target_comp.amount - kd) ** 2 + 4 * kd * central.amount).sqrt()
+        ) / 2
+        lafree_ass = Assignment.create(lafree_symb, lafree_expr)
 
         num_peripheral_comp = len(odes.find_peripheral_compartments())
         if num_peripheral_comp == 0:
@@ -170,8 +170,8 @@ def set_tmdd(
             central = cb.find_compartment('CENTRAL')
             cb.add_flow(central, output, lafree_symb * elimination_rate)
 
-            lafreef = sympy.Symbol("LAFREEF")
-            lafree_final = Assignment(lafreef, lafree_expr)
+            lafreef = Expr.symbol("LAFREEF")
+            lafree_final = Assignment.create(lafreef, lafree_expr)
             before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
             after = lafree_final + model.statements.after_odes
             ipred = lafreef / vc
@@ -231,8 +231,8 @@ def set_tmdd(
             central = cb.find_compartment('CENTRAL')
             cb.add_flow(central, output, lafree_symb * elimination_rate / central.amount)
 
-            lafreef = sympy.Symbol("LAFREEF")
-            lafree_final = Assignment(lafreef, lafree_expr)
+            lafreef = Expr.symbol("LAFREEF")
+            lafree_final = Assignment.create(lafreef, lafree_expr)
             before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
             after = lafree_final + model.statements.after_odes
             ipred = lafreef / vc
@@ -245,17 +245,17 @@ def set_tmdd(
         kel = odes.get_flow(central, output)
         kd = km * vc
         rinit = r_0 * vc
-        rinit_ass = Assignment(sympy.Symbol('RINIT'), rinit)
-        kd_ass = Assignment(sympy.Symbol('KD'), km * vc)
+        rinit_ass = Assignment(Expr.symbol('RINIT'), rinit)
+        kd_ass = Assignment(Expr.symbol('KD'), km * vc)
 
-        lafree_symb = sympy.Symbol('LAFREE')
-        lafree_expr = sympy.Rational(1, 2) * (
+        lafree_symb = Expr.symbol('LAFREE')
+        lafree_expr = (
             central.amount
             - rinit
             - kd
-            + sympy.sqrt((central.amount - rinit - kd) ** 2 + 4 * kd * central.amount)
-        )
-        lafree_ass = Assignment(lafree_symb, lafree_expr)
+            + ((central.amount - rinit - kd) ** 2 + 4 * kd * central.amount).sqrt()
+        ) / 2
+        lafree_ass = Assignment.create(lafree_symb, lafree_expr)
 
         num_peripheral_comp = len(odes.find_peripheral_compartments())
         if num_peripheral_comp == 0:
@@ -300,8 +300,8 @@ def set_tmdd(
             cb.set_input(peripheral1, kcp1 * lafree_symb - kcp1 * central.amount)
             cb.set_input(peripheral2, kcp2 * lafree_symb - kcp2 * central.amount)
 
-        lafreef = sympy.Symbol("LAFREEF")
-        lafree_final = Assignment(lafreef, lafree_expr)
+        lafreef = Expr.symbol("LAFREEF")
+        lafree_final = Assignment.create(lafreef, lafree_expr)
         before = model.statements.before_odes + lafree_ass + kd_ass + rinit_ass
         after = lafree_final + model.statements.after_odes
         ipred = lafreef / vc
@@ -342,22 +342,22 @@ def set_tmdd(
                     statements=model.statements.before_odes + model.statements.ode_system + after
                 )
             if 'target' in dv_types.keys():
-                y_target = sympy.Symbol("Y_TARGET")
-                ytarget = Assignment(y_target, target_comp.amount / vc)
+                y_target = Expr.symbol("Y_TARGET")
+                ytarget = Assignment.create(y_target, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target, dv_types['target'])
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
                 )
             if 'complex' in dv_types.keys():
-                y_complex = sympy.Symbol("Y_COMPLEX")
-                ycomplex = Assignment(y_complex, complex_comp.amount / vc)
+                y_complex = Expr.symbol("Y_COMPLEX")
+                ycomplex = Assignment.create(y_complex, complex_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
             if 'target_tot' in dv_types.keys():
-                y_target_tot = sympy.Symbol("Y_TOTTARGET")
-                ytargettot = Assignment(
+                y_target_tot = Expr.symbol("Y_TOTTARGET")
+                ytargettot = Assignment.create(
                     y_target_tot, (target_comp.amount + complex_comp.amount) / vc
                 )
                 dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
@@ -373,37 +373,37 @@ def set_tmdd(
                     statements=model.statements.before_odes + model.statements.ode_system + after
                 )
             if 'target' in dv_types.keys():
-                y_target = sympy.Symbol("Y_TARGET")
-                ytarget = Assignment(y_target, (target_comp.amount - central.amount + lafreef) / vc)
+                y_target = Expr.symbol("Y_TARGET")
+                ytarget = Assignment.create(y_target, (target_comp.amount - central.amount + lafreef) / vc)
                 dvs = model.dependent_variables.replace(y_target, dv_types['target'])
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
                 )
             if 'complex' in dv_types.keys():
-                y_complex = sympy.Symbol("Y_COMPLEX")
-                ycomplex = Assignment(y_complex, (central.amount - lafreef) / vc)
+                y_complex = Expr.symbol("Y_COMPLEX")
+                ycomplex = Assignment.create(y_complex, (central.amount - lafreef) / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
             if 'target_tot' in dv_types.keys():
-                y_target_tot = sympy.Symbol("Y_TOTTARGET")
-                ytargettot = Assignment(y_target_tot, target_comp.amount / vc)
+                y_target_tot = Expr.symbol("Y_TOTTARGET")
+                ytargettot = Assignment.create(y_target_tot, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
                 model = model.replace(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
         elif type == 'MMAPP':
             if 'target' in dv_types.keys():
-                y_target = sympy.Symbol("Y_TARGET")
-                ytarget = Assignment(y_target, target_comp.amount / vc)
+                y_target = Expr.symbol("Y_TARGET")
+                ytarget = Assignment.create(y_target, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target, dv_types['target'])
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
                 )
             if 'target_tot' in dv_types.keys():
-                y_target_tot = sympy.Symbol("Y_TOTTARGET")
-                ytargettot = Assignment(y_target_tot, target_comp.amount / vc)
+                y_target_tot = Expr.symbol("Y_TOTTARGET")
+                ytargettot = Assignment.create(y_target_tot, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
                 model = model.replace(
                     statements=model.statements + ytargettot, dependent_variables=dvs
@@ -417,8 +417,8 @@ def set_tmdd(
                     statements=model.statements.before_odes + model.statements.ode_system + after
                 )
             if 'complex' in dv_types.keys():
-                y_complex = sympy.Symbol("Y_COMPLEX")
-                ycomplex = Assignment(y_complex, complex_comp.amount / vc)
+                y_complex = Expr.symbol("Y_COMPLEX")
+                ycomplex = Assignment.create(y_complex, complex_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
@@ -432,21 +432,21 @@ def set_tmdd(
                     statements=model.statements.before_odes + model.statements.ode_system + after
                 )
             if 'complex' in dv_types.keys():
-                y_complex = sympy.Symbol("Y_COMPLEX")
-                ycomplex = Assignment(y_complex, (central.amount - lafreef) / vc)
+                y_complex = Expr.symbol("Y_COMPLEX")
+                ycomplex = Assignment.create(y_complex, (central.amount - lafreef) / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
 
         # Add proportional error model
-        if sympy.Symbol('Y_TARGET') in list(model.dependent_variables):
+        if Expr.symbol('Y_TARGET') in list(model.dependent_variables):
             model = set_proportional_error_model(model, dv=dv_types['target'])
-        if sympy.Symbol('Y_COMPLEX') in list(model.dependent_variables):
+        if Expr.symbol('Y_COMPLEX') in list(model.dependent_variables):
             model = set_proportional_error_model(model, dv=dv_types['complex'])
-        if sympy.Symbol('Y') in list(model.dependent_variables) and 'drug_tot' in dv_types.keys():
+        if Expr.symbol('Y') in list(model.dependent_variables) and 'drug_tot' in dv_types.keys():
             model = set_proportional_error_model(model, dv=dv_types['drug_tot'])
-        if sympy.Symbol('Y_TOTTARGET') in list(model.dependent_variables):
+        if Expr.symbol('Y_TOTTARGET') in list(model.dependent_variables):
             model = set_proportional_error_model(model, dv=dv_types['target_tot'])
 
     return model.update_source()
@@ -455,7 +455,7 @@ def set_tmdd(
 def _create_parameters(model, names):
     symbs = []
     for name in names:
-        symb = sympy.Symbol(name)
+        symb = Expr.symbol(name)
         symbs.append(symb)
         model = add_individual_parameter(model, symb.name)
     return model, *symbs
@@ -474,8 +474,8 @@ def _create_compartments(cb, names):
 
 
 def _create_ksyn():
-    ksyn = sympy.Symbol('KSYN')
-    ksyn_ass = Assignment(ksyn, sympy.Symbol("R_0") * sympy.Symbol("KDEG"))
+    ksyn = Expr.symbol('KSYN')
+    ksyn_ass = Assignment.create(ksyn, Expr.symbol("R_0") * Expr.symbol("KDEG"))
     return ksyn, ksyn_ass
 
 
@@ -494,12 +494,12 @@ def _validate_dv_types(dv_types):
 
 
 def _get_y_symbol(model):
-    t = sympy.Symbol("t")
+    t = Expr.symbol("t")
     y_statement = model.statements.find_assignment("Y")
     if t in y_statement.free_symbols:
         return y_statement.symbol
     else:
         sset = model.statements.direct_dependencies(y_statement)
         for s in sset:
-            if sympy.Symbol("t") in s.free_symbols:
+            if Expr.symbol("t") in s.free_symbols:
                 return s.symbol

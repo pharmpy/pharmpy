@@ -4,6 +4,7 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
+from pharmpy.basic import Expr
 import pharmpy.modeling as modeling
 from pharmpy.internals.math import nearest_positive_semidefinite
 from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
@@ -19,11 +20,9 @@ from .results_file import NONMEMResultsFile
 if TYPE_CHECKING:
     import numpy as np
     import pandas as pd
-    import sympy
 else:
     from pharmpy.deps import numpy as np
     from pharmpy.deps import pandas as pd
-    from pharmpy.deps import sympy
 
 
 def _parse_modelfit_results(
@@ -423,7 +422,7 @@ def _parse_individual_estimates(model, pe, table, rv_names):
     df = df.rename(columns=d)  # [rv_names] needed?
     if prefix == "PHI":
         for i in range(1, len(rv_names) + 1):
-            mu = sympy.Symbol(f"MU_{i}")
+            mu = Expr.symbol(f"MU_{i}")
             expr = model.statements.before_odes.full_expression(mu)
             if expr != mu:  # MU is defined in model code
                 value = expr.subs(dict(pe)).subs(model.parameters.inits)

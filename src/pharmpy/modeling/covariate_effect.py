@@ -417,7 +417,7 @@ def add_covariate_effect(
     if last_existing_parameter_assignment.expression.args and all(
         map(cov_possible.__contains__, last_existing_parameter_assignment.expression.args)
     ):
-        statements[-1] = Assignment(
+        statements[-1] = Assignment.create(
             effect_statement.symbol,
             subs(
                 effect_statement.expression,
@@ -614,7 +614,7 @@ def _create_template(effect, model, covariate):
     else:
         symbol = sympy.Symbol('symbol')
         expression = parse_expr(effect)
-        return CovariateEffect(Assignment(symbol, expression))
+        return CovariateEffect(Assignment.create(symbol, expression))
 
 
 class CovariateEffect:
@@ -638,7 +638,7 @@ class CovariateEffect:
 
     def apply(self, parameter, covariate, thetas, statistics):
         effect_name = f'{parameter}{covariate}'
-        self.template = Assignment(
+        self.template = Assignment.create(
             sympy.Symbol(effect_name),
             subs(
                 subs(
@@ -654,17 +654,17 @@ class CovariateEffect:
 
         if 'mean' in template_str:
             self.template = self.template.subs({'mean': f'{covariate}_MEAN'})
-            s = Assignment(sympy.Symbol(f'{covariate}_MEAN'), sympy.Float(statistics['mean'], 6))
+            s = Assignment.create(sympy.Symbol(f'{covariate}_MEAN'), sympy.Float(statistics['mean'], 6))
             self.statistic_statements.append(s)
         if 'median' in template_str:
             self.template = self.template.subs({'median': f'{covariate}_MEDIAN'})
-            s = Assignment(
+            s = Assignment.create(
                 sympy.Symbol(f'{covariate}_MEDIAN'), sympy.Float(statistics['median'], 6)
             )
             self.statistic_statements.append(s)
         if 'std' in template_str:
             self.template = self.template.subs({'std': f'{covariate}_STD'})
-            s = Assignment(sympy.Symbol(f'{covariate}_STD'), sympy.Float(statistics['std'], 6))
+            s = Assignment.create(sympy.Symbol(f'{covariate}_STD'), sympy.Float(statistics['std'], 6))
             self.statistic_statements.append(s)
 
     def create_effect_statement(self, operation_str, statement_original):
@@ -677,7 +677,7 @@ class CovariateEffect:
         symbol = statement_original.symbol
         expression = statement_original.symbol
 
-        statement_new = Assignment(symbol, operation(expression, self.template.symbol))
+        statement_new = Assignment.create(symbol, operation(expression, self.template.symbol))
 
         return statement_new
 
@@ -696,7 +696,7 @@ class CovariateEffect:
         """Linear continuous template (for continuous covariates)."""
         symbol = sympy.Symbol('symbol')
         expression = 1 + sympy.Symbol('theta') * (sympy.Symbol('cov') - sympy.Symbol('median'))
-        template = Assignment(symbol, expression)
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
@@ -724,7 +724,7 @@ class CovariateEffect:
 
         expression = sympy.Piecewise(*zip(values, conditions))
 
-        template = Assignment(symbol, expression)
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
@@ -743,7 +743,7 @@ class CovariateEffect:
         ]
         expression = sympy.Piecewise((values[0], conditions[0]), (values[1], conditions[1]))
 
-        template = Assignment(symbol, expression)
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
@@ -754,7 +754,7 @@ class CovariateEffect:
         expression = sympy.exp(
             sympy.Symbol('theta') * (sympy.Symbol('cov') - sympy.Symbol('median'))
         )
-        template = Assignment(symbol, expression)
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
@@ -763,7 +763,7 @@ class CovariateEffect:
         """Power template (for continuous covariates)."""
         symbol = sympy.Symbol('symbol')
         expression = (sympy.Symbol('cov') / sympy.Symbol('median')) ** sympy.Symbol('theta')
-        template = Assignment(symbol, expression)
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 

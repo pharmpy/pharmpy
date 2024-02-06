@@ -16,16 +16,38 @@ class Expr:
     def name(self) -> str:
         if isinstance(self._expr, symengine.Symbol):
             return self._expr.name
+        elif isinstance(self._expr, symengine.Function):
+            return self._expr.get_name()
         else:
             raise ValueError("Expression has no name")
 
     @property
     def args(self):
-        args = [Expr(a) for a in self._expr.args]
+        if isinstance(self._expr, symengine.Piecewise):
+            # Due to https://github.com/symengine/symengine.py/issues/469
+            x = self._expr.args
+            args = tuple((Expr(x[i]), BooleanExpr(x[i + 1]))  for i in range(0, len(x), 2))
+        else:
+            args = [Expr(a) for a in self._expr.args]
         return tuple(args)
+
+    @property
+    def free_symbols(self) -> set[Expr]:
+        symbs = {Expr(a) for a in self._expr.free_symbols}
+        return symbs
 
     def subs(self, d):
         return Expr(self._expr.subs(d))
+
+    def as_numer_denom(self):
+        numer, denom = sympy.sympify(self._expr).as_numer_denom()
+        return Expr(numer), Expr(denom)
+
+    def simplify(self):
+        return Expr(sympy.sympify(self._expr).simplify())
+
+    def expand(self):
+        return Expr(self._expr.expand())
 
     def __add__(self, other):
         return Expr(self._expr + other)
@@ -75,24 +97,173 @@ class Expr:
     def __int__(self):
         return int(self._expr)
 
+    def __repr__(self):
+        return repr(sympy.sympify(self._expr))
+
+    def serialize(self):
+        return sympy.srepr(sympy.sympify(self._expr))
+
+    @classmethod
+    def deserialize(cls, s):
+        return cls(sympy.parse_expr(s))
+
+    def unicode(self):
+        return sympy.pretty(sympy.sympify(self._expr), wrap_line=False, use_unicode=True)
+
+    def latex(self):
+        expr = sympy.sympify(self._expr)
+        s = sympy.latex(expr, mul_symbol='dot')
+        return s
+
     def _sympy_(self):
         return sympy.sympify(self._expr)
 
+    def _symengine_(self):
+        return self._expr
+
+    def exp(self):
+        return Expr(symengine.exp(self._expr))
+
+    def log(self):
+        return Expr(symengine.log(self._expr))
+
+    def sqrt(self):
+        return Expr(symengine.sqrt(self._expr))
+
+    def diff(self, x):
+        return Expr(self._expr.diff(x._expr))
+
+    def is_symbol(self):
+        # NOTE: The concept of a symbol is wider than that of sympy and symengine
+        return self._expr.is_Symbol or self._expr.is_Derivative or self._expr.is_Function
+
+    def is_integer(self):
+        return isinstance(self._expr, symengine.Integer)
+
+    def is_mul(self):
+        return self._expr.func == symengine.Mul
+
+    def is_add(self):
+        return self._expr.func == symengine.Add
+
+    def is_exp(self):
+        return isinstance(self._expr, symengine.Pow) and self._expr.args[0] == symengine.E
+
+    def is_function(self):
+        return self._expr.is_Function
+
+    def is_derivative(self):
+        return self._expr.func == symengine.Derivative
+
+    def is_piecewise(self):
+        return isinstance(self._expr, symengine.Piecewise)
+
+    def is_nonnegative(self) -> bool | None:
+        return sympy.ask(sympy.Q.nonnegative(self._expr))
+
+    def piecewise_fold(self) -> Expr:
+        if isinstance(self._expr, symengine.Piecewise):
+            expr = sympy.sympify(self._expr)
+            if expr.is_Piecewise:
+                expr = sympy.piecewise_fold(expr)
+            return Expr(expr)
+        else:
+            return self
+
     @classmethod
-    def symbol(cls, name):
+    def symbol(cls, name: str) -> Expr:
         symb = symengine.Symbol(name)
         return cls(symb)
 
     @classmethod
-    def integer(cls, value):
+    def dummy(cls, name: str) -> Expr:
+        symb = symengine.Dummy(name)
+        return cls(symb)
+
+    @classmethod
+    def integer(cls, value: int):
         n = symengine.Integer(value)
         return cls(n)
+
+    @classmethod
+    def float(cls, value: float):
+        x = symengine.RealDouble(value)
+        return cls(x)
 
     @classmethod
     def derivative(cls, f, x):
         dfdx = symengine.Derivative(f, x)
         return cls(dfdx)
 
+    @classmethod
+    def function(cls, f: str, x):
+        func = symengine.Function(f)(x)
+        return cls(func)
+
+    @classmethod
+    def piecewise(cls, *args):
+        pw = symengine.Piecewise(*args)
+        return cls(pw)
+
+    def __gt__(self, other):
+        return BooleanExpr(symengine.Gt(self._expr, other))
+
+    def __le__(self, other):
+        return BooleanExpr(symengine.Le(self._expr, other))
+
+
+class BooleanExpr:
+    # A boolean expression with all symbols real
+    def __init__(self, source: TBooleanExpr):
+        if isinstance(source, BooleanExpr):
+            self._expr = source._expr
+        else:
+            self._expr = sympy.sympify(source)
+
+    @property
+    def free_symbols(self) -> set[Expr]:
+        symbs = {Expr(a) for a in self._expr.free_symbols}
+        return symbs
+
+    @property
+    def lhs(self):
+        lhs = self._expr.lhs
+        rhs = self._expr.rhs
+        # Coming from piecewise and symengine changed the order
+        if isinstance(rhs, sympy.Symbol) and isinstance(lhs, sympy.Number):
+            return Expr(rhs)
+        else:
+            return Expr(lhs)
+
+    @property
+    def rhs(self):
+        lhs = self._expr.lhs
+        rhs = self._expr.rhs
+        # Coming from piecewise and symengine changed the order
+        if isinstance(rhs, sympy.Symbol) and isinstance(lhs, sympy.Number):
+            return Expr(lhs)
+        else:
+            return Expr(rhs)
+
+    @classmethod
+    def eq(cls, lhs, rhs):
+        return cls(sympy.Eq(lhs, rhs))
+
+    @classmethod
+    def gt(cls, lhs, rhs):
+        return cls(sympy.Gt(lhs, rhs))
+
+    def _symengine_(self):
+        return symengine.sympify(self._expr)
+
+    def _sympy_(self):
+        return self._expr
+
+    def __repr__(self):
+        return repr(self._expr)
+
 
 # Type hint for public functions taking an expression as input
 TExpr = int | float | str | sympy.Expr | symengine.Basic | Expr
+TSymbol = str | sympy.Expr | symengine.Basic | Expr
+TBooleanExpr = str | sympy.Basic | symengine.Basic | BooleanExpr

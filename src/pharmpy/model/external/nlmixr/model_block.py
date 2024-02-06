@@ -104,7 +104,7 @@ def add_statements(
                 pass
             else:
                 expr = s.expression
-                if expr.is_Piecewise:
+                if expr.is_piecewise():
                     first = True
                     for value, cond in expr.args:
                         if cond is not sympy.S.true:

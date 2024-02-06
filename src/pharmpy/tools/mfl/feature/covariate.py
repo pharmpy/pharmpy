@@ -2,7 +2,6 @@ from functools import partial
 from itertools import product
 from typing import Dict, Iterable, List, Sequence, Tuple, TypeVar, Union
 
-from pharmpy.deps import sympy
 from pharmpy.model import Model
 from pharmpy.modeling import get_bioavailability
 from pharmpy.modeling.covariate_effect import (
@@ -205,7 +204,7 @@ def _get_bioaval_parameters(model):
     pk = model.statements.before_odes
     found = []
     for _, bio in all_bio.items():
-        if isinstance(bio, sympy.Symbol):
+        if bio.is_symbol():
             ass = pk.find_assignment(bio)
             rhs_symbs = ass.rhs_symbols
             if len(rhs_symbs) == 1:

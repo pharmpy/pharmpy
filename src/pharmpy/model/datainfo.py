@@ -7,16 +7,14 @@ from collections.abc import Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast, overload
 
-from pharmpy.internals.expr.units import parse as parse_units
+from pharmpy.basic import Unit
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import Immutable, frozenmapping
 
 if TYPE_CHECKING:
     import pandas as pd
-    import sympy
 else:
     from pharmpy.deps import pandas as pd
-    from pharmpy.deps import sympy
 
 
 class ColumnInfo(Immutable):
@@ -148,7 +146,7 @@ class ColumnInfo(Immutable):
         self,
         name: str,
         type: str = 'unknown',
-        unit: sympy.Expr = sympy.Integer(1),
+        unit: Unit = Unit.unitless(),
         scale: str = 'ratio',
         continuous: Optional[bool] = None,
         categories: Optional[Union[frozenmapping[str, str], tuple[str, ...]]] = None,
@@ -188,7 +186,7 @@ class ColumnInfo(Immutable):
         cls,
         name: str,
         type: str = 'unknown',
-        unit: Optional[Union[str, int, float, sympy.Expr]] = None,
+        unit: Optional[TUnit] = None,
         scale: str = 'ratio',
         continuous: Optional[bool] = None,
         categories: Optional[Union[Mapping[str, str], Sequence[str]]] = None,
@@ -212,9 +210,9 @@ class ColumnInfo(Immutable):
                 f"Unknown scale of measurement {scale}. Only {ColumnInfo._all_scales} are possible."
             )
         if unit is None:
-            unit = sympy.Integer(1)
+            unit = Unit.unitless()
         else:
-            unit = parse_units(unit)
+            unit = Unit(unit)
         if datatype not in ColumnInfo._all_dtypes:
             raise ValueError(
                 f"{datatype} is not a valid datatype. Valid datatypes are {ColumnInfo._all_dtypes}"
@@ -275,7 +273,7 @@ class ColumnInfo(Immutable):
         return {
             'name': self._name,
             'type': self._type,
-            'unit': sympy.srepr(self._unit),
+            'unit': self._unit.serialize(),
             'scale': self._scale,
             'continuous': self._continuous,
             'categories': self._categories,
@@ -286,12 +284,10 @@ class ColumnInfo(Immutable):
 
     @classmethod
     def from_dict(cls, d: Dict[str, Any]) -> ColumnInfo:
-        unit = parse_units(d['unit'])
-        assert isinstance(unit, sympy.Expr)
         return cls(
             name=d['name'],
             type=d['type'],
-            unit=unit,
+            unit=Unit.deserialize(d['unit']),
             scale=d['scale'],
             continuous=d['continuous'],
             categories=d['categories'],
@@ -356,7 +352,7 @@ class ColumnInfo(Immutable):
         return self._descriptor
 
     @property
-    def unit(self) -> sympy.Expr:
+    def unit(self) -> Unit:
         """Unit of the column data
 
         Custom units are allowed, but units that are available in sympy.physics.units can be
@@ -958,7 +954,7 @@ class DataInfo(Sequence, Immutable):
                 type=col.get('type', 'unknown'),
                 scale=col['scale'],
                 continuous=col.get('continuous', None),
-                unit=col.get('unit', sympy.Integer(1)),
+                unit=col.get('unit', Unit.unitless()),
                 categories=col.get('categories', None),
                 datatype=col.get('datatype', 'float64'),
                 descriptor=col.get('descriptor', None),

@@ -10,6 +10,7 @@ from itertools import chain, combinations
 from operator import add, mul
 from typing import List, Literal, Optional, Union
 
+from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
@@ -121,7 +122,7 @@ def add_iiv(
         )
 
     for i in range(len(list_of_parameters)):
-        omega = sympy.Symbol(f'IIV_{list_of_parameters[i]}')
+        omega = Expr.symbol(f'IIV_{list_of_parameters[i]}')
         if not eta_names:
             eta_name = f'ETA_{list_of_parameters[i]}'
         else:
@@ -142,19 +143,19 @@ def add_iiv(
 
         if expression[i] == "re_log":
             # Need to add phi as well
-            phi = sympy.Symbol(f'phi_{statement.expression}')
+            phi = Expr.symbol(f'phi_{statement.expression}')
             eta_addition.apply(phi, eta.names[0])
             sset = (
                 sset[0:index]
-                + Assignment(phi, sympy.log(statement.expression / (1 - statement.expression)))
-                + Assignment(statement.symbol, eta_addition.template)
+                + Assignment(phi, (statement.expression / (1 - statement.expression)).log())
+                + Assignment.create(statement.symbol, eta_addition.template)
                 + sset[index + 1 :]
             )
         else:
             eta_addition.apply(statement.expression, eta.names[0])
             sset = (
                 sset[0:index]
-                + Assignment(statement.symbol, eta_addition.template)
+                + Assignment.create(statement.symbol, eta_addition.template)
                 + sset[index + 1 :]
             )
 
@@ -367,20 +368,20 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
         # NOTE: This declares IOV-ETA case assignments and replaces the existing
         # ETA with its sum with the new IOV ETA
 
-        iov = sympy.Symbol(iov_name(i))
+        iov = Expr.symbol(iov_name(i))
 
-        expression = sympy.Piecewise(
+        expression = Expr.piecewise(
             *(
                 (sympy.Symbol(eta_name(i, k)), sympy.Eq(cat, sympy.Symbol(occ)))
                 for k, cat in enumerate(categories, 1)
             )
         )
 
-        iovs.append(Assignment(iov, parse_expr(0)))
-        iovs.append(Assignment(iov, expression))
+        iovs.append(Assignment.create(iov, parse_expr(0)))
+        iovs.append(Assignment.create(iov, expression))
 
-        etai = sympy.Symbol(etai_name(i))
-        etais.append(Assignment(etai, sympy.Symbol(eta) + iov))
+        etai = Expr.symbol(etai_name(i))
+        etais.append(Assignment.create(etai, Expr.symbol(eta) + iov))
         sset = sset.subs({eta: etai})
 
     return iovs, etais, sset
@@ -390,7 +391,7 @@ def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name,
     _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
 
     for i in indices:
-        omega_iov = sympy.Symbol(omega_iov_name(i, i))
+        omega_iov = Expr.symbol(omega_iov_name(i, i))
         for k in range(1, len(categories) + 1):
             yield NormalDistribution.create(eta_name(i, k), 'iov', 0, omega_iov)
 
@@ -400,14 +401,14 @@ def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, et
 
     # NOTE: Declare off-diagonal OMEGAs
     for i, j in combinations(indices, r=2):
-        omega_iov = sympy.Symbol(omega_iov_name(i, j))
+        omega_iov = Expr.symbol(omega_iov_name(i, j))
         omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
         paramset = Parameters.create(pset)  # FIXME!
         init = paramset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in paramset else 0.001
         pset.append(Parameter(str(omega_iov), init=init))
 
     mu = [0] * len(indices)
-    sigma = [[sympy.Symbol(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
+    sigma = [[Expr.symbol(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
 
     for k in range(1, len(categories) + 1):
         names = list(map(lambda i: eta_name(i, k), indices))
@@ -418,7 +419,7 @@ def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
     for i in indices:
         eta = etas[i - 1]
         omega_iiv = rvs[eta].get_variance(eta)
-        omega_iov = sympy.Symbol(omega_iov_name(i, i))
+        omega_iov = Expr.symbol(omega_iov_name(i, i))
         paramset = Parameters.create(pset)  # FIXME!
         init = paramset[omega_iiv].init * 0.1 if omega_iiv in paramset else 0.01
         pset.append(Parameter(str(omega_iov), init=init))
@@ -662,21 +663,21 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     etas = _get_etas(model, to_remove, include_symbols=True)
 
     for eta in etas:
-        eta_sym = sympy.Symbol(eta)
+        eta_sym = Expr(eta)
         for s in sset:
             if eta_sym in s.free_symbols:
                 expr = s.expression.expand()
                 if len(expr.args) == 0:
                     sset = sset.subs({expr: 0})
-                elif len(expr.args) == 1 and expr.fun == sympy.exp:
+                elif expr.is_exp():
                     sset = sset.subs({eta_sym: 0})
                 else:
                     for i in range(len(expr.args)):
                         if eta_sym in expr.args[i].free_symbols:
-                            if expr.func == sympy.Mul:
+                            if expr.is_mul():
                                 sset = sset.subs({expr.args[i]: 1})
-                            elif expr.func == sympy.Add:
-                                if len(expr.args[i].args) == 1 and expr.args[i].func == sympy.exp:
+                            elif expr.is_add():
+                                if expr.args[i].is_exp():
                                     sset = sset.subs({expr.args[i]: 0})
                                 else:
                                     sset = sset.subs({eta_sym: 0})
@@ -726,7 +727,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
         return model
 
     keep = [name for name in rvs.names if name not in etas]
-    d = {sympy.Symbol(name): 0 for name in etas}
+    d = {Expr.symbol(name): 0 for name in etas}
 
     model = model.replace(statements=sset.subs(d), random_variables=rvs[keep])
     model = remove_unused_parameters_and_rvs(model)
@@ -950,7 +951,7 @@ class EtaTransformation:
                 sympy.Symbol(f'theta{i}')
             )
 
-            assignment = Assignment(symbol, expression)
+            assignment = Assignment.create(symbol, expression)
             assignments.append(assignment)
 
         return cls('boxcox', assignments, 'lambda')
@@ -975,7 +976,7 @@ class EtaTransformation:
 
             expression = eta * (1 + (num_1 / denom_1) + (num_2 / denom_2) + (num_3 / denom_3))
 
-            assignment = Assignment(symbol, expression)
+            assignment = Assignment.create(symbol, expression)
             assignments.append(assignment)
 
         return cls('tdist', assignments, 'df')
@@ -991,7 +992,7 @@ class EtaTransformation:
 
             expression = sympy.sign(eta) * (((abs(eta) + 1) ** theta - 1) / theta)
 
-            assignment = Assignment(symbol, expression)
+            assignment = Assignment.create(symbol, expression)
             assignments.append(assignment)
 
         return cls('johndraper', assignments, 'lambda')
@@ -1068,7 +1069,7 @@ def create_joint_distribution(
     paramnames = []
     for rv in rvs:
         parameter_names = '_'.join(
-            [s.symbol.name for s in sset if sympy.Symbol(rv) in s.rhs_symbols]
+            [s.symbol.name for s in sset if Expr.symbol(rv) in s.rhs_symbols]
         )
         paramnames.append(parameter_names)
 
