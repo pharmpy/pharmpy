@@ -1,5 +1,5 @@
 # Direct dependencies
-pip==23.3.2
+pip==24.0
 tox==4.12.1
 # Indirect dependencies
 cachetools==5.3.2
