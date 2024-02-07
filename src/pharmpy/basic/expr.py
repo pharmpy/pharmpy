@@ -88,6 +88,9 @@ class Expr:
     def __pos__(self):
         return Expr(self._expr)
 
+    def __abs__(self):
+        return Expr(abs(self._expr))
+
     def __eq__(self, other):
         return self._expr == other
 

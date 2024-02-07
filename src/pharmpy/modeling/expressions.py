@@ -492,9 +492,9 @@ def make_declarative(model: Model):
             else:
                 duplicated_symbols[s.symbol] = duplicated_symbols[s.symbol][1:]
                 if duplicated_symbols[s.symbol]:
-                    current[s.symbol] = subs(s.expression, current)
+                    current[s.symbol] = s.expression.subs(current)
                 else:
-                    ass = Assignment.create(s.symbol, subs(s.expression, current))
+                    ass = Assignment.create(s.symbol, s.expression.subs(current))
                     newstats.append(ass)
                     del current[s.symbol]
         else:
@@ -593,7 +593,7 @@ def cleanup_model(model: Model):
     current = {}
     newstats = []
     for s in model.statements:
-        if isinstance(s, Assignment) and s.expression.is_Symbol:
+        if isinstance(s, Assignment) and s.expression.is_symbol():
             current[s.symbol] = s.expression
         else:
             n = s.subs(current)
@@ -1123,8 +1123,8 @@ def has_random_effect(
     """
 
     rvs = _rvs(model, level)
-    symbol = sympy.Symbol(parameter)
-    return _depends_on_any_of(model.statements.before_odes, symbol, map(sympy.Symbol, rvs.names))
+    symbol = Expr.symbol(parameter)
+    return _depends_on_any_of(model.statements.before_odes, symbol, rvs.symbols)
 
 
 def get_rv_parameters(model: Model, rv: str) -> List[str]:
@@ -1163,7 +1163,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
 
     free_symbols = model.statements.free_symbols
     dependency_graph = _dependency_graph(natural_assignments)
-    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {sympy.Symbol(rv)})))
+    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {Expr.symbol(rv)})))
 
 
 def get_parameter_rv(
@@ -1209,13 +1209,13 @@ def get_parameter_rv(
 
     rv = list(
         map(
-            lambda rv_string: sympy.Symbol(rv_string),
+            lambda rv_string: Expr.symbol(rv_string),
             getattr(model.random_variables, var_type).names,
         )
     )
 
     dependency_graph = graph_inverse(_dependency_graph(natural_assignments))
-    return sorted(map(str, _filter_symbols(dependency_graph, rv, {sympy.Symbol(parameter)})))
+    return sorted(map(str, _filter_symbols(dependency_graph, rv, {Expr.symbol(parameter)})))
 
 
 @dataclass(frozen=True)
@@ -1256,7 +1256,7 @@ def remove_covariate_effect_from_statements(
 
     new_before_odes = list(before_odes)
 
-    symbol = sympy.Symbol(parameter)
+    symbol = Expr.symbol(parameter)
     graph_node = assignments[symbol]
 
     tree_node = _remove_covariate_effect_from_statements_recursive(
@@ -1265,7 +1265,7 @@ def remove_covariate_effect_from_statements(
         new_before_odes,
         symbol,
         graph_node.expression,
-        sympy.Symbol(covariate),
+        Expr.symbol(covariate),
         None,
     )
 
@@ -1274,14 +1274,14 @@ def remove_covariate_effect_from_statements(
 
     if tree_node.changed:
         new_before_odes[graph_node.index] = Assignment.create(
-            sympy.Symbol(parameter), tree_node.expression
+            Expr.symbol(parameter), tree_node.expression
         )
 
     return new_before_odes
 
 
 def _neutral(expr: sympy.Expr) -> sympy.Integer:
-    if isinstance(expr, sympy.Add):
+    if isinstance(sympy.sympify(expr), sympy.Add):
         return sympy.Integer(0)
     if isinstance(expr, sympy.Mul):
         return sympy.Integer(1)
@@ -1342,7 +1342,7 @@ def simplify_model(
 
 @dataclass(frozen=True)
 class ExpressionTreeNode:
-    expression: sympy.Expr
+    expression: Expr
     changed: bool
     constant: bool
     contains_theta: bool
@@ -1522,15 +1522,15 @@ def _get_drug_metabolite_parameters(model, dv=2):
     ode = statements.ode_system
 
     dv1_deps = [
-        s
-        for s in model.statements.after_odes.full_expression(get_dv_symbol(model, dv=1)).atoms(
+        Expr(s)
+        for s in sympy.sympify(model.statements.after_odes.full_expression(get_dv_symbol(model, dv=1))).atoms(
             sympy.Function
         )
     ]
     dv1_comp = None
     dv2_deps = [
-        s
-        for s in model.statements.after_odes.full_expression(get_dv_symbol(model, dv=dv)).atoms(
+        Expr(s)
+        for s in sympy.sympify(model.statements.after_odes.full_expression(get_dv_symbol(model, dv=dv))).atoms(
             sympy.Function
         )
     ]
@@ -1769,7 +1769,7 @@ def _classify_assignments(assignments: Sequence[Assignment]):
         fs = expression.free_symbols
 
         if symbol not in fs:  # NOTE: We skip redefinitions (e.g. CL=CL+1)
-            if sympy.Symbol('t') in fs:  # FIXME: Should use ode.t here at some point
+            if Expr.symbol('t') in fs:  # FIXME: Should use ode.t here at some point
                 yield 'synthetic', assignment
                 continue
             elif len(fs) == 1:

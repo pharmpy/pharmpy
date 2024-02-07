@@ -3,6 +3,7 @@ from functools import partial
 import pytest
 import sympy
 
+from pharmpy.basic import Expr
 from pharmpy.model import (
     Assignment,
     DataInfo,
@@ -153,7 +154,7 @@ $ESTIMATION METHOD=1 INTERACTION
         (
             [
                 Assignment(
-                    s('CL'), s('THETA(1)') * s('AGE') ** s('THETA(2)') * s('ETA(1)').exp())
+                    s('CL'), s('THETA(1)') * s('AGE') ** s('THETA(2)') * s('ETA(1)').exp()
                 ),
                 Assignment(s('V'), s('THETA(3)') * s('ETA(2)').exp()),
             ],
