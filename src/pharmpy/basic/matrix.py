@@ -13,7 +13,11 @@ class Matrix:
             self._m = symengine.Matrix(source)
 
     def __getitem__(self, ind):
-        return Expr(self._m[ind])
+        a = self._m[ind]
+        if isinstance(a, symengine.DenseMatrix):
+            return Matrix(a)
+        else:
+            return Expr(a)
 
     @property
     def free_symbols(self):
@@ -98,6 +102,9 @@ class Matrix:
         else:
             raise TypeError("Symbolic matrix cannot be converted to numeric")
         return a
+
+    def __array__(self):
+        return np.array(self._m)
 
     def _sympy_(self):
         return sympy.sympify(self._m)

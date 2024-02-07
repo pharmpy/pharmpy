@@ -879,15 +879,12 @@ def _calculate_covariate_baselines(model, res, covariates):
         if Expr.symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
     ]
     exprs = [
-        subs(
-            subs(model.statements.before_odes.full_expression(expr), res.parameter_estimates),
-            model.parameters.inits,
-        )
+        model.statements.before_odes.full_expression(expr).subs(res.parameter_estimates).subs(model.parameters.inits)
         for expr in exprs
     ]
 
     def fn(row):
-        return [np.float64(subs(expr, dict(row))) for expr in exprs]
+        return [np.float64(expr.subs(dict(row))) for expr in exprs]
 
     df = res.individual_estimates.apply(fn, axis=1, result_type='expand')
     df.columns = covariates
