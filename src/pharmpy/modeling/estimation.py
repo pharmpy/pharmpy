@@ -47,12 +47,12 @@ def calculate_ucp_scale(model: Model):
     """
     omega_symbolic = model.random_variables.etas.covariance_matrix
     omega = omega_symbolic.subs(model.parameters.inits)
-    omega = np.array(omega).astype(np.float64)
+    omega = omega.to_numpy()
     scale_omega = _scale_matrix(omega)
 
     sigma_symbolic = model.random_variables.epsilons.covariance_matrix
     sigma = sigma_symbolic.subs(model.parameters.inits)
-    sigma = np.array(sigma).astype(np.float64)
+    sigma = sigma.to_numpy()
     scale_sigma = _scale_matrix(sigma)
 
     theta = []
@@ -128,20 +128,20 @@ def calculate_parameters_from_ucp(
     """
     omega_symbolic = model.random_variables.etas.covariance_matrix
     omega = omega_symbolic.subs(dict(ucps))
-    omega = np.array(omega).astype(np.float64)
+    omega = omega.to_numpy()
     descaled_omega = _descale_matrix(omega, scale.omega)
     omega_dict = {}
     for symb, numb in zip(omega_symbolic, np.nditer(descaled_omega)):
-        if symb.is_Symbol:
+        if symb.is_symbol():
             omega_dict[symb] = numb
 
     sigma_symbolic = model.random_variables.epsilons.covariance_matrix
     sigma = sigma_symbolic.subs(dict(ucps))
-    sigma = np.array(sigma).astype(np.float64)
+    sigma = sigma.to_numpy()
     descaled_sigma = _descale_matrix(sigma, scale.sigma)
     sigma_dict = {}
     for symb, numb in zip(sigma_symbolic, np.nditer(descaled_sigma)):
-        if symb.is_Symbol:
+        if symb.is_symbol():
             sigma_dict[symb] = numb
 
     theta = []
