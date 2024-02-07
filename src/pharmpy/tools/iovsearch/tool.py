@@ -380,7 +380,7 @@ def _get_iov_piecewise_assignment_symbols(model: Model):
     for statement in model.statements:
         if isinstance(statement, Assignment) and statement.expression.is_piecewise():
             try:
-                expression_symbols = [p[0] for p in statement.expression.as_expr_set_pairs()]
+                expression_symbols = [p[0] for p in statement.expression.args]
             except (ValueError, NotImplementedError):
                 pass  # NOTE: These exceptions are raised by complex Piecewise
                 # statements that can be present in user code.
@@ -398,7 +398,7 @@ def _get_iiv_etas_with_corresponding_iov(model: Model):
             for symbol in statement.expression.free_symbols:
                 if symbol in iovs:
                     rest = statement.expression - symbol
-                    if isinstance(rest, Expr.symbol) and rest in iiv:
+                    if rest.is_symbol() and rest in iiv:
                         yield rest
                     break
 
