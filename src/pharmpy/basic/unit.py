@@ -37,6 +37,9 @@ class Unit:
     def __repr__(self):
         return repr(self._expr)
 
+    def _sympify_(self):
+        return self._expr
+
 
 # Type hint for public functions taking an expression as input
 TUnit = str | Unit

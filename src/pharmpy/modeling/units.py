@@ -60,7 +60,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
         return di[variable].unit
 
     # FIXME: Handle other DVs?
-    y = list(model.dependent_variables.keys())[0]
+    y = sympy.sympify(list(model.dependent_variables.keys())[0])
     input_units = {sympy.Symbol(col.name): col.unit for col in di}
     pruned_nodes = {sympy.exp}
 
@@ -68,7 +68,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
         return e.func in pruned_nodes
 
     unit_eqs = []
-    unit_eqs.append(y - di[di.dv_column.name].unit)
+    unit_eqs.append(y - sympy.sympify(di[di.dv_column.name].unit))
 
     for s in model.statements:
         if isinstance(s, Assignment):
@@ -81,9 +81,10 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
             else:
                 unit_eqs.append(s.symbol - _extract_minus(expr))
         elif isinstance(s, CompartmentalSystem):
-            amt_unit = di[di.typeix['dose'][0].name].unit
-            time_unit = di[di.idv_column.name].unit
+            amt_unit = sympy.sympify(di[di.typeix['dose'][0].name].unit)
+            time_unit = sympy.sympify(di[di.idv_column.name].unit)
             for e in s.compartmental_matrix.diagonal():
+                e = sympy.sympify(e)
                 if e.is_Add:
                     for term in e.args:
                         unit_eqs.append(amt_unit / time_unit - _extract_minus(term))

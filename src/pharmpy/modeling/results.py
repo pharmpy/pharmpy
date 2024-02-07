@@ -271,10 +271,13 @@ def calculate_individual_parameter_statistics(
               p95         0.004907  0.000001  0.001247
     """
     rng = create_rng(seed)
-    try:
-        expr_or_exprs = [sympy.sympify(e) for e in expr_or_exprs]
-    except TypeError:
+    if isinstance(expr_or_exprs, str):
         expr_or_exprs = sympy.sympify(expr_or_exprs)
+    else:
+        try:
+            expr_or_exprs = [sympy.sympify(e) for e in expr_or_exprs]
+        except TypeError:
+            expr_or_exprs = sympy.sympify(expr_or_exprs)
 
     split_exprs = map(
         _split_equation,
