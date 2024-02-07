@@ -272,7 +272,7 @@ def add_bioavailability(model: Model, add_parameter: bool = True, logit_transfor
     dose_comp = odes.dosing_compartments[0]
     bio = dose_comp.bioavailability
 
-    if isinstance(bio, sympy.Number):
+    if bio.is_number():
         # Bio not defined
         if add_parameter:
             model, bio_symb = _add_parameter(model, 'BIO', init=float(bio), upper=1.0)

@@ -31,6 +31,9 @@ class Expr:
             args = [Expr(a) for a in self._expr.args]
         return tuple(args)
 
+    def make_args(self, expr):
+        return sympy.sympify(self._expr).make_args(sympy.sympify(expr))
+
     @property
     def free_symbols(self) -> set[Expr]:
         symbs = {Expr(a) for a in self._expr.free_symbols}
@@ -139,6 +142,9 @@ class Expr:
 
     def is_integer(self):
         return isinstance(self._expr, symengine.Integer)
+
+    def is_number(self):
+        return isinstance(self._expr, symengine.Number)
 
     def is_mul(self):
         return self._expr.func == symengine.Mul
