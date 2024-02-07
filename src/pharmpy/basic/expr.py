@@ -259,6 +259,10 @@ class BooleanExpr:
     def gt(cls, lhs, rhs):
         return cls(sympy.Gt(lhs, rhs))
 
+    @classmethod
+    def ge(cls, lhs, rhs):
+        return cls(sympy.Ge(lhs, rhs))
+
     def _symengine_(self):
         return symengine.sympify(self._expr)
 

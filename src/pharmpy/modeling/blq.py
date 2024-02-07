@@ -214,7 +214,7 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     symb_cumd = create_symbol(model, 'CUMD')
 
     if indicator_type in ('lloq', 'LLOQ'):
-        is_above_lloq = BooleanExpr.gt(symb_dv, indicator_symb)
+        is_above_lloq = BooleanExpr.ge(symb_dv, indicator_symb)
     else:
         is_above_lloq = BooleanExpr.eq(indicator_symb, 0)
 
