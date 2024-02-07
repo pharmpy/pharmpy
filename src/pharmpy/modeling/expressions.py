@@ -83,7 +83,7 @@ def get_observation_expression(model: Model):
         raise ValueError('Could not locate dependent variable expression')
 
     for j in range(i, -1, -1):
-        y = subs(y, {stats[j].symbol: stats[j].expression}, simultaneous=True)
+        y = y.subs({stats[j].symbol: stats[j].expression})
 
     return y
 

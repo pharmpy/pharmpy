@@ -226,7 +226,7 @@ def evaluate_individual_prediction(
 
     y = get_individual_prediction_expression(model)
     mapping = model.parameters.inits if parameters is None else parameters
-    y = subs(y, mapping)
+    y = y.subs(mapping)
 
     df = model.dataset if dataset is None else dataset
 
@@ -250,7 +250,7 @@ def evaluate_individual_prediction(
 
 def _replace_parameters(model: Model, y: List[sympy.Expr], parameters: Optional[ParameterMap]):
     mapping = model.parameters.inits if parameters is None else parameters
-    return [subs(x, mapping) for x in y]
+    return [x.subs(mapping) for x in y]
 
 
 def evaluate_eta_gradient(
@@ -491,8 +491,8 @@ def evaluate_weighted_residuals(
     parameters = model.parameters.inits if parameters is None else parameters
     omega = omega.subs(parameters)
     sigma = sigma.subs(parameters)
-    omega = np.float64(omega)
-    sigma = np.float64(sigma)
+    omega = omega.to_numpy()
+    sigma = sigma.to_numpy()
     df = model.dataset if dataset is None else dataset
     # FIXME: Could have option to gradients to set all etas 0
     etas = pd.DataFrame(
