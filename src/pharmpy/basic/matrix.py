@@ -87,6 +87,11 @@ class Matrix:
         isp = sympy.Matrix(self._m).is_positive_semidefinite
         return isp
 
+    def eigenvals(self):
+        d = sympy.Matrix(self._m).eigenvals()
+        ud = {Expr(key): Expr(val) for key, val in d.items()}
+        return ud
+
     def __getstate__(self):
         state = self.__dict__.copy()
         state['_m'] = sympy.Matrix(self._m)

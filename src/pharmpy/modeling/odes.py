@@ -389,7 +389,7 @@ def set_zero_order_elimination(model: Model):
         odes = get_and_check_odes(model)
         central = odes.central_compartment
         rate = odes.get_flow(central, output)
-        rate = subs(rate, {'CL': 0})
+        rate = rate.subs({'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
@@ -590,7 +590,7 @@ def set_michaelis_menten_elimination(model: Model):
         odes = get_and_check_odes(model)
         central = odes.central_compartment
         rate = odes.get_flow(central, output)
-        rate = subs(rate, {'CL': 0})
+        rate = rate.subs({'CL': 0})
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
@@ -858,7 +858,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         central = cs.central_compartment
         rate = cs.get_flow(depot, central)
         assert rate is not None
-        if not rate.is_Symbol:
+        if not rate.is_symbol():
             num, den = rate.as_numer_denom()
             if num == 1 and den.is_Symbol:
                 symbol = den
@@ -986,7 +986,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             new_comp = Compartment.create(f'TRANSIT{n - nadd + 1}')
             cb.add_compartment(new_comp)
             cb.add_flow(last, new_comp, rate)
-            if rate.is_Symbol:
+            if rate.is_symbol():
                 ass = statements.find_assignment(rate.name)
                 if ass is not None:
                     rate = ass.expression

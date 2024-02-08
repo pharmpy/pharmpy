@@ -2566,7 +2566,7 @@ def test_set_zero_order_input(load_example_model_for_test):
 
 def test_get_initial_conditions(load_example_model_for_test, load_model_for_test, datadir):
     model = load_example_model_for_test('pheno')
-    assert get_initial_conditions(model) == {Expr.function('A_CENTRAL', 0): Expr.Integer(0)}
+    assert get_initial_conditions(model) == {Expr.function('A_CENTRAL', 0): Expr.integer(0)}
     ic = Assignment.create(Expr.function('A_CENTRAL', 0), Expr.integer(23))
     statements = (
         model.statements.before_odes
