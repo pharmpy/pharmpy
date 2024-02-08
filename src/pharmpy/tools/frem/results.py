@@ -888,7 +888,11 @@ def _calculate_covariate_baselines(model, res, covariates):
     def fn(row):
         return [np.float64(subs(expr, dict(row))) for expr in exprs]
 
-    df = res.individual_estimates.apply(fn, axis=1, result_type='expand')
+    data_baselines = get_baselines(model)
+    ie = res.individual_estimates
+    # Baselines from data only needed for option ntrt in frem
+    values = pd.concat((data_baselines, ie), axis=1)
+    df = values.apply(fn, axis=1, result_type='expand')
     df.columns = covariates
     return df
 
