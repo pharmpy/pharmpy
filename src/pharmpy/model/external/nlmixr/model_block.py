@@ -69,7 +69,7 @@ def add_statements(
 
     for s in statements:
         if isinstance(s, Assignment):
-            if s.symbol == dv and not s.expression.is_Piecewise:
+            if s.symbol == dv and not s.expression.is_piecewise():
                 # FIXME: Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
