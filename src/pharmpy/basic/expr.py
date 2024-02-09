@@ -281,6 +281,9 @@ class BooleanExpr:
     def le(cls, lhs, rhs):
         return cls(sympy.Le(lhs, rhs))
 
+    def unicode(self):
+        return sympy.pretty(self._expr, wrap_line=False, use_unicode=True)
+
     def atoms(self, *types):
         return self._expr.atoms(types)
 

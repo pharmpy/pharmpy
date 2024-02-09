@@ -2538,7 +2538,7 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
     >>> from pharmpy.modeling import get_zero_order_inputs, load_example_model
     >>> model = load_example_model("pheno")
     >>> get_zero_order_inputs(model)
-    Matrix([[0]])
+    [0]
     """
     odes = model.statements.ode_system
     if odes is None:
@@ -2573,7 +2573,7 @@ def set_zero_order_input(
     >>> model = load_example_model("pheno")
     >>> model = set_zero_order_input(model, "CENTRAL", 10)
     >>> get_zero_order_inputs(model)
-    Matrix([[10]])
+    [10]
     """
     odes = model.statements.ode_system
     if odes is None:
@@ -2600,7 +2600,7 @@ class ODEDisplayer:
             return ""
         a = []
         for ode in self._eqs:
-            ode_str = sympy.pretty(ode)
+            ode_str = ode.unicode()
             a += ode_str.split('\n')
         for key, value in self._ics.items():
             ics_str = sympy.pretty(sympy.Eq(key, value))
@@ -2691,7 +2691,7 @@ def solve_ode_system(model: Model):
     ics = get_initial_conditions(model, dosing=True)
     # FIXME: Should set assumptions on symbols before solving
     # FIXME: Need a way to handle systems with no explicit solutions
-    sol = sympy.dsolve(odes.eqs, ics=ics)
+    sol = sympy.dsolve(sympy.sympify(odes.eqs), ics=sympy.sympify(ics))
     new = []
     for s in model.statements:
         if isinstance(s, CompartmentalSystem):
