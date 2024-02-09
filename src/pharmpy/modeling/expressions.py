@@ -1220,13 +1220,13 @@ def get_parameter_rv(
 
 @dataclass(frozen=True)
 class AssignmentGraphNode:
-    expression: sympy.Expr
+    expression: Expr
     index: int
-    previous: Dict[sympy.Symbol, AssignmentGraphNode]
+    previous: Dict[Expr, AssignmentGraphNode]
 
 
 def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, AssignmentGraphNode]:
-    last_assignments: Dict[sympy.Symbol, AssignmentGraphNode] = {}
+    last_assignments: Dict[Expr, AssignmentGraphNode] = {}
 
     for i, statement in enumerate(statements):
         if not isinstance(statement, Assignment):
@@ -1280,13 +1280,13 @@ def remove_covariate_effect_from_statements(
     return new_before_odes
 
 
-def _neutral(expr: sympy.Expr) -> sympy.Integer:
-    if isinstance(sympy.sympify(expr), sympy.Add):
-        return sympy.Integer(0)
-    if isinstance(expr, sympy.Mul):
-        return sympy.Integer(1)
-    if isinstance(expr, sympy.Pow):
-        return sympy.Integer(1)
+def _neutral(expr: Expr) -> sympy.Integer:
+    if expr.is_add():
+        return Expr.integer(0)
+    if expr.is_mul():
+        return Expr.integer(1)
+    if expr.is_pow():
+        return Expr.integer(1)
 
     raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
 
@@ -1358,13 +1358,13 @@ def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr:
 
 
 def _remove_covariate_effect_from_statements_recursive(
-    thetas: Set[sympy.Symbol],
-    assignments: Dict[sympy.Symbol, AssignmentGraphNode],
+    thetas: Set[Expr],
+    assignments: Dict[Expr, AssignmentGraphNode],
     statements: List[Assignment],
-    symbol: sympy.Symbol,
-    expression: sympy.Expr,
-    covariate: sympy.Symbol,
-    parent: Union[None, sympy.Expr],
+    symbol: Expr,
+    expression: Expr,
+    covariate: Expr,
+    parent: Union[None, Expr],
 ) -> ExpressionTreeNode:
     if not expression.args:
         if expression in assignments:
@@ -1396,7 +1396,7 @@ def _remove_covariate_effect_from_statements_recursive(
             expression, False, _is_constant(thetas, expression), _depends_on_any(thetas, expression)
         )
 
-    if isinstance(expression, sympy.Piecewise):
+    if expression.is_piecewise():
         if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
             # NOTE: At least one condition depends on the covariate
             if all(

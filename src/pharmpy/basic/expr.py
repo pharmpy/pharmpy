@@ -31,6 +31,10 @@ class Expr:
             args = [Expr(a) for a in self._expr.args]
         return tuple(args)
 
+    @property
+    def func(self):
+        return self._expr.func
+
     def make_args(self, expr):
         return sympy.sympify(self._expr).make_args(sympy.sympify(expr))
 
@@ -156,7 +160,10 @@ class Expr:
         return self._expr.func == symengine.Add
 
     def is_exp(self):
-        return isinstance(self._expr, symengine.Pow) and self._expr.args[0] == symengine.E
+        return self.is_pow() and self._expr.args[0] == symengine.E
+
+    def is_pow(self):
+        return isinstance(self._expr, symengine.Pow)
 
     def is_function(self):
         return self._expr.is_Function
@@ -214,6 +221,10 @@ class Expr:
         pw = symengine.Piecewise(*args)
         return cls(pw)
 
+    @classmethod
+    def wild(cls, name: str):
+        return symengine.Wild(name)
+
     def __gt__(self, other):
         return BooleanExpr(symengine.Gt(self._expr, other))
 
@@ -265,6 +276,10 @@ class BooleanExpr:
     @classmethod
     def ge(cls, lhs, rhs):
         return cls(sympy.Ge(lhs, rhs))
+
+    @classmethod
+    def le(cls, lhs, rhs):
+        return cls(sympy.Le(lhs, rhs))
 
     def atoms(self, *types):
         return self._expr.atoms(types)
