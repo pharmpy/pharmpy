@@ -13,7 +13,7 @@ cloudpickle==3.0.0
 comm==0.2.1
 csscompressor==0.9.5
 dask==2024.1.1
-debugpy==1.8.0
+debugpy==1.8.1
 decorator==5.1.1
 defusedxml==0.7.1
 distributed==2024.1.1
