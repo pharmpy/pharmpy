@@ -107,7 +107,7 @@ def add_statements(
                 if expr.is_piecewise():
                     first = True
                     for value, cond in expr.args:
-                        if cond is not sympy.S.true:
+                        if sympy.sympify(cond) is not sympy.S.true:
                             cond = convert_eq(cond)
                             if first:
                                 cg.add(f'if ({cond}) {{')
@@ -288,6 +288,8 @@ def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
     first = True
     for value, cond in expr.args:
+        value = sympy.sympify(value)
+        cond = sympy.sympify(cond)
         if cond is not sympy.S.true:
             if cond.atoms(sympy.Eq):
                 cond = convert_eq(cond)
@@ -336,12 +338,12 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
         if eq.atoms(sympy.Piecewise):
-            lhs = remove_piecewise(printer.doprint(eq.lhs))
-            rhs = remove_piecewise(printer.doprint(eq.rhs))
+            lhs = remove_piecewise(printer.doprint(sympy.sympify(eq.lhs)))
+            rhs = remove_piecewise(printer.doprint(sympy.sympify(eq.rhs)))
 
             cg.add(f'{lhs} = {rhs}')
         else:
-            cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
+            cg.add(f'{printer.doprint(sympy.sympify(eq.lhs))} = {printer.doprint(sympy.sympify(eq.rhs))}')
 
     for comp in model.statements.ode_system.dosing_compartments:
         # FIXME : Handle multiple doses with different dur/rate
@@ -475,7 +477,7 @@ def convert_eq(cond: sympy.Eq) -> str:
         A string with R format for the same statement
 
     """
-    cond = sympy.pretty(cond)
+    cond = sympy.pretty(sympy.sympify(cond))
     cond = cond.replace("=", "==")
     cond = cond.replace("≠", "!=")
     cond = cond.replace("≤", "<=")

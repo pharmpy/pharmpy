@@ -336,7 +336,7 @@ def change_rvs_same(
             for el in old_to_new:
                 old = el[1]
                 new = rvs_and_var[el]
-                new_variance = new_rv.variance.replace(old, new)
+                new_variance = new_rv.variance.subs({old: new})
                 new_rv = new_rv.replace(variance=new_variance)
             all_rvs = model.random_variables
 
