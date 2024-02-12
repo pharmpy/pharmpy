@@ -11,7 +11,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import frozenmapping
-from pharmpy.model import Assignment, DataInfo, EstimationSteps
+from pharmpy.model import Assignment, DataInfo, EstimationStep, EstimationSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
 from pharmpy.model.model import ModelInternals, compare_before_after_params, update_datainfo
@@ -281,6 +281,7 @@ class Model(BaseModel):
 
             if (
                 len(model.estimation_steps) > 0
+                and isinstance(model.estimation_steps[-1], EstimationStep)
                 and model.estimation_steps[-1].parameter_uncertainty_method == "EFIM"
             ):
                 data_record = model.internals.control_stream.get_records('DATA', 1)[0]
