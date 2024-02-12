@@ -97,7 +97,7 @@ toolz==0.12.1
 tornado==6.4
 traitlets==5.14.1
 typing-extensions==4.9.0
-tzdata==2023.4
+tzdata==2024.1
 urllib3==2.2.0
 wcwidth==0.2.13
 webencodings==0.5.1
