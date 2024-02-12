@@ -666,21 +666,26 @@ def remove_iiv(model: Model, to_remove: Optional[Union[List[str], str]] = None):
         eta_sym = Expr(eta)
         for s in sset:
             if eta_sym in s.free_symbols:
-                expr = s.expression.expand()
+                expr = sympy.sympify(s.expression).expand()
                 if len(expr.args) == 0:
-                    sset = sset.subs({expr: 0})
-                elif expr.is_exp():
+                    sset = sset.subs({Expr(expr): 0})
+                elif len(expr.args) == 1 and expr.fun == sympy.exp:
                     sset = sset.subs({eta_sym: 0})
                 else:
+                    expr_subs = expr
                     for i in range(len(expr.args)):
-                        if eta_sym in expr.args[i].free_symbols:
-                            if expr.is_mul():
-                                sset = sset.subs({expr.args[i]: 1})
-                            elif expr.is_add():
-                                if expr.args[i].is_exp():
-                                    sset = sset.subs({expr.args[i]: 0})
+                        if eta_sym in Expr(expr.args[i]).free_symbols:
+                            if expr.func == sympy.Mul:
+                                expr_subs = expr_subs.subs({expr.args[i]: 1})
+                            elif expr.func == sympy.Add:
+                                if len(expr.args[i].args) == 1 and expr.args[i].func == sympy.exp:
+                                    expr_subs = expr_subs.subs({(expr.args[i]): 0})
                                 else:
-                                    sset = sset.subs({eta_sym: 0})
+                                    expr_subs = expr_subs.subs({eta_sym: 0})
+                    # NOTE: Statements.reassign is used instead of Statements.subs here
+                    #  since symengine subs (which is called further down) doesn't work
+                    #  for substitution of subexpressions in exp(x+y)
+                    sset = sset.reassign(s.symbol, Expr(expr_subs))
 
     keep = [name for name in model.random_variables.names if name not in etas]
     model = model.replace(random_variables=rvs[keep], statements=sset)

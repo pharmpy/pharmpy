@@ -54,6 +54,8 @@ class Expr:
         return Expr(sympy.sympify(self._expr).simplify())
 
     def expand(self):
+        # NOTE: the expression exp(x+y) will be expanded to
+        #  exp(x)+exp(y) in sympy but kept as exp(x+y) in symengine
         return Expr(self._expr.expand())
 
     def __add__(self, other):
