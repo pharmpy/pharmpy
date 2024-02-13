@@ -84,8 +84,8 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     if presystemic:
         fpre = Expr.symbol('FPRE')
         model = add_individual_parameter(model, fpre.name)
-        model = set_lower_bounds(model, {'POP_FPRE': Expr.integer(0)})
-        model = set_upper_bounds(model, {'POP_FPRE': Expr.integer(1)})
+        model = set_lower_bounds(model, {'POP_FPRE': 0.0})
+        model = set_upper_bounds(model, {'POP_FPRE': 1.0})
         ka = odes.get_flow(depot, central)
         cb.add_flow(depot, metacomp, fpre * ka)
         cb.remove_flow(depot, central)
