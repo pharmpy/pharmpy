@@ -260,10 +260,10 @@ def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio=False, lag=Fa
         if s.symbol in bio_lag.values():
             comp = list(bio_lag.keys())[list(bio_lag.values()).index(s.symbol)]
 
-            if s.expression.is_Piecewise:
+            if s.expression.is_piecewise():
                 first = True
                 for value, cond in s.expression.args:
-                    if cond is not sympy.S.true:
+                    if sympy.sympify(cond) is not sympy.S.true:
                         cond = convert_eq(cond)
                         if first:
                             cg.add(f'if ({cond}) {{')
@@ -465,19 +465,8 @@ def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
 def convert_eq(cond) -> str:
     """
     Convert a sympy equal statement to R syntax
-
-    Parameters
-    ----------
-    cond : BooleanExpr
-        Boolean expression
-
-    Returns
-    -------
-    str
-        A string with R format for the same statement
-
     """
-    cond = cond.unicode()
+    cond = sympy.pretty(cond)
     cond = cond.replace("=", "==")
     cond = cond.replace("≠", "!=")
     cond = cond.replace("≤", "<=")

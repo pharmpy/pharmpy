@@ -130,7 +130,7 @@ def add_true_statements(model, cg, statements):
         else:
             expr = s.expression.subs(comp_name_dict)
             expr = convert_eps_to_sigma(expr, model)
-            if expr.is_Piecewise:
+            if expr.is_piecewise():
                 add_piecewise(model, cg, s)
             else:
                 cg.add(f'{s.symbol.name} <- {expr}')
@@ -140,6 +140,8 @@ def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
     first = True
     for value, cond in expr.args:
+        value = sympy.sympify(value)
+        cond = sympy.sympify(cond)
         if cond is not sympy.S.true:
             if cond.atoms(sympy.Eq):
                 cond = convert_eq(cond)
