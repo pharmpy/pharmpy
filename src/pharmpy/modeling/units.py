@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Dict, Iterable, Set, Tuple, TypeVar, Union
 
+from pharmpy.basic import Unit
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
@@ -61,28 +62,30 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
 
     # FIXME: Handle other DVs?
     y = sympy.sympify(list(model.dependent_variables.keys())[0])
-    input_units = {sympy.Symbol(col.name): col.unit for col in di}
+    input_units = {sympy.Symbol(col.name): col.unit._expr for col in di}
     pruned_nodes = {sympy.exp}
 
     def pruning_predicate(e: sympy.Expr) -> bool:
         return e.func in pruned_nodes
 
     unit_eqs = []
-    unit_eqs.append(y - sympy.sympify(di[di.dv_column.name].unit))
+    # FIXME: Using private _expr in some places. sympify doesn't work for some reason.
+    a = di[di.dv_column.name].unit._expr
+    unit_eqs.append(y - a)
 
     for s in model.statements:
         if isinstance(s, Assignment):
             expr = sympy.expand(
-                subs(prune(pruning_predicate, s.expression), input_units, simultaneous=True)
+                subs(prune(pruning_predicate, sympy.sympify(s.expression)), input_units, simultaneous=True)
             )
             if expr.is_Add:
                 for term in expr.args:
-                    unit_eqs.append(s.symbol - _extract_minus(term))
+                    unit_eqs.append(sympy.sympify(s.symbol) - _extract_minus(term))
             else:
-                unit_eqs.append(s.symbol - _extract_minus(expr))
+                unit_eqs.append(sympy.sympify(s.symbol) - _extract_minus(expr))
         elif isinstance(s, CompartmentalSystem):
-            amt_unit = sympy.sympify(di[di.typeix['dose'][0].name].unit)
-            time_unit = sympy.sympify(di[di.idv_column.name].unit)
+            amt_unit = di[di.typeix['dose'][0].name].unit._expr
+            time_unit = di[di.idv_column.name].unit._expr
             for e in s.compartmental_matrix.diagonal():
                 e = sympy.sympify(e)
                 if e.is_Add:
