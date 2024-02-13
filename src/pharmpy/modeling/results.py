@@ -4,6 +4,7 @@ import math
 from itertools import chain
 from typing import TYPE_CHECKING, Iterable, Literal, Optional, Union
 
+from pharmpy.basic import Expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
@@ -272,24 +273,17 @@ def calculate_individual_parameter_statistics(
     """
     rng = create_rng(seed)
     if isinstance(expr_or_exprs, str):
-        expr_or_exprs = sympy.sympify(expr_or_exprs)
+        expr_or_exprs = [_split_equation(expr_or_exprs)]
     else:
         try:
-            expr_or_exprs = [sympy.sympify(e) for e in expr_or_exprs]
+            expr_or_exprs = [_split_equation(e) for e in expr_or_exprs]
         except TypeError:
-            expr_or_exprs = sympy.sympify(expr_or_exprs)
-
-    split_exprs = map(
-        _split_equation,
-        [expr_or_exprs]
-        if isinstance(expr_or_exprs, str) or isinstance(expr_or_exprs, sympy.Basic)
-        else expr_or_exprs,
-    )
+            expr_or_exprs = [_split_equation(expr_or_exprs)]
 
     full_exprs = list(
         map(
-            lambda e: (e[0], model.statements.before_odes.full_expression(e[1])),
-            split_exprs,
+            lambda e: (e[0], sympy.sympify(model.statements.before_odes.full_expression(e[1]))),
+            expr_or_exprs,
         )
     )
 
@@ -316,7 +310,7 @@ def calculate_individual_parameter_statistics(
     sampling_rvs = list(
         subs_distributions(
             distributions,
-            parameter_estimates,
+            {Expr(key): float(val) for key, val in parameter_estimates.items()},
         )
     )
 
@@ -361,7 +355,7 @@ def calculate_individual_parameter_statistics(
 
         for _, row in parameters_samples.iterrows():
             parameters = xreplace_dict(row)
-            local_sampling_rvs = list(subs_distributions(distributions, parameters)) + [
+            local_sampling_rvs = list(subs_distributions(distributions, {Expr(key): float(val) for key, val in parameters.items()})) + [
                 ((key,), ConstantDistribution(value))
                 for key, value in parameters.items()
                 if key in all_parameter_free_symbols
@@ -472,6 +466,8 @@ def calculate_pk_parameters_statistics(
     # FO abs + 1comp + FO elimination
     if len(odes) == 2 and depot and odes.t not in elimination_rate.free_symbols:
         ode_list, ics = odes.eqs, get_initial_conditions(model, dosing=True)
+        ode_list = sympy.sympify(ode_list)
+        ics = sympy.sympify(ics)
         sols = sympy.dsolve(ode_list, ics=ics)
         expr = sols[1].rhs
         d = sympy.diff(expr, odes.t)
@@ -492,6 +488,7 @@ def calculate_pk_parameters_statistics(
                 cb.remove_compartment(elimination_system.find_compartment(name))
                 elimination_system = CompartmentalSystem(cb)
         eq = elimination_system.eqs[0]
+        eq = sympy.sympify(eq)
         ic = sympy.Function(elimination_system.amounts[0].name)(0)
         A0 = sympy.Symbol('A0')
         sols = sympy.dsolve(eq, ics={ic: A0})
@@ -502,6 +499,8 @@ def calculate_pk_parameters_statistics(
     # Bolus dose + 2comp + FO elimination
     if len(peripherals) == 1 and len(odes) == 2 and odes.t not in elimination_rate.free_symbols:
         ode_list, ics = odes.eqs, get_initial_conditions(model, dosing=True)
+        ode_list = sympy.sympify(ode_list)
+        ics = sympy.sympify(ics)
         sols = sympy.dsolve(ode_list, ics=ics)
         A = sympy.Wild('A')
         B = sympy.Wild('B')
