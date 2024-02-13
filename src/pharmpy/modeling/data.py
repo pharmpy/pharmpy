@@ -1778,7 +1778,7 @@ class Checker:
             return False
         else:
             dim2 = sympy.physics.units.Dimension(
-                sympy.physics.units.si.SI.get_dimensional_expr(column.unit)
+                sympy.physics.units.si.SI.get_dimensional_expr(column.unit._expr)
             )
             self.set_result(
                 code,
@@ -1792,11 +1792,11 @@ class Checker:
         if lower == 0:
             scaled_lower = lower
         else:
-            scaled_lower = float(sympy.physics.units.convert_to(lower * unit, col.unit) / col.unit)
+            scaled_lower = float(sympy.physics.units.convert_to(lower * unit, col.unit._expr) / col.unit._expr)
         if upper == 0:
             scaled_upper = upper
         else:
-            scaled_upper = float(sympy.physics.units.convert_to(upper * unit, col.unit) / col.unit)
+            scaled_upper = float(sympy.physics.units.convert_to(upper * unit, col.unit._expr) / col.unit._expr)
         if lower_included:
             lower_viol = self.dataset[name] < scaled_lower
         else:
