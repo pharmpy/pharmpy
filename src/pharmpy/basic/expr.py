@@ -2,6 +2,22 @@ from __future__ import annotations
 
 from pharmpy.deps import symengine, sympy
 
+from sympy.printing.pretty.pretty import PrettyPrinter
+
+class ExprPrinter(PrettyPrinter):
+    def __init__(self):
+        super().__init__(settings={'wrap_line':False, 'use_unicode':True})
+
+    def _print_Equality(self, e):
+        # symengine can turn some Equations around
+        if isinstance(e.rhs, sympy.Symbol):
+            lhs = e.rhs
+            rhs = e.lhs
+        else:
+            lhs = e.lhs
+            rhs = e.rhs
+        return super()._print_Relational(sympy.Eq(lhs, rhs))
+
 
 class Expr:
     """A real valued symbolic expression with real symbols"""
@@ -287,7 +303,7 @@ class BooleanExpr:
         return cls(sympy.Le(lhs, rhs))
 
     def unicode(self):
-        return sympy.pretty(self._expr, wrap_line=False, use_unicode=True)
+        return ExprPrinter().doprint(sympy.sympify(self._expr))
 
     def atoms(self, *types):
         return self._expr.atoms(types)

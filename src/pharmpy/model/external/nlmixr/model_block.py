@@ -462,14 +462,14 @@ def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
         return expr.replace(f'Piecewise({piecewise})', s)
 
 
-def convert_eq(cond: sympy.Eq) -> str:
+def convert_eq(cond) -> str:
     """
     Convert a sympy equal statement to R syntax
 
     Parameters
     ----------
-    cond : sympy.Eq
-        Sympy equals statement
+    cond : BooleanExpr
+        Boolean expression
 
     Returns
     -------
@@ -477,7 +477,7 @@ def convert_eq(cond: sympy.Eq) -> str:
         A string with R format for the same statement
 
     """
-    cond = sympy.pretty(sympy.sympify(cond))
+    cond = cond.unicode()
     cond = cond.replace("=", "==")
     cond = cond.replace("≠", "!=")
     cond = cond.replace("≤", "<=")
