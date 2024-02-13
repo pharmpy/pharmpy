@@ -951,9 +951,9 @@ class EtaTransformation:
     def boxcox(cls, no_of_etas):
         assignments = []
         for i in range(1, no_of_etas + 1):
-            symbol = sympy.Symbol(f'etab{i}')
-            expression = (sympy.exp(sympy.Symbol(f'eta{i}')) ** sympy.Symbol(f'theta{i}') - 1) / (
-                sympy.Symbol(f'theta{i}')
+            symbol = Expr.symbol(f'etab{i}')
+            expression = (Expr.exp(Expr.symbol(f'eta{i}')) ** Expr.symbol(f'theta{i}') - 1) / (
+                Expr.symbol(f'theta{i}')
             )
 
             assignment = Assignment.create(symbol, expression)
@@ -965,10 +965,10 @@ class EtaTransformation:
     def tdist(cls, no_of_etas):
         assignments = []
         for i in range(1, no_of_etas + 1):
-            symbol = sympy.Symbol(f'etat{i}')
+            symbol = Expr.symbol(f'etat{i}')
 
-            eta = sympy.Symbol(f'eta{i}')
-            theta = sympy.Symbol(f'theta{i}')
+            eta = Expr.symbol(f'eta{i}')
+            theta = Expr.symbol(f'theta{i}')
 
             num_1 = eta**2 + 1
             denom_1 = 4 * theta
@@ -990,12 +990,12 @@ class EtaTransformation:
     def john_draper(cls, no_of_etas):
         assignments = []
         for i in range(1, no_of_etas + 1):
-            symbol = sympy.Symbol(f'etad{i}')
+            symbol = Expr.symbol(f'etad{i}')
 
-            eta = sympy.Symbol(f'eta{i}')
-            theta = sympy.Symbol(f'theta{i}')
+            eta = Expr.symbol(f'eta{i}')
+            theta = Expr.symbol(f'theta{i}')
 
-            expression = sympy.sign(eta) * (((abs(eta) + 1) ** theta - 1) / theta)
+            expression = Expr.sign(eta) * (((abs(eta) + 1) ** theta - 1) / theta)
 
             assignment = Assignment.create(symbol, expression)
             assignments.append(assignment)

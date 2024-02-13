@@ -142,6 +142,9 @@ class Expr:
     def sqrt(self):
         return Expr(symengine.sqrt(self._expr))
 
+    def sign(self):
+        return Expr(symengine.sign(self._expr))
+
     def diff(self, x):
         return Expr(self._expr.diff(x._expr))
 

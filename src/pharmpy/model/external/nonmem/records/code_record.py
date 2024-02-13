@@ -260,7 +260,7 @@ def _translate_sympy_sign(s):
 
     s = s.subs(subs_dict)
     fprn = NMTranPrinter()
-    fortran = fprn.doprint(s.expression)
+    fortran = fprn.doprint(sympy.sympify(s.expression))
     expr_str = f'{s.symbol} = {fortran}'
     return expr_str
 
