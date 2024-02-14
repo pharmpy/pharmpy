@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from deps.sympy_printing import pretty
-
+from pharmpy.deps.sympy_printing import pretty
 from pharmpy.deps import symengine, sympy
 
 
