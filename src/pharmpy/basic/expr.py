@@ -48,10 +48,6 @@ class Expr:
             args = [Expr(a) for a in self._expr.args]
         return tuple(args)
 
-    @property
-    def func(self):
-        return self._expr.func
-
     def make_args(self, expr):
         return sympy.sympify(self._expr).make_args(sympy.sympify(expr))
 
