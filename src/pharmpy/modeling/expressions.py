@@ -808,6 +808,7 @@ def get_individual_parameters(
         dvs = model.dependent_variables.keys()
     else:
         dvs = {get_dv_symbol(model, dv)}
+
     for y in dvs:
         ind = statements.find_assignment_index(y)
         gsub = _subgraph_of(full_graph, ind)
@@ -859,6 +860,7 @@ def _cut_partial_odes(model, g, dv):
         from sympy.core.function import AppliedUndef
 
         funcs = eq._sympy_().atoms(AppliedUndef)
+        funcs = {Expr(func) for func in funcs}
         return funcs
 
     def dep_amounts(ode_deps, amounts):
@@ -1545,7 +1547,8 @@ def _get_drug_metabolite_parameters(model, dv=2):
             dv2_comp = comp
 
     if dv2_comp is not None:
-        if ode.get_flow(dv1_comp, dv2_comp):
+        rate = ode.get_flow(dv1_comp, dv2_comp)
+        if ode.get_flow(dv1_comp, dv2_comp) != 0:
             return get_individual_parameters(model, dv=2)
     else:
         None
