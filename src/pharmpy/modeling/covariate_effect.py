@@ -67,6 +67,7 @@ def get_covariates(model: Model) -> dict[list]:
 
 def get_covariate_effect(model: Model, symbol, covariate):
     param_expr = model.statements.before_odes.full_expression(symbol)
+    param_expr = sympy.sympify(param_expr)
 
     # Piecewise statement can interfer with .match() of expression
     full_expr = param_expr
@@ -75,7 +76,7 @@ def get_covariate_effect(model: Model, symbol, covariate):
     def extract_parameters_recursive(expr_list, expr, full_expr, counter):
         for a in expr.args:
             if a.is_Function:
-                full_expr = full_expr.subs({a: Expr.wild(f"f{counter}")})
+                full_expr = full_expr.subs({a: sympy.Wild(f"f{counter}")})
                 counter += 1
                 if a.is_Piecewise:
                     for e, _ in a.args:
@@ -96,7 +97,7 @@ def get_covariate_effect(model: Model, symbol, covariate):
         template = template.template.expression
         wild_dict = defaultdict(list)
         for s in template.free_symbols:
-            wild_symbol = Expr.wild(str(s))
+            wild_symbol = sympy.Wild(str(s))
             template = template.subs({s: wild_symbol})
             if str(s).startswith("theta"):
                 wild_dict["theta"].append(wild_symbol)
@@ -104,7 +105,7 @@ def get_covariate_effect(model: Model, symbol, covariate):
                 wild_dict["cov"].append(wild_symbol)
             elif str(s).startswith("median"):
                 wild_dict["median"].append(wild_symbol)
-        rest_of_expression = Expr.wild('reo')
+        rest_of_expression = sympy.Wild('reo')
 
         for pe in param_expr_list:
             found_match = False
@@ -133,14 +134,14 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     # TODO : Restructure covaroiate effect template matching
     if effect == "pow":
         if (
-            Expr.wild("cov") in match.keys()
-            and match[Expr.wild("cov")].is_number()
-            and Expr.wild("median") in match.keys()
-            and match[Expr.wild("median")].is_pow()
+            sympy.Wild("cov") in match.keys()
+            and match[sympy.Wild("cov")].is_number
+            and sympy.Wild("median") in match.keys()
+            and match[sympy.Wild("median")].is_Pow
         ):
-            temp = match[Expr.wild("cov")]
-            match[Expr.wild("cov")] = match[Expr.wild("median")]
-            match[Expr.wild("median")] = temp
+            temp = match[sympy.Wild("cov")]
+            match[sympy.Wild("cov")] = match[sympy.Wild("median")]
+            match[sympy.Wild("median")] = temp
 
     for key, values in symbols.items():
         if key == "theta":
@@ -149,7 +150,7 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
                 if any(match[value] not in thetas for value in values):
                     return False
         if key == "cov":
-            covariate = Expr.symbol(covariate)
+            covariate = sympy.Symbol(covariate)
             if all(value in match.keys() for value in values):
                 if all(match[value] not in [covariate, 1 / covariate] for value in values):
                     return False
