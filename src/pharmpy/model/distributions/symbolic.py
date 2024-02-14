@@ -3,22 +3,15 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Sized
 from math import sqrt
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Sequence, Set, Tuple, Union
+from typing import Any, Dict, List, Mapping, Sequence, Tuple
 
-from pharmpy.basic import Expr, TExpr, TSymbol, Matrix
 import pharmpy.internals.unicode as unicode
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
+from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.internals.immutable import Immutable
 
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution
 from .numeric import NumericDistribution
-
-if TYPE_CHECKING:
-    import numpy as np
-else:
-    from pharmpy.deps import numpy as np
 
 
 class Distribution(Sized, Hashable, Immutable):
@@ -589,7 +582,7 @@ class JointNormalDistribution(Distribution):
         self.__dict__.update(state)
 
 
-def _subs_name(name: str, d: Mapping[TExp, TExpr]) -> str:
+def _subs_name(name: str, d: Mapping[TExpr, TExpr]) -> str:
     if name in d:
         new_name = d[name]
     elif (name_symbol := Expr.symbol(name)) in d:

@@ -17,10 +17,9 @@ from typing import (
     Union,
 )
 
-from pharmpy.basic import Expr
+from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images_and_symbols
-from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.graph.directed.connected_components import strongly_connected_component_of
 from pharmpy.internals.graph.directed.inverse import inverse as graph_inverse
@@ -70,7 +69,7 @@ def get_observation_expression(model: Model):
     >>> expr = get_observation_expression(model)
     >>> print(expr.unicode())
     D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
-    """
+    """  # noqa E501
     stats = model.statements
     # FIXME: Handle other DVs
     dv = list(model.dependent_variables.keys())[0]
@@ -113,7 +112,9 @@ def get_individual_prediction_expression(model: Model):
     --------
     get_population_prediction_expression : Get full symbolic epression for the population prediction
     """
-    return get_observation_expression(model).subs({Expr.symbol(eps): 0 for eps in model.random_variables.epsilons.names})
+    return get_observation_expression(model).subs(
+        {Expr.symbol(eps): 0 for eps in model.random_variables.epsilons.names}
+    )
 
 
 def get_population_prediction_expression(model: Model):
@@ -143,7 +144,9 @@ def get_population_prediction_expression(model: Model):
     get_individual_prediction_expression : Get full symbolic epression for the individual prediction
     """
 
-    return get_individual_prediction_expression(model).subs({Expr.symbol(eta): 0 for eta in model.random_variables.etas.names})
+    return get_individual_prediction_expression(model).subs(
+        {Expr.symbol(eta): 0 for eta in model.random_variables.etas.names}
+    )
 
 
 def calculate_eta_gradient_expression(model: Model):
@@ -1524,16 +1527,16 @@ def _get_drug_metabolite_parameters(model, dv=2):
 
     dv1_deps = [
         Expr(s)
-        for s in sympy.sympify(model.statements.after_odes.full_expression(get_dv_symbol(model, dv=1))).atoms(
-            sympy.Function
-        )
+        for s in sympy.sympify(
+            model.statements.after_odes.full_expression(get_dv_symbol(model, dv=1))
+        ).atoms(sympy.Function)
     ]
     dv1_comp = None
     dv2_deps = [
         Expr(s)
-        for s in sympy.sympify(model.statements.after_odes.full_expression(get_dv_symbol(model, dv=dv))).atoms(
-            sympy.Function
-        )
+        for s in sympy.sympify(
+            model.statements.after_odes.full_expression(get_dv_symbol(model, dv=dv))
+        ).atoms(sympy.Function)
     ]
     dv2_comp = None
 
@@ -1547,7 +1550,7 @@ def _get_drug_metabolite_parameters(model, dv=2):
 
     if dv2_comp is not None:
         rate = ode.get_flow(dv1_comp, dv2_comp)
-        if ode.get_flow(dv1_comp, dv2_comp) != 0:
+        if rate != 0:
             return get_individual_parameters(model, dv=2)
     else:
         None
@@ -1965,7 +1968,7 @@ def get_dv_symbol(model: Model, dv: Union[Expr, str, int, None] = None) -> Expr:
     else:
         try:
             dv = Expr(dv)
-        except:
+        except Exception:
             raise TypeError(
                 f"dv is of type {type(dv)} has to be one of Symbol or str representing "
                 "a dv or int representing a dvid"

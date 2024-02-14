@@ -374,7 +374,9 @@ def set_tmdd(
                 )
             if 'target' in dv_types.keys():
                 y_target = Expr.symbol("Y_TARGET")
-                ytarget = Assignment.create(y_target, (target_comp.amount - central.amount + lafreef) / vc)
+                ytarget = Assignment.create(
+                    y_target, (target_comp.amount - central.amount + lafreef) / vc
+                )
                 dvs = model.dependent_variables.replace(y_target, dv_types['target'])
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs

@@ -3,8 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, replace
 from typing import Callable, Iterable, List, Literal, Optional, Tuple, TypeVar, Union
 
-from pharmpy.basic import Expr
 import pharmpy.tools.iivsearch.algorithms
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check

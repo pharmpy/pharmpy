@@ -2725,7 +2725,9 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
     assert len(central.doses) == 2
-    assert central.doses[0] == Infusion.create(Expr.symbol('AMT'), admid=1, duration=Expr.symbol("D1"))
+    assert central.doses[0] == Infusion.create(
+        Expr.symbol('AMT'), admid=1, duration=Expr.symbol("D1")
+    )
 
 
 def test_get_central_volume_and_clearance(

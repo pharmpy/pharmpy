@@ -343,7 +343,9 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
 
             cg.add(f'{lhs} = {rhs}')
         else:
-            cg.add(f'{printer.doprint(sympy.sympify(eq.lhs))} = {printer.doprint(sympy.sympify(eq.rhs))}')
+            cg.add(
+                f'{printer.doprint(sympy.sympify(eq.lhs))} = {printer.doprint(sympy.sympify(eq.rhs))}'
+            )
 
     for comp in model.statements.ode_system.dosing_compartments:
         # FIXME : Handle multiple doses with different dur/rate

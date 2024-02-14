@@ -6,10 +6,9 @@ from __future__ import annotations
 import warnings
 from typing import List, Optional, Union
 
+from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.deps import sympy
-from pharmpy.basic import Expr, TSymbol, TExpr
 from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, NormalDistribution, Parameter, Parameters, Statements
 
 from .blq import get_blq_symb_and_type, get_sd_expr, has_blq_transformation
@@ -27,7 +26,9 @@ def _preparations(model, y=None):
         y = list(model.dependent_variables.keys())[0]
     if not model.statements.find_assignment(y.name):
         raise ValueError(f'Could not find assignment for \'{y}\'')
-    f = model.statements.find_assignment(y.name).expression.subs({Expr.symbol(eps): 0 for eps in model.random_variables.epsilons.names})
+    f = model.statements.find_assignment(y.name).expression.subs(
+        {Expr.symbol(eps): 0 for eps in model.random_variables.epsilons.names}
+    )
     return stats, y, f
 
 
@@ -450,9 +451,7 @@ def set_combined_error_model(
         ):
             if has_blq_transformation(model):
                 raise ValueError('Currently not supported to change from IIV on RUV model with BLQ')
-            error_expr = (
-                f_dummy + f_dummy * ruv_prop * eta_ruv.exp() + ruv_add * eta_ruv.exp()
-            )
+            error_expr = f_dummy + f_dummy * ruv_prop * eta_ruv.exp() + ruv_add * eta_ruv.exp()
         else:
             error_expr = f_dummy + f_dummy * ruv_prop + ruv_add
     else:
@@ -776,9 +775,7 @@ def get_weighted_error_model_weight(model: Model):
     # FIXME: Handle multiple DVs? Handle piecewise?
     y_expr = stats.error.find_assignment(y).expression
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        Expr.symbol(name) for name in rvs.names if Expr.symbol(name) in y_expr.free_symbols
-    }
+    rvs_in_y = {Expr.symbol(name) for name in rvs.names if Expr.symbol(name) in y_expr.free_symbols}
 
     if len(rvs_in_y) > 1:
         return None

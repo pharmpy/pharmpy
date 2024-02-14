@@ -4,8 +4,8 @@ import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
 
-from pharmpy.basic import Expr
 import pharmpy.modeling as modeling
+from pharmpy.basic import Expr
 from pharmpy.internals.math import nearest_positive_semidefinite
 from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream

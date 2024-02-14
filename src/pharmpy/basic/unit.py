@@ -1,13 +1,13 @@
 from __future__ import annotations
 
-from .expr import Expr
-from pharmpy.deps import sympy
-from pharmpy.internals.unicode import int_to_superscript
+from typing import Union
+
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.unicode import int_to_superscript
 
 
 class Unit:
-    def __init__(self, source : Union[Unit, str]):
+    def __init__(self, source: Union[Unit, str]):
         if isinstance(source, Unit):
             self._expr = source._expr
         else:

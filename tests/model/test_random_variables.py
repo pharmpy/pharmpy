@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 import sympy
 
+from pharmpy.basic import Expr, Matrix
 from pharmpy.model import (
     JointNormalDistribution,
     NormalDistribution,
@@ -11,7 +12,7 @@ from pharmpy.model import (
     VariabilityHierarchy,
     VariabilityLevel,
 )
-from pharmpy.basic import Expr, Matrix
+
 
 def symbol(x):
     return Expr.symbol(x)
@@ -57,9 +58,7 @@ def test_empty_rvs():
 def test_repr_rv():
     dist1 = NormalDistribution.create('ETAA', 'iiv', 0, 1)
     assert repr(dist1) == 'ETAA ~ N(0, 1)'
-    dist2 = JointNormalDistribution.create(
-        ['ETAA', 'ETAB'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]]
-    )
+    dist2 = JointNormalDistribution.create(['ETAA', 'ETAB'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     assert (
         repr(dist2)
         == """⎡ETAA⎤    ⎧⎡0⎤  ⎡ 1   0.1⎤⎫
@@ -77,10 +76,7 @@ def test_repr_latex_rv():
 
     dist2 = NormalDistribution.create('x', 'iiv', 0, 1)
     print(dist2._repr_latex_())
-    assert (
-        dist2._repr_latex_()
-        == '$x\\sim  \\mathcal{N} \\left(0,1\\right)$'
-    )
+    assert dist2._repr_latex_() == '$x\\sim  \\mathcal{N} \\left(0,1\\right)$'
 
 
 def test_parameters_rv():
@@ -634,14 +630,10 @@ def test_join():
     rvs = RandomVariables.create([dist1, dist2])
     joined_rvs, _ = rvs.join(['ETA(1)', 'ETA(2)'])
     assert len(joined_rvs) == 1
-    assert joined_rvs[0].variance == Matrix(
-        [[symbol('OMEGA(1,1)'), 0], [0, symbol('OMEGA(2,2)')]]
-    )
+    assert joined_rvs[0].variance == Matrix([[symbol('OMEGA(1,1)'), 0], [0, symbol('OMEGA(2,2)')]])
 
     joined_rvs, _ = rvs.join(['ETA(1)', 'ETA(2)'], fill=1)
-    assert joined_rvs[0].variance == Matrix(
-        [[symbol('OMEGA(1,1)'), 1], [1, symbol('OMEGA(2,2)')]]
-    )
+    assert joined_rvs[0].variance == Matrix([[symbol('OMEGA(1,1)'), 1], [1, symbol('OMEGA(2,2)')]])
 
     joined_rvs, _ = rvs.join(
         ['ETA(1)', 'ETA(2)'], name_template='IIV_{}_IIV_{}', param_names=['CL', 'V']
@@ -655,9 +647,7 @@ def test_join():
 
     rvs3 = RandomVariables.create([dist1, dist2, dist3])
     joined_rvs, _ = rvs3.join(['ETA(2)', 'ETA(3)'])
-    assert joined_rvs[1].variance == Matrix(
-        [[symbol('OMEGA(2,2)'), 0], [0, symbol('OMEGA(3,3)')]]
-    )
+    assert joined_rvs[1].variance == Matrix([[symbol('OMEGA(2,2)'), 0], [0, symbol('OMEGA(3,3)')]])
 
     rvs5 = RandomVariables.create([dist1, dist2, dist3, dist4, dist5])
     with pytest.raises(KeyError):

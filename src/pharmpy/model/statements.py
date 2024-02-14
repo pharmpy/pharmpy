@@ -4,15 +4,13 @@ import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Set, Tuple, Union, overload
-import symengine
 
-from pharmpy.basic import BooleanExpr, Expr, Matrix
 import pharmpy.internals.unicode as unicode
+from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
+from pharmpy.deps import symengine
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.immutable import Immutable, cache_method
 
 if TYPE_CHECKING:
@@ -287,9 +285,7 @@ class CompartmentalSystemBuilder:
         """
         self._g.remove_node(compartment)
 
-    def add_flow(
-        self, source: Compartment, destination: CompartmentBase, rate: TExpr
-    ) -> None:
+    def add_flow(self, source: Compartment, destination: CompartmentBase, rate: TExpr) -> None:
         """Add flow between two compartments
 
         Parameters
@@ -440,9 +436,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
-    def set_bioavailability(
-        self, compartment: Compartment, bioavailability: TExpr
-    ) -> Compartment:
+    def set_bioavailability(self, compartment: Compartment, bioavailability: TExpr) -> Compartment:
         """Set bioavailability of compartment
 
         Parameters
@@ -674,7 +668,10 @@ class CompartmentalSystem(Statement):
         derivatives = Matrix([Expr.derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
-        eqs = [BooleanExpr(sympy.Eq(lhs, canonical_ode_rhs(rhs._sympy_()))) for lhs, rhs in zip(derivatives, a)]
+        eqs = [
+            BooleanExpr(sympy.Eq(lhs, canonical_ode_rhs(rhs._sympy_())))
+            for lhs, rhs in zip(derivatives, a)
+        ]
         return tuple(eqs)
 
     @property
@@ -2310,9 +2307,7 @@ class Statements(Sequence, Immutable):
         stats._statements = [self[i] for i in succ]
         return stats
 
-    def dependencies(
-        self, symbol_or_statement: Union[TSymbol, Statement]
-    ) -> set[Expr]:
+    def dependencies(self, symbol_or_statement: Union[TSymbol, Statement]) -> set[Expr]:
         """Find all dependencies of a symbol or statement
 
         Parameters

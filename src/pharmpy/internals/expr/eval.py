@@ -3,8 +3,6 @@ from __future__ import annotations
 from functools import lru_cache
 from typing import TYPE_CHECKING, Mapping, Set
 
-from .subs import subs
-
 if TYPE_CHECKING:
     import numpy as np
     import sympy
@@ -41,8 +39,6 @@ def _lambdify_canonical(expr: sympy.Expr):
     # NOTE: Substitution allows to use cse. Otherwise weird things happen with
     # symbols that look like function eval (e.g. ETA(1), THETA(3), OMEGA(1,1)).
     ordered_substitutes = [sympy.Symbol(f'__tmp{i}') for i in range(len(ordered_symbols))]
-    substituted_expr = expr.subs(
-        dict(zip(ordered_symbols, ordered_substitutes))
-    )
+    substituted_expr = expr.subs(dict(zip(ordered_symbols, ordered_substitutes)))
     fn = sympy.lambdify(ordered_substitutes, substituted_expr, modules='numpy', cse=True)
     return ordered_symbols, fn

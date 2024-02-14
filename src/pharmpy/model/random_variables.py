@@ -20,7 +20,7 @@ from typing import (
     overload,
 )
 
-from pharmpy.basic import Expr, TExpr, TSymbol, Matrix
+from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
@@ -32,12 +32,11 @@ from .distributions.symbolic import Distribution, JointNormalDistribution, Norma
 
 if TYPE_CHECKING:
     import numpy as np
-    import symengine
     import sympy
     import sympy.stats as sympy_stats
 else:
     from pharmpy.deps import numpy as np
-    from pharmpy.deps import symengine, sympy, sympy_stats
+    from pharmpy.deps import sympy, sympy_stats
 
 
 def _create_rng(seed: Optional[Union[int, np.random.Generator]] = None) -> np.random.Generator:
@@ -447,9 +446,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         ...
 
     @overload
-    def __getitem__(
-        self, ind: Union[slice, Container[Union[str, Expr]]]
-    ) -> RandomVariables:
+    def __getitem__(self, ind: Union[slice, Container[Union[str, Expr]]]) -> RandomVariables:
         ...
 
     def __getitem__(self, ind):
@@ -554,9 +551,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                         parameters.append(p)
         return [p.name for p in parameters]
 
-    def get_covariance(
-        self, rv1: TSymbol, rv2: TSymbol
-    ) -> Expr:
+    def get_covariance(self, rv1: TSymbol, rv2: TSymbol) -> Expr:
         """Get covariance between two random variables"""
         _, dist1 = self._lookup_rv(rv1)
         _, dist2 = self._lookup_rv(rv2)
@@ -589,9 +584,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         new_dists = tuple(dist.subs(d) for dist in self._dists)
         return self.replace(dists=new_dists)
 
-    def unjoin(
-        self, inds: Union[TSymbol, Iterable[TSymbol]]
-    ) -> RandomVariables:
+    def unjoin(self, inds: Union[TSymbol, Iterable[TSymbol]]) -> RandomVariables:
         """Remove all covariances the random variables have with other random variables
 
         Parameters
@@ -616,7 +609,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         --------
         join
         """
-        if isinstance(inds, str) or isinstance(inds, Expr) and ind.is_symbol():
+        if isinstance(inds, str) or isinstance(inds, Expr) and inds.is_symbol():
             inds = [inds]
         inds = [ind.name if not isinstance(ind, str) else ind for ind in inds]
 
@@ -930,10 +923,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         sympy.Expr
             Expression with replaced RVs
         """
-        rvs_in_expr = {
-            self[rv]
-            for rv in expr.free_symbols.intersection(self.symbols)
-        }
+        rvs_in_expr = {self[rv] for rv in expr.free_symbols.intersection(self.symbols)}
         subs_dict = {}
         for i, rv in enumerate(rvs_in_expr):
             if isinstance(rv, JointNormalDistribution):

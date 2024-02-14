@@ -842,9 +842,7 @@ def update_bio(model, old, new):
     for dose in new.dosing_compartments:
         # If the dose is not already correctly set (i.e dose numbering has
         # changed), it should be update to match the new number.
-        if (dose.bioavailability != 1
-            and dose.bioavailability != f'F{newmap[dose.name]}'
-        ):
+        if dose.bioavailability != 1 and dose.bioavailability != f'F{newmap[dose.name]}':
             if re.match("F[0-9]", str(dose.bioavailability)):
                 model = model.replace(
                     statements=model.statements.subs(

@@ -107,7 +107,8 @@ $SIGMA  0.09 ; sigma"""
     assert Assignment.create(symbol('Y_1'), symbol('Y')) not in model.statements.after_odes
     assert Assignment.create(symbol('Y_2'), symbol('Y_2')) not in model.statements.after_odes
     assert (
-        Assignment.create(symbol('Y'), symbol('C') * (1 + symbol('EPS_1'))) in model.statements.after_odes
+        Assignment.create(symbol('Y'), symbol('C') * (1 + symbol('EPS_1')))
+        in model.statements.after_odes
     )
     assert (
         Assignment.create(symbol('Y_2'), symbol('E') + symbol('E') * symbol('EPS_2'))

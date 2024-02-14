@@ -1,6 +1,5 @@
 import pytest
 
-
 from pharmpy.basic import Expr
 from pharmpy.modeling import add_iov, fix_parameters, remove_iov
 from pharmpy.tools.iovsearch.tool import (

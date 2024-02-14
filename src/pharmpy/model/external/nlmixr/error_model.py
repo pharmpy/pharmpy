@@ -1,8 +1,8 @@
 from typing import Union
 
 import pharmpy.model
-from pharmpy.deps import sympy
 from pharmpy.basic.expr import Expr
+from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.modeling import get_thetas
 

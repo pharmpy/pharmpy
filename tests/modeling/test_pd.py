@@ -65,7 +65,9 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment.create(e, e0 * (1 + S("SLOPE") * conc))
-        assert model.statements.after_odes[-1] == Assignment.create(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
     elif expr == "emax":
         assert model.statements[0] == Assignment.create(ec50, S("POP_EC_50"))
         assert model.statements[2] == Assignment.create(e0, S("POP_B"))
@@ -73,7 +75,9 @@ def _test_effect_models(model, expr, conc):
         assert model.statements.after_odes[-2] == Assignment.create(
             e, e0 * (1 + (emax * conc) / (ec50 + conc))
         )
-        assert model.statements.after_odes[-1] == Assignment.create(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
     elif expr == "sigmoid":
         assert model.statements[0] == Assignment.create(S("N"), S("POP_N"))
         assert model.statements[1] == Assignment.create(ec50, S("POP_EC_50"))
@@ -89,7 +93,9 @@ def _test_effect_models(model, expr, conc):
                 (e0, True),
             ),
         )
-        assert model.statements.after_odes[-1] == Assignment.create(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
         assert model.parameters["POP_N"].init == 1
     elif expr == "step":
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
@@ -97,14 +103,18 @@ def _test_effect_models(model, expr, conc):
         assert model.statements.after_odes[-2] == Assignment.create(
             e, Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True))
         )
-        assert model.statements.after_odes[-1] == Assignment.create(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
     elif expr == "loglin":
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment.create(
             e, S("SLOPE") * (conc + (e0 / S("SLOPE")).exp()).log()
         )
-        assert model.statements.after_odes[-1] == Assignment.create(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
 
 
 @pytest.mark.parametrize(

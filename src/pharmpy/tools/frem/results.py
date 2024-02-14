@@ -9,7 +9,6 @@ from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.math import (
     conditional_joint_normal,
     conditional_joint_normal_lambda,
@@ -879,7 +878,9 @@ def _calculate_covariate_baselines(model, res, covariates):
         if Expr.symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
     ]
     exprs = [
-        model.statements.before_odes.full_expression(expr).subs(res.parameter_estimates).subs(model.parameters.inits)
+        model.statements.before_odes.full_expression(expr)
+        .subs(res.parameter_estimates)
+        .subs(model.parameters.inits)
         for expr in exprs
     ]
 

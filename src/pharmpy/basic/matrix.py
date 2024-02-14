@@ -1,6 +1,5 @@
-import sympy
-import symengine
-import numpy as np
+from pharmpy.deps import numpy as np
+from pharmpy.deps import symengine, sympy
 
 from .expr import Expr
 

@@ -1,12 +1,12 @@
 import numpy as np
 import pytest
 
-from pharmpy.model import Parameter, Parameters
 from pharmpy.basic import Expr
+from pharmpy.model import Parameter, Parameters
+
 
 def symbol(x):
     return Expr.symbol(x)
-
 
 
 @pytest.mark.parametrize(

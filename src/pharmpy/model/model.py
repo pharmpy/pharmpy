@@ -20,9 +20,8 @@ from pathlib import Path
 from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
 
 import pharmpy
-from pharmpy.basic import Expr, TSymbol, TExpr
+from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.df import hash_df_runtime
-from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
 from pharmpy.model.external import detect_model
 
@@ -77,9 +76,7 @@ class Model(Immutable):
         statements: Statements = Statements(),
         dataset: Optional[pd.DataFrame] = None,
         datainfo: DataInfo = DataInfo(),
-        dependent_variables: frozenmapping[Expr, int] = frozenmapping(
-            {Expr.symbol('y'): 1}
-        ),
+        dependent_variables: frozenmapping[Expr, int] = frozenmapping({Expr.symbol('y'): 1}),
         observation_transformation: Optional[frozenmapping[Expr, Expr]] = None,
         estimation_steps: EstimationSteps = EstimationSteps(),
         modelfit_results=None,

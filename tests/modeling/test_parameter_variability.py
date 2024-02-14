@@ -4,11 +4,8 @@ import shutil
 from operator import add, mul
 
 import pytest
+
 from pharmpy.basic import Expr
-
-def S(x):
-    return Expr.symbol(x)
-
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Assignment, NormalDistribution
 from pharmpy.modeling import (
@@ -35,6 +32,10 @@ from pharmpy.modeling.parameter_variability import (
     _choose_cov_param_init,
 )
 from pharmpy.tools import read_modelfit_results
+
+
+def S(x):
+    return Expr.symbol(x)
 
 
 @pytest.mark.parametrize(
@@ -815,16 +816,12 @@ def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
 
     model = add_iiv(model, "TVCL", "add")
     model = remove_iiv(model, 'TVCL')
-    assert model.statements.find_assignment('TVCL') == Assignment(
-        S('TVCL'), S('PTVCL') * S('WGT')
-    )
+    assert model.statements.find_assignment('TVCL') == Assignment(S('TVCL'), S('PTVCL') * S('WGT'))
 
     # Test with two different ETAs
     model6 = add_iiv(model, 'CL', 'add')
     model6 = remove_iiv(model6, 'CL')
-    assert model6.statements.find_assignment('CL') == Assignment(
-        S('CL'), S('TVCL')
-    )
+    assert model6.statements.find_assignment('CL') == Assignment(S('CL'), S('TVCL'))
 
     model7 = add_iiv(model, 'Y', 'exp')
     model7 = remove_iiv(model7, 'Y')

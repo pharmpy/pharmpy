@@ -2,7 +2,6 @@
 :meta private:
 """
 from pharmpy.basic import Expr
-
 from pharmpy.model import (
     Assignment,
     Compartment,

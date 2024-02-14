@@ -9,11 +9,10 @@ from collections import defaultdict
 from operator import add, mul
 from typing import List, Literal, Set, Union
 
-from pharmpy.basic.expr import Expr, BooleanExpr
+from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
 from .common import get_model_covariates
@@ -654,9 +653,7 @@ class CovariateEffect:
             self.statistic_statements.append(s)
         if 'median' in template_str:
             self.template = self.template.subs({'median': f'{covariate}_MEDIAN'})
-            s = Assignment.create(
-                Expr.symbol(f'{covariate}_MEDIAN'), statistics['median']
-            )
+            s = Assignment.create(Expr.symbol(f'{covariate}_MEDIAN'), statistics['median'])
             self.statistic_statements.append(s)
         if 'std' in template_str:
             self.template = self.template.subs({'std': f'{covariate}_STD'})
@@ -747,9 +744,7 @@ class CovariateEffect:
     def exponential(cls):
         """Exponential template (for continuous covariates)."""
         symbol = Expr.symbol('symbol')
-        expression = Expr.exp(
-            Expr.symbol('theta') * (Expr.symbol('cov') - Expr.symbol('median'))
-        )
+        expression = Expr.exp(Expr.symbol('theta') * (Expr.symbol('cov') - Expr.symbol('median')))
         template = Assignment.create(symbol, expression)
 
         return cls(template)

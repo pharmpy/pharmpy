@@ -14,8 +14,8 @@ from typing import (
     overload,
 )
 
-from pharmpy.internals.immutable import Immutable, cache_method
 from pharmpy.basic import Expr
+from pharmpy.internals.immutable import Immutable, cache_method
 
 if TYPE_CHECKING:
     import numpy as np

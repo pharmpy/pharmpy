@@ -268,7 +268,11 @@ def test_add_statements(pheno, statement_new, buf_new, param_new):
 @pytest.mark.parametrize(
     'param_new, statement_new, buf_new',
     [
-        (Parameter.create('X', 0.1), Assignment.create(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
+        (
+            Parameter.create('X', 0.1),
+            Assignment.create(S('Y'), S('X') + S('S1')),
+            'Y = S1 + THETA(4)',
+        ),
     ],
 )
 def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):

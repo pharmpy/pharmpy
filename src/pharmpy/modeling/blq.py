@@ -3,7 +3,7 @@
 """
 from typing import Literal, Optional
 
-from pharmpy.basic import Expr, BooleanExpr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.internals.fn.type import check_list

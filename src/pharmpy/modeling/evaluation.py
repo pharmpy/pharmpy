@@ -2,10 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Mapping, Optional, Union
 
-from pharmpy.basic import Expr
+from pharmpy.basic import Expr, TExpr
 from pharmpy.internals.expr.eval import eval_expr
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Model
 
 from .expressions import (

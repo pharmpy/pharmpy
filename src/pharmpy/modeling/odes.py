@@ -5,7 +5,6 @@ from typing import Literal, Mapping, Set, Union
 
 from pharmpy.basic import Expr, TExpr
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.unicode import bracket
 from pharmpy.model import (
     Assignment,
@@ -1098,7 +1097,9 @@ def add_lag_time(model: Model):
         )
     if old_lag_time:
         model = model.replace(
-            statements=model.statements.remove_symbol_definitions(old_lag_time.free_symbols, model.statements.ode_system)
+            statements=model.statements.remove_symbol_definitions(
+                old_lag_time.free_symbols, model.statements.ode_system
+            )
         )
         model = remove_unused_parameters_and_rvs(model)
     else:
@@ -2406,9 +2407,7 @@ def has_linear_odes_with_real_eigenvalues(model: Model):
     return True
 
 
-def get_initial_conditions(
-    model: Model, dosing: bool = False
-) -> Mapping[Expr, Expr]:
+def get_initial_conditions(model: Model, dosing: bool = False) -> Mapping[Expr, Expr]:
     """Get initial conditions for the ode system
 
     Default initial conditions at t=0 for amounts is 0
@@ -2546,9 +2545,7 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
     return odes.zero_order_inputs
 
 
-def set_zero_order_input(
-    model: Model, compartment: str, expression: Union[TExpr]
-) -> Model:
+def set_zero_order_input(model: Model, compartment: str, expression: Union[TExpr]) -> Model:
     """Set a zero order input for the ode system
 
     If the zero order input is already set it will be updated.

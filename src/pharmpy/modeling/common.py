@@ -6,7 +6,7 @@ import importlib
 import re
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Literal, Optional, Union
+from typing import Dict, Literal, Optional, Union
 
 import pharmpy.config as config
 from pharmpy.basic import Expr, TSymbol
@@ -472,9 +472,7 @@ def print_model_symbols(model: Model) -> None:
     etas = [Expr.symbol(name).unicode() for name in model.random_variables.etas.names]
     epsilons = [Expr.symbol(name).unicode() for name in model.random_variables.epsilons.names]
     omegas = [Expr.symbol(n).unicode() for n in model.random_variables.etas.parameter_names]
-    sigmas = [
-        Expr.symbol(n).unicode() for n in model.random_variables.epsilons.parameter_names
-    ]
+    sigmas = [Expr.symbol(n).unicode() for n in model.random_variables.epsilons.parameter_names]
     thetas = []
     for param in model.parameters:
         if param.name not in model.random_variables.parameter_names:
@@ -603,9 +601,7 @@ def _get_unused_parameters_and_rvs(statements, parameters, random_variables):
     return new_rvs, Parameters.create(new_params)
 
 
-def rename_symbols(
-    model: Model, new_names: Dict[TSymbol, TSymbol]
-):
+def rename_symbols(model: Model, new_names: Dict[TSymbol, TSymbol]):
     """Rename symbols in the model
 
     Make sure that no name clash occur.

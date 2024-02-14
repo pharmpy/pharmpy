@@ -76,7 +76,11 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     for s in model.statements:
         if isinstance(s, Assignment):
             expr = sympy.expand(
-                subs(prune(pruning_predicate, sympy.sympify(s.expression)), input_units, simultaneous=True)
+                subs(
+                    prune(pruning_predicate, sympy.sympify(s.expression)),
+                    input_units,
+                    simultaneous=True,
+                )
             )
             if expr.is_Add:
                 for term in expr.args:

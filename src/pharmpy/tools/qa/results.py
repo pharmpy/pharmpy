@@ -5,9 +5,9 @@ from typing import Any, Optional
 import yaml
 
 import pharmpy.tools.psn_helpers as psn_helpers
+from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.basic import Expr
 from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results
 from pharmpy.workflows import ModelEntry

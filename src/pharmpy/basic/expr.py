@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+from deps.sympy_printing import pretty
+
 from pharmpy.deps import symengine, sympy
 
-from sympy.printing.pretty.pretty import PrettyPrinter
 
-class ExprPrinter(PrettyPrinter):
+class ExprPrinter(pretty.PrettyPrinter):
     def __init__(self):
-        super().__init__(settings={'wrap_line':False, 'use_unicode':True})
+        super().__init__(settings={'wrap_line': False, 'use_unicode': True})
 
     def _print_Equality(self, e):
         # symengine can turn some Equations around
@@ -42,7 +43,7 @@ class Expr:
         if isinstance(self._expr, symengine.Piecewise):
             # Due to https://github.com/symengine/symengine.py/issues/469
             x = self._expr.args
-            args = tuple((Expr(x[i]), BooleanExpr(x[i + 1]))  for i in range(0, len(x), 2))
+            args = tuple((Expr(x[i]), BooleanExpr(x[i + 1])) for i in range(0, len(x), 2))
         else:
             args = [Expr(a) for a in self._expr.args]
         return tuple(args)
@@ -169,7 +170,11 @@ class Expr:
 
     def is_symbol(self):
         # NOTE: The concept of a symbol is wider than that of sympy and symengine
-        return self._expr.is_Symbol or self._expr.is_Derivative or isinstance(self._expr, symengine.FunctionSymbol)
+        return (
+            self._expr.is_Symbol
+            or self._expr.is_Derivative
+            or isinstance(self._expr, symengine.FunctionSymbol)
+        )
 
     def is_integer(self):
         return isinstance(self._expr, symengine.Integer)

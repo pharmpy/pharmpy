@@ -4,7 +4,7 @@ import math
 from itertools import chain
 from typing import TYPE_CHECKING, Iterable, Literal, Optional, Union
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
@@ -355,7 +355,11 @@ def calculate_individual_parameter_statistics(
 
         for _, row in parameters_samples.iterrows():
             parameters = xreplace_dict(row)
-            local_sampling_rvs = list(subs_distributions(distributions, {Expr(key): float(val) for key, val in parameters.items()})) + [
+            local_sampling_rvs = list(
+                subs_distributions(
+                    distributions, {Expr(key): float(val) for key, val in parameters.items()}
+                )
+            ) + [
                 ((key,), ConstantDistribution(value))
                 for key, value in parameters.items()
                 if key in all_parameter_free_symbols

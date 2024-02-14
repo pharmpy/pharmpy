@@ -26,7 +26,6 @@ from pharmpy.internals.expr.funcs import (
     PSQRT,
     PZR,
 )
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.parse import AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.tree import Interpreter
 from pharmpy.internals.sequence.lcs import diff

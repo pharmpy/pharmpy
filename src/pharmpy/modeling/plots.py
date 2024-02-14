@@ -2,8 +2,8 @@ import re
 import warnings
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
-from pharmpy.basic import Expr
 import pharmpy.visualization
+from pharmpy.basic import Expr
 from pharmpy.model import Assignment, Model
 
 from .data import get_observations
