@@ -68,9 +68,8 @@ def get_observation_expression(model: Model):
     >>> from pharmpy.modeling import load_example_model, get_observation_expression
     >>> model = load_example_model("pheno_linear")
     >>> expr = get_observation_expression(model)
-    >>> expr.unicode()
-    D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂
-    ) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
+    >>> print(expr.unicode())
+    D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """
     stats = model.statements
     # FIXME: Handle other DVs
