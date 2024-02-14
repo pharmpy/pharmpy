@@ -707,5 +707,5 @@ def test_get_dv_symbol(testdata, load_model_for_test):
         get_dv_symbol(model, "FLUMOX")
     with pytest.raises(ValueError):
         get_dv_symbol(model, Expr.symbol("SPANNER"))
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         get_dv_symbol(model, 3.4)

@@ -166,7 +166,7 @@ class Expr:
 
     def is_symbol(self):
         # NOTE: The concept of a symbol is wider than that of sympy and symengine
-        return self._expr.is_Symbol or self._expr.is_Derivative or self._expr.is_Function
+        return self._expr.is_Symbol or self._expr.is_Derivative or isinstance(self._expr, symengine.FunctionSymbol)
 
     def is_integer(self):
         return isinstance(self._expr, symengine.Integer)
