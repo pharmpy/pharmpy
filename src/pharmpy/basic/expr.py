@@ -125,6 +125,9 @@ class Expr:
     def __int__(self):
         return int(self._expr)
 
+    def __bool__(self):
+        return self._expr != 0
+
     def __repr__(self):
         return repr(sympy.sympify(self._expr))
 
