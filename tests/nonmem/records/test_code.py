@@ -423,8 +423,8 @@ def test_single_assignments(parser, buf, sym, expression):
         (
             '$PRED\nIF (X.EQ.0) THEN\nY = 23\nELSE\nY = 7\nZ = 9\nEND IF',
             [
-                (S('Z'), 9),
                 (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (7, True))),
+                (S('Z'), 9),
             ],
         ),
     ],
