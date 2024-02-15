@@ -1,7 +1,9 @@
 from __future__ import annotations
 
-from pharmpy.deps.sympy_printing import pretty
+from typing import Mapping
+
 from pharmpy.deps import symengine, sympy
+from pharmpy.deps.sympy_printing import pretty
 
 
 class ExprPrinter(pretty.PrettyPrinter):
@@ -44,8 +46,8 @@ class Expr:
             x = self._expr.args
             args = tuple((Expr(x[i]), BooleanExpr(x[i + 1])) for i in range(0, len(x), 2))
         else:
-            args = [Expr(a) for a in self._expr.args]
-        return tuple(args)
+            args = tuple(Expr(a) for a in self._expr.args)
+        return args
 
     def make_args(self, expr):
         return sympy.sympify(self._expr).make_args(sympy.sympify(expr))
@@ -55,61 +57,61 @@ class Expr:
         symbs = {Expr(a) for a in self._expr.free_symbols}
         return symbs
 
-    def subs(self, d):
+    def subs(self, d: Mapping[Expr, Expr]) -> Expr:
         return Expr(self._expr.subs(d))
 
-    def as_numer_denom(self):
+    def as_numer_denom(self) -> tuple[Expr, Expr]:
         numer, denom = sympy.sympify(self._expr).as_numer_denom()
         return Expr(numer), Expr(denom)
 
-    def simplify(self):
+    def simplify(self) -> Expr:
         return Expr(sympy.sympify(self._expr).simplify())
 
-    def expand(self):
+    def expand(self) -> Expr:
         # NOTE: the expression exp(x+y) will be expanded to
         #  exp(x)+exp(y) in sympy but kept as exp(x+y) in symengine
         return Expr(self._expr.expand())
 
-    def __add__(self, other):
+    def __add__(self, other) -> Expr:
         return Expr(self._expr + other)
 
-    def __radd__(self, other):
+    def __radd__(self, other) -> Expr:
         return Expr(other + self._expr)
 
-    def __sub__(self, other):
+    def __sub__(self, other) -> Expr:
         return Expr(self._expr - other)
 
-    def __rsub__(self, other):
+    def __rsub__(self, other) -> Expr:
         return Expr(other - self._expr)
 
-    def __mul__(self, other):
+    def __mul__(self, other) -> Expr:
         return Expr(self._expr * other)
 
-    def __rmul__(self, other):
+    def __rmul__(self, other) -> Expr:
         return Expr(other * self._expr)
 
-    def __truediv__(self, other):
+    def __truediv__(self, other) -> Expr:
         return Expr(self._expr / other)
 
-    def __rtruediv__(self, other):
+    def __rtruediv__(self, other) -> Expr:
         return Expr(other / self._expr)
 
-    def __pow__(self, other):
+    def __pow__(self, other) -> Expr:
         return Expr(self._expr**other)
 
-    def __rpow__(self, other):
+    def __rpow__(self, other) -> Expr:
         return Expr(other**self._expr)
 
-    def __neg__(self):
+    def __neg__(self) -> Expr:
         return Expr(-self._expr)
 
-    def __pos__(self):
+    def __pos__(self) -> Expr:
         return Expr(self._expr)
 
-    def __abs__(self):
+    def __abs__(self) -> Expr:
         return Expr(abs(self._expr))
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         return self._expr == other
 
     def __hash__(self):
@@ -127,43 +129,44 @@ class Expr:
     def __repr__(self):
         return repr(sympy.sympify(self._expr))
 
-    def serialize(self):
+    def serialize(self) -> str:
         return sympy.srepr(sympy.sympify(self._expr))
 
     @classmethod
-    def deserialize(cls, s):
+    def deserialize(cls, s: str) -> Expr:
         return cls(sympy.parse_expr(s))
 
-    def unicode(self):
-        return sympy.pretty(sympy.sympify(self._expr), wrap_line=False, use_unicode=True)
+    def unicode(self) -> str:
+        s = sympy.pretty(sympy.sympify(self._expr), wrap_line=False, use_unicode=True)
+        return s
 
-    def latex(self):
+    def latex(self) -> str:
         expr = sympy.sympify(self._expr)
         s = sympy.latex(expr, mul_symbol='dot')
         return s
 
-    def _sympy_(self):
+    def _sympy_(self) -> sympy.Expr:
         return sympy.sympify(self._expr)
 
-    def _symengine_(self):
+    def _symengine_(self) -> symengine.Expr:
         return self._expr
 
-    def exp(self):
+    def exp(self) -> Expr:
         return Expr(symengine.exp(self._expr))
 
-    def log(self):
+    def log(self) -> Expr:
         return Expr(symengine.log(self._expr))
 
-    def sqrt(self):
+    def sqrt(self) -> Expr:
         return Expr(symengine.sqrt(self._expr))
 
-    def sign(self):
+    def sign(self) -> Expr:
         return Expr(symengine.sign(self._expr))
 
-    def diff(self, x):
+    def diff(self, x) -> Expr:
         return Expr(self._expr.diff(x._expr))
 
-    def is_symbol(self):
+    def is_symbol(self) -> bool:
         # NOTE: The concept of a symbol is wider than that of sympy and symengine
         return (
             self._expr.is_Symbol
@@ -171,31 +174,31 @@ class Expr:
             or isinstance(self._expr, symengine.FunctionSymbol)
         )
 
-    def is_integer(self):
+    def is_integer(self) -> bool:
         return isinstance(self._expr, symengine.Integer)
 
-    def is_number(self):
+    def is_number(self) -> bool:
         return isinstance(self._expr, symengine.Number)
 
-    def is_mul(self):
+    def is_mul(self) -> bool:
         return self._expr.func == symengine.Mul
 
-    def is_add(self):
+    def is_add(self) -> bool:
         return self._expr.func == symengine.Add
 
-    def is_exp(self):
+    def is_exp(self) -> bool:
         return self.is_pow() and self._expr.args[0] == symengine.E
 
-    def is_pow(self):
+    def is_pow(self) -> bool:
         return isinstance(self._expr, symengine.Pow)
 
-    def is_function(self):
+    def is_function(self) -> bool:
         return self._expr.is_Function
 
-    def is_derivative(self):
+    def is_derivative(self) -> bool:
         return self._expr.func == symengine.Derivative
 
-    def is_piecewise(self):
+    def is_piecewise(self) -> bool:
         return isinstance(self._expr, symengine.Piecewise)
 
     def is_nonnegative(self) -> bool | None:
@@ -221,38 +224,34 @@ class Expr:
         return cls(symb)
 
     @classmethod
-    def integer(cls, value: int):
+    def integer(cls, value: int) -> Expr:
         n = symengine.Integer(value)
         return cls(n)
 
     @classmethod
-    def float(cls, value: float):
+    def float(cls, value: float) -> Expr:
         x = symengine.RealDouble(value)
         return cls(x)
 
     @classmethod
-    def derivative(cls, f, x):
+    def derivative(cls, f, x) -> Expr:
         dfdx = symengine.Derivative(f, x)
         return cls(dfdx)
 
     @classmethod
-    def function(cls, f: str, x):
+    def function(cls, f: str, x) -> Expr:
         func = symengine.Function(f)(x)
         return cls(func)
 
     @classmethod
-    def piecewise(cls, *args):
+    def piecewise(cls, *args) -> Expr:
         pw = symengine.Piecewise(*args)
         return cls(pw)
 
-    @classmethod
-    def wild(cls, name: str):
-        return symengine.Wild(name)
-
-    def __gt__(self, other):
+    def __gt__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Gt(self._expr, other))
 
-    def __le__(self, other):
+    def __le__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Le(self._expr, other))
 
 
