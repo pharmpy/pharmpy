@@ -20,6 +20,7 @@ from typing import (
     overload,
 )
 
+from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
@@ -31,12 +32,11 @@ from .distributions.symbolic import Distribution, JointNormalDistribution, Norma
 
 if TYPE_CHECKING:
     import numpy as np
-    import symengine
     import sympy
     import sympy.stats as sympy_stats
 else:
     from pharmpy.deps import numpy as np
-    from pharmpy.deps import symengine, sympy, sympy_stats
+    from pharmpy.deps import sympy, sympy_stats
 
 
 def _create_rng(seed: Optional[Union[int, np.random.Generator]] = None) -> np.random.Generator:
@@ -432,8 +432,8 @@ class RandomVariables(CollectionsSequence, Immutable):
             dists.append(dist)
         return cls(dists=tuple(dists), eta_levels=eta_levels, epsilon_levels=epsilon_levels)
 
-    def _lookup_rv(self, ind: Union[sympy.Expr, str]):
-        if isinstance(ind, sympy.Symbol):
+    def _lookup_rv(self, ind: TSymbol):
+        if isinstance(ind, Expr) and ind.is_symbol():
             ind = ind.name
         if isinstance(ind, str):
             for i, dist in enumerate(self._dists):
@@ -442,13 +442,11 @@ class RandomVariables(CollectionsSequence, Immutable):
         raise KeyError(f'Could not find {ind} in RandomVariables')
 
     @overload
-    def __getitem__(self, ind: Union[int, str, sympy.Expr]) -> Distribution:
+    def __getitem__(self, ind: Union[int, str, Expr]) -> Distribution:
         ...
 
     @overload
-    def __getitem__(
-        self, ind: Union[slice, Container[Union[str, sympy.Symbol]]]
-    ) -> RandomVariables:
+    def __getitem__(self, ind: Union[slice, Container[Union[str, Expr]]]) -> RandomVariables:
         ...
 
     def __getitem__(self, ind):
@@ -460,13 +458,13 @@ class RandomVariables(CollectionsSequence, Immutable):
             )
         elif not isinstance(ind, str) and isinstance(ind, CollectionsContainer):
             remove = [
-                name for name in self.names if not ((name in ind) or (sympy.Symbol(name) in ind))
+                name for name in self.names if not ((name in ind) or (Expr.symbol(name) in ind))
             ]
             split = self.unjoin(remove)
             keep = tuple(
                 dist
                 for dist in split._dists
-                if dist.names[0] in ind or sympy.Symbol(dist.names[0]) in ind
+                if dist.names[0] in ind or Expr.symbol(dist.names[0]) in ind
             )
             return RandomVariables(keep, self._eta_levels, self._epsilon_levels)
         else:
@@ -486,9 +484,9 @@ class RandomVariables(CollectionsSequence, Immutable):
         return list(chain.from_iterable(dist.names for dist in self._dists))
 
     @property
-    def symbols(self) -> list[sympy.Symbol]:
+    def symbols(self) -> list[Expr]:
         """List with symbols for all random variables"""
-        return [sympy.Symbol(name) for name in self.names]
+        return [Expr.symbol(name) for name in self.names]
 
     @property
     def epsilons(self) -> RandomVariables:
@@ -527,7 +525,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
-    def free_symbols(self) -> Set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Set of free symbols for all random variables"""
         return set().union(*(dist.free_symbols for dist in self._dists))
 
@@ -553,20 +551,18 @@ class RandomVariables(CollectionsSequence, Immutable):
                         parameters.append(p)
         return [p.name for p in parameters]
 
-    def get_covariance(
-        self, rv1: Union[sympy.Symbol, str], rv2: Union[sympy.Symbol, str]
-    ) -> sympy.Expr:
+    def get_covariance(self, rv1: TSymbol, rv2: TSymbol) -> Expr:
         """Get covariance between two random variables"""
         _, dist1 = self._lookup_rv(rv1)
         _, dist2 = self._lookup_rv(rv2)
         if dist1 is not dist2:
-            return sympy.Integer(0)
+            return Expr.integer(0)
         else:
             name1 = rv1.name if not isinstance(rv1, str) else rv1
             name2 = rv2.name if not isinstance(rv2, str) else rv2
             return dist1.get_covariance(name1, name2)
 
-    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> RandomVariables:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> RandomVariables:
         """Substitute expressions
 
         Parameters
@@ -576,21 +572,19 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         Examples
         --------
-        >>> import sympy
+        >>> from pharmpy.basic import Expr
         >>> from pharmpy.model import RandomVariables, Parameter
         >>> omega = Parameter("OMEGA_CL", 0.1)
         >>> dist = NormalDistribution.create("IIV_CL", "IIV", 0, omega.symbol)
         >>> rvs = RandomVariables.create([dist])
-        >>> rvs.subs({omega.symbol: sympy.Symbol("OMEGA_NEW")})
+        >>> rvs.subs({omega.symbol: Expr.symbol("OMEGA_NEW")})
         IIV_CL ~ N(0, OMEGA_NEW)
 
         """
         new_dists = tuple(dist.subs(d) for dist in self._dists)
         return self.replace(dists=new_dists)
 
-    def unjoin(
-        self, inds: Union[str, sympy.Symbol, Iterable[Union[str, sympy.Symbol]]]
-    ) -> RandomVariables:
+    def unjoin(self, inds: Union[TSymbol, Iterable[TSymbol]]) -> RandomVariables:
         """Remove all covariances the random variables have with other random variables
 
         Parameters
@@ -615,7 +609,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         --------
         join
         """
-        if isinstance(inds, str) or isinstance(inds, sympy.Symbol):
+        if isinstance(inds, str) or isinstance(inds, Expr) and inds.is_symbol():
             inds = [inds]
         inds = [ind.name if not isinstance(ind, str) else ind for ind in inds]
 
@@ -629,9 +623,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                 for i, name in enumerate(dist.names):
                     if name in inds:  # unjoin  this
                         mean = dist.mean[i]
-                        assert isinstance(mean, sympy.Expr)
                         variance = dist.variance[i, i]
-                        assert isinstance(variance, sympy.Expr)
                         new = NormalDistribution(name, dist.level, mean, variance)
                         newdists.append(new)
                     elif first:  # first of the ones to keep
@@ -639,9 +631,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                         remove = [i for i, n in enumerate(dist.names) if n in inds]
                         if len(dist) - len(remove) == 1:
                             mean = dist.mean[i]
-                            assert isinstance(mean, sympy.Expr)
                             variance = dist.variance[i, i]
-                            assert isinstance(variance, sympy.Expr)
                             keep = NormalDistribution(name, dist.level, mean, variance)
                         else:
                             names = list(dist.names)
@@ -655,8 +645,8 @@ class RandomVariables(CollectionsSequence, Immutable):
                             keep = JointNormalDistribution(
                                 tuple(names),
                                 dist.level,
-                                sympy.ImmutableMatrix(mean),
-                                sympy.ImmutableMatrix(variance),
+                                Matrix(mean),
+                                Matrix(variance),
                             )
                 if keep is not None:
                     newdists.append(keep)
@@ -667,8 +657,8 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     def join(
         self,
-        inds: Collection[Union[str, sympy.Symbol]],
-        fill: Union[int, float, sympy.Expr] = 0,
+        inds: Collection[TSymbol],
+        fill: Union[int, float, Expr] = 0,
         name_template: Optional[str] = None,
         param_names: Optional[list[str]] = None,
     ) -> Tuple[RandomVariables, Dict[str, Tuple[str, str]]]:
@@ -736,8 +726,8 @@ class RandomVariables(CollectionsSequence, Immutable):
         joined_dist = JointNormalDistribution(
             tuple(names),
             joined_rvs[0].level,
-            sympy.ImmutableMatrix(means),
-            sympy.ImmutableMatrix(M),
+            Matrix(means),
+            Matrix(M),
         )
 
         unjoined_rvs = self.unjoin(inds)
@@ -766,13 +756,12 @@ class RandomVariables(CollectionsSequence, Immutable):
             if isinstance(dist, JointNormalDistribution):
                 symb_sigma = dist.variance
                 sigma = symb_sigma.subs(dict(parameter_values))
-                A = np.array(sigma).astype(np.float64)
+                A = sigma.to_numpy()
                 B = nearest_positive_semidefinite(A)
                 if B is not A:
                     for row in range(len(A)):
                         for col in range(row + 1):
                             elt = symb_sigma[row, col]
-                            assert isinstance(elt, sympy.Symbol)
                             nearest[elt.name] = B[row, col]
         return nearest
 
@@ -780,21 +769,14 @@ class RandomVariables(CollectionsSequence, Immutable):
         """Validate a dict or Series of parameter values
 
         Currently checks that all covariance matrices are positive semidefinite
-        use_cache for using symengine cached matrices
         """
         for dist in self._dists:
             if isinstance(dist, JointNormalDistribution):
-                sigma = dist._symengine_variance
-                replacement = {}
-                for param in dict(parameter_values):
-                    replacement[symengine.Symbol(param)] = parameter_values[param]
-                sigma = sigma.subs(replacement)
-                if not sigma.free_symbols:  # Cannot validate since missing params
-                    a = np.array(sigma).astype(np.float64)
-                    if not is_positive_semidefinite(a):
-                        return False
-                else:
-                    raise TypeError("Cannot validate parameters since all are not numeric")
+                sigma = dist.variance
+                sigma = sigma.subs(parameter_values)
+                a = sigma.to_numpy()
+                if not is_positive_semidefinite(a):
+                    return False
         return True
 
     def sample(
@@ -819,7 +801,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             _create_rng(rng),
         )
 
-    def _calc_covariance_matrix(self) -> Tuple[List[sympy.Expr], sympy.ImmutableMatrix, List[str]]:
+    def _calc_covariance_matrix(self) -> Tuple[List[Expr], Matrix, List[str]]:
         means = []
         names = []
         n = 0
@@ -842,7 +824,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                 col += 1
             else:
                 assert isinstance(dist, JointNormalDistribution)
-                means.extend(dist.mean)  # pyright: ignore [reportGeneralTypeIssues]
+                means.extend(dist.mean)
                 var = dist.variance
                 for i in range(var.rows):
                     for j in range(var.cols):
@@ -852,10 +834,10 @@ class RandomVariables(CollectionsSequence, Immutable):
         return means, M, names
 
     @property
-    def covariance_matrix(self) -> sympy.ImmutableMatrix:
+    def covariance_matrix(self) -> Matrix:
         """Covariance matrix of all random variables"""
         _, M, _ = self._calc_covariance_matrix()
-        return M
+        return Matrix(M)
 
     def __repr__(self):
         return '\n'.join(map(repr, self._dists))
@@ -879,12 +861,11 @@ class RandomVariables(CollectionsSequence, Immutable):
         for dist in self._dists:
             if isinstance(dist, JointNormalDistribution):
                 sigma_sym = dist.variance
-                sigma = np.array(sigma_sym.subs(values)).astype(np.float64)
+                sigma = sigma_sym.subs(values).to_numpy()
                 corr = cov2corr(sigma)
                 for i in range(sigma_sym.rows):
                     for j in range(sigma_sym.cols):
                         elt = sigma_sym[i, j]
-                        assert isinstance(elt, sympy.Symbol)
                         name = elt.name
                         if i != j:
                             newdict[name] = corr[i, j]
@@ -893,15 +874,15 @@ class RandomVariables(CollectionsSequence, Immutable):
             else:
                 assert isinstance(dist, NormalDistribution)
                 variance = dist.variance
-                if isinstance(variance, sympy.Symbol):
+                if variance.is_symbol():
                     name = variance.name
                 else:
                     raise NotImplementedError(
-                        "parameters_sdcorr only supports pure" " symbols as variances"
+                        "parameters_sdcorr only supports pure symbols as variances"
                     )
                 if name in newdict:
                     newdict[name] = float(
-                        np.sqrt(np.array(subs(variance, values)).astype(np.float64))
+                        np.sqrt(np.array(variance.subs(values)).astype(np.float64))
                     )
         return newdict
 
@@ -926,7 +907,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         return RandomVariables.create(rvs)
 
-    def replace_with_sympy_rvs(self, expr: sympy.Expr) -> sympy.Expr:
+    def replace_with_sympy_rvs(self, expr: Expr) -> sympy.Expr:
         """Replaces Pharmpy RVs in a Sympy expression with Sympy RVs
 
         Takes a Sympy expression and replaces all RVs with Sympy RVs, resulting expression
@@ -942,22 +923,20 @@ class RandomVariables(CollectionsSequence, Immutable):
         sympy.Expr
             Expression with replaced RVs
         """
-        rvs_in_expr = {
-            self[rv]  # pyright: ignore [reportGeneralTypeIssues]
-            for rv in expr.free_symbols.intersection(self.symbols)
-        }
+        rvs_in_expr = {self[rv] for rv in expr.free_symbols.intersection(self.symbols)}
         subs_dict = {}
         for i, rv in enumerate(rvs_in_expr):
             if isinstance(rv, JointNormalDistribution):
                 # sympy.stats.MultivariateNormal uses variance, sympy.stats.Normal takes std
                 dist = sympy_stats.MultivariateNormal(f'__rv{i}', rv.mean, rv.variance)
                 for j in range(0, len(rv.names)):
-                    subs_dict[rv.names[j]] = dist[j]  # pyright: ignore [reportGeneralTypeIssues]
+                    subs_dict[rv.names[j]] = dist[j]
             else:
                 subs_dict[rv.names[0]] = sympy_stats.Normal(
                     f'__rv{i}', rv.mean, sympy.sqrt(rv.variance)
                 )
-        return expr.subs(subs_dict)  # pyright: ignore [reportGeneralTypeIssues]
+        sympy_expr = sympy.sympify(expr).subs(subs_dict)
+        return sympy_expr
 
 
 def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):

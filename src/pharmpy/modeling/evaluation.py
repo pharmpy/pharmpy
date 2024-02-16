@@ -2,9 +2,8 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, List, Mapping, Optional, Union
 
+from pharmpy.basic import Expr, TExpr
 from pharmpy.internals.expr.eval import eval_expr
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Model
 
 from .expressions import (
@@ -45,7 +44,7 @@ class DataFrameMapping(Mapping['sympy.Symbol', 'np.ndarray']):
 
 def evaluate_expression(
     model: Model,
-    expression: Union[str, sympy.Expr],
+    expression: Union[str, TExpr],
     parameter_estimates: Optional[ParameterMap] = None,
 ):
     """Evaluate expression using model
@@ -59,7 +58,7 @@ def evaluate_expression(
     ----------
     model : Model
         Pharmpy model
-    expression : str or sympy expression
+    expression : str or TExpr
         Expression to evaluate
     parameter_estimates : pd.Series
         Parameter estimates to use instead of initial estimates
@@ -91,11 +90,11 @@ def evaluate_expression(
     Length: 744, dtype: float64
 
     """
-    expression = parse_expr(expression)
+    expression = Expr(expression)
     full_expr = model.statements.before_odes.full_expression(expression)
     inits = model.parameters.inits
     mapping = inits if parameter_estimates is None else {**inits, **parameter_estimates}
-    expr = subs(full_expr, mapping)
+    expr = full_expr.subs(mapping)
 
     df = model.dataset
 
@@ -156,7 +155,7 @@ def evaluate_population_prediction(
     """
     y = get_population_prediction_expression(model)
     mapping = model.parameters.inits if parameters is None else parameters
-    expr = subs(y, mapping)
+    expr = y.subs(mapping)
 
     df = model.dataset if dataset is None else dataset
 
@@ -225,7 +224,7 @@ def evaluate_individual_prediction(
 
     y = get_individual_prediction_expression(model)
     mapping = model.parameters.inits if parameters is None else parameters
-    y = subs(y, mapping)
+    y = y.subs(mapping)
 
     df = model.dataset if dataset is None else dataset
 
@@ -249,7 +248,7 @@ def evaluate_individual_prediction(
 
 def _replace_parameters(model: Model, y: List[sympy.Expr], parameters: Optional[ParameterMap]):
     mapping = model.parameters.inits if parameters is None else parameters
-    return [subs(x, mapping) for x in y]
+    return [x.subs(mapping) for x in y]
 
 
 def evaluate_eta_gradient(
@@ -406,8 +405,8 @@ def evaluate_epsilon_gradient(
     y = calculate_epsilon_gradient_expression(model)
     y = _replace_parameters(model, y, parameters)
     eps_names = model.random_variables.epsilons.names
-    repl = {sympy.Symbol(eps): 0 for eps in eps_names}
-    y = [subs(x, repl) for x in y]
+    repl = {Expr.symbol(eps): 0 for eps in eps_names}
+    y = [x.subs(repl) for x in y]
 
     df = model.dataset if dataset is None else dataset
 
@@ -490,8 +489,8 @@ def evaluate_weighted_residuals(
     parameters = model.parameters.inits if parameters is None else parameters
     omega = omega.subs(parameters)
     sigma = sigma.subs(parameters)
-    omega = np.float64(omega)
-    sigma = np.float64(sigma)
+    omega = omega.to_numpy()
+    sigma = sigma.to_numpy()
     df = model.dataset if dataset is None else dataset
     # FIXME: Could have option to gradients to set all etas 0
     etas = pd.DataFrame(

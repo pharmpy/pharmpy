@@ -9,7 +9,7 @@ that are found in the conversion software
 import warnings
 
 import pharmpy.model
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
 from pharmpy.modeling import (
     has_additive_error_model,
     has_combined_error_model,
@@ -298,7 +298,7 @@ def change_rvs_same(
     for rv in rvs:
         current_var = []
 
-        if isinstance(rv.variance, sympy.Symbol):
+        if isinstance(rv.variance, Expr):
             variance = [rv.variance]
         else:
             variance = rv.variance
@@ -306,10 +306,10 @@ def change_rvs_same(
         for var in variance:
             if var in checked_variance:
                 n = 1
-                new_var = sympy.Symbol(var.name + "_" + f'{n}')
+                new_var = Expr.symbol(var.name + "_" + f'{n}')
                 while new_var in checked_variance:
                     n += 1
-                    new_var = sympy.Symbol(var.name + "_" + f'{n}')
+                    new_var = Expr.symbol(var.name + "_" + f'{n}')
 
                 var_to_add[new_var] = var
 
@@ -336,7 +336,7 @@ def change_rvs_same(
             for el in old_to_new:
                 old = el[1]
                 new = rvs_and_var[el]
-                new_variance = new_rv.variance.replace(old, new)
+                new_variance = new_rv.variance.subs({old: new})
                 new_rv = new_rv.replace(variance=new_variance)
             all_rvs = model.random_variables
 

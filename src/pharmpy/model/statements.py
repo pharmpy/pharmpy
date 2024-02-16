@@ -6,12 +6,11 @@ from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Set, Tuple, Union, overload
 
 import pharmpy.internals.unicode as unicode
+from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
+from pharmpy.deps import symengine
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
-from pharmpy.internals.expr.matrix import is_zero_matrix
 from pharmpy.internals.expr.ode import canonical_ode_rhs
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.immutable import Immutable, cache_method
 
 if TYPE_CHECKING:
@@ -40,17 +39,17 @@ class Statement(Immutable):
             return Statements(tuple(other) + (self,))
 
     @abstractmethod
-    def subs(self, substitutions: Mapping[sympy.Expr, sympy.Expr]) -> Statement:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Statement:
         pass
 
     @property
     @abstractmethod
-    def free_symbols(self) -> Set[sympy.Expr]:
+    def free_symbols(self) -> Set[Expr]:
         pass
 
     @property
     @abstractmethod
-    def rhs_symbols(self) -> Set[sympy.Expr]:
+    def rhs_symbols(self) -> Set[Expr]:
         pass
 
 
@@ -62,40 +61,25 @@ class Assignment(Statement):
 
     Parameters
     ----------
-    symbol : sympy.Symbol or str
-        Symbol of statement
-    expression : sympy.Expr
+    symbol : Expr
+        Symbol of assignment
+    expression : Expr
         Expression of assignment
     """
 
-    def __init__(
-        self, symbol: Union[sympy.Symbol, sympy.Function, sympy.Derivative], expression: sympy.Expr
-    ):
+    def __init__(self, symbol: Expr, expression: Expr):
         self._symbol = symbol
         self._expression = expression
 
     @classmethod
-    def create(
-        cls,
-        symbol: Union[sympy.Symbol, sympy.Function, sympy.Derivative, str],
-        expression: Union[sympy.Expr, int, float, str],
-    ) -> Assignment:
-        if isinstance(symbol, str):
-            symbol = sympy.Symbol(symbol)
-        if not (symbol.is_Symbol or symbol.is_Derivative or symbol.is_Function):
+    def create(cls, symbol: TExpr, expression: TExpr) -> Assignment:
+        symbol = Expr(symbol)
+        if not symbol.is_symbol:
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
-        if isinstance(expression, str):
-            expression = parse_expr(expression)
-        elif isinstance(expression, float):
-            expression = sympy.Float(expression)
-        elif isinstance(expression, int):
-            expression = sympy.Integer(expression)
-        if expression.is_Piecewise:
-            # To avoid nested piecewises
-            expression = sympy.piecewise_fold(
-                expression
-            )  # pyright: ignore [reportGeneralTypeIssues]
-        return cls(symbol, expression)  # pyright: ignore [reportGeneralTypeIssues]
+        expression = Expr(expression)
+        # To avoid nested piecewises
+        expression = expression.piecewise_fold()
+        return cls(symbol, expression)
 
     def replace(self, **kwargs):
         symbol = kwargs.get('symbol', self._symbol)
@@ -103,16 +87,16 @@ class Assignment(Statement):
         return Assignment.create(symbol, expression)
 
     @property
-    def symbol(self) -> Union[sympy.Symbol, sympy.Function, sympy.Derivative]:
+    def symbol(self) -> Expr:
         """Symbol of statement"""
         return self._symbol
 
     @property
-    def expression(self) -> sympy.Expr:
+    def expression(self) -> Expr:
         """Expression of assignment"""
         return self._expression
 
-    def subs(self, substitutions: Mapping[sympy.Expr, sympy.Expr]) -> Assignment:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Assignment:
         """Substitute expressions or symbols in assignment
 
         Parameters
@@ -136,21 +120,13 @@ class Assignment(Statement):
         CL = ETA_CL⋅WGT + POP_CL
 
         """
-        symbol = subs(self.symbol, substitutions, simultaneous=True)
-        assert (
-            isinstance(symbol, sympy.Symbol)
-            or isinstance(symbol, sympy.Derivative)
-            or isinstance(symbol, sympy.Function)
-        )
-        expression = subs(self.expression, substitutions, simultaneous=True)
-        if expression.is_Piecewise:
-            # To avoid nested piecewises
-            expression = sympy.piecewise_fold(expression)
-            assert isinstance(expression, sympy.Expr)
+        symbol = self.symbol.subs(substitutions)
+        expression = self.expression.subs(substitutions)
+        expression = expression.piecewise_fold()
         return Assignment(symbol, expression)
 
     @property
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Get set of all free symbols in the assignment
 
         Note that the left hand side symbol will be in the set
@@ -165,10 +141,10 @@ class Assignment(Statement):
         """
         symbols = {self.symbol}
         symbols |= self.expression.free_symbols
-        return symbols  # pyright: ignore [reportGeneralTypeIssues]
+        return symbols
 
     @property
-    def rhs_symbols(self) -> set[sympy.Expr]:
+    def rhs_symbols(self) -> set[Expr]:
         """Get set of all free symbols in the right hand side expression
 
         Examples
@@ -179,13 +155,13 @@ class Assignment(Statement):
         {ETA_CL, POP_CL}
 
         """
-        prefuncs = self._expression.atoms(sympy.Function)
+        prefuncs = self._expression._sympy_().atoms(sympy.Function)
         from sympy.core.function import AppliedUndef
 
         # Allow applied undefined functions
-        funcs = {f for f in prefuncs if isinstance(f, AppliedUndef)}
+        funcs = {Expr(f) for f in prefuncs if isinstance(f, AppliedUndef)}
         symbols = self._expression.free_symbols
-        return funcs | symbols  # pyright: ignore [reportGeneralTypeIssues]
+        return funcs | symbols
 
     def __eq__(self, other):
         if hash(self) != hash(other):
@@ -198,25 +174,25 @@ class Assignment(Statement):
 
     @cache_method
     def __hash__(self):
-        return hash((self.symbol, self.expression))
+        return hash((self._symbol, self._expression))
 
     def to_dict(self) -> dict[str, Any]:
         return {
             'class': 'Assignment',
-            'symbol': sympy.srepr(self.symbol),
-            'expression': sympy.srepr(self.expression),
+            'symbol': self._symbol.serialize(),
+            'expression': self._expression.serialize(),
         }
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Assignment:
         return cls(
-            symbol=sympy.parse_expr(d['symbol']), expression=sympy.parse_expr(d['expression'])
+            symbol=Expr.deserialize(d['symbol']), expression=Expr.deserialize(d['expression'])
         )
 
     def __repr__(self):
-        expression = sympy.pretty(self.expression)
+        expression = self._expression.unicode()
         lines = [line.rstrip() for line in expression.split('\n')]
-        definition = f'{sympy.pretty(self.symbol)} = '
+        definition = f'{self._symbol.unicode()} = '
         s = ''
         for line in lines:
             if line == lines[-1]:
@@ -226,8 +202,8 @@ class Assignment(Statement):
         return s.rstrip()
 
     def _repr_latex_(self):
-        sym = sympy.latex(self.symbol)
-        expr = sympy.latex(self.expression, mul_symbol='dot')
+        sym = self._symbol.latex()
+        expr = self._expression.latex()
         return f'${sym} = {expr}$'
 
 
@@ -309,9 +285,7 @@ class CompartmentalSystemBuilder:
         """
         self._g.remove_node(compartment)
 
-    def add_flow(
-        self, source: Compartment, destination: CompartmentBase, rate: Union[sympy.Expr, str]
-    ) -> None:
+    def add_flow(self, source: Compartment, destination: CompartmentBase, rate: TExpr) -> None:
         """Add flow between two compartments
 
         Parameters
@@ -333,7 +307,7 @@ class CompartmentalSystemBuilder:
         >>> cb.add_compartment(central)
         >>> cb.add_flow(depot, central, "KA")
         """
-        self._g.add_edge(source, destination, rate=parse_expr(rate))
+        self._g.add_edge(source, destination, rate=Expr(rate))
 
     def remove_flow(self, source: Compartment, destination: Compartment) -> None:
         """Remove flow between two compartments
@@ -442,7 +416,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
-    def set_lag_time(self, compartment: Compartment, lag_time: sympy.Expr) -> Compartment:
+    def set_lag_time(self, compartment: Compartment, lag_time: TExpr) -> Compartment:
         """Set lag time of compartment
 
         Parameters
@@ -462,9 +436,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
-    def set_bioavailability(
-        self, compartment: Compartment, bioavailability: sympy.Expr
-    ) -> Compartment:
+    def set_bioavailability(self, compartment: Compartment, bioavailability: TExpr) -> Compartment:
         """Set bioavailability of compartment
 
         Parameters
@@ -484,7 +456,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
-    def set_input(self, compartment: Compartment, input: sympy.Expr) -> Compartment:
+    def set_input(self, compartment: Compartment, input: TExpr) -> Compartment:
         """Set zero order input of compartment
 
         Parameters
@@ -510,7 +482,8 @@ class CompartmentalSystemBuilder:
                 return comp
 
 
-def _is_positive(expr: sympy.Expr) -> bool:
+def _is_positive(expr: Expr) -> bool:
+    expr = sympy.sympify(expr)
     return (
         sympy.ask(
             sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
@@ -529,13 +502,14 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
     names : func to compartment name map
     """
 
+    eqs = [sympy.sympify(eq) for eq in eqs]
     cb = CompartmentalSystemBuilder()
     compartments = {}
     concentrations = set()
     for eq in eqs:
         A = eq.lhs.args[0]
         concentrations.add(A)
-        name = names[A.func]
+        name = names[Expr(A)]
         comp = Compartment.create(name)
         cb.add_compartment(comp)
         compartments[name] = comp
@@ -563,16 +537,16 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                                 for eq_2 in eqs:
                                     if eq_2.lhs.args[0].name == second_comp.name:
                                         if -term in sympy.Add.make_args(eq_2.rhs.expand()):
-                                            from_comp = compartments[names[second_comp.func]]
-                                            to_comp = compartments[names[eq.lhs.args[0].func]]
+                                            from_comp = compartments[names[Expr(second_comp)]]
+                                            to_comp = compartments[names[Expr(eq.lhs.args[0])]]
                     else:
                         # Find matching term to determine if flow is between
                         # compartments or not
                         if _is_positive(term):
                             for eq_2 in eqs:
                                 if -term in sympy.Add.make_args(eq_2.rhs.expand()):
-                                    from_comp = compartments[names[eq_2.lhs.args[0].func]]
-                                    to_comp = compartments[names[eq.lhs.args[0].func]]
+                                    from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
+                                    to_comp = compartments[names[Expr(eq.lhs.args[0])]]
 
                     if from_comp is not None and to_comp is not None:
                         # FIXME: Get current flow from builder instead?
@@ -603,7 +577,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                 else:
                     o = o + term
             comp_func = eq.lhs.args[0]
-            from_comp = compartments[names[comp_func.func]]
+            from_comp = compartments[names[Expr(comp_func)]]
             if o != 0:
                 cb.add_flow(from_comp, output, -o / comp_func)
             if i != 0:
@@ -645,7 +619,7 @@ class CompartmentalSystem(Statement):
         self,
         builder: Optional[CompartmentalSystemBuilder] = None,
         graph=None,
-        t: sympy.Symbol = sympy.Symbol('t'),
+        t: Expr = Expr.symbol('t'),
     ):
         if builder is not None:
             self._g = nx.freeze(builder._g.copy())
@@ -659,7 +633,7 @@ class CompartmentalSystem(Statement):
         builder: Optional[CompartmentalSystemBuilder] = None,
         graph=None,
         eqs=None,
-        t: sympy.Symbol = sympy.Symbol('t'),
+        t: Expr = Expr.symbol('t'),
     ) -> CompartmentalSystem:
         numargs = (
             (0 if builder is None else 1) + (0 if graph is None else 1) + (0 if eqs is None else 1)
@@ -670,7 +644,7 @@ class CompartmentalSystem(Statement):
             )
         if eqs is not None:
             pass
-        t = sympy.sympify(t)
+        t = Expr(t)
         return cls(builder=builder, graph=graph, t=t)
 
     def replace(self, **kwargs) -> CompartmentalSystem:
@@ -683,22 +657,25 @@ class CompartmentalSystem(Statement):
         return CompartmentalSystem.create(builder=builder, graph=g, t=t)
 
     @property
-    def t(self) -> sympy.Symbol:
+    def t(self) -> Expr:
         """Independent variable of CompartmentalSystem"""
         return self._t
 
     @property
-    def eqs(self) -> Tuple[sympy.Eq, ...]:
+    def eqs(self) -> tuple[sympy.Eq, ...]:
         """Tuple of equations"""
-        amount_funcs = sympy.Matrix(list(self.amounts))
-        derivatives = sympy.Matrix([sympy.Derivative(fn, self.t) for fn in amount_funcs])
+        amount_funcs = Matrix(list(self.amounts))
+        derivatives = Matrix([Expr.derivative(fn, self.t) for fn in amount_funcs])
         inputs = self.zero_order_inputs
         a = self.compartmental_matrix @ amount_funcs + inputs
-        eqs = [sympy.Eq(lhs, canonical_ode_rhs(rhs)) for lhs, rhs in zip(derivatives, a)]
+        eqs = [
+            BooleanExpr(sympy.Eq(lhs, canonical_ode_rhs(rhs._sympy_())))
+            for lhs, rhs in zip(derivatives, a)
+        ]
         return tuple(eqs)
 
     @property
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Get set of all free symbols in the compartmental system
 
         Returns
@@ -713,7 +690,7 @@ class CompartmentalSystem(Statement):
         >>> model.statements.ode_system.free_symbols  # doctest: +SKIP
         {AMT, CL, V, t}
         """
-        free = {sympy.Symbol('t')}
+        free = {Expr.symbol('t')}
         for _, _, rate in self._g.edges.data('rate'):
             free |= rate.free_symbols
         for node in _comps(self._g):
@@ -721,7 +698,7 @@ class CompartmentalSystem(Statement):
         return free
 
     @property
-    def rhs_symbols(self) -> set[sympy.Expr]:
+    def rhs_symbols(self) -> set[Expr]:
         """Get set of all free symbols in the right hand side expressions
 
         Returns
@@ -738,7 +715,7 @@ class CompartmentalSystem(Statement):
         """
         return self.free_symbols  # This works currently
 
-    def subs(self, substitutions: Mapping[sympy.Expr, sympy.Expr]) -> CompartmentalSystem:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> CompartmentalSystem:
         """Substitute expressions or symbols in ODE system
 
         Examples
@@ -753,8 +730,7 @@ class CompartmentalSystem(Statement):
         """
         cb = CompartmentalSystemBuilder(self)
         for u, v, rate in cb._g.edges.data('rate'):
-            assert isinstance(rate, sympy.Expr)
-            rate_sub = subs(rate, substitutions, simultaneous=True)
+            rate_sub = rate.subs(substitutions)
             cb._g.edges[u, v]['rate'] = rate_sub
         mapping = {comp: comp.subs(substitutions) for comp in _comps(self._g)}
         nx.relabel_nodes(cb._g, mapping, copy=False)
@@ -800,14 +776,14 @@ class CompartmentalSystem(Statement):
         for from_comp, to_comp, rate in self._g.edges.data('rate'):
             from_n = comps.index(from_comp)
             to_n = comps.index(to_comp)
-            edge = (from_n, to_n, sympy.srepr(rate))
+            edge = (from_n, to_n, rate.serialize())
             edges.append(edge)
 
         d = {
             'class': 'CompartmentalSystem',
             'compartments': comps_dicts,
             'rates': edges,
-            't': sympy.srepr(self._t),
+            't': self._t.serialize(),
         }
         return d
 
@@ -826,11 +802,11 @@ class CompartmentalSystem(Statement):
         for from_n, to_n, rate in d['rates']:
             from_comp = comps[from_n]
             to_comp = comps[to_n]
-            cb.add_flow(from_comp, to_comp, sympy.parse_expr(rate))
+            cb.add_flow(from_comp, to_comp, Expr.deserialize(rate))
 
-        return cls(cb, t=sympy.parse_expr(d['t']))
+        return cls(cb, t=Expr.deserialize(d['t']))
 
-    def get_flow(self, source: CompartmentBase, destination: CompartmentBase) -> sympy.Expr:
+    def get_flow(self, source: CompartmentBase, destination: CompartmentBase) -> Expr:
         """Get the rate of flow between two compartments
 
         Parameters
@@ -863,12 +839,12 @@ class CompartmentalSystem(Statement):
         try:
             rate = self._g.edges[source, destination]['rate']
         except KeyError:
-            rate = sympy.Integer(0)
+            rate = Expr.integer(0)
         return rate
 
     def get_compartment_outflows(
         self, compartment: Union[str, CompartmentBase]
-    ) -> list[tuple[CompartmentBase, sympy.Expr]]:
+    ) -> list[tuple[CompartmentBase, Expr]]:
         """Get list of all flows going out from a compartment
 
         Parameters
@@ -897,7 +873,7 @@ class CompartmentalSystem(Statement):
 
     def get_compartment_inflows(
         self, compartment: Union[CompartmentBase, str]
-    ) -> list[tuple[Compartment, sympy.Expr]]:
+    ) -> list[tuple[Compartment, Expr]]:
         """Get list of all flows going in to a compartment
 
         Parameters
@@ -1221,22 +1197,21 @@ class CompartmentalSystem(Statement):
         return depot
 
     @property
-    def compartmental_matrix(self) -> sympy.Matrix:
+    def compartmental_matrix(self) -> Matrix:
         """Compartmental matrix of the compartmental system
 
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model, set_first_order_absorption
-        >>> import sympy
         >>> model = load_example_model("pheno")
-        >>> sympy.pprint(model.statements.ode_system.compartmental_matrix)
+        >>> model.statements.ode_system.compartmental_matrix
         ⎡-CL ⎤
         ⎢────⎥
         ⎣ V  ⎦
         """
         nodes = self._order_compartments()
         size = len(nodes)
-        f = sympy.zeros(size)
+        f = symengine.zeros(size)
         for i in range(0, size):
             from_comp = nodes[i]
             diagsum = 0
@@ -1245,13 +1220,13 @@ class CompartmentalSystem(Statement):
                 rate = self.get_flow(from_comp, to_comp)
                 if i != j:
                     f[j, i] = rate
-                diagsum += rate
+                diagsum -= rate
             outrate = self.get_flow(from_comp, output)
-            f[i, i] = -outrate - diagsum
-        return f
+            f[i, i] = diagsum - outrate
+        return Matrix(f)
 
     @property
-    def amounts(self) -> sympy.Matrix:
+    def amounts(self) -> Matrix:
         """Column vector of amounts for all compartments
 
         Examples
@@ -1264,7 +1239,7 @@ class CompartmentalSystem(Statement):
         """
         ordered_cmts = self._order_compartments()
         amts = [cmt.amount for cmt in ordered_cmts]
-        return sympy.Matrix(amts)
+        return Matrix(amts)
 
     @property
     def compartment_names(self) -> list[str]:
@@ -1315,20 +1290,19 @@ class CompartmentalSystem(Statement):
         return nodes
 
     @property
-    def zero_order_inputs(self) -> sympy.Matrix:
+    def zero_order_inputs(self) -> Matrix:
         """Vector of all zero order inputs to each compartment
 
         Example
         -------
         >>> from pharmpy.modeling import load_example_model, set_zero_order_absorption
-        >>> import sympy
         >>> model = load_example_model("pheno")
-        >>> sympy.pprint(model.statements.ode_system.zero_order_inputs)
+        >>> model.statements.ode_system.zero_order_inputs
         [0]
 
         """
         inputs = [node.input for node in self._order_compartments()]
-        return sympy.Matrix(inputs)
+        return Matrix(inputs)
 
     def __len__(self):
         """The number of compartments"""
@@ -1366,7 +1340,7 @@ class CompartmentalSystem(Statement):
                 break
 
         noutput = len(self.get_compartment_inflows(output))
-        have_zo_input = int(not is_zero_matrix(self.zero_order_inputs))
+        have_zo_input = int(not self.zero_order_inputs.is_zero_matrix())
         comp_nrows = comp_height * 2 - 1 + (1 if noutput > 1 else 0)
         nrows = comp_nrows + have_zo_input
         ncols = comp_width * 2
@@ -1464,7 +1438,7 @@ class Dose(ABC):
 
     @property
     @abstractmethod
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         ...
 
     @abstractmethod
@@ -1490,13 +1464,13 @@ class Bolus(Dose, Immutable):
     Bolus(AMT, admid=1)
     """
 
-    def __init__(self, amount: sympy.Expr, admid: int = 1):
+    def __init__(self, amount: Expr, admid: int = 1):
         self._amount = amount
         self._admid = admid
 
     @classmethod
-    def create(cls, amount: Union[sympy.Expr, str], admid: int = 1) -> Bolus:
-        return cls(parse_expr(amount), admid=admid)
+    def create(cls, amount: TExpr, admid: int = 1) -> Bolus:
+        return cls(Expr(amount), admid=admid)
 
     def replace(self, **kwargs) -> Bolus:
         amount = kwargs.get("amount", self._amount)
@@ -1504,12 +1478,12 @@ class Bolus(Dose, Immutable):
         return Bolus.create(amount=amount, admid=admid)
 
     @property
-    def amount(self) -> sympy.Expr:
+    def amount(self) -> Expr:
         """Symbolic amount of dose"""
         return self._amount
 
     @property
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Get set of all free symbols in the dose
 
         Examples
@@ -1519,9 +1493,9 @@ class Bolus(Dose, Immutable):
         >>> dose.free_symbols
         {AMT}
         """
-        return {self.amount}
+        return {self._amount}
 
-    def subs(self, substitutions: Mapping[sympy.Expr, sympy.Expr]) -> Bolus:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Bolus:
         """Substitute expressions or symbols in dose
 
         Parameters
@@ -1536,7 +1510,7 @@ class Bolus(Dose, Immutable):
         >>> dose.subs({'AMT': 'DOSE'})
         Bolus(DOSE, admid=1)
         """
-        return Bolus(subs(self.amount, substitutions, simultaneous=True), admid=self._admid)
+        return Bolus(self._amount.subs(substitutions), admid=self._admid)
 
     def __eq__(self, other):
         return (
@@ -1549,14 +1523,14 @@ class Bolus(Dose, Immutable):
         return hash((self._amount, self._admid))
 
     def to_dict(self) -> dict[str, Any]:
-        return {'class': 'Bolus', 'amount': sympy.srepr(self._amount), 'admid': self._admid}
+        return {'class': 'Bolus', 'amount': self._amount.serialize(), 'admid': self._admid}
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Bolus:
-        return cls(amount=sympy.parse_expr(d['amount']), admid=d['admid'])
+        return cls(amount=Expr.deserialize(d['amount']), admid=d['admid'])
 
     def __repr__(self):
-        return f'Bolus({self.amount}, admid={self._admid})'
+        return f'Bolus({self._amount}, admid={self._admid})'
 
 
 class Infusion(Dose, Immutable):
@@ -1576,20 +1550,20 @@ class Infusion(Dose, Immutable):
     Examples
     --------
     >>> from pharmpy.model import Infusion
-    >>> dose = Infusion("AMT", duration="D1")
+    >>> dose = Infusion.create("AMT", duration="D1")
     >>> dose
     Infusion(AMT, admid=1, duration=D1)
-    >>> dose = Infusion("AMT", rate="R1")
+    >>> dose = Infusion.create("AMT", rate="R1")
     >>> dose
     Infusion(AMT, admid=1, rate=R1)
     """
 
     def __init__(
         self,
-        amount: sympy.Expr,
+        amount: Expr,
         admid: int = 1,
-        rate: Optional[sympy.Expr] = None,
-        duration: Optional[sympy.Expr] = None,
+        rate: Optional[Expr] = None,
+        duration: Optional[Expr] = None,
     ):
         self._amount = amount
         self._admid = admid
@@ -1599,20 +1573,20 @@ class Infusion(Dose, Immutable):
     @classmethod
     def create(
         cls,
-        amount: Union[str, sympy.Expr],
+        amount: TExpr,
         admid: int = 1,
-        rate: Optional[Union[str, sympy.Expr]] = None,
-        duration: Optional[Union[str, sympy.Expr]] = None,
+        rate: Optional[TExpr] = None,
+        duration: Optional[TExpr] = None,
     ) -> Infusion:
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
         if rate is not None and duration is not None:
             raise ValueError('Cannot have both rate and duration for Infusion')
         if rate is not None:
-            rate = parse_expr(rate)
+            rate = Expr(rate)
         if duration is not None:
-            duration = parse_expr(duration)
-        return cls(parse_expr(amount), admid=admid, rate=rate, duration=duration)
+            duration = Expr(duration)
+        return cls(Expr(amount), admid=admid, rate=rate, duration=duration)
 
     def replace(self, **kwargs) -> Infusion:
         amount = kwargs.get("amount", self._amount)
@@ -1622,12 +1596,12 @@ class Infusion(Dose, Immutable):
         return Infusion.create(amount=amount, admid=admid, rate=rate, duration=duration)
 
     @property
-    def amount(self) -> sympy.Expr:
+    def amount(self) -> Expr:
         """Symbolic amount of dose"""
         return self._amount
 
     @property
-    def rate(self) -> Optional[sympy.Expr]:
+    def rate(self) -> Optional[Expr]:
         """Symbolic rate
 
         Mutually exclusive with duration.
@@ -1635,7 +1609,7 @@ class Infusion(Dose, Immutable):
         return self._rate
 
     @property
-    def duration(self) -> Optional[sympy.Expr]:
+    def duration(self) -> Optional[Expr]:
         """Symbolc duration
 
         Mutually exclusive with rate.
@@ -1643,7 +1617,7 @@ class Infusion(Dose, Immutable):
         return self._duration
 
     @property
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Get set of all free symbols in the dose
 
         Examples
@@ -1654,13 +1628,13 @@ class Infusion(Dose, Immutable):
         {AMT, RATE}
         """
         if self.rate is not None:
-            symbs = self.rate.free_symbols
+            symbs = self._rate.free_symbols
         else:
             assert self.duration is not None
-            symbs = self.duration.free_symbols
-        return symbs | self.amount.free_symbols
+            symbs = self._duration.free_symbols
+        return symbs | self._amount.free_symbols
 
-    def subs(self, substitutions: Mapping[sympy.Expr, sympy.Expr]) -> Infusion:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Infusion:
         """Substitute expressions or symbols in dose
 
         Parameters
@@ -1675,13 +1649,13 @@ class Infusion(Dose, Immutable):
         >>> dose.subs({'DUR': 'D1'})
         Infusion(AMT, admid=1, duration=D1)
         """
-        amount = subs(self.amount, substitutions, simultaneous=True)
+        amount = self._amount.subs(substitutions)
         if self.rate is not None:
-            rate = subs(self.rate, substitutions, simultaneous=True)
+            rate = self._rate.subs(substitutions)
             duration = None
         else:
             rate = None
-            duration = subs(self.duration, substitutions, simultaneous=True)
+            duration = self._duration.subs(substitutions)
         return Infusion(amount, admid=self._admid, rate=rate, duration=duration)
 
     def __eq__(self, other):
@@ -1699,27 +1673,27 @@ class Infusion(Dose, Immutable):
     def to_dict(self) -> dict[str, Any]:
         return {
             'class': 'Infusion',
-            'amount': sympy.srepr(self._amount),
-            'rate': sympy.srepr(self._rate),
-            'duration': sympy.srepr(self._duration),
+            'amount': self._amount.serialize(),
+            'rate': self._rate.serialize() if self._rate is not None else None,
+            'duration': self._duration.serialize() if self._duration is not None else None,
             'admid': self._admid,
         }
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Infusion:
         return cls(
-            amount=sympy.parse_expr(d['amount']),
+            amount=Expr.deserialize(d['amount']),
             admid=d['admid'],
-            rate=sympy.parse_expr(d['rate']),
-            duration=sympy.parse_expr(d['duration']),
+            rate=None if d['rate'] is None else Expr.deserialize(d['rate']),
+            duration=None if d['duration'] is None else Expr.deserialize(d['duration']),
         )
 
     def __repr__(self):
         if self.rate is not None:
-            arg = f'rate={self.rate}'
+            arg = f'rate={self._rate}'
         else:
-            arg = f'duration={self.duration}'
-        return f'Infusion({self.amount}, admid={self._admid}, {arg})'
+            arg = f'duration={self._duration}'
+        return f'Infusion({self._amount}, admid={self._admid}, {arg})'
 
 
 class Compartment(CompartmentBase):
@@ -1756,11 +1730,11 @@ class Compartment(CompartmentBase):
     def __init__(
         self,
         name: str,
-        amount: sympy.Expr,
+        amount: Expr,
         doses: tuple[Dose, ...] = tuple(),
-        input: sympy.Expr = sympy.Integer(0),
-        lag_time: sympy.Expr = sympy.Integer(0),
-        bioavailability: sympy.Expr = sympy.Integer(1),
+        input: Expr = Expr.integer(0),
+        lag_time: Expr = Expr.integer(0),
+        bioavailability: Expr = Expr.integer(1),
     ):
         self._name = name
         self._amount = amount
@@ -1773,19 +1747,19 @@ class Compartment(CompartmentBase):
     def create(
         cls,
         name: str,
-        amount: Optional[Union[sympy.Expr, str]] = None,
+        amount: Optional[TExpr] = None,
         doses: Tuple[Dose, ...] = tuple(),
-        input: Union[sympy.Expr, str] = sympy.Integer(0),
-        lag_time: Union[sympy.Expr, str] = sympy.Integer(0),
-        bioavailability: Union[sympy.Expr, str] = sympy.Integer(1),
+        input: TExpr = Expr.integer(0),
+        lag_time: TExpr = Expr.integer(0),
+        bioavailability: TExpr = Expr.integer(1),
     ):
         if not isinstance(name, str):
             raise TypeError("Name of a Compartment must be of string type")
         if amount is not None:
-            amount_expr = parse_expr(amount)
+            amount_expr = Expr(amount)
         else:
             # NOTE: Uses a default idv
-            amount_expr = sympy.Function(f'A_{name}')('t')
+            amount_expr = Expr.function(f'A_{name}', 't')
         if not isinstance(doses, tuple):
             try:
                 tuple(doses)
@@ -1794,9 +1768,9 @@ class Compartment(CompartmentBase):
         for d in doses:
             if not isinstance(d, Dose):
                 raise TypeError("All doses need to be of type Dose")
-        input = parse_expr(input)
-        lag_time = parse_expr(lag_time)
-        bioavailability = parse_expr(bioavailability)
+        input = Expr(input)
+        lag_time = Expr(lag_time)
+        bioavailability = Expr(bioavailability)
         return cls(
             name=name,
             amount=amount_expr,
@@ -1828,7 +1802,7 @@ class Compartment(CompartmentBase):
         return self._name
 
     @property
-    def amount(self) -> sympy.Expr:
+    def amount(self) -> Expr:
         """Compartment amount symbol"""
         return self._amount
 
@@ -1851,21 +1825,21 @@ class Compartment(CompartmentBase):
             return self._doses
 
     @property
-    def input(self) -> sympy.Expr:
+    def input(self) -> Expr:
         return self._input
 
     @property
-    def lag_time(self) -> sympy.Expr:
+    def lag_time(self) -> Expr:
         """Lag time for doses into compartment"""
         return self._lag_time
 
     @property
-    def bioavailability(self) -> sympy.Expr:
+    def bioavailability(self) -> Expr:
         """Bioavailability fraction for doses into compartment"""
         return self._bioavailability
 
     @property
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Get set of all free symbols in the compartment
 
         Examples
@@ -1884,7 +1858,7 @@ class Compartment(CompartmentBase):
         symbs |= self.bioavailability.free_symbols
         return symbs
 
-    def subs(self, substitutions: Mapping[sympy.Expr, sympy.Expr]) -> Compartment:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Compartment:
         """Substitute expressions or symbols in compartment
 
         Examples
@@ -1903,11 +1877,11 @@ class Compartment(CompartmentBase):
             new_doses = tuple()
         return Compartment(
             self.name,
-            amount=subs(self._amount, substitutions),
+            amount=self._amount.subs(substitutions),
             doses=new_doses,
-            input=subs(self._input, substitutions),
-            lag_time=subs(self._lag_time, substitutions),
-            bioavailability=subs(self._bioavailability, substitutions),
+            input=self._input.subs(substitutions),
+            lag_time=self._lag_time.subs(substitutions),
+            bioavailability=self._bioavailability.subs(substitutions),
         )
 
     def __eq__(self, other):
@@ -1941,11 +1915,11 @@ class Compartment(CompartmentBase):
         return {
             'class': 'Compartment',
             'name': self._name,
-            'amount': sympy.srepr(self._amount),
+            'amount': self._amount.serialize(),
             'doses': all_doses,
-            'input': sympy.srepr(self._input),
-            'lag_time': sympy.srepr(self._lag_time),
-            'bioavailability': sympy.srepr(self._bioavailability),
+            'input': self._input.serialize(),
+            'lag_time': self._lag_time.serialize(),
+            'bioavailability': self._bioavailability.serialize(),
         }
 
     @classmethod
@@ -1961,26 +1935,26 @@ class Compartment(CompartmentBase):
                     all_doses += (Infusion.from_dict(dose),)
         return cls(
             name=d['name'],
-            amount=sympy.parse_expr(d['amount']),
+            amount=Expr.deserialize(d['amount']),
             doses=all_doses,
-            input=sympy.parse_expr(d['input']),
-            lag_time=sympy.parse_expr(d['lag_time']),
-            bioavailability=sympy.parse_expr(d['bioavailability']),
+            input=Expr.deserialize(d['input']),
+            lag_time=Expr.deserialize(d['lag_time']),
+            bioavailability=Expr.deserialize(d['bioavailability']),
         )
 
     def __repr__(self):
-        lag = '' if self.lag_time == 0 else f', lag_time={self._lag_time}'
+        lag = '' if self._lag_time == 0 else f', lag_time={self._lag_time}'
         doses = (
             ''
-            if self.doses is tuple()
+            if self._doses is tuple()
             else f', doses={self._doses[0] if len(self._doses) == 1 else self._doses}'
         )
-        input = '' if self.input == 0 else f', input={self._input}'
+        input = '' if self._input == 0 else f', input={self._input}'
         bioavailability = (
-            '' if self.bioavailability == 1 else f', bioavailability={self._bioavailability}'
+            '' if self._bioavailability == 1 else f', bioavailability={self._bioavailability}'
         )
         return (
-            f'Compartment({self.name}, amount={self._amount}{doses}{input}{lag}{bioavailability})'
+            f'Compartment({self._name}, amount={self._amount}{doses}{input}{lag}{bioavailability})'
         )
 
 
@@ -2038,7 +2012,7 @@ class Statements(Sequence, Immutable):
             return Statements(tuple(other) + self._statements)
 
     @property
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Get a set of all free symbols
 
         Examples
@@ -2159,13 +2133,13 @@ class Statements(Sequence, Immutable):
         i = self._get_ode_system_index()
         return self if i == -1 else self[i + 1 :]
 
-    def subs(self, substitutions: Mapping[sympy.Expr, sympy.Expr]) -> Statements:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Statements:
         """Substitute symbols in all statements.
 
         Parameters
         ----------
         substitutions : dict
-            Old-new pairs(can be type str or sympy symbol)
+            Old-new pairs(can be type str or symbol)
 
         Examples
         --------
@@ -2191,10 +2165,10 @@ class Statements(Sequence, Immutable):
         return Statements(s.subs(substitutions) for s in self)
 
     def _lookup_last_assignment(
-        self, symbol: Union[str, sympy.Symbol]
+        self, symbol: TSymbol
     ) -> Tuple[Optional[int], Optional[Assignment]]:
         if isinstance(symbol, str):
-            symbol = sympy.Symbol(symbol)
+            symbol = Expr.symbol(symbol)
         ind = None
         assignment = None
         for i, statement in enumerate(self):
@@ -2204,12 +2178,12 @@ class Statements(Sequence, Immutable):
                     assignment = statement
         return ind, assignment
 
-    def find_assignment(self, symbol: Union[str, sympy.Symbol]) -> Optional[Assignment]:
+    def find_assignment(self, symbol: TSymbol) -> Optional[Assignment]:
         """Returns last assignment of symbol
 
         Parameters
         ----------
-        symbol : sympy.Symbol or str
+        symbol : Symbol or str
             Symbol to look for
 
         Returns
@@ -2227,12 +2201,12 @@ class Statements(Sequence, Immutable):
         """
         return self._lookup_last_assignment(symbol)[1]
 
-    def find_assignment_index(self, symbol: Union[str, sympy.Symbol]) -> Optional[int]:
+    def find_assignment_index(self, symbol: TSymbol) -> Optional[int]:
         """Returns index of last assignment of symbol
 
         Parameters
         ----------
-        symbol : sympy.Symbol or str
+        symbol : Symbol or str
             Symbol to look for
 
         Returns
@@ -2249,9 +2223,7 @@ class Statements(Sequence, Immutable):
         """
         return self._lookup_last_assignment(symbol)[0]
 
-    def reassign(
-        self, symbol: Union[str, sympy.Symbol], expression: Union[str, sympy.Expr]
-    ) -> Statements:
+    def reassign(self, symbol: TSymbol, expression: TExpr) -> Statements:
         """Reassign symbol to expression
 
         Set symbol to be expression and remove all previous assignments of symbol
@@ -2260,7 +2232,7 @@ class Statements(Sequence, Immutable):
         ----------
         symbol : sypmpy.Symbol or str
             Symbol to reassign
-        expression : sympy.Expr or str
+        expression : Expr or str
             The new expression to assign to symbol
 
         Return
@@ -2274,10 +2246,8 @@ class Statements(Sequence, Immutable):
         >>> model = load_example_model("pheno")
         >>> model.statements.reassign("CL", "TVCL + eta")   # doctest: +SKIP
         """
-        if isinstance(symbol, str):
-            symbol = sympy.Symbol(symbol)
-        if isinstance(expression, str):
-            expression = parse_expr(expression)
+        symbol = Expr(symbol)
+        expression = Expr(expression)
 
         last = True
         new = list(self._statements)
@@ -2301,9 +2271,7 @@ class Statements(Sequence, Immutable):
                     if statement.symbol in rhs:
                         graph.add_edge(i, j)
                 elif isinstance(statement, CompartmentalSystem):
-                    amts = {
-                        sympy.Function(amt.name)(statement.t) for amt in statement.amounts
-                    } | set(statement.amounts)
+                    amts = set(statement.amounts)
                     if not rhs.isdisjoint(amts):
                         graph.add_edge(i, j)
         return graph
@@ -2339,9 +2307,7 @@ class Statements(Sequence, Immutable):
         stats._statements = [self[i] for i in succ]
         return stats
 
-    def dependencies(
-        self, symbol_or_statement: Union[str, sympy.Symbol, Statement]
-    ) -> set[sympy.Expr]:
+    def dependencies(self, symbol_or_statement: Union[TSymbol, Statement]) -> set[Expr]:
         """Find all dependencies of a symbol or statement
 
         Parameters
@@ -2364,11 +2330,7 @@ class Statements(Sequence, Immutable):
         if isinstance(symbol_or_statement, Statement):
             i = self.index(symbol_or_statement)
         else:
-            symbol = (
-                sympy.Symbol(symbol_or_statement)
-                if isinstance(symbol_or_statement, str)
-                else symbol_or_statement
-            )
+            symbol = Expr(symbol_or_statement)
             for i in range(len(self) - 1, -1, -1):
                 statement = self[i]
                 if (
@@ -2396,7 +2358,7 @@ class Statements(Sequence, Immutable):
         return symbs
 
     def remove_symbol_definitions(
-        self, symbols: Sequence[sympy.Expr], statement: Statement
+        self, symbols: Sequence[Expr], statement: Statement
     ) -> Statements:
         """Remove symbols and dependencies not used elsewhere
 
@@ -2438,7 +2400,7 @@ class Statements(Sequence, Immutable):
         remove = candidates - additional
         return Statements(tuple(self[i] for i in range(len(self)) if i not in remove))
 
-    def full_expression(self, expression: Union[str, sympy.Expr]) -> sympy.Expr:
+    def full_expression(self, expression: TExpr) -> Expr:
         """Expand an expression into its full definition
 
         Parameters
@@ -2458,17 +2420,14 @@ class Statements(Sequence, Immutable):
         >>> model.statements.before_odes.full_expression("CL")
         PTVCL*WGT*exp(ETA_1)
         """
-        if isinstance(expression, str):
-            expression = parse_expr(expression)
+        expression = Expr(expression)
         for statement in reversed(self):
             if isinstance(statement, CompartmentalSystem):
                 raise ValueError(
                     "CompartmentalSystem not supported by full_expression. Use the properties before_odes "
                     "or after_odes."
                 )
-            expression = subs(
-                expression, {statement.symbol: statement.expression}, simultaneous=True
-            )
+            expression = expression.subs({statement.symbol: statement.expression})
         return expression
 
     def __eq__(self, other):

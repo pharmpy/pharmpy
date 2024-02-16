@@ -1,9 +1,8 @@
 import shutil
 
 import pytest
-import sympy
-from sympy import Symbol as symbol
 
+from pharmpy.basic import Expr
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
@@ -45,7 +44,7 @@ def _ensure_trailing_newline(buf):
 
 
 def S(x):
-    return symbol(x)
+    return Expr.symbol(x)
 
 
 def test_source(pheno):
@@ -217,7 +216,7 @@ def test_add_two_parameters(pheno):
 @pytest.mark.parametrize(
     'statement_new,param_new,buf_new',
     [
-        (Assignment(S('CL'), sympy.Integer(2)), None, 'CL = 2'),
+        (Assignment(S('CL'), Expr.integer(2)), None, 'CL = 2'),
         (
             Assignment(S('Y'), S('THETA(4)') + S('THETA(5)')),
             [Parameter.create('THETA(4)', 0.1), Parameter.create('THETA(5)', 0.1)],
@@ -269,7 +268,11 @@ def test_add_statements(pheno, statement_new, buf_new, param_new):
 @pytest.mark.parametrize(
     'param_new, statement_new, buf_new',
     [
-        (Parameter.create('X', 0.1), Assignment(S('Y'), S('X') + S('S1')), 'Y = S1 + THETA(4)'),
+        (
+            Parameter.create('X', 0.1),
+            Assignment.create(S('Y'), S('X') + S('S1')),
+            'Y = S1 + THETA(4)',
+        ),
     ],
 )
 def test_add_parameters_and_statements(pheno, param_new, statement_new, buf_new):
@@ -345,7 +348,7 @@ def test_add_random_variables_and_statements(pheno):
     model = add_population_parameter(model, 'sigma', 0.1)
 
     sset = model.statements
-    statement_new = Assignment(S('X'), 1 + S(eps.names[0]) + S(eta.names[0]))
+    statement_new = Assignment.create(S('X'), 1 + S(eps.names[0]) + S(eta.names[0]))
     model = model.replace(
         statements=sset.before_odes + statement_new + sset.ode_system + sset.after_odes,
         random_variables=rvs,
@@ -363,7 +366,7 @@ def test_minimal(load_model_for_test, datadir):
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)
     assert len(model.statements) == 1
-    assert model.statements[0].expression == symbol('THETA_1') + symbol('ETA_1') + symbol('EPS_1')
+    assert model.statements[0].expression == S('THETA_1') + S('ETA_1') + S('EPS_1')
 
 
 def test_initial_individual_estimates(load_model_for_test, datadir):
@@ -1075,9 +1078,9 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
     model = Model.parse_model_from_string(code)
-    assert isinstance(model.statements.ode_system.eqs[0].rhs, sympy.Piecewise)
-    assert model.statements[3].symbol == sympy.Function("A_CENTRAL")(0)
-    assert model.statements[3].expression == sympy.Integer(2)
+    assert model.statements.ode_system.eqs[0].rhs.is_piecewise()
+    assert model.statements[3].symbol == Expr.function("A_CENTRAL", 0)
+    assert model.statements[3].expression == Expr.integer(2)
 
 
 @pytest.mark.parametrize(
@@ -1118,7 +1121,7 @@ $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
     model = Model.parse_model_from_string(code)
-    assert model.value_type == sympy.Symbol('F_FLAG')
+    assert model.value_type == S('F_FLAG')
 
 
 def test_datainfo_model_drop_clash(testdata):
@@ -1202,8 +1205,8 @@ def test_parse_dvid(testdata, load_model_for_test):
 def test_parse_observation_transformation(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
     assert model.observation_transformation == {
-        sympy.Symbol('Y_1'): sympy.Symbol('Y_1'),
-        sympy.Symbol('Y_2'): sympy.Symbol('Y_2'),
+        S('Y_1'): S('Y_1'),
+        S('Y_2'): S('Y_2'),
     }
 
 

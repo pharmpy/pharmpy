@@ -3,7 +3,7 @@
 """
 from typing import Literal
 
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -76,10 +76,10 @@ def add_effect_compartment(model: Model, expr: Literal[PD_TYPES]):
     central = odes.central_compartment
     cb = CompartmentalSystemBuilder(odes)
 
-    ke0 = sympy.Symbol("KE0")
-    met = sympy.Symbol('MET')
+    ke0 = Expr.symbol("KE0")
+    met = Expr.symbol('MET')
     model = add_individual_parameter(model, met.name)
-    ke0_ass = Assignment(ke0, 1 / met)
+    ke0_ass = Assignment.create(ke0, 1 / met)
 
     effect = Compartment.create("EFFECT", input=ke0 * central.amount / vc)
     cb.add_compartment(effect)
@@ -158,44 +158,44 @@ def set_direct_effect(model: Model, expr: Literal[PD_TYPES]):
 
 
 def _add_effect(model: Model, expr: str, conc):
-    e0 = sympy.Symbol("B")
+    e0 = Expr.symbol("B")
     model = add_individual_parameter(model, e0.name)
     if expr in ["emax", "sigmoid", "step"]:
-        emax = sympy.Symbol("E_MAX")
+        emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name)
     if expr in ["emax", "sigmoid"]:
-        ec50 = sympy.Symbol("EC_50")
+        ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
 
     # Add effect E
     if expr == "linear":
-        s = sympy.Symbol("SLOPE")
+        s = Expr.symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
-        E = Assignment(sympy.Symbol('E'), e0 * (1 + (s * conc)))
+        E = Assignment(Expr.symbol('E'), e0 * (1 + (s * conc)))
     elif expr == "emax":
-        E = Assignment(sympy.Symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
+        E = Assignment(Expr.symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
     elif expr == "step":
-        E = Assignment(sympy.Symbol("E"), sympy.Piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
+        E = Assignment(Expr.symbol("E"), Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
     elif expr == "sigmoid":
-        n = sympy.Symbol("N")  # Hill coefficient
+        n = Expr.symbol("N")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_N": 1})
-        E = Assignment(
-            sympy.Symbol("E"),
-            sympy.Piecewise(
+        E = Assignment.create(
+            Expr.symbol("E"),
+            Expr.piecewise(
                 ((e0 * (1 + (emax * conc**n / (ec50**n + conc**n)))), conc > 0), (e0, True)
             ),
         )
     elif expr == "loglin":
-        s = sympy.Symbol("SLOPE")
+        s = Expr.symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
-        E = Assignment(sympy.Symbol("E"), s * sympy.log(conc + sympy.exp(e0 / s)))
+        E = Assignment(Expr.symbol("E"), s * (conc + (e0 / s).exp()).log())
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
     # Add dependent variable Y_2
-    y_2 = sympy.Symbol('Y_2')
-    y = Assignment(y_2, E.symbol)
+    y_2 = Expr.symbol('Y_2')
+    y = Assignment.create(y_2, E.symbol)
     dvs = model.dependent_variables.replace(y_2, 2)
     model = model.replace(statements=model.statements + E + y, dependent_variables=dvs)
 
@@ -269,30 +269,30 @@ def add_indirect_effect(
     response = Compartment.create("RESPONSE")
     a_response = response.amount
 
-    kin = sympy.Symbol("K_IN")
-    kout = sympy.Symbol("K_OUT")
-    met = sympy.Symbol('MET')
+    kin = Expr.symbol("K_IN")
+    kout = Expr.symbol("K_OUT")
+    met = Expr.symbol('MET')
     model = add_individual_parameter(model, met.name)
-    b = sympy.Symbol("B")  # baseline
+    b = Expr.symbol("B")  # baseline
     model = add_individual_parameter(model, b.name)
 
-    kout_ass = Assignment(kout, 1 / met)
-    kin_ass = Assignment(kin, kout * b)
+    kout_ass = Assignment.create(kout, 1 / met)
+    kin_ass = Assignment.create(kin, kout * b)
 
     if expr == 'linear':
-        s = sympy.Symbol("SLOPE")
+        s = Expr.symbol("SLOPE")
         model = add_individual_parameter(model, s.name)
-        R = sympy.Symbol("SLOPE") * conc_c
+        R = Expr.symbol("SLOPE") * conc_c
     elif expr == 'emax':
-        emax = sympy.Symbol("E_MAX")
+        emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name)
-        ec50 = sympy.Symbol("EC_50")
+        ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
         R = emax * conc_c / (ec50 + conc_c)
     elif expr == 'sigmoid':
-        emax = sympy.Symbol("E_MAX")
-        ec50 = sympy.Symbol("EC_50")
-        n = sympy.Symbol("N")
+        emax = Expr.symbol("E_MAX")
+        ec50 = Expr.symbol("EC_50")
+        n = Expr.symbol("N")
         model = set_initial_estimates(model, {"POP_N": 1})
         model = add_individual_parameter(model, n.name)
         model = add_individual_parameter(model, ec50.name)
@@ -324,7 +324,7 @@ def add_indirect_effect(
     model = set_initial_condition(model, "RESPONSE", b)
 
     # Add dependent variable Y_2
-    y_2 = sympy.Symbol('Y_2')
+    y_2 = Expr.symbol('Y_2')
     y = Assignment(y_2, a_response)
     dvs = model.dependent_variables.replace(y_2, 2)
     model = model.replace(statements=model.statements + y, dependent_variables=dvs)
@@ -364,14 +364,14 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
     >>> model.statements.find_assignment("E")
     E = B
     """
-    e0 = sympy.Symbol("B")
+    e0 = Expr.symbol("B")
     model = add_individual_parameter(model, e0.name)
 
-    E = Assignment(sympy.Symbol('E'), e0)
+    E = Assignment(Expr.symbol('E'), e0)
 
     # Add dependent variable Y_2
-    y_2 = sympy.Symbol('Y_2')
-    y = Assignment(y_2, E.symbol)
+    y_2 = Expr.symbol('Y_2')
+    y = Assignment.create(y_2, E.symbol)
     dvs = model.dependent_variables.replace(y_2, 2)
     model = model.replace(statements=model.statements + E + y, dependent_variables=dvs)
 

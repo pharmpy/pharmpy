@@ -1,6 +1,7 @@
 from typing import Union
 
 import pharmpy.model
+from pharmpy.basic.expr import Expr
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.modeling import get_thetas
@@ -54,6 +55,7 @@ class res_error_term:
             error_term = False
             full_term = full_expression(term, self.model)
             for factor in sympy.Mul.make_args(term):
+                factor = Expr(factor)
                 full_factor = full_expression(factor, self.model)
                 all_symbols = full_factor.free_symbols.union(factor.free_symbols)
                 for symbol in all_symbols:
@@ -132,7 +134,7 @@ class res_error_term:
         dv = list(self.model.dependent_variables.keys())[0]
         for s in reversed(self.model.statements.after_odes):
             if s.symbol == dv:
-                if not s.expression.is_Piecewise:
+                if not s.expression.is_piecewise():
                     self.only_piecewise = False
                     break
 
@@ -249,14 +251,14 @@ def find_aliases(symbol: str, model: pharmpy.model, aliases: set = None) -> list
         aliases.add(symbol)
     for expr in model.statements.after_odes:
         # If RES = ALI
-        if symbol == expr.symbol and isinstance(expr.expression, sympy.Symbol):
+        if symbol == expr.symbol and expr.expression.is_symbol():
             if expr.expression not in aliases:
                 aliases.union(find_aliases(expr.expression, model, aliases))
 
         # If RES = PIECEWISE or PIECEWISE = RES
-        if expr.expression.is_Piecewise:
+        if expr.expression.is_piecewise():
             for e, c in expr.expression.args:
-                if symbol == expr.symbol and isinstance(e, sympy.Symbol):
+                if symbol == expr.symbol and e.is_symbol():
                     if e not in aliases:
                         aliases.union(find_aliases(e, model, aliases))
                 elif symbol == e:

@@ -28,6 +28,8 @@ def calculate_parcov_inits(model, ie, ncovs):
 
     parcov_inits = cov[npars:, :npars]
     parcov_symb = sigma[npars:, :npars]
+    print(sigma, sigma.__class__)
+    print(parcov_symb, parcov_symb.__class__)
 
     param_inits = {
         parcov_symb[i, j].name: parcov_inits[i, j]

@@ -3,24 +3,15 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Sized
 from math import sqrt
-from typing import TYPE_CHECKING, Any, Dict, List, Mapping, Sequence, Set, Tuple, Union
+from typing import Any, Dict, List, Mapping, Sequence, Tuple
 
 import pharmpy.internals.unicode as unicode
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
+from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.internals.immutable import Immutable
 
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution
 from .numeric import NumericDistribution
-
-if TYPE_CHECKING:
-    import numpy as np
-    import symengine
-    import sympy
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import symengine, sympy
 
 
 class Distribution(Sized, Hashable, Immutable):
@@ -42,24 +33,24 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def mean(self) -> sympy.Expr:
+    def mean(self) -> Expr:
         pass
 
     @property
     @abstractmethod
-    def variance(self) -> sympy.Expr:
+    def variance(self) -> Expr:
         pass
 
     @abstractmethod
-    def get_variance(self, name: str) -> sympy.Expr:
+    def get_variance(self, name: str) -> Expr:
         pass
 
     @abstractmethod
-    def get_covariance(self, name1: str, name2: str) -> sympy.Expr:
+    def get_covariance(self, name1: str, name2: str) -> Expr:
         pass
 
     @abstractmethod
-    def evalf(self, parameters: Dict[sympy.Symbol, float]) -> NumericDistribution:
+    def evalf(self, parameters: Dict[Expr, float]) -> NumericDistribution:
         pass
 
     @abstractmethod
@@ -68,7 +59,7 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def free_symbols(self) -> Set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         pass
 
     @property
@@ -78,7 +69,7 @@ class Distribution(Sized, Hashable, Immutable):
         return tuple(sorted(map(str, params)))
 
     @abstractmethod
-    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> Distribution:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> Distribution:
         pass
 
     @abstractmethod
@@ -86,7 +77,7 @@ class Distribution(Sized, Hashable, Immutable):
         pass
 
     @abstractmethod
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         pass
 
     def _repr_latex_(self) -> str:
@@ -116,18 +107,18 @@ class NormalDistribution(Distribution):
     IIV_CL ~ N(0, OMEGA_CL)
     """
 
-    def __init__(self, name: str, level: str, mean: sympy.Expr, variance: sympy.Expr):
+    def __init__(self, name: str, level: str, mean: Expr, variance: Expr):
         self._name = name
         self._level = level
         self._mean = mean
         self._variance = variance
 
     @classmethod
-    def create(cls, name: str, level: str, mean: sympy.Expr, variance: sympy.Expr):
+    def create(cls, name: str, level: str, mean: Expr, variance: Expr):
         level = level.upper()
-        mean = parse_expr(mean)
-        variance = parse_expr(variance)
-        if sympy.ask(sympy.Q.nonnegative(variance)) is False:
+        mean = Expr(mean)
+        variance = Expr(variance)
+        if variance.is_nonnegative() is False:
             raise ValueError("Variance of normal distribution must be non-negative")
         return cls(name, level, mean, variance)
 
@@ -149,21 +140,21 @@ class NormalDistribution(Distribution):
         return self._level
 
     @property
-    def mean(self) -> sympy.Expr:
+    def mean(self) -> Expr:
         return self._mean
 
     @property
-    def variance(self) -> sympy.Expr:
+    def variance(self) -> Expr:
         return self._variance
 
     @property
-    def free_symbols(self) -> set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Free symbols including random variable itself"""
         fs = self._mean.free_symbols.union(self._variance.free_symbols)
-        fs.add(sympy.Symbol(self._name))
-        return fs  # pyright: ignore [reportGeneralTypeIssues]
+        fs.add(Expr.symbol(self._name))
+        return fs
 
-    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> NormalDistribution:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> NormalDistribution:
         """Substitute expressions
 
         Parameters
@@ -182,22 +173,18 @@ class NormalDistribution(Distribution):
         IIV_CL ~ N(0, OMEGA_NEW)
 
         """
-        mean = subs(self._mean, d)
-        variance = subs(self._variance, d)
+        mean = self._mean.subs(d)
+        variance = self._variance.subs(d)
         name = _subs_name(self._name, d)
         return NormalDistribution(name, self._level, mean, variance)
 
-    def evalf(self, parameters: Dict[sympy.Symbol, float]) -> NumericDistribution:
-        # mu = float(symengine.sympify(rv._mean[0]).xreplace(parameters))
-        # sigma = float(symengine.sympify(sympy.sqrt(rv._variance[0,0])).xreplace(parameters))
-        mean = self.mean
-        assert isinstance(mean, sympy.Expr)
-        variance = self.variance
-        assert isinstance(variance, sympy.Symbol)
+    def evalf(self, parameters: Dict[TSymbol, float]) -> NumericDistribution:
+        mean = self._mean
+        variance = self._variance
         try:
             if mean == 0:
                 mu = 0
-            elif isinstance(mean, sympy.Symbol):
+            elif mean.is_symbol():
                 mu = float(parameters[mean])
             else:
                 raise NotImplementedError("Non-supported mean for NormalDistribution")
@@ -233,12 +220,12 @@ class NormalDistribution(Distribution):
 
         return self
 
-    def get_variance(self, name: str) -> sympy.Expr:
+    def get_variance(self, name: str) -> Expr:
         if name != self._name:
             raise KeyError(name)
         return self._variance
 
-    def get_covariance(self, name1: str, name2: str) -> sympy.Expr:
+    def get_covariance(self, name1: str, name2: str) -> Expr:
         if name1 == name2 == self._name:
             return self._variance
         else:
@@ -264,8 +251,8 @@ class NormalDistribution(Distribution):
             'class': self.__class__.__name__,
             'name': self._name,
             'level': self._level,
-            'mean': sympy.srepr(self._mean),
-            'variance': sympy.srepr(self._variance),
+            'mean': self._mean.serialize(),
+            'variance': self._variance.serialize(),
         }
 
     @classmethod
@@ -273,16 +260,15 @@ class NormalDistribution(Distribution):
         return cls(
             name=d['name'],
             level=d['level'],
-            mean=sympy.parse_expr(d['mean']),
-            variance=sympy.parse_expr(d['variance']),
+            mean=Expr.deserialize(d['mean']),
+            variance=Expr.deserialize(d['variance']),
         )
 
     def __repr__(self):
         return (
-            f'{sympy.pretty(sympy.Symbol(self._name), wrap_line=False, use_unicode=True)}'
+            f'{Expr.symbol(self._name).unicode()}'
             f' ~ {unicode.mathematical_script_capital_n}'
-            f'({sympy.pretty(self._mean, wrap_line=False, use_unicode=True)}, '
-            f'{sympy.pretty(self._variance, wrap_line=False, use_unicode=True)})'
+            f'({self._mean.unicode()}, {self._variance.unicode()})'
         )
 
     def latex_string(self, aligned: bool = False) -> str:
@@ -290,9 +276,9 @@ class NormalDistribution(Distribution):
             align_str = ' & '
         else:
             align_str = ''
-        rv = sympy.Symbol(self._name)._repr_latex_()[1:-1]
-        mean = self._mean._repr_latex_()[1:-1]
-        sigma = (self._variance)._repr_latex_()[1:-1]
+        rv = Expr.symbol(self._name).latex()
+        mean = self._mean.latex()
+        sigma = self._variance.latex()
         latex = rv + align_str + r'\sim  \mathcal{N} \left(' + mean + ',' + sigma + r'\right)'
         if not aligned:
             latex = '$' + latex + '$'
@@ -332,22 +318,21 @@ class JointNormalDistribution(Distribution):
         self,
         names: Tuple[str, ...],
         level: str,
-        mean: sympy.ImmutableMatrix,
-        variance: sympy.ImmutableMatrix,
+        mean: Matrix,
+        variance: Matrix,
     ):
         self._names = names
         self._level = level
         self._mean = mean
         self._variance = variance
-        self._symengine_variance = symengine.Matrix(variance)
 
     @classmethod
     def create(cls, names: Sequence[str], level: str, mean, variance):
         names = tuple(names)
         level = level.upper()
-        mean = sympy.ImmutableMatrix(mean)
-        variance = sympy.ImmutableMatrix(variance)
-        if variance.is_positive_semidefinite is False:
+        mean = Matrix(mean)
+        variance = Matrix(variance)
+        if variance.is_positive_semidefinite() is False:
             raise ValueError(
                 'Covariance matrix of joint normal distribution is not positive semidefinite'
             )
@@ -371,21 +356,21 @@ class JointNormalDistribution(Distribution):
         return self._level
 
     @property
-    def mean(self) -> sympy.ImmutableMatrix:
+    def mean(self) -> Matrix:
         return self._mean
 
     @property
-    def variance(self) -> sympy.ImmutableMatrix:
+    def variance(self) -> Matrix:
         return self._variance
 
     @property
-    def free_symbols(self) -> Set[sympy.Expr]:
+    def free_symbols(self) -> set[Expr]:
         """Free symbols including random variable itself"""
         return self._mean.free_symbols.union(
-            self._variance.free_symbols, (sympy.Symbol(name) for name in self._names)
+            self._variance.free_symbols, (Expr.symbol(name) for name in self._names)
         )
 
-    def subs(self, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> JointNormalDistribution:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> JointNormalDistribution:
         """Substitute expressions
 
         Parameters
@@ -413,12 +398,10 @@ class JointNormalDistribution(Distribution):
         new_names = tuple(_subs_name(name, d) for name in self._names)
         return JointNormalDistribution(new_names, self._level, mean, variance)
 
-    def evalf(self, parameters: Dict[sympy.Symbol, float]) -> NumericDistribution:
+    def evalf(self, parameters: Dict[TSymbol, float]) -> NumericDistribution:
         try:
-            mu = np.array(symengine.sympify(self.mean).xreplace(parameters)).astype(np.float64)[
-                :, 0
-            ]
-            sigma = np.array(self._symengine_variance.xreplace(parameters)).astype(np.float64)
+            mu = self._mean.evalf(parameters)[:, 0]
+            sigma = self._variance.evalf(parameters)
             return NumericMultivariateNormalDistribution(mu, sigma)
         except RuntimeError as e:
             # NOTE: This handles missing parameter substitutions
@@ -475,25 +458,19 @@ class JointNormalDistribution(Distribution):
         variance = self._variance[index, index]
 
         if len(names) == 1:
-            assert isinstance(mean, sympy.Expr)
-            assert isinstance(variance, sympy.Expr)
             return NormalDistribution(names[0], self._level, mean, variance)
         else:
-            assert isinstance(mean, sympy.ImmutableMatrix)
-            assert isinstance(variance, sympy.ImmutableMatrix)
             return JointNormalDistribution(names, self._level, mean, variance)
 
-    def get_variance(self, name: str) -> sympy.Expr:
+    def get_variance(self, name: str) -> Expr:
         i = self._names.index(name)
         var = self._variance[i, i]
-        assert isinstance(var, sympy.Expr)
         return var
 
-    def get_covariance(self, name1: str, name2: str) -> sympy.Expr:
+    def get_covariance(self, name1: str, name2: str) -> Expr:
         i1 = self._names.index(name1)
         i2 = self._names.index(name2)
         cov = self._variance[i1, i2]
-        assert isinstance(cov, sympy.Expr)
         return cov
 
     def __eq__(self, other):
@@ -516,8 +493,8 @@ class JointNormalDistribution(Distribution):
             'class': self.__class__.__name__,
             'names': self._names,
             'level': self._level,
-            'mean': sympy.srepr(self._mean),
-            'variance': sympy.srepr(self._variance),
+            'mean': self._mean.serialize(),
+            'variance': self._variance.serialize(),
         }
 
     @classmethod
@@ -525,15 +502,15 @@ class JointNormalDistribution(Distribution):
         return cls(
             names=d['names'],
             level=d['level'],
-            mean=sympy.parse_expr(d['mean']),
-            variance=sympy.parse_expr(d['variance']),
+            mean=Matrix.deserialize(d['mean']),
+            variance=Matrix.deserialize(d['variance']),
         )
 
     def __repr__(self):
-        name_vector = sympy.Matrix(self._names)
-        name_strings = sympy.pretty(name_vector, wrap_line=False, use_unicode=True).split('\n')
-        mu_strings = sympy.pretty(self._mean, wrap_line=False, use_unicode=True).split('\n')
-        sigma_strings = sympy.pretty(self._variance, wrap_line=False, use_unicode=True).split('\n')
+        name_vector = Matrix(self._names)
+        name_strings = name_vector.unicode().split('\n')
+        mu_strings = self._mean.unicode().split('\n')
+        sigma_strings = self._variance.unicode().split('\n')
         mu_height = len(mu_strings)
         sigma_height = len(sigma_strings)
         max_height = max(mu_height, sigma_height)
@@ -587,10 +564,9 @@ class JointNormalDistribution(Distribution):
             align_str = ' & '
         else:
             align_str = ''
-        names = [sympy.Symbol(name) for name in self._names]
-        rv_vec = sympy.Matrix(names)._repr_latex_()[1:-1]
-        mean_vec = self._mean._repr_latex_()[1:-1]
-        sigma = self._variance._repr_latex_()[1:-1]
+        rv_vec = Matrix(self._names).latex()
+        mean_vec = self._mean.latex()
+        sigma = self._variance.latex()
         latex = (
             rv_vec + align_str + r'\sim \mathcal{N} \left(' + mean_vec + ',' + sigma + r'\right)'
         )
@@ -600,18 +576,16 @@ class JointNormalDistribution(Distribution):
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        del state['_symengine_variance']
         return state
 
     def __setstate__(self, state):
         self.__dict__.update(state)
-        self._symengine_variance = symengine.sympify(self._variance)
 
 
-def _subs_name(name: str, d: Mapping[Union[str, sympy.Expr], sympy.Expr]) -> str:
+def _subs_name(name: str, d: Mapping[TExpr, TExpr]) -> str:
     if name in d:
         new_name = d[name]
-    elif (name_symbol := sympy.Symbol(name)) in d:
+    elif (name_symbol := Expr.symbol(name)) in d:
         new_name = d[name_symbol]
     else:
         new_name = name

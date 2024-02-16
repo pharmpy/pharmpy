@@ -1,6 +1,6 @@
 import pytest
-import sympy
 
+from pharmpy.basic import Expr, Matrix
 from pharmpy.model import (
     Assignment,
     Bolus,
@@ -15,7 +15,7 @@ from pharmpy.modeling import add_effect_compartment, set_first_order_absorption
 
 
 def S(x):
-    return sympy.Symbol(x)
+    return Expr.symbol(x)
 
 
 def test_statements_effect_compartment(load_model_for_test, testdata):
@@ -29,7 +29,7 @@ def test_statements_effect_compartment(load_model_for_test, testdata):
 def test_str(load_model_for_test, testdata):
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     assert str(s1) == 'KA = X + Y'
-    s2 = Assignment(S('X2'), sympy.exp('X'))
+    s2 = Assignment(S('X2'), Expr.symbol('X').exp())
     a = str(s2).split('\n')
     assert a[0].startswith(' ')
     assert len(a) == 2
@@ -45,12 +45,12 @@ def test_subs(load_model_for_test, testdata):
 
     s2 = statements.subs({'ETA_1': 'ETAT1'})
 
-    assert s2[5].expression == S('TVCL') * sympy.exp(S('ETAT1'))
+    assert s2[5].expression == S('TVCL') * (S('ETAT1').exp())
 
     s3 = s2.subs({'TVCL': 'TVCLI'})
 
     assert s3[2].symbol == S('TVCLI')
-    assert s3[5].expression == S('TVCLI') * sympy.exp(S('ETAT1'))
+    assert s3[5].expression == S('TVCLI') * (S('ETAT1').exp())
 
     assert s3.ode_system.free_symbols == {S('V'), S('CL'), S('AMT'), S('t')}
 
@@ -72,7 +72,7 @@ def test_find_assignment(load_model_for_test, testdata):
     assert str(statements.find_assignment('CL').expression) == 'TVCL*exp(ETA_1)'
     assert str(statements.find_assignment('S1').expression) == 'V'
 
-    statements = statements + Assignment(S('CL'), S('TVCL') + S('V'))
+    statements = statements + Assignment.create(S('CL'), S('TVCL') + S('V'))
 
     assert str(statements.find_assignment('CL').expression) == 'TVCL + V'
 
@@ -96,9 +96,9 @@ def test_eq_modelstatements(load_model_for_test, testdata):
     assert model_min.statements != model_pheno.statements
 
     s1 = Assignment(S('KA'), S('X') + S('Y'))
-    s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
-    s3 = Assignment(S('M'), sympy.Integer(2))
-    s4 = Assignment(S('G'), sympy.Integer(3))
+    s2 = Assignment(S('Z'), Expr.integer(23) + S('M'))
+    s3 = Assignment(S('M'), Expr.integer(2))
+    s4 = Assignment(S('G'), Expr.integer(3))
     s1 = Statements([s2, s1])
     s2 = Statements([s3, s4])
     assert s1 != s2
@@ -109,12 +109,12 @@ def test_hash():
     s2 = Assignment(S('KA'), S('X') + S('Z'))
     assert hash(s1) != hash(s2)
 
-    b1 = Bolus(S('AMT'))
-    b2 = Bolus(S('AMT'), admid=2)
+    b1 = Bolus(Expr.symbol('AMT'))
+    b2 = Bolus(Expr.symbol('AMT'), admid=2)
     assert hash(b1) != hash(b2)
 
-    i1 = Infusion("AMT", rate="R1")
-    i2 = Infusion("AMT", rate="R2")
+    i1 = Infusion.create("AMT", rate="R1")
+    i2 = Infusion.create("AMT", rate="R2")
     assert hash(i1) != hash(i2)
 
     c1 = Compartment.create("DEPOT", lag_time="ALAG")
@@ -151,7 +151,7 @@ def test_dict(load_model_for_test, testdata):
         'amount': "Symbol('AMT')",
         'admid': 1,
         'rate': "Symbol('R1')",
-        'duration': 'None',
+        'duration': None,
     }
     inf2 = Infusion.from_dict(d)
     assert inf1 == inf2
@@ -215,8 +215,8 @@ def test_dict(load_model_for_test, testdata):
 
 def test_add():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
-    s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
-    s3 = Assignment(S('M'), sympy.Integer(2))
+    s2 = Assignment(S('Z'), Expr.integer(23) + S('M'))
+    s3 = Assignment(S('M'), Expr.integer(2))
     s = Statements([s1, s2])
     new = (s3,) + s
     assert len(new) == 3
@@ -224,52 +224,52 @@ def test_add():
 
 def test_remove_symbol_definition():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
-    s2 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
-    s3 = Assignment(S('M'), sympy.Integer(2))
-    s4 = Assignment(S('G'), sympy.Integer(3))
+    s2 = Assignment(S('Z'), Expr.integer(23) + S('M'))
+    s3 = Assignment(S('M'), Expr.integer(2))
+    s4 = Assignment(S('G'), Expr.integer(3))
     s = Statements([s4, s3, s2, s1])
-    ns = s.remove_symbol_definitions([S('Z')], s1)
+    ns = s.remove_symbol_definitions([Expr.symbol('Z')], s1)
     assert ns == Statements([s4, s1])
 
-    s1 = Assignment(S('K'), sympy.Integer(16))
-    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s1 = Assignment(S('K'), Expr.integer(16))
+    s2 = Assignment(S('CL'), Expr.integer(23))
     s3 = Assignment(S('CL'), S('CL') + S('K'))
     s4 = Assignment(S('G'), S('X') + S('K'))
     s = Statements([s1, s2, s3, s4])
-    ns = s.remove_symbol_definitions([S('CL')], s4)
+    ns = s.remove_symbol_definitions([Expr.symbol('CL')], s4)
     assert ns == Statements([s1, s4])
 
-    s1 = Assignment(S('K'), sympy.Integer(16))
-    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s1 = Assignment(S('K'), Expr.integer(16))
+    s2 = Assignment(S('CL'), Expr.integer(23))
     s3 = Assignment(S('CL'), S('CL') + S('K'))
     s4 = Assignment(S('G'), S('X') + S('K'))
     s5 = Assignment(S('KR'), S('CL'))
     s = Statements([s1, s2, s3, s4, s5])
-    ns = s.remove_symbol_definitions([S('CL')], s4)
+    ns = s.remove_symbol_definitions([Expr.symbol('CL')], s4)
     assert ns == Statements([s1, s2, s3, s4, s5])
 
-    s1 = Assignment(S('K'), sympy.Integer(16))
-    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s1 = Assignment(S('K'), Expr.integer(16))
+    s2 = Assignment(S('CL'), Expr.integer(23))
     s3 = Assignment(S('CL'), S('CL') + S('K'))
     s4 = Assignment(S('G'), S('X'))
     s = Statements([s1, s2, s3, s4])
-    ns = s.remove_symbol_definitions([S('CL'), S('K')], s4)
+    ns = s.remove_symbol_definitions([Expr.symbol('CL'), Expr.symbol('K')], s4)
     assert ns == Statements([s4])
 
-    s1 = Assignment(S('K'), sympy.Integer(16))
-    s2 = Assignment(S('CL'), sympy.Integer(23))
+    s1 = Assignment(S('K'), Expr.integer(16))
+    s2 = Assignment(S('CL'), Expr.integer(23))
     s3 = Assignment(S('CL'), S('CL') + S('K'))
     s4 = Assignment(S('G'), S('X'))
     s5 = Assignment(S('P'), S('K'))
     s = Statements([s1, s2, s3, s4, s5])
-    ns = s.remove_symbol_definitions([S('CL'), S('K')], s4)
+    ns = s.remove_symbol_definitions([Expr.symbol('CL'), Expr.symbol('K')], s4)
     assert ns == Statements([s1, s4, s5])
 
 
 def test_reassign():
-    s1 = Assignment(S('G'), sympy.Integer(3))
-    s2 = Assignment(S('M'), sympy.Integer(2))
-    s3 = Assignment(S('Z'), sympy.Integer(23) + S('M'))
+    s1 = Assignment(S('G'), Expr.integer(3))
+    s2 = Assignment(S('M'), Expr.integer(2))
+    s3 = Assignment(S('Z'), Expr.integer(23) + S('M'))
     s4 = Assignment(S('KA'), S('X') + S('Y'))
     s = Statements([s1, s2, s3, s4])
     snew = s.reassign(S('M'), S('x') + S('y'))
@@ -344,7 +344,7 @@ def test_before_odes(load_model_for_test, pheno_path):
 def test_full_expression(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     expr = model.statements.before_odes.full_expression("CL")
-    assert expr == sympy.Symbol("PTVCL") * sympy.Symbol("WGT") * sympy.exp(sympy.Symbol("ETA_1"))
+    assert expr == Expr.symbol("PTVCL") * Expr.symbol("WGT") * (Expr.symbol("ETA_1").exp())
     with pytest.raises(ValueError):
         model.statements.full_expression("Y")
 
@@ -354,17 +354,17 @@ def test_to_explicit_ode_system(load_model_for_test, pheno_path):
     cs = model.statements.ode_system
     assert len(cs.eqs) == 1
 
-    assert cs.amounts == sympy.Matrix([sympy.Function('A_CENTRAL')('t')])
+    assert cs.amounts == Matrix([Expr.function('A_CENTRAL', 't')])
 
 
 def test_repr_latex():
-    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    s1 = Assignment.create(S('KA'), S('X') + S('Y'))
     latex = s1._repr_latex_()
     assert latex == r'$KA = X + Y$'
 
 
 def test_repr_html():
-    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    s1 = Assignment.create(S('KA'), S('X') + S('Y'))
     stats = Statements([s1])
     html = stats._repr_html_()
     assert 'X + Y' in html
@@ -424,7 +424,7 @@ def test_dependencies(load_model_for_test, pheno_path):
 
 def test_builder():
     cb = CompartmentalSystemBuilder()
-    dose = Bolus('AMT')
+    dose = Bolus(Expr.symbol('AMT'))
     central = Compartment.create('CENTRAL', doses=(dose,))
     cb.add_compartment(central)
     cb.add_flow(central, output, S('K'))

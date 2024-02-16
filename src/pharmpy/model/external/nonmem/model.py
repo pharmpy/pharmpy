@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Optional, Tuple
 
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import Assignment, DataInfo, EstimationStep, EstimationSteps
@@ -51,7 +51,7 @@ class NONMEMModelInternals(ModelInternals):
     old_name: str
     old_description: str
     old_estimation_steps: EstimationSteps
-    old_observation_transformation: sympy.Symbol
+    old_observation_transformation: Expr
     old_parameters: Parameters
     old_random_variables: RandomVariables
     old_statements: Statements
@@ -148,7 +148,7 @@ class Model(BaseModel):
         if not model.random_variables.etas:
             omega = Parameter('DUMMYOMEGA', init=0, fix=True)
             eta = NormalDistribution.create('eta_dummy', 'iiv', 0, omega.symbol)
-            statement = Assignment(sympy.Symbol('DUMMYETA'), sympy.Symbol(eta.names[0]))
+            statement = Assignment(Expr.symbol('DUMMYETA'), Expr.symbol(eta.names[0]))
             model = model.replace(
                 statements=statement + model.statements,
                 random_variables=model.random_variables + eta,
@@ -190,7 +190,7 @@ class Model(BaseModel):
             model, abbr_map = abbr_translation(model, rv_trans)
             trans = {key: value for key, value in trans.items() if key not in abbr_map.values()}
 
-        trans = {sympy.Symbol(key): sympy.Symbol(value) for key, value in trans.items()}
+        trans = {Expr.symbol(key): Expr.symbol(value) for key, value in trans.items()}
         model, updated_dataset = update_statements(
             model, model.internals.old_statements, model._statements, trans
         )
@@ -336,7 +336,7 @@ def parse_model(
 
     parameters, rvs, name_map = parse_parameters(control_stream, statements)
 
-    subs_map = {sympy.Symbol(key): sympy.Symbol(val) for key, val in name_map.items()}
+    subs_map = {Expr.symbol(key): Expr.symbol(val) for key, val in name_map.items()}
     statements = statements.subs(subs_map)
 
     # FIXME: Handle by creation of new model object

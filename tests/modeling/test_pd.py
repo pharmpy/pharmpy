@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -18,7 +18,7 @@ from pharmpy.modeling import (
 
 
 def S(x):
-    return sympy.Symbol(x)
+    return Expr.symbol(x)
 
 
 @pytest.mark.parametrize(
@@ -37,9 +37,9 @@ def test_set_direct_effect(load_model_for_test, pd_model, testdata):
 )
 def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    conc_e = sympy.Function("A_EFFECT")('t')
+    conc_e = Expr.function("A_EFFECT", 't')
     ke0 = S("KE0")
-    central_amount = sympy.Function("A_CENTRAL")(S('t'))
+    central_amount = Expr.function("A_CENTRAL", S('t'))
     comp_e = Compartment.create("EFFECT", input=ke0 * central_amount / S("VC"))
 
     model1 = add_effect_compartment(model, "linear")
@@ -62,26 +62,30 @@ def _test_effect_models(model, expr, conc):
     ec50 = S("EC_50")
 
     if expr == 'linear':
-        assert model.statements[1] == Assignment(e0, S("POP_B"))
-        assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-2] == Assignment(e, e0 * (1 + S("SLOPE") * conc))
-        assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements[1] == Assignment.create(e0, S("POP_B"))
+        assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
+        assert model.statements.after_odes[-2] == Assignment.create(e, e0 * (1 + S("SLOPE") * conc))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
     elif expr == "emax":
-        assert model.statements[0] == Assignment(ec50, S("POP_EC_50"))
-        assert model.statements[2] == Assignment(e0, S("POP_B"))
-        assert model.statements[1] == Assignment(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-2] == Assignment(
+        assert model.statements[0] == Assignment.create(ec50, S("POP_EC_50"))
+        assert model.statements[2] == Assignment.create(e0, S("POP_B"))
+        assert model.statements[1] == Assignment.create(emax, S("POP_E_MAX"))
+        assert model.statements.after_odes[-2] == Assignment.create(
             e, e0 * (1 + (emax * conc) / (ec50 + conc))
         )
-        assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
     elif expr == "sigmoid":
-        assert model.statements[0] == Assignment(S("N"), S("POP_N"))
-        assert model.statements[1] == Assignment(ec50, S("POP_EC_50"))
-        assert model.statements[3] == Assignment(e0, S("POP_B"))
-        assert model.statements[2] == Assignment(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-2] == Assignment(
+        assert model.statements[0] == Assignment.create(S("N"), S("POP_N"))
+        assert model.statements[1] == Assignment.create(ec50, S("POP_EC_50"))
+        assert model.statements[3] == Assignment.create(e0, S("POP_B"))
+        assert model.statements[2] == Assignment.create(emax, S("POP_E_MAX"))
+        assert model.statements.after_odes[-2] == Assignment.create(
             e,
-            sympy.Piecewise(
+            Expr.piecewise(
                 (
                     e0 * (1 + ((emax * conc ** S("N")) / (ec50 ** S("N") + conc ** S("N")))),
                     conc > 0,
@@ -89,22 +93,28 @@ def _test_effect_models(model, expr, conc):
                 (e0, True),
             ),
         )
-        assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
         assert model.parameters["POP_N"].init == 1
     elif expr == "step":
-        assert model.statements[1] == Assignment(e0, S("POP_B"))
-        assert model.statements[0] == Assignment(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-2] == Assignment(
-            e, sympy.Piecewise((e0, conc <= 0), (e0 * (1 + emax), True))
+        assert model.statements[1] == Assignment.create(e0, S("POP_B"))
+        assert model.statements[0] == Assignment.create(emax, S("POP_E_MAX"))
+        assert model.statements.after_odes[-2] == Assignment.create(
+            e, Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True))
         )
-        assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
     elif expr == "loglin":
-        assert model.statements[1] == Assignment(e0, S("POP_B"))
-        assert model.statements[0] == Assignment(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-2] == Assignment(
-            e, S("SLOPE") * sympy.log(conc + sympy.exp(e0 / S("SLOPE")))
+        assert model.statements[1] == Assignment.create(e0, S("POP_B"))
+        assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
+        assert model.statements.after_odes[-2] == Assignment.create(
+            e, S("SLOPE") * (conc + (e0 / S("SLOPE")).exp()).log()
         )
-        assert model.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+        assert model.statements.after_odes[-1] == Assignment.create(
+            S("Y_2"), e + e * S("epsilon_p")
+        )
 
 
 @pytest.mark.parametrize(
@@ -132,9 +142,9 @@ def test_set_baseline_effect(load_model_for_test, testdata):
     baseline = set_baseline_effect(model)
 
     e, e0 = S('E'), S('B')
-    assert baseline.statements[0] == Assignment(e0, S("POP_B"))
-    assert baseline.statements.after_odes[-2] == Assignment(e, e0)
-    assert baseline.statements.after_odes[-1] == Assignment(S("Y_2"), e + e * S("epsilon_p"))
+    assert baseline.statements[0] == Assignment.create(e0, S("POP_B"))
+    assert baseline.statements.after_odes[-2] == Assignment.create(e, e0)
+    assert baseline.statements.after_odes[-1] == Assignment.create(S("Y_2"), e + e * S("epsilon_p"))
 
 
 def test_pd_michaelis_menten(load_model_for_test, testdata):

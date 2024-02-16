@@ -1,9 +1,12 @@
 import numpy as np
 import pytest
-import sympy
-from sympy import Symbol as symbol
 
+from pharmpy.basic import Expr
 from pharmpy.model import Parameter, Parameters
+
+
+def symbol(x):
+    return Expr.symbol(x)
 
 
 @pytest.mark.parametrize(
@@ -18,9 +21,9 @@ from pharmpy.model import Parameter, Parameters
 )
 def test_initialization(name, init, lower, upper, fix):
     if lower is None:
-        lower = -sympy.oo
+        lower = -float("inf")
     if upper is None:
-        upper = sympy.oo
+        upper = float("inf")
     if fix is None:
         fix = False
     param = Parameter(name, init, lower, upper, fix)
@@ -172,7 +175,7 @@ def test_pset_lower_upper():
     p2 = Parameter.create('Y', 1, lower=0)
     pset = Parameters((p1, p2))
     assert pset.lower == {'X': -1, 'Y': 0}
-    assert pset.upper == {'X': 1, 'Y': sympy.oo}
+    assert pset.upper == {'X': 1, 'Y': float("inf")}
 
 
 def test_pset_nonfixed_inits():

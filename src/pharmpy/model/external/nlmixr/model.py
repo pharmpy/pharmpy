@@ -152,7 +152,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     dv_statement = model.statements.find_assignment(dv)
 
     only_piecewise = False
-    if dv_statement.expression.is_Piecewise:
+    if dv_statement.expression.is_piecewise():
         only_piecewise = True
         dependencies = set()
         res_alias = set()

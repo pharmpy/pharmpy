@@ -3,8 +3,8 @@ import shutil
 from typing import Iterable
 
 import pytest
-import sympy
 
+from pharmpy.basic import Expr, Matrix
 from pharmpy.model import Assignment, Bolus, Infusion
 from pharmpy.modeling import (
     add_bioavailability,
@@ -94,7 +94,7 @@ $ESTIMATION METHOD=1 INTERACTION
     central = odes.central_compartment
     periph = odes.find_peripheral_compartments()[0]
     rate = model.statements.ode_system.get_flow(central, periph)
-    assert rate == sympy.Symbol('Q') / sympy.Symbol('V1')
+    assert rate == Expr.symbol('Q') / Expr.symbol('V1')
 
 
 def test_advan2(create_model_for_test):
@@ -1237,7 +1237,7 @@ CLMM = THETA(3)
 VC = THETA(2)
 KM = THETA(1)
 $DES
-DADT(1) = A(1)*(-CL/VC - CLMM*KM/(VC*(A(1)/VC + KM)))
+DADT(1) = -A(1)*(CL/VC + CLMM*KM/(VC*(A(1)/VC + KM)))
 $ERROR
 Y=F+F*EPS(1)
 $THETA  (0,0.067,101.85000000000001) ; POP_KM
@@ -1700,11 +1700,11 @@ def test_bioavailability(load_model_for_test, testdata):
 def test_move_bioavailability(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = add_bioavailability(model)
-    assert model.statements.ode_system.dosing_compartments[0].bioavailability == sympy.Symbol("F1")
+    assert model.statements.ode_system.dosing_compartments[0].bioavailability == Expr.symbol("F1")
 
     model = set_first_order_absorption(model)
     assert model.statements.ode_system.dosing_compartments[0].name == "DEPOT"
-    assert model.statements.ode_system.dosing_compartments[0].bioavailability == sympy.Symbol("F1")
+    assert model.statements.ode_system.dosing_compartments[0].bioavailability == Expr.symbol("F1")
     assert not model.statements.ode_system.find_compartment("CENTRAL").doses
 
 
@@ -2190,7 +2190,7 @@ def test_lagtime_then_zoabs(load_example_model_for_test):
     model = set_first_order_absorption(model)
     model = add_lag_time(model)
     model = set_zero_order_absorption(model)
-    assert get_lag_times(model) == {'CENTRAL': sympy.Symbol('ALAG1')}
+    assert get_lag_times(model) == {'CENTRAL': Expr.symbol('ALAG1')}
 
 
 def test_seq_to_ZO(load_model_for_test, testdata):
@@ -2443,14 +2443,14 @@ def test_mm_then_periph(pheno):
     odes = model.statements.ode_system
     central = odes.central_compartment
     periph = odes.find_peripheral_compartments()[0]
-    assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
-    assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
+    assert odes.get_flow(central, periph) == Expr.symbol('QP1') / Expr.symbol('V')
+    assert odes.get_flow(periph, central) == Expr.symbol('QP1') / Expr.symbol('VP1')
     model = add_peripheral_compartment(model)
     odes = model.statements.ode_system
     newperiph = odes.find_peripheral_compartments()[1]
     central = odes.central_compartment
-    assert odes.get_flow(central, newperiph) == sympy.Symbol('QP2') / sympy.Symbol('V')
-    assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')
+    assert odes.get_flow(central, newperiph) == Expr.symbol('QP2') / Expr.symbol('V')
+    assert odes.get_flow(newperiph, central) == Expr.symbol('QP2') / Expr.symbol('VP2')
 
 
 def test_mixed_mm_fo_then_periph(pheno, load_model_for_test, testdata):
@@ -2459,14 +2459,14 @@ def test_mixed_mm_fo_then_periph(pheno, load_model_for_test, testdata):
     odes = model.statements.ode_system
     central = odes.central_compartment
     periph = odes.find_peripheral_compartments()[0]
-    assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
-    assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
+    assert odes.get_flow(central, periph) == Expr.symbol('QP1') / Expr.symbol('V')
+    assert odes.get_flow(periph, central) == Expr.symbol('QP1') / Expr.symbol('VP1')
     model = add_peripheral_compartment(model)
     odes = model.statements.ode_system
     newperiph = odes.find_peripheral_compartments()[1]
     central = odes.central_compartment
-    assert odes.get_flow(central, newperiph) == sympy.Symbol('QP2') / sympy.Symbol('V')
-    assert odes.get_flow(newperiph, central) == sympy.Symbol('QP2') / sympy.Symbol('VP2')
+    assert odes.get_flow(central, newperiph) == Expr.symbol('QP2') / Expr.symbol('V')
+    assert odes.get_flow(newperiph, central) == Expr.symbol('QP2') / Expr.symbol('VP2')
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = set_mixed_mm_fo_elimination(pheno)
@@ -2474,8 +2474,8 @@ def test_mixed_mm_fo_then_periph(pheno, load_model_for_test, testdata):
     odes = model.statements.ode_system
     central = odes.central_compartment
     periph = odes.find_peripheral_compartments()[0]
-    assert odes.get_flow(central, periph) == sympy.Symbol('QP1') / sympy.Symbol('V')
-    assert odes.get_flow(periph, central) == sympy.Symbol('QP1') / sympy.Symbol('VP1')
+    assert odes.get_flow(central, periph) == Expr.symbol('QP1') / Expr.symbol('V')
+    assert odes.get_flow(periph, central) == Expr.symbol('QP1') / Expr.symbol('VP1')
 
 
 def test_set_ode_solver(load_model_for_test, pheno_path):
@@ -2540,12 +2540,12 @@ def test_set_intial_conditions(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = set_initial_condition(model, "CENTRAL", 10)
     assert len(model.statements) == 16
-    ic = Assignment(sympy.Function('A_CENTRAL')(0), sympy.Integer(10))
+    ic = Assignment.create(Expr.function('A_CENTRAL', 0), Expr.integer(10))
     assert model.statements.before_odes[-1] == ic
-    assert get_initial_conditions(model) == {sympy.Function('A_CENTRAL')(0): sympy.Integer(10)}
+    assert get_initial_conditions(model) == {Expr.function('A_CENTRAL', 0): Expr.integer(10)}
     model = set_initial_condition(model, "CENTRAL", 23)
     assert len(model.statements) == 16
-    ic = Assignment(sympy.Function('A_CENTRAL')(0), sympy.Integer(23))
+    ic = Assignment.create(Expr.function('A_CENTRAL', 0), Expr.integer(23))
     assert model.statements.before_odes[-1] == ic
     model = set_initial_condition(model, "CENTRAL", 0)
     assert len(model.statements) == 15
@@ -2554,20 +2554,20 @@ def test_set_intial_conditions(load_example_model_for_test):
 def test_get_zero_order_inputs(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     zo = get_zero_order_inputs(model)
-    assert zo == sympy.Matrix([[0]])
+    assert zo == Matrix([[0]])
 
 
 def test_set_zero_order_input(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     model = set_zero_order_input(model, "CENTRAL", 10)
     zo = get_zero_order_inputs(model)
-    assert zo == sympy.Matrix([[10]])
+    assert zo == Matrix([[10]])
 
 
 def test_get_initial_conditions(load_example_model_for_test, load_model_for_test, datadir):
     model = load_example_model_for_test('pheno')
-    assert get_initial_conditions(model) == {sympy.Function('A_CENTRAL')(0): sympy.Integer(0)}
-    ic = Assignment(sympy.Function('A_CENTRAL')(0), sympy.Integer(23))
+    assert get_initial_conditions(model) == {Expr.function('A_CENTRAL', 0): Expr.integer(0)}
+    ic = Assignment.create(Expr.function('A_CENTRAL', 0), Expr.integer(23))
     statements = (
         model.statements.before_odes
         + ic
@@ -2575,14 +2575,14 @@ def test_get_initial_conditions(load_example_model_for_test, load_model_for_test
         + model.statements.after_odes
     )
     mod2 = model.replace(statements=statements)
-    assert get_initial_conditions(mod2) == {sympy.Function('A_CENTRAL')(0): sympy.Integer(23)}
+    assert get_initial_conditions(mod2) == {Expr.function('A_CENTRAL', 0): Expr.integer(23)}
     path = datadir / 'minimal.mod'
     model = load_model_for_test(path)
     assert get_initial_conditions(model) == {}
 
 
 def _symbols(names: Iterable[str]):
-    return list(map(sympy.Symbol, names))
+    return list(map(Expr.symbol, names))
 
 
 def test_find_clearance_parameters(pheno):
@@ -2706,7 +2706,7 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     ode = model.statements.ode_system
     cb = CompartmentalSystemBuilder(ode)
-    cb.set_dose(cb.find_compartment("CENTRAL"), Bolus(sympy.Symbol('AMT'), admid=2), replace=False)
+    cb.set_dose(cb.find_compartment("CENTRAL"), Bolus(Expr.symbol('AMT'), admid=2), replace=False)
     ode = CompartmentalSystem(cb)
     model = model.replace(
         statements=model.statements.before_odes + ode + model.statements.after_odes
@@ -2718,39 +2718,41 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     depot = model.statements.ode_system.find_compartment("DEPOT")
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
-    assert depot.doses[0] == Bolus(sympy.Symbol('AMT'), admid=1)
-    assert central.doses[0] == Bolus(sympy.Symbol('AMT'), admid=2)
+    assert depot.doses[0] == Bolus(Expr.symbol('AMT'), admid=1)
+    assert central.doses[0] == Bolus(Expr.symbol('AMT'), admid=2)
 
     model = set_zero_order_absorption(model)
     central = model.statements.ode_system.find_compartment("CENTRAL")
 
     assert len(central.doses) == 2
-    assert central.doses[0] == Infusion(sympy.Symbol('AMT'), admid=1, duration=sympy.Symbol("D1"))
+    assert central.doses[0] == Infusion.create(
+        Expr.symbol('AMT'), admid=1, duration=Expr.symbol("D1")
+    )
 
 
 def test_get_central_volume_and_clearance(
     testdata, load_example_model_for_test, load_model_for_test
 ):
     model = load_example_model_for_test("pheno")
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CL"))
 
     model = set_michaelis_menten_elimination(model)
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CLMM"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CLMM"))
 
     model = set_mixed_mm_fo_elimination(model)
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CL"))
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CL"))
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("V"), sympy.Symbol("CL"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CL"))
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("VC"), sympy.Symbol("CL"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("VC"), Expr.symbol("CL"))
 
     model = set_michaelis_menten_elimination(model)
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("VC"), sympy.Symbol("CLMM"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("VC"), Expr.symbol("CLMM"))
 
     model = add_peripheral_compartment(model)
-    assert get_central_volume_and_clearance(model) == (sympy.Symbol("VC"), sympy.Symbol("CLMM"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("VC"), Expr.symbol("CLMM"))

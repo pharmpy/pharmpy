@@ -1,7 +1,7 @@
 import pandas as pd
 import pytest
-import sympy
 
+from pharmpy.basic import Expr
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models
@@ -41,9 +41,9 @@ def test_create_qss_models_multiple_dvs(load_example_model_for_test):
     models = create_qss_models(model, ests, {'target': 3, 'complex': 2})
     assert len(models) == 8
     assert models[0].dependent_variables == {
-        sympy.Symbol('Y'): 1,
-        sympy.Symbol('Y_TARGET'): 3,
-        sympy.Symbol('Y_COMPLEX'): 2,
+        Expr.symbol('Y'): 1,
+        Expr.symbol('Y_TARGET'): 3,
+        Expr.symbol('Y_COMPLEX'): 2,
     }
 
 

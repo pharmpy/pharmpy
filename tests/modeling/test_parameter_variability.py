@@ -4,9 +4,8 @@ import shutil
 from operator import add, mul
 
 import pytest
-from sympy import Symbol as S
 
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Assignment, NormalDistribution
 from pharmpy.modeling import (
@@ -33,6 +32,10 @@ from pharmpy.modeling.parameter_variability import (
     _choose_cov_param_init,
 )
 from pharmpy.tools import read_modelfit_results
+
+
+def S(x):
+    return Expr.symbol(x)
 
 
 @pytest.mark.parametrize(
@@ -604,8 +607,8 @@ def test_add_iov_raises(
 @pytest.mark.parametrize(
     'addition,expression',
     [
-        (EtaAddition.exponential(add), S('CL') + sympy.exp(S('eta_new'))),
-        (EtaAddition.exponential(mul), S('CL') * sympy.exp(S('eta_new'))),
+        (EtaAddition.exponential(add), S('CL') + S('eta_new').exp()),
+        (EtaAddition.exponential(mul), S('CL') * S('eta_new').exp()),
     ],
 )
 def test_add_iiv_apply(addition, expression):
@@ -813,16 +816,12 @@ def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
 
     model = add_iiv(model, "TVCL", "add")
     model = remove_iiv(model, 'TVCL')
-    assert model.statements.find_assignment('TVCL') == Assignment(
-        sympy.Symbol('TVCL'), sympy.Symbol('PTVCL') * sympy.Symbol('WGT')
-    )
+    assert model.statements.find_assignment('TVCL') == Assignment(S('TVCL'), S('PTVCL') * S('WGT'))
 
     # Test with two different ETAs
     model6 = add_iiv(model, 'CL', 'add')
     model6 = remove_iiv(model6, 'CL')
-    assert model6.statements.find_assignment('CL') == Assignment(
-        sympy.Symbol('CL'), sympy.Symbol('TVCL')
-    )
+    assert model6.statements.find_assignment('CL') == Assignment(S('CL'), S('TVCL'))
 
     model7 = add_iiv(model, 'Y', 'exp')
     model7 = remove_iiv(model7, 'Y')
@@ -836,7 +835,7 @@ def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
     model = load_model_for_test(testdata / 'nonmem/models/fviii6.mod')
     model = remove_iiv(model, 'CL')
     assert model.statements.find_assignment('CL') == Assignment(
-        sympy.Symbol('CL'), sympy.Symbol('TVCL') * sympy.exp(sympy.Symbol('IOVCL'))
+        S('CL'), S('TVCL') * S('IOVCL').exp()
     )
 
 
@@ -1223,7 +1222,7 @@ def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad,
         (
             EtaTransformation.boxcox(2),
             S('ETAB(2)'),
-            ((sympy.exp(S('ETA(2)')) ** S('BOXCOX2') - 1) / S('BOXCOX2')),
+            ((S('ETA(2)').exp() ** S('BOXCOX2') - 1) / S('BOXCOX2')),
         ),
     ],
 )

@@ -201,8 +201,7 @@ def _compartmental_model(
         cb.add_compartment(central)
         vm = Expr.symbol('VM')
         km = Expr.symbol('KM')
-        t = sympy.Symbol('t')
-        cb.add_flow(central, output, vm / (km + sympy.Function(central.amount.name)(t)))
+        cb.add_flow(central, output, vm / (km + Expr.function(central.amount.name, 't')))
         ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
     elif advan == 'ADVAN11':
@@ -282,23 +281,22 @@ def _compartmental_model(
 
         rec_model = control_stream.get_records('MODEL')[0]
 
-        subs_dict, comp_names = {}, {}
+        subs_dict = {}
         comps = [c for c, _ in rec_model.compartments()]
         func_to_name = {}
 
-        t = sympy.Symbol('t')
+        t = Expr.symbol('t')
         subs_dict['T'] = t
         for i, c in enumerate(comps, 1):
-            a = sympy.Function(f'A_{c}')
-            subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
-            subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
-            subs_dict[f'A({i})'] = a(t)
-            comp_names[f'A({i})'] = a
+            a = Expr.function(f'A_{c}', t)
+            subs_dict[Expr.symbol(f'DADT({i})')] = Expr.derivative(a, t)
+            subs_dict[Expr.symbol(f'DADT ({i})')] = Expr.derivative(a, t)
+            subs_dict[Expr.symbol(f'A({i})')] = a
             func_to_name[a] = c
 
         sset = des.statements.subs(subs_dict)
 
-        eqs = [sympy.Eq(s.symbol, s.expression) for s in sset if not s.symbol.is_Symbol]
+        eqs = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_derivative()]
 
         cs = to_compartmental_system(func_to_name, eqs)
         cb = CompartmentalSystemBuilder(cs)
@@ -324,7 +322,7 @@ def _compartmental_model(
             if 'DEFOBSERVATION' in opts:
                 defobs = (name, i)
 
-        ass = _f_link_assignment(control_stream, sympy.Symbol(f'A_{defobs[0]}'), defobs[1])
+        ass = _f_link_assignment(control_stream, Expr.symbol(f'A_{defobs[0]}'), defobs[1])
     else:
         return None
     return CompartmentalSystem(cb), ass, comp_map
@@ -337,33 +335,32 @@ def des_assign_statements(
     if des:
         rec_model = control_stream.get_records('MODEL')[0]
 
-        subs_dict, comp_names = {}, {}
+        subs_dict = {}
         comps = [c for c, _ in rec_model.compartments()]
         func_to_name = {}
-        t = sympy.Symbol('t')
+        t = Expr.symbol('t')
         for i, c in enumerate(comps, 1):
-            a = sympy.Function(f'A_{c}')
-            subs_dict[f'DADT({i})'] = sympy.Derivative(a(t))
-            subs_dict[f'DADT ({i})'] = sympy.Derivative(a(t))
-            subs_dict[f'A({i})'] = a(t)
-            comp_names[f'A({i})'] = a
+            a = Expr.function(f'A_{c}', t)
+            subs_dict[Expr.symbol(f'DADT({i})')] = Expr.derivative(a, t)
+            subs_dict[Expr.symbol(f'DADT ({i})')] = Expr.derivative(a, t)
+            subs_dict[Expr.symbol(f'A({i})')] = a
             func_to_name[a] = c
 
         sset = des.statements.subs(subs_dict)
 
-        statements = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_Symbol]
+        statements = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_symbol()]
         if len(statements) == 0:
             statements = None
         return statements
 
 
 def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compartment, compno: int):
-    f = sympy.Symbol('F')
+    f = Expr.symbol('F')
     try:
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
-    fexpr = sympy.Function(fexpr.name)(sympy.Symbol('t'))
+    fexpr = Expr.function(fexpr.name, 't')
     pkrec = control_stream.get_records('PK')[0]
     scaling = f'S{compno}'
     if pkrec.statements.find_assignment(scaling):

@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections import defaultdict
 from typing import Dict, Iterable, Set, Tuple, TypeVar, Union
 
+from pharmpy.basic import Unit
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
@@ -19,7 +20,7 @@ def _extract_minus(expr):
         return expr
 
 
-def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
+def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     """Derive the physical unit of a variable in the model
 
     Unit information for the dataset needs to be available.
@@ -35,8 +36,8 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
 
     Returns
     -------
-    unit expression
-        A sympy physics.units expression
+    Unit
+        A unit expression
 
     Examples
     --------
@@ -60,30 +61,37 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
         return di[variable].unit
 
     # FIXME: Handle other DVs?
-    y = list(model.dependent_variables.keys())[0]
-    input_units = {sympy.Symbol(col.name): col.unit for col in di}
+    y = sympy.sympify(list(model.dependent_variables.keys())[0])
+    input_units = {sympy.Symbol(col.name): col.unit._expr for col in di}
     pruned_nodes = {sympy.exp}
 
     def pruning_predicate(e: sympy.Expr) -> bool:
         return e.func in pruned_nodes
 
     unit_eqs = []
-    unit_eqs.append(y - di[di.dv_column.name].unit)
+    # FIXME: Using private _expr in some places. sympify doesn't work for some reason.
+    a = di[di.dv_column.name].unit._expr
+    unit_eqs.append(y - a)
 
     for s in model.statements:
         if isinstance(s, Assignment):
             expr = sympy.expand(
-                subs(prune(pruning_predicate, s.expression), input_units, simultaneous=True)
+                subs(
+                    prune(pruning_predicate, sympy.sympify(s.expression)),
+                    input_units,
+                    simultaneous=True,
+                )
             )
             if expr.is_Add:
                 for term in expr.args:
-                    unit_eqs.append(s.symbol - _extract_minus(term))
+                    unit_eqs.append(sympy.sympify(s.symbol) - _extract_minus(term))
             else:
-                unit_eqs.append(s.symbol - _extract_minus(expr))
+                unit_eqs.append(sympy.sympify(s.symbol) - _extract_minus(expr))
         elif isinstance(s, CompartmentalSystem):
-            amt_unit = di[di.typeix['dose'][0].name].unit
-            time_unit = di[di.idv_column.name].unit
+            amt_unit = di[di.typeix['dose'][0].name].unit._expr
+            time_unit = di[di.idv_column.name].unit._expr
             for e in s.compartmental_matrix.diagonal():
+                e = sympy.sympify(e)
                 if e.is_Add:
                     for term in e.args:
                         unit_eqs.append(amt_unit / time_unit - _extract_minus(term))
@@ -98,7 +106,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]):
     filtered_unit_eqs = _filter_equations(unit_eqs, symbol)
     # NOTE: For some reason telling sympy to solve for "symbol" does not work
     sol = sympy.solve(filtered_unit_eqs, dict=True)
-    return sol[0][symbol]
+    return Unit(sol[0][symbol])
 
 
 def _filter_equations(

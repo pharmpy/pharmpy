@@ -1,8 +1,8 @@
 from functools import partial
 from typing import List, Literal, Optional
 
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.deps.scipy import stats
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -317,8 +317,8 @@ def _create_base_model(input_model_entry, current_iteration, dv):
     sigma = NormalDistribution.create(sigma_name, 'ruv', 0, sigma.symbol)
     rvs = RandomVariables.create([eta, sigma])
 
-    y = Assignment(
-        sympy.Symbol('Y'), theta.symbol + sympy.Symbol(eta_name) + sympy.Symbol(sigma_name)
+    y = Assignment.create(
+        Expr.symbol('Y'), theta.symbol + Expr.symbol(eta_name) + Expr.symbol(sigma_name)
     )
     statements = Statements([y])
 
@@ -373,10 +373,10 @@ def _create_combined_model(input_model_entry, current_iteration):
     sset = model.statements
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
-    ipred = sympy.Symbol('IPRED')
+    ipred = Expr.symbol('IPRED')
     s = sset[0]
     assert isinstance(s, Assignment)
-    s = Assignment(s.symbol, s.expression + ruv_prop + ruv_add / ipred)
+    s = Assignment.create(s.symbol, s.expression + ruv_prop + ruv_add / ipred)
 
     prop_name = 'sigma_prop'
     model = add_population_parameter(model, prop_name, 1, lower=0)
@@ -390,8 +390,8 @@ def _create_combined_model(input_model_entry, current_iteration):
     add_name = 'sigma_add'
     model = add_population_parameter(model, add_name, sigma_add_init, lower=0)
 
-    eps_prop = NormalDistribution.create(ruv_prop.name, 'ruv', 0, sympy.Symbol(prop_name))
-    eps_add = NormalDistribution.create(ruv_add.name, 'ruv', 0, sympy.Symbol(add_name))
+    eps_prop = NormalDistribution.create(ruv_prop.name, 'ruv', 0, Expr.symbol(prop_name))
+    eps_add = NormalDistribution.create(ruv_add.name, 'ruv', 0, Expr.symbol(add_name))
     name = f'combined_{current_iteration}'
     model = model.replace(
         statements=s + sset[1:],

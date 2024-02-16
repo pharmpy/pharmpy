@@ -2,8 +2,8 @@ import os.path
 from pathlib import Path
 
 import pytest
-import sympy
 
+from pharmpy.basic import Expr
 from pharmpy.model import Model as BaseModel
 from pharmpy.model.external.nlmixr.model import Model as nlmixrModel
 from pharmpy.model.external.nonmem import Model as NMModel
@@ -100,8 +100,8 @@ def test_load_example_model():
 
 def test_get_model_covariates(pheno, testdata, load_model_for_test):
     assert set(get_model_covariates(pheno)) == {
-        sympy.Symbol('APGR'),
-        sympy.Symbol('WGT'),
+        Expr.symbol('APGR'),
+        Expr.symbol('WGT'),
     }
     minimal = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert set(get_model_covariates(minimal)) == set()

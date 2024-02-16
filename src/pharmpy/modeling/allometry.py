@@ -1,24 +1,20 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, List, Optional, Union
+from typing import List, Optional, Union
 
+from pharmpy.basic import Expr, TSymbol
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .expressions import _create_symbol
 from .odes import find_clearance_parameters, find_volume_parameters
 
-if TYPE_CHECKING:
-    import sympy
-else:
-    from pharmpy.deps import sympy
-
 
 def add_allometry(
     model: Model,
-    allometric_variable: Optional[Union[str, sympy.Expr]] = None,
-    reference_value: Union[str, int, float, sympy.Expr] = 70,
-    parameters: Optional[List[Union[str, sympy.Expr]]] = None,
+    allometric_variable: Optional[TSymbol] = None,
+    reference_value: Union[str, int, float, Expr] = 70,
+    parameters: Optional[List[Union[str, Expr]]] = None,
     initials: Optional[List[Union[int, float]]] = None,
     lower_bounds: Optional[List[Union[int, float]]] = None,
     upper_bounds: Optional[List[Union[int, float]]] = None,
@@ -40,9 +36,9 @@ def add_allometry(
     ----------
     model : Model
         Pharmpy model
-    allometric_variable : str or sympy.Expr
+    allometric_variable : str or Expr
         Value to use for allometry (X above)
-    reference_value : str, int, float or sympy.Expr
+    reference_value : str, int, float or Expr
         Reference value (Z above)
     parameters : list
         Parameters to use or None (default) for all available CL, Q and V parameters
@@ -146,7 +142,7 @@ def add_allometry(
             param = Parameter(symb.name, init=init, lower=lower, upper=upper, fix=fixed)
             params.append(param)
             expr = p * (variable / reference) ** param.symbol
-            new_ass = Assignment(p, expr)
+            new_ass = Assignment.create(p, expr)
             ind = sset.find_assignment_index(p)
             sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
     parameters = Parameters.create(params)

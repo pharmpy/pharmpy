@@ -1,4 +1,4 @@
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
 from pharmpy.model import Model, Parameters, RandomVariables
 
 
@@ -35,9 +35,9 @@ def replace_non_random_rvs(model: Model):
         else:
             for parname in dist.parameter_names:
                 remove.append(parname)
-                d[sympy.Symbol(parname)] = sympy.Integer(0)
+                d[Expr.symbol(parname)] = Expr.integer(0)
             for name in dist.names:
-                d[sympy.Symbol(name)] = sympy.Integer(0)
+                d[Expr.symbol(name)] = Expr.integer(0)
 
     new_parameters = Parameters(tuple(p for p in model.parameters if p.name not in remove))
     new_statements = model.statements.subs(d)

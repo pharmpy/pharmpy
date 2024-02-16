@@ -3,6 +3,7 @@
 """
 from typing import Literal, Optional
 
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.internals.fn.type import check_list
@@ -201,21 +202,21 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     if indicator_type == 'lloq':
         indicator_symb = lloq_symbol
     else:
-        indicator_symb = sympy.Symbol(indicator)
+        indicator_symb = Expr.symbol(indicator)
     if level_type == 'lloq':
         level_symb = lloq_symbol
     else:
-        level_symb = sympy.Symbol(level)
+        level_symb = Expr.symbol(level)
 
     sd = _get_sd(model, y)
-    symb_dv = sympy.Symbol(model.datainfo.dv_column.name)
+    symb_dv = Expr.symbol(model.datainfo.dv_column.name)
     symb_fflag = create_symbol(model, 'F_FLAG')
     symb_cumd = create_symbol(model, 'CUMD')
 
     if indicator_type in ('lloq', 'LLOQ'):
-        is_above_lloq = sympy.GreaterThan(symb_dv, indicator_symb)
+        is_above_lloq = BooleanExpr.ge(symb_dv, indicator_symb)
     else:
-        is_above_lloq = sympy.Equality(indicator_symb, 0)
+        is_above_lloq = BooleanExpr.eq(indicator_symb, 0)
 
     assignments = [sd]
     if indicator_type == 'lloq' or level_type == 'lloq':
@@ -225,24 +226,24 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
         else:
             symbol = level_symb
             value = level
-        lloq = Assignment(symbol, sympy.Float(value))
+        lloq = Assignment(symbol, Expr.float(value))
         assignments.append(lloq)
 
-    assignments += Assignment(symb_fflag, sympy.Piecewise((0, is_above_lloq), (1, True)))
+    assignments += Assignment.create(symb_fflag, Expr.piecewise((0, is_above_lloq), (1, True)))
 
-    cumd = Assignment(symb_cumd, PHI((level_symb - ipred) / sd.symbol))
+    cumd = Assignment.create(symb_cumd, PHI((level_symb - ipred) / sd.symbol))
     if method == 'm3':
-        assignments += Assignment(
-            y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (cumd.expression, True))
+        assignments += Assignment.create(
+            y.symbol, Expr.piecewise((y.expression, is_above_lloq), (cumd.expression, True))
         )
     else:
         assignments += cumd
         symb_cumdz = create_symbol(model, 'CUMDZ')
-        assignments += Assignment(symb_cumdz, PHI(-ipred / sd.symbol))
+        assignments += Assignment.create(symb_cumdz, PHI(-ipred / sd.symbol))
 
         y_below_lloq = (symb_cumd - symb_cumdz) / (1 - symb_cumdz)
-        assignments += Assignment(
-            y.symbol, sympy.Piecewise((y.expression, is_above_lloq), (y_below_lloq, True))
+        assignments += Assignment.create(
+            y.symbol, Expr.piecewise((y.expression, is_above_lloq), (y_below_lloq, True))
         )
 
     y_idx = sset.find_assignment_index(y.symbol)
@@ -259,7 +260,7 @@ def has_blq_transformation(model: Model):
     if not y:
         raise ValueError(f'Could not find assignment for \'{y_symb}\'')
     y_expr = y.expression
-    if not isinstance(y_expr, sympy.Piecewise):
+    if not y_expr.is_piecewise():
         return False
     for statement, cond in y_expr.args:
         blq_symb, _ = get_blq_symb_and_type(model)
@@ -324,9 +325,9 @@ def _get_blq_name_and_type(model: Model):
 def get_blq_symb_and_type(model: Model):
     try:
         name, tp = _get_blq_name_and_type(model)
-        return sympy.Symbol(name), tp
+        return Expr.symbol(name), tp
     except IndexError:
-        return sympy.Symbol('LLOQ'), 'lloq'
+        return Expr.symbol('LLOQ'), 'lloq'
 
 
 def _has_all_expected_symbs(sset, expected_symbs):
@@ -346,7 +347,7 @@ def _get_sd(model, y):
     y_expr = model.statements.find_assignment(y.symbol).expression
     sd_expr = get_sd_expr(y_expr, model.random_variables, model.parameters)
     symb_sd = create_symbol(model, 'SD')
-    return Assignment(symb_sd, sd_expr)
+    return Assignment.create(symb_sd, sd_expr)
 
 
 def get_sd_expr(y_expr, rvs, params):

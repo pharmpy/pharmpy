@@ -9,10 +9,10 @@ from collections import defaultdict
 from operator import add, mul
 from typing import List, Literal, Set, Union
 
+from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
 from .common import get_model_covariates
@@ -66,6 +66,7 @@ def get_covariates(model: Model) -> dict[list]:
 
 def get_covariate_effect(model: Model, symbol, covariate):
     param_expr = model.statements.before_odes.full_expression(symbol)
+    param_expr = sympy.sympify(param_expr)
 
     # Piecewise statement can interfer with .match() of expression
     full_expr = param_expr
@@ -133,9 +134,9 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     if effect == "pow":
         if (
             sympy.Wild("cov") in match.keys()
-            and isinstance(match[sympy.Wild("cov")], sympy.Number)
+            and match[sympy.Wild("cov")].is_number
             and sympy.Wild("median") in match.keys()
-            and isinstance(match[sympy.Wild("median")], sympy.Pow)
+            and match[sympy.Wild("median")].is_Pow
         ):
             temp = match[sympy.Wild("cov")]
             match[sympy.Wild("cov")] = match[sympy.Wild("median")]
@@ -154,7 +155,7 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
                     return False
         if key == "median":
             if all(value in match.keys() for value in values):
-                if not all(isinstance(match[value], sympy.Number) for value in values):
+                if not all(match[value].is_number() for value in values):
                     return False
     return True
 
@@ -372,7 +373,7 @@ def add_covariate_effect(
     >>> model = load_example_model("pheno")
     >>> model = add_covariate_effect(model, "CL", "APGR", "exp")
     >>> model.statements.before_odes.full_expression("CL")
-    PTVCL*WGT*exp(ETA_1)*exp(POP_CLAPGR*(APGR - 7.0))
+    PTVCL*WGT*exp(ETA_1 + POP_CLAPGR*(APGR - 7.0))
 
     """
     sset = model.statements
@@ -408,8 +409,8 @@ def add_covariate_effect(
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
 
-    cov_possible = {sympy.Symbol(parameter)} | {
-        sympy.Symbol(f'{parameter}{col_name}') for col_name in model.datainfo.names
+    cov_possible = {Expr.symbol(parameter)} | {
+        Expr.symbol(f'{parameter}{col_name}') for col_name in model.datainfo.names
     }
 
     # NOTE: This is a heuristic that simplifies the NONMEM statements by
@@ -417,12 +418,10 @@ def add_covariate_effect(
     if last_existing_parameter_assignment.expression.args and all(
         map(cov_possible.__contains__, last_existing_parameter_assignment.expression.args)
     ):
-        statements[-1] = Assignment(
+        statements[-1] = Assignment.create(
             effect_statement.symbol,
-            subs(
-                effect_statement.expression,
+            effect_statement.expression.subs(
                 {parameter: last_existing_parameter_assignment.expression},
-                simultaneous=True,
             ),
         )
         sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
@@ -612,9 +611,9 @@ def _create_template(effect, model, covariate):
     elif effect == 'pow':
         return CovariateEffect.power()
     else:
-        symbol = sympy.Symbol('symbol')
+        symbol = Expr.symbol('symbol')
         expression = parse_expr(effect)
-        return CovariateEffect(Assignment(symbol, expression))
+        return CovariateEffect(Assignment.create(symbol, expression))
 
 
 class CovariateEffect:
@@ -638,33 +637,27 @@ class CovariateEffect:
 
     def apply(self, parameter, covariate, thetas, statistics):
         effect_name = f'{parameter}{covariate}'
-        self.template = Assignment(
-            sympy.Symbol(effect_name),
-            subs(
-                subs(
-                    self.template.expression,
-                    thetas,
-                ),
-                {'cov': covariate},
-                simultaneous=True,
-            ),
+        theta_subs = self.template.expression.subs(thetas)
+        cov_subs = theta_subs.subs({'cov': covariate})
+
+        self.template = Assignment.create(
+            Expr(effect_name),
+            cov_subs,
         )
 
         template_str = [str(symbol) for symbol in self.template.free_symbols]
 
         if 'mean' in template_str:
             self.template = self.template.subs({'mean': f'{covariate}_MEAN'})
-            s = Assignment(sympy.Symbol(f'{covariate}_MEAN'), sympy.Float(statistics['mean'], 6))
+            s = Assignment.create(Expr.symbol(f'{covariate}_MEAN'), statistics['mean'])
             self.statistic_statements.append(s)
         if 'median' in template_str:
             self.template = self.template.subs({'median': f'{covariate}_MEDIAN'})
-            s = Assignment(
-                sympy.Symbol(f'{covariate}_MEDIAN'), sympy.Float(statistics['median'], 6)
-            )
+            s = Assignment.create(Expr.symbol(f'{covariate}_MEDIAN'), statistics['median'])
             self.statistic_statements.append(s)
         if 'std' in template_str:
             self.template = self.template.subs({'std': f'{covariate}_STD'})
-            s = Assignment(sympy.Symbol(f'{covariate}_STD'), sympy.Float(statistics['std'], 6))
+            s = Assignment.create(Expr.symbol(f'{covariate}_STD'), statistics['std'])
             self.statistic_statements.append(s)
 
     def create_effect_statement(self, operation_str, statement_original):
@@ -677,7 +670,7 @@ class CovariateEffect:
         symbol = statement_original.symbol
         expression = statement_original.symbol
 
-        statement_new = Assignment(symbol, operation(expression, self.template.symbol))
+        statement_new = Assignment.create(symbol, operation(expression, self.template.symbol))
 
         return statement_new
 
@@ -694,37 +687,37 @@ class CovariateEffect:
     @classmethod
     def linear(cls):
         """Linear continuous template (for continuous covariates)."""
-        symbol = sympy.Symbol('symbol')
-        expression = 1 + sympy.Symbol('theta') * (sympy.Symbol('cov') - sympy.Symbol('median'))
-        template = Assignment(symbol, expression)
+        symbol = Expr.symbol('symbol')
+        expression = 1 + Expr.symbol('theta') * (Expr.symbol('cov') - Expr.symbol('median'))
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
     @classmethod
     def categorical(cls, counts):
         """Linear categorical template (for categorical covariates)."""
-        symbol = sympy.Symbol('symbol')
+        symbol = Expr.symbol('symbol')
         most_common = counts.idxmax()
         categories = list(counts.index)
 
         values = [1]
-        conditions = [sympy.Eq(sympy.Symbol('cov'), most_common)]
+        conditions = [BooleanExpr.eq(Expr.symbol('cov'), most_common)]
 
         for i, cat in enumerate(categories, 1):
             if cat != most_common:
                 if np.isnan(cat):
-                    conditions += [sympy.Eq(sympy.Symbol('cov'), sympy.Symbol('NaN'))]
+                    conditions += [BooleanExpr.eq(Expr.symbol('cov'), Expr.symbol('NaN'))]
                     values += [1]
                 else:
-                    conditions += [sympy.Eq(sympy.Symbol('cov'), cat)]
+                    conditions += [BooleanExpr.eq(Expr.symbol('cov'), cat)]
                     if len(categories) == 2:
-                        values += [1 + sympy.Symbol('theta')]
+                        values += [1 + Expr.symbol('theta')]
                     else:
-                        values += [1 + sympy.Symbol(f'theta{i}')]
+                        values += [1 + Expr.symbol(f'theta{i}')]
 
-        expression = sympy.Piecewise(*zip(values, conditions))
+        expression = Expr.piecewise(*zip(values, conditions))
 
-        template = Assignment(symbol, expression)
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
@@ -732,38 +725,36 @@ class CovariateEffect:
     def piecewise_linear(cls):
         """Piecewise linear ("hockey-stick") template (for continuous
         covariates)."""
-        symbol = sympy.Symbol('symbol')
+        symbol = Expr.symbol('symbol')
         values = [
-            1 + sympy.Symbol('theta1') * (sympy.Symbol('cov') - sympy.Symbol('median')),
-            1 + sympy.Symbol('theta2') * (sympy.Symbol('cov') - sympy.Symbol('median')),
+            1 + Expr.symbol('theta1') * (Expr.symbol('cov') - Expr.symbol('median')),
+            1 + Expr.symbol('theta2') * (Expr.symbol('cov') - Expr.symbol('median')),
         ]
         conditions = [
-            sympy.Le(sympy.Symbol('cov'), sympy.Symbol('median')),
-            sympy.Gt(sympy.Symbol('cov'), sympy.Symbol('median')),
+            BooleanExpr.le(Expr.symbol('cov'), Expr.symbol('median')),
+            BooleanExpr.gt(Expr.symbol('cov'), Expr.symbol('median')),
         ]
-        expression = sympy.Piecewise((values[0], conditions[0]), (values[1], conditions[1]))
+        expression = Expr.piecewise((values[0], conditions[0]), (values[1], conditions[1]))
 
-        template = Assignment(symbol, expression)
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
     @classmethod
     def exponential(cls):
         """Exponential template (for continuous covariates)."""
-        symbol = sympy.Symbol('symbol')
-        expression = sympy.exp(
-            sympy.Symbol('theta') * (sympy.Symbol('cov') - sympy.Symbol('median'))
-        )
-        template = Assignment(symbol, expression)
+        symbol = Expr.symbol('symbol')
+        expression = Expr.exp(Expr.symbol('theta') * (Expr.symbol('cov') - Expr.symbol('median')))
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 
     @classmethod
     def power(cls):
         """Power template (for continuous covariates)."""
-        symbol = sympy.Symbol('symbol')
-        expression = (sympy.Symbol('cov') / sympy.Symbol('median')) ** sympy.Symbol('theta')
-        template = Assignment(symbol, expression)
+        symbol = Expr.symbol('symbol')
+        expression = (Expr.symbol('cov') / Expr.symbol('median')) ** Expr.symbol('theta')
+        template = Assignment.create(symbol, expression)
 
         return cls(template)
 

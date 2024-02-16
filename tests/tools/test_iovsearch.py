@@ -1,6 +1,6 @@
 import pytest
-from sympy import Symbol as S
 
+from pharmpy.basic import Expr
 from pharmpy.modeling import add_iov, fix_parameters, remove_iov
 from pharmpy.tools.iovsearch.tool import (
     _get_iiv_etas_with_corresponding_iov,
@@ -9,6 +9,10 @@ from pharmpy.tools.iovsearch.tool import (
     validate_input,
 )
 from pharmpy.workflows import Workflow
+
+
+def S(x):
+    return Expr.symbol(x)
 
 
 def test_ignore_fixed_iiv(load_model_for_test, testdata):

@@ -6,9 +6,9 @@ from __future__ import annotations
 import warnings
 from typing import List, Optional, Union
 
+from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, NormalDistribution, Parameter, Parameters, Statements
 
 from .blq import get_blq_symb_and_type, get_sd_expr, has_blq_transformation
@@ -26,10 +26,8 @@ def _preparations(model, y=None):
         y = list(model.dependent_variables.keys())[0]
     if not model.statements.find_assignment(y.name):
         raise ValueError(f'Could not find assignment for \'{y}\'')
-    f = subs(
-        model.statements.find_assignment(y.name).expression,
-        {sympy.Symbol(eps): 0 for eps in model.random_variables.epsilons.names},
-        simultaneous=True,
+    f = model.statements.find_assignment(y.name).expression.subs(
+        {Expr.symbol(eps): 0 for eps in model.random_variables.epsilons.names}
     )
     return stats, y, f
 
@@ -38,7 +36,7 @@ def _canonicalize_data_transformation(model, value, dv):
     if value is None:
         value = dv
     else:
-        value = parse_expr(value)
+        value = Expr(value)
         if value.free_symbols != {dv}:
             raise ValueError(
                 f"Expression for data transformation must contain the dependent variable "
@@ -83,8 +81,8 @@ def remove_error_model(model: Model):
 
 def set_additive_error_model(
     model: Model,
-    dv: Union[sympy.Symbol, str, int, None] = None,
-    data_trans: Optional[Union[str, sympy.Expr]] = None,
+    dv: Union[TSymbol, int, None] = None,
+    data_trans: Optional[TExpr] = None,
     series_terms: int = 2,
 ):
     r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
@@ -104,7 +102,7 @@ def set_additive_error_model(
     ----------
     model : Model
         Set error model for this model
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
@@ -154,7 +152,9 @@ def set_additive_error_model(
     expr = f + ruv
 
     if data_trans != dv:
-        expr = subs(data_trans, {dv: expr}, simultaneous=True).series(ruv, n=series_terms).removeO()
+        expr_subs = data_trans.subs({dv: expr})
+        series = sympy.sympify(expr_subs).series(sympy.sympify(ruv), n=series_terms).removeO()
+        expr = Expr(series)
 
     sigma = create_symbol(model, 'sigma')
     model = add_population_parameter(model, sigma.name, _get_prop_init(model))
@@ -185,8 +185,8 @@ def _get_prop_init(model):
 
 def set_proportional_error_model(
     model: Model,
-    dv: Union[sympy.Symbol, str, int, None] = None,
-    data_trans: Optional[Union[str, sympy.Expr]] = None,
+    dv: Union[TSymbol, int, None] = None,
+    data_trans: Optional[TExpr] = None,
     zero_protection: bool = True,
 ):
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
@@ -205,7 +205,7 @@ def set_proportional_error_model(
     ----------
     model : Model
         Set error model for this model
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
@@ -280,9 +280,9 @@ def set_proportional_error_model(
 
     eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
 
-    f_dummy = sympy.Dummy('x')
-    if data_trans == sympy.log(dv):
-        error_expr = sympy.log(ipred) + ruv if zero_protection else sympy.log(f_dummy) + ruv
+    f_dummy = Expr.dummy('x')
+    if data_trans == dv.log():
+        error_expr = ipred.log() + ruv if zero_protection else f_dummy.log() + ruv
     elif data_trans == dv:
         error_expr = f_dummy + ipred * ruv if zero_protection else f_dummy + f_dummy * ruv
     else:
@@ -295,7 +295,7 @@ def set_proportional_error_model(
         stats_new = stats.reassign(y, expr)
 
     if zero_protection:
-        guard_expr = sympy.Piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
+        guard_expr = Expr.piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
         guard_assignment = Assignment(ipred, guard_expr)
         ind = 0
         # Find first occurrence of IPREDADJ
@@ -338,8 +338,8 @@ def _get_f_above_lloq(model, f):
 
 def set_combined_error_model(
     model: Model,
-    dv: Union[sympy.Symbol, str, int, None] = None,
-    data_trans: Optional[Union[str, sympy.Expr]] = None,
+    dv: Union[TSymbol, int, None] = None,
+    data_trans: Optional[TExpr] = None,
 ):
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
     proportional and 0.09 for additive.
@@ -358,7 +358,7 @@ def set_combined_error_model(
     ----------
     model : Model
         Set error model for this model
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
         A data transformation expression or None (default) to use the transformation
@@ -401,8 +401,8 @@ def set_combined_error_model(
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
 
-    eta_ruv = sympy.Symbol('ETA_RV1')
-    theta_time = sympy.Symbol('time_varying')
+    eta_ruv = Expr.symbol('ETA_RV1')
+    theta_time = Expr.symbol('time_varying')
 
     data_trans = _canonicalize_data_transformation(model, data_trans, dv)
 
@@ -416,24 +416,24 @@ def set_combined_error_model(
 
     # FIXME: Handle other DVs
     dv = list(model.dependent_variables.keys())[0]
-    f_dummy = sympy.Dummy('x')
-    if data_trans == sympy.log(dv):
-        error_expr = sympy.log(f_dummy) + ruv_prop + ruv_add / f_dummy
+    f_dummy = Expr.dummy('x')
+    if data_trans == dv.log():
+        error_expr = f_dummy.log() + ruv_prop + ruv_add / f_dummy
     elif data_trans == dv:
         # Time varying
-        if isinstance(expr, sympy.Piecewise) and not has_blq_transformation(model):
+        if expr.is_piecewise() and not has_blq_transformation(model):
             expr_0 = expr.args[0][0]
             expr_1 = expr.args[1][0]
             cond_0 = expr.args[0][1]
             error_expr = None
             for eps in model.random_variables.epsilons.names:
-                expr_0 = subs(expr_0, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
-                expr_1 = subs(expr_1, {sympy.Symbol(eps): ruv_prop}, simultaneous=True)
+                expr_0 = expr_0.subs({Expr.symbol(eps): ruv_prop})
+                expr_1 = expr_1.subs({Expr.symbol(eps): ruv_prop})
                 if (
                     eta_ruv in model.random_variables.free_symbols
                     and theta_time in model.parameters.symbols
                 ):
-                    error_expr = sympy.Piecewise(
+                    error_expr = Expr.piecewise(
                         (expr_0 + ruv_add * theta_time * sympy.exp(eta_ruv), cond_0),
                         (expr_1 + ruv_add * sympy.exp(eta_ruv), True),
                     )
@@ -441,7 +441,7 @@ def set_combined_error_model(
                     eta_ruv not in model.random_variables.free_symbols
                     and theta_time in model.parameters.symbols
                 ):
-                    error_expr = sympy.Piecewise(
+                    error_expr = Expr.piecewise(
                         (expr_0 + ruv_add * theta_time, cond_0), (expr_1 + ruv_add, True)
                     )
             assert error_expr is not None
@@ -451,9 +451,7 @@ def set_combined_error_model(
         ):
             if has_blq_transformation(model):
                 raise ValueError('Currently not supported to change from IIV on RUV model with BLQ')
-            error_expr = (
-                f_dummy + f_dummy * ruv_prop * sympy.exp(eta_ruv) + ruv_add * sympy.exp(eta_ruv)
-            )
+            error_expr = f_dummy + f_dummy * ruv_prop * eta_ruv.exp() + ruv_add * eta_ruv.exp()
         else:
             error_expr = f_dummy + f_dummy * ruv_prop + ruv_add
     else:
@@ -475,7 +473,7 @@ def set_combined_error_model(
     return model.update_source()
 
 
-def has_additive_error_model(model: Model, dv: Union[sympy.Symbol, str, int, None] = None):
+def has_additive_error_model(model: Model, dv: Union[TSymbol, int, None] = None):
     """Check if a model has an additive error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -485,7 +483,7 @@ def has_additive_error_model(model: Model, dv: Union[sympy.Symbol, str, int, Non
     ----------
     model : Model
         The model to check
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
     Return
@@ -509,14 +507,14 @@ def has_additive_error_model(model: Model, dv: Union[sympy.Symbol, str, int, Non
     y = get_dv_symbol(model, dv)
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
+    rvs_in_y = {Expr.symbol(name) for name in rvs.names if Expr.symbol(name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
     return eps not in (expr - eps).simplify().free_symbols
 
 
-def has_proportional_error_model(model: Model, dv: Union[sympy.Symbol, str, int, None] = None):
+def has_proportional_error_model(model: Model, dv: Union[TSymbol, int, None] = None):
     """Check if a model has a proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -526,7 +524,7 @@ def has_proportional_error_model(model: Model, dv: Union[sympy.Symbol, str, int,
     ----------
     model : Model
         The model to check
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
     Return
@@ -550,7 +548,7 @@ def has_proportional_error_model(model: Model, dv: Union[sympy.Symbol, str, int,
     y = get_dv_symbol(model, dv)
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
+    rvs_in_y = {Expr.symbol(name) for name in rvs.names if Expr.symbol(name) in expr.free_symbols}
     if len(rvs_in_y) != 1:
         return False
     eps = rvs_in_y.pop()
@@ -572,7 +570,7 @@ def _check_and_get_zero_protect(error_sset, y_symbs):
     f_cand, ipredadj_cand = None, None
     for symb in y_symbs:
         s = error_sset.find_assignment(symb)
-        if s and isinstance(s.expression, sympy.Piecewise):
+        if s and s.expression.is_piecewise():
             ipredadj_cand = s
         else:
             f_cand = s
@@ -582,7 +580,7 @@ def _check_and_get_zero_protect(error_sset, y_symbs):
     return None, None
 
 
-def has_combined_error_model(model: Model, dv: Union[sympy.Symbol, str, int, None] = None):
+def has_combined_error_model(model: Model, dv: Union[TSymbol, int, None] = None):
     """Check if a model has a combined additive and proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -592,7 +590,7 @@ def has_combined_error_model(model: Model, dv: Union[sympy.Symbol, str, int, Non
     ----------
     model : Model
         The model to check
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
     Return
@@ -616,7 +614,7 @@ def has_combined_error_model(model: Model, dv: Union[sympy.Symbol, str, int, Non
     y = get_dv_symbol(model, dv)
     expr = model.statements.error.full_expression(y)
     rvs = model.random_variables.epsilons
-    rvs_in_y = {sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in expr.free_symbols}
+    rvs_in_y = {Expr.symbol(name) for name in rvs.names if Expr.symbol(name) in expr.free_symbols}
     if len(rvs_in_y) != 2:
         return False
     eps1 = rvs_in_y.pop()
@@ -672,7 +670,7 @@ def use_thetas_for_error_stdev(model: Model):
 
         sdsymb = create_symbol(model, f'SD_{eps.names[0]}')
         model = add_population_parameter(model, sdsymb.name, theta_init, lower=0)
-        symb = sympy.Symbol(eps.names[0])
+        symb = Expr.symbol(eps.names[0])
         if has_weighted_error_model(model) and (
             has_additive_error_model(model) or has_proportional_error_model(model)
         ):
@@ -724,13 +722,14 @@ def set_weighted_error_model(model: Model):
                 q &= sympy.Q.positive(symb)
     w = sympy.sqrt(ssum)
     w = sympy.refine(w, q)
+    w = Expr(w)
 
     i = _index_of_first_assignment(stats, y)
 
-    model = model.replace(statements=stats[0:i] + Assignment(sympy.Symbol('W'), w) + stats[i:])
+    model = model.replace(statements=stats[0:i] + Assignment(Expr.symbol('W'), w) + stats[i:])
     model = model.replace(
         statements=model.statements.reassign(
-            y, f + sympy.Symbol('W') * sympy.Symbol(epsilons[0].names[0])
+            y, f + Expr.symbol('W') * Expr.symbol(epsilons[0].names[0])
         )
     )
     model = remove_unused_parameters_and_rvs(model)
@@ -776,9 +775,7 @@ def get_weighted_error_model_weight(model: Model):
     # FIXME: Handle multiple DVs? Handle piecewise?
     y_expr = stats.error.find_assignment(y).expression
     rvs = model.random_variables.epsilons
-    rvs_in_y = {
-        sympy.Symbol(name) for name in rvs.names if sympy.Symbol(name) in y_expr.free_symbols
-    }
+    rvs_in_y = {Expr.symbol(name) for name in rvs.names if Expr.symbol(name) in y_expr.free_symbols}
 
     if len(rvs_in_y) > 1:
         return None
@@ -789,7 +786,7 @@ def get_weighted_error_model_weight(model: Model):
 
     if len(eps_expr) == 1:
         eps_expr = eps_expr.pop()
-        if len(eps_expr.args) == 2 and eps_expr.func is sympy.Mul:
+        if len(eps_expr.args) == 2 and eps_expr.is_mul():
             a, b = eps_expr.args
             w_cand = a if a not in rvs_in_y else b
             if w_cand != f:
@@ -798,7 +795,7 @@ def get_weighted_error_model_weight(model: Model):
     return w
 
 
-def _index_of_first_assignment(statements: Statements, symbol: sympy.Symbol) -> int:
+def _index_of_first_assignment(statements: Statements, symbol) -> int:
     return next(
         (i for i, s in enumerate(statements) if isinstance(s, Assignment) and s.symbol == symbol)
     )
@@ -838,18 +835,18 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
         model = add_population_parameter(model, lam.name, 1)
         model = add_population_parameter(model, zeta.name, 0.001)
 
-    i = _index_of_first_assignment(stats, sympy.Symbol('W'))
+    i = _index_of_first_assignment(stats, Expr.symbol('W'))
 
-    wass = Assignment(sympy.Symbol('W'), (f**zeta) * sympy.Symbol('W'))
-    ipred = sympy.Piecewise(
+    wass = Assignment(Expr.symbol('W'), (f**zeta) * Expr.symbol('W'))
+    ipred = Expr.piecewise(
         ((f**lam - 1) / lam, sympy.And(sympy.Ne(lam, 0), sympy.Ne(f, 0))),
-        (sympy.log(f), sympy.And(sympy.Eq(lam, 0), sympy.Ne(f, 0))),
+        (f.log(), sympy.And(sympy.Eq(lam, 0), sympy.Ne(f, 0))),
         (-1 / lam, sympy.And(sympy.Eq(lam, 0), sympy.Eq(f, 0))),
         (-1000000000, True),
     )
-    ipredass = Assignment(sympy.Symbol('IPRED'), ipred)
+    ipredass = Assignment(Expr.symbol('IPRED'), ipred)
     yexpr_ind = stats.find_assignment_index(y.name)
-    yexpr = stats[yexpr_ind].subs({f: sympy.Symbol('IPRED')})
+    yexpr = stats[yexpr_ind].subs({f: Expr.symbol('IPRED')})
 
     statements = (
         stats[0 : i + 1]
@@ -863,7 +860,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     obs = model.observation_transformation
     obs = obs.replace(
         y,
-        sympy.Piecewise((sympy.log(y), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))),
+        Expr.piecewise((y.log(), sympy.Eq(lam, 0)), ((y**lam - 1) / lam, sympy.Ne(lam, 0))),
     )
     model = model.replace(observation_transformation=obs, statements=statements)
 
@@ -871,7 +868,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
 
 
 def set_time_varying_error_model(
-    model: Model, cutoff: float, idv: str = 'TIME', dv: Union[sympy.Symbol, str, int, None] = None
+    model: Model, cutoff: float, idv: str = 'TIME', dv: Union[TSymbol, int, None] = None
 ):
     """Set a time varying error model per time cutoff
 
@@ -883,7 +880,7 @@ def set_time_varying_error_model(
         A value at the given quantile over idv column
     idv : str
         Time or time after dose, default is Time
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
     Return
@@ -907,13 +904,9 @@ def set_time_varying_error_model(
     idv = parse_expr(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
-    expr = sympy.Piecewise(
+    expr = Expr.piecewise(
         (
-            subs(
-                y.expression,
-                {sympy.Symbol(e): sympy.Symbol(e) * theta for e in eps.names},
-                simultaneous=True,
-            ),
+            y.expression.subs({Expr.symbol(e): Expr.symbol(e) * theta for e in eps.names}),
             idv < cutoff,
         ),
         (y.expression, True),
@@ -927,9 +920,9 @@ def set_time_varying_error_model(
 def set_power_on_ruv(
     model: Model,
     list_of_eps: Optional[Union[str, list]] = None,
-    dv: Union[sympy.Symbol, str, int, None] = None,
+    dv: Union[TSymbol, int, None] = None,
     lower_limit: Optional[float] = 0.01,
-    ipred: Optional[Union[str, sympy.Symbol]] = None,
+    ipred: Optional[TSymbol] = None,
     zero_protection: bool = False,
 ):
     """Applies a power effect to provided epsilons. If a dependent variable
@@ -949,7 +942,7 @@ def set_power_on_ruv(
     list_of_eps : str or list or None
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None will change the epsilon on all occurences
         regardless of affected dependent variable.
     lower_limit : float or None
@@ -1001,7 +994,7 @@ def set_power_on_ruv(
         and list_of_eps is not None
         and any(
             [
-                sympy.Symbol(e.names[0])
+                Expr.symbol(e.names[0])
                 not in model.statements.after_odes.full_expression(dv_symb).free_symbols
                 for e in eps
             ]
@@ -1010,7 +1003,7 @@ def set_power_on_ruv(
         warnings.warn(f'Some provided epsilons are not connected to the supplied DV ({dv_symb})')
     elif dv is not None and any(
         [
-            sympy.Symbol(e.names[0])
+            Expr.symbol(e.names[0])
             not in model.statements.after_odes.full_expression(dv_symb).free_symbols
             for e in eps
         ]
@@ -1019,7 +1012,7 @@ def set_power_on_ruv(
         eps = [
             e
             for e in eps
-            if sympy.Symbol(e.names[0])
+            if Expr.symbol(e.names[0])
             in model.statements.after_odes.full_expression(dv_symb).free_symbols
         ]
 
@@ -1037,14 +1030,14 @@ def set_power_on_ruv(
             if s.expression == ipred:
                 alternative = s.symbol
                 if zero_protection:
-                    guard_expr = sympy.Piecewise(
+                    guard_expr = Expr.piecewise(
                         (2.225e-307, sympy.Eq(s.expression, 0)), (s.expression, True)
                     )
-                    guard_assignment = Assignment(ipred, guard_expr)
+                    guard_assignment = Assignment.create(ipred, guard_expr)
                     ind = sset.find_assignment_index('Y')
                     sset = sset[0:ind] + guard_assignment + sset[ind:]
                 break
-            if isinstance(s.expression, sympy.Piecewise):
+            if s.expression.is_piecewise():
                 args = s.expression.args
                 for expr, cond in args:
                     if expr == ipred:
@@ -1068,7 +1061,7 @@ def set_power_on_ruv(
             theta = Parameter(theta_name, theta_init, lower=lower_limit)
         pset.append(theta)
 
-        subs_dict = {sympy.Symbol(e) * ipred: sympy.Symbol(e)}  # To avoid getting F*EPS*F**THETA
+        subs_dict = {Expr.symbol(e) * ipred: Expr.symbol(e)}  # To avoid getting F*EPS*F**THETA
         if not dv:
             sset = sset.subs(subs_dict)
         else:
@@ -1076,7 +1069,7 @@ def set_power_on_ruv(
             sset = sset.reassign(y.symbol, y.expression)
 
         if alternative:  # To avoid getting W*EPS*F**THETA
-            subs_dict = {sympy.Symbol(e) * alternative: sympy.Symbol(e)}
+            subs_dict = {Expr.symbol(e) * alternative: Expr.symbol(e)}
             if not dv:
                 sset = sset.subs(subs_dict)
             else:
@@ -1085,7 +1078,7 @@ def set_power_on_ruv(
 
         if ipredadj:
             subs_dict = {
-                sympy.Symbol(e) * ipredadj: ipredadj ** sympy.Symbol(theta.name) * sympy.Symbol(e)
+                Expr.symbol(e) * ipredadj: ipredadj ** Expr.symbol(theta.name) * Expr.symbol(e)
             }
             if not dv:
                 sset = sset.subs(subs_dict)
@@ -1093,7 +1086,7 @@ def set_power_on_ruv(
                 y = y.subs(subs_dict)
                 sset = sset.reassign(y.symbol, y.expression)
         else:
-            subs_dict = {sympy.Symbol(e): ipred ** sympy.Symbol(theta.name) * sympy.Symbol(e)}
+            subs_dict = {Expr.symbol(e): ipred ** Expr.symbol(theta.name) * Expr.symbol(e)}
             if not dv:
                 sset = sset.subs(subs_dict)
             else:
@@ -1116,9 +1109,7 @@ def get_ipred(model, dv=None):
     if dv is None:
         dv = list(model.dependent_variables.keys())[0]
     expr = model.statements.after_odes.full_expression(dv)
-    ipred = subs(
-        expr, {sympy.Symbol(rv): 0 for rv in model.random_variables.names}, simultaneous=True
-    )
+    ipred = expr.subs({Expr.symbol(rv): 0 for rv in model.random_variables.names})
     for s in model.statements:
         if isinstance(s, Assignment) and s.expression == ipred:
             ipred = s.symbol
@@ -1128,7 +1119,7 @@ def get_ipred(model, dv=None):
 
 def set_iiv_on_ruv(
     model: Model,
-    dv: Union[sympy.Symbol, str, int, None] = None,
+    dv: Union[TSymbol, int, None] = None,
     list_of_eps: Optional[Union[List[str], str]] = None,
     same_eta: bool = True,
     eta_names: Optional[Union[List[str], str]] = None,
@@ -1150,7 +1141,7 @@ def set_iiv_on_ruv(
         should be created for each RUV. True is default.
     eta_names : str, list
         Custom names of new etas. Must be equal to the number epsilons or 1 if same eta.
-    dv : Union[sympy.Symbol, str, int, None]
+    dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
     Return
@@ -1196,8 +1187,8 @@ def set_iiv_on_ruv(
 
     for e in eps:
         subs_dict = {
-            sympy.Symbol(e.names[0]): sympy.Symbol(e.names[0])
-            * sympy.exp(sympy.Symbol(eta_dict[e].names[0]))
+            Expr.symbol(e.names[0]): Expr.symbol(e.names[0])
+            * Expr.symbol(eta_dict[e].names[0]).exp()
         }
         # FIXME: This is needed if you e.g. have Y and IPRED, with multiple DVs, how should this be handled?
         if not dv:
@@ -1211,7 +1202,7 @@ def set_iiv_on_ruv(
 
 
 def _create_eta(pset, number, eta_names):
-    omega = sympy.Symbol(f'IIV_RUV{number}')
+    omega = Expr.symbol(f'IIV_RUV{number}')
     pset.append(Parameter(str(omega), 0.09))
 
     if eta_names:

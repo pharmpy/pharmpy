@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy.deps import sympy
+from pharmpy.basic import Expr
 from pharmpy.model import Assignment, Model
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.modeling import convert_model, create_basic_pk_model, create_symbol, load_example_model
@@ -67,18 +67,18 @@ def test_replace(load_model_for_test, testdata):
     model = load_model_for_test(path)
     sset = model.statements
     cl = sset.find_assignment('CL')
-    sset_new = sset.reassign(cl.symbol, cl.expression + sympy.Symbol('x'))
+    sset_new = sset.reassign(cl.symbol, cl.expression + Expr.symbol('x'))
     with pytest.raises(ValueError, match='Symbol x is not defined'):
         model.replace(statements=sset_new)
 
-    x_assignment = Assignment(sympy.Symbol('x'), sympy.Float(1))
+    x_assignment = Assignment(Expr.symbol('x'), Expr.float(1))
     model.replace(statements=x_assignment + sset_new)
 
     sset_new = sset_new.before_odes + x_assignment + sset_new.ode_system + sset_new.after_odes
     with pytest.raises(ValueError, match='Symbol x defined after being used'):
         model.replace(statements=sset_new)
 
-    sset_new = sset.reassign(cl.symbol, cl.expression + sympy.Symbol('TIME'))
+    sset_new = sset.reassign(cl.symbol, cl.expression + Expr.symbol('TIME'))
     model.replace(statements=sset_new)
 
 

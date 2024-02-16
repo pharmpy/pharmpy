@@ -69,7 +69,7 @@ def add_statements(
 
     for s in statements:
         if isinstance(s, Assignment):
-            if s.symbol == dv and not s.expression.is_Piecewise:
+            if s.symbol == dv and not s.expression.is_piecewise():
                 # FIXME: Find another way to assert that a sigma exist
                 sigma = None
                 for dist in model.random_variables.epsilons:
@@ -104,10 +104,10 @@ def add_statements(
                 pass
             else:
                 expr = s.expression
-                if expr.is_Piecewise:
+                if expr.is_piecewise():
                     first = True
                     for value, cond in expr.args:
-                        if cond is not sympy.S.true:
+                        if sympy.sympify(cond) is not sympy.S.true:
                             cond = convert_eq(cond)
                             if first:
                                 cg.add(f'if ({cond}) {{')
@@ -260,10 +260,10 @@ def add_bio_lag(model: pharmpy.model.Model, cg: CodeGenerator, bio=False, lag=Fa
         if s.symbol in bio_lag.values():
             comp = list(bio_lag.keys())[list(bio_lag.values()).index(s.symbol)]
 
-            if s.expression.is_Piecewise:
+            if s.expression.is_piecewise():
                 first = True
                 for value, cond in s.expression.args:
-                    if cond is not sympy.S.true:
+                    if sympy.sympify(cond) is not sympy.S.true:
                         cond = convert_eq(cond)
                         if first:
                             cg.add(f'if ({cond}) {{')
@@ -288,6 +288,8 @@ def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
     first = True
     for value, cond in expr.args:
+        value = sympy.sympify(value)
+        cond = sympy.sympify(cond)
         if cond is not sympy.S.true:
             if cond.atoms(sympy.Eq):
                 cond = convert_eq(cond)
@@ -336,12 +338,14 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     for eq in model.statements.ode_system.eqs:
         # Should remove piecewise from these equations in nlmixr
         if eq.atoms(sympy.Piecewise):
-            lhs = remove_piecewise(printer.doprint(eq.lhs))
-            rhs = remove_piecewise(printer.doprint(eq.rhs))
+            lhs = remove_piecewise(printer.doprint(sympy.sympify(eq.lhs)))
+            rhs = remove_piecewise(printer.doprint(sympy.sympify(eq.rhs)))
 
             cg.add(f'{lhs} = {rhs}')
         else:
-            cg.add(f'{printer.doprint(eq.lhs)} = {printer.doprint(eq.rhs)}')
+            cg.add(
+                f'{printer.doprint(sympy.sympify(eq.lhs))} = {printer.doprint(sympy.sympify(eq.rhs))}'
+            )
 
     for comp in model.statements.ode_system.dosing_compartments:
         # FIXME : Handle multiple doses with different dur/rate
@@ -460,20 +464,9 @@ def piecewise_replace(expr: str, piecewise: sympy.Piecewise, s: str) -> str:
         return expr.replace(f'Piecewise({piecewise})', s)
 
 
-def convert_eq(cond: sympy.Eq) -> str:
+def convert_eq(cond) -> str:
     """
     Convert a sympy equal statement to R syntax
-
-    Parameters
-    ----------
-    cond : sympy.Eq
-        Sympy equals statement
-
-    Returns
-    -------
-    str
-        A string with R format for the same statement
-
     """
     cond = sympy.pretty(cond)
     cond = cond.replace("=", "==")

@@ -2,8 +2,8 @@ import re
 
 import pytest
 
+from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
-from pharmpy.deps import sympy
 from pharmpy.modeling.covariate_effect import (
     CovariateEffect,
     _choose_param_inits,
@@ -15,8 +15,8 @@ from pharmpy.modeling.covariate_effect import (
 from ..lib import diff
 
 
-def S(x: str):
-    return sympy.Symbol(x)
+def S(x):
+    return Expr.symbol(x)
 
 
 def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
@@ -66,7 +66,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno.mod'),
             [('CL', 'WGT', 'exp', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -2,0 +4,2 @@\n'
             '+CLWGT = EXP(THETA(3)*(WGT - WGT_MEDIAN))\n'
             '+CL = CL*CLWGT\n',
@@ -76,7 +76,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno.mod'),
             [('CL', 'WGT', 'exp', '+')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -2,0 +4,2 @@\n'
             '+CLWGT = EXP(THETA(3)*(WGT - WGT_MEDIAN))\n'
             '+CL = CL + CLWGT\n',
@@ -114,7 +114,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'exp', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
             '+CL = CL*CLWGT\n',
@@ -124,7 +124,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'exp', '+')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
             '+CL = CL + CLWGT\n',
@@ -134,7 +134,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'pow', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = (WGT/WGT_MEDIAN)**THETA(4)\n'
             '+CL = CL*CLWGT\n',
@@ -144,7 +144,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'lin', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
             '+CL = CL*CLWGT\n',
@@ -182,7 +182,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'piece_lin', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,6 @@\n'
             '+IF (WGT.LE.WGT_MEDIAN) THEN\n'
             '+    CLWGT = THETA(4)*(WGT - WGT_MEDIAN) + 1\n'
@@ -196,7 +196,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'theta - cov + median', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = THETA(4) - WGT + WGT_MEDIAN\n'
             '+CL = CL*CLWGT\n',
@@ -206,7 +206,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'theta - cov + std', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_STD = 0.704565\n'
+            '+WGT_STD = 0.704564727537012\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = THETA(4) - WGT + WGT_STD\n'
             '+CL = CL*CLWGT\n',
@@ -216,7 +216,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', 'theta1 * (cov/median)**theta2', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = THETA(4)*(WGT/WGT_MEDIAN)**THETA(5)\n'
             '+CL = CL*CLWGT\n',
@@ -226,8 +226,8 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT', '((cov/std) - median) * theta', '*')],
             '@@ -1,0 +2,2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
-            '+WGT_STD = 0.704565\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
+            '+WGT_STD = 0.704564727537012\n'
             '@@ -7,0 +10,2 @@\n'
             '+CLWGT = THETA(4)*(WGT/WGT_STD - WGT_MEDIAN)\n'
             '+CL = CL*CLWGT\n',
@@ -240,7 +240,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
                 ('V', 'WGT', 'exp', '+'),
             ],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
             '+CL = CL + CLWGT\n'
@@ -256,7 +256,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
                 ('V', 'WGT', 'exp', '*'),
             ],
             '@@ -1,0 +2 @@\n'
-            '+WGT_MEDIAN = 1.30000\n'
+            '+WGT_MEDIAN = 1.30000000000000\n'
             '@@ -7,0 +9,2 @@\n'
             '+CLWGT = EXP(THETA(4)*(WGT - WGT_MEDIAN))\n'
             '+CL = CL*CLWGT\n'
@@ -272,8 +272,8 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
                 ('V', 'AGE', 'exp', '*'),
             ],
             '@@ -1,0 +2,2 @@\n'
-            '+AGE_MEDIAN = 66.0000\n'
-            '+WT_MEDIAN = 78.0000\n'
+            '+AGE_MEDIAN = 66.0000000000000\n'
+            '+WT_MEDIAN = 78.0000000000000\n'
             '@@ -6,0 +9,3 @@\n'
             '+VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
             '+VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
@@ -288,9 +288,9 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
                 ('V', 'CLCR', 'exp', '*'),
             ],
             '@@ -1,0 +2,3 @@\n'
-            '+CLCR_MEDIAN = 65.0000\n'
-            '+AGE_MEDIAN = 66.0000\n'
-            '+WT_MEDIAN = 78.0000\n'
+            '+CLCR_MEDIAN = 65.0000000000000\n'
+            '+AGE_MEDIAN = 66.0000000000000\n'
+            '+WT_MEDIAN = 78.0000000000000\n'
             '@@ -6,0 +10,4 @@\n'
             '+VWT = EXP(THETA(4)*(WT - WT_MEDIAN))\n'
             '+VAGE = EXP(THETA(5)*(AGE - AGE_MEDIAN))\n'
@@ -305,7 +305,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
                 ('V', 'CLCR', 'exp', '*'),
             ],
             '@@ -1,0 +2 @@\n'
-            '+CLCR_MEDIAN = 65.0000\n'
+            '+CLCR_MEDIAN = 65.0000000000000\n'
             '@@ -2,0 +4,2 @@\n'
             '+CLCLCR = EXP(THETA(4)*(CLCR - CLCR_MEDIAN))\n'
             '+CL = CL*CLCLCR\n'
@@ -321,7 +321,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
                 ('CL', 'CLCR', 'exp', '*'),
             ],
             '@@ -1,0 +2 @@\n'
-            '+CLCR_MEDIAN = 65.0000\n'
+            '+CLCR_MEDIAN = 65.0000000000000\n'
             '@@ -2,0 +4,2 @@\n'
             '+CLCLCR = EXP(THETA(5)*(CLCR - CLCR_MEDIAN))\n'
             '+CL = CL*CLCLCR\n'
@@ -334,8 +334,8 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'models', 'mox2.mod'),
             [('CL', 'WT', '((cov/std) - median) * theta', '*')],
             '@@ -1,0 +2,2 @@\n'
-            '+WT_MEDIAN = 78.0000\n'
-            '+WT_STD = 15.6125\n'
+            '+WT_MEDIAN = 78.0000000000000\n'
+            '+WT_STD = 15.6124973266134\n'
             '@@ -2,0 +5,2 @@\n'
             '+CLWT = THETA(4)*(WT/WT_STD - WT_MEDIAN)\n'
             '+CL = CL*CLWT\n',
@@ -357,7 +357,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'models', 'mox2.mod'),
             [('V', 'WT', 'lin', '+')],
             '@@ -1,0 +2 @@\n'
-            '+WT_MEDIAN = 78.0000\n'
+            '+WT_MEDIAN = 78.0000000000000\n'
             '@@ -6,0 +8,2 @@\n'
             '+VWT = THETA(4)*(WT - WT_MEDIAN) + 1\n'
             '+V = V + VWT\n',
@@ -367,7 +367,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'models', 'mox2.mod'),
             [('V', 'WT', 'pow', '*')],
             '@@ -1,0 +2 @@\n'
-            '+WT_MEDIAN = 78.0000\n'
+            '+WT_MEDIAN = 78.0000000000000\n'
             '@@ -6,0 +8,2 @@\n'
             '+VWT = (WT/WT_MEDIAN)**THETA(4)\n'
             '+V = V*VWT\n',
@@ -377,7 +377,7 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             ('nonmem', 'models', 'mox2.mod'),
             [('V', 'WT', 'piece_lin', '+')],
             '@@ -1,0 +2 @@\n'
-            '+WT_MEDIAN = 78.0000\n'
+            '+WT_MEDIAN = 78.0000000000000\n'
             '@@ -6,0 +8,6 @@\n'
             '+IF (WT.LE.WT_MEDIAN) THEN\n'
             '+    VWT = THETA(4)*(WT - WT_MEDIAN) + 1\n'
@@ -446,7 +446,7 @@ def test_add_covariate_effect(
         (
             CovariateEffect.exponential(),
             S('CLWGT'),
-            sympy.exp(S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),
+            (S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))).exp(),
         ),
         (CovariateEffect.power(), S('CLWGT'), (S('WGT') / S('WGT_MEDIAN')) ** S('COVEFF1')),
         (CovariateEffect.linear(), S('CLWGT'), 1 + S('COVEFF1') * (S('WGT') - S('WGT_MEDIAN'))),

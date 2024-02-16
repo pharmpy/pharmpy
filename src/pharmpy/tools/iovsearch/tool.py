@@ -4,8 +4,8 @@ from dataclasses import dataclass, replace
 from typing import Callable, Iterable, List, Literal, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
@@ -376,11 +376,11 @@ class IOVSearchResults(ToolResults):
 
 
 def _get_iov_piecewise_assignment_symbols(model: Model):
-    iovs = set(sympy.Symbol(rv) for rv in model.random_variables.iov.names)
+    iovs = set(Expr.symbol(rv) for rv in model.random_variables.iov.names)
     for statement in model.statements:
-        if isinstance(statement, Assignment) and isinstance(statement.expression, sympy.Piecewise):
+        if isinstance(statement, Assignment) and statement.expression.is_piecewise():
             try:
-                expression_symbols = [p[0] for p in statement.expression.as_expr_set_pairs()]
+                expression_symbols = [p[0] for p in statement.expression.args]
             except (ValueError, NotImplementedError):
                 pass  # NOTE: These exceptions are raised by complex Piecewise
                 # statements that can be present in user code.
@@ -394,11 +394,11 @@ def _get_iiv_etas_with_corresponding_iov(model: Model):
     iiv = _get_nonfixed_iivs(model)
 
     for statement in model.statements:
-        if isinstance(statement, Assignment) and isinstance(statement.expression, sympy.Add):
+        if isinstance(statement, Assignment) and statement.expression.is_add():
             for symbol in statement.expression.free_symbols:
                 if symbol in iovs:
                     rest = statement.expression - symbol
-                    if isinstance(rest, sympy.Symbol) and rest in iiv:
+                    if rest.is_symbol() and rest in iiv:
                         yield rest
                     break
 

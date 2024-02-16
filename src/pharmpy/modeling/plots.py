@@ -3,7 +3,7 @@ import warnings
 from typing import TYPE_CHECKING, Dict, List, Optional, Union
 
 import pharmpy.visualization
-from pharmpy.internals.expr.units import unit_string
+from pharmpy.basic import Expr
 from pharmpy.model import Assignment, Model
 
 from .data import get_observations
@@ -147,7 +147,7 @@ def plot_transformed_eta_distributions(
         Plot
     """
     parameter_estimates = dict(parameter_estimates)
-    eta_symbols = {sympy.Symbol(name) for name in model.random_variables.etas.names}
+    eta_symbols = {Expr.symbol(name) for name in model.random_variables.etas.names}
 
     transformations = []
     for s in model.statements.before_odes:
@@ -170,7 +170,7 @@ def plot_transformed_eta_distributions(
         )
         subdf = pd.DataFrame({'x': x, 'original': norm.pdf(x, scale=float(var) ** 0.5)})
         rv = sympy_stats.Normal('eta', 0, sympy.sqrt(var))
-        expr = expr.subs(parameter_estimates).subs({eta: rv})
+        expr = sympy.sympify(expr).subs(parameter_estimates).subs({eta: rv})
         curdens = sympy_stats.density(expr)
         densfn = sympy.lambdify(curdens.variables[0], curdens.expr)
         with warnings.catch_warnings():
@@ -563,7 +563,7 @@ def _title_with_unit(title, unit):
     if unit == 1:
         s = ""
     else:
-        s = f" ({unit_string(unit)})"
+        s = f" ({unit.unicode()})"
     return title + s
 
 

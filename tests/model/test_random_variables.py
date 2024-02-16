@@ -3,8 +3,8 @@ import pickle
 import numpy as np
 import pytest
 import sympy
-from sympy import Symbol as symbol
 
+from pharmpy.basic import Expr, Matrix
 from pharmpy.model import (
     JointNormalDistribution,
     NormalDistribution,
@@ -12,6 +12,10 @@ from pharmpy.model import (
     VariabilityHierarchy,
     VariabilityLevel,
 )
+
+
+def symbol(x):
+    return Expr.symbol(x)
 
 
 def test_normal_rv():
@@ -25,42 +29,41 @@ def test_normal_rv():
 
 
 def test_joint_normal_rv():
-    dist = JointNormalDistribution.create(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
-    assert dist.names == ('ETA(1)', 'ETA(2)')
+    dist = JointNormalDistribution.create(['ETA1', 'ETA2'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
+    assert dist.names == ('ETA1', 'ETA2')
     assert dist.level == 'IIV'
-    dist = dist.replace(names=['NEW', 'ETA(2)'])
-    assert dist.names == ('NEW', 'ETA(2)')
+    dist = dist.replace(names=['NEW', 'ETA2'])
+    assert dist.names == ('NEW', 'ETA2')
     with pytest.raises(ValueError):
-        JointNormalDistribution.create(['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[-1, 0.1], [0.1, 2]])
+        JointNormalDistribution.create(['ETA1', 'ETA2'], 'iiv', [0, 0], [[-1, 0.1], [0.1, 2]])
 
 
 def test_eq_rv():
-    dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
-    dist2 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
+    dist1 = NormalDistribution.create('ETA1', 'iiv', 0, 1)
+    dist2 = NormalDistribution.create('ETA1', 'iiv', 0, 1)
     assert dist1 == dist2
-    dist3 = NormalDistribution.create('ETA(2)', 'iiv', 0, 1)
+    dist3 = NormalDistribution.create('ETA2', 'iiv', 0, 1)
     assert dist1 != dist3
-    dist4 = NormalDistribution.create('ETA(2)', 'iiv', 0, 0.1)
+    dist4 = NormalDistribution.create('ETA2', 'iiv', 0, 0.1)
     assert dist3 != dist4
 
 
 def test_empty_rvs():
     rvs = RandomVariables.create([])
     assert not rvs
-    assert rvs.covariance_matrix == sympy.Matrix()
+    cov = rvs.covariance_matrix
+    assert cov == Matrix()
 
 
 def test_repr_rv():
-    dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
-    assert repr(dist1) == 'ETA(1) ~ N(0, 1)'
-    dist2 = JointNormalDistribution.create(
-        ['ETA(1)', 'ETA(2)'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]]
-    )
+    dist1 = NormalDistribution.create('ETAA', 'iiv', 0, 1)
+    assert repr(dist1) == 'ETAA ~ N(0, 1)'
+    dist2 = JointNormalDistribution.create(['ETAA', 'ETAB'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     assert (
         repr(dist2)
-        == """⎡ETA(1)⎤    ⎧⎡0⎤  ⎡ 1   0.1⎤⎫
-⎢      ⎥ ~ N⎪⎢ ⎥, ⎢        ⎥⎪
-⎣ETA(2)⎦    ⎩⎣0⎦  ⎣0.1   2 ⎦⎭"""
+        == """⎡ETAA⎤    ⎧⎡0⎤  ⎡ 1   0.1⎤⎫
+⎢    ⎥ ~ N⎪⎢ ⎥, ⎢        ⎥⎪
+⎣ETAB⎦    ⎩⎣0⎦  ⎣0.1   2 ⎦⎭"""
     )
 
 
@@ -68,19 +71,17 @@ def test_repr_latex_rv():
     dist1 = JointNormalDistribution.create(['x', 'y'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     assert (
         dist1._repr_latex_()
-        == '$\\displaystyle \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right]\\sim \\mathcal{N} \\left(\\displaystyle \\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\displaystyle \\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)$'  # noqa E501
+        == '$\\left[\\begin{matrix}x\\\\y\\end{matrix}\\right]\\sim \\mathcal{N} \\left(\\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)$'  # noqa E501
     )
 
     dist2 = NormalDistribution.create('x', 'iiv', 0, 1)
-    assert (
-        dist2._repr_latex_()
-        == '$\\displaystyle x\\sim  \\mathcal{N} \\left(\\displaystyle 0,\\displaystyle 1\\right)$'
-    )
+    print(dist2._repr_latex_())
+    assert dist2._repr_latex_() == '$x\\sim  \\mathcal{N} \\left(0,1\\right)$'
 
 
 def test_parameters_rv():
-    dist1 = NormalDistribution.create('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
-    assert dist1.parameter_names == ('OMEGA(2,2)',)
+    dist1 = NormalDistribution.create('ETA2', 'iiv', 0, symbol('OMEGA22'))
+    assert dist1.parameter_names == ('OMEGA22',)
 
 
 def test_init():
@@ -93,8 +94,8 @@ def test_init():
 def test_illegal_inits():
     with pytest.raises(TypeError):
         RandomVariables.create([8, 1])
-    dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
-    dist2 = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
+    dist1 = NormalDistribution.create('ETA1', 'iiv', 0, 1)
+    dist2 = NormalDistribution.create('ETA1', 'iiv', 0, 1)
     with pytest.raises(ValueError):
         RandomVariables.create([dist1, dist2])
     with pytest.raises(TypeError):
@@ -294,29 +295,29 @@ def test_iiv_iov():
 
 def test_subs():
     dist1 = JointNormalDistribution.create(
-        ['ETA(1)', 'ETA(2)'],
+        ['ETA1', 'ETA2'],
         'iiv',
         [0, 0],
         [
-            [symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')],
-            [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')],
+            [symbol('OMEGA11'), symbol('OMEGA21')],
+            [symbol('OMEGA21'), symbol('OMEGA22')],
         ],
     )
-    dist2 = NormalDistribution.create('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    dist2 = NormalDistribution.create('ETA3', 'iiv', 0, symbol('OMEGA33'))
     rvs = RandomVariables.create([dist1, dist2])
     rvs = rvs.subs(
         {
-            symbol('ETA(2)'): symbol('w'),
-            symbol('OMEGA(1,1)'): symbol('x'),
-            symbol('OMEGA(3,3)'): symbol('y'),
+            symbol('ETA2'): symbol('w'),
+            symbol('OMEGA11'): symbol('x'),
+            symbol('OMEGA33'): symbol('y'),
         }
     )
-    assert rvs['ETA(1)'].variance == sympy.ImmutableMatrix(
-        [[symbol('x'), symbol('OMEGA(2,1)')], [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')]]
+    assert rvs['ETA1'].variance == Matrix(
+        [[symbol('x'), symbol('OMEGA21')], [symbol('OMEGA21'), symbol('OMEGA22')]]
     )
-    assert rvs['ETA(3)'].variance == symbol('y')
-    assert rvs.names == ['ETA(1)', 'w', 'ETA(3)']
-    dist3 = dist2.subs({'ETA(3)': 'X'})
+    assert rvs['ETA3'].variance == symbol('y')
+    assert rvs.names == ['ETA1', 'w', 'ETA3']
+    dist3 = dist2.subs({'ETA3': 'X'})
     assert dist3.names == ('X',)
 
 
@@ -381,7 +382,7 @@ def test_repr_latex():
     rvs = RandomVariables.create([dist1, dist2])
     assert (
         rvs._repr_latex_()
-        == '\\begin{align*}\n\\displaystyle z & \\sim  \\mathcal{N} \\left(\\displaystyle 0,\\displaystyle 1\\right) \\\\ \\displaystyle \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right] & \\sim \\mathcal{N} \\left(\\displaystyle \\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\displaystyle \\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)\\end{align*}'  # noqa E501
+        == '\\begin{align*}\nz & \\sim  \\mathcal{N} \\left(0,1\\right) \\\\ \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right] & \\sim \\mathcal{N} \\left(\\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)\\end{align*}'  # noqa E501
     )
 
 
@@ -629,19 +630,15 @@ def test_join():
     rvs = RandomVariables.create([dist1, dist2])
     joined_rvs, _ = rvs.join(['ETA(1)', 'ETA(2)'])
     assert len(joined_rvs) == 1
-    assert joined_rvs[0].variance == sympy.Matrix(
-        [[symbol('OMEGA(1,1)'), 0], [0, symbol('OMEGA(2,2)')]]
-    )
+    assert joined_rvs[0].variance == Matrix([[symbol('OMEGA(1,1)'), 0], [0, symbol('OMEGA(2,2)')]])
 
     joined_rvs, _ = rvs.join(['ETA(1)', 'ETA(2)'], fill=1)
-    assert joined_rvs[0].variance == sympy.Matrix(
-        [[symbol('OMEGA(1,1)'), 1], [1, symbol('OMEGA(2,2)')]]
-    )
+    assert joined_rvs[0].variance == Matrix([[symbol('OMEGA(1,1)'), 1], [1, symbol('OMEGA(2,2)')]])
 
     joined_rvs, _ = rvs.join(
         ['ETA(1)', 'ETA(2)'], name_template='IIV_{}_IIV_{}', param_names=['CL', 'V']
     )
-    assert joined_rvs[0].variance == sympy.Matrix(
+    assert joined_rvs[0].variance == Matrix(
         [
             [symbol('OMEGA(1,1)'), symbol('IIV_CL_IIV_V')],
             [symbol('IIV_CL_IIV_V'), symbol('OMEGA(2,2)')],
@@ -650,9 +647,7 @@ def test_join():
 
     rvs3 = RandomVariables.create([dist1, dist2, dist3])
     joined_rvs, _ = rvs3.join(['ETA(2)', 'ETA(3)'])
-    assert joined_rvs[1].variance == sympy.Matrix(
-        [[symbol('OMEGA(2,2)'), 0], [0, symbol('OMEGA(3,3)')]]
-    )
+    assert joined_rvs[1].variance == Matrix([[symbol('OMEGA(2,2)'), 0], [0, symbol('OMEGA(3,3)')]])
 
     rvs5 = RandomVariables.create([dist1, dist2, dist3, dist4, dist5])
     with pytest.raises(KeyError):
@@ -660,16 +655,16 @@ def test_join():
 
 
 def test_parameters_sdcorr():
-    dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
-    dist2 = NormalDistribution.create('ETA(2)', 'iiv', 0, symbol('OMEGA(2,2)'))
+    dist1 = NormalDistribution.create('ETA1', 'iiv', 0, symbol('OMEGA11'))
+    dist2 = NormalDistribution.create('ETA2', 'iiv', 0, symbol('OMEGA22'))
     rvs = RandomVariables.create([dist1, dist2])
-    params = rvs.parameters_sdcorr({'OMEGA(1,1)': 4})
-    assert params == {'OMEGA(1,1)': 2}
-    params = rvs.parameters_sdcorr({'OMEGA(1,1)': 4, 'OMEGA(2,2)': 16})
-    assert params == {'OMEGA(1,1)': 2, 'OMEGA(2,2)': 4}
+    params = rvs.parameters_sdcorr({'OMEGA11': 4})
+    assert params == {'OMEGA11': 2}
+    params = rvs.parameters_sdcorr({'OMEGA11': 4, 'OMEGA22': 16})
+    assert params == {'OMEGA11': 2, 'OMEGA22': 4}
 
     dist2 = JointNormalDistribution.create(
-        ['ETA(1)', 'ETA(2)'],
+        ['ETA1', 'ETA2'],
         'iiv',
         [0, 0],
         [[symbol('x'), symbol('y')], [symbol('y'), symbol('z')]],
@@ -748,7 +743,7 @@ def test_covariance_matrix():
     )
     rvs = RandomVariables.create([dist1, dist2, dist3])
     cov = rvs.covariance_matrix
-    assert cov == sympy.Matrix(
+    assert cov == Matrix(
         [
             [symbol('OMEGA(1,1)'), 0, 0, 0],
             [0, symbol('OMEGA(2,2)'), 0, 0],
@@ -759,7 +754,7 @@ def test_covariance_matrix():
 
     rvs = RandomVariables.create([dist1, dist3, dist2])
     cov = rvs.covariance_matrix
-    assert cov == sympy.Matrix(
+    assert cov == Matrix(
         [
             [symbol('OMEGA(1,1)'), 0, 0, 0],
             [0, symbol('x'), symbol('y'), 0],
@@ -867,8 +862,8 @@ def test_replace_with_sympy_rvs():
     expr_symbs = symbol('ETA(1)') + symbol('x')
     expr_sympy = rvs.replace_with_sympy_rvs(expr_symbs)
 
-    assert expr_symbs != expr_sympy
-    assert not all(isinstance(arg, symbol) for arg in expr_sympy.args)
+    assert sympy.sympify(expr_symbs) != expr_sympy
+    assert not all(isinstance(arg, sympy.Symbol) for arg in expr_sympy.args)
 
     var2, cov = symbol('OMEGA(2,2)'), symbol('OMEGA(2,1)')
 
@@ -880,5 +875,5 @@ def test_replace_with_sympy_rvs():
     expr_symbs = symbol('ETA(1)') + symbol('ETA(2)') + symbol('x')
     expr_sympy = rvs.replace_with_sympy_rvs(expr_symbs)
 
-    assert expr_symbs != expr_sympy
-    assert not all(isinstance(arg, symbol) for arg in expr_sympy.args)
+    assert expr_symbs._sympy_() != expr_sympy
+    assert not all(isinstance(arg, sympy.Symbol) for arg in expr_sympy.args)

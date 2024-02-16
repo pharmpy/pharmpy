@@ -423,8 +423,8 @@ def test_single_assignments(parser, buf, sym, expression):
         (
             '$PRED\nIF (X.EQ.0) THEN\nY = 23\nELSE\nY = 7\nZ = 9\nEND IF',
             [
-                (S('Z'), 9),
                 (S('Y'), sympy.Piecewise((23, sympy.Eq(S('X'), 0)), (7, True))),
+                (S('Z'), 9),
             ],
         ),
     ],
@@ -656,7 +656,7 @@ def test_statements_setter_change(parser, buf_original, buf_new):
 def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression, buf_new):
     rec_original = parser.parse(buf_original).records[0]
 
-    assignment = Assignment(sym, expression)
+    assignment = Assignment.create(sym, expression)
     statements = rec_original.statements + [assignment]
     newrec = rec_original.update_statements(statements)
 
@@ -669,22 +669,22 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
     [
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
-            Assignment(S('Z'), S('THETA(2)')),
+            Assignment.create(S('Z'), S('THETA(2)')),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = THETA(2)\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\n',
-            Assignment(S('Z'), S('THETA(2)')),
+            Assignment.create(S('Z'), S('THETA(2)')),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nCL = 1.3\nZ = THETA(2)\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
-            Assignment(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
+            Assignment.create(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'IF (NaN.EQ.WGT) YWGT = 1\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
-            Assignment(S('Z'), PHI(S('A') + S('B'))),
+            Assignment.create(S('Z'), PHI(S('A') + S('B'))),
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'Z = PHI(A + B)\n',
         ),
     ],
@@ -746,7 +746,7 @@ def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
     buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
     rec = parser.parse(buf_original).records[0]
     assert isinstance(rec, CodeRecord)
-    s = Assignment(symbol, expression)
+    s = Assignment.create(symbol, expression)
     statements = rec.statements + s
     newrec = rec.update_statements(statements)
     assert str(newrec) == buf_original + buf_expected
@@ -760,7 +760,7 @@ def test_empty_record(parser):
 def test_set_block_if(parser):
     rec = parser.parse('$PRED\n').records[0]
     z = S('z')
-    s = Assignment(sympy.Symbol('X'), sympy.Piecewise((23, z < 12), (5, True)))
+    s = Assignment.create(sympy.Symbol('X'), sympy.Piecewise((23, z < 12), (5, True)))
     statements = rec.statements + s
     rec = rec.update_statements(statements)
     correct = """$PRED

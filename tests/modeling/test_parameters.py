@@ -5,7 +5,6 @@ import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     add_iiv,
@@ -131,7 +130,7 @@ def test_set_bounds(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     model = set_upper_bounds(model, {'THETA_1': 100})
     assert model.parameters['THETA_1'].upper == 100
-    assert model.parameters['OMEGA_1_1'].upper == sympy.oo
+    assert model.parameters['OMEGA_1_1'].upper == float("inf")
     model = set_lower_bounds(model, {'THETA_1': -100})
     assert model.parameters['THETA_1'].lower == -100
     assert model.parameters['OMEGA_1_1'].lower == 0
