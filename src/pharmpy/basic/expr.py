@@ -269,6 +269,11 @@ class BooleanExpr:
         return symbs
 
     @property
+    def args(self):
+        args = [Expr(a) for a in self._expr.args]
+        return tuple(args)
+
+    @property
     def lhs(self):
         lhs = self._expr.lhs
         rhs = self._expr.rhs
@@ -319,6 +324,9 @@ class BooleanExpr:
     def __repr__(self):
         return repr(self._expr)
 
+    def __bool__(self):
+        print('AAAA')
+        return self._expr is True
 
 # Type hint for public functions taking an expression as input
 TExpr = int | float | str | sympy.Expr | symengine.Basic | Expr

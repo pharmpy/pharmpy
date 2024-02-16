@@ -1236,17 +1236,18 @@ def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, Assign
         if not isinstance(statement, Assignment):
             continue
 
+        expr_as_sympy = sympy.sympify(statement.expression)
         node = AssignmentGraphNode(
-            statement.expression,
+            expr_as_sympy,
             i,
             {
                 symbol: last_assignments[symbol]
-                for symbol in statement.expression.free_symbols
+                for symbol in expr_as_sympy.free_symbols
                 if symbol in last_assignments
             },
         )
 
-        last_assignments[statement.symbol] = node
+        last_assignments[sympy.sympify(statement.symbol)] = node
 
     return last_assignments
 
@@ -1255,12 +1256,11 @@ def remove_covariate_effect_from_statements(
     model: Model, before_odes: Statements, parameter: str, covariate: str
 ) -> Iterable[Statement]:
     assignments = _make_assignments_graph(before_odes)
-
-    thetas = _theta_symbols(model)
+    thetas = {sympy.sympify(symb) for symb in _theta_symbols(model)}
 
     new_before_odes = list(before_odes)
 
-    symbol = Expr.symbol(parameter)
+    symbol = sympy.Symbol(parameter)
     graph_node = assignments[symbol]
 
     tree_node = _remove_covariate_effect_from_statements_recursive(
@@ -1269,7 +1269,7 @@ def remove_covariate_effect_from_statements(
         new_before_odes,
         symbol,
         graph_node.expression,
-        Expr.symbol(covariate),
+        sympy.Symbol(covariate),
         None,
     )
 
@@ -1285,12 +1285,13 @@ def remove_covariate_effect_from_statements(
 
 
 def _neutral(expr: Expr) -> sympy.Integer:
+    expr = Expr(expr)
     if expr.is_add():
-        return Expr.integer(0)
+        return sympy.Integer(0)
     if expr.is_mul():
-        return Expr.integer(1)
+        return sympy.Integer(1)
     if expr.is_pow():
-        return Expr.integer(1)
+        return sympy.Integer(1)
 
     raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
 
@@ -1400,7 +1401,7 @@ def _remove_covariate_effect_from_statements_recursive(
             expression, False, _is_constant(thetas, expression), _depends_on_any(thetas, expression)
         )
 
-    if expression.is_piecewise():
+    if isinstance(expression, sympy.Piecewise):
         if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
             # NOTE: At least one condition depends on the covariate
             if all(
