@@ -324,9 +324,6 @@ class BooleanExpr:
     def __repr__(self):
         return repr(self._expr)
 
-    def __bool__(self):
-        print('AAAA')
-        return self._expr is True
 
 # Type hint for public functions taking an expression as input
 TExpr = int | float | str | sympy.Expr | symengine.Basic | Expr
