@@ -44,7 +44,7 @@ class DataFrameMapping(Mapping['sympy.Symbol', 'np.ndarray']):
 
 def evaluate_expression(
     model: Model,
-    expression: TExpr,
+    expression: Union[str, TExpr],
     parameter_estimates: Optional[ParameterMap] = None,
 ):
     """Evaluate expression using model
@@ -58,7 +58,7 @@ def evaluate_expression(
     ----------
     model : Model
         Pharmpy model
-    expression : str or expression
+    expression : str or TExpr
         Expression to evaluate
     parameter_estimates : pd.Series
         Parameter estimates to use instead of initial estimates

@@ -362,14 +362,14 @@ def mu_reference_model(model: Model):
     return model
 
 
-def simplify_expression(model: Model, expr: TExpr):
+def simplify_expression(model: Model, expr: Union[str, TExpr]):
     """Simplify expression given constraints in model
 
     Parameters
     ----------
     model : Model
         Pharmpy model object
-    expr : Expression
+    expr : TExpr or str
         Expression to simplify
 
     Returns
