@@ -262,12 +262,10 @@ class Results(Immutable):
         )
 
     @overload
-    def to_json(self, path: None = None, lzma: Literal[False] = False) -> str:
-        ...
+    def to_json(self, path: None = None, lzma: Literal[False] = False) -> str: ...
 
     @overload
-    def to_json(self, path: Path, lzma: bool = False) -> None:
-        ...
+    def to_json(self, path: Path, lzma: bool = False) -> None: ...
 
     def to_json(self, path: Optional[Path] = None, lzma: bool = False) -> Union[str, None]:
         """Serialize results object as json

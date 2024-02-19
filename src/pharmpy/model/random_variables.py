@@ -189,12 +189,10 @@ class VariabilityHierarchy(Immutable):
         raise KeyError(f'Could not find level {ind} in VariabilityHierarchy')
 
     @overload
-    def __getitem__(self, ind: Union[Sequence, VariabilityHierarchy]) -> VariabilityHierarchy:
-        ...
+    def __getitem__(self, ind: Union[Sequence, VariabilityHierarchy]) -> VariabilityHierarchy: ...
 
     @overload
-    def __getitem__(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel:
-        ...
+    def __getitem__(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel: ...
 
     def __getitem__(self, ind):
         if isinstance(ind, VariabilityHierarchy):
@@ -442,12 +440,10 @@ class RandomVariables(CollectionsSequence, Immutable):
         raise KeyError(f'Could not find {ind} in RandomVariables')
 
     @overload
-    def __getitem__(self, ind: Union[int, str, Expr]) -> Distribution:
-        ...
+    def __getitem__(self, ind: Union[int, str, Expr]) -> Distribution: ...
 
     @overload
-    def __getitem__(self, ind: Union[slice, Container[Union[str, Expr]]]) -> RandomVariables:
-        ...
+    def __getitem__(self, ind: Union[slice, Container[Union[str, Expr]]]) -> RandomVariables: ...
 
     def __getitem__(self, ind):
         if isinstance(ind, int):

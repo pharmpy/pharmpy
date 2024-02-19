@@ -1,6 +1,7 @@
 """
 :meta private:
 """
+
 from typing import Literal
 
 from pharmpy.basic import Expr

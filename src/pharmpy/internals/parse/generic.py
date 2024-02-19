@@ -4,6 +4,7 @@ Generic parser using lark.
 Subclass :class:`GenericParser` (remember to set :attr:`GenericParser.grammar`
 to point to your grammar file) to define a powerful parser.
 """
+
 from __future__ import annotations
 
 import re
@@ -184,9 +185,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 
         return AttrTree(self.rule, self.children[:i] + (new_child,) + self.children[i + 1 :])
 
-    def partition(
-        self, rule
-    ) -> Tuple[
+    def partition(self, rule) -> Tuple[
         Tuple[Union[AttrTree, AttrToken], ...],
         Tuple[Union[AttrTree, AttrToken], ...],
         Tuple[Union[AttrTree, AttrToken], ...],

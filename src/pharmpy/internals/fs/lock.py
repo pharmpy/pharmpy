@@ -66,6 +66,7 @@ Caveats:
     It is currently not possible to specify a timeout for acquiring a lock. The
     only options currently are immediate failure or forever blocking.
 """
+
 import os
 import sys
 from collections import Counter

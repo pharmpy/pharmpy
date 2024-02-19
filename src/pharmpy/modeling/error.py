@@ -1,6 +1,7 @@
 """
 :meta private:
 """
+
 from __future__ import annotations
 
 import warnings

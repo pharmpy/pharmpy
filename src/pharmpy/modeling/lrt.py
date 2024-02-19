@@ -24,9 +24,11 @@ def cutoff(parent: Model, child: Model, alpha: float) -> float:
     return (
         0
         if df == 0
-        else float(stats.chi2.isf(q=alpha, df=df))
-        if df > 0
-        else -float(stats.chi2.isf(q=alpha, df=-df))
+        else (
+            float(stats.chi2.isf(q=alpha, df=df))
+            if df > 0
+            else -float(stats.chi2.isf(q=alpha, df=-df))
+        )
     )
 
 

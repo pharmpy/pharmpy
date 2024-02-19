@@ -10,6 +10,7 @@ Inherit to *implement*, i.e. to define support for a specific model type.
 Definitions
 -----------
 """
+
 from __future__ import annotations
 
 import dataclasses

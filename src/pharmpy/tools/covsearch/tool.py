@@ -422,12 +422,14 @@ def _greedy_search(
 
         parent_modelentry = best_candidate_so_far.modelentry
         ofvs = [
-            np.nan
-            if modelentry.modelfit_results is None
-            or not is_strictness_fulfilled(
-                modelentry.modelfit_results, modelentry.model, strictness
+            (
+                np.nan
+                if modelentry.modelfit_results is None
+                or not is_strictness_fulfilled(
+                    modelentry.modelfit_results, modelentry.model, strictness
+                )
+                else modelentry.modelfit_results.ofv
             )
-            else modelentry.modelfit_results.ofv
             for modelentry in new_candidate_modelentries
         ]
         # NOTE: We assume parent_modelentry.modelfit_results is not None
@@ -732,9 +734,11 @@ def _make_df_steps_row(
         assert not selected or (model is parent_model) or not extended_significant
 
     return {
-        'step': len(candidate.steps)
-        if candidate.steps == tuple() or isinstance(candidate.steps[-1], ForwardStep)
-        else len(candidate.steps) + index_offset,
+        'step': (
+            len(candidate.steps)
+            if candidate.steps == tuple() or isinstance(candidate.steps[-1], ForwardStep)
+            else len(candidate.steps) + index_offset
+        ),
         'parameter': parameter,
         'covariate': covariate,
         'extended_state': extended_state,

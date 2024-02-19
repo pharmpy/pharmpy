@@ -544,12 +544,10 @@ class EstimationSteps(Sequence, Immutable):
         return EstimationSteps.create(steps)
 
     @overload
-    def __getitem__(self, i: int) -> EstimationStep:
-        ...
+    def __getitem__(self, i: int) -> EstimationStep: ...
 
     @overload
-    def __getitem__(self, i: slice) -> EstimationSteps:
-        ...
+    def __getitem__(self, i: slice) -> EstimationSteps: ...
 
     def __getitem__(
         self, i: Union[int, slice]

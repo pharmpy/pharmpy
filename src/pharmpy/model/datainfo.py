@@ -1,5 +1,6 @@
 """DataInfo is a companion to the dataset. It contains metadata of the dataset
 """
+
 from __future__ import annotations
 
 import json
@@ -653,12 +654,10 @@ class DataInfo(Sequence, Immutable):
             raise TypeError(f"Cannot index DataInfo by {type(i)}")
 
     @overload
-    def __getitem__(self, index: Union[list, slice]) -> DataInfo:
-        ...
+    def __getitem__(self, index: Union[list, slice]) -> DataInfo: ...
 
     @overload
-    def __getitem__(self, index: Union[int, str]) -> ColumnInfo:
-        ...
+    def __getitem__(self, index: Union[int, str]) -> ColumnInfo: ...
 
     def __getitem__(  # pyright: ignore [reportIncompatibleMethodOverride]
         self, index: Union[list, slice, int, str]
@@ -882,9 +881,9 @@ class DataInfo(Sequence, Immutable):
          'FA2': 'float64'}
         """
         return {
-            col.name: col.datatype
-            if not col.drop and not col.datatype.startswith('nmtran')
-            else 'str'
+            col.name: (
+                col.datatype if not col.drop and not col.datatype.startswith('nmtran') else 'str'
+            )
             for col in self
         }
 

@@ -264,9 +264,9 @@ def _create_summary_tool(selected_model_entries, cutoff, strictness):
     sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
 
     # FIXME: Workaround since rank_models will exclude ranking of base model since dofv will be 0
-    sum_tool_by_iter.loc[
-        (0, base_model_entry.model.name), 'ofv'
-    ] = base_model_entry.modelfit_results.ofv
+    sum_tool_by_iter.loc[(0, base_model_entry.model.name), 'ofv'] = (
+        base_model_entry.modelfit_results.ofv
+    )
     sum_tool_by_iter.loc[(0, base_model_entry.model.name), 'dofv'] = 0
 
     return sum_tool_by_iter.drop(columns=['rank'])

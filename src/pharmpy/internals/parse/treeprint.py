@@ -2,6 +2,7 @@
 Pretty printing of tree-structures. Inspired by the 'tree' command (Steve
 Baker). In development.
 """
+
 from __future__ import annotations
 
 import logging

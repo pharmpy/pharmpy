@@ -71,9 +71,11 @@ def compute_covariance_ratios(cdd_model_results, covariance_matrix):
     try:
         orig_det = np.linalg.det(covariance_matrix)
         return [
-            sqrt(np.linalg.det(res.covariance_matrix) / orig_det)
-            if res is not None and res.covariance_matrix is not None
-            else np.nan
+            (
+                sqrt(np.linalg.det(res.covariance_matrix) / orig_det)
+                if res is not None and res.covariance_matrix is not None
+                else np.nan
+            )
             for res in cdd_model_results
         ]
     except Exception:

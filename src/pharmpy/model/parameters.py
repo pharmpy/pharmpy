@@ -253,14 +253,12 @@ class Parameters(CollectionsSequence, Immutable):
         return ind, self._params[ind]
 
     @overload
-    def __getitem__(self, ind: Union[int, str, Expr, Parameter]) -> Parameter:
-        ...
+    def __getitem__(self, ind: Union[int, str, Expr, Parameter]) -> Parameter: ...
 
     @overload
     def __getitem__(
         self, ind: Union[slice, Sequence[Union[int, str, Expr, Parameter]]]
-    ) -> Parameters:
-        ...
+    ) -> Parameters: ...
 
     def __getitem__(self, ind):
         if isinstance(ind, slice):

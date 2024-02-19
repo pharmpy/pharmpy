@@ -281,11 +281,15 @@ def post_process_drug_metabolite(
     if base_model_entry != user_input_model_entry:
         # Change parent model to base model instead of temporary model names or input model
         res_models = [
-            me
-            if me.parent.name
-            not in ("TEMP", user_input_model_entry.model.name)  # TEMP name for drug-met models
-            else ModelEntry.create(
-                model=me.model, parent=base_model_entry.model, modelfit_results=me.modelfit_results
+            (
+                me
+                if me.parent.name
+                not in ("TEMP", user_input_model_entry.model.name)  # TEMP name for drug-met models
+                else ModelEntry.create(
+                    model=me.model,
+                    parent=base_model_entry.model,
+                    modelfit_results=me.modelfit_results,
+                )
             )
             for me in res_models
         ]

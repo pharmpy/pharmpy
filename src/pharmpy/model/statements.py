@@ -1433,17 +1433,14 @@ class Dose(ABC):
         return self._admid
 
     @abstractmethod
-    def subs(self, substitutions) -> Dose:
-        ...
+    def subs(self, substitutions) -> Dose: ...
 
     @property
     @abstractmethod
-    def free_symbols(self) -> set[Expr]:
-        ...
+    def free_symbols(self) -> set[Expr]: ...
 
     @abstractmethod
-    def to_dict(self) -> dict[str, Any]:
-        ...
+    def to_dict(self) -> dict[str, Any]: ...
 
 
 class Bolus(Dose, Immutable):
@@ -1981,12 +1978,10 @@ class Statements(Sequence, Immutable):
             self._statements = tuple(statements)
 
     @overload
-    def __getitem__(self, ind: slice) -> Statements:
-        ...
+    def __getitem__(self, ind: slice) -> Statements: ...
 
     @overload
-    def __getitem__(self, ind: int) -> Statement:
-        ...
+    def __getitem__(self, ind: int) -> Statement: ...
 
     def __getitem__(self, ind):
         if isinstance(ind, slice):

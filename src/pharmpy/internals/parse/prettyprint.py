@@ -1,4 +1,5 @@
 """Pretty printing of :class:`generic.AttrTree` via :class:`treeprint.Node`."""
+
 from __future__ import annotations
 
 from functools import partial

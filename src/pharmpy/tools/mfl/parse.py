@@ -187,12 +187,16 @@ class ModelFeatures:
             # FIXME : Multiple let statements for the same reference value ?
             def _let_subs(cov, let):
                 return Covariate(
-                    parameter=cov.parameter
-                    if not (isinstance(cov.parameter, Ref) and cov.parameter.name in let)
-                    else let[cov.parameter.name],
-                    covariate=cov.covariate
-                    if not (isinstance(cov.covariate, Ref) and cov.covariate.name in let)
-                    else let[cov.covariate.name],
+                    parameter=(
+                        cov.parameter
+                        if not (isinstance(cov.parameter, Ref) and cov.parameter.name in let)
+                        else let[cov.parameter.name]
+                    ),
+                    covariate=(
+                        cov.covariate
+                        if not (isinstance(cov.covariate, Ref) and cov.covariate.name in let)
+                        else let[cov.covariate.name]
+                    ),
                     fp=cov.fp,
                     op=cov.op,
                     optional=cov.optional,

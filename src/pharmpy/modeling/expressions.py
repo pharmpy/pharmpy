@@ -1460,9 +1460,11 @@ def _remove_covariate_effect_from_statements_recursive(
     return ExpressionTreeNode(
         expression.func(
             *map(
-                lambda n: _neutral(expression)
-                if n.changed and n.constant and n.expression != symbol
-                else n.expression,
+                lambda n: (
+                    _neutral(expression)
+                    if n.changed and n.constant and n.expression != symbol
+                    else n.expression
+                ),
                 children,
             )
         ),
@@ -1811,15 +1813,17 @@ def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assign
         if t == 'synthetic':
             substitution_starts_at_index = last_defined.get(assignment.symbol, 0)
             assignments = [
-                succeeding
-                if i < substitution_starts_at_index
-                else Assignment.create(
-                    succeeding.symbol,
-                    subs(
-                        succeeding.expression,
-                        {assignment.symbol: assignment.expression},
-                        simultaneous=True,
-                    ),
+                (
+                    succeeding
+                    if i < substitution_starts_at_index
+                    else Assignment.create(
+                        succeeding.symbol,
+                        subs(
+                            succeeding.expression,
+                            {assignment.symbol: assignment.expression},
+                            simultaneous=True,
+                        ),
+                    )
                 )
                 for i, succeeding in enumerate(assignments)
             ]

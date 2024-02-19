@@ -1,6 +1,7 @@
 """
 :meta private:
 """
+
 from typing import Literal, Mapping, Set, Union
 
 from pharmpy.basic import Expr, TExpr
