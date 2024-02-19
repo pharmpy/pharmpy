@@ -1,3 +1,4 @@
+import warnings
 from importlib import import_module
 from types import ModuleType
 
@@ -20,7 +21,14 @@ class LazyImport(ModuleType):
 
     def _load(self):
         # Import the target module and insert it into the parent's namespace
-        module = import_module(self.__name__)
+        name = self.__name__
+        if name == 'pandas':
+            # Because of https://github.com/pandas-dev/pandas/issues/54466
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                module = import_module(name)
+        else:
+            module = import_module(name)
         resolved = module if self._attr is None else getattr(module, self._attr)
         self._parent_module_globals[self._local_name] = resolved
 
