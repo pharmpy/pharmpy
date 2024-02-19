@@ -129,9 +129,9 @@ if is_windows:
         if blocking:
             while True:
                 try:
-                    msvcrt.locking(  # pyright: ignore [reportGeneralTypeIssues]
+                    msvcrt.locking(  # pyright: ignore [reportAttributeAccessIssue]
                         fd,
-                        msvcrt.LK_LOCK,  # pyright: ignore [reportGeneralTypeIssues]
+                        msvcrt.LK_LOCK,  # pyright: ignore [reportAttributeAccessIssue]
                         _lock_length,
                     )
                     break
@@ -140,8 +140,10 @@ if is_windows:
                         raise error
         else:
             try:
-                msvcrt.locking(  # pyright: ignore [reportGeneralTypeIssues]
-                    fd, msvcrt.LK_NBLCK, _lock_length  # pyright: ignore [reportGeneralTypeIssues]
+                msvcrt.locking(  # pyright: ignore [reportAttributeAccessIssue]
+                    fd,
+                    msvcrt.LK_NBLCK,  # pyright: ignore [reportAttributeAccessIssue]
+                    _lock_length,
                 )
             except PermissionError as error:
                 if _is_process_level_lock_blocking_error(error):
@@ -153,8 +155,8 @@ if is_windows:
         # NOTE: This implementation (Windows) will raise an error if attempting
         # to unlock an already unlocked fd. This does not matter as we make
         # sure we do not do that.
-        msvcrt.locking(  # pyright: ignore [reportGeneralTypeIssues]
-            fd, msvcrt.LK_UNLCK, _lock_length  # pyright: ignore [reportGeneralTypeIssues]
+        msvcrt.locking(  # pyright: ignore [reportAttributeAccessIssue]
+            fd, msvcrt.LK_UNLCK, _lock_length  # pyright: ignore [reportAttributeAccessIssue]
         )
 
 else:

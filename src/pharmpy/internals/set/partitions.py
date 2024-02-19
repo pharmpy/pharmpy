@@ -13,8 +13,8 @@ def partitions(elements: Iterable[T]) -> Iterator[Tuple[Tuple[T, ...], ...]]:
     """
     _elements = tuple(elements)
     n = len(_elements)
-    return iter(
-        sorted(
+    return iter(  # pyright: ignore [reportCallIssue]
+        sorted(  # pyright: ignore [reportCallIssue]
             map(
                 tuple,
                 map(
@@ -22,7 +22,7 @@ def partitions(elements: Iterable[T]) -> Iterator[Tuple[Tuple[T, ...], ...]]:
                     _partitions(_elements, n),
                 ),
             ),
-            key=_partitionkey,  # pyright: ignore [reportGeneralTypeIssues]
+            key=_partitionkey,  # pyright: ignore [reportArgumentType]
         )
     )
 

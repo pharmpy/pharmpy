@@ -22,9 +22,7 @@ def subs(expr: sympy.Expr, mapping: Mapping[Any, Any], simultaneous: bool = Fals
             _mapping[sympy.Pow] = lambda a, x: new_base**x if a is sympy.S.Exp1 else a**x
             return _subs_atoms_simultaneously(_subs_atom_or_func(_mapping), expr)
         return _subs_atoms_simultaneously(_subs_atom(_mapping), expr)
-    return expr.subs(
-        _mapping, simultaneous=simultaneous
-    )  # pyright: ignore [reportGeneralTypeIssues]
+    return expr.subs(_mapping, simultaneous=simultaneous)  # pyright: ignore [reportReturnType]
 
 
 def xreplace_dict(dictlike) -> Dict[Any, Any]:
@@ -77,7 +75,7 @@ def _subs_atoms_simultaneously(
             output[-1].append(subs_new_args(e, new_args))
         else:
             # NOTE: Push the next argument on the stack
-            stack.append(old_args[i])  # pyright: ignore [reportGeneralTypeIssues]
+            stack.append(old_args[i])  # pyright: ignore [reportArgumentType]
             output.append([])
 
     return output[0][0]

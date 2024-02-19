@@ -73,7 +73,7 @@ def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Expr):
                 new_args.append(_neutral(e.func))
             else:
                 # NOTE: Push the next argument on the stack
-                stack.append(old_arg)  # pyright: ignore [reportGeneralTypeIssues]
+                stack.append(old_arg)  # pyright: ignore [reportArgumentType]
                 output.append([])
 
     return output[0][0]

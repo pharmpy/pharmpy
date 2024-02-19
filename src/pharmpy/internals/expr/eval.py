@@ -29,7 +29,7 @@ def eval_expr(
 
 @lru_cache(maxsize=256)
 def _free_symbols(expr: sympy.Expr) -> Set[sympy.Expr]:
-    return expr.free_symbols  # pyright: ignore [reportGeneralTypeIssues]
+    return expr.free_symbols  # pyright: ignore [reportReturnType]
 
 
 @lru_cache(maxsize=256)

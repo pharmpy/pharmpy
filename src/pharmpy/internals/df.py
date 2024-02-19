@@ -11,7 +11,7 @@ else:
 
 def _pd_hash_values(obj: Union[pd.Index, pd.Series, pd.DataFrame]) -> pd.Series:
     # NOTE: We explicit all arguments for future-proofing
-    return pd.util.hash_pandas_object(  # pyright: ignore [reportGeneralTypeIssues]
+    return pd.util.hash_pandas_object(  # pyright: ignore [reportAttributeAccessIssue]
         obj, index=False, encoding='utf8', hash_key='0123456789123456', categorize=True
     )
 
@@ -30,5 +30,5 @@ def hash_df_runtime(df: pd.DataFrame) -> int:
 def hash_df_fs(df: pd.DataFrame) -> str:
     h = sha256()
     for series in _df_hash_values(df):
-        h.update(series.to_numpy())  # pyright: ignore [reportGeneralTypeIssues]
+        h.update(series.to_numpy())  # pyright: ignore [reportArgumentType]
     return h.hexdigest()

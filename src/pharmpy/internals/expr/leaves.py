@@ -14,7 +14,7 @@ def free_images(expr: sympy.Expr) -> set[sympy.Expr]:
 
 
 def free_images_and_symbols(expr: sympy.Expr) -> set[sympy.Expr]:
-    return expr.free_symbols | free_images(expr)  # pyright: ignore [reportGeneralTypeIssues]
+    return expr.free_symbols | free_images(expr)  # pyright: ignore [reportReturnType]
 
 
 def _free_images_iter(expr: sympy.Expr) -> Iterable[sympy.Expr]:
@@ -25,6 +25,6 @@ def _free_images_iter(expr: sympy.Expr) -> Iterable[sympy.Expr]:
     yield from chain.from_iterable(
         map(
             _free_images_iter,
-            expr.args,  # pyright: ignore [reportGeneralTypeIssues]
+            expr.args,  # pyright: ignore [reportArgumentType]
         )
     )
