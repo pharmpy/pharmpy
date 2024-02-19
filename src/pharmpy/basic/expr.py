@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Mapping
+from typing import Mapping, Union
 
 from pharmpy.deps import symengine, sympy
 from pharmpy.deps.sympy_printing import pretty
@@ -326,6 +326,6 @@ class BooleanExpr:
 
 
 # Type hint for public functions taking an expression as input
-TExpr = int | float | str | sympy.Expr | symengine.Basic | Expr
-TSymbol = str | sympy.Expr | symengine.Basic | Expr
-TBooleanExpr = str | sympy.Basic | symengine.Basic | BooleanExpr
+TExpr = Union[int, float, str, sympy.Expr, symengine.Basic, Expr]
+TSymbol = Union[str, sympy.Expr, symengine.Basic, Expr]
+TBooleanExpr = Union[str, sympy.Basic, symengine.Basic, BooleanExpr]

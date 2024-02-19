@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Union
 
-from pharmpy.basic import Expr, TSymbol
+from pharmpy.basic import TExpr, TSymbol
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
@@ -13,8 +13,8 @@ from .odes import find_clearance_parameters, find_volume_parameters
 def add_allometry(
     model: Model,
     allometric_variable: Optional[TSymbol] = None,
-    reference_value: Union[str, int, float, Expr] = 70,
-    parameters: Optional[List[Union[str, Expr]]] = None,
+    reference_value: TExpr = 70,
+    parameters: Optional[List[TExpr]] = None,
     initials: Optional[List[Union[int, float]]] = None,
     lower_bounds: Optional[List[Union[int, float]]] = None,
     upper_bounds: Optional[List[Union[int, float]]] = None,
@@ -36,9 +36,9 @@ def add_allometry(
     ----------
     model : Model
         Pharmpy model
-    allometric_variable : str or Expr
+    allometric_variable : str or TExpr
         Value to use for allometry (X above)
-    reference_value : str, int, float or Expr
+    reference_value : str, int, float or TExpr
         Reference value (Z above)
     parameters : list
         Parameters to use or None (default) for all available CL, Q and V parameters
