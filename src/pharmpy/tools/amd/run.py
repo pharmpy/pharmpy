@@ -49,7 +49,7 @@ from pharmpy.workflows.results import ModelfitResults
 from ..run import run_tool
 from .results import AMDResults
 
-ALLOWED_STRATEGY = ["all", "retries", "SIR", "SRI", "RSI"]
+ALLOWED_STRATEGY = ["default", "reevaluation", "SIR", "SRI", "RSI"]
 ALLOWED_ADMINISTRATION = ["iv", "oral", "ivoral"]
 ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
@@ -60,7 +60,7 @@ def run_amd(
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
-    strategy: str = "all",
+    strategy: str = "default",
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
@@ -98,7 +98,7 @@ def run_amd(
     administration : str
         Route of administration. Either 'iv', 'oral' or 'ivoral'
     strategy : str
-        Run algorithm for AMD procedure. Valid options are 'all', 'retries'. Default is all
+        Run algorithm for AMD procedure. Valid options are 'default', 'reevaluation'. Default is 'default'
     cl_init : float
         Initial estimate for the population clearance
     vc_init : float
@@ -226,9 +226,9 @@ def run_amd(
             lloq=lloq_limit,
         )
 
-    if strategy == "all":
+    if strategy == "default":
         order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
-    elif strategy == "retries":
+    elif strategy == "reevaluation":
         order = [
             'structural',
             'iivsearch',
@@ -1036,7 +1036,7 @@ def validate_input(
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
-    strategy: str = "all",
+    strategy: str = "default",
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,

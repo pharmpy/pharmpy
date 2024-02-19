@@ -21,7 +21,7 @@ To initiate AMD in Python/R:
     from pharmpy.tools import run_amd
 
     dataset_path = 'path/to/dataset'
-    strategy = 'all'
+    strategy = 'default'
     res = run_amd(input=dataset_path,
                   modeltype='basic_pk',
                   administration='oral',
@@ -73,7 +73,7 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``lloq_method``                                   | Method to use for handling lower limit of quantification. See :py:func:`pharmpy.modeling.transform_blq`.        |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| :ref:`strategy<strategy_amd>`                     | Strategy defining run order of the different subtools valid arguments are 'all' (deafult) and 'retries'         |
+| :ref:`strategy<strategy_amd>`                     | Strategy defining run order of the different subtools valid arguments are 'default' (deafult) and 'reevaluation'|
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``allometric_variable``                           | Variable to use for allometry (default is name of column described as body weight)                              |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -200,10 +200,13 @@ all model types, the used subtools in the different steps is dependent on the
 ``modeltype`` argument. Please see the description for each tool described below
 for more details.
 
-all (default)
-~~~~~~~~~~~~~
+Only a single strategy can be used for each AMD run. Combinations of strategies are not
+supported. However each of the subtools used in AMD is available to use manually as well.
 
-If no argument is specified, 'all' will be used as the default strategy. This will use
+default (default)
+~~~~~~~~~~~~~~~~~
+
+If no argument is specified, 'default' will be used as the default strategy. This will use
 all tools available for the specified ``modeltype``. The exact workflow can hence differ for
 the different model type but a general visualization of this can be seen below:
 
@@ -231,10 +234,10 @@ the different model type but a general visualization of this can be seen below:
         }
 
 
-retries
-~~~~~~~
+reevaluation
+~~~~~~~~~~~~
 
-The retries strategy is an extension of the 'all' strategy. It is defined by the re-running
+The reevaluation strategy is an extension of the 'default' strategy. It is defined by the re-running
 of IIVsearch and RUVsearch. This indicate that the tool follow the exact same principles
 and the workflow hence is dependent on the model type in question.
 
@@ -553,7 +556,7 @@ For an entire AMD run, it is possible to get a maximum of three covsearch runs, 
 +---------------------+-----------------------------------------------------------------------------------------+
 
 Retries
-~~~~~~~~~~
+~~~~~~~
 
 If ``retries_strategy`` is set to 'all_final', the retries tool will be run on the final model from each subtool.
 With the argument set to 'final', the retries tool will only be run on the final model from the last subtool.
