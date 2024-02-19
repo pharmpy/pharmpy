@@ -156,6 +156,33 @@ def test_parse_parameter_uncertainty_step(testdata, load_model_for_test):
     assert model.estimation_steps[-1].tool_options == {}
 
 
+def test_update_parameter_uncertainty_method(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    model = add_parameter_uncertainty_step(model, 'SMAT')
+    assert (
+        "$ESTIMATION METHOD=COND INTER\n" "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
+    ) in model.model_code
+    assert model.estimation_steps[-1].parameter_uncertainty_method == 'SMAT'
+    model = add_parameter_uncertainty_step(model, 'EFIM')
+    assert (
+        "$ESTIMATION METHOD=COND INTER MSFO=efim.msf\n"
+        "$PROBLEM DESIGN\n"
+        "$DATA 'pheno.dta' IGNORE=@ REWIND\n"
+        "$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
+        "$MSFI efim.msf\n"
+        "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"
+    ) in model.model_code
+    assert model.estimation_steps[-1].parameter_uncertainty_method == 'EFIM'
+    model = remove_parameter_uncertainty_step(model)
+    assert ("$ESTIMATION METHOD=COND INTER\n") in model.model_code
+    assert model.estimation_steps[-1].parameter_uncertainty_method is None
+    model = add_parameter_uncertainty_step(model, 'SMAT')
+    assert (
+        "$ESTIMATION METHOD=COND INTER\n" "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
+    ) in model.model_code
+    assert model.estimation_steps[-1].parameter_uncertainty_method == 'SMAT'
+
+
 def test_append_estimation_step_options(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert len(model.estimation_steps) == 1

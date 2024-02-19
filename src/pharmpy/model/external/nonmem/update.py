@@ -1712,19 +1712,7 @@ def update_estimation(control_stream, model):
     for est in new_ests:
         new_parameter_uncertainty_method = est.parameter_uncertainty_method
 
-    if old_parameter_uncertainty_method is None and new_parameter_uncertainty_method is not None:
-        # Add parameter uncertainty step
-        last_est_rec = control_stream.get_records('ESTIMATION')[-1]
-        idx_cov = control_stream.records.index(last_est_rec)
-
-        if new_parameter_uncertainty_method == "EFIM":
-            control_stream = add_efim_records(control_stream, idx_cov, last_est_rec)
-        else:
-            control_stream = add_covariance_record(
-                control_stream, idx_cov, new_parameter_uncertainty_method
-            )
-
-    elif old_parameter_uncertainty_method is not None and new_parameter_uncertainty_method is None:
+    if old_parameter_uncertainty_method is not None:
         if old_parameter_uncertainty_method == "EFIM":
             record_types = ["PROBLEM", "DATA", "INPUT", "MSFI", "DESIGN"]
 
@@ -1736,6 +1724,18 @@ def update_estimation(control_stream, model):
         else:
             covrecs = control_stream.get_records('COVARIANCE')
             control_stream = control_stream.remove_records(covrecs)
+
+    if new_parameter_uncertainty_method is not None:
+        # Add parameter uncertainty step
+        last_est_rec = control_stream.get_records('ESTIMATION')[-1]
+        idx_cov = control_stream.records.index(last_est_rec)
+
+        if new_parameter_uncertainty_method == "EFIM":
+            control_stream = add_efim_records(control_stream, idx_cov, last_est_rec)
+        else:
+            control_stream = add_covariance_record(
+                control_stream, idx_cov, new_parameter_uncertainty_method
+            )
 
     # Update $TABLE
     # Currently only adds if did not exist before
