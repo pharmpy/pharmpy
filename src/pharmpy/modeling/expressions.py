@@ -1818,11 +1818,7 @@ def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assign
                     if i < substitution_starts_at_index
                     else Assignment.create(
                         succeeding.symbol,
-                        subs(
-                            succeeding.expression,
-                            {assignment.symbol: assignment.expression},
-                            simultaneous=True,
-                        ),
+                        succeeding.expression.subs({assignment.symbol: assignment.expression}),
                     )
                 )
                 for i, succeeding in enumerate(assignments)
