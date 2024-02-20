@@ -42,7 +42,9 @@ def create_basic_pk_model(
     mat_init: float = 0.1,
 ) -> Model:
     """
-    Creates a basic pk model of given type
+    Creates a basic pk model of given type. The model will be a one compartment model, with first
+    order elimination and in the case of oral administration first order absorption with no absorption
+    delay. The elimination rate will be :math:`CL/V` and the absorption rate will be :math:`1/MAT`
 
     Parameters
     ----------
