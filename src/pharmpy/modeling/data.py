@@ -697,10 +697,10 @@ def expand_additional_doses(model: Model, flag: bool = False):
     df = df.apply(fn, axis=1)
     df = df.apply(lambda x: x.explode() if x.name in ['_TIMES', '_EXPANDED'] else x)
     df = df.astype({'_EXPANDED': np.bool_})
-    df = df.groupby([idcol, '_RESETGROUP'], group_keys=False).apply(
+    df = df.groupby([idcol, '_RESETGROUP'], group_keys=False)[df.columns].apply(
         lambda x: x.sort_values(by='_TIMES', kind='stable')
     )
-    df[idv] = df['_TIMES']
+    df[idv] = df['_TIMES'].astype(np.float64)
     df.drop(['_TIMES', '_RESETGROUP'], axis=1, inplace=True)
     if flag:
         df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
@@ -1122,12 +1122,12 @@ def add_time_after_dose(model: Model):
 
     # Sort in case DOSEIDs are non-increasing
     df = (
-        df.groupby(idlab)
+        df.groupby(idlab)[df.columns]
         .apply(lambda x: x.sort_values(by=['_DOSEID'], kind='stable', ignore_index=True))
         .reset_index(drop=True)
     )
 
-    df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0)
+    df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0.0)
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()
 
     if addl:
@@ -1155,7 +1155,7 @@ def add_time_after_dose(model: Model):
                     df.loc[i, 'TAD'] = ii_time
             return df
 
-        df = df.groupby([idlab, idv, '_DOSEID'], group_keys=False).apply(fn)
+        df = df.groupby([idlab, idv, '_DOSEID'], group_keys=False)[df.columns].apply(fn)
 
     df.drop(columns=['_NEWTIME', '_DOSEID'], inplace=True)
 
