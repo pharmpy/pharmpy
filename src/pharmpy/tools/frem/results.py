@@ -679,7 +679,9 @@ def calculate_results_from_samples(
                 # Calculate coefficients
                 # Cov(Par, covariate) / Var(covariate)
                 for parind, parname in enumerate(param_names):
-                    coefficients[cov]['each', parname] = cov_sigma[parind][-1] / cov_sigma[-1][-1]
+                    coefficients.loc[('each', parname), cov] = (
+                        cov_sigma[parind][-1] / cov_sigma[-1][-1]
+                    )
 
         id_mu = np.array([0] * npars + list(cov_refs))
         cjn = conditional_joint_normal_lambda(id_mu, sigma, npars)

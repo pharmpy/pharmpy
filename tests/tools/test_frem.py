@@ -3,11 +3,11 @@ import shutil
 from io import StringIO
 
 import numpy as np
-import pandas as pd
 import pytest
 from pytest import approx
 
 import pharmpy.tools as tools
+from pharmpy.deps import pandas as pd
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.tools.frem.results import (
@@ -496,7 +496,7 @@ model_3b estimate  0.005818   1.44555    0.126000    0.020191    0.224959   -0.0
 model_4  init      0.005818   1.44555    0.126000    0.020191    0.224959   -0.012042    0.115427    1.000030    0.208475    0.415588    0.244080    1.007760    0.016418
 model_4  estimate  0.007084   1.38635    0.220463    0.195326    0.176796    0.062712    0.117271    1.039930    0.446939    0.402075    0.249237    1.034610    0.015250
 """  # noqa E501
-    correct = pd.read_csv(StringIO(correct), index_col=[0, 1], delim_whitespace=True)
+    correct = pd.read_csv(StringIO(correct), index_col=[0, 1], sep=r'\s+')
     pd.testing.assert_frame_equal(res.parameter_inits_and_estimates, correct, rtol=1e-4)
 
     pc = res.base_parameter_change
