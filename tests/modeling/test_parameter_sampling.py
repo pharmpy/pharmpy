@@ -1,5 +1,5 @@
 import numpy as np
-import pandas as pd
+from pharmpy.deps import pandas as pd
 import pytest
 
 from pharmpy.modeling import (
@@ -53,7 +53,7 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
     pd.testing.assert_frame_equal(samples, correct, atol=1e-6)
     # Make cov matrix non-posdef
     cm2 = cm.copy()
-    cm2['PTVCL']['PTVCL'] = -1
+    cm2.loc['PTVCL', 'PTVCL'] = -1
     with pytest.warns(UserWarning):
         sample_parameters_from_covariance_matrix(
             model,
