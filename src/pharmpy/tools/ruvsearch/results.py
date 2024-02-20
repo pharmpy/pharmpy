@@ -96,8 +96,8 @@ def psn_resmod_results(path):
     if not respath.is_file():
         return RUVSearchResults()
     df = pd.read_csv(respath, names=range(40), skiprows=[0], engine='python')
-    df[0].fillna(1, inplace=True)
-    df[1].fillna(1, inplace=True)
+    df[0] = df[0].fillna(1)
+    df[1] = df[1].fillna(1)
     df.dropna(how='all', axis=1, inplace=True)
     df2 = df[[0, 1, 2, 3]].copy()
     df2 = df2.astype({0: int})
