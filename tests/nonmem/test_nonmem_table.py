@@ -1,6 +1,6 @@
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model.external.nonmem.table import CovTable, ExtTable, NONMEMTableFile, PhiTable
 

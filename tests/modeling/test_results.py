@@ -1,9 +1,9 @@
 from io import StringIO
 
 import numpy as np
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     calculate_aic,
     calculate_bic,

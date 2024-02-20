@@ -1,6 +1,6 @@
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import NormalDistribution
 from pharmpy.modeling import set_seq_zo_fo_absorption

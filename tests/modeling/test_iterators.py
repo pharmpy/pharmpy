@@ -1,9 +1,9 @@
 import numpy as np
-import pandas as pd
 import pandas.testing
 import pytest
 
 import pharmpy.modeling.iterators as iters
+from pharmpy.deps import pandas as pd
 
 
 @pytest.fixture

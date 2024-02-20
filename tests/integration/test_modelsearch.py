@@ -1,8 +1,8 @@
 import shutil
 
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import read_model
 from pharmpy.tools import fit, run_modelsearch

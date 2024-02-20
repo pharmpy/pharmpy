@@ -1,8 +1,8 @@
 from io import StringIO
 
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.model import DataInfo
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results

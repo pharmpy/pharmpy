@@ -1,7 +1,7 @@
-import pandas as pd
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.deps import pandas as pd
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models

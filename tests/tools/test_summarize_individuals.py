@@ -1,9 +1,9 @@
 import sys
 
 import numpy as np
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import read_model
 from pharmpy.tools import (
     read_modelfit_results,

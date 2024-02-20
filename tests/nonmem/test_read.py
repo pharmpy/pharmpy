@@ -1,8 +1,8 @@
 from io import StringIO
 
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
 from pharmpy.model.external.nonmem.dataset import (
     NMTRANDataIO,

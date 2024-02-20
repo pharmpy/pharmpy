@@ -1,10 +1,10 @@
 import re
 import shutil
 
-import pandas as pd
 import pytest
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Parameter, Parameters
 from pharmpy.modeling import read_model

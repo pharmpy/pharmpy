@@ -1,8 +1,8 @@
 import numpy as np
-import pandas as pd
 from pytest import approx
 
 import pharmpy.tools.cdd.results as cdd
+from pharmpy.deps import pandas as pd
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 

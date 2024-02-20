@@ -1,7 +1,7 @@
 import numpy as np
-from pharmpy.deps import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     create_rng,
     sample_individual_estimates,

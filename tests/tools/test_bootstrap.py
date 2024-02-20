@@ -1,5 +1,4 @@
-import pandas as pd
-
+from pharmpy.deps import pandas as pd
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.workflows.results import ModelfitResults, read_results
 

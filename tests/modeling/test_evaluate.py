@@ -1,9 +1,9 @@
 from io import StringIO
 from pathlib import Path
 
-import pandas as pd
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.modeling import (
     evaluate_epsilon_gradient,
