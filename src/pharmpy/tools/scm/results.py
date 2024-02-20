@@ -112,6 +112,7 @@ def psn_scm_parse_logfile(logfile, options, parcov_dictionary):
     df = pd.concat(list(log_steps(logfile, options, parcov_dictionary)))
     if 'stashed' in df.columns:
         df.fillna(value={'stashed': False, 'readded': False}, inplace=True)
+        df = df.astype({'stashed': bool, 'readded': bool})
     return df
 
 
