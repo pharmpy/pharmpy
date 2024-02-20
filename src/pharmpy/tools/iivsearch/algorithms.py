@@ -1,7 +1,6 @@
 from typing import Dict, List, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
@@ -119,7 +118,7 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
     # FIXME: Temporary workaround, should handle IIV on eps
     symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
     for eta in dists.names:
-        if subs(dists[eta].get_variance(eta), param_subs, simultaneous=True) != 0:
+        if dists[eta].get_variance(eta).subs(param_subs) != 0:
             # Skip etas that are before ODE
             if eta not in symbs_before_ode:
                 continue
