@@ -414,7 +414,7 @@ def run_amd(
                     dv=1,
                     strictness=strictness,
                     path=db.path / f'{run_name}_drug',
-                    dir_name='{run_name}_drug',
+                    dir_name=f'{run_name}_drug',
                 )
                 run_subfuncs[f'{run_name}_drug'] = func
                 # And one for the metabolite
@@ -422,7 +422,7 @@ def run_amd(
                     dv=2,
                     strictness=strictness,
                     path=db.path / f'{run_name}_metabolite',
-                    dir_name='{run_name}_metabolite',
+                    dir_name=f'{run_name}_metabolite',
                 )
                 run_subfuncs[f'{run_name}_metabolite'] = func
             elif modeltype == 'tmdd' and dv_types is not None:
