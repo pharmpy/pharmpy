@@ -428,7 +428,10 @@ def run_amd(
             elif modeltype == 'tmdd' and dv_types is not None:
                 for key, value in dv_types.items():
                     func = _subfunc_ruvsearch(
-                        dv=value, strictness=strictness, path=db.path / f'ruvsearch_{key}'
+                        dv=value,
+                        strictness=strictness,
+                        path=db.path / f'{run_name}_tmdd_{key}',
+                        dir_name=f'{run_name}_tmdd_{key}',
                     )
                     run_subfuncs[f'ruvsearch_{key}'] = func
             else:
