@@ -9,9 +9,9 @@ from pharmpy.tools import retrieve_models, run_estmethod
     [
         ('exhaustive', ['FOCE', 'IMP'], None, 2, 'ADVAN2'),
         ('exhaustive_only_eval', ['FOCE', 'IMP'], None, 2, 'ADVAN2'),
-        ('exhaustive', ['FOCE'], ['SANDWICH', 'CPG'], 2, 'ADVAN2'),
-        ('exhaustive_with_update', ['FOCE'], ['SANDWICH', 'CPG'], 4, 'ADVAN2'),
-        ('exhaustive_with_update', ['IMP'], ['SANDWICH', 'CPG'], 5, 'ADVAN2'),
+        ('exhaustive', ['FOCE'], ['SANDWICH', 'SMAT'], 2, 'ADVAN2'),
+        ('exhaustive_with_update', ['FOCE'], ['SANDWICH', 'SMAT'], 4, 'ADVAN2'),
+        ('exhaustive_with_update', ['IMP'], ['SANDWICH', 'SMAT'], 5, 'ADVAN2'),
     ],
 )
 def test_estmethod(
