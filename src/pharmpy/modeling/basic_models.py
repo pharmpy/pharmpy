@@ -2,13 +2,12 @@
 :meta private:
 """
 
-from pathlib import Path
 from typing import Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.fs.path import path_absolute
+from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -71,7 +70,7 @@ def create_basic_pk_model(
 
     """
     if dataset_path is not None:
-        dataset_path = Path(dataset_path)
+        dataset_path = normalize_user_given_path(dataset_path)
         di = _create_default_datainfo(dataset_path)
         df = read_dataset_from_datainfo(di, datatype='nonmem')
     else:
