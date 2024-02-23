@@ -1,7 +1,7 @@
 ipykernel
 pydata-sphinx-theme==0.15.2
 sphinxcontrib-autoprogram==0.1.8
-sphinx-automodapi==0.16.0
+sphinx-automodapi==0.17.0
 jupyter-sphinx==0.5.3
 markdown==3.5.2
 ipython_genutils
