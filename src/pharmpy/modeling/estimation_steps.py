@@ -425,7 +425,7 @@ def add_predictions(model: Model, pred: List[str]):
     >>> model = load_example_model("pheno")
     >>> model.estimation_steps[-1].predictions
     ('IPRED', 'PRED')
-    >>> model = add_predictions(model, pred=['CIPREDI'])
+    >>> model = add_predictions(model, ['CIPREDI'])
     >>> model.estimation_steps[-1].predictions
     ('CIPREDI', 'IPRED', 'PRED')
 
@@ -472,7 +472,7 @@ def add_residuals(model: Model, res: List[str]):
     >>> model = load_example_model("pheno")
     >>> model.estimation_steps[-1].residuals
     ('CWRES',)
-    >>> model = add_residuals(model, pred=['RES'])
+    >>> model = add_residuals(model, ['RES'])
     >>> model.estimation_steps[-1].residuals
     ('CWRES', 'RES')
 
@@ -517,7 +517,7 @@ def remove_predictions(model: Model, to_remove: List[str] = 'all'):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = remove_predictions_residuals(model)
+    >>> model = remove_predictions(model, 'all')
     >>> model.estimation_steps[-1].predictions
     ()
 
@@ -571,8 +571,8 @@ def remove_residuals(model: Model, to_remove: List[str] = None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = remove_predictions_residuals(model)
-    >>> model.estimation_steps[-1].predictions
+    >>> model = remove_residuals(model, 'all')
+    >>> model.estimation_steps[-1].residuals
     ()
 
     See also
