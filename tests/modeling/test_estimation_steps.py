@@ -4,11 +4,13 @@ from pharmpy.model import SimulationStep
 from pharmpy.modeling import (
     add_estimation_step,
     add_parameter_uncertainty_step,
-    add_predictions_residuals,
+    add_predictions,
+    add_residuals,
     append_estimation_step_options,
     remove_estimation_step,
     remove_parameter_uncertainty_step,
-    remove_predictions_residuals,
+    remove_predictions,
+    remove_residuals,
     set_estimation_step,
     set_evaluation_step,
     set_simulation,
@@ -216,14 +218,14 @@ def test_add_predictions(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     assert model.estimation_steps[-1].predictions == ('IPRED', 'PRED')
 
-    model = add_predictions_residuals(model, pred=['PRED1'])
+    model = add_predictions(model, pred=['PRED1'])
     assert model.estimation_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1')
-    assert model.estimation_steps[-1].residuals == ('CWRES', 'RES')
+    assert tuple(sorted(model.estimation_steps[-1].residuals)) == ('CWRES', 'RES')
 
-    model = add_predictions_residuals(model, res=['RES', 'RES2'])
+    model = add_residuals(model, res=['RES', 'RES2'])
     assert model.estimation_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
 
-    model = add_predictions_residuals(model, pred=['PRED1', 'PRED2'])
+    model = add_predictions(model, pred=['PRED1', 'PRED2'])
     assert model.estimation_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1', 'PRED2')
     assert model.estimation_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -257,11 +259,12 @@ $OMEGA DIAGONAL(2)
 
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
-$COVARIANCE UNCONDITIONAL
+$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE PRED1 RES2 PRED2 NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.model_code
-    model = remove_predictions_residuals(model)
+    model = remove_predictions(model, 'all')
+    model = remove_residuals(model, 'all')
     assert model.estimation_steps[-1].predictions == ()
     assert model.estimation_steps[-1].residuals == ()
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -295,11 +298,11 @@ $OMEGA DIAGONAL(2)
 
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
-$COVARIANCE UNCONDITIONAL
+$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR TAD NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.model_code
-    model = add_predictions_residuals(model, res=['NEWRES'])
+    model = add_residuals(model, res=['NEWRES'])
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -331,15 +334,18 @@ $OMEGA DIAGONAL(2)
 
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
-$COVARIANCE UNCONDITIONAL
+$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR TAD NPDE NEWRES NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.model_code
+    model = remove_residuals(model, ['NEWRES'])
+    assert model.estimation_steps[-1].residuals == ()
 
+    # Test $DESIGN
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_design.mod')
     assert model.estimation_steps[-1].predictions == ()
     assert model.estimation_steps[-1].residuals == ()
-    model = add_predictions_residuals(model, pred=['PRED1'])
+    model = add_predictions(model, pred=['PRED1'])
     assert model.estimation_steps[-1].predictions == ('PRED1',)
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -361,15 +367,15 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION MSFO=pheno_design.msf
-$TABLE ID TIME DV PRED1 FILE=mytab NOAPPEND NOPRINT
 $PROBLEM DESIGN
 $DATA pheno.dta IGNORE=@ REWIND
 $INPUT ID TIME AMT WGT APGR DV
 $MSFI pheno_design.msf
+$TABLE ID TIME DV PRED1 FILE=mytab NOAPPEND NOPRINT
 $DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"""
     assert model_code == model.model_code
-    model = add_predictions_residuals(model, res=['RES'])
-    model = remove_predictions_residuals(model, 'pred')
+    model = add_residuals(model, res=['RES'])
+    model = remove_predictions(model, 'all')
     assert model.estimation_steps[-1].predictions == ()
     assert model.estimation_steps[-1].residuals == ('RES',)
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -392,10 +398,10 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION MSFO=pheno_design.msf
-$TABLE ID TIME DV RES FILE=mytab NOAPPEND NOPRINT
 $PROBLEM DESIGN
 $DATA pheno.dta IGNORE=@ REWIND
 $INPUT ID TIME AMT WGT APGR DV
 $MSFI pheno_design.msf
-$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"""
+$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1
+$TABLE ID TIME DV RES FILE=mytab NOAPPEND NOPRINT\n"""
     assert model_code == model.model_code
