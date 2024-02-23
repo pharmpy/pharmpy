@@ -5,12 +5,10 @@
 from typing import Optional
 
 from pharmpy.basic import Expr
-from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
+from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     Assignment,
-    ColumnInfo,
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -26,7 +24,7 @@ from pharmpy.model import (
     output,
 )
 
-from .data import add_admid, read_dataset_from_datainfo
+from .data import add_admid, create_default_datainfo, read_dataset_from_datainfo
 from .error import set_proportional_error_model
 from .odes import add_bioavailability, set_first_order_absorption
 from .parameter_variability import add_iiv, create_joint_distribution
@@ -71,7 +69,7 @@ def create_basic_pk_model(
     """
     if dataset_path is not None:
         dataset_path = normalize_user_given_path(dataset_path)
-        di = _create_default_datainfo(dataset_path)
+        di = create_default_datainfo(dataset_path)
         df = read_dataset_from_datainfo(di, datatype='nonmem')
     else:
         di = DataInfo()
@@ -214,57 +212,3 @@ def create_basic_pk_model(
         )
 
     return model
-
-
-def _create_default_datainfo(path_or_df):
-    if not isinstance(path_or_df, pd.DataFrame):
-        path = path_absolute(path_or_df)
-        datainfo_path = path.with_suffix('.datainfo')
-        if datainfo_path.is_file():
-            di = DataInfo.read_json(datainfo_path)
-            di = di.replace(path=path)
-            return di
-        else:
-            with open(path) as file:
-                first_line = file.readline()
-                if ',' not in first_line:
-                    colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
-                    separator = r'\s+'
-                else:
-                    colnames = list(pd.read_csv(path, nrows=0))
-                    separator = ','
-    else:
-        colnames = path_or_df.columns
-        separator = None
-        path = None
-
-    column_info = []
-    for colname in colnames:
-        if colname == 'ID' or colname == 'L1':
-            info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
-        elif colname == 'DV':
-            info = ColumnInfo.create(colname, type='dv')
-        elif colname == 'TIME':
-            if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                datatype = 'nmtran-time'
-            else:
-                datatype = 'float64'
-            info = ColumnInfo.create(colname, type='idv', scale='ratio', datatype=datatype)
-        elif colname == 'EVID':
-            info = ColumnInfo.create(colname, type='event', scale='nominal')
-        elif colname == 'MDV':
-            if 'EVID' in colnames:
-                info = ColumnInfo.create(colname, type='mdv')
-            else:
-                info = ColumnInfo.create(colname, type='event', scale='nominal', datatype='int32')
-        elif colname == 'AMT':
-            info = ColumnInfo.create(colname, type='dose', scale='ratio')
-        elif colname == 'BLQ':
-            info = ColumnInfo.create(colname, type='blq', scale='nominal', datatype='int32')
-        elif colname == 'LLOQ':
-            info = ColumnInfo.create(colname, type='lloq', scale='ratio')
-        else:
-            info = ColumnInfo.create(colname)
-        column_info.append(info)
-    di = DataInfo.create(column_info, path=path, separator=separator)
-    return di

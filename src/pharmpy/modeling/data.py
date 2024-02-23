@@ -1,4 +1,5 @@
 import re
+import warnings
 from pathlib import Path
 from typing import Dict, List, Literal, Optional, Union
 
@@ -9,6 +10,7 @@ from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
+from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import ColumnInfo, CompartmentalSystem, DataInfo, DatasetError, Model
 from pharmpy.model.model import update_datainfo
 
@@ -2011,6 +2013,60 @@ def read_dataset_from_datainfo(
     return df
 
 
+def create_default_datainfo(path_or_df):
+    if not isinstance(path_or_df, pd.DataFrame):
+        path = path_absolute(path_or_df)
+        datainfo_path = path.with_suffix('.datainfo')
+        if datainfo_path.is_file():
+            di = DataInfo.read_json(datainfo_path)
+            di = di.replace(path=path)
+            return di
+        else:
+            with open(path) as file:
+                first_line = file.readline()
+                if ',' not in first_line:
+                    colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
+                    separator = r'\s+'
+                else:
+                    colnames = list(pd.read_csv(path, nrows=0))
+                    separator = ','
+    else:
+        colnames = path_or_df.columns
+        separator = None
+        path = None
+
+    column_info = []
+    for colname in colnames:
+        if colname == 'ID' or colname == 'L1':
+            info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
+        elif colname == 'DV':
+            info = ColumnInfo.create(colname, type='dv')
+        elif colname == 'TIME':
+            if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
+                datatype = 'nmtran-time'
+            else:
+                datatype = 'float64'
+            info = ColumnInfo.create(colname, type='idv', scale='ratio', datatype=datatype)
+        elif colname == 'EVID':
+            info = ColumnInfo.create(colname, type='event', scale='nominal')
+        elif colname == 'MDV':
+            if 'EVID' in colnames:
+                info = ColumnInfo.create(colname, type='mdv')
+            else:
+                info = ColumnInfo.create(colname, type='event', scale='nominal', datatype='int32')
+        elif colname == 'AMT':
+            info = ColumnInfo.create(colname, type='dose', scale='ratio')
+        elif colname == 'BLQ':
+            info = ColumnInfo.create(colname, type='blq', scale='nominal', datatype='int32')
+        elif colname == 'LLOQ':
+            info = ColumnInfo.create(colname, type='lloq', scale='ratio')
+        else:
+            info = ColumnInfo.create(colname)
+        column_info.append(info)
+    di = DataInfo.create(column_info, path=path, separator=separator)
+    return di
+
+
 def deidentify_data(
     df: pd.DataFrame, id_column: str = 'ID', date_columns: Optional[List[str]] = None
 ):
@@ -2140,6 +2196,73 @@ def load_dataset(model: Model):
     df = read_dataset_from_datainfo(model.datainfo)
     model = model.replace(dataset=df)
     return model
+
+
+def set_dataset(
+    model: Model, path_or_df: Union[str, Path, pd.DataFrame], datatype: Optional[str] = None
+):
+    """Load the dataset given datainfo
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    path_or_df : str, Path, or pd.DataFrame
+        Dataset path or dataframe
+    datatype : str
+        Type of dataset (optional)
+
+    Returns
+    -------
+    Model
+        Pharmpy model with new dataset and updated datainfo
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, load_dataset, unload_dataset, set_dataset
+    >>> model = load_example_model("pheno")
+    >>> model = unload_dataset(model)
+    >>> dataset_path = model.datainfo.path
+    >>> model.dataset is None
+    True
+    >>> model = set_dataset(model, dataset_path, datatype='nonmem')
+    >>> model.dataset
+         ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
+    0     1    0.0  25.0  1.4   7.0   0.0  1.0  1.0
+    1     1    2.0   0.0  1.4   7.0  17.3  0.0  0.0
+    2     1   12.5   3.5  1.4   7.0   0.0  1.0  1.0
+    3     1   24.5   3.5  1.4   7.0   0.0  1.0  1.0
+    4     1   37.0   3.5  1.4   7.0   0.0  1.0  1.0
+    ..   ..    ...   ...  ...   ...   ...  ...  ...
+    739  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
+    740  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
+    741  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
+    742  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
+    743  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
+    <BLANKLINE>
+    [744 rows x 8 columns]
+
+    """
+    if isinstance(path_or_df, pd.DataFrame):
+        df = path_or_df
+        if datatype == 'nonmem':
+            di = create_default_datainfo(path_or_df)
+        else:
+            di = DataInfo.create(columns=list(df.columns.values), path=None)
+    else:
+        path = normalize_user_given_path(path_or_df)
+        if datatype == 'nonmem':
+            di = create_default_datainfo(path)
+        else:
+            di = DataInfo.create(path=path)
+        df = read_dataset_from_datainfo(di, datatype=datatype)
+        di = update_datainfo(di, df).replace(path=path)
+
+    if len(df.columns) == 1:
+        warnings.warn('Could only find one column, should this be another datatype?')
+
+    model = model.replace(dataset=df, datainfo=di)
+    return model.update_source()
 
 
 def bin_observations(
