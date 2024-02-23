@@ -329,7 +329,6 @@ def plot_abs_cwres_vs_ipred(
     residuals: pd.DataFrame,
     stratify_by: str = None,
     bins: int = 8,
-    uniform_scale: bool = False,
 ) -> alt.Chart:
     r"""Plot \|CWRES\| vs IPRED
 
