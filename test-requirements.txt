@@ -3,7 +3,7 @@ execnet==2.0.2
 iniconfig==2.0.0
 packaging==23.2
 pluggy==1.4.0
-pytest==8.0.1
+pytest==8.0.2
 pytest-asyncio==0.23.5
 pytest-xdist==3.5.0
 tomli==2.0.1
