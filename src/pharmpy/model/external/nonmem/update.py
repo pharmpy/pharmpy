@@ -1407,10 +1407,14 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                         assert isinstance(source_comp, Compartment)
                         sn = newmap[source]
                         dn = newmap[dest]
+                        t = ''
                         if len(str(sn)) > 1 or len(str(dn)) > 1:
-                            t = 'T'
-                        else:
-                            t = ''
+                            # This is needed if there are 8 compartments
+                            # (including central) and another is added
+                            # since the output compartment is included
+                            # in dn
+                            if dest_comp != output:
+                                t = 'T'
                         names = [f'K{sn}{dn}', f'K{sn}T{dn}']
                         if dn == len(newmap):
                             names += [f'K{sn}0', f'K{sn}T0']
