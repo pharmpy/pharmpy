@@ -13,9 +13,9 @@ from pharmpy.tools.iivsearch.algorithms import (
     _create_param_dict,
     _is_rv_block_structure,
     _rv_block_structures,
-    brute_force_block_structure,
-    brute_force_no_of_etas,
     create_eta_blocks,
+    td_exhaustive_block_structure,
+    td_exhaustive_no_of_etas,
 )
 from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
@@ -25,14 +25,14 @@ from pharmpy.workflows import Workflow
     'list_of_parameters, expected_values',
     [([], 4), (['IVCL'], 1), (["IVCL", "IVV"], 0)],
 )
-def test_brute_force_block_structure_ignore_fixed_params(
+def test_td_exhaustive_block_structure_ignore_fixed_params(
     load_model_for_test, testdata, list_of_parameters, expected_values
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     model = add_individual_parameter(model, 'PD1')
     model = add_iiv(model, 'PD1', 'exp')
     model = fix_parameters(model, list_of_parameters)
-    wf = brute_force_block_structure(model)
+    wf = td_exhaustive_block_structure(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
     assert len(fit_tasks) == expected_values
 
@@ -45,7 +45,7 @@ def test_brute_force_no_of_etas_keep(
     load_model_for_test, testdata, list_of_parameters, expected_values
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    wf = brute_force_no_of_etas(model, keep=list_of_parameters)
+    wf = td_exhaustive_no_of_etas(model, keep=list_of_parameters)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
     assert len(fit_tasks) == expected_values
 
@@ -53,7 +53,7 @@ def test_brute_force_no_of_etas_keep(
 def test_brute_force_no_of_etas_fixed(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     model = fix_parameters(model, 'IVCL')
-    wf = brute_force_no_of_etas(model)
+    wf = td_exhaustive_no_of_etas(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
     assert len(fit_tasks) == 1
 
@@ -66,7 +66,7 @@ def test_brute_force_no_of_etas(load_model_for_test, testdata, list_of_parameter
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = add_peripheral_compartment(model)
     model = add_iiv(model, list_of_parameters, 'add')
-    wf = brute_force_no_of_etas(model)
+    wf = td_exhaustive_no_of_etas(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -88,7 +88,7 @@ def test_brute_force_block_structure(
             model, block_structure, individual_estimates=res.individual_estimates
         )
 
-    wf = brute_force_block_structure(model)
+    wf = td_exhaustive_block_structure(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -199,21 +199,21 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
 
 
 def test_create_workflow():
-    assert isinstance(create_workflow('brute_force'), Workflow)
+    assert isinstance(create_workflow('top_down_exhaustive'), Workflow)
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert isinstance(create_workflow('brute_force', model=model), Workflow)
+    assert isinstance(create_workflow('top_down_exhaustive', model=model), Workflow)
 
 
 def test_validate_input():
-    validate_input('brute_force')
+    validate_input('top_down_exhaustive')
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    validate_input('brute_force', model=model)
+    validate_input('top_down_exhaustive', model=model)
 
 
 @pytest.mark.parametrize(
@@ -245,7 +245,7 @@ def test_validate_input_raises(
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     harmless_arguments = dict(
-        algorithm='brute_force',
+        algorithm='top_down_exhaustive',
     )
 
     kwargs = {**harmless_arguments, 'model': model, **arguments}

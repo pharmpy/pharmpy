@@ -62,10 +62,19 @@ def create_results(
     cutoff: Optional[float],
     bic_type: str = 'mixed',
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    n_predicted=None,
+    n_expected=None,
     **rest,
 ) -> T:
     summary_tool = summarize_tool(
-        cand_model_entries, base_model_entry, rank_type, cutoff, bic_type, strictness
+        cand_model_entries,
+        base_model_entry,
+        rank_type,
+        cutoff,
+        bic_type,
+        strictness,
+        n_predicted,
+        n_expected,
     )
     if rank_type == 'lrt':
         delta_name = 'dofv'
@@ -132,6 +141,8 @@ def summarize_tool(
     cutoff: Optional[float],
     bic_type: str = 'mixed',
     strictness: Optional[str] = None,
+    n_predicted=None,
+    n_expected=None,
 ) -> DataFrame:
     start_model_res = start_model_entry.modelfit_results
     models_res = [model_entry.modelfit_results for model_entry in model_entries]
@@ -140,12 +151,15 @@ def summarize_tool(
         rank_type = 'bic'
         if len(model_entries) > 0:
             multiple_testing = True
-            n_expected_models = len(model_entries)
+            n_predicted_models = len(model_entries) if n_predicted is None else n_predicted
+            n_expected_models = 1 if n_predicted is None else n_predicted
         else:  # This can happen if the search space of e.g. modelsearch only includes the base model
             multiple_testing = False
+            n_predicted_models = None
             n_expected_models = None
     else:
         multiple_testing = False
+        n_predicted_models = None
         n_expected_models = None
 
     start_model = start_model_entry.model
@@ -161,7 +175,8 @@ def summarize_tool(
         cutoff=cutoff,
         bic_type=bic_type,
         multiple_testing=multiple_testing,
-        mult_test_p=n_expected_models,
+        mult_test_p=n_predicted_models,
+        mult_test_e=n_expected_models,
     )
     if rank_type != "lrt" and df_rank.dropna(subset=rank_type).shape[0] == 0:
         raise ValueError("All models fail the strictness criteria!")

@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Dict, List, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
@@ -5,19 +6,28 @@ from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import (
+    calculate_bic,
     create_joint_distribution,
+    find_clearance_parameters,
     get_omegas,
     remove_iiv,
     split_joint_distribution,
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import (
+    ModelEntry,
+    ModelfitResults,
+    Task,
+    Workflow,
+    WorkflowBuilder,
+    call_workflow,
+)
 from pharmpy.workflows.results import mfr
 
 
-def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
-    wb = WorkflowBuilder(name='brute_force_no_of_etas')
+def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
+    wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
 
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -33,7 +43,7 @@ def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
         task_candidate_entry = Task(
-            'candidate_entry', create_no_of_etas_candidate_entry, model_name, to_remove
+            'candidate_entry', create_no_of_etas_candidate_entry, model_name, to_remove, None
         )
         wb.add_task(task_candidate_entry)
 
@@ -42,8 +52,132 @@ def brute_force_no_of_etas(base_model, index_offset=0, keep=None):
     return Workflow(wb)
 
 
-def brute_force_block_structure(base_model, index_offset=0):
-    wb = WorkflowBuilder(name='brute_force_block_structure')
+def bu_stepwise_no_of_etas(base_model, index_offset=0):  # Should there be a "keep" argument?
+    wb = WorkflowBuilder(name='bu_stepwise_no_of_etas')
+    stepwise_task = Task(
+        "stepwise_BU_task",
+        stepwise_BU_algorithm,
+        base_model,
+        index_offset,
+    )
+    wb.add_task(stepwise_task)
+    return wb
+
+
+def stepwise_BU_algorithm(context, base_model, index_offset, base_model_entry):
+    base_model = base_model.replace(description=create_description(base_model))
+
+    iivs = base_model.random_variables.iiv
+    iiv_names = iivs.names  # All ETAs in the base model
+
+    # Remove fixed etas
+    fixed_etas = _get_fixed_etas(base_model)
+    iiv_names = _remove_sublist(iiv_names, fixed_etas)
+
+    # Remove alle ETAs except for clearance (if possible)
+    cl = find_clearance_parameters(base_model)[0]  # FIXME : Handle multiple clearance?
+    cl_eta = list(_get_eta_from_parameter(base_model, [str(cl)]))[0]
+    if cl_eta in iiv_names:
+        base_parameter = cl_eta
+    else:
+        base_parameter = sorted(iiv_names)[0]  # No clearance --> fallback to alphabetical order
+
+    # Create and run first model with a single ETA on base_parameter
+    bu_base_model_wb = WorkflowBuilder(name='create_and_fit_BU_base_model')
+    to_be_removed = [i for i in iiv_names if i != base_parameter]
+    model_name = f'iivsearch_run{1 + index_offset}'
+    index_offset += 1
+    bu_base_entry = Task(
+        'candidate_entry',
+        create_no_of_etas_candidate_entry,
+        model_name,
+        to_be_removed,
+        None,
+        base_model_entry,
+    )
+    bu_base_model_wb.add_task(bu_base_entry)
+    wf_fit = modelfit.create_fit_workflow(n=len(bu_base_model_wb.output_tasks))
+    bu_base_model_wb.insert_workflow(wf_fit)
+    best_model_entry = call_workflow(Workflow(bu_base_model_wb), 'fit_BU_base_model', context)
+
+    # Filter IIV names to contain all combination with the base parameter in it
+    iiv_names_to_add = list(non_empty_subsets(iiv_names))
+    iiv_names_to_add = [i for i in iiv_names_to_add if base_parameter in i]
+
+    # Invert the list to REMOVE ETAs from the base model instead of adding to the
+    # single ETA model
+    iiv_names_to_remove = [tuple(i for i in iiv_names if i not in x) for x in iiv_names_to_add]
+
+    # Remove largest step removing all ETAs but base_parameter
+    max_step = max(len(element) for element in iiv_names_to_remove)
+    iiv_names_to_remove = [i for i in iiv_names_to_remove if len(i) != max_step]
+
+    # Dictionary of all possible candidates of each step
+    step_dict = defaultdict(list)
+    for step in iiv_names_to_remove:
+        step_dict[max_step - len(step) + 1].append(step)
+    # Assert to be sorted in correct order
+    step_dict = dict(sorted(step_dict.items()))
+
+    number_of_predicted = len(iiv_names)
+    number_of_expected = number_of_predicted / 2
+    previous_index = index_offset
+    previous_removed = to_be_removed
+    all_modelentries = [best_model_entry]
+    for step_number, steps in step_dict.items():
+        effect_dict = {}
+        temp_wb = WorkflowBuilder(name=f'stepwise_bu_{step_number}')
+        for to_remove in steps:
+            if all(e in previous_removed for e in to_remove):  # Filter unwanted effects
+                model_name = f'iivsearch_run{previous_index + 1}'
+                effect_dict[model_name] = to_remove
+                task_candidate_entry = Task(
+                    'candidate_entry',
+                    create_no_of_etas_candidate_entry,
+                    model_name,
+                    to_remove,
+                    best_model_entry,
+                    base_model_entry,
+                )
+                temp_wb.add_task(task_candidate_entry)
+                previous_index += 1
+        wf_fit = modelfit.create_fit_workflow(n=len(temp_wb.output_tasks))
+        temp_wb.insert_workflow(wf_fit, predecessors=temp_wb.output_tasks)
+        task_gather = Task('gather', lambda *model_entries: model_entries)
+        temp_wb.add_task(task_gather, predecessors=temp_wb.output_tasks)
+        new_candidate_modelentries = call_workflow(
+            Workflow(temp_wb), f'td_exhaustive_no_of_etas-fit-{step_number}', context
+        )
+        all_modelentries.extend(new_candidate_modelentries)
+        old_best_name = best_model_entry.model.name
+        for me in new_candidate_modelentries:
+            bic_me = calculate_bic(
+                me.model,
+                me.modelfit_results.ofv,
+                type='iiv',
+                multiple_testing=True,
+                mult_test_p=number_of_predicted,
+                mult_test_e=number_of_expected,
+            )
+            bic_best = calculate_bic(
+                best_model_entry.model,
+                best_model_entry.modelfit_results.ofv,
+                type='iiv',
+                multiple_testing=True,
+                mult_test_p=number_of_predicted,
+                mult_test_e=number_of_expected,
+            )
+            if bic_best > bic_me:
+                best_model_entry = me
+                previous_removed = effect_dict[me.model.name]
+        if old_best_name == best_model_entry.model.name:
+            return all_modelentries
+
+    return all_modelentries
+
+
+def td_exhaustive_block_structure(base_model, index_offset=0):
+    wb = WorkflowBuilder(name='td_exhaustive_block_structure')
 
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -70,14 +204,18 @@ def brute_force_block_structure(base_model, index_offset=0):
     return Workflow(wb)
 
 
-def create_no_of_etas_candidate_entry(name, to_remove, model_entry):
-    candidate_model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
-    candidate_model = remove_iiv(candidate_model, to_remove)
+def create_no_of_etas_candidate_entry(name, to_remove, best_model_entry, base_model_entry):
+    if best_model_entry is None:
+        best_model_entry = base_model_entry
+    candidate_model = remove_iiv(base_model_entry.model, to_remove)
+    candidate_model = update_initial_estimates(candidate_model, best_model_entry.modelfit_results)
     candidate_model = candidate_model.replace(
         name=name, description=create_description(candidate_model)
     )
 
-    return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
+    return ModelEntry.create(
+        model=candidate_model, modelfit_results=None, parent=best_model_entry.model
+    )
 
 
 def create_block_structure_candidate_entry(name, block_structure, model_entry):
