@@ -8,23 +8,59 @@ Drug metabolite
 Running
 ~~~~~~~
 
+The code to initiate structsearch for a drug metabolite model in Python/R is stated below:
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import read_model
+    from pharmpy.tools read_modelfit_results, run_structsearch
+
+    start_model = read_model('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
+    res = run_structsearch(type='drug_metabolite',
+                            search_space="METABOLITE([BASIC,PSC]);PERIPHERALS(0..1,MET)",
+                            model=start_model,
+                            results=start_model_results)
+
++-------------------------------------------------+-----------------------------------------------------------------------+
+| Argument                                        | Description                                                           |
++=================================================+=======================================================================+
+| ``type``                                        | Need to be set to 'drug_metabolite' (see :ref:`type<the model types>` |
+|                                                 | for more)                                                             |
++-------------------------------------------------+-----------------------------------------------------------------------+
+| ``search_space``                                | :ref:`Search space<the search space>` of models to test               |
++-------------------------------------------------+-----------------------------------------------------------------------+
+| ``model``                                       | Start model                                                           |
++-------------------------------------------------+-----------------------------------------------------------------------+
+| ``results``                                     | :code:`ModelfitResults` object of the start model                     |
++-------------------------------------------------+-----------------------------------------------------------------------+
+| ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.           |
+|                                                 | Default is :code:`"minimization_successful or                         |
+|                                                 | (rounding_errors and sigdigs>= 0.1)"`                                 |
++-------------------------------------------------+-----------------------------------------------------------------------+
+
+
 ~~~~~~
 Models
 ~~~~~~
 
 Currently implemented drug metabolite models are:
 
-* Basic metabolite
-
-    * Single metabolite compartment with parent -> metabolite conversion of 100%
-
-* Basic metabolite with a (metabolite) peripheral compartment(s)
-
-* Presystemic drug metabolite (PSC)
-
-    * Presystemic metabolite compartment with parent -> metabolite conversion of 100%
-
-* Presystemic drug metabolite with a (metabolite) peripheral compartment(s)
++--------------------------------+----------------------------------------------------------+
+| Model type                     | Description                                              |
++--------------------------------+----------------------------------------------------------+
+| Basic metabolite               | Single metabolite compartment with parent -> metabolite  |
+|                                | conversion of 100%.                                      |
++--------------------------------+----------------------------------------------------------+
+| Basic metabolite with          | Same as 'Basic metabolite' with one or more connected    |
+| peripheral compartment(s)      | peripheral compartments.                                 |
++--------------------------------+----------------------------------------------------------+
+| Presystemic drug metabolite    | Presystemic metabolite compartment with parent ->        |
+| (PSC)                          | metabolite conversion of 100%.                           |
++--------------------------------+----------------------------------------------------------+
+| Presystemic drug metabolite    | Same as 'PSC' with one or more connected peripheral      |
+| with peripheral compartment(s) | connected compartments.                                  |
++--------------------------------+----------------------------------------------------------+
 
 ~~~~~~~~~~~~~~~~~~~~~
 Structsearch workflow
@@ -76,7 +112,7 @@ MFL support the following model features:
 +===============+===============================+====================================================================+
 | METABOLITE    | :code:`PSC, BASIC`            | Type of drug metabolite model to add. PSC is for presystemic       |
 +---------------+-------------------------------+--------------------------------------------------------------------+
-| PERIPHERALS    | `number`, MET                | Regular PERIPHERALS with second option set to MET                  |
+| PERIPHERALS   | :code:`number, MET`           | Regular PERIPHERALS with second option set to MET                  |
 +---------------+-------------------------------+--------------------------------------------------------------------+
 
 A search space for testing both BASIC and PSC (presystemic) drug metabolite models with 0 or 1 peripheral compartments 
@@ -112,3 +148,25 @@ But with an iv administration instead, the default search space becomes:
 ~~~~~~~
 Results
 ~~~~~~~
+
+The results object contains various summary tables which can be accessed in the results object, as well as files in
+.csv/.json format. The name of the selected best model (based on the input selection criteria) is also included.
+
+Below is an example for a drug metabolite run.
+
+.. pharmpy-code::
+
+    res = run_structsearch(type='drug_metabolite',
+                            search_space="METABOLITE([BASIC,PSC]);PERIPHERALS(0..1,MET)",
+                            model=start_model,
+                            results=start_model_results)
+
+The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
+start model (in this case comparing BIC), and final ranking:
+
+.. pharmpy-execute::
+   :hide-code:
+
+    from pharmpy.workflows.results import read_results
+    res = read_results('tests/testdata/results/structsearch_results_drug_metabolite.json')
+    res.summary_tool
