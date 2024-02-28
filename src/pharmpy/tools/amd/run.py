@@ -776,7 +776,7 @@ def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
     def _run_iiv(model, modelfit_results):
         res = run_tool(
             'iivsearch',
-            'brute_force',
+            'top_down_exhaustive',
             iiv_strategy=iiv_strategy,
             model=model,
             results=modelfit_results,
