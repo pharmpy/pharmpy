@@ -13,10 +13,11 @@ from pharmpy.tools import fit, retrieve_models, run_iivsearch
 def test_no_of_etas_keep(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res_keep1 = run_iivsearch(
-            'brute_force_no_of_etas',
+            'top_down_exhaustive',
             results=start_modelres[1],
             model=start_modelres[0],
             keep=["CL"],
+            correlation_algorithm="skip",
         )
         no_of_models = 8
         assert len(res_keep1.summary_models) == no_of_models // 2
@@ -26,7 +27,10 @@ def test_no_of_etas_keep(tmp_path, model_count, start_modelres):
 def test_block_structure(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iivsearch(
-            'brute_force_block_structure', results=start_modelres[1], model=start_modelres[0]
+            'skip',
+            results=start_modelres[1],
+            model=start_modelres[0],
+            correlation_algorithm="top_down_exhaustive",
         )
 
         no_of_candidate_models = 4
@@ -57,13 +61,21 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         assert (rundir / 'metadata.json').exists()
 
 
-def test_no_of_etas(tmp_path, model_count, start_modelres):
+@pytest.mark.parametrize(
+    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
+    (('top_down_exhaustive', 'skip', 7), ('bottom_up_stepwise', 'skip', 4)),
+)
+def test_no_of_etas(
+    tmp_path, model_count, start_modelres, algorithm, correlation_algorithm, no_of_candidate_models
+):
     with chdir(tmp_path):
         res = run_iivsearch(
-            'brute_force_no_of_etas', results=start_modelres[1], model=start_modelres[0]
+            algorithm,
+            results=start_modelres[1],
+            model=start_modelres[0],
+            correlation_algorithm=correlation_algorithm,
         )
 
-        no_of_candidate_models = 7
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
 
@@ -73,8 +85,12 @@ def test_no_of_etas(tmp_path, model_count, start_modelres):
         assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
         assert start_modelres[0].random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
 
-        assert res.summary_tool.iloc[-1]['description'] == '[]'
-        assert res_models[0].random_variables.iiv.names == ['ETA_2', 'ETA_3']
+        if algorithm == 'top_down_exhaustive':
+            assert res.summary_tool.iloc[-1]['description'] == '[]'
+            assert res_models[0].random_variables.iiv.names == ['ETA_2', 'ETA_3']
+        elif algorithm == 'bottom_up_stepwise':
+            assert res.summary_tool.iloc[-1]['description'] == '[CL]'
+            assert res_models[0].random_variables.iiv.names == ['ETA_1']
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
         summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
@@ -88,22 +104,31 @@ def test_no_of_etas(tmp_path, model_count, start_modelres):
         assert (rundir / 'metadata.json').exists()
 
 
-def test_brute_force(tmp_path, model_count, start_modelres):
+@pytest.mark.parametrize(
+    ('algorithm', 'no_of_candidate_models'),
+    (('top_down_exhaustive', 8), ('bottom_up_stepwise', 8)),
+)
+def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_candidate_models):
     with chdir(tmp_path):
-        res = run_iivsearch('brute_force', results=start_modelres[1], model=start_modelres[0])
+        res = run_iivsearch(algorithm, results=start_modelres[1], model=start_modelres[0])
 
-        no_of_candidate_models = 8
         assert len(res.summary_tool) == no_of_candidate_models + 2
         assert len(res.summary_models) == no_of_candidate_models + 1
 
         res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
         assert len(res_models) == no_of_candidate_models
 
-        assert 'iivsearch_run3' in res.summary_errors.index.get_level_values('model')
+        if algorithm == 'top_down_exhaustive':
+            assert 'iivsearch_run3' in res.summary_errors.index.get_level_values('model')
 
-        assert all(
-            model.random_variables != start_modelres[0].random_variables for model in res_models
-        )
+            assert all(
+                model.random_variables != start_modelres[0].random_variables for model in res_models
+            )
+        elif algorithm == 'bottom_up_stepwise':
+            cand_vs_input = [
+                model.random_variables == start_modelres[0].random_variables for model in res_models
+            ]
+            assert len([c for c in cand_vs_input if c]) == 1
 
         summary_tool_sorted_by_dbic_step1 = res.summary_tool.loc[1].sort_values(
             by=['dbic'], ascending=False
@@ -137,23 +162,34 @@ def test_brute_force(tmp_path, model_count, start_modelres):
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
-    'iiv_strategy',
-    ['add_diagonal', 'fullblock'],
+    ('algorithm', 'correlation_algorithm', 'iiv_strategy', 'no_of_candidate_models'),
+    (
+        ('top_down_exhaustive', 'skip', 'add_diagonal', 15),
+        ('top_down_exhaustive', 'skip', 'fullblock', 15),
+    ),
 )
-def test_no_of_etas_iiv_strategies(tmp_path, model_count, start_modelres, iiv_strategy):
+def test_no_of_etas_iiv_strategies(
+    tmp_path,
+    model_count,
+    start_modelres,
+    algorithm,
+    correlation_algorithm,
+    iiv_strategy,
+    no_of_candidate_models,
+):
     with chdir(tmp_path):
         start_model = start_modelres[0].replace(name='moxo2_copy')
         start_model = set_seq_zo_fo_absorption(start_model)
         start_res = fit(start_model)
 
         res = run_iivsearch(
-            'brute_force_no_of_etas',
+            algorithm,
             iiv_strategy=iiv_strategy,
             results=start_res,
             model=start_model,
+            correlation_algorithm=correlation_algorithm,
         )
 
-        no_of_candidate_models = 15
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 2
 
