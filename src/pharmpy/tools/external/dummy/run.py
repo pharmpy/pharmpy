@@ -148,7 +148,7 @@ def create_dummy_modelfit_results(model, seed):
         'description': model.description,
         'parameter_estimates': params,
         'log': log,
-        'ofv': rng.uniform(-2, 2),
+        'ofv': rng.uniform(-20, 20),
         'minimization_successful': True,
         'warnings': [],
         'relative_standard_errors': rse,

@@ -262,11 +262,12 @@ def test_no_of_etas_keep(tmp_path, load_model_for_test, testdata):
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     with chdir(tmp_path):
         res_keep1 = run_iivsearch(
-            'brute_force_no_of_etas',
+            'top_down_exhaustive',
             results=results,
             model=model,
             keep=["CL"],
             estimation_tool='dummy',
+            correlation_algorithm='skip',
         )
         no_of_models = 8
         assert len(res_keep1.summary_models) == no_of_models // 2
@@ -278,7 +279,11 @@ def test_block_structure(tmp_path, load_model_for_test, testdata):
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     with chdir(tmp_path):
         res = run_iivsearch(
-            'brute_force_block_structure', results=results, model=model, estimation_tool='dummy'
+            'skip',
+            results=results,
+            model=model,
+            estimation_tool='dummy',
+            correlation_algorithm='top_down_exhaustive',
         )
 
         no_of_candidate_models = 4
@@ -296,6 +301,49 @@ def test_block_structure(tmp_path, load_model_for_test, testdata):
 
         assert res.summary_tool.loc[1, 'iivsearch_run1']['description'] == '[CL,VC,MAT]'
         assert len(res_models[0].random_variables['ETA_1'].names) == 3
+
+        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
+        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
+
+        rundir = tmp_path / 'iivsearch_dir1'
+        assert rundir.is_dir()
+        assert (rundir / 'metadata.json').exists()
+
+
+@pytest.mark.parametrize(
+    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
+    (('top_down_exhaustive', 'skip', 7), ('bottom_up_stepwise', 'skip', 4)),
+)
+def test_no_of_etas(
+    tmp_path,
+    load_model_for_test,
+    testdata,
+    algorithm,
+    correlation_algorithm,
+    no_of_candidate_models,
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    with chdir(tmp_path):
+        res = run_iivsearch(
+            algorithm,
+            results=results,
+            model=model,
+            correlation_algorithm=correlation_algorithm,
+            estimation_tool='dummy',
+        )
+
+        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 1
+
+        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
+        assert len(res_models) == no_of_candidate_models
+
+        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
+        assert model.random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
         summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])

@@ -106,7 +106,9 @@ def stepwise_BU_algorithm(
         base_model_entry,
     )
     bu_base_model_wb.add_task(bu_base_entry)
-    wf_fit = modelfit.create_fit_workflow(n=len(bu_base_model_wb.output_tasks), tool=estimation_tool)
+    wf_fit = modelfit.create_fit_workflow(
+        n=len(bu_base_model_wb.output_tasks), tool=estimation_tool
+    )
     bu_base_model_wb.insert_workflow(wf_fit)
     best_model_entry = call_workflow(Workflow(bu_base_model_wb), 'fit_BU_base_model', context)
 
@@ -153,7 +155,7 @@ def stepwise_BU_algorithm(
                 )
                 temp_wb.add_task(task_candidate_entry)
                 previous_index += 1
-        wf_fit = modelfit.create_fit_workflow(n=len(temp_wb.output_tasks))
+        wf_fit = modelfit.create_fit_workflow(n=len(temp_wb.output_tasks), tool=estimation_tool)
         temp_wb.insert_workflow(wf_fit, predecessors=temp_wb.output_tasks)
         task_gather = Task('gather', lambda *model_entries: model_entries)
         temp_wb.add_task(task_gather, predecessors=temp_wb.output_tasks)
