@@ -724,7 +724,7 @@ def _subfunc_structsearch_tmdd(
                     highest_ranked = rank_filtered.index[0]
                     final_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
 
-        final_res = model_db.model_database.retrieve_modelfit_results(final_model.name)
+        final_res = model_db.retrieve_modelfit_results(final_model.name)
 
         extra_model = None
         extra_model_results = None
