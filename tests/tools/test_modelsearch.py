@@ -1,4 +1,5 @@
 import functools
+import sys
 
 import pytest
 
@@ -25,6 +26,13 @@ from pharmpy.tools.modelsearch.algorithms import (
 )
 from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import ModelEntry, Workflow
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
 
 MINIMAL_INVALID_MFL_STRING = ''
 MINIMAL_VALID_MFL_STRING = 'LAGTIME(ON)'
@@ -381,7 +389,7 @@ def test_validate_input_raises(
         validate_input(**kwargs)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_exhaustive(tmp_path, testdata):
     with chdir(tmp_path):
         m = read_model(testdata / 'nonmem' / 'pheno_real.mod')

@@ -1,9 +1,18 @@
+import sys
+
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.tools.allometry.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
 
 
 def test_create_workflow():
@@ -80,7 +89,7 @@ def test_validate_input_raises(
         validate_input(**kwargs)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_run_allometry(tmp_path, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno5.mod')
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'pheno5.mod')

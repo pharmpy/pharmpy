@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
@@ -9,6 +11,13 @@ from pharmpy.tools.covsearch.tool import (
     validate_input,
 )
 from pharmpy.workflows import Workflow
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
 
 MINIMAL_INVALID_MFL_STRING = ''
 MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
@@ -169,7 +178,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
     assert len(eff) == 0
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_default_str(tmp_path, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')

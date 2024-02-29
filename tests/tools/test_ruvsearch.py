@@ -1,4 +1,5 @@
 import shutil
+import sys
 from dataclasses import replace
 
 import pytest
@@ -10,6 +11,13 @@ from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.tools.ruvsearch.tool import _create_dataset, create_workflow, validate_input
 from pharmpy.workflows import ModelEntry, Workflow
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
 
 
 def test_filter_dataset(load_model_for_test, testdata):
@@ -220,7 +228,7 @@ def test_validate_input_raises_ipred(load_model_for_test, testdata):
         validate_input(model=model, results=modelfit_results)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_ruvsearch(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):

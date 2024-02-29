@@ -1,3 +1,5 @@
+import sys
+
 import pytest
 
 from pharmpy.deps import pandas as pd
@@ -22,6 +24,13 @@ from pharmpy.tools.iivsearch.algorithms import (
 )
 from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
 
 
 @pytest.mark.parametrize(
@@ -257,7 +266,7 @@ def test_validate_input_raises(
         validate_input(**kwargs)
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_no_of_etas_keep(tmp_path, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
@@ -275,7 +284,7 @@ def test_no_of_etas_keep(tmp_path, load_model_for_test, testdata):
         assert res_keep1.summary_individuals.iloc[-1]['description'] == '[CL]'
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_block_structure(tmp_path, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
@@ -319,7 +328,7 @@ def test_block_structure(tmp_path, load_model_for_test, testdata):
     ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
     (('top_down_exhaustive', 'skip', 7), ('bottom_up_stepwise', 'skip', 4)),
 )
-@pytest.mark.filterwarnings("ignore::UserWarning")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_no_of_etas(
     tmp_path,
     load_model_for_test,
