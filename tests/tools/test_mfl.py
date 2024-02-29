@@ -622,7 +622,7 @@ def test_stringify(statements: Tuple[Statement, ...], expected: str):
 def test_get_model_features(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     assert (
-        'ABSORPTION(INST);ELIMINATION(FO);COVARIATE([CL, V],WGT,custom,*);COVARIATE([V],APGR,custom,*)'
+        'ABSORPTION(INST);ELIMINATION(FO);COVARIATE([CL, V],WGT,CUSTOM,*);COVARIATE([V],APGR,CUSTOM,*)'
         == get_model_features(model)
     )
 
