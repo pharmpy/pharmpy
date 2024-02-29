@@ -81,11 +81,13 @@ from .error import (
 )
 from .estimation import calculate_parameters_from_ucp, calculate_ucp_scale
 from .estimation_steps import (
+    add_derivative,
     add_estimation_step,
     add_parameter_uncertainty_step,
     add_predictions,
     add_residuals,
     append_estimation_step_options,
+    remove_derivative,
     remove_estimation_step,
     remove_parameter_uncertainty_step,
     remove_predictions,
@@ -247,6 +249,7 @@ __all__ = [
     'add_allometry',
     'add_parameter_uncertainty_step',
     'add_covariate_effect',
+    'add_derivative',
     'add_estimation_step',
     'add_effect_compartment',
     'add_indirect_effect',
@@ -390,6 +393,7 @@ __all__ = [
     'read_model',
     'read_model_from_string',
     'rename_symbols',
+    'remove_derivative',
     'remove_parameter_uncertainty_step',
     'remove_predictions',
     'remove_residuals',
