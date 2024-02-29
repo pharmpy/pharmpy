@@ -22,7 +22,7 @@ from .common import (
 from .compartments import get_bioavailability, get_lag_times
 from .covariate_effect import (
     add_covariate_effect,
-    get_covariates,
+    get_covariate_effects,
     has_covariate_effect,
     remove_covariate_effect,
 )
@@ -311,7 +311,7 @@ __all__ = [
     'get_cmt',
     'get_concentration_parameters_from_data',
     'get_config_path',
-    'get_covariates',
+    'get_covariate_effects',
     'get_covariate_baselines',
     'get_doses',
     'get_doseid',

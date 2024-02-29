@@ -45,10 +45,10 @@ class Covariate(ModelFeature):
 
         if self.fp == EffectFunctionWildcard:
             fp = (
-                'lin',
-                'piece_lin',
-                'exp',
-                'pow',
+                'LIN',
+                'PIECE_LIN',
+                'EXP',
+                'POW',
             )
         else:
             fp = self.fp
