@@ -123,6 +123,7 @@ def test_dict():
         'solver_rtol': None,
         'solver_atol': None,
         'tool_options': {},
+        'derivatives': (),
         'predictions': (),
         'residuals': (),
     }
@@ -150,6 +151,7 @@ def test_dict():
                 'solver_rtol': None,
                 'solver_atol': None,
                 'tool_options': {},
+                'derivatives': (),
                 'predictions': (),
                 'residuals': (),
             },
@@ -169,6 +171,7 @@ def test_dict():
                 'solver_rtol': None,
                 'solver_atol': None,
                 'tool_options': {},
+                'derivatives': (),
                 'predictions': (),
                 'residuals': (),
             },
@@ -189,10 +192,11 @@ def test_getitem():
 
 
 def test_properties():
-    a = EstimationStep.create('foce', epsilon_derivatives=['EPS(1)'])
-    assert a.epsilon_derivatives == ('EPS(1)',)
-    a = EstimationStep.create('foce', eta_derivatives=['ETA(1)'])
-    assert a.eta_derivatives == ('ETA(1)',)
+    # SHOULD BE DERIVATIVES AND NOT JUST STRINGS
+    a = EstimationStep.create('foce', derivatives=['EPS(1)'])
+    assert a.derivatives == ('EPS(1)',)
+    a = EstimationStep.create('foce', derivatives=['ETA(1)'])
+    assert a.derivatives == ('ETA(1)',)
     a = EstimationStep.create('foce', predictions=['PRED'])
     assert a.predictions == ('PRED',)
     a = EstimationStep.create('foce', residuals=['CWRES'])

@@ -6,7 +6,7 @@ from typing import Callable, Dict, Optional, Tuple
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
+from pharmpy.deps import symengine, sympy
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.math import triangular_root
@@ -362,7 +362,58 @@ def parse_description(control_stream) -> str:
     return rec.title
 
 
-def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
+def extract_verbatim_derivatives(cs, random_variables, dv):
+    import re
+
+    error_record = cs.get_error_record()
+    if error_record is None:
+        return {}
+    verbatim_records = [r for r in error_record.root.children if r.rule == "verbatim"]
+    verbatim_derivatives = {}
+    r = r"([\w\d]+)\s*=\s*([GH]+)\((\d+)\s*,\s*(\d+)\)$"
+    for i in verbatim_records:
+        for c in i.children:
+            if c.rule == "VERBATIM_STATEMENT":
+                m = re.search(r, c.value)
+                if m:
+                    param_name = m.group(1)
+                    derivative_type = m.group(2)
+                    first_n = int(m.group(3))
+                    second_n = int(m.group(4))
+                    if second_n != 1:
+                        # EPS ETA DERIVATIVE
+                        if derivative_type == "HH":
+                            eps = random_variables.epsilons.names[first_n - 1]
+                            eta = random_variables.etas.names[second_n - 2]
+                            verbatim_derivatives[param_name] = Expr.derivative(
+                                symengine.UnevaluatedExpr(dv), Expr.symbol(eps), Expr.symbol(eta)
+                            )
+                        else:  # ONLY G ??
+                            first_eta = random_variables.etas.names[first_n - 1]
+                            second_eta = random_variables.etas.names[second_n - 2]
+                            verbatim_derivatives[param_name] = Expr.derivative(
+                                symengine.UnevaluatedExpr(dv),
+                                Expr.symbol(first_eta),
+                                Expr.symbol(second_eta),
+                            )
+                    else:
+                        if derivative_type in ("HH", "H"):
+                            # EPSILON
+                            eps = random_variables.epsilons.names[first_n - 1]
+                            verbatim_derivatives[param_name] = Expr.derivative(
+                                symengine.UnevaluatedExpr(dv), Expr.symbol(eps)
+                            )
+                        else:
+                            # ETAS
+                            eta = random_variables.etas.names[second_n - 1]
+                            verbatim_derivatives[param_name] = Expr.derivative(
+                                symengine.UnevaluatedExpr(dv), Expr.symbol(eta)
+                            )
+
+    return verbatim_derivatives
+
+
+def parse_execution_steps(control_stream, random_variables, dependent_variables) -> ExecutionSteps:
     steps = []
     records = control_stream.get_records('ESTIMATION')
     covrec = control_stream.get_records('COVARIANCE')
@@ -370,8 +421,9 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
     solver, tol, atol = parse_solver(control_stream)
 
     # Read eta and epsilon derivatives
-    etaderiv_names = None
-    epsilonderivs_names = None
+    dv = list(dependent_variables._mapping.keys())[0]  # TODO : Handle multiple DVs ?
+    etaderiv_names = []
+    epsilonderivs_names = []
     table_records = control_stream.get_records('TABLE')
     predictions = ()
     residuals = ()
@@ -397,11 +449,23 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
         etaderivs = table.eta_derivatives
         if etaderivs:
             etas = random_variables.etas
-            etaderiv_names = [etas.names[i - 1] for i in etaderivs]
+            etaderiv_names = [
+                Expr.derivative(symengine.UnevaluatedExpr(dv), Expr.symbol(etas.names[i - 1]))
+                for i in etaderivs
+            ]
         epsderivs = table.epsilon_derivatives
         if epsderivs:
             epsilons = random_variables.epsilons
-            epsilonderivs_names = [epsilons.names[i - 1] for i in epsderivs]
+            epsilonderivs_names = [
+                Expr.derivative(symengine.UnevaluatedExpr(dv), Expr.symbol(epsilons.names[i - 1]))
+                for i in epsderivs
+            ]
+    verbatim_derivatives = extract_verbatim_derivatives(control_stream, random_variables, dv)
+    verbatim_derivatives = list(verbatim_derivatives.values())
+
+    derivatives = set(etaderiv_names).union(set(epsilonderivs_names)).union(verbatim_derivatives)
+    if not derivatives:
+        derivatives = None
 
     for record in records:
         value = record.get_option('METHOD')
@@ -493,8 +557,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 solver=solver,
                 solver_rtol=tol,
                 solver_atol=atol,
-                eta_derivatives=etaderiv_names,
-                epsilon_derivatives=epsilonderivs_names,
+                derivatives=derivatives,
                 predictions=predictions,
                 residuals=residuals,
             )

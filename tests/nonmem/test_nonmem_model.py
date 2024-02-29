@@ -3,6 +3,7 @@ import shutil
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.deps import symengine
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
     Assignment,
@@ -988,8 +989,18 @@ def test_parse_derivatives(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
     )
-    assert model.execution_steps[0].eta_derivatives == ('ETA_1', 'ETA_2')
-    assert model.execution_steps[0].epsilon_derivatives == ('EPS_1',)
+    Y = Expr(symengine.UnevaluatedExpr(Expr.symbol("Y")))
+    expected = set(
+        (
+            Expr.derivative(Y, (Expr.symbol("ETA_1"), 2)),
+            Expr.derivative(Y, Expr.symbol("EPS_1")),
+            Expr.derivative(Y, Expr.symbol("ETA_2")),
+            Expr.derivative(Y, Expr.symbol("EPS_1"), Expr.symbol("ETA_2")),
+            Expr.derivative(Y, Expr.symbol("EPS_1"), Expr.symbol("ETA_1")),
+            Expr.derivative(Y, Expr.symbol("ETA_1")),
+        )
+    )
+    assert all(d in expected for d in model.execution_steps[0].derivatives)
 
 
 def test_no_etas_in_model(pheno):
@@ -1262,7 +1273,6 @@ def test_zo(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model = set_zero_order_input(model, "CENTRAL", 10)
     des = model.internals.control_stream.get_records("DES")[0]
-    print(des)
     assert str(des) == "$DES\nDADT(1) = -A(1)*CL/V + 10\n"
 
 

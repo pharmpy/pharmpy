@@ -1,5 +1,8 @@
-from typing import Any, Dict, List, Literal, Optional
+from itertools import combinations
+from typing import Any, Dict, List, Literal, Optional, Union
 
+from pharmpy.basic import Expr
+from pharmpy.deps import symengine
 from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
@@ -402,10 +405,130 @@ def set_evaluation_step(model: Model, idx: int = -1):
     return model.update_source()
 
 
+def add_derivative(model: Model, with_respect_to: Optional[Union[tuple, str]] = None):
+    """
+    Add a derivative to be calculcated when running the model. Currently, only
+    derivatives for the predicted variable (first DV), is supported.
+    First order derivates are specied either by single string or single-element tuple.
+    Second order derivatives are specified by giving the two independent varibles
+
+    Currently, only ETAs and EPSILONs are supported
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy modeas.
+    with_respect_to : Union[tuple, str]
+        Parameter name(s) to use as independent variables
+
+    Returns
+    -------
+    Pharmpy model.
+
+    """
+    if with_respect_to is None:
+        with_respect_to = subset_combinations(
+            model.random_variables.etas.names, model.random_variables.epsilons.names
+        )
+
+    elif isinstance(with_respect_to, str):
+        with_respect_to = [[Expr.symbol(with_respect_to)]]
+    elif isinstance(with_respect_to, tuple):
+        with_respect_to = [[Expr.symbol(w) for w in with_respect_to]]
+    else:
+        raise ValueError(f"Cannot handle with_respect_to argument : {with_respect_to}")
+
+    dv = list(model.dependent_variables._mapping.keys())[0]  # TODO : Handle multiple DVs ?
+    steps = model.execution_steps
+    new_step = steps[-1]
+
+    for new_d in with_respect_to:
+        new_derivative = Expr.derivative(symengine.UnevaluatedExpr(dv), *new_d)
+        derivatives = new_step.derivatives
+
+        if new_derivative not in derivatives:
+            new_step = new_step.replace(derivatives=derivatives + (new_derivative,))
+    new_steps = steps[:-1] + new_step
+    model = model.replace(execution_steps=new_steps)
+
+    return model.update_source()
+
+
+def remove_derivative(model: Model, with_respect_to: Union[tuple, str] = None):
+    """
+    Remove a derivative currently being calculcate when running model. Currently, only
+    derivatives for the predicted variable (first DV), is supported.
+    First order derivates are specied either by single string or single-element tuple.
+    Second order derivatives are specified by giving the two independent varibles
+
+    Currently, only ETAs and EPSILONs are supported
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy modeas.
+    with_respect_to : Union[tuple, str]
+        Parameter name(s) to use as independent variables
+
+    Returns
+    -------
+    Pharmpy model.
+
+    """
+
+    if with_respect_to is None:
+        with_respect_to = subset_combinations(
+            model.random_variables.etas.names, model.random_variables.epsilons.names
+        )
+
+    elif isinstance(with_respect_to, str):
+        with_respect_to = [[Expr.symbol(with_respect_to)]]
+    elif isinstance(with_respect_to, tuple):
+        with_respect_to = [[Expr.symbol(w) for w in with_respect_to]]
+    else:
+        raise ValueError(f"Cannot handle with_respect_to argument : {with_respect_to}")
+
+    dv = list(model.dependent_variables._mapping.keys())[0]  # TODO : Handle multiple DVs ?
+    new_steps = model.execution_steps
+    derivatives = new_steps[-1].derivatives
+
+    for new_d in with_respect_to:
+        new_derivative = Expr.derivative(symengine.UnevaluatedExpr(dv), *new_d)
+        derivatives = tuple(d for d in derivatives if d != new_derivative)
+        new_step = new_steps[-1].replace(derivatives=derivatives)
+        new_steps = new_steps[:-1] + new_step
+
+    model = model.replace(execution_steps=new_steps)
+
+    return model.update_source()
+
+
+def subset_combinations(list1, list2):
+    subsets = []
+
+    # Generate subsets of one element from each list
+    for item1 in list1:
+        subsets.append((Expr.symbol(item1),))
+    for item2 in list2:
+        subsets.append((Expr.symbol(item2),))
+
+    # Generate subsets of two elements from different lists
+    for pair in combinations(range(len(list1) + len(list2)), 2):
+        if pair[0] < len(list1) and pair[1] >= len(list1):
+            subsets.append((Expr.symbol(list1[pair[0]]), Expr.symbol(list2[pair[1] - len(list1)])))
+        elif pair[0] >= len(list1) and pair[1] < len(list1):
+            subsets.append((Expr.symbol(list2[pair[0] - len(list1)]), Expr.symbol(list1[pair[1]])))
+
+    return subsets
+
+
 def add_predictions(model: Model, pred: List[str]):
     """Add predictions and/or residuals
 
     Add predictions to estimation step.
+
+    Added prediction variable(s) need to be one of the following :
+        ['PRED', 'IPRED', 'CIPREDI']
 
     Parameters
     ----------
@@ -440,6 +563,14 @@ def add_predictions(model: Model, pred: List[str]):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
+    allowed_prediction_variables = ['PRED', 'IPRED', 'CIPREDI']
+
+    if any(p not in allowed_prediction_variables for p in pred):
+        raise ValueError(
+            f'Prediction variables need to be one of the following:'
+            f' {allowed_prediction_variables}'
+        )
+
     steps = model.execution_steps
     old_predictions = steps[-1].predictions
     new_predictions = tuple(sorted(set(old_predictions) | set(pred)))
@@ -453,6 +584,9 @@ def add_residuals(model: Model, res: List[str]):
     """Add predictions and/or residuals
 
     Add residuals to estimation step.
+
+    Added redidual variable(s) need to be one of the following :
+        ['RES', 'IRES', 'WRES', 'IWRES', 'CWRES']
 
     Parameters
     ----------
@@ -487,6 +621,14 @@ def add_residuals(model: Model, res: List[str]):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
+    allowed_residual_variables = ['RES', 'IRES', 'WRES', 'IWRES', 'CWRES']
+
+    if any(p not in allowed_residual_variables for p in res):
+        raise ValueError(
+            f'Prediction variables need to be one of the following:'
+            f' {allowed_residual_variables}'
+        )
+
     steps = model.execution_steps
     old_residuals = steps[-1].residuals
     new_residuals = tuple(sorted(set(old_residuals) | set(res)))

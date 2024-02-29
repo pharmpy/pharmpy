@@ -1150,7 +1150,6 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     """
     if rv not in model.random_variables.names:
         raise ValueError(f'Could not find random variable: {rv}')
-
     ind_param = get_individual_parameters(model, level="random")
 
     rv_parameters = []

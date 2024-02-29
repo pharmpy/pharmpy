@@ -2,11 +2,13 @@ import pytest
 
 from pharmpy.model import SimulationStep
 from pharmpy.modeling import (
+    add_derivative,
     add_estimation_step,
     add_parameter_uncertainty_step,
     add_predictions,
     add_residuals,
     append_estimation_step_options,
+    remove_derivative,
     remove_estimation_step,
     remove_parameter_uncertainty_step,
     remove_predictions,
@@ -211,16 +213,16 @@ def test_add_predictions(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     assert model.execution_steps[-1].predictions == ('IPRED', 'PRED')
 
-    model = add_predictions(model, pred=['PRED1'])
-    assert model.execution_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1')
+    model = add_predictions(model, pred=['CIPREDI'])
+    assert model.execution_steps[-1].predictions == ('CIPREDI', 'IPRED', 'PRED')
     assert tuple(sorted(model.execution_steps[-1].residuals)) == ('CWRES', 'RES')
 
-    model = add_residuals(model, res=['RES', 'RES2'])
-    assert model.execution_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
+    model = add_residuals(model, res=['RES', 'IRES'])
+    assert model.execution_steps[-1].residuals == ('CWRES', 'IRES', 'RES')
 
-    model = add_predictions(model, pred=['PRED1', 'PRED2'])
-    assert model.execution_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1', 'PRED2')
-    assert model.execution_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
+    model = add_predictions(model, pred=['CIPREDI'])
+    assert model.execution_steps[-1].predictions == ('CIPREDI', 'IPRED', 'PRED')
+    assert model.execution_steps[-1].residuals == ('CWRES', 'IRES', 'RES')
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -253,8 +255,8 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE PRED1 RES2 PRED2 NOAPPEND
-       NOPRINT ONEHEADER FILE=sdtab1\n"""
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
+ CIPREDI IRES NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
     model = remove_predictions(model, 'all')
     model = remove_residuals(model, 'all')
@@ -292,10 +294,10 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR TAD NPDE NOAPPEND
-       NOPRINT ONEHEADER FILE=sdtab1\n"""
+$TABLE ID TIME DV AMT WGT APGR TAD NPDE
+ NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
-    model = add_residuals(model, res=['NEWRES'])
+    model = add_residuals(model, res=['CWRES'])
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -328,18 +330,18 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR TAD NPDE NEWRES NOAPPEND
-       NOPRINT ONEHEADER FILE=sdtab1\n"""
+$TABLE ID TIME DV AMT WGT APGR TAD NPDE
+ CWRES NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
-    model = remove_residuals(model, ['NEWRES'])
+    model = remove_residuals(model, ['CWRES'])
     assert model.execution_steps[-1].residuals == ()
 
     # Test $DESIGN
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_design.mod')
     assert model.execution_steps[-1].predictions == ()
     assert model.execution_steps[-1].residuals == ()
-    model = add_predictions(model, pred=['PRED1'])
-    assert model.execution_steps[-1].predictions == ('PRED1',)
+    model = add_predictions(model, pred=['IPRED'])
+    assert model.execution_steps[-1].predictions == ('IPRED',)
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -364,7 +366,7 @@ $PROBLEM DESIGN
 $DATA pheno.dta IGNORE=@ REWIND
 $INPUT ID TIME AMT WGT APGR DV
 $MSFI pheno_design.msf
-$TABLE ID TIME DV PRED1 FILE=mytab NOAPPEND NOPRINT
+$TABLE ID TIME DV IPRED FILE=mytab NOAPPEND NOPRINT
 $DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"""
     assert model_code == model.code
     model = add_residuals(model, res=['RES'])
@@ -398,3 +400,92 @@ $MSFI pheno_design.msf
 $DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1
 $TABLE ID TIME DV RES FILE=mytab NOAPPEND NOPRINT\n"""
     assert model_code == model.code
+
+
+def test_add_remove_derivative(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+
+    model = add_derivative(model)
+    assert len(model.execution_steps[0].derivatives) == 5
+    assert (
+        model.code
+        == '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA 'pheno.dta' IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S1=V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+D_ETAEPS_1_1 = 0
+D_ETAEPS_2_1 = 0
+
+"LAST
+"  D_ETAEPS_1_1=HH(1, 2)
+"  D_ETAEPS_2_1=HH(1, 3)
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=COND INTER
+$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
+ G011 G021 H011 D_ETAEPS_1_1 D_ETAEPS_2_1 NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n'''
+    )
+
+    model = remove_derivative(model)
+    assert len(model.execution_steps[0].derivatives) == 0
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA 'pheno.dta' IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S1=V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=COND INTER
+$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
+ NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
+    )
