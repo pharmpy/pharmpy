@@ -6,7 +6,7 @@ import re
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
+from typing import Any, List, Literal, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -1175,7 +1175,9 @@ def _get_estimation_runtime(res, i):
     return res.estimation_runtime_iterations.iloc[i]
 
 
-def read_modelfit_results(path: Union[str, Path], tool=None) -> ModelfitResults:
+def read_modelfit_results(
+    path: Union[str, Path], tool: Optional[Literal['dummy']] = None
+) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
