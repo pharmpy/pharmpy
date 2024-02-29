@@ -1,6 +1,8 @@
 import pytest
 
-from pharmpy.modeling import add_covariate_effect, get_covariate_effects, remove_covariate_effect
+from pharmpy.internals.fs.cwd import chdir
+from pharmpy.modeling import add_covariate_effect, get_covariates_effects, remove_covariate_effect
+from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.tools.covsearch.tool import (
     create_workflow,
     filter_search_space_and_model,
@@ -165,3 +167,19 @@ def test_covariate_filtering(load_model_for_test, testdata):
     eff, filtered_model = filter_search_space_and_model(search_space, model)
     assert len(get_covariate_effects(filtered_model)) == 2
     assert len(eff) == 0
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_default_str(tmp_path, load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    with chdir(tmp_path):
+        run_tool(
+            'covsearch',
+            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, exp, *)\n'
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, cat, *)',
+            results=results,
+            model=model,
+            estimation_tool='dummy',
+        )

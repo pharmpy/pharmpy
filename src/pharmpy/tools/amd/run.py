@@ -89,6 +89,7 @@ def run_amd(
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
+    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -149,6 +150,8 @@ def run_amd(
         Parameter uncertainty method.
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used. Default is to use NONMEM.
 
     Returns
     -------
@@ -349,6 +352,7 @@ def run_amd(
                 amd_start_model=model,
                 search_space=covsearch_features,
                 strictness=strictness,
+                estimation_tool=estimation_tool,
                 path=db.path,
             )
             if modeltype == 'pkpd':
@@ -360,6 +364,7 @@ def run_amd(
                     ec50_init=ec50_init,
                     met_init=met_init,
                     strictness=strictness,
+                    estimation_tool=estimation_tool,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
@@ -370,12 +375,16 @@ def run_amd(
                     strictness=strictness,
                     dv_types=dv_types,
                     orig_dataset=orig_dataset,
+                    estimation_tool=estimation_tool,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
             else:
                 func = _subfunc_modelsearch(
-                    search_space=modelsearch_features, strictness=strictness, path=db.path
+                    search_space=modelsearch_features,
+                    strictness=strictness,
+                    estimation_tool=estimation_tool,
+                    path=db.path,
                 )
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
@@ -383,6 +392,7 @@ def run_amd(
                 func = _subfunc_structsearch(
                     type=modeltype,
                     search_space=structsearch_features,
+                    estimation_tool=estimation_tool,
                     path=db.path,
                 )
                 run_subfuncs['structsearch'] = func
@@ -392,6 +402,7 @@ def run_amd(
                 func = _subfunc_iiv(
                     iiv_strategy='no_add',
                     strictness=strictness,
+                    estimation_tool=estimation_tool,
                     path=db.path,
                     dir_name="rerun_iivsearch",
                 )
@@ -400,13 +411,18 @@ def run_amd(
                 func = _subfunc_iiv(
                     iiv_strategy=iiv_strategy,
                     strictness=strictness,
+                    estimation_tool=estimation_tool,
                     path=db.path,
                     dir_name="iivsearch",
                 )
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
             func = _subfunc_iov(
-                amd_start_model=model, occasion=occasion, strictness=strictness, path=db.path
+                amd_start_model=model,
+                occasion=occasion,
+                strictness=strictness,
+                estimation_tool=estimation_tool,
+                path=db.path,
             )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
@@ -421,6 +437,7 @@ def run_amd(
                 func = _subfunc_ruvsearch(
                     dv=1,
                     strictness=strictness,
+                    estimation_tool=estimation_tool,
                     path=db.path / f'{run_name}_drug',
                     dir_name=f'{run_name}_drug',
                 )
@@ -429,6 +446,7 @@ def run_amd(
                 func = _subfunc_ruvsearch(
                     dv=2,
                     strictness=strictness,
+                    estimation_tool=estimation_tool,
                     path=db.path / f'{run_name}_metabolite',
                     dir_name=f'{run_name}_metabolite',
                 )
@@ -438,18 +456,26 @@ def run_amd(
                     func = _subfunc_ruvsearch(
                         dv=value,
                         strictness=strictness,
+                        estimation_tool=estimation_tool,
                         path=db.path / f'{run_name}_tmdd_{key}',
                         dir_name=f'{run_name}_tmdd_{key}',
                     )
                     run_subfuncs[f'ruvsearch_{key}'] = func
             else:
                 func = _subfunc_ruvsearch(
-                    dv=dv, strictness=strictness, path=db.path, dir_name=run_name
+                    dv=dv,
+                    strictness=strictness,
+                    estimation_tool=estimation_tool,
+                    path=db.path,
+                    dir_name=run_name,
                 )
                 run_subfuncs[f'{run_name}'] = func
         elif section == 'allometry':
             func = _subfunc_allometry(
-                amd_start_model=model, allometric_variable=allometric_variable, path=db.path
+                amd_start_model=model,
+                allometric_variable=allometric_variable,
+                estimation_tool=estimation_tool,
+                path=db.path,
             )
             run_subfuncs['allometry'] = func
         elif section == 'covariates':
@@ -458,17 +484,26 @@ def run_amd(
                 search_space=covsearch_features,
                 mechanistic_covariates=mechanistic_covariates,
                 strictness=strictness,
+                estimation_tool=estimation_tool,
                 path=db.path,
             )
             run_subfuncs['covsearch'] = func
         else:
             raise ValueError(f"Unrecognized section {section} in order.")
         if retries_strategy == 'all_final':
-            func = _subfunc_retires(tool=section, strictness=strictness, seed=seed, path=db.path)
+            func = _subfunc_retires(
+                tool=section,
+                strictness=strictness,
+                seed=seed,
+                estimation_tool=estimation_tool,
+                path=db.path,
+            )
             run_subfuncs[f'{section}_retries'] = func
 
     if retries_strategy == 'final':
-        func = _subfunc_retires(tool="", strictness=strictness, seed=seed, path=db.path)
+        func = _subfunc_retires(
+            tool="", strictness=strictness, seed=seed, estimation_tool=estimation_tool, path=db.path
+        )
         run_subfuncs['retries'] = func
 
     # Filter data to only contain dvid=1
@@ -478,7 +513,13 @@ def run_amd(
         model = filter_dataset(model, 'DVID != 2')
 
     if results is None:
-        results = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
+        results = run_tool(
+            'modelfit',
+            model,
+            path=db.path / 'modelfit',
+            resume=resume,
+            estimation_tool=estimation_tool,
+        )
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
     next_model_entry = model_entry
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
@@ -509,6 +550,7 @@ def run_amd(
                             search_space=covsearch_features,
                             strictness=strictness,
                             mechanistic_covariates=mechanistic_covariates,
+                            estimation_tool=estimation_tool,
                             path=db.path,
                         )
                         run_subfuncs['covsearch'] = func
@@ -519,7 +561,7 @@ def run_amd(
                 res_path = (
                     model_db.path / next_model.name / (next_model.name + model_db.file_extension)
                 )
-                results = get_modelfit_results(next_model, res_path)
+                results = get_modelfit_results(next_model, res_path, estimation_tool)
                 next_model_entry = ModelEntry.create(model=next_model, modelfit_results=results)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
             sum_models.append(subresults.summary_models.reset_index())
@@ -658,7 +700,7 @@ def noop_subfunc(_: Model):
     return None
 
 
-def _subfunc_retires(tool, strictness, seed, path):
+def _subfunc_retires(tool, strictness, seed, estimation_tool, path):
     def _run_retries(model, modelfit_results):
         res = run_tool(
             'retries',
@@ -668,6 +710,7 @@ def _subfunc_retires(tool, strictness, seed, path):
             scale='UCP',
             prefix_name=tool,
             seed=seed,
+            estimation_tool=estimation_tool,
             path=path / f'{tool}_retries',
         )
         assert isinstance(res, Results)
@@ -676,7 +719,9 @@ def _subfunc_retires(tool, strictness, seed, path):
     return _run_retries
 
 
-def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) -> SubFunc:
+def _subfunc_modelsearch(
+    search_space: Tuple[Statement, ...], strictness, estimation_tool, path
+) -> SubFunc:
     def _run_modelsearch(model, modelfit_results):
         res = run_tool(
             'modelsearch',
@@ -685,6 +730,7 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, path) 
             model=model,
             strictness=strictness,
             results=modelfit_results,
+            estimation_tool=estimation_tool,
             path=path / 'modelsearch',
         )
         assert isinstance(res, Results)
@@ -710,7 +756,7 @@ def _subfunc_structsearch(path, **kwargs) -> SubFunc:
 
 
 def _subfunc_structsearch_tmdd(
-    search_space, type, strictness, dv_types, orig_dataset, path
+    search_space, type, strictness, dv_types, orig_dataset, estimation_tool, path
 ) -> SubFunc:
     def _run_structsearch_tmdd(model, modelfit_results):
         res = run_tool(
@@ -720,6 +766,7 @@ def _subfunc_structsearch_tmdd(
             model=model,
             strictness=strictness,
             results=modelfit_results,
+            estimation_tool=estimation_tool,
             path=path / 'modelsearch',
         )
 
@@ -781,6 +828,7 @@ def _subfunc_structsearch_tmdd(
             extra_model_results=extra_model_results,
             strictness=strictness,
             dv_types=dv_types,
+            estimation_tool=estimation_tool,
             path=path / 'structsearch',
         )
         assert isinstance(res, Results)
@@ -789,7 +837,7 @@ def _subfunc_structsearch_tmdd(
     return _run_structsearch_tmdd
 
 
-def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
+def _subfunc_iiv(iiv_strategy, strictness, estimation_tool, path, dir_name) -> SubFunc:
     def _run_iiv(model, modelfit_results):
         keep = [
             str(symbol)
@@ -804,6 +852,7 @@ def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
             results=modelfit_results,
             strictness=strictness,
             keep=keep,
+            estimation_tool=estimation_tool,
             path=path / dir_name,
         )
         assert isinstance(res, Results)
@@ -812,7 +861,7 @@ def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
     return _run_iiv
 
 
-def _subfunc_ruvsearch(dv, strictness, path, dir_name) -> SubFunc:
+def _subfunc_ruvsearch(dv, strictness, estimation_tool, path, dir_name) -> SubFunc:
     def _run_ruvsearch(model, modelfit_results):
         if has_blq_transformation(model):
             skip, max_iter = ['IIV_on_RUV', 'time_varying'], 1
@@ -826,6 +875,7 @@ def _subfunc_ruvsearch(dv, strictness, path, dir_name) -> SubFunc:
             max_iter=max_iter,
             dv=dv,
             strictness=strictness,
+            estimation_tool=estimation_tool,
             path=path / dir_name,
         )
         assert isinstance(res, Results)
@@ -838,6 +888,7 @@ def _subfunc_structural_covariates(
     amd_start_model: Model,
     search_space: Tuple[Statement, ...],
     strictness,
+    estimation_tool,
     path,
 ) -> SubFunc:
     def _run_structural_covariates(model, modelfit_results):
@@ -887,6 +938,7 @@ def _subfunc_structural_covariates(
             model=model,
             strictness=strictness,
             results=modelfit_results,
+            estimation_tool=estimation_tool,
             path=path / 'covsearch_structural',
         )
         assert isinstance(res, Results)
@@ -900,6 +952,7 @@ def _subfunc_mechanistic_exploratory_covariates(
     search_space: Tuple[Statement, ...],
     mechanistic_covariates,
     strictness,
+    estimation_tool,
     path,
 ) -> SubFunc:
     covariates = set(extract_covariates(amd_start_model, search_space))
@@ -954,6 +1007,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                     model=model,
                     strictness=strictness,
                     results=modelfit_results,
+                    estimation_tool=estimation_tool,
                     path=path / 'covsearch_mechanistic',
                 )
                 model_db = res.tool_database.model_database
@@ -985,6 +1039,7 @@ def _subfunc_mechanistic_exploratory_covariates(
             model=model,
             strictness=strictness,
             results=modelfit_results,
+            estimation_tool=estimation_tool,
             path=path / 'covsearch_exploratory',
             naming_index_offset=index_offset,
         )
@@ -1035,7 +1090,9 @@ def _mechanistic_cov_extraction(search_space, model, mechanistic_covariates):
     return mechanistic_searchspace, filtered_searchspace
 
 
-def _subfunc_allometry(amd_start_model: Model, allometric_variable, path) -> SubFunc:
+def _subfunc_allometry(
+    amd_start_model: Model, allometric_variable, estimation_tool, path
+) -> SubFunc:
     if allometric_variable is None:  # Somewhat redundant with validation function
         allometric_variable = amd_start_model.datainfo.descriptorix["body weight"][0].name
 
@@ -1045,6 +1102,7 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, path) -> Sub
             model,
             results=modelfit_results,
             allometric_variable=allometric_variable,
+            estimation_tool=estimation_tool,
             path=path / 'allometry',
         )
         assert isinstance(res, Results)
@@ -1053,7 +1111,7 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, path) -> Sub
     return _run_allometry
 
 
-def _subfunc_iov(amd_start_model, occasion, strictness, path) -> SubFunc:
+def _subfunc_iov(amd_start_model, occasion, strictness, estimation_tool, path) -> SubFunc:
     def _run_iov(model, modelfit_results):
         res = run_tool(
             'iovsearch',
@@ -1061,6 +1119,7 @@ def _subfunc_iov(amd_start_model, occasion, strictness, path) -> SubFunc:
             results=modelfit_results,
             column=occasion,
             strictness=strictness,
+            estimation_tool=estimation_tool,
             path=path / 'iovsearch',
         )
         assert isinstance(res, Results)
@@ -1097,6 +1156,7 @@ def validate_input(
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
+    estimation_tool=None,
 ):
     model = input
     to_be_skipped = []

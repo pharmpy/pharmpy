@@ -26,7 +26,7 @@ from pharmpy.workflows import (
 from pharmpy.workflows.results import mfr
 
 
-def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
+def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, estimation_tool=None):
     wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
 
     base_model = base_model.replace(description=create_description(base_model))
@@ -47,7 +47,7 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
         )
         wb.add_task(task_candidate_entry)
 
-    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
+    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks), tool=estimation_tool)
     wb.insert_workflow(wf_fit)
     return Workflow(wb)
 
@@ -106,7 +106,7 @@ def stepwise_BU_algorithm(
         base_model_entry,
     )
     bu_base_model_wb.add_task(bu_base_entry)
-    wf_fit = modelfit.create_fit_workflow(n=len(bu_base_model_wb.output_tasks))
+    wf_fit = modelfit.create_fit_workflow(n=len(bu_base_model_wb.output_tasks), tool=estimation_tool)
     bu_base_model_wb.insert_workflow(wf_fit)
     best_model_entry = call_workflow(Workflow(bu_base_model_wb), 'fit_BU_base_model', context)
 
@@ -188,7 +188,7 @@ def stepwise_BU_algorithm(
     return all_modelentries
 
 
-def td_exhaustive_block_structure(base_model, index_offset=0):
+def td_exhaustive_block_structure(base_model, index_offset=0, estimation_tool=None):
     wb = WorkflowBuilder(name='td_exhaustive_block_structure')
 
     base_model = base_model.replace(description=create_description(base_model))
@@ -211,7 +211,7 @@ def td_exhaustive_block_structure(base_model, index_offset=0):
 
         model_no += 1
 
-    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
+    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks), tool=estimation_tool)
     wb.insert_workflow(wf_fit)
     return Workflow(wb)
 

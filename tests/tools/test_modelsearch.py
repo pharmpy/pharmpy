@@ -2,15 +2,17 @@ import functools
 
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_peripheral_compartment,
+    read_model,
     set_mixed_mm_fo_elimination,
     set_peripheral_compartments,
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools import read_modelfit_results, run_modelsearch
 from pharmpy.tools.mfl.helpers import funcs, modelsearch_features
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -377,3 +379,22 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
+
+
+def test_exhaustive(tmp_path, testdata):
+    with chdir(tmp_path):
+        m = read_model(testdata / 'nonmem' / 'pheno_real.mod')
+        m_res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+        run_modelsearch(
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive',
+            results=m_res,
+            model=m,
+            estimation_tool='dummy',
+        )
+
+        rundir = tmp_path / 'modelsearch_dir1'
+        assert rundir.is_dir()
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()

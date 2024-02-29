@@ -388,3 +388,36 @@ def _validate_record(record, expected):
 
     for warning, match in zip(record, expected):
         assert match in str(warning.message)
+
+
+def _model_count(rundir: Path):
+    return sum(
+        map(
+            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
+            ((rundir / 'models').iterdir()),
+        )
+    )
+
+
+@pytest.mark.filterwarnings(
+    'ignore:.*Adjusting initial estimates to create positive semidefinite omega/sigma matrices.',
+    'ignore::UserWarning',
+    'ignore::FutureWarning',
+    'ignore::Warning',
+)
+def test_amd(tmp_path, testdata):
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
+        input = 'moxo_simulated_amd.csv'
+        run_amd(
+            input,
+            modeltype='basic_pk',
+            administration='oral',
+            search_space='PERIPHERALS(1)',
+            strategy='SIR',
+            occasion='VISI',
+            strictness='minimization_successful or rounding_errors',
+            retries_strategy='skip',
+            estimation_tool='dummy',
+        )

@@ -45,6 +45,7 @@ def create_workflow(
     scale: Optional[Literal[tuple(SCALES)]] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
     seed: Optional[Union[np.random.Generator, int]] = None,
+    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """
     Run retries tool.
@@ -69,6 +70,8 @@ def create_workflow(
         Prefix the candidate model names with given string.
     seed: int or rng
         Random number generator or seed to be used.
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -99,6 +102,7 @@ def create_workflow(
             use_initial_estimates,
             prefix_name,
             seed,
+            estimation_tool,
         )
         wb.add_task(new_candidate_task, predecessors=start_task)
         candidate_tasks.append(new_candidate_task)
@@ -117,7 +121,15 @@ def _start(results, model):
 
 
 def create_random_init_model(
-    context, index, scale, fraction, use_initial_estimates, prefix_name, seed, modelentry
+    context,
+    index,
+    scale,
+    fraction,
+    use_initial_estimates,
+    prefix_name,
+    seed,
+    estimation_tool,
+    modelentry,
 ):
     original_model = modelentry.model
     # Update inits once before running
@@ -168,7 +180,9 @@ def create_random_init_model(
         modelfit_results=None,
         parent=original_model,
     )
-    new_candidate_model_fit_wf = create_fit_workflow(modelentries=[new_candidate_model_entry])
+    new_candidate_model_fit_wf = create_fit_workflow(
+        modelentries=[new_candidate_model_entry], tool=estimation_tool
+    )
     new_modelentry = call_workflow(new_candidate_model_fit_wf, f'fit_candidate_run{index}', context)
     return Retry(
         modelentry=new_modelentry,

@@ -1,7 +1,9 @@
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import add_iov, fix_parameters, remove_iov
+from pharmpy.tools import read_modelfit_results, run_iovsearch
 from pharmpy.tools.iovsearch.tool import (
     _get_iiv_etas_with_corresponding_iov,
     _get_nonfixed_iivs,
@@ -113,3 +115,12 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
+
+
+def test_default_mox2(tmp_path, load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    with chdir(tmp_path):
+        run_iovsearch(
+            'VISI', rank_type='ofv', results=results, model=model, estimation_tool='dummy'
+        )

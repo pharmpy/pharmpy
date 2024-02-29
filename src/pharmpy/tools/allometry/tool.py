@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, List, Literal, Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -31,6 +31,7 @@ def create_workflow(
     lower_bounds: Optional[List[Union[int, float]]] = None,
     upper_bounds: Optional[List[Union[int, float]]] = None,
     fixed: bool = True,
+    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run allometry tool. For more details, see :ref:`allometry`.
 
@@ -54,6 +55,8 @@ def create_workflow(
         Upper bounds for the exponents. (default is 2 for all parameters)
     fixed : bool
         Should the exponents be fixed or not. (default True)
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -87,7 +90,7 @@ def create_workflow(
     )
     task_add_allometry = Task('add allometry', _add_allometry)
     wb.add_task(task_add_allometry, predecessors=start_task)
-    fit_wf = create_fit_workflow(n=1)
+    fit_wf = create_fit_workflow(n=1, tool=estimation_tool)
     wb.insert_workflow(fit_wf, predecessors=task_add_allometry)
     results_task = Task('results', globals()['results'])
     wb.add_task(results_task, predecessors=[start_task] + fit_wf.output_tasks)

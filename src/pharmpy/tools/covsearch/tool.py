@@ -109,6 +109,7 @@ def create_workflow(
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
+    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -133,6 +134,8 @@ def create_workflow(
         Strictness criteria
     naming_index_offset: int
         index offset for naming of runs. Default is 0.
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -153,7 +156,7 @@ def create_workflow(
 
     # FIXME : Handle when model is None
     start_task = Task("create_modelentry", _start, model, results)
-    init_task = Task("init", _init_search_state, search_space)
+    init_task = Task("init", _init_search_state, effects, estimation_tool)
     wb.add_task(init_task, predecessors=start_task)
 
     forward_search_task = Task(
@@ -163,6 +166,7 @@ def create_workflow(
         max_steps,
         naming_index_offset,
         strictness,
+        estimation_tool,
     )
 
     wb.add_task(forward_search_task, predecessors=init_task)
@@ -176,6 +180,7 @@ def create_workflow(
             max_steps,
             naming_index_offset,
             strictness,
+            estimation_tool,
         )
 
         wb.add_task(backward_search_task, predecessors=search_output)
@@ -198,12 +203,20 @@ def _start(model, results):
     return ModelEntry.create(model=model, parent=None, modelfit_results=results)
 
 
+<<<<<<< HEAD
 def _init_search_state(context, search_space: str, modelentry: ModelEntry) -> SearchState:
+=======
+def _init_search_state(
+    context, effects: str, estimation_tool, modelentry: ModelEntry
+) -> SearchState:
+>>>>>>> 08a752234 (Implement dry run)
     model = modelentry.model
     effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
     if filtered_model != model:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
-        filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
+        filtered_fit_wf = create_fit_workflow(
+            modelentries=[filtered_modelentry], tool=estimation_tool
+        )
         filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
     else:
         filtered_modelentry = modelentry
@@ -309,6 +322,7 @@ def task_greedy_forward_search(
     max_steps: int,
     naming_index_offset: int,
     strictness: Optional[str],
+    estimation_tool,
     state_and_effect: Tuple[SearchState, dict],
 ) -> SearchState:
     for temp in state_and_effect:
@@ -324,9 +338,12 @@ def task_greedy_forward_search(
         parent: Candidate,
         candidate_effect_funcs: dict,
         index_offset: int,
+        estimation_tool,
     ):
         index_offset = index_offset + naming_index_offset
-        wf = wf_effects_addition(parent.modelentry, parent, candidate_effect_funcs, index_offset)
+        wf = wf_effects_addition(
+            parent.modelentry, parent, candidate_effect_funcs, index_offset, estimation_tool
+        )
         new_candidate_modelentries = call_workflow(
             wf, f'{NAME_WF}-effects_addition-{step}', context
         )
@@ -342,6 +359,7 @@ def task_greedy_forward_search(
         p_forward,
         max_steps,
         strictness,
+        estimation_tool,
     )
 
 
@@ -351,6 +369,7 @@ def task_greedy_backward_search(
     max_steps: int,
     naming_index_offset,
     strictness: Optional[str],
+    estimation_tool,
     state: SearchState,
 ) -> SearchState:
     def handle_effects(
@@ -358,9 +377,10 @@ def task_greedy_backward_search(
         parent: Candidate,
         candidate_effect_funcs: List[EffectLiteral],
         index_offset: int,
+        estimation_tool,
     ):
         index_offset = index_offset + naming_index_offset
-        wf = wf_effects_removal(parent, candidate_effect_funcs, index_offset)
+        wf = wf_effects_removal(parent, candidate_effect_funcs, index_offset, estimation_tool)
         new_candidate_modelentries = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
 
         return [
@@ -392,6 +412,7 @@ def task_greedy_backward_search(
         p_backward,
         min(max_steps, n_removable_effects) if max_steps >= 0 else n_removable_effects,
         strictness,
+        estimation_tool,
     )
 
 
@@ -402,6 +423,7 @@ def _greedy_search(
     alpha: float,
     max_steps: int,
     strictness: Optional[str],
+    estimation_tool,
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
     all_candidates_so_far = list(
@@ -415,7 +437,11 @@ def _greedy_search(
             break
 
         new_candidates = handle_effects(
-            step, best_candidate_so_far, candidate_effect_funcs, len(all_candidates_so_far) - 1
+            step,
+            best_candidate_so_far,
+            candidate_effect_funcs,
+            len(all_candidates_so_far) - 1,
+            estimation_tool,
         )
 
         all_candidates_so_far.extend(new_candidates)
@@ -477,6 +503,7 @@ def wf_effects_addition(
     candidate: Candidate,
     candidate_effect_funcs: dict,
     index_offset: int,
+    estimation_tool,
 ):
     wb = WorkflowBuilder()
 
@@ -491,7 +518,7 @@ def wf_effects_addition(
         )
         wb.add_task(task)
 
-    wf_fit = create_fit_workflow(n=len(candidate_effect_funcs))
+    wf_fit = create_fit_workflow(n=len(candidate_effect_funcs), tool=estimation_tool)
     wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)
@@ -546,6 +573,7 @@ def wf_effects_removal(
     parent: Candidate,
     candidate_effect_funcs: dict,
     index_offset: int,
+    estimation_tool,
 ):
     wb = WorkflowBuilder()
 
@@ -559,7 +587,7 @@ def wf_effects_removal(
         )
         wb.add_task(task)
 
-    wf_fit = create_fit_workflow(n=len(candidate_effect_funcs))
+    wf_fit = create_fit_workflow(n=len(candidate_effect_funcs), tool=estimation_tool)
     wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *models: models)

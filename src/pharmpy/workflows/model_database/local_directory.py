@@ -29,13 +29,23 @@ FILE_PENDING = 'PENDING'
 FILE_LOCK = '.lock'
 
 
-def get_modelfit_results(model, path):
+def get_modelfit_results(model, path, tool=None):
     # FIXME: This is a workaround. The proper solution is to only read the results.json from
     # the database. For this to work roundtrip of DataFrames in json is needed.
     # This is currently broken because of rounding issue in pandas
     # Also the modelfit_results attribute will soon be removed from model objects.
     import pharmpy.model.external.nonmem as nonmem_model
     import pharmpy.tools.external.nonmem as nonmem
+
+    if tool is not None:
+        if tool == 'dummy':
+            import pharmpy.tools.external.dummy as tool
+        elif tool == 'nonmem':
+            import pharmpy.tools.external.nonmem as tool
+        elif tool == 'nlmixr':
+            import pharmpy.tools.external.nlmixr as tool
+        res = tool.parse_modelfit_results(model, path)
+        return res
 
     if isinstance(model, nonmem_model.Model):
         res = nonmem.parse_modelfit_results(model, path)

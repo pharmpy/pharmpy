@@ -38,6 +38,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -60,6 +61,8 @@ def create_workflow(
         Pharmpy model
     strictness : str or None
         Strictness criteria
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -90,6 +93,7 @@ def create_workflow(
         cutoff,
         bic_type,
         distribution,
+        estimation_tool,
     )
 
     wb.add_task(search_task, predecessors=init_task)
@@ -129,6 +133,7 @@ def task_brute_force_search(
     cutoff: Union[None, float],
     bic_type: Union[None, str],
     distribution: str,
+    estimation_tool: Optional[Literal['dummy']],
     input_model_entry: ModelEntry,
 ):
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
@@ -156,7 +161,7 @@ def task_brute_force_search(
     model_with_iov = model_with_iov.replace(description=_create_description(model_with_iov))
     # NOTE: Fit the new model.
     model_with_iov_entry = ModelEntry.create(model_with_iov, parent=input_model)
-    wf = create_fit_workflow(modelentries=[model_with_iov_entry])
+    wf = create_fit_workflow(modelentries=[model_with_iov_entry], tool=estimation_tool)
     model_with_iov_entry = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
 
     # NOTE: Remove IOVs. Test all subsets (~2^n).
@@ -171,6 +176,7 @@ def task_brute_force_search(
         model_with_iov_entry,
         non_empty_proper_subsets(all_iov_parameters),
         no_of_models + 1,
+        estimation_tool,
     )
     iov_candidate_entries = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
 
@@ -206,6 +212,7 @@ def task_brute_force_search(
         best_model_entry_so_far,
         non_empty_subsets(iiv_parameters_with_associated_iov),
         no_of_models + 1,
+        estimation_tool,
     )
     iiv_candidate_entries = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs', context)
     current_step += 1
@@ -245,6 +252,7 @@ def wf_etas_removal(
     model_entry: ModelEntry,
     etas_subsets: Iterable[Tuple[str]],
     i: int,
+    estimation_tool: Optional[Literal['dummy']],
 ):
     wb = WorkflowBuilder()
     j = i
@@ -261,7 +269,7 @@ def wf_etas_removal(
         j += 1
 
     n = j - i
-    wf_fit = create_fit_workflow(n=n)
+    wf_fit = create_fit_workflow(n=n, tool=estimation_tool)
     wb.insert_workflow(wf_fit)
 
     task_gather = Task('gather', lambda *model_entries: model_entries)

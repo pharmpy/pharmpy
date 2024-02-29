@@ -35,6 +35,7 @@ def create_workflow(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: Optional[ModelfitResults] = None,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
+    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -64,6 +65,8 @@ def create_workflow(
         Strictness criteria
     dv_types : dict
         Dictionary of DV types for TMDD models with multiple DVs
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -90,6 +93,7 @@ def create_workflow(
             extra_model_results,
             strictness,
             dv_types,
+            estimation_tool,
         )
     elif type == 'pkpd':
         start_task = Task(
@@ -103,16 +107,25 @@ def create_workflow(
             ec50_init,
             met_init,
             strictness,
+            estimation_tool,
         )
     elif type == 'drug_metabolite':
         start_task = Task(
-            'run_drug_metabolite', run_drug_metabolite, model, search_space, results, strictness
+            'run_drug_metabolite',
+            run_drug_metabolite,
+            model,
+            search_space,
+            results,
+            strictness,
+            estimation_tool,
         )
     wb.add_task(start_task)
     return Workflow(wb)
 
 
-def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
+def run_tmdd(
+    context, model, results, extra_model, extra_model_results, strictness, dv_types, estimation_tool
+):
     model = update_initial_estimates(model, results)
     model_entry = ModelEntry.create(model, modelfit_results=results)
 
@@ -132,7 +145,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         ]
         qss_candidate_entries += extra_qss_candidate_entries
 
-    wf = create_fit_workflow(qss_candidate_entries)
+    wf = create_fit_workflow(qss_candidate_entries, tool=estimation_tool)
     wb = WorkflowBuilder(wf)
     task_results = Task('results', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
@@ -159,7 +172,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         for model in models
     ]
 
-    wf2 = create_fit_workflow(remaining_model_entries)
+    wf2 = create_fit_workflow(remaining_model_entries, tool=estimation_tool)
     wb2 = WorkflowBuilder(wf2)
     task_results = Task('results', bundle_results)
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
@@ -183,13 +196,22 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
 
 
 def run_pkpd(
-    context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
+    context,
+    input_model,
+    results,
+    search_space,
+    b_init,
+    emax_init,
+    ec50_init,
+    met_init,
+    strictness,
+    estimation_tool,
 ):
     model_entry = ModelEntry.create(input_model, modelfit_results=results)
     baseline_pd_model = create_baseline_pd_model(input_model, results.parameter_estimates, b_init)
     baseline_pd_model_entry = ModelEntry.create(baseline_pd_model, modelfit_results=None)
 
-    wf = create_fit_workflow(baseline_pd_model_entry)
+    wf = create_fit_workflow(baseline_pd_model_entry, tool=estimation_tool)
     wb = WorkflowBuilder(wf)
     task_results = Task('results2', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
@@ -209,7 +231,7 @@ def run_pkpd(
         for model in pkpd_models
     ]
 
-    wf2 = create_fit_workflow(pkpd_model_entries)
+    wf2 = create_fit_workflow(pkpd_model_entries, tool=estimation_tool)
     wb2 = WorkflowBuilder(wf2)
     task_results = Task('results2', bundle_results)
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
@@ -232,10 +254,10 @@ def run_pkpd(
     )
 
 
-def run_drug_metabolite(context, model, search_space, results, strictness):
+def run_drug_metabolite(context, model, search_space, results, strictness, estimation_tool):
     model = update_initial_estimates(model, results)
     wb, candidate_model_tasks, base_model_description = create_drug_metabolite_models(
-        model, results, search_space
+        model, results, search_space, estimation_tool=estimation_tool
     )
 
     task_results = Task(

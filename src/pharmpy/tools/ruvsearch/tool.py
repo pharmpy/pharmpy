@@ -56,6 +56,7 @@ def create_workflow(
     max_iter: int = 3,
     dv: Optional[int] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -77,6 +78,8 @@ def create_workflow(
         Which DV to assess the error model for.
     strictness : str or None
         Strictness criteria
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -95,7 +98,17 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="ruvsearch")
     start_task = Task(
-        'start_ruvsearch', start, model, results, groups, p_value, skip, max_iter, dv, strictness
+        'start_ruvsearch',
+        start,
+        model,
+        results,
+        groups,
+        p_value,
+        skip,
+        max_iter,
+        dv,
+        strictness,
+        estimation_tool,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -103,7 +116,9 @@ def create_workflow(
     return Workflow(wb)
 
 
-def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv):
+def create_iteration_workflow(
+    model_entry, groups, cutoff, skip, current_iteration, dv, estimation_tool
+):
     wb = WorkflowBuilder()
 
     start_task = Task('start_iteration', _start_iteration, model_entry)
@@ -150,16 +165,22 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
             tasks.append(task)
             wb.add_task(task, predecessors=task_base_model)
 
-    fit_wf = create_fit_workflow(n=1 + len(tasks))
+    fit_wf = create_fit_workflow(n=1 + len(tasks), tool=estimation_tool)
     wb.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration, dv=dv)
+    post_pro = partial(
+        post_process,
+        cutoff=cutoff,
+        current_iteration=current_iteration,
+        dv=dv,
+        estimation_tool=estimation_tool,
+    )
     task_post_process = Task('post_process', post_pro)
     wb.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
     return Workflow(wb)
 
 
-def proportional_error_workflow(model_entry):
+def proportional_error_workflow(model_entry, estimation_tool):
     wb = WorkflowBuilder()
 
     prop_start = Task('Check_proportional', _start_iteration, model_entry)
@@ -169,7 +190,7 @@ def proportional_error_workflow(model_entry):
         convert_to_prop_task = Task("convert_to_proportional", _change_proportional_model)
         wb.add_task(convert_to_prop_task, predecessors=prop_start)
 
-        fit_wf = create_fit_workflow(n=1)
+        fit_wf = create_fit_workflow(n=1, tool=estimation_tool)
         wb.insert_workflow(fit_wf, predecessors=convert_to_prop_task)
     return Workflow(wb)
 
@@ -184,14 +205,25 @@ def _change_proportional_model(model_entry):
     return ModelEntry.create(model, modelfit_results=None)
 
 
-def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, strictness):
+def start(
+    context,
+    input_model,
+    input_res,
+    groups,
+    p_value,
+    skip,
+    max_iter,
+    dv,
+    strictness,
+    estimation_tool,
+):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
 
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
     # Check if model has a proportional error
-    proportional_workflow = proportional_error_workflow(input_model_entry)
+    proportional_workflow = proportional_error_workflow(input_model_entry, estimation_tool)
     model_entry = call_workflow(proportional_workflow, 'Convert_error_model', context)
 
     if model_entry.model == input_model_entry.model:
@@ -201,7 +233,15 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     cwres_models = []
     tool_database = None
     for current_iteration in range(1, max_iter + 1):
-        wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
+        wf = create_iteration_workflow(
+            model_entry,
+            groups,
+            cutoff,
+            skip,
+            current_iteration,
+            dv=dv,
+            estimation_tool=estimation_tool,
+        )
         res, best_model_entry, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )
@@ -280,13 +320,15 @@ def _results(res):
     return res
 
 
-def post_process(context, start_model_entry, *model_entries, cutoff, current_iteration, dv):
+def post_process(
+    context, start_model_entry, *model_entries, cutoff, current_iteration, dv, estimation_tool
+):
     res = calculate_results(model_entries)
     best_model_unfitted, selected_model_name = _create_best_model(
         start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv
     )
     if best_model_unfitted is not None:
-        fit_wf = create_fit_workflow(modelentries=[best_model_unfitted])
+        fit_wf = create_fit_workflow(modelentries=[best_model_unfitted], tool=estimation_tool)
         best_model_entry = call_workflow(fit_wf, f'fit{current_iteration}', context)
         if best_model_entry.modelfit_results is not None:
             best_model_check = [

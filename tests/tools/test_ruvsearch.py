@@ -4,8 +4,9 @@ from dataclasses import replace
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.model import Model
 from pharmpy.modeling import remove_parameter_uncertainty_step, transform_blq
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.tools.ruvsearch.tool import _create_dataset, create_workflow, validate_input
 from pharmpy.workflows import ModelEntry, Workflow
@@ -217,3 +218,24 @@ def test_validate_input_raises_ipred(load_model_for_test, testdata):
 
     with pytest.raises(ValueError, match="IPRED"):
         validate_input(model=model, results=modelfit_results)
+
+
+def test_ruvsearch(tmp_path, testdata):
+    with chdir(tmp_path):
+        for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
+            shutil.copy2(path, tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'moxo_simulated_resmod.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'mytab', tmp_path)
+
+        model = Model.parse_model('mox3.mod')
+        results = read_modelfit_results('mox3.mod')
+        model = remove_parameter_uncertainty_step(model)
+        run_tool(
+            'ruvsearch',
+            model=model,
+            results=results,
+            groups=4,
+            p_value=0.05,
+            skip=[],
+            estimation_tool='dummy',
+        )

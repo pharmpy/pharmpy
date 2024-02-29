@@ -1,8 +1,12 @@
+import shutil
+
 import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.tools import read_modelfit_results
+from pharmpy.internals.fs.cwd import chdir
+from pharmpy.modeling import convert_model, create_basic_pk_model, filter_dataset
+from pharmpy.tools import fit, read_modelfit_results, run_structsearch
 from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models
 from pharmpy.tools.structsearch.tmdd import (
@@ -228,3 +232,45 @@ def test_validation(tmp_path, load_model_for_test, testdata, arguments, exceptio
         validate_input(type='tmdd', dv_types={'drug': 1, 'target': 1, 'complex': 2})
     with pytest.raises(exception, match='Only drug can have DVID = 1. Please choose another DVID.'):
         validate_input(type='tmdd', dv_types={'target': 1, 'complex': 2})
+
+
+def test_run_structsearch_pkpd(tmp_path, testdata):
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno_pd.csv', '.')
+
+        model = create_basic_pk_model('iv', testdata / 'nonmem/pheno_pd.csv')
+        model = convert_model(model, 'nonmem')
+
+        pk_model = filter_dataset(model, 'DVID < 2')
+        res_pk = fit(pk_model, estimation_tool='dummy')
+
+        run_structsearch(
+            model=model,
+            type='pkpd',
+            results=res_pk,
+            emax_init=0.1,
+            search_space='DIRECTEFFECT(*)',
+            estimation_tool='dummy',
+        )
+
+
+def test_run_structsearch_tmdd(tmp_path, testdata):
+    with chdir(tmp_path):
+        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = convert_model(model, 'nonmem')
+        results = fit(model, estimation_tool='dummy')
+        run_structsearch(type='tmdd', results=results, model=model, estimation_tool='dummy')
+
+
+def test_run_structsearch_drug_metabolite(tmp_path, testdata):
+    with chdir(tmp_path):
+        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno.dta")
+        model = convert_model(model, 'nonmem')
+        results = fit(model, estimation_tool='dummy')
+        run_structsearch(
+            type='drug_metabolite',
+            results=results,
+            model=model,
+            search_space="METABOLITE([BASIC,PSC]);PERIPHERALS(0..1,MET)",
+            estimation_tool='dummy',
+        )

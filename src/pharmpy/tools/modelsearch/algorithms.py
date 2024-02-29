@@ -11,7 +11,7 @@ ALGORITHMS = frozenset(('exhaustive', 'exhaustive_stepwise', 'reduced_stepwise')
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
 
 
-def exhaustive(mfl_funcs, iiv_strategy: str):
+def exhaustive(mfl_funcs, iiv_strategy: str, estimation_tool=None):
     # TODO: rewrite using _create_model_workflow
     wb_search = WorkflowBuilder()
 
@@ -30,7 +30,7 @@ def exhaustive(mfl_funcs, iiv_strategy: str):
         )
         wb_search.add_task(task_create_candidate)
 
-        wf_fit = create_fit_workflow(n=1)
+        wf_fit = create_fit_workflow(n=1, tool=estimation_tool)
         wb_search.insert_workflow(wf_fit, predecessors=task_create_candidate)
 
         model_tasks += wf_fit.output_tasks
@@ -38,7 +38,9 @@ def exhaustive(mfl_funcs, iiv_strategy: str):
     return Workflow(wb_search), model_tasks
 
 
-def exhaustive_stepwise(mfl_funcs, iiv_strategy: str, wb_search=None, tool_name="modelsearch"):
+def exhaustive_stepwise(
+    mfl_funcs, iiv_strategy: str, wb_search=None, tool_name="modelsearch", estimation_tool=None
+):
     if not wb_search:
         wb_search = WorkflowBuilder()
     model_tasks = []
@@ -65,7 +67,7 @@ def exhaustive_stepwise(mfl_funcs, iiv_strategy: str, wb_search=None, tool_name=
                 else:
                     wb_search.add_task(task_create_candidate)
 
-                wf_fit = create_fit_workflow(n=1)
+                wf_fit = create_fit_workflow(n=1, tool=estimation_tool)
                 wb_search.insert_workflow(wf_fit, predecessors=task_create_candidate)
 
                 model_tasks += wf_fit.output_tasks
@@ -77,7 +79,7 @@ def exhaustive_stepwise(mfl_funcs, iiv_strategy: str, wb_search=None, tool_name=
     return Workflow(wb_search), model_tasks
 
 
-def reduced_stepwise(mfl_funcs, iiv_strategy: str):
+def reduced_stepwise(mfl_funcs, iiv_strategy: str, estimation_tool=None):
     wb_search = WorkflowBuilder()
     model_tasks = []
 
@@ -113,7 +115,7 @@ def reduced_stepwise(mfl_funcs, iiv_strategy: str):
                 else:
                     wb_search.add_task(task_create_candidate)
 
-                wf_fit = create_fit_workflow(n=1)
+                wf_fit = create_fit_workflow(n=1, tool=estimation_tool)
                 wb_search.insert_workflow(wf_fit, predecessors=task_create_candidate)
 
                 model_tasks += wf_fit.output_tasks

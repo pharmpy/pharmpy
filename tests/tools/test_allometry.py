@@ -1,5 +1,7 @@
 import pytest
 
+from pharmpy.internals.fs.cwd import chdir
+from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.tools.allometry.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
 
@@ -76,3 +78,17 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
+
+
+def test_run_allometry(tmp_path, load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno5.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'pheno5.mod')
+    with chdir(tmp_path):
+        res = run_tool(
+            'allometry',
+            model=model,
+            results=results,
+            allometric_variable='WGT',
+            estimation_tool='dummy',
+        )
+        assert len(res.summary_models) == 2
