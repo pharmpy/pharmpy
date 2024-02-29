@@ -234,6 +234,7 @@ def test_validation(tmp_path, load_model_for_test, testdata, arguments, exceptio
         validate_input(type='tmdd', dv_types={'target': 1, 'complex': 2})
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_run_structsearch_pkpd(tmp_path, testdata):
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_pd.csv', '.')
@@ -254,6 +255,7 @@ def test_run_structsearch_pkpd(tmp_path, testdata):
         )
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_run_structsearch_tmdd(tmp_path, testdata):
     with chdir(tmp_path):
         model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
@@ -262,6 +264,7 @@ def test_run_structsearch_tmdd(tmp_path, testdata):
         run_structsearch(type='tmdd', results=results, model=model, estimation_tool='dummy')
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_run_structsearch_drug_metabolite(tmp_path, testdata):
     with chdir(tmp_path):
         model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno.dta")

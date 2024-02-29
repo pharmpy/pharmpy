@@ -80,6 +80,7 @@ def test_validate_input_raises(
         validate_input(**kwargs)
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_run_allometry(tmp_path, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno5.mod')
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'pheno5.mod')

@@ -381,6 +381,7 @@ def test_validate_input_raises(
         validate_input(**kwargs)
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_exhaustive(tmp_path, testdata):
     with chdir(tmp_path):
         m = read_model(testdata / 'nonmem' / 'pheno_real.mod')

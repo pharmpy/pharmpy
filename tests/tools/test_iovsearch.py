@@ -117,6 +117,7 @@ def test_validate_input_raises(
         validate_input(**kwargs)
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_default_mox2(tmp_path, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox1.mod')

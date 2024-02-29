@@ -220,6 +220,7 @@ def test_validate_input_raises_ipred(load_model_for_test, testdata):
         validate_input(model=model, results=modelfit_results)
 
 
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_ruvsearch(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
