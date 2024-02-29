@@ -52,15 +52,17 @@ Optional
 |                                                 | Default is "minimization_successful or                              |
 |                                                 | (rounding_errors and sigdigs>= 0.1)". Optional.                     |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| ``extra_model``                                 | Extra model for TMDD structsearch. Optional.                        |
+| ``extra_model``                                 | Extra model for TMDD structsearch. Optional. If specified,          |
+|                                                 | 8 additional QSS models will be generated.                          |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``extra_model_results``                         | ModelfitResults object for the extra model for TMDD structsearch.   |
-|                                                 | Optional.                                                           |
+|                                                 | Optional if ``extra_model`` is not specified.                       |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``dv_types``                                    | Dictionary of :ref:`DV types<dv_types>` for multiple DVs            |
 |                                                 | (e.g. dv_types = {'target': 2}). Default is None.                   |
 |                                                 | Allowed keys are: 'drug', 'target', 'complex', 'drug_tot' and       |
-|                                                 | 'target_tot'. Optional.                                             |
+|                                                 | 'target_tot'. Optional. Note: in R the integers need to be written  |
+|                                                 | with an L suffix (i.e. 2L).                                         |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 ~~~~~~
@@ -364,8 +366,8 @@ MMAPP model:
 DV types
 ~~~~~~~~
 
-The ``dv_types`` argument is a dictionary specifiying the DVs. If not ``dv_types`` is not specified then all
-observations are counted as drug observations.
+The ``dv_types`` argument is a dictionary specifiying the DVs. If ``dv_types`` is not specified then all
+observations are treated as drug observations.
 There are five types implemented: 'drug' (free drug), 'target', 'complex', 'drug_tot' (total drug) and 'target_tot'
 (total target).
 Only 'drug' and 'drug_tot' can have dv=1.
@@ -398,19 +400,29 @@ The dv types can be arranged in any possible order.
 Structsearch workflow
 ~~~~~~~~~~~~~~~~~~~~~
 
-The structsearch procedure is as follows:
+There are two workflows for the structsearch tool for TMDD models, depending on whether the tool is used separately
+or inside the AMD tool.
+If used as a standalone tool, the structsearch workflow is as follows:
+
+1. Create 8 QSS models for the input model and optionally additional 8 QSS models for the extra model if specified.
+2. Find best QSS model of the 8(16) QSS models
+3. Create 4 full models, 2 CR+IB models, 1 Wagner model, 2 CR models, 2 IB models and 1 MMAPP model.
+   Use parameter estimates from the best QSS model as initial estimates for the generated models.
+4. Find the best model of these 12 models.
+
+
+When used inside the AMD tool:
 
 1. Perform modelsearch
 2. Get the final model of the modelsearch and a model with the same features as the final model but with one
    less peripheral compartment if one such model exists.
 3. Create 8 QSS models for the final model and 8 QSS models for the final model minus one compartment if it exists.
    Otherwise only 8 QSS models are created.
-4. Find best QSS model of the 16(8) QSS models
+4. Find best QSS model of the 8(16) QSS models
 5. Create 4 full models, 2 CR+IB models, 1 Wagner model, 2 CR models,
    2 IB models and 1 MMAPP model. Use parameter estimates from the best QSS model as initial estimates for the
    generated models.
 6. Find the best model of these 12 models.
-
 
 .. graphviz::
 
@@ -439,14 +451,6 @@ The structsearch procedure is as follows:
             s3 -> s35
             s3 -> s36
     }
-
-
-.. note::
-
-    Please note that only steps 3-6 are performed inside the structsearch tool. The structsearch tool takes two models
-    as input arguments and creates the 16 QSS models from them. 
-    Steps 1 and 2 are performed outside of the structsearch tool. These steps are implemented in the AMD tool but can
-    alternatively be created by the user.
 
 
 ~~~~~~~
