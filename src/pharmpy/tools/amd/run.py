@@ -10,6 +10,8 @@ from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_ch
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_parameter_uncertainty_step,
+    find_clearance_parameters,
+    get_central_volume_and_clearance,
     get_pk_parameters,
     has_mixed_mm_fo_elimination,
     plot_abs_cwres_vs_ipred,
@@ -777,6 +779,11 @@ def _subfunc_structsearch_tmdd(
 
 def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
     def _run_iiv(model, modelfit_results):
+        keep = [
+            str(symbol)
+            for symbol in get_central_volume_and_clearance(model)
+            if symbol in find_clearance_parameters(model)
+        ]
         res = run_tool(
             'iivsearch',
             'top_down_exhaustive',
@@ -784,7 +791,7 @@ def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
             model=model,
             results=modelfit_results,
             strictness=strictness,
-            keep=['CL'],
+            keep=keep,
             path=path / dir_name,
         )
         assert isinstance(res, Results)
