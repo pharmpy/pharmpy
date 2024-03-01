@@ -95,7 +95,6 @@ Arguments
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``dv_types``                                      | Dictionary of DV types for multiple DVs (e.g. dv_types = {'target': 2}). Default is None.                       |
 |                                                   | Allowed keys are: 'drug', 'target', 'complex', 'drug_tot' and 'target_tot'. (For TMDD models only)              |
-|                                                   | Note: in R the integers need to be written with an L suffix (i.e. 2L).                                          |
 |                                                   | For more information see :ref:`here<dv_types>`.                                                                 |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 | ``parameter_uncertainty_method``                  | Parameter uncertainty method to use. Currently implemented methods are: 'SANDWICH', 'SMAT', 'RMAT' and 'EFIM'.  |
@@ -678,7 +677,7 @@ Run AMD for a TMDD model:
                 modeltype='tmdd',
                 input=start_model,
                 search_space='PERIPHERALS([1,2]);ELIMINATION([FO,ZO])',
-                dv_types = {'drug': 1, 'target':2, 'complex':3}
+                dv_types={'drug': 1, 'target': 2, 'complex': 3}
                 )
 
 .. note::
@@ -700,10 +699,10 @@ Run AMD for a PKPD model:
                 modeltype='pkpd',
                 input=start_model,
                 search_space='DIRECTEFFECT(*)',
-                b_init = 0.1,
-                emax_init = 1,
-                ec50_init = 0.1,
-                met_init = 0.4,
+                b_init=0.1,
+                emax_init=1,
+                ec50_init=0.1,
+                met_init=0.4,
                 )
 
 .. note::

@@ -61,8 +61,7 @@ Optional
 | ``dv_types``                                    | Dictionary of :ref:`DV types<dv_types>` for multiple DVs            |
 |                                                 | (e.g. dv_types = {'target': 2}). Default is None.                   |
 |                                                 | Allowed keys are: 'drug', 'target', 'complex', 'drug_tot' and       |
-|                                                 | 'target_tot'. Optional. Note: in R the integers need to be written  |
-|                                                 | with an L suffix (i.e. 2L).                                         |
+|                                                 | 'target_tot'. Optional.                                             |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 ~~~~~~
@@ -495,6 +494,6 @@ Run TMDD for multiple DVs:
     res = run_structsearch(type='tmdd',
                             model=start_model,
                             results=start_model_results,
-                            dv_types = {'drug': 1, 'target':2, 'complex':3})
+                            dv_types={'drug': 1, 'target': 2, 'complex': 3})
 
 Note: "drug" can be omitted in ``dv_types``. In this case it will be set to 1.
