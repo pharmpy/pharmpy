@@ -43,7 +43,7 @@ IIV_CORRELATION_ALGORITHMS = frozenset(
 
 
 def create_workflow(
-    algorithm: Literal[tuple(IIV_ALGORITHMS)] = "td_exhaustive",
+    algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
     iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
     rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
