@@ -156,7 +156,7 @@ def create_workflow(
 
     # FIXME : Handle when model is None
     start_task = Task("create_modelentry", _start, model, results)
-    init_task = Task("init", _init_search_state, effects, estimation_tool)
+    init_task = Task("init", _init_search_state, search_space, estimation_tool)
     wb.add_task(init_task, predecessors=start_task)
 
     forward_search_task = Task(
@@ -203,13 +203,9 @@ def _start(model, results):
     return ModelEntry.create(model=model, parent=None, modelfit_results=results)
 
 
-<<<<<<< HEAD
-def _init_search_state(context, search_space: str, modelentry: ModelEntry) -> SearchState:
-=======
 def _init_search_state(
-    context, effects: str, estimation_tool, modelentry: ModelEntry
+    context, search_space: str, estimation_tool, modelentry: ModelEntry
 ) -> SearchState:
->>>>>>> 08a752234 (Implement dry run)
     model = modelentry.model
     effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
     if filtered_model != model:

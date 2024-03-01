@@ -3,7 +3,7 @@ import sys
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import add_covariate_effect, get_covariates_effects, remove_covariate_effect
+from pharmpy.modeling import add_covariate_effect, get_covariate_effects, remove_covariate_effect
 from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.tools.covsearch.tool import (
     create_workflow,
