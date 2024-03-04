@@ -46,16 +46,22 @@ class DatasetHash(Hash):
 
 
 class ModelHash(Hash):
-    def __init__(self, model):
-        di = model.datainfo
-        if di is not None:
-            if model.dataset is None:
-                model = load_dataset(model)
-            di = di.replace(path=None)
-            model.replace(datainfo=di)
-        model_bytes = _encode(model)
-        h = hashlib.sha256()
-        _update_hash_with_dataset(model.dataset, h)
-        self.dataset_hash = _hash_to_string(h)
-        h.update(model_bytes)
-        self._hash = _hash_to_string(h)
+    def __init__(self, model_or_hash):
+        if isinstance(model_or_hash, ModelHash):
+            self.dataset_hash = model_or_hash.dataset_hash
+            self._hash = model_or_hash._hash
+        else:
+            model = model_or_hash
+            di = model.datainfo
+            if di is not None:
+                if model.dataset is None:
+                    model = load_dataset(model)
+                di = di.replace(path=None)
+                model = model.replace(datainfo=di)
+            model = model.replace(name='', description='')
+            model_bytes = _encode(model)
+            h = hashlib.sha256()
+            _update_hash_with_dataset(model.dataset, h)
+            self.dataset_hash = _hash_to_string(h)
+            h.update(model_bytes)
+            self._hash = _hash_to_string(h)
