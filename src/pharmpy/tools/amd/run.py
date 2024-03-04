@@ -81,7 +81,7 @@ def run_amd(
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[List[Union[str, tuple]]] = None,
+    mechanistic_covariates: Optional[List[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
