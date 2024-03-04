@@ -1,3 +1,30 @@
+0.107.0 (2024-03-04)
+--------------------
+
+New features
+============
+
+* Add modeling.set_dataset
+* Add AMD results plots for each DV
+* Add default search space for TMDD in AMD
+* Support EFIM as parameter uncertainty method
+
+Changes
+=======
+
+* Use Pharmpy class Expr instead of sympy/symengine
+* Remove ModelfitResults attribute from Model
+* Raise error instead of warn when expression is invalid in modeling.filter_dataset
+
+Bugfixes
+========
+
+* Keep IIV on all clearance parameters of central compartment in AMD
+* Fix bug in AMD for TMDD models where `dir_name` was not specified
+* Fix bug with naming of K-parameters in models with 9 compartments
+* Skip first order absorption with 1 transit (no depot) combination
+
+
 0.106.0 (2024-01-11)
 --------------------
 
