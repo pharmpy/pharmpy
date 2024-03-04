@@ -17,6 +17,7 @@ def _model_count(rundir: Path):
     )
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     'strategy, subrundir',
     [
@@ -122,6 +123,7 @@ def test_amd(tmp_path, testdata, strategy, subrundir):
 #         assert len(res.summary_individuals_count) >= 1
 
 
+@pytest.mark.slow
 def test_amd_dollar_design(tmp_path, testdata):
     if os.name == 'nt':
         pytest.skip("TODO Fails on GHA but not locally, temporarily skipping.")

@@ -5,6 +5,7 @@ from pharmpy.modeling import calculate_parameters_from_ucp, calculate_ucp_scale,
 from pharmpy.tools import run_retries
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ('scale',),
     (('UCP',),),

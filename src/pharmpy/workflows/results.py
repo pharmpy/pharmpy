@@ -38,7 +38,7 @@ def _df_to_json(df: pd.DataFrame) -> dict[str, Any]:
     # See: https://github.com/pandas-dev/pandas/issues/38437
     df_json = df.to_json(orient='table', double_precision=15)
     assert df_json is not None
-    if isinstance(df.index, pd.MultiIndex):
+    if isinstance(df.index, pd.MultiIndex) and "primaryKey" not in json.loads(df_json)["schema"]:
         d = json.loads(df_json)
         d['schema']['primaryKey'] = df.index.names
         return d

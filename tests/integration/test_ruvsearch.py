@@ -45,6 +45,7 @@ tflite_condition = (
 #        assert res_ruv
 
 
+@pytest.mark.slow
 def test_ruvsearch(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
@@ -71,6 +72,7 @@ def test_ruvsearch(tmp_path, testdata):
         assert best_model.model_code.split('\n')[26] == '$OMEGA  0.0396751 ; IIV_RUV1'
 
 
+@pytest.mark.slow
 def test_ruvsearch_blq(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):

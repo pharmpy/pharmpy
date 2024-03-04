@@ -17,6 +17,7 @@ tflite_condition = (
 )
 
 
+@pytest.mark.slow
 def test_exhaustive(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
@@ -38,6 +39,7 @@ def test_exhaustive(tmp_path, model_count, start_modelres):
         assert (rundir / 'metadata.json').exists()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     'search_space, no_of_models, last_model_parent_name, model_with_error, ref',
     [
@@ -110,6 +112,7 @@ def test_exhaustive_stepwise_basic(
             assert all(code in model_code for code in code_ref)
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     'search_space, iiv_strategy, no_of_models, no_of_added_etas',
     [
@@ -154,6 +157,7 @@ def test_exhaustive_stepwise_iiv_strategies(
         assert (rundir / 'metadata.json').exists()
 
 
+@pytest.mark.slow
 def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
@@ -167,6 +171,7 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_modelres):
         assert ',999999) ; POP_VP1' in res.models[-1].model_code
 
 
+@pytest.mark.slow
 def test_summary_individuals(tmp_path, testdata):
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)

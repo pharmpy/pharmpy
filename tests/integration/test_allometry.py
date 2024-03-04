@@ -17,6 +17,7 @@ tflite_condition = (
 )
 
 
+@pytest.mark.slow
 def test_allometry(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'models').glob('pheno5.*'):

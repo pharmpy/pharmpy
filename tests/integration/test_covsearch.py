@@ -13,6 +13,7 @@ tflite_condition = (
 )
 
 
+@pytest.mark.slow
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_default_str(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
