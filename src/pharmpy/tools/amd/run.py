@@ -89,8 +89,6 @@ def run_amd(
 ):
     """Run Automatic Model Development (AMD) tool
 
-    Runs structural modelsearch, IIV building, and ruvsearch
-
     Parameters
     ----------
     input : Model or Path
@@ -140,7 +138,7 @@ def run_amd(
         separate proioritized covsearch run. For instance ["WT", ("CRCL", "CL")].
         The effects are extracted from the search space for covsearch.
     retries_strategy: str
-        Weither or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.
+        Whether or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.
         Default is 'final'.
     seed : int or rng
         Random number generator or seed to be used.
