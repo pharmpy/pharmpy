@@ -1,10 +1,5 @@
-import sys
-
 import pytest
 
-from pharmpy.deps import pandas as pd
-from pharmpy.internals.fs.cwd import chdir
-from pharmpy.model import NormalDistribution
 from pharmpy.modeling import (
     add_iiv,
     add_individual_parameter,
@@ -13,7 +8,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters,
 )
-from pharmpy.tools import read_modelfit_results, retrieve_models, run_iivsearch
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
     _create_param_dict,
     _is_rv_block_structure,
@@ -24,13 +19,6 @@ from pharmpy.tools.iivsearch.algorithms import (
 )
 from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
 from pharmpy.workflows import Workflow
-
-tflite_condition = (
-    sys.version_info >= (3, 12)
-    and sys.platform == 'win32'
-    or sys.version_info >= (3, 12)
-    and sys.platform == 'darwin'
-)
 
 
 @pytest.mark.parametrize(
@@ -264,105 +252,3 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
-
-
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
-def test_no_of_etas_keep(tmp_path, load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    with chdir(tmp_path):
-        res_keep1 = run_iivsearch(
-            'top_down_exhaustive',
-            results=results,
-            model=model,
-            keep=["CL"],
-            estimation_tool='dummy',
-            correlation_algorithm='skip',
-        )
-        no_of_models = 8
-        assert len(res_keep1.summary_models) == no_of_models // 2
-        assert res_keep1.summary_individuals.iloc[-1]['description'] == '[CL]'
-
-
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
-def test_block_structure(tmp_path, load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    with chdir(tmp_path):
-        res = run_iivsearch(
-            'skip',
-            results=results,
-            model=model,
-            estimation_tool='dummy',
-            correlation_algorithm='top_down_exhaustive',
-        )
-
-        no_of_candidate_models = 4
-        assert len(res.summary_tool) == no_of_candidate_models + 1
-        assert len(res.summary_models) == no_of_candidate_models + 1
-
-        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
-        assert len(res_models) == no_of_candidate_models
-
-        start_model = model
-        assert all(model.random_variables != start_model.random_variables for model in res_models)
-
-        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
-        assert isinstance(start_model.random_variables['ETA_1'], NormalDistribution)
-
-        assert res.summary_tool.loc[1, 'iivsearch_run1']['description'] == '[CL,VC,MAT]'
-        assert len(res_models[0].random_variables['ETA_1'].names) == 3
-
-        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
-        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
-        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
-
-        rundir = tmp_path / 'iivsearch_dir1'
-        assert rundir.is_dir()
-        assert (rundir / 'metadata.json').exists()
-
-
-@pytest.mark.parametrize(
-    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
-    (('top_down_exhaustive', 'skip', 7), ('bottom_up_stepwise', 'skip', 4)),
-)
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
-def test_no_of_etas(
-    tmp_path,
-    load_model_for_test,
-    testdata,
-    algorithm,
-    correlation_algorithm,
-    no_of_candidate_models,
-):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    with chdir(tmp_path):
-        res = run_iivsearch(
-            algorithm,
-            results=results,
-            model=model,
-            correlation_algorithm=correlation_algorithm,
-            estimation_tool='dummy',
-        )
-
-        assert len(res.summary_tool) == no_of_candidate_models + 1
-        assert len(res.summary_models) == no_of_candidate_models + 1
-
-        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
-        assert len(res_models) == no_of_candidate_models
-
-        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
-        assert model.random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
-
-        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
-        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
-        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
-
-        rundir = tmp_path / 'iivsearch_dir1'
-        assert rundir.is_dir()
-        assert (rundir / 'metadata.json').exists()

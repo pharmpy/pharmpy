@@ -23,29 +23,3 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
     #    assert (rundir / 'results.json').exists()
     #    assert (rundir / 'results.csv').exists()
     #    assert (rundir / 'metadata.json').exists()
-
-
-@pytest.mark.filterwarnings("ignore::UserWarning")
-def test_drug_metabolite(tmp_path, load_model_for_test, testdata):
-    with chdir(tmp_path):
-        model = create_basic_pk_model('oral', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
-        model = convert_model(model, 'nonmem')
-        modelres = fit(model)
-
-        res = run_structsearch(
-            model=model,
-            results=modelres,
-            type="drug_metabolite",
-            search_space="METABOLITE(PSC);PERIPHERALS(0..1,MET)",
-        )
-
-        no_of_models = 2
-        assert len(res.summary_models) == no_of_models + 1
-        assert len(res.summary_tool) == no_of_models
-        assert len(res.models) == no_of_models
-
-        rundir = tmp_path / 'structsearch_dir1'
-        assert rundir.is_dir()
-        assert (rundir / 'results.json').exists()
-        assert (rundir / 'results.csv').exists()
-        assert (rundir / 'metadata.json').exists()

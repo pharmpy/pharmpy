@@ -1,4 +1,7 @@
 import shutil
+import sys
+
+import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
@@ -11,6 +14,14 @@ from pharmpy.tools import (  # fit,; run_structsearch,
     retrieve_final_model,
     run_tool,
 )
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
+
 
 # from pharmpy.tools.structsearch.pkpd import create_pk_model
 
@@ -90,3 +101,25 @@ def test_ruvsearch_blq(tmp_path, testdata):
         )
 
         assert len(res.cwres_models) > 1
+
+
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
+def test_ruvsearch_dummy(tmp_path, testdata):
+    with chdir(tmp_path):
+        for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
+            shutil.copy2(path, tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'moxo_simulated_resmod.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'mytab', tmp_path)
+
+        model = Model.parse_model('mox3.mod')
+        results = read_modelfit_results('mox3.mod')
+        model = remove_parameter_uncertainty_step(model)
+        run_tool(
+            'ruvsearch',
+            model=model,
+            results=results,
+            groups=4,
+            p_value=0.05,
+            skip=[],
+            estimation_tool='dummy',
+        )

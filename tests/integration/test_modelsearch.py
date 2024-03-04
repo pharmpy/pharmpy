@@ -1,12 +1,20 @@
 import shutil
+import sys
 
 import pytest
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import read_model
-from pharmpy.tools import fit, run_modelsearch
+from pharmpy.tools import fit, read_modelfit_results, run_modelsearch
 from pharmpy.workflows import ModelDatabase
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
 
 
 def test_exhaustive(tmp_path, model_count, start_modelres):
@@ -189,3 +197,23 @@ def test_summary_individuals(tmp_path, testdata):
                 axis=1,
             )
         )
+
+
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
+def test_exhaustive_dummy(tmp_path, testdata):
+    with chdir(tmp_path):
+        m = read_model(testdata / 'nonmem' / 'pheno_real.mod')
+        m_res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+        run_modelsearch(
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive',
+            results=m_res,
+            model=m,
+            estimation_tool='dummy',
+        )
+
+        rundir = tmp_path / 'modelsearch_dir1'
+        assert rundir.is_dir()
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()

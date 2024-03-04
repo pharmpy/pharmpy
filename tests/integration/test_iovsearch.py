@@ -1,9 +1,19 @@
 import shutil
+import sys
+
+import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import fix_parameters
-from pharmpy.tools import fit, run_iovsearch
+from pharmpy.tools import fit, read_modelfit_results, run_iovsearch
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+)
 
 
 def test_default_mox2(tmp_path, model_count, start_modelres):
@@ -46,3 +56,13 @@ def test_default_mox1(tmp_path, model_count, testdata):
         assert model_count(rundir) == 7
 
         assert res.final_model.name == start_model.name
+
+
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
+def test_default_mox2_dummy(tmp_path, load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    with chdir(tmp_path):
+        run_iovsearch(
+            'VISI', rank_type='ofv', results=results, model=model, estimation_tool='dummy'
+        )
