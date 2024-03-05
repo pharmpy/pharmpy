@@ -1,5 +1,5 @@
 from .config import NONMEMConfiguration, conf
-from .results import parse_modelfit_results
+from .results import parse_modelfit_results, parse_simulation_results
 
 r"""
 .. list-table:: Options for the nonmem plugin
@@ -29,4 +29,5 @@ __all__ = (
     'parse_modelfit_results',
     'conf',
     'NONMEMConfiguration',
+    'parse_simulation_results',
 )

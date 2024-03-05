@@ -11,7 +11,7 @@ from pathlib import Path
 
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import write_csv, write_model
-from pharmpy.tools.external.nonmem import conf, parse_modelfit_results
+from pharmpy.tools.external.nonmem import conf, parse_modelfit_results, parse_simulation_results
 from pharmpy.workflows import ModelEntry
 
 PARENT_DIR = f'..{os.path.sep}'
@@ -109,10 +109,19 @@ def execute_model(model_entry, db):
         ]
     }
 
-    modelfit_results = parse_modelfit_results(model, model_path / basename)
+    if model.internals.control_stream.get_records('ESTIMATION'):
+        modelfit_results = parse_modelfit_results(model, model_path / basename)
+    else:
+        modelfit_results = None
+    if model.internals.control_stream.get_records('SIMULATION'):
+        simulation_results = parse_simulation_results(model, model_path / basename)
+    else:
+        simulation_results = None
 
     log = modelfit_results.log if modelfit_results else None
-    model_entry = model_entry.attach_results(modelfit_results=modelfit_results, log=log)
+    model_entry = model_entry.attach_results(
+        modelfit_results=modelfit_results, simulation_results=simulation_results, log=log
+    )
 
     with database.transaction(model_entry) as txn:
         if (

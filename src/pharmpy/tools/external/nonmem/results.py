@@ -13,7 +13,7 @@ from pharmpy.model.external.nonmem.parsing import parse_table_columns
 from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile, PhiTable
 from pharmpy.model.external.nonmem.update import create_name_map
 from pharmpy.workflows.log import Log
-from pharmpy.workflows.results import ModelfitResults
+from pharmpy.workflows.results import ModelfitResults, SimulationResults
 
 from .results_file import NONMEMResultsFile
 
@@ -808,4 +808,31 @@ def parse_modelfit_results(
         model,
         subproblem=subproblem,
     )
+    return res
+
+
+def _parse_table_file(model, path: Optional[Union[str, Path]], subproblem: Optional[int] = None):
+    table_recs = model.internals.control_stream.get_records('TABLE')
+    df = pd.DataFrame()
+    for table_rec in table_recs:
+        noheader = table_rec.has_option("NOHEADER")
+        notitle = table_rec.has_option("NOTITLE") or noheader
+        nolabel = table_rec.has_option("NOLABEL") or noheader
+        table_path = path.parent / table_rec.path
+        try:
+            table_file = NONMEMTableFile(table_path, notitle=notitle, nolabel=nolabel)
+        except IOError:
+            continue
+        for i in range(len(table_file)):
+            sim = table_file.tables[i].data_frame
+            sim['SIM'] = i + 1
+            df = pd.concat([df, sim], ignore_index=True)
+    return df
+
+
+def parse_simulation_results(
+    model, path: Optional[Union[str, Path]], subproblem: Optional[int] = None
+):
+    table = _parse_table_file(model, path=path, subproblem=subproblem)
+    res = SimulationResults(name=model.name, description=model.description, table=table)
     return res
