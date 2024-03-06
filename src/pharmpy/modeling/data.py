@@ -2287,30 +2287,37 @@ def bin_observations(
     method : str
         Name of the binning method to use
     nbins : int
-        The number of binns wanted
+        The number of bins wanted
 
     Returns
     -------
     pd.Series
         A series of bin ids indexed on the original record index of the dataset
+    list
+        A list of bin edges
 
     Example
     -------
     >>> from pharmpy.modeling import load_example_model, bin_observations
     >>> model = load_example_model("pheno")
-    >>> bin_observations(model, method="equal_width", nbins=10)
-    421     1
-    527     1
-    118     1
-    135     1
-    512     1
+    >>> bins, boundaries = bin_observations(model, method="equal_width", nbins=10)
+    >>> bins
+    421     0
+    527     0
+    118     0
+    135     0
+    512     0
            ..
-    203     8
-    475     8
-    510     8
-    133     9
-    267    10
-    Length: 155, dtype: int32
+    203     7
+    475     7
+    510     7
+    133     8
+    267     9
+    Name: TIME, Length: 155, dtype: int64
+    >>> boundaries
+    array([  0.  ,  39.88,  78.76, 117.64, 156.52, 195.4 , 234.28, 273.16,
+           312.04, 350.92, 389.8 ])
+
     """
 
     observations = get_observations(model, keep_index=True)
@@ -2319,29 +2326,56 @@ def bin_observations(
     sorted_idvs = obs[idv].sort_values()
     method_lower = method.lower()
     if method_lower == "equal_width":
-        min_idv = sorted_idvs.iloc[0]
-        max_idv = sorted_idvs.iloc[-1]
-        step = (max_idv - min_idv) / nbins
-        next_cutoff = min_idv + step
-        binno = 1
-        bincol = pd.Series(0, index=sorted_idvs.index, dtype='int32')
-        for i in range(len(sorted_idvs)):
-            if sorted_idvs.iloc[i] > next_cutoff:
-                next_cutoff += step
-                binno += 1
-            bincol.iloc[i] = binno
+        bincol, boundaries = pd.cut(sorted_idvs, nbins, labels=False, retbins=True)
+        boundaries[0] = 0
     elif method_lower == "equal_number":
-        bincol = pd.Series(0, index=sorted_idvs.index, dtype='int32')
-        nobs = len(sorted_idvs)
-        i = 0
-        binno = 1
-        while nobs > 0:
-            n = round(nobs / nbins)
-            bincol.iloc[i : i + n] = binno
-            binno += 1
-            i += n
-            nobs -= n
-            nbins -= 1
+        bin_edges = _get_bin_edges_psn(sorted_idvs, nbins)
+        bincol, boundaries = pd.cut(sorted_idvs, bin_edges, labels=False, retbins=True)
     else:
         raise ValueError(f"Unknown binning method {method}")
-    return bincol
+    return bincol, boundaries
+
+
+def _get_bin_edges_psn(data, n_bins):
+    """Similar to function "get_bin_ceilings_from_count" from PsN
+
+    Divide a list of data points into bins of equal count.
+    """
+    # Create a dictionary with unique values and their indices
+    unique_values, value_indices = np.unique(data, return_inverse=True)
+    value_dict = {i: val for i, val in enumerate(unique_values)}
+
+    # Count occurrences of each unique value
+    obs_count = pd.Series(value_indices).value_counts().sort_index().tolist()
+
+    # Calculate the number of unique values
+    n_values = len(value_dict)
+
+    # Calculate the ideal count for each bin
+    count_per_bin = len(data) / n_bins
+    ideal_count = [count_per_bin] * n_bins
+
+    bin_ceilings = [0]
+    global_error = 0
+    bin_index = 0
+    local_error = -ideal_count[bin_index]
+
+    for value_index, obs in enumerate(obs_count):
+        if bin_index == len(ideal_count) - 1:
+            bin_ceilings.append(unique_values[n_values - 1])
+            break
+        elif local_error == -ideal_count[bin_index]:
+            local_error += obs
+        elif obs == 0:
+            continue
+        elif abs(global_error + local_error) > abs(global_error + local_error + obs) and (
+            n_values - value_index - 1
+        ) > (len(ideal_count) - bin_index - 1):
+            local_error += obs
+        else:
+            bin_ceilings.append(unique_values[value_index - 1])
+            global_error += local_error
+            bin_index += 1
+            local_error = -ideal_count[bin_index] + obs
+
+    return bin_ceilings

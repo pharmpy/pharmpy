@@ -1,5 +1,6 @@
 import pytest
 
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     plot_abs_cwres_vs_ipred,
@@ -10,6 +11,7 @@ from pharmpy.modeling import (
     plot_individual_predictions,
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
+    vpc_plot,
 )
 from pharmpy.tools import read_modelfit_results
 
@@ -94,3 +96,21 @@ def test_plot_abs_cwres_vs_ipred(tmp_path, load_model_for_test, testdata):
             plot = plot_abs_cwres_vs_ipred(
                 model, res.predictions, res.residuals, stratify_on='DVoID'
             )
+
+
+def test_vpc_plot(tmp_path, load_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+        simulations = pd.read_table(testdata / 'nonmem' / 'vpc_simulations.csv', delimiter=r'\s+')
+        plot = vpc_plot(model, simulations)
+        plot.save('chart.html')
+
+
+def test_vpc_plot_stratify(tmp_path, load_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+        simulations = pd.read_table(
+            testdata / 'nonmem' / 'vpc_simulations_dvid.csv', delimiter=r'\s+'
+        )
+        plot = vpc_plot(model, simulations, nbins=3, stratify_on='DVID')
+        plot.save('chart.html')

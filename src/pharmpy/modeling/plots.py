@@ -1,10 +1,12 @@
 import re
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from functools import partial
+from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.basic import Expr
 from pharmpy.model import Assignment, Model
+from pharmpy.modeling import bin_observations
 
 from .data import get_observations
 
@@ -733,3 +735,289 @@ def _bin_data(df, model, stratify_on, bins):
 def _validate_strat(model, stratify_on):
     if f'{stratify_on}' not in model.dataset.columns:
         raise ValueError(f'{stratify_on} column does not exist in dataset.')
+
+
+def _calculate_vpc(model, simulations, binning: str, nbins: int, qi: float, ci: float, query=None):
+    dv = model.datainfo.dv_column.name
+    nrows = len(model.dataset)
+    nsim = int(len(simulations) / nrows)
+    observations = get_observations(model, keep_index=True)
+    obstab = model.dataset.loc[observations.index]
+    if query is not None:
+        obstab = obstab.query(query)
+    obstab = obstab[dv]
+
+    " Calculate bin columns and bin edges "
+    bincol, boundaries = bin_observations(model, binning, nbins)
+
+    if len(bincol.unique()) != bincol.unique().max() + 1:
+        raise ValueError("Some bins are empty, please choose a different number of bins.")
+
+    obsgroup = obstab.groupby(bincol)
+
+    simtab = simulations
+    if "SIM" not in simtab.columns:
+        simtab["SIM"] = np.repeat(np.arange(nsim), nrows)
+    simtab.index = np.tile(np.arange(nrows), nsim)
+    simtab = simtab.loc[observations.index]
+    simtab["__BIN__"] = bincol
+    if query is not None:
+        simtab = simtab.query(query)
+    simser = simtab[[dv, "SIM"]]
+    simser.index = simtab["__BIN__"]
+    simgroup = simser.groupby("__BIN__")
+
+    lower_quantile = (1 - qi) / 2
+    upper_quantile = 1 - lower_quantile
+
+    median_cis = simgroup.apply(
+        partial(_calculate_confidence_interval_of_quantile, quantile=0.5, ci=ci, dv=dv),
+        include_groups=False,
+    )
+    sim_central_lower = [lower for lower, _ in median_cis]
+    sim_central_upper = [upper for _, upper in median_cis]
+
+    lowerpi_cis = simgroup.apply(
+        partial(_calculate_confidence_interval_of_quantile, quantile=lower_quantile, ci=ci, dv=dv),
+        include_groups=False,
+    )
+    sim_lower_lower = [lower for lower, _ in lowerpi_cis]
+    sim_lower_upper = [upper for _, upper in lowerpi_cis]
+
+    upperpi_cis = simgroup.apply(
+        partial(_calculate_confidence_interval_of_quantile, quantile=upper_quantile, ci=ci, dv=dv),
+        include_groups=False,
+    )
+    sim_upper_lower = [lower for lower, _ in upperpi_cis]
+    sim_upper_upper = [upper for _, upper in upperpi_cis]
+
+    midpoints = (boundaries[1::] + boundaries[0:-1]) / 2
+
+    simgroup = simser.drop(columns=["SIM"]).squeeze().groupby("__BIN__")
+
+    df = pd.DataFrame(
+        {
+            'obs_central': obsgroup.apply(
+                partial(_get_quantile, quantile=0.5), include_groups=False
+            ),
+            'obs_lower': obsgroup.apply(
+                partial(_get_quantile, quantile=lower_quantile), include_groups=False
+            ),
+            'obs_upper': obsgroup.apply(
+                partial(_get_quantile, quantile=upper_quantile), include_groups=False
+            ),
+            'sim_central': simgroup.median(),
+            'sim_central_lower': sim_central_lower,
+            'sim_central_upper': sim_central_upper,
+            'sim_lower': simgroup.apply(
+                partial(_get_quantile, quantile=lower_quantile), include_groups=False
+            ),
+            'sim_lower_lower': sim_lower_lower,
+            'sim_lower_upper': sim_lower_upper,
+            'sim_upper': simgroup.apply(
+                partial(_get_quantile, quantile=upper_quantile), include_groups=False
+            ),
+            'sim_upper_lower': sim_upper_lower,
+            'sim_upper_upper': sim_upper_upper,
+            'bin_midpoint': midpoints,
+            'bin_edges_right': boundaries[1::],
+            'bin_edges_left': boundaries[0:-1],
+            'no. of data points': obsgroup.count(),
+        }
+    )
+    return df
+
+
+def _calculate_confidence_interval_of_quantile(data, quantile, ci, dv):
+    data_sim = data.groupby("SIM")
+    quantiles = data_sim.apply(
+        partial(_get_quantile, quantile=quantile, sort_by=dv), include_groups=False
+    )
+    sorted_quantiles = quantiles.sort_values().to_list()
+    n = len(sorted_quantiles)
+    alpha = (1 - ci) / 2
+    i = int(np.floor(alpha * (n - 1) + 0.5))
+    lower = sorted_quantiles[i]
+    upper = sorted_quantiles[n - i - 1]
+    return lower, upper
+
+
+def _get_quantile(data, quantile, sort_by=None):
+    n = len(data)
+    if sort_by is None:
+        sorted_data = data.sort_values().to_list()
+    else:
+        sorted_data = data[sort_by].sort_values().to_list()
+    return sorted_data[int(np.floor(quantile * (n - 1) + 0.5))]
+
+
+def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title=''):
+    obs = get_observations(model, keep_index=True)
+    idv = model.datainfo.idv_column.name
+    idname = model.datainfo.id_column.name
+    data = model.dataset.loc[obs.index]
+    if query is not None:
+        data = data.query(query)
+
+    df = _calculate_vpc(model, simulations, binning=binning, nbins=nbins, qi=qi, ci=ci, query=query)
+
+    scatter = (
+        alt.Chart(data)
+        .mark_circle(color='blue', filled=False)
+        .encode(
+            x=alt.X(
+                f'{idv}',
+                title=f'{idv}',
+                scale=alt.Scale(domain=[-1, data[idv].max() * 1.01]),
+            ),
+            y=alt.Y(
+                'DV',
+                title='DV',
+                scale=alt.Scale(domain=[data['DV'].min() * 0.9, data['DV'].max() * 1.05]),
+            ),
+            tooltip=[idv, 'DV', idname],
+        )
+        .properties(width=700, height=500, title=title)
+        .interactive()
+    )
+
+    obs_mid = alt.Chart(df).mark_line(color='red').encode(x='bin_midpoint', y='obs_central')
+    obs_lower = (
+        alt.Chart(df)
+        .mark_line(color='red', strokeDash=[8, 4])
+        .encode(x='bin_midpoint', y='obs_lower')
+    )
+    obs_upper = (
+        alt.Chart(df)
+        .mark_line(color='red', strokeDash=[8, 4])
+        .encode(x='bin_midpoint', y='obs_upper')
+    )
+
+    central_ci = (
+        alt.Chart(df)
+        .mark_rect(opacity=0.3, color='red')
+        .encode(
+            x='bin_edges_left', x2='bin_edges_right', y='sim_central_lower', y2='sim_central_upper'
+        )
+    )
+    lower_ci = (
+        alt.Chart(df)
+        .mark_rect(opacity=0.3, color='blue')
+        .encode(x='bin_edges_left', x2='bin_edges_right', y='sim_lower_lower', y2='sim_lower_upper')
+    )
+    upper_ci = (
+        alt.Chart(df)
+        .mark_rect(opacity=0.3, color='blue')
+        .encode(x='bin_edges_left', x2='bin_edges_right', y='sim_upper_lower', y2='sim_upper_upper')
+    )
+
+    chart = scatter + obs_mid + obs_lower + obs_upper + central_ci + upper_ci + lower_ci
+    return chart
+
+
+def vpc_plot(
+    model: Model,
+    simulations,
+    binning: Literal["equal_width", "equal_number"] = "equal_number",
+    nbins: int = 8,
+    qi: float = 0.95,
+    ci: float = 0.95,
+    stratify_on: Optional[str] = None,
+):
+    """VPC plot
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    simulations : pd.DataFrame
+        DataFrame containing the simulation data
+    binning : ["equal_number", "equal_width"]
+        Binning method. Can be "equal_number" or "equal_width". The default is "equal_number".
+    nbins : float
+        Number of bins. Default is 8.
+    qi : float
+        Upper quantile. Default is 0.95.
+    ci : float
+        Confidence interval. Default is 0.95.
+    stratify_on : str
+        Parameter to use for stratification. Optional.
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+
+    """
+    if stratify_on is not None:
+        if f'{stratify_on}' not in model.dataset.columns:
+            raise ValueError(f'{stratify_on} column does not exist in dataset.')
+        charts = []
+        unique_values = model.dataset[f'{stratify_on}'].unique()
+        n_unique = len(unique_values)
+        if n_unique > 8:
+            bin_stratification = np.linspace(
+                model.dataset[stratify_on].min(), model.dataset[stratify_on].max(), 9
+            )
+            for i in range(len(bin_stratification) - 1):
+                query = f'{stratify_on} >= {bin_stratification[i] and {stratify_on} < {bin_stratification[i+1]}}'
+                charts.append(
+                    _vpc_plot(
+                        model,
+                        simulations,
+                        binning=binning,
+                        nbins=nbins,
+                        qi=qi,
+                        ci=ci,
+                        query=query,
+                        title=f'{stratify_on} {bin_stratification[i]} - {bin_stratification[i+1]}',
+                    )
+                )
+        else:
+            for value in unique_values:
+                query = f'{stratify_on} == {value}'
+                charts.append(
+                    _vpc_plot(
+                        model,
+                        simulations,
+                        binning=binning,
+                        nbins=nbins,
+                        qi=qi,
+                        ci=ci,
+                        query=query,
+                        title=f'{stratify_on} {value}',
+                    )
+                )
+        chart = _concat(charts)
+    else:
+        chart = _vpc_plot(model, simulations, binning=binning, nbins=nbins, qi=qi, ci=ci)
+
+    return chart
+
+
+def _concat(charts):
+    # Concatenate charts up to 2x4
+    n = len(charts)
+    if n == 1:
+        return charts[0]
+    elif n > 1:
+        chart = alt.hconcat(charts[0], charts[1])
+    if n == 3:
+        chart = alt.vconcat(chart, charts[2])
+    if n > 3:
+        chart_tmp = alt.hconcat(charts[2], charts[3])
+        chart = alt.vconcat(chart, chart_tmp)
+    if n == 5:
+        chart = alt.vconcat(chart, charts[4])
+    if n > 5:
+        chart_tmp = alt.hconcat(charts[4], charts[5])
+        chart = alt.vconcat(chart, chart_tmp)
+    if n == 7:
+        chart = alt.vconcat(chart, charts[6])
+    if n == 8:
+        chart_tmp = alt.hconcat(charts[6], charts[7])
+        chart = alt.vconcat(chart, chart_tmp)
+    if n > 8:
+        raise ValueError('No more than 8 subplots allowed.')
+        return None
+    return chart
