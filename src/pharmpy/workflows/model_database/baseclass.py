@@ -7,9 +7,24 @@ from pharmpy.model import Model
 
 from ...workflows.model_entry import ModelEntry
 from ..results import Results
+from ..hashing import ModelHash
 
 
 class ModelTransaction(ABC):
+    def __init__(self, database: ModelDatabase, key: Union[Model, ModelEntry, ModelHash]):
+        self.database = database
+        if isinstance(key, ModelEntry):
+            self.model_entry = key
+        elif isinstance(key, Model):
+            self.model_entry = ModelEntry.create(key)
+        elif isinstance(key, ModelKey):
+            self.model_entry = None
+        else:
+            raise ValueError(
+                f'Invalid type `model_or_model_entry`: got {type(model_or_model_entry)}, expected Model or ModelEntry'
+            )
+        self.key = ModelHash(key)
+
     @abstractmethod
     def store_model(self) -> None:
         """Store the model object bound to this transaction"""
@@ -53,6 +68,10 @@ class ModelTransaction(ABC):
 
 
 class ModelSnapshot(ABC):
+    def __init__(self, database: ModelDatabase, model: Union[Model, ModelHash]):
+        self.database = database
+        self.key = ModelHash(model)
+
     @abstractmethod
     def retrieve_local_files(self, destination_path: Path) -> None:
         """Retrieve all files related to the model bound to this snapshot
@@ -135,7 +154,7 @@ class ModelDatabase(ABC):
     """
 
     @abstractmethod
-    def store_model(self, model: Model):
+    def store_model(self, model: Model) -> None:
         """Store a model object
 
         Parameters
@@ -146,7 +165,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def store_local_file(self, model: Model, path: Path, new_filename: Union[str, None] = None):
+    def store_local_file(self, model: Union[Model, ModelHash], path: Path, new_filename: Union[str, None] = None) -> None:
         """Store a file from the local machine
 
         Parameters
@@ -162,7 +181,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def store_metadata(self, model: Model, metadata: dict):
+    def store_metadata(self, model: Union[Model, ModelHash], metadata: dict) -> None:
         """Store metadata
 
         Parameters
@@ -175,7 +194,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def store_modelfit_results(self, model: Model):
+    def store_modelfit_results(self, model: Union[Model, ModelHash]) -> None:
         """Store modelfit results
 
         Parameters
@@ -197,7 +216,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def retrieve_local_files(self, model_name: str, destination_path: Path):
+    def retrieve_local_files(self, model: Union[Model, ModelHash], destination_path: Path) -> None:
         """Retrieve all files related to a model
 
         Parameters
@@ -210,7 +229,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def retrieve_file(self, model_name: str, filename: str) -> Path:
+    def retrieve_file(self, Union[Model, ModelHash], filename: str) -> Path:
         """Retrieve one file related to a model
 
         Note that if the database is implemented in the local filesystem
@@ -231,7 +250,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def retrieve_model(self, model_name: str) -> Model:
+    def retrieve_model(self, Union[Model, ModelHash]) -> Model:
         """Read a model from the database
 
         Parameters
@@ -247,7 +266,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def retrieve_modelfit_results(self, model_name: str) -> Results:
+    def retrieve_modelfit_results(self, Union[Model, ModelHash]) -> Results:
         """Read modelfit results from the database
 
         Parameters
@@ -263,7 +282,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def retrieve_model_entry(self, model_name: str) -> ModelEntry:
+    def retrieve_model_entry(self, model: Union[Model, ModelHash]) -> ModelEntry:
         """Read model entry from the database
 
         Parameters
@@ -279,7 +298,7 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def snapshot(self, model_name: str) -> ContextManager[ModelSnapshot]:
+    def snapshot(self, model: Union[Model, ModelHash]) -> ContextManager[ModelSnapshot]:
         """Creates a readable snapshot context for a given model.
 
         Parameters

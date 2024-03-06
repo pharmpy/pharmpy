@@ -4,6 +4,7 @@ import json
 
 from pharmpy.deps import numpy as np
 from pharmpy.modeling import load_dataset
+from pharmpy.model import Model
 
 
 def _encode(obj):
@@ -46,12 +47,15 @@ class DatasetHash(Hash):
 
 
 class ModelHash(Hash):
-    def __init__(self, model_or_hash):
-        if isinstance(model_or_hash, ModelHash):
-            self.dataset_hash = model_or_hash.dataset_hash
-            self._hash = model_or_hash._hash
+    def __init__(self, obj: Union[Model, ModelEntry, ModelHash]):
+        if isinstance(obj, ModelHash):
+            self.dataset_hash = obj.dataset_hash
+            self._hash = obj._hash
         else:
-            model = model_or_hash
+            if isinstance(obj, ModelEntry):
+                model = obj.model
+            else:
+                model = obj
             di = model.datainfo
             if di is not None:
                 if model.dataset is None:
