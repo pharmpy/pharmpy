@@ -54,50 +54,44 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
         db = LocalModelDirectoryDatabase("database")
         db.store_model(model)
 
-        with open("database/.datasets/pheno_real.csv", "r") as fh:
+        with open("database/.datasets/data1.csv", "r") as fh:
             line = fh.readline()
             assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2\n"
 
-        with open("database/.datasets/pheno_real.datainfo", "r") as fh:
+        with open("database/.datasets/data1.datainfo", "r") as fh:
             obj = json.load(fh)
             assert 'columns' in obj
-            assert obj['path'] == 'pheno_real.csv'
+            assert obj['path'] == 'data1.csv'
 
-        with open("database/pheno_real/pheno_real.mod", "r") as fh:
+        with open("database/M9HTZqRSihis4X5XB39HtQBbjzDiyo9lz6cX6lV-O_g/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
+            assert line == f'$DATA ..{sep}.datasets{sep}data1.csv IGNORE=@\n'
 
         run1 = model.replace(name="run1")
         db.store_model(run1)
 
-        assert not (Path("database") / ".datasets" / "run1.csv").is_file()
-
-        with open("database/run1/run1.mod", "r") as fh:
-            line = fh.readline()
-            assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
-            line = fh.readline()
-            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
+        assert not (Path("database") / ".datasets" / "data2.csv").is_file()
 
         run2 = model.replace(name="run2")
         run2 = add_time_after_dose(run2)
         db.store_model(run2)
 
-        with open("database/.datasets/run2.csv", "r") as fh:
+        with open("database/.datasets/data2.csv", "r") as fh:
             line = fh.readline()
             assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2,TAD\n"
 
-        with open("database/.datasets/run2.datainfo", "r") as fh:
+        with open("database/.datasets/data2.datainfo", "r") as fh:
             obj = json.load(fh)
             assert 'columns' in obj
-            assert obj['path'] == 'run2.csv'
+            assert obj['path'] == 'data2.csv'
 
-        with open("database/run2/run2.mod", "r") as fh:
+        with open("database/N4u6c018G0JIuAa_L5lhlnR7pgnHA9siqGcNK6iBAdI/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line == f'$DATA ..{sep}.datasets{sep}run2.csv IGNORE=@\n'
+            assert line == f'$DATA ..{sep}.datasets{sep}data2.csv IGNORE=@\n'
 
 
 def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata):
@@ -119,22 +113,22 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
         db = LocalModelDirectoryDatabase("database")
         db.store_model_entry(model_entry)
 
-        with open("database/.datasets/pheno_real.csv", "r") as fh:
+        with open("database/.datasets/data1.csv", "r") as fh:
             line = fh.readline()
             assert line == "ID,TIME,AMT,WGT,APGR,DV,FA1,FA2\n"
 
-        with open("database/.datasets/pheno_real.datainfo", "r") as fh:
+        with open("database/.datasets/data1.datainfo", "r") as fh:
             obj = json.load(fh)
             assert 'columns' in obj
-            assert obj['path'] == 'pheno_real.csv'
+            assert obj['path'] == 'data1.csv'
 
-        with open("database/pheno_real/pheno_real.mod", "r") as fh:
+        with open("database/M9HTZqRSihis4X5XB39HtQBbjzDiyo9lz6cX6lV-O_g/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
-            assert line == f'$DATA ..{sep}.datasets{sep}pheno_real.csv IGNORE=@\n'
+            assert line == f'$DATA ..{sep}.datasets{sep}data1.csv IGNORE=@\n'
 
-        model_entry_retrieve = db.retrieve_model_entry(model.name)
+        model_entry_retrieve = db.retrieve_model_entry(model)
 
         assert model_entry_retrieve.model == model
         assert model_entry_retrieve.modelfit_results.name == modelfit_results.name

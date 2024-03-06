@@ -5,13 +5,14 @@ from os import stat
 from pathlib import Path
 from typing import Union
 
-from pharmpy.internals.df import hash_df_fs
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
+from pharmpy.modeling import write_csv, write_model
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, read_results
 
+from ..hashing import ModelHash
 from .baseclass import (
     ModelSnapshot,
     ModelTransaction,
@@ -180,8 +181,8 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         return path_lock(str(path), shared=False)
 
     @contextmanager
-    def snapshot(self, key: Union[Model, ModelEntry, ModelHash]):
-        key = ModelHash(key)
+    def snapshot(self, obj: Union[Model, ModelEntry, ModelHash]):
+        key = ModelHash(obj)
         model_path = self.path / str(key)
         destination = model_path / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
@@ -192,11 +193,11 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
                 # TODO: Finish pending transaction from journal if possible
                 raise PendingTransactionError()
 
-            yield LocalModelDirectoryDatabaseSnapshot(self, key)
+            yield LocalModelDirectoryDatabaseSnapshot(self, obj)
 
     @contextmanager
-    def transaction(self, key: Union[Model, ModelEntry, ModelHash]):
-        key = ModelHash(key)
+    def transaction(self, obj: Union[Model, ModelEntry, ModelHash]):
+        key = ModelHash(obj)
         model_path = self.path / str(key)
         destination = model_path / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
@@ -209,7 +210,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
                 # TODO: Finish pending transaction from journal if possible
                 raise PendingTransactionError()
 
-            yield LocalModelDirectoryDatabaseTransaction(self, key)
+            yield LocalModelDirectoryDatabaseTransaction(self, obj)
 
             # NOTE: Commit transaction (only if no exception was raised)
             path.unlink()
@@ -220,8 +221,6 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
 
 class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
     def store_model(self):
-        from pharmpy.modeling import read_dataset_from_datainfo, write_csv, write_model
-
         if self.model_entry is None:
             raise ValueError("Cannot store model: No model attached to transaction")
 
@@ -232,17 +231,28 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         # matching this hash only
         h = self.key.dataset_hash
         h_dir = datasets_path / DIRECTORY_INDEX / str(h)
-        if not h_dir.is_dir():
+        if h_dir.is_dir():
+            hpath = next(h_dir.iterdir())
+            # NOTE: This variable holds a string similar to "run1.csv"
+            matching_model_filename = hpath.name
+            data_path = datasets_path / matching_model_filename
+            dipath = data_path.with_suffix('.datainfo')
+            # TODO: Maybe catch FileNotFoundError and similar here (pass)
+            curdi = DataInfo.read_json(dipath)
+            # NOTE: Paths are not compared here
+            if curdi == model.datainfo:
+                datainfo = model.datainfo.replace(path=curdi.path)
+                model = model.replace(datainfo=datainfo)
+        else:
             h_dir.mkdir(parents=True, exist_ok=True)
 
             highest = 0
             for file in datasets_path.iterdir():
                 name = file.name
                 if name.startswith('data') and name.endswith('.csv'):
-                    number = int(name[4:-4])    # Remove data and .csv
+                    number = int(name[4:-4])  # Remove data and .csv
                     if number > highest:
                         highest = number
-
 
             dataset_basename = f'data{highest + 1}'
             dataset_filename = f'{dataset_basename}.csv'
@@ -261,9 +271,9 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             model.datainfo.to_json(datasets_path / (dataset_basename + '.datainfo'))
 
         # NOTE: Write the model
-        model_path = self.db.path / model.name
+        model_path = self.database.path / str(self.key)
         model_path.mkdir(exist_ok=True)
-        write_model(model, str(model_path / (model.name + model.filename_extension)), force=True)
+        write_model(model, model_path / ("model" + model.filename_extension), force=True)
         return model
 
     def store_local_file(self, path, new_filename=None):
@@ -281,7 +291,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             json.dump(metadata, f, indent=2)
 
     def store_modelfit_results(self):
-        destination = self.database.path / self.key / DIRECTORY_PHARMPY_METADATA
+        destination = self.database.path / str(self.key) / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
 
         modelfit_results = self.model_entry.modelfit_results
@@ -326,12 +336,12 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         return model
 
     def _find_full_model_path(self):
-        extensions = ['.mod', '.ctl']
-        root = self.db.path / str(self.key)
+        extensions = ('.mod', '.ctl')
+        root = self.database.path / str(self.key)
         errors = []
 
         for extension in extensions:
-            filename = self.name + extension
+            filename = "model" + extension
             path = root / filename
 
             if path.is_file():
@@ -340,7 +350,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 errors.append(path)
         else:
             raise KeyError(
-                f'Could not find {self.name} in {self.db}.'
+                f'Could not find model in {self.database}.'
                 f' Looked up {", ".join(map(lambda p: f"`{p}`", errors))}.'
             )
 
@@ -355,7 +365,9 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         # FIXME: The following does not work because deserialization of modelfit
         # results is not generic enough. We only use it to make the resume_tool
         # test pass.
-        path = self.db.path / str(self.key) / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
+        path = (
+            self.database.path / str(self.key) / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
+        )
         return read_results(path)
 
     def retrieve_model_entry(self):

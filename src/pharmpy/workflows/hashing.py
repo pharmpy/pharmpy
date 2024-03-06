@@ -1,10 +1,15 @@
+from __future__ import annotations
+
 import base64
 import hashlib
 import json
+from typing import Union
 
 from pharmpy.deps import numpy as np
-from pharmpy.modeling import load_dataset
 from pharmpy.model import Model
+from pharmpy.modeling import load_dataset
+
+from .model_entry import ModelEntry
 
 
 def _encode(obj):
