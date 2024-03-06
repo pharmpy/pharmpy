@@ -4,17 +4,22 @@
 New features
 ============
 
+* Add bottom up algorithm in IIVSearch
 * Add modeling.set_dataset
 * Add AMD results plots for each DV
 * Add default search space for TMDD in AMD
 * Support EFIM as parameter uncertainty method
+* Allow specific (covariate, parameter) combinations as part of input for mechanistic covariates in AMD
 
 Changes
 =======
 
 * Use Pharmpy class Expr instead of sympy/symengine
 * Remove ModelfitResults attribute from Model
+* Change logic of IIVsearch ``algorithm`` argument, add ``correlation_algorithm`` argument
+* Ignore datainfo fallback in AMD (to avoid automatically filling in information not given by user)
 * Raise error instead of warn when expression is invalid in modeling.filter_dataset
+* Change strategy names in AMD (to "default" and "reevaluation")
 
 Bugfixes
 ========
@@ -23,7 +28,7 @@ Bugfixes
 * Fix bug in AMD for TMDD models where `dir_name` was not specified
 * Fix bug with naming of K-parameters in models with 9 compartments
 * Skip first order absorption with 1 transit (no depot) combination
-
+* Fix bug which caused added IOVs to be removed in covsearch when running AMD (edited)
 
 0.106.0 (2024-01-11)
 --------------------
