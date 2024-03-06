@@ -54,6 +54,14 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
         if not depot:
             model = set_first_order_absorption(model)
             depot = model.statements.ode_system.find_depot(model.statements)
+        if not depot:
+            transits = model.statements.ode_system.find_transit_compartments(model.statements)
+            if transits:
+                depot = transits[-1]
+            else:
+                raise ValueError(
+                    "Pre-systemic metabolite model is not compatible with input model."
+                )
 
     # TODO: Implement possibility of converting plain metabolite to presystemic
 
@@ -87,6 +95,10 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
         model = set_lower_bounds(model, {'POP_FPRE': 0.0})
         model = set_upper_bounds(model, {'POP_FPRE': 1.0})
         ka = odes.get_flow(depot, central)
+        if ka.is_symbol():
+            ka_expression = model.statements.find_assignment(ka).expression
+            if ka_expression is not None:
+                ka = ka_expression
         cb.add_flow(depot, metacomp, fpre * ka)
         cb.remove_flow(depot, central)
         cb.add_flow(depot, central, ka * (1 - fpre))
