@@ -156,6 +156,15 @@ def nearest_positive_semidefinite(A):
     return A3
 
 
+def nearest_positive_definite(A):
+    # Find the (almost) nearest positive definite matrix given a positive semidefinite matrix
+    A = A.copy()
+    while not is_posdef(A):
+        epsilon = np.nextafter(np.diag(A), np.inf)
+        np.fill_diagonal(A, epsilon)
+    return A
+
+
 def conditional_joint_normal(mu, sigma, a):
     """Give parameters of the conditional joint normal distribution
 
