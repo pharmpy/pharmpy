@@ -917,7 +917,7 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title=''):
 
 def vpc_plot(
     model: Model,
-    simulations,
+    simulations: pd.DataFrame,
     binning: Literal["equal_width", "equal_number"] = "equal_number",
     nbins: int = 8,
     qi: float = 0.95,
@@ -934,7 +934,7 @@ def vpc_plot(
         DataFrame containing the simulation data
     binning : ["equal_number", "equal_width"]
         Binning method. Can be "equal_number" or "equal_width". The default is "equal_number".
-    nbins : float
+    nbins : int
         Number of bins. Default is 8.
     qi : float
         Upper quantile. Default is 0.95.
