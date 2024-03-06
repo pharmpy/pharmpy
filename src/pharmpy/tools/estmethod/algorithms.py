@@ -6,13 +6,11 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 
-def exhaustive(methods, solvers, parameter_uncertainty_methods):
+def exhaustive(methods, solvers, parameter_uncertainty_methods, compare_ofv):
     wb = WorkflowBuilder()
 
     task_start = Task('start', start)
     wb.add_task(task_start)
-
-    add_eval_after_est = len(methods) > 1
 
     candidate_no = 1
     for method, solver, parameter_uncertainty_method in itertools.product(
@@ -26,7 +24,7 @@ def exhaustive(methods, solvers, parameter_uncertainty_methods):
             method,
             solver,
             parameter_uncertainty_method,
-            add_eval_after_est,
+            compare_ofv,
             False,
             False,
         )
@@ -37,10 +35,8 @@ def exhaustive(methods, solvers, parameter_uncertainty_methods):
     return Workflow(wb), None
 
 
-def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
+def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods, compare_ofv):
     wb = WorkflowBuilder()
-
-    add_eval_after_est = len(methods) > 1
 
     parameter_uncertainty_method_base = (
         parameter_uncertainty_methods[0] if 'FOCE' in methods else None
@@ -50,7 +46,7 @@ def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
         'create_base_model',
         _create_base_model,
         parameter_uncertainty_method_base,
-        add_eval_after_est,
+        compare_ofv,
     )
     wb.add_task(task_base_model)
     wf_fit = create_fit_workflow(n=1)
@@ -75,7 +71,7 @@ def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
                 method,
                 solver,
                 parameter_uncertainty_method,
-                add_eval_after_est,
+                compare_ofv,
                 False,
                 False,
             )
@@ -91,7 +87,7 @@ def exhaustive_with_update(methods, solvers, parameter_uncertainty_methods):
             method,
             solver,
             parameter_uncertainty_method,
-            add_eval_after_est,
+            compare_ofv,
             True,
             False,
         )
@@ -136,21 +132,21 @@ def start(model_entry):
     return model_entry
 
 
-def _create_base_model(parameter_uncertainty_method, add_eval_after_est, model_entry):
+def _create_base_model(parameter_uncertainty_method, compare_ofv, model_entry):
     model = model_entry.model
 
-    est_settings = _create_est_settings("FOCE", parameter_uncertainty_method, add_eval_after_est)
+    est_settings = _create_est_settings("FOCE", parameter_uncertainty_method, compare_ofv)
     est_method = est_settings["method"]
     all_methods = [est_method]
 
-    if add_eval_after_est:
+    if compare_ofv:
         eval_settings = _create_eval_settings(
             laplace=False, parameter_uncertainty_method=parameter_uncertainty_method
         )
         eval_method = eval_settings["method"]
         all_methods.append(eval_method)
     else:
-        eval_settings = eval_method = None
+        eval_settings = None
 
     base_model = model.replace(name="base_model")
 
@@ -167,7 +163,7 @@ def _create_base_model(parameter_uncertainty_method, add_eval_after_est, model_e
         base_model = remove_estimation_step(base_model, 0)
 
     base_model = add_estimation_step(base_model, **est_settings)
-    if add_eval_after_est:
+    if compare_ofv:
         base_model = add_estimation_step(base_model, **eval_settings)
 
     base_entry = ModelEntry.create(base_model, modelfit_results=None, parent=model_entry.model)
@@ -179,7 +175,7 @@ def _create_candidate_model(
     method,
     solver,
     parameter_uncertainty_method,
-    add_eval_after_est,
+    compare_ofv,
     update_inits,
     only_evaluation,
     model_entry,
@@ -198,12 +194,10 @@ def _create_candidate_model(
         eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
         all_methods = [eval_settings['method']]
     else:
-        est_settings = _create_est_settings(
-            method, parameter_uncertainty_method, add_eval_after_est
-        )
+        est_settings = _create_est_settings(method, parameter_uncertainty_method, compare_ofv)
         all_methods = [est_settings['method']]
 
-        if add_eval_after_est:
+        if compare_ofv:
             eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
             all_methods.append(eval_settings['method'])
 

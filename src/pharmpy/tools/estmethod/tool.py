@@ -30,6 +30,7 @@ def create_workflow(
     parameter_uncertainty_methods: Optional[
         Union[List[Literal[PARAMETER_UNCERTAINTY_METHODS]], Literal[PARAMETER_UNCERTAINTY_METHODS]]
     ] = None,
+    compare_ofv: bool = True,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
 ):
@@ -48,6 +49,8 @@ def create_workflow(
     parameter_uncertainty_methods : str or list of {'SANDWICH', 'SMAT', 'RMAT'} or None
          List of parameter uncertainty methods to test.
          Can be specified as 'all', a list of uncertainty methods, or None (to not evaluate any uncertainty)
+    compare_ofv : bool
+        Whether to compare the OFV between candidates. Comparison is made by evaluating using IMP
     results : ModelfitResults
          Results for model
     model : Model
@@ -86,11 +89,16 @@ def create_workflow(
     if methods is None:
         methods = [model.estimation_steps[-1].method]
 
-    wf_algorithm, task_base_model_fit = algorithm_func(
+    args = [
         _format_input(methods, METHODS),
         _format_input(solvers, SOLVERS),
         _format_input(parameter_uncertainty_methods, PARAMETER_UNCERTAINTY_METHODS),
-    )
+    ]
+
+    if algorithm != 'exhaustive_only_eval':
+        args.append(compare_ofv)
+
+    wf_algorithm, task_base_model_fit = algorithm_func(*args)
     wb.insert_workflow(wf_algorithm, predecessors=start_task)
 
     wf_fit = create_fit_workflow(n=len(wb.output_tasks))

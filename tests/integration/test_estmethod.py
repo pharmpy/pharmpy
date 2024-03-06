@@ -5,13 +5,13 @@ from pharmpy.tools import retrieve_models, run_estmethod
 
 
 @pytest.mark.parametrize(
-    'algorithm, methods, parameter_uncertainty_methods, no_of_candidates, advan_ref',
+    'algorithm, methods, parameter_uncertainty_methods, compare_ofv, no_of_candidates, advan_ref',
     [
-        ('exhaustive', ['FOCE', 'IMP'], None, 2, 'ADVAN2'),
-        ('exhaustive_only_eval', ['FOCE', 'IMP'], None, 2, 'ADVAN2'),
-        ('exhaustive', ['FOCE'], ['SANDWICH', 'SMAT'], 2, 'ADVAN2'),
-        ('exhaustive_with_update', ['FOCE'], ['SANDWICH', 'SMAT'], 4, 'ADVAN2'),
-        ('exhaustive_with_update', ['IMP'], ['SANDWICH', 'SMAT'], 5, 'ADVAN2'),
+        ('exhaustive', ['FOCE', 'IMP'], None, True, 2, 'ADVAN2'),
+        ('exhaustive_only_eval', ['FOCE', 'IMP'], None, True, 2, 'ADVAN2'),
+        ('exhaustive', ['FOCE'], ['SANDWICH', 'SMAT'], False, 2, 'ADVAN2'),
+        ('exhaustive_with_update', ['FOCE'], ['SANDWICH', 'SMAT'], False, 4, 'ADVAN2'),
+        ('exhaustive_with_update', ['IMP'], ['SANDWICH', 'SMAT'], False, 5, 'ADVAN2'),
     ],
 )
 def test_estmethod(
@@ -22,6 +22,7 @@ def test_estmethod(
     algorithm,
     methods,
     parameter_uncertainty_methods,
+    compare_ofv,
     no_of_candidates,
     advan_ref,
 ):
@@ -30,6 +31,7 @@ def test_estmethod(
             algorithm,
             methods=methods,
             parameter_uncertainty_methods=parameter_uncertainty_methods,
+            compare_ofv=compare_ofv,
             model=start_modelres[0],
             results=start_modelres[1],
         )
@@ -38,6 +40,10 @@ def test_estmethod(
         res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
         assert len(res_models) == no_of_candidates
         assert advan_ref in res_models[-1].model_code
+        if compare_ofv:
+            assert all(model.estimation_steps[-1].evaluation for model in res_models)
+        else:
+            assert all(model.estimation_steps[-1].evaluation is False for model in res_models)
         rundir = tmp_path / 'estmethod_dir1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidates
