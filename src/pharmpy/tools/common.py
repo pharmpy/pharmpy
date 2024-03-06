@@ -152,7 +152,7 @@ def summarize_tool(
         if len(model_entries) > 0:
             multiple_testing = True
             n_predicted_models = len(model_entries) if n_predicted is None else n_predicted
-            n_expected_models = 1 if n_predicted is None else n_predicted
+            n_expected_models = 1 if n_predicted is None else n_expected
         else:  # This can happen if the search space of e.g. modelsearch only includes the base model
             multiple_testing = False
             n_predicted_models = None
