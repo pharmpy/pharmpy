@@ -221,6 +221,7 @@ def start(
                 base_model_entry.model,
                 index_offset=no_of_models,
                 input_model_entry=input_model_entry,
+                keep=keep,
             )
         else:
             wf_algorithm = algorithm_func(base_model_entry.model, index_offset=no_of_models)

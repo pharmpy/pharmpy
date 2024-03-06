@@ -52,7 +52,7 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
     return Workflow(wb)
 
 
-def bu_stepwise_no_of_etas(base_model, index_offset=0, input_model_entry=None):
+def bu_stepwise_no_of_etas(base_model, index_offset=0, input_model_entry=None, keep=None):
     wb = WorkflowBuilder(name='bu_stepwise_no_of_etas')
     stepwise_task = Task(
         "stepwise_BU_task",
@@ -60,12 +60,15 @@ def bu_stepwise_no_of_etas(base_model, index_offset=0, input_model_entry=None):
         base_model,
         index_offset,
         input_model_entry,
+        keep,
     )
     wb.add_task(stepwise_task)
     return wb
 
 
-def stepwise_BU_algorithm(context, base_model, index_offset, input_model_entry, base_model_entry):
+def stepwise_BU_algorithm(
+    context, base_model, index_offset, input_model_entry, keep, base_model_entry
+):
     base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
@@ -83,9 +86,14 @@ def stepwise_BU_algorithm(context, base_model, index_offset, input_model_entry, 
     else:
         base_parameter = sorted(iiv_names)[0]  # No clearance --> fallback to alphabetical order
 
+    if keep:
+        parameters_to_ignore = _get_eta_from_parameter(base_model, keep)
+    else:
+        parameters_to_ignore = {base_parameter}
+
     # Create and run first model with a single ETA on base_parameter
     bu_base_model_wb = WorkflowBuilder(name='create_and_fit_BU_base_model')
-    to_be_removed = [i for i in iiv_names if i != base_parameter]
+    to_be_removed = [i for i in iiv_names if i not in parameters_to_ignore]
     model_name = f'iivsearch_run{1 + index_offset}'
     index_offset += 1
     bu_base_entry = Task(
@@ -104,7 +112,8 @@ def stepwise_BU_algorithm(context, base_model, index_offset, input_model_entry, 
 
     # Filter IIV names to contain all combination with the base parameter in it
     iiv_names_to_add = list(non_empty_subsets(iiv_names))
-    iiv_names_to_add = [i for i in iiv_names_to_add if base_parameter in i]
+
+    iiv_names_to_add = [i for i in iiv_names_to_add if all(p in i for p in parameters_to_ignore)]
 
     # Invert the list to REMOVE ETAs from the base model instead of adding to the
     # single ETA model

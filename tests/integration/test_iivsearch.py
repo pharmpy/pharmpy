@@ -10,18 +10,27 @@ from pharmpy.tools import fit, retrieve_models, run_iivsearch
 #  return model entries or we have a separate function for this
 
 
-def test_no_of_etas_keep(tmp_path, model_count, start_modelres):
+@pytest.mark.parametrize(
+    ('algorithm', 'keep', 'no_of_candidate_models'),
+    (('top_down_exhaustive', ['CL'], 8), ('bottom_up_stepwise', ["VC"], 10)),
+)
+def test_no_of_etas_keep(
+    tmp_path, algorithm, keep, no_of_candidate_models, model_count, start_modelres
+):
     with chdir(tmp_path):
         res_keep1 = run_iivsearch(
-            'top_down_exhaustive',
+            algorithm,
             results=start_modelres[1],
             model=start_modelres[0],
-            keep=["CL"],
+            keep=keep,
             correlation_algorithm="skip",
         )
-        no_of_models = 8
+        no_of_models = no_of_candidate_models
         assert len(res_keep1.summary_models) == no_of_models // 2
-        assert res_keep1.summary_individuals.iloc[-1]['description'] == '[CL]'
+        if algorithm == "top_down_exhaustive":
+            assert res_keep1.summary_individuals.iloc[-1]['description'] == '[CL]'
+        elif algorithm == "bottom_up_stepwise":
+            assert res_keep1.summary_models.iloc[1]['description'] == '[VC]'
 
 
 def test_block_structure(tmp_path, model_count, start_modelres):
