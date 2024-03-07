@@ -65,9 +65,9 @@ def run_amd(
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: float = 0.01,
-    vc_init: float = 1.0,
-    mat_init: float = 0.1,
+    cl_init: Union[int, float] = 0.01,
+    vc_init: Union[int, float] = 1.0,
+    mat_init: Union[int, float] = 0.1,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
@@ -101,19 +101,19 @@ def run_amd(
         Route of administration. Either 'iv', 'oral' or 'ivoral'
     strategy : str
         Run algorithm for AMD procedure. Valid options are 'default', 'reevaluation'. Default is 'default'
-    cl_init : float
+    cl_init : int, float
         Initial estimate for the population clearance
-    vc_init : float
+    vc_init : int, float
         Initial estimate for the central compartment population volume
-    mat_init : float
+    mat_init : int, float
         Initial estimate for the mean absorption time (not for iv models)
-    b_init : float
+    b_init : int, float
         Initial estimate for the baseline (PKPD model)
-    emax_init : float
+    emax_init : int, float
         Initial estimate for E_max (PKPD model)
-    ec50_init : float
+    ec50_init : int, float
         Initial estimate for EC_50 (PKPD model)
-    met_init : float
+    met_init : int, float
         Initial estimate for mean equilibration time (PKPD model)
     search_space : str
         MFL for search space for structural model
