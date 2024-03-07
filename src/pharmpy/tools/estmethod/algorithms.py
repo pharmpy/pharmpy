@@ -103,8 +103,6 @@ def exhaustive_only_eval(methods, solvers, parameter_uncertainty_methods):
     task_start = Task('start', start)
     wb.add_task(task_start)
 
-    add_eval_after_est = len(methods) > 1
-
     candidate_no = 1
     for method, solver, parameter_uncertainty_method in itertools.product(
         methods, solvers, parameter_uncertainty_methods
@@ -117,7 +115,7 @@ def exhaustive_only_eval(methods, solvers, parameter_uncertainty_methods):
             method,
             solver,
             parameter_uncertainty_method,
-            add_eval_after_est,
+            False,
             False,
             True,
         )
@@ -135,13 +133,13 @@ def start(model_entry):
 def _create_base_model(parameter_uncertainty_method, compare_ofv, model_entry):
     model = model_entry.model
 
-    est_settings = _create_est_settings("FOCE", parameter_uncertainty_method, compare_ofv)
+    est_settings = _create_est_settings("FOCE", parameter_uncertainty_method)
     est_method = est_settings["method"]
     all_methods = [est_method]
 
     if compare_ofv:
         eval_settings = _create_eval_settings(
-            laplace=False, parameter_uncertainty_method=parameter_uncertainty_method
+            'IMP', laplace=False, parameter_uncertainty_method=parameter_uncertainty_method
         )
         eval_method = eval_settings["method"]
         all_methods.append(eval_method)
@@ -191,14 +189,15 @@ def _create_candidate_model(
     laplace = True if method == 'LAPLACE' else False
 
     if only_evaluation:
-        eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
+        eval_settings = _create_eval_settings(method, laplace, parameter_uncertainty_method)
+        eval_settings['method'] = method
         all_methods = [eval_settings['method']]
     else:
-        est_settings = _create_est_settings(method, parameter_uncertainty_method, compare_ofv)
+        est_settings = _create_est_settings(method, parameter_uncertainty_method)
         all_methods = [est_settings['method']]
 
         if compare_ofv:
-            eval_settings = _create_eval_settings(laplace, parameter_uncertainty_method)
+            eval_settings = _create_eval_settings('IMP', laplace, parameter_uncertainty_method)
             all_methods.append(eval_settings['method'])
 
     model = model.replace(
@@ -226,7 +225,7 @@ def _create_candidate_model(
     return candidate_entry
 
 
-def _create_est_settings(method, parameter_uncertainty_method=None, add_eval_after_est=False):
+def _create_est_settings(method, parameter_uncertainty_method=None):
     est_settings = {
         'method': method,
         'interaction': True,
@@ -234,35 +233,30 @@ def _create_est_settings(method, parameter_uncertainty_method=None, add_eval_aft
         'auto': True,
         'keep_every_nth_iter': 10,
         'maximum_evaluations': 9999,
+        'parameter_uncertainty_method': parameter_uncertainty_method,
     }
 
     if method == 'LAPLACE':
         est_settings['method'] = 'FOCE'
         est_settings['laplace'] = True
 
-    if add_eval_after_est:
-        est_settings['parameter_uncertainty_method'] = None
-    else:
-        est_settings['parameter_uncertainty_method'] = parameter_uncertainty_method
-
     return est_settings
 
 
-def _create_eval_settings(laplace=False, parameter_uncertainty_method=None):
+def _create_eval_settings(method, laplace=False, parameter_uncertainty_method=None):
     eval_settings = {
-        'method': 'IMP',
+        'method': method,
         'interaction': True,
         'evaluation': True,
-        'laplace': False,
-        'maximum_evaluations': 9999,
-        'isample': 10000,
-        'niter': 10,
+        'laplace': laplace,
         'keep_every_nth_iter': 10,
         'parameter_uncertainty_method': parameter_uncertainty_method,
     }
 
-    if laplace:
-        eval_settings['laplace'] = True
+    if method == 'IMP':
+        eval_settings['maximum_evaluations'] = 9999
+        eval_settings['isample'] = 10000
+        eval_settings['niter'] = 10
 
     return eval_settings
 
