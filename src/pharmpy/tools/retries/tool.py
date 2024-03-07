@@ -11,6 +11,7 @@ else:
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.internals.math import is_posdef, nearest_positive_definite
 from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_parameters_from_ucp,
@@ -125,6 +126,8 @@ def create_random_init_model(
             original_model, modelentry.modelfit_results.parameter_estimates
         )
 
+    original_model = convert_to_posdef(original_model)
+
     # Add any description?
     if prefix_name:
         name = f'{prefix_name}_retries_run{index}'
@@ -237,6 +240,37 @@ def task_results(strictness, retries):
     )
 
     return res
+
+
+def convert_to_posdef(model):
+    new_parameter_estimates = {}
+
+    omega_symbolic = model.random_variables.etas.covariance_matrix
+    omega = omega_symbolic.subs(model.parameters.inits)
+    omega = omega.to_numpy()
+    if not is_posdef(omega):
+        omega = nearest_positive_definite(omega)
+        for row in range(len(omega)):
+            for col in range(len(omega)):
+                new_parameter_estimates[str(omega_symbolic[row, col])] = omega[row, col]
+
+    sigma_symbolic = model.random_variables.epsilons.covariance_matrix
+    sigma = sigma_symbolic.subs(model.parameters.inits)
+    sigma = sigma.to_numpy()
+    if not is_posdef(sigma):
+        sigma = nearest_positive_definite(sigma)
+        for row in range(len(sigma)):
+            for col in range(len(sigma)):
+                new_parameter_estimates[str(sigma_symbolic[row, col])] = sigma[row, col]
+    if new_parameter_estimates:
+        warnings.warn(
+            f'{model.name} required adjusted value to becom'
+            f'postive definite. Adjusted values for parameters : '
+            f'{new_parameter_estimates.keys()}'
+        )
+        return update_inits(model, new_parameter_estimates)
+    else:
+        return model
 
 
 def _modify_summary_tool(summary_tool, retry_runs):
