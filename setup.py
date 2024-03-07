@@ -70,7 +70,7 @@ setup(
     install_requires=[
         'lark>=1.1.4',
         'sympy>=1.9',
-        'symengine>=0.9.2',
+        'symengine>=0.11.0',
         'pandas>=1.4, !=2.1.0',
         'numexpr>=2.7.0',
         'altair>=5.0.0',
