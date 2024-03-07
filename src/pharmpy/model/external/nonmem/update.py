@@ -391,7 +391,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
             model = model.replace(dataset=df)
 
         model = pk_param_conversion(model, advan=advan, trans=trans)
-        model = add_needed_pk_parameters(model, advan, trans)
+        model = update_needed_pk_parameters(model, advan, trans)
         model = update_subroutines_record(model, advan, trans)
         model = update_model_record(model, advan)
 
@@ -1333,7 +1333,7 @@ def update_model_record(model: Model, advan):
     return model
 
 
-def add_needed_pk_parameters(model: Model, advan, trans):
+def update_needed_pk_parameters(model: Model, advan, trans):
     """Add missing pk parameters that NONMEM needs"""
     statements = model.statements
     odes = statements.ode_system
@@ -1403,27 +1403,33 @@ def add_needed_pk_parameters(model: Model, advan, trans):
                     else:
                         dest_comp = odes.find_compartment(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
+                    assert isinstance(source_comp, Compartment)
+                    sn = newmap[source]
+                    dn = newmap[dest]
+                    t = ''
+                    if len(str(sn)) > 1 or len(str(dn)) > 1:
+                        # This is needed if there are 8 compartments
+                        # (including central) and another is added
+                        # since the output compartment is included
+                        # in dn
+                        if dest_comp != output:
+                            t = 'T'
+                    names = [f'K{sn}{dn}', f'K{sn}T{dn}']
+                    if dn == len(newmap):
+                        names += [f'K{sn}0', f'K{sn}T0']
+                        param = f'K{sn}{t}{0}'
+                    else:
+                        param = f'K{sn}{t}{dn}'
                     if rate != 0:
-                        assert isinstance(source_comp, Compartment)
-                        sn = newmap[source]
-                        dn = newmap[dest]
-                        t = ''
-                        if len(str(sn)) > 1 or len(str(dn)) > 1:
-                            # This is needed if there are 8 compartments
-                            # (including central) and another is added
-                            # since the output compartment is included
-                            # in dn
-                            if dest_comp != output:
-                                t = 'T'
-                        names = [f'K{sn}{dn}', f'K{sn}T{dn}']
-                        if dn == len(newmap):
-                            names += [f'K{sn}0', f'K{sn}T0']
-                            param = f'K{sn}{t}{0}'
-                        else:
-                            param = f'K{sn}{t}{dn}'
                         model = add_rate_assignment_if_missing(
                             model, param, rate, source_comp, dest_comp, synonyms=names
                         )
+                    else:
+                        if ass_index := model.statements.find_assignment_index(param):
+                            model = model.replace(
+                                statements=model.statements[:ass_index]
+                                + model.statements[ass_index + 1 :]
+                            )
     return model
 
 
