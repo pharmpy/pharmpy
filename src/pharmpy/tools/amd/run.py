@@ -264,6 +264,7 @@ def run_amd(
     modelsearch_features = mfl_filtering(input_search_space_features, "modelsearch")
     if modeltype in ['pkpd', 'drug_metabolite']:
         structsearch_features = mfl_filtering(input_search_space_features, "structsearch")
+        structsearch_features = mfl_stringify(structsearch_features)
         if search_space is None:
             if modeltype == 'pkpd':
                 structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
