@@ -73,6 +73,10 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     odes = model.statements.ode_system
     central = odes.central_compartment
     ke = odes.get_flow(central, output)
+    if ke.is_symbol():
+        ke_expression = model.statements.find_assignment(ke).expression
+        if ke_expression is not None:
+            ke = ke_expression
     cl, vc = ke.as_numer_denom()
 
     if vc != 1:
