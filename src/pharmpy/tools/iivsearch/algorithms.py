@@ -43,7 +43,7 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
         task_candidate_entry = Task(
-            'candidate_entry', create_no_of_etas_candidate_entry, model_name, to_remove, None
+            'candidate_entry', create_no_of_etas_candidate_entry, model_name, to_remove, False, None
         )
         wb.add_task(task_candidate_entry)
 
@@ -52,19 +52,23 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
     return Workflow(wb)
 
 
-def bu_stepwise_no_of_etas(base_model, index_offset=0):  # Should there be a "keep" argument?
+def bu_stepwise_no_of_etas(base_model, index_offset=0, input_model_entry=None, keep=None):
     wb = WorkflowBuilder(name='bu_stepwise_no_of_etas')
     stepwise_task = Task(
         "stepwise_BU_task",
         stepwise_BU_algorithm,
         base_model,
         index_offset,
+        input_model_entry,
+        keep,
     )
     wb.add_task(stepwise_task)
     return wb
 
 
-def stepwise_BU_algorithm(context, base_model, index_offset, base_model_entry):
+def stepwise_BU_algorithm(
+    context, base_model, index_offset, input_model_entry, keep, base_model_entry
+):
     base_model = base_model.replace(description=create_description(base_model))
 
     iivs = base_model.random_variables.iiv
@@ -82,9 +86,14 @@ def stepwise_BU_algorithm(context, base_model, index_offset, base_model_entry):
     else:
         base_parameter = sorted(iiv_names)[0]  # No clearance --> fallback to alphabetical order
 
+    if keep:
+        parameters_to_ignore = _get_eta_from_parameter(base_model, keep)
+    else:
+        parameters_to_ignore = {base_parameter}
+
     # Create and run first model with a single ETA on base_parameter
     bu_base_model_wb = WorkflowBuilder(name='create_and_fit_BU_base_model')
-    to_be_removed = [i for i in iiv_names if i != base_parameter]
+    to_be_removed = [i for i in iiv_names if i not in parameters_to_ignore]
     model_name = f'iivsearch_run{1 + index_offset}'
     index_offset += 1
     bu_base_entry = Task(
@@ -92,7 +101,8 @@ def stepwise_BU_algorithm(context, base_model, index_offset, base_model_entry):
         create_no_of_etas_candidate_entry,
         model_name,
         to_be_removed,
-        None,
+        True,
+        input_model_entry,
         base_model_entry,
     )
     bu_base_model_wb.add_task(bu_base_entry)
@@ -102,7 +112,8 @@ def stepwise_BU_algorithm(context, base_model, index_offset, base_model_entry):
 
     # Filter IIV names to contain all combination with the base parameter in it
     iiv_names_to_add = list(non_empty_subsets(iiv_names))
-    iiv_names_to_add = [i for i in iiv_names_to_add if base_parameter in i]
+
+    iiv_names_to_add = [i for i in iiv_names_to_add if all(p in i for p in parameters_to_ignore)]
 
     # Invert the list to REMOVE ETAs from the base model instead of adding to the
     # single ETA model
@@ -136,6 +147,7 @@ def stepwise_BU_algorithm(context, base_model, index_offset, base_model_entry):
                     create_no_of_etas_candidate_entry,
                     model_name,
                     to_remove,
+                    False,
                     best_model_entry,
                     base_model_entry,
                 )
@@ -204,7 +216,9 @@ def td_exhaustive_block_structure(base_model, index_offset=0):
     return Workflow(wb)
 
 
-def create_no_of_etas_candidate_entry(name, to_remove, best_model_entry, base_model_entry):
+def create_no_of_etas_candidate_entry(
+    name, to_remove, base_parent, best_model_entry, base_model_entry
+):
     if best_model_entry is None:
         best_model_entry = base_model_entry
     candidate_model = remove_iiv(base_model_entry.model, to_remove)
@@ -213,9 +227,12 @@ def create_no_of_etas_candidate_entry(name, to_remove, best_model_entry, base_mo
         name=name, description=create_description(candidate_model)
     )
 
-    return ModelEntry.create(
-        model=candidate_model, modelfit_results=None, parent=best_model_entry.model
-    )
+    if base_parent:
+        parent = base_model_entry.model
+    else:
+        parent = best_model_entry.model
+
+    return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=parent)
 
 
 def create_block_structure_candidate_entry(name, block_structure, model_entry):
