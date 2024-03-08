@@ -62,7 +62,6 @@ if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
   pharmpy run modelsearch $TESTPATH/mox2.mod 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --path $TESTPATH/modelsearch/
   cp_results $TESTPATH/modelsearch/results.json $DEST/modelsearch_results.json
   cp $TESTPATH/modelsearch/metadata.json $DEST/metadata.json
-  cp -r $TESTPATH/modelsearch $DEST/tool_databases
 fi
 
 if [ "$TOOL" == 'iivsearch' ] || [ "$TOOL" == 'all' ]; then
