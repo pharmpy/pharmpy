@@ -558,22 +558,31 @@ def run_amd(
     final_model = next_model_entry.model
     final_results = next_model_entry.modelfit_results
     summary_errors = summarize_errors(final_results)
+
+    if 'dvid' in model.datainfo.types:
+        dvid_name = model.datainfo.typeix['dvid'].names[0]
+    else:
+        dvid_name = None
+
     if final_results.predictions is not None:
-        dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions)
-        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions)
+        dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
+        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictionsi, dvid_name)
     else:
         dv_vs_ipred_plot = None
-        dv_vs_pred_plot = None
     if final_results.residuals is not None:
-        cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals)
+        cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals, dvid_name)
     else:
         cwres_vs_idv_plot = None
     if final_results.predictions is not None and final_results.residuals is not None:
         abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
-            model, predictions=final_results.predictions, residuals=final_results.residuals
+            model,
+            predictions=final_results.predictions,
+            residuals=final_results.residuals,
+            stratigy_by=dvid_name,
         )
     else:
         abs_cwres_vs_ipred_plot = None
+
     res = AMDResults(
         final_model=final_model.name,
         summary_tool=summary_tool,

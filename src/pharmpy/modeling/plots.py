@@ -259,7 +259,12 @@ def plot_eta_distributions(
     return facet
 
 
-def plot_dv_vs_pred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
+def plot_dv_vs_pred(
+    model: Model,
+    predictions: pd.DataFrame,
+    stratify_on: str = None,
+    bins: int = 8,
+) -> alt.Chart:
     """Plot DV vs PRED
 
     Parameters
@@ -268,6 +273,10 @@ def plot_dv_vs_pred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
         Pharmpy model
     predictions : pd.DataFrame
         DataFrame containing the predictions
+    stratify_on : str
+        Name of parameter for stratification
+    bins : int
+        Number of bins for stratification
 
     Returns
     -------
@@ -286,17 +295,30 @@ def plot_dv_vs_pred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
         res = load_example_modelfit_results("pheno")
         plot_dv_vs_pred(model, res.predictions)
 
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_dv_vs_ipred
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_dv_vs_pred(model, res.predictions, 'WGT', bins=4)
+
     """
     if 'PRED' in predictions.columns:
         pred = 'PRED'
     else:
         raise ValueError("Cannot find population predictions")
     pred_name = "Population prediction"
-    return _dv_vs_anypred(model, predictions, pred, pred_name)
+
+    return _dv_vs_anypred(model, predictions, pred, pred_name, stratify_on, bins)
 
 
 def plot_dv_vs_ipred(
-    model: Model, predictions: pd.DataFrame, strat: str = None, bins: int = 8
+    model: Model,
+    predictions: pd.DataFrame,
+    stratify_on: str = None,
+    bins: int = 8,
 ) -> alt.Chart:
     """Plot DV vs IPRED
 
@@ -306,7 +328,7 @@ def plot_dv_vs_ipred(
         Pharmpy model
     predictions : pd.DataFrame
         DataFrame containing the predictions
-    strat : str
+    stratify_on : str
         Name of parameter for stratification
     bins : int
         Number of bins for stratification
@@ -335,9 +357,7 @@ def plot_dv_vs_ipred(
 
         model = load_example_model("pheno")
         res = load_example_modelfit_results("pheno")
-        plot_dv_vs_ipred(model, res.predictions)
-
-        plot_dv_vs_ipred(model, res.predictions, 'WGT')
+        plot_dv_vs_ipred(model, res.predictions, 'WGT', bins=4)
 
     """
     if 'CIPREDI' in predictions.columns:
@@ -348,14 +368,15 @@ def plot_dv_vs_ipred(
         raise ValueError("Cannot find individual predictions")
     ipred_name = "Individual prediction"
 
-    if strat is not None:
-        return _dv_vs_anypred_stratify(model, predictions, ipred, ipred_name, strat, bins)
-    else:
-        return _dv_vs_anypred(model, predictions, ipred, ipred_name)
+    return _dv_vs_anypred(model, predictions, ipred, ipred_name, stratify_on, bins)
 
 
 def plot_abs_cwres_vs_ipred(
-    model: Model, predictions: pd.DataFrame, residuals: pd.DataFrame
+    model: Model,
+    predictions: pd.DataFrame,
+    residuals: pd.DataFrame,
+    stratify_on: str = None,
+    bins: int = 8,
 ) -> alt.Chart:
     r"""Plot \|CWRES\| vs IPRED
 
@@ -367,6 +388,10 @@ def plot_abs_cwres_vs_ipred(
         DataFrame containing the predictions
     residuals : pd.DataFrame
         DataFrame containing the residuals
+    stratify_on : str
+        Name of parameter for stratification
+    bins : int
+        Number of bins for stratification
 
     Returns
     -------
@@ -385,6 +410,15 @@ def plot_abs_cwres_vs_ipred(
         res = load_example_modelfit_results("pheno")
         plot_abs_cwres_vs_ipred(model, res.predictions, res.residuals)
 
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_abs_cwres_vs_ipred
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_abs_cwres_vs_ipred(model, res.predictions, res.residuals, 'WGT', bins=4)
+
     """
     if 'CIPREDI' in predictions.columns:
         ipred = 'CIPREDI'
@@ -395,10 +429,29 @@ def plot_abs_cwres_vs_ipred(
     if 'CWRES' not in residuals.columns:
         raise ValueError("CWRES not available in residuals")
 
-    predictions = predictions[[ipred]].reset_index()
+    if stratify_on is not None:
+        _validate_strat(model, stratify_on)
+        idv_name = model.datainfo.idv_column.name
+        id_name = model.datainfo.id_column.name
+        if (
+            f'{stratify_on}' not in predictions.columns
+            and f'{stratify_on}' not in predictions.index.names
+        ):
+            newcol = model.dataset[[id_name, idv_name, f'{stratify_on}']].set_index(
+                [id_name, idv_name]
+            )
+            predictions = predictions.join(newcol, how='inner')
+            predictions = predictions[[ipred, f'{stratify_on}']].reset_index()
+        else:
+            predictions = predictions[[ipred]].reset_index()
+    else:
+        predictions = predictions[[ipred]].reset_index()
     observations = get_observations(model, keep_index=True)
     residuals = abs(residuals[['CWRES']]).set_index(observations.index)
     df = predictions.join(residuals, how='inner').reset_index(drop=True)
+
+    if stratify_on is not None:
+        df = _bin_data(df, model, stratify_on, bins)
 
     idv = model.datainfo.idv_column.name
     idname = model.datainfo.id_column.name
@@ -416,13 +469,21 @@ def plot_abs_cwres_vs_ipred(
         tooltip=(idname, idv),
     )
 
-    layer = chart + _smooth(chart, ipred, 'CWRES')
+    if stratify_on is None:
+        layer = chart + _smooth(chart, ipred, 'CWRES')
+    else:
+        chart = chart.properties(height=300, width=300)
+        layer = (
+            alt.layer(chart, _smooth(chart, ipred, 'CWRES'), data=df)
+            .facet(facet=f'{stratify_on}', columns=2)
+            .resolve_scale(x='shared', y='shared')
+        )
     layer = layer.configure_point(size=60)
 
     return layer
 
 
-def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
+def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on, bins):
     obs = get_observations(model)
     di = model.datainfo
     idv = di.idv_column.name
@@ -431,99 +492,65 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr):
     dv_unit = dvcol.unit
     idname = di.id_column.name
 
-    predictions = predictions[[predcol_name]]
-    df = predictions.join(obs, how='inner').reset_index()
+    if stratify_on is None:
+        predictions = predictions[[predcol_name]]
+        df = predictions.join(obs, how='inner').reset_index()
+        title = f"Observations vs. {predcol_descr}s"
+    else:
+        _validate_strat(model, stratify_on)
+        idv_name = model.datainfo.idv_column.name
+        id_name = model.datainfo.id_column.name
+        if (
+            f'{stratify_on}' not in predictions.columns
+            and f'{stratify_on}' not in predictions.index.names
+        ):
+            newcol = model.dataset[[id_name, idv_name, f'{stratify_on}']].set_index(
+                [id_name, idv_name]
+            )
+            predictions = predictions.join(newcol, how='inner')
+            predictions = predictions[[predcol_name, f'{stratify_on}']]
+        else:
+            predictions = predictions[[predcol_name]]
+        df = predictions.join(obs, how='inner').reset_index()
+        df = _bin_data(df, model, stratify_on, bins)
+        title = f"{stratify_on}"
 
     chart = _grouped_scatter(
         df,
         x=predcol_name,
         y=dv,
         group=idname,
-        title=f"Observations vs. {predcol_descr}s",
+        title=title,
         xtitle=predcol_descr,
         ytitle="Observation",
         xunit=dv_unit,
         yunit=dv_unit,
         tooltip=(idv,),
     )
-
     line = _identity_line(
-        df[predcol_name].min(), df[predcol_name].max(), df[dv].min(), df[dv].max()
+        (min_value := min([df[predcol_name].min(), df[dv].min()])) - abs(min_value) * 10,
+        max([df[predcol_name].max(), df[dv].max()]) * 10,
     )
-
-    layer = chart + _smooth(chart, predcol_name, dv) + line
+    if stratify_on is not None:
+        chart = chart.properties(height=300, width=300)
+        layer = (
+            alt.layer(chart, _smooth(chart, predcol_name, dv), line, data=df)
+            .facet(facet=f'{stratify_on}', columns=2)
+            .resolve_scale(x='shared', y='shared')
+        )
+    else:
+        layer = chart + _smooth(chart, predcol_name, dv) + line
     layer = layer.configure_point(size=60)
 
     return layer
 
 
-def _dv_vs_anypred_stratify(model, predictions, predcol_name, predcol_descr, strat=None, bins=8):
-    obs = get_observations(model)
-    di = model.datainfo
-    idv = di.idv_column.name
-    dvcol = di.dv_column
-    dv = dvcol.name
-    dv_unit = dvcol.unit
-    idname = di.id_column.name
-
-    if f'{strat}' not in model.dataset.columns:
-        raise ValueError(f'{strat} column does not exist in dataset.')
-    if bins > 8:
-        raise ValueError('bins must be 8 or less.')
-
-    if f'{strat}' not in predictions.columns and f'{strat}' not in predictions.index.names:
-        newcol = model.dataset[['ID', 'TIME', f'{strat}']].set_index(['ID', 'TIME'])
-        predictions = predictions.join(newcol, how='inner')
-        predictions = predictions[[predcol_name, f'{strat}']]
-    else:
-        predictions = predictions[[predcol_name]]
-    df = predictions.join(obs, how='inner').reset_index()
-
-    df = df.sort_values(by=[f'{strat}'])
-    # bin data if more than bins values
-    if len(list(df[strat].unique())) > bins:
-        bins = np.linspace(df[strat].min(), df[strat].max(), bins + 1)
-        unit = di[f'{strat}'].unit
-        labels = [_title_with_unit(f'{bins[i]} - {bins[i+1]}', unit) for i in range(len(bins) - 1)]
-        df[f'{strat}'] = pd.cut(df[f'{strat}'], bins=bins, labels=labels, include_lowest=True)
-
-    layers = []
-    for j in list(df[strat].unique()):
-        df_filtered = df.query(f'{strat} == @j')
-        chart = _grouped_scatter(
-            df_filtered,
-            x=predcol_name,
-            y=dv,
-            group=idname,
-            title=f"{strat} = {j}",
-            xtitle=predcol_descr,
-            ytitle="Observation",
-            xunit=dv_unit,
-            yunit=dv_unit,
-            tooltip=(idv,),
-        )
-
-        line = _identity_line(
-            df_filtered[predcol_name].min(),
-            df_filtered[predcol_name].max(),
-            df_filtered[dv].min(),
-            df_filtered[dv].max(),
-        )
-
-        layer = chart + _smooth(chart, predcol_name, dv) + line
-        layers.append(layer)
-
-    layer = _concat(layers)
-    layer = (
-        layer.properties(title=f"Observations vs. {predcol_descr}s")
-        .configure_point(size=60)
-        .configure_title(anchor='middle')
-    )
-
-    return layer
-
-
-def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
+def plot_cwres_vs_idv(
+    model: Model,
+    residuals: pd.DataFrame,
+    stratify_on: str = None,
+    bins: int = 8,
+) -> alt.Chart:
     """Plot CWRES vs idv
 
     Parameters
@@ -532,6 +559,10 @@ def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
         Pharmpy model
     residuals : pd.DataFrame
         DataFrame containing CWRES
+    stratify_on : str
+        Name of parameter for stratification
+    bins : int
+        Number of bins for stratification
 
     Returns
     -------
@@ -550,8 +581,16 @@ def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
         res = load_example_modelfit_results("pheno")
         plot_cwres_vs_idv(model, res.residuals)
 
-    """
+    .. pharmpy-execute::
 
+        from pharmpy.modeling import load_example_model, plot_cwres_vs_idv
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_cwres_vs_idv(model, res.residuals, 'WGT', bins=4)
+
+    """
     if 'CWRES' not in residuals.columns:
         raise ValueError("CWRES not available in residuals")
     di = model.datainfo
@@ -560,7 +599,24 @@ def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
     dv_unit = di.dv_column.unit
     idname = di.id_column.name
 
-    df = residuals[['CWRES']].reset_index()
+    if stratify_on is not None:
+        _validate_strat(model, stratify_on)
+        idv_name = model.datainfo.idv_column.name
+        id_name = model.datainfo.id_column.name
+        if (
+            f'{stratify_on}' not in residuals.columns
+            and f'{stratify_on}' not in residuals.index.names
+        ):
+            newcol = model.dataset[[id_name, idv_name, f'{stratify_on}']].set_index(
+                [id_name, idv_name]
+            )
+            residuals = residuals.join(newcol, how='inner')
+            df = residuals[['CWRES', f'{stratify_on}']].reset_index()
+    else:
+        df = residuals[['CWRES']].reset_index()
+
+    if stratify_on is not None:
+        df = _bin_data(df, model, stratify_on, bins)
 
     chart = _grouped_scatter(
         df,
@@ -575,7 +631,18 @@ def plot_cwres_vs_idv(model: Model, residuals: pd.DataFrame) -> alt.Chart:
         tooltip=(),
     )
 
-    layer = chart + _smooth(chart, idv, 'CWRES') + _zero_line()
+    if stratify_on is None:
+        layer = (
+            chart + _smooth(chart, idv, 'CWRES') + _vertical_line().transform_calculate(offset="0")
+        )
+    else:
+        chart = chart.properties(height=300, width=300)
+        layer = (
+            alt.layer(chart, _smooth(chart, idv, 'CWRES'), _vertical_line(), data=df)
+            .transform_calculate(offset="0")
+            .facet(facet=f'{stratify_on}', columns=2)
+            .resolve_scale(x='shared', y='shared')
+        )
     layer = layer.configure_point(size=60)
 
     return layer
@@ -586,25 +653,28 @@ def _smooth(chart, x, y):
     return loess_smooth
 
 
-def _identity_line(xmin, xmax, ymin, ymax):
-    line = (
-        alt.Chart(
-            pd.DataFrame(
-                {
-                    'var1': [xmin, xmax],
-                    'var2': [ymin, ymax],
-                }
-            )
-        )
-        .mark_line()
-        .encode(x=alt.X('var1'), y=alt.Y('var2'), color=alt.value("#000000"))
-    )
+def _vertical_line():
+    line = alt.Chart().mark_rule().encode(y="offset:Q", color=alt.value("#000000"))
     return line
 
 
-def _zero_line():
-    zero_line = alt.Chart().mark_rule().encode(y=alt.datum(0), color=alt.value("#000000"))
-    return zero_line
+def _identity_line(min_value, max_value):
+    x1, x2 = alt.param(value=min_value), alt.param(value=max_value)
+    y1, y2 = alt.param(value=min_value), alt.param(value=max_value)
+    line = (
+        alt.Chart()
+        .mark_rule()
+        .encode(
+            x=alt.datum(x1, type="quantitative"),
+            x2=alt.datum(x2, type="quantitative"),
+            y=alt.datum(y1, type="quantitative"),
+            y2=alt.datum(y2, type="quantitative"),
+            color=alt.value("#000000"),
+            strokeWidth=alt.value(1),
+        )
+        .add_params(x1, x2, y1, y2)
+    )
+    return line
 
 
 def _title_with_unit(title, unit):
@@ -646,29 +716,18 @@ def _scatter(df, x, y, title, xtitle, ytitle, xunit, yunit, tooltip=()):
     return chart
 
 
-def _concat(charts):
-    # Concatenate charts up to 2x4
-    n = len(charts)
-    if n == 1:
-        return charts[0]
-    elif n > 1:
-        chart = alt.hconcat(charts[0], charts[1])
-    if n == 3:
-        chart = alt.vconcat(chart, charts[2])
-    if n > 3:
-        chart_tmp = alt.hconcat(charts[2], charts[3])
-        chart = alt.vconcat(chart, chart_tmp)
-    if n == 5:
-        chart = alt.vconcat(chart, charts[4])
-    if n > 5:
-        chart_tmp = alt.hconcat(charts[4], charts[5])
-        chart = alt.vconcat(chart, chart_tmp)
-    if n == 7:
-        chart = alt.vconcat(chart, charts[6])
-    if n == 8:
-        chart_tmp = alt.hconcat(charts[6], charts[7])
-        chart = alt.vconcat(chart, chart_tmp)
-    if n > 8:
-        raise ValueError('No more than 8 subplots allowed.')
-        return None
-    return chart
+def _bin_data(df, model, stratify_on, bins):
+    df = df.sort_values(by=[f'{stratify_on}'])
+    if len(list(df[stratify_on].unique())) > bins:
+        bins = np.linspace(df[stratify_on].min(), df[stratify_on].max(), bins + 1)
+        unit = model.datainfo[f'{stratify_on}'].unit
+        labels = [_title_with_unit(f'{bins[i]} - {bins[i+1]}', unit) for i in range(len(bins) - 1)]
+        df[f'{stratify_on}'] = pd.cut(
+            df[f'{stratify_on}'], bins=bins, labels=labels, include_lowest=True
+        )
+    return df
+
+
+def _validate_strat(model, stratify_on):
+    if f'{stratify_on}' not in model.dataset.columns:
+        raise ValueError(f'{stratify_on} column does not exist in dataset.')
