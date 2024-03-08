@@ -45,13 +45,13 @@ def create_workflow(
     search_space : str
         Search space to test
     b_init: float
-        Initial estimate for the baseline for pkpd models. The default value is 0.1
+        Initial estimate for the baseline for pkpd models.
     emax_init: float
-        Initial estimate for E_MAX (for pkpd models only). The default value is 0.1
+        Initial estimate for E_MAX (for pkpd models only).
     ec50_init: float
-        Initial estimate for EC_50 (for pkpd models only). The default value is 0.1
+        Initial estimate for EC_50 (for pkpd models only).
     met_init: float
-        Initial estimate for MET (for pkpd models only). The default value is 0.1
+        Initial estimate for MET (for pkpd models only).
     results : ModelfitResults
         Results for the start model
     model : Model
@@ -342,13 +342,6 @@ def validate_input(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )
 
-    if dv_types is not None:
-        if not len(dv_types.values()) == len(set(dv_types.values())):
-            raise ValueError('Values must be unique.')
-        for key, value in dv_types.items():
-            if key not in ['drug', 'drug_tot'] and value == 1:
-                raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')
-
     if type.lower() == 'tmdd':
         if search_space is not None:
             raise ValueError('Invalid argument "search_space" for TMDD models.')
@@ -356,6 +349,13 @@ def validate_input(
             raise ValueError(
                 'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.'
             )
+        if dv_types is not None:
+            if not len(dv_types.values()) == len(set(dv_types.values())):
+                raise ValueError('Values must be unique.')
+            for key, value in dv_types.items():
+                if key not in ['drug', 'drug_tot'] and value == 1:
+                    raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')
+
     elif type.lower() == 'pkpd':
         if extra_model is not None:
             raise ValueError('Invalid argument "extra_model" for PKPD models.')
@@ -363,6 +363,15 @@ def validate_input(
             raise ValueError('Invalid argument "extra_model_results" for PKPD models.')
         if dv_types is not None:
             raise ValueError('Invalid argument "dv_types" for PKPD models.')
+        if b_init is None:
+            raise ValueError("Initial estimate for baseline is needed")
+        if emax_init is None:
+            raise ValueError("Initial estimate for E_max is needed")
+        if ec50_init is None:
+            raise ValueError("Initial estimate for EC_50 is needed")
+        if met_init is None:
+            raise ValueError("Initial estimate for MET is needed")
+
     elif type.lower() == 'drug_metabolite':
         if any([b_init, emax_init, ec50_init, met_init]):
             raise ValueError(
