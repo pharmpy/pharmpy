@@ -66,13 +66,13 @@ def run_amd(
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: float = 0.01,
-    vc_init: float = 1.0,
-    mat_init: float = 0.1,
-    b_init: Optional[Union[int, float]] = None,
-    emax_init: Optional[Union[int, float]] = None,
-    ec50_init: Optional[Union[int, float]] = None,
-    met_init: Optional[Union[int, float]] = None,
+    cl_init: Optional[float] = None,
+    vc_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    b_init: Optional[float] = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
@@ -1062,13 +1062,13 @@ def validate_input(
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: float = 0.01,
-    vc_init: float = 1.0,
-    mat_init: float = 0.1,
-    b_init: Optional[Union[int, float]] = None,
-    emax_init: Optional[Union[int, float]] = None,
-    ec50_init: Optional[Union[int, float]] = None,
-    met_init: Optional[Union[int, float]] = None,
+    cl_init: Optional[float] = None,
+    vc_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    b_init: Optional[float] = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
@@ -1092,6 +1092,17 @@ def validate_input(
     check_list("administration", administration, ALLOWED_ADMINISTRATION)
 
     check_list("strategy", strategy, ALLOWED_STRATEGY)
+
+    if modeltype is 'pkpd':
+        if cl_init is not None or vc_init is not None or mat_init is not None:
+            raise ValueError("Cannot provide pk parameter inits for pkpd model")
+    else:
+        if cl_init is None:
+            raise ValueError("Initial estimate for CL is needed")
+        if vc_init is None:
+            raise ValueError("Initial estimate for VC is needed")
+        if administration in ('oral', 'ivoral') and mat_init is None:
+            raise ValueError("Initial estimate for MAT is needed")
 
     if search_space is not None:
         try:
