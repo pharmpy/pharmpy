@@ -694,7 +694,6 @@ def filter_dataset(model: Model, expr: str):
 
     """
     original_dataset = model.dataset
-    new_model = None
     try:
         new_dataset = original_dataset.query(expr)
         new_model = model.replace(
@@ -702,6 +701,6 @@ def filter_dataset(model: Model, expr: str):
             description=model.description + ". Filtered dataset.",
             name=model.name + "_filtered",
         )
-    except pandas.errors.UndefinedVariableError:
-        warnings.warn(""" The expression is invalid""")
+    except pandas.errors.UndefinedVariableError as e:
+        raise ValueError(f'The expression `{expr}` is invalid: {e}')
     return new_model

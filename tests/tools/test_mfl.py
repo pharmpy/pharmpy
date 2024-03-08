@@ -622,7 +622,7 @@ def test_stringify(statements: Tuple[Statement, ...], expected: str):
 def test_get_model_features(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     assert (
-        'ABSORPTION(INST);ELIMINATION(FO);COVARIATE([CL, V],WGT,custom,*);COVARIATE([V],APGR,custom,*)'
+        'ABSORPTION(INST);ELIMINATION(FO);COVARIATE([CL, V],WGT,CUSTOM,*);COVARIATE([V],APGR,CUSTOM,*)'
         == get_model_features(model)
     )
 
@@ -642,7 +642,9 @@ def test_ModelFeatures_eq(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
-    assert ModelFeatures() == model_mfl
+    mfl = ModelFeatures()
+    mfl = mfl.replace(covariate=model_mfl.covariate)
+    assert mfl == model_mfl
 
 
 def test_ModelFeatures_add(load_model_for_test, pheno_path):
@@ -665,7 +667,8 @@ def test_ModelFeatures_add(load_model_for_test, pheno_path):
         peripherals=Peripherals(counts=(0, 1)),
         lagtime=LagTime(modes=(Name(name='OFF'),)),
         covariate=(
-            Covariate(parameter=('CL', 'V'), covariate=('APGR', 'WGT'), fp=('CUSTOM',), op=('*',)),
+            Covariate(parameter=('CL', 'V'), covariate=('WGT',), fp=('CUSTOM',), op=('*')),
+            Covariate(parameter=('V',), covariate=('APGR',), fp=('CUSTOM',), op=('*')),
         ),
     )
 
@@ -682,10 +685,9 @@ def test_ModelFeatures_add(load_model_for_test, pheno_path):
 
     m2 = m2.expand(model)
     m3 = m1 + m2
-
     assert set(m3.covariate[0].parameter) == {'CL', 'V'}
     assert set(m3.covariate[0].covariate) == {'WGT'}
-    assert set(m3.covariate[0].fp) == {'lin', 'piece_lin', 'exp', 'pow'}
+    assert set(m3.covariate[0].fp) == {'LIN', 'PIECE_LIN', 'EXP', 'POW'}
     assert set(m3.covariate[0].op) == {'*'}
 
 
@@ -725,7 +727,8 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
         peripherals=Peripherals(counts=(0,)),
         lagtime=LagTime(modes=(Name(name='OFF'),)),
         covariate=(
-            Covariate(parameter=('CL', 'V'), covariate=('APGR', 'WGT'), fp=('CUSTOM',), op=('*',)),
+            Covariate(parameter=('CL', 'V'), covariate=('WGT',), fp=('CUSTOM',), op=('*')),
+            Covariate(parameter=('V',), covariate=('APGR',), fp=('CUSTOM',), op=('*')),
         ),
     )
 
@@ -739,14 +742,14 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
         ValueError,
         match=r'Cannot be performed with reference value. Try using .expand\(model\) first.',
     ):
-        m1 + m2
+        m1 - m2
 
     m2 = m2.expand(model)
     m3 = m1 - m2
 
     assert set(m3.covariate[0].parameter) == {'V'}
     assert set(m3.covariate[0].covariate) == {'WGT'}
-    assert set(m3.covariate[0].fp) == {'lin', 'piece_lin', 'exp', 'pow'}
+    assert set(m3.covariate[0].fp) == {'LIN', 'PIECE_LIN', 'EXP', 'POW'}
     assert set(m3.covariate[0].op) == {'*'}
 
 
@@ -754,18 +757,19 @@ def test_least_number_of_transformations(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
-    ss = "ABSORPTION([FO,ZO]);ELIMINATION(ZO);PERIPHERALS(1)"
+    ss = "ABSORPTION([FO,ZO]);ELIMINATION(ZO);PERIPHERALS(1);TRANSITS(1)"
     ss_mfl = parse(ss, mfl_class=True)
 
     lnt = model_mfl.least_number_of_transformations(ss_mfl, model)
     assert ('ABSORPTION', 'FO') in lnt
     assert ('ELIMINATION', 'ZO') in lnt
     assert ('PERIPHERALS', 1) in lnt
+    assert ('TRANSITS', 1, 'DEPOT') in lnt
     assert ('COVARIATE', 'CL', 'WGT', 'custom', '*', 'REMOVE') in lnt
     assert ('COVARIATE', 'V', 'WGT', 'custom', '*', 'REMOVE') in lnt
     assert ('COVARIATE', 'V', 'APGR', 'custom', '*', 'REMOVE') in lnt
 
-    assert len(lnt) == 6
+    assert len(lnt) == 7
 
 
 @pytest.mark.parametrize(

@@ -2729,7 +2729,14 @@ def get_central_volume_and_clearance(model: Model):
     t = odes.t
     odes = model.statements.ode_system
     central_comp = odes.central_compartment
-    rate = odes.get_flow(central_comp, output)
+
+    from .metabolite import has_presystemic_metabolite  # Circular import issue
+
+    if has_presystemic_metabolite(model):
+        metabolite = odes.find_compartment("METABOLITE")
+        rate = odes.get_flow(central_comp, metabolite)
+    else:
+        rate = odes.get_flow(central_comp, output)
     rate = sympy.expand(rate)
     if has_mixed_mm_fo_elimination(model):
         rate = rate.args[0]

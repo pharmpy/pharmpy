@@ -1,3 +1,4 @@
+import re
 import warnings
 from pathlib import Path
 from typing import Callable, List, Literal, Optional, Tuple, Union
@@ -9,6 +10,10 @@ from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_ch
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_parameter_uncertainty_step,
+    create_basic_pk_model,
+    find_clearance_parameters,
+    get_central_volume_and_clearance,
+    get_pk_parameters,
     has_mixed_mm_fo_elimination,
     plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
@@ -61,13 +66,13 @@ def run_amd(
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: float = 0.01,
-    vc_init: float = 1.0,
-    mat_init: float = 0.1,
-    b_init: Optional[Union[int, float]] = None,
-    emax_init: Optional[Union[int, float]] = None,
-    ec50_init: Optional[Union[int, float]] = None,
-    met_init: Optional[Union[int, float]] = None,
+    cl_init: Optional[float] = None,
+    vc_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    b_init: Optional[float] = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
@@ -77,15 +82,13 @@ def run_amd(
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[List[str]] = None,
+    mechanistic_covariates: Optional[List[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
 ):
     """Run Automatic Model Development (AMD) tool
-
-    Runs structural modelsearch, IIV building, and ruvsearch
 
     Parameters
     ----------
@@ -132,10 +135,11 @@ def run_amd(
     dv_types : dict or None
         Dictionary of DV types for TMDD models with multiple DVs.
     mechanistic_covariates : list
-        List of covariates to run in a separate proioritized covsearch run. The effects are extracted
-        from the search space for covsearch
+        List of covariates or tuple of covariate and parameter combination to run in a
+        separate proioritized covsearch run. For instance ["WT", ("CRCL", "CL")].
+        The effects are extracted from the search space for covsearch.
     retries_strategy: str
-        Weither or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.
+        Whether or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.
         Default is 'final'.
     seed : int or rng
         Random number generator or seed to be used.
@@ -190,9 +194,7 @@ def run_amd(
         dv = None
         iiv_strategy = 'fullblock'
 
-    if type(input) is str:
-        from pharmpy.modeling import create_basic_pk_model
-
+    if isinstance(input, str):
         model = create_basic_pk_model(
             administration,
             dataset_path=input,
@@ -201,7 +203,7 @@ def run_amd(
             mat_init=mat_init,
         )
         model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
-    elif type(input) is nonmem.model.Model:
+    elif isinstance(input, nonmem.model.Model):
         model = input
         model = model.replace(name='start')
     else:
@@ -261,6 +263,7 @@ def run_amd(
     modelsearch_features = mfl_filtering(input_search_space_features, "modelsearch")
     if modeltype in ['pkpd', 'drug_metabolite']:
         structsearch_features = mfl_filtering(input_search_space_features, "structsearch")
+        structsearch_features = mfl_stringify(structsearch_features)
         if search_space is None:
             if modeltype == 'pkpd':
                 structsearch_features = "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)"
@@ -414,7 +417,7 @@ def run_amd(
                     dv=1,
                     strictness=strictness,
                     path=db.path / f'{run_name}_drug',
-                    dir_name='{run_name}_drug',
+                    dir_name=f'{run_name}_drug',
                 )
                 run_subfuncs[f'{run_name}_drug'] = func
                 # And one for the metabolite
@@ -422,13 +425,16 @@ def run_amd(
                     dv=2,
                     strictness=strictness,
                     path=db.path / f'{run_name}_metabolite',
-                    dir_name='{run_name}_metabolite',
+                    dir_name=f'{run_name}_metabolite',
                 )
                 run_subfuncs[f'{run_name}_metabolite'] = func
             elif modeltype == 'tmdd' and dv_types is not None:
                 for key, value in dv_types.items():
                     func = _subfunc_ruvsearch(
-                        dv=value, strictness=strictness, path=db.path / f'ruvsearch_{key}'
+                        dv=value,
+                        strictness=strictness,
+                        path=db.path / f'{run_name}_tmdd_{key}',
+                        dir_name=f'{run_name}_tmdd_{key}',
                     )
                     run_subfuncs[f'ruvsearch_{key}'] = func
             else:
@@ -730,7 +736,7 @@ def _subfunc_structsearch_tmdd(
                     highest_ranked = rank_filtered.index[0]
                     final_model = retrieve_models(path / 'modelsearch', names=[highest_ranked])[0]
 
-        final_res = model_db.model_database.retrieve_modelfit_results(final_model.name)
+        final_res = model_db.retrieve_modelfit_results(final_model.name)
 
         extra_model = None
         extra_model_results = None
@@ -780,14 +786,19 @@ def _subfunc_structsearch_tmdd(
 
 def _subfunc_iiv(iiv_strategy, strictness, path, dir_name) -> SubFunc:
     def _run_iiv(model, modelfit_results):
+        keep = [
+            str(symbol)
+            for symbol in get_central_volume_and_clearance(model)
+            if symbol in find_clearance_parameters(model)
+        ]
         res = run_tool(
             'iivsearch',
-            'brute_force',
+            'top_down_exhaustive',
             iiv_strategy=iiv_strategy,
             model=model,
             results=modelfit_results,
             strictness=strictness,
-            keep=['CL'],
+            keep=keep,
             path=path / dir_name,
         )
         assert isinstance(res, Results)
@@ -825,8 +836,6 @@ def _subfunc_structural_covariates(
     path,
 ) -> SubFunc:
     def _run_structural_covariates(model, modelfit_results):
-        from pharmpy.modeling import get_pk_parameters
-
         allowed_parameters = allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )
@@ -919,63 +928,38 @@ def _subfunc_mechanistic_exploratory_covariates(
             return None
 
         if mechanistic_covariates:
-            # Extract them and all forced
-            mfl = ModelFeatures.create_from_mfl_statement_list(search_space)
-            mfl_covariates = mfl.expand(model).covariate
-            filtered_searchspace = []
-            mechanistic_searchspace = []
-            structural_searchspace = []
-            for cov_statement in mfl_covariates:
-                if not cov_statement.optional.option:
-                    # Not optional -> Add to all search spaces (was added in structural run)
-                    structural_searchspace.append(cov_statement)
-                    mechanistic_searchspace.append(cov_statement)
-                    filtered_searchspace.append(cov_statement)
-                else:
-                    current_cov = []
-                    for cov in cov_statement.covariate:
-                        if cov in mechanistic_covariates:
-                            current_cov.append(cov)
-                    if current_cov:
-                        mechanistic_cov = Covariate(
-                            cov_statement.parameter,
-                            tuple(current_cov),
-                            cov_statement.fp,
-                            cov_statement.op,
-                            cov_statement.optional,
-                        )
-                        mechanistic_searchspace.append(mechanistic_cov)
-                        if filtered_cov_set := tuple(
-                            set(cov_statement.covariate) - set(current_cov)
-                        ):
-                            filtered_cov = Covariate(
-                                cov_statement.parameter,
-                                filtered_cov_set,
-                                cov_statement.fp,
-                                cov_statement.op,
-                                cov_statement.optional,
-                            )
-                            filtered_searchspace.append(filtered_cov)
-                    else:
-                        filtered_searchspace.append(cov_statement)
+            mechanistic_searchspace, filtered_searchspace = _mechanistic_cov_extraction(
+                search_space, model, mechanistic_covariates
+            )
 
+            # FIXME : Move to validation
             if not mechanistic_searchspace:
                 warnings.warn(
                     'No covariate effect for given mechanistic covariates found.'
                     ' Skipping mechanistic COVsearch.'
                 )
             else:
+                mechanistic_searchspace = ModelFeatures.create_from_mfl_statement_list(
+                    mechanistic_searchspace
+                )
+
                 res = run_tool(
                     'covsearch',
-                    mfl_stringify(mechanistic_searchspace),
+                    mechanistic_searchspace,
                     model=model,
                     strictness=strictness,
                     results=modelfit_results,
                     path=path / 'covsearch_mechanistic',
                 )
-                index_offset = int(
-                    res.summary_tool.iloc[-1].name[-1][13:]
-                )  # Get largest number of run
+                model_db = res.tool_database.model_database
+                all_models = [model_db.retrieve_model(model) for model in model_db.list_models()]
+                covsearch_model_number = [
+                    re.search(r"(\d*)$").group(1)
+                    for model in all_models
+                    if model.name.startswith('covsearch')
+                ]
+                if covsearch_model_number:
+                    index_offset = max(covsearch_model_number)  # Get largest number of run
                 if res.final_model.name != model.name:
                     model = res.final_model
                     modelfit_results = res.tool_database.model_database.retrieve_modelfit_results(
@@ -988,11 +972,11 @@ def _subfunc_mechanistic_exploratory_covariates(
                         added_covs
                     )  # Avoid removing added cov in exploratory
         else:
-            filtered_searchspace = search_space
+            filtered_searchspace = mfl_stringify(search_space)
 
         res = run_tool(
             'covsearch',
-            mfl_stringify(filtered_searchspace),
+            filtered_searchspace,
             model=model,
             strictness=strictness,
             results=modelfit_results,
@@ -1003,6 +987,47 @@ def _subfunc_mechanistic_exploratory_covariates(
         return res
 
     return _run_mechanistic_exploratory_covariates
+
+
+def _mechanistic_cov_extraction(search_space, model, mechanistic_covariates):
+    mechanistic_covariates = [c if isinstance(c, str) else set(c) for c in mechanistic_covariates]
+    # Extract them and all forced
+    mfl = ModelFeatures.create_from_mfl_statement_list(search_space)
+    mfl_covariates = mfl.expand(model).covariate
+    mechanistic_searchspace = []
+    for cov_statement in mfl_covariates:
+        if not cov_statement.optional.option:
+            # Not optional -> Add search space (was added in structural run)
+            mechanistic_searchspace.append(cov_statement)
+        else:
+            current_cov = []
+            current_param = []
+            for cov in cov_statement.covariate:
+                if cov in mechanistic_covariates:
+                    current_cov.append(cov)
+                    current_param.append(cov_statement.parameter)
+                else:
+                    for param in cov_statement.parameter:
+                        if {cov, param} in mechanistic_covariates:
+                            current_cov.append(cov)
+                            current_param.append([param])
+            for cc, cp in zip(current_cov, current_param):
+                mechanistic_cov = Covariate(
+                    tuple(cp),
+                    (cc,),
+                    cov_statement.fp,
+                    cov_statement.op,
+                    cov_statement.optional,
+                )
+                mechanistic_searchspace.append(mechanistic_cov)
+    if mechanistic_searchspace:
+        mechanistic_searchspace = ModelFeatures.create_from_mfl_statement_list(
+            mechanistic_searchspace
+        )
+        filtered_searchspace = mfl - mechanistic_searchspace
+    else:
+        filtered_searchspace = mfl
+    return mechanistic_searchspace, filtered_searchspace
 
 
 def _subfunc_allometry(amd_start_model: Model, allometric_variable, path) -> SubFunc:
@@ -1046,13 +1071,13 @@ def validate_input(
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: float = 0.01,
-    vc_init: float = 1.0,
-    mat_init: float = 0.1,
-    b_init: Optional[Union[int, float]] = None,
-    emax_init: Optional[Union[int, float]] = None,
-    ec50_init: Optional[Union[int, float]] = None,
-    met_init: Optional[Union[int, float]] = None,
+    cl_init: Optional[float] = None,
+    vc_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    b_init: Optional[float] = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
     lloq_limit: Optional[str] = None,
@@ -1062,7 +1087,7 @@ def validate_input(
     resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[List[str]] = None,
+    mechanistic_covariates: Optional[List[Union[str, tuple]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
@@ -1076,6 +1101,17 @@ def validate_input(
     check_list("administration", administration, ALLOWED_ADMINISTRATION)
 
     check_list("strategy", strategy, ALLOWED_STRATEGY)
+
+    if modeltype == 'pkpd':
+        if cl_init is not None or vc_init is not None or mat_init is not None:
+            raise ValueError("Cannot provide pk parameter inits for pkpd model")
+    else:
+        if cl_init is None:
+            raise ValueError("Initial estimate for CL is needed")
+        if vc_init is None:
+            raise ValueError("Initial estimate for VC is needed")
+        if administration in ('oral', 'ivoral') and mat_init is None:
+            raise ValueError("Initial estimate for MAT is needed")
 
     if search_space is not None:
         try:
@@ -1124,6 +1160,50 @@ def validate_input(
         validate_allometric_variable(model, allometric_variable)
 
     # COVSEARCH
+    if mechanistic_covariates:
+        allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
+        allowed_parameters = allowed_parameters = set(get_pk_parameters(model)).union(
+            str(statement.symbol) for statement in model.statements.before_odes
+        )
+        for c in mechanistic_covariates:
+            if isinstance(c, str):
+                if c not in allowed_covariates:
+                    raise ValueError(
+                        f'Invalid mechanistic covariate: {c}.'
+                        f' Must be in {sorted(allowed_covariates)}'
+                    )
+            else:
+                if len(c) != 2:
+                    raise ValueError(
+                        f'Invalid argument in `mechanistic_covariate`: {c}.'
+                        f' Tuples need to be given with one parameter and one covariate.'
+                    )
+                cov_found = False
+                par_found = False
+                for a in c:
+                    if a in allowed_covariates:
+                        if cov_found:
+                            raise ValueError(
+                                f'`mechanistic_covariates` contain invalid argument: got `{c}`,'
+                                f' which contain two covariates.'
+                                f' Tuples need to be given with one parameter and one covariate.'
+                            )
+                        cov_found = True
+                    elif a in allowed_parameters:
+                        if par_found:
+                            raise ValueError(
+                                f'`mechanistic_covariates` contain invalid argument: got `{c}`,'
+                                f' which contain two parameters.'
+                                f' Tuples need to be given with one parameter and one covariate.'
+                            )
+                        par_found = True
+                    else:
+                        raise ValueError(
+                            f'`mechanistic_covariates` contain invalid argument: got `{c}`,'
+                            f' which contain {a}.'
+                            f' Tuples need to be given with one parameter and one covariate.'
+                        )
+
     if search_space is not None:
         covsearch_features = tuple(
             filter(

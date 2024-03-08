@@ -18,7 +18,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results, update_initial_estimates
-from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
+from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, _remove_sublist
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
@@ -27,11 +27,23 @@ from pharmpy.workflows.results import ModelfitResults
 IIV_STRATEGIES = frozenset(
     ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
 )
-IIV_ALGORITHMS = frozenset(('brute_force', 'brute_force_no_of_etas', 'brute_force_block_structure'))
+IIV_ALGORITHMS = frozenset(
+    (
+        'top_down_exhaustive',
+        'bottom_up_stepwise',
+        'skip',
+    )
+)
+IIV_CORRELATION_ALGORITHMS = frozenset(
+    (
+        'top_down_exhaustive',
+        'skip',
+    )
+)
 
 
 def create_workflow(
-    algorithm: Literal[tuple(IIV_ALGORITHMS)],
+    algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
     iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
     rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
@@ -39,12 +51,13 @@ def create_workflow(
     model: Optional[Model] = None,
     keep: Optional[List[str]] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
     Parameters
     ----------
-    algorithm : {'brute_force', 'brute_force_no_of_etas', 'brute_force_block_structure'}
+    algorithm : {'top_down_exhaustive','bottom_up_stepwise', 'skip'}
         Which algorithm to run.
     iiv_strategy : {'no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock'}
         If/how IIV should be added to start model. Default is 'no_add'.
@@ -61,6 +74,9 @@ def create_workflow(
         List of IIVs to keep
     strictness : str or None
         Strictness criteria
+    correlation_algorithm: {'top_down_exhaustive', 'skip'} or None
+        Which algorithm to run for the determining block structure of added IIVs. If None, the
+        algorithm is determined based on the 'algorithm' argument
 
     Returns
     -------
@@ -73,7 +89,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_iivsearch('brute_force', results=results, model=model)   # doctest: +SKIP
+    >>> run_iivsearch('td_brute_force', results=results, model=model)   # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name='iivsearch')
@@ -83,6 +99,7 @@ def create_workflow(
         model,
         results,
         algorithm,
+        correlation_algorithm,
         iiv_strategy,
         rank_type,
         cutoff,
@@ -119,6 +136,7 @@ def create_step_workflow(
         strictness,
         input_model_entry,
         base_model_entry.model.name,
+        wf_algorithm.name,
     )
 
     post_process_tasks = [base_model_task] + wb.output_tasks
@@ -128,7 +146,16 @@ def create_step_workflow(
 
 
 def start(
-    context, input_model, input_res, algorithm, iiv_strategy, rank_type, cutoff, keep, strictness
+    context,
+    input_model,
+    input_res,
+    algorithm,
+    correlation_algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+    keep,
+    strictness,
 ):
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
 
@@ -143,10 +170,25 @@ def start(
     else:
         base_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
 
-    if algorithm == 'brute_force':
-        list_of_algorithms = ['brute_force_no_of_etas', 'brute_force_block_structure']
-    else:
-        list_of_algorithms = [algorithm]
+    algorithm_sub = {
+        "top_down_exhaustive": "td_exhaustive_no_of_etas",
+        "bottom_up_stepwise": "bu_stepwise_no_of_etas",
+    }
+    correlation_algorithm_sub = {
+        "top_down_exhaustive": "td_exhaustive_block_structure",
+    }
+
+    list_of_algorithms = []
+    if algorithm != "skip":
+        list_of_algorithms.append(algorithm_sub[algorithm])
+    if correlation_algorithm != "skip":
+        if correlation_algorithm is None:
+            if algorithm in correlation_algorithm_sub.keys():
+                correlation_algorithm = algorithm
+            else:
+                correlation_algorithm = "top_down_exhaustive"
+        list_of_algorithms.append(correlation_algorithm_sub[correlation_algorithm])
+
     sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
 
     no_of_models = 0
@@ -158,7 +200,7 @@ def start(
     applied_algorithms = []
     for algorithm_cur in list_of_algorithms:
         if (
-            algorithm_cur == 'brute_force_block_structure'
+            algorithm_cur == 'td_exhaustive_block_structure'
             and len(
                 set(base_model_entry.model.random_variables.iiv.names).difference(
                     _get_fixed_etas(base_model_entry.model)
@@ -168,11 +210,18 @@ def start(
         ):
             continue
         algorithm_func = getattr(algorithms, algorithm_cur)
-        if algorithm_cur == "brute_force_no_of_etas":
+        if algorithm_cur == "td_exhaustive_no_of_etas":
             # NOTE: This does not need to be a model entry since it is only used as a start point for the
             # candidate models, when the workflow is run the input to this sub-workflow will be a model entry
             wf_algorithm = algorithm_func(
                 base_model_entry.model, index_offset=no_of_models, keep=keep
+            )
+        elif algorithm_cur == "bu_stepwise_no_of_etas":
+            wf_algorithm = algorithm_func(
+                base_model_entry.model,
+                index_offset=no_of_models,
+                input_model_entry=input_model_entry,
+                keep=keep,
             )
         else:
             wf_algorithm = algorithm_func(base_model_entry.model, index_offset=no_of_models)
@@ -289,9 +338,28 @@ def _add_iiv(iiv_strategy, model, modelfit_results):
     return model
 
 
-def post_process(rank_type, cutoff, strictness, input_model_entry, base_model_name, *model_entries):
+def post_process(
+    rank_type,
+    cutoff,
+    strictness,
+    input_model_entry,
+    base_model_name,
+    algorithm_name,
+    *model_entries,
+):
     res_model_entries = []
     base_model_entry = None
+
+    def flatten_list(lst):
+        result = []
+        for item in lst:
+            if isinstance(item, list):
+                result.extend(flatten_list(item))
+            else:
+                result.append(item)
+        return result
+
+    model_entries = flatten_list(model_entries)
     for model_entry in model_entries:
         if model_entry.model.name == base_model_name:
             base_model_entry = model_entry
@@ -313,6 +381,21 @@ def post_process(rank_type, cutoff, strictness, input_model_entry, base_model_na
             base_model, modelfit_results=base_model_entry.modelfit_results
         )
 
+    # Uses other values than default for MBIC calculations
+    if rank_type == "mbic" and algorithm_name == "bu_stepwise_no_of_etas":
+        # Find all ETAs in model
+        iivs = base_model_entry.model.random_variables.iiv
+        iiv_names = iivs.names  # All ETAs in the base model
+        # Remove fixed etas
+        fixed_etas = _get_fixed_etas(base_model_entry.model)
+        iiv_names = _remove_sublist(iiv_names, fixed_etas)
+
+        number_of_predicted = len(iiv_names)
+        number_of_expected = number_of_predicted / 2
+    else:
+        number_of_predicted = None
+        number_of_expected = None
+
     res = create_results(
         IIVSearchResults,
         input_model_entry,
@@ -322,6 +405,8 @@ def post_process(rank_type, cutoff, strictness, input_model_entry, base_model_na
         cutoff,
         bic_type='iiv',
         strictness=strictness,
+        n_predicted=number_of_predicted,
+        n_expected=number_of_expected,
     )
 
     summary_tool = res.summary_tool
@@ -336,12 +421,7 @@ def post_process(rank_type, cutoff, strictness, input_model_entry, base_model_na
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    algorithm,
-    iiv_strategy,
-    rank_type,
-    model,
-    keep,
-    strictness,
+    algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm
 ):
     if keep:
         for parameter in keep:
@@ -355,6 +435,13 @@ def validate_input(
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )
+
+    if algorithm == correlation_algorithm == "skip":
+        raise ValueError("Both algorithm and correlation_algorithm are set to 'skip'")
+    elif algorithm == "skip" and correlation_algorithm is None:
+        raise ValueError(
+            "correlation_algorithm need to be specified if" " 'algorithm' is set to skip"
+        )
 
 
 @dataclass(frozen=True)

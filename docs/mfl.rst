@@ -68,8 +68,8 @@ MFL support the following model features:
 |               |                                | metabolite compartment (if any). Only applicable to drug_metabolite|
 |               |                                | models.                                                            |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| TRANSITS      | `number`, DEPOT/NODEPOT        | Number of absorption transit compartments. Whether convert depot   |
-|               |                                | compartment into a transit compartment                             |
+| TRANSITS      | `number`, DEPOT/NODEPOT        | Number of absorption transit compartments and whether to keep      |
+|               |                                | the depot compartment                                              |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | LAGTIME       | :code:`OFF, ON`                | Absorption lagtime                                                 |
 +---------------+--------------------------------+--------------------------------------------------------------------+
@@ -133,10 +133,11 @@ Describe intervals
 
 It is possible to use ranges and arrays to describe the search space for e.g. transit and peripheral compartments.
 
-To add 1, 2 and 3 peripheral compartments:
+To test 0, 1, 2 and 3 peripheral compartments:
 
 .. code::
 
+    TRANSITS(0)
     TRANSITS(1)
     TRANSITS(2)
     TRANSITS(3)
@@ -145,13 +146,13 @@ This is equivalent to:
 
 .. code::
 
-    TRANSITS(1..3)
+    TRANSITS(0..3)
 
 As well as:
 
 .. code::
 
-    TRANSITS([1,2,3])
+    TRANSITS([0, 1, 2, 3])
 
 Redundant descriptions
 ======================
@@ -174,14 +175,14 @@ And:
 
 .. code::
 
-    PERIPHERALS(1..2)
+    PERIPHERALS(0..2)
     PERIPHERALS(1)
 
 Is equivalent to:
 
 .. code::
 
-    PERIPHERALS(1..2)
+    PERIPHERALS(0..2)
 
 Examples
 ========
@@ -193,15 +194,15 @@ An example of a search space for PK models with oral data:
     ABSORPTION([ZO,SEQ-ZO-FO])
     ELIMINATION([MM,MIX-FO-MM])
     LAGTIME(ON)
-    TRANSITS([1,3,10],*)
-    PERIPHERALS(1)
+    TRANSITS([0, 1, 3, 10],*)
+    PERIPHERALS(0..1)
 
 An example of a search space for PK models with IV data:
 
 .. code::
 
-    ELIMINATION([MM,MIX-FO-MM])
-    PERIPHERALS([1,2])
+    ELIMINATION([FO,MM,MIX-FO-MM])
+    PERIPHERALS([0..2])
 
 
 Search through all available absorption rates:

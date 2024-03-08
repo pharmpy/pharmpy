@@ -383,7 +383,7 @@ def _create_combined_model(input_model_entry, current_iteration):
     df = model.dataset
     assert df is not None
     df = df.copy()
-    df['IPRED'].replace(0, 2.225e-307, inplace=True)
+    df['IPRED'] = df['IPRED'].replace(0, 2.225e-307)
     model = model.replace(dataset=df)
     ipred_min = df['IPRED'].min()
     sigma_add_init = abs(ipred_min) / 2 if ipred_min != 0 else 0.001

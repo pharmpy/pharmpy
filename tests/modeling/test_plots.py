@@ -6,6 +6,7 @@ from pharmpy.modeling import (
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
     plot_dv_vs_pred,
+    plot_eta_distributions,
     plot_individual_predictions,
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
@@ -35,6 +36,16 @@ def test_plot_transformed_eta_distributions(load_model_for_test, testdata):
     ie = res.individual_estimates
     plot = plot_transformed_eta_distributions(model, pe, ie)
     assert plot
+
+
+def test_plot_eta_distributions(tmp_path, load_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+        res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+        ie = res.individual_estimates
+        plot = plot_eta_distributions(model, ie)
+        plot.save('Plot.html')
+        assert plot
 
 
 def test_plot_dv_vs_ipred(load_model_for_test, testdata):

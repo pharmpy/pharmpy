@@ -153,3 +153,5 @@ def test_filter_dataset(load_model_for_test, testdata):
     assert 2 in model.dataset['DVID'].values
     model_filtered = filter_dataset(model, 'DVID == 1')
     assert 2 not in model_filtered.dataset['DVID'].values
+    with pytest.raises(ValueError):
+        filter_dataset(model, 'dummy_col == 1')
