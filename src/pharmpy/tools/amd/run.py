@@ -332,6 +332,11 @@ def run_amd(
             def_cov_search_feature = def_cov_search_feature + (
                 Covariate(('RUV',), ('ADMID',), ('cat',), '*', Option(True)),
             )
+        if modeltype == 'pkpd':
+            def_cov_search_feature = (
+                Covariate(Ref('PD_IIV'), Ref('CONTINUOUS'), ('exp',), '*', Option(True)),
+                Covariate(Ref('PD_IIV'), Ref('CATEGORICAL'), ('cat',), '*', Option(True)),
+            )
 
         covsearch_features = def_cov_search_feature + covsearch_features
 
@@ -1110,6 +1115,14 @@ def validate_input(
     if modeltype == 'pkpd':
         if cl_init is not None or vc_init is not None or mat_init is not None:
             raise ValueError("Cannot provide pk parameter inits for pkpd model")
+        if b_init is None:
+            raise ValueError("Initial estimate for baseline is needed")
+        if emax_init is None:
+            raise ValueError("Initial estimate for E_max is needed")
+        if ec50_init is None:
+            raise ValueError("Initial estimate for EC_50 is needed")
+        if met_init is None:
+            raise ValueError("Initial estimate for MET is needed")
     else:
         if cl_init is None:
             raise ValueError("Initial estimate for CL is needed")
