@@ -211,6 +211,54 @@ def plot_transformed_eta_distributions(
     return facet
 
 
+def plot_eta_distributions(
+    model: Model,
+    individual_estimates: pd.DataFrame,
+):
+    """Plot eta distributions for all etas
+
+    Parameters
+    ----------
+    model : Model
+        Previously run Pharmpy model.
+    individual_estimates : pd.DataFrame
+        Individual estimates for etas
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+    """
+    i = 1
+    df = pd.DataFrame()
+    for eta in model.random_variables.etas.names:
+        subdf = pd.DataFrame({'value': individual_estimates[eta]})
+        subdf['eta'] = eta
+        df = pd.concat([df, subdf])
+        i += 1
+
+    df['y'] = 0
+    single = (
+        alt.Chart(width=400, height=400)
+        .transform_filter('isValid(datum.eta)')
+        .transform_density(
+            'value',
+            groupby=['eta'],
+            as_=['value', 'density'],
+        )
+        .mark_area(opacity=0.4)
+        .encode(
+            x=alt.X('value:Q', axis=alt.Axis(title='Value')),
+            y=alt.Y('density:Q', title='Density'),
+            color=alt.value('blue'),
+        )
+    )
+    ticks = alt.Chart().mark_tick().encode(x='value', y='y', color=alt.value('black'))
+    layer = alt.layer(single, ticks, data=df)
+    facet = layer.facet(facet='eta:N', columns=3).interactive()
+    return facet
+
+
 def plot_dv_vs_pred(model: Model, predictions: pd.DataFrame) -> alt.Chart:
     """Plot DV vs PRED
 
