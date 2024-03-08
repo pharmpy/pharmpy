@@ -59,7 +59,7 @@ cp $TESTDATA/models/moxo_simulated_amd.csv $TESTPATH
 cp $TESTDATA/models/moxo_simulated_amd.datainfo $TESTPATH
 
 if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
-  pharmpy run modelsearch $TESTPATH/mox2.mod 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --path $TESTPATH/modelsearch/
+    pharmpy run modelsearch $TESTPATH/mox2.mod 'ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME(ON)' 'reduced_stepwise' --path $TESTPATH/modelsearch/
   cp_results $TESTPATH/modelsearch/results.json $DEST/modelsearch_results.json
   cp $TESTPATH/modelsearch/metadata.json $DEST/metadata.json
 fi
