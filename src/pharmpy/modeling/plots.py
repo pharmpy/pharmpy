@@ -528,8 +528,7 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on,
         tooltip=(idv,),
     )
     line = _identity_line(
-        (min_value := min([df[predcol_name].min(), df[dv].min()])) - abs(min_value) * 10,
-        max([df[predcol_name].max(), df[dv].max()]) * 10,
+        min([df[predcol_name].min(), df[dv].min()]), max([df[predcol_name].max(), df[dv].max()])
     )
     if stratify_on is not None:
         chart = chart.properties(height=300, width=300)
@@ -659,6 +658,9 @@ def _vertical_line():
 
 
 def _identity_line(min_value, max_value):
+    # Extend the line
+    min_value = (min_value - abs(min_value) * 10,)
+    max_value = max_value * 10
     x1, x2 = alt.param(value=min_value), alt.param(value=max_value)
     y1, y2 = alt.param(value=min_value), alt.param(value=max_value)
     line = (
