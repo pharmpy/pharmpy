@@ -1,4 +1,4 @@
-from typing import List, Literal, Optional
+from typing import List
 
 from pharmpy.model import Model
 from pharmpy.tools.mfl.helpers import funcs, structsearch_metabolite_features
@@ -15,7 +15,6 @@ def create_drug_metabolite_models(
     model: Model,
     results,
     search_space: str,
-    estimation_tool: Optional[Literal['dummy']] = None,
 ) -> tuple[List[Model], Model]:
     # FIXME : Implement ModelFeatures when we can extract METABOLITE information
 
@@ -73,13 +72,13 @@ def create_drug_metabolite_models(
             change_name_task = Task("number_run", change_name, model_index)
             model_index += 1
             wb.add_task(change_name_task, predecessors=[out_task])
-            wf_fit = create_fit_workflow(n=1, tool=estimation_tool)
+            wf_fit = create_fit_workflow(n=1)
             wb.insert_workflow(wf_fit, predecessors=[change_name_task])
 
             candidate_model_tasks += wf_fit.output_tasks
     else:
         wb, candidate_model_tasks = exhaustive_stepwise(
-            peripheral_functions, "no_add", wb, "structsearch", estimation_tool=estimation_tool
+            peripheral_functions, "no_add", wb, "structsearch"
         )
 
     return WorkflowBuilder(wb), candidate_model_tasks, base_description

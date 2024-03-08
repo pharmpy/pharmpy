@@ -26,7 +26,6 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
-    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
@@ -49,8 +48,6 @@ def create_workflow(
         Pharmpy model
     strictness : str or None
         Strictness criteria
-    estimation_tool : str or None
-        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -78,7 +75,6 @@ def create_workflow(
         results,
         model,
         strictness,
-        estimation_tool,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -96,7 +92,6 @@ def start(
     results,
     model,
     strictness,
-    estimation_tool,
 ):
     wb = WorkflowBuilder()
 
@@ -117,7 +112,7 @@ def start(
         base_task = Task("create_base_model", create_base_model, mfl_statements)
         wb.add_task(base_task, predecessors=start_task)
 
-        base_fit = create_fit_workflow(n=1, tool=estimation_tool)
+        base_fit = create_fit_workflow(n=1)
         wb.insert_workflow(base_fit, predecessors=base_task)
         base_fit = base_fit.output_tasks
     else:
@@ -137,9 +132,7 @@ def start(
     mfl_funcs = filter_mfl_statements(mfl_statements, create_base_model(mfl_statements, model))
 
     # TODO : Implement task for filtering the search space instead
-    wf_search, candidate_model_tasks = algorithm_func(
-        mfl_funcs, iiv_strategy, estimation_tool=estimation_tool
-    )
+    wf_search, candidate_model_tasks = algorithm_func(mfl_funcs, iiv_strategy)
 
     if candidate_model_tasks:
         # Clear base description to not interfere with candidate models

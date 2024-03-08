@@ -38,7 +38,6 @@ from .external import parse_modelfit_results
 
 def fit(
     model_or_models: Union[Model, List[Model]],
-    estimation_tool: Optional[str] = None,
     path: Optional[Union[Path, str]] = None,
 ) -> Union[ModelfitResults, List[ModelfitResults]]:
     """Fit models.
@@ -47,8 +46,6 @@ def fit(
     ----------
     model_or_models : Model | list[Model]
         List of models or one single model
-    estimation_tool : str
-        Estimation tool to use. None to use default
     path :  Path | str
         Path to fit directory
 
@@ -75,7 +72,7 @@ def fit(
         else (False, model_or_models)
     )
 
-    modelfit_results = run_tool('modelfit', models, estimation_tool=estimation_tool, path=path)
+    modelfit_results = run_tool('modelfit', models, path=path)
 
     return modelfit_results if single else list(modelfit_results)
 

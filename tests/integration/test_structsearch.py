@@ -1,8 +1,7 @@
-import pytest
-
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import convert_model, create_basic_pk_model  # , filter_dataset
-from pharmpy.tools import fit, run_structsearch
+
+# from pharmpy.tools import fit, run_structsearch
 
 
 def test_pkpd(tmp_path, load_model_for_test, testdata):

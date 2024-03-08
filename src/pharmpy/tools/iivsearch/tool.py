@@ -52,7 +52,6 @@ def create_workflow(
     keep: Optional[List[str]] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
-    estimation_tool: Optional[Literal['dummy']] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -78,8 +77,6 @@ def create_workflow(
     correlation_algorithm: {'top_down_exhaustive', 'skip'} or None
         Which algorithm to run for the determining block structure of added IIVs. If None, the
         algorithm is determined based on the 'algorithm' argument
-    estimation_tool : str or None
-        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -108,7 +105,6 @@ def create_workflow(
         cutoff,
         keep,
         strictness,
-        estimation_tool,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -124,14 +120,13 @@ def create_step_workflow(
     rank_type,
     cutoff,
     strictness,
-    estimation_tool,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
     wb.add_task(start_task)
 
     if iiv_strategy != 'no_add':
-        wf_fit = create_fit_workflow(n=1, tool=estimation_tool)
+        wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
         base_model_task = wf_fit.output_tasks[0]
     else:
@@ -167,7 +162,6 @@ def start(
     cutoff,
     keep,
     strictness,
-    estimation_tool,
 ):
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
 
@@ -229,7 +223,6 @@ def start(
                 base_model_entry.model,
                 index_offset=no_of_models,
                 keep=keep,
-                estimation_tool=estimation_tool,
             )
         elif algorithm_cur == "bu_stepwise_no_of_etas":
             wf_algorithm = algorithm_func(
@@ -239,9 +232,7 @@ def start(
                 keep=keep,
             )
         else:
-            wf_algorithm = algorithm_func(
-                base_model_entry.model, index_offset=no_of_models, estimation_tool=estimation_tool
-            )
+            wf_algorithm = algorithm_func(base_model_entry.model, index_offset=no_of_models)
 
         wf = create_step_workflow(
             input_model_entry,
@@ -251,7 +242,6 @@ def start(
             rank_type,
             cutoff,
             strictness,
-            estimation_tool,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
