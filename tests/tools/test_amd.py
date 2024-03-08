@@ -28,6 +28,9 @@ def test_invalid_search_space_raises(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -47,6 +50,9 @@ def test_skip_most(tmp_path, testdata):
             retries_strategy="skip",
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
     assert len(to_be_skipped) == 3
@@ -72,6 +78,9 @@ def test_raise_allometry(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -95,6 +104,9 @@ def test_raise_covsearch(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -115,6 +127,9 @@ def test_skip_covsearch(tmp_path, testdata):
             retries_strategy="skip",
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
     assert len(to_be_skipped) == 1
 
@@ -135,6 +150,9 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
             occasion='XAT2',
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
     assert len(to_be_skipped) == 1
@@ -160,6 +178,9 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -179,6 +200,9 @@ def test_ignore_datainfo_fallback(tmp_path, testdata):
             ignore_datainfo_fallback=True,
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
     assert len(to_be_skipped) == 3
@@ -246,6 +270,9 @@ def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates
                     mechanistic_covariates=mechanistic_covariates,
                     path=db.path,
                     resume=True,
+                    cl_init=1.0,
+                    vc_init=10.0,
+                    mat_init=1.0,
                 )
         else:
             # Should not raise any errors
@@ -258,6 +285,9 @@ def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates
                 mechanistic_covariates=mechanistic_covariates,
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 

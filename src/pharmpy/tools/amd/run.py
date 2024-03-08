@@ -1093,7 +1093,7 @@ def validate_input(
 
     check_list("strategy", strategy, ALLOWED_STRATEGY)
 
-    if modeltype is 'pkpd':
+    if modeltype == 'pkpd':
         if cl_init is not None or vc_init is not None or mat_init is not None:
             raise ValueError("Cannot provide pk parameter inits for pkpd model")
     else:
