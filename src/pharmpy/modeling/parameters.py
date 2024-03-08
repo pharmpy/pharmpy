@@ -119,7 +119,7 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import load_example_model, set_initial_estimates
     >>> model = load_example_model("pheno")
-    >>> model = set_initial_estimates(model, {'PTVCL': 2})
+    >>> model = set_initial_estimates(model, {'PTVCL': 2.0})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 2.0, lower=0.0, upper=∞, fix=False)
 
