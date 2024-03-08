@@ -8,7 +8,8 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results, run_amd
-from pharmpy.tools.amd.run import validate_input
+from pharmpy.tools.amd.run import _mechanistic_cov_extraction, validate_input
+from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.workflows import default_tool_database
 
 
@@ -27,6 +28,9 @@ def test_invalid_search_space_raises(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -46,6 +50,9 @@ def test_skip_most(tmp_path, testdata):
             retries_strategy="skip",
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
     assert len(to_be_skipped) == 3
@@ -71,6 +78,9 @@ def test_raise_allometry(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -94,6 +104,9 @@ def test_raise_covsearch(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -114,6 +127,9 @@ def test_skip_covsearch(tmp_path, testdata):
             retries_strategy="skip",
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
     assert len(to_be_skipped) == 1
 
@@ -134,6 +150,9 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
             occasion='XAT2',
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
     assert len(to_be_skipped) == 1
@@ -159,6 +178,9 @@ def test_skip_iovsearch_missing_occasion_raises(tmp_path, testdata):
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
             )
 
 
@@ -178,9 +200,130 @@ def test_ignore_datainfo_fallback(tmp_path, testdata):
             ignore_datainfo_fallback=True,
             path=db.path,
             resume=True,
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
     assert len(to_be_skipped) == 3
+
+
+@pytest.mark.parametrize(
+    'mechanistic_covariates, error',
+    [
+        (
+            ["WT", ("CLCR", "CL")],
+            'PASS',
+        ),
+        (
+            ["WT", "CLCR"],
+            'PASS',
+        ),
+        (
+            [("CLCR", "CL")],
+            'PASS',
+        ),
+        (
+            [("CL", "CLCR")],
+            'PASS',
+        ),
+        (
+            ["NOT_A_COVARIATE", ("CLCR", "CL")],
+            'Invalid mechanistic covariate:',
+        ),
+        (
+            ["WT", ("CL", "CL")],
+            '`mechanistic_covariates` contain invalid argument',
+        ),
+        (
+            ["CLCR", ("WT", "WT")],
+            '`mechanistic_covariates` contain invalid argument',
+        ),
+        (
+            ["CLCR", ("WT", "NOT_A_COVARIATE")],
+            '`mechanistic_covariates` contain invalid argument',
+        ),
+        (
+            ["CLCR", ("WT",)],
+            'Invalid argument in `mechanistic_covariate`:',
+        ),
+    ],
+)
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
+def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates, error):
+    with chdir(tmp_path):
+        db, model, res = _load_model(testdata, with_datainfo=True)
+
+        if error != "PASS":
+            with pytest.raises(
+                ValueError,
+                match=error,
+            ):
+                validate_input(
+                    model,
+                    results=res,
+                    modeltype='basic_pk',
+                    administration='oral',
+                    retries_strategy="skip",
+                    mechanistic_covariates=mechanistic_covariates,
+                    path=db.path,
+                    resume=True,
+                    cl_init=1.0,
+                    vc_init=10.0,
+                    mat_init=1.0,
+                )
+        else:
+            # Should not raise any errors
+            validate_input(
+                model,
+                results=res,
+                modeltype='basic_pk',
+                administration='oral',
+                retries_strategy="skip",
+                mechanistic_covariates=mechanistic_covariates,
+                path=db.path,
+                resume=True,
+                cl_init=1.0,
+                vc_init=10.0,
+                mat_init=1.0,
+            )
+
+
+@pytest.mark.parametrize(
+    'mechanistic_covariates, expected_mechanistic_ss, expected_filtered_ss',
+    [
+        (["WT", ("CLCR", "CL")], 'COVARIATE?(CL, [WT,CLCR], POW)', ''),
+        (["WT", "CLCR"], 'COVARIATE?(CL, [WT,CLCR], POW)', ''),
+        ([("CLCR", "CL")], 'COVARIATE?(CL, CLCR, POW)', 'COVARIATE?(CL, WT, POW)'),
+        ([("CL", "CLCR")], 'COVARIATE?(CL, CLCR, POW)', 'COVARIATE?(CL, WT, POW)'),
+        (
+            ["WT"],
+            'COVARIATE?(CL, WT, POW)',
+            'COVARIATE?(CL, CLCR, POW)',
+        ),
+    ],
+)
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
+def test_mechanistic_covariate_extraction(
+    tmp_path, testdata, mechanistic_covariates, expected_mechanistic_ss, expected_filtered_ss
+):
+    with chdir(tmp_path):
+        db, model, res = _load_model(testdata, with_datainfo=True)
+
+        search_space = mfl_parse('COVARIATE?(CL, [WT,CLCR], POW)')
+        mechanistic_ss, filtered_ss = _mechanistic_cov_extraction(
+            search_space, model, mechanistic_covariates
+        )
+
+        assert mechanistic_ss == mfl_parse(expected_mechanistic_ss, True)
+        if expected_filtered_ss:
+            assert filtered_ss == mfl_parse(expected_filtered_ss, True)
+        else:
+            assert not filtered_ss.covariate
 
 
 def _load_model(testdata: Path, with_datainfo: bool = False):

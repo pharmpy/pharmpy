@@ -55,7 +55,8 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
             try:
                 res = run_tool(
                     'iivsearch',
-                    'brute_force_no_of_etas',
+                    'top_down_exhaustive',
+                    correlation_algorithm='skip',
                     model=model_start,
                     results=start_res,
                     path=path,

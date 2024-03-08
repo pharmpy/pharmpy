@@ -72,6 +72,10 @@ def run(workflow: Workflow[T]) -> T:
                     # NOTE: Catch deprecation warning from python 3.10 via tornado.
                     # Should be fixed with tornado 6.2
                     warnings.filterwarnings("ignore", message="There is no current event loop")
+                    # Because of https://github.com/dask/distributed/issues/8559 when having no network
+                    warnings.filterwarnings(
+                        "ignore", "Couldn't detect a suitable IP address for reaching"
+                    )
                     with LocalCluster(
                         processes=False, dashboard_address=':31058'
                     ) as cluster, Client(cluster) as client:

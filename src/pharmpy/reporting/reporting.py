@@ -4,7 +4,7 @@ import shutil
 import ssl
 import warnings
 from pathlib import Path
-from urllib.request import urlopen
+from urllib.request import URLError, urlopen
 
 from bs4 import BeautifulSoup
 from csscompressor import compress
@@ -110,8 +110,12 @@ def embed_css_and_js(html, target):
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
             ctx.verify_mode = ssl.CERT_NONE  # To avoid CERTIFICATE_VERIFY_FAILED
-            with urlopen(source, context=ctx) as infile:
-                content = infile.read().decode('utf-8')
+            try:
+                with urlopen(source, context=ctx) as infile:
+                    content = infile.read().decode('utf-8')
+            except URLError:
+                # Skip file if it cannot be found or if network is down
+                continue
         else:
             path = html.parent / source
             if path.name == 'thebelab-helper.js':  # This file wasn't created

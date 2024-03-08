@@ -20,6 +20,7 @@ from pharmpy.internals.math import (
     flattened_to_symmetric,
     is_posdef,
     is_positive_semidefinite,
+    nearest_positive_definite,
     nearest_positive_semidefinite,
     round_and_keep_sum,
     round_to_n_sigdig,
@@ -124,6 +125,20 @@ def test_nearest_posdef():
             A = np.random.randn(j, j)
             B = nearest_positive_semidefinite(A)
             assert is_positive_semidefinite(B)
+
+    A = np.array(
+        [
+            [0.020976700046166197, -0.005089899809737999],
+            [-0.005089899809737999, 0.001235040784115413],
+        ]
+    )
+    assert np.allclose(
+        nearest_positive_definite(A) - A,
+        np.array([[3.46944695e-18, 0.00000000e00], [0.00000000e00, 2.16840434e-19]]),
+    )
+
+    A = np.array([[1.0, 0.0], [0.0, 1.0]])
+    assert (nearest_positive_definite(A) == A).all()
 
 
 def test_conditional_joint_normal():

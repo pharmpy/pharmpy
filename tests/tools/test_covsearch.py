@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.modeling import add_covariate_effect, get_covariates, remove_covariate_effect
+from pharmpy.modeling import add_covariate_effect, get_covariate_effects, remove_covariate_effect
 from pharmpy.tools.covsearch.tool import (
     create_workflow,
     filter_search_space_and_model,
@@ -79,47 +79,42 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
             ValueError,
             'Invalid `algorithm`',
         ),
-        (('nonmem', 'pheno.mod'), dict(effects=1), TypeError, 'Invalid `effects`'),
+        (('nonmem', 'pheno.mod'), dict(search_space=1), TypeError, 'Invalid `search_space`'),
         (
             ('nonmem', 'pheno.mod'),
-            dict(effects=MINIMAL_INVALID_MFL_STRING),
+            dict(search_space=MINIMAL_INVALID_MFL_STRING),
             ValueError,
-            'Invalid `effects`',
+            'Invalid `search_space`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(effects='LAGTIME()'),
+            dict(search_space='LAGTIME(ON)'),
             ValueError,
-            'Invalid `effects`',
+            'Invalid `search_space`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(effects='COVARIATE([CL, VC], WGT, EXP)'),
+            dict(search_space='COVARIATE([CL, VC], WGT, EXP)'),
             ValueError,
-            'Invalid `effects` because of invalid parameter',
+            'Invalid `search_space` because of invalid parameter',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(effects='COVARIATE([CL, V], SEX, EXP)'),
+            dict(search_space='COVARIATE([CL, V], SEX, EXP)'),
             ValueError,
-            'Invalid `effects` because of invalid covariate',
+            'Invalid `search_space` because of invalid covariate',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(effects='COVARIATE([CL, V], WGT, [EXP, ABC])'),
+            dict(search_space='COVARIATE([CL, V], WGT, [EXP, ABC])'),
             ValueError,
-            'Invalid `effects` because of invalid effect function',
+            'Invalid `search_space` because of invalid effect function',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(
-                effects=(
-                    ('CL', 'WGT', 'exp', '*'),
-                    ('V', 'WGT', 'exp', '-'),
-                )
-            ),
+            dict(search_space='COVARIATE(CL, WGT, exp, -)'),
             ValueError,
-            'Invalid `effects`',
+            'Invalid `search_space`',
         ),
         (
             None,
@@ -140,7 +135,7 @@ def test_validate_input_raises(
     model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
 
     harmless_arguments = dict(
-        effects=MINIMAL_VALID_MFL_STRING,
+        search_space=MINIMAL_VALID_MFL_STRING,
     )
 
     kwargs = {**harmless_arguments, 'model': model, **arguments}
@@ -150,23 +145,23 @@ def test_validate_input_raises(
 
 
 def test_covariate_filtering(load_model_for_test, testdata):
-    effects = 'COVARIATE(@IIV, @CONTINUOUS, lin);COVARIATE?(@IIV, @CATEGORICAL, CAT)'
+    search_space = 'COVARIATE(@IIV, @CONTINUOUS, lin);COVARIATE?(@IIV, @CATEGORICAL, CAT)'
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    orig_cov = get_covariates(model)
+    orig_cov = get_covariate_effects(model)
     assert len(orig_cov) == 3
 
-    eff, filtered_model = filter_search_space_and_model(effects, model)
+    eff, filtered_model = filter_search_space_and_model(search_space, model)
     assert len(eff) == 2
     expected_cov_eff = set((('CL', 'APGR', 'cat', '*'), ('V', 'APGR', 'cat', '*')))
     assert set(eff.keys()) == expected_cov_eff
-    assert len(get_covariates(filtered_model)) == 2
+    assert len(get_covariate_effects(filtered_model)) == 2
 
-    for cov_effect in get_covariates(model):
+    for cov_effect in get_covariate_effects(model):
         model = remove_covariate_effect(model, cov_effect[0], cov_effect[1].name)
 
     model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
-    assert len(get_covariates(model)) == 1
-    effects = 'COVARIATE([CL, V],WGT,pow,*)'
-    eff, filtered_model = filter_search_space_and_model(effects, model)
-    assert len(get_covariates(filtered_model)) == 2
+    assert len(get_covariate_effects(model)) == 1
+    search_space = 'COVARIATE([CL, V],WGT,pow,*)'
+    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    assert len(get_covariate_effects(filtered_model)) == 2
     assert len(eff) == 0

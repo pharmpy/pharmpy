@@ -14,12 +14,14 @@ def _scatter_computation(Future, client, computation):
     #  - Any other value like 1, to be interpreted literally
     #  - A task like (inc, 'x') (see below)
     #  - A list of computations, like [1, 'x', (inc, 'x')]
-
     if isinstance(computation, tuple):
-        return (
-            computation[0],
-            *map(lambda c: _scatter_computation(Future, client, c), computation[1:]),
-        )
+        if len(computation) == 0:  # Avoid further interpreting empty argument
+            return computation
+        else:
+            return (
+                computation[0],
+                *map(lambda c: _scatter_computation(Future, client, c), computation[1:]),
+            )
 
     if isinstance(computation, list):
         return list(map(lambda c: _scatter_computation(Future, client, c), computation))

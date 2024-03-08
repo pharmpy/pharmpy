@@ -25,6 +25,7 @@ from pharmpy.modeling import (
     list_time_varying_covariates,
     load_dataset,
     remove_loq_data,
+    set_dataset,
     set_dvid,
     set_lloq_data,
     set_reference_values,
@@ -32,7 +33,7 @@ from pharmpy.modeling import (
     undrop_columns,
     unload_dataset,
 )
-from pharmpy.modeling.basic_models import _create_default_datainfo
+from pharmpy.modeling.basic_models import create_default_datainfo
 
 
 def test_get_ids(load_example_model_for_test):
@@ -367,7 +368,7 @@ def test_remove_loq_data(load_example_model_for_test):
 def test_remove_blq(load_example_model_for_test, d, expected, keep):
     m = load_example_model_for_test('pheno')
     df = pd.DataFrame(d)
-    m = m.replace(dataset=df, datainfo=_create_default_datainfo(df))
+    m = m.replace(dataset=df, datainfo=create_default_datainfo(df))
     new = remove_loq_data(m, blq='BLQ', keep=keep)
     assert list(new.dataset['DV']) == expected
 
@@ -411,7 +412,7 @@ def test_remove_blq(load_example_model_for_test, d, expected, keep):
 def test_set_lloq_value(load_example_model_for_test, d, expected, value):
     m = load_example_model_for_test('pheno')
     df = pd.DataFrame(d)
-    m = m.replace(dataset=df, datainfo=_create_default_datainfo(df))
+    m = m.replace(dataset=df, datainfo=create_default_datainfo(df))
     new = set_lloq_data(m, value, blq='BLQ')
     assert list(new.dataset['DV']) == expected
 
@@ -535,6 +536,39 @@ def test_load_dataset(load_example_model_for_test):
     assert model.dataset is None
     model = load_dataset(model)
     assert model.dataset is not None
+
+
+def test_set_dataset(load_example_model_for_test, testdata):
+    model = load_example_model_for_test("pheno")
+    mox_path = testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv'
+    pheno_path = testdata / 'nonmem' / 'pheno.dta'
+
+    assert model.datainfo.path.name == 'pheno.dta'
+    model = set_dataset(model, path_or_df=mox_path, datatype=None)
+    assert model.datainfo.path.name == 'mox_simulated_normal.csv'
+    assert model.dataset is not None
+    assert all(col_type == 'unknown' for col_type in model.datainfo.types)
+
+    model = set_dataset(model, path_or_df=mox_path, datatype='nonmem')
+    assert 'id' in model.datainfo.types
+
+    with pytest.warns():
+        set_dataset(model, path_or_df=pheno_path, datatype=None)
+
+    model = load_example_model_for_test("pheno")
+    assert model.datainfo.path.name == 'pheno.dta'
+    dataset = pd.read_csv(pheno_path, sep='\\s+')
+
+    model = set_dataset(model, path_or_df=dataset, datatype=None)
+    assert model.datainfo.path is None
+    assert model.dataset is not None
+    assert all(col_type == 'unknown' for col_type in model.datainfo.types)
+
+    model = load_example_model_for_test("pheno")
+    model = set_dataset(model, path_or_df=dataset, datatype='nonmem')
+    assert model.datainfo.path is None
+    assert model.dataset is not None
+    assert 'id' in model.datainfo.types
 
 
 def test_bin_observations(load_example_model_for_test):

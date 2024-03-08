@@ -22,7 +22,7 @@ To initiate IIVsearch in Python/R:
 
     start_model = read_model('path/to/model')
     start_model_results = read_model_results('path/to/model')
-    res = run_iivsearch(algorithm='brute_force',
+    res = run_iivsearch(algorithm='top_down_exhaustive',
                         model=start_model,
                         results=start_model_results,
                         iiv_strategy='no_add',
@@ -37,7 +37,7 @@ To run IIVsearch from the command line, the example code is redefined accordingl
 
 .. code::
 
-    pharmpy run iivsearch path/to/model 'brute_force' --iiv_strategy 'no_add' --rank_type 'bic'
+    pharmpy run iivsearch path/to/model 'top_down_exhaustive' --iiv_strategy 'no_add' --rank_type 'bic'
 
 ~~~~~~~~~
 Arguments
@@ -50,7 +50,7 @@ Mandatory
 | Argument                                      | Description                                                        |
 +===============================================+====================================================================+
 | ``algorithm``                                 | :ref:`Algorithm<algorithms_iivsearch>` to use                      | 
-|                                               | (e.g. ``'brute_force'``)                                           |
+|                                               | (e.g. ``'top_down_exhaustive'``)                                   |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``model``                                     | Input model                                                        |
 +-----------------------------------------------+--------------------------------------------------------------------+
@@ -76,6 +76,12 @@ Optional
 |                                               | Default is "minimization_successful or                             |
 |                                               | (rounding_errors and sigdigs>= 0.1)"                               |
 +-----------------------------------------------+--------------------------------------------------------------------+
+| ``correlation_algorithm``                     | Specify if an algorithm different from the argument ``algorithm``  |
+|                                               | should be used when searching for the correlation structure for    |
+|                                               | the added IIVs. If not specified, the same algorithm will be used  |
+|                                               | when searching for which IIVs to add as well as for the            |
+|                                               | correlation structure.                                             |
++-----------------------------------------------+--------------------------------------------------------------------+
 
 
 .. note::
@@ -94,78 +100,43 @@ Algorithms
 Different aspects of the IIV structure can be explored in the tool depending on which algorithm is chosen. The
 available algorithms can be seen in the table below.
 
-+-----------------------------------+--------------------------------------------------------------------------------+
-| Algorithm                         | Description                                                                    |
-+===================================+================================================================================+
-| ``'brute_force_no_of_etas'``      | Removes available IIV in all possible combinations                             |
-+-----------------------------------+--------------------------------------------------------------------------------+
-| ``'brute_force_block_structure'`` | Tests all combinations of covariance structures                                |
-+-----------------------------------+--------------------------------------------------------------------------------+
-| ``'brute_force'``                 | First runs ``'brute_force_no_of_etas'``, then                                  |
-|                                   | ``'brute_force_block_structure'``                                              |
-+-----------------------------------+--------------------------------------------------------------------------------+
+.. note::
 
-Brute force search for number of IIVs
--------------------------------------
+    If only ``algorithm`` is specified, the same will be applied to ``correlation_algorithm`` if possible.
+    If not, please see description below which would be used.
+    We recommend setting both arguments if specific algorithms are wanted.
 
-The ``brute_force_no_of_etas`` algorithm will create candidate models for all combinations of removed IIVs. It will
++-------------------------------------+--------------------------------------------------------------------------------+
+| Algorithm                           | Description                                                                    |
++=====================================+================================================================================+
+| ``'top_down_exhaustive'``           | Removes available IIV in all possible combinations. The covariance structure   |
+|                                     | search will search all possible IIV variance and covariance structure          |
++-------------------------------------+--------------------------------------------------------------------------------+
+| ``'bottom_up_stepwise'``            | Iteratively adds all available IIV, one at a time. After each addition, the    |
+|                                     | best model is selected. The algorithm stops when no better model was found     |
+|                                     | after adding a new ETA. The following covariance structure search uses         |
+|                                     | the same approach as 'top_down_exhaustive'                                     |
++-------------------------------------+--------------------------------------------------------------------------------+
+| ``'skip'``                          | Set this argument if you are certain to skip either the search for number of   |
+|                                     | etas (:code:`algorithm='skip'`) or to skip the search for the best covariance  |
+|                                     | structure (:code:`correlation_algorithm='skip'`). However, if algorithm is set |
+|                                     | to skip, then ``correlation_algorithm`` need to be set to a valid value.       |
++-------------------------------------+--------------------------------------------------------------------------------+
+
+
+Top down exhaustive search
+--------------------------
+
+The ``top_down_exhaustive`` search combines the top down exhaustive approach for choosing number of etas with the brute force
+algorithm for the block structure, by first choosing the number of etas then the block structure.
+
+The ``top_down_exhaustive`` algorithm for choosing number of etas will create candidate models for all combinations of removed IIVs. It will
 also create a naive pooled model meaning all the etas are fixed to 0. This can be useful in identifying local minima,
 since all other candidate models should have a lower OFV than the naive pooled model (which doesn't have any
 inter-individual variability).
 
-.. graphviz::
-
-    digraph BST {
-            node [fontname="Arial"];
-            base [label="Base model"]
-            s0 [label="Naive pooled"]
-            s1 [label="[CL]"]
-            s2 [label="[V]"]
-            s3 [label="[MAT]"]
-            s4 [label="[CL,V]"]
-            s5 [label="[CL,MAT]"]
-            s6 [label="[V,MAT]"]
-            s7 [label="[CL,V,MAT]"]
-
-            base -> s0
-            base -> s1
-            base -> s2
-            base -> s3
-            base -> s4
-            base -> s5
-            base -> s6
-            base -> s7
-        }
-
-Brute force search for covariance structure
--------------------------------------------
-
-The ``brute_force_block_structure`` algorithm will create candidates with all possible IIV variance and covariance
-structures from the IIVs in the base model.
-
-.. graphviz::
-
-    digraph BST {
-            node [fontname="Arial"];
-            base [label="Base model"]
-            s0 [label="[CL]+[V]+[MAT]"]
-            s1 [label="[CL,V]+[MAT]"]
-            s2 [label="[CL,MAT]+[V]"]
-            s3 [label="[V,MAT]+[CL]"]
-            s4 [label="[CL,V,MAT]"]
-
-            base -> s0
-            base -> s1
-            base -> s2
-            base -> s3
-            base -> s4
-        }
-
-Full brute force search
------------------------
-
-The full ``brute_force`` search combines the brute force algorithm for choosing number of etas with the brute force
-algorithm for the block structure, by first choosing the number of etas then the block structure.
+For the covariance structure search, the ``top_down_exhaustive`` algorithm will create candidates with all possible IIV variance and 
+covariance structures from the IIVs in the base model.
 
 .. graphviz::
 
@@ -203,7 +174,50 @@ algorithm for the block structure, by first choosing the number of etas then the
             s7 -> s12
 
         }
+        
+Bottom up stepwise search
+-------------------------
 
+The ``bottom_up_stepwise`` algorithm differ from the ``top_down_exhaustive`` as the models are created
+in iterative steps, each adding a single ETA. The algorithm will create a model with all possible IIVs and in the first step
+it will remove all but one. This ETA will be on clearance (CL) if possible. If not, the first parameter in alphabetical order
+will have an ETA. This model is then run and its results are used to update the initial estimates of the model. In the next step,
+a candidate model is created for each remaining parameter that could have an ETA put on it. All models are run, and the best model
+is chosen for the next step, updating the initial values once more.
+
+The candidate models are then compared using the specified rank type and if no better model can be found, the algorithm stops.
+
+However, this algorithm is not supported to run for the covariance structure search and thusly it will use the algorithm ``top_down_exhaustive``
+for this step.
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"];
+            base [label="Base model"]
+            s1 [label="[CL]"]
+            s2 [label="[CL,V]"]
+            s3 [label="[CL,MAT]"]
+            s4 [label="[CL,V,MAT]"]
+
+            base -> s1
+            s1 -> s2
+            s1 -> s3
+            s2 -> s4
+            
+            s5 [label="[CL]+[V]+[MAT]"]
+            s6 [label="[CL,V]+[MAT]"]
+            s7 [label="[CL,MAT]+[V]"]
+            s8 [label="[V,MAT]+[CL]"]
+            s9 [label="[CL,V,MAT]"]
+            
+            s4 -> s5
+            s4 -> s6
+            s4 -> s7
+            s4 -> s8
+            s4 -> s9
+            
+        }
 
 .. _iiv_strategies_iivsearch:
 
@@ -257,7 +271,7 @@ Consider a iivsearch run:
 
 .. pharmpy-code::
 
-    res = run_iivsearch(algorithm='brute_force',
+    res = run_iivsearch(algorithm='td_brute_force',
                         model=start_model,
                         results=start_model_results,
                         iiv_strategy='no_add',

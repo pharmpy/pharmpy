@@ -2756,3 +2756,10 @@ def test_get_central_volume_and_clearance(
 
     model = add_peripheral_compartment(model)
     assert get_central_volume_and_clearance(model) == (Expr.symbol("VC"), Expr.symbol("CLMM"))
+
+
+def test_issue_2161(testdata, load_model_for_test, load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    model = set_transit_compartments(model, 7, keep_depot=True)
+    model = add_peripheral_compartment(model)
+    assert 'K80' in model.model_code

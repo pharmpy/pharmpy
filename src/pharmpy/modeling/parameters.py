@@ -119,7 +119,7 @@ def set_initial_estimates(model: Model, inits: Dict[str, float]):
     --------
     >>> from pharmpy.modeling import load_example_model, set_initial_estimates
     >>> model = load_example_model("pheno")
-    >>> model = set_initial_estimates(model, {'PTVCL': 2})
+    >>> model = set_initial_estimates(model, {'PTVCL': 2.0})
     >>> model.parameters['PTVCL']
     Parameter("PTVCL", 2.0, lower=0.0, upper=∞, fix=False)
 
@@ -169,6 +169,7 @@ def update_inits(
     {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
 
     """
+
     # FIXME: Can be combined with set_initial_estimates
     if move_est_close_to_bounds:
         parameter_estimates = _move_est_close_to_bounds(model, parameter_estimates)
@@ -185,11 +186,13 @@ def _get_nonfixed_rvs(model):
     return RandomVariables.create(nonfixed_rvs)
 
 
-def _move_est_close_to_bounds(model: Model, pe):
+def _move_est_close_to_bounds(model: Model, est_new):
     rvs, pset = _get_nonfixed_rvs(model), model.parameters
-    est = pe.to_dict()
-    sdcorr = rvs.parameters_sdcorr(est)
-    newdict = est.copy()
+
+    parameter_estimates = model.parameters.inits
+    parameter_estimates.update(est_new)  # Need all numerical values for sdcorr
+    sdcorr = rvs.parameters_sdcorr(parameter_estimates)
+    newdict = est_new.copy()
     for dist in rvs:
         rvs = dist.names
         if len(rvs) > 1:
@@ -205,13 +208,15 @@ def _move_est_close_to_bounds(model: Model, pe):
                             sd_i, sd_j = sdcorr[name_i], sdcorr[name_j]
                             newdict[param_name] = corr_new * sd_i * sd_j
                     else:
-                        if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
-                            newdict[param_name] = 0.01
+                        if param_name in est_new.keys():
+                            if not _is_zero_fix(pset[param_name]) and est_new[param_name] < 0.001:
+                                newdict[param_name] = 0.01
         else:
             param_name = dist.variance.name
             if not pset[param_name].fix:
-                if not _is_zero_fix(pset[param_name]) and est[param_name] < 0.001:
-                    newdict[param_name] = 0.01
+                if param_name in est_new.keys():
+                    if not _is_zero_fix(pset[param_name]) and est_new[param_name] < 0.001:
+                        newdict[param_name] = 0.01
     return newdict
 
 
