@@ -379,6 +379,8 @@ class EstimationStep(Step):
             and self.niter == other.niter
             and self.auto == other.auto
             and self.keep_every_nth_iter == other.keep_every_nth_iter
+            and self.predictions == other.predictions
+            and self.residuals == other.residuals
             and super().__eq__(other)
         )
 
@@ -412,6 +414,8 @@ class EstimationStep(Step):
             'niter': self._niter,
             'auto': self._auto,
             'keep_every_nth_iter': self._keep_every_nth_iter,
+            'predictions': self._predictions,
+            'residuals': self._residuals,
         }
         super()._add_to_dict(d)
         return d

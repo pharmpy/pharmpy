@@ -1606,13 +1606,7 @@ def update_estimation(control_stream, model):
     old = model.internals.old_estimation_steps
     new = model.estimation_steps
     if old == new:
-        if (
-            len(old) > 0
-            and len(new) > 0
-            and old[-1].predictions == new[-1].predictions
-            and old[-1].residuals == new[-1].residuals
-        ):
-            return control_stream
+        return control_stream
 
     old_ests = [step for step in old if isinstance(step, EstimationStep)]
     new_ests = [step for step in new if isinstance(step, EstimationStep)]
@@ -1642,7 +1636,10 @@ def update_estimation(control_stream, model):
             newrec = create_record(str(rec))
             control_stream = control_stream.insert_record(newrec)
 
-    delta = diff(old_ests, new_ests)
+    old_ests_cleaned = [est.replace(predictions=(), residuals=()) for est in old_ests]
+    new_ests_cleaned = [est.replace(predictions=(), residuals=()) for est in new_ests]
+
+    delta = diff(old_ests_cleaned, new_ests_cleaned)
     old_records = control_stream.get_records('ESTIMATION')
     i = 0
     new_records = []

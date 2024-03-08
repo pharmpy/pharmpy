@@ -123,6 +123,8 @@ def test_dict():
         'solver_rtol': None,
         'solver_atol': None,
         'tool_options': {},
+        'predictions': (),
+        'residuals': (),
     }
     step2 = EstimationStep.from_dict(d)
     assert step2 == a
@@ -148,6 +150,8 @@ def test_dict():
                 'solver_rtol': None,
                 'solver_atol': None,
                 'tool_options': {},
+                'predictions': (),
+                'residuals': (),
             },
             {
                 'method': 'FO',
@@ -165,6 +169,8 @@ def test_dict():
                 'solver_rtol': None,
                 'solver_atol': None,
                 'tool_options': {},
+                'predictions': (),
+                'residuals': (),
             },
         )
     }
