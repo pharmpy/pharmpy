@@ -10,6 +10,7 @@ from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_ch
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_parameter_uncertainty_step,
+    create_basic_pk_model,
     find_clearance_parameters,
     get_central_volume_and_clearance,
     get_pk_parameters,
@@ -193,9 +194,7 @@ def run_amd(
         dv = None
         iiv_strategy = 'fullblock'
 
-    if type(input) is str:
-        from pharmpy.modeling import create_basic_pk_model
-
+    if isinstance(input, str):
         model = create_basic_pk_model(
             administration,
             dataset_path=input,
@@ -204,7 +203,7 @@ def run_amd(
             mat_init=mat_init,
         )
         model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
-    elif type(input) is nonmem.model.Model:
+    elif isinstance(input, nonmem.model.Model):
         model = input
         model = model.replace(name='start')
     else:
