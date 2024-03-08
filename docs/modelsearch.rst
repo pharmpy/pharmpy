@@ -22,7 +22,7 @@ To initiate modelsearch in Python/R:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME()',
+    res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME(ON)',
                           algorithm='reduced_stepwise',
                           model=start_model,
                           results=start_model_results,
@@ -40,7 +40,7 @@ To run modelsearch from the command line, the example code is redefined accordin
 
 .. code::
 
-    pharmpy run modelsearch path/to/model 'PERIPHERALS(1);LAGTIME()' 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
+    pharmpy run modelsearch path/to/model 'PERIPHERALS(1);LAGTIME(ON)' 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
 
 Arguments
 ~~~~~~~~~
@@ -399,11 +399,12 @@ The Modelsearch results
 The results object contains various summary tables which can be accessed in the results object, as well as files in
 .csv/.json format. The name of the selected best model (based on the input selection criteria) is also included.
 
-Consider a modelsearch run with the search space of zero order absorption and adding one peripheral compartment:
+Consider a modelsearch run with the search space of zero and first order absorption, adding zero or one peripheral
+compartment and lagtime:
 
 .. pharmpy-code::
 
-    res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME()',
+    res = run_modelsearch(search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME(ON)',
                           algorithm='reduced_stepwise',
                           model=start_model,
                           results=start_model_results,
