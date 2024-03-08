@@ -37,6 +37,8 @@ from .records.parsers import CodeRecordParser
 if TYPE_CHECKING:
     from .model import Model
 
+from pharmpy.model.external.nonmem.parsing import parse_table_columns
+
 from .nmtran_parser import NMTranControlStream
 from .parsing import parse_column_info
 from .records.code_record import CodeRecord
@@ -1556,13 +1558,19 @@ def update_abbr_record(model: Model, rv_trans):
 
 
 def add_efim_records(control_stream, idx_cov, last_est_rec):
+    # Check if $MSFI already exists in control stream:
+    if last_est_rec.has_option("MSFO"):
+        msf_name = last_est_rec.get_option("MSFO")
+    else:
+        msf_name = "efim.msf"
+
     data_record = str(control_stream.get_records("DATA")[0]).rstrip()
     input_record = str(control_stream.get_records("INPUT")[0]).rstrip()
     efim_records = [
         "$PROBLEM DESIGN",
         f"{data_record} REWIND",
         f"{input_record}",
-        "$MSFI efim.msf",
+        f"$MSFI {msf_name}",
         "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1",
     ]
 
@@ -1570,8 +1578,9 @@ def add_efim_records(control_stream, idx_cov, last_est_rec):
         new_record = create_record(f"{rec}\n")
         control_stream = control_stream.insert_record(new_record, at_index=idx_cov + i)
 
-    last_est_rec_msfo = last_est_rec.append_option("MSFO", "efim.msf")
-    control_stream = control_stream.replace_records([last_est_rec], [last_est_rec_msfo])
+    if not last_est_rec.has_option("MSFO"):
+        last_est_rec_msfo = last_est_rec.append_option("MSFO", "efim.msf")
+        control_stream = control_stream.replace_records([last_est_rec], [last_est_rec_msfo])
 
     return control_stream
 
@@ -1597,7 +1606,13 @@ def update_estimation(control_stream, model):
     old = model.internals.old_estimation_steps
     new = model.estimation_steps
     if old == new:
-        return control_stream
+        if (
+            len(old) > 0
+            and len(new) > 0
+            and old[-1].predictions == new[-1].predictions
+            and old[-1].residuals == new[-1].residuals
+        ):
+            return control_stream
 
     old_ests = [step for step in old if isinstance(step, EstimationStep)]
     new_ests = [step for step in new if isinstance(step, EstimationStep)]
@@ -1748,13 +1763,31 @@ def update_estimation(control_stream, model):
             )
 
     # Update $TABLE
-    # Currently only adds if did not exist before
-    cols = set()
+    new_pred, old_pred = set(), set()
+    new_res, old_res = set(), set()
     for estep in new_ests:
-        cols.update(estep.predictions)
-        cols.update(estep.residuals)
-    tables = control_stream.get_records('TABLE')
+        new_pred.update(estep.predictions)
+        new_res.update(estep.residuals)
+    for old_estep in old_ests:
+        old_pred.update(old_estep.predictions)
+        old_res.update(old_estep.residuals)
+    cols = new_pred | new_res
+
+    # Remore or add parameters to $TABLE
+    remove = bool((not new_res and old_res) or (not new_pred and old_pred))
+
+    # Check if there are multiple $PROBLEMs
+    # FIXME: At the moment we always take the last $PROBLEM. What to do with multiple $PROBLEMs?
+    problems = [record.name for record in control_stream.records if record.name == "PROBLEM"]
+    if len(problems) > 1:
+        problem_no = len(problems) - 1
+    else:
+        problem_no = 0
+    tables = control_stream.get_records("TABLE", problem_no)
+
+    # If $TABLE does not exist create a new TABLE record
     if model.dataset is not None and not tables and cols:
+        last_rec_ix = control_stream.records.index(control_stream.records[-1])
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
@@ -1762,7 +1795,42 @@ def update_estimation(control_stream, model):
             s += ' FORMAT=s1PE16.8'
         s += '\n'
         tabrec = create_record(s)
-        control_stream = control_stream.insert_record(tabrec)
+        control_stream = control_stream.insert_record(tabrec, at_index=last_rec_ix)
+
+    # Add or remove predictions/residuals
+    if old_pred != new_pred or old_res != new_res:
+
+        # Add new parameters to $TABLE
+        if model.dataset is not None and tables and not remove:
+            for i in range(len(tables)):
+                old_cols = parse_table_columns(
+                    control_stream, len(model.random_variables.etas.names), problem_no
+                )
+                old_cols_str = " ".join(old_cols[i])
+                non_cols = str(tables[i]).split(old_cols_str)
+                new_cols = [col for col in cols if col not in old_cols[i]]
+                new = non_cols[0] + old_cols_str + " " + " ".join(new_cols) + non_cols[1]
+                new_record = create_record(new)
+                control_stream = control_stream.replace_records([tables[i]], [new_record])
+
+        # Remove all predictions/residuals
+        elif model.dataset is not None and tables and remove:
+            for i in range(len(tables)):
+                old_cols = parse_table_columns(
+                    control_stream, len(model.random_variables.etas.names), problem_no
+                )
+                old_cols_str = " ".join(old_cols[i])
+                non_cols = str(tables[i]).split(old_cols_str)
+                if not new_pred and not new_res:  # remove all
+                    new_cols = [col for col in old_cols[i] if col not in old_pred | old_res]
+                elif not new_pred:  # remove all predictions
+                    new_cols = [col for col in old_cols[i] if col not in old_pred]
+                elif not new_res:  # remove all residuals
+                    new_cols = [col for col in old_cols[i] if col not in old_res]
+                new = non_cols[0] + " ".join(new_cols) + non_cols[1]
+                new_record = create_record(new)
+                control_stream = control_stream.replace_records([tables[i]], [new_record])
+
     return control_stream
 
 

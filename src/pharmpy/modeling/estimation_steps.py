@@ -1,4 +1,4 @@
-from typing import Any, Dict, Literal, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 from pharmpy.model import EstimationStep, EstimationSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
@@ -400,3 +400,205 @@ def set_evaluation_step(model: Model, idx: int = -1):
         newsteps = steps[0:-1] + newstep
     model = model.replace(estimation_steps=newsteps)
     return model.update_source()
+
+
+def add_predictions(model: Model, pred: List[str]):
+    """Add predictions and/or residuals
+
+    Add predictions to estimation step.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    pred : list
+        List of predictions (e.g. ['IPRED', 'PRED'])
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.estimation_steps[-1].predictions
+    ('IPRED', 'PRED')
+    >>> model = add_predictions(model, ['CIPREDI'])
+    >>> model.estimation_steps[-1].predictions
+    ('CIPREDI', 'IPRED', 'PRED')
+
+    See also
+    --------
+    remove_predictions
+    remove_residuals
+    set_estimation_step
+    add_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
+    """
+    steps = model.estimation_steps
+    old_predictions = steps[-1].predictions
+    new_predictions = tuple(sorted(set(old_predictions) | set(pred)))
+    newstep = steps[-1].replace(predictions=new_predictions)
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
+    return model.update_source()
+
+
+def add_residuals(model: Model, res: List[str]):
+    """Add predictions and/or residuals
+
+    Add residuals to estimation step.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    res : list
+        List of residuals (e.g. ['CWRES'])
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.estimation_steps[-1].residuals
+    ('CWRES',)
+    >>> model = add_residuals(model, ['RES'])
+    >>> model.estimation_steps[-1].residuals
+    ('CWRES', 'RES')
+
+    See also
+    --------
+    remove_predictions
+    remove_residuals
+    set_estimation_step
+    add_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
+    """
+    steps = model.estimation_steps
+    old_residuals = steps[-1].residuals
+    new_residuals = tuple(sorted(set(old_residuals) | set(res)))
+    newstep = steps[-1].replace(residuals=new_residuals)
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
+    return model.update_source()
+
+
+def remove_predictions(model: Model, to_remove: List[str] = 'all'):
+    """Remove predictions and/or residuals
+
+    Remove predictions from estimation step.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    to_remove : List[str]
+        List of predictions to remove
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = remove_predictions(model, 'all')
+    >>> model.estimation_steps[-1].predictions
+    ()
+
+    See also
+    --------
+    add_predictions
+    add_residuals
+    set_estimation_step
+    add_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
+    """
+    steps = model.estimation_steps
+    old_predictions = steps[-1].predictions
+    newstep = steps[-1].replace(predictions=())
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
+    model = model.update_source()
+    if to_remove != 'all':
+        for value in to_remove:
+            if value not in old_predictions:
+                raise ValueError(f"{value} not in predictions")
+        new_predictions = tuple(sorted(set(old_predictions) - set(to_remove)))
+        newstep = steps[-1].replace(predictions=new_predictions)
+        newsteps = steps[0:-1] + newstep
+        model = model.replace(estimation_steps=newsteps)
+        model = model.update_source()
+    return model
+
+
+def remove_residuals(model: Model, to_remove: List[str] = None):
+    """Remove predictions and/or residuals
+
+    Remove residuals from estimation step.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    to_remove : List[str]
+        List of predictions to remove
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = remove_residuals(model, 'all')
+    >>> model.estimation_steps[-1].residuals
+    ()
+
+    See also
+    --------
+    add_predictions
+    add_residuals
+    set_estimation_step
+    add_estimation_step
+    remove_estimation_step
+    append_estimation_step_options
+    add_parameter_uncertainty_step
+    remove_parameter_uncertainty_step
+    """
+    steps = model.estimation_steps
+    old_residuals = steps[-1].residuals
+    newstep = steps[-1].replace(residuals=())
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(estimation_steps=newsteps)
+    model = model.update_source()
+    if to_remove != 'all':
+        for value in to_remove:
+            if value not in old_residuals:
+                raise ValueError(f"{value} not in residuals")
+        new_residuals = tuple(sorted(set(old_residuals) - set(to_remove)))
+        newstep = steps[-1].replace(residuals=new_residuals)
+        newsteps = steps[0:-1] + newstep
+        model = model.replace(estimation_steps=newsteps)
+        model.update_source()
+    return model

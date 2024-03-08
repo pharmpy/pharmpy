@@ -373,6 +373,26 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
     etaderiv_names = None
     epsilonderivs_names = None
     table_records = control_stream.get_records('TABLE')
+    predictions = ()
+    residuals = ()
+    all_predictions = ['PRED', 'CPRED', 'CPREDI', 'CIPRED', 'CIPREDI', 'IPRED']
+    all_residuals = [
+        'RES',
+        'WRES',
+        'CRES',
+        'CWRES',
+        'CRESI',
+        'CWRESI',
+        'CIRES',
+        'CIWRES',
+        'CIRESI',
+        'CIWRESI',
+    ]
+    columns = parse_table_columns(control_stream, len(random_variables.etas.names))
+    columns = [item for row in columns for item in row]
+    predictions = [param for param in columns if param in all_predictions]
+    residuals = [param for param in columns if param in all_residuals]
+
     for table in table_records:
         etaderivs = table.eta_derivatives
         if etaderivs:
@@ -475,6 +495,8 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
                 solver_atol=atol,
                 eta_derivatives=etaderiv_names,
                 epsilon_derivatives=epsilonderivs_names,
+                predictions=predictions,
+                residuals=residuals,
             )
         except ValueError:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
@@ -813,7 +835,7 @@ def filter_observations(df, col_names):
     return df[~df['ID'].isin(ids_to_remove)]
 
 
-def parse_table_columns(control_stream, netas):
+def parse_table_columns(control_stream, netas, problem_no=0):
     # Handle synonyms and appended columns
 
     reserved = {'PRED', 'IPRED', 'CIPREDI'}
@@ -833,7 +855,7 @@ def parse_table_columns(control_stream, netas):
     (colnames, _, _, _) = parse_column_info(control_stream)
     symbs |= set(colnames)
 
-    for table_record in control_stream.get_records('TABLE'):
+    for table_record in control_stream.get_records('TABLE', problem_no=problem_no):
         noappend = False
         columns = []
         for opt, key, value in table_record.parse_options(nonoptions=symbs, netas=netas):

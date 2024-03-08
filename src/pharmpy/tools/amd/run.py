@@ -10,6 +10,8 @@ from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_ch
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_parameter_uncertainty_step,
+    add_predictions,
+    add_residuals,
     create_basic_pk_model,
     find_clearance_parameters,
     get_central_volume_and_clearance,
@@ -212,6 +214,9 @@ def run_amd(
             f'Invalid input: got `{input}` of type {type(input)},'
             f' only NONMEM model or standalone dataset are supported currently.'
         )
+
+    model = add_predictions(model, ['PRED', 'CIPREDI'])
+    model = add_residuals(model, ['CWRES'])
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
