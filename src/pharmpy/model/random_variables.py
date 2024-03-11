@@ -13,7 +13,6 @@ from typing import (
     List,
     Mapping,
     Optional,
-    Self,
     Sequence,
     Set,
     Tuple,
@@ -559,7 +558,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             name2 = rv2.name if not isinstance(rv2, str) else rv2
             return dist1.get_covariance(name1, name2)
 
-    def subs(self, d: Mapping[TExpr, TExpr]) -> Self:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> RandomVariables:
         """Substitute expressions
 
         Parameters

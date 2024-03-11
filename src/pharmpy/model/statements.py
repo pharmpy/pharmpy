@@ -3,18 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Iterable,
-    Mapping,
-    Optional,
-    Self,
-    Set,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Set, Tuple, Union, overload
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
@@ -50,7 +39,7 @@ class Statement(Immutable):
             return Statements(tuple(other) + (self,))
 
     @abstractmethod
-    def subs(self, substitutions: Mapping[Expr, Expr]) -> Self:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Statement:
         pass
 
     @property
@@ -107,7 +96,7 @@ class Assignment(Statement):
         """Expression of assignment"""
         return self._expression
 
-    def subs(self, substitutions: Mapping[Expr, Expr]) -> Self:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Assignment:
         """Substitute expressions or symbols in assignment
 
         Parameters
@@ -726,7 +715,7 @@ class CompartmentalSystem(Statement):
         """
         return self.free_symbols  # This works currently
 
-    def subs(self, substitutions: Mapping[Expr, Expr]) -> Self:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> CompartmentalSystem:
         """Substitute expressions or symbols in ODE system
 
         Examples
@@ -1444,7 +1433,7 @@ class Dose(ABC):
         return self._admid
 
     @abstractmethod
-    def subs(self, substitutions) -> Self: ...
+    def subs(self, substitutions) -> Dose: ...
 
     @property
     @abstractmethod
@@ -1503,7 +1492,7 @@ class Bolus(Dose, Immutable):
         """
         return {self._amount}
 
-    def subs(self, substitutions: Mapping[Expr, Expr]) -> Self:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Bolus:
         """Substitute expressions or symbols in dose
 
         Parameters
@@ -1642,7 +1631,7 @@ class Infusion(Dose, Immutable):
             symbs = self._duration.free_symbols
         return symbs | self._amount.free_symbols
 
-    def subs(self, substitutions: Mapping[Expr, Expr]) -> Self:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Infusion:
         """Substitute expressions or symbols in dose
 
         Parameters
@@ -1857,7 +1846,7 @@ class Compartment(CompartmentBase):
         symbs |= self.bioavailability.free_symbols
         return symbs
 
-    def subs(self, substitutions: Mapping[Expr, Expr]) -> Self:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Compartment:
         """Substitute expressions or symbols in compartment
 
         Examples
@@ -2130,7 +2119,7 @@ class Statements(Sequence, Immutable):
         i = self._get_ode_system_index()
         return self if i == -1 else self[i + 1 :]
 
-    def subs(self, substitutions: Mapping[Expr, Expr]) -> Self:
+    def subs(self, substitutions: Mapping[Expr, Expr]) -> Statements:
         """Substitute symbols in all statements.
 
         Parameters
