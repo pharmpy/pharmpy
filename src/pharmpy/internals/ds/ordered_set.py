@@ -1,6 +1,6 @@
 from collections.abc import MutableSet
 from itertools import chain
-from typing import AbstractSet, Dict, Generic, Iterable, Literal, Optional, Tuple, TypeVar
+from typing import AbstractSet, Any, Dict, Generic, Iterable, Literal, Optional, Tuple, TypeVar
 
 T = TypeVar('T')
 
@@ -21,7 +21,7 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
 
     # NOTE: The following are required by the MutableSet ABC
 
-    def __contains__(self, key: T):
+    def __contains__(self, key: Any):
         return key in self._dict
 
     def __iter__(self):
