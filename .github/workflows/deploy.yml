@@ -13,19 +13,19 @@ jobs:
     steps:
 
       - name: Checkout pharmpy/pharmpy
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
             path: pharmpy
 
       - name: Checkout pharmpy/pharmpy.github.io
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           repository: pharmpy/pharmpy.github.io
           path: pharmpy.github.io
           token: ${{secrets.DOC_TOKEN}}
 
       - name: Set up Python 3.11
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
