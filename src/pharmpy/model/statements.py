@@ -1812,15 +1812,6 @@ class Compartment(CompartmentBase):
         else:
             return self._doses
 
-    def sorted_doses(self, model):
-        """Return doses to compartment where oral doses are located first"""
-        if len(self._doses) > 1:
-            from pharmpy.modeling.odes import _dose_zo
-
-            return tuple(sorted(self.doses, key=lambda d: _dose_zo(model, d), reverse=True))
-        else:
-            return self._doses
-
     @property
     def input(self) -> Expr:
         return self._input

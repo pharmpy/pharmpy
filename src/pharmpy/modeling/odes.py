@@ -923,9 +923,9 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         if len(dosing_comp.doses) == 1:
             cb.move_dose(dosing_comp, comp)
         else:
-            dose = dosing_comp.sorted_doses(model)[0]
+            dose = _sorted_doses(dosing_comp, model)[0]
             cb.set_dose(comp, dose, replace=False)
-            cb.set_dose(dosing_comp, dosing_comp.sorted_doses(model)[1:])
+            cb.set_dose(dosing_comp, _sorted_doses(dosing_comp, model)[1:])
 
         statements = (
             model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
@@ -1070,7 +1070,7 @@ def add_lag_time(model: Model):
     # FIXME: Very temporary until new zo absorption logic is implemented
     if len(dosing_comp.doses) > 1:
         cb.set_lag_time(dosing_comp, Expr.symbol("lag_time"))
-        doses = dosing_comp.sorted_doses(model)
+        doses = _sorted_doses(dosing_comp, model)
         oral_admid = doses[0].admid
         admid = Expr.symbol("ADMID")
         model = model.replace(
@@ -1190,7 +1190,7 @@ def set_zero_order_absorption(model: Model):
 
         dose_comp = odes.dosing_compartments[0]
         symbols = dose_comp.free_symbols
-        dose = dose_comp.sorted_doses(model)[0]
+        dose = _sorted_doses(dose_comp, model)[0]
         lag_time = dose_comp.lag_time
         if depot:
             to_comp, _ = odes.get_compartment_outflows(depot)[0]
@@ -1284,12 +1284,12 @@ def set_first_order_absorption(model: Model):
             dose_comp = cb.set_lag_time(dose_comp, Expr.integer(0))
         if not depot:
             # TODO : Add another way of removing dependencies
-            dose_admid = dose_comp.sorted_doses(model)[0].admid
+            dose_admid = _sorted_doses(dose_comp, model)[0].admid
             if len(dose_comp.doses) == 1:
                 dose_comp = cb.set_dose(dose_comp, Bolus(amount))
                 remove_dose = True
             else:
-                dose_comp = cb.set_dose(dose_comp, dose_comp.sorted_doses(model)[1:])
+                dose_comp = cb.set_dose(dose_comp, _sorted_doses(dose_comp, model)[1:])
                 remove_dose = False
 
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
@@ -1370,9 +1370,9 @@ def set_instantaneous_absorption(model: Model):
             dose_comp = cs.dosing_compartments[0]
             old_symbols = dose_comp.free_symbols
             cb = CompartmentalSystemBuilder(cs)
-            new_dose = Bolus(dose_comp.sorted_doses(model)[0].amount)
+            new_dose = Bolus(_sorted_doses(dose_comp, model)[0].amount)
             if len(dose_comp.doses) > 1:
-                cb.set_dose(dose_comp, (new_dose,) + dose_comp.sorted_doses(model)[1:])
+                cb.set_dose(dose_comp, (new_dose,) + _sorted_doses(dose_comp, model)[1:])
             else:
                 cb.set_dose(dose_comp, new_dose)
             unneeded_symbols = old_symbols - new_dose.free_symbols
@@ -1442,9 +1442,9 @@ def set_seq_zo_fo_absorption(model: Model):
                 fo_dose = dose_comp.doses[0]
                 remove_dose = True
             else:
-                fo_dose = dose_comp.sorted_doses(model)[0]
+                fo_dose = _sorted_doses(dose_comp, model)[0]
                 cb = CompartmentalSystemBuilder(model.statements.ode_system)
-                dose_comp = cb.set_dose(dose_comp, dose_comp.sorted_doses(model)[1:])
+                dose_comp = cb.set_dose(dose_comp, _sorted_doses(dose_comp, model)[1:])
                 model = model.replace(
                     statements=model.statements.before_odes
                     + CompartmentalSystem(cb)
@@ -1523,6 +1523,14 @@ def _dose_zo(model, dose):
             if not all(name in model.datainfo.names for name in names):
                 return True
     return False
+
+
+def _sorted_doses(comp, model):
+    """Return doses to compartment where oral doses are located first"""
+    if len(comp.doses) > 1:
+        return tuple(sorted(comp.doses, key=lambda d: _dose_zo(model, d), reverse=True))
+    else:
+        return comp.doses
 
 
 def has_first_order_absorption(model: Model):
