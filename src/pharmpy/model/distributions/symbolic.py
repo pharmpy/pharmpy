@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Sized
 from math import sqrt
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Dict, List, Mapping, Self, Sequence, Tuple
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
@@ -69,7 +69,7 @@ class Distribution(Sized, Hashable, Immutable):
         return tuple(sorted(map(str, params)))
 
     @abstractmethod
-    def subs(self, d: Mapping[TExpr, TExpr]) -> Distribution:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> Self:
         pass
 
     @abstractmethod
@@ -154,7 +154,7 @@ class NormalDistribution(Distribution):
         fs.add(Expr.symbol(self._name))
         return fs
 
-    def subs(self, d: Mapping[TExpr, TExpr]) -> NormalDistribution:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> Self:
         """Substitute expressions
 
         Parameters
@@ -370,7 +370,7 @@ class JointNormalDistribution(Distribution):
             self._variance.free_symbols, (Expr.symbol(name) for name in self._names)
         )
 
-    def subs(self, d: Mapping[TExpr, TExpr]) -> JointNormalDistribution:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> Self:
         """Substitute expressions
 
         Parameters
