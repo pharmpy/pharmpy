@@ -54,7 +54,7 @@ nest-asyncio==1.6.0
 networkx==3.2.1
 numexpr==2.9.0
 numpy==1.26.4
-packaging==23.2
+packaging==24.0
 pandas==2.2.1
 pandocfilters==1.5.1
 parso==0.8.3
