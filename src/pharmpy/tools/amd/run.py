@@ -576,7 +576,7 @@ def run_amd(
 
     if final_results.predictions is not None:
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
-        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictionsi, dvid_name)
+        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions, dvid_name)
     else:
         dv_vs_ipred_plot = None
     if final_results.residuals is not None:
