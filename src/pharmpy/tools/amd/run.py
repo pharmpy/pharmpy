@@ -588,7 +588,7 @@ def run_amd(
             model,
             predictions=final_results.predictions,
             residuals=final_results.residuals,
-            stratigy_by=dvid_name,
+            stratify_on=dvid_name,
         )
     else:
         abs_cwres_vs_ipred_plot = None
