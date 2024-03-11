@@ -5,7 +5,7 @@ docutils==0.20.1
 flake8==7.0.0
 flake8-black==0.3.6
 isort==5.13.2
-pyright==1.1.352
+pyright==1.1.353
 readme-renderer==43.0
 twine==5.0.0 
 # Indirect dependencies
