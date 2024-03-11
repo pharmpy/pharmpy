@@ -4,6 +4,6 @@ iniconfig==2.0.0
 packaging==24.0
 pluggy==1.4.0
 pytest==8.1.1
-pytest-asyncio==0.23.5
+pytest-asyncio==0.23.5.post1
 pytest-xdist==3.5.0
 tomli==2.0.1
