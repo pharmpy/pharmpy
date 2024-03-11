@@ -66,6 +66,9 @@ def test_amd(tmp_path, testdata, strategy, subrundir):
             occasion='VISI',
             strictness='minimization_successful or rounding_errors',
             retries_strategy='skip',
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
         rundir = tmp_path / 'amd_dir1'
@@ -140,6 +143,9 @@ def test_amd_dollar_design(tmp_path, testdata):
             strictness='minimization_successful or rounding_errors',
             retries_strategy='skip',
             parameter_uncertainty_method='EFIM',
+            cl_init=1.0,
+            vc_init=10.0,
+            mat_init=1.0,
         )
 
         rundir = tmp_path / 'amd_dir1'
