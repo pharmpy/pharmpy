@@ -1,3 +1,6 @@
+import dask
+
+
 def optimize_task_graph_for_dask_distributed(client, graph):
     from dask.distributed import Future
 
@@ -35,4 +38,9 @@ def _scatter_value(Future, client, value):
     if isinstance(value, (int, str, float, bool, range, Future)) or callable(value):
         return value
     else:
-        return client.scatter(value)
+        if dask.__version__ in ('2024.2.1', '2024.3.0'):
+            # This is a workaround for https://github.com/dask/distributed/issues/8576
+            future = client.scatter(value, hash=False)
+        else:
+            future = client.scatter(value)
+        return future
