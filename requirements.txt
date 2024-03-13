@@ -95,7 +95,7 @@ tblib==3.0.0
 tinycss2==1.2.1
 toolz==0.12.1
 tornado==6.4
-traitlets==5.14.1
+traitlets==5.14.2
 typing-extensions==4.10.0
 tzdata==2024.1
 urllib3==2.2.1
