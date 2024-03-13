@@ -10,7 +10,7 @@ certifi==2024.2.2
 charset-normalizer==3.3.2
 click==8.1.7
 cloudpickle==3.0.0
-comm==0.2.1
+comm==0.2.2
 csscompressor==0.9.5
 dask==2024.2.0
 debugpy==1.8.1
