@@ -228,6 +228,19 @@ def plot_eta_distributions(
     -------
     alt.Chart
         Plot
+
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_eta_distributions
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_eta_distributions(model, res.individual_estimates)
+
     """
     i = 1
     df = pd.DataFrame()
