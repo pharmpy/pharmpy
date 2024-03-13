@@ -47,7 +47,7 @@ mdurl==0.1.2
 mistune==3.0.2
 mpmath==1.3.0
 msgpack==1.0.8
-nbclient==0.9.0
+nbclient==0.10.0
 nbconvert==7.16.2
 nbformat==5.9.2
 nest-asyncio==1.6.0
