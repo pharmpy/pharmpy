@@ -1,5 +1,6 @@
 import warnings
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import TYPE_CHECKING, Literal, Optional, Union
 
 if TYPE_CHECKING:
@@ -319,4 +320,5 @@ def validate_input(model, results, number_of_candidates, fraction, strictness, s
 
 @dataclass(frozen=True)
 class RetriesResults(ToolResults):
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
     pass

@@ -85,7 +85,7 @@ def calculate_eta_shrinkage(
     param_inits = model.parameters.to_dataframe()['value']
     pe = parameter_estimates.combine_first(param_inits)
 
-    param_names = model.random_variables.iiv.variance_parameters
+    param_names = [str(param) for param in model.random_variables.etas.covariance_matrix.diagonal()]
     diag_ests = pe[param_names]
     diag_ests.index = individual_estimates.columns
     if not sd:

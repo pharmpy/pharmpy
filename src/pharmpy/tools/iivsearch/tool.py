@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import warnings
 from dataclasses import dataclass, replace
+from pathlib import Path
 from typing import List, Literal, Optional, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
@@ -17,7 +18,15 @@ from pharmpy.modeling import (
     has_random_effect,
 )
 from pharmpy.tools import summarize_modelfit_results
-from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results, update_initial_estimates
+from pharmpy.tools.common import (
+    RANK_TYPES,
+    ToolResults,
+    create_plots,
+    create_results,
+    table_final_eta_shrinkage,
+    table_final_parameter_estimates,
+    update_initial_estimates,
+)
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, _remove_sublist
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
@@ -292,6 +301,13 @@ def start(
 
     keys = list(range(1, len(applied_algorithms) + 1))
 
+    if final_final_model.name == final_model.name:
+        final_results = final_res
+    elif final_final_model.name == input_model.name:
+        final_results = input_res
+
+    plots = create_plots(final_final_model, final_results)
+
     return IIVSearchResults(
         summary_tool=_concat_summaries(sum_tools, keys),
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
@@ -300,6 +316,17 @@ def start(
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
         tool_database=last_res.tool_database,
+        final_model_parameter_estimates=table_final_parameter_estimates(
+            final_final_model,
+            final_results.parameter_estimates_sdcorr,
+            final_results.standard_errors_sdcorr,
+        ),
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=table_final_eta_shrinkage(final_final_model, final_results),
     )
 
 
@@ -446,4 +473,5 @@ def validate_input(
 
 @dataclass(frozen=True)
 class IIVSearchResults(ToolResults):
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
     pass

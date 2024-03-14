@@ -5,8 +5,8 @@
    results
 
 
-AMD Results
-===========
+RUVsearch Results
+==================
 
 Final model
 ~~~~~~~~~~~
