@@ -824,9 +824,12 @@ def _parse_table_file(model, path: Optional[Union[str, Path]], subproblem: Optio
         except IOError:
             continue
         for i in range(len(table_file)):
-            sim = table_file.tables[i].data_frame
+            sim = table_file.tables[i].data_frame[['DV']].copy()
+            assert 'DV' in sim.columns
             sim['SIM'] = i + 1
             df = pd.concat([df, sim], ignore_index=True)
+    df['index'] = df.index
+    df = df.set_index(['SIM', 'index'])
     return df
 
 
