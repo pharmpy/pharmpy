@@ -1,5 +1,8 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Optional
 
 FINAL_MODEL_NAME = 'final'
 INPUT_MODEL_NAME = 'input'

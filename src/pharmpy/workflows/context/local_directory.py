@@ -1,8 +1,11 @@
+from __future__ import annotations
+
 import json
 import shutil
 from itertools import count
 from pathlib import Path
 from datetime import datetime
+from typing import Optional
 
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.fs.symlink import create_directory_symlink
@@ -27,25 +30,28 @@ class LocalDirectoryContext(Context):
         Whether to allow using an existing context.
     """
 
-    def __init__(self, name: Optional[str]=None, parent: Optional[LocalDirectoryContext]=None, path: Optional[Union[str, Path]]=None, exists_ok: bool = False):
+    def __init__(self, name: Optional[str]=None, parent: Optional[LocalDirectoryContext]=None, path: Optional[Union[str, Path]]=None, exists_ok: bool = True):
         # Give name, parent to create a subcontext
         # Give path to create a top level context or open an already available context
         if name is not None and parent is not None and path is None:
-            path = path / 'sub' / name
+            path = parent.path / 'sub' / name
         elif path is not None and name is None and parent is None:
             pass
         else:
             raise ValueError("Either supply name and parent or path")
 
         self.path = path_absolute(path)
-        if self.path.is_dir() and not exists_ok:
-            raise ValueError("Context already exists")
-
-        if parent is None:
-            modeldb = LocalModelDirectoryDatabase(self.path / '.modeldb')
-            self.model_database = modeldb
+        if self.path.is_dir():
+            if not exists_ok:
+                raise ValueError("Context already exists")
         else:
-            self.model_database = parent.model_database
+            self.path.mkdir(parents=True)
+
+        if parent is None :
+            modeldb = LocalModelDirectoryDatabase(self.path / '.modeldb')
+            self._model_database = modeldb
+        else:
+            self._model_database = parent.model_database
 
         self._init_annotations()
         self._init_model_name_map()
@@ -60,7 +66,7 @@ class LocalDirectoryContext(Context):
             path.touch()
 
     def _init_model_name_map(self):
-        self._models_path.mkdir(exists_ok=True)
+        self._models_path.mkdir(exist_ok=True)
 
     def _init_top_path(self, parent):
         if parent is None:
@@ -70,7 +76,7 @@ class LocalDirectoryContext(Context):
 
     def _init_log(self, parent):
         if parent is None:
-            log_path = self._log_path()
+            log_path = self._log_path
             if not log_path.is_file():
                 with open(log_path, 'w') as fh:
                     fh.write("path,time,severity,message\n")
@@ -114,7 +120,9 @@ class LocalDirectoryContext(Context):
     @property
     def context_path(self) -> str:
         relpath = self.path.relative_to(self._top_path.parent)
-        ctxpath = str(relpath.as_posix())
+        posixpath = str(relpath.as_posix())
+        a = posixpath.split('/')[0::2]    # Remove sub/
+        ctxpath = '/'.join(a)
         return ctxpath
 
     def store_metadata(self, metadata: dict):

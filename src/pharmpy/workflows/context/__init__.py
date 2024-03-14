@@ -1,9 +1,9 @@
-from .baseclass import ToolDatabase
-from .local_directory import LocalDirectoryToolDatabase
-from .null_database import NullToolDatabase
+from .baseclass import Context
+from .local_directory import LocalDirectoryContext
+#from .null_database import NullContext
 
 __all__ = [
-    'NullToolDatabase',
-    'LocalDirectoryToolDatabase',
-    'ToolDatabase',
+        #    'NullContext',
+    'LocalDirectoryContext',
+    'Context',
 ]

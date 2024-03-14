@@ -6,9 +6,8 @@ from typing import TypeVar
 
 from pharmpy.model import Model
 
-from .context import insert_context
 from .results import ModelfitResults, Results
-from .workflow import Workflow, WorkflowBuilder
+from .workflow import Workflow, WorkflowBuilder, insert_context
 
 T = TypeVar('T')
 

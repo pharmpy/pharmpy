@@ -1,7 +1,6 @@
 from typing import TypeVar
 
-from .context import insert_context
-from .workflow import Workflow, WorkflowBuilder
+from .workflow import Workflow, WorkflowBuilder, insert_context
 
 T = TypeVar('T')
 
