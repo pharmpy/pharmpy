@@ -737,7 +737,9 @@ def _validate_strat(model, stratify_on):
         raise ValueError(f'{stratify_on} column does not exist in dataset.')
 
 
-def _calculate_vpc(model, simulations, binning: str, nbins: int, qi: float, ci: float, query=None):
+def _calculate_vpc(
+    model, simulations, binning: str, nbins: int, qi: float, ci: float, query=None, stratify_on=None
+):
     dv = model.datainfo.dv_column.name
     nrows = len(model.dataset)
     nsim = int(len(simulations) / nrows)
@@ -747,7 +749,6 @@ def _calculate_vpc(model, simulations, binning: str, nbins: int, qi: float, ci: 
         obstab = obstab.query(query)
     obstab = obstab[dv]
 
-    " Calculate bin columns and bin edges "
     bincol, boundaries = bin_observations(model, binning, nbins)
 
     if len(bincol.unique()) != bincol.unique().max() + 1:
@@ -756,9 +757,10 @@ def _calculate_vpc(model, simulations, binning: str, nbins: int, qi: float, ci: 
     obsgroup = obstab.groupby(bincol)
 
     simtab = simulations
-    if "SIM" not in simtab.columns:
-        simtab["SIM"] = np.repeat(np.arange(nsim), nrows)
-    simtab.index = np.tile(np.arange(nrows), nsim)
+    assert 'SIM' in simtab.columns
+    if stratify_on is not None:
+        simtab[stratify_on] = np.tile(model.dataset[stratify_on], nsim)
+    simtab = simtab.set_index(['index'])
     simtab = simtab.loc[observations.index]
     simtab["__BIN__"] = bincol
     if query is not None:
@@ -822,7 +824,7 @@ def _calculate_vpc(model, simulations, binning: str, nbins: int, qi: float, ci: 
             'bin_midpoint': midpoints,
             'bin_edges_right': boundaries[1::],
             'bin_edges_left': boundaries[0:-1],
-            'no. of data points': obsgroup.count(),
+            'n_data_points': obsgroup.count(),
         }
     )
     return df
@@ -851,7 +853,7 @@ def _get_quantile(data, quantile, sort_by=None):
     return sorted_data[int(np.floor(quantile * (n - 1) + 0.5))]
 
 
-def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title=''):
+def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', stratify_on=None):
     obs = get_observations(model, keep_index=True)
     idv = model.datainfo.idv_column.name
     idname = model.datainfo.id_column.name
@@ -859,7 +861,16 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title=''):
     if query is not None:
         data = data.query(query)
 
-    df = _calculate_vpc(model, simulations, binning=binning, nbins=nbins, qi=qi, ci=ci, query=query)
+    df = _calculate_vpc(
+        model,
+        simulations,
+        binning=binning,
+        nbins=nbins,
+        qi=qi,
+        ci=ci,
+        query=query,
+        stratify_on=stratify_on,
+    )
 
     scatter = (
         alt.Chart(data)
@@ -971,6 +982,7 @@ def vpc_plot(
                         ci=ci,
                         query=query,
                         title=f'{stratify_on} {bin_stratification[i]} - {bin_stratification[i+1]}',
+                        stratify_on=stratify_on,
                     )
                 )
         else:
@@ -986,6 +998,7 @@ def vpc_plot(
                         ci=ci,
                         query=query,
                         title=f'{stratify_on} {value}',
+                        stratify_on=stratify_on,
                     )
                 )
         chart = _concat(charts)

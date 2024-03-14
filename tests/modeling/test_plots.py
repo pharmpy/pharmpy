@@ -101,7 +101,7 @@ def test_plot_abs_cwres_vs_ipred(tmp_path, load_model_for_test, testdata):
 def test_vpc_plot(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-        simulations = pd.read_table(testdata / 'nonmem' / 'vpc_simulations.csv', delimiter=r'\s+')
+        simulations = pd.read_table(testdata / 'nonmem' / 'vpc_simulations.csv', delimiter=',')
         plot = vpc_plot(model, simulations)
         plot.save('chart.html')
 
@@ -109,8 +109,6 @@ def test_vpc_plot(tmp_path, load_model_for_test, testdata):
 def test_vpc_plot_stratify(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-        simulations = pd.read_table(
-            testdata / 'nonmem' / 'vpc_simulations_dvid.csv', delimiter=r'\s+'
-        )
+        simulations = pd.read_table(testdata / 'nonmem' / 'vpc_simulations_dvid.csv', delimiter=',')
         plot = vpc_plot(model, simulations, nbins=3, stratify_on='DVID')
         plot.save('chart.html')
