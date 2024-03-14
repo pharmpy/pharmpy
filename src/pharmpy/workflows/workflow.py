@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import inspect
 import uuid
 from typing import TYPE_CHECKING, Generic, List, Optional, TypeVar, Union
 
@@ -259,3 +260,16 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
         g = nx.compose(self._g, other._g)
         wf_new = Workflow(graph=g)
         return wf_new
+
+
+
+def insert_context(wb: WorkflowBuilder, context):
+    """Insert context for all tasks in a workflow needing it
+
+    having context as first argument of function
+    """
+    for task in wb.tasks:
+        parameters = tuple(inspect.signature(task.function).parameters)
+        if parameters and parameters[0] == 'context':
+            new_task = task.replace(task_input=(context, *task.task_input))
+            wb.replace_task(task, new_task)
