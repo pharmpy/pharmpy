@@ -40,7 +40,7 @@ from .model_database import (
 from .model_entry import ModelEntry
 from .results import ModelfitResults, Results, SimulationResults
 from .task import Task
-from .tool_database import LocalDirectoryToolDatabase, NullToolDatabase, ToolDatabase
+from .context import LocalDirectoryContext, Context
 from .workflow import Workflow, WorkflowBuilder
 
 
@@ -52,8 +52,8 @@ class WorkflowConfiguration(config.Configuration):
     default_model_database = config.ConfigItem(
         'pharmpy.workflows.LocalDirectoryDatabase', 'Name of default model database class'
     )
-    default_tool_database = config.ConfigItem(
-        'pharmpy.workflows.LocalDirectoryToolDatabase', 'Name of default tool database class'
+    default_context = config.ConfigItem(
+        'pharmpy.workflows.LocalDirectoryContext', 'Name of default context class'
     )
 
 
@@ -72,7 +72,7 @@ def _importclass(name):
 
 default_dispatcher = _importclass(conf.default_dispatcher)
 default_model_database = _importclass(conf.default_model_database)
-default_tool_database = _importclass(conf.default_tool_database)
+default_tool_database = _importclass(conf.default_context)
 
 
 __all__ = [
@@ -85,17 +85,16 @@ __all__ = [
     'local_dask',
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',
-    'LocalDirectoryToolDatabase',
+    'LocalDirectoryContext',
     'Log',
     'NullModelDatabase',
-    'NullToolDatabase',
     'ModelDatabase',
     'ModelEntry',
     'ModelfitResults',
     'Results',
     'SimulationResults',
     'Task',
-    'ToolDatabase',
+    'Context',
     'Workflow',
     'WorkflowBuilder',
 ]
