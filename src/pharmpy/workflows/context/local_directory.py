@@ -7,10 +7,13 @@ from pathlib import Path
 from datetime import datetime
 from typing import Optional
 
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.fs.symlink import create_directory_symlink
+from pharmpy.internals.fs.lock import path_lock
 from pharmpy.model import Model
 from pharmpy.workflows.results import ModelfitResults
+from pharmpy.workflows.hashing import ModelHash
 
 from ..model_database import LocalModelDirectoryDatabase
 from ..results import read_results
@@ -34,7 +37,7 @@ class LocalDirectoryContext(Context):
         # Give name, parent to create a subcontext
         # Give path to create a top level context or open an already available context
         if name is not None and parent is not None and path is None:
-            path = parent.path / 'sub' / name
+            path = parent.path / 'subcontexts' / name
         elif path is not None and name is None and parent is None:
             pass
         else:
@@ -47,18 +50,29 @@ class LocalDirectoryContext(Context):
         else:
             self.path.mkdir(parents=True)
 
-        if parent is None :
-            modeldb = LocalModelDirectoryDatabase(self.path / '.modeldb')
-            self._model_database = modeldb
-        else:
-            self._model_database = parent.model_database
+        if not (self.path / 'subcontexts').is_dir():
+            (self.path / 'subcontexts').mkdir()
+
+        self._init_top_path()
+
+        self._model_database = LocalModelDirectoryDatabase(self._top_path / '.modeldb')
 
         self._init_annotations()
         self._init_model_name_map()
-        self._init_top_path(parent)
         self._init_log(parent)
 
         super().__init__(name)
+
+    def _init_top_path(self):
+        path = self.path
+        while True:
+            parent = path.parent
+            if path == parent:
+                raise FileNotFoundError("Cannot find top level of context.")
+            if not (parent.name == "subcontexts"):
+                self._top_path = path
+                break
+            path = parent.parent
 
     def _init_annotations(self):
         path = self._annotations_path
@@ -68,11 +82,6 @@ class LocalDirectoryContext(Context):
     def _init_model_name_map(self):
         self._models_path.mkdir(exist_ok=True)
 
-    def _init_top_path(self, parent):
-        if parent is None:
-            self._top_path = self.path
-        else:
-            self._top_path = parent._top_path
 
     def _init_log(self, parent):
         if parent is None:
@@ -87,7 +96,7 @@ class LocalDirectoryContext(Context):
         path.touch(exist_ok=True)
         return path_lock(str(path), shared=True)
 
-    def _write_lock(self, name : str):
+    def _write_lock(self, path : Path):
         # NOTE: Obtain exclusive (blocking) lock on one file
         path = path.with_suffix('.lock')
         path.touch(exist_ok=True)
@@ -103,7 +112,7 @@ class LocalDirectoryContext(Context):
 
     @property
     def _log_path(self) -> Path:
-        return self._top_path / 'log.csv'
+        return self._top_path / 'log'
 
     @property
     def _metadata_path(self) -> Path:
@@ -121,12 +130,12 @@ class LocalDirectoryContext(Context):
     def context_path(self) -> str:
         relpath = self.path.relative_to(self._top_path.parent)
         posixpath = str(relpath.as_posix())
-        a = posixpath.split('/')[0::2]    # Remove sub/
+        a = posixpath.split('/')[0::2]    # Remove subcontexts/
         ctxpath = '/'.join(a)
         return ctxpath
 
     def store_metadata(self, metadata: dict):
-        with open(self._metapath_path, 'w') as f:
+        with open(self._metadata_path, 'w') as f:
             json.dump(metadata, f, indent=4, cls=MetadataJSONEncoder)
 
     def retrieve_metadata(self) -> dict:
@@ -134,20 +143,33 @@ class LocalDirectoryContext(Context):
             return json.load(f, cls=MetadataJSONDecoder)
 
     def store_key(self, name: str, key: ModelHash):
-        create_directory_symlink(self._models_path / name, self.model_database.path / str(key))
+        # FIXME: check if exists
+        from_path = self._models_path / name
+        if not from_path.exists():
+            create_directory_symlink(self._models_path / name, self.model_database.path / str(key))
 
     def retrieve_key(self, name: str) -> ModelHash:
         symlink_path = self._models_path / name
         digest = symlink_path.resolve().name
         db = self.model_database
         # FIXME: Currently it is not possible to use the digest here in the modeldb
-        with db.snapshot(digest) as txn:
+        with db.snapshot(ModelHash(digest)) as txn:
             key = txn.key
         return key
 
+    def retrieve_name(self, key: ModelHash) -> str:
+        path = self._models_path
+        mydigest = str(key)
+        for link_path in path.iterdir():
+            resolved = link_path.resolved()
+            digest = resolved.name
+            if digest == mydigest:
+                return link_path.name
+        raise KeyError("Model with key {mydigest} could not be found.")
+
     def store_annotation(self, name: str, annotation: str):
         path = self._annotations_path
-        with _write_lock(path):
+        with self._write_lock(path):
             with open(path, 'r') as fh:
                 lines = []
                 found = False
@@ -165,7 +187,7 @@ class LocalDirectoryContext(Context):
 
     def retrieve_annotation(self, name: str) -> str:
         path = self._annotations_path
-        with _read_lock(path):
+        with self._read_lock(path):
             with open(path, 'r') as fh:
                 for line in fh.readlines():
                     a = line.split(" ", 1)
@@ -177,19 +199,28 @@ class LocalDirectoryContext(Context):
         log_path = self._log_path
         with self._write_lock(log_path):
             with open(log_path, 'a') as fh:
-                fh.write(f'{self._context_path},{datetime.now()},{severity},{msg}\n')
+                fh.write(f'{self.context_path},{datetime.now()},{severity},{msg}\n')
 
     def retrieve_log(self, level: Literal['all', 'current', 'lower']='all') -> pd.DataFrame:
-        # FIXME: How allow splitting to not be done after the start of the message column
         log_path = self._log_path
         with self._read_lock(log_path):
-            df = pd.read_csv(log_path, header=0)
-            count = df['path'].str.count('/')
-            curlevel = self.context_path.count('/')
-            if level == 'lower':
-                df = df.loc[count >= curlevel]
-            elif level == 'current':
-                df = df.loc[count == curlevel]
+            # NOTE: Custom parsing to allow message column to contain any character
+            with open(log_path, 'r') as fh:
+                lines = []
+                for line in fh.readlines():
+                    a = line[0:-1].split(',')
+                    if len(a) > 4:
+                        a[3] = ','.join(a[3:])
+                        del a[4:]
+                    lines.append(a)
+                df = pd.DataFrame(lines[1:], columns=lines[0])
+        count = df['path'].str.count('/')
+        curlevel = self.context_path.count('/')
+        if level == 'lower':
+            df = df.loc[count >= curlevel]
+        elif level == 'current':
+            df = df.loc[count == curlevel]
+        df = df.reset_index(drop=True)
         return df
 
     def get_parent_context(self) -> LocalDirectoryContext:
@@ -199,7 +230,7 @@ class LocalDirectoryContext(Context):
         return parent
 
     def get_subcontext(self, name: str) -> LocalDirectoryContext:
-        path = self.path / 'sub' / name
+        path = self.path / 'subcontexts' / name
         if path.is_dir():
             return LocalDirectoryContext(path=path, exists_ok=True)
         else:

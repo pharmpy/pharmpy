@@ -15,7 +15,7 @@ from pharmpy.modeling import (
     update_inits,
 )
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import ModelEntry, ModelfitResults, Results, ToolDatabase
+from pharmpy.workflows import ModelEntry, ModelfitResults, Results
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -56,7 +56,6 @@ class ToolResults(Results):
     summary_errors: Optional[pd.DataFrame] = None
     final_model: Optional[Model] = None
     models: Sequence[Model] = ()
-    tool_database: Optional[ToolDatabase] = None
     final_model_parameter_estimates: Optional[pd.DataFrame] = None
     final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
     final_model_dv_vs_pred_plot: Optional[alt.Chart] = None

@@ -52,8 +52,12 @@ class DatasetHash(Hash):
 
 
 class ModelHash(Hash):
-    def __init__(self, obj: Union[Model, ModelEntry, ModelHash]):
-        if isinstance(obj, ModelHash):
+    def __init__(self, obj: Union[str, Model, ModelEntry, ModelHash]):
+        if isinstance(obj, str):
+            self._hash = obj
+            # FIXME: No dataset hash here
+            self.dataset_hash = None
+        elif isinstance(obj, ModelHash):
             self.dataset_hash = obj.dataset_hash
             self._hash = obj._hash
         else:

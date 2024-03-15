@@ -4,6 +4,10 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Optional
 
+from pharmpy.model import Model
+from pharmpy.workflows.model_entry import ModelEntry
+
+
 FINAL_MODEL_NAME = 'final'
 INPUT_MODEL_NAME = 'input'
 
@@ -132,22 +136,37 @@ class Context(ABC):
             txn.store_model_entry()
             key = txn.key
         self.store_key(name, key)
+        annotation = model.description if isinstance(model, Model) else model.model.description
+        self.store_annotation(name, annotation)
 
-    def _retrieve_model(self, name: str) -> Model:
+    def _retrieve_me(self, name: str) -> ModelEntry:
         db = self.model_database
         key = self.retrieve_key(name)
-        model = db.retrieve_model(key)
-        return model
+        me = db.retrieve_model_entry(key)
+        model = me.model
+        annotation = self.retrieve_annotation(name)
+        model = model.replace(name=name, description=annotation)
+        new_me = ModelEntry(model=model, parent=me.parent, modelfit_results=me.modelfit_results, log=me.log)
+        return new_me
 
-    def store_model(self, me: ModelEntry):
-        self._store_model(me.model.name, me)
+    def store_model_entry(self, me: Union[Model, ModelEntry]) -> None:
+        name = me.name if isinstance(me, Model) else me.model.name
+        self._store_model(name, me)
 
-    def store_input_model(self, model: Model):
-        self._store_model(INPUT_MODEL_NAME, model)
+    def retrieve_model_entry(self, name : str) -> ModelEntry:
+        me = self._retrieve_me(name)
+        return me
 
-    def store_final_model(self, me: ModelEntry):
+    def store_input_model_entry(self, me: Union[Model, ModelEntry]) -> None:
+        self._store_model(INPUT_MODEL_NAME, me)
+
+    def retrieve_input_model_entry(self) -> ModelEntry:
+        me = self._retrieve_me(INPUT_MODEL_NAME)
+        return me
+
+    def store_final_model_entry(self, me: ModelEntry) -> None:
         self._store_model(FINAL_MODEL_NAME, me)
 
-    def retrieve_final_model(self) -> Model:
-        model = self._retrieve_model(FINAL_MODEL_NAME)
+    def retrieve_final_model_entry(self) -> ModelEntry:
+        model = self._retrieve_me(FINAL_MODEL_NAME)
         return model

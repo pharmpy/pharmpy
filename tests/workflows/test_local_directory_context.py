@@ -1,4 +1,9 @@
+import pytest
+
 from pharmpy.workflows import LocalDirectoryContext
+from pharmpy.workflows.results import read_results
+from pharmpy.workflows.model_entry import ModelEntry
+from pharmpy.tools import load_example_modelfit_results
 
 
 def test_init(tmp_path):
@@ -7,7 +12,7 @@ def test_init(tmp_path):
     assert ctx.path == path
     assert (ctx.path / 'models').is_dir()
     assert (ctx.path / '.modeldb').is_dir()
-    assert (ctx.path / 'log.csv').is_file()
+    assert (ctx.path / 'log').is_file()
     assert (ctx.path / '.annotations').is_file()
     assert ctx.context_path == 'mycontext'
 
@@ -18,5 +23,86 @@ def test_init(tmp_path):
     assert (subctx.path / '.annotations').is_file()
     assert subctx.context_path == 'mycontext/mysubcontext'
 
+    parent = subctx.get_parent_context()
+    assert parent.context_path == ctx.context_path
+
+    sub = ctx.get_subcontext("mysubcontext")
+    with pytest.raises(ValueError):
+        ctx.get_subcontext("nonexisting")
+
+    assert sub.context_path == 'mycontext/mysubcontext'
+
     existing_ctx = LocalDirectoryContext(path=path)
     assert existing_ctx.path == ctx.path
+
+    subsubctx = subctx.create_subcontext("nextlevel")
+    assert subsubctx.context_path == 'mycontext/mysubcontext/nextlevel'
+
+
+def test_metadata(tmp_path):
+    path = tmp_path / 'mycontext'
+    ctx = LocalDirectoryContext(path=path)
+    d = {'mymeta': 23, 'other': 'ext'}
+    ctx.store_metadata(d)
+    retd = ctx.retrieve_metadata()
+    assert d == retd
+
+
+def test_log(tmp_path):
+    path = tmp_path / 'mycontext'
+    ctx = LocalDirectoryContext(path=path)
+    ctx.log_message('error', "This didn't work")
+    ctx.log_message('warning', "Potential disaster")
+    df = ctx.retrieve_log()
+    assert tuple(df.columns) == ('path', 'time', 'severity', 'message')
+    assert tuple(df['path']) == ('mycontext', 'mycontext')
+    assert tuple(df['severity']) == ('error', 'warning')
+    assert df.loc[1, 'message'] == "Potential disaster"
+
+    subctx = LocalDirectoryContext(name="mysubcontext", parent=ctx)
+    subctx.log_message('error', "Neither did this")
+    df = subctx.retrieve_log()
+    assert len(df) == 3
+    assert df.loc[2, 'path'] == 'mycontext/mysubcontext'
+
+    df = subctx.retrieve_log(level='current')
+    assert len(df) == 1
+    assert df.loc[0, 'path'] == 'mycontext/mysubcontext'
+    df = subctx.retrieve_log(level='lower')
+    assert len(df) == 1
+    df = ctx.retrieve_log(level='current')
+    assert len(df) == 2
+
+    s = 'String, with, commas'
+    s2 = '"Quoted"'
+    ctx.log_message('error', s)
+    ctx.log_message('error', s2)
+    df = ctx.retrieve_log()
+    assert df.loc[3, 'message'] == s
+    assert df.loc[4, 'message'] == s2
+
+
+def test_results(tmp_path, testdata):
+    path = tmp_path / 'mycontext'
+    ctx = LocalDirectoryContext(path=path)
+    res = read_results(testdata / 'results' / 'estmethod_results.json')
+    ctx.store_results(res)
+    newres = ctx.retrieve_results()
+    assert tuple(newres.summary_models.iloc[0]) == tuple(res.summary_models.iloc[0])
+
+
+def test_store_model(tmp_path, load_example_model_for_test):
+    path = tmp_path / 'mycontext'
+    ctx = LocalDirectoryContext(path=path)
+    model = load_example_model_for_test("pheno")
+    ctx.store_model_entry(model)
+    me = ctx.retrieve_model_entry("pheno")
+    assert me.model == model
+    assert me.modelfit_results is None
+
+    res = load_example_modelfit_results("pheno")
+    me = ModelEntry.create(model, modelfit_results=res)
+    ctx.store_model_entry(me)
+    newme = ctx.retrieve_model_entry("pheno")
+    assert newme.model == me.model
+    assert dict(newme.modelfit_results.parameter_estimates) == dict(me.modelfit_results.parameter_estimates)
