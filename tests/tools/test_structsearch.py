@@ -87,6 +87,17 @@ def test_create_remaining_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     models = create_remaining_models(model, ests, 2, None)
     assert len(models) == 12
+    models = create_remaining_models(model, ests, 2, dv_types={'drug': 1, 'complex': 2})
+    assert len(models) == 11
+    models = create_remaining_models(model, ests, 2, dv_types={'drug': 1, 'target': 2})
+    assert len(models) == 7
+    models = create_remaining_models(
+        model, ests, 2, dv_types={'drug': 1, 'target': 2, 'target_tot': 3}
+    )
+    assert len(models) == 7
+    with pytest.raises(ValueError, match='`dv_types` must contain more than 1 dv type'):
+        models = create_remaining_models(model, ests, 2, dv_types={'drug': 1})
+        assert len(models) == 7
 
 
 def test_create_remaining_models_multiple_dvs(load_example_model_for_test):
