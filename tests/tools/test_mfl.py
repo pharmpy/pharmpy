@@ -627,22 +627,643 @@ def test_get_model_features(load_model_for_test, pheno_path):
     )
 
 
-def test_ModelFeatures(load_model_for_test, pheno_path):
-    model = load_model_for_test(pheno_path)
-    model_string = get_model_features(model)
-    model_mfl = ModelFeatures.create_from_mfl_string(model_string)
-    assert model_mfl.absorption == Absorption(modes=(Name(name='INST'),))
-    assert model_mfl.elimination == Elimination(modes=(Name(name='FO'),))
-    assert model_mfl.transits == (Transits(counts=(0,), depot=(Name(name='DEPOT'),)),)
-    assert model_mfl.peripherals == Peripherals(counts=(0,))
-    assert model_mfl.lagtime == LagTime(modes=(Name(name='OFF'),))
+@pytest.mark.parametrize(
+    ('source', 'expected'),
+    (
+        (
+            'ABSORPTION(INST)',
+            (
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION(FO)',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION(* )',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ABSORPTION', 'SEQ-ZO-FO'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION([ZO,FO])',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION([ZO,  FO])',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION( [   SEQ-ZO-FO,  FO   ]  )',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'SEQ-ZO-FO'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION([zo, fo])',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION(FO);ABSORPTION(ZO)',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ABSORPTION(FO)\nABSORPTION([FO, SEQ-ZO-FO])',
+            (
+                ('ABSORPTION', 'FO'),
+                ('ABSORPTION', 'SEQ-ZO-FO'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ELIMINATION(FO)',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ABSORPTION', 'INST'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ELIMINATION( *)',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ELIMINATION', 'ZO'),
+                ('ELIMINATION', 'MM'),
+                ('ELIMINATION', 'MIX-FO-MM'),
+                ('ABSORPTION', 'INST'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ELIMINATION([ZO,FO])',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ELIMINATION', 'ZO'),
+                ('ABSORPTION', 'INST'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ELIMINATION([ZO,  FO])',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ELIMINATION', 'ZO'),
+                ('ABSORPTION', 'INST'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ELIMINATION( [   MIX-FO-MM,  FO   ]  )',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ELIMINATION', 'MIX-FO-MM'),
+                ('ABSORPTION', 'INST'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'elimination([zo, fo])',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ELIMINATION', 'ZO'),
+                ('ABSORPTION', 'INST'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'ELIMINATION(FO);ABSORPTION(ZO)',
+            (
+                ('ELIMINATION', 'FO'),
+                ('ABSORPTION', 'ZO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(0)',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS([0, 1])',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('TRANSITS', 1, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS([0, 2, 4])',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(0..1)',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('TRANSITS', 1, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4); TRANSITS(5)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+                ('TRANSITS', 5, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(0);PERIPHERALS(0)',
+            (
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4, DEPOT)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4, NODEPOT)',
+            (
+                ('TRANSITS', 1, 'NODEPOT'),
+                ('TRANSITS', 2, 'NODEPOT'),
+                ('TRANSITS', 3, 'NODEPOT'),
+                ('TRANSITS', 4, 'NODEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1..4, *)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 2, 'DEPOT'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 4, 'DEPOT'),
+                ('TRANSITS', 1, 'NODEPOT'),
+                ('TRANSITS', 2, 'NODEPOT'),
+                ('TRANSITS', 3, 'NODEPOT'),
+                ('TRANSITS', 4, 'NODEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'PERIPHERALS(0)',
+            (
+                ('PERIPHERALS', 0),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'PERIPHERALS([0, 1])',
+            (
+                ('PERIPHERALS', 0),
+                ('PERIPHERALS', 1),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'PERIPHERALS([0, 2, 4])',
+            (
+                ('PERIPHERALS', 0),
+                ('PERIPHERALS', 2),
+                ('PERIPHERALS', 4),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'PERIPHERALS(0..1)',
+            (
+                ('PERIPHERALS', 0),
+                ('PERIPHERALS', 1),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'PERIPHERALS(1..4)',
+            (
+                ('PERIPHERALS', 1),
+                ('PERIPHERALS', 2),
+                ('PERIPHERALS', 3),
+                ('PERIPHERALS', 4),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'PERIPHERALS(1..4); PERIPHERALS(5)',
+            (
+                ('PERIPHERALS', 1),
+                ('PERIPHERALS', 2),
+                ('PERIPHERALS', 3),
+                ('PERIPHERALS', 4),
+                ('PERIPHERALS', 5),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'LAGTIME(ON)',
+            (
+                ('LAGTIME', 'ON'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+            ),
+        ),
+        (
+            'LAGTIME ( ON )',
+            (
+                ('LAGTIME', 'ON'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+            ),
+        ),
+        (
+            'LAGTIME(OFF)',
+            (
+                ('LAGTIME', 'OFF'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+            ),
+        ),
+        (
+            'LAGTIME([ON, OFF])',
+            (
+                ('LAGTIME', 'OFF'),
+                ('LAGTIME', 'ON'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+            ),
+        ),
+        (
+            'TRANSITS(1, *)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('TRANSITS', 1, 'NODEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1, DEPOT)',
+            (
+                ('TRANSITS', 1, 'DEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'TRANSITS(1, NODEPOT)',
+            (
+                ('TRANSITS', 1, 'NODEPOT'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        ('LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)', []),
+        (
+            'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                ('COVARIATE', 'CL', 'APGR', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'APGR', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'MAT', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'APGR', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'VC', 'WGT', 'exp', '*', 'ADD'),
+            ),
+        ),
+        (
+            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'CL', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'MAT', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'VC', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'MAT', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'MAT', 'SEX', 'cat', '+', 'REMOVE'),
+                ('COVARIATE', 'MAT', 'WT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'VC', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'REMOVE'),
+                ('COVARIATE', 'VC', 'WT', 'exp', '*', 'REMOVE'),
+            ),
+        ),
+        (
+            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+            'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
+            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'CL', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'MAT', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'MAT', 'WT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'ADD'),
+                ('COVARIATE', 'VC', 'WT', 'exp', '*', 'ADD'),
+            ),
+        ),
+        (
+            'LET(CONTINUOUS, AGE); LET(CATEGORICAL, SEX)\n'
+            'COVARIATE?([CL], @CONTINUOUS, *)\n'
+            'COVARIATE([VC], @CATEGORICAL, CAT, +)',
+            (
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'AGE', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'AGE', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'AGE', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'VC', 'SEX', 'cat', '+', 'ADD'),
+            ),
+        ),
+        (
+            'COVARIATE?(@IIV, @CONTINUOUS, *);' 'COVARIATE?(*, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'REMOVE'),
+            ),
+        ),
+        (
+            'COVARIATE?(@PK, @CONTINUOUS, *);' 'COVARIATE?(@PK, @CATEGORICAL, CAT, *)',
+            (
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'ADD'),
+                ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'CL', 'WGT', 'piece_lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'APGR', 'cat', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'lin', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'pow', '*', 'REMOVE'),
+                ('COVARIATE', 'V', 'WGT', 'piece_lin', '*', 'REMOVE'),
+            ),
+        ),
+        (
+            'COVARIATE(@ABSORPTION, APGR, CAT);'
+            'COVARIATE(@DISTRIBUTION, WGT, EXP);'
+            'COVARIATE(@ELIMINATION, SEX, CAT)',
+            (
+                ('COVARIATE', 'CL', 'SEX', 'cat', '*', 'ADD'),
+                ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
+            ),
+        ),
+        (
+            'COVARIATE(@BIOAVAIL, APGR, CAT)',
+            (),
+        ),
+        (
+            'METABOLITE([BASIC, PSC]);' 'PERIPHERALS(1..2, MET)',
+            (
+                ('METABOLITE', 'BASIC'),
+                ('METABOLITE', 'PSC'),
+                ('PERIPHERALS', 1, 'METABOLITE'),
+                ('PERIPHERALS', 2, 'METABOLITE'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+        (
+            'METABOLITE(*)',
+            (
+                ('METABOLITE', 'BASIC'),
+                ('METABOLITE', 'PSC'),
+                ('ABSORPTION', 'INST'),
+                ('ELIMINATION', 'FO'),
+                ('TRANSITS', 0, 'DEPOT'),
+                ('PERIPHERALS', 0),
+                ('LAGTIME', 'OFF'),
+            ),
+        ),
+    ),
+    ids=repr,
+)
+def test_ModelFeatures(load_model_for_test, pheno_path, source, expected):
+    pheno = load_model_for_test(pheno_path)
+    model_mfl = parse(source, True)
+    model_mfl_funcs = model_mfl.convert_to_funcs(model=pheno)
+
+    assert set(model_mfl_funcs.keys()) == set(expected)
 
 
 def test_ModelFeatures_eq(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
-    mfl = ModelFeatures()
+    mfl = parse(
+        "ABSORPTION(INST);"
+        "ELIMINATION(FO);"
+        "TRANSITS(0,DEPOT);"
+        "PERIPHERALS(0);"
+        "LAGTIME(OFF)",
+        True,
+    )
     mfl = mfl.replace(covariate=model_mfl.covariate)
     assert mfl == model_mfl
 
@@ -651,25 +1272,21 @@ def test_ModelFeatures_add(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
-    mfl = ModelFeatures.create(
-        absorption=Absorption(
-            (Name("FO"), Name("ZO")),
-        ),
-        peripherals=Peripherals(counts=(1,)),
-    )
+    mfl = parse("ABSORPTION([FO,ZO]);PERIPHERALS(1)", True)
 
-    expected_mfl = ModelFeatures.create(
-        absorption=Absorption(
-            (Name("INST"), Name("FO"), Name("ZO")),
-        ),
-        elimination=Elimination(modes=(Name(name='FO'),)),
-        transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
-        peripherals=Peripherals(counts=(0, 1)),
-        lagtime=LagTime(modes=(Name(name='OFF'),)),
+    expected_mfl = parse(
+        "ABSORPTION([INST,FO,ZO]);"
+        "ELIMINATION(FO);"
+        "TRANSITS(0,DEPOT);"
+        "PERIPHERALS(0..1);"
+        "LAGTIME(OFF)",
+        True,
+    )
+    expected_mfl = expected_mfl.replace(
         covariate=(
             Covariate(parameter=('CL', 'V'), covariate=('WGT',), fp=('CUSTOM',), op=('*')),
             Covariate(parameter=('V',), covariate=('APGR',), fp=('CUSTOM',), op=('*')),
-        ),
+        )
     )
 
     assert mfl + model_mfl == expected_mfl
@@ -695,41 +1312,31 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
-    mfl = ModelFeatures.create(
-        absorption=Absorption(
-            (Name("INST"), Name("ZO")),
-        ),
-        peripherals=Peripherals(counts=(0, 1)),
-    )
+    mfl = parse("ABSORPTION([INST,ZO]);PERIPHERALS(0..1)", True)
 
-    expected_mfl = ModelFeatures.create(
-        absorption=Absorption(modes=(Name(name='ZO'),)),
-        elimination=Elimination(modes=(Name(name='FO'),)),
-        transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
-        peripherals=Peripherals(counts=(1,)),
-        lagtime=LagTime(modes=(Name(name='OFF'),)),
+    expected_mfl = parse(
+        "ABSORPTION(ZO);" "ELIMINATION(FO);" "TRANSITS(0,DEPOT);" "PERIPHERALS(1);" "LAGTIME(OFF)",
+        True,
     )
 
     res_mfl = mfl - model_mfl
     assert res_mfl == expected_mfl
 
-    mfl = ModelFeatures.create(
-        absorption=Absorption(
-            (Name("INST"), Name("ZO")),
-        ),
-        peripherals=Peripherals(counts=(0, 1)),
-    )
+    mfl = parse("ABSORPTION([INST,ZO]);PERIPHERALS(0..1)", True)
 
-    expected_mfl = ModelFeatures.create(
-        absorption=Absorption((Name("INST"),)),
-        elimination=Elimination(modes=(Name(name='FO'),)),
-        transits=(Transits(counts=(0,), depot=(Name(name='DEPOT'),)),),
-        peripherals=Peripherals(counts=(0,)),
-        lagtime=LagTime(modes=(Name(name='OFF'),)),
+    expected_mfl = parse(
+        "ABSORPTION(INST);"
+        "ELIMINATION(FO);"
+        "TRANSITS(0,DEPOT);"
+        "PERIPHERALS(0);"
+        "LAGTIME(OFF)",
+        True,
+    )
+    expected_mfl = expected_mfl.replace(
         covariate=(
             Covariate(parameter=('CL', 'V'), covariate=('WGT',), fp=('CUSTOM',), op=('*')),
             Covariate(parameter=('V',), covariate=('APGR',), fp=('CUSTOM',), op=('*')),
-        ),
+        )
     )
 
     res_mfl = model_mfl - mfl
@@ -770,6 +1377,33 @@ def test_least_number_of_transformations(load_model_for_test, pheno_path):
     assert ('COVARIATE', 'V', 'APGR', 'custom', '*', 'REMOVE') in lnt
 
     assert len(lnt) == 7
+
+
+def test_mfl_function_filtration(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    search_space = (
+        "ABSORPTION(FO);"
+        "ELIMINATION(ZO);"
+        "LAGTIME(ON);"
+        "PERIPHERALS(2);"
+        "TRANSITS(1);"
+        "COVARIATE(CL,WT,EXP);"
+        "DIRECTEFFECT(LINEAR);"
+        "INDIRECTEFFECT(LINEAR,PRODUCTION);"
+        "EFFECTCOMP(LINEAR);"
+        "PERIPHERALS(1,MET);"
+        "METABOLITE(BASIC)"
+    )
+    ss_mfl = parse(search_space, True)
+
+    funcs = ss_mfl.convert_to_funcs()
+    assert len(funcs) == 11
+    pk_funcs = ss_mfl.convert_to_funcs(model=model, subset_features="pk")
+    assert len(pk_funcs) == 5
+    pd_funcs = ss_mfl.convert_to_funcs(model=model, subset_features="pd")
+    assert len(pd_funcs) == 3
+    metabolite_funcs = ss_mfl.convert_to_funcs(model=model, subset_features="metabolite")
+    assert len(metabolite_funcs) == 2
 
 
 @pytest.mark.parametrize(
