@@ -477,3 +477,25 @@ class ModelfitResults(Results):
 
     def __repr__(self):
         return f'<Pharmpy modelfit results object {self.name}>'
+
+
+@dataclass(frozen=True)
+class SimulationResults(Results):
+    """Base class for resutls from simulation operation
+
+    Attributes
+    ----------
+    name : str
+        Name of model
+    description : str
+        Description of model
+    table : pd.DataFrame
+        Table file of model
+    """
+
+    name: Optional[str] = None
+    description: Optional[str] = None
+    table: Optional[pd.DataFrame] = None
+
+    def __repr__(self):
+        return f'<Pharmpy simulation results object {self.name}>'

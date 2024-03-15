@@ -31,6 +31,7 @@ __all__ = (
     'run_ruvsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_structsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_simulation',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_errors',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_individuals_count_table',  # pyright: ignore [reportUnsupportedDunderAll]

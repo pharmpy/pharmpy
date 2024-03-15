@@ -4,7 +4,7 @@ from pharmpy.internals.immutable import Immutable
 from pharmpy.model import Model
 
 from .log import Log
-from .results import ModelfitResults
+from .results import ModelfitResults, SimulationResults
 
 
 class ModelEntry(Immutable):
@@ -32,11 +32,13 @@ class ModelEntry(Immutable):
         model: Model,
         parent: Optional[Model] = None,
         modelfit_results: Optional[ModelfitResults] = None,
+        simulation_results: Optional[SimulationResults] = None,
         log: Optional[Log] = None,
     ):
         self._model = model
         self._parent = parent
         self._modelfit_results = modelfit_results
+        self._simulation_results = simulation_results
         self._log = log
 
     @classmethod
@@ -45,6 +47,7 @@ class ModelEntry(Immutable):
         model: Model,
         parent: Optional[Model] = None,
         modelfit_results: Optional[ModelfitResults] = None,
+        simulation_results: Optional[SimulationResults] = None,
         log: Optional[Log] = None,
     ):
         if parent:
@@ -52,7 +55,13 @@ class ModelEntry(Immutable):
         # FIXME: Should we require the same name?
         # if modelfit_results:
         #     ModelEntry._canonicalize_modelfit_results(model, modelfit_results)
-        return cls(model=model, parent=parent, modelfit_results=modelfit_results, log=log)
+        return cls(
+            model=model,
+            parent=parent,
+            modelfit_results=modelfit_results,
+            simulation_results=simulation_results,
+            log=log,
+        )
 
     @staticmethod
     def _canonicalize_parent(model, parent):
@@ -68,15 +77,33 @@ class ModelEntry(Immutable):
                 f'Name of `model` and `modelfit_results` do not match: `{model.name}`, `{modelfit_results.name}`'
             )
 
-    def attach_results(self, modelfit_results: ModelfitResults, log: Optional[Log] = None):
+    @staticmethod
+    def _canonicalize_simulation_results(model, simulation_results):
+        if model.name != simulation_results.name:
+            raise ValueError(
+                f'Name of `model` and `simulation_results` do not match: `{model.name}`, `{simulation_results.name}`'
+            )
+
+    def attach_results(
+        self,
+        modelfit_results: ModelfitResults,
+        simulation_results: Optional[SimulationResults] = None,
+        log: Optional[Log] = None,
+    ):
         """Attaches modelfit results and possible log to ModelEntry objects"""
         if self._modelfit_results:
             raise ValueError('ModelEntry `modelfit_results` attribute already set')
+        if self._simulation_results:
+            raise ValueError('ModelEntry `simulation_results` attribute already set')
         if self._log:
             raise ValueError('ModelEntry `log` attribute already set')
 
         return ModelEntry.create(
-            self._model, parent=self._parent, modelfit_results=modelfit_results, log=log
+            self._model,
+            parent=self._parent,
+            modelfit_results=modelfit_results,
+            simulation_results=simulation_results,
+            log=log,
         )
 
     @property
@@ -93,6 +120,11 @@ class ModelEntry(Immutable):
     def modelfit_results(self):
         """Modelfit results of main model"""
         return self._modelfit_results
+
+    @property
+    def simulation_results(self):
+        """Simulation results of main model"""
+        return self._simulation_results
 
     @property
     def log(self):
