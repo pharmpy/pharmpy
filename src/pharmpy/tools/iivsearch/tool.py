@@ -113,7 +113,13 @@ def create_workflow(
 
 
 def create_step_workflow(
-    input_model_entry, base_model_entry, wf_algorithm, iiv_strategy, rank_type, cutoff, strictness
+    input_model_entry,
+    base_model_entry,
+    wf_algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+    strictness,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
@@ -214,7 +220,9 @@ def start(
             # NOTE: This does not need to be a model entry since it is only used as a start point for the
             # candidate models, when the workflow is run the input to this sub-workflow will be a model entry
             wf_algorithm = algorithm_func(
-                base_model_entry.model, index_offset=no_of_models, keep=keep
+                base_model_entry.model,
+                index_offset=no_of_models,
+                keep=keep,
             )
         elif algorithm_cur == "bu_stepwise_no_of_etas":
             wf_algorithm = algorithm_func(

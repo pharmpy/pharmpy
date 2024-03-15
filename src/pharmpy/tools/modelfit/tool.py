@@ -3,13 +3,13 @@ from typing import Iterable, Literal, Optional, Tuple, Union
 from pharmpy.model import Model
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
-SupportedExternalTools = Literal['nonmem', 'nlmixr', 'rxode']
+SupportedExternalTools = Literal['dummy']
 
 
 def create_workflow(
     model_or_models: Optional[Union[Model, Iterable[Model]]] = None,
     n: Optional[int] = None,
-    tool: Optional[SupportedExternalTools] = None,
+    estimation_tool: Optional[SupportedExternalTools] = None,
 ) -> Workflow[Union[Model, Tuple[Model, ...]]]:
     """Run modelfit tool.
 
@@ -19,8 +19,8 @@ def create_workflow(
         A list of models are one single model object
     n : int
         Number of models to fit. This is only used if the tool is going to be combined with other tools.
-    tool : str
-        Which tool to use for fitting. Currently, 'nonmem', 'nlmixr', 'rxode' can be used.
+    estimation_tool : str or None
+        Which tool to use for estimation. Currently, 'dummy' can be used.
 
     Returns
     -------
@@ -38,7 +38,7 @@ def create_workflow(
         if not isinstance(model_or_models, Iterable):
             model_or_models = [model_or_models]
         modelentries = [ModelEntry.create(model=model) for model in model_or_models]
-    wf = create_fit_workflow(modelentries, n, tool)
+    wf = create_fit_workflow(modelentries, n, estimation_tool)
     wf = wf.replace(name="modelfit")
     if len(modelentries) == 1 or (modelentries is None and n is None):
         post_process_results = post_process_results_one
@@ -116,6 +116,8 @@ def get_execute_model(tool: Optional[SupportedExternalTools]):
         from pharmpy.tools.external.nlmixr.run import execute_model
     elif tool == 'rxode':
         from pharmpy.tools.external.rxode.run import execute_model
+    elif tool == 'dummy':
+        from pharmpy.tools.external.dummy.run import execute_model
     else:
         raise ValueError(f"Unknown estimation tool {tool}")
 

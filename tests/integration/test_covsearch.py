@@ -4,6 +4,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_tool
 
 
+@pytest.mark.slow
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_default_str(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):

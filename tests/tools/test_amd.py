@@ -388,3 +388,12 @@ def _validate_record(record, expected):
 
     for warning, match in zip(record, expected):
         assert match in str(warning.message)
+
+
+def _model_count(rundir: Path):
+    return sum(
+        map(
+            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
+            ((rundir / 'models').iterdir()),
+        )
+    )

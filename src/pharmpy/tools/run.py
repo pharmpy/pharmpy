@@ -6,7 +6,7 @@ import re
 import warnings
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
+from typing import Any, List, Literal, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -38,7 +38,6 @@ from .external import parse_modelfit_results
 
 def fit(
     model_or_models: Union[Model, List[Model]],
-    tool: Optional[str] = None,
     path: Optional[Union[Path, str]] = None,
 ) -> Union[ModelfitResults, List[ModelfitResults]]:
     """Fit models.
@@ -47,8 +46,6 @@ def fit(
     ----------
     model_or_models : Model | list[Model]
         List of models or one single model
-    tool : str
-        Estimation tool to use. None to use default
     path :  Path | str
         Path to fit directory
 
@@ -75,7 +72,7 @@ def fit(
         else (False, model_or_models)
     )
 
-    modelfit_results = run_tool('modelfit', models, tool=tool, path=path)
+    modelfit_results = run_tool('modelfit', models, path=path)
 
     return modelfit_results if single else list(modelfit_results)
 
@@ -1175,7 +1172,9 @@ def _get_estimation_runtime(res, i):
     return res.estimation_runtime_iterations.iloc[i]
 
 
-def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
+def read_modelfit_results(
+    path: Union[str, Path], tool: Optional[Literal['dummy']] = None
+) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
@@ -1190,7 +1189,7 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
     """
     path = normalize_user_given_path(path)
     model = read_model(path)
-    res = parse_modelfit_results(model, path)
+    res = parse_modelfit_results(model, path, tool)
     return res
 
 

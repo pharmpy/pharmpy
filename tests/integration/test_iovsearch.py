@@ -1,11 +1,14 @@
 import shutil
 
+import pytest
+
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import fix_parameters
 from pharmpy.tools import fit, run_iovsearch
 
 
+@pytest.mark.slow
 def test_default_mox2(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iovsearch(
@@ -17,6 +20,7 @@ def test_default_mox2(tmp_path, model_count, start_modelres):
         assert res.final_model.name == 'iovsearch_run7'
 
 
+@pytest.mark.slow
 def test_ignore_fixed_iiv(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         start_model = fix_parameters(start_modelres[0], 'IIV_CL')
@@ -24,6 +28,7 @@ def test_ignore_fixed_iiv(tmp_path, model_count, start_modelres):
         assert len(res.summary_models) == 5
 
 
+@pytest.mark.slow
 def test_rank_type_ofv_mox2(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iovsearch(
@@ -35,6 +40,7 @@ def test_rank_type_ofv_mox2(tmp_path, model_count, start_modelres):
         assert res.final_model.name == 'iovsearch_run7'
 
 
+@pytest.mark.slow
 def test_default_mox1(tmp_path, model_count, testdata):
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox1.mod', tmp_path)
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_log.csv', tmp_path)

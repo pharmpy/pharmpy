@@ -415,7 +415,10 @@ def _greedy_search(
             break
 
         new_candidates = handle_effects(
-            step, best_candidate_so_far, candidate_effect_funcs, len(all_candidates_so_far) - 1
+            step,
+            best_candidate_so_far,
+            candidate_effect_funcs,
+            len(all_candidates_so_far) - 1,
         )
 
         all_candidates_so_far.extend(new_candidates)

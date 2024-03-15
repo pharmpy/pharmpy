@@ -1,5 +1,7 @@
 import shutil
 
+import pytest
+
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import (  # convert_model,; create_basic_pk_model,
@@ -34,6 +36,7 @@ from pharmpy.tools import (  # fit,; run_structsearch,
 #        assert res_ruv
 
 
+@pytest.mark.slow
 def test_ruvsearch(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
@@ -60,6 +63,7 @@ def test_ruvsearch(tmp_path, testdata):
         assert best_model.model_code.split('\n')[26] == '$OMEGA  0.0396751 ; IIV_RUV1'
 
 
+@pytest.mark.slow
 def test_ruvsearch_blq(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):

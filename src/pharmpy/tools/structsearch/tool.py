@@ -106,7 +106,12 @@ def create_workflow(
         )
     elif type == 'drug_metabolite':
         start_task = Task(
-            'run_drug_metabolite', run_drug_metabolite, model, search_space, results, strictness
+            'run_drug_metabolite',
+            run_drug_metabolite,
+            model,
+            search_space,
+            results,
+            strictness,
         )
     wb.add_task(start_task)
     return Workflow(wb)
@@ -183,7 +188,15 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
 
 
 def run_pkpd(
-    context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
+    context,
+    input_model,
+    results,
+    search_space,
+    b_init,
+    emax_init,
+    ec50_init,
+    met_init,
+    strictness,
 ):
     model_entry = ModelEntry.create(input_model, modelfit_results=results)
     baseline_pd_model = create_baseline_pd_model(input_model, results.parameter_estimates, b_init)

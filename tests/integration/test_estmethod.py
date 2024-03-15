@@ -4,6 +4,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import retrieve_models, run_estmethod
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     'algorithm, methods, parameter_uncertainty_methods, compare_ofv, no_of_candidates, advan_ref',
     [

@@ -12,7 +12,9 @@ from ..mfl.statement.feature.peripherals import Peripherals
 
 
 def create_drug_metabolite_models(
-    model: Model, results, search_space: str
+    model: Model,
+    results,
+    search_space: str,
 ) -> tuple[List[Model], Model]:
     # FIXME : Implement ModelFeatures when we can extract METABOLITE information
 

@@ -10,6 +10,7 @@ from pharmpy.tools import fit, retrieve_models, run_iivsearch
 #  return model entries or we have a separate function for this
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ('algorithm', 'keep', 'no_of_candidate_models'),
     (('top_down_exhaustive', ['CL'], 8), ('bottom_up_stepwise', ["VC"], 10)),
@@ -33,6 +34,7 @@ def test_no_of_etas_keep(
             assert res_keep1.summary_models.iloc[1]['description'] == '[VC]'
 
 
+@pytest.mark.slow
 def test_block_structure(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iivsearch(
@@ -70,6 +72,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         assert (rundir / 'metadata.json').exists()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
     (('top_down_exhaustive', 'skip', 7), ('bottom_up_stepwise', 'skip', 4)),
@@ -113,6 +116,7 @@ def test_no_of_etas(
         assert (rundir / 'metadata.json').exists()
 
 
+@pytest.mark.slow
 @pytest.mark.parametrize(
     ('algorithm', 'no_of_candidate_models'),
     (('top_down_exhaustive', 8), ('bottom_up_stepwise', 8)),
@@ -169,6 +173,7 @@ def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_can
         assert (rundir / 'metadata.json').exists()
 
 
+@pytest.mark.slow
 @pytest.mark.filterwarnings("ignore::UserWarning")
 @pytest.mark.parametrize(
     ('algorithm', 'correlation_algorithm', 'iiv_strategy', 'no_of_candidate_models'),

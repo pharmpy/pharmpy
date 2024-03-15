@@ -380,7 +380,9 @@ def run_amd(
                 run_subfuncs['structsearch'] = func
             else:
                 func = _subfunc_modelsearch(
-                    search_space=modelsearch_features, strictness=strictness, path=db.path
+                    search_space=modelsearch_features,
+                    strictness=strictness,
+                    path=db.path,
                 )
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
@@ -411,7 +413,10 @@ def run_amd(
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
             func = _subfunc_iov(
-                amd_start_model=model, occasion=occasion, strictness=strictness, path=db.path
+                amd_start_model=model,
+                occasion=occasion,
+                strictness=strictness,
+                path=db.path,
             )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
@@ -449,12 +454,17 @@ def run_amd(
                     run_subfuncs[f'ruvsearch_{key}'] = func
             else:
                 func = _subfunc_ruvsearch(
-                    dv=dv, strictness=strictness, path=db.path, dir_name=run_name
+                    dv=dv,
+                    strictness=strictness,
+                    path=db.path,
+                    dir_name=run_name,
                 )
                 run_subfuncs[f'{run_name}'] = func
         elif section == 'allometry':
             func = _subfunc_allometry(
-                amd_start_model=model, allometric_variable=allometric_variable, path=db.path
+                amd_start_model=model,
+                allometric_variable=allometric_variable,
+                path=db.path,
             )
             run_subfuncs['allometry'] = func
         elif section == 'covariates':
@@ -469,7 +479,12 @@ def run_amd(
         else:
             raise ValueError(f"Unrecognized section {section} in order.")
         if retries_strategy == 'all_final':
-            func = _subfunc_retires(tool=section, strictness=strictness, seed=seed, path=db.path)
+            func = _subfunc_retires(
+                tool=section,
+                strictness=strictness,
+                seed=seed,
+                path=db.path,
+            )
             run_subfuncs[f'{section}_retries'] = func
 
     if retries_strategy == 'final':
@@ -483,7 +498,12 @@ def run_amd(
         model = filter_dataset(model, 'DVID != 2')
 
     if results is None:
-        results = run_tool('modelfit', model, path=db.path / 'modelfit', resume=resume)
+        results = run_tool(
+            'modelfit',
+            model,
+            path=db.path / 'modelfit',
+            resume=resume,
+        )
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
     next_model_entry = model_entry
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []

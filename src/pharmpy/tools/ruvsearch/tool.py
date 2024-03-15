@@ -95,7 +95,16 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="ruvsearch")
     start_task = Task(
-        'start_ruvsearch', start, model, results, groups, p_value, skip, max_iter, dv, strictness
+        'start_ruvsearch',
+        start,
+        model,
+        results,
+        groups,
+        p_value,
+        skip,
+        max_iter,
+        dv,
+        strictness,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -152,7 +161,12 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wb.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration, dv=dv)
+    post_pro = partial(
+        post_process,
+        cutoff=cutoff,
+        current_iteration=current_iteration,
+        dv=dv,
+    )
     task_post_process = Task('post_process', post_pro)
     wb.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
@@ -184,7 +198,17 @@ def _change_proportional_model(model_entry):
     return ModelEntry.create(model, modelfit_results=None)
 
 
-def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, strictness):
+def start(
+    context,
+    input_model,
+    input_res,
+    groups,
+    p_value,
+    skip,
+    max_iter,
+    dv,
+    strictness,
+):
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -201,7 +225,14 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     cwres_models = []
     tool_database = None
     for current_iteration in range(1, max_iter + 1):
-        wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
+        wf = create_iteration_workflow(
+            model_entry,
+            groups,
+            cutoff,
+            skip,
+            current_iteration,
+            dv=dv,
+        )
         res, best_model_entry, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )

@@ -117,7 +117,14 @@ def _start(results, model):
 
 
 def create_random_init_model(
-    context, index, scale, fraction, use_initial_estimates, prefix_name, seed, modelentry
+    context,
+    index,
+    scale,
+    fraction,
+    use_initial_estimates,
+    prefix_name,
+    seed,
+    modelentry,
 ):
     original_model = modelentry.model
     # Update inits once before running

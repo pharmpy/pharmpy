@@ -1,12 +1,15 @@
 import os.path
 import shutil
 
+import pytest
+
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results, run_tool
 from pharmpy.workflows import ModelDatabase
 
 
+@pytest.mark.slow
 def test_allometry(tmp_path, testdata):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'models').glob('pheno5.*'):
