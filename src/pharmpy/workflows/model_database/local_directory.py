@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Union
 
 from pharmpy.internals.fs.lock import path_lock
+
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
 from pharmpy.modeling import write_csv, write_model
@@ -326,8 +327,6 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
             raise FileNotFoundError(f"Cannot retrieve {filename} for {self.name}")
 
     def retrieve_model(self):
-        from pharmpy.model import Model
-
         path = self._find_full_model_path()
 
         # NOTE: This will guess the model type
@@ -368,7 +367,10 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         path = (
             self.database.path / str(self.key) / DIRECTORY_PHARMPY_METADATA / FILE_MODELFIT_RESULTS
         )
-        return read_results(path)
+        if path.is_file():
+            return read_results(path)
+        else:
+            return None
 
     def retrieve_model_entry(self):
         model = self.retrieve_model()

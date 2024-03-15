@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import ModelEntry, ModelfitResults, Results, ToolDatabase
+from pharmpy.workflows import ModelEntry, ModelfitResults, Results
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -47,7 +47,7 @@ class ToolResults(Results):
     summary_errors: Optional[pd.DataFrame] = None
     final_model: Optional[Model] = None
     models: Sequence[Model] = ()
-    tool_database: Optional[ToolDatabase] = None
+    tool_database: Optional[Context] = None
 
 
 T = TypeVar('T', bound=ToolResults)

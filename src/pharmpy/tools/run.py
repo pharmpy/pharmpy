@@ -31,7 +31,7 @@ from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
 from pharmpy.workflows.results import ModelfitResults, mfr
-from pharmpy.workflows.tool_database import ToolDatabase
+from pharmpy.workflows.context import Context
 
 from .external import parse_modelfit_results
 
@@ -214,7 +214,7 @@ def run_tool_with_name(
 
 
 def _create_metadata(
-    database: ToolDatabase,
+    database: Context,
     dispatcher,
     tool_name: str,
     tool_params,
@@ -347,7 +347,7 @@ def _parse_args_kwargs_from_tool_options(tool_params, tool_options):
 
 
 def _create_metadata_tool(
-    database: ToolDatabase,
+    database: Context,
     tool_name: str,
     tool_params,
     tool_param_types,
@@ -393,7 +393,7 @@ def _create_metadata_tool(
 
 
 def _create_metadata_common(
-    database: ToolDatabase, dispatcher, toolname: Optional[str], common_options: Mapping[str, Any]
+    database: Context, dispatcher, toolname: Optional[str], common_options: Mapping[str, Any]
 ):
     setup_metadata = {}
     setup_metadata['dispatcher'] = dispatcher.__name__
@@ -461,7 +461,7 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
-def _get_run_setup(common_options, toolname) -> Tuple[Any, ToolDatabase]:
+def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
     try:
         dispatcher = common_options['dispatcher']
     except KeyError:
@@ -486,7 +486,7 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, ToolDatabase]:
 
 
 def retrieve_models(
-    source: Union[str, Path, Results, ToolDatabase, ModelDatabase],
+    source: Union[str, Path, Results, Context, ModelDatabase],
     names: Optional[List[str]] = None,
 ) -> List[Model]:
     """Retrieve models after a tool run
@@ -496,9 +496,9 @@ def retrieve_models(
 
     Parameters
     ----------
-    source : str, Path, Results, ToolDatabase, ModelDatabase
+    source : str, Path, Results, Context, ModelDatabase
         Source where to find models. Can be a path (as str or Path), a results object, or a
-        ToolDatabase/ModelDatabase
+        Context/ModelDatabase
     names : list
         List of names of the models to retrieve or None for all
 
@@ -530,7 +530,7 @@ def retrieve_models(
             raise ValueError(
                 f'Results type \'{source.__class__.__name__}\' does not serialize tool database'
             )
-    elif isinstance(source, ToolDatabase):
+    elif isinstance(source, Context):
         db = source.model_database
     elif isinstance(source, ModelDatabase):
         db = source
@@ -1207,7 +1207,7 @@ def _get_run_setup_from_metadata(path):
     dispatcher = getattr(workflows, common_options['dispatcher'].split('.')[-1])
 
     # TODO: Be more general
-    assert common_options['database']['class'] == 'LocalDirectoryToolDatabase'
+    assert common_options['database']['class'] == 'LocalDirectoryContext'
     assert common_options['database']['toolname'] == tool_name
 
     return dispatcher, tool_database
