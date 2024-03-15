@@ -12,6 +12,8 @@ from pharmpy.model import Model
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
+from pharmpy.tools.mfl.parse import ModelFeatures
+from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
@@ -25,7 +27,7 @@ TYPES = frozenset(('pkpd', 'drug_metabolite', 'tmdd'))
 
 def create_workflow(
     type: Literal[tuple(TYPES)],
-    search_space: Optional[str] = None,
+    search_space: Optional[Union[str, ModelFeatures]] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
@@ -360,6 +362,15 @@ def validate_input(
                     raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')
 
     elif type.lower() == 'pkpd':
+        if search_space is not None:
+            if isinstance(search_space, str):
+                search_space = mfl_parse(search_space, True)
+            if search_space.filter("pd") != search_space:
+                raise ValueError(
+                    f'Argument search_space contain attributes not used for "{type}" models'
+                )
+        else:
+            raise ValueError("Argument search_space need to be specified.")
         if extra_model is not None:
             raise ValueError('Invalid argument "extra_model" for PKPD models.')
         if extra_model_results is not None:
@@ -376,6 +387,15 @@ def validate_input(
             raise ValueError("Initial estimate for MET is needed")
 
     elif type.lower() == 'drug_metabolite':
+        if search_space is not None:
+            if isinstance(search_space, str):
+                search_space = mfl_parse(search_space, True)
+            if search_space.filter("metabolite") != search_space:
+                raise ValueError(
+                    f'Argument search_space contain attributes not used for "{type}" models'
+                )
+        else:
+            raise ValueError("Argument search_space need to be specified.")
         if any([b_init, emax_init, ec50_init, met_init]):
             raise ValueError(
                 'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for drug metabolite models.'
