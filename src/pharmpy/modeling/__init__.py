@@ -224,6 +224,7 @@ from .plots import (
     plot_individual_predictions,
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
+    vpc_plot,
 )
 from .random_variables import replace_non_random_rvs
 from .results import (
@@ -462,4 +463,5 @@ __all__ = [
     'unconstrain_parameters',
     'undrop_columns',
     'unload_dataset',
+    'vpc_plot',
 ]
