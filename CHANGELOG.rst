@@ -1,3 +1,29 @@
+0.108.0 (2024-03-18)
+--------------------
+
+New features
+============
+
+* New simulation tool tools.run_simulations
+* Add reports with various plots for final model in all AMD subtools
+* Add functions modeling.add_predictions_residuals and modeling.remove_predictions_residuals
+
+Changes
+=======
+
+* Force positive definitiveness in retries tool
+* Make initial estimates in AMD mandatory
+* Add default search space for PKPD models
+
+Bugfixes
+========
+
+* Correct extraction of CL/VC parameters in PSC metabolite models
+* Remove unused K-parameters from NONMEM code
+* Correct number of expected models in BIC calculation for bottom up algorithm in IIVSearch
+* Use input model results when updating initial estimates for first model in bottom up algorithm in IIVSearch
+* Add keep-option to bottom up algorithm in IIVSearch
+
 0.107.0 (2024-03-04)
 --------------------
 
