@@ -1,0 +1,66 @@
+.. _linearize:
+
+=========
+Linearize
+=========
+
+Create a linearize model based on a given input model.
+
+The linearization procedure will produce and run two new models. Given an input model,
+a derivative model is created which will extract all derivatives for ETAs and EPSILONs.
+This is followed by the creation of a linearized model with input values of the ETAs
+updated according to the results from the derivative model.
+
+~~~~~~~
+Running
+~~~~~~~
+
+To create a linearized model, please run
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import read_model
+    from pharmpy.tools import read_modelfit_results, run_iivsearch
+
+    start_model = read_model('path/to/model')
+    start_model_results = read_model_results('path/to/model')
+    res = run_iivsearch(algorithm='top_down_exhaustive',
+                        model=start_model,
+                        results=start_model_results,
+                        iiv_strategy='no_add',
+                        rank_type='bic',
+                        cutoff=None)
+
+~~~~~~~~~~~~~~~~~~~~~
+The linearize results
+~~~~~~~~~~~~~~~~~~~~~
+
+OFVs
+~~~~
+
+The OFVs of the input model and the linearized model before and after estimation are summarized in the ``ofv`` table. These values should be close. A difference signals problems with the linearization.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    from pharmpy.workflows.results import read_results
+    res = read_results('tests/testdata/results/linearize_results.json')
+    res.ofv
+
+
+Individual OFVs
+~~~~~~~~~~~~~~~
+
+The individual OFVs for the base and linearized models together with their difference is in the ``iofv`` table. If there was a deviation in the ``ofv`` these values can be used to see if some particular individual was problematic to linearize.
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.iofv
+
+This is also plotted in ``iofv_plot``
+
+.. pharmpy-execute::
+    :hide-code:
+
+    res.iofv_plot

@@ -1,5 +1,6 @@
 from threading import Lock
 
+from .linearize.tool import create_linearized_model, delinearize_model
 from .mfl.parse import get_model_features
 
 __all__ = (
@@ -38,6 +39,8 @@ __all__ = (
     'summarize_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'write_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'get_model_features',
+    'create_linearized_model',
+    'delinearize_model',
 )
 
 

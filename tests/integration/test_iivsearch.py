@@ -220,3 +220,35 @@ def test_no_of_etas_iiv_strategies(
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidate_models + 1
         assert (rundir / 'metadata.json').exists()
+
+
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
+@pytest.mark.parametrize(
+    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
+    (('top_down_exhaustive', 'skip', 4), ('bottom_up_stepwise', 'skip', 3)),
+)
+def test_no_of_etas_linearization(
+    tmp_path, model_count, algorithm, correlation_algorithm, no_of_candidate_models
+):
+    with chdir(tmp_path):
+        from pharmpy.modeling import load_example_model
+        from pharmpy.tools import load_example_modelfit_results
+
+        start_modelres = (load_example_model("pheno"), load_example_modelfit_results("pheno"))
+        res = run_iivsearch(
+            algorithm,
+            results=start_modelres[1],
+            model=start_modelres[0],
+            linearize=True,
+            correlation_algorithm=correlation_algorithm,
+        )
+
+        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 2
+
+        rundir = tmp_path / 'iivsearch_dir1'
+        assert rundir.is_dir()
+        assert model_count(rundir) == no_of_candidate_models + 2
+        assert (rundir / 'metadata.json').exists()
