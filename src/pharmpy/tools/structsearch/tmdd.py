@@ -75,14 +75,50 @@ def create_remaining_models(model, ests, num_peripherals_qss, dv_types):
     if num_peripherals_qss < num_peripherals_model:
         model = remove_peripheral_compartment(model)
 
-    models = (
-        create_full_models(model, ests, dv_types)
-        + create_cr_models(model, ests, dv_types)
-        + create_ib_models(model, ests, dv_types)
-        + create_crib_models(model, ests, dv_types)
-        + create_wagner_model(model, ests, dv_types)
-        + create_mmapp_model(model, ests, dv_types)
-    )
+    if dv_types is None:
+        models = (
+            create_full_models(model, ests, dv_types)
+            + create_cr_models(model, ests, dv_types)
+            + create_ib_models(model, ests, dv_types)
+            + create_crib_models(model, ests, dv_types)
+            + create_wagner_model(model, ests, dv_types)
+            + create_mmapp_model(model, ests, dv_types)
+        )
+    else:
+        if len(dv_types) < 2:
+            raise ValueError('`dv_types` must contain more than 1 dv type')
+        else:
+            if (
+                ('drug' in dv_types or 'drug_tot' in dv_types)
+                and ('target' in dv_types or 'target_tot' in dv_types)
+                and 'complex' not in dv_types
+            ):
+                models = (
+                    create_full_models(model, ests, dv_types)
+                    + create_ib_models(model, ests, dv_types)
+                    + create_mmapp_model(model, ests, dv_types)
+                )
+            elif (
+                ('drug' in dv_types or 'drug_tot' in dv_types)
+                and 'complex' in dv_types
+                and not ('target' in dv_types or 'target_tot' in dv_types)
+            ):
+                models = (
+                    create_full_models(model, ests, dv_types)
+                    + create_cr_models(model, ests, dv_types)
+                    + create_ib_models(model, ests, dv_types)
+                    + create_crib_models(model, ests, dv_types)
+                    + create_wagner_model(model, ests, dv_types)
+                )
+            else:
+                models = (
+                    create_full_models(model, ests, dv_types)
+                    + create_cr_models(model, ests, dv_types)
+                    + create_ib_models(model, ests, dv_types)
+                    + create_crib_models(model, ests, dv_types)
+                    + create_wagner_model(model, ests, dv_types)
+                    + create_mmapp_model(model, ests, dv_types)
+                )
     return models
 
 

@@ -353,6 +353,8 @@ def validate_input(
         if dv_types is not None:
             if not len(dv_types.values()) == len(set(dv_types.values())):
                 raise ValueError('Values must be unique.')
+            if len(dv_types) == 1:
+                raise ValueError('`dv_types` must contain more than 1 dv type')
             for key, value in dv_types.items():
                 if key not in ['drug', 'drug_tot'] and value == 1:
                     raise ValueError('Only drug can have DVID = 1. Please choose another DVID.')
