@@ -22,3 +22,4 @@ class AMDResults(Results):
     final_model_abs_cwres_vs_ipred_plot: Optional[alt.Chart] = None
     final_model_eta_distribution_plot: Optional[alt.Chart] = None
     final_model_eta_shrinkage: Optional[pd.Series] = None
+    final_model_vpc_plot: Optional[alt.Chart] = None
