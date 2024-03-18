@@ -5,8 +5,8 @@
    results
 
 
-AMD Results
-===========
+Modelsearch Results
+====================
 
 Final model
 ~~~~~~~~~~~
@@ -17,6 +17,7 @@ Final model
     from pharmpy.workflows.results import read_results
 
     res = read_results('results.json')
+
 
 Parameter estimates
 

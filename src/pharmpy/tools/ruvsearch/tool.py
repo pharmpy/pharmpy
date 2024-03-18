@@ -37,7 +37,13 @@ from pharmpy.tools import (
     summarize_individuals_count_table,
     summarize_modelfit_results,
 )
-from pharmpy.tools.common import summarize_tool, update_initial_estimates
+from pharmpy.tools.common import (
+    create_plots,
+    summarize_tool,
+    table_final_eta_shrinkage,
+    table_final_parameter_estimates,
+    update_initial_estimates,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
@@ -236,6 +242,8 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     summary_tool = _create_summary_tool(selected_model_entries, cutoff, strictness)
     summary_errors = summarize_errors(m.modelfit_results for m in selected_model_entries)
 
+    plots = create_plots(model_entry.model, model_entry.modelfit_results)
+
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
         summary_individuals=sumind,
@@ -245,6 +253,19 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         summary_tool=summary_tool,
         summary_errors=summary_errors,
         tool_database=tool_database,
+        final_model_parameter_estimates=table_final_parameter_estimates(
+            model_entry.model,
+            model_entry.modelfit_results.parameter_estimates_sdcorr,
+            model_entry.modelfit_results.standard_errors_sdcorr,
+        ),
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=table_final_eta_shrinkage(
+            model_entry.model, model_entry.modelfit_results
+        ),
     )
     return res
 

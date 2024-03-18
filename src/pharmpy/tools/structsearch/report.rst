@@ -5,8 +5,8 @@
    results
 
 
-AMD Results
-===========
+Structsearch Results
+====================
 
 Final model
 ~~~~~~~~~~~

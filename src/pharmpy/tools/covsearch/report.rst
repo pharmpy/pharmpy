@@ -5,8 +5,8 @@
    results
 
 
-AMD Results
-===========
+COVsearch Results
+==================
 
 Final model
 ~~~~~~~~~~~

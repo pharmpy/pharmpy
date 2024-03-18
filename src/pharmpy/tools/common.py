@@ -3,8 +3,17 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
 
+from pharmpy.deps import altair as alt
 from pharmpy.model import Model
-from pharmpy.modeling import update_inits
+from pharmpy.modeling import (
+    calculate_eta_shrinkage,
+    plot_abs_cwres_vs_ipred,
+    plot_cwres_vs_idv,
+    plot_dv_vs_ipred,
+    plot_dv_vs_pred,
+    plot_eta_distributions,
+    update_inits,
+)
 from pharmpy.tools import rank_models, summarize_errors
 from pharmpy.workflows import ModelEntry, ModelfitResults, Results, ToolDatabase
 
@@ -48,6 +57,13 @@ class ToolResults(Results):
     final_model: Optional[Model] = None
     models: Sequence[Model] = ()
     tool_database: Optional[ToolDatabase] = None
+    final_model_parameter_estimates: Optional[pd.DataFrame] = None
+    final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
+    final_model_dv_vs_pred_plot: Optional[alt.Chart] = None
+    final_model_cwres_vs_idv_plot: Optional[alt.Chart] = None
+    final_model_abs_cwres_vs_ipred_plot: Optional[alt.Chart] = None
+    final_model_eta_distribution_plot: Optional[alt.Chart] = None
+    final_model_eta_shrinkage: Optional[pd.Series] = None
 
 
 T = TypeVar('T', bound=ToolResults)
@@ -120,6 +136,12 @@ def create_results(
         else:
             models = None
 
+    final_results = None
+    for res in cand_res + [base_res]:
+        if res.name == best_model.name:
+            final_results = res
+    plots = create_plots(best_model, final_results)
+
     # FIXME: Remove best_model, input_model, models when there is function to read db
     res = res_class(
         summary_tool=summary_tool,
@@ -128,6 +150,17 @@ def create_results(
         summary_errors=summary_errors,
         final_model=best_model,
         models=models,
+        final_model_parameter_estimates=table_final_parameter_estimates(
+            best_model,
+            final_results.parameter_estimates_sdcorr,
+            final_results.standard_errors_sdcorr,
+        ),
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=table_final_eta_shrinkage(best_model, final_results),
         **rest,
     )
 
@@ -229,3 +262,73 @@ def summarize_tool_individuals(
             by=[rank_type_col.name], ascending=False
         )
     return summary_individuals, summary_individuals_count
+
+
+def create_plots(model: Model, results: ModelfitResults):
+    if 'dvid' in model.datainfo.types:
+        dvid_name = model.datainfo.typeix['dvid'].names[0]
+    else:
+        dvid_name = None
+
+    pred = results.predictions
+    res = results.residuals
+
+    if pred is not None and 'PRED' in pred.columns:
+        dv_vs_pred_plot = plot_dv_vs_pred(model, results.predictions, dvid_name)
+    else:
+        dv_vs_pred_plot = None
+
+    if pred is not None and ('IPRED' in pred.columns or 'CIPREDI' in pred.columns):
+        dv_vs_ipred_plot = plot_dv_vs_ipred(model, results.predictions, dvid_name)
+    else:
+        dv_vs_ipred_plot = None
+
+    if (
+        pred is not None
+        and res is not None
+        and ('IPRED' in pred.columns or 'CIPREDI' in pred.columns)
+        and 'CWRES' in res.columns
+    ):
+        cwres_vs_idv_plot = plot_cwres_vs_idv(model, results.residuals, dvid_name)
+    else:
+        cwres_vs_idv_plot = None
+
+    if pred is not None and res is not None and 'CWRES' in res.columns:
+        abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
+            model,
+            predictions=results.predictions,
+            residuals=results.residuals,
+            stratify_on=dvid_name,
+        )
+    else:
+        abs_cwres_vs_ipred_plot = None
+
+    if results.individual_estimates is not None and results.individual_estimates.any(axis=None):
+        eta_distribution_plot = plot_eta_distributions(model, results.individual_estimates)
+    else:
+        eta_distribution_plot = None
+
+    return {
+        'dv_vs_pred': dv_vs_pred_plot,
+        'dv_vs_ipred': dv_vs_ipred_plot,
+        'cwres_vs_idv': cwres_vs_idv_plot,
+        'abs_cwres_vs_ipred': abs_cwres_vs_ipred_plot,
+        'eta_distribution': eta_distribution_plot,
+    }
+
+
+def table_final_parameter_estimates(model: Model, parameter_estimates, ses):
+    rse = ses / parameter_estimates
+    rse.name = "RSE"
+    df = pd.concat([parameter_estimates, rse], axis=1)
+    return df
+
+
+def table_final_eta_shrinkage(model, results):
+    if results.parameter_estimates is not None and results.individual_estimates is not None:
+        eta_shrinkage = calculate_eta_shrinkage(
+            model, results.parameter_estimates, results.individual_estimates
+        )
+    else:
+        eta_shrinkage = None
+    return eta_shrinkage

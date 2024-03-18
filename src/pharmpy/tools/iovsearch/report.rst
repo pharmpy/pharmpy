@@ -5,8 +5,8 @@
    results
 
 
-AMD Results
-===========
+IOVsearch Results
+==================
 
 Final model
 ~~~~~~~~~~~

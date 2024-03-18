@@ -20,3 +20,5 @@ class AMDResults(Results):
     final_model_dv_vs_pred_plot: Optional[alt.Chart] = None
     final_model_cwres_vs_idv_plot: Optional[alt.Chart] = None
     final_model_abs_cwres_vs_ipred_plot: Optional[alt.Chart] = None
+    final_model_eta_distribution_plot: Optional[alt.Chart] = None
+    final_model_eta_shrinkage: Optional[pd.Series] = None

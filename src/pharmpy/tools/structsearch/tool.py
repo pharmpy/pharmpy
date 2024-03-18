@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from pathlib import Path
 from typing import Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
@@ -387,4 +388,5 @@ def validate_input(
 
 @dataclass(frozen=True)
 class StructSearchResults(ToolResults):
+    rst_path = Path(__file__).resolve().parent / 'report.rst'
     pass
