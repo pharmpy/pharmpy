@@ -22,6 +22,8 @@ from pharmpy.modeling import (
     plot_dv_vs_ipred,
     plot_dv_vs_pred,
     plot_eta_distributions,
+    set_simulation,
+    vpc_plot,
 )
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
@@ -571,6 +573,11 @@ def run_amd(
     final_results = next_model_entry.modelfit_results
     summary_errors = summarize_errors(final_results)
 
+    # run simulation for VPC plot
+    sim_model = set_simulation(final_model, n=300)
+    sim_res = run_tool('simulation', sim_model)
+    simulation_data = sim_res.table
+
     if 'dvid' in model.datainfo.types:
         dvid_name = model.datainfo.typeix['dvid'].names[0]
     else:
@@ -602,6 +609,8 @@ def run_amd(
     else:
         eta_distribution_plot = None
 
+    final_vpc_plot = vpc_plot(final_model, simulation_data, stratify_on=dvid_name)
+
     res = AMDResults(
         final_model=final_model.name,
         summary_tool=summary_tool,
@@ -617,6 +626,7 @@ def run_amd(
         final_model_abs_cwres_vs_ipred_plot=abs_cwres_vs_ipred_plot,
         final_model_eta_distribution_plot=eta_distribution_plot,
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_model, final_results),
+        final_model_vpc_plot=final_vpc_plot,
     )
     # Since we are outside of the regular tools machinery the following is needed
     results_path = db.path / 'results.json'

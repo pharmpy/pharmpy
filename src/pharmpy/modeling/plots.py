@@ -770,10 +770,14 @@ def _calculate_vpc(
     obsgroup = obstab.groupby(bincol)
 
     simtab = simulations
-    assert 'SIM' in simtab.columns
     if stratify_on is not None:
         simtab[stratify_on] = np.tile(model.dataset[stratify_on], nsim)
-    simtab = simtab.set_index(['index'])
+    if 'SIM' in simtab.index.names:
+        simtab = simtab.reset_index(['SIM'])
+    elif 'SIM' in simtab.columns:
+        simtab = simtab.set_index(['index'])
+    else:
+        raise KeyError("No column 'SIM' in simulation data.")
     simtab = simtab.loc[observations.index]
     simtab["__BIN__"] = bincol
     if query is not None:

@@ -2330,7 +2330,9 @@ def bin_observations(
         boundaries[0] = 0
     elif method_lower == "equal_number":
         bin_edges = _get_bin_edges_psn(sorted_idvs, nbins)
-        bincol, boundaries = pd.cut(sorted_idvs, bin_edges, labels=False, retbins=True)
+        bincol, boundaries = pd.cut(
+            sorted_idvs, bin_edges, labels=False, retbins=True, include_lowest=True
+        )
     else:
         raise ValueError(f"Unknown binning method {method}")
     return bincol, boundaries

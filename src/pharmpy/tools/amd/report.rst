@@ -69,3 +69,9 @@ Eta shrinkage
    :hide-code:
 
    res.final_model_eta_distribution_plot
+
+
+.. jupyter-execute::
+   :hide-code:
+
+   res.final_model_vpc_plot
