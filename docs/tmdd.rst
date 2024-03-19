@@ -59,9 +59,11 @@ Optional
 |                                                 | Optional if ``extra_model`` is not specified.                       |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``dv_types``                                    | Dictionary of :ref:`DV types<dv_types>` for multiple DVs            |
-|                                                 | (e.g. dv_types = {'target': 2}). Default is None.                   |
+|                                                 | (e.g. dv_types = {'target': 2}).                                    |
 |                                                 | Allowed keys are: 'drug', 'target', 'complex', 'drug_tot' and       |
 |                                                 | 'target_tot'. Optional.                                             |
+|                                                 | Default is None which means that all observations are treated as    |
+|                                                 | drug observations.                                                  |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 ~~~~~~
