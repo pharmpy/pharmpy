@@ -6,6 +6,7 @@ New features
 
 * New simulation tool tools.run_simulations
 * Add reports with various plots for final model in all AMD subtools
+* Add VPC plot to AMD
 * Add functions modeling.add_predictions_residuals and modeling.remove_predictions_residuals
 
 Changes
@@ -14,6 +15,7 @@ Changes
 * Force positive definitiveness in retries tool
 * Make initial estimates in AMD mandatory
 * Add default search space for PKPD models
+* Remove TMDD models with less than 2 DVs
 
 Bugfixes
 ========
