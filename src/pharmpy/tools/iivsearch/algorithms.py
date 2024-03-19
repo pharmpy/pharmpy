@@ -323,7 +323,7 @@ def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res:
 def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
     # returns list of eta names from parameter names
     iiv_set = set()
-    iiv_names = model.random_variables.names
+    iiv_names = model.random_variables.iiv.names
     for iiv_name in iiv_names:
         param = get_rv_parameters(model, iiv_name)
         if set(param).issubset(parameters) and len(param) > 0:

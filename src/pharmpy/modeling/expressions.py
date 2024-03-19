@@ -1163,11 +1163,16 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     if rv not in model.random_variables.names:
         raise ValueError(f'Could not find random variable: {rv}')
 
-    natural_assignments = _get_natural_assignments(model.statements.before_odes)
+    ind_param = get_individual_parameters(model, level="random")
 
-    free_symbols = model.statements.free_symbols
-    dependency_graph = _dependency_graph(natural_assignments)
-    return sorted(map(str, _filter_symbols(dependency_graph, free_symbols, {Expr.symbol(rv)})))
+    rv_parameters = []
+    for param in ind_param:
+        if Expr.symbol(rv) in model.statements.dependencies(param):
+            rv_parameters.append(param)
+    if not rv_parameters:
+        raise ValueError(f"Cannot find any parameter connected to '{rv}'.")
+    else:
+        return sorted(map(str, rv_parameters))
 
 
 def get_parameter_rv(

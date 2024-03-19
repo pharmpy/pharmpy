@@ -2,7 +2,6 @@ import pytest
 
 from pharmpy.modeling import (
     add_iiv,
-    add_individual_parameter,
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
@@ -23,14 +22,12 @@ from pharmpy.workflows import Workflow
 
 @pytest.mark.parametrize(
     'list_of_parameters, expected_values',
-    [([], 4), (['IVCL'], 1), (["IVCL", "IVV"], 0)],
+    [([], 4), (['IIV_CL'], 1), (["IIV_CL", "IIV_VC"], 0)],
 )
 def test_td_exhaustive_block_structure_ignore_fixed_params(
     load_model_for_test, testdata, list_of_parameters, expected_values
 ):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    model = add_individual_parameter(model, 'PD1')
-    model = add_iiv(model, 'PD1', 'exp')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = fix_parameters(model, list_of_parameters)
     wf = td_exhaustive_block_structure(model)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
