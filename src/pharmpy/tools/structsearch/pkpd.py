@@ -11,8 +11,8 @@ from pharmpy.modeling import (
     set_name,
     unconstrain_parameters,
 )
-from pharmpy.tools.mfl.helpers import funcs, structsearch_pd_features
 
+from ..mfl.parse import ModelFeatures
 from ..mfl.parse import parse as mfl_parse
 
 
@@ -44,7 +44,7 @@ def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[flo
 
 def create_pkpd_models(
     model: Model,
-    search_space: str,
+    search_space: Union[str, ModelFeatures],
     b_init: Optional[Union[int, float]] = None,
     ests: Optional[pd.Series] = None,
     emax_init: Optional[Union[int, float]] = None,
@@ -57,7 +57,7 @@ def create_pkpd_models(
     ----------
     model : Model
         Pharmpy PK model
-    search_space : str
+    search_space : Union[str, ModelFeatures]
         search space for pkpd models
     b_init : float
        Initial estimate for baseline
@@ -74,8 +74,9 @@ def create_pkpd_models(
     -------
     List of pharmpy models
     """
-    mfl_statements = mfl_parse(search_space)
-    functions = funcs(model, mfl_statements, structsearch_pd_features)
+    if isinstance(search_space, str):
+        mfl_statements = mfl_parse(search_space, True)
+    functions = mfl_statements.convert_to_funcs(model=model, subset_features="pd")
 
     models = []
     for key, func in functions.items():

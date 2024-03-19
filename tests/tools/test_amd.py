@@ -87,13 +87,13 @@ def test_raise_allometry(tmp_path, testdata):
 @pytest.mark.filterwarnings(
     'ignore::UserWarning',
 )
-def test_raise_covsearch(tmp_path, testdata):
+def test_raise_empty_search_space(tmp_path, testdata):
     with chdir(tmp_path):
         db, model, res = _load_model(testdata, with_datainfo=True)
 
         with pytest.raises(
             ValueError,
-            match='Invalid `search_space` because of invalid covariate .* got `SJDLKSDJ`',
+            match='`search_space` evaluated to be empty :',
         ):
             run_amd(
                 model,
@@ -119,7 +119,6 @@ def test_skip_covsearch(tmp_path, testdata):
         to_be_skipped = validate_input(
             model,
             results=res,
-            search_space='LET(CONTINUOUS, []); LET(CATEGORICAL, [])',
             modeltype='basic_pk',
             administration='oral',
             occasion='VISI',
@@ -130,8 +129,9 @@ def test_skip_covsearch(tmp_path, testdata):
             cl_init=1.0,
             vc_init=10.0,
             mat_init=1.0,
+            ignore_datainfo_fallback=True,
         )
-    assert len(to_be_skipped) == 1
+    assert "covariates" in to_be_skipped
 
 
 @pytest.mark.filterwarnings(
@@ -314,7 +314,7 @@ def test_mechanistic_covariate_extraction(
     with chdir(tmp_path):
         db, model, res = _load_model(testdata, with_datainfo=True)
 
-        search_space = mfl_parse('COVARIATE?(CL, [WT,CLCR], POW)')
+        search_space = mfl_parse('COVARIATE?(CL, [WT,CLCR], POW)', True)
         mechanistic_ss, filtered_ss = _mechanistic_cov_extraction(
             search_space, model, mechanistic_covariates
         )

@@ -6,10 +6,51 @@ from lark.visitors import Interpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
+EFFECTCOMP_WILDCARD = tuple([Name(x) for x in ('LINEAR', 'EMAX', 'SIGMOID')])
+
 
 @dataclass(frozen=True)
 class EffectComp(ModelFeature):
     modes: Union[Tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
+
+    def __add__(self, other):
+        if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):
+            return EffectComp(Wildcard())
+        else:
+            return EffectComp(
+                tuple(set(self.modes + tuple([a for a in other.modes if a not in self.modes])))
+            )
+
+    def __sub__(self, other):
+        if isinstance(other, EffectComp):
+            if isinstance(other.modes, Wildcard):
+                return None
+            elif isinstance(self.modes, Wildcard):
+                default = EFFECTCOMP_WILDCARD
+                all_modes = tuple([a for a in default if a not in other.modes])
+            else:
+                # NOTE : WILDCARD should not be used here to future proof the method
+                all_modes = tuple(set([a for a in self.modes if a not in other.modes]))
+
+            if len(all_modes) == 0:
+                all_modes = None
+
+            return EffectComp(all_modes)
+        else:
+            return self
+
+    def __eq__(self, other):
+        if isinstance(other, EffectComp):
+            return set(self.modes) == set(other.modes)
+        else:
+            return False
+
+    @property
+    def eval(self):
+        if isinstance(self.modes, Wildcard):
+            return EffectComp(EFFECTCOMP_WILDCARD)
+        else:
+            return self
 
 
 class EffectCompInterpreter(Interpreter):

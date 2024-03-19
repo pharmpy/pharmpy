@@ -6,11 +6,28 @@ from lark.visitors import Interpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
+INDIRECT_EFFECT_MODES_WILDCARD = tuple([Name(x) for x in ('LINEAR', 'EMAX', 'SIGMOID')])
+INDIRECT_EFFECT_PRODUCTION_WILDCARD = tuple([Name(x) for x in ('DEGRADATION', 'PRODUCTION')])
+
 
 @dataclass(frozen=True)
 class IndirectEffect(ModelFeature):
     modes: Union[Tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
     production: Union[Tuple[Name[Literal['DEGRADATION', 'PRODUCTION']], ...], Wildcard]
+
+    @property
+    def eval(self):
+        if isinstance(self.modes, Wildcard):
+            modes = INDIRECT_EFFECT_MODES_WILDCARD
+        else:
+            modes = self.modes
+
+        if isinstance(self.production, Wildcard):
+            production = INDIRECT_EFFECT_PRODUCTION_WILDCARD
+        else:
+            production = self.production
+
+        return IndirectEffect(modes, production)
 
 
 class IndirectEffectInterpreter(Interpreter):

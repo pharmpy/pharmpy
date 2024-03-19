@@ -6,6 +6,8 @@ from lark.visitors import Interpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
+ABSORPTION_WILDCARD = tuple([Name(x) for x in ('FO', 'ZO', 'SEQ-ZO-FO', 'INST')])
+
 
 @dataclass(frozen=True)
 class Absorption(ModelFeature):
@@ -23,7 +25,7 @@ class Absorption(ModelFeature):
         if isinstance(other.modes, Wildcard):
             return Absorption((Name('INST')))
         elif isinstance(self.modes, Wildcard):
-            default = self._wildcard
+            default = ABSORPTION_WILDCARD
             all_modes = tuple([a for a in default if a not in other.modes])
         else:
             # NOTE : WILDCARD should not be used here to future proof the method
@@ -43,13 +45,9 @@ class Absorption(ModelFeature):
     @property
     def eval(self):
         if isinstance(self.modes, Wildcard):
-            return Absorption(self._wildcard)
+            return Absorption(ABSORPTION_WILDCARD)
         else:
             return self
-
-    @property
-    def _wildcard(self):
-        return tuple([Name(x) for x in ['FO', 'ZO', 'SEQ-ZO-FO', 'INST']])
 
 
 class AbsorptionInterpreter(Interpreter):
