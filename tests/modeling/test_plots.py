@@ -1,6 +1,5 @@
 import pytest
 
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     plot_abs_cwres_vs_ipred,
@@ -101,14 +100,13 @@ def test_plot_abs_cwres_vs_ipred(tmp_path, load_model_for_test, testdata):
 def test_vpc_plot(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-        simulations = pd.read_table(testdata / 'nonmem' / 'vpc_simulations.csv', delimiter=',')
-        plot = vpc_plot(model, simulations)
+        plot = vpc_plot(model, testdata / 'nonmem' / 'vpc_simulations.csv')
         plot.save('chart.html')
 
 
 def test_vpc_plot_stratify(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-        simulations = pd.read_table(testdata / 'nonmem' / 'vpc_simulations_dvid.csv', delimiter=',')
-        plot = vpc_plot(model, simulations, nbins=3, stratify_on='DVID')
+        data_path = testdata / 'nonmem' / 'vpc_simulations_dvid.csv'
+        plot = vpc_plot(model, simulations=data_path, nbins=3, stratify_on='DVID')
         plot.save('chart.html')

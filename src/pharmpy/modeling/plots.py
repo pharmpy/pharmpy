@@ -1,6 +1,7 @@
 import re
 import warnings
 from functools import partial
+from pathlib import Path
 from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
 
 import pharmpy.visualization
@@ -772,12 +773,7 @@ def _calculate_vpc(
     simtab = simulations
     if stratify_on is not None:
         simtab[stratify_on] = np.tile(model.dataset[stratify_on], nsim)
-    if 'SIM' in simtab.index.names:
-        simtab = simtab.reset_index(['SIM'])
-    elif 'SIM' in simtab.columns:
-        simtab = simtab.set_index(['index'])
-    else:
-        raise KeyError("No column 'SIM' in simulation data.")
+    simtab = simtab.reset_index(['SIM'])
     simtab = simtab.loc[observations.index]
     simtab["__BIN__"] = bincol
     if query is not None:
@@ -945,21 +941,24 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', 
 
 def vpc_plot(
     model: Model,
-    simulations: pd.DataFrame,
+    simulations: Union[Path, pd.DataFrame, str],
     binning: Literal["equal_width", "equal_number"] = "equal_number",
     nbins: int = 8,
     qi: float = 0.95,
     ci: float = 0.95,
     stratify_on: Optional[str] = None,
 ):
-    """VPC plot
+    """Creates a VPC plot for a model
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    simulations : pd.DataFrame
-        DataFrame containing the simulation data
+    simulations : Path or pd.DataFrame
+        DataFrame containing the simulation data or path to dataset.
+        The dataset has to have one (index) column named "SIM" containing
+        the simulation number, one (index) column containing the data indices and one dv column.
+        See below for more information.
     binning : ["equal_number", "equal_width"]
         Binning method. Can be "equal_number" or "equal_width". The default is "equal_number".
     nbins : int
@@ -976,7 +975,50 @@ def vpc_plot(
     alt.Chart
         Plot
 
+
+    The simulation data should have the following format:
+
+    +-----+-------+--------+
+    | SIM | index | DV     |
+    +=====+=======+========+
+    | 1   | 0     | 0.000  |
+    +-----+-------+--------+
+    | 1   | 1     | 34.080 |
+    +-----+-------+--------+
+    | 1   | 2     | 28.858 |
+    +-----+-------+--------+
+    | 1   | 3     | 0.000  |
+    +-----+-------+--------+
+    | 1   | 4     | 12.157 |
+    +-----+-------+--------+
+    | 2   | 0     | 23.834 |
+    +-----+-------+--------+
+    | 2   | 1     | 0.000  |
+    +-----+-------+--------+
+    | ... | ...   | ...    |
+    +-----+-------+--------+
+    | 20  | 2     | 0.000  |
+    +-----+-------+--------+
+    | 20  | 3     | 31.342 |
+    +-----+-------+--------+
+    | 20  | 4     | 29.983 |
+    +-----+-------+--------+
+
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import set_simulation, vpc_plot, load_example_model
+    >>> from pharmpy.tools import run_simulation
+    >>> model = load_example_model("pheno")
+    >>> sim_model = set_simulation(model, n=100)
+    >>> sim_data = run_simulation(sim_model) # doctest: +SKIP
+    >>> vpc_plot(model, sim_data) # doctest: +SKIP
     """
+    if isinstance(simulations, str) or isinstance(simulations, Path):
+        simulations = pd.read_table(simulations, delimiter=r'\s+|,', engine='python')
+        assert 'SIM' in simulations.columns and 'index' in simulations.columns
+        simulations = simulations.set_index(['SIM', 'index'])
+
     if stratify_on is not None:
         if f'{stratify_on}' not in model.dataset.columns:
             raise ValueError(f'{stratify_on} column does not exist in dataset.')
