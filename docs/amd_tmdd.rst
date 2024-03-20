@@ -68,7 +68,7 @@ Optional
 | ``dv_types``                                      | Dictionary of DV types for multiple DVs (e.g. dv_types = {'target': 2}).                                        |
 |                                                   | Allowed keys are: 'drug', 'target', 'complex', 'drug_tot' and 'target_tot'. (For TMDD models only)              |
 |                                                   | For more information see :ref:`here<dv_types>`.                                                                 |
-|                                                   | Default is None                                                                                                 |
+|                                                   | Default is None which means that all observations are treated as drug observations.                             |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
 
 .. note::
