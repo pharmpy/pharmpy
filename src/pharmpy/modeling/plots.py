@@ -957,7 +957,7 @@ def vpc_plot(
     simulations : Path or pd.DataFrame
         DataFrame containing the simulation data or path to dataset.
         The dataset has to have one (index) column named "SIM" containing
-        the simulation number, one (index) column containing the data indices and one dv column.
+        the simulation number, one (index) column named "index" containing the data indices and one dv column.
         See below for more information.
     binning : ["equal_number", "equal_width"]
         Binning method. Can be "equal_number" or "equal_width". The default is "equal_number".
@@ -1016,7 +1016,10 @@ def vpc_plot(
     """
     if isinstance(simulations, str) or isinstance(simulations, Path):
         simulations = pd.read_table(simulations, delimiter=r'\s+|,', engine='python')
-        assert 'SIM' in simulations.columns and 'index' in simulations.columns
+        if 'SIM' not in simulations.columns:
+            raise ValueError('No column named "SIM" found in dataset.')
+        if 'index' not in simulations.columns:
+            raise ValueError('No column named "index" found in dataset.')
         simulations = simulations.set_index(['SIM', 'index'])
 
     if stratify_on is not None:
