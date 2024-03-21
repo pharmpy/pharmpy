@@ -9,6 +9,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     Assignment,
+    ColumnInfo,
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -72,7 +73,9 @@ def create_basic_pk_model(
         di = create_default_datainfo(dataset_path)
         df = read_dataset_from_datainfo(di, datatype='nonmem')
     else:
-        di = DataInfo()
+        di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
+        di_ci = [ColumnInfo.create(key, type=value) for key, value in di_col_dict.items()]
+        di = DataInfo.create(di_ci)
         df = None
 
     if administration not in [

@@ -28,3 +28,4 @@ def test_create_basic_pk_model(testdata):
 
     model = create_basic_pk_model('ivoral')
     assert len(model.statements.ode_system.dosing_compartments) == 2
+    assert model.datainfo.id_column

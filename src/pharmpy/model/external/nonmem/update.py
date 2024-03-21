@@ -545,11 +545,18 @@ def update_infusion(model: Model, old: CompartmentalSystem):
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
         statements = statements.before_odes + ass + statements.ode_system + statements.after_odes
-        dataset = model.dataset.copy()
-        rate = np.where(dataset['AMT'] == 0, 0.0, -2.0)
-        dataset['RATE'] = rate
-        updated_dataset = True
-        model = model.replace(dataset=dataset)
+        try:
+            dataset = model.dataset.copy()
+        except AttributeError as e:
+            if model.datainfo and model.datainfo.path is None:
+                updated_dataset = None
+            else:
+                raise e
+        else:
+            rate = np.where(dataset['AMT'] == 0, 0.0, -2.0)
+            dataset['RATE'] = rate
+            updated_dataset = True
+            model = model.replace(dataset=dataset)
     else:
         updated_dataset = False
     model = model.replace(statements=statements)
