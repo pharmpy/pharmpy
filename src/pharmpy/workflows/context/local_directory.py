@@ -1,19 +1,17 @@
 from __future__ import annotations
 
 import json
-import shutil
-from itertools import count
-from pathlib import Path
 from datetime import datetime
-from typing import Optional
+from pathlib import Path
+from typing import Literal, Optional, Union
 
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.fs.symlink import create_directory_symlink
-from pharmpy.internals.fs.lock import path_lock
 from pharmpy.model import Model
-from pharmpy.workflows.results import ModelfitResults
 from pharmpy.workflows.hashing import ModelHash
+from pharmpy.workflows.results import ModelfitResults, Results
 
 from ..model_database import LocalModelDirectoryDatabase
 from ..results import read_results
@@ -33,7 +31,13 @@ class LocalDirectoryContext(Context):
         Whether to allow using an existing context.
     """
 
-    def __init__(self, name: Optional[str]=None, parent: Optional[LocalDirectoryContext]=None, path: Optional[Union[str, Path]]=None, exists_ok: bool = True):
+    def __init__(
+        self,
+        name: Optional[str] = None,
+        parent: Optional[LocalDirectoryContext] = None,
+        path: Optional[Union[str, Path]] = None,
+        exists_ok: bool = True,
+    ):
         # Give name, parent to create a subcontext
         # Give path to create a top level context or open an already available context
         if name is not None and parent is not None and path is None:
@@ -82,7 +86,6 @@ class LocalDirectoryContext(Context):
     def _init_model_name_map(self):
         self._models_path.mkdir(exist_ok=True)
 
-
     def _init_log(self, parent):
         if parent is None:
             log_path = self._log_path
@@ -96,7 +99,7 @@ class LocalDirectoryContext(Context):
         path.touch(exist_ok=True)
         return path_lock(str(path), shared=True)
 
-    def _write_lock(self, path : Path):
+    def _write_lock(self, path: Path):
         # NOTE: Obtain exclusive (blocking) lock on one file
         path = path.with_suffix('.lock')
         path.touch(exist_ok=True)
@@ -130,7 +133,7 @@ class LocalDirectoryContext(Context):
     def context_path(self) -> str:
         relpath = self.path.relative_to(self._top_path.parent)
         posixpath = str(relpath.as_posix())
-        a = posixpath.split('/')[0::2]    # Remove subcontexts/
+        a = posixpath.split('/')[0::2]  # Remove subcontexts/
         ctxpath = '/'.join(a)
         return ctxpath
 
@@ -161,7 +164,7 @@ class LocalDirectoryContext(Context):
         path = self._models_path
         mydigest = str(key)
         for link_path in path.iterdir():
-            resolved = link_path.resolved()
+            resolved = link_path.resolve()
             digest = resolved.name
             if digest == mydigest:
                 return link_path.name
@@ -201,7 +204,7 @@ class LocalDirectoryContext(Context):
             with open(log_path, 'a') as fh:
                 fh.write(f'{self.context_path},{datetime.now()},{severity},{msg}\n')
 
-    def retrieve_log(self, level: Literal['all', 'current', 'lower']='all') -> pd.DataFrame:
+    def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
         log_path = self._log_path
         with self._read_lock(log_path):
             # NOTE: Custom parsing to allow message column to contain any character

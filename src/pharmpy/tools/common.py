@@ -15,7 +15,7 @@ from pharmpy.modeling import (
     update_inits,
 )
 from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import ModelEntry, ModelfitResults, Results
+from pharmpy.workflows import Context, ModelEntry, ModelfitResults, Results
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 

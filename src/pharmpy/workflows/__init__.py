@@ -28,6 +28,7 @@ import pharmpy.config as config
 
 from .args import split_common_options
 from .call import call_workflow
+from .context import Context, LocalDirectoryContext
 from .dispatchers import local_dask
 from .execute import execute_workflow
 from .log import Log
@@ -40,7 +41,6 @@ from .model_database import (
 from .model_entry import ModelEntry
 from .results import ModelfitResults, Results, SimulationResults
 from .task import Task
-from .context import LocalDirectoryContext, Context
 from .workflow import Workflow, WorkflowBuilder
 
 

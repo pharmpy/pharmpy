@@ -29,9 +29,9 @@ from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
+from pharmpy.workflows.context import Context
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
 from pharmpy.workflows.results import ModelfitResults, mfr
-from pharmpy.workflows.context import Context
 
 from .external import parse_modelfit_results
 
