@@ -1407,6 +1407,48 @@ def test_mfl_function_filtration(load_model_for_test, pheno_path):
 
 
 @pytest.mark.parametrize(
+    ('search_space', 'expected'),
+    (
+        (
+            'ABSORPTION(ZO);PERIPHERALS(1)',
+            {
+                'absorption': Absorption((Name('ZO'),)),
+                'elimination': Elimination((Name('FO'),)),
+                'peripherals': (Peripherals((1,)),),
+            },
+        ),
+        (
+            'PERIPHERALS(2);PERIPHERALS(1, MET)',
+            {'peripherals': (Peripherals((2,)), Peripherals((1,), (Name('MET'),)))},
+        ),
+        (
+            'COVARIATE(CL,WT,[EXP,POW]);COVARIATE(V,WT,CAT)',
+            {
+                'covariate': (
+                    Covariate(
+                        parameter=('CL',),
+                        covariate=('WT',),
+                        fp=('EXP', 'POW'),
+                    ),
+                    Covariate(
+                        parameter=('V',),
+                        covariate=('WT',),
+                        fp=('CAT',),
+                    ),
+                )
+            },
+        ),
+    ),
+)
+def test_replace_features(load_model_for_test, pheno_path, search_space, expected):
+    mfl_original = parse("ABSORPTION(FO)", mfl_class=True)
+    mfl_new = mfl_original.replace_features(search_space)
+
+    for attr, attr_expected in expected.items():
+        assert getattr(mfl_new, attr) == attr_expected
+
+
+@pytest.mark.parametrize(
     ('source', 'expected'),
     (
         (
