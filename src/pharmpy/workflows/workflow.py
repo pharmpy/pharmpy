@@ -262,7 +262,6 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
         return wf_new
 
 
-
 def insert_context(wb: WorkflowBuilder, context):
     """Insert context for all tasks in a workflow needing it
 

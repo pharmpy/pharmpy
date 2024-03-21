@@ -1,12 +1,14 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from pathlib import Path
-from typing import Optional
+from typing import Literal, Optional, Union
 
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
+from pharmpy.workflows.hashing import ModelHash
+from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
-
+from pharmpy.workflows.results import Results
 
 FINAL_MODEL_NAME = 'final'
 INPUT_MODEL_NAME = 'input'
@@ -27,7 +29,7 @@ class Context(ABC):
 
     def __init__(self, name: str, parent: Optional[Context] = None):
         self._name = name
-        #self._parent = parent
+        # self._parent = parent
         # NOTE: An implementation needs to create the model database here
 
     @property
@@ -74,8 +76,7 @@ class Context(ABC):
 
     @abstractmethod
     def store_key(self, name: str, key: ModelHash):
-        """Associate a key with a model name
-        """
+        """Associate a key with a model name"""
         pass
 
     @abstractmethod
@@ -88,23 +89,20 @@ class Context(ABC):
 
     @abstractmethod
     def store_annotation(self, name: str, annotation: str):
-        """Store an annotation string (description) for a model
-        """
+        """Store an annotation string (description) for a model"""
 
     @abstractmethod
     def retrieve_annotation(self, name: str) -> str:
-        """Retrieve an annotation for a model
-        """
+        """Retrieve an annotation for a model"""
         pass
 
     @abstractmethod
     def log_message(self, severity: Literal["error", "warning", "note"], message: str):
-        """Add a message to the log
-        """
+        """Add a message to the log"""
         pass
 
     @abstractmethod
-    def retrieve_log(self, level: Literal['all', 'current', 'lower']='all') -> pd.DataFrame:
+    def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
         """Retrieve the entire log
         all - the entire log
         current - only the current Context level
@@ -114,20 +112,17 @@ class Context(ABC):
 
     @abstractmethod
     def get_parent_context(self) -> Context:
-        """Get the parent context of this context
-        """
+        """Get the parent context of this context"""
         pass
 
     @abstractmethod
     def get_subcontext(self, name: str) -> Context:
-        """Get one of the subcontexts of this context
-        """
+        """Get one of the subcontexts of this context"""
         pass
 
     @abstractmethod
     def create_subcontext(self, name: str) -> Context:
-        """Create a new subcontext of this context
-        """
+        """Create a new subcontext of this context"""
         pass
 
     def _store_model(self, name: str, model: Union[Model, ModelEntry]):
@@ -146,14 +141,16 @@ class Context(ABC):
         model = me.model
         annotation = self.retrieve_annotation(name)
         model = model.replace(name=name, description=annotation)
-        new_me = ModelEntry(model=model, parent=me.parent, modelfit_results=me.modelfit_results, log=me.log)
+        new_me = ModelEntry(
+            model=model, parent=me.parent, modelfit_results=me.modelfit_results, log=me.log
+        )
         return new_me
 
     def store_model_entry(self, me: Union[Model, ModelEntry]) -> None:
         name = me.name if isinstance(me, Model) else me.model.name
         self._store_model(name, me)
 
-    def retrieve_model_entry(self, name : str) -> ModelEntry:
+    def retrieve_model_entry(self, name: str) -> ModelEntry:
         me = self._retrieve_me(name)
         return me
 

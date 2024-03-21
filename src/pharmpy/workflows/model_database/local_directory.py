@@ -6,7 +6,6 @@ from pathlib import Path
 from typing import Union
 
 from pharmpy.internals.fs.lock import path_lock
-
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
 from pharmpy.modeling import write_csv, write_model

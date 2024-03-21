@@ -204,6 +204,7 @@ class ResultsJSONDecoder(json.JSONDecoder):
             return Path(obj)
         if cls == 'Log':
             from pharmpy.workflows import Log
+
             return Log.from_dict(obj)
 
         return obj

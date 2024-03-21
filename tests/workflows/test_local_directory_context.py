@@ -1,9 +1,10 @@
 import pytest
 
-from pharmpy.workflows import LocalDirectoryContext
-from pharmpy.workflows.results import read_results
-from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.tools import load_example_modelfit_results
+from pharmpy.workflows import LocalDirectoryContext
+from pharmpy.workflows.hashing import ModelHash
+from pharmpy.workflows.model_entry import ModelEntry
+from pharmpy.workflows.results import read_results
 
 
 def test_init(tmp_path):
@@ -105,4 +106,30 @@ def test_store_model(tmp_path, load_example_model_for_test):
     ctx.store_model_entry(me)
     newme = ctx.retrieve_model_entry("pheno")
     assert newme.model == me.model
-    assert dict(newme.modelfit_results.parameter_estimates) == dict(me.modelfit_results.parameter_estimates)
+    assert dict(newme.modelfit_results.parameter_estimates) == dict(
+        me.modelfit_results.parameter_estimates
+    )
+    assert newme.model.name == "pheno"
+
+    ctx.store_input_model_entry(me)
+    inputme = ctx.retrieve_input_model_entry()
+    assert inputme.model.name == "input"
+    assert inputme.model.parameters == newme.model.parameters
+
+    ctx.store_final_model_entry(me)
+    finalme = ctx.retrieve_final_model_entry()
+    assert finalme.model.name == "final"
+    assert finalme.model.parameters == newme.model.parameters
+
+
+def test_key(tmp_path, load_example_model_for_test):
+    path = tmp_path / 'mycontext'
+    ctx = LocalDirectoryContext(path=path)
+    model = load_example_model_for_test("pheno")
+    ctx.store_model_entry(model)
+    key = ctx.retrieve_key("pheno")
+    assert isinstance(key, ModelHash)
+    name = ctx.retrieve_name(key)
+    assert name == "pheno"
+    annotation = ctx.retrieve_annotation("pheno")
+    assert annotation.startswith("PHENOBARB")
