@@ -398,7 +398,7 @@ def _create_metadata_common(
     setup_metadata = {}
     setup_metadata['dispatcher'] = dispatcher.__name__
     # FIXME: Naming of workflows/tools should be consistent (db and input name of tool)
-    setup_metadata['database'] = {
+    setup_metadata['context'] = {
         'class': type(database).__name__,
         'toolname': toolname,
         'path': str(database.path),
@@ -470,17 +470,17 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
         dispatcher = default_dispatcher
 
     try:
-        database = common_options['database']
+        database = common_options['context']
     except KeyError:
-        from pharmpy.workflows import default_tool_database
+        from pharmpy.workflows import default_context
 
         if 'path' in common_options.keys():
-            path = common_options['path']
+            path = Path(common_options['path'])
         else:
-            path = None
-        database = default_tool_database(
-            toolname=toolname, path=path, exist_ok=common_options.get('resume', False)
-        )  # TODO: database -> tool_database
+            path = Path.cwd()
+        database = default_context(
+            path=path / toolname, exists_ok=common_options.get('resume', False)
+        )
 
     return dispatcher, database
 
@@ -1197,20 +1197,15 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
 def _get_run_setup_from_metadata(path):
     import pharmpy.workflows as workflows
 
-    tool_database = workflows.default_tool_database(toolname=None, path=path, exist_ok=True)
+    context = workflows.default_context(path=path, exists_ok=True)
 
-    tool_metadata = tool_database.read_metadata()
-    tool_name = tool_metadata['tool_name']
+    tool_metadata = context.read_metadata()
     common_options = tool_metadata['common_options']
 
     # TODO: Be more general
     dispatcher = getattr(workflows, common_options['dispatcher'].split('.')[-1])
 
-    # TODO: Be more general
-    assert common_options['database']['class'] == 'LocalDirectoryContext'
-    assert common_options['database']['toolname'] == tool_name
-
-    return dispatcher, tool_database
+    return dispatcher, context
 
 
 def load_example_modelfit_results(name: str):
@@ -1233,7 +1228,7 @@ def load_example_modelfit_results(name: str):
     >>> from pharmpy.tools import load_example_modelfit_results
     >>> results = load_example_modelfit_results("pheno")
     >>> results.parameter_estimates
-        PTVCL        0.004696
+    PTVCL        0.004696
     PTVV         0.984258
     THETA_3      0.158920
     IVCL         0.029351

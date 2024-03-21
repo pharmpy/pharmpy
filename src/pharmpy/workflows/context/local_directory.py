@@ -43,7 +43,7 @@ class LocalDirectoryContext(Context):
         if name is not None and parent is not None and path is None:
             path = parent.path / 'subcontexts' / name
         elif path is not None and name is None and parent is None:
-            pass
+            path = Path(path)
         else:
             raise ValueError("Either supply name and parent or path")
 

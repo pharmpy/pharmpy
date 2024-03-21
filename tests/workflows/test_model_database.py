@@ -63,7 +63,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert 'columns' in obj
             assert obj['path'] == 'data1.csv'
 
-        with open("database/M9HTZqRSihis4X5XB39HtQBbjzDiyo9lz6cX6lV-O_g/model.mod", "r") as fh:
+        with open("database/LDz1V3LSRB6A6tUpHnpRbdy_xUIWA9whXsxB-xLO37g/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
@@ -87,7 +87,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert 'columns' in obj
             assert obj['path'] == 'data2.csv'
 
-        with open("database/N4u6c018G0JIuAa_L5lhlnR7pgnHA9siqGcNK6iBAdI/model.mod", "r") as fh:
+        with open("database/g0QZO_7oGVORo1cGrHWsY-pqW_xs_ZJb49tseq2a3uk/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
@@ -122,7 +122,7 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
             assert 'columns' in obj
             assert obj['path'] == 'data1.csv'
 
-        with open("database/M9HTZqRSihis4X5XB39HtQBbjzDiyo9lz6cX6lV-O_g/model.mod", "r") as fh:
+        with open("database/LDz1V3LSRB6A6tUpHnpRbdy_xUIWA9whXsxB-xLO37g/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()

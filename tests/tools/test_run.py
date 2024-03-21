@@ -14,7 +14,6 @@ from pharmpy.modeling import add_iiv, load_example_model, read_model, set_lower_
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
-    _get_run_setup,
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
@@ -23,7 +22,7 @@ from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     summarize_errors,
     summarize_modelfit_results,
 )
-from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
+from pharmpy.workflows import LocalDirectoryContext, local_dask
 
 
 @pytest.mark.parametrize(
@@ -42,7 +41,7 @@ from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
-        database = LocalDirectoryToolDatabase(tool_name)
+        database = LocalDirectoryContext(path=tool_name)
         tool = import_tool(tool_name)
         tool_params = inspect.signature(tool.create_workflow).parameters
         tool_param_types = get_type_hints(tool.create_workflow)
@@ -56,9 +55,9 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
             kwargs={'model': pheno, **kwargs},
         )
 
-        rundir = tmp_path / 'modelsearch_dir1'
+        rundir = tmp_path / 'modelsearch'
 
-        assert (rundir / 'models' / 'input_model' / '.pharmpy').exists()
+        assert (rundir / 'models').exists()
 
         assert metadata['pharmpy_version'] == pharmpy.__version__
         assert metadata['tool_name'] == 'modelsearch'
@@ -72,7 +71,7 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
 def test_create_metadata_tool_raises(tmp_path, pheno):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
-        database = LocalDirectoryToolDatabase(tool_name)
+        database = LocalDirectoryContext(path=tool_name)
         tool = import_tool(tool_name)
         tool_params = inspect.signature(tool.create_workflow).parameters
         tool_param_types = get_type_hints(tool.create_workflow)
@@ -87,29 +86,12 @@ def test_create_metadata_tool_raises(tmp_path, pheno):
             )
 
 
-def test_get_run_setup(tmp_path):
-    with chdir(tmp_path):
-        name = 'modelsearch'
-
-        dispatcher, database = _get_run_setup(common_options={}, toolname=name)
-
-        assert dispatcher.__name__.endswith('local_dask')
-        assert database.path.stem == 'modelsearch_dir1'
-
-        dispatcher, database = _get_run_setup(
-            common_options={'path': 'tool_database_path'}, toolname=name
-        )
-
-        assert dispatcher.__name__.endswith('local_dask')
-        assert database.path.stem == 'tool_database_path'
-
-
 def test_create_metadata_common(tmp_path):
     with chdir(tmp_path):
         name = 'modelsearch'
 
         dispatcher = local_dask
-        database = LocalDirectoryToolDatabase(name)
+        database = LocalDirectoryContext(path=Path.cwd() / name)
 
         metadata = _create_metadata_common(
             database=database,
@@ -119,15 +101,15 @@ def test_create_metadata_common(tmp_path):
         )
 
         assert metadata['dispatcher'] == 'pharmpy.workflows.dispatchers.local_dask'
-        assert metadata['database']['class'] == 'LocalDirectoryToolDatabase'
-        path = Path(metadata['database']['path'])
-        assert path.stem == 'modelsearch_dir1'
+        assert metadata['context']['class'] == 'LocalDirectoryContext'
+        path = Path(metadata['context']['path'])
+        assert path.stem == 'modelsearch'
         assert 'path' not in metadata.keys()
 
         path = 'tool_database_path'
 
         dispatcher = local_dask
-        database = LocalDirectoryToolDatabase(name, path)
+        database = LocalDirectoryContext(path=path)
 
         metadata = _create_metadata_common(
             database=database,
@@ -136,7 +118,7 @@ def test_create_metadata_common(tmp_path):
             common_options={'path': path},
         )
 
-        path = Path(metadata['database']['path'])
+        path = Path(metadata['context']['path'])
         assert path.stem == 'tool_database_path'
         assert metadata['path'] == 'tool_database_path'
 

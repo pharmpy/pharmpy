@@ -49,7 +49,7 @@ from pharmpy.tools.mfl.statement.feature.symbols import Name, Option, Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.mfl.stringify import stringify as mfl_stringify
-from pharmpy.workflows import ModelEntry, Results, default_tool_database
+from pharmpy.workflows import ModelEntry, Results, default_context
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
@@ -345,7 +345,7 @@ def run_amd(
         if dv_types is not None:
             model = filter_dataset(model, 'DVID < 2')
 
-    db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
+    db = default_context(path=path / 'amd', exists_ok=resume)
     run_subfuncs = {}
 
     for section in order:

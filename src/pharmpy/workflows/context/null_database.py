@@ -1,8 +1,8 @@
 from ..model_database import NullModelDatabase
-from .baseclass import ToolDatabase
+from .baseclass import Context
 
 
-class NullToolDatabase(ToolDatabase):
+class NullToolDatabase(Context):
     """Dummy tool database
 
     No operation does anything. This database can be used if no storing of files

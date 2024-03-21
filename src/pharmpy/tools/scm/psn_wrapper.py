@@ -1,10 +1,11 @@
 import os
 import re
 import subprocess
+from pathlib import Path
 
 from pharmpy.modeling import read_model, write_csv, write_model
 from pharmpy.tools import read_results
-from pharmpy.workflows import default_tool_database
+from pharmpy.workflows import default_context
 
 
 def have_scm():
@@ -34,8 +35,10 @@ def run_scm(model, relations, continuous=None, categorical=None, path=None):
 
     if path is not None:
         path = path / 'scm'
+    else:
+        path = Path.cwd()
 
-    db = default_tool_database(toolname='scm', path=path)
+    db = default_context(path=path)
     path = db.path / "psn-wrapper"
     path.mkdir()
 

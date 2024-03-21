@@ -14,7 +14,7 @@ from pharmpy.model.external.rxode import convert_model
 from pharmpy.modeling import get_omegas, get_sigmas, update_inits, write_csv
 from pharmpy.tools import fit
 from pharmpy.tools.external.nlmixr.run import compare_models, print_step
-from pharmpy.workflows import ModelEntry, default_tool_database
+from pharmpy.workflows import ModelEntry, default_context
 from pharmpy.workflows.results import ModelfitResults
 
 
@@ -192,7 +192,7 @@ def verification(
     rxode_model = convert_model(update_inits(nonmem_model, param_estimates))
 
     # Execute the rxode model
-    db = default_tool_database(toolname="comparison")
+    db = default_context(path="comparison")
     if not ignore_print:
         print_step("Executing RxODE model... (this might take a while)")
 
