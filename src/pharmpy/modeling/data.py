@@ -2060,6 +2060,8 @@ def create_default_datainfo(path_or_df):
             info = ColumnInfo.create(colname, type='blq', scale='nominal', datatype='int32')
         elif colname == 'LLOQ':
             info = ColumnInfo.create(colname, type='lloq', scale='ratio')
+        elif colname == 'DVID':
+            info = ColumnInfo.create(colname, type='dvid', scale='nominal', datatype='int32')
         else:
             info = ColumnInfo.create(colname)
         column_info.append(info)

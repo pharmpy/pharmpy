@@ -198,6 +198,13 @@ def run_amd(
             f' only NONMEM model or standalone dataset are supported currently.'
         )
 
+    if 'dvid' in model.datainfo.types:
+        dvid_name = model.datainfo.typeix['dvid'][0].name
+    elif 'DVID' in model.datainfo.names:
+        dvid_name = 'DVID'
+    else:
+        dvid_name = None
+
     model = add_predictions(model, ['PRED', 'CIPREDI'])
     model = add_residuals(model, ['CWRES'])
 
@@ -323,7 +330,7 @@ def run_amd(
     if modeltype == "tmdd":
         orig_dataset = model.dataset
         if dv_types is not None:
-            model = filter_dataset(model, 'DVID < 2')
+            model = filter_dataset(model, f'{dvid_name} < 2')
 
     n = 1
     while True:
@@ -467,7 +474,7 @@ def run_amd(
     if modeltype == "drug_metabolite":
         orig_dataset = model.dataset
         # FIXME : remove
-        model = filter_dataset(model, 'DVID != 2')
+        model = filter_dataset(model, f'{dvid_name} != 2')
 
     if results is None:
         results = run_tool('modelfit', model, path=ctx.path, resume=resume)
@@ -556,11 +563,6 @@ def run_amd(
     sim_model = set_simulation(final_model, n=300)
     sim_res = _run_simulation(sim_model, ctx)
     simulation_data = sim_res.table
-
-    if 'dvid' in model.datainfo.types:
-        dvid_name = model.datainfo.typeix['dvid'].names[0]
-    else:
-        dvid_name = None
 
     if final_results.predictions is not None:
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
