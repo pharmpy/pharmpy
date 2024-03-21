@@ -15,10 +15,10 @@
      - ``pharmpy.workflows.LocalDirectoryDatabase``
      - str
      - Name of default model database class
-   * - ``default_tool_database``
-     - ``pharmpy.workflows.LocalDirectoryToolDatabase``
+   * - ``default_context``
+     - ``pharmpy.workflows.LocalDirectoryContext``
      - str
-     - Name of default tool database class
+     - Name of default context class
 
 """
 
@@ -72,14 +72,14 @@ def _importclass(name):
 
 default_dispatcher = _importclass(conf.default_dispatcher)
 default_model_database = _importclass(conf.default_model_database)
-default_tool_database = _importclass(conf.default_context)
+default_context = _importclass(conf.default_context)
 
 
 __all__ = [
     'call_workflow',
     'default_dispatcher',
     'default_model_database',
-    'default_tool_database',
+    'default_context',
     'execute_workflow',
     'split_common_options',
     'local_dask',

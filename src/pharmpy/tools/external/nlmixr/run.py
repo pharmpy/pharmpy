@@ -21,7 +21,7 @@ from pharmpy.modeling import (
     write_csv,
 )
 from pharmpy.tools import fit
-from pharmpy.workflows import ModelEntry, default_tool_database
+from pharmpy.workflows import ModelEntry, default_context
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
@@ -224,7 +224,7 @@ def verification(
         raise Exception("Could not convert model to nlmixr2")
 
     # Execute the nlmixr model
-    db = default_tool_database(toolname="comparison")
+    db = default_context(path="comparison")
     if not ignore_print:
         print_step("Executing nlmixr2 model... (this might take a while)")
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'

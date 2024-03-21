@@ -40,7 +40,7 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.statement import Statement
-from pharmpy.workflows import ModelEntry, Results, default_tool_database
+from pharmpy.workflows import ModelEntry, Results, default_context
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
@@ -323,7 +323,7 @@ def run_amd(
         if dv_types is not None:
             model = filter_dataset(model, 'DVID < 2')
 
-    db = default_tool_database(toolname='amd', path=path, exist_ok=resume)
+    db = default_context(path=path / 'amd', exists_ok=resume)
     run_subfuncs = {}
 
     for section in order:

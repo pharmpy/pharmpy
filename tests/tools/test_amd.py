@@ -10,7 +10,7 @@ from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results, run_amd
 from pharmpy.tools.amd.run import _mechanistic_cov_extraction, validate_input
 from pharmpy.tools.mfl.parse import parse as mfl_parse
-from pharmpy.workflows import default_tool_database
+from pharmpy.workflows import default_context
 
 
 def test_invalid_search_space_raises(tmp_path, testdata):
@@ -346,8 +346,8 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
     res = read_modelfit_results('mox2.mod')
 
     # NOTE: Load results directly in DB to skip fitting
-    db_tool = default_tool_database(toolname='amd', path='amd_dir1')
-    db_fit = default_tool_database(toolname='modelfit', path=db_tool.path / 'modelfit')
+    db_tool = default_context(path='amd_dir1/amd')
+    db_fit = default_context(path=db_tool.path / 'modelfit')
 
     with db_fit.model_database.transaction(model) as txn:
         txn.store_model()

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 from dataclasses import replace
+from pathlib import Path
 from typing import TypeVar
 
 from pharmpy.model import Model
@@ -41,10 +42,14 @@ def execute_workflow(
 
         dispatcher = default_dispatcher
     if database is None:
-        from pharmpy.workflows import default_tool_database
+        from pharmpy.workflows import default_context
 
-        database = default_tool_database(
-            toolname=workflow.name, path=path, exist_ok=resume
+        if path is None:
+            path = Path.cwd()
+        else:
+            path = Path(path)
+        database = default_context(
+            path=path / workflow.name, exists_ok=resume
         )  # TODO: database -> tool_database
 
     # For all input models set new database and read in results

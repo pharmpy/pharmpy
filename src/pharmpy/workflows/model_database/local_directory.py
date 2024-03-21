@@ -278,7 +278,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
     def store_local_file(self, path, new_filename=None):
         if Path(path).is_file():
-            destination = self.database.path / self.key
+            destination = self.database.path / str(self.key)
             destination.mkdir(parents=True, exist_ok=True)
             if new_filename:
                 destination = destination / new_filename
