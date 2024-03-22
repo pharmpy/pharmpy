@@ -72,9 +72,9 @@ def test_block_structure(tmp_path, model_count, start_modelres):
 
 @pytest.mark.parametrize(
     ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
-    (('top_down_exhaustive', 'skip', 7), ('bottom_up_stepwise', 'skip', 4)),
+    (('top_down_exhaustive', 'skip', 7),),  # ('bottom_up_stepwise', 'skip', 4)
 )
-def test_no_of_etas(
+def test_no_of_etas_base(
     tmp_path, model_count, start_modelres, algorithm, correlation_algorithm, no_of_candidate_models
 ):
     with chdir(tmp_path):

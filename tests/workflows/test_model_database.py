@@ -16,6 +16,7 @@ from pharmpy.workflows import (
     ModelEntry,
     NullModelDatabase,
 )
+from pharmpy.workflows.hashing import ModelHash
 
 
 def test_base_class():
@@ -63,7 +64,8 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert 'columns' in obj
             assert obj['path'] == 'data1.csv'
 
-        with open("database/LDz1V3LSRB6A6tUpHnpRbdy_xUIWA9whXsxB-xLO37g/model.mod", "r") as fh:
+        h = ModelHash(model)
+        with open(f"database/{h}/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
@@ -87,7 +89,8 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert 'columns' in obj
             assert obj['path'] == 'data2.csv'
 
-        with open("database/g0QZO_7oGVORo1cGrHWsY-pqW_xs_ZJb49tseq2a3uk/model.mod", "r") as fh:
+        h = ModelHash(run2)
+        with open(f"database/{h}/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
@@ -122,7 +125,8 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
             assert 'columns' in obj
             assert obj['path'] == 'data1.csv'
 
-        with open("database/LDz1V3LSRB6A6tUpHnpRbdy_xUIWA9whXsxB-xLO37g/model.mod", "r") as fh:
+        h = ModelHash(model_entry.model)
+        with open(f"database/{h}/model.mod", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()

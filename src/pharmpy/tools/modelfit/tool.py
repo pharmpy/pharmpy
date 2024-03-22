@@ -87,7 +87,7 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
         assert isinstance(model_entry, ModelEntry)
         model = model_entry.model
         try:
-            db_model_entry = context.model_database.retrieve_model_entry(model.name)
+            db_model_entry = context.model_database.retrieve_model_entry(model)
         except (KeyError, AttributeError, FileNotFoundError):
             db_model_entry = None
 
