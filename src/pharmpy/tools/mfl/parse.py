@@ -50,6 +50,16 @@ from .stringify import stringify as mfl_stringify
 
 
 def parse(code: str, mfl_class=False) -> List[Statement]:
+    mfl_statement_list = _parse(code)
+
+    # TODO : only return class once it has been implemented everywhere
+    if mfl_class:
+        return ModelFeatures.create_from_mfl_statement_list(mfl_statement_list)
+    else:
+        return mfl_statement_list
+
+
+def _parse(code: str):
     parser = Lark(
         grammar,
         start='start',
@@ -67,11 +77,7 @@ def parse(code: str, mfl_class=False) -> List[Statement]:
     mfl_statement_list = MFLInterpreter().interpret(tree)
     validate_mfl_list(mfl_statement_list)
 
-    # TODO : only return class once it has been implemented everywhere
-    if mfl_class:
-        return ModelFeatures.create_from_mfl_statement_list(mfl_statement_list)
-    else:
-        return mfl_statement_list
+    return mfl_statement_list
 
 
 def validate_mfl_list(mfl_statement_list):
@@ -308,6 +314,33 @@ class ModelFeatures:
             indirect_effect=indirect_effect,
             metabolite=metabolite,
         )
+
+    def replace_features(self, mfl_str):
+        key_dict = {
+            Absorption: 'absorption',
+            Elimination: 'elimination',
+            Transits: 'transits',
+            Peripherals: 'peripherals',
+            LagTime: 'lagtime',
+            Covariate: 'covariate',
+            DirectEffect: 'direct_effect',
+            EffectComp: 'effect_comp',
+            IndirectEffect: 'indirect_effect',
+            Metabolite: 'metabolite',
+        }
+        mfl_list = _parse(mfl_str)
+        kwargs = {}
+        for statement in mfl_list:
+            key = key_dict[type(statement)]
+            if type(statement) in (Transits, Peripherals, Covariate, IndirectEffect):
+                value = (statement,)
+            else:
+                value = statement
+            if key in kwargs.keys():
+                kwargs[key] += value
+            else:
+                kwargs[key] = value
+        return self.replace(**kwargs)
 
     @property
     def absorption(self):
