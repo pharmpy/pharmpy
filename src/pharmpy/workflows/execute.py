@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import os
-from dataclasses import replace
 from pathlib import Path
 from typing import TypeVar
 
@@ -50,7 +49,7 @@ def execute_workflow(
             path = Path(path)
         database = default_context(
             path=path / workflow.name, exists_ok=resume
-        )  # TODO: database -> tool_database
+        )  # TODO: database -> context
 
     # For all input models set new database and read in results
     original_input_models = []
@@ -77,8 +76,6 @@ def execute_workflow(
     res: T = dispatcher.run(workflow)
 
     if isinstance(res, Results) and not isinstance(res, ModelfitResults):
-        if hasattr(res, 'tool_database'):
-            res = replace(res, tool_database=database)
         database.store_results(res)
         if hasattr(res, 'rst_path'):
             from pharmpy.tools.reporting import create_report

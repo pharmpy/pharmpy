@@ -285,7 +285,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             shutil.copy2(path, destination)
 
     def store_metadata(self, metadata):
-        destination = self.database.path / self.key / DIRECTORY_PHARMPY_METADATA
+        destination = self.database.path / str(self.key) / DIRECTORY_PHARMPY_METADATA
         destination.mkdir(parents=True, exist_ok=True)
         with open(destination / FILE_METADATA, 'w') as f:
             json.dump(metadata, f, indent=2)
@@ -319,7 +319,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
 
     def retrieve_file(self, filename):
         # Return path to file
-        path = self.db.path / str(self.key) / filename
+        path = self.database.path / str(self.key) / filename
         if path.is_file() and stat(path).st_size > 0:
             return path
         else:
