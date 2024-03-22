@@ -153,7 +153,10 @@ class LocalDirectoryContext(Context):
 
     def retrieve_key(self, name: str) -> ModelHash:
         symlink_path = self._models_path / name
-        digest = symlink_path.resolve().name
+        resolved_path = symlink_path.resolve()
+        if symlink_path == resolved_path:
+            raise KeyError(f'There is no model with the name "{name}"')
+        digest = resolved_path.name
         db = self.model_database
         # FIXME: Currently it is not possible to use the digest here in the modeldb
         with db.snapshot(ModelHash(digest)) as txn:
