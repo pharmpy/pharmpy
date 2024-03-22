@@ -475,7 +475,11 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
         from pharmpy.workflows import default_context
 
         if 'path' in common_options.keys():
-            path = Path(common_options['path'])
+            path = common_options['path']
+            if path is None:
+                path = Path.cwd()
+            else:
+                path = Path(path)
         else:
             path = Path.cwd()
         database = default_context(

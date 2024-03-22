@@ -17,15 +17,17 @@ class ModelTransaction(ABC):
         self.database = database
         if isinstance(obj, ModelEntry):
             self.model_entry = obj
+            self.key = ModelHash(obj.model)
         elif isinstance(obj, Model):
             self.model_entry = ModelEntry.create(obj)
+            self.key = ModelHash(obj)
         elif isinstance(obj, ModelHash):
             self.model_entry = None
+            self.key = obj
         else:
             raise ValueError(
                 f'Invalid type `model_or_model_entry`: got {type(obj)}, expected Model or ModelEntry'
             )
-        self.key = ModelHash(obj)
 
     @abstractmethod
     def store_model(self) -> None:
