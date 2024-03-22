@@ -75,7 +75,7 @@ Mandatory
 Strategy components
 ~~~~~~~~~~~~~~~~~~~
 
-For a description about the different model building strategies in AMD, see :ref:Strategy<strategy_amd>.
+For a description about the different model building strategies in AMD, see :ref:`Strategy<strategy_amd>`.
 This section will cover the aspects that are specific to drug metabolite models.
 
 Structural
@@ -116,7 +116,7 @@ The settings that the AMD tool uses for the modelsearch subtool can be seen in t
 +-------------------+----------------------------------------------------------------------------------------------------+
 | Argument          | Setting                                                                                            |
 +===================+====================================================================================================+
-| ``search_space``  | ``search_space`` (As defined in :ref:`AMD options<amd_drug_metabolite_args>`)                      |
+| ``search_space``  | ``search_space`` (As defined in :ref:`AMD options<amd_args_common>`)                               |
 +-------------------+----------------------------------------------------------------------------------------------------+
 | ``algorithm``     | 'reduced_stepwise'                                                                                 |
 +-------------------+----------------------------------------------------------------------------------------------------+
@@ -166,7 +166,7 @@ the user when initializing AMD.
 +-------------------+----------------------------------------------------------------------------------------------------+
 | Argument          | Setting                                                                                            |
 +===================+====================================================================================================+
-| ``search_space``  | ``search_space`` (As defined in :ref:`AMD options<amd_drug_metabolite_args>`)                      |
+| ``search_space``  | ``search_space`` (As defined in :ref:`AMD options<amd_args_common>`)                               |
 +-------------------+----------------------------------------------------------------------------------------------------+
 | ``modeltype``     | 'drug_metabolite'                                                                                  |
 +-------------------+----------------------------------------------------------------------------------------------------+
@@ -254,7 +254,7 @@ The settings that the AMD tool uses for this subtool can be seen in the table be
 +-------------------------+----------------------------------------------------------------------------------------------+
 | Argument                | Setting                                                                                      |
 +=========================+==============================================================================================+
-| ``column``              | ``occasion`` (As defined in :ref:`AMD options<amd_drug_metabolite_args>`)                    |
+| ``column``              | ``occasion`` (As defined in :ref:`AMD options<amd_args_common>`)                             |
 +-------------------------+----------------------------------------------------------------------------------------------+
 | ``list_of_parameters``  | None                                                                                         |
 +-------------------------+----------------------------------------------------------------------------------------------+
@@ -273,7 +273,7 @@ The settings that the AMD tool uses for this subtool can be seen in the table be
 +--------------------------+---------------------------------------------------------------------------------------------+
 | Argument                 | Setting                                                                                     |
 +==========================+=============================================================================================+
-| ``allometric_variable``  | ``allometric_variable`` (As defined in :ref:`AMD options<amd_drug_metabolite_args>`)        |
+| ``allometric_variable``  | ``allometric_variable`` (As defined in :ref:`AMD options<amd_args_common>`)                 |
 +--------------------------+---------------------------------------------------------------------------------------------+
 | ``reference_value``      | 70                                                                                          |
 +--------------------------+---------------------------------------------------------------------------------------------+
@@ -304,13 +304,12 @@ covsearch
             s0 -> s1
         }
 
-The settings that the AMD tool uses for this subtool can be seen in the table below. The effects are extracted from the
-search space.
+The settings that the AMD tool uses for this subtool can be seen in the table below.
 
 +-------------------+----------------------------------------------------------------------------------------------------+
 | Argument          | Setting                                                                                            |
 +===================+====================================================================================================+
-| ``effects``       | ``search_space`` (As defined in :ref:`AMD options<amd_drug_metabolite_args>`)                      |
+| ``search_space``  | ``search_space`` (As defined in :ref:`AMD options<amd_args_common>`)                               |
 +-------------------+----------------------------------------------------------------------------------------------------+
 | ``p_forward``     | 0.05                                                                                               |
 +-------------------+----------------------------------------------------------------------------------------------------+
