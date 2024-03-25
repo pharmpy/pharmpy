@@ -76,6 +76,8 @@ def create_pkpd_models(
     """
     if isinstance(search_space, str):
         mfl_statements = mfl_parse(search_space, True)
+    else:
+        mfl_statements = search_space
     functions = mfl_statements.convert_to_funcs(model=model, subset_features="pd")
 
     models = []
