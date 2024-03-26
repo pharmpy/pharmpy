@@ -102,5 +102,5 @@ def determine_base_description(met_mfl_func, per_mfl_func):
     else:
         description.append("METABOLITE_PSC")
     if per_mfl_func:
-        description.append(f"PERIPHERALS({min([k[1] for k in per_mfl_func.keys()])})")
+        description.append(f"PERIPHERALS({min([k[1] for k in per_mfl_func.keys()])}, METABOLITE)")
     return ";".join(description)

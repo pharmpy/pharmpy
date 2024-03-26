@@ -140,7 +140,7 @@ def test_drug_metabolite(load_model_for_test, testdata):
     wb, candidate_tasks, base_model_description = create_drug_metabolite_models(
         model, res, search_space
     )
-    assert base_model_description == "METABOLITE_BASIC;PERIPHERALS(0)"
+    assert base_model_description == "METABOLITE_BASIC;PERIPHERALS(0, METABOLITE)"
     assert len(candidate_tasks) == 4
 
     wb, candidate_tasks, base_model_description = create_drug_metabolite_models(
@@ -152,7 +152,7 @@ def test_drug_metabolite(load_model_for_test, testdata):
     wb, candidate_tasks, base_model_description = create_drug_metabolite_models(
         model, res, "METABOLITE(BASIC);PERIPHERALS([0,1], MET)"
     )
-    assert base_model_description == "METABOLITE_BASIC;PERIPHERALS(0)"
+    assert base_model_description == "METABOLITE_BASIC;PERIPHERALS(0, METABOLITE)"
     assert len(candidate_tasks) == 2
 
 
