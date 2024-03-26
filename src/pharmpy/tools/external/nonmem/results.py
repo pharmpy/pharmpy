@@ -426,11 +426,18 @@ def _parse_individual_estimates(model, pe, table, rv_names):
             expr = model.statements.before_odes.full_expression(mu)
             if expr != mu:  # MU is defined in model code
                 value = expr.subs(dict(pe)).subs(model.parameters.inits)
-                try:
-                    value = float(value)
-                except TypeError:
-                    raise ValueError("MU depends on something else than population parameters")
-                df.iloc[:, i - 1] -= value
+                columns = value.free_symbols
+                if columns:
+                    # MU depends on covariates
+                    # NONMEM do not support time varying covariates so we can use baselines
+                    colnames = [str(name) for name in columns]
+                    baseline_data = modeling.get_baselines(model)[colnames]
+                    for j, (_, row) in enumerate(baseline_data.iterrows()):
+                        rowcovs = row.to_dict()
+                        rowvalue = value.subs(rowcovs)
+                        df.iloc[j, i - 1] -= float(rowvalue)
+                else:
+                    df.iloc[:, i - 1] -= float(value)
     return prefix, df
 
 
