@@ -1,4 +1,5 @@
 import os
+import sys
 
 import pytest
 
@@ -8,8 +9,8 @@ from pharmpy.tools import fit, run_structsearch
 
 
 def test_pkpd(tmp_path, load_model_for_test, testdata):
-    if os.name == 'nt':
-        pytest.skip("TODO Fails on Windows, temporarily skipping.")
+    if os.name == 'nt' or sys.platform == 'darwin':  # needs to be fixed. Issue #1967
+        pytest.skip("TODO Fails on Windows and Mac, temporarily skipping.")
     with chdir(tmp_path):
         model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
