@@ -47,9 +47,7 @@ def execute_workflow(
             path = Path.cwd()
         else:
             path = Path(path)
-        database = default_context(
-            path=path / workflow.name, exists_ok=resume
-        )  # TODO: database -> context
+        database = default_context(workflow.name, ref=path)
 
     # For all input models set new database and read in results
     original_input_models = []

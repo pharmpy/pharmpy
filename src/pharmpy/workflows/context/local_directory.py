@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.lock import path_lock
@@ -25,47 +25,30 @@ class LocalDirectoryContext(Context):
     ----------
     name : str
         Name of the context
-    path : str or Path
+    ref : str
         Path to directory. Will be created if it does not exist.
-    exist_ok : bool
-        Whether to allow using an existing context.
     """
 
-    def __init__(
-        self,
-        name: Optional[str] = None,
-        parent: Optional[LocalDirectoryContext] = None,
-        path: Optional[Union[str, Path]] = None,
-        exists_ok: bool = True,
-    ):
-        # Give name, parent to create a subcontext
-        # Give path to create a top level context or open an already available context
-        if name is not None and parent is not None and path is None:
-            path = parent.path / 'subcontexts' / name
-        elif path is not None and name is None and parent is None:
-            path = Path(path)
-        else:
-            raise ValueError("Either supply name and parent or path")
+    def __init__(self, name: str, ref: Optional[str] = None):
+        if ref is None:
+            ref = Path.cwd()
+        path = Path(ref) / name
+        self.name = name
 
+        self._init_path(path)
+        self._init_top_path()
+        self._init_model_database()
+        self._init_annotations()
+        self._init_model_name_map()
+        self._init_log()
+
+    def _init_path(self, path):
         self.path = path_absolute(path)
-        if self.path.is_dir():
-            if not exists_ok:
-                raise ValueError("Context already exists")
-        else:
+        if not self.path.is_dir():
             self.path.mkdir(parents=True)
 
         if not (self.path / 'subcontexts').is_dir():
             (self.path / 'subcontexts').mkdir()
-
-        self._init_top_path()
-
-        self._model_database = LocalModelDirectoryDatabase(self._top_path / '.modeldb')
-
-        self._init_annotations()
-        self._init_model_name_map()
-        self._init_log(parent)
-
-        super().__init__(name)
 
     def _init_top_path(self):
         path = self.path
@@ -78,6 +61,9 @@ class LocalDirectoryContext(Context):
                 break
             path = parent.parent
 
+    def _init_model_database(self):
+        self._model_database = LocalModelDirectoryDatabase(self._top_path / '.modeldb')
+
     def _init_annotations(self):
         path = self._annotations_path
         if not path.is_file():
@@ -86,12 +72,11 @@ class LocalDirectoryContext(Context):
     def _init_model_name_map(self):
         self._models_path.mkdir(exist_ok=True)
 
-    def _init_log(self, parent):
-        if parent is None:
-            log_path = self._log_path
-            if not log_path.is_file():
-                with open(log_path, 'w') as fh:
-                    fh.write("path,time,severity,message\n")
+    def _init_log(self):
+        log_path = self._log_path
+        if not log_path.is_file():
+            with open(log_path, 'w') as fh:
+                fh.write("path,time,severity,message\n")
 
     def _read_lock(self, path: Path):
         # NOTE: Obtain shared (blocking) lock on one file
@@ -104,6 +89,14 @@ class LocalDirectoryContext(Context):
         path = path.with_suffix('.lock')
         path.touch(exist_ok=True)
         return path_lock(str(path), shared=False)
+
+    def exists(self, name: str, ref: Optional[str]):
+        if ref is None:
+            ref = Path.cwd()
+        path = Path(ref) / name
+        return (
+            path.is_dir() and (path / 'subcontexts').is_dir() and (path / 'annotations').is_file()
+        )
 
     def store_results(self, res: Results):
         res.to_json(path=self.path / 'results.json')
@@ -127,7 +120,7 @@ class LocalDirectoryContext(Context):
 
     @property
     def _annotations_path(self) -> Path:
-        return self.path / '.annotations'
+        return self.path / 'annotations'
 
     @property
     def context_path(self) -> str:
@@ -158,7 +151,6 @@ class LocalDirectoryContext(Context):
             raise KeyError(f'There is no model with the name "{name}"')
         digest = resolved_path.name
         db = self.model_database
-        # FIXME: Currently it is not possible to use the digest here in the modeldb
         with db.snapshot(ModelHash(digest)) as txn:
             key = txn.key
         return key
@@ -232,18 +224,20 @@ class LocalDirectoryContext(Context):
     def get_parent_context(self) -> LocalDirectoryContext:
         if self.path == self._top_path:
             raise ValueError("Already at the top level context")
-        parent = LocalDirectoryContext(path=self.path.parent.parent, exists_ok=True)
+        parent_path = self.path.parent.parent
+        parent = LocalDirectoryContext(name=parent_path.name, ref=parent_path.parent)
         return parent
 
     def get_subcontext(self, name: str) -> LocalDirectoryContext:
         path = self.path / 'subcontexts' / name
         if path.is_dir():
-            return LocalDirectoryContext(path=path, exists_ok=True)
+            return LocalDirectoryContext(name=name, ref=path.parent)
         else:
             raise ValueError(f"No subcontext with the name {name}")
 
     def create_subcontext(self, name: str) -> LocalDirectoryContext:
-        ctx = LocalDirectoryContext(name=name, parent=self, exists_ok=False)
+        path = self.path / 'subcontexts'
+        ctx = LocalDirectoryContext(name=name, ref=path)
         return ctx
 
 

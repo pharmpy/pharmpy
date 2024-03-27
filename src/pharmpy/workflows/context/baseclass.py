@@ -23,19 +23,25 @@ class Context(ABC):
     ----------
     name : str
         Name of the context
-    parent : Context
-        A parent context or None if this is the top level context
+    ref : str
+        A reference (path) to the context
     """
 
-    def __init__(self, name: str, parent: Optional[Context] = None):
+    def __init__(self, name: str, ref: Optional[str] = None):
+        # If the context already exists it will be opened
+        # otherwise a new top level context will be created
+        # An implementation needs to create the model database here
+        # If ref is None an implementation specific default ref will be used
         self._name = name
-        # self._parent = parent
-        # NOTE: An implementation needs to create the model database here
 
     @property
     def model_database(self) -> ModelDatabase:
         """ModelDatabase to store results of models run in context"""
         return self._model_database
+
+    @abstractmethod
+    def exists(self, name: str, ref: Optional[str]) -> bool:
+        pass
 
     @abstractmethod
     def store_results(self, res: Results):

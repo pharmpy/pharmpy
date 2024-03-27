@@ -346,8 +346,8 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
     res = read_modelfit_results('mox2.mod')
 
     # NOTE: Load results directly in DB to skip fitting
-    db_tool = default_context(path='amd_dir1/amd')
-    db_fit = default_context(path=db_tool.path / 'modelfit')
+    db_tool = default_context(name='amd', ref='amd_dir1')
+    db_fit = default_context(name='modelfit', ref=db_tool.path)
 
     with db_fit.model_database.transaction(model) as txn:
         txn.store_model()
