@@ -252,3 +252,27 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
+
+
+@pytest.mark.parametrize(
+    ('model_path', 'arguments', 'warning', 'match'),
+    [(["nonmem", "pheno.mod"], dict(keep=["NONEXISTENT"]), UserWarning, 'Parameter')],
+)
+def test_validate_input_warn(
+    load_model_for_test,
+    testdata,
+    model_path,
+    arguments,
+    warning,
+    match,
+):
+    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+
+    harmless_arguments = dict(
+        algorithm='top_down_exhaustive',
+    )
+
+    kwargs = {**harmless_arguments, 'model': model, **arguments}
+
+    with pytest.warns(warning, match=match):
+        validate_input(**kwargs)

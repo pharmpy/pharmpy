@@ -58,7 +58,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    keep: Optional[List[str]] = None,
+    keep: Optional[List[str]] = ["CL"],
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
 ):
@@ -80,7 +80,7 @@ def create_workflow(
     model : Model
         Pharmpy model
     keep :  List[str]
-        List of IIVs to keep
+        List of IIVs to keep. Default is ["CL"]
     strictness : str or None
         Strictness criteria
     correlation_algorithm: {'top_down_exhaustive', 'skip'} or None
@@ -450,12 +450,12 @@ def post_process(
 def validate_input(
     algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm
 ):
-    if keep:
+    if keep and model:
         for parameter in keep:
             try:
                 has_random_effect(model, parameter, "iiv")
             except KeyError:
-                raise ValueError(f"Parameter {parameter} has no iiv.")
+                warnings.warn(f"Parameter {keep} has no iiv and is ignored")
 
     if strictness is not None and "rse" in strictness.lower():
         if model.estimation_steps[-1].parameter_uncertainty_method is None:
