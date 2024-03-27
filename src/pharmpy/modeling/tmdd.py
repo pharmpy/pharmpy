@@ -335,6 +335,10 @@ def set_tmdd(
 
     # Multiple DVs:
     if dv_types is not None:
+        if model.dataset is None:
+            raise ValueError('No dataset connected to model.')
+        if 'dvid' not in model.datainfo.types and 'DVID' not in model.dataset.columns:
+            raise ValueError("DVID column in dataset is needed when using dv_types.")
         if type in ['FULL', 'IB']:
             if 'drug_tot' in dv_types.keys():
                 new_y = (central.amount + complex_comp.amount) / vc
@@ -453,6 +457,8 @@ def set_tmdd(
         if Expr.symbol('Y_TOTTARGET') in list(model.dependent_variables):
             model = set_proportional_error_model(model, dv=dv_types['target_tot'])
 
+        dvs = [dv for dv in model.dependent_variables.values()]
+        model = model.replace(dataset=model.dataset.query('DVID in @dvs'))
     return model.update_source()
 
 
