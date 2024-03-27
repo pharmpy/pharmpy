@@ -62,6 +62,7 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     validate_input(model=model, column='APGR', list_of_parameters=['CL', 'V'])
+    validate_input(model=model, column='APGR', list_of_parameters=[['V'], ['CL']])
 
 
 @pytest.mark.parametrize(
