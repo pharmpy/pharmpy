@@ -13,7 +13,7 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
-        pk_model = filter_dataset(model, "DVID != 2")  # NOTE: This step needs to be removed later
+        pk_model = filter_dataset(model, "DVID != 2")
         pk_res = fit(pk_model)
         res = run_structsearch(
             type='pkpd',
