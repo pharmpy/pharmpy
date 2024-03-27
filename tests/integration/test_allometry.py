@@ -19,7 +19,7 @@ def test_allometry(tmp_path, testdata):
         res = run_tool('allometry', model=model, results=results, allometric_variable='WGT')
         assert len(res.summary_models) == 2
 
-        context = LocalDirectoryContext(path="allometry")
+        context = LocalDirectoryContext("allometry")
         sep = os.path.sep
         model_name = 'scaled_model'
         print(context.retrieve_model_entry(model_name).model.datainfo.path)
