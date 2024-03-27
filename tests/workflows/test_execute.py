@@ -137,8 +137,8 @@ def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
     ofvs = [(-17 + x) ** 2 - x + 3 for x in indices]
 
     def fit(ofv, m):
-        m = m.replace(modelfit_results=ModelfitResults(ofv=ofv))
-        return m
+        res = ModelfitResults(ofv=ofv)
+        return res
 
     init = map(lambda i: Task(f'init_{i}', lambda x: x, models[i]), indices)
     process = map(lambda i: Task(f'fit{i}', fit, ofvs[i]), indices)
@@ -151,13 +151,10 @@ def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
     with chdir(tmp_path):
         with warnings.catch_warnings():
             ignore_scratch_warning()
-            execute_workflow(wf)
+            res = execute_workflow(wf)
 
-    # FIXME: These cannot be updated in place
-    # for orig, fitted, ofv in zip(models, res, ofvs):
-    #    assert orig.modelfit_results.ofv == ofv
-    #    assert fitted.modelfit_results.ofv == ofv
-    #    assert orig.modelfit_results == fitted.modelfit_results
+    for modelres, ofv in zip(res, ofvs):
+        assert modelres.ofv == ofv
 
 
 @pytest.mark.xdist_group(name="workflow")
