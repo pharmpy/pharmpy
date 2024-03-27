@@ -89,11 +89,9 @@ class res_error_term:
                     self.create_res_alias()
 
         if self.res is None:
-            print("No resulting term found")
-            exit
+            raise ValueError("No resulting term found")
         elif len(errors) > 2:
             print("Too many error terms found. Will try to translate either way.")
-
         for t in errors:
             prop = False
             ali_removed = False
@@ -105,8 +103,8 @@ class res_error_term:
                         prop = True
                         # Remove the resulting symbol from the error term
                         term = convert_eps_to_sigma(term, self.model)
-                        if ali in term.free_symbols:
-                            term = term.subs(ali, 1)
+                        if sympy.sympify(ali) in term.free_symbols:
+                            term = term.subs(sympy.sympify(ali), 1)
                             ali_removed = True
             if prop is True:
                 if not ali_removed:
@@ -168,7 +166,6 @@ class error:
             if self.model.parameters[str(self.sigma)].init == 1.0:
                 if self.model.parameters[str(self.sigma)].fix:
                     return True
-        else:
             return False
 
     def check_dependecies(self):
@@ -184,11 +181,11 @@ class error:
             etas = [sympy.Symbol(i) for i in self.model.random_variables.etas.names]
             accepted_symbols.update(etas)
             for symbol in self.expr.free_symbols:
-                if not any([i in accepted_symbols for i in find_aliases(symbol, self.model)]):
+                if not any([Expr(i) in accepted_symbols for i in find_aliases(symbol, self.model)]):
                     if is_number(symbol, self.model):
                         accepted_symbols.update([symbol])
                     else:
-                        self.dependencies.add(symbol)
+                        self.dependencies.add(Expr(symbol))
 
 
 def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
@@ -196,7 +193,7 @@ def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
     for a in alias:
         if a not in model.random_variables.free_symbols:
             a_assign = model.statements.find_assignment(a)
-            if a_assign.expression.is_number:
+            if a_assign.expression.is_number():
                 return True
     return False
 
