@@ -32,7 +32,7 @@ T = TypeVar('T')
 
 def create_workflow(
     column: str = 'OCC',
-    list_of_parameters: Optional[List[Union[str, List]]] = None,
+    list_of_parameters: Optional[List[Union[str, List[str]]]] = None,
     rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
     cutoff: Optional[Union[float, int]] = None,
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
@@ -359,7 +359,7 @@ def validate_input(
             allowed_parameters = set(get_pk_parameters(model)).union(
                 str(statement.symbol) for statement in model.statements.before_odes
             )
-            if not set(_flat_list(list_of_parameters)).issubset(allowed_parameters):
+            if not set(_flatten_list(list_of_parameters)).issubset(allowed_parameters):
                 raise ValueError(
                     f'Invalid `list_of_parameters`: got `{list_of_parameters}`,'
                     f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
@@ -414,11 +414,8 @@ def _get_nonfixed_iivs(model):
     return RandomVariables.create(nonfixed_iivs)
 
 
-def _flat_list(some_list):
+def _flatten_list(some_list):
     if isinstance(some_list[0], list):
-        if isinstance(some_list[0][0], list):
-            raise ValueError("Can only contain list of lists")
-        else:
-            return [x1 for x2 in some_list for x1 in x2]
+        return [x1 for x2 in some_list for x1 in x2]
     else:
         return some_list
