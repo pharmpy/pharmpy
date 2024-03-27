@@ -8,20 +8,19 @@ from pharmpy.workflows.results import read_results
 
 
 def test_init(tmp_path):
-    path = tmp_path / 'mycontext'
-    ctx = LocalDirectoryContext(path=path)
-    assert ctx.path == path
+    ctx = LocalDirectoryContext('mycontext', tmp_path)
+    assert ctx.path == tmp_path / 'mycontext'
     assert (ctx.path / 'models').is_dir()
     assert (ctx.path / '.modeldb').is_dir()
     assert (ctx.path / 'log').is_file()
-    assert (ctx.path / '.annotations').is_file()
+    assert (ctx.path / 'annotations').is_file()
     assert ctx.context_path == 'mycontext'
 
-    subctx = LocalDirectoryContext(name="mysubcontext", parent=ctx)
+    subctx = ctx.create_subcontext("mysubcontext")
     assert (subctx.path / 'models').is_dir()
     assert not (subctx.path / '.modeldb').is_dir()
     assert not (subctx.path / 'log.csv').is_file()
-    assert (subctx.path / '.annotations').is_file()
+    assert (subctx.path / 'annotations').is_file()
     assert subctx.context_path == 'mycontext/mysubcontext'
 
     parent = subctx.get_parent_context()
@@ -33,7 +32,7 @@ def test_init(tmp_path):
 
     assert sub.context_path == 'mycontext/mysubcontext'
 
-    existing_ctx = LocalDirectoryContext(path=path)
+    existing_ctx = LocalDirectoryContext('mycontext', tmp_path)
     assert existing_ctx.path == ctx.path
 
     subsubctx = subctx.create_subcontext("nextlevel")
@@ -41,8 +40,7 @@ def test_init(tmp_path):
 
 
 def test_metadata(tmp_path):
-    path = tmp_path / 'mycontext'
-    ctx = LocalDirectoryContext(path=path)
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     d = {'mymeta': 23, 'other': 'ext'}
     ctx.store_metadata(d)
     retd = ctx.retrieve_metadata()
@@ -50,8 +48,7 @@ def test_metadata(tmp_path):
 
 
 def test_log(tmp_path):
-    path = tmp_path / 'mycontext'
-    ctx = LocalDirectoryContext(path=path)
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     ctx.log_message('error', "This didn't work")
     ctx.log_message('warning', "Potential disaster")
     df = ctx.retrieve_log()
@@ -60,7 +57,7 @@ def test_log(tmp_path):
     assert tuple(df['severity']) == ('error', 'warning')
     assert df.loc[1, 'message'] == "Potential disaster"
 
-    subctx = LocalDirectoryContext(name="mysubcontext", parent=ctx)
+    subctx = ctx.create_subcontext("mysubcontext")
     subctx.log_message('error', "Neither did this")
     df = subctx.retrieve_log()
     assert len(df) == 3
@@ -84,8 +81,7 @@ def test_log(tmp_path):
 
 
 def test_results(tmp_path, testdata):
-    path = tmp_path / 'mycontext'
-    ctx = LocalDirectoryContext(path=path)
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     res = read_results(testdata / 'results' / 'estmethod_results.json')
     ctx.store_results(res)
     newres = ctx.retrieve_results()
@@ -93,8 +89,7 @@ def test_results(tmp_path, testdata):
 
 
 def test_store_model(tmp_path, load_example_model_for_test):
-    path = tmp_path / 'mycontext'
-    ctx = LocalDirectoryContext(path=path)
+    ctx = LocalDirectoryContext(name='myconext', ref=tmp_path)
     model = load_example_model_for_test("pheno")
     ctx.store_model_entry(model)
     me = ctx.retrieve_model_entry("pheno")
@@ -123,8 +118,7 @@ def test_store_model(tmp_path, load_example_model_for_test):
 
 
 def test_key(tmp_path, load_example_model_for_test):
-    path = tmp_path / 'mycontext'
-    ctx = LocalDirectoryContext(path=path)
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     model = load_example_model_for_test("pheno")
     ctx.store_model_entry(model)
     key = ctx.retrieve_key("pheno")

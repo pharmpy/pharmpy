@@ -41,7 +41,7 @@ from pharmpy.workflows import LocalDirectoryContext, local_dask
 def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
-        database = LocalDirectoryContext(path=tool_name)
+        database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
         tool_params = inspect.signature(tool.create_workflow).parameters
         tool_param_types = get_type_hints(tool.create_workflow)
@@ -71,7 +71,7 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
 def test_create_metadata_tool_raises(tmp_path, pheno):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
-        database = LocalDirectoryContext(path=tool_name)
+        database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
         tool_params = inspect.signature(tool.create_workflow).parameters
         tool_param_types = get_type_hints(tool.create_workflow)
@@ -91,7 +91,7 @@ def test_create_metadata_common(tmp_path):
         name = 'modelsearch'
 
         dispatcher = local_dask
-        database = LocalDirectoryContext(path=Path.cwd() / name)
+        database = LocalDirectoryContext(name, Path.cwd())
 
         metadata = _create_metadata_common(
             database=database,
@@ -109,7 +109,7 @@ def test_create_metadata_common(tmp_path):
         path = 'tool_database_path'
 
         dispatcher = local_dask
-        database = LocalDirectoryContext(path=path)
+        database = LocalDirectoryContext(path)
 
         metadata = _create_metadata_common(
             database=database,

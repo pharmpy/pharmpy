@@ -482,9 +482,7 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
                 path = Path(path)
         else:
             path = Path.cwd()
-        database = default_context(
-            path=path / toolname, exists_ok=common_options.get('resume', False)
-        )
+        database = default_context(name=toolname, ref=path)
 
     return dispatcher, database
 
