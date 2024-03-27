@@ -66,7 +66,6 @@ def add_statements(
 
     # FIXME: Handle other DVs?
     dv = list(model.dependent_variables.keys())[0]
-
     for s in statements:
         if isinstance(s, Assignment):
             if s.symbol == dv and not s.expression.is_piecewise():
@@ -137,7 +136,7 @@ def add_statements(
                             cg.add(f'{s.symbol.name} <- {value}')
 
                             if s.symbol in dependencies:
-                                if not value.is_constant() and not isinstance(value, sympy.Symbol):
+                                if not value.is_number() and not isinstance(value, sympy.Symbol):
                                     add, prop = extract_add_prop(value, res_alias, model)
                                     cg.add(f'add_error <- {add}')
                                     cg.add(f'prop_error <- {prop}')
@@ -194,6 +193,8 @@ def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Mode
             The symbol representing  the proportional error. Zero if none found
 
     """
+
+    s = sympy.sympify(s)
     if isinstance(s, sympy.Symbol):
         terms = [s]
     elif isinstance(s, sympy.Pow):

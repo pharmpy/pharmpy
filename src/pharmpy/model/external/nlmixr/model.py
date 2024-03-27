@@ -158,7 +158,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
         res_alias = set()
         for s in model.statements.after_odes:
             if s.symbol == dv:
-                if s.expression.is_Piecewise:
+                if s.expression.is_piecewise:
                     for value, cond in s.expression.args:
                         if value != dv:
                             dv_term = res_error_term(model, value)
