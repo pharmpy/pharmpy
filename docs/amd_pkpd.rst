@@ -118,21 +118,12 @@ Structural
             node [fontname="Arial",shape="rect"];
             rankdir="LR";
             base [label="Input", shape="oval"]
-            s0 [label="add structural covariates"]
-            s1 [label="structsearch"]
+            s0 [label="structsearch"]
 
             base -> s0
-            s0 -> s1
         }
 
 
-**Structural covariates**
-
-The structural covariates are added directly to the starting model. If these cannot be added here (due to missing 
-parameters for instance) they will be added at the start of the next covsearch run. Note that all structural
-covariates are added all at once without any test or search.
-
-If no structural covariates are specified, no default is used.
 
 **Structsearch**
 
@@ -269,7 +260,9 @@ If no search space for this tool is given, the following default will be used:
     COVARIATE?(@PD_IIV, @CATEGORICAL, cat, *)
 
 Here, both statements are defined with a '?', meaning that these are covariate effect(s) to be explored rather than
-structural covariate effects, which are added during the earlier "structural" step.
+structural covariate effects.
+
+Structural covariate effects found in the search space are also added to the model in this step. 
 
 **Mechanisitic covariates**
 
