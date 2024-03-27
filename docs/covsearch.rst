@@ -25,14 +25,14 @@ To initiate COVsearch in Python/R:
     res = run_covsearch(algorithm='scm-forward-then-backward',
                         model=start_model,
                         results=start_model_results,
-                        effects='COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)',
+                        search_space='COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)',
                         p_forward=0.05,
                         p_backward=0.01,
                         max_steps=5)
 
 In this example, we attempt up to five forward steps of the Stepwise
 Covariate Modeling (SCM) algorithm on the model ``start_model``. The p-value
-threshold for these steps is 5% and the candidate effects consists of all (*)
+threshold for these steps is 5% and the candidate search_space consists of all (*)
 supported effects (multiplicative) of continuous covariates on parameters with IIV,
 and a (multiplicative) categorical effect of categorical covariates on parameters
 with IIV. Once we have identified the best model with this method, we attempt
@@ -45,7 +45,7 @@ To run COVsearch from the command line, the example code is redefined accordingl
 
 .. code::
 
-    pharmpy run covsearch path/to/model --algorithm scm-forward-then-backward --effects 'COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --p_backward 0.01 --max_steps 5
+    pharmpy run covsearch path/to/model --algorithm scm-forward-then-backward --search_space 'COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --p_backward 0.01 --max_steps 5
 
 ~~~~~~~~~
 Arguments
@@ -57,8 +57,9 @@ Mandatory
 +---------------------------------------------+-----------------------------------------------------------------------+
 | Argument                                    | Description                                                           |
 +=============================================+=======================================================================+
-| ``effects``                                 | The candidate parameter-covariate :ref:`effects<effects_covsearch>`   |
-|                                             | to search through (required)                                          |
+| ``search_space``                            | The candidate parameter-covariate                                     |
+|                                             | :ref:`search_space<search_space_covsearch>` to search through         |
+|                                             | (required)                                                            |
 +---------------------------------------------+-----------------------------------------------------------------------+
 | ``results``                                 | ModelfitResults of start model                                        |
 +---------------------------------------------+-----------------------------------------------------------------------+
@@ -86,11 +87,11 @@ Optional
 |                                             | (rounding_errors and sigdigs>= 0.1)"                                  |
 +---------------------------------------------+-----------------------------------------------------------------------+
 
-.. _effects_covsearch:
+.. _search_space_covsearch:
 
-~~~~~~~
-Effects
-~~~~~~~
+~~~~~~~~~~~~
+Search space
+~~~~~~~~~~~~
 
 There are two kinds of candidate effects that can be described through the model
 feature language (:ref:`MFL<mfl>`). For instance, say that we want to have want to forcefully
@@ -102,14 +103,14 @@ MFL specification can be used:
 
     run_covsearch(
         ...
-        effects='COVARIATE(CL, WT, EXP);COVARIATE?(V,AGE,EXP)',
+        search_space='COVARIATE(CL, WT, EXP);COVARIATE?(V,AGE,EXP)',
         ...
     )
     
 .. note::
     :code:`COVARIATE(...)` represent structural covariates while :code:`COVARIATE?(...)` represent exploratory. 
 
-The effect is specified by first writing the parameters, then the covariates of interest,
+The search space is specified by first writing the parameters, then the covariates of interest,
 which effect, and, optionally, the operation to use for the covariate effect (`'*'`
 (default) or `'+'`). If the operation is omitted, the default operation will be used.
 
@@ -133,7 +134,7 @@ For instance,
 
     run_covsearch(
         ...
-        effects='COVARIATE?([CL, V], @CONTINUOUS, EXP)'
+        search_space='COVARIATE?([CL, V], @CONTINUOUS, EXP)'
         ...
     )
 
@@ -179,7 +180,7 @@ dependent on the effects that are already present in the input model. All covari
 initially part of the model but are *not* part of the search space will be removed before starting 
 the search. Covariate effects that are part of both the search space *and* the model will be left in 
 the model but are removed from the search space. In this initial stage, any structural covariates 
-defined within the search space (see :ref:`effects<effects_covsearch>`) will be added as well. If any
+defined within the search space (see :ref:`search_space<effects_covsearch>`) will be added as well. If any
 filtration is done, a new "filtered_input_model" is created, otherwise the input model will be used.
 
 .. note::
@@ -262,7 +263,7 @@ Consider a `covsearch` run:
 .. pharmpy-code::
 
     res = run_covsearch(model=start_model, results=start_model_results,
-                        effects='COVARIATE?([CL, MAT, VC], [AGE, WT], EXP);COVARIATE?([CL, MAT, VC], [SEX], CAT)')
+                        search_space='COVARIATE?([CL, MAT, VC], [AGE, WT], EXP);COVARIATE?([CL, MAT, VC], [SEX], CAT)')
 
 
 The ``summary_tool`` table contains information such as which feature each
