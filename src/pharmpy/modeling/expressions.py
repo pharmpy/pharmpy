@@ -314,9 +314,7 @@ def mu_reference_model(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = mu_reference_model(model)
     >>> model.statements.before_odes
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = PTVCL⋅WGT
     TVV = PTVV⋅WGT
@@ -439,9 +437,7 @@ def make_declarative(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements.before_odes
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = PTVCL⋅WGT
     TVV = PTVV⋅WGT
@@ -455,9 +451,7 @@ def make_declarative(model: Model):
     S₁ = V
     >>> model = make_declarative(model)
     >>> model.statements.before_odes
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = PTVCL⋅WGT
           ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
@@ -535,9 +529,7 @@ def cleanup_model(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = PTVCL⋅WGT
     TVV = PTVV⋅WGT
@@ -565,9 +557,7 @@ def cleanup_model(model: Model):
     IWRES =  W
     >>> model = cleanup_model(model)
     >>> model.statements
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = PTVCL⋅WGT
           ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
@@ -625,9 +615,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = PTVCL⋅WGT
     TVV = PTVV⋅WGT
@@ -656,9 +644,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
 
     >>> model = greekify_model(cleanup_model(model))
     >>> model.statements
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = WGT⋅θ₁
           ⎧WGT⋅θ₂⋅(θ₃ + 1)  for APGR < 5

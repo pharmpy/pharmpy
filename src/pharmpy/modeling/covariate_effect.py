@@ -54,7 +54,6 @@ def get_covariate_effects(model: Model) -> dict[list]:
         for c in covariates:
             if has_covariate_effect(model, str(p), str(c)):
                 param_w_cov[p].append(c)
-
     res = defaultdict(list)
     for param, covariates in param_w_cov.items():
         for cov in covariates:
@@ -83,17 +82,33 @@ def _get_covariate_effect(model: Model, symbol, covariate):
     cov_expression = None
     perform_matching = False
     for arg in param_expr.args:
+        check_covariate = False
         free_symbols = arg.free_symbols
         if any(eta in free_symbols for eta in etas):
-            pass
+            # Remove
+            if Expr(arg).is_exp():
+                if covariate in free_symbols:
+                    check_covariate = True
+                    expression = arg
+                    # Substitute all terms with no covarite
+                    exp_terms = arg.args[0]
+                    if len(exp_terms.args) > 1:
+                        for a in exp_terms.args:
+                            if covariate not in a.free_symbols:
+                                expression = expression.subs({a: Expr(0)})
+                            else:
+                                pass
         else:
+            check_covariate = True
+            expression = arg
+
+        if check_covariate:
             if covariate in free_symbols:
-                cov_expression = arg
+                cov_expression = expression
                 # Need at least one theta to perform matching
                 cov_effect = "CUSTOM"
                 if any(theta in free_symbols for theta in thetas):
                     perform_matching = True
-
     if perform_matching:
         for effect in ['lin', 'cat', 'piece_lin', 'exp', 'pow']:
             template = _create_template(effect, model, str(covariate))
@@ -110,6 +125,7 @@ def _get_covariate_effect(model: Model, symbol, covariate):
                 elif str(s).startswith("median"):
                     wild_dict["median"].append(wild_symbol)
 
+            cov_expression = sympy.sympify(cov_expression)
             match = cov_expression.match(template)
             if match:
                 if _assert_cov_effect_match(wild_dict, match, model, str(covariate), effect):

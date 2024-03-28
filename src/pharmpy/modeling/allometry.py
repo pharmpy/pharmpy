@@ -64,9 +64,7 @@ def add_allometry(
     >>> model = remove_covariate_effect(model, 'V', 'WGT')
     >>> model = add_allometry(model, allometric_variable='WGT')
     >>> model.statements.before_odes
-            ⎧TIME  for AMT > 0
-            ⎨
-    BTIME = ⎩ 0     otherwise
+    BTIME = {TIME  for AMT > 0
     TAD = -BTIME + TIME
     TVCL = PTVCL
     TVV = PTVV

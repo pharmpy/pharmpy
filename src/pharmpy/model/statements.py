@@ -2055,9 +2055,7 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.before_odes
-                ⎧TIME  for AMT > 0
-                ⎨
-        BTIME = ⎩ 0     otherwise
+        BTIME = {TIME  for AMT > 0
         TAD = -BTIME + TIME
         TVCL = PTVCL⋅WGT
         TVV = PTVV⋅WGT
@@ -2133,9 +2131,7 @@ class Statements(Sequence, Immutable):
         >>> model = load_example_model("pheno")
         >>> stats = model.statements.subs({'WGT': 'WT'})
         >>> stats.before_odes
-                ⎧TIME  for AMT > 0
-                ⎨
-        BTIME = ⎩ 0     otherwise
+        BTIME = {TIME  for AMT > 0
         TAD = -BTIME + TIME
         TVCL = PTVCL⋅WT
         TVV = PTVV⋅WT
