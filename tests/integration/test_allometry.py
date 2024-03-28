@@ -19,12 +19,11 @@ def test_allometry(tmp_path, testdata):
         res = run_tool('allometry', model=model, results=results, allometric_variable='WGT')
         assert len(res.summary_models) == 2
 
-        context = LocalDirectoryContext("allometry")
+        context = LocalDirectoryContext("allometry1")
         sep = os.path.sep
         model_name = 'scaled_model'
-        print(context.retrieve_model_entry(model_name).model.datainfo.path)
         assert str(context.retrieve_model_entry(model_name).model.datainfo.path).endswith(
-            f'{sep}allometry{sep}.modeldb{sep}.datasets{sep}data1.csv'
+            f'{sep}allometry1{sep}.modeldb{sep}.datasets{sep}data1.csv'
         )
         path = context.model_database.retrieve_file(context.retrieve_key(model_name), 'model.lst')
         with open(path, 'r') as fh:

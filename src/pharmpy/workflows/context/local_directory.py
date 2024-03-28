@@ -90,7 +90,8 @@ class LocalDirectoryContext(Context):
         path.touch(exist_ok=True)
         return path_lock(str(path), shared=False)
 
-    def exists(self, name: str, ref: Optional[str]):
+    @staticmethod
+    def exists(name: str, ref: Optional[str] = None):
         if ref is None:
             ref = Path.cwd()
         path = Path(ref) / name
