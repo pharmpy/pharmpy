@@ -14,10 +14,13 @@ from pharmpy.workflows import ModelEntry, Workflow
 def test_filter_dataset(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem/pheno_pd.mod')
     res = read_modelfit_results(testdata / 'nonmem/pheno_pd.mod')
+    indices = model.dataset.index[model.dataset['DVID'] == 2].tolist()
     model_entry = ModelEntry.create(model, modelfit_results=res)
-    cwres = _create_dataset(model_entry, dv=2)
+    df = _create_dataset(model_entry, dv=2)
     expected_cwres = [-1.15490, 0.95703, -0.85365, 0.42327]
-    assert cwres['DV'].tolist() == expected_cwres
+    assert df['DV'].tolist() == expected_cwres
+    assert df['IPRED'].tolist() == res.predictions['CIPREDI'].iloc[indices].tolist()
+    assert df['ID'].tolist() == model.dataset['ID'].iloc[indices].tolist()
 
 
 def test_resmod_results(testdata):
