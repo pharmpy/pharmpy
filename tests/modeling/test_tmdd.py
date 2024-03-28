@@ -1,10 +1,12 @@
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
 from pharmpy.model import Assignment
 from pharmpy.modeling import (
     add_peripheral_compartment,
     create_basic_pk_model,
+    create_rng,
     set_mixed_mm_fo_elimination,
     set_tmdd,
 )
@@ -164,16 +166,18 @@ def test_wagner_1c(pheno_path, load_model_for_test):
 )
 def test_full_multiple_dvs(pheno_path, load_model_for_test, model_name, dv_types, expected):
     model = load_model_for_test(pheno_path)
+    model = _add_random_dvids(model)
     model = set_tmdd(model, model_name, dv_types)
     assert model.dependent_variables == expected
     assert len(model.random_variables.epsilons) > 1
 
 
-def test_multiple_dvs(load_model_for_test, pheno_path):
+def test_multiple_dvs(load_model_for_test, pheno_path, testdata):
     central_amount = Expr.function("A_CENTRAL", S('t'))
     complex_amount = Expr.function("A_COMPLEX", S('t'))
 
     model = load_model_for_test(pheno_path)
+    model = _add_random_dvids(model)
     model1 = set_tmdd(model, 'qss', {'complex': 2, 'target_tot': 3})
     ass1 = Assignment.create(S("F"), S("LAFREEF") / S("V"))
     assert model1.statements.find_assignment("F") == ass1
@@ -218,7 +222,8 @@ def test_multiple_dvs(load_model_for_test, pheno_path):
     assert model1.statements.find_assignment("F") == ass1
     assert S("Y_TOTTARGET") in model1.statements.free_symbols
 
-    model = create_basic_pk_model('iv')
+    model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno.dta')
+    model = _add_random_dvids(model)
     model1 = set_tmdd(model, 'qss', {'complex': 2, 'target_tot': 3})
     ass1 = Assignment.create(S("IPRED"), S("LAFREEF") / S("VC"))
     assert model1.statements.find_assignment("IPRED") == ass1
@@ -249,3 +254,37 @@ def test_validation(load_model_for_test, testdata):
         '"drug_tot" and "target_tot".',
     ):
         _validate_dv_types(dv_types={'taget': 1})
+
+
+def test_dataset_multiple_dvs(pheno_path, load_model_for_test):
+    model = load_model_for_test(pheno_path)
+    model = _add_random_dvids(model)
+
+    model1 = set_tmdd(model, type="cr", dv_types={'drug': 1, 'target': 2})
+    unique_values = model1.dataset['DVID'].unique()
+    assert 1 in unique_values and 2 not in unique_values
+    model2 = set_tmdd(model, type="cr", dv_types={'drug': 1, 'complex': 3})
+    unique_values = model2.dataset['DVID'].unique()
+    assert 1 in unique_values and 3 in unique_values
+    model3 = set_tmdd(model, type="wagner", dv_types={'drug': 1, 'target': 2})
+    unique_values = model3.dataset['DVID'].unique()
+    assert 1 in unique_values and 2 not in unique_values
+    model4 = set_tmdd(model, type="wagner", dv_types={'drug': 1, 'complex': 3})
+    unique_values = model4.dataset['DVID'].unique()
+    assert 1 in unique_values and 3 in unique_values
+    model5 = set_tmdd(model, type="mmapp", dv_types={'drug': 1, 'complex': 2})
+    unique_values = model5.dataset['DVID'].unique()
+    assert 1 in unique_values and 2 not in unique_values
+    model6 = set_tmdd(model, type="mmapp", dv_types={'drug': 1, 'target': 2})
+    unique_values = model6.dataset['DVID'].unique()
+    assert 1 in unique_values and 2 in unique_values
+    model7 = set_tmdd(model, type="full", dv_types={'drug': 1, 'target': 2, 'complex': 3})
+    unique_values = model7.dataset['DVID'].unique()
+    assert 1 in unique_values and 2 in unique_values and 3 in unique_values
+
+
+def _add_random_dvids(model):
+    df = model.dataset.copy()
+    rng = create_rng(23)
+    df['DVID'] = np.array([rng.integers(1, 6) for i in range(len(df))])
+    return model.replace(dataset=df)
