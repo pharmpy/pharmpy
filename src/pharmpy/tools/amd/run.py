@@ -328,12 +328,13 @@ def run_amd(
 
     for section in order:
         if section == 'structural':
-            run_subfuncs['structural_covariates'] = _subfunc_structural_covariates(
-                amd_start_model=model,
-                search_space=covsearch_features,
-                strictness=strictness,
-                path=db.path,
-            )
+            if modeltype != 'pkpd':
+                run_subfuncs['structural_covariates'] = _subfunc_structural_covariates(
+                    amd_start_model=model,
+                    search_space=covsearch_features,
+                    strictness=strictness,
+                    path=db.path,
+                )
             if modeltype == 'pkpd':
                 func = _subfunc_structsearch(
                     type=modeltype,
