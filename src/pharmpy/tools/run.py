@@ -31,6 +31,7 @@ from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.context import Context
 from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
+from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, mfr
 
 from .external import parse_modelfit_results
@@ -670,15 +671,15 @@ def write_results(results: Results, path: Union[str, Path], lzma: bool = False, 
         results.to_json(path, lzma=lzma)
 
 
-def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> pd.DataFrame:
-    """Summarize errors and warnings from one or multiple model runs.
+def summarize_errors(context: Context) -> pd.DataFrame:
+    """Summarize errors and warnings from all runs in a context.
 
     Summarize the errors and warnings found after running the model/models.
 
     Parameters
     ----------
-    results : list, ModelfitResults
-        List of ModelfitResults or single ModelfitResults
+    context : Context
+        Context in which models were run
 
     Return
     ------
@@ -686,23 +687,21 @@ def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> 
         A DataFrame of errors with model name, category (error or warning), and an int as index,
         an empty DataFrame if there were no errors or warnings found.
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import load_example_model
-    >>> from pharmpy.tools import summarize_errors
-    >>> model = load_example_model("pheno")
-    >>> summarize_errors(model)      # doctest: +SKIP
     """
-    # FIXME: Have example with errors
-    if isinstance(results, ModelfitResults):
-        results = [results]
+    names = context.list_all_names()
+    mes = [context.retrieve_model_entry(name) for name in names]
+    return summarize_errors_from_entries(mes)
 
+
+def summarize_errors_from_entries(mes: list[ModelEntry]):
     idcs, rows = [], []
 
-    for res in results:
+    for me in mes:
+        name = me.model.name
+        res = me.modelfit_results
         if res is not None and len(res.log) > 0:
             for i, entry in enumerate(res.log):
-                idcs.append((res.name, entry.category, i))
+                idcs.append((name, entry.category, i))
                 rows.append([entry.time, entry.message])
 
     index_names = ['model', 'category', 'error_no']
@@ -1033,7 +1032,7 @@ def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
 
 
 def summarize_modelfit_results(
-    results: Union[ModelfitResults, List[ModelfitResults]],
+    context: Context,
     include_all_estimation_steps: bool = False,
 ) -> pd.DataFrame:
     """Summarize results of model runs
@@ -1047,8 +1046,8 @@ def summarize_modelfit_results(
 
     Parameters
     ----------
-    results : list, ModelfitResults
-        List of ModelfitResults or single ModelfitResults
+    context : Context
+        Context in which models were run
     include_all_estimation_steps : bool
         Whether to include all estimation steps, default is False
 
@@ -1068,20 +1067,29 @@ def summarize_modelfit_results(
     model
     pheno  PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
-    if isinstance(results, ModelfitResults):
-        results = [results]
 
-    if results is None:
+    names = context.list_all_names()
+    mes = [context.retrieve_model_entry(name) for name in names]
+    df = summarize_modelfit_results_from_entries(mes)
+    return df
+
+
+def summarize_modelfit_results_from_entries(
+    mes: list[ModelEntry],
+    include_all_estimation_steps: bool = False,
+) -> pd.DataFrame:
+
+    if mes is None:
         raise ValueError('Option `results` is None')
-    if all(res is None for res in results):
+    if all(me is None for me in mes):
         raise ValueError('All input results are empty')
 
     summaries = []
 
-    for res in results:
-        if res is not None:
-            summary = _get_model_result_summary(res, include_all_estimation_steps)
-            summary.insert(0, 'description', res.description)
+    for me in mes:
+        if me is not None and me.modelfit_results is not None:
+            summary = _get_model_result_summary(me, include_all_estimation_steps)
+            summary.insert(0, 'description', me.model.description)
             summaries.append(summary)
 
     with warnings.catch_warnings():
@@ -1097,10 +1105,11 @@ def summarize_modelfit_results(
     return df
 
 
-def _get_model_result_summary(res, include_all_estimation_steps=False):
+def _get_model_result_summary(me, include_all_estimation_steps=False):
+    res = me.modelfit_results
     if not include_all_estimation_steps:
         summary_dict = _summarize_step(res, -1)
-        index = pd.Index([res.name], name='model')
+        index = pd.Index([me.model.name], name='model')
         summary_df = pd.DataFrame(summary_dict, index=index)
     else:
         summary_dicts = []
@@ -1114,7 +1123,7 @@ def _get_model_result_summary(res, include_all_estimation_steps=False):
                 run_type = 'estimation'
             summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
-            tuples.append((res.name, i + 1))
+            tuples.append((me.model.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
 

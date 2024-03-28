@@ -135,4 +135,4 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
         model_entry_retrieve = db.retrieve_model_entry(model)
 
         assert model_entry_retrieve.model == model
-        assert model_entry_retrieve.modelfit_results.name == modelfit_results.name
+        assert model_entry_retrieve.modelfit_results.ofv == modelfit_results.ofv

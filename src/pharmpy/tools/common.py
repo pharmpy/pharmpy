@@ -14,7 +14,7 @@ from pharmpy.modeling import (
     plot_eta_distributions,
     update_inits,
 )
-from pharmpy.tools import rank_models, summarize_errors
+from pharmpy.tools.run import rank_models, summarize_errors_from_entries
 from pharmpy.workflows import Context, ModelEntry, ModelfitResults, Results
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
@@ -116,7 +116,7 @@ def create_results(
         summary_tool['description'],
         summary_tool[delta_name],
     )
-    summary_errors = summarize_errors([base_res] + cand_res)
+    summary_errors = summarize_errors_from_entries([base_model_entry] + cand_model_entries)
 
     if summary_tool['rank'].isnull().all():
         best_model = None

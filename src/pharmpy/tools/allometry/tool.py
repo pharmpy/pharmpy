@@ -9,14 +9,10 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import add_allometry, get_pk_parameters
-from pharmpy.tools import (
-    summarize_errors,
-    summarize_individuals,
-    summarize_individuals_count_table,
-    summarize_modelfit_results,
-)
+from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.common import ToolResults, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -176,12 +172,12 @@ def results(start_model_entry, allometry_model_entry):
     allometry_model_failed = allometry_res is None
     best_model = start_model if allometry_model_failed else allometry_model
 
-    summod = summarize_modelfit_results([start_res, allometry_res])
+    summod = summarize_modelfit_results_from_entries([start_model_entry, allometry_model_entry])
     summod['step'] = [0, 1]
     summods = summod.reset_index().set_index(['step', 'model'])
     suminds = summarize_individuals([start_model, allometry_model], [start_res, allometry_res])
     sumcount = summarize_individuals_count_table(df=suminds)
-    sumerrs = summarize_errors([start_res, allometry_res])
+    sumerrs = summarize_errors_from_entries([start_model_entry, allometry_model_entry])
 
     return AllometryResults(
         summary_models=summods,

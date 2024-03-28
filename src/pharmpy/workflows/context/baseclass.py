@@ -95,6 +95,11 @@ class Context(ABC):
         pass
 
     @abstractmethod
+    def list_all_names(self) -> list(str):
+        """Retrieve a list of all model names in the context"""
+        pass
+
+    @abstractmethod
     def store_annotation(self, name: str, annotation: str):
         """Store an annotation string (description) for a model"""
 

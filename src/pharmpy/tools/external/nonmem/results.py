@@ -38,8 +38,6 @@ def _parse_modelfit_results(
 
     path = Path(path)
 
-    name = model.name
-    description = model.description
     estimation_steps = model.estimation_steps
     parameters = model.parameters
     etas = model.random_variables.etas
@@ -52,8 +50,6 @@ def _parse_modelfit_results(
         except ValueError:
             log = log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
             return ModelfitResults(
-                name=name,
-                description=description,
                 minimization_successful=False,
                 ofv=np.nan,
                 parameter_estimates=_create_failed_parameter_estimates(model.parameters),
@@ -153,8 +149,6 @@ def _parse_modelfit_results(
         warnings.append('final_zero_gradient')
 
     res = ModelfitResults(
-        name=name,
-        description=description,
         minimization_successful=minimization_successful[last_est_ind],
         minimization_successful_iterations=minsucc_iters,
         estimation_runtime=estimation_runtime[last_est_ind],

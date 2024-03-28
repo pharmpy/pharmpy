@@ -156,6 +156,9 @@ class LocalDirectoryContext(Context):
             key = txn.key
         return key
 
+    def list_all_names(self) -> list(str):
+        return [f.name for f in Path(self._models_path).iterdir()]
+
     def retrieve_name(self, key: ModelHash) -> str:
         path = self._models_path
         mydigest = str(key)

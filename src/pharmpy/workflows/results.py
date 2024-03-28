@@ -372,10 +372,6 @@ class ModelfitResults(Results):
 
     Attributes
     ----------
-    name : str
-        Name of model
-    description : str
-        Description of model
     correlation_matrix : pd.DataFrame
         Correlation matrix of the population parameter estimates
     covariance_matrix : pd.DataFrame
@@ -430,8 +426,6 @@ class ModelfitResults(Results):
         List of warnings
     """
 
-    name: Optional[str] = None
-    description: Optional[str] = None
     ofv: Optional[float] = None
     ofv_iterations: Optional[pd.Series] = None
     parameter_estimates: Optional[pd.Series] = None
@@ -468,7 +462,7 @@ class ModelfitResults(Results):
     warnings: Optional[List[str]] = None
 
     def __repr__(self):
-        return f'<Pharmpy modelfit results object {self.name}>'
+        return '<Pharmpy modelfit results object>'
 
 
 @dataclass(frozen=True)
@@ -477,17 +471,11 @@ class SimulationResults(Results):
 
     Attributes
     ----------
-    name : str
-        Name of model
-    description : str
-        Description of model
     table : pd.DataFrame
         Table file of model
     """
 
-    name: Optional[str] = None
-    description: Optional[str] = None
     table: Optional[pd.DataFrame] = None
 
     def __repr__(self):
-        return f'<Pharmpy simulation results object {self.name}>'
+        return f'<Pharmpy simulation results object>'
