@@ -6,7 +6,7 @@ def test_serialization(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch('ABSORPTION(ZO)', 'exhaustive', model=start_modelres[0])
 
-        rundir = tmp_path / 'modelsearch_dir1'
+        rundir = tmp_path / 'modelsearch1'
 
         res_serialized = read_results(rundir / 'results.json')
 
@@ -18,8 +18,3 @@ def test_serialization(tmp_path, model_count, start_modelres):
         summary_tool_serialized_rounded = res_serialized.summary_tool.round(cols_round)
 
         assert summary_tool_rounded.equals(summary_tool_serialized_rounded)
-        assert res.tool_database.path == res_serialized.tool_database.path
-        assert (
-            res.tool_database.model_database.path
-            == res_serialized.tool_database.model_database.path
-        )

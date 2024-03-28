@@ -180,13 +180,13 @@ def run_tool_with_name(
 
     create_workflow = tool.create_workflow
 
-    dispatcher, tool_database = _get_run_setup(common_options, name)
+    dispatcher, ctx = _get_run_setup(common_options, name)
 
     tool_params = inspect.signature(create_workflow).parameters
     tool_param_types = get_type_hints(create_workflow)
 
     tool_metadata = _create_metadata(
-        database=tool_database,
+        database=ctx,
         dispatcher=dispatcher,
         tool_name=name,
         tool_params=tool_params,
@@ -196,7 +196,7 @@ def run_tool_with_name(
         common_options=common_options,
     )
 
-    tool_database.store_metadata(tool_metadata)
+    ctx.store_metadata(tool_metadata)
 
     if validate_input := getattr(tool, 'validate_input', None):
         validate_input(*args, **tool_options)
@@ -204,11 +204,11 @@ def run_tool_with_name(
     wf: Workflow = create_workflow(*args, **tool_options)
     assert wf.name == name
 
-    res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
+    res = execute_workflow(wf, dispatcher=dispatcher, database=ctx)
     assert name == 'modelfit' or isinstance(res, Results) or name == 'simulation'
 
     tool_metadata = _update_metadata(tool_metadata, res)
-    tool_database.store_metadata(tool_metadata)
+    ctx.store_metadata(tool_metadata)
 
     return res
 
@@ -470,21 +470,24 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
         dispatcher = default_dispatcher
 
     try:
-        database = common_options['context']
+        ctx = common_options['context']
     except KeyError:
         from pharmpy.workflows import default_context
 
-        if 'path' in common_options.keys():
+        common_path = common_options.get('path', None)
+        if common_path is not None:
             path = common_options['path']
-            if path is None:
-                path = Path.cwd()
-            else:
-                path = Path(path)
+            ctx = default_context(path.name, path.parent)
         else:
-            path = Path.cwd()
-        database = default_context(name=toolname, ref=path)
+            n = 1
+            while True:
+                name = f"{toolname}{n}"
+                if not default_context.exists(name):
+                    ctx = default_context(name)
+                    break
+                n += 1
 
-    return dispatcher, database
+    return dispatcher, ctx
 
 
 def retrieve_models(

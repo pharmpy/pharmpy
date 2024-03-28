@@ -39,8 +39,9 @@ class Context(ABC):
         """ModelDatabase to store results of models run in context"""
         return self._model_database
 
+    @staticmethod
     @abstractmethod
-    def exists(self, name: str, ref: Optional[str]) -> bool:
+    def exists(name: str, ref: Optional[str] = None) -> bool:
         pass
 
     @abstractmethod
