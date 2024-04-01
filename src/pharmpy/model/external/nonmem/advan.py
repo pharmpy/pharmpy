@@ -4,7 +4,7 @@ import re
 import warnings
 from typing import TYPE_CHECKING, Optional, Tuple
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy
 from pharmpy.model import (
     Assignment,
@@ -51,8 +51,8 @@ def _compartmental_model(
         )
         cb.add_compartment(central)
         cb.add_flow(central, output, _advan1and2_trans(trans))
-        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 1)
     elif advan == 'ADVAN2':
         doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
@@ -72,8 +72,8 @@ def _compartmental_model(
         cb.add_compartment(central)
         cb.add_flow(central, output, _advan1and2_trans(trans))
         cb.add_flow(depot, central, Expr.symbol('KA'))
-        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'OUTPUT': 3}
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 2)
     elif advan == 'ADVAN3':
         # FIXME: Multiple doses per compartment IV+ORAL
         doses = dosing(di, dataset, 1)
@@ -96,8 +96,8 @@ def _compartmental_model(
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k12)
         cb.add_flow(peripheral, central, k21)
-        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL': 2, 'OUTPUT': 3}
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 1)
     elif advan == 'ADVAN4':
         doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
@@ -127,8 +127,8 @@ def _compartmental_model(
         cb.add_flow(central, output, k)
         cb.add_flow(central, peripheral, k23)
         cb.add_flow(peripheral, central, k32)
-        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL': 3, 'OUTPUT': 4}
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 2)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
         modrec = control_stream.get_records('MODEL')[0]
@@ -187,7 +187,7 @@ def _compartmental_model(
         assert obscomp is not None
         for from_n, to_n, rate in _find_rates(control_stream, len(compartments)):
             cb.add_flow(compartments[from_n - 1], compartments[to_n - 1], rate)
-        ass = _f_link_assignment(control_stream, obscomp, defobs[1])
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, obscomp, defobs[1])
     elif advan == 'ADVAN10':
         # FIXME: Multiple doses per compartment needed
         doses = dosing(di, dataset, 1)
@@ -202,8 +202,8 @@ def _compartmental_model(
         vm = Expr.symbol('VM')
         km = Expr.symbol('KM')
         cb.add_flow(central, output, vm / (km + Expr.function(central.amount.name, 't')))
-        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'OUTPUT': 2}
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 1)
     elif advan == 'ADVAN11':
         doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
@@ -234,8 +234,8 @@ def _compartmental_model(
         cb.add_flow(per1, central, k21)
         cb.add_flow(central, per2, k13)
         cb.add_flow(per2, central, k31)
-        ass = _f_link_assignment(control_stream, central, 1)
         comp_map = {'CENTRAL': 1, 'PERIPHERAL1': 2, 'PERIPHERAL2': 3, 'OUTPUT': 4}
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 1)
     elif advan == 'ADVAN12':
         doses = dosing(di, dataset, 1)
         cb = CompartmentalSystemBuilder()
@@ -274,8 +274,8 @@ def _compartmental_model(
         cb.add_flow(per1, central, k32)
         cb.add_flow(central, per2, k24)
         cb.add_flow(per2, central, k42)
-        ass = _f_link_assignment(control_stream, central, 2)
         comp_map = {'DEPOT': 1, 'CENTRAL': 2, 'PERIPHERAL1': 3, 'PERIPHERAL2': 4, 'OUTPUT': 5}
+        ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 2)
     elif des:
         # FIXME: Add dose based on presence of CMT column
 
@@ -322,7 +322,9 @@ def _compartmental_model(
             if 'DEFOBSERVATION' in opts:
                 defobs = (name, i)
 
-        ass = _f_link_assignment(control_stream, Expr.symbol(f'A_{defobs[0]}'), defobs[1])
+        ass = _f_link_assignment(
+            control_stream, di, dataset, comp_map, Expr.symbol(f'A_{defobs[0]}'), defobs[1]
+        )
     else:
         return None
     return CompartmentalSystem(cb), ass, comp_map
@@ -354,19 +356,71 @@ def des_assign_statements(
         return statements
 
 
-def _f_link_assignment(control_stream: NMTranControlStream, compartment: Compartment, compno: int):
+def _f_link_assignment(
+    control_stream: NMTranControlStream,
+    di: DataInfo,
+    dataset,
+    comp_map,
+    compartment: Compartment,
+    compno: int,
+):
     f = Expr.symbol('F')
     try:
         fexpr = compartment.amount
     except AttributeError:
         fexpr = compartment
-    fexpr = Expr.function(fexpr.name, 't')
+    ffunc = Expr.function(fexpr.name, 't')
     pkrec = control_stream.get_records('PK')[0]
     scaling = f'S{compno}'
     if pkrec.statements.find_assignment(scaling):
-        fexpr = fexpr / Expr.symbol(scaling)
+        fexpr = ffunc / Expr.symbol(scaling)
+    else:
+        fexpr = ffunc
+
+    if dataset is not None and 'CMT' in dataset and not di['CMT'].drop:
+        obscol = _find_observation_column(di)
+        df = dataset[dataset[obscol] == 0.0]
+        cmtvals = set(df['CMT'].unique())
+        if 100.0 in cmtvals or 1000.0 in cmtvals:
+            # These are synonymous to output
+            cmtvals.add(comp_map['OUTPUT'])
+            cmtvals.remove(100.0)
+            cmtvals.remove(1000.0)
+        if float(compno) in cmtvals:
+            # Set default output to be 0.0
+            cmtvals.add(0.0)
+            cmtvals.remove(float(compno))
+        if cmtvals != {0.0}:
+            inv_map = {v: k for k, v in comp_map.items()}
+            pairs = []
+            for val in sorted(cmtvals - {0.0}):
+                cond = BooleanExpr.eq(Expr.symbol(obscol), 0.0) & BooleanExpr.eq(
+                    Expr.symbol('CMT'), val
+                )
+                func = Expr.function(f'A_{inv_map[val]}', 't')
+                s = f'S{int(val)}'
+                if pkrec.statements.find_assignment(s):
+                    expr = func / s
+                else:
+                    expr = func
+                pair = (expr, cond)
+                pairs.append(pair)
+            if 0.0 in cmtvals:
+                pair = (fexpr, True)
+                pairs.append(pair)
+            fexpr = Expr.piecewise(*pairs)
     ass = Assignment(f, fexpr)
     return ass
+
+
+def _find_observation_column(di):
+    colnames = di.names
+    if 'EVID' in colnames and not di['EVID'].drop:
+        return 'EVID'
+    elif 'MDV' in colnames and not di['MDV'].drop:
+        return 'MDV'
+    else:
+        return 'AMT'
 
 
 def _find_rates(control_stream: NMTranControlStream, ncomps: int):

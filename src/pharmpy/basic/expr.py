@@ -293,6 +293,9 @@ class BooleanExpr:
         else:
             return Expr(rhs)
 
+    def __and__(self, other):
+        return BooleanExpr(sympy.And(self._expr, other._expr))
+
     @classmethod
     def eq(cls, lhs, rhs):
         return cls(sympy.Eq(lhs, rhs))
