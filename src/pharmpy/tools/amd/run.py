@@ -234,7 +234,7 @@ def run_amd(
     elif strategy == 'RSI':
         order = ['residual', 'structural', 'iivsearch']
 
-    if modeltype == 'pkpd':
+    if modeltype == 'pkpd' and 'allometry' in order:
         warnings.warn('Skipping allometry since modeltype is "pkpd"')
         order.remove('allometry')
 
