@@ -72,6 +72,9 @@ Optional
 | ``cutoff``                                    | :ref:`Cutoff<ranking_iivsearch>` for the ranking function, exclude |
 |                                               | models that are below cutoff (default is none)                     |
 +-----------------------------------------------+--------------------------------------------------------------------+
+| ``keep``                                      | List of IIVs to keep, either by parameter name or ETA name.        |
+|                                               | Default is ["CL"]                                                  |
++-----------------------------------------------+--------------------------------------------------------------------+
 | ``strictness``                                | :ref:`strictness<strictness>` criteria for model selection.        |
 |                                               | Default is "minimization_successful or                             |
 |                                               | (rounding_errors and sigdigs>= 0.1)"                               |

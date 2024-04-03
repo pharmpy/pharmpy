@@ -82,6 +82,7 @@ def test_no_of_etas(
             algorithm,
             results=start_modelres[1],
             model=start_modelres[0],
+            keep=[],
             correlation_algorithm=correlation_algorithm,
         )
 
@@ -119,7 +120,7 @@ def test_no_of_etas(
 )
 def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_candidate_models):
     with chdir(tmp_path):
-        res = run_iivsearch(algorithm, results=start_modelres[1], model=start_modelres[0])
+        res = run_iivsearch(algorithm, keep=[], results=start_modelres[1], model=start_modelres[0])
 
         assert len(res.summary_tool) == no_of_candidate_models + 2
         assert len(res.summary_models) == no_of_candidate_models + 1
@@ -196,6 +197,7 @@ def test_no_of_etas_iiv_strategies(
             iiv_strategy=iiv_strategy,
             results=start_res,
             model=start_model,
+            keep=[],
             correlation_algorithm=correlation_algorithm,
         )
 
