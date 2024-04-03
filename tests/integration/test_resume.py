@@ -57,6 +57,7 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
                     'iivsearch',
                     'top_down_exhaustive',
                     correlation_algorithm='skip',
+                    keep=[],
                     model=model_start,
                     results=start_res,
                     path=path,
