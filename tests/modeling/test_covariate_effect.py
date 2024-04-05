@@ -8,6 +8,7 @@ from pharmpy.modeling.covariate_effect import (
     CovariateEffect,
     _choose_param_inits,
     add_covariate_effect,
+    get_covariate_effects,
     has_covariate_effect,
     remove_covariate_effect,
 )
@@ -949,3 +950,137 @@ def test_remove_covariate_effect(load_model_for_test, testdata, model_path, effe
         == expected
     )
     assert error_record_after == error_record_before
+
+
+@pytest.mark.parametrize(
+    ('model_path', 'effects', 'expected'),
+    [
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', 'lin'),),
+            {('CL', Expr('WGT')): [('lin', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', 'cat'),),
+            {('CL', Expr('WGT')): [('cat', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', 'piece_lin'),),
+            {('CL', Expr('WGT')): [('piece_lin', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', 'exp'),),
+            {('CL', Expr('WGT')): [('exp', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', 'pow'),),
+            {('CL', Expr('WGT')): [('pow', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'lin'),
+                ('CL', 'APGR', 'cat'),
+            ),
+            {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('cat', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'lin'),
+                ('CL', 'APGR', 'piece_lin'),
+            ),
+            {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('piece_lin', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'lin'),
+                ('CL', 'APGR', 'exp'),
+            ),
+            {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('exp', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'lin'),
+                ('CL', 'APGR', 'pow'),
+            ),
+            {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'cat'),
+                ('CL', 'APGR', 'piece_lin'),
+            ),
+            {('CL', Expr('WGT')): [('cat', '*')], ('CL', Expr('APGR')): [('piece_lin', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'cat'),
+                ('CL', 'APGR', 'exp'),
+            ),
+            {('CL', Expr('WGT')): [('cat', '*')], ('CL', Expr('APGR')): [('exp', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'cat'),
+                ('CL', 'APGR', 'pow'),
+            ),
+            {('CL', Expr('WGT')): [('cat', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'piece_lin'),
+                ('CL', 'APGR', 'exp'),
+            ),
+            {('CL', Expr('WGT')): [('piece_lin', '*')], ('CL', Expr('APGR')): [('exp', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'piece_lin'),
+                ('CL', 'APGR', 'pow'),
+            ),
+            {('CL', Expr('WGT')): [('piece_lin', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (
+                ('CL', 'WGT', 'exp'),
+                ('CL', 'APGR', 'pow'),
+            ),
+            {('CL', Expr('WGT')): [('exp', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
+        ),
+    ],
+    ids=repr,
+)
+def test_get_covariate_effects(load_model_for_test, testdata, model_path, effects, expected):
+    model = load_model_for_test(testdata.joinpath(*model_path))
+    for param, cov in (
+        (
+            'CL',
+            'WGT',
+        ),
+        (
+            'V',
+            'APGR',
+        ),
+        ('V', 'WGT'),
+    ):
+        model = remove_covariate_effect(model, param, cov)
+
+    for param, cov, eff in effects:
+        model = add_covariate_effect(model, param, cov, eff)
+
+    extracted_cov_effects = get_covariate_effects(model)
+
+    assert dict(extracted_cov_effects) == expected

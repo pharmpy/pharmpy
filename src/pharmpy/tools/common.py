@@ -138,8 +138,11 @@ def create_results(
 
     final_results = None
     for res in cand_res + [base_res]:
-        if res.name == best_model.name:
+        if best_model is not None and res.name == best_model.name:
             final_results = res
+    if best_model is None:
+        best_model = base_model
+        final_results = base_model_entry.modelfit_results
     plots = create_plots(best_model, final_results)
 
     # FIXME: Remove best_model, input_model, models when there is function to read db

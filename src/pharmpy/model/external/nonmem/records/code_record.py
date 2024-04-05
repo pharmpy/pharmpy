@@ -678,10 +678,11 @@ def _parse_tree(tree: AttrTree):
                     symbol = interpreter.visit(assignment.subtree('assignable'))
                     expr = interpreter.visit(assignment.subtree('real_expr'))
                     # Check if symbol was previously declared
-                    else_val = (
-                        symbol if any(map(lambda x: x.symbol == symbol, s)) else sympy.Integer(0)
-                    )
-                    pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
+                    else_val = symbol if any(map(lambda x: x.symbol == symbol, s)) else None
+                    if else_val is not None:
+                        pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
+                    else:
+                        pw = sympy.Piecewise((expr, logic_expr))
                     ass = Assignment.create(symbol, pw)
                     s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
@@ -739,19 +740,12 @@ def _parse_tree(tree: AttrTree):
                                 pairs.append((expr, logic))
 
                     if pairs[-1][1] is not True:
-                        else_val = (
-                            symbol
-                            if any(map(lambda x: x.symbol == symbol, s))
-                            else sympy.Integer(0)
-                        )
-                        pairs.append((else_val, True))
+                        else_val = symbol if any(map(lambda x: x.symbol == symbol, s)) else None
+                        if else_val is not None:
+                            pairs.append((else_val, True))
 
-                    if len(pairs) == 1:
-                        expr = pairs[0][0]
-                        ass = Assignment.create(symbol, expr)
-                    else:
-                        pw = sympy.Piecewise(*pairs)
-                        ass = Assignment.create(symbol, pw)
+                    pw = sympy.Piecewise(*pairs)
+                    ass = Assignment.create(symbol, pw)
                     s_block.append(ass)
 
                 s.extend(_reorder_block_statements(s_block))
