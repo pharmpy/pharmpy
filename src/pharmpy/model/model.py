@@ -299,10 +299,34 @@ class Model(Immutable):
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
 
+        description = kwargs.get('description', self.description)
+        internals = kwargs.get('internals', self._internals)
+        parent_model = kwargs.get('parent_model', self.parent_model)
+        initial_individual_estimates = kwargs.get(
+            'initial_individual_estimates', self.initial_individual_estimates
+        )
+        filename_extension = kwargs.get('filename_extension', self.filename_extension)
+        if not isinstance(filename_extension, str):
+
+            raise TypeError("Filename extension has to be of string type")
+        for key_name in (
+            'name',
+            'description',
+            'internals',
+            'parent_model',
+            'initial_individual_estimates',
+            'filename_extension',
+        ):
+            try:
+                kwargs.pop(key_name)
+            except KeyError:
+                pass
+
         if 'dependent_variables' in kwargs:
             dependent_variables = Model._canonicalize_dependent_variables(
                 kwargs['dependent_variables']
             )
+            kwargs.pop('dependent_variables')
         else:
             dependent_variables = self.dependent_variables
 
@@ -310,16 +334,19 @@ class Model(Immutable):
             observation_transformation = Model._canonicalize_observation_transformation(
                 kwargs['observation_transformation'], dependent_variables
             )
+            kwargs.pop('observation_transformation')
         else:
             observation_transformation = self.observation_transformation
 
         if 'parameters' in kwargs:
             parameters = Model._canonicalize_parameters(kwargs['parameters'])
+            kwargs.pop('parameters')
         else:
             parameters = self.parameters
 
         if 'random_variables' in kwargs:
             random_variables = Model._canonicalize_random_variables(kwargs['random_variables'])
+            kwargs.pop('random_variables')
         else:
             random_variables = self.random_variables
 
@@ -328,6 +355,7 @@ class Model(Immutable):
         if 'dataset' in kwargs:
             dataset = kwargs['dataset']
             new_dataset = True
+            kwargs.pop('dataset')
         else:
             dataset = self._dataset
             new_dataset = False
@@ -337,6 +365,7 @@ class Model(Immutable):
             if not isinstance(datainfo, DataInfo):
                 raise TypeError("model.datainfo must be of DataInfo type")
             new_datainfo = True
+            kwargs.pop('datainfo')
         else:
             datainfo = self._datainfo
             new_datainfo = False
@@ -351,27 +380,25 @@ class Model(Immutable):
             statements = Model._canonicalize_statements(
                 kwargs['statements'], parameters, random_variables, datainfo
             )
+            kwargs.pop('statements')
         else:
             statements = self.statements
 
         if 'estimation_steps' in kwargs:
             estimation_steps = Model._canonicalize_estimation_steps(kwargs['estimation_steps'])
+            kwargs.pop('estimation_steps')
         else:
             estimation_steps = self.estimation_steps
 
-        parent_model = kwargs.get('parent_model', self.parent_model)
-        initial_individual_estimates = kwargs.get(
-            'initial_individual_estimates', self.initial_individual_estimates
-        )
-        filename_extension = kwargs.get('filename_extension', self.filename_extension)
-        if not isinstance(filename_extension, str):
-            raise TypeError("Filename extension has to be of string type")
         if 'value_type' in kwargs:
             value_type = Model._canonicalize_value_type(kwargs['value_type'])
+            kwargs.pop('value_type')
         else:
             value_type = self.value_type
-        description = kwargs.get('description', self.description)
-        internals = kwargs.get('internals', self._internals)
+
+        if len(kwargs) != 0:
+            raise ValueError(f'Invalid keywords given : {[key for key in kwargs.keys()]}')
+
         return self.__class__(
             name=name,
             dependent_variables=dependent_variables,
