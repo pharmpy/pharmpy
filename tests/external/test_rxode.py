@@ -12,6 +12,15 @@ def test_model(testdata, load_model_for_test):
     assert 'sigmas' in model.model_code
 
 
+def test_model_without_ode(testdata, load_model_for_test):
+    nmmodel = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    model = convert_model(nmmodel)
+    assert 'rxode2' in model.model_code
+    assert 'thetas' in model.model_code
+    assert 'omegas' in model.model_code
+    assert 'sigmas' in model.model_code
+
+
 def test_pheno_real(testdata, load_model_for_test):
     nmmodel = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     model = convert_model(nmmodel)
