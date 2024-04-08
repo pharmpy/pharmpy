@@ -110,6 +110,7 @@ If no structural covariates are specified, no default is used.
 
 **Modelsearch**
 
+In this step the best structural PK model is found.
 The settings that the AMD tool uses for the modelsearch subtool can be seen in the table below.
 
 +-------------------+----------------------------------------------------------------------------------------------------+
@@ -126,7 +127,7 @@ The settings that the AMD tool uses for the modelsearch subtool can be seen in t
 | ``cutoff``        | None                                                                                               |
 +-------------------+----------------------------------------------------------------------------------------------------+
 
-If no search space is given by the user, the default search space is dependent on the ``administration`` argument
+If no search space is given by the user, the default search space is dependent on the ``administration`` argument.
 
 .. tabs::
 
@@ -157,11 +158,20 @@ If no search space is given by the user, the default search space is dependent o
           TRANSITS([0,1,3,10],*)
           PERIPHERALS([0,1,2])
     
+
+.. note::
+   Before modelsearch is run, the dataset of the model is filtered so that it only contains PK data (i.e. DVIDs smaller than 2).
+   Before running structsearch the dataset is replaced again with the original dataset containing all DVIDs.
+
 **Structsearch**
 
-The input model to the structsearch tool is the highest ranking model from modelsearch that has mixed-mm-fo elimination
+The input model to the structsearch tool is the highest ranking (PK) model from modelsearch that has mixed-mm-fo elimination
 (note that this model might not be the highest ranking overall). If no such model exists then the final model from modelsearch
-will be used regardless of elimination type.
+will be used regardless of the elimination type.
+The dataset of the input model is replaced with the original dataset containing all DVIDs.
+
+The extra model is the highest-ranking model that has the same structural features as the input model but with one less
+peripheral compartment. If no such model exists the extra model is set to ``None``.
 
 For a TMDD model, structsearch is run to determine the best structural model. All input arguments are specified by
 the user when initializing AMD.
