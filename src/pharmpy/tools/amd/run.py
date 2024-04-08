@@ -750,7 +750,9 @@ def _subfunc_structsearch_tmdd(
         n_peripherals = len(final_model.statements.ode_system.find_peripheral_compartments())
         modelfeatures = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
         # Model features - 1 peripheral compartment
-        modelfeatures_minus = modelfeatures.replace(peripherals=Peripherals((n_peripherals - 1,)))
+        modelfeatures_minus = modelfeatures.replace(
+            peripherals=(Peripherals((n_peripherals - 1,)),)
+        )
         # Loop through all models and find one with same features
         models = [
             model.name
