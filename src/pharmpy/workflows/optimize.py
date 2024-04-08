@@ -38,7 +38,7 @@ def _scatter_value(Future, client, value):
     if isinstance(value, (int, str, float, bool, range, Future)) or callable(value):
         return value
     else:
-        if dask.__version__ in ('2024.2.1', '2024.3.0', '2024.3.1', '2024.4.0'):
+        if dask.__version__ in ('2024.2.1', '2024.3.0', '2024.3.1', '2024.4.0', '2024.4.1'):
             # This is a workaround for https://github.com/dask/distributed/issues/8576
             future = client.scatter(value, hash=False)
         else:
