@@ -58,7 +58,7 @@ def test_drug_metabolite(tmp_path, load_model_for_test, testdata):
         assert len(res.summary_tool) == no_of_models
         assert len(res.models) == no_of_models
 
-        rundir = tmp_path / 'structsearch_dir1'
+        rundir = tmp_path / 'structsearch1'
         assert rundir.is_dir()
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()

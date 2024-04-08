@@ -31,12 +31,6 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
-from pharmpy.tools import (
-    summarize_errors,
-    summarize_individuals,
-    summarize_individuals_count_table,
-    summarize_modelfit_results,
-)
 from pharmpy.tools.common import (
     create_plots,
     summarize_tool,
@@ -44,7 +38,9 @@ from pharmpy.tools.common import (
     table_final_parameter_estimates,
     update_initial_estimates,
 )
+from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -226,6 +222,8 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         else:
             skip.append(selected_model_name)
 
+    context.store_final_model_entry(model_entry)
+
     # Check that there actually occured an improvement from the initial model.
     delta_ofv = input_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
     if delta_ofv < cutoff:
@@ -236,11 +234,11 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
 
     sumind = summarize_individuals(selected_models, model_results)
     sumcount = summarize_individuals_count_table(df=sumind)
-    sum_models = summarize_modelfit_results(model_results)
+    sum_models = summarize_modelfit_results_from_entries(selected_model_entries)
     sum_models['step'] = list(range(len(sum_models)))
     summf = sum_models.reset_index().set_index(['step', 'model'])
     summary_tool = _create_summary_tool(selected_model_entries, cutoff, strictness)
-    summary_errors = summarize_errors(m.modelfit_results for m in selected_model_entries)
+    summary_errors = summarize_errors_from_entries(selected_model_entries)
 
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
 

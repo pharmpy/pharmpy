@@ -13,7 +13,6 @@ from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_su
 from pharmpy.model import Assignment, Model, RandomVariables
 from pharmpy.modeling import add_iov, get_omegas, get_pk_parameters, remove_iiv, remove_iov
 from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
-from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
@@ -22,6 +21,7 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -307,9 +307,7 @@ def task_results(rank_type, cutoff, bic_type, strictness, step_mapping_and_model
             for model_name, model_entry in model_dict.items()
             if model_name in model_names
         ]
-        sum_mod_step = summarize_modelfit_results(
-            [model_entry.modelfit_results for model_entry in candidate_entries]
-        )
+        sum_mod_step = summarize_modelfit_results_from_entries(candidate_entries)
         sum_mod.append(sum_mod_step)
         if step >= 1:
             ref_model_entry = model_dict[candidate_entries[0].parent.name]

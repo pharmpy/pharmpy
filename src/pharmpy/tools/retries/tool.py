@@ -21,9 +21,9 @@ from pharmpy.modeling import (
     sample_parameters_uniformly,
     update_inits,
 )
-from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -214,13 +214,11 @@ def task_results(strictness, retries):
         else:
             raise ValueError(f'Unknown type ({type(r)}) found when summarizing results.')
     res_models = [r.modelentry for r in retry_runs]
-    results_to_summarize = [input_model_entry.modelfit_results] + [
-        r.modelentry.modelfit_results for r in retry_runs
-    ]
+    results_to_summarize = [input_model_entry] + [r.modelentry for r in retry_runs]
     rank_type = "ofv"
     cutoff = None
 
-    summary_models = summarize_modelfit_results(results_to_summarize)
+    summary_models = summarize_modelfit_results_from_entries(results_to_summarize)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
 

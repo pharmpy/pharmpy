@@ -28,7 +28,7 @@ def test_retries(tmp_path, model_count, scale, start_modelres):
         for model in res.models:
             if model != start_modelres[0]:
                 is_within_fraction(start_modelres[0], start_modelres[1], model, scale, fraction)
-        rundir = tmp_path / 'retries_dir1'
+        rundir = tmp_path / 'retries1'
         assert rundir.is_dir()
         assert model_count(rundir) == 2  # Not the start model
         assert (rundir / 'results.json').exists()

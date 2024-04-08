@@ -157,7 +157,11 @@ class LocalDirectoryContext(Context):
         return key
 
     def list_all_names(self) -> list(str):
-        return [f.name for f in Path(self._models_path).iterdir()]
+        return sorted([f.name for f in Path(self._models_path).iterdir()])
+
+    def list_all_subcontexts(self) -> list(str):
+        path = self.path / 'subcontexts'
+        return sorted([f.name for f in path.iterdir()])
 
     def retrieve_name(self, key: ModelHash) -> str:
         path = self._models_path

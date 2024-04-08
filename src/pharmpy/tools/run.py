@@ -29,8 +29,8 @@ from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
-from pharmpy.workflows.context import Context
-from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
+from pharmpy.workflows.context import Context, LocalDirectoryContext
+from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, mfr
 
@@ -261,7 +261,7 @@ def resume_tool(path: str):
 
     dispatcher, tool_database = _get_run_setup_from_metadata(path)
 
-    tool_metadata = tool_database.read_metadata()
+    tool_metadata = tool_database.retrieve_metadata()
     tool_name = tool_metadata['tool_name']
 
     tool = importlib.import_module(f'pharmpy.tools.{tool_name}')
@@ -492,7 +492,7 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
 
 
 def retrieve_models(
-    source: Union[str, Path, Results, Context, ModelDatabase],
+    source: Union[str, Path, Context],
     names: Optional[List[str]] = None,
 ) -> List[Model]:
     """Retrieve models after a tool run
@@ -502,9 +502,9 @@ def retrieve_models(
 
     Parameters
     ----------
-    source : str, Path, Results, Context, ModelDatabase
-        Source where to find models. Can be a path (as str or Path), a results object, or a
-        Context/ModelDatabase
+    source : str, Path, Context
+        Source where to find models. Can be a path (as str or Path), or a
+        Context
     names : list
         List of names of the models to retrieve or None for all
 
@@ -526,29 +526,19 @@ def retrieve_models(
     """
     if isinstance(source, Path) or isinstance(source, str):
         path = Path(source)
-        # FIXME: Should be using metadata to know how to init databases
-        db = LocalModelDirectoryDatabase(path / 'models')
-    elif isinstance(source, Results):
-        try:
-            db_tool = getattr(source, 'tool_database')
-            db = db_tool.model_database
-        except AttributeError:
-            raise ValueError(
-                f'Results type \'{source.__class__.__name__}\' does not serialize tool database'
-            )
+        context = LocalDirectoryContext(path)
     elif isinstance(source, Context):
-        db = source.model_database
-    elif isinstance(source, ModelDatabase):
-        db = source
+        context = source
     else:
         raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
-    names_all: List[str] = db.list_models()
+
+    names_all = context.list_all_names()
     if names is None:
         names = names_all
     diff = set(names).difference(names_all)
     if diff:
         raise ValueError(f'Models {diff} not in database')
-    models = [db.retrieve_model(name) for name in names]
+    models = [context.retrieve_model_entry(name).model for name in names]
     return models
 
 
@@ -1211,9 +1201,9 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
 def _get_run_setup_from_metadata(path):
     import pharmpy.workflows as workflows
 
-    context = workflows.default_context(path=path, exists_ok=True)
+    context = workflows.default_context(name=path, ref=None)
 
-    tool_metadata = context.read_metadata()
+    tool_metadata = context.retrieve_metadata()
     common_options = tool_metadata['common_options']
 
     # TODO: Be more general

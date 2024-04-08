@@ -192,7 +192,7 @@ def verification(
     rxode_model = convert_model(update_inits(nonmem_model, param_estimates))
 
     # Execute the rxode model
-    db = default_context(path="comparison")
+    db = default_context("comparison")
     if not ignore_print:
         print_step("Executing RxODE model... (this might take a while)")
 

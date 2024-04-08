@@ -13,7 +13,7 @@ from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariat
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.tools import is_strictness_fulfilled, summarize_modelfit_results
+from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import create_results, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral, all_covariate_effects
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
@@ -23,6 +23,7 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
@@ -631,9 +632,7 @@ def _modify_summary_tool(summary_tool, steps):
 
 
 def _summarize_models(modelentries, steps):
-    summary_models = summarize_modelfit_results(
-        [modelentry.modelfit_results for modelentry in modelentries]
-    )
+    summary_models = summarize_modelfit_results_from_entries(modelentries)
     summary_models['step'] = steps.reset_index().set_index(['model'])['step']
 
     return summary_models.reset_index().set_index(['step', 'model'])

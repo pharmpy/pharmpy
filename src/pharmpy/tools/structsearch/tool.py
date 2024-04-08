@@ -10,11 +10,11 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling.tmdd import DV_TYPES
-from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -168,9 +168,9 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     run_model_entries = call_workflow(Workflow(wb2), 'results_remaining', context)
 
-    summary_input = summarize_modelfit_results(results)
-    summary_candidates = summarize_modelfit_results(
-        [model_entry.modelfit_results for model_entry in qss_run_entries + run_model_entries]
+    summary_input = summarize_modelfit_results_from_entries([model_entry])
+    summary_candidates = summarize_modelfit_results_from_entries(
+        qss_run_entries + run_model_entries
     )
 
     return create_results(
@@ -218,10 +218,8 @@ def run_pkpd(
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     pkpd_models_fit = call_workflow(Workflow(wb2), 'results_remaining', context)
 
-    summary_input = summarize_modelfit_results(results)
-    summary_candidates = summarize_modelfit_results(
-        [model_entry.modelfit_results for model_entry in pd_baseline_fit + pkpd_models_fit]
-    )
+    summary_input = summarize_modelfit_results_from_entries([model_entry])
+    summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
 
     return create_results(
         StructSearchResults,
@@ -297,14 +295,14 @@ def post_process_drug_metabolite(
             for me in res_models
         ]
 
-    results_to_summarize = [user_input_model_entry.modelfit_results]
+    results_to_summarize = [user_input_model_entry]
 
     if user_input_model_entry != base_model_entry:
-        results_to_summarize.append(base_model_entry.modelfit_results)
+        results_to_summarize.append(base_model_entry)
     if res_models:
-        results_to_summarize.extend(me.modelfit_results for me in res_models)
+        results_to_summarize.extend(res_models)
 
-    summary_models = summarize_modelfit_results(results_to_summarize)
+    summary_models = summarize_modelfit_results_from_entries(results_to_summarize)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
 

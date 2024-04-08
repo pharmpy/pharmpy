@@ -93,13 +93,13 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
 
         if db_model_entry and db_model_entry.modelfit_results is not None:
             if model.has_same_dataset_as(db_model_entry.model):
-                return model_entry.attach_results(
-                    db_model_entry.modelfit_results, db_model_entry.log
-                )
+                me = model_entry.attach_results(db_model_entry.modelfit_results, db_model_entry.log)
+                return me
 
         # NOTE: Fallback to executing the model
         execute_model = get_execute_model(tool)
-        return execute_model(model_entry, context)
+        me = execute_model(model_entry, context)
+        return me
 
     return task
 
