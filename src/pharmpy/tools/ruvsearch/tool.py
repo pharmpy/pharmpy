@@ -31,6 +31,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
+from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.common import (
     create_plots,
     summarize_tool,
@@ -38,7 +39,6 @@ from pharmpy.tools.common import (
     table_final_parameter_estimates,
     update_initial_estimates,
 )
-from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow

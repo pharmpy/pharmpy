@@ -478,4 +478,4 @@ class SimulationResults(Results):
     table: Optional[pd.DataFrame] = None
 
     def __repr__(self):
-        return f'<Pharmpy simulation results object>'
+        return '<Pharmpy simulation results object>'
