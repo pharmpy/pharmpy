@@ -106,7 +106,6 @@ def test_run_tool_modelsearch_resume_flag(
         )
 
         start_res = fit(model_start)
-        model_start = model_start.replace(modelfit_results=start_res)
 
         path = 'x'
         for i, resume in enumerate([False, False, True]):
