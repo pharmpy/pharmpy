@@ -768,7 +768,6 @@ def get_individual_parameters(
 
     """
     # FIXME: Support multiple DVs
-
     model = make_declarative(model)
     model = _replace_trivial_redefinitions(model)
     statements = model.statements
@@ -801,7 +800,6 @@ def get_individual_parameters(
         ind = statements.find_assignment_index(y)
         gsub = _subgraph_of(full_graph, ind)
         gsub = _cut_partial_odes(model, gsub, ind)
-
         candidates = set(gsub.nodes).intersection(all_candidates)
 
         parameter_indices = _find_individual_parameters(gsub, candidates)
@@ -976,8 +974,11 @@ def _replace_trivial_redefinitions(model):
             s.expression in all_assigned_symbols or 1 / s.expression in all_assigned_symbols
         ):
             d[s.symbol] = s.expression
+            if s.expression in d.keys():
+                d[s.symbol] = d[s.expression]
         else:
             keep.append(s)
+
     new = Statements(tuple(keep)).subs(d)
     return model.replace(statements=new)
 

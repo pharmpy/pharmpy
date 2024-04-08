@@ -41,6 +41,8 @@ from pharmpy.modeling import (
     mu_reference_model,
     read_model_from_string,
     set_direct_effect,
+    set_first_order_absorption,
+    set_transit_compartments,
     simplify_expression,
     solve_ode_system,
 )
@@ -494,6 +496,14 @@ def test_get_pd_parameters_indirect(
 def test_get_individual_parameters(load_model_for_test, testdata, model_path, level, expected):
     model = load_model_for_test(testdata / model_path)
     assert set(get_individual_parameters(model, level)) == set(expected)
+
+
+def test_get_individual_parameters_redundant_assign(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = set_first_order_absorption(model)
+    model = set_transit_compartments(model, 3)
+
+    assert set(get_individual_parameters(model)) == {'CL', 'MAT', 'MDT', 'V'}
 
 
 basic_pk_model = create_basic_pk_model()
