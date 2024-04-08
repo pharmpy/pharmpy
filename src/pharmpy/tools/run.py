@@ -1046,16 +1046,6 @@ def summarize_modelfit_results(
     pd.DataFrame
         A DataFrame of modelfit results with model name and estmation step as index.
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import load_example_model
-    >>> from pharmpy.tools import load_example_modelfit_results, summarize_modelfit_results
-    >>> results = load_example_modelfit_results("pheno")
-    >>> df = summarize_modelfit_results(results)
-    >>> df  # doctest: +SKIP
-                      description  minimization_successful ...        ofv  ... runtime_total  ...
-    model
-    pheno  PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
 
     names = context.list_all_names()
