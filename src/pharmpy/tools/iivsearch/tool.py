@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import List, Literal, Optional, Union
+from typing import Iterable, Literal, Optional, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.deps import pandas as pd
@@ -58,7 +58,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    keep: Optional[List[str]] = ["CL"],
+    keep: Optional[Iterable[str]] = ("CL",),
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
 ):
@@ -79,8 +79,8 @@ def create_workflow(
         Results for model
     model : Model
         Pharmpy model
-    keep :  List[str]
-        List of IIVs to keep. Default is ["CL"]
+    keep : Iterable[str]
+        List of IIVs to keep. Default is "CL"
     strictness : str or None
         Strictness criteria
     correlation_algorithm: {'top_down_exhaustive', 'skip'} or None
