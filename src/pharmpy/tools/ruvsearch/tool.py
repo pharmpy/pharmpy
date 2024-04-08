@@ -486,16 +486,14 @@ def _create_best_model(model_entry, res, current_iteration, dv, groups=4, cutoff
         )
 
         if name.startswith('power'):
-            model = set_power_on_ruv(model, dv=dv)
-            model = set_initial_estimates(
-                model,
-                {
-                    'power1': res.cwres_models['parameters']
-                    .loc['power', 1, current_iteration]
-                    .get('theta')
-                    + 1
-                },
+            power = (
+                res.cwres_models['parameters'].loc['power', 1, current_iteration].get('theta') + 1.0
             )
+            if power < 0.01:
+                # FIXME: Remove lower bound?
+                power = 0.02
+            model = set_power_on_ruv(model, dv=dv)
+            model = set_initial_estimates(model, {'power1': power})
         elif name.startswith('IIV_on_RUV'):
             model = set_iiv_on_ruv(model, dv=dv)
             model = set_initial_estimates(

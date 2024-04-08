@@ -2,6 +2,7 @@ from typing import Iterable, Literal, Optional, Tuple, Union
 
 from pharmpy.model import Model
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows.hashing import ModelHash
 
 SupportedExternalTools = Literal['nonmem', 'nlmixr', 'rxode']
 
@@ -94,6 +95,8 @@ def retrieve_from_database_or_execute_model_with_tool(tool):
         if db_model_entry and db_model_entry.modelfit_results is not None:
             if model.has_same_dataset_as(db_model_entry.model):
                 me = model_entry.attach_results(db_model_entry.modelfit_results, db_model_entry.log)
+                context.store_key(model.name, ModelHash(model))
+                context.store_annotation(model.name, model.description)
                 return me
 
         # NOTE: Fallback to executing the model
