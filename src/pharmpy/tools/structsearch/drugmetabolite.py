@@ -55,9 +55,7 @@ def create_drug_metabolite_models(
 
     def apply_transformation(eff, f, model_entry):
         candidate_model = f(model_entry.model)
-        candidate_model = candidate_model.replace(
-            name="TEMP", description='_'.join(eff), modelfit_results=None
-        )
+        candidate_model = candidate_model.replace(name="TEMP", description='_'.join(eff))
         return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model)
 
     for eff, func in metabolite_functions.items():
