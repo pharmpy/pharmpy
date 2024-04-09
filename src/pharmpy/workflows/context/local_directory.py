@@ -10,6 +10,7 @@ from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.fs.symlink import create_directory_symlink
 from pharmpy.model import Model
+from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.results import ModelfitResults, Results
 
@@ -255,8 +256,10 @@ class MetadataJSONEncoder(json.JSONEncoder):
             # NOTE: This is only used by modelfit at the moment since we encode
             # models for other tools upstream.
             return obj.name
-        if isinstance(obj, ModelfitResults):
+        elif isinstance(obj, ModelfitResults):
             return obj.to_json()
+        elif isinstance(obj, ModelFeatures):
+            return str(obj)
         return super().default(obj)
 
 

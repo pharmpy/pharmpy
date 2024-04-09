@@ -201,14 +201,12 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     else:
         selected_model_entries = [input_model_entry, model_entry]
     cwres_models = []
-    tool_database = None
     for current_iteration in range(1, max_iter + 1):
         wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
         res, best_model_entry, selected_model_name = call_workflow(
             wf, f'results{current_iteration}', context
         )
         cwres_models.append(res.cwres_models)
-        tool_database = res.tool_database
 
         if not selected_model_name.startswith('base'):
             selected_model_entries.append(best_model_entry)
@@ -250,7 +248,6 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         summary_models=summf,
         summary_tool=summary_tool,
         summary_errors=summary_errors,
-        tool_database=tool_database,
         final_model_parameter_estimates=table_final_parameter_estimates(
             model_entry.model,
             model_entry.modelfit_results.parameter_estimates_sdcorr,

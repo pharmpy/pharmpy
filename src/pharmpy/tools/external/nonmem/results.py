@@ -838,5 +838,5 @@ def parse_simulation_results(
     model, path: Optional[Union[str, Path]], subproblem: Optional[int] = None
 ):
     table = _parse_table_file(model, path=path, subproblem=subproblem)
-    res = SimulationResults(name=model.name, description=model.description, table=table)
+    res = SimulationResults(table=table)
     return res

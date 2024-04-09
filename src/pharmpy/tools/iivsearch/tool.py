@@ -309,7 +309,6 @@ def start(
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
-        tool_database=last_res.tool_database,
         final_model_parameter_estimates=table_final_parameter_estimates(
             final_final_model,
             final_results.parameter_estimates_sdcorr,
