@@ -1,5 +1,5 @@
 exceptiongroup==1.2.0
-execnet==2.1.0
+execnet==2.1.1
 iniconfig==2.0.0
 packaging==24.0
 pluggy==1.4.0
