@@ -1,7 +1,9 @@
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.modeling import create_rng
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models
@@ -38,6 +40,7 @@ def test_create_qss_models(load_example_model_for_test):
 
 def test_create_qss_models_multiple_dvs(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
+    model = _add_random_dvids(model)
     models = create_qss_models(model, ests, {'target': 3, 'complex': 2})
     assert len(models) == 8
     assert models[0].dependent_variables == {
@@ -85,12 +88,18 @@ def test_create_cr_models(load_example_model_for_test):
 
 def test_create_remaining_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
+    model = _add_random_dvids(model)
+
     models = create_remaining_models(model, ests, 2, None)
     assert len(models) == 12
-    models = create_remaining_models(model, ests, 2, dv_types={'drug': 1, 'complex': 2})
+    models = create_remaining_models(model, ests, 2, dv_types={'drug': 1, 'complex': 3})
     assert len(models) == 11
+    for m in models:
+        assert 2 not in m.dataset['DVID'].unique()
     models = create_remaining_models(model, ests, 2, dv_types={'drug': 1, 'target': 2})
     assert len(models) == 7
+    for m in models:
+        assert 3 not in m.dataset['DVID'].unique()
     models = create_remaining_models(
         model, ests, 2, dv_types={'drug': 1, 'target': 2, 'target_tot': 3}
     )
@@ -102,6 +111,7 @@ def test_create_remaining_models(load_example_model_for_test):
 
 def test_create_remaining_models_multiple_dvs(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
+    model = _add_random_dvids(model)
     models = create_remaining_models(model, ests, 2, {'target': 2, 'complex': 3})
     assert len(models) == 12
 
@@ -265,3 +275,10 @@ def test_validation(tmp_path, load_model_for_test, testdata, arguments, exceptio
             validate_input(**kwargs)
     else:
         validate_input(**kwargs)
+
+
+def _add_random_dvids(model):
+    df = model.dataset.copy()
+    rng = create_rng(23)
+    df['DVID'] = np.array([rng.integers(1, 6) for i in range(len(df))])
+    return model.replace(dataset=df)
