@@ -53,7 +53,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
         # instance, or any custom class.
-        from pharmpy.workflows import LocalDirectoryToolDatabase, Log
+        from pharmpy.workflows import Log
 
         if isinstance(obj, Results):
             d = obj.to_dict()
@@ -104,11 +104,6 @@ class ResultsJSONEncoder(json.JSONEncoder):
             return None
         elif isinstance(obj, Log):
             d: Dict[Any, Any] = obj.to_dict()
-            d['__class__'] = obj.__class__.__qualname__
-            return d
-        elif isinstance(obj, LocalDirectoryToolDatabase):
-            d = obj.to_dict()
-            d['__module__'] = obj.__class__.__module__
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Path):
@@ -205,14 +200,11 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
             return results_class.from_dict(obj)
 
-        from pharmpy.workflows import LocalDirectoryToolDatabase, Log
-
-        if cls is not None and cls == 'LocalDirectoryToolDatabase':
-            return LocalDirectoryToolDatabase.from_dict(obj)
-
         if cls == 'PosixPath':
             return Path(obj)
         if cls == 'Log':
+            from pharmpy.workflows import Log
+
             return Log.from_dict(obj)
 
         return obj
@@ -380,10 +372,6 @@ class ModelfitResults(Results):
 
     Attributes
     ----------
-    name : str
-        Name of model
-    description : str
-        Description of model
     correlation_matrix : pd.DataFrame
         Correlation matrix of the population parameter estimates
     covariance_matrix : pd.DataFrame
@@ -438,8 +426,6 @@ class ModelfitResults(Results):
         List of warnings
     """
 
-    name: Optional[str] = None
-    description: Optional[str] = None
     ofv: Optional[float] = None
     ofv_iterations: Optional[pd.Series] = None
     parameter_estimates: Optional[pd.Series] = None
@@ -476,7 +462,7 @@ class ModelfitResults(Results):
     warnings: Optional[List[str]] = None
 
     def __repr__(self):
-        return f'<Pharmpy modelfit results object {self.name}>'
+        return '<Pharmpy modelfit results object>'
 
 
 @dataclass(frozen=True)
@@ -485,17 +471,11 @@ class SimulationResults(Results):
 
     Attributes
     ----------
-    name : str
-        Name of model
-    description : str
-        Description of model
     table : pd.DataFrame
         Table file of model
     """
 
-    name: Optional[str] = None
-    description: Optional[str] = None
     table: Optional[pd.DataFrame] = None
 
     def __repr__(self):
-        return f'<Pharmpy simulation results object {self.name}>'
+        return '<Pharmpy simulation results object>'

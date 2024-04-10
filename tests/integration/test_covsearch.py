@@ -16,5 +16,5 @@ def test_default_str(tmp_path, model_count, start_modelres):
             model=start_modelres[0],
         )
 
-        rundir = tmp_path / 'covsearch_dir1'
+        rundir = tmp_path / 'covsearch1'
         assert model_count(rundir) >= 9

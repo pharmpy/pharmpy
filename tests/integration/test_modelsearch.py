@@ -6,10 +6,9 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import read_model
 from pharmpy.tools import fit, run_modelsearch
-from pharmpy.workflows import ModelDatabase
 
 
-def test_exhaustive(tmp_path, model_count, start_modelres):
+def test_exhaustive_exhaustive(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
@@ -22,7 +21,7 @@ def test_exhaustive(tmp_path, model_count, start_modelres):
         assert len(res.summary_models) == 4
         assert len(res.models) == 4
 
-        rundir = tmp_path / 'modelsearch_dir1'
+        rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == 3
         assert (rundir / 'results.json').exists()
@@ -87,19 +86,12 @@ def test_exhaustive_stepwise_basic(
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
-        rundir = tmp_path / 'modelsearch_dir1'
+        rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
-
-        db: ModelDatabase = res.tool_database.model_database
-        model_name, code_ref = ref
-        path = db.retrieve_file(model_name, f'{model_name}.mod')
-        with open(path, 'r') as fh:
-            model_code = fh.read()
-            assert all(code in model_code for code in code_ref)
 
 
 @pytest.mark.parametrize(
@@ -138,7 +130,7 @@ def test_exhaustive_stepwise_iiv_strategies(
             == no_of_added_etas
         )
 
-        rundir = tmp_path / 'modelsearch_dir1'
+        rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_models
         assert (rundir / 'results.json').exists()

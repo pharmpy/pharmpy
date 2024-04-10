@@ -10,9 +10,9 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import has_linear_odes
-from pharmpy.tools import summarize_errors, summarize_modelfit_results
 from pharmpy.tools.common import ToolResults
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -133,13 +133,12 @@ def post_process(*model_entries):
     summary_tool = summarize_tool(model_entries)
 
     res_models = [model_entry.model for model_entry in model_entries]
-    res_modelfit_results = [model_entry.modelfit_results for model_entry in model_entries]
 
-    summary_models = summarize_modelfit_results(
-        res_modelfit_results,
+    summary_models = summarize_modelfit_results_from_entries(
+        model_entries,
         include_all_estimation_steps=True,
     )
-    summary_errors = summarize_errors(res_modelfit_results)
+    summary_errors = summarize_errors_from_entries(model_entries)
     summary_settings = summarize_estimation_steps(res_models)
 
     return EstMethodResults(

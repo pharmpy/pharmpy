@@ -21,7 +21,7 @@ from pharmpy.modeling import (
     write_csv,
 )
 from pharmpy.tools import fit
-from pharmpy.workflows import ModelEntry, default_tool_database
+from pharmpy.workflows import ModelEntry, default_context
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
@@ -224,7 +224,7 @@ def verification(
         raise Exception("Could not convert model to nlmixr2")
 
     # Execute the nlmixr model
-    db = default_tool_database(toolname="comparison")
+    db = default_context("comparison")
     if not ignore_print:
         print_step("Executing nlmixr2 model... (this might take a while)")
     path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
@@ -600,7 +600,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
     omega = model.random_variables.etas.covariance_matrix
     for i in range(0, omega.rows):
         for j in range(0, omega.cols):
-            symb = omega.row(i)[j]
+            symb = omega[i, j]
             if symb != 0:
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
     sigma = model.random_variables.epsilons.covariance_matrix
@@ -620,8 +620,6 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
             pe[param.name] = rdata['thetas']['fit$theta'][param.name]
             thetas_index += 1
 
-    name = model.name
-    description = model.description
     pe = pd.Series(pe)
     predictions = rdata['pred'].set_index(["ID", "TIME"])
     predictions.index = predictions.index.set_levels(
@@ -629,8 +627,6 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
     )
 
     res = ModelfitResults(
-        name=name,
-        description=description,
         ofv=ofv,
         minimization_successful=True,  # FIXME: Parse minimization status
         parameter_estimates=pe,

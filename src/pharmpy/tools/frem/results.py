@@ -26,7 +26,7 @@ from pharmpy.modeling import (
     set_covariates,
 )
 from pharmpy.tools import read_modelfit_results
-from pharmpy.workflows import Results, ToolDatabase
+from pharmpy.workflows import Results
 
 
 @dataclass(frozen=True)
@@ -182,7 +182,6 @@ class FREMResults(Results):
     base_parameter_change: Optional[Any] = None
     estimated_covariates: Optional[Any] = None
     ofv: Optional[Any] = None
-    tool_database: Optional[ToolDatabase] = None
 
 
 def plot_covariate_effects(res):

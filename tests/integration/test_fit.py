@@ -12,7 +12,7 @@ from pharmpy.tools.external.nlmixr import verification as nlmixr_verification
 from pharmpy.tools.external.nonmem import conf
 from pharmpy.tools.external.nonmem.run import execute_model as nonmem_execute_model
 from pharmpy.tools.external.rxode import verification as rxode_verification
-from pharmpy.workflows import LocalDirectoryToolDatabase, ModelEntry
+from pharmpy.workflows import LocalDirectoryContext, ModelEntry
 
 
 def test_configuration():
@@ -29,7 +29,7 @@ def test_fit_single(tmp_path, model_count, testdata):
         model = Model.parse_model('pheno.mod')
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         res = fit(model)
-        rundir = tmp_path / 'modelfit_dir1'
+        rundir = tmp_path / 'modelfit1'
         assert res.ofv == pytest.approx(730.8947268137308)
         assert rundir.is_dir()
         assert model_count(rundir) == 1
@@ -55,7 +55,7 @@ def test_fit_multiple(tmp_path, model_count, testdata):
             dataset=df, datainfo=model_2.datainfo.replace(path=tmp_path / 'pheno_2.dta')
         )
         res1, res2 = fit([model_1, model_2])
-        rundir = tmp_path / 'modelfit_dir1'
+        rundir = tmp_path / 'modelfit1'
         assert res1.ofv == pytest.approx(730.8947268137308)
         assert res2.ofv == pytest.approx(730.8947268137308)
         assert rundir.is_dir()
@@ -71,7 +71,7 @@ def test_fit_copy(tmp_path, model_count, testdata):
         model_1 = model_1.replace(datainfo=model_1.datainfo.replace(path=tmp_path / 'pheno.dta'))
         res1 = fit(model_1)
 
-        rundir_1 = tmp_path / 'modelfit_dir1'
+        rundir_1 = tmp_path / 'modelfit1'
         assert rundir_1.is_dir()
         assert model_count(rundir_1) == 1
 
@@ -79,7 +79,7 @@ def test_fit_copy(tmp_path, model_count, testdata):
         model_2 = modeling.update_inits(model_2, res1.parameter_estimates)
         res2 = fit(model_2)
 
-        rundir_2 = tmp_path / 'modelfit_dir1'
+        rundir_2 = tmp_path / 'modelfit1'
         assert rundir_2.is_dir()
         assert model_count(rundir_2) == 1
 
@@ -144,7 +144,7 @@ def test_execute_model_nonmem(tmp_path, testdata):
             log=None,
         )
 
-        db = LocalDirectoryToolDatabase('db_model')
+        db = LocalDirectoryContext('db_model')
 
         model_entry = nonmem_execute_model(model_entry, db)
 

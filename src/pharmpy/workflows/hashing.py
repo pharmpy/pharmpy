@@ -1,13 +1,19 @@
+from __future__ import annotations
+
 import base64
 import hashlib
 import json
+from typing import Union
 
-from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.model import Model
 from pharmpy.modeling import load_dataset
+
+from .model_entry import ModelEntry
 
 
 def _encode(obj):
-    # Encode a model subobject into a bytes string
+    # Encode a model object into a bytes string
     d = obj.to_dict()
     js = json.dumps(d)
     enc = js.encode('utf-8')
@@ -15,13 +21,15 @@ def _encode(obj):
 
 
 def _update_hash_with_dataset(df, h):
-    values = df.values
-    if not values.flags['C_CONTIGUOUS']:
-        values = np.ascontiguousarray(values)
-    columns = repr(df.columns).encode('utf-8')
+    hash_series = pd.util.hash_pandas_object(
+        df, index=False, encoding='utf8', hash_key='0123456789123456', categorize=True
+    )
+    for val in hash_series:
+        h.update(int(val).to_bytes(8, byteorder='big'))
+
+    columns = repr(list(df.columns)).encode('utf-8')
     index = repr(df.index).encode('utf-8')
     dtypes = repr(list(df.dtypes)).encode('utf-8')
-    h.update(values)
     h.update(columns)
     h.update(index)
     h.update(dtypes)
@@ -46,12 +54,21 @@ class DatasetHash(Hash):
 
 
 class ModelHash(Hash):
-    def __init__(self, model_or_hash):
-        if isinstance(model_or_hash, ModelHash):
-            self.dataset_hash = model_or_hash.dataset_hash
-            self._hash = model_or_hash._hash
+    def __init__(self, obj: Union[str, Model, ModelEntry, ModelHash]):
+        if isinstance(obj, str):
+            if len(obj) != 43:  # SHA-256 in base-64 encoding
+                raise ValueError(f"Invalid digest to construct hash: {obj}")
+            self._hash = obj
+            # FIXME: No dataset hash here
+            self.dataset_hash = None
+        elif isinstance(obj, ModelHash):
+            self.dataset_hash = obj.dataset_hash
+            self._hash = obj._hash
         else:
-            model = model_or_hash
+            if isinstance(obj, ModelEntry):
+                model = obj.model
+            else:
+                model = obj
             di = model.datainfo
             if di is not None:
                 if model.dataset is None:

@@ -17,7 +17,6 @@ from pharmpy.modeling import (
     create_joint_distribution,
     has_random_effect,
 )
-from pharmpy.tools import summarize_modelfit_results
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
@@ -29,8 +28,8 @@ from pharmpy.tools.common import (
 )
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, _remove_sublist
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
-from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
 IIV_STRATEGIES = frozenset(
@@ -204,7 +203,7 @@ def start(
     last_res = None
     final_model_entry = None
 
-    sum_models = [summarize_modelfit_results(input_res)]
+    sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
 
     applied_algorithms = []
     for algorithm_cur in list_of_algorithms:
@@ -259,16 +258,11 @@ def start(
 
         final_model = res.final_model
         if final_model.name != input_model_entry.model.name:
-            # FIXME: Temporary workaround until context system is in place. We need to avoid reparsing the model
-            #  since not all models can be read.
-            model_db = context.model_database
-            res_path = (
-                model_db.path / final_model.name / (final_model.name + model_db.file_extension)
-            )
-            final_res = get_modelfit_results(res.final_model, res_path)
+            # FIXME: This should be piped instead
+            final_model_entry = context.retrieve_model_entry(final_model.name)
         else:
             final_res = input_model_entry.modelfit_results
-        final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
+            final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
 
         # FIXME: Add parent model
         base_model_entry = final_model_entry
@@ -315,7 +309,6 @@ def start(
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
-        tool_database=last_res.tool_database,
         final_model_parameter_estimates=table_final_parameter_estimates(
             final_final_model,
             final_results.parameter_estimates_sdcorr,
@@ -438,9 +431,7 @@ def post_process(
 
     summary_tool = res.summary_tool
     assert summary_tool is not None
-    summary_models = summarize_modelfit_results(
-        [model_entry.modelfit_results for model_entry in model_entries]
-    )
+    summary_models = summarize_modelfit_results_from_entries(model_entries)
 
     return replace(res, summary_models=summary_models)
 

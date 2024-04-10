@@ -14,8 +14,8 @@ from pharmpy.modeling import (
     plot_eta_distributions,
     update_inits,
 )
-from pharmpy.tools import rank_models, summarize_errors
-from pharmpy.workflows import ModelEntry, ModelfitResults, Results, ToolDatabase
+from pharmpy.tools.run import rank_models, summarize_errors_from_entries
+from pharmpy.workflows import ModelEntry, ModelfitResults, Results
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -56,7 +56,6 @@ class ToolResults(Results):
     summary_errors: Optional[pd.DataFrame] = None
     final_model: Optional[Model] = None
     models: Sequence[Model] = ()
-    tool_database: Optional[ToolDatabase] = None
     final_model_parameter_estimates: Optional[pd.DataFrame] = None
     final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
     final_model_dv_vs_pred_plot: Optional[alt.Chart] = None
@@ -117,7 +116,7 @@ def create_results(
         summary_tool['description'],
         summary_tool[delta_name],
     )
-    summary_errors = summarize_errors([base_res] + cand_res)
+    summary_errors = summarize_errors_from_entries([base_model_entry] + cand_model_entries)
 
     if summary_tool['rank'].isnull().all():
         best_model = None
@@ -136,13 +135,15 @@ def create_results(
         else:
             models = None
 
-    final_results = None
-    for res in cand_res + [base_res]:
-        if best_model is not None and res.name == best_model.name:
-            final_results = res
     if best_model is None:
         best_model = base_model
-        final_results = base_model_entry.modelfit_results
+
+    final_results = None
+    for me in cand_model_entries + [base_model_entry]:
+        if me.model.name == best_model.name:
+            final_results = me.modelfit_results
+            break
+
     plots = create_plots(best_model, final_results)
 
     # FIXME: Remove best_model, input_model, models when there is function to read db

@@ -1,5 +1,6 @@
 import warnings
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
+from pathlib import Path
 from typing import Optional
 
 import pytest
@@ -7,15 +8,7 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import set_instantaneous_absorption
 from pharmpy.tools import read_results
-from pharmpy.workflows import (
-    Results,
-    Task,
-    ToolDatabase,
-    Workflow,
-    WorkflowBuilder,
-    execute_workflow,
-    local_dask,
-)
+from pharmpy.workflows import Results, Task, Workflow, WorkflowBuilder, execute_workflow, local_dask
 from pharmpy.workflows.results import ModelfitResults
 
 # All workflow tests are run by the same xdist test worker
@@ -177,7 +170,6 @@ def test_execute_workflow_results(tmp_path):
 @dataclass(frozen=True)
 class MyResults(Results):
     ofv: Optional[float] = None
-    tool_database: Optional[ToolDatabase] = None
 
 
 @pytest.mark.xdist_group(name="workflow")
@@ -192,14 +184,13 @@ def test_execute_workflow_results_with_tool_database(tmp_path):
         with warnings.catch_warnings():
             ignore_scratch_warning()
             res = execute_workflow(wf)
-        assert res.tool_database is not None
 
     assert res.ofv == ofv
 
 
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_results_with_report(testdata, tmp_path):
-    mfr = replace(read_results(testdata / 'frem' / 'results.json'), tool_database=None)
+    mfr = read_results(testdata / 'frem' / 'results.json')
 
     wb = WorkflowBuilder(tasks=[Task('result', lambda: mfr)], name='test-workflow')
     wf = Workflow(wb)
@@ -207,8 +198,8 @@ def test_execute_workflow_results_with_report(testdata, tmp_path):
     with chdir(tmp_path):
         with warnings.catch_warnings():
             ignore_scratch_warning()
-            res = execute_workflow(wf)
-        html = res.tool_database.path / 'results.html'
+            execute_workflow(wf)
+        html = Path.cwd() / 'test-workflow' / 'results.html'
         assert html.is_file()
         assert html.stat().st_size > 500000
 

@@ -29,9 +29,10 @@ from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
-from pharmpy.workflows.model_database import LocalModelDirectoryDatabase, ModelDatabase
+from pharmpy.workflows.context import Context, LocalDirectoryContext
+from pharmpy.workflows.model_database import ModelDatabase
+from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, mfr
-from pharmpy.workflows.tool_database import ToolDatabase
 
 from .external import parse_modelfit_results
 
@@ -180,13 +181,13 @@ def run_tool_with_name(
 
     create_workflow = tool.create_workflow
 
-    dispatcher, tool_database = _get_run_setup(common_options, name)
+    dispatcher, ctx = _get_run_setup(common_options, name)
 
     tool_params = inspect.signature(create_workflow).parameters
     tool_param_types = get_type_hints(create_workflow)
 
     tool_metadata = _create_metadata(
-        database=tool_database,
+        database=ctx,
         dispatcher=dispatcher,
         tool_name=name,
         tool_params=tool_params,
@@ -196,7 +197,7 @@ def run_tool_with_name(
         common_options=common_options,
     )
 
-    tool_database.store_metadata(tool_metadata)
+    ctx.store_metadata(tool_metadata)
 
     if validate_input := getattr(tool, 'validate_input', None):
         validate_input(*args, **tool_options)
@@ -204,17 +205,17 @@ def run_tool_with_name(
     wf: Workflow = create_workflow(*args, **tool_options)
     assert wf.name == name
 
-    res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
+    res = execute_workflow(wf, dispatcher=dispatcher, database=ctx)
     assert name == 'modelfit' or isinstance(res, Results) or name == 'simulation'
 
     tool_metadata = _update_metadata(tool_metadata, res)
-    tool_database.store_metadata(tool_metadata)
+    ctx.store_metadata(tool_metadata)
 
     return res
 
 
 def _create_metadata(
-    database: ToolDatabase,
+    database: Context,
     dispatcher,
     tool_name: str,
     tool_params,
@@ -260,7 +261,7 @@ def resume_tool(path: str):
 
     dispatcher, tool_database = _get_run_setup_from_metadata(path)
 
-    tool_metadata = tool_database.read_metadata()
+    tool_metadata = tool_database.retrieve_metadata()
     tool_name = tool_metadata['tool_name']
 
     tool = importlib.import_module(f'pharmpy.tools.{tool_name}')
@@ -347,7 +348,7 @@ def _parse_args_kwargs_from_tool_options(tool_params, tool_options):
 
 
 def _create_metadata_tool(
-    database: ToolDatabase,
+    database: Context,
     tool_name: str,
     tool_params,
     tool_param_types,
@@ -393,12 +394,12 @@ def _create_metadata_tool(
 
 
 def _create_metadata_common(
-    database: ToolDatabase, dispatcher, toolname: Optional[str], common_options: Mapping[str, Any]
+    database: Context, dispatcher, toolname: Optional[str], common_options: Mapping[str, Any]
 ):
     setup_metadata = {}
     setup_metadata['dispatcher'] = dispatcher.__name__
     # FIXME: Naming of workflows/tools should be consistent (db and input name of tool)
-    setup_metadata['database'] = {
+    setup_metadata['context'] = {
         'class': type(database).__name__,
         'toolname': toolname,
         'path': str(database.path),
@@ -461,7 +462,7 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
-def _get_run_setup(common_options, toolname) -> Tuple[Any, ToolDatabase]:
+def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
     try:
         dispatcher = common_options['dispatcher']
     except KeyError:
@@ -470,23 +471,28 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, ToolDatabase]:
         dispatcher = default_dispatcher
 
     try:
-        database = common_options['database']
+        ctx = common_options['context']
     except KeyError:
-        from pharmpy.workflows import default_tool_database
+        from pharmpy.workflows import default_context
 
-        if 'path' in common_options.keys():
+        common_path = common_options.get('path', None)
+        if common_path is not None:
             path = common_options['path']
+            ctx = default_context(path.name, path.parent)
         else:
-            path = None
-        database = default_tool_database(
-            toolname=toolname, path=path, exist_ok=common_options.get('resume', False)
-        )  # TODO: database -> tool_database
+            n = 1
+            while True:
+                name = f"{toolname}{n}"
+                if not default_context.exists(name):
+                    ctx = default_context(name)
+                    break
+                n += 1
 
-    return dispatcher, database
+    return dispatcher, ctx
 
 
 def retrieve_models(
-    source: Union[str, Path, Results, ToolDatabase, ModelDatabase],
+    source: Union[str, Path, Context],
     names: Optional[List[str]] = None,
 ) -> List[Model]:
     """Retrieve models after a tool run
@@ -496,9 +502,9 @@ def retrieve_models(
 
     Parameters
     ----------
-    source : str, Path, Results, ToolDatabase, ModelDatabase
-        Source where to find models. Can be a path (as str or Path), a results object, or a
-        ToolDatabase/ModelDatabase
+    source : str, Path, Context
+        Source where to find models. Can be a path (as str or Path), or a
+        Context
     names : list
         List of names of the models to retrieve or None for all
 
@@ -520,29 +526,19 @@ def retrieve_models(
     """
     if isinstance(source, Path) or isinstance(source, str):
         path = Path(source)
-        # FIXME: Should be using metadata to know how to init databases
-        db = LocalModelDirectoryDatabase(path / 'models')
-    elif isinstance(source, Results):
-        try:
-            db_tool = getattr(source, 'tool_database')
-            db = db_tool.model_database
-        except AttributeError:
-            raise ValueError(
-                f'Results type \'{source.__class__.__name__}\' does not serialize tool database'
-            )
-    elif isinstance(source, ToolDatabase):
-        db = source.model_database
-    elif isinstance(source, ModelDatabase):
-        db = source
+        context = LocalDirectoryContext(path)
+    elif isinstance(source, Context):
+        context = source
     else:
         raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
-    names_all: List[str] = db.list_models()
+
+    names_all = context.list_all_names()
     if names is None:
         names = names_all
     diff = set(names).difference(names_all)
     if diff:
         raise ValueError(f'Models {diff} not in database')
-    models = [db.retrieve_model(name) for name in names]
+    models = [context.retrieve_model_entry(name).model for name in names]
     return models
 
 
@@ -665,15 +661,15 @@ def write_results(results: Results, path: Union[str, Path], lzma: bool = False, 
         results.to_json(path, lzma=lzma)
 
 
-def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> pd.DataFrame:
-    """Summarize errors and warnings from one or multiple model runs.
+def summarize_errors(context: Context) -> pd.DataFrame:
+    """Summarize errors and warnings from all runs in a context.
 
     Summarize the errors and warnings found after running the model/models.
 
     Parameters
     ----------
-    results : list, ModelfitResults
-        List of ModelfitResults or single ModelfitResults
+    context : Context
+        Context in which models were run
 
     Return
     ------
@@ -681,23 +677,21 @@ def summarize_errors(results: Union[ModelfitResults, List[ModelfitResults]]) -> 
         A DataFrame of errors with model name, category (error or warning), and an int as index,
         an empty DataFrame if there were no errors or warnings found.
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import load_example_model
-    >>> from pharmpy.tools import summarize_errors
-    >>> model = load_example_model("pheno")
-    >>> summarize_errors(model)      # doctest: +SKIP
     """
-    # FIXME: Have example with errors
-    if isinstance(results, ModelfitResults):
-        results = [results]
+    names = context.list_all_names()
+    mes = [context.retrieve_model_entry(name) for name in names]
+    return summarize_errors_from_entries(mes)
 
+
+def summarize_errors_from_entries(mes: list[ModelEntry]):
     idcs, rows = [], []
 
-    for res in results:
+    for me in mes:
+        name = me.model.name
+        res = me.modelfit_results
         if res is not None and len(res.log) > 0:
             for i, entry in enumerate(res.log):
-                idcs.append((res.name, entry.category, i))
+                idcs.append((name, entry.category, i))
                 rows.append([entry.time, entry.message])
 
     index_names = ['model', 'category', 'error_no']
@@ -1028,7 +1022,7 @@ def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
 
 
 def summarize_modelfit_results(
-    results: Union[ModelfitResults, List[ModelfitResults]],
+    context: Context,
     include_all_estimation_steps: bool = False,
 ) -> pd.DataFrame:
     """Summarize results of model runs
@@ -1042,8 +1036,8 @@ def summarize_modelfit_results(
 
     Parameters
     ----------
-    results : list, ModelfitResults
-        List of ModelfitResults or single ModelfitResults
+    context : Context
+        Context in which models were run
     include_all_estimation_steps : bool
         Whether to include all estimation steps, default is False
 
@@ -1052,31 +1046,30 @@ def summarize_modelfit_results(
     pd.DataFrame
         A DataFrame of modelfit results with model name and estmation step as index.
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import load_example_model
-    >>> from pharmpy.tools import load_example_modelfit_results, summarize_modelfit_results
-    >>> results = load_example_modelfit_results("pheno")
-    >>> df = summarize_modelfit_results(results)
-    >>> df  # doctest: +SKIP
-                      description  minimization_successful ...        ofv  ... runtime_total  ...
-    model
-    pheno  PHENOBARB SIMPLE MODEL                     True ... 586.276056  ...           4.0  ...
     """
-    if isinstance(results, ModelfitResults):
-        results = [results]
 
-    if results is None:
+    names = context.list_all_names()
+    mes = [context.retrieve_model_entry(name) for name in names]
+    df = summarize_modelfit_results_from_entries(mes)
+    return df
+
+
+def summarize_modelfit_results_from_entries(
+    mes: list[ModelEntry],
+    include_all_estimation_steps: bool = False,
+) -> pd.DataFrame:
+
+    if mes is None:
         raise ValueError('Option `results` is None')
-    if all(res is None for res in results):
+    if all(me is None for me in mes):
         raise ValueError('All input results are empty')
 
     summaries = []
 
-    for res in results:
-        if res is not None:
-            summary = _get_model_result_summary(res, include_all_estimation_steps)
-            summary.insert(0, 'description', res.description)
+    for me in mes:
+        if me is not None and me.modelfit_results is not None:
+            summary = _get_model_result_summary(me, include_all_estimation_steps)
+            summary.insert(0, 'description', me.model.description)
             summaries.append(summary)
 
     with warnings.catch_warnings():
@@ -1092,10 +1085,11 @@ def summarize_modelfit_results(
     return df
 
 
-def _get_model_result_summary(res, include_all_estimation_steps=False):
+def _get_model_result_summary(me, include_all_estimation_steps=False):
+    res = me.modelfit_results
     if not include_all_estimation_steps:
         summary_dict = _summarize_step(res, -1)
-        index = pd.Index([res.name], name='model')
+        index = pd.Index([me.model.name], name='model')
         summary_df = pd.DataFrame(summary_dict, index=index)
     else:
         summary_dicts = []
@@ -1109,7 +1103,7 @@ def _get_model_result_summary(res, include_all_estimation_steps=False):
                 run_type = 'estimation'
             summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
-            tuples.append((res.name, i + 1))
+            tuples.append((me.model.name, i + 1))
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
 
@@ -1197,20 +1191,15 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
 def _get_run_setup_from_metadata(path):
     import pharmpy.workflows as workflows
 
-    tool_database = workflows.default_tool_database(toolname=None, path=path, exist_ok=True)
+    context = workflows.default_context(name=path, ref=None)
 
-    tool_metadata = tool_database.read_metadata()
-    tool_name = tool_metadata['tool_name']
+    tool_metadata = context.retrieve_metadata()
     common_options = tool_metadata['common_options']
 
     # TODO: Be more general
     dispatcher = getattr(workflows, common_options['dispatcher'].split('.')[-1])
 
-    # TODO: Be more general
-    assert common_options['database']['class'] == 'LocalDirectoryToolDatabase'
-    assert common_options['database']['toolname'] == tool_name
-
-    return dispatcher, tool_database
+    return dispatcher, context
 
 
 def load_example_modelfit_results(name: str):
@@ -1233,7 +1222,7 @@ def load_example_modelfit_results(name: str):
     >>> from pharmpy.tools import load_example_modelfit_results
     >>> results = load_example_modelfit_results("pheno")
     >>> results.parameter_estimates
-        PTVCL        0.004696
+    PTVCL        0.004696
     PTVV         0.984258
     THETA_3      0.158920
     IVCL         0.029351

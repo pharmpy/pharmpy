@@ -14,16 +14,15 @@ from pharmpy.modeling import add_iiv, load_example_model, read_model, set_lower_
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
-    _get_run_setup,
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
     rank_models,
     read_modelfit_results,
-    summarize_errors,
-    summarize_modelfit_results,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
 )
-from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
+from pharmpy.workflows import LocalDirectoryContext, ModelEntry, local_dask
 
 
 @pytest.mark.parametrize(
@@ -42,7 +41,7 @@ from pharmpy.workflows import LocalDirectoryToolDatabase, local_dask
 def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
-        database = LocalDirectoryToolDatabase(tool_name)
+        database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
         tool_params = inspect.signature(tool.create_workflow).parameters
         tool_param_types = get_type_hints(tool.create_workflow)
@@ -56,9 +55,9 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
             kwargs={'model': pheno, **kwargs},
         )
 
-        rundir = tmp_path / 'modelsearch_dir1'
+        rundir = tmp_path / 'modelsearch'
 
-        assert (rundir / 'models' / 'input_model' / '.pharmpy').exists()
+        assert (rundir / 'models').exists()
 
         assert metadata['pharmpy_version'] == pharmpy.__version__
         assert metadata['tool_name'] == 'modelsearch'
@@ -72,7 +71,7 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
 def test_create_metadata_tool_raises(tmp_path, pheno):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
-        database = LocalDirectoryToolDatabase(tool_name)
+        database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
         tool_params = inspect.signature(tool.create_workflow).parameters
         tool_param_types = get_type_hints(tool.create_workflow)
@@ -87,29 +86,12 @@ def test_create_metadata_tool_raises(tmp_path, pheno):
             )
 
 
-def test_get_run_setup(tmp_path):
-    with chdir(tmp_path):
-        name = 'modelsearch'
-
-        dispatcher, database = _get_run_setup(common_options={}, toolname=name)
-
-        assert dispatcher.__name__.endswith('local_dask')
-        assert database.path.stem == 'modelsearch_dir1'
-
-        dispatcher, database = _get_run_setup(
-            common_options={'path': 'tool_database_path'}, toolname=name
-        )
-
-        assert dispatcher.__name__.endswith('local_dask')
-        assert database.path.stem == 'tool_database_path'
-
-
 def test_create_metadata_common(tmp_path):
     with chdir(tmp_path):
         name = 'modelsearch'
 
         dispatcher = local_dask
-        database = LocalDirectoryToolDatabase(name)
+        database = LocalDirectoryContext(name, Path.cwd())
 
         metadata = _create_metadata_common(
             database=database,
@@ -119,15 +101,15 @@ def test_create_metadata_common(tmp_path):
         )
 
         assert metadata['dispatcher'] == 'pharmpy.workflows.dispatchers.local_dask'
-        assert metadata['database']['class'] == 'LocalDirectoryToolDatabase'
-        path = Path(metadata['database']['path'])
-        assert path.stem == 'modelsearch_dir1'
+        assert metadata['context']['class'] == 'LocalDirectoryContext'
+        path = Path(metadata['context']['path'])
+        assert path.stem == 'modelsearch'
         assert 'path' not in metadata.keys()
 
         path = 'tool_database_path'
 
         dispatcher = local_dask
-        database = LocalDirectoryToolDatabase(name, path)
+        database = LocalDirectoryContext(path)
 
         metadata = _create_metadata_common(
             database=database,
@@ -136,14 +118,16 @@ def test_create_metadata_common(tmp_path):
             common_options={'path': path},
         )
 
-        path = Path(metadata['database']['path'])
+        path = Path(metadata['context']['path'])
         assert path.stem == 'tool_database_path'
         assert metadata['path'] == 'tool_database_path'
 
 
 def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
     with chdir(tmp_path):
-        model = read_modelfit_results(pheno_path)
+        model = read_model(pheno_path)
+        res = read_modelfit_results(pheno_path)
+        me1 = ModelEntry(model=model, modelfit_results=res)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
         error_path = testdata / 'nonmem' / 'errors'
@@ -151,15 +135,19 @@ def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
-        model_no_header = read_modelfit_results('pheno_no_header.mod')
+        model_no_header = read_model('pheno_no_header.mod')
+        res_no_header = read_modelfit_results('pheno_no_header.mod')
+        me2 = ModelEntry(model=model_no_header, modelfit_results=res_no_header)
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
-        model_rounding_error = read_modelfit_results('pheno_rounding_error.mod')
+        model_rounding_error = read_model('pheno_rounding_error.mod')
+        res_rounding_error = read_modelfit_results('pheno_rounding_error.mod')
+        me3 = ModelEntry(model=model_rounding_error, modelfit_results=res_rounding_error)
 
-        models = [model, model_no_header, model_rounding_error]
-        summary = summarize_errors(models)
+        entries = [me1, me2, me3]
+        summary = summarize_errors_from_entries(entries)
 
         assert 'pheno_real' not in summary.index.get_level_values('model')
         assert len(summary.loc[('pheno_no_header', 'WARNING')]) == 1
@@ -339,18 +327,22 @@ def test_rank_models_bic(load_model_for_test, testdata):
 def test_summarize_modelfit_results(
     load_model_for_test, create_model_for_test, testdata, pheno_path
 ):
-    pheno = read_modelfit_results(pheno_path)
+    pheno = read_model(pheno_path)
+    pheno_res = read_modelfit_results(pheno_path)
+    pheno_me = ModelEntry(model=pheno, modelfit_results=pheno_res)
 
-    summary_single = summarize_modelfit_results(pheno)
+    summary_single = summarize_modelfit_results_from_entries([pheno_me])
 
     assert summary_single.loc['pheno_real']['ofv'] == 586.2760562818805
     assert summary_single['IVCL_estimate'].mean() == 0.0293508
 
     assert len(summary_single.index) == 1
 
-    mox = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox = read_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox_res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox_me = ModelEntry(model=mox, modelfit_results=mox_res)
 
-    summary_multiple = summarize_modelfit_results([pheno, mox])
+    summary_multiple = summarize_modelfit_results_from_entries([pheno_me, mox_me])
 
     assert summary_multiple.loc['mox1']['ofv'] == -624.5229577248352
     assert summary_multiple['IIV_CL_estimate'].mean() == 0.41791
@@ -359,11 +351,11 @@ def test_summarize_modelfit_results(
     assert len(summary_multiple.index) == 2
     assert list(summary_multiple.index) == ['pheno_real', 'mox1']
 
-    summary_no_res = summarize_modelfit_results([pheno, None])
+    summary_no_res = summarize_modelfit_results_from_entries([pheno_me, None])
 
     assert summary_no_res.loc['pheno_real']['ofv'] == 586.2760562818805
 
-    pheno_multest = read_modelfit_results(
+    multest_path = (
         testdata
         / 'nonmem'
         / 'modelfit_results'
@@ -372,14 +364,17 @@ def test_summarize_modelfit_results(
         / 'noSIM'
         / 'pheno_multEST.mod'
     )
+    pheno_multest = read_model(multest_path)
+    pheno_multest_res = read_modelfit_results(multest_path)
+    pheno_multest_me = ModelEntry(model=pheno_multest, modelfit_results=pheno_multest_res)
 
-    summary_multest = summarize_modelfit_results([pheno_multest, mox])
+    summary_multest = summarize_modelfit_results_from_entries([pheno_multest_me, mox_me])
 
     assert len(summary_multest.index) == 2
 
     assert not summary_multest.loc['pheno_multEST']['minimization_successful']
-    summary_multest_full = summarize_modelfit_results(
-        [pheno_multest, mox], include_all_estimation_steps=True
+    summary_multest_full = summarize_modelfit_results_from_entries(
+        [pheno_multest_me, mox_me], include_all_estimation_steps=True
     )
 
     assert len(summary_multest_full.index) == 3
@@ -389,23 +384,25 @@ def test_summarize_modelfit_results(
 
     assert not summary_multest_full.loc['pheno_multEST', 1]['minimization_successful']
 
-    summary_multest_full_no_res = summarize_modelfit_results(
-        [None, mox],
+    summary_multest_full_no_res = summarize_modelfit_results_from_entries(
+        [None, mox_me],
         include_all_estimation_steps=True,
     )
 
     assert summary_multest_full_no_res.loc['mox1', 1]['ofv'] == -624.5229577248352
 
     with pytest.raises(ValueError, match='Option `results` is None'):
-        summarize_modelfit_results(None)
+        summarize_modelfit_results_from_entries(None)
 
     with pytest.raises(ValueError, match='All input results are empty'):
-        summarize_modelfit_results([None, None])
+        summarize_modelfit_results_from_entries([None, None])
 
 
 def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
     with chdir(tmp_path):
-        model = read_modelfit_results(pheno_path)
+        model = read_model(pheno_path)
+        res = read_modelfit_results(pheno_path)
+        me1 = ModelEntry(model=model, modelfit_results=res)
         shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
         error_path = testdata / 'nonmem' / 'errors'
@@ -413,19 +410,23 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
-        model_no_header = read_modelfit_results('pheno_no_header.mod')
+        model_no_header = read_model('pheno_no_header.mod')
+        model_no_header_res = read_modelfit_results('pheno_no_header.mod')
+        me2 = ModelEntry(model=model_no_header, modelfit_results=model_no_header_res)
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
-        model_rounding_error = read_modelfit_results('pheno_rounding_error.mod')
+        model_rounding_error = read_model('pheno_rounding_error.mod')
+        model_rounding_error_res = read_modelfit_results('pheno_rounding_error.mod')
+        me3 = ModelEntry(model=model_rounding_error, modelfit_results=model_rounding_error_res)
 
-        results = [
-            model,
-            model_no_header,
-            model_rounding_error,
+        entries = [
+            me1,
+            me2,
+            me3,
         ]
-        summary = summarize_modelfit_results(results)
+        summary = summarize_modelfit_results_from_entries(entries)
 
         assert summary.loc['pheno_real']['errors_found'] == 0
         assert summary.loc['pheno_real']['warnings_found'] == 0

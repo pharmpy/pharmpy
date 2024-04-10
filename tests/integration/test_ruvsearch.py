@@ -6,11 +6,8 @@ from pharmpy.modeling import (  # convert_model,; create_basic_pk_model,
     remove_parameter_uncertainty_step,
     transform_blq,
 )
-from pharmpy.tools import (  # fit,; run_structsearch,
-    read_modelfit_results,
-    retrieve_final_model,
-    run_tool,
-)
+from pharmpy.tools import read_modelfit_results, run_tool  # fit,; run_structsearch,
+from pharmpy.workflows import LocalDirectoryContext
 
 # from pharmpy.tools.structsearch.pkpd import create_pk_model
 
@@ -46,7 +43,8 @@ def test_ruvsearch(tmp_path, testdata):
         model = remove_parameter_uncertainty_step(model)
         res = run_tool('ruvsearch', model=model, results=results, groups=4, p_value=0.05, skip=[])
         iteration = [1, 1, 1, 1, 1, 1, 2, 2, 2, 2, 2, 3, 3]
-        best_model = retrieve_final_model(res)
+        ctx = LocalDirectoryContext("ruvsearch1")
+        best_model = ctx.retrieve_final_model_entry().model
         assert (res.cwres_models.index.get_level_values('iteration') == iteration).all()
         assert best_model.model_code.split('\n')[12] == 'IF (TAD.LT.6.08) THEN'
         assert (

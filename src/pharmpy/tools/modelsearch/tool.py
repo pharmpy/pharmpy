@@ -7,10 +7,11 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import update_inits
-from pharmpy.tools import get_model_features, summarize_modelfit_results
+from pharmpy.tools import get_model_features
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -266,21 +267,19 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
     if not input_model_entry:
         raise ValueError('Error in workflow: No input model')
 
-    results_to_summarize = [user_input_model_entry.modelfit_results]
+    entries_to_summarize = [user_input_model_entry]
 
     if user_input_model_entry != base_model_entry:
-        results_to_summarize.append(base_model_entry.modelfit_results)
+        entries_to_summarize.append(base_model_entry)
 
     if res_model_entries:
-        results_to_summarize.extend(
-            model_entry.modelfit_results for model_entry in res_model_entries
-        )
+        entries_to_summarize += res_model_entries
 
-    summary_models = summarize_modelfit_results(results_to_summarize)
+    summary_models = summarize_modelfit_results_from_entries(entries_to_summarize)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
 
-    return create_results(
+    res = create_results(
         ModelSearchResults,
         input_model_entry,
         base_model_entry,
@@ -290,6 +289,7 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
         summary_models=summary_models,
         strictness=strictness,
     )
+    return res
 
 
 @with_runtime_arguments_type_check

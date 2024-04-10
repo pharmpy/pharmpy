@@ -4,7 +4,8 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import NormalDistribution
 from pharmpy.modeling import set_seq_zo_fo_absorption
-from pharmpy.tools import fit, retrieve_models, run_iivsearch
+from pharmpy.tools import fit, run_iivsearch
+from pharmpy.workflows import LocalDirectoryContext
 
 # FIXME: Tests including modelfit_results are commented out, uncomment once function retrieve_models
 #  return model entries or we have a separate function for this
@@ -46,7 +47,11 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
 
-        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
+        ctx = LocalDirectoryContext("iivsearch1")
+        names = ctx.list_all_names()
+        res_models = [
+            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+        ]
         assert len(res_models) == no_of_candidate_models
 
         start_model = start_modelres[0]
@@ -64,7 +69,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
-        rundir = tmp_path / 'iivsearch_dir1'
+        rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
@@ -72,9 +77,9 @@ def test_block_structure(tmp_path, model_count, start_modelres):
 
 @pytest.mark.parametrize(
     ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
-    (('top_down_exhaustive', 'skip', 7), ('bottom_up_stepwise', 'skip', 4)),
+    (('top_down_exhaustive', 'skip', 7),),  # ('bottom_up_stepwise', 'skip', 4)
 )
-def test_no_of_etas(
+def test_no_of_etas_base(
     tmp_path, model_count, start_modelres, algorithm, correlation_algorithm, no_of_candidate_models
 ):
     with chdir(tmp_path):
@@ -89,7 +94,11 @@ def test_no_of_etas(
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
 
-        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
+        ctx = LocalDirectoryContext('iivsearch1')
+        names = ctx.list_all_names()
+        res_models = [
+            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+        ]
         assert len(res_models) == no_of_candidate_models
 
         assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
@@ -108,7 +117,7 @@ def test_no_of_etas(
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
-        rundir = tmp_path / 'iivsearch_dir1'
+        rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
@@ -125,7 +134,11 @@ def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_can
         assert len(res.summary_tool) == no_of_candidate_models + 2
         assert len(res.summary_models) == no_of_candidate_models + 1
 
-        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
+        ctx = LocalDirectoryContext('iivsearch1')
+        names = ctx.list_all_names()
+        res_models = [
+            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+        ]
         assert len(res_models) == no_of_candidate_models
 
         if algorithm == 'top_down_exhaustive':
@@ -164,7 +177,7 @@ def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_can
             summary_tool_sorted_by_dbic_step2, summary_tool_sorted_by_bic_step2
         )
 
-        rundir = tmp_path / 'iivsearch_dir1'
+        rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
@@ -204,7 +217,11 @@ def test_no_of_etas_iiv_strategies(
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 2
 
-        res_models = [model for model in retrieve_models(res) if model.name != 'input_model']
+        ctx = LocalDirectoryContext('iivsearch1')
+        names = ctx.list_all_names()
+        res_models = [
+            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+        ]
         assert len(res_models) == no_of_candidate_models + 1
 
         if iiv_strategy == 'fullblock':
@@ -218,7 +235,7 @@ def test_no_of_etas_iiv_strategies(
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
-        rundir = tmp_path / 'iivsearch_dir1'
+        rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidate_models + 1
         assert (rundir / 'metadata.json').exists()

@@ -15,10 +15,10 @@
      - ``pharmpy.workflows.LocalDirectoryDatabase``
      - str
      - Name of default model database class
-   * - ``default_tool_database``
-     - ``pharmpy.workflows.LocalDirectoryToolDatabase``
+   * - ``default_context``
+     - ``pharmpy.workflows.LocalDirectoryContext``
      - str
-     - Name of default tool database class
+     - Name of default context class
 
 """
 
@@ -28,6 +28,7 @@ import pharmpy.config as config
 
 from .args import split_common_options
 from .call import call_workflow
+from .context import Context, LocalDirectoryContext
 from .dispatchers import local_dask
 from .execute import execute_workflow
 from .log import Log
@@ -40,7 +41,6 @@ from .model_database import (
 from .model_entry import ModelEntry
 from .results import ModelfitResults, Results, SimulationResults
 from .task import Task
-from .tool_database import LocalDirectoryToolDatabase, NullToolDatabase, ToolDatabase
 from .workflow import Workflow, WorkflowBuilder
 
 
@@ -52,8 +52,8 @@ class WorkflowConfiguration(config.Configuration):
     default_model_database = config.ConfigItem(
         'pharmpy.workflows.LocalDirectoryDatabase', 'Name of default model database class'
     )
-    default_tool_database = config.ConfigItem(
-        'pharmpy.workflows.LocalDirectoryToolDatabase', 'Name of default tool database class'
+    default_context = config.ConfigItem(
+        'pharmpy.workflows.LocalDirectoryContext', 'Name of default context class'
     )
 
 
@@ -72,30 +72,29 @@ def _importclass(name):
 
 default_dispatcher = _importclass(conf.default_dispatcher)
 default_model_database = _importclass(conf.default_model_database)
-default_tool_database = _importclass(conf.default_tool_database)
+default_context = _importclass(conf.default_context)
 
 
 __all__ = [
     'call_workflow',
     'default_dispatcher',
     'default_model_database',
-    'default_tool_database',
+    'default_context',
     'execute_workflow',
     'split_common_options',
     'local_dask',
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',
-    'LocalDirectoryToolDatabase',
+    'LocalDirectoryContext',
     'Log',
     'NullModelDatabase',
-    'NullToolDatabase',
     'ModelDatabase',
     'ModelEntry',
     'ModelfitResults',
     'Results',
     'SimulationResults',
     'Task',
-    'ToolDatabase',
+    'Context',
     'Workflow',
     'WorkflowBuilder',
 ]

@@ -18,11 +18,11 @@ from pharmpy.workflows import ModelEntry
 PARENT_DIR = f'..{os.path.sep}'
 
 
-def execute_model(model_entry, db):
+def execute_model(model_entry, context):
     assert isinstance(model_entry, ModelEntry)
     model = model_entry.model
 
-    database = db.model_database
+    database = context.model_database
     parent_model = model.parent_model
     model = convert_model(model)
     model = model.replace(parent_model=parent_model)
@@ -36,7 +36,7 @@ def execute_model(model_entry, db):
     # current incomplete implementation of serialization of Pharmpy Model
     # objects through the NONMEM plugin. Hopefully we can get rid of this
     # hack later.
-    model_with_correct_datapath = database.retrieve_model(model.name)
+    model_with_correct_datapath = database.retrieve_model(model)
     stream = model_with_correct_datapath.internals.control_stream
     data_record = stream.get_records('DATA')[0]
     relative_dataset_path = data_record.filename
@@ -61,12 +61,9 @@ def execute_model(model_entry, db):
 
     # NOTE: Write dataset and model files so they can be used by NONMEM.
     model = write_csv(model, path=dataset_path, force=True)
-    model = write_model(model, path=model_path, force=True)
+    model = write_model(model, path=model_path / "model.ctl", force=True)
 
-    args = nmfe(
-        model.name + model.filename_extension,
-        'results.lst',
-    )
+    args = nmfe("model.ctl", "model.lst")
 
     stdout = model_path / 'stdout'
     stderr = model_path / 'stderr'
@@ -76,23 +73,19 @@ def execute_model(model_entry, db):
             args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, cwd=str(model_path)
         )
 
-    basename = Path(model.name)
+    basename = Path("model")
 
-    results_path = model_path / 'results.lst'
+    results_path = model_path / 'model.lst'
     start = time.time()
     timeout = 5
 
-    while True:
-        try:
-            results_path.rename((model_path / basename).with_suffix('.lst'))
+    while not results_path.is_file():
+        elapsed_time = time.time() - start
+        if elapsed_time >= timeout:
+            warnings.warn(f'UNEXPECTED Could not find .lst-file after waiting {elapsed_time}s')
             break
-        except FileNotFoundError:
-            elapsed_time = time.time() - start
-            if elapsed_time >= timeout:
-                warnings.warn(f'UNEXPECTED Could not find .lst-file after waiting {elapsed_time}s')
-                break
-            else:
-                time.sleep(1)
+        else:
+            time.sleep(1)
 
     metadata = {
         'plugin': 'nonmem',
@@ -151,7 +144,7 @@ def execute_model(model_entry, db):
 
         txn.store_metadata(metadata)
 
-        txn.store_model_entry()
+    context.store_model_entry(model_entry)
 
     return model_entry
 
