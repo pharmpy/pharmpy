@@ -169,6 +169,8 @@ def run_amd(
             ss_mfl = mfl_parse(search_space, True)
         except:  # noqa E722
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+    else:
+        ss_mfl = ModelFeatures()
 
     if modeltype == 'pkpd':
         dv = 2
