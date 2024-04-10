@@ -553,7 +553,7 @@ def run_amd(
 
     # run simulation for VPC plot
     sim_model = set_simulation(final_model, n=300)
-    sim_res = run_tool('simulation', sim_model)
+    sim_res = run_tool('simulation', model=sim_model, path=db.path / 'simulation')
     simulation_data = sim_res.table
 
     if 'dvid' in model.datainfo.types:
