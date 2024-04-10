@@ -255,6 +255,8 @@ class ExtTable(NONMEMTable):
     @property
     def data_frame(self):
         df = self._df.copy(deep=True)
+        if 'SAEMOBJ' in df.columns:
+            df = df.rename(columns={'SAEMOBJ': 'OBJ'})
         df = NONMEMTable.rename_index(df)
         if df['ITERATION'].isnull().values.all():
             raise ValueError('Broken table in ext-file')
