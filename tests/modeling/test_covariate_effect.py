@@ -4,6 +4,7 @@ import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
+from pharmpy.modeling import add_iov
 from pharmpy.modeling.covariate_effect import (
     CovariateEffect,
     _choose_param_inits,
@@ -1084,3 +1085,23 @@ def test_get_covariate_effects(load_model_for_test, testdata, model_path, effect
     extracted_cov_effects = get_covariate_effects(model)
 
     assert dict(extracted_cov_effects) == expected
+
+
+def test_get_covariate_effects_w_ETA(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+    model = add_covariate_effect(model, "CL", "WGT", "exp")
+
+    key = ("CL", Expr("WGT"))
+    value = [("exp", "*")]
+
+    cov_effects = get_covariate_effects(model)
+    assert key in cov_effects.keys()
+    assert value == cov_effects[key]
+
+
+def test_avoid_IOV_in_get_covariate_effects(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "models" / "mox2.mod")
+    model = add_iov(model, "VISI", "CL")
+
+    cov_effects = get_covariate_effects(model)
+    assert len(cov_effects) == 0
