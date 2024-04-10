@@ -1,3 +1,27 @@
+0.109.0 (2024-04-10)
+--------------------
+
+New features
+============
+
+* The structsearch tool can now take an mfl string as search space
+* Allow list of lists of parameters in iovsearch options
+* Explicitly handle CMT columns for observations in the expression for F for NONMEM models
+
+Changes
+=======
+
+* Deafault to keeping eta on CL in iivsearch
+
+Bugfixes
+========
+
+* Handle cases with covariates on MU when parsing phi-file with PHI columns
+* Fix issues with allometry and structural covariates for PKPD models in amd
+* Fix broken conversion to RxODE for models without ODE system
+* Fix handling of datasets with multiple DVIDs in ruvsearch and sructsearch for TMDD models
+
+
 0.108.0 (2024-03-18)
 --------------------
 
