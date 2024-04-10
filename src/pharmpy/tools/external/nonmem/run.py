@@ -9,8 +9,9 @@ import warnings
 from itertools import repeat
 from pathlib import Path
 
+import pharmpy.config as config
 from pharmpy.model.external.nonmem import convert_model
-from pharmpy.modeling import write_csv, write_model
+from pharmpy.modeling import get_config_path, write_csv, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results, parse_simulation_results
 from pharmpy.workflows import ModelEntry
 
@@ -160,16 +161,16 @@ def nmfe_path():
         nmfe_candidates = ['nmfe75.bat', 'nmfe74.bat', 'nmfe73.bat']
     else:
         nmfe_candidates = ['nmfe75', 'nmfe74', 'nmfe73']
-    path = conf.default_nonmem_path
-    if path != Path(''):
-        path /= 'run'
+    default_path = conf.default_nonmem_path
+    if default_path != Path(''):
+        path = default_path / 'run'
         for nmfe in nmfe_candidates:
             candidate_path = path / nmfe
             if candidate_path.is_file():
                 path = candidate_path
                 break
         else:
-            raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({path})')
+            raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({default_path})')
     else:
         # Not in configuration file
         for nmfe in nmfe_candidates:
@@ -178,9 +179,16 @@ def nmfe_path():
                 path = candidate_path
                 break
         else:
-            raise FileNotFoundError(
-                'No path to NONMEM configured in pharmpy.conf and nmfe not in PATH'
-            )
+            with warnings.catch_warnings():
+                conf_path = get_config_path()
+                if conf_path:
+                    raise FileNotFoundError(
+                        'No path to NONMEM configured in pharmpy.conf and nmfe not in PATH'
+                    )
+                else:
+                    raise FileNotFoundError(
+                        f'Cannot find pharmpy.conf: {config.user_config_path()}'
+                    )
     return str(path)
 
 
