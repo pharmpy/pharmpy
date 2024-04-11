@@ -151,13 +151,3 @@ def test_execute_model_nonmem(tmp_path, testdata):
         assert isinstance(model_entry, ModelEntry)
         assert model_entry.modelfit_results
         assert (db.path / 'models' / 'pheno_real').is_dir()
-
-
-def test_saem(tmp_path, load_model_for_test, testdata):
-    from pharmpy.modeling import add_estimation_step
-
-    with chdir(tmp_path):
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-        model = add_estimation_step(model, 'SAEM')
-        res = fit(model)
-        assert res.ofv == 140.234139194478

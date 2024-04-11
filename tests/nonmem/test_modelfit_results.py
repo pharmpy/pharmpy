@@ -313,3 +313,10 @@ def test_empty_results(testdata, pheno_path):
     )
     assert np.isnan(res.ofv)
     assert res.parameter_estimates.isnull().all()
+
+
+def test_saem(testdata):
+    res = read_modelfit_results(
+        testdata / 'nonmem' / 'modelfit_results' / 'saem' / 'pheno_saem.mod'
+    )
+    assert res.ofv == 140.234139194478
