@@ -1,5 +1,6 @@
 import os
 from unittest import mock
+
 import pytest
 
 import pharmpy.config as config
