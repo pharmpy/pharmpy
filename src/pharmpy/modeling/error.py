@@ -878,7 +878,7 @@ def set_time_varying_error_model(
     model : Model
         Pharmpy model
     cutoff : float
-        A value at the given quantile over idv column
+        A cutoff value for idv column
     idv : str
         Time or time after dose, default is Time
     dv : Union[Expr, str, int, None]
