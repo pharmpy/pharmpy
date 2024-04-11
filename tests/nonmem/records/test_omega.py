@@ -1,11 +1,6 @@
 import pytest
-import sympy
 
 from pharmpy.model import ModelSyntaxError, Parameter, Parameters
-
-
-def S(x):
-    return sympy.Symbol(x)
 
 
 @pytest.mark.usefixtures('parser')

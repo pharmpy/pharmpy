@@ -48,8 +48,10 @@ def test_read_model_expanduser(testdata):
     model_path_relative_to_home = ''
     try:
         model_path_relative_to_home = model_path.relative_to(Path.home())
-    except ValueError:
-        pytest.skip(f'{model_path} is not a descendant of home directory ({Path.home()})')
+    except ValueError:  # pragma: no cover
+        pytest.skip(
+            f'{model_path} is not a descendant of home directory ({Path.home()})'
+        )  # pragma: no cover
     path = os.path.join('~', model_path_relative_to_home)
     model = read_model(path)
     assert model.parameters['THETA_1'].init == 0.1

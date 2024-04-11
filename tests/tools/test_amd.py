@@ -1,6 +1,4 @@
 import shutil
-import warnings
-from contextlib import contextmanager
 from pathlib import Path
 
 import pytest
@@ -359,32 +357,3 @@ def _load_model(testdata: Path, with_datainfo: bool = False):
         txn.store_local_file(models / 'mox2.phi', 'start.phi')
 
     return db_tool, model, res
-
-
-@contextmanager
-def _record_warnings():
-    with pytest.warns(Warning) as record:
-        with warnings.catch_warnings():
-            warnings.filterwarnings(
-                "ignore",
-                module='distributed',
-                category=UserWarning,
-            )
-            warnings.filterwarnings(
-                "ignore",
-                module='distributed',
-                category=ResourceWarning,
-            )
-            warnings.filterwarnings(
-                "ignore",
-                module='distributed',
-                category=RuntimeWarning,
-            )
-            yield record
-
-
-def _validate_record(record, expected):
-    assert len(record) == len(expected)
-
-    for warning, match in zip(record, expected):
-        assert match in str(warning.message)

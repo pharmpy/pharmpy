@@ -106,7 +106,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), e + e * S("epsilon_p")
         )
-    elif expr == "loglin":
+    else:  # expr == "loglin"
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment.create(

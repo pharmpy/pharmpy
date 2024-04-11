@@ -105,8 +105,7 @@ def test_create_remaining_models(load_example_model_for_test):
     )
     assert len(models) == 7
     with pytest.raises(ValueError, match='`dv_types` must contain more than 1 dv type'):
-        models = create_remaining_models(model, ests, 2, dv_types={'drug': 1})
-        assert len(models) == 7
+        create_remaining_models(model, ests, 2, dv_types={'drug': 1})
 
 
 def test_create_remaining_models_multiple_dvs(load_example_model_for_test):

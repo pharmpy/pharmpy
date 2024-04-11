@@ -18,7 +18,7 @@ def test_set_option(parser, buf, option, old_value, value, expected):
     assert getattr(rec, option) == old_value
     if option == 'PC':
         newrec = rec.set_PC(value)
-    elif option == 'LTH':
+    else:  # option == 'LTH'
         newrec = rec.set_LTH(value)
     assert str(newrec) == expected
 

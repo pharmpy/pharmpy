@@ -38,11 +38,6 @@ from pharmpy.modeling import (
 from pharmpy.tools import read_modelfit_results
 
 
-def _ensure_trailing_newline(buf):
-    # FIXME: This should not be necessary
-    return buf if buf[-1] == '\n' else buf + '\n'
-
-
 def S(x):
     return Expr.symbol(x)
 

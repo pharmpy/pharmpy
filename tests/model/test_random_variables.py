@@ -863,7 +863,7 @@ def test_replace_with_sympy_rvs():
     expr_sympy = rvs.replace_with_sympy_rvs(expr_symbs)
 
     assert sympy.sympify(expr_symbs) != expr_sympy
-    assert not all(isinstance(arg, sympy.Symbol) for arg in expr_sympy.args)
+    assert not all(isinstance(arg, sympy.Symbol) for arg in expr_sympy.args)  # pragma: no cover
 
     var2, cov = symbol('OMEGA(2,2)'), symbol('OMEGA(2,1)')
 
@@ -876,4 +876,4 @@ def test_replace_with_sympy_rvs():
     expr_sympy = rvs.replace_with_sympy_rvs(expr_symbs)
 
     assert expr_symbs._sympy_() != expr_sympy
-    assert not all(isinstance(arg, sympy.Symbol) for arg in expr_sympy.args)
+    assert not all(isinstance(arg, sympy.Symbol) for arg in expr_sympy.args)  # pragma: no cover

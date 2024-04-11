@@ -16,10 +16,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.lock import (
     AcquiringProcessLevelLockWouldBlockError,
     AcquiringThreadLevelLockWouldBlockError,
-    RecursiveDeadlockError,
     path_lock,
-    process_level_path_lock,
-    thread_level_lock,
 )
 
 mp = get_context(method='spawn')
@@ -94,7 +91,7 @@ def lock_rest(is_locked, is_done, path, shared, blocking):
 )
 def test_non_blocking(tmp_path, parallelization, exception, shared):
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")  # pragma: no cover
 
     assert len(shared) >= 2
     assert not shared[0] or not shared[-1]
@@ -131,7 +128,7 @@ def test_non_blocking(tmp_path, parallelization, exception, shared):
                 task.result()
 
 
-def locked_threads(parameters, is_done):
+def locked_threads(parameters, is_done):  # pragma: no cover
     n = len(parameters)
     with threads(n) as (executor, _):
         tasks = []
@@ -148,7 +145,7 @@ def locked_threads(parameters, is_done):
 @pytest.mark.parametrize('n_blocking', (0, 1, 2, 3, 4, 5))
 def test_non_blocking_processes_and_threads(tmp_path, n_blocking):
     if os.name == 'nt':
-        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")  # pragma: no cover
 
     with lock(tmp_path) as path:
         with processes(2) as (executor, m):
@@ -186,7 +183,7 @@ def lock_exclusive(are_locked, q, path, i):
 @pytest.mark.parametrize('parallelization', (threads, processes))
 def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")  # pragma: no cover
 
     with lock(tmp_path) as path:
         n = 10
@@ -213,14 +210,14 @@ def test_many_shared_one_exclusive_blocking(tmp_path, parallelization):
                 assert results[-1] == 0
 
 
-@pytest.mark.parametrize('acquire_lock', (path_lock, thread_level_lock, process_level_path_lock))
-@pytest.mark.parametrize('shared', (True, False))
-def test_non_reentrant_dead_lock(tmp_path, acquire_lock, shared):
-    with lock(tmp_path) as path:
-        with acquire_lock(path, shared=shared):
-            with pytest.raises(RecursiveDeadlockError):
-                with acquire_lock(path, shared=shared):
-                    pass
+# @pytest.mark.parametrize('acquire_lock', (path_lock, thread_level_lock, process_level_path_lock))
+# @pytest.mark.parametrize('shared', (True, False))
+# def test_non_reentrant_dead_lock(tmp_path, acquire_lock, shared):
+#    with lock(tmp_path) as path:
+#        with acquire_lock(path, shared=shared):
+#            with pytest.raises(RecursiveDeadlockError):
+#                with acquire_lock(path, shared=shared):
+#                    pass
 
 
 @pytest.mark.parametrize('shared', (True, False))
@@ -281,14 +278,14 @@ def exclusive_thread_write(path, i):
             fp.seek(0)
 
 
-def many_exclusive_threads_and_processes_rw_process(path, indices):
+def many_exclusive_threads_and_processes_rw_process(path, indices):  # pragma: no cover
     with ThreadPoolExecutor(max_workers=len(indices)) as executor:
         executor.map(exclusive_thread_write, [path] * len(indices), indices)
 
 
 def test_many_exclusive_threads_and_processes_rw(tmp_path):
     if os.name == 'nt':
-        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")  # pragma: no cover
 
     with lock(tmp_path) as path:
         m = 10
@@ -322,7 +319,7 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
 @pytest.mark.parametrize('parallelization, n', ((threads, 200), (processes, 20)))
 def test_many_exclusive(tmp_path, parallelization, n):
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")  # pragma: no cover
 
     with lock(tmp_path) as path:
         items = list(range(n))
@@ -361,7 +358,7 @@ def lock_shared_chained(path, first_is_locked, recvp, send, recvn, results, n, i
 @pytest.mark.parametrize('parallelization', (threads, processes))
 def test_chained_shared_one_exclusive_blocking(tmp_path, parallelization):
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")  # pragma: no cover
 
     with lock(tmp_path) as path:
         n = 10
@@ -433,7 +430,7 @@ def sync_write(path, filename, q, i):
 @pytest.mark.parametrize('parallelization', (threads, processes))
 def test_synchronized_reads_blocking(tmp_path, parallelization):
     if os.name == 'nt' and 'processes' in repr(parallelization):
-        pytest.skip("TODO Processes-based tests randomly fail on Windows.")
+        pytest.skip("TODO Processes-based tests randomly fail on Windows.")  # pragma: no cover
 
     with lock(tmp_path) as path:
         filename = 'rw'

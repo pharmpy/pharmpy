@@ -36,10 +36,6 @@ def load_model_for_test(tmp_path_factory):
 
         def _parse_model():
             model = Model.parse_model(given_path)
-            try:
-                model.dataset  # NOTE: Force parsing of dataset
-            except FileNotFoundError:
-                pass  # NOTE: The error will resurface later if needed
             return model
 
         basetemp = tmp_path_factory.getbasetemp().resolve()
