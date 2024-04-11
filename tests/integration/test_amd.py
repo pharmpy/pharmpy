@@ -32,6 +32,7 @@ def _model_count(rundir: Path):
                 'covsearch_exploratory',
                 'covsearch_mechanistic',  # FIXME: Theses two are currently created as empty
                 'covsearch_structural',
+                'simulation',
             ],
         ),
         (

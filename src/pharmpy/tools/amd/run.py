@@ -554,7 +554,7 @@ def run_amd(
 
     # run simulation for VPC plot
     sim_model = set_simulation(final_model, n=300)
-    sim_res = run_tool('simulation', model=sim_model, path=ctx.path / 'simulation')
+    sim_res = _run_simulation(sim_model, ctx)
     simulation_data = sim_res.table
 
     if 'dvid' in model.datainfo.types:
@@ -661,6 +661,12 @@ SubFunc = Callable[[Model], Optional[Results]]
 
 def noop_subfunc(_: Model):
     return None
+
+
+def _run_simulation(model, ctx):
+    subctx = ctx.create_subcontext('simulation')
+    res = run_tool('simulation', model=model, path=subctx.path)
+    return res
 
 
 def _subfunc_retires(tool, strictness, seed, ctx):
