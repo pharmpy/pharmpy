@@ -1,7 +1,7 @@
 # Direct dependencies
 black==24.3.0
 check-manifest==0.49
-docutils==0.20.1
+docutils==0.21.1
 flake8==7.0.0
 flake8-black==0.3.6
 isort==5.13.2
