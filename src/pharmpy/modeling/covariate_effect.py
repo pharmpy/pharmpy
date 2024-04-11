@@ -85,19 +85,19 @@ def _get_covariate_effect(model: Model, symbol, covariate):
         check_covariate = False
         free_symbols = arg.free_symbols
         if any(eta in free_symbols for eta in etas):
-            # Remove
-            if Expr(arg).is_exp():
-                if covariate in free_symbols:
+            if Expr(arg).is_exp() and covariate in free_symbols:
+                skip = False
+                expression = arg
+                exp_terms = arg.args[0]
+                for a in exp_terms.args:
+                    if covariate not in a.free_symbols:
+                        expression = expression.subs({a: Expr(0)})
+                    else:
+                        # If both covariate and ETA in same term -> SKIP
+                        if any(eta in a.free_symbols for eta in etas):
+                            skip = True
+                if not skip:
                     check_covariate = True
-                    expression = arg
-                    # Substitute all terms with no covarite
-                    exp_terms = arg.args[0]
-                    if len(exp_terms.args) > 1:
-                        for a in exp_terms.args:
-                            if covariate not in a.free_symbols:
-                                expression = expression.subs({a: Expr(0)})
-                            else:
-                                pass
         else:
             check_covariate = True
             expression = arg
