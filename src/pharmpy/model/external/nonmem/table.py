@@ -61,12 +61,14 @@ class NONMEMTableFile:
 
         table_line = None if notitle else content.pop(0)
 
+        content_str = ''.join(content)
+        content_str = re.sub(r"[A-Z]*OBJ", "OBJ", content_str)
         if suffix == '.ext':
-            table = ExtTable(''.join(content))
+            table = ExtTable(content_str)
         elif suffix == '.phi':
-            table = PhiTable(''.join(content))
+            table = PhiTable(content_str)
         elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
-            table = CovTable(''.join(content))
+            table = CovTable(content_str)
         else:
             # Remove repeated header lines, but not the first
             content[1:] = [line for line in content[1:] if not re.match(r'\s[A-Za-z_]', line)]
