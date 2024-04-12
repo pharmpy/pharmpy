@@ -15,6 +15,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
+from pharmpy.tools.run import is_strictness_fulfilled
 from pharmpy.workflows import (
     ModelEntry,
     ModelfitResults,
@@ -52,13 +53,20 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
     return Workflow(wb)
 
 
-def bu_stepwise_no_of_etas(base_model, index_offset=0, input_model_entry=None, keep=None):
+def bu_stepwise_no_of_etas(
+    base_model,
+    strictness,
+    index_offset=0,
+    input_model_entry=None,
+    keep=None,
+):
     wb = WorkflowBuilder(name='bu_stepwise_no_of_etas')
     stepwise_task = Task(
         "stepwise_BU_task",
         stepwise_BU_algorithm,
         base_model,
         index_offset,
+        strictness,
         input_model_entry,
         keep,
     )
@@ -67,7 +75,7 @@ def bu_stepwise_no_of_etas(base_model, index_offset=0, input_model_entry=None, k
 
 
 def stepwise_BU_algorithm(
-    context, base_model, index_offset, input_model_entry, keep, base_model_entry
+    context, base_model, index_offset, strictness, input_model_entry, keep, base_model_entry
 ):
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -163,25 +171,26 @@ def stepwise_BU_algorithm(
         all_modelentries.extend(new_candidate_modelentries)
         old_best_name = best_model_entry.model.name
         for me in new_candidate_modelentries:
-            bic_me = calculate_bic(
-                me.model,
-                me.modelfit_results.ofv,
-                type='iiv',
-                multiple_testing=True,
-                mult_test_p=number_of_predicted,
-                mult_test_e=number_of_expected,
-            )
-            bic_best = calculate_bic(
-                best_model_entry.model,
-                best_model_entry.modelfit_results.ofv,
-                type='iiv',
-                multiple_testing=True,
-                mult_test_p=number_of_predicted,
-                mult_test_e=number_of_expected,
-            )
-            if bic_best > bic_me:
-                best_model_entry = me
-                previous_removed = effect_dict[me.model.name]
+            if is_strictness_fulfilled(me.modelfit_results, me.model, strictness):
+                bic_me = calculate_bic(
+                    me.model,
+                    me.modelfit_results.ofv,
+                    type='iiv',
+                    multiple_testing=True,
+                    mult_test_p=number_of_predicted,
+                    mult_test_e=number_of_expected,
+                )
+                bic_best = calculate_bic(
+                    best_model_entry.model,
+                    best_model_entry.modelfit_results.ofv,
+                    type='iiv',
+                    multiple_testing=True,
+                    mult_test_p=number_of_predicted,
+                    mult_test_e=number_of_expected,
+                )
+                if bic_best > bic_me:
+                    best_model_entry = me
+                    previous_removed = effect_dict[me.model.name]
         if old_best_name == best_model_entry.model.name:
             return all_modelentries
 

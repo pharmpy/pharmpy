@@ -227,6 +227,7 @@ def start(
         elif algorithm_cur == "bu_stepwise_no_of_etas":
             wf_algorithm = algorithm_func(
                 base_model_entry.model,
+                strictness=strictness,
                 index_offset=no_of_models,
                 input_model_entry=input_model_entry,
                 keep=keep,
