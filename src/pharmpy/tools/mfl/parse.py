@@ -749,7 +749,7 @@ class ModelFeatures:
         # Add all unique to RHS
         rhs_unique = [c for c in rhs if c not in lhs]
         if rhs_unique:
-            cov_list = convert_to_covariate(lhs_unique)
+            cov_list = convert_to_covariate(rhs_unique)
             lhs_mfl = ModelFeatures.create_from_mfl_statement_list(cov_list)
             add_cov_dict = dict(covariate_features(model, lhs_mfl.covariate, remove=False))
             lnt.update(add_cov_dict)
