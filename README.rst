@@ -1,22 +1,24 @@
-.. image:: https://img.shields.io/pypi/v/pharmpy-core.svg
+|badge1| |badge2| |badge3| |badge4| |badge5| |badge6| |badge7|
+
+.. |badge1| image:: https://img.shields.io/pypi/v/pharmpy-core.svg
    :target: https://pypi.org/project/pharmpy-core
 
-.. image:: https://img.shields.io/pypi/l/pharmpy-core.svg
+.. |badge2| image:: https://img.shields.io/pypi/l/pharmpy-core.svg
    :target: https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER
 
-.. image:: https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg
+.. |badge3| image:: https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg
     :target: https://github.com/pharmpy/pharmpy/actions
 
-.. image:: https://img.shields.io/pypi/pyversions/pharmpy-core
+.. |badge4| image:: https://img.shields.io/pypi/pyversions/pharmpy-core
    :target: https://www.python.org/downloads/
 
-.. image:: https://img.shields.io/badge/code%20style-black-000000.svg
+.. |badge5| image:: https://img.shields.io/badge/code%20style-black-000000.svg
    :target: https://github.com/psf/black
 
-.. image:: https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII
+.. |badge6| image:: https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII
     :target: https://codecov.io/gh/pharmpy/pharmpy
 
-.. image:: https://img.shields.io/pypi/dm/pharmpy-core.svg
+.. |badge7| image:: https://img.shields.io/pypi/dm/pharmpy-core.svg
    :target: https://pypistats.org/packages/pharmpy-core
 
 .. _README:
