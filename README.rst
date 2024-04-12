@@ -69,26 +69,29 @@ be installed using::
 Python Example
 --------------
 
->>> from pharmpy.modeling import read_model, read_modelfit_results
->>> model = read_model("run1.mod")
->>> res = read_modelfit_results("run1.mod")
->>> res.parameter_estimates
-THETA(1)      0.004696
-THETA(2)      0.984258
-THETA(3)      0.158920
-OMEGA(1,1)    0.029351
-OMEGA(2,2)    0.027906
-SIGMA(1,1)    0.013241
-Name: 2, dtype: float64
->>> model.parameters
-       name     value  lower    upper    fix
-   THETA(1)  0.004693   0.00  1000000  False
-   THETA(2)  1.009160   0.00  1000000  False
-   THETA(3)  0.100000  -0.99  1000000  False
- OMEGA(1,1)  0.030963   0.00       oo  False
- OMEGA(2,2)  0.031128   0.00       oo  False
- SIGMA(1,1)  0.013086   0.00       oo  False
->>>
+
+.. code-block:: none
+
+   >>> from pharmpy.modeling import read_model, read_modelfit_results
+   >>> model = read_model("run1.mod")
+   >>> res = read_modelfit_results("run1.mod")
+   >>> res.parameter_estimates
+   THETA_1       0.004696
+   THETA_2       0.984258
+   THETA_3       0.158920
+   OMEGA_1_1     0.029351
+   OMEGA_2_2     0.027906
+   SIGMA_1_1     0.013241
+   Name: ests, dtype: float64
+   >>> model.parameters
+            name     value   lower    upper    fix
+        THETA_1     0.004693  0.00  1000000  False
+        THETA_2     1.009160  0.00  1000000  False
+        THETA_3     0.100000 -0.99  1000000  False
+      OMEGA_1_1     0.030963  0.00       oo  False
+      OMEGA_2_2     0.031128  0.00       oo  False
+      SIGMA_1_1     0.013086  0.00       oo  False
+   >>>
 
 CLI Example
 -----------
