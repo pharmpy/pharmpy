@@ -277,7 +277,7 @@ def parse_statements(
     return statements, comp_map
 
 
-def convert_dvs(statements, control_stream):
+def convert_dvs(statements, control_stream, dvid_name):
     # Conversion of IF (DVID.EQ.n) THEN to non-piecewise
     # could partly be done in code_record
     after = statements.error
@@ -291,9 +291,9 @@ def convert_dvs(statements, control_stream):
     yind = yind - 1
     for s in after:
         expr = s.expression
-        if expr.is_piecewise() and Expr.symbol("DVID") in expr.free_symbols:
+        if expr.is_piecewise() and Expr.symbol(f"{dvid_name}") in expr.free_symbols:
             cond = expr.args[0][1]
-            if cond.lhs == Expr.symbol("DVID") and cond.rhs == 1:
+            if cond.lhs == Expr.symbol(f"{dvid_name}") and cond.rhs == 1:
                 ass1 = s.replace(symbol=Expr.symbol('Y_1'), expression=expr.args[0][0])
                 ass2 = s.replace(symbol=Expr.symbol('Y_2'), expression=expr.args[1][0])
                 if expr.args[0][0] not in statements.free_symbols:
@@ -746,6 +746,8 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
             info = ColumnInfo.create(colname, drop=coldrop, type='blq', scale='nominal')
         elif colname == 'LLOQ':
             info = ColumnInfo.create(colname, drop=coldrop, type='lloq')
+        elif colname == 'DVID':
+            info = ColumnInfo.create(colname, drop=coldrop, type='dvid', datatype='int32')
         else:
             info = ColumnInfo.create(colname, drop=coldrop)
         column_info.append(info)

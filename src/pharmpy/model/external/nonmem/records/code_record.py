@@ -599,7 +599,7 @@ class CodeRecord(Record):
             statements.append(Assignment(symbol, expression))
         return self.update_statements(statements)
 
-    def update_extra_nodes(self, dvs):
+    def update_extra_nodes(self, dvs, dvid_name):
         """Update AST nodes not part of the statements
 
         Currently the block IF for DVID is handled as extra nodes
@@ -624,7 +624,7 @@ class CodeRecord(Record):
                     break
 
         if found is None:
-            node = create_dvs_node(dvs)
+            node = create_dvs_node(dvs, dvid_name)
             new_root = AttrTree(self.root.rule, self.root.children + (node,))
             rec = CodeRecord(
                 self.name, self.raw_name, new_root, index=self._index, statements=self._statements
@@ -634,11 +634,11 @@ class CodeRecord(Record):
             return self
 
 
-def create_dvs_node(dvs):
+def create_dvs_node(dvs, dvid_name):
     """Create special dvs AST node"""
     for i, (dv, dvid) in enumerate(dvs.items()):
         cg = CodeGenerator()
-        cg.add(f'IF (DVID.EQ.{dvid}) Y = {dv}')
+        cg.add(f'IF ({dvid_name}.EQ.{dvid}) Y = {dv}')
 
         if i == 0:
             node = CodeRecordParser(str(cg)).root.children[0]

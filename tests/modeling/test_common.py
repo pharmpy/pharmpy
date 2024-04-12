@@ -4,6 +4,7 @@ from pathlib import Path
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.model import ColumnInfo
 from pharmpy.model import Model as BaseModel
 from pharmpy.model.external.nlmixr.model import Model as nlmixrModel
 from pharmpy.model.external.nonmem import Model as NMModel
@@ -20,6 +21,8 @@ from pharmpy.modeling import (
     read_model,
     read_model_from_string,
     remove_unused_parameters_and_rvs,
+    set_dataset,
+    set_direct_effect,
     set_name,
     write_model,
 )
@@ -157,3 +160,24 @@ def test_filter_dataset(load_model_for_test, testdata):
     assert 2 not in model_filtered.dataset['DVID'].values
     with pytest.raises(ValueError):
         filter_dataset(model, 'dummy_col == 1')
+
+
+def test_dvid_column(testdata):
+    model = read_model(testdata / 'nonmem' / 'pheno_pd.mod')
+    assert model.datainfo.typeix['dvid'][0].name == 'DVID'
+
+    pkpd_model = set_direct_effect(model, 'linear')
+    assert "IF (DVID.EQ.1) Y = Y" in pkpd_model.model_code
+    assert "IF (DVID.EQ.2) Y = Y_2" in pkpd_model.model_code
+
+    # Replace name of DVID column
+    dataset2 = model.dataset.rename({'DVID': 'FLAG'}, axis=1)
+    model2 = set_dataset(model, dataset2, 'nonmem')
+    dvid_col = ColumnInfo.create("FLAG", type='dvid')
+    datainfo2 = model2.datainfo.set_column(dvid_col)
+    model2 = model2.replace(datainfo=datainfo2)
+    assert model2.datainfo.typeix['dvid'][0].name == 'FLAG'
+
+    pkpd_model = set_direct_effect(model2, 'linear')
+    assert "IF (FLAG.EQ.1) Y = Y" in pkpd_model.model_code
+    assert "IF (FLAG.EQ.2) Y = Y_2" in pkpd_model.model_code

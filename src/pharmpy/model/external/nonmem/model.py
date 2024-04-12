@@ -332,7 +332,11 @@ def parse_model(
         pass
 
     statements, comp_map = parse_statements(di, dataset, control_stream)
-    statements, dependent_variables, obs_trans = convert_dvs(statements, control_stream)
+    try:
+        dvid_name = di.typeix['dvid'][0].name
+    except IndexError:
+        dvid_name = 'DVID'
+    statements, dependent_variables, obs_trans = convert_dvs(statements, control_stream, dvid_name)
 
     parameters, rvs, name_map = parse_parameters(control_stream, statements)
 

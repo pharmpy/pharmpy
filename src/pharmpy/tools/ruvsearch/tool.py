@@ -427,11 +427,15 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
     input_dataset = input_model.dataset
     assert input_dataset is not None
     if dv is not None:
+        try:
+            dvid_name = input_model.datainfo.typeix['dvid'][0].name
+        except IndexError:
+            dvid_name = 'DVID'
         observation_label = input_model.datainfo.dv_column.name
         input_dataset_obs = input_dataset.query(f'{observation_label} != 0').reset_index(
             drop=True
         )  # filter non-observations
-        indices_obs = input_dataset_obs.index[input_dataset_obs['DVID'] == dv].tolist()
+        indices_obs = input_dataset_obs.index[input_dataset_obs[f'{dvid_name}'] == dv].tolist()
         residuals = residuals.iloc[indices_obs]
     cwres = residuals['CWRES'].reset_index(drop=True)
     if has_blq_transformation(input_model):
@@ -595,8 +599,8 @@ def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictne
             )
 
         if dv:
-            if 'DVID' not in model.dataset.columns:
-                raise ValueError("No column DVID in dataset.")
+            if 'DVID' not in model.dataset.columns and 'dvid' not in model.datainfo.types:
+                raise ValueError("No DVID column in dataset.")
             else:
                 if dv not in set(model.dataset['DVID']):
                     raise ValueError(f"No DVID = {dv} in dataset.")
