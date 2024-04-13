@@ -246,48 +246,37 @@ def _compartmental_model(
     elif des:
         # FIXME: Add dose based on presence of CMT column
 
-        rec_model = control_stream.get_records('MODEL')[0]
+        defobs, defdose, comp_map = parse_model_record(control_stream)
 
         subs_dict = {}
-        comps = [c for c, _ in rec_model.compartments()]
         func_to_name = {}
 
         t = Expr.symbol('t')
         subs_dict['T'] = t
-        for i, c in enumerate(comps, 1):
-            a = Expr.function(f'A_{c}', t)
+        for name, i in comp_map.items():
+            a = Expr.function(f'A_{name}', t)
             subs_dict[Expr.symbol(f'DADT({i})')] = Expr.derivative(a, t)
             subs_dict[Expr.symbol(f'DADT ({i})')] = Expr.derivative(a, t)
             subs_dict[Expr.symbol(f'A({i})')] = a
-            func_to_name[a] = c
+            func_to_name[a] = name
 
         sset = des.statements.subs(subs_dict)
-
         eqs = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_derivative()]
 
         cs = to_compartmental_system(func_to_name, eqs)
         cb = CompartmentalSystemBuilder(cs)
-        doses = dosing(di, dataset, 1)
-        comp_map = {}
-        for i, comp_name in enumerate(comps, start=1):
-            comp = cs.find_compartment(comp_name)
-            comp_map[comp_name] = i
+        doses = dosing(di, dataset, defdose[1])
+        for name, i in comp_map.items():
+            comp = cs.find_compartment(name)
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
                 continue
             cb.set_dose(comp, find_dose(doses, i))
-            comp = cb.find_compartment(comp_name)
+            comp = cb.find_compartment(name)
             f = _get_bioavailability(control_stream, i)
             cb.set_bioavailability(comp, f)
-            comp = cb.find_compartment(comp_name)
+            comp = cb.find_compartment(name)
             alag = _get_alag(control_stream, i)
             cb.set_lag_time(comp, alag)
-
-        # Search for DEFOBSERVATION, default to first
-        it = iter(rec_model.compartments())
-        defobs = (next(it)[0], 1)
-        for i, (name, opts) in enumerate(it, start=2):
-            if 'DEFOBSERVATION' in opts:
-                defobs = (name, i)
 
         ass = _f_link_assignment(
             control_stream, di, dataset, comp_map, Expr.symbol(f'A_{defobs[0]}'), defobs[1]
