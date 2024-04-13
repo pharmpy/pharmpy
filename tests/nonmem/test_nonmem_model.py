@@ -457,6 +457,35 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
         model = Model.parse_model_from_string(code)
         assert model.parameters.names == ['TV', 'THETA_2']
 
+    code = """$PROBLEM base model
+$INPUT ID TIME WGT DROP DV
+$DATA pheno.dta IGNORE=@
+$PRED
+Y=THETA(1)+ETA(1)+ERR(1)
+$THETA 0.1  ; WGT
+$OMEGA 0.01 ; OM
+$SIGMA 1 ; SI
+$ESTIMATION METHOD=1 INTER
+"""
+    with pytest.warns(UserWarning):
+        model = Model.parse_model_from_string(code)
+        assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+
+    code = """$PROBLEM base model
+$INPUT ID TIME DROP DROP DV
+$DATA pheno.dta IGNORE=@
+$PRED
+WGT=23
+Y=THETA(1)+ETA(1)+ERR(1)
+$THETA 0.1  ; WGT
+$OMEGA 0.01 ; OM
+$SIGMA 1 ; SI
+$ESTIMATION METHOD=1 INTER
+"""
+    with pytest.warns(UserWarning):
+        model = Model.parse_model_from_string(code)
+        assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+
 
 def test_abbr_write(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)

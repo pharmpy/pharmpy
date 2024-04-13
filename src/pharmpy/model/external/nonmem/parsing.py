@@ -180,9 +180,9 @@ def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
     return RandomVariables.create(rvs), name_map
 
 
-def parse_parameters(control_stream, statements):
+def parse_parameters(control_stream, statements, di):
     symbols = statements.free_symbols
-    all_names = {s.name for s in symbols if not s.is_derivative()}
+    all_names = {s.name for s in symbols if not s.is_derivative()} | set(di.names)
     theta_names, theta_bounds, theta_inits, theta_fixs = parse_thetas(control_stream)
     abbr_map = control_stream.abbreviated.translate_to_pharmpy_names()
     theta_parameters = []

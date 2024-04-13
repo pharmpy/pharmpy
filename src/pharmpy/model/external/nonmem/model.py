@@ -338,7 +338,7 @@ def parse_model(
         dvid_name = 'DVID'
     statements, dependent_variables, obs_trans = convert_dvs(statements, control_stream, dvid_name)
 
-    parameters, rvs, name_map = parse_parameters(control_stream, statements)
+    parameters, rvs, name_map = parse_parameters(control_stream, statements, di)
 
     subs_map = {Expr.symbol(key): Expr.symbol(val) for key, val in name_map.items()}
     statements = statements.subs(subs_map)
