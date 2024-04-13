@@ -131,46 +131,13 @@ def _compartmental_model(
         ass = _f_link_assignment(control_stream, di, dataset, comp_map, central, 2)
     elif advan == 'ADVAN5' or advan == 'ADVAN7':
         cb = CompartmentalSystemBuilder()
-        modrec = control_stream.get_records('MODEL')[0]
-        defobs: Optional[Tuple[str, int]] = None
-        defdose: Optional[Tuple[str, int]] = None
-        defcentral: Optional[Tuple[str, int]] = None
-        defdepot: Optional[Tuple[str, int]] = None
-        deffirst_dose: Optional[Tuple[str, int]] = None
-        compartments = []
-        comp_names = []
-        for i, (name, opts) in enumerate(modrec.compartments(), 1):
-            if 'DEFOBSERVATION' in opts:
-                defobs = (name, i)
-            if 'DEFDOSE' in opts:
-                defdose = (name, i)
-            if name == 'CENTRAL':
-                defcentral = (name, i)
-            elif name == 'DEPOT':
-                defdepot = (name, i)
-            if deffirst_dose is None and 'NODOSE' not in opts:
-                deffirst_dose = (name, i)
-            comp_names.append(name)
 
-        comp_map = {name: i for i, name in enumerate(comp_names, 1)}
-
-        if defobs is None:
-            if defcentral is None:
-                defobs = (comp_names[0], 1)
-            else:
-                defobs = defcentral
-
-        if defdose is None:
-            if defdepot is not None:
-                defdose = defdepot
-            elif deffirst_dose is not None:
-                defdose = deffirst_dose
-            else:
-                raise ModelSyntaxError('Dosing compartment is unknown')
+        defobs, defdose, comp_map = parse_model_record(control_stream)
 
         doses = dosing(di, dataset, defdose[1])
         obscomp = None
-        for i, name in enumerate(comp_names, start=1):
+        compartments = []
+        for i, name in enumerate(comp_map.keys(), start=1):
             curdose = find_dose(doses, i)
             comp = Compartment.create(
                 name,
@@ -752,3 +719,44 @@ def _get_bioavailability(control_stream: NMTranControlStream, n: int):
         return Expr.symbol(fn)
     else:
         return Expr.integer(1)
+
+
+def parse_model_record(control_stream):
+    # Return DEFOBS, DEFDOSE and map from compartment name to number
+    modrec = control_stream.get_records('MODEL')[0]
+    defobs: Optional[Tuple[str, int]] = None
+    defdose: Optional[Tuple[str, int]] = None
+    defcentral: Optional[Tuple[str, int]] = None
+    defdepot: Optional[Tuple[str, int]] = None
+    deffirst_dose: Optional[Tuple[str, int]] = None
+    comp_names = []
+    for i, (name, opts) in enumerate(modrec.compartments(), 1):
+        if 'DEFOBSERVATION' in opts:
+            defobs = (name, i)
+        if 'DEFDOSE' in opts:
+            defdose = (name, i)
+        if name == 'CENTRAL':
+            defcentral = (name, i)
+        elif name == 'DEPOT':
+            defdepot = (name, i)
+        if deffirst_dose is None and 'NODOSE' not in opts:
+            deffirst_dose = (name, i)
+        comp_names.append(name)
+
+    comp_map = {name: i for i, name in enumerate(comp_names, 1)}
+
+    if defobs is None:
+        if defcentral is None:
+            defobs = (comp_names[0], 1)
+        else:
+            defobs = defcentral
+
+    if defdose is None:
+        if defdepot is not None:
+            defdose = defdepot
+        elif deffirst_dose is not None:
+            defdose = deffirst_dose
+        else:
+            raise ModelSyntaxError('Dosing compartment is unknown')
+
+    return defobs, defdose, comp_map
