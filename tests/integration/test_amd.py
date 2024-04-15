@@ -48,6 +48,7 @@ def _model_count(rundir: Path):
                 'covsearch_structural',
                 'rerun_iivsearch',
                 'rerun_ruvsearch',
+                'simulation',
             ],
         ),
     ],
