@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from typing import Mapping, Union
+from typing import TYPE_CHECKING, Mapping, Union
 
-from pharmpy.deps import symengine, sympy
-from pharmpy.deps.sympy_printing import pretty
+if TYPE_CHECKING:
+    import symengine
+    import sympy
+    import sympy.printing.pretty.pretty as pretty
+else:
+    from pharmpy.deps import symengine, sympy
+    from pharmpy.deps.sympy_printing import pretty
 
 
 class ExprPrinter(pretty.PrettyPrinter):
@@ -40,7 +45,7 @@ class Expr:
             raise ValueError("Expression has no name")
 
     @property
-    def args(self):
+    def args(self) -> tuple[Union[Expr, tuple[Union[Expr, BooleanExpr], ...]], ...]:
         if isinstance(self._expr, symengine.Piecewise):
             # Due to https://github.com/symengine/symengine.py/issues/469
             x = self._expr.args
@@ -117,16 +122,16 @@ class Expr:
     def __hash__(self):
         return hash(self._expr)
 
-    def __float__(self):
+    def __float__(self) -> float:
         return float(self._expr)
 
-    def __int__(self):
+    def __int__(self) -> int:
         return int(self._expr)
 
-    def __bool__(self):
+    def __bool__(self) -> bool:
         return self._expr != 0
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(sympy.sympify(self._expr))
 
     def serialize(self) -> str:
@@ -145,7 +150,7 @@ class Expr:
         s = sympy.latex(expr, mul_symbol='dot')
         return s
 
-    def _sympy_(self) -> sympy.Expr:
+    def _sympy_(self) -> sympy.core.expr.Expr:
         return sympy.sympify(self._expr)
 
     def _symengine_(self) -> symengine.Expr:
@@ -269,12 +274,12 @@ class BooleanExpr:
         return symbs
 
     @property
-    def args(self):
+    def args(self) -> tuple[Expr, ...]:
         args = [Expr(a) for a in self._expr.args]
         return tuple(args)
 
     @property
-    def lhs(self):
+    def lhs(self) -> Expr:
         lhs = self._expr.lhs
         rhs = self._expr.rhs
         # Coming from piecewise and symengine changed the order
@@ -284,7 +289,7 @@ class BooleanExpr:
             return Expr(lhs)
 
     @property
-    def rhs(self):
+    def rhs(self) -> Expr:
         lhs = self._expr.lhs
         rhs = self._expr.rhs
         # Coming from piecewise and symengine changed the order
@@ -293,38 +298,38 @@ class BooleanExpr:
         else:
             return Expr(rhs)
 
-    def __and__(self, other):
+    def __and__(self, other: BooleanExpr) -> BooleanExpr:
         return BooleanExpr(sympy.And(self._expr, other._expr))
 
     @classmethod
-    def eq(cls, lhs, rhs):
+    def eq(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
         return cls(sympy.Eq(lhs, rhs))
 
     @classmethod
-    def gt(cls, lhs, rhs):
+    def gt(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
         return cls(sympy.Gt(lhs, rhs))
 
     @classmethod
-    def ge(cls, lhs, rhs):
+    def ge(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
         return cls(sympy.Ge(lhs, rhs))
 
     @classmethod
-    def le(cls, lhs, rhs):
+    def le(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
         return cls(sympy.Le(lhs, rhs))
 
-    def unicode(self):
+    def unicode(self) -> str:
         return ExprPrinter().doprint(sympy.sympify(self._expr))
 
     def atoms(self, *types):
         return self._expr.atoms(types)
 
-    def _symengine_(self):
+    def _symengine_(self) -> symengine.Expr:
         return symengine.sympify(self._expr)
 
-    def _sympy_(self):
+    def _sympy_(self) -> sympy.Expr:
         return self._expr
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return repr(self._expr)
 
 
