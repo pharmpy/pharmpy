@@ -2,10 +2,10 @@ from ..model_database import NullModelDatabase
 from .baseclass import Context
 
 
-class NullToolDatabase(Context):
-    """Dummy tool database
+class NullContext(Context):
+    """Dummy context
 
-    No operation does anything. This database can be used if no storing of files
+    No operation does anything. This context can be used if no storing of files
     is desirable.
     """
 

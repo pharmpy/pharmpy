@@ -5,7 +5,7 @@ from .workflow import Workflow, WorkflowBuilder, insert_context
 T = TypeVar('T')
 
 
-def call_workflow(wf: Workflow[T], unique_name, db) -> T:
+def call_workflow(wf: Workflow[T], unique_name, ctx) -> T:
     """Dynamically call a workflow from another workflow.
 
     Currently only supports dask distributed
@@ -16,8 +16,8 @@ def call_workflow(wf: Workflow[T], unique_name, db) -> T:
         A workflow object
     unique_name : str
         A name of the results node that is unique between parent and dynamically created workflows
-    db : ToolDatabase
-        ToolDatabase to pass to new workflow
+    ctx : Context
+        Context to pass to new workflow
 
     Returns
     -------
@@ -29,7 +29,7 @@ def call_workflow(wf: Workflow[T], unique_name, db) -> T:
     from .optimize import optimize_task_graph_for_dask_distributed
 
     wb = WorkflowBuilder(wf)
-    insert_context(wb, db)
+    insert_context(wb, ctx)
     wf = Workflow(wb)
 
     client = get_client()

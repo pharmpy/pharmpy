@@ -13,7 +13,7 @@ T = TypeVar('T')
 
 
 def execute_workflow(
-    workflow: Workflow[T], dispatcher=None, database=None, path=None, resume=False
+    workflow: Workflow[T], dispatcher=None, context=None, path=None, resume=False
 ) -> T:
     """Execute workflow
 
@@ -23,10 +23,10 @@ def execute_workflow(
         Workflow to execute
     dispatcher : ExecutionDispatcher
         Dispatcher to use
-    database : ToolDatabase
-        Tool database to use. None for the default Tool database.
+    context : Context
+        Context to use. None for the default context.
     path : Path
-        Path to use for database if applicable.
+        Path to use for context if applicable.
     resume : bool
         Whether to allow resuming previous workflow execution.
 
@@ -40,14 +40,14 @@ def execute_workflow(
         from pharmpy.workflows import default_dispatcher
 
         dispatcher = default_dispatcher
-    if database is None:
+    if context is None:
         from pharmpy.workflows import default_context
 
         if path is None:
             path = Path.cwd()
         else:
             path = Path(path)
-        database = default_context(workflow.name, ref=path)
+        context = default_context(workflow.name, ref=path)
 
     # For all input models set new database and read in results
     original_input_models = []
@@ -68,13 +68,13 @@ def execute_workflow(
         new_task = task.replace(task_input=tuple(new_inp))
         wb.replace_task(task, new_task)
 
-    insert_context(wb, database)
+    insert_context(wb, context)
     workflow = Workflow(wb)
 
     res: T = dispatcher.run(workflow)
 
     if isinstance(res, Results) and not isinstance(res, ModelfitResults):
-        database.store_results(res)
+        context.store_results(res)
         if hasattr(res, 'rst_path'):
             from pharmpy.tools.reporting import create_report
 
@@ -83,6 +83,6 @@ def execute_workflow(
                 import asyncio
 
                 asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-            create_report(res, database.path)
+            create_report(res, context.path)
 
     return res

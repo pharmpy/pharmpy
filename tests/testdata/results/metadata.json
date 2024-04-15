@@ -16,7 +16,7 @@
     "common_options": {
         "dispatcher": "pharmpy.workflows.dispatchers.local_dask",
         "database": {
-            "class": "LocalDirectoryToolDatabase",
+            "class": "LocalDirectoryContext",
             "toolname": "modelsearch",
             "path": "/tmp/tool_results/modelsearch"
         },
