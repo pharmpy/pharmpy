@@ -1,17 +1,26 @@
-from pharmpy.deps import numpy as np
-from pharmpy.deps import symengine, sympy
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Iterable, Mapping, Union
+
+if TYPE_CHECKING:
+    import numpy as np
+    import symengine
+    import sympy
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import symengine, sympy
 
 from .expr import Expr
 
 
 class Matrix:
-    def __init__(self, source=()):
+    def __init__(self, source: Union[Matrix, Iterable] = ()):
         if isinstance(source, Matrix):
             self._m = source._m
         else:
             self._m = symengine.Matrix(source)
 
-    def __getitem__(self, ind):
+    def __getitem__(self, ind) -> Union[Expr, Matrix]:
         a = self._m[ind]
         if isinstance(a, symengine.DenseMatrix):
             return Matrix(a)
@@ -19,10 +28,10 @@ class Matrix:
             return Expr(a)
 
     @property
-    def free_symbols(self):
+    def free_symbols(self) -> set[Expr]:
         return self._m.free_symbols
 
-    def subs(self, d):
+    def subs(self, d: Mapping) -> Matrix:
         return Matrix(self._m.subs(d))
 
     @property
@@ -33,10 +42,10 @@ class Matrix:
     def cols(self):
         return self._m.cols
 
-    def diagonal(self):
+    def diagonal(self) -> Matrix:
         return Matrix(sympy.sympify(self._m).diagonal())
 
-    def serialize(self):
+    def serialize(self) -> str:
         return sympy.srepr(sympy.sympify(self._m))
 
     def unicode(self) -> str:
@@ -62,36 +71,37 @@ class Matrix:
     def __hash__(self):
         return hash(sympy.ImmutableMatrix(self._m))
 
-    def __add__(self, other):
+    def __add__(self, other) -> Matrix:
         return Matrix(self._m + other)
 
-    def __radd__(self, other):
+    def __radd__(self, other) -> Matrix:
         return Matrix(self._m + other)
 
-    def __matmul__(self, other):
+    def __matmul__(self, other) -> Matrix:
         return Matrix(self._m @ other)
 
-    def __rmatmul__(self, other):
-        return Matrix(other._expr @ self._expr)
+    def __rmatmul__(self, other) -> Matrix:
+        return Matrix(other._m @ self._m)
 
-    def evalf(self, d):
+    def evalf(self, d: Mapping) -> np.ndarray:
         A = np.array(self._m.xreplace(d)).astype(np.float64)
         return A
 
     @classmethod
-    def deserialize(cls, s):
+    def deserialize(cls, s) -> Matrix:
         return cls(sympy.parse_expr(s))
 
     def is_positive_semidefinite(self) -> bool | None:
         isp = sympy.Matrix(self._m).is_positive_semidefinite
         return isp
 
-    def eigenvals(self):
+    def eigenvals(self) -> dict[Expr, Expr]:
         d = sympy.Matrix(self._m).eigenvals()
+        assert isinstance(d, dict)
         ud = {Expr(key): Expr(val) for key, val in d.items()}
         return ud
 
-    def cholesky(self):
+    def cholesky(self) -> Matrix:
         return Matrix(self._m.cholesky())
 
     def __getstate__(self):
@@ -103,18 +113,18 @@ class Matrix:
         state['_m'] = symengine.Matrix(state['_m'])
         self.__dict__.update(state)
 
-    def to_numpy(self):
+    def to_numpy(self) -> np.ndarray:
         if not self._m.free_symbols:  # Not fully numeric
             a = np.array(self._m).astype(np.float64)
         else:
             raise TypeError("Symbolic matrix cannot be converted to numeric")
         return a
 
-    def __array__(self):
+    def __array__(self) -> np.ndarray:
         return np.array(self._m)
 
-    def _sympy_(self):
+    def _sympy_(self) -> sympy.Expr:
         return sympy.sympify(self._m)
 
-    def _symengine_(self):
+    def _symengine_(self) -> symengine.Expr:
         return self._m
