@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from typing import Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
@@ -27,7 +27,7 @@ class Context(ABC):
         A reference (path) to the context
     """
 
-    def __init__(self, name: str, ref: Optional[str] = None):
+    def __init__(self, name: str, ref: Optional[str] = None, common_options: dict[str, Any] = None):
         # If the context already exists it will be opened
         # otherwise a new top level context will be created
         # An implementation needs to create the model database here
@@ -125,6 +125,10 @@ class Context(ABC):
         current - only the current Context level
         lower - current and sub levels
         """
+        pass
+
+    @abstractmethod
+    def retrieve_common_options(self) -> dict[str, Any]:
         pass
 
     @abstractmethod

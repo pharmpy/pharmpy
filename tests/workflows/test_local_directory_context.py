@@ -47,6 +47,12 @@ def test_metadata(tmp_path):
     assert d == retd
 
 
+def test_common_options(tmp_path):
+    opts = {'ref': 23}
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path, common_options=opts)
+    assert ctx.retrieve_common_options() == opts
+
+
 def test_log(tmp_path):
     ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     ctx.log_message('error', "This didn't work")

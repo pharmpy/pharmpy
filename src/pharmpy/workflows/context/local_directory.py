@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from datetime import datetime
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Any, Literal, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.lock import path_lock
@@ -30,7 +30,7 @@ class LocalDirectoryContext(Context):
         Path to directory. Will be created if it does not exist.
     """
 
-    def __init__(self, name: str, ref: Optional[str] = None):
+    def __init__(self, name: str, ref: Optional[str] = None, common_options: dict[str, Any] = None):
         if ref is None:
             ref = Path.cwd()
         path = Path(ref) / name
@@ -42,6 +42,7 @@ class LocalDirectoryContext(Context):
         self._init_annotations()
         self._init_model_name_map()
         self._init_log()
+        self._store_common_options(common_options)
 
     def _init_path(self, path):
         self.path = path_absolute(path)
@@ -78,6 +79,10 @@ class LocalDirectoryContext(Context):
         if not log_path.is_file():
             with open(log_path, 'w') as fh:
                 fh.write("path,time,severity,message\n")
+
+    def _store_common_options(self, common_options):
+        with open(self._common_options_path, 'w') as f:
+            json.dump(common_options, f, indent=4, cls=MetadataJSONEncoder)
 
     def _read_lock(self, path: Path):
         # NOTE: Obtain shared (blocking) lock on one file
@@ -123,6 +128,10 @@ class LocalDirectoryContext(Context):
     @property
     def _annotations_path(self) -> Path:
         return self.path / 'annotations'
+
+    @property
+    def _common_options_path(self) -> Path:
+        return self.path / 'common_options'
 
     @property
     def context_path(self) -> str:
@@ -229,6 +238,10 @@ class LocalDirectoryContext(Context):
             df = df.loc[count == curlevel]
         df = df.reset_index(drop=True)
         return df
+
+    def retrieve_common_options(self) -> dict[str, Any]:
+        with open(self._common_options_path, 'r') as f:
+            return json.load(f, cls=MetadataJSONDecoder)
 
     def get_parent_context(self) -> LocalDirectoryContext:
         if self.path == self._top_path:
