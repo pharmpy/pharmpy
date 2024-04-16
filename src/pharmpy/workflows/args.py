@@ -15,7 +15,7 @@ def split_common_options(d) -> Tuple[Mapping[str, Any], Mapping[str, Any]]:
     -------
     Tuple of common options and other option dictionaries
     """
-    execute_options = ['path', 'resume']
+    execute_options = ['path', 'resume', 'esttool']
     common_options = {}
     other_options = {}
     for key, value in d.items():
