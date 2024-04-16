@@ -515,7 +515,7 @@ def run_amd(
                 next_model = subresults.final_model
                 # FIXME: This could perhaps be piped
                 model_db = ctx.model_database
-                next_model_entry = model_db.retrieve_model_entry(model)
+                next_model_entry = model_db.retrieve_model_entry(next_model)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
             sum_models.append(subresults.summary_models.reset_index())
             sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
