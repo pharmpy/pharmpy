@@ -973,9 +973,10 @@ def _replace_trivial_redefinitions(model):
         if isinstance(s, Assignment) and (
             s.expression in all_assigned_symbols or 1 / s.expression in all_assigned_symbols
         ):
-            d[s.symbol] = s.expression
             if s.expression in d.keys():
                 d[s.symbol] = d[s.expression]
+            else:
+                d[s.symbol] = s.expression
         else:
             keep.append(s)
 
