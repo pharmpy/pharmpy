@@ -478,13 +478,13 @@ def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
         common_path = common_options.get('path', None)
         if common_path is not None:
             path = common_options['path']
-            ctx = default_context(path.name, path.parent)
+            ctx = default_context(path.name, path.parent, common_options=common_options)
         else:
             n = 1
             while True:
                 name = f"{toolname}{n}"
                 if not default_context.exists(name):
-                    ctx = default_context(name)
+                    ctx = default_context(name, common_options=common_options)
                     break
                 n += 1
 
