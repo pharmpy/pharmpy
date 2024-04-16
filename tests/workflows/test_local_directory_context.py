@@ -51,6 +51,8 @@ def test_common_options(tmp_path):
     opts = {'ref': 23}
     ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path, common_options=opts)
     assert ctx.retrieve_common_options() == opts
+    subctx = ctx.create_subcontext("mysubcontext")
+    assert subctx.retrieve_common_options() == opts
 
 
 def test_log(tmp_path):

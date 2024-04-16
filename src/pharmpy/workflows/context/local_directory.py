@@ -81,8 +81,10 @@ class LocalDirectoryContext(Context):
                 fh.write("path,time,severity,message\n")
 
     def _store_common_options(self, common_options):
-        with open(self._common_options_path, 'w') as f:
-            json.dump(common_options, f, indent=4, cls=MetadataJSONEncoder)
+        if self.path == self._top_path:
+            if not self._common_options_path.is_file():
+                with open(self._common_options_path, 'w') as f:
+                    json.dump(common_options, f, indent=4, cls=MetadataJSONEncoder)
 
     def _read_lock(self, path: Path):
         # NOTE: Obtain shared (blocking) lock on one file
@@ -131,7 +133,7 @@ class LocalDirectoryContext(Context):
 
     @property
     def _common_options_path(self) -> Path:
-        return self.path / 'common_options'
+        return self._top_path / 'common_options'
 
     @property
     def context_path(self) -> str:
