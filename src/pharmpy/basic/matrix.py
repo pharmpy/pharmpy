@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, Mapping, Union
+from typing import TYPE_CHECKING, Iterable, Mapping, Sequence, Union, overload
 
 if TYPE_CHECKING:
     import numpy as np
@@ -19,6 +19,23 @@ class Matrix:
             self._m = source._m
         else:
             self._m = symengine.Matrix(source)
+
+    @overload
+    def __getitem__(self, ind: tuple[int, int]) -> Expr: ...
+
+    @overload
+    def __getitem__(
+        self,
+        ind: Union[
+            tuple[Sequence, Sequence],
+            tuple[int, Sequence],
+            tuple[Sequence, int],
+            tuple[slice, int],
+            tuple[int, slice],
+            tuple[slice, Sequence],
+            tuple[Sequence, slice],
+        ],
+    ) -> Matrix: ...
 
     def __getitem__(self, ind) -> Union[Expr, Matrix]:
         a = self._m[ind]

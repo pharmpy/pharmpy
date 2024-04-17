@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Sized
 from math import sqrt
-from typing import Any, Dict, List, Mapping, Sequence, Tuple
+from typing import Any, Mapping, Sequence, Union
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
@@ -21,7 +21,7 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def names(self) -> Tuple[str, ...]:
+    def names(self) -> tuple[str, ...]:
         """Names of random variables of distribution"""
         pass
 
@@ -33,12 +33,12 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def mean(self) -> Expr:
+    def mean(self) -> Union[Expr, Matrix]:
         pass
 
     @property
     @abstractmethod
-    def variance(self) -> Expr:
+    def variance(self) -> Union[Expr, Matrix]:
         pass
 
     @abstractmethod
@@ -50,7 +50,7 @@ class Distribution(Sized, Hashable, Immutable):
         pass
 
     @abstractmethod
-    def evalf(self, parameters: Dict[Expr, float]) -> NumericDistribution:
+    def evalf(self, parameters: dict[Expr, float]) -> NumericDistribution:
         pass
 
     @abstractmethod
@@ -63,7 +63,7 @@ class Distribution(Sized, Hashable, Immutable):
         pass
 
     @property
-    def parameter_names(self) -> Tuple[str, ...]:
+    def parameter_names(self) -> tuple[str, ...]:
         """List of names of all parameters used in definition"""
         params = self.mean.free_symbols.union(self.variance.free_symbols)
         return tuple(sorted(map(str, params)))
@@ -132,7 +132,7 @@ class NormalDistribution(Distribution):
         return new
 
     @property
-    def names(self) -> Tuple[str, ...]:
+    def names(self) -> tuple[str, ...]:
         return (self._name,)
 
     @property
@@ -178,7 +178,7 @@ class NormalDistribution(Distribution):
         name = _subs_name(self._name, d)
         return NormalDistribution(name, self._level, mean, variance)
 
-    def evalf(self, parameters: Dict[TSymbol, float]) -> NumericDistribution:
+    def evalf(self, parameters: dict[TSymbol, float]) -> NumericDistribution:
         mean = self._mean
         variance = self._variance
         try:
@@ -231,7 +231,7 @@ class NormalDistribution(Distribution):
         else:
             raise KeyError((name1, name2))
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         return (
             isinstance(other, NormalDistribution)
             and self._name == other._name
@@ -246,7 +246,7 @@ class NormalDistribution(Distribution):
     def __hash__(self):
         return hash((self._name, self._level, self._mean, self._variance))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'class': self.__class__.__name__,
             'name': self._name,
@@ -316,7 +316,7 @@ class JointNormalDistribution(Distribution):
 
     def __init__(
         self,
-        names: Tuple[str, ...],
+        names: tuple[str, ...],
         level: str,
         mean: Matrix,
         variance: Matrix,
@@ -338,7 +338,7 @@ class JointNormalDistribution(Distribution):
             )
         return cls(names, level, mean, variance)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> JointNormalDistribution:
         """Replace properties and create a new JointNormalDistribution"""
         names = kwargs.get('names', self._names)
         level = kwargs.get('level', self._level)
@@ -348,7 +348,7 @@ class JointNormalDistribution(Distribution):
         return new
 
     @property
-    def names(self) -> Tuple[str, ...]:
+    def names(self) -> tuple[str, ...]:
         return self._names
 
     @property
@@ -398,7 +398,7 @@ class JointNormalDistribution(Distribution):
         new_names = tuple(_subs_name(name, d) for name in self._names)
         return JointNormalDistribution(new_names, self._level, mean, variance)
 
-    def evalf(self, parameters: Dict[TSymbol, float]) -> NumericDistribution:
+    def evalf(self, parameters: dict[TSymbol, float]) -> NumericDistribution:
         try:
             mu = self._mean.evalf(parameters)[:, 0]
             sigma = self._variance.evalf(parameters)
@@ -407,59 +407,64 @@ class JointNormalDistribution(Distribution):
             # NOTE: This handles missing parameter substitutions
             raise ValueError(e)
 
-    def __getitem__(self, index):
+    def __getitem__(
+        self, index: Union[int, str, slice, Collection[Union[int, str]]]
+    ) -> Union[NormalDistribution, JointNormalDistribution]:
         if isinstance(index, int):
             if -len(self) <= index < len(self):
                 names = (self._names[index],)
+                our_index = (index,)
             else:
                 raise IndexError(index)
 
         elif isinstance(index, str):
             names = (index,)
             try:
-                index = self._names.index(index)
+                our_index = (self._names.index(index),)
             except ValueError:
                 raise KeyError(names[0])
 
-        else:
-            if isinstance(index, slice):
-                index = range(index.start, index.stop, index.step if index.step is not None else 1)
-                index = [self._names[i] for i in index]
+        elif isinstance(index, slice):
+            our_index = range(index.start, index.stop, index.step if index.step is not None else 1)
+            names = tuple(self._names[i] for i in our_index)
 
-            if isinstance(index, Collection):
-                if len(index) == 0 or len(index) > len(self._names):
-                    raise KeyError(index)
-
-                collection = set(index)
-                if not collection.issubset(self._names):
-                    raise KeyError(index)
-
-                if len(collection) == len(self._names):
-                    return self
-
-                index_list: List[int] = []
-                names_list: List[str] = []
-
-                for i, name in enumerate(self._names):
-                    if name in collection:
-                        index_list.append(i)
-                        names_list.append(name)
-
-                index = tuple(index_list)
-                names = tuple(names_list)
-
-                if len(index) == 1:
-                    index = index[0]
-
-            else:
+        elif isinstance(index, Collection):
+            if len(index) == 0 or len(index) > len(self._names):
                 raise KeyError(index)
 
-        mean = self._mean[index, [0]] if isinstance(index, int) else self._mean[index, :]
-        variance = self._variance[index, index]
+            collection = set(index)
+            if not collection.issubset(self._names):
+                raise KeyError(index)
+
+            if len(collection) == len(self._names):
+                return self
+
+            index_list: list[int] = []
+            names_list: list[str] = []
+
+            for i, name in enumerate(self._names):
+                if name in collection or i in collection:
+                    index_list.append(i)
+                    names_list.append(name)
+
+            our_index = tuple(index_list)
+            names = tuple(names_list)
+
+        else:
+            raise KeyError(index)
+
+        if len(our_index) == 1:
+            our_index = our_index[0]
 
         if len(names) == 1:
+            assert isinstance(our_index, int)
+            mean = self._mean[our_index, 0]
+            variance = self._variance[our_index, our_index]
             return NormalDistribution(names[0], self._level, mean, variance)
         else:
+            assert not isinstance(our_index, int)
+            mean = self._mean[our_index, :]
+            variance = self._variance[our_index, our_index]
             return JointNormalDistribution(names, self._level, mean, variance)
 
     def get_variance(self, name: str) -> Expr:
@@ -488,7 +493,7 @@ class JointNormalDistribution(Distribution):
     def __hash__(self):
         return hash((self._names, self._level, self._mean, self._variance))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'class': self.__class__.__name__,
             'names': self._names,

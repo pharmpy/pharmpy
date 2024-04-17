@@ -62,7 +62,7 @@ class Expr:
         symbs = {Expr(a) for a in self._expr.free_symbols}
         return symbs
 
-    def subs(self, d: Mapping[Expr, Expr]) -> Expr:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> Expr:
         return Expr(self._expr.subs(d))
 
     def as_numer_denom(self) -> tuple[Expr, Expr]:

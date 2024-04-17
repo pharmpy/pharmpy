@@ -6,7 +6,7 @@ from __future__ import annotations
 import json
 from collections.abc import Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Mapping, Optional, Tuple, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Union, cast, overload
 
 from pharmpy.basic import TUnit, Unit
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
@@ -284,7 +284,7 @@ class ColumnInfo(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> ColumnInfo:
+    def from_dict(cls, d: dict[str, Any]) -> ColumnInfo:
         return cls(
             name=d['name'],
             type=d['type'],
@@ -332,7 +332,7 @@ class ColumnInfo(Immutable):
         return self._type
 
     @property
-    def descriptor(self) -> Union[str, None]:
+    def descriptor(self) -> Optional[str]:
         """Kind of data
 
         ====================== ============================================
@@ -371,7 +371,7 @@ class ColumnInfo(Immutable):
         return self._scale
 
     @property
-    def continuous(self) -> Union[bool, None]:
+    def continuous(self) -> Optional[bool]:
         """Is the column data continuous
 
         True for continuous data and False for discrete. Note that nominal and ordinal data have to
@@ -380,7 +380,7 @@ class ColumnInfo(Immutable):
         return self._continuous
 
     @property
-    def categories(self) -> Union[frozenmapping[str, str], tuple[str, ...], None]:
+    def categories(self) -> Optional[Union[frozenmapping[str, str], tuple[str, ...]]]:
         """List or dict of allowed categories"""
         return self._categories
 
@@ -576,11 +576,11 @@ class DataInfo(Sequence, Immutable):
                 'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
             )
         if columns is None or len(columns) == 0:
-            cols: Tuple[ColumnInfo, ...] = ()
+            cols: tuple[ColumnInfo, ...] = ()
         elif len(columns) > 0 and any(isinstance(col, str) for col in columns):
             cols = tuple(ColumnInfo.create(col) if isinstance(col, str) else col for col in columns)
         else:
-            cols = cast(Tuple[ColumnInfo, ...], tuple(columns))
+            cols = cast(tuple[ColumnInfo, ...], tuple(columns))
         assert isinstance(cols, tuple)
         if path is not None:
             path = Path(path)
@@ -674,7 +674,7 @@ class DataInfo(Sequence, Immutable):
         return self._columns[self._getindex(index)]
 
     @property
-    def path(self) -> Union[Path, None]:
+    def path(self) -> Optional[Path]:
         r"""Path of dataset file
 
         Examples
