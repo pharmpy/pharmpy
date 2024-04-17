@@ -13,19 +13,19 @@ class Unit:
         else:
             self._expr = sympy.sympify(source).subs(_unit_subs())
 
-    def unicode(self):
+    def unicode(self) -> str:
         printer = UnitPrinter()
         return printer._print(self._expr)
 
-    def serialize(self):
+    def serialize(self) -> str:
         return sympy.srepr(self._expr)
 
     @classmethod
-    def deserialize(cls, s):
+    def deserialize(cls, s) -> Unit:
         return cls(s)
 
     @classmethod
-    def unitless(cls):
+    def unitless(cls) -> Unit:
         return cls(sympy.Integer(1))
 
     def __eq__(self, other):
