@@ -1,18 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence as CollectionsSequence
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Dict,
-    List,
-    Mapping,
-    Optional,
-    Sequence,
-    Tuple,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Tuple, Union, overload
 
 from pharmpy.basic import Expr
 from pharmpy.internals.immutable import Immutable, cache_method
@@ -95,7 +84,7 @@ class Parameter(Immutable):
             raise ValueError(f'Upper bound {upper} cannot be less than init {init}')
         return cls(name, init, lower, upper, bool(fix))
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Parameter:
         """Replace properties and create a new Parameter"""
         name = kwargs.get('name', self._name)
         init = kwargs.get('init', self._init)
@@ -139,7 +128,7 @@ class Parameter(Immutable):
     def __hash__(self):
         return hash((self.name, self.init, self.lower, self.upper, self.fix))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {
             'name': self.name,
             'init': self.init,
@@ -149,10 +138,10 @@ class Parameter(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]):
+    def from_dict(cls, d: dict[str, Any]):
         return cls(**d)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         """Two parameters are equal if they have the same name, init and constraints"""
         if hash(self) != hash(other):
             return False
@@ -227,7 +216,7 @@ class Parameters(CollectionsSequence, Immutable):
             names.add(p.name)
         return cls(parameters)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Parameters:
         """Replace properties and create a new Parameters object"""
         parameters = kwargs.get('parameters', self._params)
         new = Parameters.create(parameters)
@@ -237,8 +226,11 @@ class Parameters(CollectionsSequence, Immutable):
         return len(self._params)
 
     def _lookup_param(self, ind: Union[int, str, Expr, Parameter]):
-        if isinstance(ind, Expr) and ind.is_symbol():
-            ind = ind.name
+        if isinstance(ind, Expr):
+            if ind.is_symbol():
+                ind = ind.name
+            else:
+                raise KeyError("Cannot index Parameters with Expr other than Symbol")
         if isinstance(ind, str):
             for i, param in enumerate(self._params):
                 if ind == param.name:
@@ -303,36 +295,37 @@ class Parameters(CollectionsSequence, Immutable):
         lower = [param.lower for param in self._params]
         upper = [param.upper for param in self._params]
         fix = [param.fix for param in self._params]
+        index = pd.Index(symbols)
         return pd.DataFrame(
-            {'value': values, 'lower': lower, 'upper': upper, 'fix': fix}, index=symbols
+            {'value': values, 'lower': lower, 'upper': upper, 'fix': fix}, index=index
         )
 
     @property
-    def names(self) -> List[str]:
+    def names(self) -> list[str]:
         """List of all parameter names"""
         return [p.name for p in self._params]
 
     @property
-    def symbols(self) -> List[Expr]:
+    def symbols(self) -> list[Expr]:
         """List of all parameter symbols"""
         return [p.symbol for p in self._params]
 
     @property
-    def lower(self) -> Dict[str, float]:
+    def lower(self) -> dict[str, float]:
         """Lower bounds of all parameters as a dictionary"""
         return {p.name: p.lower for p in self._params}
 
     @property
-    def upper(self) -> Dict[str, float]:
+    def upper(self) -> dict[str, float]:
         """Upper bounds of all parameters as a dictionary"""
         return {p.name: p.upper for p in self._params}
 
     @property
-    def inits(self) -> Dict[str, float]:
+    def inits(self) -> dict[str, float]:
         """Initial estimates of parameters as dict"""
         return {p.name: p.init for p in self._params}
 
-    def set_initial_estimates(self, inits: Mapping[str, float]):
+    def set_initial_estimates(self, inits: Mapping[str, float]) -> Parameters:
         """Create a new Parameters with changed initial estimates
 
         Parameters
@@ -355,11 +348,11 @@ class Parameters(CollectionsSequence, Immutable):
         return Parameters(tuple(new))
 
     @property
-    def fix(self) -> Dict[str, bool]:
+    def fix(self) -> dict[str, bool]:
         """Fixedness of parameters as dict"""
         return {p.name: p.fix for p in self._params}
 
-    def set_fix(self, fix: Mapping[str, bool]):
+    def set_fix(self, fix: Mapping[str, bool]) -> Parameters:
         """Create a new Parameters with changed fix state
 
         Parameters
@@ -411,7 +404,7 @@ class Parameters(CollectionsSequence, Immutable):
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         if hash(self) != hash(other):
             return False
         if not isinstance(other, Parameters):
@@ -427,12 +420,12 @@ class Parameters(CollectionsSequence, Immutable):
     def __hash__(self):
         return hash(self._params)
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, Any]:
         params = tuple(p.to_dict() for p in self._params)
         return {'parameters': params}
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d) -> Parameters:
         params = tuple(Parameter.from_dict(p) for p in d['parameters'])
         return cls(parameters=params)
 
@@ -443,7 +436,7 @@ class Parameters(CollectionsSequence, Immutable):
             self.to_dataframe().replace(float("inf"), "∞").replace(-float("inf"), "-∞").to_string()
         )
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         if len(self) == 0:
             return "Parameters()"
         else:

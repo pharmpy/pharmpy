@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Union, overload
 
 from pharmpy.internals.immutable import Immutable, frozenmapping
 
@@ -46,7 +46,7 @@ class Step(Immutable):
         return tool_options
 
     @property
-    def solver(self) -> Union[str, None]:
+    def solver(self) -> Optional[str]:
         """Numerical solver to use when numerically solving the ODE system
         Supported solvers and their corresponding NONMEM ADVAN
 
@@ -69,17 +69,17 @@ class Step(Immutable):
         return self._solver
 
     @property
-    def solver_rtol(self) -> Union[int, None]:
+    def solver_rtol(self) -> Optional[int]:
         """Relative tolerance for numerical ODE system solver"""
         return self._solver_rtol
 
     @property
-    def solver_atol(self) -> Union[int, None]:
+    def solver_atol(self) -> Optional[int]:
         """Absolute tolerance for numerical ODE system solver"""
         return self._solver_atol
 
     @property
-    def tool_options(self) -> Union[frozenmapping[str, Any], None]:
+    def tool_options(self) -> Optional[frozenmapping[str, Any]]:
         """Dictionary of tool specific options"""
         return self._tool_options
 
@@ -278,7 +278,7 @@ class EstimationStep(Step):
         return self._method
 
     @property
-    def maximum_evaluations(self) -> Union[int, None]:
+    def maximum_evaluations(self) -> Optional[int]:
         """Maximum allowable number of evaluations of the objective function"""
         return self._maximum_evaluations
 
@@ -293,7 +293,7 @@ class EstimationStep(Step):
         return self._evaluation
 
     @property
-    def parameter_uncertainty_method(self) -> Union[str, None]:
+    def parameter_uncertainty_method(self) -> Optional[str]:
         """Method to use when estimating parameter uncertainty.
         Supported methods and their corresponding NMTRAN code:
 
@@ -322,47 +322,47 @@ class EstimationStep(Step):
         return self._laplace
 
     @property
-    def isample(self) -> Union[int, None]:
+    def isample(self) -> Optional[int]:
         """Number of samples per subject (or similar) for EM methods"""
         return self._isample
 
     @property
-    def niter(self) -> Union[int, None]:
+    def niter(self) -> Optional[int]:
         """Number of iterations for EM methods"""
         return self._niter
 
     @property
-    def auto(self) -> Union[bool, None]:
+    def auto(self) -> Optional[bool]:
         """Let estimation tool automatically add settings"""
         return self._auto
 
     @property
-    def keep_every_nth_iter(self) -> Union[int, None]:
+    def keep_every_nth_iter(self) -> Optional[int]:
         """Keep results for every nth iteration"""
         return self._keep_every_nth_iter
 
     @property
-    def residuals(self) -> Union[tuple[str, ...], None]:
+    def residuals(self) -> Optional[tuple[str, ...]]:
         """List of residuals to calculate"""
         return self._residuals
 
     @property
-    def predictions(self) -> Union[tuple[str, ...], None]:
+    def predictions(self) -> Optional[tuple[str, ...]]:
         """List of predictions to estimate"""
         return self._predictions
 
     @property
-    def eta_derivatives(self) -> Union[tuple[str, ...], None]:
+    def eta_derivatives(self) -> Optional[tuple[str, ...]]:
         """List of names of etas for which to calculate derivatives"""
         return self._eta_derivatives
 
     @property
-    def epsilon_derivatives(self) -> Union[tuple[str, ...], None]:
+    def epsilon_derivatives(self) -> Optional[tuple[str, ...]]:
         """List of names of epsilons for which to calculate derivatives"""
         return self._epsilon_derivatives
 
     @property
-    def tool_options(self) -> Union[frozenmapping[str, Any], None]:
+    def tool_options(self) -> Optional[frozenmapping[str, Any]]:
         """Dictionary of tool specific options"""
         return self._tool_options
 
@@ -560,7 +560,7 @@ class EstimationSteps(Sequence, Immutable):
             return EstimationSteps(self._steps[i])
         return self._steps[i]
 
-    def __add__(self, other) -> EstimationSteps:
+    def __add__(self, other: Union[EstimationStep, EstimationSteps, Iterable]) -> EstimationSteps:
         if isinstance(other, EstimationSteps):
             return EstimationSteps(self._steps + other._steps)
         elif isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
@@ -568,7 +568,7 @@ class EstimationSteps(Sequence, Immutable):
         else:
             return EstimationSteps(self._steps + tuple(other))
 
-    def __radd__(self, other) -> EstimationSteps:
+    def __radd__(self, other: Union[EstimationStep, Iterable]) -> EstimationSteps:
         if isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
             return EstimationSteps((other,) + self._steps)
         else:
@@ -577,7 +577,9 @@ class EstimationSteps(Sequence, Immutable):
     def __len__(self):
         return len(self._steps)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
+        if not isinstance(other, EstimationSteps):
+            return False
         if len(self) != len(other):
             return False
         for s1, s2 in zip(self, other):
@@ -647,12 +649,12 @@ class EstimationSteps(Sequence, Immutable):
         )
         return df
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         if len(self) == 0:
             return "EstimationSteps()"
         return self.to_dataframe().to_string()
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         if len(self) == 0:
             return "EstimationSteps()"
         else:
