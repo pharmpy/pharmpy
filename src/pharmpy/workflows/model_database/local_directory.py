@@ -375,3 +375,9 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
         model = self.retrieve_model()
         modelfit_results = self.retrieve_modelfit_results()
         return create_model_entry(model, modelfit_results)
+
+    # FIXME: Helper function until we can serialize model objects
+    def get_modelentry_helper(self, model):
+        path = self._find_full_model_path()
+        modelfit_results = get_modelfit_results(model, path)
+        return create_model_entry(model, modelfit_results)

@@ -42,6 +42,7 @@ from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.run import summarize_errors_from_entries
 from pharmpy.workflows import ModelEntry, Results, default_context
+from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
 from ..run import run_tool
@@ -515,7 +516,7 @@ def run_amd(
                 next_model = subresults.final_model
                 # FIXME: This could perhaps be piped
                 model_db = ctx.model_database
-                next_model_entry = model_db.retrieve_model_entry(next_model)
+                next_model_entry = model_db.get_model_entry(next_model)
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
             sum_models.append(subresults.summary_models.reset_index())
             sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
@@ -746,8 +747,11 @@ def _subfunc_structsearch_tmdd(
         )
 
         final_model = res.final_model
-        model_db = res.tool_database.model_database
-        all_models = [model_db.retrieve_model(model) for model in model_db.list_models()]
+        all_models = [
+            subctx1.retrieve_model_entry(model_name).model
+            for model_name in subctx1.list_all_names()
+        ]
+        all_models = retrieve_models(subctx1.path, names=subctx1.list_all_names())
 
         if not has_mixed_mm_fo_elimination(final_model):
             # Only select models that have mixed MM FO elimination
@@ -761,11 +765,15 @@ def _subfunc_structsearch_tmdd(
                 if len(rank_filtered) > 0:
                     rank_filtered = rank_filtered.sort_values(by=['rank'])
                     highest_ranked = rank_filtered.index[0]
-                    final_model = retrieve_models(
-                        ctx.path / 'subcontexts' / 'modelsearch', names=[highest_ranked]
-                    )[0]
+                    final_model = retrieve_models(subctx1.path, names=[highest_ranked])[0]
 
-        final_res = model_db.retrieve_modelfit_results(final_model.name)
+        res_path = (
+            subctx1.path
+            / "models"
+            / final_model.name
+            / ("model" + subctx1.model_database.file_extension)
+        )
+        final_res = get_modelfit_results(final_model, res_path)
 
         extra_model = None
         extra_model_results = None
@@ -789,12 +797,16 @@ def _subfunc_structsearch_tmdd(
             if len(rank_filtered) > 0:
                 rank_filtered = rank_filtered.sort_values(by=['rank'])
                 highest_ranked = rank_filtered.index[0]
-                extra_model = retrieve_models(
-                    ctx.path / 'subcontexts' / 'modelsearch', names=[highest_ranked]
-                )[0]
+                extra_model = retrieve_models(subctx1.path, names=[highest_ranked])[0]
                 if dv_types is not None:
                     extra_model = extra_model.replace(dataset=orig_dataset)
-                extra_model_results = model_db.retrieve_modelfit_results(extra_model.name)
+                res_path = (
+                    subctx1.path
+                    / "models"
+                    / extra_model.name
+                    / ("model" + subctx1.model_database.file_extension)
+                )
+                extra_model_results = get_modelfit_results(extra_model, res_path)
 
         # Replace original dataset if multiple DVs
         if dv_types is not None:
@@ -990,20 +1002,22 @@ def _subfunc_mechanistic_exploratory_covariates(
                     results=modelfit_results,
                     path=subcontext1.path,
                 )
-                model_db = res.tool_database.model_database
-                all_models = [model_db.retrieve_model(model) for model in model_db.list_models()]
                 covsearch_model_number = [
                     re.search(r"(\d*)$").group(1)
-                    for model in all_models
-                    if model.name.startswith('covsearch')
+                    for model_name in subcontext1.list_all_names()
+                    if model_name.startswith('covsearch')
                 ]
                 if covsearch_model_number:
                     index_offset = max(covsearch_model_number)  # Get largest number of run
                 if res.final_model.name != model.name:
                     model = res.final_model
-                    modelfit_results = res.tool_database.model_database.retrieve_modelfit_results(
-                        res.final_model.name
+                    res_path = (
+                        subcontext1.path
+                        / "models"
+                        / model.name
+                        / ("model" + subcontext1.model_database.file_extension)
                     )
+                    modelfit_results = get_modelfit_results(model, res_path)
                     added_covs = ModelFeatures.create_from_mfl_string(
                         get_model_features(model)
                     ).covariate

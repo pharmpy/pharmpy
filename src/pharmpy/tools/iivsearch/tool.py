@@ -30,6 +30,7 @@ from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, _remove_sublist
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
 IIV_STRATEGIES = frozenset(
@@ -260,10 +261,16 @@ def start(
         final_model = res.final_model
         if final_model.name != input_model_entry.model.name:
             # FIXME: This should be piped instead
-            final_model_entry = context.retrieve_model_entry(final_model.name)
+            res_path = (
+                context.path
+                / "models"
+                / final_model.name
+                / ("model" + context.model_database.file_extension)
+            )
+            final_res = get_modelfit_results(final_model, res_path)
         else:
             final_res = input_model_entry.modelfit_results
-            final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
+        final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
 
         # FIXME: Add parent model
         base_model_entry = final_model_entry

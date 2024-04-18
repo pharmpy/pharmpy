@@ -435,6 +435,11 @@ class TransactionalModelDatabase(ModelDatabase):
         with self.snapshot(obj) as sn:
             return sn.retrieve_model_entry()
 
+    # FIXME: Helper function until we can serialize model objects
+    def get_model_entry(self, obj: Union[Model, ModelEntry, ModelHash]) -> Results:
+        with self.snapshot(obj) as sn:
+            return sn.get_modelentry_helper(obj)
+
 
 class PendingTransactionError(Exception):
     pass
