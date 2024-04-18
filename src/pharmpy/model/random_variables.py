@@ -8,14 +8,10 @@ from typing import (
     Any,
     Collection,
     Container,
-    Dict,
     Iterable,
-    List,
     Mapping,
     Optional,
     Sequence,
-    Set,
-    Tuple,
     Union,
     overload,
 )
@@ -75,7 +71,7 @@ class VariabilityLevel(Immutable):
         group = kwargs.get('group', self._group)
         return VariabilityLevel(name, bool(reference), group)
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         return (
             isinstance(other, VariabilityLevel)
             and self._name == other._name
@@ -86,11 +82,11 @@ class VariabilityLevel(Immutable):
     def __hash__(self):
         return hash((self._name, self._reference, self._group))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         return {'name': self._name, 'reference': self._reference, 'group': self._group}
 
     @classmethod
-    def from_dict(cls, d: Dict[str, Any]) -> VariabilityLevel:
+    def from_dict(cls, d: dict[str, Any]) -> VariabilityLevel:
         return cls(**d)
 
     @property
@@ -115,7 +111,7 @@ class VariabilityLevel(Immutable):
 class VariabilityHierarchy(Immutable):
     """Description of a variability hierarchy"""
 
-    def __init__(self, levels: Tuple[VariabilityLevel, ...] = ()):
+    def __init__(self, levels: tuple[VariabilityLevel, ...] = ()):
         self._levels = levels
 
     @classmethod
@@ -147,7 +143,7 @@ class VariabilityHierarchy(Immutable):
         new = VariabilityHierarchy.create(levels)
         return new
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
         if not isinstance(other, VariabilityHierarchy):
             return False
 
@@ -162,7 +158,7 @@ class VariabilityHierarchy(Immutable):
     def __hash__(self):
         return hash(self._levels)
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         levels = tuple(level.to_dict() for level in self._levels)
         return {'levels': levels}
 
@@ -219,7 +215,7 @@ class VariabilityHierarchy(Immutable):
             raise ValueError(f"Cannot add {other} to VariabilityLevel")
 
     @property
-    def names(self) -> List[str]:
+    def names(self) -> list[str]:
         """Names of all variability levels"""
         return [varlev.name for varlev in self._levels]
 
@@ -231,7 +227,7 @@ class VariabilityHierarchy(Immutable):
         )
 
     @property
-    def levels(self) -> Dict[str, int]:
+    def levels(self) -> dict[str, int]:
         """Dictionary of variability level name to numerical level"""
         ind = self._find_reference()
         d = {}
@@ -243,7 +239,7 @@ class VariabilityHierarchy(Immutable):
     def __len__(self):
         return len(self._levels)
 
-    def __contains__(self, value):
+    def __contains__(self, value: str):
         return value in self.names
 
 
@@ -274,7 +270,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     def __init__(
         self,
-        dists: Tuple[Distribution, ...],
+        dists: tuple[Distribution, ...],
         eta_levels: VariabilityHierarchy,
         epsilon_levels: VariabilityHierarchy,
     ):
@@ -395,7 +391,9 @@ class RandomVariables(CollectionsSequence, Immutable):
             n += len(dist)
         return n
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any):
+        if not isinstance(other, RandomVariables):
+            return False
         if len(self) == len(other):
             for s, o in zip(self._dists, other._dists):
                 if s != o:
@@ -409,7 +407,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     def __hash__(self):
         return hash((self._dists, self._eta_levels, self._epsilon_levels))
 
-    def to_dict(self) -> Dict[str, Any]:
+    def to_dict(self) -> dict[str, Any]:
         dists = tuple(d.to_dict() for d in self._dists)
         return {
             'dists': dists,
@@ -467,7 +465,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             _, rv = self._lookup_rv(ind)
             return rv
 
-    def __contains__(self, ind):
+    def __contains__(self, ind: TSymbol):
         try:
             self._lookup_rv(ind)
             return True
@@ -526,13 +524,13 @@ class RandomVariables(CollectionsSequence, Immutable):
         return set().union(*(dist.free_symbols for dist in self._dists))
 
     @property
-    def parameter_names(self) -> Tuple[str, ...]:
+    def parameter_names(self) -> tuple[str, ...]:
         """List of parameter names for all random variables"""
         params = set().union(*(dist.parameter_names for dist in self._dists))
         return tuple(sorted(map(str, params)))
 
     @property
-    def variance_parameters(self) -> List[str]:
+    def variance_parameters(self) -> list[str]:
         """List of all parameters representing variance for all random variables"""
         parameters = []
         for dist in self._dists:
@@ -549,6 +547,8 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     def get_covariance(self, rv1: TSymbol, rv2: TSymbol) -> Expr:
         """Get covariance between two random variables"""
+        rv1 = Expr(rv1)
+        rv2 = Expr(rv2)
         _, dist1 = self._lookup_rv(rv1)
         _, dist2 = self._lookup_rv(rv2)
         if dist1 is not dist2:
@@ -580,7 +580,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         new_dists = tuple(dist.subs(d) for dist in self._dists)
         return self.replace(dists=new_dists)
 
-    def unjoin(self, inds: Union[TSymbol, Iterable[TSymbol]]) -> RandomVariables:
+    def unjoin(self, inds: Union[str, Expr, Iterable[Union[str, Expr]]]) -> RandomVariables:
         """Remove all covariances the random variables have with other random variables
 
         Parameters
@@ -605,7 +605,9 @@ class RandomVariables(CollectionsSequence, Immutable):
         --------
         join
         """
-        if isinstance(inds, str) or isinstance(inds, Expr) and inds.is_symbol():
+        if isinstance(inds, Expr) and not inds.is_symbol():
+            raise ValueError("Expression must be symbol")
+        if isinstance(inds, str) or isinstance(inds, Expr):
             inds = [inds]
         inds = [ind.name if not isinstance(ind, str) else ind for ind in inds]
 
@@ -657,7 +659,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         fill: Union[int, float, Expr] = 0,
         name_template: Optional[str] = None,
         param_names: Optional[list[str]] = None,
-    ) -> Tuple[RandomVariables, Dict[str, Tuple[str, str]]]:
+    ) -> tuple[RandomVariables, dict[str, tuple[str, str]]]:
         """Join random variables together into one joint distribution
 
         Set new covariances (and previous 0 covs) to 'fill'.
@@ -797,7 +799,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             _create_rng(rng),
         )
 
-    def _calc_covariance_matrix(self) -> Tuple[List[Expr], Matrix, List[str]]:
+    def _calc_covariance_matrix(self) -> tuple[list[Expr], Matrix, list[str]]:
         means = []
         names = []
         n = 0
@@ -838,7 +840,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     def __repr__(self):
         return '\n'.join(map(repr, self._dists))
 
-    def _repr_latex_(self):
+    def _repr_latex_(self) -> str:
         lines = (dist.latex_string(aligned=True) for dist in self._dists)
         return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
 
@@ -944,7 +946,7 @@ def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):
 
 
 def filter_distributions(
-    distributions: Iterable[Distribution], symbols: Set[sympy.Symbol]
+    distributions: Iterable[Distribution], symbols: set[sympy.Symbol]
 ) -> Iterable[Distribution]:
     covered_symbols = set()
 
@@ -959,8 +961,8 @@ def filter_distributions(
 
 
 def subs_distributions(
-    distributions: Iterable[Distribution], parameters: Dict[sympy.Symbol, float]
-) -> Iterable[Tuple[Tuple[sympy.Symbol, ...], NumericDistribution]]:
+    distributions: Iterable[Distribution], parameters: dict[sympy.Expr, float]
+) -> Iterable[tuple[tuple[sympy.Expr, ...], NumericDistribution]]:
     for dist in distributions:
         rvs_symbols = tuple(map(sympy.Symbol, dist.names))
         numeric_distribution = dist.evalf(parameters)
@@ -968,7 +970,7 @@ def subs_distributions(
 
 
 def sample_expr_from_rvs(
-    sampling_rvs: Iterable[Tuple[Tuple[sympy.Expr, ...], NumericDistribution]],
+    sampling_rvs: Iterable[tuple[tuple[sympy.Expr, ...], NumericDistribution]],
     expr: sympy.Expr,
     nsamples: int,
     rng,
@@ -978,10 +980,10 @@ def sample_expr_from_rvs(
 
 
 def sample_rvs(
-    sampling_rvs: Iterable[Tuple[Tuple[sympy.Expr, ...], NumericDistribution]],
+    sampling_rvs: Iterable[tuple[tuple[sympy.Expr, ...], NumericDistribution]],
     nsamples: int,
     rng,
-) -> Dict[sympy.Expr, np.ndarray]:
+) -> dict[sympy.Expr, np.ndarray]:
     data = {}
     for symbols, distribution in sampling_rvs:
         cursample = distribution.sample(rng, nsamples)

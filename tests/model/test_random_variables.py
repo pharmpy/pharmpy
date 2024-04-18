@@ -582,23 +582,23 @@ def test_get_variance():
 
 def test_get_covariance():
     dist1 = JointNormalDistribution.create(
-        ['ETA(1)', 'ETA(2)'],
+        ['ETA_1', 'ETA_2'],
         'iiv',
         [0, 0],
         [
-            [symbol('OMEGA(1,1)'), symbol('OMEGA(2,1)')],
-            [symbol('OMEGA(2,1)'), symbol('OMEGA(2,2)')],
+            [symbol('OMEGA_1_1'), symbol('OMEGA_2_1')],
+            [symbol('OMEGA_2_1'), symbol('OMEGA_2_2')],
         ],
     )
-    dist2 = NormalDistribution.create('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
+    dist2 = NormalDistribution.create('ETA_3', 'iiv', 0, symbol('OMEGA_3_3'))
     rvs = RandomVariables.create([dist1, dist2])
-    assert rvs.get_covariance('ETA(1)', 'ETA(2)') == symbol('OMEGA(2,1)')
-    assert rvs.get_covariance('ETA(3)', 'ETA(2)') == 0
+    assert rvs.get_covariance('ETA_1', 'ETA_2') == symbol('OMEGA_2_1')
+    assert rvs.get_covariance('ETA_3', 'ETA_2') == 0
 
-    assert dist2.get_covariance('ETA(3)', 'ETA(3)') == symbol('OMEGA(3,3)')
+    assert dist2.get_covariance('ETA_3', 'ETA_3') == symbol('OMEGA_3_3')
 
     with pytest.raises(KeyError):
-        dist2.get_covariance('ETA(1)', 'ETA(1)')
+        dist2.get_covariance('ETA_1', 'ETA_1')
 
 
 def test_unjoin():

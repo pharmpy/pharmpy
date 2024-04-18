@@ -14,7 +14,7 @@ from .expr import Expr
 
 
 class Matrix:
-    def __init__(self, source: Union[Matrix, Iterable] = ()):
+    def __init__(self, source: Union[sympy.Matrix, symengine.Matrix, Matrix, Iterable] = ()):
         if isinstance(source, Matrix):
             self._m = source._m
         else:
@@ -37,12 +37,20 @@ class Matrix:
         ],
     ) -> Matrix: ...
 
+    @overload
+    def __getitem__(self, ind: int) -> Expr: ...
+
     def __getitem__(self, ind) -> Union[Expr, Matrix]:
         a = self._m[ind]
         if isinstance(a, symengine.DenseMatrix):
             return Matrix(a)
         else:
             return Expr(a)
+
+    def __iter__(self):
+        for row in range(self.rows):
+            for col in range(self.cols):
+                yield self[row, col]
 
     @property
     def free_symbols(self) -> set[Expr]:
@@ -52,11 +60,11 @@ class Matrix:
         return Matrix(self._m.subs(d))
 
     @property
-    def rows(self):
+    def rows(self) -> int:
         return self._m.rows
 
     @property
-    def cols(self):
+    def cols(self) -> int:
         return self._m.cols
 
     def diagonal(self) -> Matrix:
