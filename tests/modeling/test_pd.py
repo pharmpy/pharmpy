@@ -158,3 +158,10 @@ def test_pd_michaelis_menten(load_model_for_test, testdata):
     michaelis_menten = set_michaelis_menten_elimination(model)
     pkpd_mm = add_effect_compartment(michaelis_menten, 'linear')
     assert pkpd.statements.find_assignment('E') == pkpd_mm.statements.find_assignment('E')
+
+
+def test_find_central_comp(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    pkpd = add_indirect_effect(model, 'linear', True)
+    central = pkpd.statements.ode_system.central_compartment
+    assert central.name == 'CENTRAL'
