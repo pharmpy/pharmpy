@@ -1051,7 +1051,7 @@ class CompartmentalSystem(Statement):
             # E.g. TMDD models have more than one output
             # FIXME: Relying heavily on compartment naming for drug metabolite
             central = list(self._g.predecessors(output))[-1]
-            if central.name in ["METABOLITE", "EFFECT", "COMPLEX"]:
+            if central.name in ["METABOLITE", "EFFECT", "COMPLEX", "RESPONSE"]:
                 central = self.find_compartment("CENTRAL")
                 if central is None:
                     raise ValueError('Cannot find central compartment')
