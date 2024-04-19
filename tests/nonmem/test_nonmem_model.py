@@ -43,7 +43,7 @@ def S(x):
 
 
 def test_source(pheno):
-    assert pheno.model_code.startswith('$PROBLEM PHENOBARB')
+    assert pheno.code.startswith('$PROBLEM PHENOBARB')
 
 
 def test_convert_nonmem_model(testdata):
@@ -238,7 +238,7 @@ def test_add_statements(pheno, statement_new, buf_new, param_new):
     assert len(model.statements) == 16
 
     parser = NMTranParser()
-    stream = parser.parse(model.model_code)
+    stream = parser.parse(model.code)
 
     assert str(model.internals.control_stream) == str(stream)
 
@@ -387,7 +387,7 @@ def test_deterministic_theta_comments(pheno):
 
 def test_remove_eta(pheno):
     model = remove_iiv(pheno, 'ETA_1')
-    assert model.model_code.split('\n')[13] == 'V = TVV*EXP(ETA_2)'
+    assert model.code.split('\n')[13] == 'V = TVV*EXP(ETA_2)'
     assert '$ABBR REPLACE ETA_2=ETA(1)'
 
 
@@ -491,7 +491,7 @@ def test_abbr_write(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     model = add_iiv(model, 'S1', 'add')
 
-    assert 'ETA_S1' in model.model_code
+    assert 'ETA_S1' in model.code
     assert 'ETA_S1' in model.random_variables.names
     assert S('ETA_S1') in model.statements.free_symbols
 
@@ -499,8 +499,8 @@ def test_abbr_write(load_model_for_test, pheno_path):
 def test_abbr_read_write(load_model_for_test, pheno_path):
     model_write = load_model_for_test(pheno_path)
     model_write = add_iiv(model_write, 'S1', 'add')
-    model_read = Model.parse_model_from_string(model_write.model_code)
-    assert model_read.model_code == model_write.model_code
+    model_read = Model.parse_model_from_string(model_write.code)
+    assert model_read.code == model_write.code
     assert model_read.statements == model_write.statements
     assert not (
         set(model_read.random_variables.names) - set(model_write.random_variables.names)
@@ -515,12 +515,12 @@ def test_insert_unknown_record(pheno):
     rec = create_record('$TRIREME one')
     newcs = pheno.internals.control_stream.insert_record(rec)
     model = pheno.replace(internals=pheno.internals.replace(control_stream=newcs))
-    assert model.model_code.split('\n')[-1] == '$TRIREME one'
+    assert model.code.split('\n')[-1] == '$TRIREME one'
 
     rec = create_record('\n$OA two')
     newcs = model.internals.control_stream.insert_record(rec)
     model = model.replace(internals=model.internals.replace(control_stream=newcs))
-    assert model.model_code.split('\n')[-1] == '$OA two'
+    assert model.code.split('\n')[-1] == '$OA two'
 
 
 def test_parse_illegal_record_name():
@@ -613,7 +613,7 @@ def test_des(load_model_for_test, testdata, model_path, transformation):
     model_ref = load_model_for_test(testdata / model_path)
     model_ref = transformation(model_ref)
 
-    model_des = Model.parse_model_from_string(model_ref.model_code)
+    model_des = Model.parse_model_from_string(model_ref.code)
 
     assert model_ref.statements.ode_system == model_des.statements.ode_system
 
@@ -640,7 +640,7 @@ def test_cmt_update(load_model_for_test, testdata, tmp_path):
         dataset["CMT"] = 2
         dataset.loc[(dataset["ID"] <= 573) & (dataset["AMT"] != 0), "CMT"] = 1
         dataset.to_csv(str(tmp_path / 'temp_dataset.csv'), index=False)
-        model_string = model.model_code
+        model_string = model.code
         model_string = model_string.replace("DUMMYPATH", str(tmp_path / 'temp_dataset.csv'))
         model_string = model_string.replace("CMT=DROP", "CMT")
 
@@ -791,7 +791,7 @@ $SIGMA 1
     newstep = steps[0].replace(**kwargs)
     model = model.replace(estimation_steps=newstep + steps[1:])
     model = model.update_source()
-    assert model.model_code.split('\n')[-2] == rec_ref
+    assert model.code.split('\n')[-2] == rec_ref
 
 
 @pytest.mark.parametrize(
@@ -847,19 +847,19 @@ $EST METH=COND INTER
     est_new = EstimationStep.create('IMP', interaction=True, tool_options={'saddle_reset': 1})
     model = model.replace(estimation_steps=model.estimation_steps + est_new)
     model = model.update_source()
-    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
+    assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     est_new = EstimationStep.create('SAEM', interaction=True)
     model = model.replace(estimation_steps=est_new + model.estimation_steps)
     model = model.update_source()
-    assert model.model_code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
+    assert model.code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
     est_new = EstimationStep.create('FO', evaluation=True)
     model = model.replace(estimation_steps=model.estimation_steps + est_new)
     model = model.update_source()
-    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
+    assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
     est_new = EstimationStep.create('IMP', evaluation=True)
     model = model.replace(estimation_steps=model.estimation_steps + est_new)
     model = model.update_source()
-    assert model.model_code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
+    assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
 
 def test_remove_estimation_step():
@@ -877,7 +877,7 @@ $EST METH=COND INTER
     model = model.replace(estimation_steps=model.estimation_steps[1:])
     assert not model.estimation_steps
     model = model.update_source()
-    assert model.model_code.split('\n')[-2] == '$SIGMA 1'
+    assert model.code.split('\n')[-2] == '$SIGMA 1'
 
 
 def test_update_source_comments():
@@ -952,7 +952,7 @@ $OMEGA 2 ; OM1
 $SIGMA 3 ; SI1
 $ESTIMATION METHOD=1 INTER
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_table_long_ids(testdata):
@@ -973,7 +973,7 @@ def test_table_long_ids(testdata):
     dataset_new['ID'] = dataset_new['ID'] * 10000
     model = model.replace(dataset=dataset_new)
     model = set_estimation_step(model, 'FO', residuals=['CWRES'])
-    assert 'FORMAT=' in model.model_code
+    assert 'FORMAT=' in model.code
 
 
 def test_convert_model_iv(testdata, tmp_path):
@@ -994,8 +994,8 @@ def test_parse_derivatives(load_model_for_test, testdata):
 
 def test_no_etas_in_model(pheno):
     pheno = remove_iiv(pheno)
-    assert 'DUMMYETA' in pheno.model_code
-    assert 'ETA(1)' in pheno.model_code
+    assert 'DUMMYETA' in pheno.code
+    assert 'ETA(1)' in pheno.code
 
 
 def test_0_fix_diag_omega():
@@ -1192,14 +1192,14 @@ $SIGMA 1
     model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
     model = remove_iiv(model, ['ETA_MY'])
     model = add_iiv(model, ['VAR'], 'exp', '+', eta_names=['ETA_MY'])
-    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA_DUMMY=ETA(1)'
-    assert model.model_code.split('\n')[4] == '$ABBR REPLACE ETA_MY=ETA(2)'
-    assert not model.model_code.split('\n')[5].startswith('$ABBR')
-    assert 'VAR = EXP(ETA_MY)' in model.model_code
+    assert model.code.split('\n')[3] == '$ABBR REPLACE ETA_DUMMY=ETA(1)'
+    assert model.code.split('\n')[4] == '$ABBR REPLACE ETA_MY=ETA(2)'
+    assert not model.code.split('\n')[5].startswith('$ABBR')
+    assert 'VAR = EXP(ETA_MY)' in model.code
     assert 'Y = THETA(1) + VAR + ERR(1) + EXP(ETA_DUMMY)'
     model = remove_iiv(model, ['ETA_DUMMY'])
-    assert model.model_code.split('\n')[3] == '$ABBR REPLACE ETA_MY=ETA(1)'
-    assert not model.model_code.split('\n')[4].startswith('$ABBR')
+    assert model.code.split('\n')[3] == '$ABBR REPLACE ETA_MY=ETA(1)'
+    assert not model.code.split('\n')[4].startswith('$ABBR')
 
 
 def test_abbr_not_replace():
@@ -1216,7 +1216,7 @@ $SIGMA 1
 '''
     model = Model.parse_model_from_string(code)
     model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
-    assert model.model_code.split('\n')[3] == '$ABBR PROTECT DERIV2=NO'
+    assert model.code.split('\n')[3] == '$ABBR PROTECT DERIV2=NO'
 
 
 def test_parse_dvid(testdata, load_model_for_test):

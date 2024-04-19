@@ -7,8 +7,8 @@ def markdown_html(string):
 
 
 def print_model_diff(model_ref, model_new):
-    model_ref = model_ref.model_code.split('\n')
-    model_new = model_new.model_code.split('\n')
+    model_ref = model_ref.code.split('\n')
+    model_new = model_new.code.split('\n')
 
     diffs = list(set(model_new) - set(model_ref))
 

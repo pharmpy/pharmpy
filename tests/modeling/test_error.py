@@ -28,17 +28,17 @@ from pharmpy.modeling.error import _get_prop_init, set_time_varying_error_model
 def test_remove_error_model(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = remove_error_model(model)
-    assert model.model_code.split('\n')[11] == 'Y = F'
+    assert model.code.split('\n')[11] == 'Y = F'
 
 
 def test_set_additive_error_model(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_additive_error_model(model)
-    assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)'
-    assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
-    before = model.model_code
+    assert model.code.split('\n')[11] == 'Y = F + EPS(1)'
+    assert model.code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
+    before = model.code
     model = set_additive_error_model(model)  # One more time and nothing should change
-    assert before == model.model_code
+    assert before == model.code
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
     model = set_additive_error_model(model)
@@ -56,8 +56,8 @@ IF (DVID.EQ.2) Y = Y_2
 def test_set_additive_error_model_logdv(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_additive_error_model(model, data_trans="log(Y)")
-    assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
-    assert model.model_code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
+    assert model.code.split('\n')[11] == 'Y = LOG(F) + EPS(1)/F'
+    assert model.code.split('\n')[17] == '$SIGMA  11.2225 ; sigma'
 
 
 def test_set_proportional_error_model_nolog(load_model_for_test, testdata):
@@ -66,13 +66,13 @@ def test_set_proportional_error_model_nolog(load_model_for_test, testdata):
         statements=model.statements[0:5] + Assignment.create('Y', 'F') + model.statements[6:]
     )
     model = set_proportional_error_model(model)
-    assert model.model_code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ'
-    assert model.model_code.split('\n')[22] == '$SIGMA  0.09 ; sigma'
+    assert model.code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ'
+    assert model.code.split('\n')[22] == '$SIGMA  0.09 ; sigma'
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_proportional_error_model(model, zero_protection=False)
-    assert model.model_code.split('\n')[11] == 'Y=F+F*EPS(1)'
-    assert model.model_code.split('\n')[17] == '$SIGMA 0.013241'
+    assert model.code.split('\n')[11] == 'Y=F+F*EPS(1)'
+    assert model.code.split('\n')[17] == '$SIGMA 0.013241'
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
     model = set_proportional_error_model(model, dv=2)
@@ -123,42 +123,42 @@ $OMEGA 0.031128  ; IVV
 $SIGMA  0.09 ; sigma
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_set_combined_error_model(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_combined_error_model(model)
-    assert model.model_code.split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
-    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
-    assert model.model_code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
-    before = model.model_code
+    assert model.code.split('\n')[11] == 'Y = F + EPS(1)*F + EPS(2)'
+    assert model.code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
+    assert model.code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
+    before = model.code
     model = set_combined_error_model(model)  # One more time and nothing should change
-    assert before == model.model_code
+    assert before == model.code
 
 
 def test_set_combined_error_model_log(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_combined_error_model(model, data_trans='log(Y)')
-    assert model.model_code.split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
-    assert model.model_code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
-    assert model.model_code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
+    assert model.code.split('\n')[11] == 'Y = LOG(F) + EPS(2)/F + EPS(1)'
+    assert model.code.split('\n')[17] == '$SIGMA  0.09 ; sigma_prop'
+    assert model.code.split('\n')[18] == '$SIGMA  11.2225 ; sigma_add'
 
 
 def test_set_combined_error_model_with_eta_on_ruv(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_iiv_on_ruv(model)
     model = set_combined_error_model(model)
-    assert model.model_code.split('\n')[12] == 'Y = F + EPS(1)*F*EXP(ETA_RV1) + EPS(2)*EXP(ETA_RV1)'
+    assert model.code.split('\n')[12] == 'Y = F + EPS(1)*F*EXP(ETA_RV1) + EPS(2)*EXP(ETA_RV1)'
 
 
 def test_set_combined_error_model_with_time_varying(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_time_varying_error_model(model, cutoff=1.0)
     model = set_combined_error_model(model)
-    assert model.model_code.split('\n')[11] == 'IF (TIME.LT.1.0) THEN'
-    assert model.model_code.split('\n')[12] == '    Y = F + EPS(1)*F*THETA(3) + EPS(2)*THETA(3)'
-    assert model.model_code.split('\n')[14] == '    Y = F + EPS(1)*F + EPS(2)'
+    assert model.code.split('\n')[11] == 'IF (TIME.LT.1.0) THEN'
+    assert model.code.split('\n')[12] == '    Y = F + EPS(1)*F*THETA(3) + EPS(2)*THETA(3)'
+    assert model.code.split('\n')[14] == '    Y = F + EPS(1)*F + EPS(2)'
 
 
 def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, load_model_for_test):
@@ -167,13 +167,10 @@ def test_set_combined_error_model_with_time_varying_and_eta_on_ruv(testdata, loa
     model = set_iiv_on_ruv(model)
     model = set_combined_error_model(model)
     assert (
-        model.model_code.split('\n')[13]
+        model.code.split('\n')[13]
         == '    Y = F + EPS(1)*F*THETA(3)*EXP(ETA_RV1) + EPS(2)*THETA(3)*EXP(ETA_RV1)'
     )
-    assert (
-        model.model_code.split('\n')[15]
-        == '    Y = F + EPS(1)*F*EXP(ETA_RV1) + EPS(2)*EXP(ETA_RV1)'
-    )
+    assert model.code.split('\n')[15] == '    Y = F + EPS(1)*F*EXP(ETA_RV1) + EPS(2)*EXP(ETA_RV1)'
 
 
 def test_set_combined_error_model_multiple_dvs(testdata, load_model_for_test):
@@ -226,7 +223,7 @@ $OMEGA 0.0309626  ; IVCL
 $OMEGA 0.031128  ; IVV
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_additive_error_without_f(create_model_for_test):
@@ -268,7 +265,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA  11.2225 ; sigma
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_get_prop_init(testdata, load_model_for_test):
@@ -528,7 +525,7 @@ $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
 
-    assert model.model_code == correct
+    assert model.code == correct
 
     model = read_model_from_string(code)
     model = set_weighted_error_model(model)
@@ -548,7 +545,7 @@ $OMEGA 0.01
 $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -593,7 +590,7 @@ $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTERACTION
 """
 
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_set_weighted_error_model():
@@ -636,7 +633,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
     code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
@@ -682,7 +679,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_has_weighted_error_model():
@@ -798,7 +795,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 1 FIX
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_set_time_varying_error_model():
@@ -843,7 +840,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 def test_set_time_varying_error_model_multiple_dvs(testdata, load_model_for_test):
@@ -898,7 +895,7 @@ $SIGMA 0.013241
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 @pytest.mark.parametrize(
@@ -975,7 +972,7 @@ def test_set_iiv_on_ruv(
 ):
     model = load_model_for_test(pheno_path)
 
-    model_str = model.model_code
+    model_str = model.code
     model_more_eps = re.sub(
         'IPRED=F\nIRES=DV-IPRED', 'IPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)', model_str
     )
@@ -1113,7 +1110,7 @@ def test_set_power_on_ruv(
         model_more_eps = re.sub(
             r'V=TVV\*EXP\(ETA\(2\)\)',
             'V=TVV',
-            model_pheno.model_code,
+            model_pheno.code,
         )
         model_more_eps = re.sub(
             r'( 0.031128  ;        IVV\n)',
@@ -1150,4 +1147,4 @@ def test_set_power_on_ruv_with_zero_protect(load_model_for_test, testdata):
     model = set_proportional_error_model(model)
     model = set_power_on_ruv(model)
 
-    assert 'F + EPS(1)*IPREDADJ**THETA(3)' in model.model_code
+    assert 'F + EPS(1)*IPREDADJ**THETA(3)' in model.code

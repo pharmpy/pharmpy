@@ -647,13 +647,13 @@ def test_add_iov_regression_code_record(load_model_for_test, testdata, eta_iov_1
     model_r12 = remove_iov(model, to_remove=[eta_iov_1, eta_iov_2])
 
     assert model_r12 == model_r1r2
-    assert model_r12.model_code == model_r1r2.model_code
+    assert model_r12.code == model_r1r2.code
 
     model_r2r1 = remove_iov(model, to_remove=[eta_iov_2])
     model_r2r1 = remove_iov(model_r2r1, to_remove=[eta_iov_1])
 
     assert model_r1r2 == model_r2r1
-    assert model_r1r2.model_code == model_r2r1.model_code
+    assert model_r1r2.code == model_r2r1.code
 
 
 def test_add_pk_iiv_1(load_model_for_test, pheno_path):
@@ -842,7 +842,7 @@ def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
 def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem/pheno_block.mod')
 
-    model_str = model.model_code
+    model_str = model.code
     model_with_iov = model_str.replace(
         '$OMEGA DIAGONAL(2)\n' '0.0309626  ; IVCL\n' '0.031128  ; IVV',
         '$OMEGA BLOCK(1)\n0.1\n$OMEGA BLOCK(1) SAME\n',
@@ -930,7 +930,7 @@ $ESTIMATION METHOD=1 INTERACTION
 0.015
 0.02
 $OMEGA 0.1'''
-        in model.model_code
+        in model.code
     )
 
 
@@ -1081,7 +1081,7 @@ def test_remove_iov_with_options(
 
         model_with_some_iovs_removed = remove_iov(start_model, to_remove=to_remove)
 
-        assert cases in model_with_some_iovs_removed.model_code
+        assert cases in model_with_some_iovs_removed.code
         assert set(model_with_some_iovs_removed.random_variables.iov.names) == set(rest)
 
         rec_abbr = ''.join(
@@ -1468,7 +1468,7 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, a
 
     cov_params = {p.symbol for p in model.parameters if p.symbol.name.startswith('IIV')}
     assert all(p in model.random_variables.free_symbols for p in cov_params)
-    assert not re.search(r'\$THETA\s+0\.\d+\s+;\s+IIV_', model.model_code)
+    assert not re.search(r'\$THETA\s+0\.\d+\s+;\s+IIV_', model.code)
 
 
 @pytest.mark.parametrize(
@@ -1721,7 +1721,7 @@ def test_update_initial_individual_estimates(
         model = update_initial_individual_estimates(model, res.individual_estimates, force=force)
         model = model.write_files()
 
-        assert ('$ETAS FILE=run1_input.phi' in model.model_code) is file_exists
+        assert ('$ETAS FILE=run1_input.phi' in model.code) is file_exists
         assert (os.path.isfile('run1_input.phi')) is file_exists
 
 
@@ -1731,18 +1731,18 @@ def test_nested_iiv_transformations(load_model_for_test, pheno_path):
 
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
 
-    assert 'IIV_CL_IIV_V' in model.model_code
+    assert 'IIV_CL_IIV_V' in model.code
 
     model = load_model_for_test(pheno_path)
 
     model = remove_iiv(model, 'CL')
 
-    assert '0.031128' in model.model_code
-    assert '0.0309626' not in model.model_code
+    assert '0.031128' in model.code
+    assert '0.0309626' not in model.code
 
     model = load_model_for_test(pheno_path)
 
     model = remove_iiv(model, 'V')
 
-    assert '0.0309626' in model.model_code
-    assert '0.031128' not in model.model_code
+    assert '0.0309626' in model.code
+    assert '0.031128' not in model.code

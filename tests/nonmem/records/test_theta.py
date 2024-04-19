@@ -193,7 +193,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION\n"""
-    assert model.model_code == expected
+    assert model.code == expected
 
     model = set_lower_bounds(model, {'TVCL': 0})
     expected = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -216,4 +216,4 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION\n"""
-    assert model.model_code == expected
+    assert model.code == expected

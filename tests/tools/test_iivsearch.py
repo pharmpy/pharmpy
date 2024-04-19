@@ -185,7 +185,7 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
 
     assert param_dict == param_dict_ref
 
-    model_code = model.model_code.replace(
+    model_code = model.code.replace(
         'CL = THETA(1) * EXP(ETA(1))', 'ETA_1 = ETA(1)\nCL = THETA(1) * EXP(ETA_1)'
     )
     model = create_model_for_test(model_code)

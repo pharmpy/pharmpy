@@ -52,7 +52,7 @@ class Model(pharmpy.model.Model):
         return model
 
     @property
-    def model_code(self):
+    def code(self):
         model = self.update_source()
         code = model.internals.src
         assert code is not None

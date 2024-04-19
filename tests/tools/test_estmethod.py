@@ -61,8 +61,8 @@ def test_create_base_model(
     )
     base_model = base_model_entry.model
     assert len(base_model.estimation_steps) == 2
-    assert base_model.model_code.split('\n')[-5] == est_rec
-    assert base_model.model_code.split('\n')[-4] == eval_rec
+    assert base_model.code.split('\n')[-5] == est_rec
+    assert base_model.code.split('\n')[-4] == eval_rec
 
 
 @pytest.mark.parametrize(
@@ -105,8 +105,8 @@ def test_create_candidate_model(
     )
     candidate_model = candidate_model_entry.model
     assert len(candidate_model.estimation_steps) == 2
-    assert candidate_model.model_code.split('\n')[-5] == est_rec
-    assert candidate_model.model_code.split('\n')[-4] == eval_rec
+    assert candidate_model.code.split('\n')[-5] == est_rec
+    assert candidate_model.code.split('\n')[-4] == eval_rec
 
 
 @pytest.mark.parametrize(

@@ -297,7 +297,7 @@ class Model(BaseModel):
         return model
 
     @property
-    def model_code(self):
+    def code(self):
         return str(self.internals.control_stream)
 
     def read_raw_dataset(self, parse_columns: Tuple[str, ...] = ()):

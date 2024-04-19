@@ -167,8 +167,8 @@ def test_dvid_column(testdata):
     assert model.datainfo.typeix['dvid'][0].name == 'DVID'
 
     pkpd_model = set_direct_effect(model, 'linear')
-    assert "IF (DVID.EQ.1) Y = Y" in pkpd_model.model_code
-    assert "IF (DVID.EQ.2) Y = Y_2" in pkpd_model.model_code
+    assert "IF (DVID.EQ.1) Y = Y" in pkpd_model.code
+    assert "IF (DVID.EQ.2) Y = Y_2" in pkpd_model.code
 
     # Replace name of DVID column
     dataset2 = model.dataset.rename({'DVID': 'FLAG'}, axis=1)
@@ -179,5 +179,5 @@ def test_dvid_column(testdata):
     assert model2.datainfo.typeix['dvid'][0].name == 'FLAG'
 
     pkpd_model = set_direct_effect(model2, 'linear')
-    assert "IF (FLAG.EQ.1) Y = Y" in pkpd_model.model_code
-    assert "IF (FLAG.EQ.2) Y = Y_2" in pkpd_model.model_code
+    assert "IF (FLAG.EQ.1) Y = Y" in pkpd_model.code
+    assert "IF (FLAG.EQ.2) Y = Y_2" in pkpd_model.code

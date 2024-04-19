@@ -102,7 +102,7 @@ def test_execute_workflow_map_reduce(tmp_path):
 def test_execute_workflow_set_instantaneous_absorption(load_model_for_test, testdata, tmp_path):
     model1 = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model2 = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
-    advan1_before = model1.model_code
+    advan1_before = model1.code
 
     t1 = Task('init', lambda x: x, model2)
     t2 = Task('update', set_instantaneous_absorption)
@@ -117,7 +117,7 @@ def test_execute_workflow_set_instantaneous_absorption(load_model_for_test, test
             ignore_scratch_warning()
             res = execute_workflow(wf)
 
-    assert res.model_code == advan1_before
+    assert res.code == advan1_before
 
 
 @pytest.mark.xdist_group(name="workflow")

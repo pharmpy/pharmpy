@@ -644,7 +644,7 @@ class Model(Immutable):
         return self._internals
 
     @property
-    def model_code(self) -> str:
+    def code(self) -> str:
         """Model type specific code"""
         d = self.to_dict()
         d['__magic__'] = "Pharmpy Model"

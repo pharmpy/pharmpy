@@ -41,7 +41,7 @@ def test_estmethod(
         context = LocalDirectoryContext("estmethod1")
         res_models = [model for model in retrieve_models(context) if model.name != 'input_model']
         assert len(res_models) == no_of_candidates
-        assert advan_ref in res_models[-1].model_code
+        assert advan_ref in res_models[-1].code
         if compare_ofv:
             assert all(model.estimation_steps[-1].evaluation for model in res_models)
         else:

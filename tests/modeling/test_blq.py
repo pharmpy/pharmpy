@@ -56,8 +56,8 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
 
     model = transform_blq(model, method=method, lloq=0.1)
 
-    assert sd_ref in model.model_code
-    assert all(statement in model.model_code for statement in y_ref)
+    assert sd_ref in model.code
+    assert all(statement in model.code for statement in y_ref)
 
     assert all(est.laplace for est in model.estimation_steps)
 
@@ -126,8 +126,8 @@ def test_update_blq_transformation(
 
     model = error_func_after(model, **args)
 
-    assert sd_ref in model.model_code
-    assert all(statement in model.model_code for statement in y_ref)
+    assert sd_ref in model.code
+    assert all(statement in model.code for statement in y_ref)
 
     assert all(est.laplace for est in model.estimation_steps)
 
@@ -170,7 +170,7 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model_float = transform_blq(model, lloq=0.1)
 
-    assert 'DV.GE.LLOQ' in model_float.model_code
+    assert 'DV.GE.LLOQ' in model_float.code
 
     df_blq = model.dataset
     df_blq['BLQ'] = np.random.randint(0, 2, df_blq.shape[0])
@@ -191,10 +191,10 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
 
     model_lloq_col = transform_blq(model_lloq)
 
-    assert 'DV.GE.LLOQ' in model_lloq_col.model_code
-    assert 'LLOQ = ' not in model_lloq_col.model_code
+    assert 'DV.GE.LLOQ' in model_lloq_col.code
+    assert 'LLOQ = ' not in model_lloq_col.code
 
     model_float_with_blq_col = transform_blq(model_blq, lloq=0.1)
 
-    assert 'BLQ.EQ.0' in model_float_with_blq_col.model_code
-    assert 'LLOQ = ' in model_float_with_blq_col.model_code
+    assert 'BLQ.EQ.0' in model_float_with_blq_col.code
+    assert 'LLOQ = ' in model_float_with_blq_col.code

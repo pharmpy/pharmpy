@@ -42,7 +42,7 @@ def execute_model(model_entry, db):
 
     pre += "\n"
 
-    code = pre + model.model_code
+    code = pre + model.code
     cg = CodeGenerator()
 
     dv = list(model.dependent_variables.keys())[0]

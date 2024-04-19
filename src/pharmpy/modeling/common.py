@@ -137,7 +137,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     if not force and path.exists():
         raise FileExistsError(f'Cannot overwrite model at {path} with "force" not set')
     with open(path, 'w', encoding='latin-1') as fp:
-        fp.write(model.model_code)
+        fp.write(model.code)
     return model
 
 
@@ -194,7 +194,7 @@ def get_model_code(model: Model):
     >>> get_model_code(model)  # doctest: +SKIP
 
     """
-    return model.model_code
+    return model.code
 
 
 def print_model_code(model: Model) -> None:
@@ -245,7 +245,7 @@ def print_model_code(model: Model) -> None:
     $TABLE ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
            NOPRINT ONEHEADER FILE=pheno.tab
     """
-    print(model.model_code)
+    print(model.code)
 
 
 def set_name(model: Model, new_name: str):

@@ -62,7 +62,7 @@ def execute_model(model_entry, db, evaluate=False, path=None):
         pre += f'etas <- as.matrix(read.csv("{fix_eta_path}"))'
     pre += "\n"
 
-    code = pre + model.model_code
+    code = pre + model.code
     cg = CodeGenerator()
     cg.add('ofv <- fit$objDf$OBJF')
     cg.add('thetas <- as.data.frame(fit$theta)')

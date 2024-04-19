@@ -32,8 +32,8 @@ def test_nan_add_covariate_effect(load_model_for_test, pheno_path):
 
     model = add_covariate_effect(model, 'CL', 'new_col', 'cat')
 
-    assert not re.search('NaN', model.model_code)
-    assert re.search(r'NEW_COL\.EQ\.-99', model.model_code)
+    assert not re.search('NaN', model.code)
+    assert re.search(r'NEW_COL\.EQ\.-99', model.code)
 
 
 def test_nested_add_covariate_effect(load_model_for_test, testdata):
@@ -57,8 +57,8 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
     assert has_covariate_effect(model, 'CL', 'WGT')
     assert has_covariate_effect(model, 'CL', 'APGR')
 
-    assert 'CL = CL*CLAPGR*CLWGT' in model.model_code
-    assert 'CL = CL*CLWGT' not in model.model_code
+    assert 'CL = CL*CLAPGR*CLWGT' in model.code
+    assert 'CL = CL*CLWGT' not in model.code
 
 
 @pytest.mark.parametrize(
@@ -421,7 +421,7 @@ def test_add_covariate_effect(
     assert error_record_after == error_record_before
 
     for effect in effects:
-        assert f'POP_{effect[0]}{effect[1]}' in model.model_code
+        assert f'POP_{effect[0]}{effect[1]}' in model.code
 
     if not allow_nested:
         for effect in effects:
@@ -439,7 +439,7 @@ def test_add_covariate_effect(
         )
 
         for effect in effects:
-            assert f'POP_{effect[0]}{effect[1]}' not in model.model_code
+            assert f'POP_{effect[0]}{effect[1]}' not in model.code
 
 
 @pytest.mark.parametrize(

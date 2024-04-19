@@ -139,7 +139,7 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241 ;sigma
 $ESTIMATION METHOD=1 INTERACTION
 """
-    assert model.model_code == correct
+    assert model.code == correct
 
 
 @pytest.mark.usefixtures('testdata')

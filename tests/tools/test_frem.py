@@ -443,9 +443,7 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
     param_names = get_params(model_frem, rvs, npars)
     assert param_names == ['CL', 'V']
 
-    model_multiple_etas = re.sub(
-        r'(V=TVV\*EXP\(ETA\(2\)\))', r'\1*EXP(ETA(3))', model_frem.model_code
-    )
+    model_multiple_etas = re.sub(r'(V=TVV\*EXP\(ETA\(2\)\))', r'\1*EXP(ETA(3))', model_frem.code)
 
     model = create_model_for_test(model_multiple_etas)
     model = model.replace(dataset=model_frem.dataset)
@@ -459,7 +457,7 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
     model_separate_declare = re.sub(
         r'(V=TVV\*EXP\(ETA\(2\)\))',
         'ETA2=ETA(2)\n      V=TVV*EXP(ETA2)',
-        model_frem.model_code,
+        model_frem.code,
     )
 
     model = create_model_for_test(model_separate_declare)
