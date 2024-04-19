@@ -1147,7 +1147,7 @@ class CompartmentalSystem(Statement):
         else:
             return transits
 
-    def find_depot(self, statements: Statements) -> Compartment:
+    def find_depot(self, statements: Statements) -> Optional[Compartment]:
         """Find the depot compartment
 
         The depot compartment is defined to be the compartment that only has out flow to the
@@ -1624,10 +1624,10 @@ class Infusion(Dose, Immutable):
         >>> dose.free_symbols   # doctest: +SKIP
         {AMT, RATE}
         """
-        if self.rate is not None:
+        if self._rate is not None:
             symbs = self._rate.free_symbols
         else:
-            assert self.duration is not None
+            assert self._duration is not None
             symbs = self._duration.free_symbols
         return symbs | self._amount.free_symbols
 
@@ -1647,11 +1647,12 @@ class Infusion(Dose, Immutable):
         Infusion(AMT, admid=1, duration=D1)
         """
         amount = self._amount.subs(substitutions)
-        if self.rate is not None:
+        if self._rate is not None:
             rate = self._rate.subs(substitutions)
             duration = None
         else:
             rate = None
+            assert self._duration is not None
             duration = self._duration.subs(substitutions)
         return Infusion(amount, admid=self._admid, rate=rate, duration=duration)
 
