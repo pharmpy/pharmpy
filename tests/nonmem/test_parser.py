@@ -11,6 +11,49 @@ def symbol(x):
     return Expr.symbol(x)
 
 
+def test_parse_des():
+    code = """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA testpharmpy/lib/python3.10/site-packages/pharmpy/internals/example_models/pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN13 TOL=9
+
+$MODEL COMPARTMENT=(CENTRAL DEFDOSE)
+$PK
+KM = THETA(4)
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CLMM = TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S1=V
+
+$DES
+DADT(1) = -A(1)*CLMM*KM/(V*(A(1)/V + KM))
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$THETA  (0,33.95,101.85000000000001) ; POP_KM
+$OMEGA  0.0309626 ; IIV_CLMM
+$OMEGA 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=pheno.tab"""
+    model = read_model_from_string(code)
+    assert len(model.statements) == 16
+
+
 def test_simple_parse():
     parser = NMTranParser()
 

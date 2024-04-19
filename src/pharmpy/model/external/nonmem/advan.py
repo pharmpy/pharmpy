@@ -306,7 +306,11 @@ def des_assign_statements(
 
         sset = des.statements.subs(subs_dict)
 
-        statements = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_symbol()]
+        statements = [
+            sympy.Eq(s.symbol, s.expression)
+            for s in sset
+            if s.symbol.is_symbol() and not s.symbol.is_derivative()
+        ]
         if len(statements) == 0:
             statements = None
         return statements
