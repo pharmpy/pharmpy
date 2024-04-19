@@ -65,7 +65,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert obj['path'] == 'data1.csv'
 
         h = ModelHash(model)
-        with open(f"database/{h}/model.mod", "r") as fh:
+        with open(f"database/{h}/model.ctl", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
@@ -90,7 +90,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
             assert obj['path'] == 'data2.csv'
 
         h = ModelHash(run2)
-        with open(f"database/{h}/model.mod", "r") as fh:
+        with open(f"database/{h}/model.ctl", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()
@@ -126,7 +126,7 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
             assert obj['path'] == 'data1.csv'
 
         h = ModelHash(model_entry.model)
-        with open(f"database/{h}/model.mod", "r") as fh:
+        with open(f"database/{h}/model.ctl", "r") as fh:
             line = fh.readline()
             assert line == "$PROBLEM PHENOBARB SIMPLE MODEL\n"
             line = fh.readline()

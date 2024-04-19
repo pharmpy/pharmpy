@@ -22,7 +22,6 @@ def convert_model(model):
         observation_transformation=model.observation_transformation,
         description=model.description,
         parent_model=model.name,
-        filename_extension=model.filename_extension,
         initial_individual_estimates=model.initial_individual_estimates,
     )
     return new

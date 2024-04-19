@@ -44,7 +44,6 @@ def convert_model(
         statements=model.statements,
         dependent_variables=model.dependent_variables,
         execution_steps=model.execution_steps,
-        filename_extension='.R',
         datainfo=model.datainfo,
         dataset=model.dataset,
         name=model.name,
@@ -267,6 +266,8 @@ class NLMIXRModelInternals(ModelInternals):
 
 
 class Model(pharmpy.model.Model):
+    filename_extension = ('.R',)
+
     def __init__(self, **kwargs):
         super().__init__(
             **kwargs,

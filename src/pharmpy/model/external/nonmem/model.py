@@ -115,6 +115,8 @@ def convert_model(model):
 
 
 class Model(BaseModel):
+    filename_extension = '.ctl'
+
     def __init__(
         self,
         internals: NONMEMModelInternals,
@@ -312,10 +314,8 @@ def parse_model(
     parser = NMTranParser()
     if path is None:
         name = 'run1'
-        filename_extension = '.ctl'
     else:
         name = path.stem
-        filename_extension = path.suffix
 
     control_stream = parser.parse(code)
     di = parse_datainfo(control_stream, path)
@@ -392,7 +392,6 @@ def parse_model(
         execution_steps=execution_steps,
         parent_model=None,
         initial_individual_estimates=init_etas,
-        filename_extension=filename_extension,
         value_type=value_type,
         description=description,
         internals=internals,

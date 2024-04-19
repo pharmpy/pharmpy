@@ -69,6 +69,8 @@ class ModelInternals:
 class Model(Immutable):
     """The Pharmpy model class"""
 
+    filename_extension = '.ppmod'
+
     def __init__(
         self,
         name: str = '',
@@ -82,7 +84,6 @@ class Model(Immutable):
         execution_steps: ExecutionSteps = ExecutionSteps(),
         parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
-        filename_extension: str = '',
         value_type: str = 'PREDICTION',
         description: str = '',
         internals: Optional[ModelInternals] = None,
@@ -102,7 +103,6 @@ class Model(Immutable):
         self._execution_steps = execution_steps
         self._parent_model = parent_model
         self._initial_individual_estimates = initial_individual_estimates
-        self._filename_extension = filename_extension
         self._value_type = value_type
         self._description = description
         self._internals = internals
@@ -121,7 +121,6 @@ class Model(Immutable):
         execution_steps: Optional[ExecutionSteps] = None,
         parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
-        filename_extension: str = '',
         value_type: str = 'PREDICTION',
         description: str = '',
         internals: Optional[ModelInternals] = None,
@@ -155,7 +154,6 @@ class Model(Immutable):
             statements=statements,
             description=description,
             parent_model=parent_model,
-            filename_extension=filename_extension,
             value_type=value_type,
             internals=internals,
             initial_individual_estimates=initial_individual_estimates,
@@ -305,17 +303,12 @@ class Model(Immutable):
         initial_individual_estimates = kwargs.get(
             'initial_individual_estimates', self.initial_individual_estimates
         )
-        filename_extension = kwargs.get('filename_extension', self.filename_extension)
-        if not isinstance(filename_extension, str):
-
-            raise TypeError("Filename extension has to be of string type")
         for key_name in (
             'name',
             'description',
             'internals',
             'parent_model',
             'initial_individual_estimates',
-            'filename_extension',
         ):
             try:
                 kwargs.pop(key_name)
@@ -410,7 +403,6 @@ class Model(Immutable):
             execution_steps=execution_steps,
             parent_model=parent_model,
             initial_individual_estimates=initial_individual_estimates,
-            filename_extension=filename_extension,
             value_type=value_type,
             description=description,
             internals=internals,
@@ -560,11 +552,6 @@ class Model(Immutable):
     def name(self) -> str:
         """Name of the model"""
         return self._name
-
-    @property
-    def filename_extension(self) -> str:
-        """Filename extension of model file"""
-        return self._filename_extension
 
     @property
     def dependent_variables(self) -> frozenmapping[Expr, int]:

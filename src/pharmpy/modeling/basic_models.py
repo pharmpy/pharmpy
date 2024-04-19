@@ -131,7 +131,6 @@ def create_basic_pk_model(
         random_variables=rvs,
         parameters=params,
         description='Start model',
-        filename_extension='.mod',  # Should this really be needed?
         dataset=df,
         datainfo=di,
     )

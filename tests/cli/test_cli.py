@@ -57,7 +57,7 @@ def test_model_sample(datadir, tmp_path):
         args = ['model', 'sample', 'run1.mod', '--seed=24']
         cli.main(args)
 
-        with open('run1.mod', 'r') as f_ori, open('sample_1.mod', 'r') as f_cov:
+        with open('run1.mod', 'r') as f_ori, open('sample_1.ctl', 'r') as f_cov:
             mod_ori = f_ori.read()
             mod_cov = f_cov.read()
 
