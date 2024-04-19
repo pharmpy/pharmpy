@@ -374,7 +374,7 @@ def test_summarize_modelfit_results(
 
     assert not summary_multest.loc['pheno_multEST']['minimization_successful']
     summary_multest_full = summarize_modelfit_results_from_entries(
-        [pheno_multest_me, mox_me], include_all_estimation_steps=True
+        [pheno_multest_me, mox_me], include_all_execution_steps=True
     )
 
     assert len(summary_multest_full.index) == 3
@@ -386,7 +386,7 @@ def test_summarize_modelfit_results(
 
     summary_multest_full_no_res = summarize_modelfit_results_from_entries(
         [None, mox_me],
-        include_all_estimation_steps=True,
+        include_all_execution_steps=True,
     )
 
     assert summary_multest_full_no_res.loc['mox1', 1]['ofv'] == -624.5229577248352

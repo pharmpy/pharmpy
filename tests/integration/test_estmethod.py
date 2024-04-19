@@ -43,9 +43,9 @@ def test_estmethod(
         assert len(res_models) == no_of_candidates
         assert advan_ref in res_models[-1].code
         if compare_ofv:
-            assert all(model.estimation_steps[-1].evaluation for model in res_models)
+            assert all(model.execution_steps[-1].evaluation for model in res_models)
         else:
-            assert all(model.estimation_steps[-1].evaluation is False for model in res_models)
+            assert all(model.execution_steps[-1].evaluation is False for model in res_models)
         rundir = tmp_path / 'estmethod1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidates

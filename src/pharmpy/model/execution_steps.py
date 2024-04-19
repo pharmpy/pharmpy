@@ -14,7 +14,7 @@ else:
 SUPPORTED_SOLVERS = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
 
 
-class Step(Immutable):
+class ExecutionStep(Immutable):
     def __init__(
         self,
         solver: Optional[str] = None,
@@ -127,7 +127,7 @@ class Step(Immutable):
         )
 
 
-class EstimationStep(Step):
+class EstimationStep(ExecutionStep):
     """Definition of one estimation operation"""
 
     """Supported estimation methods
@@ -225,8 +225,8 @@ class EstimationStep(Step):
                 f"Unknown parameter uncertainty method {parameter_uncertainty_method}. "
                 f"Recognized methods are {sorted(EstimationStep.supported_parameter_uncertainty_methods)}."
             )
-        solver = Step._canonicalize_solver(solver)
-        tool_options = Step._canonicalize_tool_options(tool_options)
+        solver = ExecutionStep._canonicalize_solver(solver)
+        tool_options = ExecutionStep._canonicalize_tool_options(tool_options)
         if eta_derivatives is None:
             eta_derivatives = ()
         else:
@@ -423,7 +423,7 @@ class EstimationStep(Step):
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> EstimationStep:
         d = dict(d)
-        Step._adjust_dict(d)
+        ExecutionStep._adjust_dict(d)
         return cls(**d)
 
     def __repr__(self):
@@ -441,7 +441,7 @@ class EstimationStep(Step):
         )
 
 
-class SimulationStep(Step):
+class SimulationStep(ExecutionStep):
     """Definition of one simulation operation"""
 
     def __init__(
@@ -516,14 +516,14 @@ class SimulationStep(Step):
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> SimulationStep:
         d = dict(d)
-        Step._adjust_dict(d)
+        ExecutionStep._adjust_dict(d)
         return cls(**d)
 
     def __repr__(self):
         return f"SimulationStep(n={self._n}, seed={self._seed}, {super()._partial_repr()})"
 
 
-class EstimationSteps(Sequence, Immutable):
+class ExecutionSteps(Sequence, Immutable):
     """A sequence of estimation steps
 
     Parameters
@@ -541,44 +541,44 @@ class EstimationSteps(Sequence, Immutable):
             steps = ()
         else:
             steps = tuple(steps)
-        return EstimationSteps(steps=steps)
+        return ExecutionSteps(steps=steps)
 
-    def replace(self, **kwargs) -> EstimationSteps:
+    def replace(self, **kwargs) -> ExecutionSteps:
         steps = kwargs.get('steps', self._steps)
-        return EstimationSteps.create(steps)
+        return ExecutionSteps.create(steps)
 
     @overload
     def __getitem__(self, i: int) -> EstimationStep: ...
 
     @overload
-    def __getitem__(self, i: slice) -> EstimationSteps: ...
+    def __getitem__(self, i: slice) -> ExecutionSteps: ...
 
     def __getitem__(
         self, i: Union[int, slice]
-    ) -> Union[EstimationStep, SimulationStep, EstimationSteps]:
+    ) -> Union[EstimationStep, SimulationStep, ExecutionSteps]:
         if isinstance(i, slice):
-            return EstimationSteps(self._steps[i])
+            return ExecutionSteps(self._steps[i])
         return self._steps[i]
 
-    def __add__(self, other: Union[EstimationStep, EstimationSteps, Iterable]) -> EstimationSteps:
-        if isinstance(other, EstimationSteps):
-            return EstimationSteps(self._steps + other._steps)
+    def __add__(self, other: Union[EstimationStep, ExecutionSteps, Iterable]) -> ExecutionSteps:
+        if isinstance(other, ExecutionSteps):
+            return ExecutionSteps(self._steps + other._steps)
         elif isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
-            return EstimationSteps(self._steps + (other,))
+            return ExecutionSteps(self._steps + (other,))
         else:
-            return EstimationSteps(self._steps + tuple(other))
+            return ExecutionSteps(self._steps + tuple(other))
 
-    def __radd__(self, other: Union[EstimationStep, Iterable]) -> EstimationSteps:
+    def __radd__(self, other: Union[EstimationStep, Iterable]) -> ExecutionSteps:
         if isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
-            return EstimationSteps((other,) + self._steps)
+            return ExecutionSteps((other,) + self._steps)
         else:
-            return EstimationSteps(tuple(other) + self._steps)
+            return ExecutionSteps(tuple(other) + self._steps)
 
     def __len__(self):
         return len(self._steps)
 
     def __eq__(self, other: Any):
-        if not isinstance(other, EstimationSteps):
+        if not isinstance(other, ExecutionSteps):
             return False
         if len(self) != len(other):
             return False
@@ -594,7 +594,7 @@ class EstimationSteps(Sequence, Immutable):
         return {'steps': tuple(step.to_dict() for step in self._steps)}
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> EstimationSteps:
+    def from_dict(cls, d: dict[str, Any]) -> ExecutionSteps:
         steps = []
         for sdict in d['steps']:
             if sdict['class'] == 'EstimationStep':
@@ -616,7 +616,7 @@ class EstimationSteps(Sequence, Immutable):
 
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.estimation_steps.to_dataframe()   # doctest: +ELLIPSIS
+        >>> model.execution_steps.to_dataframe()   # doctest: +ELLIPSIS
         method  interaction       parameter_uncertainty_method  ...  auto keep_every_nth_iter  tool_options
         0   FOCE         True  SANDWICH  ...  None                None            {}
         """
@@ -651,11 +651,11 @@ class EstimationSteps(Sequence, Immutable):
 
     def __repr__(self) -> str:
         if len(self) == 0:
-            return "EstimationSteps()"
+            return "ExecutionSteps()"
         return self.to_dataframe().to_string()
 
     def _repr_html_(self) -> str:
         if len(self) == 0:
-            return "EstimationSteps()"
+            return "ExecutionSteps()"
         else:
             return self.to_dataframe().to_html()

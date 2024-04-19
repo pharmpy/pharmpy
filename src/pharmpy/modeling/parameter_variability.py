@@ -1155,7 +1155,7 @@ def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
     sd = np.array([np.sqrt(parent1.init), np.sqrt(parent2.init)])
     init_default = round(0.1 * sd[0] * sd[1], 7)
 
-    last_estimation_step = [est for est in model.estimation_steps if not est.evaluation][-1]
+    last_estimation_step = [est for est in model.execution_steps if not est.evaluation][-1]
     if last_estimation_step.method == 'FO':
         return init_default
     elif individual_estimates is not None:

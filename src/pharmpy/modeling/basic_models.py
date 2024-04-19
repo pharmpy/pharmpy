@@ -14,7 +14,7 @@ from pharmpy.model import (
     CompartmentalSystemBuilder,
     DataInfo,
     EstimationStep,
-    EstimationSteps,
+    ExecutionSteps,
     Model,
     NormalDistribution,
     Parameter,
@@ -121,12 +121,12 @@ def create_basic_pk_model(
         predictions=['PRED', 'CIPREDI'],
         residuals=['CWRES'],
     )
-    eststeps = EstimationSteps.create([est])
+    eststeps = ExecutionSteps.create([est])
 
     model = Model.create(
         name='start',
         statements=stats,
-        estimation_steps=eststeps,
+        execution_steps=eststeps,
         dependent_variables={y_ass.symbol: 1},
         random_variables=rvs,
         parameters=params,

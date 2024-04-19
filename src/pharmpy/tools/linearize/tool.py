@@ -1,6 +1,6 @@
 import pharmpy.model
 from pharmpy.basic import Expr
-from pharmpy.model import Assignment, EstimationStep, EstimationSteps, Statements
+from pharmpy.model import Assignment, EstimationStep, ExecutionSteps, Statements
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
 
 
@@ -66,6 +66,6 @@ def create_linearized_model(model):
 
     est = EstimationStep.create('foce', interaction=True)
     linbase = linbase.replace(
-        name='linbase', statements=Statements(ms), estimation_steps=EstimationSteps.create([est])
+        name='linbase', statements=Statements(ms), execution_steps=ExecutionSteps.create([est])
     )
     return linbase

@@ -13,7 +13,7 @@ from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
-    EstimationSteps,
+    ExecutionSteps,
     Infusion,
     Model,
     ModelError,
@@ -2162,11 +2162,11 @@ def set_ode_solver(
 
     """
     new_steps = []
-    for step in model.estimation_steps:
+    for step in model.execution_steps:
         new = step.replace(solver=solver)
         new_steps.append(new)
-    newsteps = EstimationSteps.create(new_steps)
-    model = model.replace(estimation_steps=newsteps).update_source()
+    newsteps = ExecutionSteps.create(new_steps)
+    model = model.replace(execution_steps=newsteps).update_source()
     return model
 
 

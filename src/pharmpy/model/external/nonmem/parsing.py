@@ -16,7 +16,7 @@ from pharmpy.model import (
     DataInfo,
     DatasetError,
     EstimationStep,
-    EstimationSteps,
+    ExecutionSteps,
     JointNormalDistribution,
     ModelSyntaxError,
     NormalDistribution,
@@ -362,7 +362,7 @@ def parse_description(control_stream) -> str:
     return rec.title
 
 
-def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
+def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
     steps = []
     records = control_stream.get_records('ESTIMATION')
     covrec = control_stream.get_records('COVARIANCE')
@@ -502,7 +502,7 @@ def parse_estimation_steps(control_stream, random_variables) -> EstimationSteps:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
         steps.append(meth)
 
-    steps = EstimationSteps.create(steps)
+    steps = ExecutionSteps.create(steps)
 
     return steps
 

@@ -11,7 +11,7 @@ from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import frozenmapping
-from pharmpy.model import Assignment, DataInfo, EstimationStep, EstimationSteps
+from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
 from pharmpy.model.model import ModelInternals, compare_before_after_params, update_datainfo
@@ -23,7 +23,7 @@ from .parsing import (
     parse_datainfo,
     parse_dataset,
     parse_description,
-    parse_estimation_steps,
+    parse_execution_steps,
     parse_initial_individual_estimates,
     parse_parameters,
     parse_statements,
@@ -50,7 +50,7 @@ class NONMEMModelInternals(ModelInternals):
     control_stream: NMTranControlStream
     old_name: str
     old_description: str
-    old_estimation_steps: EstimationSteps
+    old_execution_steps: ExecutionSteps
     old_observation_transformation: Expr
     old_parameters: Parameters
     old_random_variables: RandomVariables
@@ -87,7 +87,7 @@ def convert_model(model):
     nm_model._datainfo = model.datainfo
     nm_model._parameters = model.parameters
     nm_model._dataset = model.dataset
-    nm_model._estimation_steps = model.estimation_steps
+    nm_model._execution_steps = model.execution_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
     new_obs_trans = frozenmapping({dv: dv for dv in model.dependent_variables.keys()})
     internals = nm_model.internals.replace(old_parameters=Parameters())
@@ -233,7 +233,7 @@ class Model(BaseModel):
         new_internals = model.internals.replace(
             control_stream=cs,
             old_description=model._description,
-            old_estimation_steps=model._estimation_steps,
+            old_execution_steps=model._execution_steps,
             old_datainfo=model._datainfo,
             old_statements=model._statements,
         )
@@ -280,9 +280,9 @@ class Model(BaseModel):
             model = model.replace(**replace_dict)
 
             if (
-                len(model.estimation_steps) > 0
-                and isinstance(model.estimation_steps[-1], EstimationStep)
-                and model.estimation_steps[-1].parameter_uncertainty_method == "EFIM"
+                len(model.execution_steps) > 0
+                and isinstance(model.execution_steps[-1], EstimationStep)
+                and model.execution_steps[-1].parameter_uncertainty_method == "EFIM"
             ):
                 data_record = model.internals.control_stream.get_records('DATA', 1)[0]
                 if data_record.filename == 'DUMMYPATH' or force:
@@ -354,7 +354,7 @@ def parse_model(
         )
         parameters = parameters.set_initial_estimates(nearest)
 
-    estimation_steps = parse_estimation_steps(control_stream, rvs)
+    execution_steps = parse_execution_steps(control_stream, rvs)
 
     description = parse_description(control_stream)
 
@@ -368,7 +368,7 @@ def parse_model(
         control_stream=control_stream,
         old_name=name,
         old_description=description,
-        old_estimation_steps=estimation_steps,
+        old_execution_steps=execution_steps,
         old_observation_transformation=obs_trans,
         old_parameters=parameters,
         old_random_variables=rvs,
@@ -389,7 +389,7 @@ def parse_model(
         datainfo=di,
         dependent_variables=dependent_variables,
         observation_transformation=obs_trans,
-        estimation_steps=estimation_steps,
+        execution_steps=execution_steps,
         parent_model=None,
         initial_individual_estimates=init_etas,
         filename_extension=filename_extension,

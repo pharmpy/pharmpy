@@ -157,7 +157,7 @@ def _create_base_model(parameter_uncertainty_method, compare_ofv, model_entry):
         )
     )
 
-    while len(base_model.estimation_steps) > 0:
+    while len(base_model.execution_steps) > 0:
         base_model = remove_estimation_step(base_model, 0)
 
     base_model = add_estimation_step(base_model, **est_settings)
@@ -210,7 +210,7 @@ def _create_candidate_model(
         ),
     )
 
-    while len(model.estimation_steps) > 0:
+    while len(model.execution_steps) > 0:
         model = remove_estimation_step(model, 0)
 
     if est_settings:

@@ -72,7 +72,7 @@ def check_model(
         model = change_rvs_same(model, omega=True)
 
     # Checks regarding esimation method
-    method = model.estimation_steps[0].method
+    method = model.execution_steps[0].method
     if not known_estimation_method(method):
         print_warning(
             f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"

@@ -1,6 +1,6 @@
 from typing import Any, Dict, List, Literal, Optional
 
-from pharmpy.model import EstimationStep, EstimationSteps, Model, SimulationStep
+from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
 ESTIMATION_METHODS = ('FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES')
@@ -34,7 +34,7 @@ def set_estimation_step(model: Model, method: Literal[ESTIMATION_METHODS], idx: 
     >>> model = load_example_model("pheno")
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
     >>> model = set_estimation_step(model, 'IMP', evaluation=True, tool_options=opts)
-    >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
+    >>> model.execution_steps[0]   # doctest: +ELLIPSIS
     EstimationStep('IMP', interaction=True, parameter_uncertainty_method='SANDWICH', evaluation=True, ...,
     tool_options=...
 
@@ -55,10 +55,10 @@ def set_estimation_step(model: Model, method: Literal[ESTIMATION_METHODS], idx: 
 
     d = kwargs
     d['method'] = method
-    steps = model.estimation_steps
+    steps = model.execution_steps
     newstep = steps[idx].replace(**d)
     newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -92,7 +92,7 @@ def add_estimation_step(
     >>> model = load_example_model("pheno")
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
     >>> model = add_estimation_step(model, 'IMP', tool_options=opts)
-    >>> ests = model.estimation_steps
+    >>> ests = model.execution_steps
     >>> len(ests)
     2
     >>> ests[1]   # doctest: +ELLIPSIS
@@ -115,11 +115,11 @@ def add_estimation_step(
             idx = _as_integer(idx)
         except TypeError:
             raise TypeError(f'Index must be integer: {idx}')
-        steps = model.estimation_steps
+        steps = model.execution_steps
         newsteps = steps[0:idx] + meth + steps[idx:]
     else:
-        newsteps = model.estimation_steps + meth
-    model = model.replace(estimation_steps=newsteps)
+        newsteps = model.execution_steps + meth
+    model = model.replace(execution_steps=newsteps)
 
     return model.update_source()
 
@@ -146,13 +146,13 @@ def set_simulation(model: Model, n: int = 1, seed: int = 64206):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = set_simulation(model, n=10, seed=1234)
-    >>> steps = model.estimation_steps
+    >>> steps = model.execution_steps
     >>> steps[0]
     SimulationStep(n=10, seed=1234, solver=None, solver_rtol=None, solver_atol=None, tool_options=None)
 
     """
     final_est = None
-    for step in model.estimation_steps:
+    for step in model.execution_steps:
         if isinstance(step, EstimationStep):
             final_est = step
     if final_est is not None:
@@ -165,8 +165,8 @@ def set_simulation(model: Model, n: int = 1, seed: int = 64206):
         )
     else:
         step = SimulationStep.create(n=n, seed=seed)
-    steps = EstimationSteps((step,))
-    model = model.replace(estimation_steps=steps)
+    steps = ExecutionSteps((step,))
+    model = model.replace(execution_steps=steps)
     return model.update_source()
 
 
@@ -190,7 +190,7 @@ def remove_estimation_step(model: Model, idx: int):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = remove_estimation_step(model, 0)
-    >>> ests = model.estimation_steps
+    >>> ests = model.execution_steps
     >>> len(ests)
     0
 
@@ -209,9 +209,9 @@ def remove_estimation_step(model: Model, idx: int):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    steps = model.estimation_steps
+    steps = model.execution_steps
     newsteps = steps[0:idx] + steps[idx + 1 :]
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -240,7 +240,7 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     >>> model = load_example_model("pheno")
     >>> opts = {'NITER': 1000, 'ISAMPLE': 100}
     >>> model = append_estimation_step_options(model, tool_options=opts, idx=0)
-    >>> est = model.estimation_steps[0]
+    >>> est = model.execution_steps[0]
     >>> len(est.tool_options)
     2
 
@@ -259,12 +259,12 @@ def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], i
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    steps = model.estimation_steps
+    steps = model.execution_steps
     toolopts = dict(steps[idx].tool_options)
     toolopts.update(tool_options)
     newstep = steps[idx].replace(tool_options=toolopts)
     newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -291,7 +291,7 @@ def add_parameter_uncertainty_step(
     >>> model = load_example_model("pheno")
     >>> model = set_estimation_step(model, 'FOCE', parameter_uncertainty_method=None)
     >>> model = add_parameter_uncertainty_step(model, 'SANDWICH')
-    >>> ests = model.estimation_steps
+    >>> ests = model.execution_steps
     >>> ests[0]   # doctest: +ELLIPSIS
     EstimationStep('FOCE', interaction=True, parameter_uncertainty_method='SANDWICH', ...)
 
@@ -305,10 +305,10 @@ def add_parameter_uncertainty_step(
     set_evaluation_step
 
     """
-    steps = model.estimation_steps
+    steps = model.execution_steps
     newstep = steps[-1].replace(parameter_uncertainty_method=f'{parameter_uncertainty_method}')
     newsteps = steps[0:-1] + newstep
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -330,7 +330,7 @@ def remove_parameter_uncertainty_step(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = remove_parameter_uncertainty_step(model)
-    >>> ests = model.estimation_steps
+    >>> ests = model.execution_steps
     >>> ests[0]   # doctest: +ELLIPSIS
     EstimationStep('FOCE', interaction=True, parameter_uncertainty_method=None, ...)
 
@@ -344,10 +344,10 @@ def remove_parameter_uncertainty_step(model: Model):
     set_evaluation_step
 
     """
-    steps = model.estimation_steps
+    steps = model.execution_steps
     newstep = steps[-1].replace(parameter_uncertainty_method=None)
     newsteps = steps[:-1] + newstep
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -374,7 +374,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = set_evaluation_step(model)
-    >>> model.estimation_steps[0]   # doctest: +ELLIPSIS
+    >>> model.execution_steps[0]   # doctest: +ELLIPSIS
     EstimationStep('FOCE', interaction=True, parameter_uncertainty_method='SANDWICH', evaluation=True, ...
 
     See also
@@ -392,13 +392,13 @@ def set_evaluation_step(model: Model, idx: int = -1):
     except TypeError:
         raise TypeError(f'Index must be integer: {idx}')
 
-    steps = model.estimation_steps
+    steps = model.execution_steps
     newstep = steps[idx].replace(evaluation=True)
     if idx != -1:
         newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
     else:
         newsteps = steps[0:-1] + newstep
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -423,10 +423,10 @@ def add_predictions(model: Model, pred: List[str]):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model.estimation_steps[-1].predictions
+    >>> model.execution_steps[-1].predictions
     ('IPRED', 'PRED')
     >>> model = add_predictions(model, ['CIPREDI'])
-    >>> model.estimation_steps[-1].predictions
+    >>> model.execution_steps[-1].predictions
     ('CIPREDI', 'IPRED', 'PRED')
 
     See also
@@ -440,12 +440,12 @@ def add_predictions(model: Model, pred: List[str]):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
-    steps = model.estimation_steps
+    steps = model.execution_steps
     old_predictions = steps[-1].predictions
     new_predictions = tuple(sorted(set(old_predictions) | set(pred)))
     newstep = steps[-1].replace(predictions=new_predictions)
     newsteps = steps[0:-1] + newstep
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -470,10 +470,10 @@ def add_residuals(model: Model, res: List[str]):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model.estimation_steps[-1].residuals
+    >>> model.execution_steps[-1].residuals
     ('CWRES',)
     >>> model = add_residuals(model, ['RES'])
-    >>> model.estimation_steps[-1].residuals
+    >>> model.execution_steps[-1].residuals
     ('CWRES', 'RES')
 
     See also
@@ -487,12 +487,12 @@ def add_residuals(model: Model, res: List[str]):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
-    steps = model.estimation_steps
+    steps = model.execution_steps
     old_residuals = steps[-1].residuals
     new_residuals = tuple(sorted(set(old_residuals) | set(res)))
     newstep = steps[-1].replace(residuals=new_residuals)
     newsteps = steps[0:-1] + newstep
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     return model.update_source()
 
 
@@ -518,7 +518,7 @@ def remove_predictions(model: Model, to_remove: List[str] = 'all'):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = remove_predictions(model, 'all')
-    >>> model.estimation_steps[-1].predictions
+    >>> model.execution_steps[-1].predictions
     ()
 
     See also
@@ -532,11 +532,11 @@ def remove_predictions(model: Model, to_remove: List[str] = 'all'):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
-    steps = model.estimation_steps
+    steps = model.execution_steps
     old_predictions = steps[-1].predictions
     newstep = steps[-1].replace(predictions=())
     newsteps = steps[0:-1] + newstep
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     model = model.update_source()
     if to_remove != 'all':
         for value in to_remove:
@@ -545,7 +545,7 @@ def remove_predictions(model: Model, to_remove: List[str] = 'all'):
         new_predictions = tuple(sorted(set(old_predictions) - set(to_remove)))
         newstep = steps[-1].replace(predictions=new_predictions)
         newsteps = steps[0:-1] + newstep
-        model = model.replace(estimation_steps=newsteps)
+        model = model.replace(execution_steps=newsteps)
         model = model.update_source()
     return model
 
@@ -572,7 +572,7 @@ def remove_residuals(model: Model, to_remove: List[str] = None):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = remove_residuals(model, 'all')
-    >>> model.estimation_steps[-1].residuals
+    >>> model.execution_steps[-1].residuals
     ()
 
     See also
@@ -586,11 +586,11 @@ def remove_residuals(model: Model, to_remove: List[str] = None):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
-    steps = model.estimation_steps
+    steps = model.execution_steps
     old_residuals = steps[-1].residuals
     newstep = steps[-1].replace(residuals=())
     newsteps = steps[0:-1] + newstep
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
     model = model.update_source()
     if to_remove != 'all':
         for value in to_remove:
@@ -599,6 +599,6 @@ def remove_residuals(model: Model, to_remove: List[str] = None):
         new_residuals = tuple(sorted(set(old_residuals) - set(to_remove)))
         newstep = steps[-1].replace(residuals=new_residuals)
         newsteps = steps[0:-1] + newstep
-        model = model.replace(estimation_steps=newsteps)
+        model = model.replace(execution_steps=newsteps)
         model.update_source()
     return model

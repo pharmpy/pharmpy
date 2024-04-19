@@ -7,7 +7,7 @@ from typing import TYPE_CHECKING, Dict, Optional, Union
 import pharmpy.modeling as modeling
 from pharmpy.basic import Expr
 from pharmpy.internals.math import nearest_positive_semidefinite
-from pharmpy.model import EstimationSteps, Model, Parameters, RandomVariables
+from pharmpy.model import ExecutionSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
 from pharmpy.model.external.nonmem.parsing import parse_table_columns
 from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile, PhiTable
@@ -38,7 +38,7 @@ def _parse_modelfit_results(
 
     path = Path(path)
 
-    estimation_steps = model.estimation_steps
+    execution_steps = model.execution_steps
     parameters = model.parameters
     etas = model.random_variables.etas
 
@@ -102,13 +102,13 @@ def _parse_modelfit_results(
         estimate_near_boundary,
         log,
         est_table_numbers,
-    ) = _parse_lst(len(estimation_steps), path, table_numbers, log)
+    ) = _parse_lst(len(execution_steps), path, table_numbers, log)
 
     if est_table_numbers:
         eststeps = est_table_numbers
     else:
-        eststeps = list(range(1, len(estimation_steps) + 1))
-    last_est_ind = _get_last_est(estimation_steps)
+        eststeps = list(range(1, len(execution_steps) + 1))
+    last_est_ind = _get_last_est(execution_steps)
     minsucc_iters = pd.Series(
         minimization_successful, index=eststeps, name='minimization_successful'
     )
@@ -130,12 +130,9 @@ def _parse_modelfit_results(
     if cov is not None:
         cov = nearest_positive_semidefinite(cov)
 
-    evaluation = _parse_evaluation(estimation_steps)
+    evaluation = _parse_evaluation(execution_steps)
 
-    if (
-        not model.estimation_steps
-        or model.estimation_steps[-1].parameter_uncertainty_method is None
-    ):
+    if not model.execution_steps or model.execution_steps[-1].parameter_uncertainty_method is None:
         covstep_successful = None
     elif covstatus:
         covstep_successful = True
@@ -352,14 +349,14 @@ def parse_estimation_status(results_file, table_numbers):
     )
 
 
-def _get_last_est(estimation_steps: EstimationSteps):
+def _get_last_est(execution_steps: ExecutionSteps):
     # Find last estimation
-    for i in range(len(estimation_steps) - 1, -1, -1):
-        step = estimation_steps[i]
+    for i in range(len(execution_steps) - 1, -1, -1):
+        step = execution_steps[i]
         if not step.evaluation:
             return i
     # If all steps were evaluation the last evaluation step is relevant
-    return len(estimation_steps) - 1
+    return len(execution_steps) - 1
 
 
 def _parse_phi(
@@ -746,9 +743,9 @@ def _parse_standard_errors(
     return ses, sdcorr_ses, cov_abort
 
 
-def _parse_evaluation(estimation_steps: EstimationSteps):
-    index = list(range(1, len(estimation_steps) + 1))
-    evaluation = [est.evaluation for est in estimation_steps]
+def _parse_evaluation(execution_steps: ExecutionSteps):
+    index = list(range(1, len(execution_steps) + 1))
+    evaluation = [est.evaluation for est in execution_steps]
     return pd.Series(evaluation, index=index, name='evaluation', dtype='float64')
 
 
@@ -779,7 +776,7 @@ def simfit_results(model, model_path):
 #         ext_tables = NONMEMTableFile(path.with_suffix('.ext'))
 #     except ValueError:
 #         failed_pe = _create_failed_parameter_estimates(model.parameters)
-#         n = len(model.estimation_steps)
+#         n = len(model.execution_steps)
 #         df = pd.concat([failed_pe] * n, axis=1).T
 #         df['step'] = range(1, n + 1)
 #         df['iteration'] = 0
@@ -787,7 +784,7 @@ def simfit_results(model, model_path):
 #         return (
 #             [],
 #             np.nan,
-#             _create_failed_ofv_iterations(len(model.estimation_steps)),
+#             _create_failed_ofv_iterations(len(model.execution_steps)),
 #             failed_pe,
 #             failed_pe,
 #             df,

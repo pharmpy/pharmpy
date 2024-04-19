@@ -59,7 +59,7 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
     assert sd_ref in model.code
     assert all(statement in model.code for statement in y_ref)
 
-    assert all(est.laplace for est in model.estimation_steps)
+    assert all(est.laplace for est in model.execution_steps)
 
 
 @pytest.mark.parametrize(
@@ -129,7 +129,7 @@ def test_update_blq_transformation(
     assert sd_ref in model.code
     assert all(statement in model.code for statement in y_ref)
 
-    assert all(est.laplace for est in model.estimation_steps)
+    assert all(est.laplace for est in model.execution_steps)
 
 
 @pytest.mark.parametrize(

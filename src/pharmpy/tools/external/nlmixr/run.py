@@ -31,7 +31,7 @@ def execute_model(model_entry, db, evaluate=False, path=None):
     model = model_entry.model
 
     if evaluate:
-        if [s.evaluation for s in model.estimation_steps._steps][0] is False:
+        if [s.evaluation for s in model.execution_steps._steps][0] is False:
             model = set_evaluation_step(model)
 
     database = db.model_database
@@ -53,7 +53,7 @@ def execute_model(model_entry, db, evaluate=False, path=None):
         dataset_path = f"{path / dataname}"
     pre = f'library(nlmixr2)\n\ndataset <- read.csv("{dataset_path}")\n'
 
-    if "fix_eta" in model.estimation_steps[0].tool_options:
+    if "fix_eta" in model.execution_steps[0].tool_options:
         fix_eta_filename = "fix_eta.csv"
         if sys.platform == 'win32':
             fix_eta_path = f"{path / fix_eta_filename}".replace("\\", "\\\\")
@@ -211,7 +211,7 @@ def verification(
         nonmem_model = fixate_eta(nonmem_model)
 
     # Check that evaluation step is set to True
-    if [s.evaluation for s in nonmem_model.estimation_steps._steps][0] is False:
+    if [s.evaluation for s in nonmem_model.execution_steps._steps][0] is False:
         nonmem_model = set_evaluation_step(nonmem_model)
 
     # Update the NONMEM model with new estimates

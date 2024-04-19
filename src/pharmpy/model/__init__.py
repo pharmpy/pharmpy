@@ -1,7 +1,7 @@
 from .data import DatasetError, DatasetWarning
 from .datainfo import ColumnInfo, DataInfo
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
-from .estimation import EstimationStep, EstimationSteps, SimulationStep
+from .execution_steps import EstimationStep, ExecutionSteps, SimulationStep
 from .model import Model, ModelError, ModelfitResultsError, ModelSyntaxError
 from .parameters import Parameter, Parameters
 from .random_variables import RandomVariables, VariabilityHierarchy, VariabilityLevel
@@ -30,7 +30,7 @@ __all__ = (
     'DatasetWarning',
     'Distribution',
     'EstimationStep',
-    'EstimationSteps',
+    'ExecutionSteps',
     'Infusion',
     'JointNormalDistribution',
     'Model',

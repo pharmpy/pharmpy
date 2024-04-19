@@ -43,7 +43,7 @@ def convert_model(
         random_variables=model.random_variables,
         statements=model.statements,
         dependent_variables=model.dependent_variables,
-        estimation_steps=model.estimation_steps,
+        execution_steps=model.execution_steps,
         filename_extension='.R',
         datainfo=model.datainfo,
         dataset=model.dataset,
@@ -214,19 +214,19 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
 
     """
     # FIXME: Raise error if the method does not match when evaluating
-    estimation_steps = model.estimation_steps[0]
-    if "fix_eta" in estimation_steps.tool_options:
+    execution_steps = model.execution_steps[0]
+    if "fix_eta" in execution_steps.tool_options:
         fix_eta = True
     else:
         fix_eta = False
 
-    if [s.evaluation for s in model.estimation_steps._steps][0] is True:
+    if [s.evaluation for s in model.execution_steps._steps][0] is True:
         max_eval = 0
     else:
-        max_eval = estimation_steps.maximum_evaluations
+        max_eval = execution_steps.maximum_evaluations
 
-    method = estimation_steps.method
-    interaction = estimation_steps.interaction
+    method = execution_steps.method
+    interaction = execution_steps.interaction
 
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
 

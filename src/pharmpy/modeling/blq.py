@@ -8,7 +8,7 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.internals.fn.type import check_list
-from pharmpy.model import Assignment, EstimationSteps, JointNormalDistribution, Model
+from pharmpy.model import Assignment, ExecutionSteps, JointNormalDistribution, Model
 
 from .data import remove_loq_data, set_lloq_data
 from .expressions import _simplify_expression_from_parameters, create_symbol
@@ -190,9 +190,9 @@ def _m7_method(model, indicator, tp):
 def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     sset = model.statements
 
-    est_steps = model.estimation_steps
-    est_steps_new = EstimationSteps([est_step.replace(laplace=True) for est_step in est_steps])
-    model = model.replace(estimation_steps=est_steps_new)
+    est_steps = model.execution_steps
+    est_steps_new = ExecutionSteps([est_step.replace(laplace=True) for est_step in est_steps])
+    model = model.replace(execution_steps=est_steps_new)
 
     # FIXME: Handle other DVs?
     y_symb = list(model.dependent_variables.keys())[0]

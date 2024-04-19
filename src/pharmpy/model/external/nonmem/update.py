@@ -614,7 +614,7 @@ def to_des(model: Model, new: CompartmentalSystem):
     newrec = newrec.remove_option('TOL')
     cs = cs.replace_records([subs], [newrec])
     subs = newrec
-    step = model.estimation_steps[0]
+    step = model.execution_steps[0]
     solver = step.solver
     if solver:
         advan = solver_to_advan(solver)
@@ -680,10 +680,10 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     updated_dataset = False
 
     old_solver, new_solver = None, None
-    if len(model.estimation_steps) > 0:
-        new_solver = model.estimation_steps[0].solver
-    if len(model.internals.old_estimation_steps) > 0:
-        old_solver = model.internals.old_estimation_steps[0].solver
+    if len(model.execution_steps) > 0:
+        new_solver = model.execution_steps[0].solver
+    if len(model.internals.old_execution_steps) > 0:
+        old_solver = model.internals.old_execution_steps[0].solver
 
     # If CMT previously dropped, generate new CMT column
     # Perform regardless of if ODE system has been updated
@@ -1315,7 +1315,7 @@ def update_model_record(model: Model, advan):
         )
         replace_dict['control_stream'] = newcs
     else:
-        if oldmap != newmap or model.estimation_steps[0].solver:
+        if oldmap != newmap or model.execution_steps[0].solver:
             newcs = model.internals.control_stream.remove_records(
                 model.internals.control_stream.get_records('MODEL')
             )
@@ -1607,8 +1607,8 @@ def add_covariance_record(control_stream, idx_cov, method):
 
 
 def update_estimation(control_stream, model):
-    old = model.internals.old_estimation_steps
-    new = model.estimation_steps
+    old = model.internals.old_execution_steps
+    new = model.execution_steps
     if old == new:
         return control_stream
 

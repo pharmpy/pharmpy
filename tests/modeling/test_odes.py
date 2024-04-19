@@ -2480,14 +2480,14 @@ def test_mixed_mm_fo_then_periph(pheno, load_model_for_test, testdata):
 
 def test_set_ode_solver(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    assert model.estimation_steps[0].solver is None
+    assert model.execution_steps[0].solver is None
     assert 'ADVAN1' in model.code
     assert '$MODEL' not in model.code
 
     model = load_model_for_test(pheno_path)
     model = set_michaelis_menten_elimination(model)
     model = set_ode_solver(model, 'LSODA')
-    assert model.estimation_steps[0].solver == 'LSODA'
+    assert model.execution_steps[0].solver == 'LSODA'
     assert 'ADVAN13' in model.code
     assert '$MODEL' in model.code
 
@@ -2497,11 +2497,11 @@ def test_set_ode_solver(load_model_for_test, pheno_path):
     assert '$MODEL' in model.code
     model = set_ode_solver(model, 'LSODA')
     model = set_michaelis_menten_elimination(model)
-    assert model.estimation_steps[0].solver == 'LSODA'
+    assert model.execution_steps[0].solver == 'LSODA'
     assert 'ADVAN13' in model.code
     assert '$MODEL' in model.code
     model = set_ode_solver(model, 'DVERK')
-    assert model.estimation_steps[0].solver == 'DVERK'
+    assert model.execution_steps[0].solver == 'DVERK'
     assert 'ADVAN6' in model.code
     assert '$MODEL' in model.code
 

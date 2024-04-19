@@ -52,7 +52,7 @@ def test_create_base_model(
     add_eval_after_est=True,
 ):
     model = load_model_for_test(pheno_path)
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     model_entry = ModelEntry.create(model)
     base_model_entry = _create_base_model(
         parameter_uncertainty_method,
@@ -60,7 +60,7 @@ def test_create_base_model(
         model_entry=model_entry,
     )
     base_model = base_model_entry.model
-    assert len(base_model.estimation_steps) == 2
+    assert len(base_model.execution_steps) == 2
     assert base_model.code.split('\n')[-5] == est_rec
     assert base_model.code.split('\n')[-4] == eval_rec
 
@@ -91,7 +91,7 @@ def test_create_candidate_model(
     add_eval_after_est=True,
 ):
     model = load_model_for_test(pheno_path)
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     model_entry = ModelEntry.create(model)
     candidate_model_entry = _create_candidate_model(
         '',
@@ -104,7 +104,7 @@ def test_create_candidate_model(
         model_entry=model_entry,
     )
     candidate_model = candidate_model_entry.model
-    assert len(candidate_model.estimation_steps) == 2
+    assert len(candidate_model.execution_steps) == 2
     assert candidate_model.code.split('\n')[-5] == est_rec
     assert candidate_model.code.split('\n')[-4] == eval_rec
 

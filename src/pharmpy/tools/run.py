@@ -613,7 +613,7 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
     print_fmt("Objective function value", round(ofv, 1))
 
     print_header("Parameter uncertainty status")
-    cov_run = model.estimation_steps[-1].cov
+    cov_run = model.execution_steps[-1].cov
     print_fmt("Covariance step run", bool_yes_no(cov_run))
 
     if cov_run:
@@ -1023,12 +1023,12 @@ def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
 
 def summarize_modelfit_results(
     context: Context,
-    include_all_estimation_steps: bool = False,
+    include_all_execution_steps: bool = False,
 ) -> pd.DataFrame:
     """Summarize results of model runs
 
     Summarize different results after fitting a model, includes runtime, ofv,
-    and parameter estimates (with errors). If include_all_estimation_steps is False,
+    and parameter estimates (with errors). If include_all_execution_steps is False,
     only the last estimation step will be included (note that in that case, the
     minimization_successful value will be referring to the last estimation step, if
     last step is evaluation it will go backwards until it finds an estimation step
@@ -1038,7 +1038,7 @@ def summarize_modelfit_results(
     ----------
     context : Context
         Context in which models were run
-    include_all_estimation_steps : bool
+    include_all_execution_steps : bool
         Whether to include all estimation steps, default is False
 
     Return
@@ -1056,7 +1056,7 @@ def summarize_modelfit_results(
 
 def summarize_modelfit_results_from_entries(
     mes: list[ModelEntry],
-    include_all_estimation_steps: bool = False,
+    include_all_execution_steps: bool = False,
 ) -> pd.DataFrame:
 
     if mes is None:
@@ -1068,7 +1068,7 @@ def summarize_modelfit_results_from_entries(
 
     for me in mes:
         if me is not None and me.modelfit_results is not None:
-            summary = _get_model_result_summary(me, include_all_estimation_steps)
+            summary = _get_model_result_summary(me, include_all_execution_steps)
             summary.insert(0, 'description', me.model.description)
             summaries.append(summary)
 
@@ -1085,9 +1085,9 @@ def summarize_modelfit_results_from_entries(
     return df
 
 
-def _get_model_result_summary(me, include_all_estimation_steps=False):
+def _get_model_result_summary(me, include_all_execution_steps=False):
     res = me.modelfit_results
-    if not include_all_estimation_steps:
+    if not include_all_execution_steps:
         summary_dict = _summarize_step(res, -1)
         index = pd.Index([me.model.name], name='model')
         summary_df = pd.DataFrame(summary_dict, index=index)

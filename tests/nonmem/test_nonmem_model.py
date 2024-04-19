@@ -8,7 +8,7 @@ from pharmpy.model import (
     Assignment,
     CompartmentalSystem,
     EstimationStep,
-    EstimationSteps,
+    ExecutionSteps,
     Model,
     ModelSyntaxError,
     NormalDistribution,
@@ -699,7 +699,7 @@ def test_cmt_update(load_model_for_test, testdata, tmp_path):
         ),
     ],
 )
-def test_estimation_steps_getter(estcode, est_steps):
+def test_execution_steps_getter(estcode, est_steps):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -711,11 +711,11 @@ $SIGMA 1
 '''
     code += estcode
     model = Model.parse_model_from_string(code)
-    correct = EstimationSteps.create(steps=est_steps)
-    assert model.estimation_steps == correct
+    correct = ExecutionSteps.create(steps=est_steps)
+    assert model.execution_steps == correct
 
 
-def test_estimation_steps_getter_options():
+def test_execution_steps_getter_options():
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
@@ -727,8 +727,8 @@ $SIGMA 1
 $ESTIMATION METHOD=1 SADDLE_RESET=1
 '''
     model = Model.parse_model_from_string(code)
-    assert model.estimation_steps[0].method == 'FOCE'
-    assert model.estimation_steps[0].tool_options['SADDLE_RESET'] == '1'
+    assert model.execution_steps[0].method == 'FOCE'
+    assert model.execution_steps[0].tool_options['SADDLE_RESET'] == '1'
 
 
 @pytest.mark.parametrize(
@@ -775,7 +775,7 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
         ('$EST METH=COND INTER', {'auto': False}, '$ESTIMATION METHOD=COND INTER AUTO=0'),
     ],
 )
-def test_estimation_steps_setter(estcode, kwargs, rec_ref):
+def test_execution_steps_setter(estcode, kwargs, rec_ref):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA tests/testdata/nonmem/file.csv IGNORE=@
@@ -787,9 +787,9 @@ $SIGMA 1
 '''
     code += estcode
     model = Model.parse_model_from_string(code)
-    steps = model.estimation_steps
+    steps = model.execution_steps
     newstep = steps[0].replace(**kwargs)
-    model = model.replace(estimation_steps=newstep + steps[1:])
+    model = model.replace(execution_steps=newstep + steps[1:])
     model = model.update_source()
     assert model.code.split('\n')[-2] == rec_ref
 
@@ -809,7 +809,7 @@ $SIGMA 1
         ),
     ],
 )
-def test_set_estimation_steps_option_clash(estcode, kwargs, error_msg):
+def test_set_execution_steps_option_clash(estcode, kwargs, error_msg):
     code = '''$PROBLEM base model
 $INPUT ID DV TIME
 $DATA tests/testdata/nonmem/file.csv IGNORE=@
@@ -822,10 +822,10 @@ $SIGMA 1
     code += estcode
     model = Model.parse_model_from_string(code)
 
-    steps = model.estimation_steps
+    steps = model.execution_steps
     newstep = steps[0].replace(**kwargs)
     newsteps = newstep + steps[1:]
-    model = model.replace(estimation_steps=newsteps)
+    model = model.replace(execution_steps=newsteps)
 
     with pytest.raises(ValueError) as excinfo:
         model.update_source()
@@ -845,19 +845,19 @@ $EST METH=COND INTER
 '''
     model = Model.parse_model_from_string(code)
     est_new = EstimationStep.create('IMP', interaction=True, tool_options={'saddle_reset': 1})
-    model = model.replace(estimation_steps=model.estimation_steps + est_new)
+    model = model.replace(execution_steps=model.execution_steps + est_new)
     model = model.update_source()
     assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=IMP INTER SADDLE_RESET=1'
     est_new = EstimationStep.create('SAEM', interaction=True)
-    model = model.replace(estimation_steps=est_new + model.estimation_steps)
+    model = model.replace(execution_steps=est_new + model.execution_steps)
     model = model.update_source()
     assert model.code.split('\n')[-4] == '$ESTIMATION METHOD=SAEM INTER'
     est_new = EstimationStep.create('FO', evaluation=True)
-    model = model.replace(estimation_steps=model.estimation_steps + est_new)
+    model = model.replace(execution_steps=model.execution_steps + est_new)
     model = model.update_source()
     assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
     est_new = EstimationStep.create('IMP', evaluation=True)
-    model = model.replace(estimation_steps=model.estimation_steps + est_new)
+    model = model.replace(execution_steps=model.execution_steps + est_new)
     model = model.update_source()
     assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=IMP EONLY=1'
 
@@ -874,8 +874,8 @@ $SIGMA 1
 $EST METH=COND INTER
 '''
     model = Model.parse_model_from_string(code)
-    model = model.replace(estimation_steps=model.estimation_steps[1:])
-    assert not model.estimation_steps
+    model = model.replace(execution_steps=model.execution_steps[1:])
+    assert not model.execution_steps
     model = model.update_source()
     assert model.code.split('\n')[-2] == '$SIGMA 1'
 
@@ -988,8 +988,8 @@ def test_parse_derivatives(load_model_for_test, testdata):
     model = load_model_for_test(
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
     )
-    assert model.estimation_steps[0].eta_derivatives == ('ETA_1', 'ETA_2')
-    assert model.estimation_steps[0].epsilon_derivatives == ('EPS_1',)
+    assert model.execution_steps[0].eta_derivatives == ('ETA_1', 'ETA_2')
+    assert model.execution_steps[0].epsilon_derivatives == ('EPS_1',)
 
 
 def test_no_etas_in_model(pheno):
@@ -1038,8 +1038,8 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
     model = Model.parse_model_from_string(code)
-    assert len(model.estimation_steps) == 1
-    step = model.estimation_steps[0]
+    assert len(model.execution_steps) == 1
+    step = model.execution_steps[0]
     assert step.solver == 'DVERK'
     assert step.solver_rtol == 5
     assert step.solver_atol == 1e-12
@@ -1066,8 +1066,8 @@ $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
 """
     model = Model.parse_model_from_string(code)
-    assert len(model.estimation_steps) == 1
-    step = model.estimation_steps[0]
+    assert len(model.execution_steps) == 1
+    step = model.execution_steps[0]
     assert step.solver == 'LSODA'
     assert step.solver_rtol == 5
     assert step.solver_atol == 1.5

@@ -9,7 +9,7 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import (
     Assignment,
     EstimationStep,
-    EstimationSteps,
+    ExecutionSteps,
     Model,
     NormalDistribution,
     Parameter,
@@ -348,7 +348,7 @@ def _create_base_model(input_model_entry, current_iteration, dv):
         statements=statements,
         name=name,
         description=name,
-        estimation_steps=EstimationSteps.create([est]),
+        execution_steps=ExecutionSteps.create([est]),
         dependent_variables={y.symbol: 1},
     )
     base_model = base_model.replace(dataset=_create_dataset(input_model_entry, dv))
@@ -606,7 +606,7 @@ def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictne
                     raise ValueError(f"No DVID = {dv} in dataset.")
 
     if strictness is not None and "rse" in strictness.lower():
-        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+        if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )

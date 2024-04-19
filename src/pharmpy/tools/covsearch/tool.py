@@ -844,7 +844,7 @@ def validate_input(
                     f' must be in {sorted(allowed_ops)}.'
                 )
     if strictness is not None and "rse" in strictness.lower():
-        if model.estimation_steps[-1].parameter_uncertainty_method is None:
+        if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )

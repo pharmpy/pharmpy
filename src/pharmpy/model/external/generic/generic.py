@@ -17,7 +17,7 @@ def convert_model(model):
         parameters=model.parameters,
         statements=model.statements,
         random_variables=model.random_variables,
-        estimation_steps=model.estimation_steps,
+        execution_steps=model.execution_steps,
         dependent_variables=model.dependent_variables,
         observation_transformation=model.observation_transformation,
         description=model.description,

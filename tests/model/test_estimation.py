@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.model import EstimationStep, EstimationSteps, SimulationStep
+from pharmpy.model import EstimationStep, ExecutionSteps, SimulationStep
 
 
 def test_init():
@@ -10,7 +10,7 @@ def test_init():
     assert a.solver == 'LSODA'
     with pytest.raises(ValueError):
         EstimationStep.create('foce', solver='unknownsolverz')
-    steps = EstimationSteps.create()
+    steps = ExecutionSteps.create()
     assert len(steps) == 0
 
 
@@ -42,39 +42,39 @@ def test_estimation_method():
 
 
 def test_repr():
-    steps = EstimationSteps()
-    assert steps._repr_html_() == 'EstimationSteps()'
-    assert repr(steps) == 'EstimationSteps()'
+    steps = ExecutionSteps()
+    assert steps._repr_html_() == 'ExecutionSteps()'
+    assert repr(steps) == 'ExecutionSteps()'
 
     a = EstimationStep.create('foce')
-    steps = EstimationSteps.create([a])
+    steps = ExecutionSteps.create([a])
     assert type(steps._repr_html_()) == str
     assert type(repr(steps)) == str
 
 
 def test_eq():
-    s1 = EstimationSteps()
-    s2 = EstimationSteps()
+    s1 = ExecutionSteps()
+    s2 = ExecutionSteps()
     assert s1 == s2
     a = EstimationStep.create('foce')
-    s3 = EstimationSteps.create([a, a])
+    s3 = ExecutionSteps.create([a, a])
     assert s1 != s3
     b = EstimationStep.create('fo')
-    s4 = EstimationSteps.create([a, b])
+    s4 = ExecutionSteps.create([a, b])
     assert s3 != s4
 
 
 def test_len():
-    s1 = EstimationSteps()
+    s1 = ExecutionSteps()
     assert len(s1) == 0
     a = EstimationStep.create('foce')
-    s2 = EstimationSteps.create([a, a])
+    s2 = ExecutionSteps.create([a, a])
     assert len(s2) == 2
 
 
 def test_radd():
     a = EstimationStep.create('foce')
-    s2 = EstimationSteps.create([a, a])
+    s2 = ExecutionSteps.create([a, a])
     b = EstimationStep.create('fo')
     conc = b + s2
     assert len(conc) == 3
@@ -84,9 +84,9 @@ def test_radd():
 
 def test_add():
     a = EstimationStep.create('foce')
-    s2 = EstimationSteps.create([a, a])
+    s2 = ExecutionSteps.create([a, a])
     b = EstimationStep.create('fo')
-    s3 = EstimationSteps.create([a, b])
+    s3 = ExecutionSteps.create([a, b])
     conc = s2 + b
     assert len(conc) == 3
     conc = s2 + (b,)
@@ -99,8 +99,8 @@ def test_hash():
     a = EstimationStep.create('foce')
     b = EstimationStep.create('fo')
     assert hash(a) != hash(b)
-    s1 = EstimationSteps.create([a, b])
-    s2 = EstimationSteps.create([a])
+    s1 = ExecutionSteps.create([a, b])
+    s2 = ExecutionSteps.create([a])
     assert hash(s1) != hash(s2)
 
 
@@ -130,7 +130,7 @@ def test_dict():
     assert step2 == a
 
     b = EstimationStep.create('fo')
-    s1 = EstimationSteps.create([a, b])
+    s1 = ExecutionSteps.create([a, b])
     d = s1.to_dict()
     assert d == {
         'steps': (
@@ -174,14 +174,14 @@ def test_dict():
             },
         )
     }
-    s2 = EstimationSteps.from_dict(d)
+    s2 = ExecutionSteps.from_dict(d)
     assert s1 == s2
 
 
 def test_getitem():
     a = EstimationStep.create('foce')
     b = EstimationStep.create('fo')
-    s = EstimationSteps.create([a, b])
+    s = ExecutionSteps.create([a, b])
     assert s[0].method == 'FOCE'
     assert s[1].method == 'FO'
 
@@ -206,8 +206,8 @@ def test_replace():
     c = a.replace(solver_atol=0.01)
     assert c.solver_atol == 0.01
 
-    steps1 = EstimationSteps((a,))
-    steps2 = EstimationSteps((b,))
+    steps1 = ExecutionSteps((a,))
+    steps2 = ExecutionSteps((b,))
     steps3 = steps1.replace(steps=[steps2])
     assert len(steps3) == 1
 

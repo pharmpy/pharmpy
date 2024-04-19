@@ -87,7 +87,7 @@ def create_workflow(
     wb.add_task(start_task)
 
     if methods is None:
-        methods = [model.estimation_steps[-1].method]
+        methods = [model.execution_steps[-1].method]
 
     args = [
         _format_input(methods, METHODS),
@@ -136,10 +136,10 @@ def post_process(*model_entries):
 
     summary_models = summarize_modelfit_results_from_entries(
         model_entries,
-        include_all_estimation_steps=True,
+        include_all_execution_steps=True,
     )
     summary_errors = summarize_errors_from_entries(model_entries)
-    summary_settings = summarize_estimation_steps(res_models)
+    summary_settings = summarize_execution_steps(res_models)
 
     return EstMethodResults(
         summary_tool=summary_tool,
@@ -176,10 +176,10 @@ def summarize_tool(model_entries):
     return df.sort_values(by=['ofv'])
 
 
-def summarize_estimation_steps(models):
+def summarize_execution_steps(models):
     dfs = {}
     for model in models:
-        df = model.estimation_steps.to_dataframe()
+        df = model.execution_steps.to_dataframe()
         df.index = range(1, len(df) + 1)
         dfs[model.name] = df.drop(columns=['tool_options'])
 

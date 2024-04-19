@@ -426,7 +426,7 @@ function:
 
 .. pharmpy-execute::
     run1 = set_estimation_step(model_start, method='imp', keep_every_nth_iter=10)
-    run1.estimation_steps
+    run1.execution_steps
 
 If we then examine the model code:
 

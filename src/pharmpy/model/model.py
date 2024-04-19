@@ -27,7 +27,7 @@ from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
 from pharmpy.model.external import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
-from .estimation import EstimationSteps
+from .execution_steps import ExecutionSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
 from .statements import CompartmentalSystem, Statements
@@ -79,7 +79,7 @@ class Model(Immutable):
         datainfo: DataInfo = DataInfo(),
         dependent_variables: frozenmapping[Expr, int] = frozenmapping({Expr.symbol('y'): 1}),
         observation_transformation: Optional[frozenmapping[Expr, Expr]] = None,
-        estimation_steps: EstimationSteps = EstimationSteps(),
+        execution_steps: ExecutionSteps = ExecutionSteps(),
         parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
         filename_extension: str = '',
@@ -99,7 +99,7 @@ class Model(Immutable):
                 {dv: dv for dv in dependent_variables.keys()}
             )
         self._observation_transformation = observation_transformation
-        self._estimation_steps = estimation_steps
+        self._execution_steps = execution_steps
         self._parent_model = parent_model
         self._initial_individual_estimates = initial_individual_estimates
         self._filename_extension = filename_extension
@@ -118,7 +118,7 @@ class Model(Immutable):
         datainfo: DataInfo = DataInfo(),
         dependent_variables: Optional[Mapping[TSymbol, int]] = None,
         observation_transformation: Optional[Mapping[TSymbol, TExpr]] = None,
-        estimation_steps: Optional[EstimationSteps] = None,
+        execution_steps: Optional[ExecutionSteps] = None,
         parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
         filename_extension: str = '',
@@ -134,7 +134,7 @@ class Model(Immutable):
         parameters = Model._canonicalize_parameters(parameters)
         random_variables = Model._canonicalize_random_variables(random_variables)
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
-        estimation_steps = Model._canonicalize_estimation_steps(estimation_steps)
+        execution_steps = Model._canonicalize_execution_steps(execution_steps)
         value_type = Model._canonicalize_value_type(value_type)
         if not isinstance(datainfo, DataInfo):
             raise TypeError("model.datainfo must be of DataInfo type")
@@ -151,7 +151,7 @@ class Model(Immutable):
             observation_transformation=obs_transformation,
             parameters=parameters,
             random_variables=random_variables,
-            estimation_steps=estimation_steps,
+            execution_steps=execution_steps,
             statements=statements,
             description=description,
             parent_model=parent_model,
@@ -287,12 +287,12 @@ class Model(Immutable):
             return params
 
     @staticmethod
-    def _canonicalize_estimation_steps(steps: Optional[EstimationSteps]) -> EstimationSteps:
+    def _canonicalize_execution_steps(steps: Optional[ExecutionSteps]) -> ExecutionSteps:
         if steps is None:
-            return EstimationSteps()
+            return ExecutionSteps()
         else:
-            if not isinstance(steps, EstimationSteps):
-                raise TypeError("model.estimation_steps must be of EstimationSteps type")
+            if not isinstance(steps, ExecutionSteps):
+                raise TypeError("model.execution_steps must be of ExecutionSteps type")
             return steps
 
     def replace(self, **kwargs) -> Model:
@@ -384,11 +384,11 @@ class Model(Immutable):
         else:
             statements = self.statements
 
-        if 'estimation_steps' in kwargs:
-            estimation_steps = Model._canonicalize_estimation_steps(kwargs['estimation_steps'])
-            kwargs.pop('estimation_steps')
+        if 'execution_steps' in kwargs:
+            execution_steps = Model._canonicalize_execution_steps(kwargs['execution_steps'])
+            kwargs.pop('execution_steps')
         else:
-            estimation_steps = self.estimation_steps
+            execution_steps = self.execution_steps
 
         if 'value_type' in kwargs:
             value_type = Model._canonicalize_value_type(kwargs['value_type'])
@@ -407,7 +407,7 @@ class Model(Immutable):
             statements=statements,
             dataset=dataset,
             datainfo=datainfo,
-            estimation_steps=estimation_steps,
+            execution_steps=execution_steps,
             parent_model=parent_model,
             initial_individual_estimates=initial_individual_estimates,
             filename_extension=filename_extension,
@@ -467,7 +467,7 @@ class Model(Immutable):
             return False
         if self.observation_transformation != other.observation_transformation:
             return False
-        if self.estimation_steps != other.estimation_steps:
+        if self.execution_steps != other.execution_steps:
             return False
         if self.initial_individual_estimates is None:
             if other.initial_individual_estimates is not None:
@@ -494,7 +494,7 @@ class Model(Immutable):
                 self._statements,
                 self._dependent_variables,
                 self._observation_transformation,
-                self._estimation_steps,
+                self._execution_steps,
                 self._initial_individual_estimates,
                 self._datainfo,
                 dataset_hash,
@@ -516,7 +516,7 @@ class Model(Immutable):
             'parameters': self._parameters.to_dict(),
             'random_variables': self._random_variables.to_dict(),
             'statements': self._statements.to_dict(),
-            'estimation_steps': self._estimation_steps.to_dict(),
+            'execution_steps': self._execution_steps.to_dict(),
             'datainfo': self._datainfo.to_dict(),
             'value_type': self._value_type,
             'dependent_variables': depvars,
@@ -540,7 +540,7 @@ class Model(Immutable):
             parameters=Parameters.from_dict(d['parameters']),
             random_variables=RandomVariables.from_dict(d['random_variables']),
             statements=Statements.from_dict(d['statements']),
-            estimation_steps=EstimationSteps.from_dict(d['estimation_steps']),
+            execution_steps=ExecutionSteps.from_dict(d['execution_steps']),
             datainfo=DataInfo.from_dict(d['datainfo']),
             value_type=d['value_type'],
             dependent_variables=frozenmapping(depvars),
@@ -613,12 +613,12 @@ class Model(Immutable):
         return self._statements
 
     @property
-    def estimation_steps(self) -> EstimationSteps:
+    def execution_steps(self) -> ExecutionSteps:
         """Definitions of estimation steps
 
-        See :class:`pharmpy.EstimationSteps`
+        See :class:`pharmpy.ExecutionSteps`
         """
-        return self._estimation_steps
+        return self._execution_steps
 
     @property
     def datainfo(self) -> DataInfo:

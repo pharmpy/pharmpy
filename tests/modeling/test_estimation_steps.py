@@ -66,15 +66,15 @@ def test_set_estimation_step_est_middle(testdata, load_model_for_test):
 
 def test_add_estimation_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     model = add_estimation_step(model, 'fo')
-    assert len(model.estimation_steps) == 2
+    assert len(model.execution_steps) == 2
     assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO'
 
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     model = add_estimation_step(model, 'fo', evaluation=True)
-    assert len(model.estimation_steps) == 2
+    assert len(model.execution_steps) == 2
     assert model.code.split('\n')[-2] == '$ESTIMATION METHOD=ZERO MAXEVAL=0'
 
 
@@ -87,27 +87,27 @@ def test_add_estimation_step_non_int(testdata, load_model_for_test):
 
 def test_remove_estimation_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     model = remove_estimation_step(model, 0)
-    assert not model.estimation_steps
+    assert not model.execution_steps
     assert model.code.split('\n')[-2] == '$SIGMA 1'
 
 
 def test_add_parameter_uncertainty_step(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     model = add_parameter_uncertainty_step(model, 'SANDWICH')
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     assert model.code.split('\n')[-2] == '$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1'
     model = remove_parameter_uncertainty_step(model)
     model = add_parameter_uncertainty_step(model, 'SMAT')
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     assert model.code.split('\n')[-2] == '$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1'
 
     model = remove_parameter_uncertainty_step(model)
 
     model = add_parameter_uncertainty_step(model, "EFIM")
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     assert (
         "$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC MSFO=efim.msf\n"
         "$PROBLEM DESIGN\n"
@@ -128,7 +128,7 @@ def test_remove_parameter_uncertainty_step(testdata, load_model_for_test):
     )
 
     model = add_parameter_uncertainty_step(model, "EFIM")
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     assert (
         "$ESTIMATION METHOD=COND INTER MAXEVAL=9990 PRINT=2 POSTHOC MSFO=efim.msf\n"
         "$PROBLEM DESIGN\n"
@@ -153,7 +153,7 @@ def test_parse_parameter_uncertainty_step(testdata, load_model_for_test):
         "$MSFI pheno_design.msf\n"
         "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n" in model.code
     )
-    assert model.estimation_steps[-1].tool_options == {}
+    assert model.execution_steps[-1].tool_options == {}
 
 
 def test_update_parameter_uncertainty_method(testdata, load_model_for_test):
@@ -162,7 +162,7 @@ def test_update_parameter_uncertainty_method(testdata, load_model_for_test):
     assert (
         "$ESTIMATION METHOD=COND INTER\n" "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
     ) in model.code
-    assert model.estimation_steps[-1].parameter_uncertainty_method == 'SMAT'
+    assert model.execution_steps[-1].parameter_uncertainty_method == 'SMAT'
     model = add_parameter_uncertainty_step(model, 'EFIM')
     assert (
         "$ESTIMATION METHOD=COND INTER MSFO=efim.msf\n"
@@ -172,20 +172,20 @@ def test_update_parameter_uncertainty_method(testdata, load_model_for_test):
         "$MSFI efim.msf\n"
         "$DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"
     ) in model.code
-    assert model.estimation_steps[-1].parameter_uncertainty_method == 'EFIM'
+    assert model.execution_steps[-1].parameter_uncertainty_method == 'EFIM'
     model = remove_parameter_uncertainty_step(model)
     assert ("$ESTIMATION METHOD=COND INTER\n") in model.code
-    assert model.estimation_steps[-1].parameter_uncertainty_method is None
+    assert model.execution_steps[-1].parameter_uncertainty_method is None
     model = add_parameter_uncertainty_step(model, 'SMAT')
     assert (
         "$ESTIMATION METHOD=COND INTER\n" "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
     ) in model.code
-    assert model.estimation_steps[-1].parameter_uncertainty_method == 'SMAT'
+    assert model.execution_steps[-1].parameter_uncertainty_method == 'SMAT'
 
 
 def test_append_estimation_step_options(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    assert len(model.estimation_steps) == 1
+    assert len(model.execution_steps) == 1
     model = append_estimation_step_options(model, {'SADDLE_RESET': 1}, 0)
     assert (
         model.code.split('\n')[-2]
@@ -202,25 +202,25 @@ def test_set_evaluation_step(testdata, load_model_for_test):
 def test_set_simulation(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     model = set_simulation(model, n=2, seed=1234)
-    assert len(model.estimation_steps) == 1
-    assert model.estimation_steps[0] == SimulationStep(n=2, seed=1234)
+    assert len(model.execution_steps) == 1
+    assert model.execution_steps[0] == SimulationStep(n=2, seed=1234)
     assert model.code.split('\n')[-2] == "$SIMULATION (1234) SUBPROBLEMS=2"
 
 
 def test_add_predictions(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    assert model.estimation_steps[-1].predictions == ('IPRED', 'PRED')
+    assert model.execution_steps[-1].predictions == ('IPRED', 'PRED')
 
     model = add_predictions(model, pred=['PRED1'])
-    assert model.estimation_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1')
-    assert tuple(sorted(model.estimation_steps[-1].residuals)) == ('CWRES', 'RES')
+    assert model.execution_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1')
+    assert tuple(sorted(model.execution_steps[-1].residuals)) == ('CWRES', 'RES')
 
     model = add_residuals(model, res=['RES', 'RES2'])
-    assert model.estimation_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
+    assert model.execution_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
 
     model = add_predictions(model, pred=['PRED1', 'PRED2'])
-    assert model.estimation_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1', 'PRED2')
-    assert model.estimation_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
+    assert model.execution_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1', 'PRED2')
+    assert model.execution_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -258,8 +258,8 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE PRED1 RES2 PRED2 NO
     assert model_code == model.code
     model = remove_predictions(model, 'all')
     model = remove_residuals(model, 'all')
-    assert model.estimation_steps[-1].predictions == ()
-    assert model.estimation_steps[-1].residuals == ()
+    assert model.execution_steps[-1].predictions == ()
+    assert model.execution_steps[-1].residuals == ()
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -332,14 +332,14 @@ $TABLE ID TIME DV AMT WGT APGR TAD NPDE NEWRES NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
     model = remove_residuals(model, ['NEWRES'])
-    assert model.estimation_steps[-1].residuals == ()
+    assert model.execution_steps[-1].residuals == ()
 
     # Test $DESIGN
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_design.mod')
-    assert model.estimation_steps[-1].predictions == ()
-    assert model.estimation_steps[-1].residuals == ()
+    assert model.execution_steps[-1].predictions == ()
+    assert model.execution_steps[-1].residuals == ()
     model = add_predictions(model, pred=['PRED1'])
-    assert model.estimation_steps[-1].predictions == ('PRED1',)
+    assert model.execution_steps[-1].predictions == ('PRED1',)
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -369,8 +369,8 @@ $DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"""
     assert model_code == model.code
     model = add_residuals(model, res=['RES'])
     model = remove_predictions(model, 'all')
-    assert model.estimation_steps[-1].predictions == ()
-    assert model.estimation_steps[-1].residuals == ('RES',)
+    assert model.execution_steps[-1].predictions == ()
+    assert model.execution_steps[-1].residuals == ('RES',)
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV

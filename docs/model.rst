@@ -194,14 +194,14 @@ Dataset and datainfo
 
 See :ref:`dataset`.
 
-Estimation steps
-~~~~~~~~~~~~~~~~
+Execution steps
+~~~~~~~~~~~~~~~
 
-The :py:class:`pharmpy.model.EstimationSteps` object contains information on how to estimate the model.
+The :py:class:`pharmpy.model.ExecutionSteps` object contains information on how to estimate or simulate the model.
 
 .. pharmpy-execute::
 
-   ests = model.estimation_steps
+   ests = model.execution_steps
    ests
 
 Dependent variables
