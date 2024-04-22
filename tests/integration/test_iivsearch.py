@@ -77,7 +77,10 @@ def test_block_structure(tmp_path, model_count, start_modelres):
 
 @pytest.mark.parametrize(
     ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
-    (('top_down_exhaustive', 'skip', 7),),  # ('bottom_up_stepwise', 'skip', 4)
+    (
+        ('top_down_exhaustive', 'skip', 7),
+        ('bottom_up_stepwise', 'skip', 4),
+    ),
 )
 def test_no_of_etas_base(
     tmp_path, model_count, start_modelres, algorithm, correlation_algorithm, no_of_candidate_models
@@ -238,4 +241,35 @@ def test_no_of_etas_iiv_strategies(
         rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_candidate_models + 1
+        assert (rundir / 'metadata.json').exists()
+
+
+@pytest.mark.filterwarnings(
+    'ignore::UserWarning',
+)
+@pytest.mark.parametrize(
+    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
+    (
+        ('top_down_exhaustive', 'skip', 8),
+        ('bottom_up_stepwise', 'skip', 5),
+    ),
+)
+def test_no_of_etas_linearization(
+    tmp_path, start_modelres, model_count, algorithm, correlation_algorithm, no_of_candidate_models
+):
+    with chdir(tmp_path):
+        res = run_iivsearch(
+            algorithm,
+            results=start_modelres[1],
+            model=start_modelres[0],
+            linearize=True,
+            correlation_algorithm=correlation_algorithm,
+        )
+
+        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 1
+
+        rundir = tmp_path / 'iivsearch1'
+        assert rundir.is_dir()
+        assert model_count(rundir) == no_of_candidate_models
         assert (rundir / 'metadata.json').exists()
