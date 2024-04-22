@@ -1,5 +1,6 @@
 from threading import Lock
 
+from .delinearize import delinearize_model
 from .mfl.parse import get_model_features
 
 __all__ = (
@@ -32,12 +33,14 @@ __all__ = (
     'run_structsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_simulation',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_linearize',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_errors',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_individuals_count_table',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'write_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'get_model_features',
+    'delinearize_model',
 )
 
 

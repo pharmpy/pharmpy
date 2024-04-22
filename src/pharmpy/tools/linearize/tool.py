@@ -1,10 +1,37 @@
-import pharmpy.model
+from typing import Optional
+
 from pharmpy.basic import Expr
-from pharmpy.model import Assignment, EstimationStep, ExecutionSteps, Statements
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.deps import pandas as pd
+from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps, Model, Statements
+from pharmpy.modeling import add_predictions, get_mdv, set_estimation_step, update_inits
+from pharmpy.modeling.estimation_steps import add_derivative
+from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+
+from .results import calculate_results
 
 
-def create_workflow(model=None):
+def create_workflow(
+    model: Optional[Model] = None, model_name: str = "linbase", description: str = ""
+):
+    """
+    Run linaerization procedure
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model.
+    model_name : str, optional
+        New name of linearized model. The default is "linbase".
+    description : str, optional
+        Description of linaerized model. The default is "".
+
+    Returns
+    -------
+    LinearizeResults
+        Linaerize tool results object.
+
+    """
     wb = WorkflowBuilder(name="linearize")
 
     if model is not None:
@@ -13,25 +40,91 @@ def create_workflow(model=None):
         start_task = Task('start_linearize', start_linearize)
 
     wb.add_task(start_task)
+
+    # No need to run input model before adding derivatives
+    der_task = Task("create_derivative_model", create_derivative_model)
+    wb.add_task(der_task, predecessors=wb.output_tasks)
+
+    wf_fit_deriv = create_fit_workflow(n=1)
+    wb.insert_workflow(wf_fit_deriv, predecessors=[der_task])
+    fit_deriv_task = wb.output_tasks
+
+    lin_task = Task(
+        "create_linearized_model", _create_linearized_model, model_name, description, model
+    )
+    wb.add_task(lin_task, predecessors=fit_deriv_task)
+
+    wf_fit_lin = create_fit_workflow(n=1)
+    wb.insert_workflow(wf_fit_lin, predecessors=[lin_task])
+    fit_lin_task = wb.output_tasks
+
+    postprocess_task = Task("results", postprocess, model_name)
+    wb.add_task(postprocess_task, predecessors=fit_deriv_task + fit_lin_task)
+
     return Workflow(wb)
 
 
 def start_linearize(model):
-    return model
+    return ModelEntry.create(model=model)
 
 
-def create_linearized_model(model):
-    linbase = pharmpy.model.Model(
-        parameters=model.parameters,
-        random_variables=model.random_variables,
-        datainfo=model.datainfo,
+def postprocess(context, model_name, *modelentries):
+    for me in modelentries:
+        if me.model.name == model_name:
+            linbase = me
+        else:
+            base = me
+
+    res = calculate_results(
+        base.model, base.modelfit_results, linbase.model, linbase.modelfit_results
     )
 
+    res.to_csv(context.path / "results.csv")
+
+    return res
+
+
+def create_derivative_model(modelentry):
+    # Create derivative model
+    der_model = modelentry.model.replace(name="derivative_model")
+    der_model = add_derivative(der_model)
+    first_es = der_model.execution_steps[0]
+    der_model = set_estimation_step(der_model, first_es.method, 0, maximum_evaluations=1)
+    der_model = add_predictions(der_model, ["CIPREDI"])
+    return ModelEntry.create(model=der_model)
+
+
+def _create_linearized_model(context, model_name, description, model, derivative_model_entry):
+    new_input_file = cleanup_columns(derivative_model_entry)
+    new_datainfo = DataInfo.create(list(new_input_file.columns))
+    new_datainfo = new_datainfo.set_dv_column("DV")
+    new_datainfo = new_datainfo.set_id_column("ID")
+    new_datainfo = new_datainfo.set_idv_column("TIME")
+
+    linbase = Model(
+        parameters=derivative_model_entry.model.parameters,
+        random_variables=derivative_model_entry.model.random_variables,
+        dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
+        datainfo=model.datainfo,
+        name=model_name,
+        description=description,
+    )
+    linbase = update_inits(linbase, derivative_model_entry.modelfit_results.parameter_estimates)
+
+    linbase = linbase.replace(dataset=new_input_file)
+    linbase = linbase.replace(datainfo=new_datainfo)  # CANNOT CHANGE BOTH AT THE SAME TIME
+
+    linbase = _create_linearized_model_statements(linbase, model)
+
+    return ModelEntry.create(model=linbase)
+
+
+def _create_linearized_model_statements(linbase, model):
     ms = []
     base_terms_sum = 0
     for i, eta in enumerate(model.random_variables.etas.names, start=1):
-        deta = Expr.symbol("D_ETA1")
-        oeta = Expr.symbol("OETA")
+        deta = Expr.symbol(f"D_ETA{i}")
+        oeta = Expr.symbol(f"OETA{i}")
         base = Assignment(Expr.symbol(f'BASE{i}'), deta * (Expr.symbol(eta) - oeta))
         ms.append(base)
         base_terms_sum += base.symbol
@@ -44,14 +137,17 @@ def create_linearized_model(model):
     i = 1
     err_terms_sum = 0
     for epsno, eps in enumerate(model.random_variables.epsilons, start=1):
-        err = Assignment(Expr.symbol(f'ERR{epsno}'), Expr.symbol(f'D_EPS{epsno}'))
+        err = Assignment(
+            Expr.symbol(f'ERR{epsno}'), Expr.symbol(eps.names[0]) * Expr.symbol(f'D_EPS{epsno}')
+        )
         err_terms_sum += err.symbol
         ms.append(err)
         i += 1
         for etano, eta in enumerate(model.random_variables.etas.names, start=1):
             inter = Assignment(
                 Expr.symbol(f'ERR{i}'),
-                Expr.symbol(f'D_EPSETA{epsno}_{etano}')
+                Expr.symbol(eps.names[0])
+                * Expr.symbol(f'D_ETAEPS_{etano}_{epsno}')
                 * (Expr.symbol(eta) - Expr.symbol(f'OETA{etano}')),
             )
             err_terms_sum += inter.symbol
@@ -62,10 +158,58 @@ def create_linearized_model(model):
 
     # FIXME: Handle other DVs?
     y = list(model.dependent_variables.keys())[0]
-    Assignment.create(y, ipred.symbol + error_terms.symbol)
+    y_assignment = Assignment.create(y, ipred.symbol + error_terms.symbol)
+
+    ms.append(y_assignment)
 
     est = EstimationStep.create('foce', interaction=True)
-    linbase = linbase.replace(
-        name='linbase', statements=Statements(ms), execution_steps=ExecutionSteps.create([est])
-    )
+    linbase = linbase.replace(execution_steps=ExecutionSteps.create([est]))
+    linbase = linbase.replace(statements=Statements(ms))
+
+    from pharmpy.modeling import convert_model
+
+    linbase = convert_model(linbase, "nonmem")
+
     return linbase
+
+
+def cleanup_columns(modelentry):
+    # Will have index "ID" and "TIME"
+    predictions = modelentry.modelfit_results.predictions
+    if predictions is None:
+        raise ValueError("Require PREDICTIONS to be calculated")
+    else:
+        pred_found = False
+        for p in ["IPRED", "CIPREDI"]:
+            try:
+                pred_col = predictions[p]  # TODO : Allow other prediction values?
+                predictions = pd.DataFrame(pred_col)
+                predictions = predictions.rename({p: "OPRED"}, axis=1)
+                predictions = predictions.reset_index()
+                predictions = predictions.drop(["ID", "TIME"], axis=1)
+                pred_found = True
+                break
+            except KeyError:  # HOW TO HANDLE ?
+                pass
+
+        if not pred_found:
+            raise ValueError("Cannot determine OPRED to use for linearized model")
+
+    derivatives = modelentry.modelfit_results.derivatives
+    derivatives = derivatives.reset_index()
+    derivatives = derivatives.drop(["ID", "TIME"], axis=1)
+    amt_dv = modelentry.model.dataset[["ID", "TIME", "AMT", "DV"]]
+
+    new_input_file = predictions.join(amt_dv).join(derivatives)
+
+    etas = modelentry.modelfit_results.individual_estimates
+    eta_name_subs = {}
+    for n, eta in enumerate(modelentry.model.random_variables.iiv.names, start=1):
+        eta_name_subs[eta] = f"OETA{n}"
+    etas = etas.rename(eta_name_subs, axis=1)
+    new_input_file = new_input_file.join(etas, on="ID")
+
+    new_input_file = new_input_file.reset_index()
+    new_input_file["MDV"] = get_mdv(modelentry.model)
+
+    return new_input_file
