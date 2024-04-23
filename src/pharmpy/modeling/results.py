@@ -592,9 +592,6 @@ def calculate_bic(
     model: Model,
     likelihood: float,
     type: Literal['mixed', 'fixed', 'random', 'iiv'] = 'mixed',
-    multiple_testing: bool = False,
-    mult_test_p: int = 1,
-    mult_test_e: int = 1,
 ):
     """Calculate BIC
 
@@ -610,10 +607,6 @@ def calculate_bic(
     * | iiv
       | BIC = -2LL + n_estimated_iiv_omega_parameters * log(n_individuals)
 
-    If multiple_testing option is set to true an additional penalty will be added:
-
-    * | mBIC = BIC + 2*(n_estimated_parameters)*log(n_predictors/n_expected_predictors)
-
     Parameters
     ----------
     model : Model
@@ -622,12 +615,6 @@ def calculate_bic(
         -2LL to use
     type : {'mixed', 'fixed', 'random', 'iiv'}
         Type of BIC to calculate. Default is the mixed effects.
-    multiple_testing : bool
-        Whether to use penalty for multiple testing (default is False)
-    mult_test_p : int
-        Number of expected models if using type `multiple_testing`
-    mult_test_e : int
-        E value if using type `mult_test`
 
     Returns
     -------
@@ -668,13 +655,6 @@ def calculate_bic(
     else:
         supported_types = ('mixed', 'fixed', 'random', 'iiv')
         raise ValueError(f'Unknown `type` \'{type}\', must be one of: {supported_types}')
-
-    if multiple_testing:
-        if mult_test_p <= 0 or mult_test_e <= 0:
-            raise ValueError(
-                'Options `mult_test_p` and `mult_test_e` must be >= 0 for method `multiple_testing`'
-            )
-        penalty += 2 * len(parameters) * math.log(mult_test_p / mult_test_e)
 
     return likelihood + penalty
 

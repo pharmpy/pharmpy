@@ -310,18 +310,9 @@ def test_rank_models_bic(load_model_for_test, testdata):
     model_iiv = add_iiv(model_base, ['S1'], 'exp')
     model_iiv = model_iiv.replace(name='pheno_iiv')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
-    df_mixed = rank_models(model_base, res, [model_iiv], [res], rank_type='bic', bic_type='mixed')
-    df_mult_test = rank_models(
-        model_base,
-        res,
-        [model_iiv],
-        [res],
-        rank_type='bic',
-        bic_type='mixed',
-        multiple_testing=True,
-        mult_test_p=2,
-    )
-    assert df_mixed.loc['pheno_iiv', 'bic'] != df_mult_test.loc['pheno_iiv', 'bic']
+    df = rank_models(model_base, res, [model_iiv], [res], rank_type='bic', bic_type='mixed')
+    assert df.iloc[0].name == 'pheno'
+    assert df.loc['pheno', 'bic'] != df.loc['pheno_iiv', 'bic']
 
 
 def test_summarize_modelfit_results(
