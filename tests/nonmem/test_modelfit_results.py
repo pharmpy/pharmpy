@@ -176,8 +176,8 @@ def test_residuals(testdata):
     df = res.residuals
     assert len(df) == 155
     assert list(df.columns) == ['RES', 'CWRES']
-    assert df['RES'][1.0, 2.0] == -0.67071
-    assert df['CWRES'][1.0, 2.0] == -0.401100
+    assert df.loc[1, 'RES'] == -0.67071
+    assert df.loc[1, 'CWRES'] == -0.401100
 
 
 def test_predictions(testdata):
@@ -185,7 +185,7 @@ def test_predictions(testdata):
     df = res.predictions
     assert len(df) == 744
     assert set(df.columns) == {'IPRED', 'PRED'}
-    assert df['PRED'][1.0, 0.0] == 18.143
+    assert df.loc[0, 'PRED'] == 18.143
 
 
 def test_runtime_total(testdata):

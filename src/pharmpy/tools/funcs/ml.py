@@ -37,7 +37,7 @@ def _create_dataset(model: Model, res: ModelfitResults):
     nids = get_number_of_individuals(model)
     nobs = get_number_of_observations(model)
     nobsi = get_number_of_observations_per_individual(model)
-    cwres = res.residuals['CWRES']
+    cwres = res.residuals[['CWRES']].join(model.dataset[idcol]).set_index(idcol).squeeze()
     iofv = res.individual_estimates
     npar = len(model.parameters)
     ofv = res.ofv

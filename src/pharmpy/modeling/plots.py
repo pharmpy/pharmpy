@@ -108,13 +108,14 @@ def plot_individual_predictions(
         plot_individual_predictions(model, res.predictions, individuals=[1, 2, 3, 4, 5])
 
     """
-    obs = get_observations(model)
-    indexcols = predictions.index.names
-    idcol = indexcols[0]
-    idvcol = indexcols[1]
+    obs = get_observations(model, keep_index=True)
+    idcol = model.datainfo.id_column.name
+    idvcol = model.datainfo.idv_column.name
+    columns = (idcol, idvcol, model.datainfo.dv_column.name)
+    df = model.dataset.loc[obs.index, columns]
 
-    data = predictions.join(obs).reset_index()
-    data = data.melt(id_vars=indexcols)
+    data = df.join(predictions)
+    data = data.melt(id_vars=(idcol, idvcol))
 
     if individuals is not None:
         data = data[data[idcol].isin(individuals)]
@@ -444,33 +445,19 @@ def plot_abs_cwres_vs_ipred(
         raise ValueError("Cannot find individual predictions")
     if 'CWRES' not in residuals.columns:
         raise ValueError("CWRES not available in residuals")
+    idv = model.datainfo.idv_column.name
+    idname = model.datainfo.id_column.name
 
+    columns = [idname, idv]
     if stratify_on is not None:
         _validate_strat(model, stratify_on)
-        idv_name = model.datainfo.idv_column.name
-        id_name = model.datainfo.id_column.name
-        if (
-            f'{stratify_on}' not in predictions.columns
-            and f'{stratify_on}' not in predictions.index.names
-        ):
-            newcol = model.dataset[[id_name, idv_name, f'{stratify_on}']].set_index(
-                [id_name, idv_name]
-            )
-            predictions = predictions.join(newcol, how='inner')
-            predictions = predictions[[ipred, f'{stratify_on}']].reset_index()
-        else:
-            predictions = predictions[[ipred]].reset_index()
-    else:
-        predictions = predictions[[ipred]].reset_index()
-    observations = get_observations(model, keep_index=True)
-    residuals = abs(residuals[['CWRES']]).set_index(observations.index)
-    df = predictions.join(residuals, how='inner').reset_index(drop=True)
+        columns.append(stratify_on)
+    df = model.dataset.loc[residuals.index, columns]
+    df = df.join(residuals[['CWRES']]).join(predictions[[ipred]])
 
     if stratify_on is not None:
         df = _bin_data(df, model, stratify_on, bins)
 
-    idv = model.datainfo.idv_column.name
-    idname = model.datainfo.id_column.name
     dv_unit = model.datainfo.dv_column.unit
 
     chart = _scatter(
@@ -500,34 +487,23 @@ def plot_abs_cwres_vs_ipred(
 
 
 def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on, bins):
-    obs = get_observations(model)
+    obs = get_observations(model, keep_index=True)
     di = model.datainfo
     idv = di.idv_column.name
     dvcol = di.dv_column
     dv = dvcol.name
     dv_unit = dvcol.unit
     idname = di.id_column.name
+    columns = [idname, idv, dv]
+    if stratify_on is not None:
+        _validate_strat(model, stratify_on)
+        columns.append(stratify_on)
+    df = model.dataset.loc[obs.index, columns]
+    df = df.join(predictions[[predcol_name]])
 
     if stratify_on is None:
-        predictions = predictions[[predcol_name]]
-        df = predictions.join(obs, how='inner').reset_index()
         title = f"Observations vs. {predcol_descr}s"
     else:
-        _validate_strat(model, stratify_on)
-        idv_name = model.datainfo.idv_column.name
-        id_name = model.datainfo.id_column.name
-        if (
-            f'{stratify_on}' not in predictions.columns
-            and f'{stratify_on}' not in predictions.index.names
-        ):
-            newcol = model.dataset[[id_name, idv_name, f'{stratify_on}']].set_index(
-                [id_name, idv_name]
-            )
-            predictions = predictions.join(newcol, how='inner')
-            predictions = predictions[[predcol_name, f'{stratify_on}']]
-        else:
-            predictions = predictions[[predcol_name]]
-        df = predictions.join(obs, how='inner').reset_index()
         df = _bin_data(df, model, stratify_on, bins)
         title = f"{stratify_on}"
 
@@ -614,21 +590,12 @@ def plot_cwres_vs_idv(
     dv_unit = di.dv_column.unit
     idname = di.id_column.name
 
+    columns = [idname, idv]
     if stratify_on is not None:
         _validate_strat(model, stratify_on)
-        idv_name = model.datainfo.idv_column.name
-        id_name = model.datainfo.id_column.name
-        if (
-            f'{stratify_on}' not in residuals.columns
-            and f'{stratify_on}' not in residuals.index.names
-        ):
-            newcol = model.dataset[[id_name, idv_name, f'{stratify_on}']].set_index(
-                [id_name, idv_name]
-            )
-            residuals = residuals.join(newcol, how='inner')
-            df = residuals[['CWRES', f'{stratify_on}']].reset_index()
-    else:
-        df = residuals[['CWRES']].reset_index()
+        columns.append(stratify_on)
+    df = model.dataset.loc[residuals.index, columns]
+    df = df.join(residuals[['CWRES']])
 
     if stratify_on is not None:
         df = _bin_data(df, model, stratify_on, bins)
@@ -747,7 +714,7 @@ def _bin_data(df, model, stratify_on, bins):
 
 
 def _validate_strat(model, stratify_on):
-    if f'{stratify_on}' not in model.dataset.columns:
+    if stratify_on not in model.dataset.columns:
         raise ValueError(f'{stratify_on} column does not exist in dataset.')
 
 

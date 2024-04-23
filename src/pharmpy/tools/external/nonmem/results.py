@@ -508,34 +508,25 @@ def _parse_tables(path: Path, control_stream: NMTranControlStream, netas) -> pd.
     return df
 
 
-def _extract_from_df(df: pd.DataFrame, mandatory, optional):
-    # Extract all mandatory and at least one optional column from df
-    columns = set(df.columns)
-    if not (set(mandatory) <= columns):
+def _extract_at_least_one_column(df: pd.DataFrame, cols):
+    # Extract at least one column from df
+    found_cols = [col for col in cols if col in df.columns]
+    if not found_cols:
         return None
-
-    found_optionals = [col for col in optional if col in columns]
-    if not found_optionals:
-        return None
-    return df[mandatory + found_optionals]
+    return df[found_cols]
 
 
 def _parse_residuals(df: pd.DataFrame):
-    index_cols = ['ID', 'TIME']
     cols = ['RES', 'WRES', 'CWRES']
-    df = _extract_from_df(df, index_cols, cols)
+    df = _extract_at_least_one_column(df, cols)
     if df is not None:
-        df.set_index(['ID', 'TIME'], inplace=True)
         df = df.loc[(df != 0).any(axis=1)]  # Simple way of removing non-observations
     return df
 
 
 def _parse_predictions(df: pd.DataFrame):
-    index_cols = ['ID', 'TIME']
     cols = ['PRED', 'CIPREDI', 'CPRED', 'IPRED']
-    df = _extract_from_df(df, index_cols, cols)
-    if df is not None:
-        df.set_index(['ID', 'TIME'], inplace=True)
+    df = _extract_at_least_one_column(df, cols)
     return df
 
 

@@ -106,13 +106,14 @@ def outlier_count_func(df: pd.DataFrame) -> float:
     return float((abs(df) > 5).sum())
 
 
-def outlier_count(res: ModelfitResults) -> Union[pd.Series, float]:
+def outlier_count(res: ModelfitResults, data) -> Union[pd.Series, float]:
     if res is None:
         return np.nan
     residuals = res.residuals
     if residuals is None:
         return np.nan
     else:
+        residuals = residuals.join(data['ID']).set_index('ID').squeeze()
         groupedByID = residuals.groupby('ID')
         return groupedByID['CWRES'].agg(outlier_count_func)
 
@@ -157,7 +158,7 @@ def groupedByIDAddColumnsOneModel(
     df = pd.DataFrame(
         {
             'parent_model': parent_model_name,
-            'outlier_count': outlier_count(model_res),
+            'outlier_count': outlier_count(model_res, model.dataset),
             'ofv': ofv(model_res),
             'dofv_vs_parent': dofv(parent_model_res, model_res),
             'predicted_dofv': predicted_dofv(model, model_res),
