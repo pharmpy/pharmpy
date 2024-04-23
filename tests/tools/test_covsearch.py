@@ -1,7 +1,9 @@
 import pytest
 
 from pharmpy.modeling import add_covariate_effect, get_covariate_effects, remove_covariate_effect
+from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.covsearch.tool import (
+    _start,
     create_workflow,
     filter_search_space_and_model,
     validate_input,
@@ -165,3 +167,17 @@ def test_covariate_filtering(load_model_for_test, testdata):
     eff, filtered_model = filter_search_space_and_model(search_space, model)
     assert len(get_covariate_effects(filtered_model)) == 2
     assert len(eff) == 0
+
+
+def test_max_eval(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    modelres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+
+    no_max_eval_model_entry = _start(model, modelres, max_eval=False)
+    assert no_max_eval_model_entry.model == model
+
+    max_eval_model_entry = _start(model, modelres, max_eval=True)
+    assert max_eval_model_entry.model != model
+    assert max_eval_model_entry.model.execution_steps[0].maximum_evaluations == round(
+        3.1 * modelres.function_evaluations_iterations.loc[1]
+    )

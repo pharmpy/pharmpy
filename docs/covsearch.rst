@@ -82,6 +82,9 @@ Optional
 | ``algorithm``                               | The search :ref:`algorithm<algorithm_covsearch>` to use               |
 |                                             | (default is `'scm-forward-then-backward'`)                            |
 +---------------------------------------------+-----------------------------------------------------------------------+
+| ``max_eval``                                | Limit the number of function evaluations to 3.1 times that of the     |
+|                                             | base model. Default is False.                                         |
++---------------------------------------------+-----------------------------------------------------------------------+
 | ``strictness``                              | :ref:`Strictness<strictness>` criteria for model selection.           |
 |                                             | Default is "minimization_successful or                                |
 |                                             | (rounding_errors and sigdigs>= 0.1)"                                  |

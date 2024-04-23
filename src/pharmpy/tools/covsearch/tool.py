@@ -8,7 +8,12 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import get_pk_parameters, has_covariate_effect, remove_covariate_effect
+from pharmpy.modeling import (
+    get_pk_parameters,
+    has_covariate_effect,
+    remove_covariate_effect,
+    set_estimation_step,
+)
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
@@ -108,6 +113,7 @@ def create_workflow(
     algorithm: Literal[ALGORITHMS] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
+    max_eval: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
 ):
@@ -130,6 +136,9 @@ def create_workflow(
         Results of model
     model : Model
         Pharmpy model
+    max_eval : bool
+        Limit the number of function evaluations to 3.1 times that of the
+        base model. Default is False.
     strictness : str or None
         Strictness criteria
     naming_index_offset: int
@@ -153,7 +162,7 @@ def create_workflow(
     wb = WorkflowBuilder(name=NAME_WF)
 
     # FIXME : Handle when model is None
-    start_task = Task("create_modelentry", _start, model, results)
+    start_task = Task("create_modelentry", _start, model, results, max_eval)
     init_task = Task("init", _init_search_state, search_space)
     wb.add_task(init_task, predecessors=start_task)
 
@@ -195,7 +204,12 @@ def create_workflow(
     return Workflow(wb)
 
 
-def _start(model, results):
+def _start(model, results, max_eval):
+    if max_eval:
+        max_eval_number = round(3.1 * results.function_evaluations_iterations.loc[1])
+        # Change last instead of first?
+        first_es = model.execution_steps[0]
+        model = set_estimation_step(model, first_es.method, 0, maximum_evaluations=max_eval_number)
     return ModelEntry.create(model=model, parent=None, modelfit_results=results)
 
 
