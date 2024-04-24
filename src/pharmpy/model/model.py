@@ -213,7 +213,7 @@ class Model(Immutable):
         symbs_all = rvs.free_symbols.union(params.symbols).union(colnames)
         if statements.ode_system is not None:
             symbs_all = symbs_all.union({statements.ode_system.t})
-        sset_prev = []
+
         for i, statement in enumerate(statements):
             if isinstance(statement, CompartmentalSystem):
                 continue
@@ -223,6 +223,8 @@ class Model(Immutable):
                 # E.g. after solve_ode_system
                 if statement.symbol.is_function():
                     symbs_all.add(Expr.symbol(statement.symbol.name))
+                    for arg in statement.symbol.args:
+                        symbs_all.add(arg)
                     continue
 
                 for symb in symbs:
@@ -231,16 +233,10 @@ class Model(Immutable):
                     if str(symb) == 'NaN':
                         continue
                     if statements.find_assignment(symb) is None:
-                        if symb == Expr.symbol('t'):
-                            # FIXME: Hack because t is not defined on model
-                            continue
-                        if statements.ode_system and symb in statements.ode_system.amounts:
-                            continue
                         raise ValueError(f'Symbol {symb} is not defined')
-                    if Statements(sset_prev).find_assignment_index(symb) is None:
+                    if statements[:i].find_assignment_index(symb) is None:
                         raise ValueError(f'Symbol {symb} defined after being used')
 
-            sset_prev += statement
         return statements
 
     @staticmethod
