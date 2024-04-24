@@ -113,7 +113,7 @@ def outlier_count(res: ModelfitResults, data) -> Union[pd.Series, float]:
     if residuals is None:
         return np.nan
     else:
-        residuals = residuals.join(data['ID']).set_index('ID').squeeze()
+        residuals = residuals.join(data['ID']).set_index('ID')
         groupedByID = residuals.groupby('ID')
         return groupedByID['CWRES'].agg(outlier_count_func)
 
