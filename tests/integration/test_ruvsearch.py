@@ -98,4 +98,12 @@ def test_ruvsearch_dummy(tmp_path, testdata):
         model = Model.parse_model('mox3.mod')
         results = read_modelfit_results('mox3.mod')
         model = remove_parameter_uncertainty_step(model)
-        run_tool('ruvsearch', model=model, results=results, groups=4, p_value=0.05, skip=[])
+        run_tool(
+            'ruvsearch',
+            model=model,
+            results=results,
+            groups=4,
+            p_value=0.05,
+            skip=[],
+            esttool='dummy',
+        )
