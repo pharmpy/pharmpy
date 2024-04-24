@@ -126,8 +126,16 @@ def calculate_parameters_from_ucp(
     --------
     calculate_ucp_scale : Calculate the scale for conversion from ucps
     """
+    fixed_parameters_dict = model.parameters.fixed.inits
+    for p in model.parameters.names:
+        if p not in fixed_parameters_dict and p not in ucps:
+            raise ValueError(f'Parameter "{p}" is neither fixed nor given in ucps.')
+        if p in fixed_parameters_dict and p in ucps:
+            raise ValueError(f'Parameter "{p}" cannot both be fixed and given in ucps.')
+
     omega_symbolic = model.random_variables.etas.covariance_matrix
     omega = omega_symbolic.subs(dict(ucps))
+    omega = omega.subs(fixed_parameters_dict)
     omega = omega.to_numpy()
     descaled_omega = _descale_matrix(omega, scale.omega)
     omega_dict = {}
@@ -137,6 +145,7 @@ def calculate_parameters_from_ucp(
 
     sigma_symbolic = model.random_variables.epsilons.covariance_matrix
     sigma = sigma_symbolic.subs(dict(ucps))
+    sigma = sigma.subs(fixed_parameters_dict)
     sigma = sigma.to_numpy()
     descaled_sigma = _descale_matrix(sigma, scale.sigma)
     sigma_dict = {}
