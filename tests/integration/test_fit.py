@@ -97,9 +97,21 @@ def test_fit_nlmixr(tmp_path, testdata):
         model = Model.parse_model('pheno.mod')
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         model = modeling.convert_model(model, 'nlmixr')
-        res = fit(model, tool='nlmixr')
+        res = fit(model, esttool='nlmixr')
         assert res.ofv == pytest.approx(732.58813)
         assert res.parameter_estimates['TVCL'] == pytest.approx(0.0058686, abs=1e-6)
+
+
+def test_fit_dummy(tmp_path, testdata):
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        model = Model.parse_model('pheno.mod')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+        res = fit(model, esttool='dummy')
+        rundir = tmp_path / 'modelfit1'
+        assert res.ofv == -13.999031838879104
+        assert rundir.is_dir()
 
 
 def test_verification_nlmixr(tmp_path, testdata):

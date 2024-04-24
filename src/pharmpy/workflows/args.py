@@ -3,6 +3,8 @@ from typing import Any
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 
+ALLOWED_ESTTOOLS = ('dummy', 'nonmem', 'nlmixr')
+
 
 def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]]:
     """Split the dict into dispatching options, common options and other options
@@ -32,6 +34,11 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
             if key == 'path':
                 if value is not None:
                     value = normalize_user_given_path(value)
+            elif key == 'esttool':
+                if value not in ALLOWED_ESTTOOLS:
+                    raise ValueError(
+                        f"Invalid estimation tool {value}, must be one of {ALLOWED_ESTTOOLS}"
+                    )
             common_options[key] = value
         else:
             other_options[key] = value
