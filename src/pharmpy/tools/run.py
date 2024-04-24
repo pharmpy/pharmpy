@@ -1050,7 +1050,7 @@ def summarize_modelfit_results(
 
     names = context.list_all_names()
     mes = [context.retrieve_model_entry(name) for name in names]
-    df = summarize_modelfit_results_from_entries(mes)
+    df = summarize_modelfit_results_from_entries(mes, include_all_execution_steps)
     return df
 
 
