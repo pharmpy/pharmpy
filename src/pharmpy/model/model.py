@@ -172,7 +172,7 @@ class Model(Immutable):
                 )
             value = value.upper()
         elif not (isinstance(value, Expr) and value.is_symbol()):
-            raise ValueError("Can only set value_type to one of {allowed_strings} or a symbol")
+            raise ValueError(f"Can only set value_type to one of {allowed_strings} or a symbol")
         return value
 
     @staticmethod
@@ -191,12 +191,12 @@ class Model(Immutable):
 
     @staticmethod
     def _canonicalize_random_variables(rvs: Optional[RandomVariables]) -> RandomVariables:
-        if not isinstance(rvs, RandomVariables):
-            raise TypeError("model.random_variables must be of RandomVariables type")
-        if rvs is None:
+        if isinstance(rvs, RandomVariables):
+            return rvs
+        elif rvs is None:
             return RandomVariables.create()
         else:
-            return rvs
+            raise TypeError("model.random_variables must be of RandomVariables type")
 
     @staticmethod
     def _canonicalize_statements(
@@ -257,7 +257,7 @@ class Model(Immutable):
         for key, value in dvs.items():
             if isinstance(key, str):
                 key = Expr.symbol(key)
-            if not key.is_symbol():
+            if not (isinstance(key, Expr) and key.is_symbol()):
                 raise TypeError("Dependent variable keys must be a string or a symbol")
             if not isinstance(value, int):
                 raise TypeError("Dependent variable values must be of int type")
