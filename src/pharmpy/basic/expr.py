@@ -239,8 +239,8 @@ class Expr:
         return cls(x)
 
     @classmethod
-    def derivative(cls, f, x) -> Expr:
-        dfdx = symengine.Derivative(f, x)
+    def derivative(cls, f, *x) -> Expr:
+        dfdx = symengine.Derivative(f, *x)
         return cls(dfdx)
 
     @classmethod
