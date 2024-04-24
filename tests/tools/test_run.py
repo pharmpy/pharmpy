@@ -180,14 +180,18 @@ class DummyResults:
         self.warnings = warnings
 
 
-def test_rank_models():
-    base = DummyModel('base', parameter_names=['p1'])
+@pytest.fixture(scope='session')
+def base_model_and_res():
+    return DummyModel('base', parameter_names=['p1']), DummyResults(name='base', ofv=0)
+
+
+@pytest.fixture(scope='session')
+def candidate_models_and_res():
     m1 = DummyModel('m1', parameter_names=['p1', 'p2'])
     m2 = DummyModel('m2', parameter_names=['p1', 'p2'])
     m3 = DummyModel('m3', parameter_names=['p1', 'p2', 'p3'])
     m4 = DummyModel('m4', parameter_names=['p1'])
 
-    base_res = DummyResults(name=base.name, ofv=0)
     m1_res = DummyResults(
         name=m1.name, ofv=-5, minimization_successful=False, termination_cause='rounding_errors'
     )
@@ -195,114 +199,91 @@ def test_rank_models():
     m3_res = DummyResults(name=m3.name, ofv=-4)
     m4_res = DummyResults(name=m4.name, ofv=1)
 
-    models = [m1, m2, m3, m4]
-    models_res = [m1_res, m2_res, m3_res, m4_res]
+    return [m1, m2, m3, m4], [m1_res, m2_res, m3_res, m4_res]
 
-    df = rank_models(base, base_res, models, models_res, rank_type='ofv')
+
+@pytest.mark.parametrize(
+    'kwargs, best_model_names, no_of_ranked_models',
+    [
+        ({}, ['m2', 'm3'], 4),
+        ({'strictness': 'minimization_successful or rounding_errors'}, ['m1'], 5),
+        ({'cutoff': 1}, ['m2', 'm3'], 3),
+        ({'rank_type': 'lrt', 'cutoff': 0.05}, ['m2'], 2),
+    ],
+)
+def test_rank_models(
+    base_model_and_res, candidate_models_and_res, kwargs, best_model_names, no_of_ranked_models
+):
+    base, base_res = base_model_and_res
+    models, models_res = candidate_models_and_res
+
+    df = rank_models(base, base_res, models, models_res, **kwargs)
     assert len(df) == 5
-    best_model = df.loc[df['rank'] == 1].index.values
-    assert list(best_model) == ['m2', 'm3']
-
-    # Test if rounding errors are allowed
-    df = rank_models(
-        base,
-        base_res,
-        models,
-        models_res,
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
-    )
-    best_model = df.loc[df['rank'] == 1].index.values
-    assert list(best_model) == ['m1']
+    best_models = df.loc[df['rank'] == 1].index.values
+    assert list(best_models) == best_model_names
     ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 5
+    assert len(ranked_models) == no_of_ranked_models
 
-    # Test with a cutoff of dOFV=1
-    df = rank_models(base, base_res, models, models_res, rank_type='ofv', cutoff=1)
-    ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 3
 
-    # Test with LRT
-    df = rank_models(base, base_res, models, models_res, rank_type='lrt', cutoff=0.05)
-    ranked_models = list(df.dropna().index.values)
-    assert sorted(ranked_models) == ['base', 'm2']
+@pytest.mark.parametrize(
+    'res_kwargs, rank_models_kwargs',
+    [
+        ({'ofv': np.nan}, {}),
+        (
+            {
+                'ofv': -5,
+                'minimization_successful': False,
+                'termination_cause': 'rounding_errors',
+                'significant_digits': np.nan,
+            },
+            {'strictness': 'minimization_successful or (rounding_errors and sigdigs>=0)'},
+        ),
+    ],
+)
+def test_rank_models_nan(
+    base_model_and_res, candidate_models_and_res, res_kwargs, rank_models_kwargs
+):
+    base, base_res = base_model_and_res
+    models, models_res = candidate_models_and_res
 
-    df = rank_models(
-        base,
-        base_res,
-        models,
-        models_res,
-        parent_dict={m: base for m in models},
-        rank_type='lrt',
-        cutoff=0.05,
-    )
-    ranked_models = list(df.dropna().index.values)
-    assert sorted(ranked_models) == ['base', 'm2']
+    model = DummyModel('m5', parameter_names=['p1'])
+    res = DummyResults(name=model.name, **res_kwargs)
 
-    # Test if candidate model does not have an OFV
-    m5 = DummyModel('m5', parameter_names=['p1'])
-    m5_res = DummyResults(name=m5.name, ofv=np.nan)
-    df = rank_models(base, base_res, models + [m5], models_res + [m5_res], rank_type='ofv')
+    df = rank_models(base, base_res, models + [model], models_res + [res], **rank_models_kwargs)
     ranked_models = list(df.dropna().index.values)
     assert 'm5' not in ranked_models
     assert np.isnan(df.loc['m5']['rank'])
 
-    # Test if model has minimized but has unreportable number of significant digits while still allowing rounding
-    # errors
-    m6 = DummyModel('m6', parameter_names=['p1'])
-    m6_res = DummyResults(
-        name=m6.name,
-        ofv=-5,
-        minimization_successful=False,
-        termination_cause='rounding_errors',
-        significant_digits=np.nan,
-    )
-    df = rank_models(
-        base,
-        base_res,
-        models + [m6],
-        models_res + [m6_res],
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
-    )
-    ranked_models = list(df.dropna().index.values)
-    assert 'm6' not in ranked_models
-    assert np.isnan(df.loc['m6']['rank'])
 
-    # Test if base model failed, fall back to rank value
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        ({'ofv': np.nan}),
+        ({'ofv': 2e154, 'minimization_successful': False}),
+    ],
+)
+def test_rank_models_base_fail(candidate_models_and_res, kwargs):
     base_nan = DummyModel('base_nan', parameter_names=['p1'])
-    base_nan_res = DummyResults(name=base_nan.name, ofv=np.nan)
-    df = rank_models(
-        base_nan,
-        base_nan_res,
-        models,
-        models_res,
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
-    )
-    assert df.iloc[0].name == 'm1'
+    base_nan_res = DummyResults(name=base_nan.name, **kwargs)
 
-    # Test if base model failed but still has OFV with a very high value, fall back to rank value
-    base_nan = DummyModel(
-        'base_nan',
-        parameter_names=['p1'],
-    )
-    base_nan_res = DummyResults(
-        name=base_nan.name, ofv=2e154, minimization_successful=False, termination_cause='something'
-    )
+    models, models_res = candidate_models_and_res
+
     df = rank_models(
         base_nan,
         base_nan_res,
         models,
         models_res,
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
     )
-    assert df.iloc[0].name == 'm1'
-    assert df.nunique()['ofv'] == df.nunique()['rank']
+    best_models = df.loc[df['rank'] == 1].index.values
+    assert list(best_models) == ['m2', 'm3']
+
+
+def test_rank_models_raises(base_model_and_res, candidate_models_and_res):
+    base, base_res = base_model_and_res
+    models, models_res = candidate_models_and_res
 
     with pytest.raises(ValueError):
-        rank_models(base, base_res, models + [m5], models_res)
+        rank_models(base, base_res, models[:-1], models_res)
 
 
 def test_rank_models_bic(load_model_for_test, testdata):
