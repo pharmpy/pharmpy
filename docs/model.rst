@@ -75,44 +75,49 @@ Inspecting the model attributes
 Name and description
 ~~~~~~~~~~~~~~~~~~~~
 
-A model has a name property that can be read or changed. After reading a model from a file the name is set to the
+A model has a name property. After reading a model from a file the name is set to the
 filename without extension.
 
 .. pharmpy-execute::
 
    model.name
 
+If the model has a description it can also be retrieved. For NONMEM models this is taken from $PROBLEM.
+
+.. pharmpy-execute::
+
+   model.description
+
 
 
 Parameters
 ~~~~~~~~~~
 
-Model parameters are scalar values that are used in the mathematical definition of the model and are estimated when a
-model is fit from data. The parameters of a model are thus optimization parameters and can in turn be used as
-parameters in statistical distributions or as structural parameters. A parameter is represented by using the
+Model population parameters are scalar values that are used in the mathematical definition of the model and are estimated when a
+model is fit to a dataset. The parameters of a model are thus optimization parameters and can in turn be used as
+parameters in statistical distributions or as structural parameters. A parameter is represented by the
 :py:class:`pharmpy.model.Parameter` class.
 
-It is often convenient to work with a set of parameters at the same time, for example all parameters of a model.
-In Pharmpy multiple parameters are organized using the :py:class:`pharmpy.model.Parameters` class as an ordered set of
+All parameters in a model are organized by the the :py:class:`pharmpy.model.Parameters` class as an ordered set of
 :py:class:`pharmpy.model.Parameter`. All parameters of a model can be accessed by using the parameters attribute:
 
 .. pharmpy-execute::
 
-   parset = model.parameters
-   parset
+   params = model.parameters
+   params
 
 Operations on multiple parameters are made easier using methods or properties on parameter sets. For example, to get
 all initial estimates as a dictionary:
 
 .. pharmpy-execute::
 
-   parset.inits
+   params.inits
 
 Each parameter can be retrieved using indexing:
 
 .. pharmpy-execute::
 
-   par = parset['PTVCL']
+   par = params['PTVCL']
 
 A model parameter must have a name and an initial value and can optionally be constrained to a lower and or upper bound.
 A parameter can also be fixed meaning that it will be set to its initial value. The parameter attributes can be read
