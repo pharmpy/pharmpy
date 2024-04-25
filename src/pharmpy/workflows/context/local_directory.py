@@ -9,6 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.fs.symlink import create_directory_symlink
+from pharmpy.internals.sort import sort_alphanum
 from pharmpy.model import Model
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows.hashing import ModelHash
@@ -169,11 +170,11 @@ class LocalDirectoryContext(Context):
         return key
 
     def list_all_names(self) -> list(str):
-        return sorted([f.name for f in Path(self._models_path).iterdir()])
+        return sort_alphanum([f.name for f in Path(self._models_path).iterdir()])
 
     def list_all_subcontexts(self) -> list(str):
         path = self.path / 'subcontexts'
-        return sorted([f.name for f in path.iterdir()])
+        return sort_alphanum([f.name for f in path.iterdir()])
 
     def retrieve_name(self, key: ModelHash) -> str:
         path = self._models_path
