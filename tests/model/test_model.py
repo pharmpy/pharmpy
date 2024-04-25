@@ -341,6 +341,10 @@ def test_statements():
     with pytest.raises(ValueError, match='Symbol t is not defined'):
         Model.create('model', statements=Statements() + assign)
 
+    assign = Assignment.create(Expr.function('A', 0), Expr.symbol('0'))
+    with pytest.raises(ValueError, match='Symbol 0 is not defined'):
+        Model.create('model', statements=Statements() + assign)
+
     assign1 = Assignment(Expr.symbol('A'), Expr.symbol('B'))
     assign2 = Assignment(Expr.symbol('B'), Expr.symbol('0'))
     with pytest.raises(ValueError, match='Symbol B defined after being used'):
