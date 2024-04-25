@@ -717,7 +717,7 @@ def rank_models(
     strictness: Optional[str] = "minimization_successful",
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
-    bic_type: str = 'mixed',
+    penalties: Optional[List[float]] = None,
     **kwargs,
 ) -> pd.DataFrame:
     """Ranks a list of models
@@ -742,8 +742,8 @@ def rank_models(
         Name of ranking type. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)
     cutoff : float or None
         Value to use as cutoff. If using LRT, cutoff denotes p-value. Default is None
-    bic_type : str
-        Type of BIC to calculate. Default is the mixed effects.
+    penalties : list
+        List of penalties to add to candidate models
     kwargs
         Arguments to pass to calculate BIC (such as `mult_test_p` and `mult_test_p`)
 
@@ -763,6 +763,8 @@ def rank_models(
     """
     if len(models) != len(models_res):
         raise ValueError('Different length of `models` and `models_res`')
+    if penalties is not None and len(models) != len(penalties):
+        raise ValueError('Different length of `models` and `penalties`')
     if rank_type == 'lrt' and not parent_dict:
         parent_dict = {model.name: base_model.name for model in models}
     if parent_dict and not isinstance(list(parent_dict.keys())[0], str):
@@ -774,15 +776,17 @@ def rank_models(
     rank_values, delta_values = {}, {}
     models_to_rank = []
 
-    ref_value = _get_rankval(base_model, base_model_res, strictness, rank_type, bic_type, **kwargs)
+    ref_value = _get_rankval(base_model, base_model_res, strictness, rank_type, **kwargs)
     model_dict = {model.name: (model, res) for model, res in zip(models_all, res_all)}
 
     # Filter on strictness
-    for model, res in zip(models_all, res_all):
+    for i, (model, res) in enumerate(zip(models_all, res_all)):
         # Exclude OFV etc. if model was not successful
-        rank_value = _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs)
+        rank_value = _get_rankval(model, res, strictness, rank_type, **kwargs)
         if np.isnan(rank_value):
             continue
+        if penalties and model.name != base_model.name:
+            rank_value += penalties[i - 1]
         if model.name == base_model.name:
             pass
         elif rank_type == 'lrt':
@@ -1010,7 +1014,7 @@ def is_strictness_fulfilled(
         return True
 
 
-def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
+def _get_rankval(model, res, strictness, rank_type, **kwargs):
     if not is_strictness_fulfilled(res, model, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
@@ -1018,7 +1022,8 @@ def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
     elif rank_type == 'aic':
         return calculate_aic(model, res.ofv)
     elif rank_type == 'bic':
-        return calculate_bic(model, res.ofv, bic_type, **kwargs)
+        bic_type = kwargs.get('bic_type')
+        return calculate_bic(model, res.ofv, type=bic_type)
     else:
         raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
 
