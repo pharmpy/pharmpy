@@ -224,8 +224,8 @@ class Model(Immutable):
                 if statement.symbol.is_function():
                     symbs_all.add(Expr.symbol(statement.symbol.name))
                     for arg in statement.symbol.args:
-                        symbs_all.add(arg)
-                    continue
+                        if arg.is_symbol():
+                            symbs_all.add(arg)
 
                 for symb in symbs:
                     if symb in symbs_all:
