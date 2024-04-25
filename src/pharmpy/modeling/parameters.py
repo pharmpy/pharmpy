@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Mapping, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Parameter, Parameters, RandomVariables
@@ -100,41 +100,10 @@ def get_sigmas(model: Model):
     return Parameters(tuple(sigmas))
 
 
-def set_initial_estimates(model: Model, inits: Dict[str, float]):
-    """Set initial estimates
-
-    Parameters
-    ----------
-    model : Model
-        Pharmpy model
-    inits : dict
-        A dictionary of parameter init for parameters to change
-
-    Returns
-    -------
-    Model
-        Pharmpy model object
-
-    Examples
-    --------
-    >>> from pharmpy.modeling import load_example_model, set_initial_estimates
-    >>> model = load_example_model("pheno")
-    >>> model = set_initial_estimates(model, {'PTVCL': 2.0})
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 2.0, lower=0.0, upper=∞, fix=False)
-
-    See also
-    --------
-    fix_parameters_to : Fixing and setting parameter initial estimates in the same function
-    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
-    """
-    new = model.parameters.set_initial_estimates(inits)
-    model = model.replace(parameters=new)
-    return model.update_source()
-
-
-def update_inits(
-    model: Model, parameter_estimates: pd.Series, move_est_close_to_bounds: bool = False
+def set_initial_estimates(
+    model: Model,
+    inits: Union[Mapping[str, float], pd.Series],
+    move_est_close_to_bounds: bool = False,
 ):
     """Update initial parameter estimate for a model
 
@@ -158,23 +127,32 @@ def update_inits(
 
     Example
     -------
-    >>> from pharmpy.modeling import load_example_model, update_inits
+    >>> from pharmpy.modeling import load_example_model, set_initial_estimates
     >>> from pharmpy.tools import load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
     >>> model.parameters.inits  # doctest:+ELLIPSIS
     {'PTVCL': 0.00469307, 'PTVV': 1.00916, 'THETA_3': 0.1, 'IVCL': 0.0309626, 'IVV': 0.031128, 'SIGMA_1_1': 0.013241}
-    >>> model = update_inits(model, results.parameter_estimates)
+    >>> model = set_initial_estimates(model, results.parameter_estimates)
     >>> model.parameters.inits  # doctest:+ELLIPSIS
     {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
+    >>> model = load_example_model("pheno")
+    >>> model = set_initial_estimates(model, {'PTVCL': 2.0})
+    >>> model.parameters['PTVCL']
+    Parameter("PTVCL", 2.0, lower=0.0, upper=∞, fix=False)
+
+    See also
+    --------
+    fix_parameters_to : Fixing and setting parameter initial estimates in the same function
+    unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
 
     """
 
-    # FIXME: Can be combined with set_initial_estimates
     if move_est_close_to_bounds:
-        parameter_estimates = _move_est_close_to_bounds(model, parameter_estimates)
+        inits = _move_est_close_to_bounds(model, inits)
 
-    model = model.replace(parameters=model.parameters.set_initial_estimates(parameter_estimates))
+    new = model.parameters.set_initial_estimates(inits)
+    model = model.replace(parameters=new)
 
     return model.update_source()
 

@@ -11,7 +11,7 @@ import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.rxode import convert_model
-from pharmpy.modeling import get_omegas, get_sigmas, update_inits, write_csv
+from pharmpy.modeling import get_omegas, get_sigmas, set_initial_estimates, write_csv
 from pharmpy.tools import fit
 from pharmpy.tools.external.nlmixr.run import compare_models, print_step
 from pharmpy.workflows import ModelEntry, default_context
@@ -189,7 +189,7 @@ def verification(
     # and convert to nlmixr
     if not ignore_print:
         print_step("Converting NONMEM model to RxODE...")
-    rxode_model = convert_model(update_inits(nonmem_model, param_estimates))
+    rxode_model = convert_model(set_initial_estimates(nonmem_model, param_estimates))
 
     # Execute the rxode model
     db = default_context("comparison")

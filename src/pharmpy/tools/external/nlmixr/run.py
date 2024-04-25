@@ -17,7 +17,7 @@ from pharmpy.modeling import (
     get_sigmas,
     get_thetas,
     set_evaluation_step,
-    update_inits,
+    set_initial_estimates,
     write_csv,
 )
 from pharmpy.tools import fit
@@ -219,7 +219,9 @@ def verification(
     if not ignore_print:
         print_step("Converting NONMEM model to nlmixr2...")
     try:
-        nlmixr_model = convert_model(update_inits(nonmem_model, nonmem_res.parameter_estimates))
+        nlmixr_model = convert_model(
+            set_initial_estimates(nonmem_model, nonmem_res.parameter_estimates)
+        )
     except Exception:
         raise Exception("Could not convert model to nlmixr2")
 

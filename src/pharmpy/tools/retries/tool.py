@@ -19,7 +19,7 @@ from pharmpy.modeling import (
     calculate_ucp_scale,
     create_rng,
     sample_parameters_uniformly,
-    update_inits,
+    set_initial_estimates,
 )
 from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -123,7 +123,7 @@ def create_random_init_model(
     original_model = modelentry.model
     # Update inits once before running
     if not use_initial_estimates and modelentry.modelfit_results:
-        original_model = update_inits(
+        original_model = set_initial_estimates(
             original_model, modelentry.modelfit_results.parameter_estimates
         )
 
@@ -149,7 +149,7 @@ def create_random_init_model(
                     category=UserWarning,
                 )
                 try:
-                    new_candidate_model = update_inits(new_candidate_model, new_parameters)
+                    new_candidate_model = set_initial_estimates(new_candidate_model, new_parameters)
                     break
                 except UserWarning:
                     if try_number == maximum_tests:
@@ -159,7 +159,7 @@ def create_random_init_model(
                         )
     elif scale == "UCP":
         new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, seed)
-        new_candidate_model = update_inits(new_candidate_model, new_parameters)
+        new_candidate_model = set_initial_estimates(new_candidate_model, new_parameters)
     else:
         # Should be caught in validate_input()
         raise ValueError(f'Scale ({scale}) is not supported')
@@ -267,7 +267,7 @@ def convert_to_posdef(model):
             f'postive definite. Adjusted values for parameters : '
             f'{new_parameter_estimates.keys()}'
         )
-        return update_inits(model, new_parameter_estimates)
+        return set_initial_estimates(model, new_parameter_estimates)
     else:
         return model
 

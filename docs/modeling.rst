@@ -372,7 +372,6 @@ List of functions to change population parameters:
 * :py:func:`pharmpy.modeling.unconstrain_parameters`
 * :py:func:`pharmpy.modeling.unfix_parameters`
 * :py:func:`pharmpy.modeling.unfix_parameters_to`
-* :py:func:`pharmpy.modeling.update_inits`
 
 Error model
 ~~~~~~~~~~~~

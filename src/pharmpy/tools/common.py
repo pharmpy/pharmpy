@@ -12,7 +12,7 @@ from pharmpy.modeling import (
     plot_dv_vs_ipred,
     plot_dv_vs_pred,
     plot_eta_distributions,
-    update_inits,
+    set_initial_estimates,
 )
 from pharmpy.tools.run import rank_models, summarize_errors_from_entries
 from pharmpy.workflows import ModelEntry, ModelfitResults, Results
@@ -39,7 +39,7 @@ def update_initial_estimates(model: Model, modelfit_results: Optional[ModelfitRe
             return model
 
     try:
-        model = update_inits(
+        model = set_initial_estimates(
             model, modelfit_results.parameter_estimates, move_est_close_to_bounds=True
         )
     except (ValueError, np.linalg.LinAlgError):

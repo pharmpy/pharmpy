@@ -6,7 +6,7 @@ import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import update_inits
+from pharmpy.modeling import set_initial_estimates
 from pharmpy.tools import get_model_features
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures
@@ -232,7 +232,7 @@ def create_base_model(ss, model_or_model_entry):
         model = model_or_model_entry
         res = None
 
-    base = update_inits(model, res.parameter_estimates) if res else model
+    base = set_initial_estimates(model, res.parameter_estimates) if res else model
 
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)

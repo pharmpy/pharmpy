@@ -493,10 +493,10 @@ def model_sample(args):
 
 def update_inits(args):
     """Subcommand to update initial estimates from previous output."""
-    from pharmpy.modeling import update_inits
+    from pharmpy.modeling import set_initial_estimates
 
     model, res = args.model
-    update_inits(model, res.parameter_estimates)
+    set_initial_estimates(model, res.parameter_estimates)
 
     write_model_or_dataset(model, model.dataset, path=args.output_file, force=False)
 

@@ -16,12 +16,12 @@ from pharmpy.modeling import (
     get_omegas,
     get_sigmas,
     get_thetas,
+    set_initial_estimates,
     set_lower_bounds,
     set_upper_bounds,
     unconstrain_parameters,
     unfix_parameters,
     unfix_parameters_to,
-    update_inits,
 )
 from pharmpy.tools import read_modelfit_results
 
@@ -143,7 +143,7 @@ def test_add_population_parameter(load_model_for_test, testdata):
     assert model.parameters['NEWPARAM'].init == 23
 
 
-def test_update_inits_move_est(load_model_for_test, pheno_path):
+def test_set_initial_estimates_move_est(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     res = read_modelfit_results(pheno_path)
 
@@ -154,20 +154,20 @@ def test_update_inits_move_est(load_model_for_test, pheno_path):
     param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
     param_est['IIV_S1'] = 0.0005
 
-    model = update_inits(model, param_est, move_est_close_to_bounds=True)
+    model = set_initial_estimates(model, param_est, move_est_close_to_bounds=True)
 
     assert model.parameters['IVCL'].init == param_est['IVCL']
     assert model.parameters['IIV_S1'].init == 0.01
     assert round(model.parameters['IIV_CL_IIV_V'].init, 6) == 0.025757
 
 
-def test_update_inits_zero_fix(load_model_for_test, pheno_path):
+def test_set_initial_estimates_zero_fix(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     model = fix_parameters_to(model, d)
     res = read_modelfit_results(pheno_path)
     param_est = res.parameter_estimates.drop(index=['IVCL'])
-    model = update_inits(model, param_est)
+    model = set_initial_estimates(model, param_est)
     assert model.parameters['IVCL'].init == 0
     assert model.parameters['IVCL'].fix
 
@@ -175,12 +175,12 @@ def test_update_inits_zero_fix(load_model_for_test, pheno_path):
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     model = fix_parameters_to(model, d)
     param_est = res.parameter_estimates.drop(index=['IVCL'])
-    model = update_inits(model, param_est, move_est_close_to_bounds=True)
+    model = set_initial_estimates(model, param_est, move_est_close_to_bounds=True)
     assert model.parameters['IVCL'].init == 0
     assert model.parameters['IVCL'].fix
 
 
-def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
+def test_set_initial_estimates_no_res(load_model_for_test, testdata, tmp_path):
     shutil.copy(testdata / 'nonmem/pheno.mod', tmp_path / 'run1.mod')
     shutil.copy(testdata / 'nonmem/pheno.dta', tmp_path / 'pheno.dta')
 
@@ -199,10 +199,10 @@ def test_update_inits_no_res(load_model_for_test, testdata, tmp_path):
         )
 
         with pytest.raises(ValueError):
-            update_inits(model, modelfit_results.parameter_estimates)
+            set_initial_estimates(model, modelfit_results.parameter_estimates)
 
 
-def test_update_inits_subset_parameters_w_correlation(load_model_for_test, pheno_path):
+def test_set_initial_estimates_subset_parameters_w_correlation(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     res = read_modelfit_results(pheno_path)
 
@@ -213,7 +213,7 @@ def test_update_inits_subset_parameters_w_correlation(load_model_for_test, pheno
     param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
     param_est['IIV_S1'] = 0.5
 
-    updated_model = update_inits(model, param_est, move_est_close_to_bounds=True)
+    updated_model = set_initial_estimates(model, param_est, move_est_close_to_bounds=True)
 
     assert model.parameters['IVCL'].init == updated_model.parameters['IVCL'].init
     assert model.parameters['IIV_S1'].init == 0.09

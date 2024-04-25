@@ -64,12 +64,12 @@ def test_parse_nonmem_model(testdata):
     assert model.observation_transformation == {S('Y_1'): S('Y_1'), S('Y_2'): S('Y_2')}
 
 
-def test_update_inits(load_model_for_test, pheno_path):
-    from pharmpy.modeling import update_inits
+def test_set_initial_estimates(load_model_for_test, pheno_path):
+    from pharmpy.modeling import set_initial_estimates
 
     model = load_model_for_test(pheno_path)
     res = read_modelfit_results(pheno_path)
-    model = update_inits(model, res.parameter_estimates)
+    model = set_initial_estimates(model, res.parameter_estimates)
 
 
 def test_empty_ext_file(testdata):

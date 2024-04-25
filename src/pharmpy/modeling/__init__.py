@@ -212,7 +212,6 @@ from .parameters import (
     unconstrain_parameters,
     unfix_parameters,
     unfix_parameters_to,
-    update_inits,
 )
 from .pd import add_effect_compartment, add_indirect_effect, set_baseline_effect, set_direct_effect
 from .plots import (
@@ -456,7 +455,6 @@ __all__ = [
     'unfix_parameters',
     'unfix_parameters_to',
     'update_initial_individual_estimates',
-    'update_inits',
     'use_thetas_for_error_stdev',
     'write_csv',
     'write_model',

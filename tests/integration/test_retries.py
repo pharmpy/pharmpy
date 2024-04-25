@@ -1,7 +1,11 @@
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import calculate_parameters_from_ucp, calculate_ucp_scale, update_inits
+from pharmpy.modeling import (
+    calculate_parameters_from_ucp,
+    calculate_ucp_scale,
+    set_initial_estimates,
+)
 from pharmpy.tools import run_retries
 
 
@@ -47,7 +51,7 @@ def is_within_fraction(start_model, start_model_res, candidate_model, scale, fra
                 value + value * fraction,
             )
     elif scale == "UCP":
-        start_model = update_inits(start_model, start_model_res.parameter_estimates)
+        start_model = set_initial_estimates(start_model, start_model_res.parameter_estimates)
         ucp_scale = calculate_ucp_scale(start_model)
         lower = {}
         upper = {}
