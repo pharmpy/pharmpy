@@ -1074,7 +1074,7 @@ def add_cmt(model: Model):
 
 
 def add_time_after_dose(model: Model):
-    """Calculate and add a TAD column to the dataset"
+    """Calculate and add a TAD column to the dataset
 
     Parameters
     ----------
