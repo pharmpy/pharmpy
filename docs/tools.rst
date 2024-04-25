@@ -38,6 +38,7 @@ Tools in Pharmpy
    allometry - add allometric scaling <allometry>
    estmethod - compare estimation methods and/or solvers <estmethod>
    Retries - Rerun a model with tweaked initial estimates <retries>
+   Simulation - Run a simulation <simulation>
 
 ~~~~~~~~~~~~~~
 Common options
