@@ -114,8 +114,8 @@ def set_initial_estimates(
     ----------
     model : Model
         Pharmpy model to update initial estimates
-    parameter_estimates : pd.Series
-        Parameter estimates to update
+    inits : pd.Series or dict
+        Initial parameter estimates to update
     move_est_close_to_bounds : bool
         Move estimates that are close to bounds. If correlation >0.99 the correlation will
         be set to 0.9, if variance is <0.001 the variance will be set to 0.01.
