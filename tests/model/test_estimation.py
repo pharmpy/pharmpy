@@ -1,5 +1,6 @@
 import pytest
 
+from pharmpy.basic import Expr
 from pharmpy.model import EstimationStep, ExecutionSteps, SimulationStep
 
 
@@ -123,6 +124,7 @@ def test_dict():
         'solver_rtol': None,
         'solver_atol': None,
         'tool_options': {},
+        'derivatives': (),
         'predictions': (),
         'residuals': (),
     }
@@ -150,6 +152,7 @@ def test_dict():
                 'solver_rtol': None,
                 'solver_atol': None,
                 'tool_options': {},
+                'derivatives': (),
                 'predictions': (),
                 'residuals': (),
             },
@@ -169,6 +172,7 @@ def test_dict():
                 'solver_rtol': None,
                 'solver_atol': None,
                 'tool_options': {},
+                'derivatives': (),
                 'predictions': (),
                 'residuals': (),
             },
@@ -189,10 +193,35 @@ def test_getitem():
 
 
 def test_properties():
-    a = EstimationStep.create('foce', epsilon_derivatives=['EPS(1)'])
-    assert a.epsilon_derivatives == ('EPS(1)',)
-    a = EstimationStep.create('foce', eta_derivatives=['ETA(1)'])
-    assert a.eta_derivatives == ('ETA(1)',)
+    d = tuple(map(Expr.symbol, ('EPS_1',)))
+    a = EstimationStep.create('foce', derivatives=(d,))
+    assert a.derivatives == (d,)
+
+    d = tuple(map(Expr.symbol, ('ETA_1',)))
+    a = EstimationStep.create('foce', derivatives=(d,))
+    assert a.derivatives == (d,)
+
+    d = tuple(map(Expr.symbol, ('EPS_1', 'ETA_1')))
+    a = EstimationStep.create('foce', derivatives=(d,))
+    assert a.derivatives == (d,)
+
+    d = tuple(tuple(map(Expr.symbol, params)) for params in (('EPS_1', 'ETA_1'), ('ETA_1',)))
+    d2 = list(list(map(Expr.symbol, params)) for params in (('EPS_1', 'ETA_1'), ('ETA_1',)))
+    a = EstimationStep.create('foce', derivatives=d)
+    b = EstimationStep.create('foce', derivatives=d2)
+    assert a.derivatives == b.derivatives == d
+
+    d = tuple(tuple(map(Expr.symbol, params)) for params in (('ETA_1',), ('EPS_1', 'ETA_1')))
+    a = EstimationStep.create('foce', derivatives=d)
+    assert a.derivatives == EstimationStep._canonicalize_derivatives(d)
+
+    with pytest.raises(TypeError, match="Given derivatives cannot be converted to tuple of tuples"):
+        a = EstimationStep.create('foce', derivatives=13)
+    with pytest.raises(TypeError, match="Given derivatives cannot be converted to tuple of tuples"):
+        a = EstimationStep.create('foce', derivatives=(13,))
+    with pytest.raises(TypeError, match="Each derivative argument must be a symbol of type"):
+        a = EstimationStep.create('foce', derivatives=((13,),))
+
     a = EstimationStep.create('foce', predictions=['PRED'])
     assert a.predictions == ('PRED',)
     a = EstimationStep.create('foce', residuals=['CWRES'])
