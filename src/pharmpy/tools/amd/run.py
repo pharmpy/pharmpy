@@ -600,7 +600,7 @@ def run_amd(
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
         final_model_parameter_estimates=_table_final_parameter_estimates(
-            model, final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
+            final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
         ),
         final_model_dv_vs_ipred_plot=dv_vs_ipred_plot,
         final_model_dv_vs_pred_plot=dv_vs_pred_plot,
@@ -622,7 +622,7 @@ def run_amd(
     return res
 
 
-def _table_final_parameter_estimates(model: Model, parameter_estimates, ses):
+def _table_final_parameter_estimates(parameter_estimates, ses):
     rse = ses / parameter_estimates
     rse.name = "RSE"
     df = pd.concat([parameter_estimates, rse], axis=1)

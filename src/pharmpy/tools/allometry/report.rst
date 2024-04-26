@@ -18,7 +18,10 @@ Final model
     from pharmpy.tools.common import table_final_parameter_estimates
 
     res = read_results('results.json')
-    final_model_parameter_estimates = table_final_parameter_estimates(res.final_model, res.final_results.parameter_estimates_sdcorr, res.final_results.standard_errors_sdcorr)
+    final_model_parameter_estimates = table_final_parameter_estimates(
+            res.final_results.parameter_estimates_sdcorr,
+            res.final_results.standard_errors_sdcorr
+            )
 
 
 .. jupyter-execute::

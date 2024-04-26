@@ -317,7 +317,7 @@ def create_plots(model: Model, results: ModelfitResults):
     }
 
 
-def table_final_parameter_estimates(model: Model, parameter_estimates, ses):
+def table_final_parameter_estimates(parameter_estimates, ses):
     rse = ses / parameter_estimates
     rse.name = "RSE"
     df = pd.concat([parameter_estimates, rse], axis=1)
