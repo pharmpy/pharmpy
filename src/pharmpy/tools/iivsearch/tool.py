@@ -23,7 +23,6 @@ from pharmpy.tools.common import (
     create_plots,
     create_results,
     table_final_eta_shrinkage,
-    table_final_parameter_estimates,
     update_initial_estimates,
 )
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, _remove_sublist
@@ -259,8 +258,9 @@ def start(
 
         final_model = res.final_model
         if final_model.name != input_model_entry.model.name:
-            # FIXME: This should be piped instead
-            final_model_entry = context.retrieve_model_entry(final_model.name)
+            final_model_entry = ModelEntry.create(
+                model=final_model, modelfit_results=res.final_results
+            )
         else:
             final_res = input_model_entry.modelfit_results
             final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
@@ -310,11 +310,7 @@ def start(
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
-        final_model_parameter_estimates=table_final_parameter_estimates(
-            final_final_model,
-            final_results.parameter_estimates_sdcorr,
-            final_results.standard_errors_sdcorr,
-        ),
+        final_results=final_results,
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
         final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
