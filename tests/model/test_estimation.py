@@ -222,10 +222,17 @@ def test_properties():
     with pytest.raises(TypeError, match="Each derivative argument must be a symbol of type"):
         a = EstimationStep.create('foce', derivatives=((13,),))
 
-    a = EstimationStep.create('foce', predictions=['PRED'])
-    assert a.predictions == ('PRED',)
-    a = EstimationStep.create('foce', residuals=['CWRES'])
-    assert a.residuals == ('CWRES',)
+    a1 = EstimationStep.create('foce', predictions=('PRED',))
+    a2 = EstimationStep.create('foce', predictions=['PRED'])
+    assert a1.predictions == a2.predictions == ('PRED',)
+    a1 = EstimationStep.create('foce', residuals=('CWRES',))
+    a2 = EstimationStep.create('foce', residuals=['CWRES'])
+    assert a1.residuals == a2.residuals == ('CWRES',)
+
+    with pytest.raises(TypeError, match="Predictions could not be converted to tuple"):
+        a = EstimationStep.create('foce', predictions=13)
+    with pytest.raises(TypeError, match="Residuals could not be converted to tuple"):
+        a = EstimationStep.create('foce', residuals=13)
 
 
 def test_replace():

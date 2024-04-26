@@ -118,8 +118,8 @@ def create_basic_pk_model(
         "FOCE",
         interaction=True,
         maximum_evaluations=99999,
-        predictions=['PRED', 'CIPREDI'],
-        residuals=['CWRES'],
+        predictions=('PRED', 'CIPREDI'),
+        residuals=('CWRES',),
     )
     eststeps = ExecutionSteps.create([est])
 
