@@ -36,7 +36,6 @@ from pharmpy.tools.common import (
     create_plots,
     summarize_tool,
     table_final_eta_shrinkage,
-    table_final_parameter_estimates,
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -245,14 +244,10 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         summary_individuals=sumind,
         summary_individuals_count=sumcount,
         final_model=model_entry.model,
+        final_results=model_entry.modelfit_results,
         summary_models=summf,
         summary_tool=summary_tool,
         summary_errors=summary_errors,
-        final_model_parameter_estimates=table_final_parameter_estimates(
-            model_entry.model,
-            model_entry.modelfit_results.parameter_estimates_sdcorr,
-            model_entry.modelfit_results.standard_errors_sdcorr,
-        ),
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
         final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],

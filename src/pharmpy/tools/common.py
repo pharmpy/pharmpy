@@ -55,8 +55,8 @@ class ToolResults(Results):
     summary_individuals_count: Optional[pd.DataFrame] = None
     summary_errors: Optional[pd.DataFrame] = None
     final_model: Optional[Model] = None
+    final_results: Optional[ModelfitResults] = None
     models: Sequence[Model] = ()
-    final_model_parameter_estimates: Optional[pd.DataFrame] = None
     final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
     final_model_dv_vs_pred_plot: Optional[alt.Chart] = None
     final_model_cwres_vs_idv_plot: Optional[alt.Chart] = None
@@ -153,12 +153,8 @@ def create_results(
         summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
         final_model=best_model,
+        final_results=final_results,
         models=models,
-        final_model_parameter_estimates=table_final_parameter_estimates(
-            best_model,
-            final_results.parameter_estimates_sdcorr,
-            final_results.standard_errors_sdcorr,
-        ),
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
         final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],

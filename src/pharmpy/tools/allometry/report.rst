@@ -15,14 +15,16 @@ Final model
     :hide-code:
 
     from pharmpy.workflows.results import read_results
+    from pharmpy.tools.common import table_final_parameter_estimates
 
     res = read_results('results.json')
+    final_model_parameter_estimates = table_final_parameter_estimates(res.final_model, res.final_results.parameter_estimates_sdcorr, res.final_results.standard_errors_sdcorr)
 
 
 .. jupyter-execute::
    :hide-code:
 
-   res.final_model_parameter_estimates.style.format({
+   final_model_parameter_estimates.style.format({
        'estimates': '{:,.4f}'.format,
        'RSE': '{:,.1%}'.format,
    })
