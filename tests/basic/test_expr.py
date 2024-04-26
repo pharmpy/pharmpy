@@ -18,6 +18,8 @@ def test_symbol():
         expr.name
     expr = Expr.function("f", "t")
     assert expr.name == "f"
+    with pytest.raises(ValueError):
+        Expr.symbol('0')
 
 
 def test_piecewise():

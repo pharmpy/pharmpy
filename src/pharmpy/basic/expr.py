@@ -220,7 +220,10 @@ class Expr:
 
     @classmethod
     def symbol(cls, name: str) -> Expr:
-        symb = symengine.Symbol(name)
+        if name.isnumeric():
+            raise ValueError("Symbols cannot be integers")
+        else:
+            symb = symengine.Symbol(name)
         return cls(symb)
 
     @classmethod
