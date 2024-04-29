@@ -570,7 +570,7 @@ def parse_dataset_path(control_stream, basepath) -> Optional[Path]:
 
     path = Path(record.filename)
     if basepath is not None and not path.is_absolute():
-        path = basepath.parent / path
+        path = basepath.resolve().parent / path
 
     return path_absolute(path)
 
