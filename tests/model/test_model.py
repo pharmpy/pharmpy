@@ -331,11 +331,21 @@ def test_statements():
         model.replace(statements=model.statements + assign)
 
     assign = Assignment.create(Expr.symbol('A'), Expr.symbol('t'))
-    model2 = Model.create(
-        'model',
-        parameters=pheno.parameters,
-        datainfo=pheno.datainfo,
-        statements=Statements() + assign,
-        random_variables=pheno.random_variables,
-    )
-    assert model2.statements == Statements() + assign
+    with pytest.raises(ValueError, match='Symbol t is not defined'):
+        Model.create('model', statements=Statements() + assign)
+
+    assign = Assignment.create(Expr.function('A', Expr.symbol('t')), Expr.symbol('t'))
+    Model.create('model', statements=Statements() + assign)
+
+    assign = Assignment.create(Expr.function('A', 0), Expr.symbol('t'))
+    with pytest.raises(ValueError, match='Symbol t is not defined'):
+        Model.create('model', statements=Statements() + assign)
+
+    assign = Assignment.create(Expr.function('A', 0), Expr.symbol('0'))
+    with pytest.raises(ValueError, match='Symbol 0 is not defined'):
+        Model.create('model', statements=Statements() + assign)
+
+    assign1 = Assignment(Expr.symbol('A'), Expr.symbol('B'))
+    assign2 = Assignment(Expr.symbol('B'), Expr.symbol('0'))
+    with pytest.raises(ValueError, match='Symbol B defined after being used'):
+        Model.create('model', statements=Statements() + assign1 + assign2)
