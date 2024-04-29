@@ -41,6 +41,7 @@ def fit(
     model_or_models: Union[Model, List[Model]],
     tool: Optional[str] = None,
     path: Optional[Union[Path, str]] = None,
+    context: Optional[Context] = None,
 ) -> Union[ModelfitResults, List[ModelfitResults]]:
     """Fit models.
 
@@ -52,6 +53,8 @@ def fit(
         Estimation tool to use. None to use default
     path :  Path | str
         Path to fit directory
+    context : Context
+        Run in this context
 
     Return
     ------
@@ -76,7 +79,7 @@ def fit(
         else (False, model_or_models)
     )
 
-    modelfit_results = run_tool('modelfit', models, tool=tool, path=path)
+    modelfit_results = run_tool('modelfit', models, tool=tool, path=path, context=context)
 
     return modelfit_results if single else list(modelfit_results)
 
@@ -177,11 +180,11 @@ def import_tool(name: str):
 def run_tool_with_name(
     name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, List[Model], Tuple[Model], Results]:
-    common_options, tool_options = split_common_options(kwargs)
+    dispatching_options, common_options, tool_options = split_common_options(kwargs)
 
     create_workflow = tool.create_workflow
 
-    dispatcher, ctx = _get_run_setup(common_options, name)
+    dispatcher, ctx = _get_run_setup(dispatching_options, common_options, name)
 
     tool_params = inspect.signature(create_workflow).parameters
     tool_param_types = get_type_hints(create_workflow)
@@ -462,22 +465,22 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
-def _get_run_setup(common_options, toolname) -> Tuple[Any, Context]:
+def _get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, Context]:
     try:
-        dispatcher = common_options['dispatcher']
+        dispatcher = dispatching_options['dispatcher']
     except KeyError:
         from pharmpy.workflows import default_dispatcher
 
         dispatcher = default_dispatcher
 
     try:
-        ctx = common_options['context']
+        ctx = dispatching_options['context']
     except KeyError:
         from pharmpy.workflows import default_context
 
-        common_path = common_options.get('path', None)
+        common_path = dispatching_options.get('path', None)
         if common_path is not None:
-            path = common_options['path']
+            path = dispatching_options['path']
             ctx = default_context(path.name, path.parent, common_options=common_options)
         else:
             n = 1
