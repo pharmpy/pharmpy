@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Sequence
 from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Union, overload
 
+from pharmpy.basic import Expr
 from pharmpy.internals.immutable import Immutable, frozenmapping
 
 if TYPE_CHECKING:
@@ -153,8 +154,7 @@ class EstimationStep(ExecutionStep):
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
         tool_options: Optional[frozenmapping[str, Any]] = None,
-        eta_derivatives: Optional[tuple[str, ...]] = None,
-        epsilon_derivatives: Optional[tuple[str, ...]] = None,
+        derivatives: Sequence[Sequence[Expr]] = (),
     ):
         self._method = method
         self._interaction = interaction
@@ -168,8 +168,7 @@ class EstimationStep(ExecutionStep):
         self._keep_every_nth_iter = keep_every_nth_iter
         self._residuals = residuals
         self._predictions = predictions
-        self._eta_derivatives = eta_derivatives
-        self._epsilon_derivatives = epsilon_derivatives
+        self._derivatives = derivatives
         super().__init__(
             solver=solver,
             solver_rtol=solver_rtol,
@@ -196,8 +195,7 @@ class EstimationStep(ExecutionStep):
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
         tool_options: Optional[Mapping[str, Any]] = None,
-        eta_derivatives: Optional[Sequence[str]] = None,
-        epsilon_derivatives: Optional[Sequence[str]] = None,
+        derivatives: Sequence[Sequence[Expr]] = (),
     ):
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
@@ -214,6 +212,9 @@ class EstimationStep(ExecutionStep):
             predictions = ()
         else:
             predictions = tuple(predictions)
+        if derivatives:
+            derivatives = EstimationStep._canonicalize_derivatives(derivatives)
+
         if parameter_uncertainty_method is not None:
             parameter_uncertainty_method = parameter_uncertainty_method.upper()
         if not (
@@ -227,14 +228,6 @@ class EstimationStep(ExecutionStep):
             )
         solver = ExecutionStep._canonicalize_solver(solver)
         tool_options = ExecutionStep._canonicalize_tool_options(tool_options)
-        if eta_derivatives is None:
-            eta_derivatives = ()
-        else:
-            eta_derivatives = tuple(eta_derivatives)
-        if epsilon_derivatives is None:
-            epsilon_derivatives = ()
-        else:
-            epsilon_derivatives = tuple(epsilon_derivatives)
         return cls(
             method=method,
             interaction=interaction,
@@ -252,8 +245,7 @@ class EstimationStep(ExecutionStep):
             solver_rtol=solver_rtol,
             solver_atol=solver_atol,
             tool_options=tool_options,
-            eta_derivatives=eta_derivatives,
-            epsilon_derivatives=epsilon_derivatives,
+            derivatives=derivatives,
         )
 
     def replace(self, **kwargs) -> EstimationStep:
@@ -271,6 +263,29 @@ class EstimationStep(ExecutionStep):
                 f'EstimationStep: {method} not recognized. Use any of {sorted(EstimationStep.supported_methods)}.'
             )
         return method
+
+    @staticmethod
+    def _canonicalize_derivatives(derivatives: Sequence[Sequence[Expr]]) -> tuple:
+        try:
+            derivatives = tuple(tuple(d) for d in derivatives)
+        except TypeError:
+            raise TypeError(
+                "Given derivatives cannot be converted to tuple of tuples. "
+                " Check type of input arguments."
+            )
+
+        for d in derivatives:
+            for d_arg in d:
+                if not (isinstance(d_arg, Expr) and d_arg.is_symbol()):
+                    raise TypeError(
+                        f"Each derivative argument must be a symbol of type 'Expr'. "
+                        f"Found '{d_arg}' of type {type(d_arg)}"
+                    )
+
+        derivatives = tuple(
+            sorted([tuple(sorted(d, key=str)) for d in derivatives], key=lambda der: str(der[0]))
+        )
+        return derivatives
 
     @property
     def method(self) -> str:
@@ -352,14 +367,9 @@ class EstimationStep(ExecutionStep):
         return self._predictions
 
     @property
-    def eta_derivatives(self) -> Optional[tuple[str, ...]]:
-        """List of names of etas for which to calculate derivatives"""
-        return self._eta_derivatives
-
-    @property
-    def epsilon_derivatives(self) -> Optional[tuple[str, ...]]:
-        """List of names of epsilons for which to calculate derivatives"""
-        return self._epsilon_derivatives
+    def derivatives(self) -> Sequence[Sequence[Expr]]:
+        """List of derivates to calculate when running"""
+        return self._derivatives
 
     @property
     def tool_options(self) -> Optional[frozenmapping[str, Any]]:
@@ -379,6 +389,7 @@ class EstimationStep(ExecutionStep):
             and self.niter == other.niter
             and self.auto == other.auto
             and self.keep_every_nth_iter == other.keep_every_nth_iter
+            and self.derivatives == other.derivatives
             and self.predictions == other.predictions
             and self.residuals == other.residuals
             and super().__eq__(other)
@@ -414,6 +425,7 @@ class EstimationStep(ExecutionStep):
             'niter': self._niter,
             'auto': self._auto,
             'keep_every_nth_iter': self._keep_every_nth_iter,
+            'derivatives': tuple(str(d) for d in self._derivatives),
             'predictions': self._predictions,
             'residuals': self._residuals,
         }

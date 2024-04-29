@@ -399,6 +399,8 @@ class ModelfitResults(Results):
         Table of various residuals
     predictions: pd.DataFrame
         Table of various predictions
+    derivaitves: pd.DataFrame
+        Table of various derivatives
     estimation_runtime : float
         Runtime for one estimation step
     runtime_total : float
@@ -446,6 +448,7 @@ class ModelfitResults(Results):
     individual_estimates_covariance: Optional[pd.DataFrame] = None
     residuals: Optional[pd.DataFrame] = None
     predictions: Optional[pd.DataFrame] = None
+    derivatives: Optional[pd.DataFrame] = None
     runtime_total: Optional[float] = None
     termination_cause: Optional[str] = None
     termination_cause_iterations: Optional[pd.Series] = None

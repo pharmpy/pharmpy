@@ -370,8 +370,8 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
     solver, tol, atol = parse_solver(control_stream)
 
     # Read eta and epsilon derivatives
-    etaderiv_names = None
-    epsilonderivs_names = None
+    etaderiv_names = []
+    epsilonderivs_names = []
     table_records = control_stream.get_records('TABLE')
     predictions = ()
     residuals = ()
@@ -397,11 +397,13 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
         etaderivs = table.eta_derivatives
         if etaderivs:
             etas = random_variables.etas
-            etaderiv_names = [etas.names[i - 1] for i in etaderivs]
+            etaderiv_names = [(Expr.symbol(etas.names[i - 1]),) for i in etaderivs]
         epsderivs = table.epsilon_derivatives
         if epsderivs:
             epsilons = random_variables.epsilons
-            epsilonderivs_names = [epsilons.names[i - 1] for i in epsderivs]
+            epsilonderivs_names = [(Expr.symbol(epsilons.names[i - 1]),) for i in epsderivs]
+
+    derivatives = tuple(etaderiv_names + epsilonderivs_names)
 
     for record in records:
         value = record.get_option('METHOD')
@@ -493,8 +495,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 solver=solver,
                 solver_rtol=tol,
                 solver_atol=atol,
-                eta_derivatives=etaderiv_names,
-                epsilon_derivatives=epsilonderivs_names,
+                derivatives=derivatives,
                 predictions=predictions,
                 residuals=residuals,
             )
