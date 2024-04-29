@@ -440,6 +440,14 @@ def add_predictions(model: Model, pred: List[str]):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
+    allowed_prediction_variables = ['PRED', 'IPRED', 'CIPREDI']
+
+    if any(p not in allowed_prediction_variables for p in pred):
+        raise ValueError(
+            f'Prediction variables need to be one of the following:'
+            f' {allowed_prediction_variables}'
+        )
+
     steps = model.execution_steps
     old_predictions = steps[-1].predictions
     new_predictions = tuple(sorted(set(old_predictions) | set(pred)))
@@ -453,6 +461,9 @@ def add_residuals(model: Model, res: List[str]):
     """Add predictions and/or residuals
 
     Add residuals to estimation step.
+
+    Added redidual variable(s) need to be one of the following :
+        ['RES', 'IRES', 'WRES', 'IWRES', 'CWRES']
 
     Parameters
     ----------
@@ -487,6 +498,13 @@ def add_residuals(model: Model, res: List[str]):
     add_parameter_uncertainty_step
     remove_parameter_uncertainty_step
     """
+    allowed_residual_variables = ['RES', 'IRES', 'WRES', 'IWRES', 'CWRES']
+
+    if any(p not in allowed_residual_variables for p in res):
+        raise ValueError(
+            f'Residual variables need to be one of the following:' f' {allowed_residual_variables}'
+        )
+
     steps = model.execution_steps
     old_residuals = steps[-1].residuals
     new_residuals = tuple(sorted(set(old_residuals) | set(res)))

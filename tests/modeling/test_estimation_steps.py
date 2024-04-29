@@ -207,20 +207,34 @@ def test_set_simulation(testdata, load_model_for_test):
     assert model.code.split('\n')[-2] == "$SIMULATION (1234) SUBPROBLEMS=2"
 
 
+def test_add_predictions_raise(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+
+    with pytest.raises(ValueError, match="Prediction variables need to be one of the following:"):
+        model = add_predictions(model, pred=["NOT_A_PREDICTION"])
+
+
+def test_add_residuals_raise(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+
+    with pytest.raises(ValueError, match="Residual variables need to be one of the following"):
+        model = add_residuals(model, res=["NOT_A_RESIDUAL"])
+
+
 def test_add_predictions(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     assert model.execution_steps[-1].predictions == ('IPRED', 'PRED')
 
-    model = add_predictions(model, pred=['PRED1'])
-    assert model.execution_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1')
+    model = add_predictions(model, pred=['CIPREDI'])
+    assert model.execution_steps[-1].predictions == ('CIPREDI', 'IPRED', 'PRED')
     assert tuple(sorted(model.execution_steps[-1].residuals)) == ('CWRES', 'RES')
 
-    model = add_residuals(model, res=['RES', 'RES2'])
-    assert model.execution_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
+    model = add_residuals(model, res=['RES', 'IRES'])
+    assert model.execution_steps[-1].residuals == ('CWRES', 'IRES', 'RES')
 
-    model = add_predictions(model, pred=['PRED1', 'PRED2'])
-    assert model.execution_steps[-1].predictions == ('IPRED', 'PRED', 'PRED1', 'PRED2')
-    assert model.execution_steps[-1].residuals == ('CWRES', 'RES', 'RES2')
+    model = add_predictions(model, pred=['CIPREDI'])
+    assert model.execution_steps[-1].predictions == ('CIPREDI', 'IPRED', 'PRED')
+    assert model.execution_steps[-1].residuals == ('CWRES', 'IRES', 'RES')
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -253,7 +267,7 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE PRED1 RES2 PRED2 NOAPPEND
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE CIPREDI IRES NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
     model = remove_predictions(model, 'all')
@@ -295,7 +309,7 @@ $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR TAD NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
-    model = add_residuals(model, res=['NEWRES'])
+    model = add_residuals(model, res=['CWRES'])
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
@@ -328,18 +342,18 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR TAD NPDE NEWRES NOAPPEND
+$TABLE ID TIME DV AMT WGT APGR TAD NPDE CWRES NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
-    model = remove_residuals(model, ['NEWRES'])
+    model = remove_residuals(model, ['CWRES'])
     assert model.execution_steps[-1].residuals == ()
 
     # Test $DESIGN
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_design.mod')
     assert model.execution_steps[-1].predictions == ()
     assert model.execution_steps[-1].residuals == ()
-    model = add_predictions(model, pred=['PRED1'])
-    assert model.execution_steps[-1].predictions == ('PRED1',)
+    model = add_predictions(model, pred=['IPRED'])
+    assert model.execution_steps[-1].predictions == ('IPRED',)
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
@@ -364,7 +378,7 @@ $PROBLEM DESIGN
 $DATA pheno.dta IGNORE=@ REWIND
 $INPUT ID TIME AMT WGT APGR DV
 $MSFI pheno_design.msf
-$TABLE ID TIME DV PRED1 FILE=mytab NOAPPEND NOPRINT
+$TABLE ID TIME DV IPRED FILE=mytab NOAPPEND NOPRINT
 $DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"""
     assert model_code == model.code
     model = add_residuals(model, res=['RES'])

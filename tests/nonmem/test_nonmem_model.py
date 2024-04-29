@@ -972,7 +972,7 @@ def test_table_long_ids(testdata):
     dataset_new = model.dataset.copy()
     dataset_new['ID'] = dataset_new['ID'] * 10000
     model = model.replace(dataset=dataset_new)
-    model = set_estimation_step(model, 'FO', residuals=['CWRES'])
+    model = set_estimation_step(model, 'FO', residuals=('CWRES',))
     assert 'FORMAT=' in model.code
 
 

@@ -148,8 +148,8 @@ class EstimationStep(ExecutionStep):
         niter: Optional[int] = None,
         auto: Optional[bool] = None,
         keep_every_nth_iter: Optional[int] = None,
-        residuals: Optional[tuple[str, ...]] = None,
-        predictions: Optional[tuple[str, ...]] = None,
+        residuals: Sequence[str] = (),
+        predictions: Sequence[str] = (),
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
@@ -189,8 +189,8 @@ class EstimationStep(ExecutionStep):
         niter: Optional[int] = None,
         auto: Optional[bool] = None,
         keep_every_nth_iter: Optional[int] = None,
-        residuals: Optional[Sequence[str]] = None,
-        predictions: Optional[Sequence[str]] = None,
+        residuals: Sequence[str] = (),
+        predictions: Sequence[str] = (),
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
@@ -204,14 +204,21 @@ class EstimationStep(ExecutionStep):
                 'evaluation=True or tool_options for special cases (e.g. 0 and -1'
                 'in NONMEM)'
             )
-        if residuals is None:
-            residuals = ()
-        else:
+
+        try:
             residuals = tuple(residuals)
-        if predictions is None:
-            predictions = ()
-        else:
+        except TypeError:
+            raise TypeError(
+                f"Residuals could not be converted to tuple. Recieved type '{type(residuals)}'"
+            )
+
+        try:
             predictions = tuple(predictions)
+        except TypeError:
+            raise TypeError(
+                f"Predictions could not be converted to tuple. Recieved type '{type(predictions)}'"
+            )
+
         if derivatives:
             derivatives = EstimationStep._canonicalize_derivatives(derivatives)
 
@@ -357,12 +364,12 @@ class EstimationStep(ExecutionStep):
         return self._keep_every_nth_iter
 
     @property
-    def residuals(self) -> Optional[tuple[str, ...]]:
+    def residuals(self) -> Sequence[str]:
         """List of residuals to calculate"""
         return self._residuals
 
     @property
-    def predictions(self) -> Optional[tuple[str, ...]]:
+    def predictions(self) -> Sequence[str]:
         """List of predictions to estimate"""
         return self._predictions
 
