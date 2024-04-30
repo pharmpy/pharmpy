@@ -655,7 +655,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     def join(
         self,
-        inds: Collection[TSymbol],
+        inds: Collection[Union[str, Expr]],
         fill: Union[int, float, Expr] = 0,
         name_template: Optional[str] = None,
         param_names: Optional[list[str]] = None,
@@ -799,7 +799,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             _create_rng(rng),
         )
 
-    def _calc_covariance_matrix(self) -> tuple[list[Expr], Matrix, list[str]]:
+    def _calc_covariance_matrix(self) -> tuple[list[Expr], sympy.Matrix, list[str]]:
         means = []
         names = []
         n = 0
@@ -928,7 +928,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                 # sympy.stats.MultivariateNormal uses variance, sympy.stats.Normal takes std
                 dist = sympy_stats.MultivariateNormal(f'__rv{i}', rv.mean, rv.variance)
                 for j in range(0, len(rv.names)):
-                    subs_dict[rv.names[j]] = dist[j]
+                    subs_dict[rv.names[j]] = dist[j]  # pyright: ignore reportIndexIssue
             else:
                 subs_dict[rv.names[0]] = sympy_stats.Normal(
                     f'__rv{i}', rv.mean, sympy.sqrt(rv.variance)
@@ -965,7 +965,7 @@ def subs_distributions(
 ) -> Iterable[tuple[tuple[sympy.Expr, ...], NumericDistribution]]:
     for dist in distributions:
         rvs_symbols = tuple(map(sympy.Symbol, dist.names))
-        numeric_distribution = dist.evalf(parameters)
+        numeric_distribution = dist.evalf(parameters)  # pyright: ignore reportArgumentType
         yield (rvs_symbols, numeric_distribution)
 
 
@@ -993,6 +993,7 @@ def sample_rvs(
             for j, s in enumerate(symbols):
                 data[s] = cursample[:, j]
         else:
+            assert len(symbols) > 0
             data[symbols[0]] = cursample
 
     return data
