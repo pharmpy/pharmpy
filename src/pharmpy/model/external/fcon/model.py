@@ -22,8 +22,8 @@ def detect_model(src, *args, **kwargs):
 
 @dataclass
 class FCONInternals:
-    code: str = None
-    path: Path = None
+    code: str
+    path: Path
 
 
 class Model(BaseModel):
