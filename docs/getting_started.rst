@@ -52,3 +52,14 @@ You can read more about how to read in and examine your model in :ref:`model`, a
 
     In order to run any of the tools you need to have a configuration file set up with a path to NONMEM, instructions
     can be found :ref:`here <config_page>`.
+
+========
+Examples
+========
+
+Examples can be found here
+
+.. toctree::
+   :maxdepth: 1
+
+   Simple estimation example <getting_started_example_1>

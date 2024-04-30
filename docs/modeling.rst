@@ -125,6 +125,8 @@ We can then examine the NONMEM model code:
 .. pharmpy-execute::
     print_model_code(model_start)
 
+.. _modeling_transformations:
+
 ~~~~~~~~~~~~~~~~~~~~~~~~
 Modeling transformations
 ~~~~~~~~~~~~~~~~~~~~~~~~
