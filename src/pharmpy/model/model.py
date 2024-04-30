@@ -405,7 +405,7 @@ class Model(Immutable):
             observation_transformation=observation_transformation,
         )
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         """Compare two models for equality
 
         Tests whether a model is equal to another model. This ignores
@@ -539,7 +539,7 @@ class Model(Immutable):
     def __repr__(self):
         return f'<Pharmpy model object {self.name}>'
 
-    def _repr_html_(self):
+    def _repr_html_(self) -> str:
         stat = self.statements._repr_html_()
         rvs = self.random_variables._repr_latex_()
         return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
