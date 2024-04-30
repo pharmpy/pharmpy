@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Set, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Union, overload
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
@@ -44,12 +44,12 @@ class Statement(Immutable):
 
     @property
     @abstractmethod
-    def free_symbols(self) -> Set[Expr]:
+    def free_symbols(self) -> set[Expr]:
         pass
 
     @property
     @abstractmethod
-    def rhs_symbols(self) -> Set[Expr]:
+    def rhs_symbols(self) -> set[Expr]:
         pass
 
 
@@ -81,7 +81,7 @@ class Assignment(Statement):
         expression = expression.piecewise_fold()
         return cls(symbol, expression)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Assignment:
         symbol = kwargs.get('symbol', self._symbol)
         expression = kwargs.get('expression', self._expression)
         return Assignment.create(symbol, expression)
@@ -163,7 +163,7 @@ class Assignment(Statement):
         symbols = self._expression.free_symbols
         return funcs | symbols
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         if hash(self) != hash(other):
             return False
         return (
@@ -201,7 +201,7 @@ class Assignment(Statement):
                 s += len(definition) * ' ' + line + '\n'
         return s.rstrip()
 
-    def _repr_latex_(self):
+    def _repr_latex_(self) -> str:
         sym = self._symbol.latex()
         expr = self._expression.latex()
         return f'${sym} = {expr}$'
@@ -224,14 +224,14 @@ class Output(CompartmentBase):
     def __hash__(self):
         return 5267
 
-    def to_dict(self):
+    def to_dict(self) -> dict[str, str]:
         return {'class': 'Output'}
 
     @classmethod
-    def from_dict(cls, d):
+    def from_dict(cls, d) -> Output:
         return cls.instance
 
-    def __eq__(self, other):
+    def __eq__(self, other: Any) -> bool:
         return self is other
 
 
@@ -338,7 +338,7 @@ class CompartmentalSystemBuilder:
         destination: Compartment,
         admid: Optional[int] = None,
         replace: bool = True,
-    ) -> Tuple[Compartment, Compartment]:
+    ) -> tuple[Compartment, Compartment]:
         """Move a dose input from one compartment to another
 
         Parameters
@@ -482,8 +482,7 @@ class CompartmentalSystemBuilder:
                 return comp
 
 
-def _is_positive(expr: Expr) -> bool:
-    expr = sympy.sympify(expr)
+def _is_positive(expr: sympy.Expr) -> bool:
     return (
         sympy.ask(
             sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
@@ -535,8 +534,10 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                         if _is_positive(term):
                             for second_comp in concentrations.intersection(free_images(term)):
                                 for eq_2 in eqs:
-                                    if eq_2.lhs.args[0].name == second_comp.name:
-                                        if -term in sympy.Add.make_args(eq_2.rhs.expand()):
+                                    if eq_2.lhs.args[0].name == second_comp.name:  # pyright: ignore
+                                        if -term in sympy.Add.make_args(
+                                            eq_2.rhs.expand()  # pyright: ignore
+                                        ):
                                             from_comp = compartments[names[Expr(second_comp)]]
                                             to_comp = compartments[names[Expr(eq.lhs.args[0])]]
                     else:
@@ -544,7 +545,9 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                         # compartments or not
                         if _is_positive(term):
                             for eq_2 in eqs:
-                                if -term in sympy.Add.make_args(eq_2.rhs.expand()):
+                                if -term in sympy.Add.make_args(
+                                    eq_2.rhs.expand()  # pyright: ignore
+                                ):
                                     from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
                                     to_comp = compartments[names[Expr(eq.lhs.args[0])]]
 
@@ -562,10 +565,14 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                         for i, neweq in enumerate(neweqs):
                             xrhs = neweq.rhs
                             assert isinstance(xrhs, sympy.Expr)
-                            if neweq.lhs.args[0].name == eq.lhs.args[0].name:
-                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(xrhs - term))
-                            elif neweq.lhs.args[0].name == comp_func.name:
-                                neweqs[i] = sympy.Eq(neweq.lhs, sympy.expand(xrhs + term))
+                            if neweq.lhs.args[0].name == eq.lhs.args[0].name:  # pyright: ignore
+                                neweqs[i] = sympy.Eq(
+                                    neweq.lhs, sympy.expand(xrhs - term)  # pyright: ignore
+                                )
+                            elif neweq.lhs.args[0].name == comp_func.name:  # pyright: ignore
+                                neweqs[i] = sympy.Eq(
+                                    neweq.lhs, sympy.expand(xrhs + term)  # pyright: ignore
+                                )
     for eq in neweqs:
         if eq.rhs != 0:
             i = sympy.Integer(0)
@@ -573,13 +580,13 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
             for term in sympy.Add.make_args(eq.rhs):
                 assert isinstance(term, sympy.Expr)
                 if _is_positive(term):
-                    i = i + term
+                    i = i + term  # pyright: ignore
                 else:
-                    o = o + term
+                    o = o + term  # pyright: ignore
             comp_func = eq.lhs.args[0]
             from_comp = compartments[names[Expr(comp_func)]]
             if o != 0:
-                cb.add_flow(from_comp, output, -o / comp_func)
+                cb.add_flow(from_comp, output, -o / comp_func)  # pyright: ignore
             if i != 0:
                 cb.set_input(from_comp, i)
     cs = CompartmentalSystem(cb)
@@ -662,7 +669,7 @@ class CompartmentalSystem(Statement):
         return self._t
 
     @property
-    def eqs(self) -> tuple[sympy.Eq, ...]:
+    def eqs(self) -> tuple[BooleanExpr, ...]:
         """Tuple of equations"""
         amount_funcs = Matrix(list(self.amounts))
         derivatives = Matrix([Expr.derivative(fn, self.t) for fn in amount_funcs])
@@ -962,7 +969,7 @@ class CompartmentalSystem(Statement):
 
     def find_compartment_or_raise(self, comp: Union[str, CompartmentBase]) -> Compartment:
         if isinstance(comp, CompartmentBase):
-            return comp
+            return comp  # pyright: ignore
         found_comp = self.find_compartment(comp)
         if found_comp is None:
             raise ValueError(f"No compartment named {comp}")
@@ -1746,7 +1753,7 @@ class Compartment(CompartmentBase):
         cls,
         name: str,
         amount: Optional[TExpr] = None,
-        doses: Tuple[Dose, ...] = tuple(),
+        doses: tuple[Dose, ...] = tuple(),
         input: TExpr = Expr.integer(0),
         lag_time: TExpr = Expr.integer(0),
         bioavailability: TExpr = Expr.integer(1),
@@ -1975,7 +1982,7 @@ class Statements(Sequence, Immutable):
     @overload
     def __getitem__(self, ind: int) -> Statement: ...
 
-    def __getitem__(self, ind):
+    def __getitem__(self, ind):  # pyright: ignore
         if isinstance(ind, slice):
             return Statements(self._statements[ind])
         else:
@@ -2149,7 +2156,7 @@ class Statements(Sequence, Immutable):
 
     def _lookup_last_assignment(
         self, symbol: TSymbol
-    ) -> Tuple[Optional[int], Optional[Assignment]]:
+    ) -> tuple[Optional[int], Optional[Assignment]]:
         if isinstance(symbol, str):
             symbol = Expr.symbol(symbol)
         ind = None
