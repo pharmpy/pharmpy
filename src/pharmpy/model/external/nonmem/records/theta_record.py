@@ -214,7 +214,7 @@ class ThetaRecord(Record):
             if low != param.lower:
                 comma = AttrToken('COMMA', ',')
                 if not math.isinf(param.lower) and int(param.lower) == param.lower:
-                    lower = AttrToken('NUMERIC', int(param.lower))
+                    lower = AttrToken('NUMERIC', str(int(param.lower)))
                 else:
                     lower = AttrToken('NUMERIC', param.lower)
                 low_node = AttrTree('low', (lower,))
