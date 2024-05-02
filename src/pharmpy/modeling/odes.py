@@ -1745,9 +1745,8 @@ def _get_absorption_init(model, param_name) -> float:
     except (AttributeError, KeyError):
         pass
 
-    try:
-        time_label = model.datainfo.idv_column.name
-    except IndexError:
+    time_label = model.datainfo.idv_column.name
+    if model.dataset is None:
         time_min = 1.0
     else:
         obs = get_observations(model)
