@@ -473,9 +473,8 @@ def _get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, 
 
         dispatcher = default_dispatcher
 
-    try:
-        ctx = dispatching_options['context']
-    except KeyError:
+    ctx = dispatching_options.get('context', None)
+    if ctx is None:
         from pharmpy.workflows import default_context
 
         common_path = dispatching_options.get('path', None)
