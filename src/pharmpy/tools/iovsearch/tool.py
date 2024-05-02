@@ -293,7 +293,7 @@ def best_model(
         return base_entry
 
 
-def task_results(rank_type, cutoff, bic_type, strictness, step_mapping_and_model_entries):
+def task_results(context, rank_type, cutoff, bic_type, strictness, step_mapping_and_model_entries):
     step_mapping, (base_model_entry, *res_model_entries) = step_mapping_and_model_entries
 
     model_dict = {
@@ -328,6 +328,7 @@ def task_results(rank_type, cutoff, bic_type, strictness, step_mapping_and_model
         bic_type=bic_type,
         summary_models=pd.concat(sum_mod, keys=[0] + keys, names=['step']),
         strictness=strictness,
+        context=context,
     )
 
     # NOTE: This overwrites the default summary_tool field

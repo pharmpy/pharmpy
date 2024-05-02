@@ -120,7 +120,14 @@ def create_workflow(
 
 
 def create_step_workflow(
-    input_model_entry, base_model_entry, wf_algorithm, iiv_strategy, rank_type, cutoff, strictness
+    input_model_entry,
+    base_model_entry,
+    wf_algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+    strictness,
+    context,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
@@ -144,6 +151,7 @@ def create_step_workflow(
         input_model_entry,
         base_model_entry.model.name,
         wf_algorithm.name,
+        context,
     )
 
     post_process_tasks = [base_model_task] + wb.output_tasks
@@ -242,6 +250,7 @@ def start(
             rank_type,
             cutoff,
             strictness,
+            context,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
@@ -362,6 +371,7 @@ def post_process(
     input_model_entry,
     base_model_name,
     algorithm_name,
+    context,
     *model_entries,
 ):
     res_model_entries = []
@@ -424,6 +434,7 @@ def post_process(
         strictness=strictness,
         n_predicted=number_of_predicted,
         n_expected=number_of_expected,
+        context=context,
     )
 
     summary_tool = res.summary_tool

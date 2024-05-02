@@ -203,7 +203,7 @@ def create_new_parameter_inits(model, fraction, scale, seed):
     return new_parameters
 
 
-def task_results(strictness, retries):
+def task_results(context, strictness, retries):
     # Note : the input (modelentry) is a part of retries
     retry_runs = []
     for r in retries:
@@ -230,6 +230,7 @@ def task_results(strictness, retries):
         rank_type,
         cutoff,
         strictness=strictness,
+        context=context,
         summary_models=summary_models,
     )
 
