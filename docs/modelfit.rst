@@ -1,3 +1,5 @@
+.. _model_estimation_and_results:
+
 ============================
 Model estimation and results
 ============================
