@@ -67,6 +67,15 @@ class Covariate(ModelFeature):
             return None
         return Covariate(parameter=parameter, covariate=covariate, fp=fp, op=op, optional=optional)
 
+    def get_length(self, model: Optional[Model] = None):
+        self_eval = self.eval(model)
+        if self_eval is None:
+            return 0
+        len_add = len(self_eval.covariate) * len(self_eval.parameter) * len(self_eval.fp)
+        if self.optional.option:
+            len_add *= 2
+        return len_add
+
 
 @dataclass(frozen=True)
 class Ref(Symbol):

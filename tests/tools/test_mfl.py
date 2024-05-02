@@ -1250,6 +1250,7 @@ def test_ModelFeatures(load_model_for_test, pheno_path, source, expected):
     model_mfl_funcs = model_mfl.convert_to_funcs(model=pheno)
 
     assert set(model_mfl_funcs.keys()) == set(expected)
+    assert model_mfl.get_number_of_features(pheno) == len(expected)
 
 
 def test_ModelFeatures_eq(load_model_for_test, pheno_path):

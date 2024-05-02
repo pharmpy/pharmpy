@@ -35,6 +35,10 @@ class Peripherals(ModelFeature):
         else:
             return False
 
+    def __len__(self):
+        self_eval = self.eval
+        return len(self_eval.modes) * len(self_eval.counts)
+
     @property
     def eval(self):
         if isinstance(self.modes, Wildcard):

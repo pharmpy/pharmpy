@@ -45,6 +45,9 @@ class EffectComp(ModelFeature):
         else:
             return False
 
+    def __len__(self):
+        return len(self.eval.modes)
+
     @property
     def eval(self):
         if isinstance(self.modes, Wildcard):

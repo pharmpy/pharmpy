@@ -487,7 +487,7 @@ class ModelFeatures:
         if "metabolite" in attribute_type:
             mfl_list.append(self.metabolite)
 
-        return [m for m in mfl_list if m]
+        return [m for m in mfl_list if m is not None]
 
     def filter(self, subset):
         if subset == "pk":
@@ -1006,6 +1006,21 @@ class ModelFeatures:
             )
 
         return lhs
+
+    def get_number_of_features(self, model=None):
+        no_of_features = 0
+        for key, attr in vars(self).items():
+            if attr is None:
+                continue
+            if isinstance(attr, tuple):
+                if key == '_covariate':
+                    no_of_features += sum(feat.get_length(model) for feat in attr)
+                else:
+                    no_of_features += sum(len(feat) for feat in attr)
+            else:
+                no_of_features += len(attr)
+
+        return no_of_features
 
 
 def _add_helper(s1, s2, value_name, join_name):

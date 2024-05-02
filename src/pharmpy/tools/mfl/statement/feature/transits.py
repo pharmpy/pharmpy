@@ -60,6 +60,10 @@ class Transits(ModelFeature):
         else:
             return False
 
+    def __len__(self):
+        self_eval = self.eval
+        return len(self_eval.counts) * len(self_eval.depot)
+
     @property
     def eval(self):
         if isinstance(self.depot, Wildcard):
