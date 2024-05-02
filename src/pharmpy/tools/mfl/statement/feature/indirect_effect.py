@@ -15,6 +15,10 @@ class IndirectEffect(ModelFeature):
     modes: Union[Tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
     production: Union[Tuple[Name[Literal['DEGRADATION', 'PRODUCTION']], ...], Wildcard]
 
+    def __len__(self):
+        self_eval = self.eval
+        return len(self_eval.modes) * len(self_eval.production)
+
     @property
     def eval(self):
         if isinstance(self.modes, Wildcard):
