@@ -204,7 +204,7 @@ def test_set_simulation(testdata, load_model_for_test):
     model = set_simulation(model, n=2, seed=1234)
     assert len(model.execution_steps) == 1
     assert model.execution_steps[0] == SimulationStep(n=2, seed=1234)
-    assert model.code.split('\n')[-2] == "$SIMULATION (1234) SUBPROBLEMS=2"
+    assert model.code.split('\n')[-2] == "$SIMULATION (1234) SUBPROBLEMS=2 ONLYSIMULATION"
 
 
 def test_add_predictions_raise(testdata, load_model_for_test):

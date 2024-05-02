@@ -1631,7 +1631,7 @@ def update_estimation(control_stream, model):
 
     for op, sim in delta:
         if op == 1:
-            sim_code = f'$SIMULATION ({sim.seed}) SUBPROBLEMS={sim.n}\n'
+            sim_code = f'$SIMULATION ({sim.seed}) SUBPROBLEMS={sim.n} ONLYSIMULATION\n'
             newrec = create_record(sim_code)
             new_records.append(newrec)
         elif op == -1:
