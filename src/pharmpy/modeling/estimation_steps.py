@@ -1,5 +1,7 @@
-from typing import Any, Dict, List, Literal, Optional
+from itertools import product
+from typing import Any, Dict, List, Literal, Optional, Sequence, Union
 
+from pharmpy.basic import Expr
 from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
@@ -399,6 +401,136 @@ def set_evaluation_step(model: Model, idx: int = -1):
     else:
         newsteps = steps[0:-1] + newstep
     model = model.replace(execution_steps=newsteps)
+    return model.update_source()
+
+
+def add_derivative(
+    model: Model, with_respect_to: Optional[Union[Sequence[Union[Sequence[str], str]], str]] = None
+):
+    """
+    Add a derivative to be calculcated when running the model. Currently, only
+    derivatives with respect to the prediction is supported. Default is to add all possible
+    ETA and EPS derivatives.
+    First order derivates are specied either by single string or single-element tuple.
+    For instance with_respect_to = "ETA_1" or with_respect_to = ("ETA_1",)
+
+    Second order derivatives are specified by giving the two independent varibles in a tuple
+    of tuples. For instance with_respect_to ((ETA_1, EPS_1),)
+
+    Multiple derivatives can be specified within a tuple. For instance ((ETA_1, EPS_1), "ETA_1")
+
+    Currently, only ETAs and EPSILONs are supported
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy modeas.
+    with_respect_to : Union[str, Sequence[str, Sequence[str]]]
+        Parameter name(s) to use as independent variables. Default is None.
+
+    Returns
+    -------
+    Pharmpy model.
+
+    """
+
+    if with_respect_to is None:
+        etas = model.random_variables.etas.symbols
+        eps = model.random_variables.epsilons.symbols
+        with_respect_to = tuple(
+            tuple((e,) for e in etas) + tuple((e,) for e in eps) + tuple(product(eps, etas))
+        )
+
+    elif isinstance(with_respect_to, str):
+        with_respect_to = ((Expr.symbol(with_respect_to),),)
+    elif isinstance(with_respect_to, Sequence):
+        with_respect_to = tuple(
+            (Expr.symbol(w),) if isinstance(w, str) else tuple(map(Expr.symbol, w))
+            for w in with_respect_to
+        )
+    else:
+        raise ValueError(
+            f"with_respect_to argument need to be tuple, str or None. Recieved {type(with_respect_to)}"
+        )
+
+    for derivative in with_respect_to:
+        for parameter in derivative:
+            if parameter not in model.random_variables.symbols:
+                raise ValueError(f"Parameter '{parameter}' not part of ETAs or EPS")
+
+    steps = model.execution_steps
+    new_step = steps[-1]
+
+    for new_derivative in with_respect_to:
+        derivatives = tuple(set(d) for d in new_step.derivatives)
+
+        if set(new_derivative) not in derivatives:
+            new_step = new_step.replace(derivatives=derivatives + (new_derivative,))
+    new_steps = steps[:-1] + new_step
+    model = model.replace(execution_steps=new_steps)
+
+    return model.update_source()
+
+
+def remove_derivative(
+    model: Model, with_respect_to: Optional[Union[Sequence[Union[Sequence[str], str]], str]] = None
+):
+    """
+    Remove a derivative currently being calculcate when running model. Currently, only
+    derivatives with respect to the prediction is supported. Default is to remove all
+    that are present,
+    First order derivates are specied either by single string or single-element tuple.
+    For instance with_respect_to = "ETA_1" or with_respect_to = ("ETA_1",)
+
+    Second order derivatives are specified by giving the two independent varibles in a tuple
+    of tuples. For instance with_respect_to ((ETA_1, EPS_1),)
+
+    Multiple derivatives can be specified within a tuple. For instance ((ETA_1, EPS_1), "ETA_1")
+
+    Currently, only ETAs and EPSILONs are supported
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy modeas.
+    with_respect_to : Union[str, Sequence[str, Sequence[str]]]
+        Parameter name(s) to use as independent variables. Default is None.
+
+    Returns
+    -------
+    Pharmpy model.
+
+    """
+
+    if with_respect_to is None:
+        etas = model.random_variables.etas.symbols
+        eps = model.random_variables.epsilons.symbols
+        with_respect_to = tuple(
+            tuple((e,) for e in etas) + tuple((e,) for e in eps) + tuple(product(eps, etas))
+        )
+
+    elif isinstance(with_respect_to, str):
+        with_respect_to = ((Expr.symbol(with_respect_to),),)
+    elif isinstance(with_respect_to, Sequence):
+        with_respect_to = tuple(
+            (Expr.symbol(w),) if isinstance(w, str) else tuple(map(Expr.symbol, w))
+            for w in with_respect_to
+        )
+    else:
+        raise ValueError(
+            f"with_respect_to argument need to be tuple, str or None. Recieved {type(with_respect_to)}"
+        )
+
+    with_respect_to = tuple(set(d) for d in with_respect_to)
+    new_steps = model.execution_steps
+    derivatives = new_steps[-1].derivatives
+
+    derivatives = tuple(d for d in derivatives if set(d) not in with_respect_to)
+    new_step = new_steps[-1].replace(derivatives=derivatives)
+    new_steps = new_steps[:-1] + new_step
+
+    model = model.replace(execution_steps=new_steps)
+
     return model.update_source()
 
 

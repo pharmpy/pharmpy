@@ -2,11 +2,13 @@ import pytest
 
 from pharmpy.model import SimulationStep
 from pharmpy.modeling import (
+    add_derivative,
     add_estimation_step,
     add_parameter_uncertainty_step,
     add_predictions,
     add_residuals,
     append_estimation_step_options,
+    remove_derivative,
     remove_estimation_step,
     remove_parameter_uncertainty_step,
     remove_predictions,
@@ -412,3 +414,33 @@ $MSFI pheno_design.msf
 $DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1
 $TABLE ID TIME DV RES FILE=mytab NOAPPEND NOPRINT\n"""
     assert model_code == model.code
+
+
+def test_add_remove_derivative(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+
+    model = add_derivative(model)
+    assert len(model.execution_steps[0].derivatives) == 5
+    model = add_derivative(model)
+    assert len(model.execution_steps[0].derivatives) == 5
+
+    model = remove_derivative(model)
+    assert len(model.execution_steps[0].derivatives) == 0
+    model = remove_derivative(model)
+    assert len(model.execution_steps[0].derivatives) == 0
+
+    model = add_derivative(model, "ETA_1")
+    assert len(model.execution_steps[0].derivatives) == 1
+    model = add_derivative(model, (("ETA_1", "ETA_2"),))
+    assert len(model.execution_steps[0].derivatives) == 2
+    model = add_derivative(model, (("ETA_1", "EPS_1"), "EPS_1"))
+    assert len(model.execution_steps[0].derivatives) == 4
+
+    model = remove_derivative(model, "ETA_1")
+    assert len(model.execution_steps[0].derivatives) == 3
+    model = remove_derivative(model, (("ETA_1", "ETA_2"),))
+    assert len(model.execution_steps[0].derivatives) == 2
+    model = remove_derivative(model, (("ETA_1", "EPS_1"), "EPS_1"))
+    assert len(model.execution_steps[0].derivatives) == 0
+
+    # TODO : Check model code once update machinery for derivatives is in place
