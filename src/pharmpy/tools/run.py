@@ -1252,7 +1252,7 @@ def load_example_modelfit_results(name: str):
 def calculate_bic_penalty(
     base_model: Model,
     candidate_model: Model,
-    search_space: Optional[str] = None,
+    search_space: Union[str, List[str]],
     E_p: Optional[float] = 1.0,
     E_q: Optional[float] = 1.0,
     keep: Optional[list[str]] = None,
@@ -1273,19 +1273,31 @@ def calculate_bic_penalty(
         base_funcs = base_mfl.convert_to_funcs().keys()
         k_p = len(cand_funcs - base_funcs)
 
-        k_q = 0.0
+        q = 0
+        k_q = 0
     else:
-        base_rvs = base_model.random_variables.iiv + base_model.random_variables.iov
+        allowed_options = ['iiv_diag', 'iiv_block']
+        for search_space_type in search_space:
+            if search_space_type not in allowed_options:
+                raise ValueError(
+                    f'Unknown `search_space`: {search_space_type} (must be one of {allowed_options})'
+                )
+
+        base_rvs = base_model.random_variables.iiv
         base_var_params = base_rvs.variance_parameters
 
         p = len(base_var_params)
         q = (p * (p - 1)) / 2 if p else 1
 
-        cand_rvs = candidate_model.random_variables.iiv + candidate_model.random_variables.iov
+        cand_rvs = candidate_model.random_variables.iiv
         cand_var_params = cand_rvs.variance_parameters
         cand_cov_params = set(cand_rvs.parameter_names).difference(cand_var_params)
-        k_p = len(cand_var_params)
-        k_q = len(cand_cov_params)
+
+        k_p, k_q = 0, 0
+        if 'iiv_diag' in search_space:
+            k_p = len(cand_var_params)
+        if 'iiv_block' in search_space:
+            k_q = len(cand_cov_params)
 
     if keep:
         p -= len(keep)

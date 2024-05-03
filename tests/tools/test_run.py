@@ -568,21 +568,21 @@ def test_strictness_parameters(testdata):
         ),
         (
             [split_joint_distribution],
-            None,
+            ['iiv_diag'],
             None,
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [4.39, 2.20],
         ),
         (
             [create_joint_distribution],
-            None,
+            ['iiv_diag', 'iiv_block'],
             None,
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [6.59, 2.20],
         ),
         (
             [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
-            None,
+            ['iiv_diag', 'iiv_block'],
             None,
             [
                 partial(remove_iiv, to_remove=['ETA_VP1']),
@@ -592,7 +592,7 @@ def test_strictness_parameters(testdata):
         ),
         (
             [add_lag_time, add_pk_iiv, create_joint_distribution],
-            None,
+            ['iiv_diag', 'iiv_block'],
             ['ETA_CL'],
             [
                 partial(remove_iiv, to_remove=['ETA_MDT']),
