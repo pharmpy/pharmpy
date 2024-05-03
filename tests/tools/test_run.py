@@ -2,6 +2,7 @@ import inspect
 
 # import os
 import shutil
+from functools import partial
 from pathlib import Path
 from typing import get_type_hints
 
@@ -10,10 +11,24 @@ import pytest
 import pharmpy
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import add_iiv, load_example_model, read_model, set_lower_bounds
+from pharmpy.modeling import (
+    add_iiv,
+    add_lag_time,
+    add_peripheral_compartment,
+    add_pk_iiv,
+    create_basic_pk_model,
+    create_joint_distribution,
+    load_example_model,
+    read_model,
+    remove_iiv,
+    set_lower_bounds,
+    set_zero_order_absorption,
+    split_joint_distribution,
+)
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
+    calculate_bic_penalty,
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
@@ -528,3 +543,71 @@ def test_strictness_parameters(testdata):
     assert not is_strictness_fulfilled(res, model, 'estimate_near_boundary_theta')
     model = set_lower_bounds(model, {'TVCL': 0.0058})
     assert is_strictness_fulfilled(res, model, 'estimate_near_boundary_theta')
+
+
+@pytest.mark.parametrize(
+    ('base_funcs', 'search_space', 'keep', 'candidate_funcs', 'penalties'),
+    [
+        (
+            [],
+            'PERIPHERALS(0..2);ABSORPTION([FO,ZO])',
+            None,
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [2.20, 4.39],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            None,
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [4.61, 9.21],
+        ),
+        (
+            [split_joint_distribution],
+            None,
+            None,
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [4.39, 2.20],
+        ),
+        (
+            [create_joint_distribution],
+            None,
+            None,
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [6.59, 2.20],
+        ),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            None,
+            None,
+            [
+                partial(remove_iiv, to_remove=['ETA_VP1']),
+                partial(remove_iiv, to_remove=['ETA_QP1']),
+            ],
+            [40.51, 23.47],
+        ),
+        (
+            [add_lag_time, add_pk_iiv, create_joint_distribution],
+            None,
+            ['ETA_CL'],
+            [
+                partial(remove_iiv, to_remove=['ETA_MDT']),
+                partial(split_joint_distribution, rvs=['ETA_MAT']),
+            ],
+            [17.34, 10.18],
+        ),
+    ],
+)
+def test_bic_penalty(testdata, base_funcs, search_space, keep, candidate_funcs, penalties):
+    base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    for func in base_funcs:
+        base_model = func(base_model)
+    candidate = base_model
+    for func, ref in zip(candidate_funcs, penalties):
+        candidate = func(candidate)
+        penalty = calculate_bic_penalty(base_model, candidate, search_space=search_space, keep=keep)
+        assert round(penalty, 2) == ref

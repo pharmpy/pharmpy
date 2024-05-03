@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import math
 import re
 import warnings
 from datetime import datetime
@@ -27,6 +28,8 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.tools import get_model_features
+from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.context import Context, LocalDirectoryContext
@@ -1244,3 +1247,51 @@ def load_example_modelfit_results(name: str):
     path = Path(__file__).resolve().parent.parent / 'internals' / 'example_models' / (name + '.mod')
     res = read_modelfit_results(path)
     return res
+
+
+def calculate_bic_penalty(
+    base_model: Model,
+    candidate_model: Model,
+    search_space: Optional[str] = None,
+    E_p: Optional[float] = 1.0,
+    E_q: Optional[float] = 1.0,
+    keep: Optional[list[str]] = None,
+):
+    if isinstance(search_space, str):
+        cand_features = get_model_features(candidate_model)
+        base_features = get_model_features(base_model)
+
+        search_space_mfl = parse(search_space, mfl_class=True)
+        cand_mfl = parse(cand_features, mfl_class=True)
+        base_mfl = parse(base_features, mfl_class=True)
+
+        no_of_predictors_all = search_space_mfl.get_number_of_features()
+        no_of_predictors_model = base_mfl.get_number_of_features()
+        p = no_of_predictors_all - no_of_predictors_model
+
+        cand_funcs = cand_mfl.convert_to_funcs().keys()
+        base_funcs = base_mfl.convert_to_funcs().keys()
+        k_p = len(cand_funcs - base_funcs)
+
+        k_q = 0.0
+    else:
+        base_rvs = base_model.random_variables.iiv + base_model.random_variables.iov
+        base_var_params = base_rvs.variance_parameters
+
+        p = len(base_var_params)
+        q = (p * (p - 1)) / 2 if p else 1
+
+        cand_rvs = candidate_model.random_variables.iiv + candidate_model.random_variables.iov
+        cand_var_params = cand_rvs.variance_parameters
+        cand_cov_params = set(cand_rvs.parameter_names).difference(cand_var_params)
+        k_p = len(cand_var_params)
+        k_q = len(cand_cov_params)
+
+    if keep:
+        p -= len(keep)
+
+    # To avoid domain error
+    p = p if k_p != 0 else 1
+    q = q if k_q != 0 else 1
+
+    return 2 * k_p * math.log(p / E_p) + 2 * k_q * math.log(q / E_q)
