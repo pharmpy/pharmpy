@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import warnings
 from pathlib import Path
 from typing import TYPE_CHECKING, Dict, Optional, Union
@@ -9,7 +10,7 @@ from pharmpy.basic import Expr
 from pharmpy.internals.math import nearest_positive_semidefinite
 from pharmpy.model import ExecutionSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
-from pharmpy.model.external.nonmem.parsing import parse_table_columns
+from pharmpy.model.external.nonmem.parsing import extract_verbatim_derivatives, parse_table_columns
 from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile, PhiTable
 from pharmpy.model.external.nonmem.update import create_name_map
 from pharmpy.workflows.log import Log
@@ -80,10 +81,11 @@ def _parse_modelfit_results(
     ) = _parse_ext(control_stream, name_map, ext_tables, subproblem, parameters)
 
     table_df = _parse_tables(
-        path, control_stream, netas=len(model.random_variables.etas.names)
+        model, path, control_stream, netas=len(model.random_variables.etas.names)
     )  # $TABLEs
     residuals = _parse_residuals(table_df)
     predictions = _parse_predictions(table_df)
+    derivatives = _parse_derivatives(table_df, model)
     iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, model, final_pe, subproblem)
     gradients_iterations, final_zero_gradient, gradients = _parse_grd(
         path, control_stream, name_map, parameters, subproblem
@@ -174,6 +176,7 @@ def _parse_modelfit_results(
         ofv_iterations=ofv_iterations,
         predictions=predictions,
         residuals=residuals,
+        derivatives=derivatives,
         evaluation=evaluation,
         log=log,
         covstep_successful=covstep_successful,
@@ -463,7 +466,9 @@ def _parse_grd(
     return gradients_table, final_zero_gradient, last_row
 
 
-def _parse_tables(path: Path, control_stream: NMTranControlStream, netas) -> pd.DataFrame:
+def _parse_tables(
+    model: Model, path: Path, control_stream: NMTranControlStream, netas
+) -> pd.DataFrame:
     """Parse $TABLE and table files into one large dataframe of useful columns"""
     interesting_columns = {
         'ID',
@@ -478,6 +483,11 @@ def _parse_tables(path: Path, control_stream: NMTranControlStream, netas) -> pd.
         'MDV',
     }
 
+    derivative_regex = r'[HG]\d+'
+    verbatim_derivatives = extract_verbatim_derivatives(control_stream, model.random_variables)
+    verbatim_derivativates_names = set(verbatim_derivatives.keys())
+    interesting_columns = interesting_columns.union(verbatim_derivativates_names)
+
     table_recs = control_stream.get_records('TABLE')
     colnames_list = parse_table_columns(control_stream, netas)
     found = set()
@@ -486,7 +496,9 @@ def _parse_tables(path: Path, control_stream: NMTranControlStream, netas) -> pd.
         columns_in_table = []
         colnames_in_table = []
         for i, name in enumerate(colnames):
-            if name in interesting_columns and name not in found:
+            if (
+                name in interesting_columns or re.match(derivative_regex, name)
+            ) and name not in found:
                 found.add(name)
                 colnames_in_table.append(name)
                 columns_in_table.append(i)
@@ -527,6 +539,36 @@ def _parse_residuals(df: pd.DataFrame):
 def _parse_predictions(df: pd.DataFrame):
     cols = ['PRED', 'CIPREDI', 'CPRED', 'IPRED']
     df = _extract_at_least_one_column(df, cols)
+    return df
+
+
+def _parse_derivatives(df: pd.DataFrame, model: Model):
+    cols = []
+    derivative_regex = r'[HG]\d+'
+    verbatim_derivatives = extract_verbatim_derivatives(
+        model.internals.control_stream, model.random_variables
+    )
+    verbatim_derivatives_names = list(verbatim_derivatives.keys())
+    cols += verbatim_derivatives_names
+
+    rename_derivative_dict = {}  # Name is ";".join of names as stored in EstimationStep
+    for col in df.columns:
+        if re.match(derivative_regex, col):
+            if match := re.match(r'H(\d+)1', col):
+                param_name = model.random_variables.epsilons.names[int(match.group(1)) - 1]
+                rename_derivative_dict[col] = param_name
+            elif match := re.match(r'G(\d+)1', col):
+                param_name = model.random_variables.etas.names[int(match.group(1)) - 1]
+                rename_derivative_dict[col] = param_name
+            cols.append(col)
+        elif col in verbatim_derivatives_names:
+            param_name = verbatim_derivatives[col]
+            param_name = map(str, param_name)
+            rename_derivative_dict[col] = ";".join(param_name)
+
+    df = _extract_at_least_one_column(df, cols)
+    if df is not None:
+        df = df.rename(rename_derivative_dict, axis=1)
     return df
 
 
