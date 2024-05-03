@@ -102,7 +102,7 @@ def get_sigmas(model: Model):
 
 def set_initial_estimates(
     model: Model,
-    inits: Union[Mapping[str, float], pd.Series],
+    inits: Mapping[str, float],
     move_est_close_to_bounds: bool = False,
 ):
     """Update initial parameter estimate for a model
