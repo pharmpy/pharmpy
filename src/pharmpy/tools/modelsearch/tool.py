@@ -7,7 +7,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import set_initial_estimates
-from pharmpy.tools import get_model_features
+from pharmpy.tools import calculate_bic_penalty, get_model_features
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -125,6 +125,7 @@ def start(
     task_result = Task(
         'results',
         post_process,
+        search_space,
         rank_type,
         cutoff,
         strictness,
@@ -248,7 +249,7 @@ def create_base_model(ss, model_or_model_entry):
     return ModelEntry.create(base, modelfit_results=None, parent=None)
 
 
-def post_process(rank_type, cutoff, strictness, *model_entries):
+def post_process(mfl, rank_type, cutoff, strictness, *model_entries):
     res_model_entries = []
     input_model_entry = None
     base_model_entry = None
@@ -279,6 +280,12 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
 
+    if rank_type == 'mbic':
+        base = base_model_entry.model
+        penalties = [calculate_bic_penalty(base, me.model, mfl) for me in res_model_entries]
+    else:
+        penalties = None
+
     res = create_results(
         ModelSearchResults,
         input_model_entry,
@@ -288,6 +295,7 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
         cutoff,
         summary_models=summary_models,
         strictness=strictness,
+        penalties=penalties,
     )
     return res
 
