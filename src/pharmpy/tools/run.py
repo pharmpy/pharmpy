@@ -480,7 +480,7 @@ def _get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, 
 
         common_path = dispatching_options.get('path', None)
         if common_path is not None:
-            path = dispatching_options['path']
+            path = Path(dispatching_options['path'])
             ctx = default_context(path.name, path.parent, common_options=common_options)
         else:
             n = 1
