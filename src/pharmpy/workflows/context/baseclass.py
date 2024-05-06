@@ -107,6 +107,7 @@ class Context(ABC):
     @abstractmethod
     def store_annotation(self, name: str, annotation: str):
         """Store an annotation string (description) for a model"""
+        pass
 
     @abstractmethod
     def retrieve_annotation(self, name: str) -> str:
