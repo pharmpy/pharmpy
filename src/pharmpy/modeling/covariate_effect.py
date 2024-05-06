@@ -291,7 +291,7 @@ def add_covariate_effect(
         - Init: 0.001
         - Upper: 5
         - Lower: -1
-    - (alterivative) Linear function for categorical covariates (*cat2*)
+    - (alternative) Linear function for categorical covariates (*cat2*)
         - Function:
             - If covariate is the most common category:
 
