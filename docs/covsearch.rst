@@ -82,6 +82,14 @@ Optional
 | ``algorithm``                               | The search :ref:`algorithm<algorithm_covsearch>` to use               |
 |                                             | (default is `'scm-forward-then-backward'`)                            |
 +---------------------------------------------+-----------------------------------------------------------------------+
+| ``max_eval``                                | Limit the number of function evaluations to 3.1 times that of the     |
+|                                             | base model. Default is False.                                         |
++---------------------------------------------+-----------------------------------------------------------------------+
+| ``adaptive_scope_reduction``                | Stash all non-significant parameter-covariate effects at each step in |
+|                                             | the forward search for later evaluation. As soon as all significant   |
+|                                             | effects have been tested the stashed effects gets evaluated in a      |
+|                                             | normal forward approach. Default is False                             |
++---------------------------------------------+-----------------------------------------------------------------------+
 | ``strictness``                              | :ref:`Strictness<strictness>` criteria for model selection.           |
 |                                             | Default is "minimization_successful or                                |
 |                                             | (rounding_errors and sigdigs>= 0.1)"                                  |
@@ -250,6 +258,16 @@ To skip the backward steps use search algorithm `'scm-forward'`.
             s4 -> s9
         }
 
+Adaptive scope reduction
+------------------------
+
+The adaptive scope reduction option integrates part of the SCM+ procedure within the covsearch tool. This option will
+modify the forward search such that only significant effects will be transferred to the next step. Insignificant effects 
+are stored away. The number of possible steps in this search is dependent on the ``max_steps`` argument. With the resulting
+model from this search as input, a regular 'scm-forward' procedure is applied, using only the previously insignificant effects.
+The number of possible steps in this procedure is also determined by the ``max_steps`` argument.
+
+If 'scm-forward-then-backward' is used, a subsequent backward search will follow.
 
 ~~~~~~~
 Results
