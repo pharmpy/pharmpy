@@ -17,7 +17,7 @@ def test_default_str(tmp_path, model_count, start_modelres):
         )
 
         rundir = tmp_path / 'covsearch1'
-        assert model_count(rundir) == 39
+        assert model_count(rundir) == 39 + 2
 
 
 def test_adaptive_scope_reduction(tmp_path, model_count, start_modelres):
@@ -33,4 +33,4 @@ def test_adaptive_scope_reduction(tmp_path, model_count, start_modelres):
         )
 
         rundir = tmp_path / 'covsearch1'
-        assert model_count(rundir) == 33
+        assert model_count(rundir) == 33 + 2

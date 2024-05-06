@@ -23,7 +23,7 @@ def test_exhaustive_exhaustive(tmp_path, model_count, start_modelres):
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == 3
+        assert model_count(rundir) == 5
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -88,7 +88,7 @@ def test_exhaustive_stepwise_basic(
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -132,7 +132,7 @@ def test_exhaustive_stepwise_iiv_strategies(
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
