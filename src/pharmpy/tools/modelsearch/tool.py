@@ -128,6 +128,7 @@ def start(
         rank_type,
         cutoff,
         strictness,
+        context,
     )
 
     # Filter the mfl_statements from base model attributes
@@ -248,7 +249,7 @@ def create_base_model(ss, model_or_model_entry):
     return ModelEntry.create(base, modelfit_results=None, parent=None)
 
 
-def post_process(rank_type, cutoff, strictness, *model_entries):
+def post_process(rank_type, cutoff, strictness, context, *model_entries):
     res_model_entries = []
     input_model_entry = None
     base_model_entry = None
@@ -288,6 +289,7 @@ def post_process(rank_type, cutoff, strictness, *model_entries):
         cutoff,
         summary_models=summary_models,
         strictness=strictness,
+        context=context,
     )
     return res
 

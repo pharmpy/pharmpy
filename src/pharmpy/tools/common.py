@@ -16,6 +16,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.run import rank_models, summarize_errors_from_entries
 from pharmpy.workflows import ModelEntry, ModelfitResults, Results
+from pharmpy.workflows.hashing import ModelHash
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -79,6 +80,7 @@ def create_results(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     n_predicted=None,
     n_expected=None,
+    context=None,
     **rest,
 ) -> T:
     summary_tool = summarize_tool(
@@ -143,6 +145,10 @@ def create_results(
         if me.model.name == best_model.name:
             final_results = me.modelfit_results
             break
+
+    # Create links to input model and final model
+    context.store_key("input", ModelHash(input_model_entry.model))
+    context.store_key("final", ModelHash(best_model))
 
     plots = create_plots(best_model, final_results)
 

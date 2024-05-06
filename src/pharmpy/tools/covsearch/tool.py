@@ -31,6 +31,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.filter import COVSEARCH_STATEMENT_TYPES
@@ -726,7 +727,7 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     )
 
 
-def task_results(p_forward: float, p_backward: float, strictness: str, state: SearchState):
+def task_results(context, p_forward: float, p_backward: float, strictness: str, state: SearchState):
     candidates = state.all_candidates_so_far
     modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
     base_modelentry, *res_modelentries = modelentries
@@ -743,6 +744,7 @@ def task_results(p_forward: float, p_backward: float, strictness: str, state: Se
         res_modelentries,
         'lrt',
         (p_forward, p_backward),
+        context=context,
     )
 
     steps = _make_df_steps(best_modelentry, candidates)
@@ -755,6 +757,8 @@ def task_results(p_forward: float, p_backward: float, strictness: str, state: Se
         summary_tool=_modify_summary_tool(res.summary_tool, steps),
         summary_models=_summarize_models(modelentries, steps),
     )
+
+    context.store_key("final", ModelHash(best_modelentry.model))
 
     return res
 
