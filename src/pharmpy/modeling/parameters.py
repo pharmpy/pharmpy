@@ -1,6 +1,5 @@
 from typing import Dict, List, Mapping, Optional, Union
 
-from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, Parameter, Parameters, RandomVariables
 
 
