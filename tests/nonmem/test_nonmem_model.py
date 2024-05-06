@@ -989,7 +989,13 @@ def test_parse_derivatives(load_model_for_test, testdata):
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
     )
     # NOTE : Order of derivatives is cannonicalized
-    d = tuple(tuple(map(Expr.symbol, p)) for p in (('EPS_1',), ('ETA_1',), ('ETA_2',)))
+    d = (
+        (Expr.symbol("EPS_1"),),
+        (Expr.symbol("EPS_1"), Expr.symbol("ETA_1")),
+        (Expr.symbol("EPS_1"), Expr.symbol("ETA_2")),
+        (Expr.symbol("ETA_1"),),
+        (Expr.symbol("ETA_2"),),
+    )
     assert model.execution_steps[0].derivatives == d
 
 

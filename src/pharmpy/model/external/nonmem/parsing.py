@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 import warnings
 from pathlib import Path
 from typing import Callable, Dict, Optional, Tuple
@@ -362,6 +363,55 @@ def parse_description(control_stream) -> str:
     return rec.title
 
 
+def extract_verbatim_derivatives(cs, random_variables):
+
+    error_record = cs.get_error_record()
+    if error_record is None:
+        return {}
+    verbatim_records = [r for r in error_record.root.children if r.rule == "verbatim"]
+    verbatim_derivatives = {}
+    r = r"([\w\d]+)\s*=\s*([GH]+)\((\d+)\s*,\s*(\d+)\)$"
+    for i in verbatim_records:
+        for c in i.children:
+            if c.rule == "VERBATIM_STATEMENT":
+                m = re.search(r, c.value)
+                if m:
+                    param_name = m.group(1)
+                    derivative_type = m.group(2)
+                    first_n = int(m.group(3))
+                    second_n = int(m.group(4))
+                    if second_n != 1:
+                        # EPS ETA DERIVATIVE
+                        if derivative_type in ("H", "HH"):
+                            eps = random_variables.epsilons.names[first_n - 1]
+                            eta = random_variables.etas.names[second_n - 2]
+                            verbatim_derivatives[param_name] = (Expr.symbol(eps), Expr.symbol(eta))
+                        elif derivative_type == "G":
+                            first_eta = random_variables.etas.names[first_n - 1]
+                            second_eta = random_variables.etas.names[second_n - 2]
+                            verbatim_derivatives[param_name] = (
+                                Expr.symbol(first_eta),
+                                Expr.symbol(second_eta),
+                            )
+                        else:
+                            raise ValueError(
+                                f'Unknown derivate type with name {derivative_type}({first_n},{second_n})'
+                            )
+                    else:
+                        if derivative_type in ("H", "HH"):
+                            # EPSILON
+                            eps = random_variables.epsilons.names[first_n - 1]
+                            verbatim_derivatives[param_name] = (Expr.symbol(eps),)
+                        elif derivative_type == "G":
+                            # ETAS
+                            eta = random_variables.etas.names[second_n - 1]
+                            verbatim_derivatives[param_name] = (Expr.symbol(eta),)
+                        else:
+                            raise ValueError(f'Unknown derivate of type {derivative_type}')
+
+    return verbatim_derivatives
+
+
 def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
     steps = []
     records = control_stream.get_records('ESTIMATION')
@@ -403,7 +453,10 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
             epsilons = random_variables.epsilons
             epsilonderivs_names = [(Expr.symbol(epsilons.names[i - 1]),) for i in epsderivs]
 
-    derivatives = tuple(etaderiv_names + epsilonderivs_names)
+    verbatim_derivatives = extract_verbatim_derivatives(control_stream, random_variables)
+    verbatim_derivatives = list(verbatim_derivatives.values())
+
+    derivatives = tuple(etaderiv_names + epsilonderivs_names + verbatim_derivatives)
 
     for record in records:
         value = record.get_option('METHOD')
