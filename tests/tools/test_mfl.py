@@ -566,16 +566,13 @@ def test_funcs_ivoral(source, expected):
 @pytest.mark.parametrize(
     ('code'),
     (
-        [
-            ('ABSORPTION(ILLEGAL)'),
-            ('ELIMINATION(ALSOILLEGAL)'),
-            ('LAGTIME(0)'),
-            ('TRANSITS(*)'),
-        ],
-        [
-            ('COVARIATE([V], WGT, *, +)'),
-            ('COVARIATE?(V, WGT, *, +)'),
-        ],
+        ('ABSORPTION(ILLEGAL)'),
+        ('ELIMINATION(ALSOILLEGAL)'),
+        ('LAGTIME(0)'),
+        ('TRANSITS(*)'),
+        ('COVARIATE([V], WGT, *, +)'),
+        ('COVARIATE?(V, WGT, *, -)'),
+        ('COVARIATE([CL, V], WGT, [EXP, ABC])'),
     ),
 )
 def test_illegal_mfl(code):
