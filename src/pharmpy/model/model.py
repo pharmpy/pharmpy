@@ -16,9 +16,10 @@ from __future__ import annotations
 import dataclasses
 import json
 import warnings
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol

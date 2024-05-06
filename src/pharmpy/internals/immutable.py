@@ -1,5 +1,6 @@
 from abc import ABC
-from typing import Iterator, Mapping, TypeVar
+from collections.abc import Mapping
+from typing import Iterator, TypeVar
 
 
 def cache_method(func):

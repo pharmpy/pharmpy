@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Mapping
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any, Callable, Dict, List, Mapping
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:
     import sympy
@@ -25,7 +26,7 @@ def subs(expr: sympy.Expr, mapping: Mapping[Any, Any], simultaneous: bool = Fals
     return expr.subs(_mapping, simultaneous=simultaneous)  # pyright: ignore [reportReturnType]
 
 
-def xreplace_dict(dictlike) -> Dict[Any, Any]:
+def xreplace_dict(dictlike) -> dict[Any, Any]:
     return {_sympify_old(key): _sympify_new(value) for key, value in dictlike.items()}
 
 
@@ -44,7 +45,7 @@ def _sympify_new(new) -> sympy.Expr:
     return sympy.sympify(new, strict=not isinstance(new, (str, type)))
 
 
-def _mapping_is_not_recursive(mapping: Dict[sympy.Expr, sympy.Expr]):
+def _mapping_is_not_recursive(mapping: dict[sympy.Expr, sympy.Expr]):
     return set(mapping.keys()).isdisjoint(
         set().union(*map(lambda e: e.free_symbols, mapping.values()))
     )
@@ -55,7 +56,7 @@ def _old_does_not_need_generic_subs(expr: sympy.Expr):
 
 
 def _subs_atoms_simultaneously(
-    subs_new_args: Callable[[sympy.Expr, List[sympy.Expr]], sympy.Expr], expr: sympy.Expr
+    subs_new_args: Callable[[sympy.Expr, list[sympy.Expr]], sympy.Expr], expr: sympy.Expr
 ):
     stack = [expr]
     output = [[], []]
@@ -81,15 +82,15 @@ def _subs_atoms_simultaneously(
     return output[0][0]
 
 
-def _subs_atom(mapping: Dict[sympy.Expr, sympy.Expr]):
-    def _subs(expr: sympy.Expr, args: List[sympy.Expr]):
+def _subs_atom(mapping: dict[sympy.Expr, sympy.Expr]):
+    def _subs(expr: sympy.Expr, args: list[sympy.Expr]):
         return replace_root_children(expr, args) if args else mapping.get(expr, expr)
 
     return _subs
 
 
-def _subs_atom_or_func(mapping: Dict[Any, Any]):
-    def _subs(expr: sympy.Expr, args: List[Any]):
+def _subs_atom_or_func(mapping: dict[Any, Any]):
+    def _subs(expr: sympy.Expr, args: list[Any]):
         if not args:
             return mapping.get(expr, expr)
 

@@ -1,4 +1,5 @@
-from typing import Any, Mapping
+from collections.abc import Mapping
+from typing import Any
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 

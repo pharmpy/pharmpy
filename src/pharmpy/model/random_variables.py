@@ -1,20 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Container as CollectionsContainer
+from collections.abc import Iterable, Mapping
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
-from typing import (
-    TYPE_CHECKING,
-    Any,
-    Collection,
-    Container,
-    Iterable,
-    Mapping,
-    Optional,
-    Sequence,
-    Union,
-    overload,
-)
+from typing import TYPE_CHECKING, Any, Collection, Container, Optional, Sequence, Union, overload
 
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.internals.expr.eval import eval_expr

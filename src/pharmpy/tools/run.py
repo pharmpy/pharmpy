@@ -4,9 +4,10 @@ import importlib
 import inspect
 import re
 import warnings
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
+from typing import Any, Optional, Union, get_type_hints
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -38,11 +39,11 @@ from .external import parse_modelfit_results
 
 
 def fit(
-    model_or_models: Union[Model, List[Model]],
+    model_or_models: Union[Model, list[Model]],
     tool: Optional[str] = None,
     path: Optional[Union[Path, str]] = None,
     context: Optional[Context] = None,
-) -> Union[ModelfitResults, List[ModelfitResults]]:
+) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
 
     Parameters
@@ -142,7 +143,7 @@ def read_results(path: Union[str, Path]) -> Results:
     return res
 
 
-def run_tool(name: str, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], Results]:
+def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Model], Results]:
     """Run tool workflow
 
     Parameters
@@ -179,7 +180,7 @@ def import_tool(name: str):
 
 def run_tool_with_name(
     name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
-) -> Union[Model, List[Model], Tuple[Model], Results]:
+) -> Union[Model, list[Model], tuple[Model], Results]:
     dispatching_options, common_options, tool_options = split_common_options(kwargs)
 
     create_workflow = tool.create_workflow
@@ -495,8 +496,8 @@ def _get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, 
 
 def retrieve_models(
     source: Union[str, Path, Context],
-    names: Optional[List[str]] = None,
-) -> List[Model]:
+    names: Optional[list[str]] = None,
+) -> list[Model]:
     """Retrieve models after a tool run
 
     Any models created and run by the tool can be
@@ -711,8 +712,8 @@ def summarize_errors_from_entries(mes: list[ModelEntry]):
 def rank_models(
     base_model: Model,
     base_model_res: ModelfitResults,
-    models: List[Model],
-    models_res: List[ModelfitResults],
+    models: list[Model],
+    models_res: list[ModelfitResults],
     parent_dict: Optional[Union[dict[str, str], dict[Model, Model]]] = None,
     strictness: Optional[str] = "minimization_successful",
     rank_type: str = 'ofv',

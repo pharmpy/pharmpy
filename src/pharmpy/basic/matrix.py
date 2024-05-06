@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Iterable, Mapping, Sequence, Union, overload
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Union, overload
 
 if TYPE_CHECKING:
     import numpy as np

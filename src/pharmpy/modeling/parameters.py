@@ -1,4 +1,5 @@
-from typing import Dict, List, Mapping, Optional, Union
+from collections.abc import Mapping
+from typing import Optional, Union
 
 from pharmpy.model import Model, Parameter, Parameters, RandomVariables
 
@@ -201,7 +202,7 @@ def _is_zero_fix(param):
     return param.init == 0 and param.fix
 
 
-def set_upper_bounds(model: Model, bounds: Dict[str, float]):
+def set_upper_bounds(model: Model, bounds: dict[str, float]):
     """Set parameter upper bounds
 
     Parameters
@@ -242,7 +243,7 @@ def set_upper_bounds(model: Model, bounds: Dict[str, float]):
     return model.update_source()
 
 
-def set_lower_bounds(model: Model, bounds: Dict[str, float]):
+def set_lower_bounds(model: Model, bounds: dict[str, float]):
     """Set parameter lower bounds
 
     Parameters
@@ -284,7 +285,7 @@ def set_lower_bounds(model: Model, bounds: Dict[str, float]):
     return model
 
 
-def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
+def fix_parameters(model: Model, parameter_names: Union[list[str], str]):
     """Fix parameters
 
     Fix all listed parameters
@@ -334,7 +335,7 @@ def fix_parameters(model: Model, parameter_names: Union[List[str], str]):
     return model.update_source()
 
 
-def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
+def unfix_parameters(model: Model, parameter_names: Union[list[str], str]):
     """Unfix parameters
 
     Unfix all listed parameters
@@ -387,7 +388,7 @@ def unfix_parameters(model: Model, parameter_names: Union[List[str], str]):
     return model
 
 
-def fix_parameters_to(model: Model, inits: Dict[str, float]):
+def fix_parameters_to(model: Model, inits: dict[str, float]):
     """Fix parameters to
 
     Fix all listed parameters to specified value/values
@@ -428,7 +429,7 @@ def fix_parameters_to(model: Model, inits: Dict[str, float]):
     return model
 
 
-def unfix_parameters_to(model: Model, inits: Dict[str, float]):
+def unfix_parameters_to(model: Model, inits: dict[str, float]):
     """Unfix parameters to
 
     Unfix all listed parameters to specified value/values
@@ -471,7 +472,7 @@ def unfix_parameters_to(model: Model, inits: Dict[str, float]):
     return model
 
 
-def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
+def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool]):
     """Fix or unfix parameters
 
     Set fixedness of parameters to specified values
@@ -520,7 +521,7 @@ def fix_or_unfix_parameters(model: Model, parameters: Dict[str, bool]):
     return model
 
 
-def unconstrain_parameters(model: Model, parameter_names: List[str]):
+def unconstrain_parameters(model: Model, parameter_names: list[str]):
     """Remove all constraints from parameters
 
     Parameters
