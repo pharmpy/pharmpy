@@ -77,14 +77,16 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
                 ctx = LocalDirectoryContext(path)
                 names = ctx.list_all_names()
                 res_models = [
-                    ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+                    ctx.retrieve_model_entry(name).model
+                    for name in names
+                    if name not in ['input', 'final']
                 ]
                 assert len(res_models) == no_of_candidate_models
 
                 rundir = tmp_path / path
                 assert rundir.is_dir()
-                assert len(list((rundir / 'models').iterdir())) == no_of_candidate_models
-                assert model_count(rundir) == no_of_candidate_models
+                assert len(list((rundir / 'models').iterdir())) == no_of_candidate_models + 2
+                assert model_count(rundir) == no_of_candidate_models + 2
                 assert (rundir / 'metadata.json').exists()
 
 
@@ -144,8 +146,8 @@ def test_run_tool_modelsearch_resume_flag(
 
                 rundir = tmp_path / path
                 assert rundir.is_dir()
-                assert len(list((rundir / 'models').iterdir())) == no_of_models
-                assert model_count(rundir) == no_of_models
+                assert len(list((rundir / 'models').iterdir())) == no_of_models + 2
+                assert model_count(rundir) == no_of_models + 2
                 assert (rundir / 'results.json').exists()
                 assert (rundir / 'results.csv').exists()
                 assert (rundir / 'metadata.json').exists()
