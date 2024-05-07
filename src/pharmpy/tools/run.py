@@ -32,8 +32,9 @@ from pharmpy.tools import get_model_features
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
+from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
+from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.feature.transits import Transits
-from pharmpy.tools.mfl.stringify import stringify
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.context import Context, LocalDirectoryContext
@@ -1309,55 +1310,51 @@ def calculate_bic_penalty(
 
 
 def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
-    base_mfl = parse('ABSORPTION(INST)', mfl_class=True)
-    search_without_base_mfl = search_space_mfl - base_mfl
-
     def _get_len(attr):
         if isinstance(attr, tuple):
             return sum(len(feat) for feat in attr)
         else:
             return len(attr)
 
-    p = 0
-    for attr_name, attr in vars(search_without_base_mfl).items():
-        if not attr:
-            continue
-        if _get_len(vars(search_space_mfl)[attr_name]) == 1:
-            continue
-        attr_len = _get_len(attr)
-        p_attr = attr_len
-        if isinstance(attr, Absorption) and 'SEQ-ZO-FO' in stringify([attr]):
-            p_attr -= 1
-        if isinstance(attr, Elimination):
-            attr_str = stringify([attr])
-            if 'MM,' in attr_str or ',MM' in attr_str:
-                p_attr += 1
-                if 'MIX-FO-MM' in attr_str:
-                    p_attr -= 1
-        if isinstance(attr, tuple) and isinstance(attr[0], Transits):
-            if any(0 in transit.counts for transit in attr):
-                p_attr -= 1
-        p += p_attr
-
-    k_p = 0
+    p, k_p = 0, 0
     for attr_name, attr in vars(cand_mfl).items():
         if not attr:
             continue
-        base_feat = getattr(base_mfl, attr_name)
-        if _get_len(vars(search_space_mfl)[attr_name]) == 1:
+        attr_search_space = getattr(search_space_mfl, attr_name)
+        if _get_len(attr_search_space) == 1:
             continue
-        # FIXME: This should be part of the MFL, e.g. ModelFeatures.get_number_of_predictors
-        k_p_attr = 0
-        if attr != base_feat:
-            k_p_attr += 1
-            if isinstance(attr, Absorption) and stringify([attr]) == 'ABSORPTION(SEQ-ZO-FO)':
-                k_p_attr += 1
-            if isinstance(attr, Elimination) and stringify([attr]) == 'ELIMINATION(MIX-FO-MM)':
-                k_p_attr += 1
-            if isinstance(attr, tuple) and stringify([attr[0]]) == 'PERIPHERALS(2)':
-                k_p_attr += 1
-        elif isinstance(attr, Elimination) and stringify([attr]) == 'ELIMINATION(FO)':
-            k_p_attr += 1
+        if isinstance(attr, Absorption) or isinstance(attr, Elimination):
+            feat_combo = 'SEQ-ZO-FO' if isinstance(attr, Absorption) else 'MIX-FO-MM'
+            assert len(attr.modes) == 1
+            if feat_combo in [node.name for node in attr_search_space.modes]:
+                p_attr = 2
+            else:
+                p_attr = 1
+            abs_type = attr.modes[0].name
+            if abs_type == feat_combo:
+                k_p_attr = 2
+            else:
+                k_p_attr = 1
+        elif isinstance(attr, LagTime):
+            p_attr = 1
+            k_p_attr = 1 if attr.modes[0].name == 'ON' else 0
+        elif isinstance(attr, tuple):
+            assert len(attr) == 1 and len(attr_search_space) == 1
+            attr, attr_search_space = attr[0], attr_search_space[0]
+            p_attr = len(attr_search_space) - 1
+            if isinstance(attr, Peripherals):
+                k_p_attr = attr.counts[0]
+            elif isinstance(attr, Transits):
+                if attr.counts[0] == 0:
+                    k_p_attr = 0
+                elif attr.depot[0].name == 'DEPOT':
+                    k_p_attr = 1
+                else:
+                    k_p_attr = 2
+        else:
+            raise ValueError(f'MFL attribute of type `{type(attr)}` not supported.')
+
+        p += p_attr
         k_p += k_p_attr
 
     return p, k_p

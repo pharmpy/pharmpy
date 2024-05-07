@@ -556,7 +556,7 @@ def test_strictness_parameters(testdata):
             'PERIPHERALS(0..2);ABSORPTION([FO,ZO])',
             {},
             [add_peripheral_compartment, set_zero_order_absorption],
-            [5.55, 5.55],
+            [4.39, 4.39],
         ),
         (
             [],
@@ -643,8 +643,31 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
 @pytest.mark.parametrize(
     ('search_space', 'candidate_features', 'p_expected', 'k_p_expected'),
     [
-        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(1);ABSORPTION(ZO)', 4, 2),
-        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(2);ABSORPTION(ZO)', 4, 3),
+        ('ABSORPTION([FO,ZO])', 'ABSORPTION(ZO)', 1, 1),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 1),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(ZO)', 2, 1),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 2),
+        ('ABSORPTION([FO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 2),
+        ('ELIMINATION([FO,MM])', 'ELIMINATION(MM)', 1, 1),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(FO)', 2, 1),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MM)', 2, 1),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 2),
+        ('ELIMINATION([FO,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 2),
+        ('PERIPHERALS(0..2)', 'PERIPHERALS(0)', 2, 0),
+        ('PERIPHERALS(0..2)', 'PERIPHERALS(1)', 2, 1),
+        ('PERIPHERALS(0..2)', 'PERIPHERALS(2)', 2, 2),
+        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(0)', 2, 0),
+        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(1)', 2, 1),
+        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(2)', 2, 1),
+        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(0,NODEPOT)', 2, 0),
+        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(1,NODEPOT)', 2, 2),
+        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(2,NODEPOT)', 2, 2),
+        ('TRANSITS([0,1,2],*)', 'TRANSITS(2)', 4, 1),
+        ('TRANSITS([0,1,2],*)', 'TRANSITS(2,NODEPOT)', 4, 2),
+        ('LAGTIME([OFF,ON])', 'LAGTIME(OFF)', 1, 0),
+        ('LAGTIME([OFF,ON])', 'LAGTIME(ON)', 1, 1),
+        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(1);ABSORPTION(ZO)', 3, 2),
+        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(2);ABSORPTION(ZO)', 3, 3),
         (
             'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
             'ELIMINATION(FO);'
