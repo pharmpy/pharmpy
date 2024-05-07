@@ -771,7 +771,7 @@ def rank_models(
     """
     if len(models) != len(models_res):
         raise ValueError('Different length of `models` and `models_res`')
-    if penalties is not None and len(models) != len(penalties):
+    if penalties is not None and len(models) + 1 != len(penalties):
         raise ValueError('Different length of `models` and `penalties`')
     if rank_type == 'lrt' and not parent_dict:
         parent_dict = {model.name: base_model.name for model in models}
@@ -785,6 +785,8 @@ def rank_models(
     models_to_rank = []
 
     ref_value = _get_rankval(base_model, base_model_res, strictness, rank_type, **kwargs)
+    if penalties:
+        ref_value += penalties[0]
     model_dict = {model.name: (model, res) for model, res in zip(models_all, res_all)}
 
     # Filter on strictness
@@ -793,8 +795,8 @@ def rank_models(
         rank_value = _get_rankval(model, res, strictness, rank_type, **kwargs)
         if np.isnan(rank_value):
             continue
-        if penalties and model.name != base_model.name:
-            rank_value += penalties[i - 1]
+        if penalties:
+            rank_value += penalties[i]
         if model.name == base_model.name:
             pass
         elif rank_type == 'lrt':

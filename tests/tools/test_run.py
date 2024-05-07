@@ -227,7 +227,7 @@ def candidate_models_and_res():
         ({'strictness': 'minimization_successful or rounding_errors'}, ['m1'], 5),
         ({'cutoff': 1}, ['m2', 'm3'], 3),
         ({'rank_type': 'lrt', 'cutoff': 0.05}, ['m2'], 2),
-        ({'penalties': [0, 100, 0, 0]}, ['m3'], 4),
+        ({'penalties': [0, 0, 100, 0, 0]}, ['m3'], 4),
     ],
 )
 def test_rank_models(
