@@ -750,8 +750,8 @@ def _subfunc_structsearch_tmdd(
         all_models = [
             subctx1.retrieve_model_entry(model_name).model
             for model_name in subctx1.list_all_names()
+            if model_name not in ['input', 'final']
         ]
-        all_models = retrieve_models(subctx1.path, names=subctx1.list_all_names())
 
         if not has_mixed_mm_fo_elimination(final_model):
             # Only select models that have mixed MM FO elimination
