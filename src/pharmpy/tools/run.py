@@ -30,6 +30,10 @@ from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import get_model_features
 from pharmpy.tools.mfl.parse import parse
+from pharmpy.tools.mfl.statement.feature.absorption import Absorption
+from pharmpy.tools.mfl.statement.feature.elimination import Elimination
+from pharmpy.tools.mfl.statement.feature.transits import Transits
+from pharmpy.tools.mfl.stringify import stringify
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.context import Context, LocalDirectoryContext
@@ -1250,28 +1254,23 @@ def load_example_modelfit_results(name: str):
 
 
 def calculate_bic_penalty(
-    base_model: Model,
     candidate_model: Model,
     search_space: Union[str, List[str]],
+    base_model: Optional[None] = None,
     E_p: Optional[float] = 1.0,
     E_q: Optional[float] = 1.0,
     keep: Optional[list[str]] = None,
 ):
     if isinstance(search_space, str):
+        if base_model:
+            raise ValueError('Cannot provide both `search_space` as MFL as well as `base_model`')
+
         cand_features = get_model_features(candidate_model)
-        base_features = get_model_features(base_model)
 
         search_space_mfl = parse(search_space, mfl_class=True)
         cand_mfl = parse(cand_features, mfl_class=True)
-        base_mfl = parse(base_features, mfl_class=True)
 
-        no_of_predictors_all = search_space_mfl.get_number_of_features()
-        no_of_predictors_model = base_mfl.get_number_of_features()
-        p = no_of_predictors_all - no_of_predictors_model
-
-        cand_funcs = cand_mfl.convert_to_funcs().keys()
-        base_funcs = base_mfl.convert_to_funcs().keys()
-        k_p = len(cand_funcs - base_funcs)
+        p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
 
         q = 0
         k_q = 0
@@ -1307,3 +1306,58 @@ def calculate_bic_penalty(
     q = q if k_q != 0 else 1
 
     return 2 * k_p * math.log(p / E_p) + 2 * k_q * math.log(q / E_q)
+
+
+def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
+    base_mfl = parse('ABSORPTION(INST)', mfl_class=True)
+    search_without_base_mfl = search_space_mfl - base_mfl
+
+    def _get_len(attr):
+        if isinstance(attr, tuple):
+            return sum(len(feat) for feat in attr)
+        else:
+            return len(attr)
+
+    p = 0
+    for attr_name, attr in vars(search_without_base_mfl).items():
+        if not attr:
+            continue
+        if _get_len(vars(search_space_mfl)[attr_name]) == 1:
+            continue
+        attr_len = _get_len(attr)
+        p_attr = attr_len
+        if isinstance(attr, Absorption) and 'SEQ-ZO-FO' in stringify([attr]):
+            p_attr -= 1
+        if isinstance(attr, Elimination):
+            attr_str = stringify([attr])
+            if 'MM,' in attr_str or ',MM' in attr_str:
+                p_attr += 1
+                if 'MIX-FO-MM' in attr_str:
+                    p_attr -= 1
+        if isinstance(attr, tuple) and isinstance(attr[0], Transits):
+            if any(0 in transit.counts for transit in attr):
+                p_attr -= 1
+        p += p_attr
+
+    k_p = 0
+    for attr_name, attr in vars(cand_mfl).items():
+        if not attr:
+            continue
+        base_feat = getattr(base_mfl, attr_name)
+        if _get_len(vars(search_space_mfl)[attr_name]) == 1:
+            continue
+        # FIXME: This should be part of the MFL, e.g. ModelFeatures.get_number_of_predictors
+        k_p_attr = 0
+        if attr != base_feat:
+            k_p_attr += 1
+            if isinstance(attr, Absorption) and stringify([attr]) == 'ABSORPTION(SEQ-ZO-FO)':
+                k_p_attr += 1
+            if isinstance(attr, Elimination) and stringify([attr]) == 'ELIMINATION(MIX-FO-MM)':
+                k_p_attr += 1
+            if isinstance(attr, tuple) and stringify([attr[0]]) == 'PERIPHERALS(2)':
+                k_p_attr += 1
+        elif isinstance(attr, Elimination) and stringify([attr]) == 'ELIMINATION(FO)':
+            k_p_attr += 1
+        k_p += k_p_attr
+
+    return p, k_p

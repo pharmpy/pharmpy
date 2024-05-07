@@ -3,7 +3,6 @@ from threading import Lock
 from .mfl.parse import get_model_features
 
 __all__ = (
-    'calculate_bic_penalty',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -48,7 +47,6 @@ _not_wrapped = {
     '.amd.run': ('run_amd',),
     '.reporting': ('create_report',),
     '.run': (
-        'calculate_bic_penalty',
         'create_results',
         'fit',
         'is_strictness_fulfilled',

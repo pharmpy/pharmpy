@@ -22,13 +22,16 @@ from pharmpy.modeling import (
     read_model,
     remove_iiv,
     set_lower_bounds,
+    set_seq_zo_fo_absorption,
     set_zero_order_absorption,
     split_joint_distribution,
 )
+from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
     calculate_bic_penalty,
+    get_penalty_parameters_mfl,
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
@@ -546,14 +549,14 @@ def test_strictness_parameters(testdata):
 
 
 @pytest.mark.parametrize(
-    ('base_funcs', 'search_space', 'keep', 'candidate_funcs', 'penalties'),
+    ('base_funcs', 'search_space', 'kwargs', 'candidate_funcs', 'penalties'),
     [
         (
             [],
             'PERIPHERALS(0..2);ABSORPTION([FO,ZO])',
-            None,
+            {},
             [add_peripheral_compartment, set_zero_order_absorption],
-            [2.20, 4.39],
+            [5.55, 5.55],
         ),
         (
             [],
@@ -562,28 +565,50 @@ def test_strictness_parameters(testdata):
             'LAGTIME([OFF,ON]);'
             'TRANSITS([0,1,3,10],*);'
             'PERIPHERALS([0,1])',
-            None,
+            {},
+            [add_peripheral_compartment],
+            [9.21],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {},
             [add_peripheral_compartment, set_zero_order_absorption],
-            [4.61, 9.21],
+            [9.21, 9.21],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {},
+            [add_peripheral_compartment, set_seq_zo_fo_absorption],
+            [9.21, 13.82],
         ),
         (
             [split_joint_distribution],
             ['iiv_diag'],
-            None,
+            {'base_model': None},
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [4.39, 2.20],
         ),
         (
             [create_joint_distribution],
             ['iiv_diag', 'iiv_block'],
-            None,
+            {'base_model': None},
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [6.59, 2.20],
         ),
         (
             [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
             ['iiv_diag', 'iiv_block'],
-            None,
+            {'base_model': None},
             [
                 partial(remove_iiv, to_remove=['ETA_VP1']),
                 partial(remove_iiv, to_remove=['ETA_QP1']),
@@ -593,7 +618,7 @@ def test_strictness_parameters(testdata):
         (
             [add_lag_time, add_pk_iiv, create_joint_distribution],
             ['iiv_diag', 'iiv_block'],
-            ['ETA_CL'],
+            {'keep': ['ETA_CL'], 'base_model': None},
             [
                 partial(remove_iiv, to_remove=['ETA_MDT']),
                 partial(split_joint_distribution, rvs=['ETA_MAT']),
@@ -602,12 +627,75 @@ def test_strictness_parameters(testdata):
         ),
     ],
 )
-def test_bic_penalty(testdata, base_funcs, search_space, keep, candidate_funcs, penalties):
+def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):
     base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
     for func in base_funcs:
         base_model = func(base_model)
+    if 'base_model' in kwargs.keys():
+        kwargs['base_model'] = base_model
     candidate = base_model
     for func, ref in zip(candidate_funcs, penalties):
         candidate = func(candidate)
-        penalty = calculate_bic_penalty(base_model, candidate, search_space=search_space, keep=keep)
+        penalty = calculate_bic_penalty(candidate, search_space=search_space, **kwargs)
         assert round(penalty, 2) == ref
+
+
+@pytest.mark.parametrize(
+    ('search_space', 'candidate_features', 'p_expected', 'k_p_expected'),
+    [
+        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(1);ABSORPTION(ZO)', 4, 2),
+        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(2);ABSORPTION(ZO)', 4, 3),
+        (
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ABSORPTION(FO)',
+            10,
+            2,
+        ),
+        (
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ABSORPTION(ZO)',
+            10,
+            2,
+        ),
+        (
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ABSORPTION(SEQ-ZO-FO)',
+            10,
+            3,
+        ),
+        (
+            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'PERIPHERALS(1)',
+            3,
+            2,
+        ),
+        (
+            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ELIMINATION(MM)',
+            3,
+            2,
+        ),
+        (
+            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ELIMINATION(MIX-FO-MM)',
+            3,
+            3,
+        ),
+    ],
+)
+def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected, k_p_expected):
+    search_space_mfl = parse(search_space, mfl_class=True)
+    cand_mfl = parse(candidate_features, mfl_class=True)
+    assert get_penalty_parameters_mfl(search_space_mfl, cand_mfl) == (p_expected, k_p_expected)
