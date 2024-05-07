@@ -50,7 +50,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         ctx = LocalDirectoryContext("iivsearch1")
         names = ctx.list_all_names()
         res_models = [
-            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+            ctx.retrieve_model_entry(name).model for name in names if name not in ['input', 'final']
         ]
         assert len(res_models) == no_of_candidate_models
 
@@ -71,7 +71,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
 
         rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_candidate_models
+        assert model_count(rundir) == no_of_candidate_models + 2
         assert (rundir / 'metadata.json').exists()
 
 
@@ -97,7 +97,7 @@ def test_no_of_etas_base(
         ctx = LocalDirectoryContext('iivsearch1')
         names = ctx.list_all_names()
         res_models = [
-            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+            ctx.retrieve_model_entry(name).model for name in names if name not in ['input', 'final']
         ]
         assert len(res_models) == no_of_candidate_models
 
@@ -119,7 +119,7 @@ def test_no_of_etas_base(
 
         rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_candidate_models
+        assert model_count(rundir) == no_of_candidate_models + 2
         assert (rundir / 'metadata.json').exists()
 
 
@@ -137,7 +137,7 @@ def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_can
         ctx = LocalDirectoryContext('iivsearch1')
         names = ctx.list_all_names()
         res_models = [
-            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+            ctx.retrieve_model_entry(name).model for name in names if name not in ['input', 'final']
         ]
         assert len(res_models) == no_of_candidate_models
 
@@ -179,7 +179,7 @@ def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_can
 
         rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_candidate_models
+        assert model_count(rundir) == no_of_candidate_models + 2
         assert (rundir / 'metadata.json').exists()
 
 
@@ -220,7 +220,7 @@ def test_no_of_etas_iiv_strategies(
         ctx = LocalDirectoryContext('iivsearch1')
         names = ctx.list_all_names()
         res_models = [
-            ctx.retrieve_model_entry(name).model for name in names if name != 'input_model'
+            ctx.retrieve_model_entry(name).model for name in names if name not in ['input', 'final']
         ]
         assert len(res_models) == no_of_candidate_models + 1
 
@@ -237,5 +237,5 @@ def test_no_of_etas_iiv_strategies(
 
         rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_candidate_models + 1
+        assert model_count(rundir) == no_of_candidate_models + 3
         assert (rundir / 'metadata.json').exists()

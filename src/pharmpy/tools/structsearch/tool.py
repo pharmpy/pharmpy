@@ -249,7 +249,6 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
         "bic",
         None,
         strictness,
-        context=context,
     )
 
     wb.add_task(task_results, predecessors=candidate_model_tasks)
@@ -259,12 +258,12 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
 
 
 def post_process_drug_metabolite(
+    context,
     user_input_model_entry,
     base_model_description,
     rank_type,
     cutoff,
     strictness,
-    context,
     *model_entries,
 ):
     # NOTE : The base model is part of the model_entries but not the user_input_model
