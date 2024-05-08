@@ -5,6 +5,7 @@ import pytest
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DataInfo
 from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
 from pharmpy.tools.linearize.tool import create_linearized_model
 from pharmpy.tools.psn_helpers import create_results
@@ -120,3 +121,28 @@ def test_create_linearized_model(load_model_for_test, testdata):
     model = model.replace(datainfo=datainfo)
     linbase = create_linearized_model(model)
     assert len(linbase.statements) == 8
+
+
+def test_delinearize_model(load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    datainfo = DataInfo.create(
+        ['D_ETA1', 'OETA', 'OPRED', 'D_EPS1', 'D_EPSETA1_1', 'OETA1', 'D_EPSETA1_2', 'OETA2']
+    )
+    # FIXME : Use complete linearization procedure once in place
+    temp_model = model.replace(datainfo=datainfo)
+    linbase = create_linearized_model(temp_model)
+
+    delinearized_model = delinearize_model(linbase, model)
+    assert model == delinearized_model
+
+    pm_delinearized_model = delinearize_model(
+        linbase, model, param_mapping={"ETA_1": "V", "ETA_2": "CL"}
+    )
+    assert model != pm_delinearized_model
+    assert (
+        delinearized_model.parameters["IVCL"].init == pm_delinearized_model.parameters["IIV_V"].init
+    )
+    assert (
+        delinearized_model.parameters["IVV"].init == pm_delinearized_model.parameters["IIV_CL"].init
+    )
