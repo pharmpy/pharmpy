@@ -22,6 +22,10 @@ The code to initiate structsearch for a drug metabolite model in Python/R is sta
                             model=start_model,
                             results=start_model_results)
 
+.. note::                          
+    The tool expect the model to have a dataset with two DVIDs. DVID=1 connected to the parent
+    drug and DVID=2 which is representing the metabolite.
+
 +-------------------------------------------------+-----------------------------------------------------------------------+
 | Argument                                        | Description                                                           |
 +=================================================+=======================================================================+
@@ -62,42 +66,10 @@ Currently implemented drug metabolite models are:
 | with peripheral compartment(s) | connected compartments.                                  |
 +--------------------------------+----------------------------------------------------------+
 
-~~~~~~~~~~~~~~~~~~~~~
-Structsearch workflow
-~~~~~~~~~~~~~~~~~~~~~
-
-The graph below show how the drug metabolite models are built, with each of the two types 
-of drug metabolite models (basic and pre-systemic) with and without added peripherals.
-For reasons explained above, one of the created candidate models will be chosen as 
-the base model (shown by a square). The base model is chosen as one of the candidate models
-with the fewewst amount of peripheral compartments as possible, with "BASIC" being chosen over
-"PSC". If the inputed model is a drug_metabolite model, this will be used as the base model 
-instead.
-
-.. graphviz::
-
-    digraph BST {
-            node [fontname="Arial"]
-            base [label="Base model"]
-            s1 [label="Base metabolite";shape = rect;]
-            s2 [label="PERIPHERALS(0)"]
-            s3 [label="PERIPHERALS(1)"]
-            s4 [label="Presystemic metabolite"]
-            s5 [label="PERIPHERALS(0)"]
-            s6 [label="PERIPHERALS(1)"]
-
-            base -> s1
-            s1 -> s2
-            s1 -> s3
-            base -> s4
-            s4 -> s5
-            s4 -> s6
-    }
-
 .. note::
-    Peripheral compartments are added using the see :ref:`exhaustive stepwise search algorithm<algorithms_modelsearch>`.
+    Drug metabolite models created outside of pharmpy currently require the metabolite
+    compartment to be named 'METABOLITE' in order to function properly.
 
-Regarding DVID, DVID=1 is connected to the parent drug while DVID=2 is representing the metabolite.
 
 .. _drug metabolite search space:
 
@@ -144,6 +116,44 @@ But with an iv administration instead, the default search space becomes:
     METABOLITE(BASIC);PERIPHERALS(0..1,MET)
 
 .. _results:
+
+~~~~~~~~~~~~~~~~~~~~~
+Structsearch workflow
+~~~~~~~~~~~~~~~~~~~~~
+
+The given input model can either be a drug metabolite model or a pk model.
+
+.. note::
+    With a drug metabolite model as input, only PERIPHERALS are supported in the search space.
+
+The graph below shows how the drug metabolite models are built, with each of the two types 
+of basic and pre-systemic, with and without added peripherals. If the given input model is a
+drug metabolite model, this will be used as the base model. If not, the base model is chosen
+as the candidate models with the fewest amount of peripheral compartments as possible, with
+"BASIC" being chosen over "PSC".
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"]
+            base [label="Base model"]
+            s1 [label="Base metabolite";shape = rect;]
+            s2 [label="PERIPHERALS(0)"]
+            s3 [label="PERIPHERALS(1)"]
+            s4 [label="Presystemic metabolite"]
+            s5 [label="PERIPHERALS(0)"]
+            s6 [label="PERIPHERALS(1)"]
+
+            base -> s1
+            s1 -> s2
+            s1 -> s3
+            base -> s4
+            s4 -> s5
+            s4 -> s6
+    }
+
+.. note::
+    Peripheral compartments are added using the :ref:`exhaustive stepwise search algorithm<algorithms_modelsearch>`.
 
 ~~~~~~~
 Results
