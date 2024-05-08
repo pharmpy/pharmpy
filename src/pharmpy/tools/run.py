@@ -29,7 +29,7 @@ from pharmpy.modeling import (
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import get_model_features
-from pharmpy.tools.mfl.parse import parse
+from pharmpy.tools.mfl.parse import ModelFeatures, parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
 from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
@@ -1258,26 +1258,29 @@ def load_example_modelfit_results(name: str):
 
 def calculate_bic_penalty(
     candidate_model: Model,
-    search_space: Union[str, List[str]],
+    search_space: Union[str, List[str], ModelFeatures],
     base_model: Optional[None] = None,
     E_p: Optional[float] = 1.0,
     E_q: Optional[float] = 1.0,
     keep: Optional[list[str]] = None,
 ):
-    if isinstance(search_space, str):
+    if isinstance(search_space, str) or isinstance(search_space, ModelFeatures):
         if base_model:
             raise ValueError('Cannot provide both `search_space` as MFL as well as `base_model`')
 
         cand_features = get_model_features(candidate_model)
 
-        search_space_mfl = parse(search_space, mfl_class=True)
+        if isinstance(search_space, str):
+            search_space_mfl = parse(search_space, mfl_class=True)
+        else:
+            search_space_mfl = search_space
         cand_mfl = parse(cand_features, mfl_class=True)
 
         p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
 
         q = 0
         k_q = 0
-    else:
+    if isinstance(search_space, list):
         allowed_options = ['iiv_diag', 'iiv_block']
         for search_space_type in search_space:
             if search_space_type not in allowed_options:
