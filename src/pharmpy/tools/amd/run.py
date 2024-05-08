@@ -702,6 +702,7 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, ctx) -
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
+            rank_type='bic',
             results=modelfit_results,
             path=subctx.path,
         )
@@ -742,6 +743,7 @@ def _subfunc_structsearch_tmdd(
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
+            rank_type='bic',
             results=modelfit_results,
             path=subctx1.path,
         )
@@ -845,6 +847,7 @@ def _subfunc_iiv(iiv_strategy, strictness, ctx, dir_name) -> SubFunc:
             model=model,
             results=modelfit_results,
             strictness=strictness,
+            rank_type='bic',
             keep=keep,
             path=subctx.path,
         )
@@ -1113,6 +1116,7 @@ def _subfunc_iov(amd_start_model, occasion, strictness, ctx) -> SubFunc:
             results=modelfit_results,
             column=occasion,
             strictness=strictness,
+            rank_type='bic',
             path=subctx.path,
         )
         assert isinstance(res, Results)
