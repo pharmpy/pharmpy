@@ -25,9 +25,9 @@ from pharmpy.tools.common import (
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
-from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, _remove_sublist
+from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -120,7 +120,15 @@ def create_workflow(
 
 
 def create_step_workflow(
-    input_model_entry, base_model_entry, wf_algorithm, iiv_strategy, rank_type, cutoff, strictness
+    input_model_entry,
+    base_model_entry,
+    wf_algorithm,
+    iiv_strategy,
+    rank_type,
+    cutoff,
+    strictness,
+    list_of_algorithms,
+    keep,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
@@ -143,7 +151,8 @@ def create_step_workflow(
         strictness,
         input_model_entry,
         base_model_entry.model.name,
-        wf_algorithm.name,
+        list_of_algorithms,
+        keep,
     )
 
     post_process_tasks = [base_model_task] + wb.output_tasks
@@ -229,6 +238,7 @@ def start(
                 strictness=strictness,
                 index_offset=no_of_models,
                 input_model_entry=input_model_entry,
+                list_of_algorithms=list_of_algorithms,
                 keep=keep,
             )
         else:
@@ -242,6 +252,8 @@ def start(
             rank_type,
             cutoff,
             strictness,
+            list_of_algorithms,
+            keep,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
@@ -361,7 +373,8 @@ def post_process(
     strictness,
     input_model_entry,
     base_model_name,
-    algorithm_name,
+    list_of_algorithms,
+    keep,
     *model_entries,
 ):
     res_model_entries = []
@@ -398,20 +411,19 @@ def post_process(
             base_model, modelfit_results=base_model_entry.modelfit_results
         )
 
-    # Uses other values than default for MBIC calculations
-    if rank_type == "mbic" and algorithm_name == "bu_stepwise_no_of_etas":
-        # Find all ETAs in model
-        iivs = base_model_entry.model.random_variables.iiv
-        iiv_names = iivs.names  # All ETAs in the base model
-        # Remove fixed etas
-        fixed_etas = _get_fixed_etas(base_model_entry.model)
-        iiv_names = _remove_sublist(iiv_names, fixed_etas)
-
-        number_of_predicted = len(iiv_names)
-        number_of_expected = number_of_predicted / 2
+    if rank_type == "mbic":
+        base = base_model_entry.model
+        search_space = []
+        if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
+            search_space.append('iiv_diag')
+        if any('block' in algorithm for algorithm in list_of_algorithms):
+            search_space.append('iiv_block')
+        penalties = [
+            calculate_bic_penalty(me.model, search_space, base_model=base, keep=keep)
+            for me in model_entries
+        ]
     else:
-        number_of_predicted = None
-        number_of_expected = None
+        penalties = None
 
     res = create_results(
         IIVSearchResults,
@@ -422,8 +434,7 @@ def post_process(
         cutoff,
         bic_type='iiv',
         strictness=strictness,
-        n_predicted=number_of_predicted,
-        n_expected=number_of_expected,
+        penalties=penalties,
     )
 
     summary_tool = res.summary_tool

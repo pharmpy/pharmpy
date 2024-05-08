@@ -15,7 +15,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.tools.run import is_strictness_fulfilled
+from pharmpy.tools.run import calculate_bic_penalty, is_strictness_fulfilled
 from pharmpy.workflows import (
     ModelEntry,
     ModelfitResults,
@@ -58,6 +58,7 @@ def bu_stepwise_no_of_etas(
     strictness,
     index_offset=0,
     input_model_entry=None,
+    list_of_algorithms=None,
     keep=None,
 ):
     wb = WorkflowBuilder(name='bu_stepwise_no_of_etas')
@@ -68,6 +69,7 @@ def bu_stepwise_no_of_etas(
         index_offset,
         strictness,
         input_model_entry,
+        list_of_algorithms,
         keep,
     )
     wb.add_task(stepwise_task)
@@ -75,7 +77,14 @@ def bu_stepwise_no_of_etas(
 
 
 def stepwise_BU_algorithm(
-    context, base_model, index_offset, strictness, input_model_entry, keep, base_model_entry
+    context,
+    base_model,
+    index_offset,
+    strictness,
+    input_model_entry,
+    list_of_algorithms,
+    keep,
+    base_model_entry,
 ):
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -138,8 +147,12 @@ def stepwise_BU_algorithm(
     # Assert to be sorted in correct order
     step_dict = dict(sorted(step_dict.items()))
 
-    number_of_predicted = len(iiv_names)
-    number_of_expected = number_of_predicted / 2
+    search_space = []
+    if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
+        search_space.append('iiv_diag')
+    if any('block' in algorithm for algorithm in list_of_algorithms):
+        search_space.append('iiv_block')
+
     previous_index = index_offset
     previous_removed = to_be_removed
     all_modelentries = [best_model_entry]
@@ -176,18 +189,12 @@ def stepwise_BU_algorithm(
                     me.model,
                     me.modelfit_results.ofv,
                     type='iiv',
-                    multiple_testing=True,
-                    mult_test_p=number_of_predicted,
-                    mult_test_e=number_of_expected,
-                )
+                ) + calculate_bic_penalty(me.model, search_space, base_model=base_model, keep=keep)
                 bic_best = calculate_bic(
                     best_model_entry.model,
                     best_model_entry.modelfit_results.ofv,
                     type='iiv',
-                    multiple_testing=True,
-                    mult_test_p=number_of_predicted,
-                    mult_test_e=number_of_expected,
-                )
+                ) + calculate_bic_penalty(me.model, search_space, base_model=base_model, keep=keep)
                 if bic_best > bic_me:
                     best_model_entry = me
                     previous_removed = effect_dict[me.model.name]
