@@ -13,6 +13,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     add_iiv,
+    add_iov,
     add_lag_time,
     add_peripheral_compartment,
     add_pk_iiv,
@@ -21,6 +22,7 @@ from pharmpy.modeling import (
     load_example_model,
     read_model,
     remove_iiv,
+    remove_iov,
     set_lower_bounds,
     set_seq_zo_fo_absorption,
     set_zero_order_absorption,
@@ -32,6 +34,7 @@ from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_tool,
     calculate_bic_penalty,
     get_penalty_parameters_mfl,
+    get_penalty_parameters_rvs,
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
@@ -623,7 +626,14 @@ def test_strictness_parameters(testdata):
                 partial(remove_iiv, to_remove=['ETA_MDT']),
                 partial(split_joint_distribution, rvs=['ETA_MAT']),
             ],
-            [17.34, 10.18],
+            [15.15, 7.98],
+        ),
+        (
+            [partial(add_iov, occ='FA1')],
+            ['iiv_diag', 'iov'],
+            {'base_model': None},
+            [partial(remove_iov, to_remove='ETA_MAT'), partial(remove_iiv, to_remove='ETA_CL')],
+            [17.92, 14.33],
         ),
     ],
 )
@@ -643,6 +653,7 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
 @pytest.mark.parametrize(
     ('search_space', 'candidate_features', 'p_expected', 'k_p_expected'),
     [
+        ('ABSORPTION([FO,ZO])', 'ABSORPTION(FO)', 1, 1),
         ('ABSORPTION([FO,ZO])', 'ABSORPTION(ZO)', 1, 1),
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 1),
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(ZO)', 2, 1),
@@ -722,3 +733,142 @@ def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected
     search_space_mfl = parse(search_space, mfl_class=True)
     cand_mfl = parse(candidate_features, mfl_class=True)
     assert get_penalty_parameters_mfl(search_space_mfl, cand_mfl) == (p_expected, k_p_expected)
+
+
+@pytest.mark.parametrize(
+    (
+        'base_funcs',
+        'kwargs',
+        'candidate_funcs',
+        'p_expected',
+        'k_p_expected',
+        'q_expected',
+        'k_q_expected',
+    ),
+    [
+        ([], {'search_space': ['iiv_diag']}, [], 3, 3, 0, 0),
+        (
+            [],
+            {'search_space': ['iiv_diag']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            2,
+            0,
+            0,
+        ),
+        (
+            [split_joint_distribution],
+            {'search_space': ['iiv_diag']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            2,
+            0,
+            0,
+        ),
+        ([], {'search_space': ['iiv_diag'], 'keep': ['CL']}, [], 2, 2, 0, 0),
+        ([create_joint_distribution], {'search_space': ['iiv_block']}, [], 0, 0, 3, 3),
+        (
+            [create_joint_distribution],
+            {'search_space': ['iiv_block']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            0,
+            0,
+            3,
+            1,
+        ),
+        ([create_joint_distribution], {'search_space': ['iiv_diag', 'iiv_block']}, [], 3, 3, 3, 3),
+        (
+            [create_joint_distribution],
+            {'search_space': ['iiv_diag', 'iiv_block']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            2,
+            3,
+            1,
+        ),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            {'search_space': ['iiv_diag', 'iiv_block']},
+            [
+                partial(remove_iiv, to_remove=['ETA_VP1']),
+                partial(remove_iiv, to_remove=['ETA_QP1']),
+            ],
+            5,
+            3,
+            10,
+            3,
+        ),
+        (
+            [add_lag_time, add_pk_iiv, create_joint_distribution],
+            {'search_space': ['iiv_diag', 'iiv_block'], 'keep': ['ETA_CL']},
+            [
+                partial(remove_iiv, to_remove=['ETA_MDT']),
+                partial(split_joint_distribution, rvs=['ETA_MAT']),
+            ],
+            3,
+            2,
+            6,
+            1,
+        ),
+        ([], {'search_space': ['iiv_diag']}, [], 3, 3, 0, 0),
+        ([partial(add_iov, occ='FA1')], {'search_space': ['iov']}, [], 3, 3, 0, 0),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iov']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            3,
+            0,
+            0,
+        ),
+        ([partial(add_iov, occ='FA1')], {'search_space': ['iiv_diag', 'iov']}, [], 6, 6, 0, 0),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iiv_diag', 'iov']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            6,
+            5,
+            0,
+            0,
+        ),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iiv_diag', 'iov']},
+            [
+                partial(remove_iov, to_remove='ETA_MAT'),
+            ],
+            6,
+            5,
+            0,
+            0,
+        ),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iiv_diag', 'iov']},
+            [partial(remove_iov, to_remove='ETA_MAT'), partial(remove_iiv, to_remove='ETA_CL')],
+            6,
+            4,
+            0,
+            0,
+        ),
+    ],
+)
+def test_get_penalty_parameters_rvs(
+    testdata,
+    base_funcs,
+    kwargs,
+    candidate_funcs,
+    p_expected,
+    k_p_expected,
+    q_expected,
+    k_q_expected,
+):
+    base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    for func in base_funcs:
+        base_model = func(base_model)
+    candidate = base_model
+    for func in candidate_funcs:
+        candidate = func(candidate)
+
+    p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate, **kwargs)
+    assert (p, k_p, q, k_q) == (p_expected, k_p_expected, q_expected, k_q_expected)

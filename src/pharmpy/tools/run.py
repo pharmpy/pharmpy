@@ -1259,7 +1259,7 @@ def load_example_modelfit_results(name: str):
 def calculate_bic_penalty(
     candidate_model: Model,
     search_space: Union[str, List[str], ModelFeatures],
-    base_model: Optional[None] = None,
+    base_model: Optional[Model] = None,
     E_p: Optional[float] = 1.0,
     E_q: Optional[float] = 1.0,
     keep: Optional[list[str]] = None,
@@ -1281,31 +1281,22 @@ def calculate_bic_penalty(
         q = 0
         k_q = 0
     if isinstance(search_space, list):
-        allowed_options = ['iiv_diag', 'iiv_block']
+        allowed_options = ['iiv_diag', 'iiv_block', 'iov']
         for search_space_type in search_space:
             if search_space_type not in allowed_options:
                 raise ValueError(
                     f'Unknown `search_space`: {search_space_type} (must be one of {allowed_options})'
                 )
+        if 'iiv_block' in search_space and 'iov' in search_space:
+            raise ValueError(
+                'Incorrect `search_space`: `iiv_block` and `iov` cannot be tested in same search space'
+            )
+        if not base_model:
+            raise ValueError(
+                'Missing `base_model`: reference model is needed to determine search space'
+            )
 
-        base_rvs = base_model.random_variables.iiv
-        base_var_params = base_rvs.variance_parameters
-
-        p = len(base_var_params)
-        q = (p * (p - 1)) / 2 if p else 1
-
-        cand_rvs = candidate_model.random_variables.iiv
-        cand_var_params = cand_rvs.variance_parameters
-        cand_cov_params = set(cand_rvs.parameter_names).difference(cand_var_params)
-
-        k_p, k_q = 0, 0
-        if 'iiv_diag' in search_space:
-            k_p = len(cand_var_params)
-        if 'iiv_block' in search_space:
-            k_q = len(cand_cov_params)
-
-    if keep:
-        p -= len(keep)
+        p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate_model, search_space, keep)
 
     # To avoid domain error
     p = p if k_p != 0 else 1
@@ -1363,3 +1354,31 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
         k_p += k_p_attr
 
     return p, k_p
+
+
+def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
+    base_rvs = base_model.random_variables
+    cand_rvs = cand_model.random_variables
+
+    base_var_params, cand_var_params = [], []
+    if any(s.startswith('iiv') for s in search_space):
+        base_var_params.extend(base_rvs.iiv.variance_parameters)
+        cand_var_params.extend(cand_rvs.iiv.variance_parameters)
+    if 'iov' in search_space:
+        base_var_params.extend(base_rvs.iov.variance_parameters)
+        cand_var_params.extend(cand_rvs.iov.variance_parameters)
+
+    p, k_p, q, k_q = 0, 0, 0, 0
+    if 'iiv_diag' in search_space or 'iov' in search_space:
+        p = len(base_var_params)
+        k_p = len(cand_var_params)
+    if 'iiv_block' in search_space:
+        q = int(len(base_var_params) * (len(base_var_params) - 1) / 2)
+        params = set(cand_rvs.iiv.parameter_names).difference(cand_var_params)
+        cand_cov_params = cand_model.parameters[list(params)].nonfixed
+        k_q = len(cand_cov_params)
+    if keep:
+        p -= len(keep)
+        k_p -= len(keep)
+
+    return p, k_p, q, k_q
