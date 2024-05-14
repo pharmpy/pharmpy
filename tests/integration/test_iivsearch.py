@@ -88,6 +88,9 @@ def test_block_structure_dummy(tmp_path, model_count, start_modelres):
         no_of_candidate_models = 4
         assert len(res.summary_tool) == no_of_candidate_models + 1
         assert len(res.summary_models) == no_of_candidate_models + 1
+        rundir = tmp_path / 'iivsearch1'
+        assert (rundir / 'models' / 'iivsearch_run1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'iivsearch_run1' / 'model.lst').exists()
 
 
 @pytest.mark.parametrize(

@@ -3,7 +3,7 @@ from typing import Any
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 
-ALLOWED_ESTTOOLS = ('dummy', 'nonmem', 'nlmixr')
+ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
 
 
 def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mapping[str, Any]]:

@@ -80,7 +80,7 @@ def fit(
         else (False, model_or_models)
     )
 
-    modelfit_results = run_tool('modelfit', models, tool=esttool, path=path, context=context)
+    modelfit_results = run_tool('modelfit', models, esttool=esttool, path=path, context=context)
 
     return modelfit_results if single else list(modelfit_results)
 

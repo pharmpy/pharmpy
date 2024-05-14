@@ -199,7 +199,9 @@ def test_exhaustive_exhaustive_dummy(tmp_path, model_count, start_modelres):
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == 3
+        assert model_count(rundir) == 5
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
+        assert (rundir / 'models' / 'modelsearch_run1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'modelsearch_run1' / 'model.lst').exists()

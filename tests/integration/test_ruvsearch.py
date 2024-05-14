@@ -107,3 +107,7 @@ def test_ruvsearch_dummy(tmp_path, testdata):
             skip=[],
             esttool='dummy',
         )
+        rundir = tmp_path / 'ruvsearch1'
+        assert (rundir / 'models' / 'base_1' / 'model.ctl').exists()
+        assert (rundir / 'models' / 'base_1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'base_1' / 'model.lst').exists()
