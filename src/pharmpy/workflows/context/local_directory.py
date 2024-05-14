@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os.path
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, Optional
@@ -153,10 +154,12 @@ class LocalDirectoryContext(Context):
             return json.load(f, cls=MetadataJSONDecoder)
 
     def store_key(self, name: str, key: ModelHash):
-        # FIXME: check if exists
         from_path = self._models_path / name
         if not from_path.exists():
-            create_directory_symlink(self._models_path / name, self.model_database.path / str(key))
+            absolute_to_path = self.model_database.path / str(key)
+            if absolute_to_path.exists():
+                relative_to_path = Path(os.path.relpath(absolute_to_path, from_path.parent))
+                create_directory_symlink(from_path, relative_to_path)
 
     def retrieve_key(self, name: str) -> ModelHash:
         symlink_path = self._models_path / name
