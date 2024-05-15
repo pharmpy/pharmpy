@@ -558,6 +558,8 @@ def _choose_param_inits(effect, model, covariate, index=None):
             init = init_default
     elif effect == 'pow':
         init = init_default
+    elif effect == "cat2":
+        init = 1.01
     else:
         init = init_default
 
