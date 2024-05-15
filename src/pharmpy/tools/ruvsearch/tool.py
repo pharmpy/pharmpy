@@ -41,7 +41,6 @@ from pharmpy.tools.common import (
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
-from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.results import ModelfitResults
 
 from .results import RUVSearchResults, calculate_results
@@ -240,8 +239,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
 
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
 
-    # Create links to input model and final model
-    context.store_key("input", ModelHash(input_model_entry.model))
+    context.store_input_model_entry(input_model_entry)
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),

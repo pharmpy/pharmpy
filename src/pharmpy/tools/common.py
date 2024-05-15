@@ -16,7 +16,6 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.run import rank_models, summarize_errors_from_entries
 from pharmpy.workflows import ModelEntry, ModelfitResults, Results
-from pharmpy.workflows.hashing import ModelHash
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
 
@@ -147,8 +146,8 @@ def create_results(
             break
 
     # Create links to input model and final model
-    context.store_key("input", ModelHash(input_model_entry.model))
-    context.store_key("final", ModelHash(best_model))
+    context.store_input_model_entry(input_model_entry)
+    context.store_final_model_entry(best_model)
 
     plots = create_plots(best_model, final_results)
 

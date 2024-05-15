@@ -31,7 +31,6 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
-from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.filter import COVSEARCH_STATEMENT_TYPES
@@ -758,7 +757,7 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
         summary_models=_summarize_models(modelentries, steps),
     )
 
-    context.store_key("final", ModelHash(best_modelentry.model))
+    context.store_final_model_entry(best_modelentry)
 
     return res
 
