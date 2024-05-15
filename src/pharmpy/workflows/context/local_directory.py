@@ -158,11 +158,10 @@ class LocalDirectoryContext(Context):
         if not from_path.exists():
             absolute_to_path = self.model_database.path / str(key)
             if absolute_to_path.exists():
-                relative_to_path = Path(
-                    os.path.relpath(
-                        absolute_to_path, from_path.parent if os.name != 'nt' else from_path
-                    )
-                )
+                if os.name != 'nt':
+                    relative_to_path = Path(os.path.relpath(absolute_to_path, from_path.parent))
+                else:
+                    relative_to_path = absolute_to_path
                 create_directory_symlink(from_path, relative_to_path)
 
     def retrieve_key(self, name: str) -> ModelHash:
