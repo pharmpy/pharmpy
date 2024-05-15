@@ -130,6 +130,7 @@ def test_amd_basic(tmp_path, testdata, strategy, subrundir):
 #         assert len(res.summary_individuals_count) >= 1
 
 
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_amd_dollar_design(tmp_path, testdata):
     if os.name == 'nt':
         pytest.skip("TODO Fails on GHA but not locally, temporarily skipping.")
