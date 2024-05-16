@@ -7,8 +7,13 @@ from pharmpy.model import DataInfo
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
-from pharmpy.tools.linearize.tool import create_linearized_model
+from pharmpy.tools.linearize.tool import (
+    _create_linearized_model,
+    _create_linearized_model_statements,
+    create_derivative_model,
+)
 from pharmpy.tools.psn_helpers import create_results
+from pharmpy.workflows import ModelEntry
 
 
 def test_ofv(load_model_for_test, testdata):
@@ -112,26 +117,75 @@ def test_create_results(testdata):
     assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
 
 
-def test_create_linearized_model(load_model_for_test, testdata):
-    path = testdata / 'nonmem' / 'pheno_real.mod'
-    model = load_model_for_test(path)
-    datainfo = DataInfo.create(
-        ['D_ETA1', 'OETA', 'OPRED', 'D_EPS1', 'D_EPSETA1_1', 'OETA1', 'D_EPSETA1_2', 'OETA2']
+def test_derivative_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    modelentry = create_derivative_model(ModelEntry.create(model=model))
+    assert len(modelentry.model.execution_steps[0].derivatives) == 5
+    assert (
+        modelentry.model.code
+        == '''$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA pheno.dta IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+CL=THETA(1)*EXP(ETA(1))
+V=THETA(2)*EXP(ETA(2))
+S1=V
+
+$ERROR
+Y=F+F*EPS(1)
+D_EPSETA_1_1 = 0
+D_EPSETA_1_2 = 0
+
+"LAST
+"  D_EPSETA_1_1=HH(1, 2)
+"  D_EPSETA_1_2=HH(1, 3)
+$THETA (0,0.00469307) ; TVCL
+$THETA (0,1.00916) ; TVV
+$OMEGA 0.0309626  ; IVCL
+$OMEGA 0.031128  ; IVV
+$SIGMA 0.013241
+
+$TABLE ID TIME DV G011 G021 H011 CIPREDI FILE=mytab NOAPPEND NOPRINT
+$ESTIMATION METHOD=COND INTER MAXEVAL=1\n'''
     )
-    model = model.replace(datainfo=datainfo)
-    linbase = create_linearized_model(model)
-    assert len(linbase.statements) == 8
+
+
+def test_create_linearized_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+    derivative_model = load_model_for_test(
+        testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
+    )
+    modelres = read_modelfit_results(
+        testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
+    )
+
+    derivative_modelentry = ModelEntry.create(model=derivative_model, modelfit_results=modelres)
+
+    linearized_model = _create_linearized_model(
+        "linbase", "Linearized model", model, derivative_modelentry
+    )
+    assert len(linearized_model.model.statements) == 9
 
 
 def test_delinearize_model(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno_real.mod'
     model = load_model_for_test(path)
     datainfo = DataInfo.create(
-        ['D_ETA1', 'OETA', 'OPRED', 'D_EPS1', 'D_EPSETA1_1', 'OETA1', 'D_EPSETA1_2', 'OETA2']
+        [
+            'D_ETA_1',
+            'D_ETA_2',
+            'D_EPS_1',
+            'D_EPSETA_1_1',
+            'D_EPSETA_1_2',
+            'OETA_1',
+            'OETA_2',
+            'OPRED',
+        ]
     )
-    # FIXME : Use complete linearization procedure once in place
-    temp_model = model.replace(datainfo=datainfo)
-    linbase = create_linearized_model(temp_model)
+    linbase = model.replace(datainfo=datainfo)
+    linbase = _create_linearized_model_statements(linbase, model)
 
     delinearized_model = delinearize_model(linbase, model)
     assert model == delinearized_model
