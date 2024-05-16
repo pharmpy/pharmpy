@@ -269,8 +269,8 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE CIPREDI IRES NOAPPEND
-       NOPRINT ONEHEADER FILE=sdtab1\n"""
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
+ CIPREDI IRES NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
     model = remove_predictions(model, 'all')
     model = remove_residuals(model, 'all')
@@ -308,8 +308,8 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR TAD NPDE NOAPPEND
-       NOPRINT ONEHEADER FILE=sdtab1\n"""
+$TABLE ID TIME DV AMT WGT APGR TAD NPDE
+ NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
     model = add_residuals(model, res=['CWRES'])
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -344,8 +344,8 @@ $OMEGA DIAGONAL(2)
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
-$TABLE ID TIME DV AMT WGT APGR TAD NPDE CWRES NOAPPEND
-       NOPRINT ONEHEADER FILE=sdtab1\n"""
+$TABLE ID TIME DV AMT WGT APGR TAD NPDE
+ CWRES NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
     model = remove_residuals(model, ['CWRES'])
     assert model.execution_steps[-1].residuals == ()
@@ -424,6 +424,49 @@ def test_add_remove_derivative(testdata, load_model_for_test):
     model = add_derivative(model)
     assert len(model.execution_steps[0].derivatives) == 5
 
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA 'pheno.dta' IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S1=V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+D_EPSETA_1_1 = 0
+D_EPSETA_1_2 = 0
+
+"LAST
+"  D_EPSETA_1_1=HH(1, 2)
+"  D_EPSETA_1_2=HH(1, 3)
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=COND INTER
+$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
+ G011 G021 H011 D_EPSETA_1_1 D_EPSETA_1_2 NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
+    )
+
     model = remove_derivative(model)
     assert len(model.execution_steps[0].derivatives) == 0
     model = remove_derivative(model)
@@ -443,4 +486,40 @@ def test_add_remove_derivative(testdata, load_model_for_test):
     model = remove_derivative(model, (("ETA_1", "EPS_1"), "EPS_1"))
     assert len(model.execution_steps[0].derivatives) == 0
 
-    # TODO : Check model code once update machinery for derivatives is in place
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA 'pheno.dta' IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL=THETA(1)*WGT
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL=TVCL*EXP(ETA(1))
+V=TVV*EXP(ETA(2))
+S1=V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=COND INTER
+$COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
+ NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
+    )
