@@ -181,3 +181,27 @@ def test_summary_individuals(tmp_path, testdata):
                 axis=1,
             )
         )
+
+
+def test_exhaustive_exhaustive_dummy(tmp_path, model_count, start_modelres):
+    with chdir(tmp_path):
+        res = run_modelsearch(
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive',
+            results=start_modelres[1],
+            model=start_modelres[0],
+            esttool='dummy',
+        )
+
+        assert len(res.summary_tool) == 4
+        assert len(res.summary_models) == 4
+        assert len(res.models) == 4
+
+        rundir = tmp_path / 'modelsearch1'
+        assert rundir.is_dir()
+        assert model_count(rundir) == 5
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
+        assert (rundir / 'models' / 'modelsearch_run1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'modelsearch_run1' / 'model.lst').exists()

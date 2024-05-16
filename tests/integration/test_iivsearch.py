@@ -75,6 +75,24 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         assert (rundir / 'metadata.json').exists()
 
 
+def test_block_structure_dummy(tmp_path, model_count, start_modelres):
+    with chdir(tmp_path):
+        res = run_iivsearch(
+            'skip',
+            results=start_modelres[1],
+            model=start_modelres[0],
+            correlation_algorithm="top_down_exhaustive",
+            esttool='dummy',
+        )
+
+        no_of_candidate_models = 4
+        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 1
+        rundir = tmp_path / 'iivsearch1'
+        assert (rundir / 'models' / 'iivsearch_run1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'iivsearch_run1' / 'model.lst').exists()
+
+
 @pytest.mark.parametrize(
     ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
     (('top_down_exhaustive', 'skip', 7),),  # ('bottom_up_stepwise', 'skip', 4)

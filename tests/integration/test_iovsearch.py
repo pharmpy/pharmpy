@@ -46,3 +46,16 @@ def test_default_mox1(tmp_path, model_count, testdata):
         assert model_count(rundir) == 9
 
         assert res.final_model.name == start_model.name
+
+
+def test_default_mox1_dummy(tmp_path, model_count, testdata):
+    shutil.copy2(testdata / 'nonmem' / 'models' / 'mox1.mod', tmp_path)
+    shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_log.csv', tmp_path)
+    with chdir(tmp_path):
+        start_model = Model.parse_model('mox1.mod')
+        start_res = fit(start_model)
+        res = run_iovsearch('VISI', results=start_res, model=start_model, esttool='dummy')
+        rundir = tmp_path / 'iovsearch1'
+        assert model_count(rundir) == 7
+
+        assert res.final_model.name == start_model.name
