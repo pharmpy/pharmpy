@@ -266,7 +266,7 @@ class NLMIXRModelInternals(ModelInternals):
 
 
 class Model(pharmpy.model.Model):
-    filename_extension = ('.R',)
+    filename_extension = '.R'
 
     def __init__(self, **kwargs):
         super().__init__(
