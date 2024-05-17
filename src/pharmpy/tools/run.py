@@ -38,6 +38,10 @@ from pharmpy.workflows.results import ModelfitResults, mfr
 from .external import parse_modelfit_results
 
 
+class InputValidationError(Exception):
+    pass
+
+
 def fit(
     model_or_models: Union[Model, list[Model]],
     esttool: Optional[str] = None,
@@ -204,7 +208,10 @@ def run_tool_with_name(
     ctx.store_metadata(tool_metadata)
 
     if validate_input := getattr(tool, 'validate_input', None):
-        validate_input(*args, **tool_options)
+        try:
+            validate_input(*args, **tool_options)
+        except Exception as err:
+            raise InputValidationError(str(err))
 
     wf: Workflow = create_workflow(*args, **tool_options)
     assert wf.name == name
