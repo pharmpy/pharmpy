@@ -1,5 +1,5 @@
 $PROBLEM    PHENOBARB SIMPLE MODEL
-$DATA      ../../pheno.dta IGNORE=@
+$DATA      ../../../pheno.dta IGNORE=@
 $INPUT      ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN1 TRANS2
 $PK

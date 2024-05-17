@@ -25,6 +25,7 @@ __all__ = (
     'run_estmethod',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_iivsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_iovsearch',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_linearize',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelfit',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_retries',  # pyright: ignore [reportUnsupportedDunderAll]
