@@ -12,7 +12,7 @@ def test_init(tmp_path):
     assert ctx.path == tmp_path / 'mycontext'
     assert (ctx.path / 'models').is_dir()
     assert (ctx.path / '.modeldb').is_dir()
-    assert (ctx.path / 'log').is_file()
+    assert (ctx.path / 'log.csv').is_file()
     assert (ctx.path / 'annotations').is_file()
     assert ctx.context_path == 'mycontext'
 
