@@ -20,7 +20,7 @@ from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral, all_covariate_effects
+from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
@@ -959,7 +959,7 @@ def validate_input(
         allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )
-        allowed_covariate_effects = set(all_covariate_effects)
+
         allowed_ops = set(['*', '+'])
 
         for effect in candidate_effects:
@@ -975,11 +975,10 @@ def validate_input(
                     f' search_space: got `{effect.parameter}`,'
                     f' must be in {sorted(allowed_parameters)}.'
                 )
-            if effect.fp not in allowed_covariate_effects:
+            if effect.fp == "custom":
                 raise ValueError(
                     f'Invalid `search_space` because of invalid effect function found in'
-                    f' search_space: got `{effect.fp}`,'
-                    f' must be in {sorted(allowed_covariate_effects)}.'
+                    f' search_space: `{effect.fp}` is not a supported type.'
                 )
             if effect.operation not in allowed_ops:
                 raise ValueError(

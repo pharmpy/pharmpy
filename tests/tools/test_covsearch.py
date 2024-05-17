@@ -117,7 +117,7 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(search_space='COVARIATE([CL, V], WGT, [EXP, ABC])'),
+            dict(search_space='COVARIATE([CL, V], WGT, [EXP, CUSTOM])'),
             ValueError,
             'Invalid `search_space` because of invalid effect function',
         ),
