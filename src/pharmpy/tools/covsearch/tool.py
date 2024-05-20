@@ -403,20 +403,31 @@ def task_greedy_backward_search(
             for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
         ]
 
+    # TODO : When only backwards search is supported, use get_model_features to extract removeable effects.
     optional_effects = list(map(astuple, _added_effects(state.best_candidate_so_far.steps)))
+
+    def _extract_sublist(lst, n, iterable=False):
+        if iterable:
+            return [(item[n],) for item in lst]
+        else:
+            return [item[n] for item in lst]
+
     candidate_effect_funcs = dict(
         covariate_features(
             state.best_candidate_so_far.modelentry.model,
-            ModelFeatures.create_from_mfl_string(
-                get_model_features(state.best_candidate_so_far.modelentry.model)
-            ).covariate,
+            tuple(
+                map(
+                    Covariate,
+                    _extract_sublist(optional_effects, 0, True),
+                    _extract_sublist(optional_effects, 1, True),
+                    _extract_sublist(optional_effects, 2, True),
+                    _extract_sublist(optional_effects, 3),
+                )
+            ),
             remove=True,
         )
     )
-
-    candidate_effect_funcs = {
-        k[1:-1]: v for k, v in candidate_effect_funcs.items() if (*k[1:-1],) in optional_effects
-    }
+    candidate_effect_funcs = {k[1:-1]: v for k, v in candidate_effect_funcs.items()}
 
     n_removable_effects = max(0, len(state.best_candidate_so_far.steps) - 1)
 
