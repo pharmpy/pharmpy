@@ -83,6 +83,8 @@ class LocalDirectoryContext(Context):
                 fh.write("path,time,severity,message\n")
 
     def _store_common_options(self, common_options):
+        if common_options is None:
+            common_options = {}
         if self.path == self._top_path:
             if not self._common_options_path.is_file():
                 with open(self._common_options_path, 'w') as f:
