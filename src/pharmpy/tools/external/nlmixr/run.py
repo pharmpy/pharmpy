@@ -268,12 +268,9 @@ def verification(
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_fix_eta(nonmem_res, path=path)
-    # try:
     # FIXME : use fit() instead and incorporate write_fix_eta
     nlmixr_model_entry = ModelEntry.create(nlmixr_model, modelfit_results=None)
     nlmixr_model_entry = execute_model(nlmixr_model_entry, db, path=path)
-    # except Exception:
-    #     raise Exception("nlmixr2 model could not be fitted")
 
     # Combine the two based on ID and time
     if not ignore_print:
