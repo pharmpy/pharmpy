@@ -46,7 +46,7 @@ def execute_model(model_entry, context, evaluate=False, path=None):
     parent_model = model.parent_model
     model = convert_model(model)
     model = model.replace(parent_model=parent_model)
-
+    model_entry = ModelEntry.create(model=model, parent=model_entry.parent)
     database.store_model(model)
 
     model = model.replace(internals=model.internals.replace(path=path))
