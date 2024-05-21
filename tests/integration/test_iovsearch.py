@@ -56,6 +56,6 @@ def test_default_mox1_dummy(tmp_path, model_count, testdata):
         start_res = fit(start_model)
         res = run_iovsearch('VISI', results=start_res, model=start_model, esttool='dummy')
         rundir = tmp_path / 'iovsearch1'
-        assert model_count(rundir) == 7
+        assert model_count(rundir) == 9
 
         assert res.final_model.name == start_model.name
