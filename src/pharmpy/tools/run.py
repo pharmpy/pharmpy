@@ -751,7 +751,7 @@ def rank_models(
     cutoff : float or None
         Value to use as cutoff. If using LRT, cutoff denotes p-value. Default is None
     penalties : list
-        List of penalties to add to candidate models
+        List of penalties to add to all models (including base model)
     kwargs
         Arguments to pass to calculate BIC (such as `mult_test_p` and `mult_test_p`)
 
@@ -772,7 +772,10 @@ def rank_models(
     if len(models) != len(models_res):
         raise ValueError('Different length of `models` and `models_res`')
     if penalties is not None and len(models) + 1 != len(penalties):
-        raise ValueError('Different length of `models` and `penalties`')
+        raise ValueError(
+            f'Mismatch in length of `models` and `penalties`: number of `penalties` ({len(penalties)}) '
+            f'must be one more than number of `models` ({len(models)})'
+        )
     if rank_type == 'lrt' and not parent_dict:
         parent_dict = {model.name: base_model.name for model in models}
     if parent_dict and not isinstance(list(parent_dict.keys())[0], str):
