@@ -191,6 +191,9 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         skip = []
 
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
+    # Create links to input model
+    context.store_input_model_entry(input_model_entry)
+
     # Check if model has a proportional error
     proportional_workflow = proportional_error_workflow(input_model_entry)
     model_entry = call_workflow(proportional_workflow, 'Convert_error_model', context)
@@ -239,8 +242,6 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
 
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
 
-    context.store_input_model_entry(input_model_entry)
-
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
         summary_individuals=sumind,
@@ -259,6 +260,10 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
             model_entry.model, model_entry.modelfit_results
         ),
     )
+
+    # Create links to final model
+    context.store_final_model_entry(res.final_model)
+
     return res
 
 

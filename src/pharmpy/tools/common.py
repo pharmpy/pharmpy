@@ -145,10 +145,6 @@ def create_results(
             final_results = me.modelfit_results
             break
 
-    # Create links to input model and final model
-    context.store_input_model_entry(input_model_entry)
-    context.store_final_model_entry(best_model)
-
     plots = create_plots(best_model, final_results)
 
     # FIXME: Remove best_model, input_model, models when there is function to read db

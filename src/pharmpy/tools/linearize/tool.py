@@ -64,8 +64,13 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start_linearize(model):
-    return ModelEntry.create(model=model)
+def start_linearize(context, model):
+    start_model_entry = ModelEntry.create(model=model)
+
+    # Create links to input model
+    context.store_input_model_entry(start_model_entry)
+
+    return start_model_entry
 
 
 def postprocess(context, model_name, *modelentries):
@@ -80,6 +85,9 @@ def postprocess(context, model_name, *modelentries):
     )
 
     res.to_csv(context.path / "results.csv")
+
+    # Create links to final model
+    context.store_final_model_entry(res.final_model)
 
     return res
 

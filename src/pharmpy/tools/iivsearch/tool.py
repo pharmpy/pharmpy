@@ -188,6 +188,8 @@ def start(
     strictness,
 ):
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
+    # Create links to input model
+    context.store_input_model_entry(input_model_entry)
 
     if iiv_strategy != 'no_add':
         base_model = update_initial_estimates(input_model, modelfit_results=input_res)
@@ -370,7 +372,7 @@ def start(
 
     plots = create_plots(final_final_model, final_results)
 
-    return IIVSearchResults(
+    final_results = IIVSearchResults(
         summary_tool=_concat_summaries(sum_tools, keys),
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
         summary_individuals=_concat_summaries(sum_inds, keys),
@@ -385,6 +387,11 @@ def start(
         final_model_eta_distribution_plot=plots['eta_distribution'],
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_final_model, final_results),
     )
+
+    # Create links to final model
+    context.store_final_model_entry(res.final_model)
+
+    return final_results
 
 
 def _concat_summaries(summaries, keys):
