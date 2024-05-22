@@ -1357,16 +1357,8 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
 
 
 def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
-    base_rvs = base_model.random_variables
-    cand_rvs = cand_model.random_variables
-
-    base_var_params, cand_var_params = [], []
-    if any(s.startswith('iiv') for s in search_space):
-        base_var_params.extend(base_rvs.iiv.variance_parameters)
-        cand_var_params.extend(cand_rvs.iiv.variance_parameters)
-    if 'iov' in search_space:
-        base_var_params.extend(base_rvs.iov.variance_parameters)
-        cand_var_params.extend(cand_rvs.iov.variance_parameters)
+    base_var_params = _get_var_params(base_model, search_space)
+    cand_var_params = _get_var_params(cand_model, search_space)
 
     p, k_p, q, k_q = 0, 0, 0, 0
     if 'iiv_diag' in search_space or 'iov' in search_space:
@@ -1374,7 +1366,7 @@ def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
         k_p = len(cand_var_params)
     if 'iiv_block' in search_space:
         q = int(len(base_var_params) * (len(base_var_params) - 1) / 2)
-        params = set(cand_rvs.iiv.parameter_names).difference(cand_var_params)
+        params = set(cand_model.random_variables.iiv.parameter_names).difference(cand_var_params)
         cand_cov_params = cand_model.parameters[list(params)].nonfixed
         k_q = len(cand_cov_params)
     if keep:
@@ -1382,3 +1374,13 @@ def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
         k_p -= len(keep)
 
     return p, k_p, q, k_q
+
+
+def _get_var_params(model, search_space):
+    var_params = []
+    if any(s.startswith('iiv') for s in search_space):
+        var_params.extend(model.random_variables.iiv.variance_parameters)
+    if 'iov' in search_space:
+        var_params.extend(model.random_variables.iov.variance_parameters)
+
+    return set(var_params).difference(model.parameters.fixed.names)
