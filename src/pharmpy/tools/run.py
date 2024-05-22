@@ -213,6 +213,24 @@ def run_tool_with_name(
         except Exception as err:
             raise InputValidationError(str(err))
 
+    if (
+        "model" in tool_options
+        and "results" in tool_options
+        and "esttool" in common_options
+        and common_options["esttool"] != "dummy"
+    ):
+
+        model_type = str(type(tool_options["model"])).split(".")[-3]
+        results = tool_options["results"]
+        esttool = common_options["esttool"]
+        if results:
+            if esttool != model_type:
+                if not (esttool is None and model_type == "nonmeme"):
+                    warnings.warn(
+                        f"Not recommended to run tools with different estimation tool ({esttool})"
+                        f" than that of the input model ({model_type})"
+                    )
+
     wf: Workflow = create_workflow(*args, **tool_options)
     assert wf.name == name
 
