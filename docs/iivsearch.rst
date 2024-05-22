@@ -69,6 +69,10 @@ Optional
 | ``rank_type``                                 | Which :ref:`selection criteria<ranking_iivsearch>` to rank models  | 
 |                                               | on, e.g. OFV (default is BIC)                                      |
 +-----------------------------------------------+--------------------------------------------------------------------+
+| ``linearize``                                 | Decide wether or not to linearize model before starting the search.|
+|                                               | See :ref:`linearization tool<linearize>` for more. Default value   |
+|                                               | is False.                                                          |
++-----------------------------------------------+--------------------------------------------------------------------+
 | ``cutoff``                                    | :ref:`Cutoff<ranking_iivsearch>` for the ranking function, exclude |
 |                                               | models that are below cutoff (default is none)                     |
 +-----------------------------------------------+--------------------------------------------------------------------+

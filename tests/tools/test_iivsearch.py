@@ -5,11 +5,13 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
+    find_clearance_parameters,
     fix_parameters,
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
     _create_param_dict,
+    _extract_clearance_parameter,
     _is_rv_block_structure,
     _rv_block_structures,
     create_eta_blocks,
@@ -67,6 +69,40 @@ def test_brute_force_no_of_etas(load_model_for_test, testdata, list_of_parameter
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
+
+
+def test_td_no_of_etas_linearized(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real_linbase.mod')
+    param_mapping = {"ETA_1": "CL", "ETA_2": "V"}
+    wf = td_exhaustive_no_of_etas(model, param_mapping=param_mapping)
+    fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
+
+    assert len(fit_tasks) == 3
+
+
+def test_extract_base_parameter(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    clearance_parameter = str(find_clearance_parameters(model)[0])
+    iiv_names = model.random_variables.iiv.names
+    param_mapping = None
+
+    base_parameter = _extract_clearance_parameter(
+        model, param_mapping, clearance_parameter, iiv_names
+    )
+    assert base_parameter == "ETA_1"
+
+    param_mapping = {"ETA_3": clearance_parameter}
+    base_parameter = _extract_clearance_parameter(
+        model, param_mapping, clearance_parameter, iiv_names
+    )
+    assert base_parameter == "ETA_3"
+
+    param_mapping = None
+    clearance_parameter = ""
+    base_parameter = _extract_clearance_parameter(
+        model, param_mapping, clearance_parameter, iiv_names
+    )
+    assert base_parameter == ""
 
 
 @pytest.mark.parametrize(
