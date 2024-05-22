@@ -8,7 +8,6 @@ from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import (
     calculate_bic,
     create_joint_distribution,
-    find_clearance_parameters,
     get_omegas,
     remove_iiv,
     split_joint_distribution,
@@ -27,10 +26,12 @@ from pharmpy.workflows import (
 from pharmpy.workflows.results import mfr
 
 
-def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
+def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mapping=None):
     wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
 
-    base_model = base_model.replace(description=create_description(base_model))
+    base_model = base_model.replace(
+        description=create_description(base_model, param_dict=param_mapping)
+    )
 
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names
@@ -43,8 +44,21 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None):
 
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
+        if param_mapping:
+            etas = param_mapping.keys()
+            param_names = param_mapping.values()
+        else:
+            etas = tuple()
+            param_names = tuple()
         task_candidate_entry = Task(
-            'candidate_entry', create_no_of_etas_candidate_entry, model_name, to_remove, False, None
+            'candidate_entry',
+            create_no_of_etas_candidate_entry,
+            model_name,
+            to_remove,
+            etas,
+            param_names,
+            False,
+            None,
         )
         wb.add_task(task_candidate_entry)
 
@@ -59,6 +73,8 @@ def bu_stepwise_no_of_etas(
     index_offset=0,
     input_model_entry=None,
     keep=None,
+    param_mapping=None,
+    clearance_parameter="",
 ):
     wb = WorkflowBuilder(name='bu_stepwise_no_of_etas')
     stepwise_task = Task(
@@ -67,15 +83,25 @@ def bu_stepwise_no_of_etas(
         base_model,
         index_offset,
         strictness,
+        param_mapping,
         input_model_entry,
         keep,
+        clearance_parameter,
     )
     wb.add_task(stepwise_task)
     return wb
 
 
 def stepwise_BU_algorithm(
-    context, base_model, index_offset, strictness, input_model_entry, keep, base_model_entry
+    context,
+    base_model,
+    index_offset,
+    strictness,
+    param_mapping,
+    input_model_entry,
+    keep,
+    clearance_parameter,
+    base_model_entry,
 ):
     base_model = base_model.replace(description=create_description(base_model))
 
@@ -86,13 +112,12 @@ def stepwise_BU_algorithm(
     fixed_etas = _get_fixed_etas(base_model)
     iiv_names = _remove_sublist(iiv_names, fixed_etas)
 
-    # Remove alle ETAs except for clearance (if possible)
-    cl = find_clearance_parameters(base_model)[0]  # FIXME : Handle multiple clearance?
-    cl_eta = list(_get_eta_from_parameter(base_model, [str(cl)]))[0]
-    if cl_eta in iiv_names:
-        base_parameter = cl_eta
-    else:
-        base_parameter = sorted(iiv_names)[0]  # No clearance --> fallback to alphabetical order
+    if keep and param_mapping:
+        keep = tuple(k for k, v in param_mapping.items() if v in keep)
+
+    base_parameter = _extract_clearance_parameter(
+        base_model, param_mapping, clearance_parameter, iiv_names
+    )
 
     if keep:
         parameters_to_ignore = _get_eta_from_parameter(base_model, keep)
@@ -104,11 +129,20 @@ def stepwise_BU_algorithm(
     to_be_removed = [i for i in iiv_names if i not in parameters_to_ignore]
     model_name = f'iivsearch_run{1 + index_offset}'
     index_offset += 1
+    if param_mapping:
+        etas = param_mapping.keys()
+        param_names = param_mapping.values()
+    else:
+        etas = tuple()
+        param_names = tuple()
+
     bu_base_entry = Task(
         'candidate_entry',
         create_no_of_etas_candidate_entry,
         model_name,
         to_be_removed,
+        etas,
+        param_names,
         True,
         input_model_entry,
         base_model_entry,
@@ -117,11 +151,12 @@ def stepwise_BU_algorithm(
     wf_fit = modelfit.create_fit_workflow(n=len(bu_base_model_wb.output_tasks))
     bu_base_model_wb.insert_workflow(wf_fit)
     best_model_entry = call_workflow(Workflow(bu_base_model_wb), 'fit_BU_base_model', context)
-
     # Filter IIV names to contain all combination with the base parameter in it
     iiv_names_to_add = list(non_empty_subsets(iiv_names))
-
-    iiv_names_to_add = [i for i in iiv_names_to_add if all(p in i for p in parameters_to_ignore)]
+    if parameters_to_ignore != {""}:
+        iiv_names_to_add = [
+            i for i in iiv_names_to_add if all(p in i for p in parameters_to_ignore)
+        ]
 
     # Invert the list to REMOVE ETAs from the base model instead of adding to the
     # single ETA model
@@ -129,7 +164,8 @@ def stepwise_BU_algorithm(
 
     # Remove largest step removing all ETAs but base_parameter
     max_step = max(len(element) for element in iiv_names_to_remove)
-    iiv_names_to_remove = [i for i in iiv_names_to_remove if len(i) != max_step]
+    if base_parameter:
+        iiv_names_to_remove = [i for i in iiv_names_to_remove if len(i) != max_step]
 
     # Dictionary of all possible candidates of each step
     step_dict = defaultdict(list)
@@ -155,6 +191,8 @@ def stepwise_BU_algorithm(
                     create_no_of_etas_candidate_entry,
                     model_name,
                     to_remove,
+                    etas,
+                    param_names,
                     False,
                     best_model_entry,
                     base_model_entry,
@@ -197,7 +235,7 @@ def stepwise_BU_algorithm(
     return all_modelentries
 
 
-def td_exhaustive_block_structure(base_model, index_offset=0):
+def td_exhaustive_block_structure(base_model, index_offset=0, param_mapping=None):
     wb = WorkflowBuilder(name='td_exhaustive_block_structure')
 
     base_model = base_model.replace(description=create_description(base_model))
@@ -213,8 +251,19 @@ def td_exhaustive_block_structure(base_model, index_offset=0):
             continue
 
         model_name = f'iivsearch_run{model_no}'
+        if param_mapping:
+            etas = param_mapping.keys()
+            param_names = param_mapping.values()
+        else:
+            etas = tuple()
+            param_names = tuple()
         task_candidate_entry = Task(
-            'candidate_entry', create_block_structure_candidate_entry, model_name, block_structure
+            'candidate_entry',
+            create_block_structure_candidate_entry,
+            model_name,
+            block_structure,
+            etas,
+            param_names,
         )
         wb.add_task(task_candidate_entry)
 
@@ -226,14 +275,18 @@ def td_exhaustive_block_structure(base_model, index_offset=0):
 
 
 def create_no_of_etas_candidate_entry(
-    name, to_remove, base_parent, best_model_entry, base_model_entry
+    name, to_remove, etas, param_names, base_parent, best_model_entry, base_model_entry
 ):
     if best_model_entry is None:
         best_model_entry = base_model_entry
-    candidate_model = remove_iiv(base_model_entry.model, to_remove)
-    candidate_model = update_initial_estimates(candidate_model, best_model_entry.modelfit_results)
+    param_mapping = {k: v for k, v in zip(etas, param_names)}
+    candidate_model = update_initial_estimates(
+        base_model_entry.model, best_model_entry.modelfit_results
+    )
+    candidate_model = remove_iiv(candidate_model, to_remove)
+    candidate_model = candidate_model.replace(name=name)
     candidate_model = candidate_model.replace(
-        name=name, description=create_description(candidate_model)
+        description=create_description(candidate_model, param_dict=param_mapping)
     )
 
     if base_parent:
@@ -244,16 +297,30 @@ def create_no_of_etas_candidate_entry(
     return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=parent)
 
 
-def create_block_structure_candidate_entry(name, block_structure, model_entry):
+def create_block_structure_candidate_entry(name, block_structure, etas, param_names, model_entry):
+    param_mapping = {k: v for k, v in zip(etas, param_names)}
     candidate_model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
     candidate_model = create_eta_blocks(
         block_structure, candidate_model, model_entry.modelfit_results
     )
     candidate_model = candidate_model.replace(
-        name=name, description=create_description(candidate_model)
+        name=name, description=create_description(candidate_model, param_mapping)
     )
 
     return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
+
+
+def _extract_clearance_parameter(model, param_mapping, clearance_parameter, iiv_names):
+    if param_mapping:  # Linearized model
+        cl_eta_list = list(k for k in param_mapping if param_mapping[k] == clearance_parameter)
+    else:
+        cl_eta_list = list(_get_eta_from_parameter(model, [clearance_parameter]))
+    if cl_eta_list and cl_eta_list[0] in iiv_names:
+        base_parameter = cl_eta_list[0]
+    else:
+        base_parameter = ""  # Start with no ETAs at all
+
+    return base_parameter
 
 
 def _rv_block_structures(etas: RandomVariables):
@@ -290,13 +357,14 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
     return param_dict
 
 
-def create_description(model: Model, iov: bool = False) -> str:
+def create_description(model: Model, iov: bool = False, param_dict: Dict[str, str] = {}) -> str:
     if iov:
         dists = model.random_variables.iov
     else:
         dists = model.random_variables.iiv
 
-    param_dict = _create_param_dict(model, dists)
+    if not param_dict:
+        param_dict = _create_param_dict(model, dists)
     if len(param_dict) == 0:
         return '[]'
 
@@ -331,8 +399,14 @@ def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res:
 
 def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
     # returns list of eta names from parameter names
+    # ETA names in parameters are allowed and will be returned as is
     iiv_set = set()
     iiv_names = model.random_variables.iiv.names
+
+    for p in parameters:
+        if p in iiv_names:
+            iiv_set.add(p)
+
     for iiv_name in iiv_names:
         param = get_rv_parameters(model, iiv_name)
         if set(param).issubset(parameters) and len(param) > 0:
