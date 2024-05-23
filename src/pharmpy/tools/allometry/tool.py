@@ -90,12 +90,19 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start(modelfit_results, model_or_model_entry):
+def start(context, modelfit_results, model_or_model_entry):
     if isinstance(model_or_model_entry, ModelEntry):
-        return model_or_model_entry
-    log = modelfit_results.log if modelfit_results else None
-    model_entry = ModelEntry(model_or_model_entry, modelfit_results=modelfit_results, log=log)
-    return model_entry
+        log = model_or_model_entry.log
+        mfr = model_or_model_entry.modelfit_results
+        model = model_or_model_entry.model
+    else:
+        log = modelfit_results.log if modelfit_results else None
+        mfr = modelfit_results
+        model = model_or_model_entry
+    input_model = model.replace(name="input", description="")
+    me = ModelEntry(input_model, modelfit_results=mfr, log=log)
+    context.store_input_model_entry(me)
+    return me
 
 
 def _add_allometry_on_model(
@@ -164,15 +171,14 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, E
 
 
 def results(context, start_model_entry, allometry_model_entry):
-    # Create links to input model
-    context.store_input_model_entry(start_model_entry)
-
     start_model = start_model_entry.model
     allometry_model = allometry_model_entry.model
     allometry_res = allometry_model_entry.modelfit_results
 
     allometry_model_failed = allometry_res is None
     best_model = start_model if allometry_model_failed else allometry_model
+    best_model = best_model.replace(name="final")
+    context.store_final_model_entry(best_model)
 
     summod = summarize_modelfit_results_from_entries([start_model_entry, allometry_model_entry])
     summod['step'] = [0, 1]
@@ -189,9 +195,6 @@ def results(context, start_model_entry, allometry_model_entry):
         final_model=best_model,
         final_results=allometry_res,
     )
-
-    # Create links to final model
-    context.store_final_model_entry(res.final_model)
 
     return res
 
