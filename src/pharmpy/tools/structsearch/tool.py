@@ -116,6 +116,9 @@ def create_workflow(
 
 
 def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
+    # Create links to input model
+    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+
     model = update_initial_estimates(model, results)
     model_entry = ModelEntry.create(model, modelfit_results=results)
 
@@ -173,7 +176,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         qss_run_entries + run_model_entries
     )
 
-    return create_results(
+    res = create_results(
         StructSearchResults,
         model_entry,
         best_qss_entry,
@@ -185,10 +188,18 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         context=context,
     )
 
+    # Create links to final model
+    context.store_final_model_entry(res.final_model)
+
+    return res
+
 
 def run_pkpd(
     context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
 ):
+    # Create links to input model
+    context.store_input_model_entry(ModelEntry.create(model=input_model, modelfit_results=results))
+
     model_entry = ModelEntry.create(input_model, modelfit_results=results)
     baseline_pd_model = create_baseline_pd_model(input_model, results.parameter_estimates, b_init)
     baseline_pd_model_entry = ModelEntry.create(baseline_pd_model, modelfit_results=None)
@@ -222,7 +233,7 @@ def run_pkpd(
     summary_input = summarize_modelfit_results_from_entries([model_entry])
     summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
 
-    return create_results(
+    res = create_results(
         StructSearchResults,
         model_entry,
         pd_baseline_fit[0],
@@ -234,8 +245,16 @@ def run_pkpd(
         context=context,
     )
 
+    # Create links to final model
+    context.store_final_model_entry(res.final_model)
+
+    return res
+
 
 def run_drug_metabolite(context, model, search_space, results, strictness):
+    # Create links to input model
+    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+
     model = update_initial_estimates(model, results)
     wb, candidate_model_tasks, base_model_description = create_drug_metabolite_models(
         model, results, search_space
@@ -253,6 +272,9 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
 
     wb.add_task(task_results, predecessors=candidate_model_tasks)
     results = call_workflow(Workflow(wb), "results_remaining", context)
+
+    # Create links to final model
+    context.store_final_model_entry(results.final_model)
 
     return results
 

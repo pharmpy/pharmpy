@@ -95,6 +95,9 @@ def start(
     model,
     strictness,
 ):
+    # Create links to input model
+    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+
     wb = WorkflowBuilder()
 
     start_task = Task('start_modelsearch', _start, model, results)
@@ -155,6 +158,9 @@ def start(
             wb.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
     res = call_workflow(wb, 'run_candidate_models', context)
+
+    # Create links to input model and final model
+    context.store_final_model_entry(res.final_model)
 
     return res
 

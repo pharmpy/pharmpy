@@ -163,7 +163,10 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, E
             )
 
 
-def results(start_model_entry, allometry_model_entry):
+def results(context, start_model_entry, allometry_model_entry):
+    # Create links to input model
+    context.store_input_model_entry(start_model_entry)
+
     start_model = start_model_entry.model
     allometry_model = allometry_model_entry.model
     allometry_res = allometry_model_entry.modelfit_results
@@ -178,7 +181,7 @@ def results(start_model_entry, allometry_model_entry):
     sumcount = summarize_individuals_count_table(df=suminds)
     sumerrs = summarize_errors_from_entries([start_model_entry, allometry_model_entry])
 
-    return AllometryResults(
+    res = AllometryResults(
         summary_models=summods,
         summary_individuals=suminds,
         summary_individuals_count=sumcount,
@@ -186,6 +189,11 @@ def results(start_model_entry, allometry_model_entry):
         final_model=best_model,
         final_results=allometry_res,
     )
+
+    # Create links to final model
+    context.store_final_model_entry(res.final_model)
+
+    return res
 
 
 @dataclass(frozen=True)

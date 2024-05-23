@@ -132,6 +132,9 @@ def task_brute_force_search(
     distribution: str,
     input_model_entry: ModelEntry,
 ):
+    # Create links to input model
+    context.store_input_model_entry(input_model_entry)
+
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     # NOTE: Default is to try all IIV ETAs.
     if list_of_parameters is None:
@@ -333,6 +336,9 @@ def task_results(context, rank_type, cutoff, bic_type, strictness, step_mapping_
 
     # NOTE: This overwrites the default summary_tool field
     res = replace(res, summary_tool=pd.concat(sum_tool, keys=keys, names=['step']))
+
+    # Create links to final model
+    context.store_final_model_entry(res.final_model)
 
     return res
 

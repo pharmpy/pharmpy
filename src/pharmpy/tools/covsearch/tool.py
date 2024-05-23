@@ -179,7 +179,9 @@ def create_workflow(
     wb = WorkflowBuilder(name=NAME_WF)
 
     # FIXME : Handle when model is None
-    start_task = Task("create_modelentry", _start, model, results, max_eval)
+    store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
+    start_task = Task("create_modelentry", _start, model, results)
+    wb.add_task(start_task, predecessors=store_task)
     init_task = Task("init", _init_search_state, search_space)
     wb.add_task(init_task, predecessors=start_task)
 
@@ -222,7 +224,14 @@ def create_workflow(
     return Workflow(wb)
 
 
+def _store_input_model(context, model, results, max_eval):
+    # Create links to input model
+    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+    return max_eval
+
+
 def _start(model, results, max_eval):
+
     if max_eval:
         max_eval_number = round(3.1 * results.function_evaluations_iterations.loc[1])
         # Change last instead of first?
@@ -766,6 +775,7 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
         summary_models=_summarize_models(modelentries, steps),
     )
 
+    # Create links to final model
     context.store_final_model_entry(best_modelentry)
 
     return res
