@@ -23,11 +23,12 @@ def create_workflow(
     search_space: Union[str, ModelFeatures],
     algorithm: Literal[tuple(algorithms.ALGORITHMS)],
     iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
-    rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
+    rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    E: Optional[float] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
@@ -50,6 +51,8 @@ def create_workflow(
         Pharmpy model
     strictness : str or None
         Strictness criteria
+    E : float
+        Expected number of predictors (used for mBIC). Must be set when using mBIC
 
     Returns
     -------
@@ -77,6 +80,7 @@ def create_workflow(
         results,
         model,
         strictness,
+        E,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -94,6 +98,7 @@ def start(
     results,
     model,
     strictness,
+    E,
 ):
     wb = WorkflowBuilder()
 
@@ -129,6 +134,7 @@ def start(
         rank_type,
         cutoff,
         strictness,
+        E,
     )
 
     # Filter the mfl_statements from base model attributes
@@ -249,7 +255,7 @@ def create_base_model(ss, model_or_model_entry):
     return ModelEntry.create(base, modelfit_results=None, parent=None)
 
 
-def post_process(mfl, rank_type, cutoff, strictness, *model_entries):
+def post_process(mfl, rank_type, cutoff, strictness, E, *model_entries):
     res_model_entries = []
     input_model_entry = None
     base_model_entry = None
@@ -282,7 +288,8 @@ def post_process(mfl, rank_type, cutoff, strictness, *model_entries):
 
     if rank_type == 'mbic':
         penalties = [
-            calculate_bic_penalty(me.model, mfl) for me in [base_model_entry] + res_model_entries
+            calculate_bic_penalty(me.model, mfl, E_p=E)
+            for me in [base_model_entry] + res_model_entries
         ]
     else:
         penalties = None
@@ -310,6 +317,7 @@ def validate_input(
     rank_type,
     model,
     strictness,
+    E,
 ):
     if isinstance(search_space, str):
         try:
@@ -334,6 +342,11 @@ def validate_input(
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )
+    if rank_type == 'mbic':
+        if E is None:
+            raise ValueError('E-value must be provided when using mbic')
+        if E <= 0:
+            raise ValueError(f'E-value must be more than 0: got `{E}`')
 
 
 @dataclass(frozen=True)
