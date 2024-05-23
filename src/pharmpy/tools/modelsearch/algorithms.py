@@ -189,7 +189,7 @@ def _get_previous_features(wf, task, mfl_funcs):
 
 def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, model_entry):
     input_model, input_res = model_entry.model, model_entry.modelfit_results
-    model = _update_name_and_description(model_name, combo, input_model)
+    model = _update_name_and_description(model_name, combo, model_entry)
     model = update_initial_estimates(model, input_res)
     for feat, func in zip(combo, funcs):
         model = func(model)
@@ -200,7 +200,7 @@ def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, model_en
 
 def create_candidate_stepwise(model_name, feat, func, iiv_strategy, model_entry):
     input_model, input_res = model_entry.model, model_entry.modelfit_results
-    model = _update_name_and_description(model_name, (feat,), input_model)
+    model = _update_name_and_description(model_name, (feat,), model_entry)
     model = update_initial_estimates(model, input_res)
     model = _apply_transformation(feat, func, model)
     if iiv_strategy != 'no_add':
@@ -284,9 +284,10 @@ def _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs):
     return n_index > 0 and n_all[n_index - 1] < n
 
 
-def _update_name_and_description(name, features, model):
+def _update_name_and_description(name, features, me):
+    model = me.model
     features_str = ';'.join(map(key_to_str, features))
-    if not model.description or model.parent_model == model.name:
+    if not model.description or (me.parent is not None and me.parent.name == model.name):
         description = features_str
     else:
         description = f'{model.description};{features_str}'

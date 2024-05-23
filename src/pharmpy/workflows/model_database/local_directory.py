@@ -64,15 +64,14 @@ def create_model_entry(model, modelfit_results):
     # FIXME: This function is to avoid duplication of this logic, this can be removed once
     #  parent_model has been moved from Model and log has been moved from modelfit_results
     #  and each database implementation has methods for retrieving these
+    # Currently no parent information can be retrieved
     if not isinstance(modelfit_results, ModelfitResults):
         modelfit_results = None
         log = None
     else:
         log = modelfit_results.log
 
-    parent_model = model.parent_model
-
-    return ModelEntry(model=model, modelfit_results=modelfit_results, parent=parent_model, log=log)
+    return ModelEntry(model=model, modelfit_results=modelfit_results, log=log)
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):

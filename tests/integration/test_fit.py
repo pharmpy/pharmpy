@@ -154,7 +154,6 @@ def test_execute_model_nonmem(tmp_path, testdata):
         model_entry = ModelEntry.create(
             model=model,
             modelfit_results=None,
-            parent=model.parent_model,
             log=None,
         )
 

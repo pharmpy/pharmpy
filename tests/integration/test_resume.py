@@ -133,17 +133,6 @@ def test_run_tool_modelsearch_resume_flag(
                 assert len(res.summary_models) == no_of_models + 1
                 assert len(res.models) == no_of_models + 1
 
-                assert res.models[1].parent_model == 'mox2'
-                assert res.models[-1].parent_model == last_model_parent_name
-                if last_model_parent_name != 'mox2':
-                    last_model_features = res.summary_tool.loc[res.models[-1].name]['description']
-                    parent_model_features = res.summary_tool.loc[last_model_parent_name][
-                        'description'
-                    ]
-                    assert (
-                        last_model_features[: len(parent_model_features)] == parent_model_features
-                    )
-
                 rundir = tmp_path / path
                 assert rundir.is_dir()
                 assert len(list((rundir / 'models').iterdir())) == no_of_models + 2

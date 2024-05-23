@@ -43,9 +43,7 @@ def execute_model(model_entry, context, evaluate=False, path=None):
         path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
 
     database = context.model_database
-    parent_model = model.parent_model
     model = convert_model(model)
-    model = model.replace(parent_model=parent_model)
     model_entry = ModelEntry.create(model=model, parent=model_entry.parent)
     database.store_model(model)
 

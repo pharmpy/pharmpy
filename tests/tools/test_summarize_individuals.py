@@ -5,12 +5,10 @@ import pytest
 
 from pharmpy.deps import pandas as pd
 from pharmpy.modeling import read_model
-from pharmpy.tools import (
-    read_modelfit_results,
-    summarize_individuals,
-    summarize_individuals_count_table,
-)
+from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.funcs.summarize_individuals import dofv
+from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import ModelfitResults
 
 
@@ -49,13 +47,14 @@ tflite_condition = (
 def test_tflite_not_installed(pheno_path, monkeypatch):
     model = read_model(pheno_path)
     results = read_modelfit_results(pheno_path)
+    me = ModelEntry(model=model, modelfit_results=results)
 
-    df = summarize_individuals([model], [results])
+    df = summarize_individuals([me])
     assert not df['predicted_dofv'].isnull().any().any()
 
     with pytest.warns(UserWarning, match='tflite is not installed'):
         monkeypatch.setitem(sys.modules, 'tflite_runtime', None)
-        df = summarize_individuals([model], [results])
+        df = summarize_individuals([me])
         assert df['predicted_dofv'].isnull().all().all()
 
 

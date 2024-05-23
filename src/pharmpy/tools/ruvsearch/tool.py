@@ -31,13 +31,13 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
-from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.common import (
     create_plots,
     summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
+from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
@@ -226,10 +226,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     if delta_ofv < cutoff:
         model_entry = input_model_entry
 
-    selected_models = [model_entry.model for model_entry in selected_model_entries]
-    model_results = [model_entry.modelfit_results for model_entry in selected_model_entries]
-
-    sumind = summarize_individuals(selected_models, model_results)
+    sumind = summarize_individuals(selected_model_entries)
     sumcount = summarize_individuals_count_table(df=sumind)
     sum_models = summarize_modelfit_results_from_entries(selected_model_entries)
     sum_models['step'] = list(range(len(sum_models)))

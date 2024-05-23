@@ -100,20 +100,10 @@ def create_results(
         delta_name = f'd{rank_type}'
 
     base_model = base_model_entry.model
-    # FIXME: Temporary until parent_model attribute has been removed, e.g. summarize_individuals fails otherwise
-    base_model = base_model.replace(parent_model=base_model.name)
-    base_res = base_model_entry.modelfit_results
-
-    # FIXME: Temporary until parent_model attribute has been removed, e.g. summarize_individuals fails otherwise
-    cand_models = [
-        model_entry.model.replace(parent_model=model_entry.parent.name)
-        for model_entry in cand_model_entries
-    ]
-    cand_res = [model_entry.modelfit_results for model_entry in cand_model_entries]
+    cand_models = [model_entry.model for model_entry in cand_model_entries]
 
     summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model] + cand_models,
-        [base_res] + cand_res,
+        [base_model_entry] + cand_model_entries,
         summary_tool['description'],
         summary_tool[delta_name],
     )
@@ -246,12 +236,11 @@ def summarize_tool(
 
 
 def summarize_tool_individuals(
-    models: Sequence[Model],
-    models_res: Sequence[ModelfitResults],
+    mes: Sequence[ModelEntry],
     description_col: pd.Series,
     rank_type_col: pd.Series,
 ):
-    summary_individuals = summarize_individuals(models, models_res)
+    summary_individuals = summarize_individuals(mes)
     summary_individuals = summary_individuals.join(description_col, how='inner')
     col_to_move = summary_individuals.pop('description')
     summary_individuals.insert(0, 'description', col_to_move)

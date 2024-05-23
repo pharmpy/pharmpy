@@ -23,9 +23,7 @@ def execute_model(model_entry, context):
     model = model_entry.model
 
     database = context.model_database
-    parent_model = model.parent_model
     model = convert_model(model)
-    model = model.replace(parent_model=parent_model)
     path = Path.cwd() / f'NONMEM_run_{model.name}-{uuid.uuid1()}'
 
     # NOTE: This deduplicates the dataset before running NONMEM, so we know which

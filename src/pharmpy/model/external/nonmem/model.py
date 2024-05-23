@@ -396,7 +396,6 @@ def parse_model(
         dependent_variables=dependent_variables,
         observation_transformation=obs_trans,
         execution_steps=execution_steps,
-        parent_model=None,
         initial_individual_estimates=init_etas,
         value_type=value_type,
         description=description,

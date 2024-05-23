@@ -245,7 +245,7 @@ def _init_search_state(context, search_space: str, modelentry: ModelEntry) -> Se
 
 
 def filter_search_space_and_model(search_space, model):
-    filtered_model = model.replace(name="filtered_input_model", parent_model="filtered_input_model")
+    filtered_model = model.replace(name="filtered_input_model")
     if isinstance(search_space, str):
         search_space = ModelFeatures.create_from_mfl_string(search_space)
     ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
@@ -722,9 +722,7 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     model = candidate.modelentry.model
     name = f'covsearch_run{effect_index}'
     description = _create_description(effect[0], candidate.steps, forward=False)
-    model_with_removed_effect = model.replace(
-        name=name, description=description, parent_model=model.name
-    )
+    model_with_removed_effect = model.replace(name=name, description=description)
 
     func = effect[1]
     model_with_removed_effect = func(model_with_removed_effect)

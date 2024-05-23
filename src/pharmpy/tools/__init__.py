@@ -34,8 +34,6 @@ __all__ = (
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_simulation',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_errors',  # pyright: ignore [reportUnsupportedDunderAll]
-    'summarize_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
-    'summarize_individuals_count_table',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'write_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'get_model_features',
@@ -68,8 +66,6 @@ _not_wrapped = {
         'predict_outliers',
         'predict_influential_individuals',
         'predict_influential_outliers',
-        'summarize_individuals',
-        'summarize_individuals_count_table',
     ),
 }
 
