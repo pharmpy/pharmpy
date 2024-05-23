@@ -63,8 +63,6 @@ class Transits(ModelFeature):
     def __len__(self):
         self_eval = self.eval
         transit_len = len(self_eval.counts) * len(self_eval.depot)
-        if 0 in self.eval.counts and len(self_eval.depot) > 1:
-            transit_len -= 1
         return transit_len
 
     @property

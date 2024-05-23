@@ -34,6 +34,7 @@ from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
 from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
+from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
@@ -1328,28 +1329,31 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
             if feat_combo in [node.name for node in attr_search_space.modes]:
                 p_attr = 2
             else:
-                p_attr = 1
+                p_attr = 0
             abs_type = attr.modes[0].name
             if abs_type == feat_combo:
-                k_p_attr = 2
-            else:
                 k_p_attr = 1
+            else:
+                k_p_attr = 0
         elif isinstance(attr, LagTime):
             p_attr = 1
             k_p_attr = 1 if attr.modes[0].name == 'ON' else 0
         elif isinstance(attr, tuple):
             assert len(attr) == 1 and len(attr_search_space) == 1
             attr, attr_search_space = attr[0], attr_search_space[0]
-            p_attr = len(attr_search_space) - 1
             if isinstance(attr, Peripherals):
+                p_attr = len(attr_search_space) - 1
                 k_p_attr = attr.counts[0]
             elif isinstance(attr, Transits):
-                if attr.counts[0] == 0:
-                    k_p_attr = 0
-                elif attr.depot[0].name == 'DEPOT':
+                p_attr = len([n for n in attr_search_space.counts if n > 0])
+                if 'DEPOT' in [node.name for node in attr_search_space.eval.depot]:
+                    p_attr += 1
+                if isinstance(attr_search_space.depot, Wildcard):
+                    p_attr += 1
+                if attr.depot[0].name == 'DEPOT' and attr.counts[0] > 0:
                     k_p_attr = 1
                 else:
-                    k_p_attr = 2
+                    k_p_attr = 0
         else:
             raise ValueError(f'MFL attribute of type `{type(attr)}` not supported.')
 
