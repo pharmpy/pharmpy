@@ -17,7 +17,7 @@ def test_summarize_individuals_count_table():
         {
             'model': ['start_model'] * 3 + ['candidate1'] * 3 + ['candidate2'] * 3,
             'ID': [1, 2, 3, 1, 2, 3, 1, 2, 3],
-            'parent_model': ['start_model'] * 6 + ['candidate1'] * 3,
+            'parent_model': [None] * 3 + ['start_model'] * 3 + ['candidate1'] * 3,
             'outlier_count': [0, 0, 0, 1, 0, 2, 0, 0, 1],
             'ofv': [-1, -2, -3, -4, -5, -6, -7, -8, -9],
             'dofv_vs_parent': [0.0, 0.0, 0.0, 1.0, 2.0, 3.0, 4.0, 5.0, 6.0],
