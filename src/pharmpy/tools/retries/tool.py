@@ -113,12 +113,13 @@ def create_workflow(
 
 
 def _start(context, results, model):
-    start_model_entry = ModelEntry.create(model=model, modelfit_results=results)
+    input_model = model.replace(name="input", description="")
+    input_model_entry = ModelEntry.create(model=input_model, modelfit_results=results)
 
     # Create links to input model
-    context.store_input_model_entry(start_model_entry)
+    context.store_input_model_entry(input_model_entry)
 
-    return start_model_entry
+    return input_model_entry
 
 
 def create_random_init_model(
@@ -243,8 +244,9 @@ def task_results(context, strictness, retries):
         summary_tool=_modify_summary_tool(res.summary_tool, retry_runs),
     )
 
+    final_model = res.final_model.replace(name="final")
     # Create links to final model
-    context.store_final_model_entry(res.final_model)
+    context.store_final_model_entry(final_model)
 
     return res
 
