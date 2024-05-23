@@ -1279,6 +1279,14 @@ def calculate_bic_penalty(
         else:
             search_space_mfl = search_space
         cand_mfl = parse(cand_features, mfl_class=True)
+        # FIXME: Workaround to skip covariate effects detected in search space
+        cand_mfl = ModelFeatures.create(
+            absorption=cand_mfl.absorption,
+            elimination=cand_mfl.elimination,
+            transits=cand_mfl.transits,
+            peripherals=cand_mfl.peripherals,
+            lagtime=cand_mfl.lagtime,
+        )
 
         p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
 
@@ -1339,6 +1347,7 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
             p_attr = 1
             k_p_attr = 1 if attr.modes[0].name == 'ON' else 0
         elif isinstance(attr, tuple):
+            print(attr, attr_search_space)
             assert len(attr) == 1 and len(attr_search_space) == 1
             attr, attr_search_space = attr[0], attr_search_space[0]
             if isinstance(attr, Peripherals):
