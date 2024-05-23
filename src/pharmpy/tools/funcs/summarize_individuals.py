@@ -49,22 +49,6 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
     pd.DataFrame | None
         The summary as a dataframe
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import fit, summarize_individuals
-    >>> fit_results = fit(model)  # doctest: +SKIP
-    <Pharmpy model object pheno>
-    >>> from pharmpy.tools import run_tool # doctest: +SKIP
-    >>> results = run_tool(
-    ...     'modelsearch',
-    ...     model=model,
-    ...     mfl='ABSORPTION(ZO);PERIPHERALS([1, 2])',
-    ...     algorithm='reduced_stepwise'
-    ... ) # doctest: +SKIP
-    >>> summarize_individuals([results.start_model, *results.models]) # doctest: +SKIP
-
     """  # noqa: E501
     models = [me.model for me in mes]
     models_res = [me.modelfit_results for me in mes]
