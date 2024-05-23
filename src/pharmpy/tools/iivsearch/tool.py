@@ -187,20 +187,23 @@ def start(
     keep,
     strictness,
 ):
+    input_model = input_model.replace(
+        name="input", description=algorithms.create_description(input_model)
+    )
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
-    # Create links to input model
     context.store_input_model_entry(input_model_entry)
 
     if iiv_strategy != 'no_add':
         base_model = update_initial_estimates(input_model, modelfit_results=input_res)
         base_model = _add_iiv(iiv_strategy, base_model, modelfit_results=input_res)
         base_model = base_model.replace(
-            name='base_model', description=algorithms.create_description(base_model)
+            name='base', description=algorithms.create_description(base_model)
         )
-        # FIXME: Set parent model once create_results fully supports model entries
+        # FIXME: Set parent model once create_results can do different things for different tools
         base_model_entry = ModelEntry.create(base_model, modelfit_results=None)
     else:
-        base_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
+        base_model = input_model.replace(name='base')
+        base_model_entry = ModelEntry.create(base_model, modelfit_results=input_res)
 
     algorithm_sub = {
         "top_down_exhaustive": "td_exhaustive_no_of_etas",
@@ -372,6 +375,9 @@ def start(
 
     plots = create_plots(final_final_model, final_results)
 
+    final_final_model = final_final_model.replace(name="final")
+    context.store_final_model_entry(final_final_model)
+
     final_results = IIVSearchResults(
         summary_tool=_concat_summaries(sum_tools, keys),
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
@@ -387,9 +393,6 @@ def start(
         final_model_eta_distribution_plot=plots['eta_distribution'],
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_final_model, final_results),
     )
-
-    # Create links to final model
-    context.store_final_model_entry(res.final_model)
 
     return final_results
 

@@ -27,11 +27,11 @@ def test_no_of_etas_keep(
             correlation_algorithm="skip",
         )
         no_of_models = no_of_candidate_models
-        assert len(res_keep1.summary_models) == no_of_models // 2
+        assert len(res_keep1.summary_models) == no_of_models // 2 + 1
         if algorithm == "top_down_exhaustive":
             assert res_keep1.summary_individuals.iloc[-1]['description'] == '[CL]'
         elif algorithm == "bottom_up_stepwise":
-            assert res_keep1.summary_models.iloc[1]['description'] == '[VC]'
+            assert res_keep1.summary_models.iloc[2]['description'] == '[VC]'
 
 
 def test_block_structure(tmp_path, model_count, start_modelres):
@@ -45,7 +45,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
 
         no_of_candidate_models = 4
         assert len(res.summary_tool) == no_of_candidate_models + 1
-        assert len(res.summary_models) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 2
 
         ctx = LocalDirectoryContext("iivsearch1")
         names = ctx.list_all_names()
@@ -57,7 +57,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         start_model = start_modelres[0]
         assert all(model.random_variables != start_model.random_variables for model in res_models)
 
-        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
+        assert res.summary_tool.loc[1, 'base']['description'] == '[CL]+[VC]+[MAT]'
         assert isinstance(start_model.random_variables['ETA_1'], NormalDistribution)
 
         assert res.summary_tool.loc[1, 'iivsearch_run1']['description'] == '[CL,VC,MAT]'
@@ -87,7 +87,7 @@ def test_block_structure_dummy(tmp_path, model_count, start_modelres):
 
         no_of_candidate_models = 4
         assert len(res.summary_tool) == no_of_candidate_models + 1
-        assert len(res.summary_models) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 2
         rundir = tmp_path / 'iivsearch1'
         assert (rundir / 'models' / 'iivsearch_run1' / 'model_results.json').exists()
         assert not (rundir / 'models' / 'iivsearch_run1' / 'model.lst').exists()
@@ -113,7 +113,7 @@ def test_no_of_etas_base(
         )
 
         assert len(res.summary_tool) == no_of_candidate_models + 1
-        assert len(res.summary_models) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 2
 
         ctx = LocalDirectoryContext('iivsearch1')
         names = ctx.list_all_names()
@@ -122,7 +122,7 @@ def test_no_of_etas_base(
         ]
         assert len(res_models) == no_of_candidate_models
 
-        assert res.summary_tool.loc[1, 'mox2']['description'] == '[CL]+[VC]+[MAT]'
+        assert res.summary_tool.loc[1, 'base']['description'] == '[CL]+[VC]+[MAT]'
         assert start_modelres[0].random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
 
         if algorithm == 'top_down_exhaustive':
@@ -153,7 +153,7 @@ def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_can
         res = run_iivsearch(algorithm, keep=[], results=start_modelres[1], model=start_modelres[0])
 
         assert len(res.summary_tool) == no_of_candidate_models + 2
-        assert len(res.summary_models) == no_of_candidate_models + 1
+        assert len(res.summary_models) == no_of_candidate_models + 2
 
         ctx = LocalDirectoryContext('iivsearch1')
         names = ctx.list_all_names()
@@ -246,7 +246,7 @@ def test_no_of_etas_iiv_strategies(
         assert len(res_models) == no_of_candidate_models + 1
 
         if iiv_strategy == 'fullblock':
-            base_model = [model for model in res_models if model.name == 'base_model'].pop()
+            base_model = [model for model in res_models if model.name == 'base'].pop()
             base_rvs = base_model.random_variables.iiv
             assert len(base_rvs['ETA_1']) == base_rvs.nrvs
 
