@@ -2,11 +2,11 @@ from collections import defaultdict
 from typing import Dict, List, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
+from pharmpy.deps import numpy as np
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import (
-    calculate_bic,
     create_joint_distribution,
     find_clearance_parameters,
     get_omegas,
@@ -15,7 +15,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.tools.run import calculate_bic_penalty, is_strictness_fulfilled
+from pharmpy.tools.run import calculate_bic_penalty, get_rankval
 from pharmpy.workflows import (
     ModelEntry,
     ModelfitResults,
@@ -59,6 +59,7 @@ def bu_stepwise_no_of_etas(
     index_offset=0,
     input_model_entry=None,
     list_of_algorithms=None,
+    rank_type=None,
     keep=None,
 ):
     wb = WorkflowBuilder(name='bu_stepwise_no_of_etas')
@@ -70,6 +71,7 @@ def bu_stepwise_no_of_etas(
         strictness,
         input_model_entry,
         list_of_algorithms,
+        rank_type,
         keep,
     )
     wb.add_task(stepwise_task)
@@ -83,6 +85,7 @@ def stepwise_BU_algorithm(
     strictness,
     input_model_entry,
     list_of_algorithms,
+    rank_type,
     keep,
     base_model_entry,
 ):
@@ -184,18 +187,29 @@ def stepwise_BU_algorithm(
         all_modelentries.extend(new_candidate_modelentries)
         old_best_name = best_model_entry.model.name
         for me in new_candidate_modelentries:
-            if is_strictness_fulfilled(me.modelfit_results, me.model, strictness):
-                bic_me = calculate_bic(
-                    me.model,
-                    me.modelfit_results.ofv,
-                    type='iiv',
-                ) + calculate_bic_penalty(me.model, search_space, base_model=base_model, keep=keep)
-                bic_best = calculate_bic(
-                    best_model_entry.model,
-                    best_model_entry.modelfit_results.ofv,
-                    type='iiv',
-                ) + calculate_bic_penalty(me.model, search_space, base_model=base_model, keep=keep)
-                if bic_best > bic_me:
+            if rank_type == 'mbic':
+                rank_name = 'bic'
+            else:
+                rank_name = rank_type
+            rankval_me = get_rankval(
+                me.model, me.modelfit_results, strictness, rank_type=rank_name, bic_type='iiv'
+            )
+            rankval_best = get_rankval(
+                best_model_entry.model,
+                best_model_entry.modelfit_results,
+                strictness,
+                rank_type=rank_name,
+                bic_type='iiv',
+            )
+            if not np.isnan(rankval_me) and not np.isnan(rankval_best):
+                if rank_type == 'mbic':
+                    rankval_me += calculate_bic_penalty(
+                        me.model, search_space, base_model=base_model, keep=keep
+                    )
+                    rankval_best += calculate_bic_penalty(
+                        best_model_entry.model, search_space, base_model=base_model, keep=keep
+                    )
+                if rankval_best > rankval_me:
                     best_model_entry = me
                     previous_removed = effect_dict[me.model.name]
         if old_best_name == best_model_entry.model.name:

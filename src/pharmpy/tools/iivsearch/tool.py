@@ -237,6 +237,7 @@ def start(
                 index_offset=no_of_models,
                 input_model_entry=input_model_entry,
                 list_of_algorithms=list_of_algorithms,
+                rank_type=rank_type,
                 keep=keep,
             )
         else:

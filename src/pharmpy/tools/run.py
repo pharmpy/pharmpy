@@ -788,7 +788,7 @@ def rank_models(
     rank_values, delta_values = {}, {}
     models_to_rank = []
 
-    ref_value = _get_rankval(base_model, base_model_res, strictness, rank_type, **kwargs)
+    ref_value = get_rankval(base_model, base_model_res, strictness, rank_type, **kwargs)
     if penalties:
         ref_value += penalties[0]
     model_dict = {model.name: (model, res) for model, res in zip(models_all, res_all)}
@@ -796,7 +796,7 @@ def rank_models(
     # Filter on strictness
     for i, (model, res) in enumerate(zip(models_all, res_all)):
         # Exclude OFV etc. if model was not successful
-        rank_value = _get_rankval(model, res, strictness, rank_type, **kwargs)
+        rank_value = get_rankval(model, res, strictness, rank_type, **kwargs)
         if np.isnan(rank_value):
             continue
         if penalties:
@@ -1028,7 +1028,7 @@ def is_strictness_fulfilled(
         return True
 
 
-def _get_rankval(model, res, strictness, rank_type, **kwargs):
+def get_rankval(model, res, strictness, rank_type, **kwargs):
     if not is_strictness_fulfilled(res, model, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
@@ -1039,7 +1039,7 @@ def _get_rankval(model, res, strictness, rank_type, **kwargs):
         bic_type = kwargs.get('bic_type')
         return calculate_bic(model, res.ofv, type=bic_type)
     else:
-        raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
+        raise ValueError(f'Unknown rank_type: got `{rank_type}`, must be ofv, lrt, aic, or bic')
 
 
 def summarize_modelfit_results(
