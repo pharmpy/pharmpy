@@ -96,6 +96,7 @@ def start(
     strictness,
 ):
     # Create links to input model
+    model = model.replace(name="input", description="")
     context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
 
     wb = WorkflowBuilder()
@@ -159,7 +160,6 @@ def start(
 
     res = call_workflow(wb, 'run_candidate_models', context)
 
-    # Create links to input model and final model
     context.store_final_model_entry(res.final_model)
 
     return res
