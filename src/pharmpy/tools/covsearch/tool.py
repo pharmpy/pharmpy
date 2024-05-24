@@ -225,8 +225,9 @@ def create_workflow(
 
 
 def _store_input_model(context, model, results, max_eval):
-    # Create links to input model
-    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+    model = model.replace(name="input", description="")
+    me = ModelEntry.create(model=model, modelfit_results=results)
+    context.store_input_model_entry(me)
     return max_eval
 
 
@@ -775,7 +776,6 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
         summary_models=_summarize_models(modelentries, steps),
     )
 
-    # Create links to final model
     context.store_final_model_entry(best_modelentry)
 
     return res
