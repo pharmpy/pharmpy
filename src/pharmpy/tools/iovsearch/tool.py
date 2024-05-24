@@ -119,6 +119,7 @@ def init(model, modelfit_results):
 
 
 def _model_entry(modelfit_results, model):
+    model = model.replace(name="input", description="")
     return ModelEntry.create(model, modelfit_results=modelfit_results)
 
 
@@ -337,8 +338,8 @@ def task_results(context, rank_type, cutoff, bic_type, strictness, step_mapping_
     # NOTE: This overwrites the default summary_tool field
     res = replace(res, summary_tool=pd.concat(sum_tool, keys=keys, names=['step']))
 
-    # Create links to final model
-    context.store_final_model_entry(res.final_model)
+    final_model = res.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
 
     return res
 

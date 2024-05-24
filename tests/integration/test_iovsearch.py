@@ -45,7 +45,7 @@ def test_default_mox1(tmp_path, model_count, testdata):
         rundir = tmp_path / 'iovsearch1'
         assert model_count(rundir) == 9
 
-        assert res.final_model.name == start_model.name
+        assert res.final_model.name == 'input'
 
 
 def test_default_mox1_dummy(tmp_path, model_count, testdata):
@@ -58,4 +58,4 @@ def test_default_mox1_dummy(tmp_path, model_count, testdata):
         rundir = tmp_path / 'iovsearch1'
         assert model_count(rundir) == 9
 
-        assert res.final_model.name == start_model.name
+        assert res.final_model.name == 'input'
