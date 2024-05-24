@@ -190,8 +190,8 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     if skip is None:
         skip = []
 
+    input_model = input_model.replace(name="input", description="")
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
-    # Create links to input model
     context.store_input_model_entry(input_model_entry)
 
     # Check if model has a proportional error
@@ -222,8 +222,6 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         else:
             skip.append(selected_model_name)
 
-    context.store_final_model_entry(model_entry)
-
     # Check that there actually occured an improvement from the initial model.
     delta_ofv = input_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
     if delta_ofv < cutoff:
@@ -238,12 +236,13 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     summary_errors = summarize_errors_from_entries(selected_model_entries)
 
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
+    final_model = model_entry.model.replace(name="final")
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
         summary_individuals=sumind,
         summary_individuals_count=sumcount,
-        final_model=model_entry.model,
+        final_model=final_model,
         final_results=model_entry.modelfit_results,
         summary_models=summf,
         summary_tool=summary_tool,
@@ -259,7 +258,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     )
 
     # Create links to final model
-    context.store_final_model_entry(res.final_model)
+    context.store_final_model_entry(final_model)
 
     return res
 
