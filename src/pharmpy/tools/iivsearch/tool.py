@@ -10,18 +10,13 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import (
-    add_pd_iiv,
-    add_pk_iiv,
-    calculate_bic,
-    create_joint_distribution,
-    has_random_effect,
-)
+from pharmpy.modeling import add_pd_iiv, add_pk_iiv, create_joint_distribution, has_random_effect
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
     create_plots,
     create_results,
+    summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
@@ -128,6 +123,7 @@ def create_step_workflow(
     cutoff,
     strictness,
     list_of_algorithms,
+    ref_model,
     keep,
 ):
     wb = WorkflowBuilder()
@@ -152,6 +148,7 @@ def create_step_workflow(
         input_model_entry,
         base_model_entry.model.name,
         list_of_algorithms,
+        ref_model,
         keep,
     )
 
@@ -184,6 +181,7 @@ def start(
         # FIXME: Set parent model once create_results fully supports model entries
         base_model_entry = ModelEntry.create(base_model, modelfit_results=None)
     else:
+        base_model = input_model
         base_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
 
     algorithm_sub = {
@@ -253,6 +251,7 @@ def start(
             cutoff,
             strictness,
             list_of_algorithms,
+            base_model,
             keep,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
@@ -296,13 +295,31 @@ def start(
     # NOTE: Compute final final model
     final_final_model = last_res.final_model
     if input_res and final_res:
-        bic_input = calculate_bic(input_model, input_res.ofv, type='iiv')
-        bic_final = calculate_bic(final_model, final_res.ofv, type='iiv')
-        if bic_final > bic_input:
+        if rank_type == 'mbic':
+            penalties = _get_penalties(
+                base_model,
+                [input_model_entry, final_model_entry],
+                keep=keep,
+                list_of_algorithms=list_of_algorithms,
+            )
+        else:
+            penalties = None
+        summary_final_step = summarize_tool(
+            [final_model_entry],
+            input_model_entry,
+            rank_type,
+            cutoff=cutoff,
+            bic_type='iiv',
+            strictness=strictness,
+            penalties=penalties,
+        )
+        sum_tools.append(summary_final_step)
+        best_model_name = summary_final_step['rank'].idxmin()
+
+        if best_model_name == input_model.name:
             warnings.warn(
                 f'Worse {rank_type} in final model {final_model.name} '
-                f'({bic_final}) than {input_model.name} ({bic_input}), selecting '
-                f'input model'
+                f'than {input_model.name}, selecting input model'
             )
             final_final_model = input_model
 
@@ -316,7 +333,9 @@ def start(
     plots = create_plots(final_final_model, final_results)
 
     return IIVSearchResults(
-        summary_tool=_concat_summaries(sum_tools, keys),
+        summary_tool=_concat_summaries(
+            sum_tools, keys + [len(keys) + 1]
+        ),  # To include step comparing input to final
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
         summary_individuals=_concat_summaries(sum_inds, keys),
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
@@ -374,6 +393,7 @@ def post_process(
     input_model_entry,
     base_model_name,
     list_of_algorithms,
+    ref_model,
     keep,
     *model_entries,
 ):
@@ -412,16 +432,7 @@ def post_process(
         )
 
     if rank_type == "mbic":
-        base = base_model_entry.model
-        search_space = []
-        if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
-            search_space.append('iiv_diag')
-        if any('block' in algorithm for algorithm in list_of_algorithms):
-            search_space.append('iiv_block')
-        penalties = [
-            calculate_bic_penalty(me.model, search_space, base_model=base, keep=keep)
-            for me in model_entries
-        ]
+        penalties = _get_penalties(ref_model, model_entries, keep, list_of_algorithms)
     else:
         penalties = None
 
@@ -442,6 +453,19 @@ def post_process(
     summary_models = summarize_modelfit_results_from_entries(model_entries)
 
     return replace(res, summary_models=summary_models)
+
+
+def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms):
+    search_space = []
+    if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
+        search_space.append('iiv_diag')
+    if any('block' in algorithm for algorithm in list_of_algorithms):
+        search_space.append('iiv_block')
+    penalties = [
+        calculate_bic_penalty(me.model, search_space, base_model=ref_model, keep=keep)
+        for me in candidate_model_entries
+    ]
+    return penalties
 
 
 @with_runtime_arguments_type_check

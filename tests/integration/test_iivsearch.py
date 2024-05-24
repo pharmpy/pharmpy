@@ -44,7 +44,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         )
 
         no_of_candidate_models = 4
-        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_tool) == no_of_candidate_models + 3
         assert len(res.summary_models) == no_of_candidate_models + 1
 
         ctx = LocalDirectoryContext("iivsearch1")
@@ -63,9 +63,11 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         assert res.summary_tool.loc[1, 'iivsearch_run1']['description'] == '[CL,VC,MAT]'
         assert len(res_models[0].random_variables['ETA_1'].names) == 3
 
-        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
-        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
-        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
+        summary_tool_sorted_by_dbic = res.summary_tool.loc[1].sort_values(
+            by=['dbic'], ascending=False
+        )
+        summary_tool_sorted_by_bic = res.summary_tool.loc[1].sort_values(by=['bic'])
+        summary_tool_sorted_by_rank = res.summary_tool.loc[1].sort_values(by=['rank'])
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
@@ -91,7 +93,7 @@ def test_no_of_etas_base(
             correlation_algorithm=correlation_algorithm,
         )
 
-        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_tool) == no_of_candidate_models + 3
         assert len(res.summary_models) == no_of_candidate_models + 1
 
         ctx = LocalDirectoryContext('iivsearch1')
@@ -105,10 +107,10 @@ def test_no_of_etas_base(
         assert start_modelres[0].random_variables.iiv.names == ['ETA_1', 'ETA_2', 'ETA_3']
 
         if algorithm == 'top_down_exhaustive':
-            assert res.summary_tool.iloc[-1]['description'] == '[]'
+            assert res.summary_tool.loc[1].iloc[-1]['description'] == '[]'
             assert res_models[0].random_variables.iiv.names == ['ETA_2', 'ETA_3']
         elif algorithm == 'bottom_up_stepwise':
-            assert res.summary_tool.iloc[-1]['description'] == '[CL]'
+            assert res.summary_tool.loc[1].iloc[-1]['description'] == '[CL]'
             assert res_models[0].random_variables.iiv.names == ['ETA_1']
 
         summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
@@ -131,7 +133,7 @@ def test_brute_force(tmp_path, model_count, start_modelres, algorithm, no_of_can
     with chdir(tmp_path):
         res = run_iivsearch(algorithm, keep=[], results=start_modelres[1], model=start_modelres[0])
 
-        assert len(res.summary_tool) == no_of_candidate_models + 2
+        assert len(res.summary_tool) == no_of_candidate_models + 4
         assert len(res.summary_models) == no_of_candidate_models + 1
 
         ctx = LocalDirectoryContext('iivsearch1')
@@ -214,7 +216,7 @@ def test_no_of_etas_iiv_strategies(
             correlation_algorithm=correlation_algorithm,
         )
 
-        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_tool) == no_of_candidate_models + 3
         assert len(res.summary_models) == no_of_candidate_models + 2
 
         ctx = LocalDirectoryContext('iivsearch1')
@@ -229,9 +231,11 @@ def test_no_of_etas_iiv_strategies(
             base_rvs = base_model.random_variables.iiv
             assert len(base_rvs['ETA_1']) == base_rvs.nrvs
 
-        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
-        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
-        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
+        summary_tool_sorted_by_dbic = res.summary_tool.loc[1].sort_values(
+            by=['dbic'], ascending=False
+        )
+        summary_tool_sorted_by_bic = res.summary_tool.loc[1].sort_values(by=['bic'])
+        summary_tool_sorted_by_rank = res.summary_tool.loc[1].sort_values(by=['rank'])
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
