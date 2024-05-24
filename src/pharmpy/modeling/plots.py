@@ -906,7 +906,7 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', 
     return chart
 
 
-def vpc_plot(
+def plot_vpc(
     model: Model,
     simulations: Union[Path, pd.DataFrame, str],
     binning: Literal["equal_width", "equal_number"] = "equal_number",
@@ -974,12 +974,12 @@ def vpc_plot(
 
     Examples
     --------
-    >>> from pharmpy.modeling import set_simulation, vpc_plot, load_example_model
+    >>> from pharmpy.modeling import set_simulation, plot_vpc, load_example_model
     >>> from pharmpy.tools import run_simulation
     >>> model = load_example_model("pheno")
     >>> sim_model = set_simulation(model, n=100)
     >>> sim_data = run_simulation(sim_model) # doctest: +SKIP
-    >>> vpc_plot(model, sim_data) # doctest: +SKIP
+    >>> plot_vpc(model, sim_data) # doctest: +SKIP
     """
     if isinstance(simulations, str) or isinstance(simulations, Path):
         simulations = pd.read_table(simulations, delimiter=r'\s+|,', engine='python')

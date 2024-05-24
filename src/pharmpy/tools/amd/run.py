@@ -22,8 +22,8 @@ from pharmpy.modeling import (
     plot_dv_vs_ipred,
     plot_dv_vs_pred,
     plot_eta_distributions,
+    plot_vpc,
     set_simulation,
-    vpc_plot,
 )
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
@@ -591,7 +591,7 @@ def run_amd(
     else:
         eta_distribution_plot = None
 
-    final_vpc_plot = vpc_plot(final_model, simulation_data, stratify_on=dvid_name)
+    final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
 
     res = AMDResults(
         final_model=final_model.name,
