@@ -382,7 +382,7 @@ def add_covariate_effect(
         Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
-    allow_nested: bool, optional
+    allow_nested : bool, optional
         Whether to allow adding a covariate effect when one already exists for
         the input parameter-covariate pair.
 

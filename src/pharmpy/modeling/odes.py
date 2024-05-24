@@ -2709,7 +2709,7 @@ def get_central_volume_and_clearance(model: Model):
 
     Parameters
     ----------
-    model: Model
+    model : Model
         Pharmpy model
 
 

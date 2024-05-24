@@ -902,7 +902,7 @@ class ArrayEvaluator:
 
 
 def is_strictness_fulfilled(
-    res: ModelfitResults,
+    results: ModelfitResults,
     model: Model,
     statement: str,
 ) -> bool:
@@ -932,7 +932,7 @@ def is_strictness_fulfilled(
     >>> is_strictness_fulfilled(res, model, "minimization_successful or rounding_errors")
     True
     """
-    if res is None or np.isnan(res.ofv):
+    if results is None or np.isnan(results.ofv):
         return False
     if statement is not None:
         statement = statement.lower()
@@ -970,22 +970,22 @@ def is_strictness_fulfilled(
                 f'Some expressions were not correct. Valid arguments are: {allowed_args}'
             )
         else:
-            minimization_successful = res.minimization_successful  # noqa
-            rounding_errors = res.termination_cause == "rounding_errors"  # noqa
-            maxevals_exceeded = res.termination_cause == "maxevals_exceeded"  # noqa
-            sigdigs = ArrayEvaluator([res.significant_digits])  # noqa
-            final_zero_gradient = 'final_zero_gradient' in res.warnings  # noqa
-            estimate_near_boundary = 'estimate_near_boundary' in res.warnings  # noqa
+            minimization_successful = results.minimization_successful  # noqa
+            rounding_errors = results.termination_cause == "rounding_errors"  # noqa
+            maxevals_exceeded = results.termination_cause == "maxevals_exceeded"  # noqa
+            sigdigs = ArrayEvaluator([results.significant_digits])  # noqa
+            final_zero_gradient = 'final_zero_gradient' in results.warnings  # noqa
+            estimate_near_boundary = 'estimate_near_boundary' in results.warnings  # noqa
             if 'condition_number' in args_in_statement:
-                if res.covariance_matrix is not None:
+                if results.covariance_matrix is not None:
                     condition_number = ArrayEvaluator(  # noqa
-                        [np.linalg.cond(res.covariance_matrix)]
+                        [np.linalg.cond(results.covariance_matrix)]
                     )
                 else:
                     raise ValueError("Could not calculate condition_number.")
             if "rse" in args_in_statement:
-                if res.relative_standard_errors is not None:
-                    rse = ArrayEvaluator(res.relative_standard_errors)  # noqa
+                if results.relative_standard_errors is not None:
+                    rse = ArrayEvaluator(results.relative_standard_errors)  # noqa
                 else:
                     raise ValueError("Could not calculate relative standard error.")
 
@@ -994,7 +994,7 @@ def is_strictness_fulfilled(
                 or 'rse_omega' in args_in_statement
                 or 'rse_sigma' in args_in_statement
             ):
-                rse = res.relative_standard_errors
+                rse = results.relative_standard_errors
                 rse_theta = ArrayEvaluator(rse[rse.index.isin(get_thetas(model).names)])  # noqa
                 rse_omega = ArrayEvaluator(rse[rse.index.isin(get_omegas(model).names)])  # noqa
                 rse_sigma = ArrayEvaluator(rse[rse.index.isin(get_sigmas(model).names)])  # noqa
@@ -1003,7 +1003,7 @@ def is_strictness_fulfilled(
                 or 'final_zero_gradient_omega' in args_in_statement
                 or 'final_zero_gradient_sigma' in args_in_statement
             ):
-                grd = res.gradients
+                grd = results.gradients
                 final_zero_gradient_theta = (  # noqa
                     grd[grd.index.isin(get_thetas(model).names)] == 0
                 ).any() or grd[grd.index.isin(get_thetas(model).names)].isnull().any()
@@ -1019,7 +1019,7 @@ def is_strictness_fulfilled(
                 or 'estimate_near_boundary_omega' in args_in_statement
                 or 'estimate_near_boundary_sigma' in args_in_statement
             ):
-                ests = res.parameter_estimates
+                ests = results.parameter_estimates
                 estimate_near_boundary = check_parameters_near_bounds(model, ests).any()  # noqa
                 estimate_near_boundary_theta = check_parameters_near_bounds(  # noqa
                     model, ests[ests.index.isin(get_thetas(model).names)]
@@ -1204,6 +1204,8 @@ def read_modelfit_results(path: Union[str, Path], esttool: str = None) -> Modelf
     ----------
     path : Path or str
         Path to model file
+    esttool : str
+        Set if other than the default estimation tool is to be used
 
     Return
     ------
