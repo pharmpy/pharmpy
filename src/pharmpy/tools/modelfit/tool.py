@@ -19,8 +19,6 @@ def create_workflow(
         A list of models are one single model object
     n : int
         Number of models to fit. This is only used if the tool is going to be combined with other tools.
-    tool : str
-        Which tool to use for fitting. Currently, 'nonmem', 'nlmixr', 'rxode' can be used.
 
     Returns
     -------
