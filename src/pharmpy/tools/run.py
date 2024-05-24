@@ -1347,7 +1347,6 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
             p_attr = 1
             k_p_attr = 1 if attr.modes[0].name == 'ON' else 0
         elif isinstance(attr, tuple):
-            print(attr, attr_search_space)
             assert len(attr) == 1 and len(attr_search_space) == 1
             attr, attr_search_space = attr[0], attr_search_space[0]
             if isinstance(attr, Peripherals):
@@ -1380,14 +1379,14 @@ def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
     if 'iiv_diag' in search_space or 'iov' in search_space:
         p = len(base_var_params)
         k_p = len(cand_var_params)
+        if keep:
+            p -= len(keep)
+            k_p -= len(keep)
     if 'iiv_block' in search_space:
         q = int(len(base_var_params) * (len(base_var_params) - 1) / 2)
         params = set(cand_model.random_variables.iiv.parameter_names).difference(cand_var_params)
         cand_cov_params = cand_model.parameters[list(params)].nonfixed
         k_q = len(cand_cov_params)
-    if keep:
-        p -= len(keep)
-        k_p -= len(keep)
 
     return p, k_p, q, k_q
 
