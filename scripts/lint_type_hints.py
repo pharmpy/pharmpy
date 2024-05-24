@@ -55,8 +55,9 @@ for name, func in funcs:
     if diff:
         raise TypeHintError(f'Not all args have type hints: {name} (args: {diff})')
 
-    if param_names:
+    all_param_names = {param.name for param in params}
+    if all_param_names:
         args = extract_parameters_from_docstring(func)
-        diff = param_names.difference(args)
+        diff = all_param_names.symmetric_difference(args)
         if diff:
             raise ValueError(f'Not all args are documented: {name} (args: {diff})')
