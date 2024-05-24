@@ -116,8 +116,7 @@ def create_workflow(
 
 
 def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
-    # Create links to input model
-    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+    model = store_input_model(context, model, results)
 
     model = update_initial_estimates(model, results)
     model_entry = ModelEntry.create(model, modelfit_results=results)
@@ -188,8 +187,8 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         context=context,
     )
 
-    # Create links to final model
-    context.store_final_model_entry(res.final_model)
+    final_model = res.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
 
     return res
 
@@ -197,8 +196,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
 def run_pkpd(
     context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
 ):
-    # Create links to input model
-    context.store_input_model_entry(ModelEntry.create(model=input_model, modelfit_results=results))
+    input_model = store_input_model(context, input_model, results)
 
     model_entry = ModelEntry.create(input_model, modelfit_results=results)
     baseline_pd_model = create_baseline_pd_model(input_model, results.parameter_estimates, b_init)
@@ -245,15 +243,15 @@ def run_pkpd(
         context=context,
     )
 
-    # Create links to final model
-    context.store_final_model_entry(res.final_model)
+    final_model = res.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
 
     return res
 
 
 def run_drug_metabolite(context, model, search_space, results, strictness):
     # Create links to input model
-    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+    model = store_input_model(context, model, results)
 
     model = update_initial_estimates(model, results)
     wb, candidate_model_tasks, base_model_description = create_drug_metabolite_models(
@@ -273,8 +271,8 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
     wb.add_task(task_results, predecessors=candidate_model_tasks)
     results = call_workflow(Workflow(wb), "results_remaining", context)
 
-    # Create links to final model
-    context.store_final_model_entry(results.final_model)
+    final_model = results.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
 
     return results
 
@@ -435,6 +433,13 @@ def validate_input(
             raise ValueError('Invalid argument "extra_model_results" for drug metabolite models.')
         if dv_types is not None:
             raise ValueError('Invalid argument "dv_types" for drug metabolite models.')
+
+
+def store_input_model(context, model, results):
+    model = model.replace(name="input", description="")
+    me = ModelEntry.create(model=model, modelfit_results=results)
+    context.store_input_model_entry(me)
+    return model
 
 
 @dataclass(frozen=True)
