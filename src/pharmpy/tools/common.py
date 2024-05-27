@@ -192,7 +192,7 @@ def summarize_tool(
         if model.name == start_model.name:
             d_params = 0
         else:
-            d_params = n_params - len(parent_model.parameters.nonfixed)
+            d_params = n_params - len(start_model.parameters.nonfixed)
         rows[model.name] = (description, n_params, d_params, parent_model.name)
 
     colnames = ['description', 'n_params', 'd_params', 'parent_model']
