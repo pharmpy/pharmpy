@@ -556,8 +556,8 @@ def add_predictions(model: Model, pred: List[str]):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.execution_steps[-1].predictions
-    ('IPRED', 'PRED')
-    >>> model = add_predictions(model, ['CIPREDI'])
+    ('CIPREDI', 'PRED')
+    >>> model = add_predictions(model, ['IPRED'])
     >>> model.execution_steps[-1].predictions
     ('CIPREDI', 'IPRED', 'PRED')
 
@@ -614,10 +614,10 @@ def add_residuals(model: Model, res: List[str]):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.execution_steps[-1].residuals
-    ('CWRES',)
-    >>> model = add_residuals(model, ['RES'])
+    ('RES', 'CWRES')
+    >>> model = add_residuals(model, ['WRES'])
     >>> model.execution_steps[-1].residuals
-    ('CWRES', 'RES')
+    ('CWRES', 'RES', 'WRES')
 
     See also
     --------

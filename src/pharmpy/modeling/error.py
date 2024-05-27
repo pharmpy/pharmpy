@@ -64,7 +64,7 @@ def remove_error_model(model: Model):
     >>> from pharmpy.modeling import remove_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y = EPS₁⋅W + F
+    Y = EPS₁⋅F + F
     >>> model = remove_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F
@@ -122,7 +122,7 @@ def set_additive_error_model(
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y = EPS₁⋅W + F
+    Y = EPS₁⋅F + F
     >>> model = set_additive_error_model(model)
     >>> model.statements.find_assignment("Y")
     Y = F + εₐ
@@ -130,7 +130,7 @@ def set_additive_error_model(
     >>> from pharmpy.modeling import set_additive_error_model, load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements.find_assignment("Y")
-    Y = EPS₁⋅W + F
+    Y = EPS₁⋅F + F
     >>> model = set_additive_error_model(model, data_trans="log(Y)")
     >>> model.statements.find_assignment("Y")
                  εₐ
@@ -228,16 +228,10 @@ def set_proportional_error_model(
         A_CENTRAL(t)
         ────────────
     F =      S₁
-    W = F
                ⎧2.225e-16  for F = 0
                ⎨
     IPREDADJ = ⎩    F      otherwise
     Y = F + IPREDADJ⋅εₚ
-    IPRED = F
-    IRES = DV - IPRED
-            IRES
-            ────
-    IWRES =  W
 
     >>> from pharmpy.modeling import *
     >>> model = remove_error_model(load_example_model("pheno"))
@@ -249,16 +243,10 @@ def set_proportional_error_model(
         A_CENTRAL(t)
         ────────────
     F =      S₁
-    W = F
                ⎧2.225e-16  for F = 0
                ⎨
-    IPREDADJ = ⎩    F       otherwise
+    IPREDADJ = ⎩    F      otherwise
     Y = εₚ + log(IPREDADJ)
-    IPRED = F
-    IRES = DV - IPRED
-            IRES
-            ────
-    IWRES =  W
 
     See Also
     --------
@@ -643,16 +631,6 @@ def use_thetas_for_error_stdev(model: Model):
     Model
         Pharmpy model object
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import load_example_model, use_thetas_for_error_stdev
-    >>> model = load_example_model("pheno")
-    >>> model = use_thetas_for_error_stdev(model)
-    >>> model.statements.find_assignment("W")
-    W = F⋅SD_EPS_1
-    >>> model.statements.find_assignment("Y")
-    Y = EPS₁⋅W + F
-
     See also
     --------
     set_weighted_error_model : Encode error model with one epsilon and weight
@@ -755,7 +733,7 @@ def has_weighted_error_model(model: Model):
     >>> from pharmpy.modeling import load_example_model, has_weighted_error_model
     >>> model = load_example_model("pheno")
     >>> has_weighted_error_model(model)
-    True
+    False
 
     See Also
     --------
@@ -895,9 +873,9 @@ def set_time_varying_error_model(
     >>> model = load_example_model("pheno")
     >>> model = set_time_varying_error_model(model, cutoff=1.0)
     >>> model.statements.find_assignment("Y")
-        ⎧EPS₁⋅W⋅time_varying + F  for TIME < 1.0
+        ⎧EPS₁⋅F⋅time_varying + F  for TIME < 1.0
         ⎨
-    Y = ⎩      EPS₁⋅W + F           otherwise
+    Y = ⎩      EPS₁⋅F + F           otherwise
 
     """
     dv = get_dv_symbol(model, dv)
@@ -1156,8 +1134,8 @@ def set_iiv_on_ruv(
     >>> model = load_example_model("pheno")
     >>> model = set_iiv_on_ruv(model)
     >>> model.statements.find_assignment("Y")
-                  ETA_RV1
-    Y = EPS₁⋅W⋅ℯ        + F
+                ETA_RV1
+    Y = EPS₁⋅F⋅ℯ        + F
 
     See also
     --------

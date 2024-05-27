@@ -314,20 +314,20 @@ def mu_reference_model(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = mu_reference_model(model)
     >>> model.statements.before_odes
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-    TVV = PTVV⋅WGT
-          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL⋅WGT
+    TVV = POP_VC⋅WGT
+          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       TVV           otherwise
+    TVV = ⎩       TVV          otherwise
     μ₁ = log(TVCL)
-          ETA₁ + μ₁
+          ETA_CL + μ₁
     CL = ℯ
     μ₂ = log(TVV)
-         ETA₂ + μ₂
-    V = ℯ
-    S₁ = V
+          ETA_VC + μ₂
+    VC = ℯ
+    V = VC
+    S₁ = VC
+
     """
     index = {Expr.symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
     etas = set(index)
@@ -379,8 +379,8 @@ def simplify_expression(model: Model, expr: Union[str, TExpr]):
     -------
     >>> from pharmpy.modeling import load_example_model, simplify_expression
     >>> model = load_example_model("pheno")
-    >>> simplify_expression(model, "Abs(PTVCL)")
-    PTVCL
+    >>> simplify_expression(model, "Abs(POP_CL)")
+    POP_CL
     """
     return _simplify_expression_from_parameters(expr, model.parameters)
 
@@ -437,31 +437,30 @@ def make_declarative(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements.before_odes
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-    TVV = PTVV⋅WGT
-          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL⋅WGT
+    TVV = POP_VC⋅WGT
+          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       TVV           otherwise
-               ETA₁
+    TVV = ⎩       TVV          otherwise
+               ETA_CL
     CL = TVCL⋅ℯ
-             ETA₂
-    V = TVV⋅ℯ
-    S₁ = V
+              ETA_VC
+    VC = TVV⋅ℯ
+    V = VC
+    S₁ = VC
     >>> model = make_declarative(model)
     >>> model.statements.before_odes
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-          ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL⋅WGT
+          ⎧POP_VC⋅WGT⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩      PTVV⋅WGT          otherwise
-               ETA₁
+    TVV = ⎩       POP_VC⋅WGT          otherwise
+               ETA_CL
     CL = TVCL⋅ℯ
-             ETA₂
-    V = TVV⋅ℯ
-    S₁ = V
+              ETA_VC
+    VC = TVV⋅ℯ
+    V = VC
+    S₁ = VC
+
     """
     assigned_symbols = set()
     duplicated_symbols = {}  # symbol to last index
@@ -529,18 +528,17 @@ def cleanup_model(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-    TVV = PTVV⋅WGT
-          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL⋅WGT
+    TVV = POP_VC⋅WGT
+          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       TVV           otherwise
-               ETA₁
+    TVV = ⎩       TVV          otherwise
+               ETA_CL
     CL = TVCL⋅ℯ
-             ETA₂
-    V = TVV⋅ℯ
-    S₁ = V
+              ETA_VC
+    VC = TVV⋅ℯ
+    V = VC
+    S₁ = VC
     Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
@@ -548,37 +546,27 @@ def cleanup_model(model: Model):
         A_CENTRAL(t)
         ────────────
     F =      S₁
-    W = F
-    Y = EPS₁⋅W + F
-    IPRED = F
-    IRES = DV - IPRED
-            IRES
-            ────
-    IWRES =  W
+    Y = EPS₁⋅F + F
     >>> model = cleanup_model(model)
     >>> model.statements
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-          ⎧PTVV⋅WGT⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL⋅WGT
+          ⎧POP_VC⋅WGT⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩      PTVV⋅WGT           otherwise
-               ETA₁
+    TVV = ⎩       POP_VC⋅WGT          otherwise
+               ETA_CL
     CL = TVCL⋅ℯ
-             ETA₂
-    V = TVV⋅ℯ
+              ETA_VC
+    VC = TVV⋅ℯ
+    V = VC
     Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
         A_CENTRAL(t)
         ────────────
-    F =      V
+    F =      VC
     Y = EPS₁⋅F + F
-    IRES = DV - F
-            IRES
-            ────
-    IWRES =  F
+
     """
     model = make_declarative(model)
 
@@ -615,18 +603,17 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.statements
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-    TVV = PTVV⋅WGT
-          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL⋅WGT
+    TVV = POP_VC⋅WGT
+          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩      TVV           otherwise
-               ETA₁
+    TVV = ⎩       TVV          otherwise
+               ETA_CL
     CL = TVCL⋅ℯ
-             ETA₂
-    V = TVV⋅ℯ
-    S₁ = V
+              ETA_VC
+    VC = TVV⋅ℯ
+    V = VC
+    S₁ = VC
     Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
@@ -634,38 +621,27 @@ def greekify_model(model: Model, named_subscripts: bool = False):
         A_CENTRAL(t)
         ────────────
     F =      S₁
-    W = F
-    Y = EPS₁⋅W + F
-    IPRED = F
-    IRES = DV - IPRED
-            IRES
-            ────
-    IWRES =  W
+    Y = EPS₁⋅F + F
 
     >>> model = greekify_model(cleanup_model(model))
     >>> model.statements
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
     TVCL = WGT⋅θ₁
           ⎧WGT⋅θ₂⋅(θ₃ + 1)  for APGR < 5
           ⎨
     TVV = ⎩    WGT⋅θ₂        otherwise
                η₁
     CL = TVCL⋅ℯ
-             η₂
-    V = TVV⋅ℯ
+              η₂
+    VC = TVV⋅ℯ
+    V = VC
     Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
     └───────┘
         A_CENTRAL(t)
         ────────────
-    F =      V
+    F =      VC
     Y = F⋅ε₁ + F
-    IRES = DV - F
-            IRES
-            ────
-    IWRES =  F
 
     """
 
@@ -753,9 +729,9 @@ def get_individual_parameters(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_individual_parameters(model)
-    ['CL', 'V']
+    ['CL', 'VC']
     >>> get_individual_parameters(model, 'iiv')
-    ['CL', 'V']
+    ['CL', 'VC']
     >>> get_individual_parameters(model, 'iov')
     []
 
@@ -1138,7 +1114,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> get_rv_parameters(model, 'ETA_1')
+    >>> get_rv_parameters(model, 'ETA_CL')
     ['CL']
 
     See also
@@ -1187,7 +1163,7 @@ def get_parameter_rv(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_parameter_rv(model, 'CL')
-    ['ETA_1']
+    ['ETA_CL']
 
     See also
     --------
@@ -1490,11 +1466,11 @@ def get_pk_parameters(
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_pk_parameters(model)
-    ['CL', 'V']
+    ['CL', 'VC']
     >>> get_pk_parameters(model, 'absorption')
     []
     >>> get_pk_parameters(model, 'distribution')
-    ['V']
+    ['VC']
     >>> get_pk_parameters(model, 'elimination')
     ['CL']
 

@@ -68,12 +68,12 @@ def calculate_eta_shrinkage(
     >>> pe = results.parameter_estimates
     >>> ie = results.individual_estimates
     >>> calculate_eta_shrinkage(model, pe, ie)
-    ETA_1    0.720481
-    ETA_2    0.240295
+    ETA_CL    0.720481
+    ETA_VC    0.240295
     dtype: float64
     >>> calculate_eta_shrinkage(model, pe, ie, sd=True)
-    ETA_1    0.471305
-    ETA_2    0.128389
+    ETA_CL    0.471305
+    ETA_VC    0.128389
     dtype: float64
 
     See also
@@ -125,7 +125,7 @@ def calculate_individual_shrinkage(
     >>> pe = results.parameter_estimates
     >>> covs = results.individual_estimates_covariance
     >>> calculate_individual_shrinkage(model, pe, covs)
-           ETA_1     ETA_2
+          ETA_CL    ETA_VC
     ID
     1   0.847789  0.256473
     2   0.796643  0.210669
@@ -180,7 +180,7 @@ def calculate_individual_shrinkage(
     51  0.822213  0.202534
     52  0.511489  0.273601
     53  0.964757  0.223448
-    54  0.762153  0.181648
+    54  0.762156  0.181648
     55  0.965657  0.435741
     56  0.995278  0.354798
     57  0.813382  0.263372
@@ -445,13 +445,12 @@ def calculate_pk_parameters_statistics(
     >>> calculate_pk_parameters_statistics(model, pe, cov, seed=rng)
                                   mean     variance     stderr
     parameter   covariates
-    t_half_elim p5          173.337164  1769.493756  42.843398
-                median      149.567842  1317.474199  36.233070
-                p95         149.567842  1317.474199  36.233070
+    t_half_elim p5          173.337164  1769.493756  42.842434
+                median      149.567842  1317.474199  36.230160
+                p95         149.567842  1317.474199  36.230160
     k_e         p5            0.004234     0.000001   0.001138
                 median        0.004907     0.000001   0.001247
                 p95           0.004907     0.000001   0.001247
-
 
     See Also
     --------
@@ -629,13 +628,13 @@ def calculate_bic(
     >>> results = load_example_modelfit_results("pheno")
     >>> ofv = results.ofv
     >>> calculate_bic(model, ofv)
-    611.7071686183284
+        611.7071686216575
     >>> calculate_bic(model, ofv, type='fixed')
-    616.536606983396
+    616.5366069867251
     >>> calculate_bic(model, ofv, type='random')
-    610.7412809453149
+        610.741280948644
     >>> calculate_bic(model, ofv, type='iiv')
-    594.431131169692
+    594.4311311730211
     """
     parameters = model.parameters.nonfixed
     if type == 'fixed':
@@ -720,9 +719,9 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
     >>> results = load_example_modelfit_results("pheno")
     >>> cor = results.correlation_matrix
     >>> check_high_correlations(model, cor, limit=0.3)
-    PTVCL  IVCL      -0.388059
-    PTVV   THETA_3   -0.356899
-           IVV        0.356662
+    POP_CL  IIV_CL    -0.387063
+    POP_VC  COVAPGR   -0.357003
+            IIV_VC     0.356831
     dtype: float64
     """
     high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(bool)
@@ -757,12 +756,12 @@ def check_parameters_near_bounds(
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
     >>> check_parameters_near_bounds(model, results.parameter_estimates)
-    PTVCL        False
-    PTVV         False
-    THETA_3      False
-    IVCL         False
-    IVV          False
-    SIGMA_1_1    False
+    POP_CL     False
+    POP_VC     False
+    COVAPGR    False
+    IIV_CL     False
+    IIV_VC     False
+    SIGMA      False
     dtype: bool
 
     """

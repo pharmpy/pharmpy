@@ -2536,19 +2536,19 @@ def test_has_linear_odes_with_real_eigenvalues(
     assert not has_linear_odes_with_real_eigenvalues(model)
 
 
-def test_set_intial_conditions(load_example_model_for_test):
+def test_set_initial_conditions(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = set_initial_condition(model, "CENTRAL", 10)
-    assert len(model.statements) == 16
+    assert len(model.statements) == 11
     ic = Assignment.create(Expr.function('A_CENTRAL', 0), Expr.integer(10))
     assert model.statements.before_odes[-1] == ic
     assert get_initial_conditions(model) == {Expr.function('A_CENTRAL', 0): Expr.integer(10)}
     model = set_initial_condition(model, "CENTRAL", 23)
-    assert len(model.statements) == 16
+    assert len(model.statements) == 11
     ic = Assignment.create(Expr.function('A_CENTRAL', 0), Expr.integer(23))
     assert model.statements.before_odes[-1] == ic
     model = set_initial_condition(model, "CENTRAL", 0)
-    assert len(model.statements) == 15
+    assert len(model.statements) == 10
 
 
 def test_get_zero_order_inputs(load_example_model_for_test):
@@ -2644,13 +2644,13 @@ def test_find_volume_and_clearance_parameters_mm_and_mixed_mm(pheno):
 def test_find_volume_parameters_github_issues_1053_and_1062(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     model = set_michaelis_menten_elimination(model)
-    assert find_volume_parameters(model) == _symbols(['V'])
+    assert find_volume_parameters(model) == _symbols(['VC'])
 
 
 def test_find_volume_parameters_github_issues_1044_and_1053(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     model = set_transit_compartments(model, 10)
-    assert find_volume_parameters(model) == _symbols(['V'])
+    assert find_volume_parameters(model) == _symbols(['VC'])
 
 
 def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_model_for_test):
@@ -2658,19 +2658,19 @@ def test_find_volume_parameters_github_issues_1053_and_1062_bis(load_example_mod
     model = add_peripheral_compartment(model)
     model = add_peripheral_compartment(model)
     model = set_michaelis_menten_elimination(model)
-    assert find_volume_parameters(model) == _symbols(['V1', 'VP1', 'VP2'])
+    assert find_volume_parameters(model) == _symbols(['VC', 'VP1', 'VP2'])
 
 
 @pytest.mark.parametrize(
     ('model_name', 'expected_cl', 'expected_v'),
     (
-        ('full', ['CL'], ['V']),
-        ('ib', ['CL'], ['V']),
-        ('cr', ['CL'], ['V']),
-        ('crib', ['CL'], ['V']),
-        ('wagner', ['CL'], ['V']),
-        ('qss', ['CL'], ['V']),
-        ('mmapp', ['CL'], ['V']),
+        ('full', ['CL'], ['VC']),
+        ('ib', ['CL'], ['VC']),
+        ('cr', ['CL'], ['VC']),
+        ('crib', ['CL'], ['VC']),
+        ('wagner', ['CL'], ['VC']),
+        ('qss', ['CL'], ['VC']),
+        ('mmapp', ['CL'], ['VC']),
     ),
     ids=repr,
 )
@@ -2685,20 +2685,20 @@ def test_find_clearance_and_volume_parameters_tmdd(
     model = load_example_model_for_test('pheno')
     model = add_peripheral_compartment(model)
     model = set_tmdd(model, 'qss')
-    assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
+    assert find_volume_parameters(model) == _symbols(['VC', 'VP1'])
     assert find_clearance_parameters(model) == _symbols(['CL', 'QP1'])
 
     model = load_example_model_for_test('pheno')
     model = add_peripheral_compartment(model)
     model = set_tmdd(model, 'wagner')
-    assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
+    assert find_volume_parameters(model) == _symbols(['VC', 'VP1'])
     assert find_clearance_parameters(model) == _symbols(['CL', 'QP1'])
 
     model = load_example_model_for_test('pheno')
     model = add_peripheral_compartment(model)
     model = set_mixed_mm_fo_elimination(model)
     model = set_tmdd(model, 'mmapp')
-    assert find_volume_parameters(model) == _symbols(['V1', 'VP1'])
+    assert find_volume_parameters(model) == _symbols(['VC', 'VP1'])
     assert find_clearance_parameters(model) == _symbols(['CL', 'QP1'])
 
 
@@ -2734,13 +2734,13 @@ def test_get_central_volume_and_clearance(
     testdata, load_example_model_for_test, load_model_for_test
 ):
     model = load_example_model_for_test("pheno")
-    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CL"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("VC"), Expr.symbol("CL"))
 
     model = set_michaelis_menten_elimination(model)
-    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CLMM"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("VC"), Expr.symbol("CLMM"))
 
     model = set_mixed_mm_fo_elimination(model)
-    assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CL"))
+    assert get_central_volume_and_clearance(model) == (Expr.symbol("VC"), Expr.symbol("CL"))
 
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     assert get_central_volume_and_clearance(model) == (Expr.symbol("V"), Expr.symbol("CL"))

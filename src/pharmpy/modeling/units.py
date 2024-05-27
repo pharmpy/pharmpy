@@ -45,7 +45,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     >>> model = load_example_model("pheno")
     >>> get_unit_of(model, "Y")
     milligram/liter
-    >>> get_unit_of(model, "V")
+    >>> get_unit_of(model, "VC")
     liter
     >>> get_unit_of(model, "WGT")
     kilogram
@@ -72,6 +72,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     # FIXME: Using private _expr in some places. sympify doesn't work for some reason.
     a = di[di.dv_column.name].unit._expr
     unit_eqs.append(y - a)
+    d = {}
 
     for s in model.statements:
         if isinstance(s, Assignment):
@@ -100,10 +101,14 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
                 else:
                     unit_eqs.append(amt_unit / time_unit - _extract_minus(e))
             for a in s.amounts:
-                unit_eqs.append(amt_unit - a)
+                sy = sympy.Symbol(a.name)
+                d[a] = sy
+                unit_eqs.append(amt_unit - sy)
 
+    # FIXME: This doesn't seem to work any longer. sympy seems to be fast enough though
     # NOTE: This keeps only the equations required to solve for "symbol"
-    filtered_unit_eqs = _filter_equations(unit_eqs, symbol)
+    # filtered_unit_eqs = _filter_equations(unit_eqs, symbol)
+    filtered_unit_eqs = [eq.subs(d) for eq in unit_eqs]
     # NOTE: For some reason telling sympy to solve for "symbol" does not work
     sol = sympy.solve(filtered_unit_eqs, dict=True)
     return Unit(sol[0][symbol])

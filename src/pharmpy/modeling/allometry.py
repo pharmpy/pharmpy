@@ -64,26 +64,25 @@ def add_allometry(
     >>> model = remove_covariate_effect(model, 'V', 'WGT')
     >>> model = add_allometry(model, allometric_variable='WGT')
     >>> model.statements.before_odes
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL
-    TVV = PTVV
-          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL
+    TVV = POP_VC
+          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩      TVV           otherwise
-               ETA₁
+    TVV = ⎩       TVV          otherwise
+               ETA_CL
     CL = TVCL⋅ℯ
                  ALLO_CL
             ⎛WGT⎞
          CL⋅⎜───⎟
     CL =    ⎝ 70⎠
-             ETA₂
-    V = TVV⋅ℯ
-               ALLO_V
-          ⎛WGT⎞
-        V⋅⎜───⎟
-    V =   ⎝ 70⎠
-    S₁ = V
+              ETA_VC
+    VC = TVV⋅ℯ
+                 ALLO_VC
+            ⎛WGT⎞
+         VC⋅⎜───⎟
+    VC =    ⎝ 70⎠
+    V = VC
+    S₁ = VC
 
     """
     from pharmpy.modeling import has_covariate_effect

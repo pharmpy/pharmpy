@@ -2228,7 +2228,7 @@ def find_volume_parameters(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> find_volume_parameters(model)
-    [V]
+    [VC]
     """
     vcs = set()
     sset = model.statements
@@ -2725,7 +2725,7 @@ def get_central_volume_and_clearance(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_central_volume_and_clearance(model)
-    (V, CL)
+    (VC, CL)
 
     """
     vcs = set()

@@ -2063,18 +2063,18 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.before_odes
-        BTIME = {TIME  for AMT > 0
-        TAD = -BTIME + TIME
-        TVCL = PTVCL⋅WGT
-        TVV = PTVV⋅WGT
-              ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
-              ⎨
-        TVV = ⎩       TVV           otherwise
-                   ETA₁
-        CL = TVCL⋅ℯ
-                 ETA₂
-        V = TVV⋅ℯ
-        S₁ = V
+                TVCL = POP_CL⋅WGT
+                TVV = POP_VC⋅WGT
+                          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
+                          ⎨
+                TVV = ⎩       TVV          otherwise
+                                   ETA_CL
+                CL = TVCL⋅ℯ
+                                  ETA_VC
+                VC = TVV⋅ℯ
+                V = VC
+                S₁ = VC
+
         """
         i = self._get_ode_system_index()
         return self if i == -1 else self[:i]
@@ -2088,16 +2088,11 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.after_odes
-            A_CENTRAL(t)
-            ────────────
-        F =      S₁
-        W = F
-        Y = EPS₁⋅W + F
-        IPRED = F
-        IRES = DV - IPRED
-                 IRES
-                 ────
-        IWRES =   W
+                        A_CENTRAL(t)
+                        ────────────
+                F =      S₁
+                Y = EPS₁⋅F + F
+
         """
         i = self._get_ode_system_index()
         return Statements() if i == -1 else self[i + 1 :]
@@ -2111,16 +2106,10 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.error
-            A_CENTRAL(t)
-            ────────────
-        F =      S₁
-        W = F
-        Y = EPS₁⋅W + F
-        IPRED = F
-        IRES = DV - IPRED
-                 IRES
-                 ────
-        IWRES =   W
+                        A_CENTRAL(t)
+                        ────────────
+                F =      S₁
+                Y = EPS₁⋅F + F
         """
         i = self._get_ode_system_index()
         return self if i == -1 else self[i + 1 :]
@@ -2139,18 +2128,17 @@ class Statements(Sequence, Immutable):
         >>> model = load_example_model("pheno")
         >>> stats = model.statements.subs({'WGT': 'WT'})
         >>> stats.before_odes
-        BTIME = {TIME  for AMT > 0
-        TAD = -BTIME + TIME
-        TVCL = PTVCL⋅WT
-        TVV = PTVV⋅WT
-              ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+                TVCL = POP_CL⋅WT
+                TVV = POP_VC⋅WT
+                          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
               ⎨
-        TVV = ⎩       TVV           otherwise
-                   ETA₁
+                TVV = ⎩       TVV          otherwise
+                           ETA_CL
         CL = TVCL⋅ℯ
-                 ETA₂
-        V = TVV⋅ℯ
-        S₁ = V
+                                  ETA_VC
+                VC = TVV⋅ℯ
+                V = VC
+                S₁ = VC
         """
         return Statements(s.subs(substitutions) for s in self)
 
@@ -2186,7 +2174,7 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.find_assignment("CL")
-                   ETA₁
+                   ETA_CL
         CL = TVCL⋅ℯ
         """
         return self._lookup_last_assignment(symbol)[1]
@@ -2209,7 +2197,7 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.find_assignment_index("CL")
-        5
+        3
         """
         return self._lookup_last_assignment(symbol)[0]
 
@@ -2285,10 +2273,9 @@ class Statements(Sequence, Immutable):
         >>> model = load_example_model("pheno")
         >>> odes = model.statements.ode_system
         >>> model.statements.direct_dependencies(odes)
-                   ETA₁
+                   ETA_CL
         CL = TVCL⋅ℯ
-                 ETA₂
-        V = TVV⋅ℯ
+        V = VC
         """
         g = self._create_dependency_graph()
         index = self.index(statement)
@@ -2408,7 +2395,7 @@ class Statements(Sequence, Immutable):
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
         >>> model.statements.before_odes.full_expression("CL")
-        PTVCL*WGT*exp(ETA_1)
+        POP_CL*WGT*exp(ETA_CL)
         """
         expression = Expr(expression)
         for statement in reversed(self):

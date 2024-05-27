@@ -23,9 +23,9 @@ def get_thetas(model: Model):
     >>> model = load_example_model("pheno")
     >>> get_thetas(model)
                 value  lower upper    fix
-    PTVCL    0.004693   0.00     ∞  False
-    PTVV     1.009160   0.00     ∞  False
-    THETA_3  0.100000  -0.99     ∞  False
+    POP_CL   0.004693   0.00     ∞  False
+    POP_VC   1.009160   0.00     ∞  False
+    COVAPGR  0.100000  -0.99     ∞  False
 
     See also
     --------
@@ -55,9 +55,9 @@ def get_omegas(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_omegas(model)
-             value  lower upper    fix
-    IVCL  0.030963    0.0     ∞  False
-    IVV   0.031128    0.0     ∞  False
+               value  lower upper    fix
+    IIV_CL  0.030963    0.0     ∞  False
+    IIV_VC  0.031128    0.0     ∞  False
 
     See also
     --------
@@ -86,8 +86,8 @@ def get_sigmas(model: Model):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> get_sigmas(model)
-                  value  lower upper    fix
-    SIGMA_1_1  0.013241    0.0     ∞  False
+              value  lower upper    fix
+    SIGMA  0.013086    0.0     ∞  False
 
     See also
     --------
@@ -132,14 +132,14 @@ def set_initial_estimates(
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
     >>> model.parameters.inits  # doctest:+ELLIPSIS
-    {'PTVCL': 0.00469307, 'PTVV': 1.00916, 'THETA_3': 0.1, 'IVCL': 0.0309626, 'IVV': 0.031128, 'SIGMA_1_1': 0.013241}
+    {'POP_CL': 0.00469307, 'POP_VC': 1.00916, 'COVAPGR': 0.1, 'IIV_CL': 0.0309626, 'IIV_VC': ...}
     >>> model = set_initial_estimates(model, results.parameter_estimates)
     >>> model.parameters.inits  # doctest:+ELLIPSIS
-    {'PTVCL': 0.00469555, 'PTVV': 0.984258, 'THETA_3': 0.15892, 'IVCL': 0.0293508, 'IVV': 0.027906, ...}
+    {'POP_CL': 0.00469555, 'POP_VC': 0.984258, 'COVAPGR': 0.15892, 'IIV_CL': 0.0293508, ...}
     >>> model = load_example_model("pheno")
-    >>> model = set_initial_estimates(model, {'PTVCL': 2.0})
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 2.0, lower=0.0, upper=∞, fix=False)
+    >>> model = set_initial_estimates(model, {'POP_CL': 2.0})
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 2.0, lower=0.0, upper=∞, fix=False)
 
     See also
     --------
@@ -221,9 +221,9 @@ def set_upper_bounds(model: Model, bounds: dict[str, float]):
     --------
     >>> from pharmpy.modeling import load_example_model, set_upper_bounds
     >>> model = load_example_model("pheno")
-    >>> model = set_upper_bounds(model, {'PTVCL': 10})
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=0.0, upper=10, fix=False)
+    >>> model = set_upper_bounds(model, {'POP_CL': 10})
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=0.0, upper=10, fix=False)
 
     See also
     --------
@@ -262,9 +262,9 @@ def set_lower_bounds(model: Model, bounds: dict[str, float]):
     --------
     >>> from pharmpy.modeling import load_example_model, set_lower_bounds
     >>> model = load_example_model("pheno")
-    >>> model = set_lower_bounds(model, {'PTVCL': -10})
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=-10, upper=∞, fix=False)
+    >>> model = set_lower_bounds(model, {'POP_CL': -10})
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=-10, upper=∞, fix=False)
 
     See also
     --------
@@ -306,11 +306,11 @@ def fix_parameters(model: Model, parameter_names: Union[list[str], str]):
     -------
     >>> from pharmpy.modeling import fix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=0.0, upper=∞, fix=False)
-    >>> model = fix_parameters(model, 'PTVCL')
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=0.0, upper=∞, fix=True)
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=0.0, upper=∞, fix=False)
+    >>> model = fix_parameters(model, 'POP_CL')
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=0.0, upper=∞, fix=True)
 
     See also
     --------
@@ -356,12 +356,12 @@ def unfix_parameters(model: Model, parameter_names: Union[list[str], str]):
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model = fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])
+    >>> model = fix_parameters(model, ['POP_CL', 'POP_VC'])
     >>> model.parameters.fix    # doctest: +ELLIPSIS
-    {'PTVCL': True, 'PTVV': True, 'THETA_3': True, ...}
-    >>> model = unfix_parameters(model, 'PTVCL')
+    {'POP_CL': True, 'POP_VC': True, ...}
+    >>> model = unfix_parameters(model, 'POP_CL')
     >>> model.parameters.fix        # doctest: +ELLIPSIS
-    {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
+    {'POP_CL': False, 'POP_VC': True, ...}
 
     See also
     --------
@@ -409,11 +409,11 @@ def fix_parameters_to(model: Model, inits: dict[str, float]):
     --------
     >>> from pharmpy.modeling import fix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=0.0, upper=∞, fix=False)
-    >>> model = fix_parameters_to(model, {'PTVCL': 0.5})
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.5, lower=0.0, upper=∞, fix=True)
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=0.0, upper=∞, fix=False)
+    >>> model = fix_parameters_to(model, {'POP_CL': 0.5})
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.5, lower=0.0, upper=∞, fix=True)
 
     See also
     --------
@@ -445,14 +445,14 @@ def unfix_parameters_to(model: Model, inits: dict[str, float]):
     --------
     >>> from pharmpy.modeling import fix_parameters, unfix_parameters_to, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model = fix_parameters(model, ['PTVCL', 'PTVV', 'THETA_3'])
+    >>> model = fix_parameters(model, ['POP_CL', 'POP_VC'])
     >>> model.parameters.fix    # doctest: +ELLIPSIS
-    {'PTVCL': True, 'PTVV': True, 'THETA_3': True, 'IVCL': False, 'IVV': False, 'SIGMA_1_1': False}
-    >>> model = unfix_parameters_to(model, {'PTVCL': 0.5})
+    {'POP_CL': True, 'POP_VC': True, 'COVAPGR': False, 'IIV_CL': False, 'IIV_VC': False, 'SIGMA': False}
+    >>> model = unfix_parameters_to(model, {'POP_CL': 0.5})
     >>> model.parameters.fix        # doctest: +ELLIPSIS
-    {'PTVCL': False, 'PTVV': True, 'THETA_3': True, ...}
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.5, lower=0.0, upper=∞, fix=False)
+    {'POP_CL': False, 'POP_VC': True, 'COVAPGR': False, ...}
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.5, lower=0.0, upper=∞, fix=False)
 
     Returns
     -------
@@ -488,11 +488,11 @@ def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool]):
     --------
     >>> from pharmpy.modeling import fix_or_unfix_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=0.0, upper=∞, fix=False)
-    >>> model = fix_or_unfix_parameters(model, {'PTVCL': True})
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=0.0, upper=∞, fix=True)
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=0.0, upper=∞, fix=False)
+    >>> model = fix_or_unfix_parameters(model, {'POP_CL': True})
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=0.0, upper=∞, fix=True)
 
     Returns
     -------
@@ -535,11 +535,11 @@ def unconstrain_parameters(model: Model, parameter_names: list[str]):
     --------
     >>> from pharmpy.modeling import unconstrain_parameters, load_example_model
     >>> model = load_example_model("pheno")
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=0.0, upper=∞, fix=False)
-    >>> model = unconstrain_parameters(model, ['PTVCL'])
-    >>> model.parameters['PTVCL']
-    Parameter("PTVCL", 0.00469307, lower=-∞, upper=∞, fix=False)
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=0.0, upper=∞, fix=False)
+    >>> model = unconstrain_parameters(model, ['POP_CL'])
+    >>> model.parameters['POP_CL']
+    Parameter("POP_CL", 0.00469307, lower=-∞, upper=∞, fix=False)
 
     Returns
     -------
@@ -602,14 +602,14 @@ def add_population_parameter(
     >>> model = load_example_model("pheno")
     >>> model = add_population_parameter(model, 'POP_KA', 2)
     >>> model.parameters
-                  value lower upper    fix
-    PTVCL      0.004693   0.0     ∞  False
-    PTVV       1.009160   0.0     ∞  False
-    THETA_3    0.100000 -0.99     ∞  False
-    IVCL       0.030963   0.0     ∞  False
-    IVV        0.031128   0.0     ∞  False
-    SIGMA_1_1  0.013241   0.0     ∞  False
-    POP_KA     2.000000    -∞     ∞  False
+                value lower upper    fix
+    POP_CL   0.004693   0.0     ∞  False
+    POP_VC   1.009160   0.0     ∞  False
+    COVAPGR  0.100000 -0.99     ∞  False
+    IIV_CL   0.030963   0.0     ∞  False
+    IIV_VC   0.031128   0.0     ∞  False
+    SIGMA    0.013086   0.0     ∞  False
+    POP_KA   2.000000    -∞     ∞  False
     """
 
     param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)

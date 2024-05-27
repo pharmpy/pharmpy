@@ -461,7 +461,7 @@ def test_read_modelfit_results(testdata):
 
 def test_load_example_modelfit_results():
     res = load_example_modelfit_results("pheno")
-    assert res.ofv == 586.27605628188053
+    assert res.ofv == 586.2760562852096
 
 
 @pytest.mark.parametrize(

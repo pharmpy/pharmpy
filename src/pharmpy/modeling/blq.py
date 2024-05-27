@@ -114,10 +114,10 @@ def transform_blq(
     >>> model = load_example_model("pheno")
     >>> model = transform_blq(model, method='m4', lloq=0.1)
     >>> model.statements.find_assignment("Y")
-        ⎧ EPS₁⋅W + F   for DV ≥ LLOQ
+        ⎧ EPS₁⋅F + F   for DV ≥ LLOQ
         ⎪
         ⎨CUMD - CUMDZ
-        ⎪────────────   otherwise
+        ⎪────────────    otherwise
     Y = ⎩ 1 - CUMDZ
 
     See also

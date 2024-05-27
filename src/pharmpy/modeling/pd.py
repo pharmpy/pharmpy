@@ -69,7 +69,7 @@ def add_effect_compartment(model: Model, expr: Literal[PD_TYPES]):
     >>> model = load_example_model("pheno")
     >>> model = add_effect_compartment(model, "linear")
     >>> model.statements.ode_system.find_compartment("EFFECT")
-    Compartment(EFFECT, amount=A_EFFECT(t), input=KE0*A_CENTRAL(t)/V)
+    Compartment(EFFECT, amount=A_EFFECT(t), input=KE0*A_CENTRAL(t)/VC)
     """
     vc, cl = get_central_volume_and_clearance(model)
 
@@ -148,7 +148,8 @@ def set_direct_effect(model: Model, expr: Literal[PD_TYPES]):
     >>> model.statements.find_assignment("E")
           ⎛SLOPE⋅A_CENTRAL(t)    ⎞
         B⋅⎜────────────────── + 1⎟
-    E =   ⎝        V             ⎠
+    E =   ⎝        VC            ⎠
+
     """
     vc, cl = get_central_volume_and_clearance(model)
     conc = model.statements.ode_system.central_compartment.amount / vc

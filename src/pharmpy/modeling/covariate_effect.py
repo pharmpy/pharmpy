@@ -397,7 +397,7 @@ def add_covariate_effect(
     >>> model = load_example_model("pheno")
     >>> model = add_covariate_effect(model, "CL", "APGR", "exp")
     >>> model.statements.before_odes.full_expression("CL")
-    PTVCL*WGT*exp(ETA_1 + POP_CLAPGR*(APGR - 7.0))
+    POP_CL*WGT*exp(ETA_CL + POP_CLAPGR*(APGR - 7.0))
 
     """
     sset = model.statements

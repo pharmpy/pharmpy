@@ -1271,12 +1271,12 @@ def load_example_modelfit_results(name: str):
     >>> from pharmpy.tools import load_example_modelfit_results
     >>> results = load_example_modelfit_results("pheno")
     >>> results.parameter_estimates
-    PTVCL        0.004696
-    PTVV         0.984258
-    THETA_3      0.158920
-    IVCL         0.029351
-    IVV          0.027906
-    SIGMA_1_1    0.013241
+    POP_CL     0.004696
+    POP_VC     0.984258
+    COVAPGR    0.158920
+    IIV_CL     0.029351
+    IIV_VC     0.027906
+    SIGMA      0.013241
     Name: estimates, dtype: float64
 
     """

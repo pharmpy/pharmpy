@@ -77,6 +77,7 @@ autodoc_typehints = 'none'
 graphviz_output_format = 'svg'
 
 import doctest
+doctest_show_success = False
 doctest_default_flags = doctest.NORMALIZE_WHITESPACE
 doctest_global_setup = '''
 import pandas as pd

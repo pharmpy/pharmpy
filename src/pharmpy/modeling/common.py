@@ -211,39 +211,38 @@ def print_model_code(model: Model) -> None:
     >>> model = load_example_model("pheno")
     >>> print_model_code(model)
     $PROBLEM PHENOBARB SIMPLE MODEL
-    $DATA 'pheno.dta' IGNORE=@
+    $DATA pheno.dta IGNORE=@
     $INPUT ID TIME AMT WGT APGR DV FA1 FA2
     $SUBROUTINE ADVAN1 TRANS2
+    $ABBREV REPLACE ETA_CL=ETA(1)
+    $ABBREV REPLACE ETA_VC=ETA(2)
     <BLANKLINE>
     $PK
-    IF(AMT.GT.0) BTIME=TIME
-    TAD=TIME-BTIME
-    TVCL=THETA(1)*WGT
-    TVV=THETA(2)*WGT
-    IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
-    CL=TVCL*EXP(ETA(1))
-    V=TVV*EXP(ETA(2))
-    S1=V
+    TVCL = THETA(1)*WGT
+    TVV = THETA(2)*WGT
+    IF(APGR.LT.5) TVV = TVV*(1 + THETA(3))
+    CL = TVCL*EXP(ETA_CL)
+    VC = TVV*EXP(ETA_VC)
+    V = VC
+    S1 = VC
     <BLANKLINE>
     $ERROR
-    W=F
-    Y=F+W*EPS(1)
-    IPRED=F
-    IRES=DV-IPRED
-    IWRES=IRES/W
+    Y = F + F*EPS(1)
     <BLANKLINE>
-    $THETA (0,0.00469307) ; PTVCL
-    $THETA (0,1.00916) ; PTVV
-    $THETA (-.99,.1)
-    $OMEGA DIAGONAL(2)
-     0.0309626  ;       IVCL
-     0.031128  ;        IVV
+    $THETA  (0,0.00469307) ; POP_CL
+    $THETA  (0,1.00916) ; POP_VC
+    $THETA  (-.99,.1) ; COVAPGR
     <BLANKLINE>
-    $SIGMA 0.013241
-    $ESTIMATION METHOD=1 INTERACTION
-    $COVARIANCE UNCONDITIONAL
-    $TABLE ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
-           NOPRINT ONEHEADER FILE=pheno.tab
+    $OMEGA  0.0309626 ; IIV_CL
+    $OMEGA  0.031128 ; IIV_VC
+    <BLANKLINE>
+    $SIGMA  0.0130865  ; SIGMA
+    <BLANKLINE>
+    $ESTIMATION METHOD=1 INTERACTION MAXEVALS=99999
+    $COVARIANCE UNCONDITIONAL PRINT=E
+    $TABLE ID TIME DV CIPREDI PRED RES CWRES NOAPPEND NOPRINT ONEHEADER FILE=pheno.tab
+    <BLANKLINE>
+
     """
     print(model.code)
 
@@ -345,18 +344,17 @@ def load_example_model(name: str):
     >>> from pharmpy.modeling import load_example_model
     >>> model = load_example_model("pheno")
     >>> model.statements
-    BTIME = {TIME  for AMT > 0
-    TAD = -BTIME + TIME
-    TVCL = PTVCL⋅WGT
-    TVV = PTVV⋅WGT
-          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+    TVCL = POP_CL⋅WGT
+    TVV = POP_VC⋅WGT
+          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
           ⎨
-    TVV = ⎩       TVV           otherwise
-               ETA₁
+    TVV = ⎩       TVV          otherwise
+               ETA_CL
     CL = TVCL⋅ℯ
-             ETA₂
-    V = TVV⋅ℯ
-    S₁ = V
+              ETA_VC
+    VC = TVV⋅ℯ
+    V = VC
+    S₁ = VC
     Bolus(AMT, admid=1) → CENTRAL
     ┌───────┐
     │CENTRAL│──CL/V→
@@ -364,13 +362,7 @@ def load_example_model(name: str):
         A_CENTRAL(t)
         ────────────
     F =      S₁
-    W = F
-    Y = EPS₁⋅W + F
-    IPRED = F
-    IRES = DV - IPRED
-            IRES
-            ────
-    IWRES =  W
+    Y = EPS₁⋅F + F
 
     """
     available = ('moxo', 'pheno', 'pheno_linear')
@@ -458,12 +450,12 @@ def print_model_symbols(model: Model) -> None:
     >>> from pharmpy.modeling import load_example_model, print_model_symbols
     >>> model = load_example_model("pheno")
     >>> print_model_symbols(model)
-    Thetas: PTVCL, PTVV, THETA₃
-    Etas: ETA₁, ETA₂
-    Omegas: IVCL, IVV
+    Thetas: POP_CL, POP_VC, COVAPGR
+    Etas: ETA_CL, ETA_VC
+    Omegas: IIV_CL, IIV_VC
     Epsilons: EPS₁
-    Sigmas: SIGMA₁ ₁
-    Variables: BTIME, TAD, TVCL, TVV, TVV, CL, V, S₁, F, W, Y, IPRED, IRES, IWRES
+    Sigmas: SIGMA
+    Variables: TVCL, TVV, TVV, CL, VC, V, S₁, F, Y
     Data columns: ID, TIME, AMT, WGT, APGR, DV, FA1, FA2
 
     """

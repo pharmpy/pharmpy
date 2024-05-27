@@ -5,7 +5,7 @@ from pharmpy.workflows.hashing import DatasetHash, ModelHash
 def test_hash(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     h = ModelHash(model)
-    assert str(h) == "Ov1wUMumvRAxL0WKygUhXacZ2pnRKmbr-mNpGRUuaBI"
+    assert str(h) == "xwlPmtqSjdfu2ZN1iVzlT4JsBn70cttu7F8JO5N2-ys"
     d = DatasetHash(model.dataset)
     assert str(d) == h.dataset_hash
 
@@ -18,5 +18,5 @@ def test_hash(load_example_model_for_test):
     assert str(h) == str(ModelHash(m3))
 
     # changing init of a parameter should change hash
-    m4 = set_initial_estimates(model, {'IVV': 0.99})
+    m4 = set_initial_estimates(model, {'IIV_VC': 0.99})
     assert str(h) != str(ModelHash(m4))
