@@ -1,13 +1,11 @@
 from __future__ import annotations
 
-from collections import defaultdict
-from typing import Dict, Iterable, Set, Tuple, TypeVar, Union
+from typing import TypeVar, Union
 
 from pharmpy.basic import Unit
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
-from pharmpy.internals.graph.directed.reachability import reachable_from
 from pharmpy.model import Assignment, CompartmentalSystem, Model
 
 T = TypeVar('T')
@@ -105,64 +103,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
                 d[a] = sy
                 unit_eqs.append(amt_unit - sy)
 
-    # FIXME: This doesn't seem to work any longer. sympy seems to be fast enough though
-    # NOTE: This keeps only the equations required to solve for "symbol"
-    # filtered_unit_eqs = _filter_equations(unit_eqs, symbol)
     filtered_unit_eqs = [eq.subs(d) for eq in unit_eqs]
     # NOTE: For some reason telling sympy to solve for "symbol" does not work
     sol = sympy.solve(filtered_unit_eqs, dict=True)
     return Unit(sol[0][symbol])
-
-
-def _filter_equations(
-    equations: Iterable[sympy.Expr], symbol: sympy.Symbol
-) -> Iterable[sympy.Expr]:
-    # NOTE: This has the side effect of deduplicating equations
-    fs = {eq: eq.free_symbols for eq in equations}
-
-    # NOTE: We could first contract clique edges, but I have not found a way to
-    # make it as elegant as the current implementation
-    edges = _cliques_spanning_forest_edges_linear_superset(fs.values())
-
-    graph = _adjacency_list(edges)
-
-    dependent_symbols = reachable_from(
-        {symbol},
-        graph.__getitem__,
-    )
-
-    # NOTE: All symbols are in the same connected component, so we only need to
-    # test one symbol for each equation
-    return (
-        eq for eq, symbols in fs.items() if symbols and next(iter(symbols)) in dependent_symbols
-    )
-
-
-def _adjacency_list(edges: Iterable[Tuple[T, T]]) -> Dict[T, Set[T]]:
-    graph = defaultdict(set)
-    for u, v in edges:
-        graph[u].add(v)
-        graph[v].add(u)
-
-    return graph
-
-
-def _cliques_spanning_forest_edges_linear_superset(
-    cliques: Iterable[Iterable[T]],
-) -> Iterable[Tuple[T, T]]:
-    # NOTE: This is not a forest, but it has a linear number of edges in the
-    # input size. Building a spanning tree would require a union-find data
-    # structure and superlinear time, which is unnecessary here since we are
-    # only interested in connected components of the graph.
-    for clique in cliques:
-        yield from _clique_spanning_tree_edges(clique)
-
-
-def _clique_spanning_tree_edges(clique: Iterable[T]) -> Iterable[Tuple[T, T]]:
-    it = iter(clique)
-    try:
-        u = next(it)
-    except StopIteration:
-        return
-    for v in it:
-        yield (u, v)
