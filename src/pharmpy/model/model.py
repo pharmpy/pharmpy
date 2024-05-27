@@ -16,9 +16,10 @@ from __future__ import annotations
 import dataclasses
 import json
 import warnings
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Union
 
 import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
@@ -82,7 +83,6 @@ class Model(Immutable):
         dependent_variables: frozenmapping[Expr, int] = frozenmapping({Expr.symbol('y'): 1}),
         observation_transformation: Optional[frozenmapping[Expr, Expr]] = None,
         execution_steps: ExecutionSteps = ExecutionSteps(),
-        parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
         value_type: str = 'PREDICTION',
         description: str = '',
@@ -101,7 +101,6 @@ class Model(Immutable):
             )
         self._observation_transformation = observation_transformation
         self._execution_steps = execution_steps
-        self._parent_model = parent_model
         self._initial_individual_estimates = initial_individual_estimates
         self._value_type = value_type
         self._description = description
@@ -119,7 +118,6 @@ class Model(Immutable):
         dependent_variables: Optional[Mapping[TSymbol, int]] = None,
         observation_transformation: Optional[Mapping[TSymbol, TExpr]] = None,
         execution_steps: Optional[ExecutionSteps] = None,
-        parent_model: Optional[str] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
         value_type: str = 'PREDICTION',
         description: str = '',
@@ -153,7 +151,6 @@ class Model(Immutable):
             execution_steps=execution_steps,
             statements=statements,
             description=description,
-            parent_model=parent_model,
             value_type=value_type,
             internals=internals,
             initial_individual_estimates=initial_individual_estimates,
@@ -295,7 +292,6 @@ class Model(Immutable):
 
         description = kwargs.get('description', self.description)
         internals = kwargs.get('internals', self._internals)
-        parent_model = kwargs.get('parent_model', self.parent_model)
         initial_individual_estimates = kwargs.get(
             'initial_individual_estimates', self.initial_individual_estimates
         )
@@ -303,7 +299,6 @@ class Model(Immutable):
             'name',
             'description',
             'internals',
-            'parent_model',
             'initial_individual_estimates',
         ):
             try:
@@ -397,7 +392,6 @@ class Model(Immutable):
             dataset=dataset,
             datainfo=datainfo,
             execution_steps=execution_steps,
-            parent_model=parent_model,
             initial_individual_estimates=initial_individual_estimates,
             value_type=value_type,
             description=description,
@@ -633,11 +627,6 @@ class Model(Immutable):
         d['__magic__'] = "Pharmpy Model"
         d['__version__'] = pharmpy.__version__
         return json.dumps(d)
-
-    @property
-    def parent_model(self) -> Optional[str]:
-        """Name of parent model"""
-        return self._parent_model
 
     def has_same_dataset_as(self, other: Model) -> bool:
         """Check if this model has the same dataset as another model

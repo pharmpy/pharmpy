@@ -1,3 +1,32 @@
+0.110.0 (2024-05-08)
+--------------------
+
+New features
+============
+
+* Add alternative categorical effect "cat2" in covsearch
+* Add adaptive scope reduction and maxevals restriction in covsearch
+
+Changes
+=======
+
+* ToolDatabase replaced with Context
+* Default Context gives a new file system organization for tools
+* The same model can have multiple names in a context
+* New API for ModelDatabase
+* Allow clashes of names in $INPUT and parameter comments
+* Rename Model property model_code to code
+* Rename estimation_steps to execution_steps
+* Change index for modelfit_results.predictions and residuals
+* Set BIC as the default selection criteria in AMD
+
+Bugfixes
+========
+
+* Do not remove IOV if present in covsearch
+* Properly parse OFV for NONMEM runs using SAEM
+* Fix crash in retries caused by having fixed thetas
+
 0.109.0 (2024-04-10)
 --------------------
 

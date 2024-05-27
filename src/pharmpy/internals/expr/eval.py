@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from functools import lru_cache
-from typing import TYPE_CHECKING, Mapping, Set
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     import numpy as np
@@ -28,7 +29,7 @@ def eval_expr(
 
 
 @lru_cache(maxsize=256)
-def _free_symbols(expr: sympy.Expr) -> Set[sympy.Expr]:
+def _free_symbols(expr: sympy.Expr) -> set[sympy.Expr]:
     return expr.free_symbols  # pyright: ignore [reportReturnType]
 
 

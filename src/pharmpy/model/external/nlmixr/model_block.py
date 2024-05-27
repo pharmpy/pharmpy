@@ -2,6 +2,7 @@ import re
 from typing import Set, Union
 
 import pharmpy.model
+from pharmpy.basic import BooleanExpr
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model import Assignment, Infusion
@@ -469,6 +470,8 @@ def convert_eq(cond) -> str:
     """
     Convert a sympy equal statement to R syntax
     """
+    if isinstance(cond, BooleanExpr):
+        cond = cond._sympy_()
     cond = sympy.pretty(cond)
     cond = cond.replace("=", "==")
     cond = cond.replace("≠", "!=")

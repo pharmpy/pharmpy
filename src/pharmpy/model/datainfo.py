@@ -4,9 +4,9 @@
 from __future__ import annotations
 
 import json
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Union, cast, overload
+from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
 from pharmpy.basic import TUnit, Unit
 from pharmpy.internals.fs.path import path_absolute, path_relative_to

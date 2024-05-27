@@ -9,8 +9,8 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import add_allometry, get_pk_parameters
-from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.common import ToolResults, update_initial_estimates
+from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -90,12 +90,19 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start(modelfit_results, model_or_model_entry):
+def start(context, modelfit_results, model_or_model_entry):
     if isinstance(model_or_model_entry, ModelEntry):
-        return model_or_model_entry
-    log = modelfit_results.log if modelfit_results else None
-    model_entry = ModelEntry(model_or_model_entry, modelfit_results=modelfit_results, log=log)
-    return model_entry
+        log = model_or_model_entry.log
+        mfr = model_or_model_entry.modelfit_results
+        model = model_or_model_entry.model
+    else:
+        log = modelfit_results.log if modelfit_results else None
+        mfr = modelfit_results
+        model = model_or_model_entry
+    input_model = model.replace(name="input", description="")
+    me = ModelEntry(input_model, modelfit_results=mfr, log=log)
+    context.store_input_model_entry(me)
+    return me
 
 
 def _add_allometry_on_model(
@@ -163,23 +170,24 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, E
             )
 
 
-def results(start_model_entry, allometry_model_entry):
+def results(context, start_model_entry, allometry_model_entry):
     start_model = start_model_entry.model
-    start_res = start_model_entry.modelfit_results
     allometry_model = allometry_model_entry.model
     allometry_res = allometry_model_entry.modelfit_results
 
     allometry_model_failed = allometry_res is None
     best_model = start_model if allometry_model_failed else allometry_model
+    best_model = best_model.replace(name="final")
+    context.store_final_model_entry(best_model)
 
     summod = summarize_modelfit_results_from_entries([start_model_entry, allometry_model_entry])
     summod['step'] = [0, 1]
     summods = summod.reset_index().set_index(['step', 'model'])
-    suminds = summarize_individuals([start_model, allometry_model], [start_res, allometry_res])
+    suminds = summarize_individuals([start_model_entry, allometry_model_entry])
     sumcount = summarize_individuals_count_table(df=suminds)
     sumerrs = summarize_errors_from_entries([start_model_entry, allometry_model_entry])
 
-    return AllometryResults(
+    res = AllometryResults(
         summary_models=summods,
         summary_individuals=suminds,
         summary_individuals_count=sumcount,
@@ -187,6 +195,8 @@ def results(start_model_entry, allometry_model_entry):
         final_model=best_model,
         final_results=allometry_res,
     )
+
+    return res
 
 
 @dataclass(frozen=True)

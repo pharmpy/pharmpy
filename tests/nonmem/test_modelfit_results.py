@@ -321,3 +321,19 @@ def test_saem(testdata):
     )
     assert res.individual_ofv is not None
     assert res.ofv == 140.234139194478
+
+
+def test_derivative_results(testdata):
+    model = read_model(
+        testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
+    )
+    res = parse_modelfit_results(
+        model, testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
+    )
+    assert model.execution_steps[0].derivatives != ()
+    assert res.derivatives is not None
+
+    derivatives = model.execution_steps[0].derivatives
+    derivative_names = tuple(tuple(map(str, d)) for d in derivatives)
+    derivative_names = tuple(";".join(d) for d in derivative_names)
+    assert all(d in res.derivatives.columns for d in derivative_names)

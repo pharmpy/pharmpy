@@ -116,6 +116,8 @@ def create_workflow(
 
 
 def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
+    model = store_input_model(context, model, results)
+
     model = update_initial_estimates(model, results)
     model_entry = ModelEntry.create(model, modelfit_results=results)
 
@@ -173,7 +175,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         qss_run_entries + run_model_entries
     )
 
-    return create_results(
+    res = create_results(
         StructSearchResults,
         model_entry,
         best_qss_entry,
@@ -182,12 +184,20 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
         strictness=strictness,
+        context=context,
     )
+
+    final_model = res.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
+
+    return res
 
 
 def run_pkpd(
     context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
 ):
+    input_model = store_input_model(context, input_model, results)
+
     model_entry = ModelEntry.create(input_model, modelfit_results=results)
     baseline_pd_model = create_baseline_pd_model(input_model, results.parameter_estimates, b_init)
     baseline_pd_model_entry = ModelEntry.create(baseline_pd_model, modelfit_results=None)
@@ -221,7 +231,7 @@ def run_pkpd(
     summary_input = summarize_modelfit_results_from_entries([model_entry])
     summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
 
-    return create_results(
+    res = create_results(
         StructSearchResults,
         model_entry,
         pd_baseline_fit[0],
@@ -230,10 +240,19 @@ def run_pkpd(
         cutoff=None,
         summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
         strictness=strictness,
+        context=context,
     )
+
+    final_model = res.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
+
+    return res
 
 
 def run_drug_metabolite(context, model, search_space, results, strictness):
+    # Create links to input model
+    model = store_input_model(context, model, results)
+
     model = update_initial_estimates(model, results)
     wb, candidate_model_tasks, base_model_description = create_drug_metabolite_models(
         model, results, search_space
@@ -252,11 +271,20 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
     wb.add_task(task_results, predecessors=candidate_model_tasks)
     results = call_workflow(Workflow(wb), "results_remaining", context)
 
+    final_model = results.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
+
     return results
 
 
 def post_process_drug_metabolite(
-    user_input_model_entry, base_model_description, rank_type, cutoff, strictness, *model_entries
+    context,
+    user_input_model_entry,
+    base_model_description,
+    rank_type,
+    cutoff,
+    strictness,
+    *model_entries,
 ):
     # NOTE : The base model is part of the model_entries but not the user_input_model
     res_models = []
@@ -315,6 +343,7 @@ def post_process_drug_metabolite(
         cutoff,
         summary_models=summary_models,
         strictness=strictness,
+        context=context,
     )
 
 
@@ -404,6 +433,13 @@ def validate_input(
             raise ValueError('Invalid argument "extra_model_results" for drug metabolite models.')
         if dv_types is not None:
             raise ValueError('Invalid argument "dv_types" for drug metabolite models.')
+
+
+def store_input_model(context, model, results):
+    model = model.replace(name="input", description="")
+    me = ModelEntry.create(model=model, modelfit_results=results)
+    context.store_input_model_entry(me)
+    return model
 
 
 @dataclass(frozen=True)

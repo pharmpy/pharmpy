@@ -226,7 +226,7 @@ class Model(BaseModel):
             cs = cs.replace_records([data_record], [newdata])
 
         cs = update_sizes(cs, model)
-        cs = update_estimation(cs, model)
+        cs, new_statements = update_estimation(cs, model)
         cs = update_description(cs, model.internals.old_description, model.description)
 
         if model._name != model.internals.old_name:
@@ -240,6 +240,12 @@ class Model(BaseModel):
             old_statements=model._statements,
         )
         model = model.replace(internals=new_internals)
+
+        if new_statements != model.statements:
+            model = model.replace(statements=new_statements)
+            model, updated_dataset = update_statements(
+                model, model.internals.old_statements, model._statements, trans
+            )
 
         return model
 
@@ -390,7 +396,6 @@ def parse_model(
         dependent_variables=dependent_variables,
         observation_transformation=obs_trans,
         execution_steps=execution_steps,
-        parent_model=None,
         initial_individual_estimates=init_etas,
         value_type=value_type,
         description=description,

@@ -110,7 +110,8 @@ class CovariateInterpreter(Interpreter):
         return self.option(tree)
 
     def fp_option(self, tree):
-        return self.option(tree)
+        children = self.visit_children(tree)
+        return list((child.value.upper()) for child in children)
 
     def optional_cov(self, tree):
         children = self.visit_children(tree)

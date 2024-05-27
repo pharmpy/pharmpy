@@ -161,7 +161,8 @@ def summarize_tool(model_entries):
 
     for model_entry in model_entries:
         model, res = model_entry.model, model_entry.modelfit_results
-        description, parent_model = model.description, model.parent_model
+        description = model.description
+        parent_model = model_entry.parent.name if model_entry.parent is not None else None
         if res is not None:
             ofv = res.ofv
             runtime_est = res.estimation_runtime_iterations.iloc[0]

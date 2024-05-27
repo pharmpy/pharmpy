@@ -49,7 +49,7 @@ all_continuous_covariate_effects = (
     'pow',
 )
 
-all_categorical_covariate_effects = ('cat',)
+all_categorical_covariate_effects = ('cat', 'cat2')
 
 all_covariate_effects = all_continuous_covariate_effects + all_categorical_covariate_effects
 

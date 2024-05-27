@@ -112,9 +112,14 @@ def create_workflow(
     return Workflow(wb)
 
 
-def _start(results, model):
-    # Convert to modelentry
-    return ModelEntry.create(model=model, modelfit_results=results)
+def _start(context, results, model):
+    input_model = model.replace(name="input", description="")
+    input_model_entry = ModelEntry.create(model=input_model, modelfit_results=results)
+
+    # Create links to input model
+    context.store_input_model_entry(input_model_entry)
+
+    return input_model_entry
 
 
 def create_random_init_model(
@@ -203,7 +208,7 @@ def create_new_parameter_inits(model, fraction, scale, seed):
     return new_parameters
 
 
-def task_results(strictness, retries):
+def task_results(context, strictness, retries):
     # Note : the input (modelentry) is a part of retries
     retry_runs = []
     for r in retries:
@@ -230,6 +235,7 @@ def task_results(strictness, retries):
         rank_type,
         cutoff,
         strictness=strictness,
+        context=context,
         summary_models=summary_models,
     )
 
@@ -237,6 +243,10 @@ def task_results(strictness, retries):
         res,
         summary_tool=_modify_summary_tool(res.summary_tool, retry_runs),
     )
+
+    final_model = res.final_model.replace(name="final")
+    # Create links to final model
+    context.store_final_model_entry(final_model)
 
     return res
 

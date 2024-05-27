@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import importlib.util
 import warnings
-from typing import TYPE_CHECKING, Dict, List, Optional, Union
+from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union
 
 from pharmpy.model import Model, ModelfitResultsError
-from pharmpy.workflows import ModelfitResults
+from pharmpy.workflows import ModelEntry, ModelfitResults
 
 if TYPE_CHECKING:
     import numpy as np
@@ -17,7 +17,7 @@ else:
 from .ml import predict_influential_individuals, predict_outliers
 
 
-def summarize_individuals(models: List[Model], models_res: List[ModelfitResults]) -> pd.DataFrame:
+def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
     """Creates a summary dataframe keyed by model-individual pairs for an input
     list of models.
 
@@ -49,23 +49,9 @@ def summarize_individuals(models: List[Model], models_res: List[ModelfitResults]
     pd.DataFrame | None
         The summary as a dataframe
 
-    Examples
-    --------
-    >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> from pharmpy.tools import fit, summarize_individuals
-    >>> fit_results = fit(model)  # doctest: +SKIP
-    <Pharmpy model object pheno>
-    >>> from pharmpy.tools import run_tool # doctest: +SKIP
-    >>> results = run_tool(
-    ...     'modelsearch',
-    ...     model=model,
-    ...     mfl='ABSORPTION(ZO);PERIPHERALS([1, 2])',
-    ...     algorithm='reduced_stepwise'
-    ... ) # doctest: +SKIP
-    >>> summarize_individuals([results.start_model, *results.models]) # doctest: +SKIP
-
     """  # noqa: E501
+    models = [me.model for me in mes]
+    models_res = [me.modelfit_results for me in mes]
     if len(models) != len(models_res):
         raise ValueError('Different length of `models` and `models_res`')
 
@@ -77,8 +63,8 @@ def summarize_individuals(models: List[Model], models_res: List[ModelfitResults]
 
     df = pd.concat(
         map(
-            lambda model: groupedByIDAddColumnsOneModel(resDict, model, resDict[model.name]),
-            models,
+            lambda me: groupedByIDAddColumnsOneModel(resDict, me),
+            mes,
         ),
         keys=[model.name for model in models],
         names=['model'],
@@ -88,12 +74,6 @@ def summarize_individuals(models: List[Model], models_res: List[ModelfitResults]
 
     assert df is not None
     return df
-
-
-def parent_model_name(model: Model) -> str:
-    name = model.parent_model
-    assert isinstance(name, str)
-    return name
 
 
 def model_name(model: Model) -> str:
@@ -149,11 +129,13 @@ def dofv(
 
 
 def groupedByIDAddColumnsOneModel(
-    resDict: Dict[str, ModelfitResults], model: Model, model_res: ModelfitResults
+    resDict: Dict[str, ModelfitResults], me: ModelEntry
 ) -> pd.DataFrame:
+    model = me.model
+    model_res = me.modelfit_results
     id_column_name = model.datainfo.id_column.name
     index = pd.Index(data=model.dataset[id_column_name].unique(), name=id_column_name)
-    parent_model_name = model.parent_model
+    parent_model_name = me.parent.name if me.parent is not None else None
     parent_model_res = None if parent_model_name is None else resDict.get(parent_model_name)
     df = pd.DataFrame(
         {
@@ -170,8 +152,7 @@ def groupedByIDAddColumnsOneModel(
 
 
 def summarize_individuals_count_table(
-    models: Optional[List[Model]] = None,
-    models_res: Optional[List[ModelfitResults]] = None,
+    model_entries: Optional[Sequence[ModelEntry]] = None,
     df: pd.DataFrame = None,
 ):
     r"""Create a count table for individual data
@@ -196,8 +177,8 @@ def summarize_individuals_count_table(
 
     Parameters
     ----------
-    models : list of models
-        List of models to summarize.
+    model_entries : list of model_entries
+        List of model_entries to summarize.
     models_res : List[ModelfitResults]
         Input results
     df : pd.DataFrame
@@ -213,6 +194,15 @@ def summarize_individuals_count_table(
     summarize_individuals : Get raw individual data
 
     """  # noqa: E501
+    if model_entries is None:
+        models = None
+    else:
+        models = [me.model for me in model_entries]
+    if model_entries is None:
+        models_res = None
+    else:
+        models_res = [me.modelfit_results for me in model_entries]
+
     if models and models_res:
         if len(models) != len(models_res):
             raise ValueError('Different length of `models` and `models_res`')
@@ -230,11 +220,16 @@ def summarize_individuals_count_table(
 
     ninds = len(df.index.unique(level='ID'))
     parents = df['parent_model'].iloc[::ninds]
-    parent_ofvs = df.loc[parents]['ofv'].reset_index(drop=True)
-    parent_ofvs.index = df.index
+    ofvs = df['ofv']
+    parent_ofvs = ofvs.copy()
+    for (name, _), parent in parents.items():
+        if parent is None:
+            parent_ofvs.loc[name] = np.nan
+        else:
+            parent_ofvs.loc[name] = list(ofvs.loc[parent])
 
     for name in df.index.unique(level='model'):
-        if name == df.loc[name]['parent_model'].iloc[0]:
+        if df.loc[name]['parent_model'].iloc[0] is None:
             start_name = name
             break
     else:

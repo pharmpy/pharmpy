@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Mapping
 from collections.abc import Sequence as CollectionsSequence
-from typing import TYPE_CHECKING, Any, Mapping, Optional, Sequence, Tuple, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, Sequence, Union, overload
 
 from pharmpy.basic import Expr
 from pharmpy.internals.immutable import Immutable, cache_method
@@ -193,7 +194,7 @@ class Parameters(CollectionsSequence, Immutable):
 
     """
 
-    def __init__(self, parameters: Tuple[Parameter, ...] = ()):
+    def __init__(self, parameters: tuple[Parameter, ...] = ()):
         self._params = parameters
 
     @classmethod

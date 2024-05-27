@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Mapping, Union
+from collections.abc import Mapping
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     import symengine

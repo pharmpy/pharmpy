@@ -25,7 +25,7 @@ from .expressions import (
 )
 from .parameters import get_thetas
 
-EffectType = Union[Literal['lin', 'cat', 'piece_lin', 'exp', 'pow'], str]
+EffectType = Union[Literal['lin', 'cat', 'cat2', 'piece_lin', 'exp', 'pow'], str]
 OperationType = Literal['*', '+']
 
 
@@ -110,7 +110,7 @@ def _get_covariate_effect(model: Model, symbol, covariate):
                 if any(theta in free_symbols for theta in thetas):
                     perform_matching = True
     if perform_matching:
-        for effect in ['lin', 'cat', 'piece_lin', 'exp', 'pow']:
+        for effect in ['lin', 'cat', 'cat2', 'piece_lin', 'exp', 'pow']:
             template = _create_template(effect, model, str(covariate))
             template = template.template.expression
             template = sympy.sympify(template)
@@ -291,6 +291,23 @@ def add_covariate_effect(
         - Init: 0.001
         - Upper: 5
         - Lower: -1
+    - (alternative) Linear function for categorical covariates (*cat2*)
+        - Function:
+            - If covariate is the most common category:
+
+            .. math::
+
+                \\text{coveff} = 1
+
+            - For each additional category:
+
+            .. math::
+
+                \\text{coveff} = \\text{theta}
+
+        - Init: 0.001
+        - Upper: 6
+        - Lower: 0
     - Piecewise linear function/"hockey-stick", continuous covariates only (*piece_lin*)
         - Function:
             - If cov <= median:
@@ -365,7 +382,7 @@ def add_covariate_effect(
         Type of covariate effect. May be abbreviated covariate effect (see above) or custom.
     operation : str, optional
         Whether the covariate effect should be added or multiplied (default).
-    allow_nested: bool, optional
+    allow_nested : bool, optional
         Whether to allow adding a covariate effect when one already exists for
         the input parameter-covariate pair.
 
@@ -541,6 +558,8 @@ def _choose_param_inits(effect, model, covariate, index=None):
             init = init_default
     elif effect == 'pow':
         init = init_default
+    elif effect == "cat2":
+        init = 1.01
     else:
         init = init_default
 
@@ -598,6 +617,9 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
     elif effect == 'cat':
         lower = -1
         upper = 5
+    elif effect == 'cat2':
+        lower = 0
+        upper = 6
     else:
         lower = -100000
         upper = 100000
@@ -611,6 +633,9 @@ def _create_template(effect, model, covariate):
     elif effect == 'cat':
         counts = _count_categorical(model, covariate)
         return CovariateEffect.categorical(counts)
+    elif effect == 'cat2':
+        counts = _count_categorical(model, covariate)
+        return CovariateEffect.categorical(counts, alternative=True)
     elif effect == 'piece_lin':
         return CovariateEffect.piecewise_linear()
     elif effect == 'exp':
@@ -701,7 +726,7 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def categorical(cls, counts):
+    def categorical(cls, counts, alternative=False):
         """Linear categorical template (for categorical covariates)."""
         symbol = Expr.symbol('symbol')
         most_common = counts.idxmax()
@@ -718,9 +743,15 @@ class CovariateEffect:
                 else:
                     conditions += [BooleanExpr.eq(Expr.symbol('cov'), cat)]
                     if len(categories) == 2:
-                        values += [1 + Expr.symbol('theta')]
+                        if alternative:
+                            values += [Expr.symbol('theta')]
+                        else:
+                            values += [1 + Expr.symbol('theta')]
                     else:
-                        values += [1 + Expr.symbol(f'theta{i}')]
+                        if alternative:
+                            values += [Expr.symbol(f'theta{i}')]
+                        else:
+                            values += [1 + Expr.symbol(f'theta{i}')]
 
         expression = Expr.piecewise(*zip(values, conditions))
 

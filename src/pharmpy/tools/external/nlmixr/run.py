@@ -1,5 +1,6 @@
 import json
 import os
+import shutil
 import subprocess
 import sys
 import uuid
@@ -7,6 +8,7 @@ import warnings
 from pathlib import Path
 from typing import Optional, Union
 
+import pharmpy.config as config
 import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
@@ -14,6 +16,7 @@ from pharmpy.model.external.nlmixr import convert_model
 from pharmpy.model.external.nlmixr.model import add_evid
 from pharmpy.modeling import (
     append_estimation_step_options,
+    get_config_path,
     get_sigmas,
     get_thetas,
     set_evaluation_step,
@@ -25,8 +28,10 @@ from pharmpy.workflows import ModelEntry, default_context
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
+PARENT_DIR = f'..{os.path.sep}'
 
-def execute_model(model_entry, db, evaluate=False, path=None):
+
+def execute_model(model_entry, context, evaluate=False, path=None):
     assert isinstance(model_entry, ModelEntry)
     model = model_entry.model
 
@@ -34,15 +39,17 @@ def execute_model(model_entry, db, evaluate=False, path=None):
         if [s.evaluation for s in model.execution_steps._steps][0] is False:
             model = set_evaluation_step(model)
 
-    database = db.model_database
-    model = convert_model(model)
-    if path is None:
+    if path is None:  # Only used in verification
         path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'
+
+    database = context.model_database
+    model = convert_model(model)
+    model_entry = ModelEntry.create(model=model, parent=model_entry.parent)
+    database.store_model(model)
+
     model = model.replace(internals=model.internals.replace(path=path))
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
-    if model.datainfo.path is not None:
-        model = model.replace(datainfo=model.datainfo.replace(path=None))
     write_csv(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
@@ -70,7 +77,7 @@ def execute_model(model_entry, db, evaluate=False, path=None):
     cg.add('sigma <- as.data.frame(fit$theta)')
     cg.add('log_likelihood <- fit$objDf$`Log-likelihood`')
     cg.add('runtime_total <- sum(fit$time)')
-    cg.add('pred <- as.data.frame(fit[c("ID", "TIME", "PRED", "IPRED")])')
+    cg.add('pred <- as.data.frame(fit[c("PRED", "IPRED")])')
 
     if sys.platform == 'win32':
         p = f"{path / model.name}.RDATA".replace("\\", "\\\\")
@@ -81,9 +88,7 @@ def execute_model(model_entry, db, evaluate=False, path=None):
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
 
-    from pharmpy.tools.external.nlmixr import conf
-
-    rpath = conf.rpath / 'bin' / 'Rscript'
+    rpath = get_rpath()
 
     newenv = os.environ
     # Reset environment variables incase started from R
@@ -119,7 +124,6 @@ def execute_model(model_entry, db, evaluate=False, path=None):
     }
 
     with database.transaction(model) as txn:
-        txn.store_local_file(path / f'{model.name}.R')
         txn.store_local_file(rdata_path)
 
         txn.store_local_file(stdout)
@@ -140,7 +144,36 @@ def execute_model(model_entry, db, evaluate=False, path=None):
     log = res.log if res else None
     model_entry = model_entry.attach_results(modelfit_results=res, log=log)
 
+    context.store_model_entry(model_entry)
+
     return model_entry
+
+
+def get_rpath():
+    from pharmpy.tools.external.nlmixr import conf
+
+    r_candidate = "Rscript"
+
+    default_path = conf.rpath
+    if default_path != Path(''):
+        path = default_path / 'bin' / r_candidate
+        if not path.is_file():
+            raise FileNotFoundError(f'Cannot find R script for nlmixr exection ({default_path})')
+    else:
+        # Not in configuration file
+        path = shutil.which(r_candidate)
+        if path is None:
+            with warnings.catch_warnings():
+                conf_path = get_config_path()
+                if conf_path:
+                    raise FileNotFoundError(
+                        'No path to R configured in pharmpy.conf and R not in PATH'
+                    )
+                else:
+                    raise FileNotFoundError(
+                        f'Cannot find pharmpy.conf: {config.user_config_path()}'
+                    )
+    return str(path)
 
 
 def verification(
@@ -233,12 +266,9 @@ def verification(
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
     write_fix_eta(nonmem_res, path=path)
-    try:
-        # FIXME : use fit() instead and incorporate write_fix_eta
-        nlmixr_model_entry = ModelEntry.create(nlmixr_model, modelfit_results=None)
-        nlmixr_model_entry = execute_model(nlmixr_model_entry, db, path=path)
-    except Exception:
-        raise Exception("nlmixr2 model could not be fitted")
+    # FIXME : use fit() instead and incorporate write_fix_eta
+    nlmixr_model_entry = ModelEntry.create(nlmixr_model, modelfit_results=None)
+    nlmixr_model_entry = execute_model(nlmixr_model_entry, db, path=path)
 
     # Combine the two based on ID and time
     if not ignore_print:
@@ -308,7 +338,6 @@ def compare_models(
             predictions = predictions.drop(
                 mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
             )
-            predictions = predictions.set_index(["ID", "TIME"])
             mod1_res_pred = ModelfitResults(predictions=predictions)
             mod2_res_pred = model_2_res
 
@@ -322,7 +351,6 @@ def compare_models(
             predictions = predictions.drop(
                 mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list()
             )
-            predictions = predictions.set_index(["ID", "TIME"])
 
             mod1_res_pred = model_1_res
             mod2_res_pred = ModelfitResults(predictions=predictions)
@@ -587,7 +615,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
         import pyreadr
     try:
         rdata = pyreadr.read_r(rdata_path)
-    except (FileNotFoundError, OSError):
+    except (FileNotFoundError, OSError, pyreadr.PyreadrError):
         return None
 
     rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names]
@@ -623,10 +651,8 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
             thetas_index += 1
 
     pe = pd.Series(pe)
-    predictions = rdata['pred'].set_index(["ID", "TIME"])
-    predictions.index = predictions.index.set_levels(
-        predictions.index.levels[0].astype("float64"), level=0
-    )
+    predictions = rdata['pred']
+    predictions = predictions.set_index(model.dataset[model.dataset["DV"] != 0].index)
 
     res = ModelfitResults(
         ofv=ofv,
@@ -634,5 +660,6 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
         parameter_estimates=pe,
         predictions=predictions,
         log=Log(),
+        warnings=[],  # FIXME : Parse warnings
     )
     return res

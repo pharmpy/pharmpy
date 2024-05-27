@@ -1,4 +1,5 @@
-from typing import Mapping, Tuple, Union
+from collections.abc import Mapping
+from typing import Union
 
 from lark import Tree, Visitor
 from lark.lexer import Token
@@ -17,7 +18,7 @@ def _empty_node(rule: str):
 
 
 class InsertMissing(Visitor):
-    def __init__(self, missing: Tuple[Mapping[str, Tuple[Tuple[int, str], ...]], ...]):
+    def __init__(self, missing: tuple[Mapping[str, tuple[tuple[int, str], ...]], ...]):
         self._missing = missing
 
     def __default__(self, tree: Tree):

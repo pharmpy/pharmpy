@@ -34,7 +34,7 @@ def test_retries(tmp_path, model_count, scale, start_modelres):
                 is_within_fraction(start_modelres[0], start_modelres[1], model, scale, fraction)
         rundir = tmp_path / 'retries1'
         assert rundir.is_dir()
-        assert model_count(rundir) == 2  # Not the start model
+        assert model_count(rundir) == 2 + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()

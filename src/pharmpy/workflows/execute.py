@@ -59,9 +59,8 @@ def execute_workflow(
         for inp in task.task_input:
             if isinstance(inp, Model):
                 original_input_models.append(inp)
-                new_model = inp.replace(parent_model=inp.name)
-                new_inp.append(new_model)
-                input_models.append(new_model)
+                new_inp.append(inp)
+                input_models.append(inp)
             else:
                 new_inp.append(inp)
 

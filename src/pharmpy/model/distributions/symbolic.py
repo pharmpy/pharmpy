@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from collections.abc import Collection, Hashable, Sized
+from collections.abc import Collection, Hashable, Mapping, Sequence, Sized
 from math import sqrt
-from typing import Any, Mapping, Sequence, Union
+from typing import Any, Union
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol

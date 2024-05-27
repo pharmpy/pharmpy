@@ -31,13 +31,13 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
-from pharmpy.tools import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.common import (
     create_plots,
     summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
+from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
@@ -190,7 +190,10 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     if skip is None:
         skip = []
 
+    input_model = input_model.replace(name="input", description="")
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
+    context.store_input_model_entry(input_model_entry)
+
     # Check if model has a proportional error
     proportional_workflow = proportional_error_workflow(input_model_entry)
     model_entry = call_workflow(proportional_workflow, 'Convert_error_model', context)
@@ -219,17 +222,12 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         else:
             skip.append(selected_model_name)
 
-    context.store_final_model_entry(model_entry)
-
     # Check that there actually occured an improvement from the initial model.
     delta_ofv = input_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
     if delta_ofv < cutoff:
         model_entry = input_model_entry
 
-    selected_models = [model_entry.model for model_entry in selected_model_entries]
-    model_results = [model_entry.modelfit_results for model_entry in selected_model_entries]
-
-    sumind = summarize_individuals(selected_models, model_results)
+    sumind = summarize_individuals(selected_model_entries)
     sumcount = summarize_individuals_count_table(df=sumind)
     sum_models = summarize_modelfit_results_from_entries(selected_model_entries)
     sum_models['step'] = list(range(len(sum_models)))
@@ -238,12 +236,13 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     summary_errors = summarize_errors_from_entries(selected_model_entries)
 
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
+    final_model = model_entry.model.replace(name="final")
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
         summary_individuals=sumind,
         summary_individuals_count=sumcount,
-        final_model=model_entry.model,
+        final_model=final_model,
         final_results=model_entry.modelfit_results,
         summary_models=summf,
         summary_tool=summary_tool,
@@ -257,6 +256,10 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
             model_entry.model, model_entry.modelfit_results
         ),
     )
+
+    # Create links to final model
+    context.store_final_model_entry(final_model)
+
     return res
 
 

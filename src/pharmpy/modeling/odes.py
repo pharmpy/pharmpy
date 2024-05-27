@@ -2,7 +2,8 @@
 :meta private:
 """
 
-from typing import Literal, Mapping, Set, Union
+from collections.abc import Mapping
+from typing import Literal, Union
 
 from pharmpy.basic import Expr, TExpr
 from pharmpy.deps import sympy
@@ -996,7 +997,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     return model
 
 
-def _find_last_transit(odes: CompartmentalSystem, transits: Set[Compartment]):
+def _find_last_transit(odes: CompartmentalSystem, transits: set[Compartment]):
     for trans in transits:
         destination, flow = odes.get_compartment_outflows(trans)[0]
         if destination not in transits:
@@ -2708,7 +2709,7 @@ def get_central_volume_and_clearance(model: Model):
 
     Parameters
     ----------
-    model: Model
+    model : Model
         Pharmpy model
 
 

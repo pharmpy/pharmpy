@@ -11,18 +11,31 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.workflows import default_context
 
 
-def test_invalid_search_space_raises(tmp_path, testdata):
+@pytest.mark.parametrize(
+    'search_space, error',
+    [
+        (
+            'XYZ',
+            'Invalid `search_space`, could not be parsed:',
+        ),
+        (
+            'ELIMINATION(ZO)',  # ABSORPTION(INST) automatically added
+            'The given search space have instantaneous absorption',
+        ),
+    ],
+)
+def test_invalid_search_space_raises(tmp_path, testdata, search_space, error):
     with chdir(tmp_path):
         db, model, res = _load_model(testdata)
 
         with pytest.raises(
             ValueError,
-            match='Invalid `search_space`, could not be parsed:',
+            match=error,
         ):
             run_amd(
                 model,
                 results=res,
-                search_space='XYZ',
+                search_space=search_space,
                 retries_strategy="skip",
                 path=db.path,
                 resume=True,

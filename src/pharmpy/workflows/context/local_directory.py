@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os.path
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, Optional
@@ -82,6 +83,8 @@ class LocalDirectoryContext(Context):
                 fh.write("path,time,severity,message\n")
 
     def _store_common_options(self, common_options):
+        if common_options is None:
+            common_options = {}
         if self.path == self._top_path:
             if not self._common_options_path.is_file():
                 with open(self._common_options_path, 'w') as f:
@@ -118,7 +121,7 @@ class LocalDirectoryContext(Context):
 
     @property
     def _log_path(self) -> Path:
-        return self._top_path / 'log'
+        return self._top_path / 'log.csv'
 
     @property
     def _metadata_path(self) -> Path:
@@ -153,10 +156,15 @@ class LocalDirectoryContext(Context):
             return json.load(f, cls=MetadataJSONDecoder)
 
     def store_key(self, name: str, key: ModelHash):
-        # FIXME: check if exists
         from_path = self._models_path / name
         if not from_path.exists():
-            create_directory_symlink(self._models_path / name, self.model_database.path / str(key))
+            absolute_to_path = self.model_database.path / str(key)
+            if absolute_to_path.exists():
+                if os.name != 'nt':
+                    relative_to_path = Path(os.path.relpath(absolute_to_path, from_path.parent))
+                else:
+                    relative_to_path = absolute_to_path
+                create_directory_symlink(from_path, relative_to_path)
 
     def retrieve_key(self, name: str) -> ModelHash:
         symlink_path = self._models_path / name
@@ -218,21 +226,16 @@ class LocalDirectoryContext(Context):
         log_path = self._log_path
         with self._write_lock(log_path):
             with open(log_path, 'a') as fh:
-                fh.write(f'{self.context_path},{datetime.now()},{severity},{msg}\n')
+
+                def mangle_message(msg):
+                    return '"' + msg.replace('"', '""') + '"'
+
+                fh.write(f'{self.context_path},{datetime.now()},{severity},{mangle_message(msg)}\n')
 
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
         log_path = self._log_path
         with self._read_lock(log_path):
-            # NOTE: Custom parsing to allow message column to contain any character
-            with open(log_path, 'r') as fh:
-                lines = []
-                for line in fh.readlines():
-                    a = line[0:-1].split(',')
-                    if len(a) > 4:
-                        a[3] = ','.join(a[3:])
-                        del a[4:]
-                    lines.append(a)
-                df = pd.DataFrame(lines[1:], columns=lines[0])
+            df = pd.read_csv(log_path)
         count = df['path'].str.count('/')
         curlevel = self.context_path.count('/')
         if level == 'lower':

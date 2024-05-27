@@ -21,7 +21,6 @@ def convert_model(model):
         dependent_variables=model.dependent_variables,
         observation_transformation=model.observation_transformation,
         description=model.description,
-        parent_model=model.name,
         initial_individual_estimates=model.initial_individual_estimates,
     )
     return new

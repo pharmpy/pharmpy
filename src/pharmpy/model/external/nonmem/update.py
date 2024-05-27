@@ -11,6 +11,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.parse import AttrTree
+from pharmpy.internals.parse.generic import AttrToken
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
     Assignment,
@@ -37,10 +38,8 @@ from .records.parsers import CodeRecordParser
 if TYPE_CHECKING:
     from .model import Model
 
-from pharmpy.model.external.nonmem.parsing import parse_table_columns
-
 from .nmtran_parser import NMTranControlStream
-from .parsing import parse_column_info
+from .parsing import extract_verbatim_derivatives, parse_column_info
 from .records.code_record import CodeRecord
 from .records.etas_record import EtasRecord
 from .records.factory import create_record
@@ -1617,7 +1616,7 @@ def update_estimation(control_stream, model):
     old = model.internals.old_execution_steps
     new = model.execution_steps
     if old == new:
-        return control_stream
+        return control_stream, model.statements
 
     old_ests = [step for step in old if isinstance(step, EstimationStep)]
     new_ests = [step for step in new if isinstance(step, EstimationStep)]
@@ -1771,19 +1770,6 @@ def update_estimation(control_stream, model):
             )
 
     # Update $TABLE
-    new_pred, old_pred = set(), set()
-    new_res, old_res = set(), set()
-    for estep in new_ests:
-        new_pred.update(estep.predictions)
-        new_res.update(estep.residuals)
-    for old_estep in old_ests:
-        old_pred.update(old_estep.predictions)
-        old_res.update(old_estep.residuals)
-    cols = new_pred | new_res
-
-    # Remore or add parameters to $TABLE
-    remove = bool((not new_res and old_res) or (not new_pred and old_pred))
-
     # Check if there are multiple $PROBLEMs
     # FIXME: At the moment we always take the last $PROBLEM. What to do with multiple $PROBLEMs?
     problems = [record.name for record in control_stream.records if record.name == "PROBLEM"]
@@ -1793,53 +1779,280 @@ def update_estimation(control_stream, model):
         problem_no = 0
     tables = control_stream.get_records("TABLE", problem_no)
 
-    # If $TABLE does not exist create a new TABLE record
-    if model.dataset is not None and not tables and cols:
+    predictions_subset = set()
+    residuals_subset = set()
+    derivatives_subset = set()
+    for estep in new_ests:
+        predictions_subset.update(estep.predictions)
+        residuals_subset.update(estep.residuals)
+        derivatives_subset.update(estep.derivatives)
+        for der in estep.derivatives:
+            if any(d not in model.random_variables for d in der):
+                raise ValueError(f'Derivative {der} not supported in NONMEM currently')
+    verbatim_derivatives = extract_verbatim_derivatives(control_stream, model.random_variables)
+    single_deriv_subset = set([d for d in derivatives_subset if len(d) == 1])
+    single_deriv_subset = set(nonmem_deriv_names(single_deriv_subset, model.random_variables))
+    multi_deriv_subset = set([d for d in derivatives_subset if len(d) > 1])
+
+    old_predictions_subset = set()
+    old_residuals_subset = set()
+    for estep in old_ests:
+        old_predictions_subset.update(estep.predictions)
+        old_residuals_subset.update(estep.residuals)
+    pred_res_to_remove = old_predictions_subset.difference(predictions_subset).union(
+        old_residuals_subset.difference(residuals_subset)
+    )
+
+    # Find which derivative parameters to remove
+    remove_param = {}
+    for key, value in verbatim_derivatives.items():
+        if value not in derivatives_subset:
+            remove_param[key] = convert_derive_to_nonmem(value, model.random_variables)
+
+    if remove_param:
+        control_stream = update_verbatim(
+            control_stream, model.random_variables, to_remove=remove_param
+        )
+
+    new_statements = model.statements
+    if remove_param:
+        new_statements = []
+        for statement in model.statements:
+            if isinstance(statement, CompartmentalSystem):
+                new_statements.append(statement)
+            elif str(statement.symbol) not in remove_param.keys():
+                new_statements.append(statement)
+        new_statements = Statements(new_statements)
+
+    cols = sorted(predictions_subset) + sorted(residuals_subset) + sorted(single_deriv_subset)
+
+    if not tables and (cols or multi_deriv_subset):
         last_rec_ix = control_stream.records.index(control_stream.records[-1])
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
-        if any(id_val > 99999 for id_val in get_ids(model)):
+        if model.dataset is not None and any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
         s += '\n'
         tabrec = create_record(s)
+
+        # Add second order derivative parameters to table and statements
+        if multi_deriv_subset:
+            control_stream, new_table, new_statements = add_multi_deriv(
+                tabrec, multi_deriv_subset, model.random_variables, control_stream, new_statements
+            )
+
         control_stream = control_stream.insert_record(tabrec, at_index=last_rec_ix)
 
-    # Add or remove predictions/residuals
-    if old_pred != new_pred or old_res != new_res:
+    elif tables:
+        # Update the last table with the new information
+        table = tables[-1]
+        new_table = table
+        derivative_regex = r'[HG]\d+'
+        for item in table.all_options:
+            if item.key in remove_param or item.key in pred_res_to_remove:
+                new_table = new_table.remove_option(item.key)
+            elif item.key in predictions_subset:
+                predictions_subset.discard(item.key)
+            elif item.key in residuals_subset:
+                residuals_subset.discard(item.key)
+            elif item.key in single_deriv_subset:
+                single_deriv_subset.discard(item.key)
+            elif re.match(derivative_regex, item.key):  # Remove unwanted derivatives
+                new_table = new_table.remove_option(item.key)
+            else:
+                # Unknown --> Leave as is
+                pass
 
-        # Add new parameters to $TABLE
-        if model.dataset is not None and tables and not remove:
-            for i in range(len(tables)):
-                old_cols = parse_table_columns(
-                    control_stream, len(model.random_variables.etas.names), problem_no
-                )
-                old_cols_str = " ".join(old_cols[i])
-                non_cols = str(tables[i]).split(old_cols_str)
-                new_cols = [col for col in cols if col not in old_cols[i]]
-                new = non_cols[0] + old_cols_str + " " + " ".join(new_cols) + non_cols[1]
-                new_record = create_record(new)
-                control_stream = control_stream.replace_records([tables[i]], [new_record])
+        for option in sorted(predictions_subset.union(residuals_subset)):
+            new_table = new_table.append_option(option)
 
-        # Remove all predictions/residuals
-        elif model.dataset is not None and tables and remove:
-            for i in range(len(tables)):
-                old_cols = parse_table_columns(
-                    control_stream, len(model.random_variables.etas.names), problem_no
-                )
-                old_cols_str = " ".join(old_cols[i])
-                non_cols = str(tables[i]).split(old_cols_str)
-                if not new_pred and not new_res:  # remove all
-                    new_cols = [col for col in old_cols[i] if col not in old_pred | old_res]
-                elif not new_pred:  # remove all predictions
-                    new_cols = [col for col in old_cols[i] if col not in old_pred]
-                elif not new_res:  # remove all residuals
-                    new_cols = [col for col in old_cols[i] if col not in old_res]
-                new = non_cols[0] + " ".join(new_cols) + non_cols[1]
-                new_record = create_record(new)
-                control_stream = control_stream.replace_records([tables[i]], [new_record])
+        for option in sorted(single_deriv_subset):
+            new_table = new_table.append_option(option)
 
-    return control_stream
+        # Check what already exist
+        multi_deriv_subset = [
+            d for d in multi_deriv_subset if d not in set(verbatim_derivatives.values())
+        ]
+        if multi_deriv_subset:
+            # ADD TO STATEMENTS AS WELL
+            control_stream, new_table, new_statements = add_multi_deriv(
+                new_table,
+                multi_deriv_subset,
+                model.random_variables,
+                control_stream,
+                new_statements,
+            )
+
+        new_table = sort_table(new_table)
+        control_stream = control_stream.replace_records([table], [new_table])
+    return control_stream, new_statements
+
+
+def sort_table(table):
+    move_last = (
+        "NOAPPEND",
+        "NOPRINT",
+        "ONEHEADER",
+        "FILE",
+    )
+    sorted_table = table
+    for option in table.all_options:
+        if option.key in move_last:
+            sorted_table = sorted_table.remove_option(option.key)
+            sorted_table = sorted_table.append_option(option.key, option.value)
+    return sorted_table
+
+
+def nonmem_deriv_names(derivs, random_variables):
+    # Convert first order derivatives to nonmem naming
+    new_derivs = []
+    for d in derivs:
+        assert len(d) == 1
+        d_param = d[0].name
+        if d_param in random_variables.etas.names:
+            n = random_variables.etas.names.index(d_param) + 1
+            new_derivs.append(f"G0{n}1")
+        elif d_param in random_variables.epsilons.names:
+            n = random_variables.epsilons.names.index(d_param) + 1
+            new_derivs.append(f"H0{n}1")
+        else:
+            raise ValueError(f"Unknown derivative: {d}")
+    return new_derivs
+
+
+def add_multi_deriv(table, multi_deriv_subset, random_variables, control_stream, new_statements):
+    verbatim_to_add = {}
+    for derive in sorted(multi_deriv_subset):
+        # Check if verbatim need to be updated
+        new_param_name = create_derivative_name(
+            derive, random_variables
+        )  # Assume name not already in use
+        d = convert_derive_to_nonmem(derive, random_variables)
+        verbatim_to_add[new_param_name] = d
+        table = table.append_option(new_param_name)
+
+    if verbatim_to_add:
+        control_stream = update_verbatim(control_stream, random_variables, to_add=verbatim_to_add)
+        for new_param_name in verbatim_to_add:
+            ass = Assignment(Expr.symbol(new_param_name), Expr(0))
+            new_statements += ass
+
+    return control_stream, table, new_statements
+
+
+def update_verbatim(cs, random_variables, to_add: dict = {}, to_remove: dict = {}):
+
+    error_record = cs.get_error_record()
+    old_attr_tree = error_record.root
+    new_children = tuple()
+    r = r"([\w\d]+)\s*=\s*([GH]+)\((\d+)\s*,\s*(\d+)\)$"
+
+    last_node = len(old_attr_tree.children)
+    verbatim_found = False
+    for current_number, child in enumerate(old_attr_tree.children, start=1):
+        if child.rule != "verbatim":
+            new_children += (child,)
+        else:
+            verbatim_found = True
+
+            verbatim_child = child.children[0]
+            m = re.search(r, verbatim_child.value)
+            if not m:
+                new_children += (child,)
+            else:
+                deriv_param = m.group(1)
+                if deriv_param not in to_remove.keys():  # Here, entries are removed
+                    new_children += (child,)
+
+        if current_number == last_node and child.rule == "verbatim":
+            if to_add:
+                new_children = _add_verbatim_derivative(new_children, to_add)
+            else:
+                if new_children[-1].children[0].value == '"LAST':
+                    new_children = new_children[:-1]  # Remove entire verbatim block
+        elif current_number == last_node and not verbatim_found:
+            # Initiate new verbatim block
+            new_node = AttrTree(
+                "verbatim",
+                (
+                    AttrToken("VERBATIM_STATEMENT", '"LAST'),
+                    AttrToken('NEWLINE', '\n'),
+                ),
+            )
+            new_children += (new_node,)
+            if to_add:
+                new_children = _add_verbatim_derivative(new_children, to_add)
+
+    # REPLACE ERROR RECORD
+    new_error_record = error_record.replace(root=AttrTree.create("root", new_children))
+    cs = cs.replace_records([error_record], [new_error_record])
+    return cs
+
+
+def _add_verbatim_derivative(new_children, to_add):
+    for new_param_name, nonmem_derive_name in to_add.items():
+        new_node = AttrTree(
+            "verbatim",
+            (
+                AttrToken("VERBATIM_STATEMENT", f'"  {new_param_name}={nonmem_derive_name}'),
+                AttrToken('NEWLINE', '\n'),
+            ),
+        )
+        new_children += (new_node,)
+
+    return new_children
+
+
+def convert_derive_to_nonmem(derivative, random_variables):
+    assert len(derivative) == 2
+
+    def find_number(d_param):
+        if str(d_param) in random_variables.etas.names:
+            n = random_variables.etas.symbols.index(d_param) + 1
+        elif str(d_param) in random_variables.epsilons.names:
+            n = random_variables.epsilons.symbols.index(d_param) + 1
+        else:
+            raise ValueError(f'{d_param} not associated with any random vairable name')
+        return n
+
+    first = derivative[0]
+    first_n = find_number(first)
+    if len(derivative) == 2:
+        second = derivative[1]
+        second_n = find_number(second)
+    else:
+        second = derivative[1]
+        second_n = find_number(second)
+        if second_n != 1:
+            raise ValueError("Unknown derivative '{derivative[0]}' within verbatim block")
+
+    if first in random_variables.etas.symbols and second in random_variables.etas.symbols:
+        return f'G({first_n}, {second_n+1})'
+    elif first in random_variables.epsilons.symbols and second in random_variables.epsilons.symbols:
+        return f'H({first_n}, {second_n+1})'
+    elif first in random_variables.etas.symbols and second in random_variables.epsilons.symbols:
+        return f'HH({second_n}, {first_n+1})'
+    elif first in random_variables.epsilons.symbols and second in random_variables.etas.symbols:
+        return f'HH({first_n}, {second_n+1})'
+    else:
+        raise ValueError("Unknown second order derivative")
+
+
+def create_derivative_name(derivative, random_variables):
+    der_name = "D_"
+    numbers = []
+    for a in derivative:
+        if str(a) in random_variables.etas.names:
+            der_name += "ETA"
+            numbers.append(random_variables.etas.names.index(str(a)) + 1)
+        elif str(a) in random_variables.epsilons.names:
+            der_name += "EPS"
+            numbers.append(random_variables.epsilons.names.index(str(a)) + 1)
+    der_name += "_"
+    numbers = "_".join([str(n) for n in numbers])
+    der_name += numbers
+    return der_name
 
 
 def solver_to_advan(solver):

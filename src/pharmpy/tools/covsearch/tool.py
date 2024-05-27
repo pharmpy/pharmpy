@@ -8,14 +8,19 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import get_pk_parameters, has_covariate_effect, remove_covariate_effect
+from pharmpy.modeling import (
+    get_pk_parameters,
+    has_covariate_effect,
+    remove_covariate_effect,
+    set_estimation_step,
+)
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral, all_covariate_effects
+from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
@@ -53,6 +58,10 @@ class RemoveEffect(Effect):
     pass
 
 
+class DummyEffect(Effect):
+    pass
+
+
 @dataclass(frozen=True)
 class Step:
     alpha: float
@@ -67,14 +76,21 @@ class BackwardStep(Step):
     pass
 
 
+class AdaptiveStep(Step):
+    pass
+
+
 def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
     added_effects = defaultdict(list)
     for i, step in enumerate(steps):
         if isinstance(step, ForwardStep):
             added_effects[astuple(step.effect)].append(i)
-        else:
-            assert isinstance(step, BackwardStep)
+        elif isinstance(step, BackwardStep):
             added_effects[astuple(step.effect)].pop()
+        elif isinstance(step, AdaptiveStep):
+            pass
+        else:
+            raise ValueError("Unknown step ({step}) added")
 
     pos = {effect: set(indices) for effect, indices in added_effects.items()}
 
@@ -108,6 +124,8 @@ def create_workflow(
     algorithm: Literal[ALGORITHMS] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
+    max_eval: bool = False,
+    adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
 ):
@@ -130,6 +148,14 @@ def create_workflow(
         Results of model
     model : Model
         Pharmpy model
+    max_eval : bool
+        Limit the number of function evaluations to 3.1 times that of the
+        base model. Default is False.
+    adaptive_scope_reduction : bool
+        Stash all non-significant parameter-covariate effects to be tested
+        after all significant effects have been tested. Once all these have been
+        tested, try adding the stashed effects once more with a regular forward approach.
+        Default is False
     strictness : str or None
         Strictness criteria
     naming_index_offset: int
@@ -153,7 +179,9 @@ def create_workflow(
     wb = WorkflowBuilder(name=NAME_WF)
 
     # FIXME : Handle when model is None
+    store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     start_task = Task("create_modelentry", _start, model, results)
+    wb.add_task(start_task, predecessors=store_task)
     init_task = Task("init", _init_search_state, search_space)
     wb.add_task(init_task, predecessors=start_task)
 
@@ -164,6 +192,7 @@ def create_workflow(
         max_steps,
         naming_index_offset,
         strictness,
+        adaptive_scope_reduction,
     )
 
     wb.add_task(forward_search_task, predecessors=init_task)
@@ -195,7 +224,20 @@ def create_workflow(
     return Workflow(wb)
 
 
-def _start(model, results):
+def _store_input_model(context, model, results, max_eval):
+    model = model.replace(name="input", description="")
+    me = ModelEntry.create(model=model, modelfit_results=results)
+    context.store_input_model_entry(me)
+    return max_eval
+
+
+def _start(model, results, max_eval):
+
+    if max_eval:
+        max_eval_number = round(3.1 * results.function_evaluations_iterations.loc[1])
+        # Change last instead of first?
+        first_es = model.execution_steps[0]
+        model = set_estimation_step(model, first_es.method, 0, maximum_evaluations=max_eval_number)
     return ModelEntry.create(model=model, parent=None, modelfit_results=results)
 
 
@@ -213,7 +255,7 @@ def _init_search_state(context, search_space: str, modelentry: ModelEntry) -> Se
 
 
 def filter_search_space_and_model(search_space, model):
-    filtered_model = model.replace(name="filtered_input_model", parent_model="filtered_input_model")
+    filtered_model = model.replace(name="filtered_input_model")
     if isinstance(search_space, str):
         search_space = ModelFeatures.create_from_mfl_string(search_space)
     ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
@@ -310,6 +352,7 @@ def task_greedy_forward_search(
     max_steps: int,
     naming_index_offset: int,
     strictness: Optional[str],
+    adaptive_scope_reduction: bool,
     state_and_effect: Tuple[SearchState, dict],
 ) -> SearchState:
     for temp in state_and_effect:
@@ -343,6 +386,7 @@ def task_greedy_forward_search(
         p_forward,
         max_steps,
         strictness,
+        adaptive_scope_reduction,
     )
 
 
@@ -369,20 +413,31 @@ def task_greedy_backward_search(
             for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
         ]
 
+    # TODO : When only backwards search is supported, use get_model_features to extract removeable effects.
     optional_effects = list(map(astuple, _added_effects(state.best_candidate_so_far.steps)))
+
+    def _extract_sublist(lst, n, iterable=False):
+        if iterable:
+            return [(item[n],) for item in lst]
+        else:
+            return [item[n] for item in lst]
+
     candidate_effect_funcs = dict(
         covariate_features(
             state.best_candidate_so_far.modelentry.model,
-            ModelFeatures.create_from_mfl_string(
-                get_model_features(state.best_candidate_so_far.modelentry.model)
-            ).covariate,
+            tuple(
+                map(
+                    Covariate,
+                    _extract_sublist(optional_effects, 0, True),
+                    _extract_sublist(optional_effects, 1, True),
+                    _extract_sublist(optional_effects, 2, True),
+                    _extract_sublist(optional_effects, 3),
+                )
+            ),
             remove=True,
         )
     )
-
-    candidate_effect_funcs = {
-        k[1:-1]: v for k, v in candidate_effect_funcs.items() if (*k[1:-1],) in optional_effects
-    }
+    candidate_effect_funcs = {k[1:-1]: v for k, v in candidate_effect_funcs.items()}
 
     n_removable_effects = max(0, len(state.best_candidate_so_far.steps) - 1)
 
@@ -403,6 +458,7 @@ def _greedy_search(
     alpha: float,
     max_steps: int,
     strictness: Optional[str],
+    adaptive_scope_reduction: bool = False,
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
     all_candidates_so_far = list(
@@ -411,13 +467,90 @@ def _greedy_search(
 
     steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
 
+    nonsignificant_effects, all_candidates_so_far, best_candidate_so_far = perform_step_procedure(
+        steps,
+        candidate_effect_funcs,
+        handle_effects,
+        all_candidates_so_far,
+        best_candidate_so_far,
+        strictness,
+        alpha,
+        adaptive_scope_reduction,
+    )
+
+    if nonsignificant_effects and adaptive_scope_reduction:
+
+        # TODO : Different number of steps for adaptive part (?)
+        steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
+
+        # Filter incompatible effects
+        parameter_steps_taken = [step.effect.parameter for step in best_candidate_so_far.steps]
+        cov_steps_taken = [step.effect.covariate for step in best_candidate_so_far.steps]
+
+        nonsignificant_effects = {
+            effect_description: effect_func
+            for effect_description, effect_func in nonsignificant_effects.items()
+            if effect_description[0] not in parameter_steps_taken
+            or effect_description[1] not in cov_steps_taken
+        }
+
+        if nonsignificant_effects:
+            # Add adaptive step if the best candidate model is not part of the latest step
+            max_steps_taken = max([len(c.steps) for c in all_candidates_so_far])
+            add_adaptive_step = len(best_candidate_so_far.steps) != max_steps_taken
+
+            _, all_candidates_so_far, best_candidate_so_far = perform_step_procedure(
+                steps,
+                nonsignificant_effects,
+                handle_effects,
+                all_candidates_so_far,
+                best_candidate_so_far,
+                strictness,
+                alpha,
+                adaptive_scope_reduction=False,
+                add_adaptive_step=add_adaptive_step,
+            )
+
+    return SearchState(
+        state.user_input_modelentry,
+        state.start_modelentry,
+        best_candidate_so_far,
+        all_candidates_so_far,
+    )
+
+
+def perform_step_procedure(
+    steps,
+    candidate_effect_funcs,
+    handle_effects,
+    all_candidates_so_far,
+    best_candidate_so_far,
+    strictness,
+    alpha,
+    adaptive_scope_reduction,
+    add_adaptive_step=False,
+):
+
+    nonsignificant_effects = {}
+
     for step in steps:
         if not candidate_effect_funcs:
             break
-
-        new_candidates = handle_effects(
-            step, best_candidate_so_far, candidate_effect_funcs, len(all_candidates_so_far) - 1
-        )
+        if add_adaptive_step and step == 1:
+            temp_best_candidate_so_far = Candidate(
+                best_candidate_so_far.modelentry,
+                best_candidate_so_far.steps + (AdaptiveStep(alpha, DummyEffect("", "", "", "")),),
+            )
+            new_candidates = handle_effects(
+                step,
+                temp_best_candidate_so_far,
+                candidate_effect_funcs,
+                len(all_candidates_so_far) - 1,
+            )
+        else:
+            new_candidates = handle_effects(
+                step, best_candidate_so_far, candidate_effect_funcs, len(all_candidates_so_far) - 1
+            )
 
         all_candidates_so_far.extend(new_candidates)
         new_candidate_modelentries = list(
@@ -455,7 +588,30 @@ def _greedy_search(
             )
         )
 
+        # TODO : Find all non-significant models and stash the most recently added effect
+        if adaptive_scope_reduction:
+            last_step = best_candidate_so_far.steps[-1]
+            is_backward = isinstance(last_step, BackwardStep)
+            if not is_backward:
+                for new_cand in new_candidates:
+                    if alpha <= lrt_p_value(
+                        parent_modelentry.model,
+                        new_cand.modelentry.model,
+                        parent_modelentry.modelfit_results.ofv,
+                        new_cand.modelentry.modelfit_results.ofv,
+                    ):
+                        last_step_effect = new_cand.steps[-1].effect
+                        key = (
+                            last_step_effect.parameter,
+                            last_step_effect.covariate,
+                            last_step_effect.fp,
+                            last_step_effect.operation,
+                        )
+                        nonsignificant_effects[key] = candidate_effect_funcs[key]
+
         # NOTE: Filter out incompatible effects
+
+        # Filter effects with same parameter or covariate
         last_step_effect = best_candidate_so_far.steps[-1].effect
 
         candidate_effect_funcs = {
@@ -465,12 +621,16 @@ def _greedy_search(
             or effect_description[1] != last_step_effect.covariate
         }
 
-    return SearchState(
-        state.user_input_modelentry,
-        state.start_modelentry,
-        best_candidate_so_far,
-        all_candidates_so_far,
-    )
+        # Filter away any stashed effects as well
+        nonsig_param_cov_eff = tuple((eff[0], eff[1]) for eff in nonsignificant_effects.keys())
+
+        candidate_effect_funcs = {
+            effect_description: effect_func
+            for effect_description, effect_func in candidate_effect_funcs.items()
+            if (effect_description[0], effect_description[1]) not in nonsig_param_cov_eff
+        }
+
+    return nonsignificant_effects, all_candidates_so_far, best_candidate_so_far
 
 
 def wf_effects_addition(
@@ -572,9 +732,7 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     model = candidate.modelentry.model
     name = f'covsearch_run{effect_index}'
     description = _create_description(effect[0], candidate.steps, forward=False)
-    model_with_removed_effect = model.replace(
-        name=name, description=description, parent_model=model.name
-    )
+    model_with_removed_effect = model.replace(name=name, description=description)
 
     func = effect[1]
     model_with_removed_effect = func(model_with_removed_effect)
@@ -587,7 +745,7 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     )
 
 
-def task_results(p_forward: float, p_backward: float, strictness: str, state: SearchState):
+def task_results(context, p_forward: float, p_backward: float, strictness: str, state: SearchState):
     candidates = state.all_candidates_so_far
     modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
     base_modelentry, *res_modelentries = modelentries
@@ -604,6 +762,7 @@ def task_results(p_forward: float, p_backward: float, strictness: str, state: Se
         res_modelentries,
         'lrt',
         (p_forward, p_backward),
+        context=context,
     )
 
     steps = _make_df_steps(best_modelentry, candidates)
@@ -616,6 +775,8 @@ def task_results(p_forward: float, p_backward: float, strictness: str, state: Se
         summary_tool=_modify_summary_tool(res.summary_tool, steps),
         summary_models=_summarize_models(modelentries, steps),
     )
+
+    context.store_final_model_entry(best_modelentry)
 
     return res
 
@@ -738,7 +899,9 @@ def _make_df_steps_row(
     return {
         'step': (
             len(candidate.steps)
-            if candidate.steps == tuple() or isinstance(candidate.steps[-1], ForwardStep)
+            if candidate.steps == tuple()
+            or isinstance(candidate.steps[-1], ForwardStep)
+            or isinstance(candidate.steps[-1], AdaptiveStep)
             else len(candidate.steps) + index_offset
         ),
         'parameter': parameter,
@@ -815,7 +978,7 @@ def validate_input(
         allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )
-        allowed_covariate_effects = set(all_covariate_effects)
+
         allowed_ops = set(['*', '+'])
 
         for effect in candidate_effects:
@@ -831,11 +994,10 @@ def validate_input(
                     f' search_space: got `{effect.parameter}`,'
                     f' must be in {sorted(allowed_parameters)}.'
                 )
-            if effect.fp not in allowed_covariate_effects:
+            if effect.fp == "custom":
                 raise ValueError(
                     f'Invalid `search_space` because of invalid effect function found in'
-                    f' search_space: got `{effect.fp}`,'
-                    f' must be in {sorted(allowed_covariate_effects)}.'
+                    f' search_space: `{effect.fp}` is not a supported type.'
                 )
             if effect.operation not in allowed_ops:
                 raise ValueError(

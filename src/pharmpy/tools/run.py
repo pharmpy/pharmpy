@@ -5,9 +5,10 @@ import inspect
 import math
 import re
 import warnings
+from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union, get_type_hints
+from typing import Any, Optional, Union, get_type_hints
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -46,19 +47,23 @@ from pharmpy.workflows.results import ModelfitResults, mfr
 from .external import parse_modelfit_results
 
 
+class InputValidationError(Exception):
+    pass
+
+
 def fit(
-    model_or_models: Union[Model, List[Model]],
-    tool: Optional[str] = None,
+    model_or_models: Union[Model, list[Model]],
+    esttool: Optional[str] = None,
     path: Optional[Union[Path, str]] = None,
     context: Optional[Context] = None,
-) -> Union[ModelfitResults, List[ModelfitResults]]:
+) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
 
     Parameters
     ----------
     model_or_models : Model | list[Model]
         List of models or one single model
-    tool : str
+    esttool : str
         Estimation tool to use. None to use default
     path :  Path | str
         Path to fit directory
@@ -88,7 +93,7 @@ def fit(
         else (False, model_or_models)
     )
 
-    modelfit_results = run_tool('modelfit', models, tool=tool, path=path, context=context)
+    modelfit_results = run_tool('modelfit', models, esttool=esttool, path=path, context=context)
 
     return modelfit_results if single else list(modelfit_results)
 
@@ -151,7 +156,7 @@ def read_results(path: Union[str, Path]) -> Results:
     return res
 
 
-def run_tool(name: str, *args, **kwargs) -> Union[Model, List[Model], Tuple[Model], Results]:
+def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Model], Results]:
     """Run tool workflow
 
     Parameters
@@ -188,7 +193,7 @@ def import_tool(name: str):
 
 def run_tool_with_name(
     name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
-) -> Union[Model, List[Model], Tuple[Model], Results]:
+) -> Union[Model, list[Model], tuple[Model], Results]:
     dispatching_options, common_options, tool_options = split_common_options(kwargs)
 
     create_workflow = tool.create_workflow
@@ -212,7 +217,28 @@ def run_tool_with_name(
     ctx.store_metadata(tool_metadata)
 
     if validate_input := getattr(tool, 'validate_input', None):
-        validate_input(*args, **tool_options)
+        try:
+            validate_input(*args, **tool_options)
+        except Exception as err:
+            raise InputValidationError(str(err))
+
+    if (
+        "model" in tool_options
+        and "results" in tool_options
+        and "esttool" in common_options
+        and common_options["esttool"] != "dummy"
+    ):
+
+        model_type = str(type(tool_options["model"])).split(".")[-3]
+        results = tool_options["results"]
+        esttool = common_options["esttool"]
+        if results:
+            if esttool != model_type:
+                if not (esttool is None and model_type == "nonmeme"):
+                    warnings.warn(
+                        f"Not recommended to run tools with different estimation tool ({esttool})"
+                        f" than that of the input model ({model_type})"
+                    )
 
     wf: Workflow = create_workflow(*args, **tool_options)
     assert wf.name == name
@@ -488,7 +514,7 @@ def _get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, 
 
         common_path = dispatching_options.get('path', None)
         if common_path is not None:
-            path = dispatching_options['path']
+            path = Path(dispatching_options['path'])
             ctx = default_context(path.name, path.parent, common_options=common_options)
         else:
             n = 1
@@ -504,8 +530,8 @@ def _get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, 
 
 def retrieve_models(
     source: Union[str, Path, Context],
-    names: Optional[List[str]] = None,
-) -> List[Model]:
+    names: Optional[list[str]] = None,
+) -> list[Model]:
     """Retrieve models after a tool run
 
     Any models created and run by the tool can be
@@ -720,13 +746,13 @@ def summarize_errors_from_entries(mes: list[ModelEntry]):
 def rank_models(
     base_model: Model,
     base_model_res: ModelfitResults,
-    models: List[Model],
-    models_res: List[ModelfitResults],
+    models: list[Model],
+    models_res: list[ModelfitResults],
     parent_dict: Optional[Union[dict[str, str], dict[Model, Model]]] = None,
     strictness: Optional[str] = "minimization_successful",
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
-    penalties: Optional[List[float]] = None,
+    penalties: Optional[list[float]] = None,
     **kwargs,
 ) -> pd.DataFrame:
     """Ranks a list of models
@@ -894,7 +920,7 @@ class ArrayEvaluator:
 
 
 def is_strictness_fulfilled(
-    res: ModelfitResults,
+    results: ModelfitResults,
     model: Model,
     statement: str,
 ) -> bool:
@@ -924,7 +950,7 @@ def is_strictness_fulfilled(
     >>> is_strictness_fulfilled(res, model, "minimization_successful or rounding_errors")
     True
     """
-    if res is None or np.isnan(res.ofv):
+    if results is None or np.isnan(results.ofv):
         return False
     if statement is not None:
         statement = statement.lower()
@@ -962,22 +988,22 @@ def is_strictness_fulfilled(
                 f'Some expressions were not correct. Valid arguments are: {allowed_args}'
             )
         else:
-            minimization_successful = res.minimization_successful  # noqa
-            rounding_errors = res.termination_cause == "rounding_errors"  # noqa
-            maxevals_exceeded = res.termination_cause == "maxevals_exceeded"  # noqa
-            sigdigs = ArrayEvaluator([res.significant_digits])  # noqa
-            final_zero_gradient = 'final_zero_gradient' in res.warnings  # noqa
-            estimate_near_boundary = 'estimate_near_boundary' in res.warnings  # noqa
+            minimization_successful = results.minimization_successful  # noqa
+            rounding_errors = results.termination_cause == "rounding_errors"  # noqa
+            maxevals_exceeded = results.termination_cause == "maxevals_exceeded"  # noqa
+            sigdigs = ArrayEvaluator([results.significant_digits])  # noqa
+            final_zero_gradient = 'final_zero_gradient' in results.warnings  # noqa
+            estimate_near_boundary = 'estimate_near_boundary' in results.warnings  # noqa
             if 'condition_number' in args_in_statement:
-                if res.covariance_matrix is not None:
+                if results.covariance_matrix is not None:
                     condition_number = ArrayEvaluator(  # noqa
-                        [np.linalg.cond(res.covariance_matrix)]
+                        [np.linalg.cond(results.covariance_matrix)]
                     )
                 else:
                     raise ValueError("Could not calculate condition_number.")
             if "rse" in args_in_statement:
-                if res.relative_standard_errors is not None:
-                    rse = ArrayEvaluator(res.relative_standard_errors)  # noqa
+                if results.relative_standard_errors is not None:
+                    rse = ArrayEvaluator(results.relative_standard_errors)  # noqa
                 else:
                     raise ValueError("Could not calculate relative standard error.")
 
@@ -986,7 +1012,7 @@ def is_strictness_fulfilled(
                 or 'rse_omega' in args_in_statement
                 or 'rse_sigma' in args_in_statement
             ):
-                rse = res.relative_standard_errors
+                rse = results.relative_standard_errors
                 rse_theta = ArrayEvaluator(rse[rse.index.isin(get_thetas(model).names)])  # noqa
                 rse_omega = ArrayEvaluator(rse[rse.index.isin(get_omegas(model).names)])  # noqa
                 rse_sigma = ArrayEvaluator(rse[rse.index.isin(get_sigmas(model).names)])  # noqa
@@ -995,7 +1021,7 @@ def is_strictness_fulfilled(
                 or 'final_zero_gradient_omega' in args_in_statement
                 or 'final_zero_gradient_sigma' in args_in_statement
             ):
-                grd = res.gradients
+                grd = results.gradients
                 final_zero_gradient_theta = (  # noqa
                     grd[grd.index.isin(get_thetas(model).names)] == 0
                 ).any() or grd[grd.index.isin(get_thetas(model).names)].isnull().any()
@@ -1011,7 +1037,7 @@ def is_strictness_fulfilled(
                 or 'estimate_near_boundary_omega' in args_in_statement
                 or 'estimate_near_boundary_sigma' in args_in_statement
             ):
-                ests = res.parameter_estimates
+                ests = results.parameter_estimates
                 estimate_near_boundary = check_parameters_near_bounds(model, ests).any()  # noqa
                 estimate_near_boundary_theta = check_parameters_near_bounds(  # noqa
                     model, ests[ests.index.isin(get_thetas(model).names)]
@@ -1190,13 +1216,15 @@ def _get_estimation_runtime(res, i):
     return res.estimation_runtime_iterations.iloc[i]
 
 
-def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
+def read_modelfit_results(path: Union[str, Path], esttool: str = None) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
     ----------
     path : Path or str
         Path to model file
+    esttool : str
+        Set if other than the default estimation tool is to be used
 
     Return
     ------
@@ -1205,7 +1233,7 @@ def read_modelfit_results(path: Union[str, Path]) -> ModelfitResults:
     """
     path = normalize_user_given_path(path)
     model = read_model(path)
-    res = parse_modelfit_results(model, path)
+    res = parse_modelfit_results(model, path, esttool)
     return res
 
 
@@ -1262,7 +1290,7 @@ def load_example_modelfit_results(name: str):
 
 def calculate_bic_penalty(
     candidate_model: Model,
-    search_space: Union[str, List[str], ModelFeatures],
+    search_space: Union[str, list[str], ModelFeatures],
     base_model: Optional[Model] = None,
     E_p: Optional[float] = 1.0,
     E_q: Optional[float] = 1.0,

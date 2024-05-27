@@ -12,7 +12,7 @@ def test_init(tmp_path):
     assert ctx.path == tmp_path / 'mycontext'
     assert (ctx.path / 'models').is_dir()
     assert (ctx.path / '.modeldb').is_dir()
-    assert (ctx.path / 'log').is_file()
+    assert (ctx.path / 'log.csv').is_file()
     assert (ctx.path / 'annotations').is_file()
     assert ctx.context_path == 'mycontext'
 
@@ -97,7 +97,7 @@ def test_results(tmp_path, testdata):
 
 
 def test_store_model(tmp_path, load_example_model_for_test):
-    ctx = LocalDirectoryContext(name='myconext', ref=tmp_path)
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     model = load_example_model_for_test("pheno")
     ctx.store_model_entry(model)
     me = ctx.retrieve_model_entry("pheno")

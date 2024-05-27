@@ -30,13 +30,23 @@ FILE_PENDING = 'PENDING'
 FILE_LOCK = '.lock'
 
 
-def get_modelfit_results(model, path):
+def get_modelfit_results(model, path, esttool=None):
     # FIXME: This is a workaround. The proper solution is to only read the results.json from
     # the database. For this to work roundtrip of DataFrames in json is needed.
     # This is currently broken because of rounding issue in pandas
     # Also the modelfit_results attribute will soon be removed from model objects.
     import pharmpy.model.external.nonmem as nonmem_model
     import pharmpy.tools.external.nonmem as nonmem
+
+    if esttool is not None:
+        if esttool == 'dummy':
+            import pharmpy.tools.external.dummy as tool
+        elif esttool == 'nonmem':
+            import pharmpy.tools.external.nonmem as tool
+        elif esttool == 'nlmixr':
+            import pharmpy.tools.external.nlmixr as tool
+        res = tool.parse_modelfit_results(model, path)
+        return res
 
     if isinstance(model, nonmem_model.Model):
         res = nonmem.parse_modelfit_results(model, path)
@@ -54,15 +64,14 @@ def create_model_entry(model, modelfit_results):
     # FIXME: This function is to avoid duplication of this logic, this can be removed once
     #  parent_model has been moved from Model and log has been moved from modelfit_results
     #  and each database implementation has methods for retrieving these
+    # Currently no parent information can be retrieved
     if not isinstance(modelfit_results, ModelfitResults):
         modelfit_results = None
         log = None
     else:
         log = modelfit_results.log
 
-    parent_model = model.parent_model
-
-    return ModelEntry(model=model, modelfit_results=modelfit_results, parent=parent_model, log=log)
+    return ModelEntry(model=model, modelfit_results=modelfit_results, log=log)
 
 
 class LocalDirectoryDatabase(NonTransactionalModelDatabase):

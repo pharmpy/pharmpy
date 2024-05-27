@@ -10,7 +10,7 @@ from pharmpy.modeling import (
     plot_individual_predictions,
     plot_iofv_vs_iofv,
     plot_transformed_eta_distributions,
-    vpc_plot,
+    plot_vpc,
 )
 from pharmpy.tools import read_modelfit_results
 
@@ -100,13 +100,13 @@ def test_plot_abs_cwres_vs_ipred(tmp_path, load_model_for_test, testdata):
 def test_vpc_plot(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-        plot = vpc_plot(model, testdata / 'nonmem' / 'vpc_simulations.csv')
+        plot = plot_vpc(model, testdata / 'nonmem' / 'vpc_simulations.csv')
         plot.save('chart.html')
 
 
-def test_vpc_plot_stratify(tmp_path, load_model_for_test, testdata):
+def test_(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
         data_path = testdata / 'nonmem' / 'vpc_simulations_dvid.csv'
-        plot = vpc_plot(model, simulations=data_path, nbins=3, stratify_on='DVID')
+        plot = plot_vpc(model, simulations=data_path, nbins=3, stratify_on='DVID')
         plot.save('chart.html')

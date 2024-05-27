@@ -10,7 +10,6 @@ SupportedExternalTools = Literal['nonmem', 'nlmixr', 'rxode']
 def create_workflow(
     model_or_models: Optional[Union[Model, Iterable[Model]]] = None,
     n: Optional[int] = None,
-    tool: Optional[SupportedExternalTools] = None,
 ) -> Workflow[Union[Model, Tuple[Model, ...]]]:
     """Run modelfit tool.
 
@@ -20,8 +19,6 @@ def create_workflow(
         A list of models are one single model object
     n : int
         Number of models to fit. This is only used if the tool is going to be combined with other tools.
-    tool : str
-        Which tool to use for fitting. Currently, 'nonmem', 'nlmixr', 'rxode' can be used.
 
     Returns
     -------
@@ -39,7 +36,7 @@ def create_workflow(
         if not isinstance(model_or_models, Iterable):
             model_or_models = [model_or_models]
         modelentries = [ModelEntry.create(model=model) for model in model_or_models]
-    wf = create_fit_workflow(modelentries, n, tool)
+    wf = create_fit_workflow(modelentries, n)
     wf = wf.replace(name="modelfit")
     if len(modelentries) == 1 or (modelentries is None and n is None):
         post_process_results = post_process_results_one
@@ -52,8 +49,8 @@ def create_workflow(
     return wf
 
 
-def create_fit_workflow(modelentries=None, n=None, tool=None):
-    execute_model = retrieve_from_database_or_execute_model_with_tool(tool)
+def create_fit_workflow(modelentries=None, n=None):
+    execute_model = retrieve_from_database_or_execute_model_with_tool()
 
     wb = WorkflowBuilder()
     if modelentries is None:
@@ -83,8 +80,9 @@ def post_process_results_many(context, *modelentries: ModelEntry):
     return tuple([m.modelfit_results for m in modelentries])
 
 
-def retrieve_from_database_or_execute_model_with_tool(tool):
+def retrieve_from_database_or_execute_model_with_tool():
     def task(context, model_entry):
+        tool = context.retrieve_common_options().get('esttool', None)
         assert isinstance(model_entry, ModelEntry)
         model = model_entry.model
         try:
@@ -119,6 +117,8 @@ def get_execute_model(tool: Optional[SupportedExternalTools]):
         from pharmpy.tools.external.nlmixr.run import execute_model
     elif tool == 'rxode':
         from pharmpy.tools.external.rxode.run import execute_model
+    elif tool == 'dummy':
+        from pharmpy.tools.external.dummy.run import execute_model
     else:
         raise ValueError(f"Unknown estimation tool {tool}")
 

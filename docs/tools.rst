@@ -39,6 +39,7 @@ Tools in Pharmpy
    estmethod - compare estimation methods and/or solvers <estmethod>
    Retries - Rerun a model with tweaked initial estimates <retries>
    Simulation - Run a simulation <simulation>
+   Linearize - Linearize a model <linearize_tool>
 
 ~~~~~~~~~~~~~~
 Common options

@@ -34,7 +34,7 @@ elimination: "ELIMINATION"i "(" (_elimination_option) ")"
 peripherals: "PERIPHERALS"i "(" (_counts) ["," _peripheral_comp] ")"
 transits: "TRANSITS"i "(" _counts ["," _depot_option] ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
-covariate: "COVARIATE"i [optional_cov] "(" parameter_option "," covariate_option "," fp_option ["," op_option] ")"
+covariate: "COVARIATE"i [optional_cov] "(" parameter_option "," covariate_option "," (_fp_options) ["," op_option] ")"
 
 direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
 effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
@@ -84,13 +84,15 @@ LAGTIME_MODE: "ON"i | "OFF"i
 
 parameter_option: values | ref | parameter_wildcard
 covariate_option: values | ref | covariate_wildcard
-fp_option: values | fp_wildcard
+_fp_options: fp_option | fp_wildcard
 !op_option: "+" | "*"
 optional_cov: OPTIONAL
 
 ref: "@" VARIABLE_NAME
 parameter_wildcard: WILDCARD
 covariate_wildcard: WILDCARD
+fp_option: FP_OP  | "[" [FP_OP ("," FP_OP)*] "]"
+FP_OP: "LIN"i | "CAT"i | "CAT2"i | "PIECE_LIN"i | "EXP"i | "POW"i | "CUSTOM"i
 fp_wildcard: WILDCARD
 
 WILDCARD: "*"

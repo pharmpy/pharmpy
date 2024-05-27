@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Sequence
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Union, overload
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Union, overload
 
 from pharmpy.basic import Expr
 from pharmpy.internals.immutable import Immutable, frozenmapping

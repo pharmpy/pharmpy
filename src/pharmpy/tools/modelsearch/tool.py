@@ -100,6 +100,10 @@ def start(
     strictness,
     E,
 ):
+    # Create links to input model
+    model = model.replace(name="input", description="")
+    context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+
     wb = WorkflowBuilder()
 
     start_task = Task('start_modelsearch', _start, model, results)
@@ -135,6 +139,7 @@ def start(
         cutoff,
         strictness,
         E,
+        context,
     )
 
     # Filter the mfl_statements from base model attributes
@@ -161,6 +166,8 @@ def start(
             wb.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
     res = call_workflow(wb, 'run_candidate_models', context)
+
+    context.store_final_model_entry(res.final_model)
 
     return res
 
@@ -255,7 +262,7 @@ def create_base_model(ss, model_or_model_entry):
     return ModelEntry.create(base, modelfit_results=None, parent=None)
 
 
-def post_process(mfl, rank_type, cutoff, strictness, E, *model_entries):
+def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries):
     res_model_entries = []
     input_model_entry = None
     base_model_entry = None
@@ -304,6 +311,7 @@ def post_process(mfl, rank_type, cutoff, strictness, E, *model_entries):
         summary_models=summary_models,
         strictness=strictness,
         penalties=penalties,
+        context=context,
     )
     return res
 

@@ -22,8 +22,8 @@ from pharmpy.modeling import (
     plot_dv_vs_ipred,
     plot_dv_vs_pred,
     plot_eta_distributions,
+    plot_vpc,
     set_simulation,
-    vpc_plot,
 )
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
@@ -591,7 +591,7 @@ def run_amd(
     else:
         eta_distribution_plot = None
 
-    final_vpc_plot = vpc_plot(final_model, simulation_data, stratify_on=dvid_name)
+    final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
 
     res = AMDResults(
         final_model=final_model.name,
@@ -702,6 +702,7 @@ def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, ctx) -
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
+            rank_type='bic',
             results=modelfit_results,
             path=subctx.path,
         )
@@ -742,6 +743,7 @@ def _subfunc_structsearch_tmdd(
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
+            rank_type='bic',
             results=modelfit_results,
             path=subctx1.path,
         )
@@ -750,8 +752,8 @@ def _subfunc_structsearch_tmdd(
         all_models = [
             subctx1.retrieve_model_entry(model_name).model
             for model_name in subctx1.list_all_names()
+            if model_name not in ['input', 'final']
         ]
-        all_models = retrieve_models(subctx1.path, names=subctx1.list_all_names())
 
         if not has_mixed_mm_fo_elimination(final_model):
             # Only select models that have mixed MM FO elimination
@@ -845,6 +847,7 @@ def _subfunc_iiv(iiv_strategy, strictness, ctx, dir_name) -> SubFunc:
             model=model,
             results=modelfit_results,
             strictness=strictness,
+            rank_type='bic',
             keep=keep,
             path=subctx.path,
         )
@@ -1113,6 +1116,7 @@ def _subfunc_iov(amd_start_model, occasion, strictness, ctx) -> SubFunc:
             results=modelfit_results,
             column=occasion,
             strictness=strictness,
+            rank_type='bic',
             path=subctx.path,
         )
         assert isinstance(res, Results)
@@ -1185,6 +1189,12 @@ def validate_input(
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
         if len(ss_mfl.mfl_statement_list()) == 0:
             raise ValueError(f'`search_space` evaluated to be empty : "{search_space}')
+
+        if administration == "oral" and "INST" in (a.name for a in ss_mfl.absorption.modes):
+            raise ValueError(
+                'The given search space have instantaneous absorption (´INST´)'
+                ' which is not allowed with ´oral´ administration.'
+            )
 
     check_list("retries_strategy", retries_strategy, RETRIES_STRATEGIES)
 

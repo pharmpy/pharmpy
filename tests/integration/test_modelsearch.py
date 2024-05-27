@@ -25,7 +25,7 @@ def test_exhaustive_exhaustive(tmp_path, model_count, start_modelres):
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == 3
+        assert model_count(rundir) == 5
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -74,13 +74,6 @@ def test_exhaustive_stepwise_basic(
         assert len(res.summary_models) == no_of_models + 1
         assert len(res.models) == no_of_models + 1
 
-        assert res.models[0].parent_model == 'mox2'
-        assert res.models[-1].parent_model == last_model_parent_name
-        if last_model_parent_name != 'mox2':
-            last_model_features = res.summary_tool.loc[res.models[-1].name]['description']
-            parent_model_features = res.summary_tool.loc[last_model_parent_name]['description']
-            assert last_model_features[: len(parent_model_features)] == parent_model_features
-
         if model_with_error:
             assert model_with_error in res.summary_errors.index.get_level_values('model')
 
@@ -92,7 +85,7 @@ def test_exhaustive_stepwise_basic(
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -138,7 +131,7 @@ def test_exhaustive_stepwise_iiv_strategies(
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models
+        assert model_count(rundir) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -185,9 +178,29 @@ def test_summary_individuals(tmp_path, testdata):
         )
         assert summary is not None
         assert tuple(summary.columns) == columns
-        assert summary['dofv_vs_parent'].equals(
-            summary.apply(
-                lambda row: summary.loc[(row['parent_model'], row.name[1])]['ofv'] - row['ofv'],
-                axis=1,
-            )
+        assert summary.loc[("BASE", 1), "parent_model"] is None
+        assert summary.loc[("modelsearch_run1", 1), "parent_model"] == "BASE"
+
+
+def test_exhaustive_exhaustive_dummy(tmp_path, model_count, start_modelres):
+    with chdir(tmp_path):
+        res = run_modelsearch(
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive',
+            results=start_modelres[1],
+            model=start_modelres[0],
+            esttool='dummy',
         )
+
+        assert len(res.summary_tool) == 4
+        assert len(res.summary_models) == 4
+        assert len(res.models) == 4
+
+        rundir = tmp_path / 'modelsearch1'
+        assert rundir.is_dir()
+        assert model_count(rundir) == 5
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
+        assert (rundir / 'models' / 'modelsearch_run1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'modelsearch_run1' / 'model.lst').exists()

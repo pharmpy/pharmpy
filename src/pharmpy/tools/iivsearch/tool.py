@@ -10,7 +10,14 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import add_pd_iiv, add_pk_iiv, create_joint_distribution, has_random_effect
+from pharmpy.modeling import (
+    add_pd_iiv,
+    add_pk_iiv,
+    append_estimation_step_options,
+    create_joint_distribution,
+    find_clearance_parameters,
+    has_random_effect,
+)
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
@@ -21,6 +28,8 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
+from pharmpy.tools.linearize.delinearize import delinearize_model
+from pharmpy.tools.linearize.tool import create_workflow as create_linearize_workflow
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
@@ -48,6 +57,7 @@ def create_workflow(
     algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
     iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
+    linearize: bool = False,
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -67,6 +77,8 @@ def create_workflow(
         If/how IIV should be added to start model. Default is 'no_add'.
     rank_type : {'ofv', 'lrt', 'aic', 'bic', 'mbic'}
         Which ranking type should be used. Default is mBIC.
+    linearize : bool
+        Wheter or not use linearization when running the tool.
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
@@ -114,6 +126,7 @@ def create_workflow(
         rank_type,
         E_p,
         E_q,
+        linearize,
         cutoff,
         keep,
         strictness,
@@ -137,12 +150,17 @@ def create_step_workflow(
     list_of_algorithms,
     ref_model,
     keep,
+    linearize,
+    param_mapping,
+    context,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
     wb.add_task(start_task)
 
-    if iiv_strategy != 'no_add':
+    if (wf_algorithm.name == 'td_exhaustive_no_of_etas' and iiv_strategy != 'no_add') or (
+        wf_algorithm.name == 'bu_stepwise_no_of_etas' and iiv_strategy != 'no_add' and not linearize
+    ):
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
         base_model_task = wf_fit.output_tasks[0]
@@ -164,6 +182,9 @@ def create_step_workflow(
         E_p,
         E_q,
         keep,
+        linearize,
+        param_mapping,
+        context,
     )
 
     post_process_tasks = [base_model_task] + wb.output_tasks
@@ -182,23 +203,28 @@ def start(
     rank_type,
     E_p,
     E_q,
+    linearize,
     cutoff,
     keep,
     strictness,
 ):
+    input_model = input_model.replace(
+        name="input", description=algorithms.create_description(input_model)
+    )
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
+    context.store_input_model_entry(input_model_entry)
 
     if iiv_strategy != 'no_add':
         base_model = update_initial_estimates(input_model, modelfit_results=input_res)
         base_model = _add_iiv(iiv_strategy, base_model, modelfit_results=input_res)
         base_model = base_model.replace(
-            name='base_model', description=algorithms.create_description(base_model)
+            name='base', description=algorithms.create_description(base_model)
         )
-        # FIXME: Set parent model once create_results fully supports model entries
+        # FIXME: Set parent model once create_results can do different things for different tools
         base_model_entry = ModelEntry.create(base_model, modelfit_results=None)
     else:
-        base_model = input_model
-        base_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
+        base_model = input_model.replace(name='base')
+        base_model_entry = ModelEntry.create(base_model, modelfit_results=input_res)
 
     algorithm_sub = {
         "top_down_exhaustive": "td_exhaustive_no_of_etas",
@@ -227,6 +253,32 @@ def start(
 
     sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
 
+    # LINEARIZE
+    if linearize:
+        # Create param map for ETA
+        from .algorithms import _create_param_dict
+
+        param_mapping = _create_param_dict(
+            base_model_entry.model, dists=base_model_entry.model.random_variables.iiv
+        )
+
+        linearize_context = context.create_subcontext('linearization')
+        linear_workflow = create_linearize_workflow(
+            model=base_model_entry.model,
+            model_name="linear_base_model",
+            description=algorithms.create_description(base_model_entry.model),
+        )
+        linear_results = call_workflow(linear_workflow, "running_linearization", linearize_context)
+        linear_model = linear_results.final_model
+        linear_model = append_estimation_step_options(
+            linear_model, tool_options={"MCETAS": 1000}, idx=-1
+        )
+        base_model_entry = ModelEntry.create(
+            model=linear_results.final_model, modelfit_results=linear_results.final_model_results
+        )
+    else:
+        param_mapping = None
+
     applied_algorithms = []
     for algorithm_cur in list_of_algorithms:
         if (
@@ -244,9 +296,20 @@ def start(
             # NOTE: This does not need to be a model entry since it is only used as a start point for the
             # candidate models, when the workflow is run the input to this sub-workflow will be a model entry
             wf_algorithm = algorithm_func(
-                base_model_entry.model, index_offset=no_of_models, keep=keep
+                base_model_entry.model,
+                index_offset=no_of_models,
+                keep=keep,
+                param_mapping=param_mapping,
             )
         elif algorithm_cur == "bu_stepwise_no_of_etas":
+            try:
+                clearance_parameter = find_clearance_parameters(input_model)
+            except ValueError:
+                pass
+            if clearance_parameter:
+                clearance_parameter = str(clearance_parameter[0])
+            else:
+                clearance_parameter = ""
             wf_algorithm = algorithm_func(
                 base_model_entry.model,
                 strictness=strictness,
@@ -255,9 +318,13 @@ def start(
                 list_of_algorithms=list_of_algorithms,
                 rank_type=rank_type,
                 keep=keep,
+                param_mapping=param_mapping,
+                clearance_parameter=clearance_parameter,
             )
         else:
-            wf_algorithm = algorithm_func(base_model_entry.model, index_offset=no_of_models)
+            wf_algorithm = algorithm_func(
+                base_model_entry.model, index_offset=no_of_models, param_mapping=param_mapping
+            )
 
         wf = create_step_workflow(
             input_model_entry,
@@ -272,6 +339,9 @@ def start(
             list_of_algorithms=list_of_algorithms,
             ref_model=base_model,
             keep=keep,
+            linearize=linearize,
+            param_mapping=param_mapping,
+            context=context,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
@@ -353,7 +423,10 @@ def start(
 
     plots = create_plots(final_final_model, final_results)
 
-    return IIVSearchResults(
+    final_final_model = final_final_model.replace(name="final")
+    context.store_final_model_entry(final_final_model)
+
+    final_results = IIVSearchResults(
         summary_tool=_concat_summaries(
             sum_tools, keys + [len(keys) + 1]
         ),  # To include step comparing input to final
@@ -370,6 +443,8 @@ def start(
         final_model_eta_distribution_plot=plots['eta_distribution'],
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_final_model, final_results),
     )
+
+    return final_results
 
 
 def _concat_summaries(summaries, keys):
@@ -390,7 +465,15 @@ def _start_algorithm(model_entry):
     return model_entry
 
 
+def rename_linbase(model, linbase_model_entry):
+    linbase_model = linbase_model_entry.replace(
+        name="linear_base_model", description=algorithms.create_description(model)
+    )
+    return ModelEntry.create(model=linbase_model)
+
+
 def _add_iiv(iiv_strategy, model, modelfit_results):
+    # IF LINEARIZED - inital value should be 0.00001
     assert iiv_strategy in ['add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock']
     if iiv_strategy in ['add_diagonal', 'fullblock']:
         model = add_pk_iiv(model)
@@ -418,6 +501,9 @@ def post_process(
     E_p,
     E_q,
     keep,
+    linearize,
+    param_mapping,
+    context,
     *model_entries,
 ):
     res_model_entries = []
@@ -471,11 +557,54 @@ def post_process(
         bic_type='iiv',
         strictness=strictness,
         penalties=penalties,
+        context=context,
     )
 
-    summary_tool = res.summary_tool
-    assert summary_tool is not None
-    summary_models = summarize_modelfit_results_from_entries(model_entries)
+    if linearize:
+        final_linearized_model = res.final_model
+        flm_etas = final_linearized_model.random_variables.iiv.names
+        final_param_mapp = {k: v for k, v in param_mapping.items() if k in flm_etas}
+        final_delinearized_model = delinearize_model(
+            final_linearized_model, input_model_entry.model, final_param_mapp
+        )
+        final_delinearized_model = final_delinearized_model.replace(
+            name=f'delinerized_{final_delinearized_model.name}',
+            description=algorithms.create_description(final_delinearized_model),
+        )
+
+        lin_model_entry = ModelEntry.create(
+            model=final_delinearized_model, parent=final_linearized_model
+        )
+        dl_wf = WorkflowBuilder(name="delinearization_workflow")
+        l_start = Task("START", _start_algorithm, lin_model_entry)
+        dl_wf.add_task(l_start)
+        fit_wf = create_fit_workflow(n=1)
+        dl_wf.insert_workflow(fit_wf)
+        dlin_model_entry = call_workflow(Workflow(dl_wf), "running_delinearization", context)
+
+        res_model_entries.append(dlin_model_entry)
+        res = create_results(
+            IIVSearchResults,
+            input_model_entry,
+            base_model_entry,
+            res_model_entries,
+            rank_type,
+            cutoff,
+            bic_type='iiv',
+            strictness=strictness,
+            context=context,
+        )
+
+        res = replace(res, final_model=dlin_model_entry.model)
+        summary_tool = res.summary_tool
+        assert summary_tool is not None
+        summary_tool = modify_summary_tool(res.summary_tool, dlin_model_entry.model.name)
+        res = replace(res, summary_tool=summary_tool)
+        summary_models = summarize_modelfit_results_from_entries(model_entries)
+    else:
+        summary_tool = res.summary_tool
+        assert summary_tool is not None
+        summary_models = summarize_modelfit_results_from_entries(model_entries)
 
     return replace(res, summary_models=summary_models)
 
@@ -493,6 +622,20 @@ def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms,
         for me in candidate_model_entries
     ]
     return penalties
+
+
+def modify_summary_tool(summary_tool, first_model_name):
+    # If linear model --> Force de-linearized model to be chosen
+    # TODO : Remove BIC values of linearized models as they are misleading ?
+    summary_tool = summary_tool.reset_index()
+    first_model_entry_rank = summary_tool.loc[summary_tool["model"] == first_model_name][
+        "rank"
+    ].iloc[0]
+    summary_tool.loc[summary_tool['rank'] < first_model_entry_rank, 'rank'] += 1
+    summary_tool.loc[summary_tool['model'] == first_model_name, 'rank'] = 1
+    summary_tool = summary_tool.sort_values(by=['rank'], ascending=True)
+    summary_tool.set_index(['model'])
+    return summary_tool
 
 
 @with_runtime_arguments_type_check
