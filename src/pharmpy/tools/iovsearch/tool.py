@@ -21,7 +21,7 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -33,12 +33,13 @@ T = TypeVar('T')
 def create_workflow(
     column: str = 'OCC',
     list_of_parameters: Optional[List[Union[str, List[str]]]] = None,
-    rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
+    rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    E: Optional[float] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -61,6 +62,8 @@ def create_workflow(
         Pharmpy model
     strictness : str or None
         Strictness criteria
+    E : float
+        Expected number of predictors (used for mBIC). Must be set when using mBIC
 
     Returns
     -------
@@ -90,6 +93,7 @@ def create_workflow(
         rank_type,
         cutoff,
         bic_type,
+        E,
         distribution,
     )
 
@@ -102,6 +106,7 @@ def create_workflow(
         rank_type,
         cutoff,
         bic_type,
+        E,
         strictness,
     )
 
@@ -130,6 +135,7 @@ def task_brute_force_search(
     rank_type: str,
     cutoff: Union[None, float],
     bic_type: Union[None, str],
+    E: Optional[float],
     distribution: str,
     input_model_entry: ModelEntry,
 ):
@@ -179,11 +185,21 @@ def task_brute_force_search(
     )
     iov_candidate_entries = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
 
+    if rank_type == "mbic":
+        ref = model_with_iov
+        penalties = [
+            calculate_bic_penalty(me.model, ['iiv_diag', 'iov'], base_model=ref, E_p=E)
+            for me in [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
+        ]
+    else:
+        penalties = None
+
     # NOTE: Keep the best candidate.
     best_model_entry_so_far = best_model(
         input_model_entry,
         [model_with_iov_entry, *iov_candidate_entries],
         rank_type=rank_type,
+        penalties=penalties,
         cutoff=cutoff,
         bic_type=bic_type,
     )
@@ -278,12 +294,18 @@ def best_model(
     base_entry: ModelEntry,
     model_entries: List[ModelEntry],
     rank_type: str,
+    penalties: Union[None, list[float]],
     cutoff: Union[None, float],
     bic_type: Union[None, str],
 ):
     candidate_entries = [base_entry, *model_entries]
     df = summarize_tool(
-        model_entries, base_entry, rank_type=rank_type, cutoff=cutoff, bic_type=bic_type
+        model_entries,
+        base_entry,
+        rank_type=rank_type,
+        penalties=penalties,
+        cutoff=cutoff,
+        bic_type=bic_type,
     )
     best_model_name = df['rank'].idxmin()
 
@@ -297,7 +319,9 @@ def best_model(
         return base_entry
 
 
-def task_results(context, rank_type, cutoff, bic_type, strictness, step_mapping_and_model_entries):
+def task_results(
+    context, rank_type, cutoff, bic_type, E, strictness, step_mapping_and_model_entries
+):
     step_mapping, (base_model_entry, *res_model_entries) = step_mapping_and_model_entries
 
     model_dict = {
@@ -322,6 +346,16 @@ def task_results(context, rank_type, cutoff, bic_type, strictness, step_mapping_
 
     keys = list(range(1, len(step_mapping)))
 
+    if rank_type == "mbic":
+        models = [me.model for me in [base_model_entry] + res_model_entries]
+        ref = sorted(models, key=lambda model: len(model.parameters), reverse=True)[0]
+        penalties = [
+            calculate_bic_penalty(me.model, ['iiv_diag', 'iov'], base_model=ref, E_p=E)
+            for me in [base_model_entry] + res_model_entries
+        ]
+    else:
+        penalties = None
+
     res = create_results(
         IOVSearchResults,
         base_model_entry,
@@ -330,6 +364,7 @@ def task_results(context, rank_type, cutoff, bic_type, strictness, step_mapping_
         rank_type,
         cutoff,
         bic_type=bic_type,
+        penalties=penalties,
         summary_models=pd.concat(sum_mod, keys=[0] + keys, names=['step']),
         strictness=strictness,
         context=context,
@@ -353,6 +388,7 @@ def validate_input(
     rank_type,
     distribution,
     strictness,
+    E,
 ):
     if model is not None:
         if column not in model.datainfo.names:
@@ -375,6 +411,13 @@ def validate_input(
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )
+    if rank_type != 'mbic' and E is not None:
+        raise ValueError(f'E can only be provided when `rank_type` is mbic: got `{rank_type}`')
+    if rank_type == 'mbic':
+        if E is None:
+            raise ValueError('Value `E` must be provided when using mbic')
+        if E <= 0.0:
+            raise ValueError(f'Value `E` must be more than 0: got `{E}`')
 
 
 @dataclass(frozen=True)

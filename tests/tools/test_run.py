@@ -2,6 +2,7 @@ import inspect
 
 # import os
 import shutil
+from functools import partial
 from pathlib import Path
 from typing import get_type_hints
 
@@ -10,10 +11,31 @@ import pytest
 import pharmpy
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import add_iiv, load_example_model, read_model, set_lower_bounds
+from pharmpy.modeling import (
+    add_iiv,
+    add_iov,
+    add_lag_time,
+    add_peripheral_compartment,
+    add_pk_iiv,
+    create_basic_pk_model,
+    create_joint_distribution,
+    fix_parameters,
+    load_example_model,
+    read_model,
+    remove_iiv,
+    remove_iov,
+    set_lower_bounds,
+    set_seq_zo_fo_absorption,
+    set_zero_order_absorption,
+    split_joint_distribution,
+)
+from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
+    calculate_bic_penalty,
+    get_penalty_parameters_mfl,
+    get_penalty_parameters_rvs,
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
@@ -64,7 +86,7 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
         assert metadata['tool_options']['model']['__class__'] == 'Model'
         assert metadata['tool_options']['model']['arg_name'] == 'pheno_real'
         assert metadata['tool_options']['model']['db_name'] == 'input_model'
-        assert metadata['tool_options']['rank_type'] == 'mbic'
+        assert metadata['tool_options']['rank_type'] == 'bic'
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
 
 
@@ -180,14 +202,18 @@ class DummyResults:
         self.warnings = warnings
 
 
-def test_rank_models():
-    base = DummyModel('base', parameter_names=['p1'])
+@pytest.fixture(scope='session')
+def base_model_and_res():
+    return DummyModel('base', parameter_names=['p1']), DummyResults(name='base', ofv=0)
+
+
+@pytest.fixture(scope='session')
+def candidate_models_and_res():
     m1 = DummyModel('m1', parameter_names=['p1', 'p2'])
     m2 = DummyModel('m2', parameter_names=['p1', 'p2'])
     m3 = DummyModel('m3', parameter_names=['p1', 'p2', 'p3'])
     m4 = DummyModel('m4', parameter_names=['p1'])
 
-    base_res = DummyResults(name=base.name, ofv=0)
     m1_res = DummyResults(
         name=m1.name, ofv=-5, minimization_successful=False, termination_cause='rounding_errors'
     )
@@ -195,114 +221,95 @@ def test_rank_models():
     m3_res = DummyResults(name=m3.name, ofv=-4)
     m4_res = DummyResults(name=m4.name, ofv=1)
 
-    models = [m1, m2, m3, m4]
-    models_res = [m1_res, m2_res, m3_res, m4_res]
+    return [m1, m2, m3, m4], [m1_res, m2_res, m3_res, m4_res]
 
-    df = rank_models(base, base_res, models, models_res, rank_type='ofv')
+
+@pytest.mark.parametrize(
+    'kwargs, best_model_names, no_of_ranked_models',
+    [
+        ({}, ['m2', 'm3'], 4),
+        ({'strictness': 'minimization_successful or rounding_errors'}, ['m1'], 5),
+        ({'cutoff': 1}, ['m2', 'm3'], 3),
+        ({'rank_type': 'lrt', 'cutoff': 0.05}, ['m2'], 2),
+        ({'penalties': [0, 0, 100, 0, 0]}, ['m3'], 4),
+    ],
+)
+def test_rank_models(
+    base_model_and_res, candidate_models_and_res, kwargs, best_model_names, no_of_ranked_models
+):
+    base, base_res = base_model_and_res
+    models, models_res = candidate_models_and_res
+
+    df = rank_models(base, base_res, models, models_res, **kwargs)
     assert len(df) == 5
-    best_model = df.loc[df['rank'] == 1].index.values
-    assert list(best_model) == ['m2', 'm3']
-
-    # Test if rounding errors are allowed
-    df = rank_models(
-        base,
-        base_res,
-        models,
-        models_res,
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
-    )
-    best_model = df.loc[df['rank'] == 1].index.values
-    assert list(best_model) == ['m1']
+    best_models = df.loc[df['rank'] == 1].index.values
+    assert list(best_models) == best_model_names
     ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 5
+    assert len(ranked_models) == no_of_ranked_models
 
-    # Test with a cutoff of dOFV=1
-    df = rank_models(base, base_res, models, models_res, rank_type='ofv', cutoff=1)
-    ranked_models = df.dropna().index.values
-    assert len(ranked_models) == 3
 
-    # Test with LRT
-    df = rank_models(base, base_res, models, models_res, rank_type='lrt', cutoff=0.05)
-    ranked_models = list(df.dropna().index.values)
-    assert sorted(ranked_models) == ['base', 'm2']
+@pytest.mark.parametrize(
+    'res_kwargs, rank_models_kwargs',
+    [
+        ({'ofv': np.nan}, {}),
+        (
+            {
+                'ofv': -5,
+                'minimization_successful': False,
+                'termination_cause': 'rounding_errors',
+                'significant_digits': np.nan,
+            },
+            {'strictness': 'minimization_successful or (rounding_errors and sigdigs>=0)'},
+        ),
+    ],
+)
+def test_rank_models_nan(
+    base_model_and_res, candidate_models_and_res, res_kwargs, rank_models_kwargs
+):
+    base, base_res = base_model_and_res
+    models, models_res = candidate_models_and_res
 
-    df = rank_models(
-        base,
-        base_res,
-        models,
-        models_res,
-        parent_dict={m: base for m in models},
-        rank_type='lrt',
-        cutoff=0.05,
-    )
-    ranked_models = list(df.dropna().index.values)
-    assert sorted(ranked_models) == ['base', 'm2']
+    model = DummyModel('m5', parameter_names=['p1'])
+    res = DummyResults(name=model.name, **res_kwargs)
 
-    # Test if candidate model does not have an OFV
-    m5 = DummyModel('m5', parameter_names=['p1'])
-    m5_res = DummyResults(name=m5.name, ofv=np.nan)
-    df = rank_models(base, base_res, models + [m5], models_res + [m5_res], rank_type='ofv')
+    df = rank_models(base, base_res, models + [model], models_res + [res], **rank_models_kwargs)
     ranked_models = list(df.dropna().index.values)
     assert 'm5' not in ranked_models
     assert np.isnan(df.loc['m5']['rank'])
 
-    # Test if model has minimized but has unreportable number of significant digits while still allowing rounding
-    # errors
-    m6 = DummyModel('m6', parameter_names=['p1'])
-    m6_res = DummyResults(
-        name=m6.name,
-        ofv=-5,
-        minimization_successful=False,
-        termination_cause='rounding_errors',
-        significant_digits=np.nan,
-    )
-    df = rank_models(
-        base,
-        base_res,
-        models + [m6],
-        models_res + [m6_res],
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
-    )
-    ranked_models = list(df.dropna().index.values)
-    assert 'm6' not in ranked_models
-    assert np.isnan(df.loc['m6']['rank'])
 
-    # Test if base model failed, fall back to rank value
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        ({'ofv': np.nan}),
+        ({'ofv': 2e154, 'minimization_successful': False}),
+    ],
+)
+def test_rank_models_base_fail(candidate_models_and_res, kwargs):
     base_nan = DummyModel('base_nan', parameter_names=['p1'])
-    base_nan_res = DummyResults(name=base_nan.name, ofv=np.nan)
-    df = rank_models(
-        base_nan,
-        base_nan_res,
-        models,
-        models_res,
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
-    )
-    assert df.iloc[0].name == 'm1'
+    base_nan_res = DummyResults(name=base_nan.name, **kwargs)
 
-    # Test if base model failed but still has OFV with a very high value, fall back to rank value
-    base_nan = DummyModel(
-        'base_nan',
-        parameter_names=['p1'],
-    )
-    base_nan_res = DummyResults(
-        name=base_nan.name, ofv=2e154, minimization_successful=False, termination_cause='something'
-    )
+    models, models_res = candidate_models_and_res
+
     df = rank_models(
         base_nan,
         base_nan_res,
         models,
         models_res,
-        strictness='minimization_successful or (rounding_errors and sigdigs>=0)',
-        rank_type='ofv',
     )
-    assert df.iloc[0].name == 'm1'
-    assert df.nunique()['ofv'] == df.nunique()['rank']
+    best_models = df.loc[df['rank'] == 1].index.values
+    assert list(best_models) == ['m2', 'm3']
+
+
+def test_rank_models_raises(base_model_and_res, candidate_models_and_res):
+    base, base_res = base_model_and_res
+    models, models_res = candidate_models_and_res
 
     with pytest.raises(ValueError):
-        rank_models(base, base_res, models + [m5], models_res)
+        rank_models(base, base_res, models[:-1], models_res)
+
+    with pytest.raises(ValueError):
+        rank_models(base, base_res, models, models_res, penalties=[1])
 
 
 def test_rank_models_bic(load_model_for_test, testdata):
@@ -310,18 +317,9 @@ def test_rank_models_bic(load_model_for_test, testdata):
     model_iiv = add_iiv(model_base, ['S1'], 'exp')
     model_iiv = model_iiv.replace(name='pheno_iiv')
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
-    df_mixed = rank_models(model_base, res, [model_iiv], [res], rank_type='bic', bic_type='mixed')
-    df_mult_test = rank_models(
-        model_base,
-        res,
-        [model_iiv],
-        [res],
-        rank_type='bic',
-        bic_type='mixed',
-        multiple_testing=True,
-        mult_test_p=2,
-    )
-    assert df_mixed.loc['pheno_iiv', 'bic'] != df_mult_test.loc['pheno_iiv', 'bic']
+    df = rank_models(model_base, res, [model_iiv], [res], rank_type='bic', bic_type='mixed')
+    assert df.iloc[0].name == 'pheno'
+    assert df.loc['pheno', 'bic'] != df.loc['pheno_iiv', 'bic']
 
 
 def test_summarize_modelfit_results(
@@ -552,3 +550,337 @@ def test_strictness_parameters(testdata):
     assert not is_strictness_fulfilled(res, model, 'estimate_near_boundary_theta')
     model = set_lower_bounds(model, {'TVCL': 0.0058})
     assert is_strictness_fulfilled(res, model, 'estimate_near_boundary_theta')
+
+
+@pytest.mark.parametrize(
+    ('base_funcs', 'search_space', 'kwargs', 'candidate_funcs', 'penalties'),
+    [
+        (
+            [],
+            'PERIPHERALS(0..2);ABSORPTION([FO,ZO])',
+            {},
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [1.39, 1.39],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {},
+            [add_peripheral_compartment],
+            [4.39],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {},
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [4.39, 4.39],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {},
+            [add_peripheral_compartment, set_seq_zo_fo_absorption],
+            [4.39, 8.79],
+        ),
+        (
+            [split_joint_distribution],
+            ['iiv_diag'],
+            {'base_model': None},
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [4.39, 2.20],
+        ),
+        (
+            [create_joint_distribution],
+            ['iiv_diag', 'iiv_block'],
+            {'base_model': None},
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [6.59, 2.20],
+        ),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            ['iiv_diag', 'iiv_block'],
+            {'base_model': None},
+            [
+                partial(remove_iiv, to_remove=['ETA_VP1']),
+                partial(remove_iiv, to_remove=['ETA_QP1']),
+            ],
+            [40.51, 23.47],
+        ),
+        (
+            [add_lag_time, add_pk_iiv, create_joint_distribution],
+            ['iiv_diag', 'iiv_block'],
+            {'keep': ['ETA_CL'], 'base_model': None},
+            [
+                partial(remove_iiv, to_remove=['ETA_MDT']),
+                partial(split_joint_distribution, rvs=['ETA_MAT']),
+            ],
+            [15.15, 7.98],
+        ),
+        (
+            [partial(add_iov, occ='FA1')],
+            ['iiv_diag', 'iov'],
+            {'base_model': None},
+            [partial(remove_iov, to_remove='ETA_MAT'), partial(remove_iiv, to_remove='ETA_CL')],
+            [17.92, 14.33],
+        ),
+    ],
+)
+def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):
+    base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    for func in base_funcs:
+        base_model = func(base_model)
+    if 'base_model' in kwargs.keys():
+        kwargs['base_model'] = base_model
+    candidate = base_model
+    for func, ref in zip(candidate_funcs, penalties):
+        candidate = func(candidate)
+        penalty = calculate_bic_penalty(candidate, search_space=search_space, **kwargs)
+        assert round(penalty, 2) == ref
+
+
+@pytest.mark.parametrize(
+    ('search_space', 'candidate_features', 'p_expected', 'k_p_expected'),
+    [
+        ('ABSORPTION([FO,ZO])', 'ABSORPTION(FO)', 0, 0),
+        ('ABSORPTION([FO,ZO])', 'ABSORPTION(ZO)', 0, 0),
+        ('ABSORPTION([FO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 0),
+        ('ABSORPTION([FO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 1),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 0),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(ZO)', 2, 0),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 1),
+        ('ELIMINATION([FO,MM])', 'ELIMINATION(MM)', 0, 0),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(FO)', 2, 0),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MM)', 2, 0),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 1),
+        ('ELIMINATION([FO,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 1),
+        ('PERIPHERALS(0..2)', 'PERIPHERALS(0)', 2, 0),
+        ('PERIPHERALS(0..2)', 'PERIPHERALS(1)', 2, 1),
+        ('PERIPHERALS(0..2)', 'PERIPHERALS(2)', 2, 2),
+        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(0)', 3, 0),
+        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(1)', 3, 1),
+        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(2)', 3, 1),
+        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(0,NODEPOT)', 2, 0),
+        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(1,NODEPOT)', 2, 0),
+        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(2,NODEPOT)', 2, 0),
+        ('TRANSITS([0,1,2],*)', 'TRANSITS(2)', 4, 1),
+        ('TRANSITS([0,1,2],*)', 'TRANSITS(2,NODEPOT)', 4, 0),
+        ('LAGTIME(ON)', 'LAGTIME(ON)', 0, 0),
+        ('LAGTIME([OFF,ON])', 'LAGTIME(OFF)', 1, 0),
+        ('LAGTIME([OFF,ON])', 'LAGTIME(ON)', 1, 1),
+        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(1);ABSORPTION(ZO)', 2, 1),
+        ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(2);ABSORPTION(ZO)', 2, 2),
+        (
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ABSORPTION(FO)',
+            9,
+            1,
+        ),
+        (
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ABSORPTION(ZO)',
+            9,
+            1,
+        ),
+        (
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ABSORPTION(SEQ-ZO-FO)',
+            9,
+            2,
+        ),
+        (
+            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'PERIPHERALS(1)',
+            3,
+            1,
+        ),
+        (
+            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ELIMINATION(MM)',
+            3,
+            1,
+        ),
+        (
+            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'PERIPHERALS(1);ELIMINATION(MIX-FO-MM)',
+            3,
+            2,
+        ),
+    ],
+)
+def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected, k_p_expected):
+    search_space_mfl = parse(search_space, mfl_class=True)
+    cand_mfl = parse(candidate_features, mfl_class=True)
+    assert get_penalty_parameters_mfl(search_space_mfl, cand_mfl) == (p_expected, k_p_expected)
+
+
+@pytest.mark.parametrize(
+    (
+        'base_funcs',
+        'kwargs',
+        'candidate_funcs',
+        'p_expected',
+        'k_p_expected',
+        'q_expected',
+        'k_q_expected',
+    ),
+    [
+        ([], {'search_space': ['iiv_diag']}, [], 3, 3, 0, 0),
+        (
+            [],
+            {'search_space': ['iiv_diag']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            2,
+            0,
+            0,
+        ),
+        (
+            [split_joint_distribution],
+            {'search_space': ['iiv_diag']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            2,
+            0,
+            0,
+        ),
+        ([], {'search_space': ['iiv_diag'], 'keep': ['CL']}, [], 2, 2, 0, 0),
+        ([create_joint_distribution], {'search_space': ['iiv_block']}, [], 0, 0, 3, 3),
+        (
+            [create_joint_distribution],
+            {'search_space': ['iiv_block']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            0,
+            0,
+            3,
+            1,
+        ),
+        ([create_joint_distribution], {'search_space': ['iiv_diag', 'iiv_block']}, [], 3, 3, 3, 3),
+        (
+            [create_joint_distribution],
+            {'search_space': ['iiv_diag', 'iiv_block']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            2,
+            3,
+            1,
+        ),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            {'search_space': ['iiv_diag', 'iiv_block']},
+            [
+                partial(remove_iiv, to_remove=['ETA_VP1']),
+                partial(remove_iiv, to_remove=['ETA_QP1']),
+            ],
+            5,
+            3,
+            10,
+            3,
+        ),
+        (
+            [add_lag_time, add_pk_iiv, create_joint_distribution],
+            {'search_space': ['iiv_diag', 'iiv_block'], 'keep': ['ETA_CL']},
+            [
+                partial(remove_iiv, to_remove=['ETA_MDT']),
+                partial(split_joint_distribution, rvs=['ETA_MAT']),
+            ],
+            3,
+            2,
+            6,
+            1,
+        ),
+        (
+            [partial(fix_parameters, parameter_names='IIV_MAT')],
+            {'search_space': ['iiv_diag']},
+            [],
+            2,
+            2,
+            0,
+            0,
+        ),
+        ([], {'search_space': ['iiv_diag']}, [], 3, 3, 0, 0),
+        ([partial(add_iov, occ='FA1')], {'search_space': ['iov']}, [], 3, 3, 0, 0),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iov']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            3,
+            3,
+            0,
+            0,
+        ),
+        ([partial(add_iov, occ='FA1')], {'search_space': ['iiv_diag', 'iov']}, [], 6, 6, 0, 0),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iiv_diag', 'iov']},
+            [partial(remove_iiv, to_remove=['ETA_CL'])],
+            6,
+            5,
+            0,
+            0,
+        ),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iiv_diag', 'iov']},
+            [
+                partial(remove_iov, to_remove='ETA_MAT'),
+            ],
+            6,
+            5,
+            0,
+            0,
+        ),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': ['iiv_diag', 'iov']},
+            [partial(remove_iov, to_remove='ETA_MAT'), partial(remove_iiv, to_remove='ETA_CL')],
+            6,
+            4,
+            0,
+            0,
+        ),
+    ],
+)
+def test_get_penalty_parameters_rvs(
+    testdata,
+    base_funcs,
+    kwargs,
+    candidate_funcs,
+    p_expected,
+    k_p_expected,
+    q_expected,
+    k_q_expected,
+):
+    base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    for func in base_funcs:
+        base_model = func(base_model)
+    candidate = base_model
+    for func in candidate_funcs:
+        candidate = func(candidate)
+
+    p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate, **kwargs)
+    assert (p, k_p, q, k_q) == (p_expected, k_p_expected, q_expected, k_q_expected)

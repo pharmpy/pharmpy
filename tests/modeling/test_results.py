@@ -154,10 +154,6 @@ def test_bic(load_model_for_test, testdata):
     assert calculate_bic(model, ofv, type='iiv') == 739.0498017015422
     assert calculate_bic(model, ofv, type='fixed') == 756.111852398327
     assert calculate_bic(model, ofv, type='random') == 751.2824140332593
-    assert (
-        calculate_bic(model, ofv, 'mixed', multiple_testing=True, mult_test_p=10, mult_test_e=1)
-        == 775.2741526362133
-    )
     assert calculate_bic(model, ofv) == 752.2483017062729
     model = set_iiv_on_ruv(model)
     assert calculate_bic(model, ofv) == 755.359951477165

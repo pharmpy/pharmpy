@@ -14,7 +14,6 @@ from pharmpy.modeling import (
     add_pd_iiv,
     add_pk_iiv,
     append_estimation_step_options,
-    calculate_bic,
     create_joint_distribution,
     find_clearance_parameters,
     has_random_effect,
@@ -24,14 +23,15 @@ from pharmpy.tools.common import (
     ToolResults,
     create_plots,
     create_results,
+    summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
-from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, _remove_sublist
+from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.tool import create_workflow as create_linearize_workflow
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
@@ -56,7 +56,7 @@ IIV_CORRELATION_ALGORITHMS = frozenset(
 def create_workflow(
     algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
     iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
-    rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
+    rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     linearize: bool = False,
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
@@ -64,6 +64,8 @@ def create_workflow(
     keep: Optional[Iterable[str]] = ("CL",),
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
+    E_p: Optional[float] = None,
+    E_q: Optional[float] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -91,6 +93,12 @@ def create_workflow(
     correlation_algorithm: {'top_down_exhaustive', 'skip'} or None
         Which algorithm to run for the determining block structure of added IIVs. If None, the
         algorithm is determined based on the 'algorithm' argument
+    E_p : float
+        Expected number of predictors for diagonal elements (used for mBIC). Must be set when using mBIC and
+        when the argument 'algorithm' is not 'skip'
+    E_q : float
+        Expected number of predictors for off-diagonal elements (used for mBIC). Must be set when using mBIC
+        and when the argument `correlation_algorithm` is not `skip` or None
 
     Returns
     -------
@@ -116,6 +124,8 @@ def create_workflow(
         correlation_algorithm,
         iiv_strategy,
         rank_type,
+        E_p,
+        E_q,
         linearize,
         cutoff,
         keep,
@@ -133,8 +143,13 @@ def create_step_workflow(
     wf_algorithm,
     iiv_strategy,
     rank_type,
+    E_p,
+    E_q,
     cutoff,
     strictness,
+    list_of_algorithms,
+    ref_model,
+    keep,
     linearize,
     param_mapping,
     context,
@@ -162,9 +177,13 @@ def create_step_workflow(
         strictness,
         input_model_entry,
         base_model_entry.model.name,
+        list_of_algorithms,
+        ref_model,
+        E_p,
+        E_q,
+        keep,
         linearize,
         param_mapping,
-        wf_algorithm.name,
         context,
     )
 
@@ -182,6 +201,8 @@ def start(
     correlation_algorithm,
     iiv_strategy,
     rank_type,
+    E_p,
+    E_q,
     linearize,
     cutoff,
     keep,
@@ -294,6 +315,8 @@ def start(
                 strictness=strictness,
                 index_offset=no_of_models,
                 input_model_entry=input_model_entry,
+                list_of_algorithms=list_of_algorithms,
+                rank_type=rank_type,
                 keep=keep,
                 param_mapping=param_mapping,
                 clearance_parameter=clearance_parameter,
@@ -307,13 +330,18 @@ def start(
             input_model_entry,
             base_model_entry,
             wf_algorithm,
-            iiv_strategy,
-            rank_type,
-            cutoff,
-            strictness,
-            linearize,
-            param_mapping,
-            context,
+            iiv_strategy=iiv_strategy,
+            rank_type=rank_type,
+            E_p=E_p,
+            E_q=E_q,
+            cutoff=cutoff,
+            strictness=strictness,
+            list_of_algorithms=list_of_algorithms,
+            ref_model=base_model,
+            keep=keep,
+            linearize=linearize,
+            param_mapping=param_mapping,
+            context=context,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
@@ -356,13 +384,33 @@ def start(
     # NOTE: Compute final final model
     final_final_model = last_res.final_model
     if input_res and final_res:
-        bic_input = calculate_bic(input_model, input_res.ofv, type='iiv')
-        bic_final = calculate_bic(final_model, final_res.ofv, type='iiv')
-        if bic_final > bic_input:
+        if rank_type == 'mbic':
+            penalties = _get_penalties(
+                base_model,
+                [input_model_entry, final_model_entry],
+                keep=keep,
+                list_of_algorithms=list_of_algorithms,
+                E_p=E_p,
+                E_q=E_q,
+            )
+        else:
+            penalties = None
+        summary_final_step = summarize_tool(
+            [final_model_entry],
+            input_model_entry,
+            rank_type,
+            cutoff=cutoff,
+            bic_type='iiv',
+            strictness=strictness,
+            penalties=penalties,
+        )
+        sum_tools.append(summary_final_step)
+        best_model_name = summary_final_step['rank'].idxmin()
+
+        if best_model_name == input_model.name:
             warnings.warn(
                 f'Worse {rank_type} in final model {final_model.name} '
-                f'({bic_final}) than {input_model.name} ({bic_input}), selecting '
-                f'input model'
+                f'than {input_model.name}, selecting input model'
             )
             final_final_model = input_model
 
@@ -379,7 +427,9 @@ def start(
     context.store_final_model_entry(final_final_model)
 
     final_results = IIVSearchResults(
-        summary_tool=_concat_summaries(sum_tools, keys),
+        summary_tool=_concat_summaries(
+            sum_tools, keys + [len(keys) + 1]
+        ),  # To include step comparing input to final
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
         summary_individuals=_concat_summaries(sum_inds, keys),
         summary_individuals_count=_concat_summaries(sum_inds_count, keys),
@@ -446,9 +496,13 @@ def post_process(
     strictness,
     input_model_entry,
     base_model_name,
+    list_of_algorithms,
+    ref_model,
+    E_p,
+    E_q,
+    keep,
     linearize,
     param_mapping,
-    algorithm_name,
     context,
     *model_entries,
 ):
@@ -486,32 +540,23 @@ def post_process(
             base_model, modelfit_results=base_model_entry.modelfit_results
         )
 
-    # Uses other values than default for MBIC calculations
-    if rank_type == "mbic" and algorithm_name == "bu_stepwise_no_of_etas":
-        # Find all ETAs in model
-        iivs = base_model_entry.model.random_variables.iiv
-        iiv_names = iivs.names  # All ETAs in the base model
-        # Remove fixed etas
-        fixed_etas = _get_fixed_etas(base_model_entry.model)
-        iiv_names = _remove_sublist(iiv_names, fixed_etas)
-
-        number_of_predicted = len(iiv_names)
-        number_of_expected = number_of_predicted / 2
+    if rank_type == "mbic":
+        penalties = _get_penalties(
+            ref_model, model_entries, keep, list_of_algorithms, E_p=E_p, E_q=E_q
+        )
     else:
-        number_of_predicted = None
-        number_of_expected = None
+        penalties = None
 
     res = create_results(
         IIVSearchResults,
         input_model_entry,
         base_model_entry,
         res_model_entries,
-        rank_type,
-        cutoff,
+        rank_type=rank_type,
+        cutoff=cutoff,
         bic_type='iiv',
         strictness=strictness,
-        n_predicted=number_of_predicted,
-        n_expected=number_of_expected,
+        penalties=penalties,
         context=context,
     )
 
@@ -564,6 +609,21 @@ def post_process(
     return replace(res, summary_models=summary_models)
 
 
+def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms, E_p, E_q):
+    search_space = []
+    if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
+        search_space.append('iiv_diag')
+    if any('block' in algorithm for algorithm in list_of_algorithms):
+        search_space.append('iiv_block')
+    penalties = [
+        calculate_bic_penalty(
+            me.model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
+        )
+        for me in candidate_model_entries
+    ]
+    return penalties
+
+
 def modify_summary_tool(summary_tool, first_model_name):
     # If linear model --> Force de-linearized model to be chosen
     # TODO : Remove BIC values of linearized models as they are misleading ?
@@ -581,7 +641,7 @@ def modify_summary_tool(summary_tool, first_model_name):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm
+    algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm, E_p, E_q
 ):
     if keep and model:
         for parameter in keep:
@@ -602,6 +662,22 @@ def validate_input(
         raise ValueError(
             "correlation_algorithm need to be specified if" " 'algorithm' is set to skip"
         )
+
+    if rank_type != 'mbic' and (E_p is not None or E_q is not None):
+        raise ValueError(
+            f'E_p and E_q can only be provided when `rank_type` is mbic: got `{rank_type}`'
+        )
+    if rank_type == 'mbic':
+        if algorithm != 'skip' and E_p is None:
+            raise ValueError('Value `E_p` must be provided for `algorithm` when using mbic')
+        if correlation_algorithm and E_q is None:
+            raise ValueError(
+                'Value `E_q` must be provided for `correlation_algorithm` when using mbic'
+            )
+        if E_p is not None and E_p <= 0.0:
+            raise ValueError(f'Value `E_p` must be more than 0: got `{E_p}`')
+        if E_q is not None and E_q <= 0.0:
+            raise ValueError(f'Value `E_q` must be more than 0: got `{E_q}`')
 
 
 @dataclass(frozen=True)

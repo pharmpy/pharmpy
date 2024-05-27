@@ -15,6 +15,8 @@ def test_exhaustive_exhaustive(tmp_path, model_count, start_modelres):
             'exhaustive',
             results=start_modelres[1],
             model=start_modelres[0],
+            rank_type='mbic',
+            E=1.0,
         )
 
         assert len(res.summary_tool) == 4
@@ -64,6 +66,8 @@ def test_exhaustive_stepwise_basic(
             'exhaustive_stepwise',
             results=start_modelres[1],
             model=start_modelres[0],
+            rank_type='mbic',
+            E=1.0,
         )
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -111,6 +115,8 @@ def test_exhaustive_stepwise_iiv_strategies(
             iiv_strategy=iiv_strategy,
             results=start_modelres[1],
             model=start_modelres[0],
+            rank_type='mbic',
+            E=1.0,
         )
 
         assert len(res.summary_tool) == no_of_models + 1
@@ -138,6 +144,8 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_modelres):
             'exhaustive_stepwise',
             results=start_modelres[1],
             model=start_modelres[0],
+            rank_type='mbic',
+            E=1.0,
         )
 
         assert ',999999) ; POP_QP1' in res.models[-1].code
@@ -155,6 +163,8 @@ def test_summary_individuals(tmp_path, testdata):
             results=start_res,
             search_space='ABSORPTION(ZO);PERIPHERALS([1, 2])',
             algorithm='reduced_stepwise',
+            rank_type='mbic',
+            E=1.0,
         )
         summary = res.summary_individuals
         columns = (

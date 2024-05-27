@@ -265,6 +265,36 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             TypeError,
             'Invalid `model`',
         ),
+        (None, {'rank_type': 'ofv', 'E_p': 1.0}, ValueError, 'E_p and E_q can only be provided'),
+        (None, {'rank_type': 'ofv', 'E_q': 1.0}, ValueError, 'E_p and E_q can only be provided'),
+        (
+            None,
+            {'rank_type': 'mbic', 'algorithm': 'top_down_exhaustive'},
+            ValueError,
+            'Value `E_p` must be provided for `algorithm`',
+        ),
+        (
+            None,
+            {
+                'rank_type': 'mbic',
+                'algorithm': 'skip',
+                'correlation_algorithm': 'top_down_exhaustive',
+            },
+            ValueError,
+            'Value `E_q` must be provided for `correlation_algorithm`',
+        ),
+        (None, {'rank_type': 'mbic', 'E_p': 0.0}, ValueError, 'Value `E_p` must be more than 0'),
+        (
+            None,
+            {
+                'rank_type': 'mbic',
+                'algorithm': 'skip',
+                'correlation_algorithm': 'top_down_exhaustive',
+                'E_q': 0.0,
+            },
+            ValueError,
+            'Value `E_q` must be more than 0',
+        ),
     ],
 )
 def test_validate_input_raises(

@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import importlib
 import inspect
+import math
 import re
 import warnings
 from collections.abc import Mapping, Sequence
@@ -28,6 +29,14 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.tools import get_model_features
+from pharmpy.tools.mfl.parse import ModelFeatures, parse
+from pharmpy.tools.mfl.statement.feature.absorption import Absorption
+from pharmpy.tools.mfl.statement.feature.elimination import Elimination
+from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
+from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
+from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
+from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.context import Context, LocalDirectoryContext
@@ -743,7 +752,7 @@ def rank_models(
     strictness: Optional[str] = "minimization_successful",
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
-    bic_type: str = 'mixed',
+    penalties: Optional[list[float]] = None,
     **kwargs,
 ) -> pd.DataFrame:
     """Ranks a list of models
@@ -768,8 +777,8 @@ def rank_models(
         Name of ranking type. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)
     cutoff : float or None
         Value to use as cutoff. If using LRT, cutoff denotes p-value. Default is None
-    bic_type : str
-        Type of BIC to calculate. Default is the mixed effects.
+    penalties : list
+        List of penalties to add to all models (including base model)
     kwargs
         Arguments to pass to calculate BIC (such as `mult_test_p` and `mult_test_p`)
 
@@ -789,6 +798,11 @@ def rank_models(
     """
     if len(models) != len(models_res):
         raise ValueError('Different length of `models` and `models_res`')
+    if penalties is not None and len(models) + 1 != len(penalties):
+        raise ValueError(
+            f'Mismatch in length of `models` and `penalties`: number of `penalties` ({len(penalties)}) '
+            f'must be one more than number of `models` ({len(models)})'
+        )
     if rank_type == 'lrt' and not parent_dict:
         parent_dict = {model.name: base_model.name for model in models}
     if parent_dict and not isinstance(list(parent_dict.keys())[0], str):
@@ -800,15 +814,19 @@ def rank_models(
     rank_values, delta_values = {}, {}
     models_to_rank = []
 
-    ref_value = _get_rankval(base_model, base_model_res, strictness, rank_type, bic_type, **kwargs)
+    ref_value = get_rankval(base_model, base_model_res, strictness, rank_type, **kwargs)
+    if penalties:
+        ref_value += penalties[0]
     model_dict = {model.name: (model, res) for model, res in zip(models_all, res_all)}
 
     # Filter on strictness
-    for model, res in zip(models_all, res_all):
+    for i, (model, res) in enumerate(zip(models_all, res_all)):
         # Exclude OFV etc. if model was not successful
-        rank_value = _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs)
+        rank_value = get_rankval(model, res, strictness, rank_type, **kwargs)
         if np.isnan(rank_value):
             continue
+        if penalties:
+            rank_value += penalties[i]
         if model.name == base_model.name:
             pass
         elif rank_type == 'lrt':
@@ -1036,7 +1054,7 @@ def is_strictness_fulfilled(
         return True
 
 
-def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
+def get_rankval(model, res, strictness, rank_type, **kwargs):
     if not is_strictness_fulfilled(res, model, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
@@ -1044,9 +1062,10 @@ def _get_rankval(model, res, strictness, rank_type, bic_type, **kwargs):
     elif rank_type == 'aic':
         return calculate_aic(model, res.ofv)
     elif rank_type == 'bic':
-        return calculate_bic(model, res.ofv, bic_type, **kwargs)
+        bic_type = kwargs.get('bic_type')
+        return calculate_bic(model, res.ofv, type=bic_type)
     else:
-        raise ValueError('Unknown rank_type: must be ofv, lrt, aic, or bic')
+        raise ValueError(f'Unknown rank_type: got `{rank_type}`, must be ofv, lrt, aic, or bic')
 
 
 def summarize_modelfit_results(
@@ -1267,3 +1286,144 @@ def load_example_modelfit_results(name: str):
     path = Path(__file__).resolve().parent.parent / 'internals' / 'example_models' / (name + '.mod')
     res = read_modelfit_results(path)
     return res
+
+
+def calculate_bic_penalty(
+    candidate_model: Model,
+    search_space: Union[str, list[str], ModelFeatures],
+    base_model: Optional[Model] = None,
+    E_p: Optional[float] = 1.0,
+    E_q: Optional[float] = 1.0,
+    keep: Optional[list[str]] = None,
+):
+    if isinstance(search_space, str) or isinstance(search_space, ModelFeatures):
+        if base_model:
+            raise ValueError('Cannot provide both `search_space` as MFL as well as `base_model`')
+
+        cand_features = get_model_features(candidate_model)
+
+        if isinstance(search_space, str):
+            search_space_mfl = parse(search_space, mfl_class=True)
+        else:
+            search_space_mfl = search_space
+        cand_mfl = parse(cand_features, mfl_class=True)
+        # FIXME: Workaround to skip covariate effects detected in search space
+        cand_mfl = ModelFeatures.create(
+            absorption=cand_mfl.absorption,
+            elimination=cand_mfl.elimination,
+            transits=cand_mfl.transits,
+            peripherals=cand_mfl.peripherals,
+            lagtime=cand_mfl.lagtime,
+        )
+
+        p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
+
+        q = 0
+        k_q = 0
+    if isinstance(search_space, list):
+        allowed_options = ['iiv_diag', 'iiv_block', 'iov']
+        for search_space_type in search_space:
+            if search_space_type not in allowed_options:
+                raise ValueError(
+                    f'Unknown `search_space`: {search_space_type} (must be one of {allowed_options})'
+                )
+        if 'iiv_block' in search_space and 'iov' in search_space:
+            raise ValueError(
+                'Incorrect `search_space`: `iiv_block` and `iov` cannot be tested in same search space'
+            )
+        if not base_model:
+            raise ValueError(
+                'Missing `base_model`: reference model is needed to determine search space'
+            )
+
+        p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate_model, search_space, keep)
+
+    # To avoid domain error
+    p = p if k_p != 0 else 1
+    q = q if k_q != 0 else 1
+
+    return 2 * k_p * math.log(p / E_p) + 2 * k_q * math.log(q / E_q)
+
+
+def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
+    def _get_len(attr):
+        if isinstance(attr, tuple):
+            return sum(len(feat) for feat in attr)
+        else:
+            return len(attr)
+
+    p, k_p = 0, 0
+    for attr_name, attr in vars(cand_mfl).items():
+        if not attr:
+            continue
+        attr_search_space = getattr(search_space_mfl, attr_name)
+        if _get_len(attr_search_space) == 1:
+            continue
+        if isinstance(attr, Absorption) or isinstance(attr, Elimination):
+            feat_combo = 'SEQ-ZO-FO' if isinstance(attr, Absorption) else 'MIX-FO-MM'
+            assert len(attr.modes) == 1
+            if feat_combo in [node.name for node in attr_search_space.modes]:
+                p_attr = 2
+            else:
+                p_attr = 0
+            abs_type = attr.modes[0].name
+            if abs_type == feat_combo:
+                k_p_attr = 1
+            else:
+                k_p_attr = 0
+        elif isinstance(attr, LagTime):
+            p_attr = 1
+            k_p_attr = 1 if attr.modes[0].name == 'ON' else 0
+        elif isinstance(attr, tuple):
+            assert len(attr) == 1 and len(attr_search_space) == 1
+            attr, attr_search_space = attr[0], attr_search_space[0]
+            if isinstance(attr, Peripherals):
+                p_attr = len(attr_search_space) - 1
+                k_p_attr = attr.counts[0]
+            elif isinstance(attr, Transits):
+                p_attr = len([n for n in attr_search_space.counts if n > 0])
+                if 'DEPOT' in [node.name for node in attr_search_space.eval.depot]:
+                    p_attr += 1
+                if isinstance(attr_search_space.depot, Wildcard):
+                    p_attr += 1
+                if attr.depot[0].name == 'DEPOT' and attr.counts[0] > 0:
+                    k_p_attr = 1
+                else:
+                    k_p_attr = 0
+        else:
+            raise ValueError(f'MFL attribute of type `{type(attr)}` not supported.')
+
+        p += p_attr
+        k_p += k_p_attr
+
+    return p, k_p
+
+
+def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
+    base_var_params = _get_var_params(base_model, search_space)
+    cand_var_params = _get_var_params(cand_model, search_space)
+
+    p, k_p, q, k_q = 0, 0, 0, 0
+    if 'iiv_diag' in search_space or 'iov' in search_space:
+        p = len(base_var_params)
+        k_p = len(cand_var_params)
+        if keep:
+            p -= len(keep)
+            k_p -= len(keep)
+    if 'iiv_block' in search_space:
+        q = int(len(base_var_params) * (len(base_var_params) - 1) / 2)
+        params = set(cand_model.random_variables.iiv.parameter_names).difference(cand_var_params)
+        cand_cov_params = cand_model.parameters[list(params)].nonfixed
+        k_q = len(cand_cov_params)
+
+    return p, k_p, q, k_q
+
+
+def _get_var_params(model, search_space):
+    var_params = []
+    if any(s.startswith('iiv') for s in search_space):
+        var_params.extend(model.random_variables.iiv.variance_parameters)
+    if 'iov' in search_space:
+        var_params.extend(model.random_variables.iov.variance_parameters)
+
+    return set(var_params).difference(model.parameters.fixed.names)

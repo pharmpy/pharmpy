@@ -356,6 +356,9 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             TypeError,
             'Invalid `model`',
         ),
+        (None, {'rank_type': 'ofv', 'E': 1.0}, ValueError, 'E can only be provided'),
+        (None, {'rank_type': 'mbic'}, ValueError, 'Value `E` must be provided when using mbic'),
+        (None, {'rank_type': 'mbic', 'E': 0.0}, ValueError, 'Value `E` must be more than 0'),
     ],
 )
 def test_validate_input_raises(
