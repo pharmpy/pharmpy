@@ -85,11 +85,11 @@ def bu_stepwise_no_of_etas(
         base_model,
         index_offset,
         strictness,
-        param_mapping,
         input_model_entry,
         list_of_algorithms,
         rank_type,
         keep,
+        param_mapping,
         clearance_parameter,
     )
     wb.add_task(stepwise_task)

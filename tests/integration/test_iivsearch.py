@@ -77,6 +77,7 @@ def test_block_structure(tmp_path, model_count, start_modelres):
         assert (rundir / 'metadata.json').exists()
 
 
+@pytest.mark.filterwarnings('ignore::UserWarning')
 def test_block_structure_dummy(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iivsearch(
@@ -88,7 +89,7 @@ def test_block_structure_dummy(tmp_path, model_count, start_modelres):
         )
 
         no_of_candidate_models = 4
-        assert len(res.summary_tool) == no_of_candidate_models + 1
+        assert len(res.summary_tool) == no_of_candidate_models + 3
         assert len(res.summary_models) == no_of_candidate_models + 2
         rundir = tmp_path / 'iivsearch1'
         assert (rundir / 'models' / 'iivsearch_run1' / 'model_results.json').exists()
@@ -134,9 +135,11 @@ def test_no_of_etas_base(
             assert res.summary_tool.loc[1].iloc[-1]['description'] == '[CL]'
             assert res_models[0].random_variables.iiv.names == ['ETA_1']
 
-        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
-        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
-        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
+        summary_tool_sorted_by_dbic = res.summary_tool.loc[1].sort_values(
+            by=['dbic'], ascending=False
+        )
+        summary_tool_sorted_by_bic = res.summary_tool.loc[1].sort_values(by=['bic'])
+        summary_tool_sorted_by_rank = res.summary_tool.loc[1].sort_values(by=['rank'])
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
         pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
 
