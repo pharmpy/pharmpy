@@ -47,13 +47,15 @@ IIV_CORRELATION_ALGORITHMS = frozenset(
 def create_workflow(
     algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
     iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
-    rank_type: Literal[tuple(RANK_TYPES)] = 'mbic',
+    rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     keep: Optional[Iterable[str]] = ("CL",),
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
+    E_p: Optional[float] = None,
+    E_q: Optional[float] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -79,6 +81,12 @@ def create_workflow(
     correlation_algorithm: {'top_down_exhaustive', 'skip'} or None
         Which algorithm to run for the determining block structure of added IIVs. If None, the
         algorithm is determined based on the 'algorithm' argument
+    E_p : float
+        Expected number of predictors for diagonal elements (used for mBIC). Must be set when using mBIC and
+        when the argument 'algorithm' is not 'skip'
+    E_q : float
+        Expected number of predictors for off-diagonal elements (used for mBIC). Must be set when using mBIC
+        and when the argument `correlation_algorithm` is not `skip` or None
 
     Returns
     -------
@@ -104,6 +112,8 @@ def create_workflow(
         correlation_algorithm,
         iiv_strategy,
         rank_type,
+        E_p,
+        E_q,
         cutoff,
         keep,
         strictness,
@@ -120,6 +130,8 @@ def create_step_workflow(
     wf_algorithm,
     iiv_strategy,
     rank_type,
+    E_p,
+    E_q,
     cutoff,
     strictness,
     list_of_algorithms,
@@ -149,6 +161,8 @@ def create_step_workflow(
         base_model_entry.model.name,
         list_of_algorithms,
         ref_model,
+        E_p,
+        E_q,
         keep,
     )
 
@@ -166,6 +180,8 @@ def start(
     correlation_algorithm,
     iiv_strategy,
     rank_type,
+    E_p,
+    E_q,
     cutoff,
     keep,
     strictness,
@@ -247,13 +263,15 @@ def start(
             input_model_entry,
             base_model_entry,
             wf_algorithm,
-            iiv_strategy,
-            rank_type,
-            cutoff,
-            strictness,
-            list_of_algorithms,
-            base_model,
-            keep,
+            iiv_strategy=iiv_strategy,
+            rank_type=rank_type,
+            E_p=E_p,
+            E_q=E_q,
+            cutoff=cutoff,
+            strictness=strictness,
+            list_of_algorithms=list_of_algorithms,
+            ref_model=base_model,
+            keep=keep,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
@@ -302,6 +320,8 @@ def start(
                 [input_model_entry, final_model_entry],
                 keep=keep,
                 list_of_algorithms=list_of_algorithms,
+                E_p=E_p,
+                E_q=E_q,
             )
         else:
             penalties = None
@@ -395,6 +415,8 @@ def post_process(
     base_model_name,
     list_of_algorithms,
     ref_model,
+    E_p,
+    E_q,
     keep,
     *model_entries,
 ):
@@ -433,7 +455,9 @@ def post_process(
         )
 
     if rank_type == "mbic":
-        penalties = _get_penalties(ref_model, model_entries, keep, list_of_algorithms)
+        penalties = _get_penalties(
+            ref_model, model_entries, keep, list_of_algorithms, E_p=E_p, E_q=E_q
+        )
     else:
         penalties = None
 
@@ -442,8 +466,8 @@ def post_process(
         input_model_entry,
         base_model_entry,
         res_model_entries,
-        rank_type,
-        cutoff,
+        rank_type=rank_type,
+        cutoff=cutoff,
         bic_type='iiv',
         strictness=strictness,
         penalties=penalties,
@@ -456,14 +480,16 @@ def post_process(
     return replace(res, summary_models=summary_models)
 
 
-def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms):
+def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms, E_p, E_q):
     search_space = []
     if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
         search_space.append('iiv_diag')
     if any('block' in algorithm for algorithm in list_of_algorithms):
         search_space.append('iiv_block')
     penalties = [
-        calculate_bic_penalty(me.model, search_space, base_model=ref_model, keep=keep)
+        calculate_bic_penalty(
+            me.model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
+        )
         for me in candidate_model_entries
     ]
     return penalties
@@ -472,7 +498,7 @@ def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms)
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm
+    algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm, E_p, E_q
 ):
     if keep and model:
         for parameter in keep:
@@ -493,6 +519,22 @@ def validate_input(
         raise ValueError(
             "correlation_algorithm need to be specified if" " 'algorithm' is set to skip"
         )
+
+    if rank_type != 'mbic' and (E_p is not None or E_q is not None):
+        raise ValueError(
+            f'E_p and E_q can only be provided when `rank_type` is mbic: got `{rank_type}`'
+        )
+    if rank_type == 'mbic':
+        if algorithm != 'skip' and E_p is None:
+            raise ValueError('Value `E_p` must be provided for `algorithm` when using mbic')
+        if correlation_algorithm and E_q is None:
+            raise ValueError(
+                'Value `E_q` must be provided for `correlation_algorithm` when using mbic'
+            )
+        if E_p is not None and E_p <= 0.0:
+            raise ValueError(f'Value `E_p` must be more than 0: got `{E_p}`')
+        if E_q is not None and E_q <= 0.0:
+            raise ValueError(f'Value `E_q` must be more than 0: got `{E_q}`')
 
 
 @dataclass(frozen=True)

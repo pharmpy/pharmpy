@@ -7,7 +7,7 @@ def _is_iivsearch(obj):
     params = inspect.signature(obj).parameters
     assert 'algorithm' in params.keys()
     assert 'rank_type' in params.keys()
-    assert params['rank_type'].default == 'mbic'
+    assert params['rank_type'].default == 'bic'
     assert 'kwargs' in params.keys()
     assert 'kwargs' in obj.__doc__
     return True
