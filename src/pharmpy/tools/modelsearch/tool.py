@@ -342,11 +342,13 @@ def validate_input(
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
             )
+    if rank_type != 'mbic' and E is not None:
+        raise ValueError(f'E can only be provided when `rank_type` is mbic: got `{rank_type}`')
     if rank_type == 'mbic':
         if E is None:
-            raise ValueError('E-value must be provided when using mbic')
-        if E <= 0:
-            raise ValueError(f'E-value must be more than 0: got `{E}`')
+            raise ValueError('Value `E` must be provided when using mbic')
+        if E <= 0.0:
+            raise ValueError(f'Value `E` must be more than 0: got `{E}`')
 
 
 @dataclass(frozen=True)
