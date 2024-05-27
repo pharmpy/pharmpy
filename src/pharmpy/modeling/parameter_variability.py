@@ -2,6 +2,7 @@
 :meta private:
 """
 
+import copy
 import re
 import warnings
 from collections import Counter, defaultdict
@@ -27,7 +28,15 @@ from pharmpy.model import (
 )
 
 from .common import remove_unused_parameters_and_rvs
-from .expressions import create_symbol, get_pd_parameters, get_pk_parameters, has_random_effect
+from .expressions import (
+    create_symbol,
+    get_individual_parameters,
+    get_parameter_rv,
+    get_pd_parameters,
+    get_pk_parameters,
+    get_rv_parameters,
+    has_random_effect,
+)
 from .help_functions import _format_input_list, _format_options, _get_etas
 
 ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'))
@@ -170,10 +179,43 @@ def add_iov(
     list_of_parameters: Optional[Union[List[str], str]] = None,
     eta_names: Optional[Union[List[str], str]] = None,
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'disjoint',
+    on_iiv: bool = True,
+    expression: Union[List[str], str] = 'exp',
+    operation: str = '*',
+    initial_estimate: float = 0.09,
 ):
-    """Adds IOVs to :class:`pharmpy.model`.
+    r"""Adds IOVs to :class:`pharmpy.model`.
 
-    Initial estimate of new IOVs are 10% of the IIV eta it is based on.
+    IOVs are either added to the IIV eta if one exists or directly to the parameter if no IIV exists.
+
+    **IOV on IIV:**
+
+    IOV is added to IIV eta. Initial estimate of new IOVs are 10% of the IIV eta it is based on.
+
+    **IOV without IIV:**
+
+    If the parameter has no IIV then IOV is added directly to the parameter. How the IOV eta is added is
+    specified by  ``expression`` and ``operation``.
+
+    Effects that currently have templates are:
+
+    - Additive (*add*)
+    - Proportional (*prop*)
+    - Exponential (*exp*)
+    - Logit (*log*)
+    - Rescaled logit (*re_log*)
+
+    For all except exponential the operation input is not needed. Otherwise user specified
+    input is supported. Initial estimates for new etas are 0.09.
+
+    Assuming a statement :math:`CL = \Theta`, IOVs are added in the following ways:
+
+    - Additive: :math:`CL = \Theta + \eta_{IOV}`
+    - Proportional: :math:`CL = \Theta \cdot (1 + \eta_{IOV})`
+    - Exponential: :math:`CL = \Theta +/\cdot e^{\eta_{IOV}}`
+    - Logit: :math:`CL = \Theta \cdot e^{\eta_{IOV}}/ (e^{\eta_{IOV}} + 1)`
+    - Rescaled logit: :math:`CL = e^{\Phi \cdot \eta_{IOV}}/(1+e^{\Phi \cdot \eta_{IOV}})`
+      with :math:`\Phi = log(\Theta/(1-\Theta))`
 
     Parameters
     ----------
@@ -192,6 +234,14 @@ def add_iov(
         'disjoint' for disjoint normal distributions, 'joint' for joint normal
         distribution, 'explicit' for an explicit mix of joint and disjoint
         distributions, and 'same-as-iiv' for copying the distribution of IIV etas.
+    on_iiv: bool
+        Whether IOV should be added to IIV.
+    expression : str, list
+        Effect/effects on IOV eta. Either abbreviated (see above) or custom. Only applies to IOV etas without IIV.
+    operation : str, list, optional
+        Whether the new IIV should be added or multiplied (default). Only applies to IOV etas without IIV.
+    initial_estimate : float
+        Value of initial estimate of parameter. Default is 0.09. Only applies to IOV etas without IIV.
 
     Return
     ------
@@ -202,9 +252,57 @@ def add_iov(
     -------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = add_iov(model, "TIME", "CL")
-    >>> model.statements.find_assignment("CL")  # doctest: +SKIP
-    CL = ETA_CL + TVCL
+    >>> model = add_iov(model, "WGT", "CL")
+    >>> model.statements.before_odes
+    IOV₁ = 0
+           ⎧ETA_IOV_1_1   for WGT = 0
+           ⎪
+           ⎪ETA_IOV_1_5   for WGT = 1
+           ⎨
+           ⎪ETA_IOV_1_14  for WGT = 2
+           ⎪
+    IOV₁ = ⎩ETA_IOV_1_18  for WGT = 3
+    ETAI₁ = ETA₁ + IOV₁
+    BTIME = {TIME  for AMT > 0
+    TAD = -BTIME + TIME
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩      TVV          otherwise
+               ETAI₁
+    CL = TVCL⋅ℯ
+             ETA₂
+    V = TVV⋅ℯ
+    S₁ = V
+
+
+
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = remove_iiv(model, 'ETA_1')
+    >>> model = add_iov(model, "WGT", "CL", expression='exp')
+    >>> model.statements.before_odes
+    IOV₁ = 0
+           ⎧ETA_IOV_1_1   for WGT = 0
+           ⎪
+           ⎪ETA_IOV_1_5   for WGT = 1
+           ⎨
+           ⎪ETA_IOV_1_14  for WGT = 2
+           ⎪
+    IOV₁ = ⎩ETA_IOV_1_18  for WGT = 3
+    BTIME = {TIME  for AMT > 0
+    TAD = -BTIME + TIME
+    TVCL = PTVCL⋅WGT
+    TVV = PTVV⋅WGT
+          ⎧TVV⋅(THETA₃ + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩      TVV          otherwise
+               IOV₁
+    CL = TVCL⋅ℯ
+             ETA₂
+    V = TVV⋅ℯ
+    S₁ = V
 
     See also
     --------
@@ -235,12 +333,16 @@ def add_iov(
                 'distribution != "explicit" requires parameters to be given as lists of strings'
             )
 
-    if list_of_parameters is None:
+    if list_of_parameters in [None, ['all']]:
         if distribution == 'disjoint':
             etas = list(map(lambda x: [x], _get_etas(model, None, include_symbols=True)))
+            if list_of_parameters == ['all']:
+                list_of_parameters = get_individual_parameters(model)
+                list_of_parameters = list(map(lambda x: [x], list_of_parameters))
         else:
             etas = [_get_etas(model, None, include_symbols=True)]
-
+            if list_of_parameters == ['all']:
+                list_of_parameters = [get_individual_parameters(model)]
     else:
         if distribution == 'disjoint':
             list_of_parameters = list(map(lambda x: [x], list_of_parameters))
@@ -286,6 +388,22 @@ def add_iov(
 
             etas.append(intersection)
 
+    # Create same distribution as etas but with parameters
+    params = copy.deepcopy(etas)
+    for i in range(len(params)):
+        for j in range(len(params[i])):
+            eta = params[i][j]
+            params[i][j] = get_rv_parameters(model, eta)[0]
+    if list_of_parameters is not None:
+        for param in list(chain.from_iterable(list_of_parameters)):
+            if param not in list(chain.from_iterable(params)) and param not in list(
+                chain.from_iterable(etas)
+            ):
+                params.append([param])
+    list_of_parameters = params
+    if distribution == 'joint':
+        list_of_parameters = [list(chain.from_iterable(list_of_parameters))]
+
     first_iov_name = create_symbol(model, 'IOV_', force_numbering=True).name
     first_iov_number = int(first_iov_name.split('_')[-1])
 
@@ -304,26 +422,64 @@ def add_iov(
         return f'ETAI{first_iov_number + i - 1}'
 
     rvs, pset, iovs = _add_iov_explicit(
-        model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name
+        model,
+        occ,
+        etas,
+        categories,
+        iov_name,
+        etai_name,
+        eta_name,
+        omega_iov_name,
+        expression,
+        operation,
+        initial_estimate,
+        list_of_parameters,
+        on_iiv,
     )
 
     model = model.replace(random_variables=rvs, parameters=Parameters.create(pset), statements=iovs)
     return model.update_source()
 
 
-def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_name, omega_iov_name):
-    assert all(map(bool, etas))
-
+def _add_iov_explicit(
+    model,
+    occ,
+    etas,
+    categories,
+    iov_name,
+    etai_name,
+    eta_name,
+    omega_iov_name,
+    expression,
+    operation,
+    initial_estimate,
+    params,
+    on_iiv,
+):
     ordered_etas = list(chain.from_iterable(etas))
 
-    eta, count = next(iter(Counter(ordered_etas).most_common()))
+    if len(ordered_etas) > 0:
+        eta, count = next(iter(Counter(ordered_etas).most_common()))
 
-    if count >= 2:
-        raise ValueError(f'{eta} was given twice.')
+        if count >= 2:
+            raise ValueError(f'{eta} was given twice.')
+
+    if any(isinstance(i, list) for i in params):
+        ordered_params = list(chain.from_iterable(params))
+    else:
+        ordered_params = params
+
+    param_eta_dict = {}
+    for param in ordered_params:
+        eta = get_parameter_rv(model, param)
+        if len(eta) < 1:
+            param_eta_dict[param] = None
+        else:
+            param_eta_dict[param] = eta
 
     distributions = [
         range(i, i + len(grp))
-        for i, grp in zip(reduce(lambda acc, x: acc + [acc[-1] + x], map(len, etas), [1]), etas)
+        for i, grp in zip(reduce(lambda acc, x: acc + [acc[-1] + x], map(len, params), [1]), params)
     ]
 
     rvs, pset, sset = (
@@ -335,36 +491,61 @@ def _add_iov_explicit(model, occ, etas, categories, iov_name, etai_name, eta_nam
     iovs, etais, sset = _add_iov_declare_etas(
         sset,
         occ,
-        ordered_etas,
-        range(1, len(ordered_etas) + 1),
+        param_eta_dict,
+        range(1, len(ordered_params) + 1),
         categories,
         eta_name,
         iov_name,
         etai_name,
+        expression,
+        operation,
+        initial_estimate,
+        ordered_params,
+        on_iiv,
     )
 
     for dist in distributions:
-        assert dist
-        _add_iov_etas = _add_iov_etas_disjoint if len(dist) == 1 else _add_iov_etas_joint
-        to_add = _add_iov_etas(
-            rvs,
-            pset,
-            ordered_etas,
-            dist,
-            categories,
-            omega_iov_name,
-            eta_name,
-        )
-        rvs = rvs + list(to_add)
+        if len(dist) > 0:
+            _add_iov_etas = _add_iov_etas_disjoint if len(dist) == 1 else _add_iov_etas_joint
+            to_add = _add_iov_etas(
+                rvs,
+                pset,
+                param_eta_dict,
+                dist,
+                categories,
+                omega_iov_name,
+                eta_name,
+                initial_estimate,
+                ordered_params,
+                on_iiv,
+            )
+            rvs = rvs + list(to_add)
 
     return rvs, pset, iovs + etais + sset
 
 
-def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_name, etai_name):
+def _add_iov_declare_etas(
+    sset,
+    occ,
+    param_eta_dict,
+    indices,
+    categories,
+    eta_name,
+    iov_name,
+    etai_name,
+    expr,
+    operation,
+    initial_estimate,
+    list_of_parameters,
+    on_iiv,
+):
     iovs, etais = [], []
 
     for i in indices:
-        eta = etas[i - 1]
+        param = list_of_parameters[i - 1]
+        if param_eta_dict[param] is not None and on_iiv:
+            eta = param_eta_dict[param][0]
+
         # NOTE: This declares IOV-ETA case assignments and replaces the existing
         # ETA with its sum with the new IOV ETA
 
@@ -380,15 +561,39 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
         iovs.append(Assignment.create(iov, parse_expr(0)))
         iovs.append(Assignment.create(iov, expression))
 
-        etai = Expr.symbol(etai_name(i))
-        etais.append(Assignment.create(etai, Expr.symbol(eta) + iov))
-        sset = sset.subs({eta: etai})
+        if param_eta_dict[param] is not None and on_iiv:
+            etai = Expr.symbol(etai_name(i))
+            etais.append(Assignment.create(etai, Expr.symbol(eta) + iov))
+            sset = sset.subs({eta: etai})
+        else:
+            eta_addition = _create_template(expr, operation)
+            index = sset.find_assignment_index(param)
+            statement = sset[index]
+            eta_addition.apply(statement.expression, iov.name)
+            sset = (
+                sset[0:index]
+                + Assignment.create(statement.symbol, eta_addition.template)
+                + sset[index + 1 :]
+            )
 
     return iovs, etais, sset
 
 
-def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
-    _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
+def _add_iov_etas_disjoint(
+    rvs,
+    pset,
+    param_eta_dict,
+    indices,
+    categories,
+    omega_iov_name,
+    eta_name,
+    init,
+    list_of_parameters,
+    on_iiv,
+):
+    _add_iov_declare_diagonal_omegas(
+        rvs, pset, param_eta_dict, indices, omega_iov_name, init, list_of_parameters, on_iiv
+    )
 
     for i in indices:
         omega_iov = Expr.symbol(omega_iov_name(i, i))
@@ -396,15 +601,39 @@ def _add_iov_etas_disjoint(rvs, pset, etas, indices, categories, omega_iov_name,
             yield NormalDistribution.create(eta_name(i, k), 'iov', 0, omega_iov)
 
 
-def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, eta_name):
-    _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name)
+def _add_iov_etas_joint(
+    rvs,
+    pset,
+    param_eta_dict,
+    indices,
+    categories,
+    omega_iov_name,
+    eta_name,
+    init,
+    list_of_parameters,
+    on_iiv,
+):
+    _add_iov_declare_diagonal_omegas(
+        rvs, pset, param_eta_dict, indices, omega_iov_name, init, list_of_parameters, on_iiv
+    )
 
     # NOTE: Declare off-diagonal OMEGAs
     for i, j in combinations(indices, r=2):
         omega_iov = Expr.symbol(omega_iov_name(i, j))
-        omega_iiv = rvs.get_covariance(etas[i - 1], etas[j - 1])
-        paramset = Parameters.create(pset)  # FIXME!
-        init = paramset[omega_iiv].init * 0.1 if omega_iiv != 0 and omega_iiv in paramset else 0.001
+        param_i = list_of_parameters[i - 1]
+        param_j = list_of_parameters[j - 1]
+        if param_eta_dict[param_i] is not None and param_eta_dict[param_j] is not None:
+            eta_i = param_eta_dict[param_i][0]
+            eta_j = param_eta_dict[param_j][0]
+            omega_iiv = rvs.get_covariance(eta_i, eta_j)
+            paramset = Parameters.create(pset)  # FIXME!
+            init = (
+                paramset[omega_iiv].init * 0.1
+                if omega_iiv != 0 and omega_iiv in paramset
+                else 0.001
+            )
+        else:
+            init = init
         pset.append(Parameter(str(omega_iov), init=init))
 
     mu = [0] * len(indices)
@@ -415,13 +644,19 @@ def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, et
         yield JointNormalDistribution.create(names, 'iov', mu, sigma)
 
 
-def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
+def _add_iov_declare_diagonal_omegas(
+    rvs, pset, param_eta_dict, indices, omega_iov_name, init, list_of_parameters, on_iiv
+):
     for i in indices:
-        eta = etas[i - 1]
-        omega_iiv = rvs[eta].get_variance(eta)
+        param = list_of_parameters[i - 1]
+        if param_eta_dict[param] is not None and on_iiv:
+            eta = param_eta_dict[param][0]
+            omega_iiv = rvs[eta].get_variance(eta)
+
         omega_iov = Expr.symbol(omega_iov_name(i, i))
         paramset = Parameters.create(pset)  # FIXME!
-        init = paramset[omega_iiv].init * 0.1 if omega_iiv in paramset else 0.01
+        if param_eta_dict[param] is not None and on_iiv:
+            init = paramset[omega_iiv].init * 0.1 if omega_iiv in paramset else 0.01
         pset.append(Parameter(str(omega_iov), init=init))
 
 
@@ -734,7 +969,52 @@ def remove_iov(model: Model, to_remove: Optional[Union[List[str], str]] = None):
     keep = [name for name in rvs.names if name not in etas]
     d = {Expr.symbol(name): 0 for name in etas}
 
-    model = model.replace(statements=sset.subs(d), random_variables=rvs[keep])
+    iovs = []
+    if to_remove is None:
+        to_remove = get_individual_parameters(model)
+    if not isinstance(to_remove, list):
+        to_remove = [to_remove]
+    for param in to_remove:
+        if param not in etas:
+            symbs = list(
+                map(
+                    lambda x: str(x),
+                    model.statements.find_assignment(param).expression.free_symbols,
+                )
+            )
+            r = re.compile(r"IOV_\d+")
+            iov = list(filter(r.match, symbs))
+            if iov:
+                iovs.append(iov[0])
+
+    # IOV_x should be replaced with either 1 or 0
+    for iov in iovs:
+        eta_sym = Expr(iov)
+        for s in sset:
+            from pharmpy.model import CompartmentalSystem
+
+            if not isinstance(s, CompartmentalSystem) and eta_sym in s.expression.free_symbols:
+                expr = sympy.sympify(s.expression).expand()
+                if len(expr.args) == 0:
+                    sset = sset.subs({Expr(expr): 0})
+                elif len(expr.args) == 1 and expr.fun == sympy.exp:
+                    sset = sset.subs({eta_sym: 0})
+                else:
+                    expr_subs = expr
+                    for i in range(len(expr.args)):
+                        if eta_sym in Expr(expr.args[i]).free_symbols:
+                            if expr.func == sympy.Mul:
+                                expr_subs = expr_subs.subs({expr.args[i]: 1})
+                            elif expr.func == sympy.Add:
+                                if len(expr.args[i].args) == 1 and expr.args[i].func == sympy.exp:
+                                    expr_subs = expr_subs.subs({(expr.args[i]): 0})
+                                else:
+                                    expr_subs = expr_subs.subs({eta_sym: 0})
+                    sset = sset.reassign(s.symbol, Expr(expr_subs))
+
+    sset = sset.subs(d)
+
+    model = model.replace(statements=sset, random_variables=rvs[keep])
     model = remove_unused_parameters_and_rvs(model)
     return model.update_source()
 

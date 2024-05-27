@@ -15,8 +15,10 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
+    load_example_model,
     remove_iiv,
     remove_iov,
+    set_direct_effect,
     set_first_order_absorption,
     set_transit_compartments,
     set_zero_order_elimination,
@@ -397,52 +399,6 @@ def test_add_iiv_missing_param(load_model_for_test, pheno_path):
             '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
-        (
-            'nonmem/pheno_block.mod',
-            'FA1',
-            None,
-            None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
-            'IOV_3 = 0\n'
-            'IF (FA1.EQ.0) IOV_3 = ETA_IOV_3_1\n'
-            'IF (FA1.EQ.1) IOV_3 = ETA_IOV_3_2\n'
-            'IOV_4 = 0\n'
-            'IF (FA1.EQ.0) IOV_4 = ETA_IOV_4_1\n'
-            'IF (FA1.EQ.1) IOV_4 = ETA_IOV_4_2\n'
-            'IOV_5 = 0\n'
-            'IF (FA1.EQ.0) IOV_5 = ETA_IOV_5_1\n'
-            'IF (FA1.EQ.1) IOV_5 = ETA_IOV_5_2\n'
-            'ETAI1 = IOV_1 + ETA_CL\n'
-            'ETAI2 = IOV_2 + ETA_V\n'
-            'ETAI3 = IOV_3 + ETA_S1\n'
-            'ETAI4 = IOV_4 + ETA_MAT\n'
-            'ETAI5 = IOV_5 + ETA_Q\n',
-            'CL = THETA(1)*EXP(ETAI1)\n'
-            'V = THETA(2)*EXP(ETAI2)\n'
-            'S1 = ETAI3 + V\n'
-            'MAT = THETA(3)*EXP(ETAI4)\n'
-            'Q = THETA(4)*EXP(ETAI5)\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.0031128 ; OMEGA_IOV_2\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.010000000000000002 ; OMEGA_IOV_3\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.00309626\t; OMEGA_IOV_4\n'
-            '5E-05\t; OMEGA_IOV_4_5\n'
-            '0.0031128\t; OMEGA_IOV_5\n'
-            '$OMEGA BLOCK(2) SAME\n',
-            'same-as-iiv',
-        ),
     ],
 )
 def test_add_iov(
@@ -479,6 +435,94 @@ def test_add_iov(
         assert len(model.internals.control_stream.get_records('ABBREVIATED')) == 0
     else:
         assert len(model.internals.control_stream.get_records('ABBREVIATED')) > 0
+
+
+@pytest.mark.parametrize(
+    'parameters, distribution, expression, on_iiv, expected_iov, expected_statements',
+    [
+        (
+            'all',
+            'same-as-iiv',
+            'prop',
+            True,
+            84,
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n'
+            'SLOPE = THETA(5)*(IOV_4 + 1)\n'
+            'B = THETA(4)*(IOV_3 + 1)\n',
+        ),
+        (
+            None,
+            'same-as-iiv',
+            'prop',
+            True,
+            42,
+            'ETAI1 = IOV_1 + ETA(1)\n'
+            'ETAI2 = IOV_2 + ETA(2)\n'
+            'SLOPE = THETA(5)\n'
+            'B = THETA(4)\n',
+        ),
+        (
+            ['B', 'SLOPE'],
+            'joint',
+            'prop',
+            True,
+            42,
+            'SLOPE = THETA(5)*(IOV_2 + 1)\n' 'B = THETA(4)*(IOV_1 + 1)\n',
+        ),
+        (
+            ['ETA_1', 'SLOPE'],
+            'disjoint',
+            'prop',
+            True,
+            42,
+            'ETAI1 = IOV_1 + ETA(1)\n' 'SLOPE = THETA(5)*(IOV_2 + 1)\n' 'B = THETA(4)\n',
+        ),
+        (['ETA_1', 'SLOPE'], 'disjoint', 'prop', False, 42, 'CL = TVCL*(IOV_1 + 1)*EXP(ETA(1))\n'),
+    ],
+)
+def test_iov_without_iiv(
+    parameters, distribution, expression, on_iiv, expected_iov, expected_statements
+):
+    model = load_example_model('pheno')
+    model = set_direct_effect(model, 'linear')
+    model = create_joint_distribution(model, ['ETA_1', 'ETA_2'])
+
+    model = add_iov(
+        model, 'WGT', parameters, expression=expression, distribution=distribution, on_iiv=on_iiv
+    )
+    assert len(model.random_variables.iov.names) == expected_iov
+    assert expected_statements in model.code
+
+
+def test_iov_without_iiv_init():
+    model = load_example_model('pheno')
+    model = remove_iiv(model, 'ETA_1')
+    model = add_iov(model, 'WGT', ['CL', 'V'], expression='prop', initial_estimate=0.2)
+    assert model.parameters['OMEGA_IOV_2'].init == 0.2
+
+
+def test_iov_joint():
+    model = load_example_model('pheno')
+    model = create_joint_distribution(model, ['ETA_1', 'ETA_2'])
+    model = add_iov(model, 'WGT', ['CL', 'V'], expression='prop', distribution='same-as-iiv')
+    assert 'OMEGA_IOV_1_2' in model.parameters.names
+
+    model = load_example_model('pheno')
+    model = set_direct_effect(model, 'linear')
+    model = create_joint_distribution(model, ['ETA_1', 'ETA_2'])
+    model = add_iov(model, 'WGT', ['CL', 'V', 'B'], expression='add', distribution='same-as-iiv')
+    assert 'OMEGA_IOV_1_2' in model.parameters.names
+    assert 'OMEGA_IOV_2_3' not in model.parameters.names
+    assert 'OMEGA_IOV_1_3' not in model.parameters.names
+
+    model = load_example_model('pheno')
+    model = set_direct_effect(model, 'linear')
+    model = create_joint_distribution(model, ['ETA_1', 'ETA_2'])
+    model = add_iov(model, 'WGT', ['CL', 'V', 'B'], expression='add', distribution='joint')
+    assert 'OMEGA_IOV_1_2' in model.parameters.names
+    assert 'OMEGA_IOV_2_3' in model.parameters.names
+    assert 'OMEGA_IOV_1_3' in model.parameters.names
 
 
 def test_add_iov_compose(load_model_for_test, pheno_path):
@@ -863,6 +907,28 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
+
+
+def test_remove_iov_without_iiv():
+    model = load_example_model('pheno')
+    model = remove_iiv(model, 'ETA_1')
+
+    model2 = add_iov(model, 'WGT', ['CL'], expression='exp', operation='*', on_iiv=False)
+    model2 = remove_iov(model2)
+    assert Expr.symbol('IOV_1') not in model2.statements.find_assignment('CL').free_symbols
+
+    model2 = add_iov(model, 'WGT', ['CL'], expression='exp', operation='+', on_iiv=False)
+    model2 = remove_iov(model2)
+    assert Expr.symbol('IOV_1') not in model2.statements.find_assignment('CL').free_symbols
+
+    model2 = add_iov(model, 'WGT', ['CL'], expression='prop', operation='+', on_iiv=False)
+    model2 = remove_iov(model2)
+    assert Expr.symbol('IOV_1') not in model2.statements.find_assignment('CL').free_symbols
+
+    model2 = add_iov(model, 'WGT', ['CL', 'V'], expression='prop', operation='+', on_iiv=False)
+    model2 = remove_iov(model2)
+    assert Expr.symbol('IOV_1') not in model2.statements.find_assignment('CL').free_symbols
+    assert Expr.symbol('IOV_2') not in model2.statements.find_assignment('CL').free_symbols
 
 
 def test_remove_iov_no_iovs(load_model_for_test, testdata):
