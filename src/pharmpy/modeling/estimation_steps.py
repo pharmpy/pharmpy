@@ -614,7 +614,7 @@ def add_residuals(model: Model, res: List[str]):
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model.execution_steps[-1].residuals
-    ('RES', 'CWRES')
+    ('CWRES', 'RES')
     >>> model = add_residuals(model, ['WRES'])
     >>> model.execution_steps[-1].residuals
     ('CWRES', 'RES', 'WRES')
