@@ -795,7 +795,7 @@ def rank_models(
     Examples
     --------
     >>> from pharmpy.modeling import load_example_model
-    >>> from pharmpy.tools import rank_models
+    >>> from pharmpy.tools.run import rank_models
     >>> model_1 = load_example_model("pheno")
     >>> model_2 = load_example_model("pheno_linear")
     >>> rank_models(model_1, [model_2],
