@@ -1304,6 +1304,10 @@ def calculate_bic_penalty(
     if isinstance(search_space, str) or isinstance(search_space, ModelFeatures):
         if base_model:
             raise ValueError('Cannot provide both `search_space` as MFL as well as `base_model`')
+        if E_p is None:
+            raise ValueError(
+                'Missing value for `E_p`, must be specified when using MFL in `search_space`'
+            )
 
         cand_features = get_model_features(candidate_model)
 
@@ -1332,10 +1336,20 @@ def calculate_bic_penalty(
                 raise ValueError(
                     f'Unknown `search_space`: {search_space_type} (must be one of {allowed_options})'
                 )
-        if 'iiv_block' in search_space and 'iov' in search_space:
-            raise ValueError(
-                'Incorrect `search_space`: `iiv_block` and `iov` cannot be tested in same search space'
-            )
+        if 'iiv_block' in search_space:
+            if 'iov' in search_space:
+                raise ValueError(
+                    'Incorrect `search_space`: `iiv_block` and `iov` cannot be tested in same search space'
+                )
+            if E_q is None:
+                raise ValueError(
+                    'Missing value for `E_q`, must be specified when using `iiv_block` in `search_space`'
+                )
+        if 'iiv_diag' in search_space or 'iov' in search_space:
+            if E_p is None:
+                raise ValueError(
+                    'Missing value for `E_p`, must be specified when using `iiv_diag` or `iov` in `search_space`'
+                )
         if not base_model:
             raise ValueError(
                 'Missing `base_model`: reference model is needed to determine search space'
@@ -1346,6 +1360,9 @@ def calculate_bic_penalty(
     # To avoid domain error
     p = p if k_p != 0 else 1
     q = q if k_q != 0 else 1
+    # If either are omitted
+    E_p = E_p if E_p is not None else 1
+    E_q = E_q if E_q is not None else 1
 
     return 2 * k_p * math.log(p / E_p) + 2 * k_q * math.log(q / E_q)
 

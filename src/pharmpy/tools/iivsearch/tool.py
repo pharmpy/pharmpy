@@ -670,7 +670,7 @@ def validate_input(
     if rank_type == 'mbic':
         if algorithm != 'skip' and E_p is None:
             raise ValueError('Value `E_p` must be provided for `algorithm` when using mbic')
-        if correlation_algorithm and E_q is None:
+        if correlation_algorithm and correlation_algorithm != 'skip' and E_q is None:
             raise ValueError(
                 'Value `E_q` must be provided for `correlation_algorithm` when using mbic'
             )
