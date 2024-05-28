@@ -12,7 +12,6 @@ __all__ = (
     'predict_influential_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'print_fit_summary',  # pyright: ignore [reportUnsupportedDunderAll]
-    'rank_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_final_model',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -50,7 +49,6 @@ _not_wrapped = {
         'is_strictness_fulfilled',
         'load_example_modelfit_results',
         'print_fit_summary',
-        'rank_models',
         'read_modelfit_results',
         'read_results',
         'retrieve_final_model',
