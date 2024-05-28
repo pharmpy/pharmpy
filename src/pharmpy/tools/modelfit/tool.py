@@ -13,6 +13,9 @@ def create_workflow(
 ) -> Workflow[Union[Model, Tuple[Model, ...]]]:
     """Run modelfit tool.
 
+    .. note::
+        For most use cases the :func:`pharmpy.tools.fit` function is a more user friendly option for fitting a model.
+
     Parameters
     ----------
     model_or_models : Model
