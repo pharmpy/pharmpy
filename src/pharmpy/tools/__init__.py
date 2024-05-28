@@ -15,7 +15,6 @@ __all__ = (
     'rank_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
-    'resume_tool',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_final_model',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_allometry',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -54,7 +53,6 @@ _not_wrapped = {
         'rank_models',
         'read_modelfit_results',
         'read_results',
-        'resume_tool',
         'retrieve_final_model',
         'retrieve_models',
         'run_tool',
