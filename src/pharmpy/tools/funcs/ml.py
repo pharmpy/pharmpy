@@ -116,7 +116,7 @@ def predict_outliers(model: Model, results: ModelfitResults, cutoff: float = 3.0
     results : ModelfitResults
         ModelfitResults for the model
     cutoff : float
-        Cutoff threshold for a residual singalling an outlier
+        Cutoff threshold for a residual signaling an outlier
 
     Returns
     -------
@@ -257,9 +257,9 @@ def predict_influential_outliers(
     results : ModelfitResults
         Results for model
     outlier_cutoff : float
-        Cutoff threshold for a residual signalling an outlier
+        Cutoff threshold for a residual signaling an outlier
     influential_cutoff : float
-        Cutoff threshold for a dofv signalling an influential individual
+        Cutoff threshold for a dofv signaling an influential individual
 
     Returns
     -------
