@@ -206,14 +206,14 @@ class EstimationStep(ExecutionStep):
             )
 
         try:
-            residuals = tuple(residuals)
+            residuals = tuple(sorted(residuals))
         except TypeError:
             raise TypeError(
                 f"Residuals could not be converted to tuple. Recieved type '{type(residuals)}'"
             )
 
         try:
-            predictions = tuple(predictions)
+            predictions = tuple(sorted(predictions))
         except TypeError:
             raise TypeError(
                 f"Predictions could not be converted to tuple. Recieved type '{type(predictions)}'"

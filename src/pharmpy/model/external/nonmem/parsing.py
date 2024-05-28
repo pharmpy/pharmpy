@@ -440,8 +440,8 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
     ]
     columns = parse_table_columns(control_stream, len(random_variables.etas.names))
     columns = [item for row in columns for item in row]
-    predictions = tuple(param for param in columns if param in all_predictions)
-    residuals = tuple(param for param in columns if param in all_residuals)
+    predictions = tuple(sorted(param for param in columns if param in all_predictions))
+    residuals = tuple(sorted(param for param in columns if param in all_residuals))
 
     for table in table_records:
         etaderivs = table.eta_derivatives
