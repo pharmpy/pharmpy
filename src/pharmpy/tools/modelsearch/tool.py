@@ -7,9 +7,8 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import set_initial_estimates
-from pharmpy.tools import get_model_features
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
-from pharmpy.tools.mfl.parse import ModelFeatures
+from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow

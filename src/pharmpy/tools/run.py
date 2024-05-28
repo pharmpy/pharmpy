@@ -29,8 +29,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.tools import get_model_features
-from pharmpy.tools.mfl.parse import ModelFeatures, parse
+from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features, parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
 from pharmpy.tools.mfl.statement.feature.lagtime import LagTime

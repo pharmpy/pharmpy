@@ -3,9 +3,8 @@ from typing import Tuple
 import pytest
 
 from pharmpy.modeling import create_basic_pk_model, set_direct_effect
-from pharmpy.tools import get_model_features
 from pharmpy.tools.mfl.helpers import all_funcs
-from pharmpy.tools.mfl.parse import ModelFeatures, parse
+from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features, parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
