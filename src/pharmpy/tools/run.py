@@ -675,7 +675,9 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
     print(df)
 
 
-def write_results(results: Results, path: Union[str, Path], lzma: bool = False, csv: bool = False):
+def write_results(
+    results: Results, path: Union[str, Path], compression: bool = False, csv: bool = False
+):
     """Write results object to json (or csv) file
 
     Note that the csv-file cannot be read into a results object again.
@@ -686,8 +688,8 @@ def write_results(results: Results, path: Union[str, Path], lzma: bool = False, 
         Pharmpy results object
     path : Path
         Path to results file
-    lzma : bool
-        True for lzma compression. Not applicable to csv file
+    compression : bool
+        True to compress the file. Not applicable to csv file
     csv : bool
         Save as csv file
     """
@@ -695,7 +697,7 @@ def write_results(results: Results, path: Union[str, Path], lzma: bool = False, 
     if csv:
         results.to_csv(path)
     else:
-        results.to_json(path, lzma=lzma)
+        results.to_json(path, lzma=compression)
 
 
 def summarize_errors(context: Context) -> pd.DataFrame:
