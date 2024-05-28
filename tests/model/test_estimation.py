@@ -127,6 +127,7 @@ def test_dict():
         'derivatives': (),
         'predictions': (),
         'residuals': (),
+        'posterior_eta_type': 'mode',
     }
     step2 = EstimationStep.from_dict(d)
     assert step2 == a
@@ -155,6 +156,7 @@ def test_dict():
                 'derivatives': (),
                 'predictions': (),
                 'residuals': (),
+                'posterior_eta_type': 'mode',
             },
             {
                 'method': 'FO',
@@ -175,6 +177,7 @@ def test_dict():
                 'derivatives': (),
                 'predictions': (),
                 'residuals': (),
+                'posterior_eta_type': 'mode',
             },
         )
     }
