@@ -159,6 +159,10 @@ def read_results(path: Union[str, Path]) -> Results:
 def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Model], Results]:
     """Run tool workflow
 
+    .. note::
+        This is a general function that can run any tool. There is also one function for each
+        specific tool. Please refer to the documentation of these for more specific information.
+
     Parameters
     ----------
     name : str
