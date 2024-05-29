@@ -559,10 +559,6 @@ def retrieve_models(
     >>> tooldir_path = 'path/to/tool/directory'
     >>> models = retrieve_models(tooldir_path, names=['run1'])      # doctest: +SKIP
 
-    See also
-    --------
-    retrieve_final_model
-
     """
     if isinstance(source, Path) or isinstance(source, str):
         path = Path(source)
