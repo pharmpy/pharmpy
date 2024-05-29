@@ -597,7 +597,7 @@ def retrieve_final_model(res: Results) -> Model:
 
     Examples
     --------
-    >>> from pharmpy.tools import read_results, retrieve_final_model
+    >>> from pharmpy.tools.run import read_results, retrieve_final_model
     >>> res = read_results("results.json")     # doctest: +SKIP
     >>> model = retrieve_final_model(res)      # doctest: +SKIP
 
