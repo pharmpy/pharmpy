@@ -921,21 +921,21 @@ class ArrayEvaluator:
 
 
 def is_strictness_fulfilled(
-    results: ModelfitResults,
     model: Model,
-    statement: str,
+    results: ModelfitResults,
+    strictness: str,
 ) -> bool:
     """Takes a ModelfitResults object and a statement as input and returns True/False
     if the evaluation of the statement is True/False.
 
     Parameters
     ----------
-    results : ModelfitResults
-        ModelfitResults object
     model : Model
         Model for parameter specific strictness.
-    statement : str
-        A statement containing the strictness criteria
+    results : ModelfitResults
+        ModelfitResults object
+    strictness : str
+        A strictness expression
 
     Return
     ------
@@ -948,13 +948,13 @@ def is_strictness_fulfilled(
     >>> from pharmpy.modeling import *
     >>> res = load_example_modelfit_results('pheno')
     >>> model = load_example_model('pheno')
-    >>> is_strictness_fulfilled(res, model, "minimization_successful or rounding_errors")
+    >>> is_strictness_fulfilled(model, res, "minimization_successful or rounding_errors")
     True
     """
     if results is None or np.isnan(results.ofv):
         return False
-    if statement is not None:
-        statement = statement.lower()
+    if strictness is not None:
+        strictness = strictness.lower()
         allowed_args = [
             'minimization_successful',
             'rounding_errors',
@@ -975,9 +975,9 @@ def is_strictness_fulfilled(
             'estimate_near_boundary_sigma',
         ]
         unwanted_args = ['and', 'or', 'not']
-        find_all_words = re.findall(r'[^\d\W]+', statement)
+        find_all_words = re.findall(r'[^\d\W]+', strictness)
         args_in_statement = [w for w in find_all_words if w not in unwanted_args]
-        find_all_non_allowed_operators = re.findall(r"[^\w\s\.\<\>\=\!\(\)]", statement)
+        find_all_non_allowed_operators = re.findall(r"[^\w\s\.\<\>\=\!\(\)]", strictness)
         if len(find_all_non_allowed_operators) > 0:
             raise ValueError(
                 f"Unallowed operators found: {', '.join(find_all_non_allowed_operators)}"
@@ -1050,13 +1050,13 @@ def is_strictness_fulfilled(
                     model, ests[ests.index.isin(get_sigmas(model).names)]
                 ).any()
 
-        return eval(statement)
+        return eval(strictness)
     else:
         return True
 
 
 def get_rankval(model, res, strictness, rank_type, **kwargs):
-    if not is_strictness_fulfilled(res, model, strictness):
+    if not is_strictness_fulfilled(model, res, strictness):
         return np.nan
     if rank_type in ['ofv', 'lrt']:
         return res.ofv

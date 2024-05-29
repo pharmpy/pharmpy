@@ -563,7 +563,7 @@ def perform_step_procedure(
                 np.nan
                 if modelentry.modelfit_results is None
                 or not is_strictness_fulfilled(
-                    modelentry.modelfit_results, modelentry.model, strictness
+                    modelentry.model, modelentry.modelfit_results, strictness
                 )
                 else modelentry.modelfit_results.ofv
             )
