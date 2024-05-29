@@ -50,7 +50,7 @@ def create_workflow(
     list_of_parameters : None or list
         List of parameters to test IOV on, if none all parameters with IIV will be tested (default)
     rank_type : {'ofv', 'lrt', 'aic', 'bic', 'mbic'}
-        Which ranking type should be used. Default is mBIC.
+        Which ranking type should be used. Default is BIC.
     cutoff : None or float
         Cutoff for which value of the ranking type that is considered significant. Default
         is None (all models will be ranked)

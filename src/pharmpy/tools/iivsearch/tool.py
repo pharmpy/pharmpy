@@ -75,7 +75,7 @@ def create_workflow(
     iiv_strategy : {'no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock'}
         If/how IIV should be added to start model. Default is 'no_add'.
     rank_type : {'ofv', 'lrt', 'aic', 'bic', 'mbic'}
-        Which ranking type should be used. Default is mBIC.
+        Which ranking type should be used. Default is BIC.
     linearize : bool
         Wheter or not use linearization when running the tool.
     cutoff : float
