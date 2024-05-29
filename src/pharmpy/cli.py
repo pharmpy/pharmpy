@@ -1397,7 +1397,7 @@ parser_definition = [
         }
     },
     {
-        'results': {
+        'psn': {
             'subs': [
                 {
                     'bootstrap': {
@@ -1569,6 +1569,15 @@ parser_definition = [
                         ],
                     }
                 },
+            ],
+            'help': 'Special PsN commands',
+            'title': 'PsN commands',
+            'metavar': 'ACTION',
+        }
+    },
+    {
+        'results': {
+            'subs': [
                 {
                     'summary': {
                         'help': 'Modelfit summary',

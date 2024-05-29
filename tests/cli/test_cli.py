@@ -28,7 +28,7 @@ def test_results_linearize(datadir, tmp_path):
     shutil.copy(path / 'scm_dir1' / 'derivatives.lst', scmdir)
     shutil.copy(path / 'scm_dir1' / 'derivatives.phi', scmdir)
 
-    args = ['results', 'linearize', str(tmp_path)]
+    args = ['psn', 'linearize', str(tmp_path)]
     cli.main(args)
 
     assert os.path.exists(tmp_path / 'results.json')
