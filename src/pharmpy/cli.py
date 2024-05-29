@@ -596,18 +596,6 @@ def results_simeval(args):
     res.to_csv(path=args.psn_dir / 'results.csv')
 
 
-def results_ofv(args):
-    """Subcommand to extract final ofv from multiple results"""
-    ofvs = []
-    for _, res in args.models:
-        try:
-            ofv = str(res.ofv)
-        except AttributeError:
-            ofv = 'NA'
-        ofvs.append(ofv)
-    print(' '.join(ofvs))
-
-
 def results_print(args):
     """Subcommand to print any results"""
     if args.dir.is_dir():
@@ -1486,14 +1474,6 @@ parser_definition = [
                                 'help': 'Path to PsN linearize run directory',
                             }
                         ],
-                    }
-                },
-                {
-                    'ofv': {
-                        'help': 'Extract OFVs from model runs',
-                        'description': 'Extract OFVs from one or more model runs',
-                        'parents': [args_input],
-                        'func': results_ofv,
                     }
                 },
                 {
