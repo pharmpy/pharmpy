@@ -463,8 +463,19 @@ def model_print(args):
         dict_['parameters'] = s
         s = repr(model.random_variables) + '\n\n'
         dict_['random_variables'] = s
-        s = str(model.statements) + '\n\n'
-        dict_['model_statements'] = s
+        if args.explicit_odes:
+            from pharmpy.modeling import display_odes
+
+            s = (
+                str(model.statements.before_odes)
+                + '\n'
+                + str(display_odes(model))
+                + str(model.statements.after_odes)
+                + '\n\n'
+            )
+        else:
+            s = str(model.statements) + '\n\n'
+        dict_['statements'] = s
         dict_lines = format_keyval_pairs(dict_, sort=False)
         lines += ['\t%s' % line for line in dict_lines]
     if len(lines) > 24:
