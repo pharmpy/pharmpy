@@ -20,7 +20,7 @@ Currently supported model types are PKPD, TMDD and drug metabolite.
 Running
 ~~~~~~~
 
-The structsearch tool is available both in Pharmpy/pharmr.
+The structsearch tool is available both in Pharmpy and pharmr.
 
 The code to initiate structsearch for a PKPD model in Python/R is stated below:
 

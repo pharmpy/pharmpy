@@ -13,7 +13,7 @@ candidates, the best model is based solely on the 'OFV' value.
 Running
 ~~~~~~~
 
-The retries tool is available both in Pharmpy/pharmr.
+The retries tool is available both in Pharmpy and pharmr.
 
 An example of how to initiate the tool can be seen below
 

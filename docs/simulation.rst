@@ -11,7 +11,7 @@ The simulation tool is a tool for running simulations.
 Running
 ~~~~~~~
 
-The simulation tool is available both in Pharmpy/pharmr and from the command line.
+The simulation tool is available both in Pharmpy and pharmr.
 
 To initiate the simulation tool in Python/R:
 
