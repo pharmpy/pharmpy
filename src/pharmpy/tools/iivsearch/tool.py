@@ -634,7 +634,7 @@ def modify_summary_tool(summary_tool, first_model_name):
     summary_tool.loc[summary_tool['rank'] < first_model_entry_rank, 'rank'] += 1
     summary_tool.loc[summary_tool['model'] == first_model_name, 'rank'] = 1
     summary_tool = summary_tool.sort_values(by=['rank'], ascending=True)
-    summary_tool.set_index(['model'])
+    summary_tool = summary_tool.set_index(['model'])
     return summary_tool
 
 
