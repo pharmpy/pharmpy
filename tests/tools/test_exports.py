@@ -1,7 +1,6 @@
 import pytest
 
 exports = (
-    ('create_results',),
     ('fit',),
     ('read_results',),
     ('retrieve_models',),

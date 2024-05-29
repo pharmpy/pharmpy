@@ -543,7 +543,7 @@ def test_create_results(testdata):
 
 def test_modeling_create_results(testdata):
     with pytest.warns(UserWarning):
-        res = tools.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+        res = tools.run.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
     ofv = res.ofv['ofv']
     assert len(ofv) == 5
 

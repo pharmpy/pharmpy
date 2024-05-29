@@ -114,7 +114,7 @@ def create_results(path: Union[str, Path], **kwargs) -> Results:
 
     Examples
     --------
-    >>> from pharmpy.tools import create_results
+    >>> from pharmpy.tools.run import create_results
     >>> res = create_results("frem_dir1")   # doctest: +SKIP
 
     See also
