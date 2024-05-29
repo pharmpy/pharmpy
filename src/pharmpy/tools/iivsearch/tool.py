@@ -13,7 +13,6 @@ from pharmpy.model import Model
 from pharmpy.modeling import (
     add_pd_iiv,
     add_pk_iiv,
-    append_estimation_step_options,
     create_joint_distribution,
     find_clearance_parameters,
     has_random_effect,
@@ -269,10 +268,6 @@ def start(
             description=algorithms.create_description(base_model_entry.model),
         )
         linear_results = call_workflow(linear_workflow, "running_linearization", linearize_context)
-        linear_model = linear_results.final_model
-        linear_model = append_estimation_step_options(
-            linear_model, tool_options={"MCETAS": 1000}, idx=-1
-        )
         base_model_entry = ModelEntry.create(
             model=linear_results.final_model, modelfit_results=linear_results.final_model_results
         )

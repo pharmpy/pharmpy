@@ -3,7 +3,13 @@ from typing import Optional
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps, Model, Statements
-from pharmpy.modeling import add_predictions, get_mdv, set_estimation_step, set_initial_estimates
+from pharmpy.modeling import (
+    add_predictions,
+    append_estimation_step_options,
+    get_mdv,
+    set_estimation_step,
+    set_initial_estimates,
+)
 from pharmpy.modeling.estimation_steps import add_derivative
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -174,6 +180,7 @@ def _create_linearized_model_statements(linbase, model):
     est = EstimationStep.create('foce', interaction=True)
     linbase = linbase.replace(execution_steps=ExecutionSteps.create([est]))
     linbase = linbase.replace(statements=Statements(ms))
+    linbase = append_estimation_step_options(linbase, tool_options={"MCETA": 1000}, idx=-1)
 
     from pharmpy.modeling import convert_model
 
