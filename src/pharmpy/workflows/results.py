@@ -340,6 +340,8 @@ class Results(Immutable):
                 continue
             elif isinstance(value, Model):
                 continue
+            elif isinstance(value, ModelfitResults):
+                continue
             elif isinstance(value, list) and isinstance(value[0], Model):
                 continue
             s += f'{key}\n'
