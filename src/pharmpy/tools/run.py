@@ -649,7 +649,7 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
     print_fmt("Objective function value", round(ofv, 1))
 
     print_header("Parameter uncertainty status")
-    cov_run = model.execution_steps[-1].cov
+    cov_run = model.execution_steps[-1].parameter_uncertainty_method is not None
     print_fmt("Covariance step run", bool_yes_no(cov_run))
 
     if cov_run:

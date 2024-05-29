@@ -635,9 +635,11 @@ def results_report(args):
 
 def results_summary(args):
     """Subcommand to output summary of modelfit"""
+    from pharmpy.tools import print_fit_summary
+
     for model, res in args.models:
         print(model.name)
-        print(res.parameter_summary())
+        print_fit_summary(model, res)
         print()
 
 
