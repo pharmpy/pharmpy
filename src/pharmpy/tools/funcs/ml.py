@@ -109,6 +109,9 @@ def predict_outliers(model: Model, results: ModelfitResults, cutoff: float = 3.0
 
     See the :ref:`simeval <Individual OFV summary>` documentation for a definition of the `residual`
 
+    Please refer to www.page-meeting.org/?abstract=10029 for more information on training and estimated
+    precision and accuracy.
+
     Parameters
     ----------
     model : Model
@@ -211,6 +214,9 @@ def predict_outliers(model: Model, results: ModelfitResults, cutoff: float = 3.0
 def predict_influential_individuals(model: Model, results: ModelfitResults, cutoff: float = 3.84):
     """Predict influential individuals for a model using a machine learning model.
 
+    Please refer to www.page-meeting.org/?abstract=10029 for more information on training and estimated
+    precision and accuracy.
+
     Parameters
     ----------
     model : Model
@@ -249,6 +255,9 @@ def predict_influential_outliers(
     influential_cutoff: float = 3.84,
 ):
     """Predict influential outliers for a model using a machine learning model.
+
+    Please refer to www.page-meeting.org/?abstract=10029 for more information on training and estimated
+    precision and accuracy.
 
     Parameters
     ----------
