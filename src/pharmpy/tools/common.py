@@ -51,12 +51,12 @@ def update_initial_estimates(model: Model, modelfit_results: Optional[ModelfitRe
 class ToolResults(Results):
     summary_tool: Optional[Any] = None
     summary_models: Optional[pd.DataFrame] = None
-    summary_individuals: Optional[pd.DataFrame] = None
-    summary_individuals_count: Optional[pd.DataFrame] = None
     summary_errors: Optional[pd.DataFrame] = None
     final_model: Optional[Model] = None
     final_results: Optional[ModelfitResults] = None
     models: Sequence[Model] = ()
+    summary_individuals: Optional[pd.DataFrame] = None
+    summary_individuals_count: Optional[pd.DataFrame] = None
     final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
     final_model_dv_vs_pred_plot: Optional[alt.Chart] = None
     final_model_cwres_vs_idv_plot: Optional[alt.Chart] = None
