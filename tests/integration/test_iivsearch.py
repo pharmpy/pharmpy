@@ -291,7 +291,7 @@ def test_no_of_etas_linearization(
             correlation_algorithm=correlation_algorithm,
         )
 
-        assert len(res.summary_tool) == no_of_candidate_models + 2
+        assert len(res.summary_tool) == no_of_candidate_models + 4
         assert len(res.summary_models) == no_of_candidate_models + 2
 
         rundir = tmp_path / 'iivsearch1'
