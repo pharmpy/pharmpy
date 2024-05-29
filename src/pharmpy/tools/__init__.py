@@ -28,7 +28,6 @@ __all__ = (
     'run_structsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_simulation',  # pyright: ignore [reportUnsupportedDunderAll]
-    'summarize_errors',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'write_results',  # pyright: ignore [reportUnsupportedDunderAll]
 )
@@ -49,7 +48,6 @@ _not_wrapped = {
         'read_results',
         'retrieve_models',
         'run_tool',
-        'summarize_errors',
         'summarize_modelfit_results',
         'write_results',
     ),
