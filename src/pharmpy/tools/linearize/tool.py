@@ -180,7 +180,7 @@ def _create_linearized_model_statements(linbase, model):
     est = EstimationStep.create('foce', interaction=True)
     linbase = linbase.replace(execution_steps=ExecutionSteps.create([est]))
     linbase = linbase.replace(statements=Statements(ms))
-    linbase = append_estimation_step_options(linbase, tool_options={"MCETA": 1000}, idx=-1)
+    linbase = append_estimation_step_options(linbase, tool_options={"MCETA": 1000}, idx=0)
 
     from pharmpy.modeling import convert_model
 
