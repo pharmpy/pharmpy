@@ -1,3 +1,41 @@
+1.0.0 (2024-05-30)
+------------------
+
+New features
+============
+
+* eta and epsilon derivatives can be requested for NONMEM models
+* Add a dummy estimation tool that could be used for testing and demonstrations
+* Support linearization in iivsearch
+
+Changes
+=======
+
+* Problematic input arguments to tools will raise InputValidationError
+* The log file is now a csv file in the local direcory context
+* The parent model name is no longer a part of a Model object
+* All tools stores the input and final models in the context
+* Input and final models will now have these names in all tool result tables
+* Input models will have a proper (or empty) description in tool result tables
+* modeling.vpc_plot renamed to modeling.plot_vpc
+* Cleaned up the pheno model in load_example_model
+* The "lzma" option in write_results was renamed to "compression"
+* summarize_errors, resume_tool, rank_models, get_model_features, create_results and retrieve_final_model in tools are no longer exported
+* tools.is_strictness_fulfilled have a new argument structure
+* All PsN commands in the CLI have been moved to separate subcommand
+
+Bugfixes
+========
+
+* The amd tool will raise an error if instantaneous absorption is combined with oral administration
+* Make symlinks in the local directory context be relative so that the directory can be moved (does not work on Windows)
+* Fix initial estimates for cat2 in covsearch
+* Fix calculation of d_params in iivsearch results. Was using parent and now uses the base model.
+* Make sure that predictions and residuals in EstimationStep have sorted order
+* Fix broken --explicit-odes option in CLI "model print"
+* "results ofv" has been removed from the CLI
+* Do not output the full ModelfitResults object in results.csv
+
 0.110.0 (2024-05-08)
 --------------------
 
