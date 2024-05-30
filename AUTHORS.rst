@@ -48,6 +48,13 @@ Scientific input
 * Xuanlin Liu
 * Samia Mohamed
 * Yersultan Mirasbekov
+* Youjung Cho
+* Emilie Schindler
+* Sylvie Retout
+* Franziska Schaedeli Stark
+* Sreenath Krishnan
+* Orwa Albitar
+* Valerie Cosson
 
 Funding
 ~~~~~~~
