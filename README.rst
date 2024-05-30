@@ -20,9 +20,6 @@
 
 .. _README:
 
-.. highlight::
-    console
-
 |logo|
 ======
 
