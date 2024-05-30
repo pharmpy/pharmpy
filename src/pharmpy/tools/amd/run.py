@@ -69,7 +69,7 @@ def run_amd(
     met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
-    lloq_limit: Optional[str] = None,
+    lloq_limit: Optional[float] = None,
     allometric_variable: Optional[TSymbol] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
@@ -111,7 +111,7 @@ def run_amd(
     met_init : float
         Initial estimate for mean equilibration time (PKPD model)
     search_space : str
-        MFL for search space for structural model
+        MFL for search space for structural and covariate model
     lloq_method : str
         Method for how to remove LOQ data. See `transform_blq` for list of available methods
     lloq_limit : float

@@ -44,7 +44,7 @@ def create_workflow(
          List of estimation methods to test.
          Can be specified as 'all', a list of estimation methods, or None (to not test any estimation method)
     solvers : str or list of {'CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'} or None
-         List of solver to test. Can be specified as 'all', a list of solvers, or None (to
+         List of solvers to test. Can be specified as 'all', a list of solvers, or None (to
          not test any solver)
     parameter_uncertainty_methods : str or list of {'SANDWICH', 'SMAT', 'RMAT'} or None
          List of parameter uncertainty methods to test.

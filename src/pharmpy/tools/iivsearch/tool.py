@@ -71,7 +71,7 @@ def create_workflow(
     Parameters
     ----------
     algorithm : {'top_down_exhaustive','bottom_up_stepwise', 'skip'}
-        Which algorithm to run.
+        Which algorithm to run when determining number of IIVs.
     iiv_strategy : {'no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock'}
         If/how IIV should be added to start model. Default is 'no_add'.
     rank_type : {'ofv', 'lrt', 'aic', 'bic', 'mbic'}
