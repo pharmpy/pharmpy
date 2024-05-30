@@ -133,13 +133,15 @@ def run_modelsearch(args):
     model, res = args.model
     run_tool(
         'modelsearch',
-        args.mfl,
-        args.algorithm,
+        search_space=args.mfl,
+        algorithm=args.algorithm,
+        iiv_strategy=args.iiv_strategy,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
-        iiv_strategy=args.iiv_strategy,
         results=res,
         model=model,
+        strictness=args.strictness,
+        E=args.e,
         path=args.path,
     )
 
@@ -150,12 +152,18 @@ def run_iivsearch(args):
     model, res = args.model
     run_tool(
         'iivsearch',
-        args.algorithm,
+        algorithm=args.algorithm,
         iiv_strategy=args.iiv_strategy,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
+        linearize=args.linearize,
         results=res,
         model=model,
+        keep=args.keep,
+        strictness=args.strictness,
+        correlation_algorithm=args.correlation_algorithm,
+        E_p=args.e_p,
+        E_q=args.e_q,
         path=args.path,
     )
 
@@ -173,6 +181,8 @@ def run_iovsearch(args):
         distribution=args.distribution,
         results=res,
         model=model,
+        strictness=args.strictness,
+        E=args.e,
         path=args.path,
     )
 
@@ -183,12 +193,17 @@ def run_covsearch(args):
     model, res = args.model
     run_tool(
         'covsearch',
-        effects=args.effects,
+        search_space=args.search_space,
         p_forward=args.p_forward,
+        p_backward=args.p_backward,
         max_steps=args.max_steps,
         algorithm=args.algorithm,
         results=res,
         model=model,
+        max_eval=args.max_eval,
+        adaptive_scope_reduction=args.adaptive_scope_reduction,
+        strictness=args.strictness,
+        naming_index_offset=args.naming_index_offset,
         path=args.path,
     )
 
@@ -204,6 +219,9 @@ def run_ruvsearch(args):
         groups=args.groups,
         p_value=args.p_value,
         skip=args.skip,
+        max_iter=args.max_iter,
+        dv=args.dv,
+        strictness=args.strictness,
         path=args.path,
     )
 
@@ -231,20 +249,13 @@ def run_estmethod(args):
     from pharmpy.tools import run_tool
 
     model, res = args.model
-    try:
-        methods = args.methods.split(" ")
-    except AttributeError:
-        methods = args.methods
-    try:
-        solvers = args.solvers.split(" ")
-    except AttributeError:
-        solvers = args.solvers
-
     run_tool(
         'estmethod',
         args.algorithm,
-        methods=methods,
-        solvers=solvers,
+        methods=args.methods,
+        solvers=args.solvers,
+        parameter_uncertainty_methods=args.parameter_uncertainty_methods,
+        compare_ofv=args.compare_ofv,
         results=res,
         model=model,
         path=args.path,
@@ -254,21 +265,36 @@ def run_estmethod(args):
 def run_amd(args):
     from pharmpy.tools import run_amd
 
+    input = args.model_or_dataset
+    dv_types = key_vals(args.dv_types)
+
     run_amd(
-        args.input_path,
+        input,
+        results=args.results,
         modeltype=args.modeltype,
         administration=args.administration,
+        strategy=args.strategy,
         cl_init=args.cl_init,
         vc_init=args.vc_init,
         mat_init=args.mat_init,
+        b_init=args.b_init,
+        emax_init=args.emax_init,
+        ec50_init=args.ec50_init,
+        met_init=args.met_init,
         search_space=args.search_space,
         lloq_method=args.lloq_method,
         lloq_limit=args.lloq_limit,
-        order=args.order,
         allometric_variable=args.allometric_variable,
         occasion=args.occasion,
         path=args.path,
         resume=args.resume,
+        strictness=args.strictness,
+        dv_types=dv_types,
+        mechanistic_covariates=args.mechanistic_covariates,
+        retries_strategy=args.retries_strategy,
+        seed=args.seed,
+        parameter_uncertainty_method=args.parameter_uncertainty_method,
+        ignore_datainfo_fallback=args.ignore_datainfo_fallback,
     )
 
 
@@ -774,7 +800,7 @@ parser_definition = [
             'subs': [
                 {
                     'execute': {
-                        'help': 'Execute one or more model',
+                        'help': 'Execute one or more models',
                         'func': run_execute,
                         'parents': [args_input],
                     }
@@ -810,23 +836,35 @@ parser_definition = [
                                 'help': 'Algorithm to use',
                             },
                             {
+                                'name': '--iiv_strategy',
+                                'type': str,
+                                'help': 'If/how IIV should be added to candidate models',
+                                'default': 'absorption_delay',
+                            },
+                            {
                                 'name': '--rank_type',
                                 'type': str,
-                                'help': 'Name of function to use for ranking '
-                                'candidates (default is bic).',
+                                'help': 'Which ranking type should be used',
                                 'default': 'bic',
                             },
                             {
                                 'name': '--cutoff',
                                 'type': float,
-                                'help': 'Which selection criteria to rank models on',
+                                'help': 'Cutoff for which value of the ranking function that '
+                                'is considered significant',
                                 'default': None,
                             },
                             {
-                                'name': '--iiv_strategy',
+                                'name': '--strictness',
                                 'type': str,
-                                'help': 'If/how IIV should be added to candidate models',
-                                'default': 'absorption_delay',
+                                'help': 'Strictness criteria',
+                                'default': "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+                            },
+                            {
+                                'name': '--e',
+                                'type': float,
+                                'help': 'Expected number of predictors (used for mBIC)',
+                                'default': None,
                             },
                             {
                                 'name': '--path',
@@ -843,9 +881,10 @@ parser_definition = [
                         'parents': [args_model_input],
                         'args': [
                             {
-                                'name': 'algorithm',
+                                'name': '--algorithm',
                                 'type': str,
-                                'help': 'Algorithm to use',
+                                'help': 'Which algorithm to run when determining number of IIVs',
+                                'default': 'top_down_exhaustive',
                             },
                             {
                                 'name': '--iiv_strategy',
@@ -856,14 +895,50 @@ parser_definition = [
                             {
                                 'name': '--rank_type',
                                 'type': str,
-                                'help': 'Name of function to use for ranking '
-                                'candidates (default is bic).',
+                                'help': 'Which ranking type should be used',
                                 'default': 'bic',
                             },
                             {
                                 'name': '--cutoff',
                                 'type': float,
-                                'help': 'Which selection criteria to rank models on',
+                                'help': 'Cutoff for which value of the ranking function that '
+                                'is considered significant',
+                                'default': None,
+                            },
+                            {
+                                'name': '--linearize',
+                                'type': bool,
+                                'help': 'Whether or not use linearization when running the tool',
+                                'default': False,
+                            },
+                            {
+                                'name': '--keep',
+                                'type': comma_list,
+                                'help': 'List of IIVs to keep',
+                                'default': ['CL'],
+                            },
+                            {
+                                'name': '--strictness',
+                                'type': str,
+                                'help': 'Strictness criteria',
+                                'default': "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+                            },
+                            {
+                                'name': '--correlation_algorithm',
+                                'type': str,
+                                'help': 'Which algorithm to run for the determining block structure of added IIVs',
+                                'default': None,
+                            },
+                            {
+                                'name': '--e_p',
+                                'type': float,
+                                'help': 'Expected number of predictors for diagonal elements (used for mBIC)',
+                                'default': None,
+                            },
+                            {
+                                'name': '--e_q',
+                                'type': float,
+                                'help': 'Expected number of predictors for off-diagonal elements (used for mBIC)',
                                 'default': None,
                             },
                             {
@@ -890,20 +965,21 @@ parser_definition = [
                             {
                                 'name': '--list_of_parameters',
                                 'type': comma_list,
-                                'help': 'List of parameters to test IOV on',
+                                'help': 'List of parameters to test IOV on (if not specified, all'
+                                'parameters with IIV will be tested)',
                                 'default': None,
                             },
                             {
                                 'name': '--rank_type',
                                 'type': str,
-                                'help': 'Name of function to use for ranking '
-                                'candidates (default is bic).',
+                                'help': 'Which ranking type should be used',
                                 'default': 'bic',
                             },
                             {
                                 'name': '--cutoff',
                                 'type': float,
-                                'help': 'Which selection criteria to rank models on',
+                                'help': 'Cutoff for which value of the ranking function that '
+                                'is considered significant',
                                 'default': None,
                             },
                             {
@@ -912,6 +988,18 @@ parser_definition = [
                                 'help': 'Which distribution added IOVs should have '
                                 '(default is same-as-iiv)',
                                 'default': 'same-as-iiv',
+                            },
+                            {
+                                'name': '--strictness',
+                                'type': str,
+                                'help': 'Strictness criteria',
+                                'default': "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+                            },
+                            {
+                                'name': '--e',
+                                'type': float,
+                                'help': 'Expected number of predictors (used for mBIC)',
+                                'default': None,
                             },
                             {
                                 'name': '--path',
@@ -928,38 +1016,59 @@ parser_definition = [
                         'parents': [args_model_input],
                         'args': [
                             {
-                                'name': '--effects',
+                                'name': '--search_space',
                                 'type': str,
-                                'help': 'The candidate effects to search through (required)',
+                                'help': 'MFL of covariate effects to try',
                             },
                             {
                                 'name': '--p_forward',
                                 'type': float,
-                                'help': 'The p-value threshold for forward '
-                                'steps (default is `0.05`)',
-                                'default': 0.05,
+                                'help': 'The p-value to use in the likelihood ratio test for forward steps',
+                                'default': 0.01,
                             },
                             {
                                 'name': '--p_backward',
                                 'type': float,
-                                'help': 'The p-value threshold for backward '
-                                'steps (default is `0.01`)',
-                                'default': 0.01,
+                                'help': 'The p-value to use in the likelihood ratio test for backward steps',
+                                'default': 0.001,
                             },
                             {
                                 'name': '--max_steps',
                                 'type': int,
-                                'help': 'The maximum number of search '
-                                'algorithm steps to perform, or `-1` '
-                                'for no maximum (default).',
+                                'help': 'The maximum number of search steps to make',
                                 'default': -1,
                             },
                             {
                                 'name': '--algorithm',
                                 'type': str,
-                                'help': "The search algorithm to use (default "
-                                "is `'scm-forward-then-backward'`)",
+                                'help': 'The search algorithm to use',
                                 'default': 'scm-forward-then-backward',
+                            },
+                            {
+                                'name': '--max_eval',
+                                'type': bool,
+                                'help': 'Limit the number of function evaluations to 3.1 times that of the base model',
+                                'default': False,
+                            },
+                            {
+                                'name': '--adaptive_scope_reduction',
+                                'type': bool,
+                                'help': 'Stash all non-significant parameter-covariate effects to be tested after all '
+                                'significant effects have been tested. Once all these have been tested, try '
+                                'adding the stashed effects once more with a regular forward approach',
+                                'default': False,
+                            },
+                            {
+                                'name': '--strictness',
+                                'type': str,
+                                'help': 'Strictness criteria',
+                                'default': "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+                            },
+                            {
+                                'name': '--naming_index_offset',
+                                'type': int,
+                                'help': 'Index offset for naming of runs',
+                                'default': 0,
                             },
                             {
                                 'name': '--path',
@@ -978,20 +1087,38 @@ parser_definition = [
                             {
                                 'name': '--groups',
                                 'type': int,
-                                'help': 'Number of groups for the time varying models',
+                                'help': 'The number of bins to use for the time varying models',
                                 'default': 4,
                             },
                             {
                                 'name': '--p_value',
                                 'type': float,
-                                'help': 'p_value to use for the likelihood ratio test',
-                                'default': 0.05,
+                                'help': 'The p-value to use for the likelihood ratio test',
+                                'default': 0.001,
                             },
                             {
                                 'name': '--skip',
                                 'type': comma_list,
                                 'help': 'List of models to not test',
                                 'default': None,
+                            },
+                            {
+                                'name': '--max_iter',
+                                'type': int,
+                                'help': 'Number of iterations to run (1, 2, or 3)',
+                                'default': 3,
+                            },
+                            {
+                                'name': '--dv',
+                                'type': int,
+                                'help': 'Which DV to assess the error model for',
+                                'default': None,
+                            },
+                            {
+                                'name': '--strictness',
+                                'type': str,
+                                'help': 'Strictness criteria',
+                                'default': "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
                             },
                             {
                                 'name': '--path',
@@ -1010,7 +1137,7 @@ parser_definition = [
                             {
                                 'name': '--allometric_variable',
                                 'type': str,
-                                'help': 'Name of the allometric variable',
+                                'help': 'Name of the variable to use for allometric scaling',
                                 'default': 'WT',
                             },
                             {
@@ -1022,7 +1149,7 @@ parser_definition = [
                             {
                                 'name': '--parameters',
                                 'type': comma_list,
-                                'help': 'List of parameters to apply scaling to',
+                                'help': 'Parameters to apply scaling to',
                                 'default': None,
                             },
                             {
@@ -1058,7 +1185,7 @@ parser_definition = [
                 },
                 {
                     'estmethod': {
-                        'help': 'Find best estimation method',
+                        'help': 'Assess estimation methods, solvers, and parameter uncertainty methods',
                         'func': run_estmethod,
                         'parents': [args_model_input],
                         'args': [
@@ -1069,21 +1196,31 @@ parser_definition = [
                             },
                             {
                                 'name': '--methods',
-                                'type': str,
+                                'type': comma_list,
                                 'default': None,
-                                'help': 'List of methods to try, mark group of methods in single '
-                                'quote separated by spaces. Supported are: FOCE, FO, IMP, '
-                                'IMPMAP, ITS, SAEM, LAPLACE, BAYES, or \'all\'. Default is None.',
+                                'help': 'List of estimation methods to test. Can be specified as "all", a list '
+                                'of estimation methods, or not specify (to not test any estimation method)',
                             },
                             {
                                 'name': '--solvers',
-                                'type': str,
+                                'type': comma_list,
                                 'default': None,
-                                'help': 'List of solvers to try, mark group of methods in single '
-                                'quote separated by spaces. Supported are: CVODES '
-                                '(ADVAN14), DGEAR (ADVAN8), DVERK (ADVAN6), IDA '
-                                '(ADVAN15), LSODA (ADVAN13) and LSODI (ADVAN9), or \'all\'. '
-                                'Default is None.',
+                                'help': 'List of solvers to test. Can be specified as "all", a list of solvers, '
+                                'or not specify (to not test any solver)',
+                            },
+                            {
+                                'name': '--parameter_uncertainty_methods',
+                                'type': comma_list,
+                                'default': None,
+                                'help': 'List of parameter uncertainty methods to test. Can be specified as "all", '
+                                'a list of uncertainty methods, or not specify (to not test any uncertainty '
+                                'method)',
+                            },
+                            {
+                                'name': 'compare_ofv',
+                                'type': bool,
+                                'help': 'Whether to compare the OFV between candidates',
+                                'default': True,
                             },
                             {
                                 'name': '--path',
@@ -1097,54 +1234,86 @@ parser_definition = [
                     'amd': {
                         'help': 'Use Automatic Model Development tool to select PK model',
                         'func': run_amd,
+                        'parents': [args_model_or_data_input],
                         'args': [
                             {
-                                'name': 'input_path',
-                                'type': str,
-                                'help': 'Path to output directory',
+                                'name': '--results',
+                                'type': Path,
+                                'default': None,
+                                'help': 'Reults of input if input is a model',
                             },
                             {
                                 'name': '--modeltype',
                                 'type': str,
                                 'default': 'basic_pk',
-                                'help': 'Type of model to build. Currently only "basic_pk"',
+                                'help': 'Type of model to build. Valid strings are "basic_pk", "pkpd", '
+                                '"drug_metabolite" and "tmdd"',
                             },
                             {
                                 'name': '--administration',
                                 'type': str,
                                 'default': 'oral',
-                                'help': 'Type of model to build. One of "iv", "oral" or "ivoral"',
+                                'help': 'Route of administration. Either "iv", "oral" or "ivoral"',
+                            },
+                            {
+                                'name': '--strategy',
+                                'type': str,
+                                'default': 'default',
+                                'help': 'Run algorithm for AMD procedure. Valid options are "default", "reevaluation"',
                             },
                             {
                                 'name': '--cl_init',
                                 'type': float,
-                                'default': 0.01,
+                                'default': None,
                                 'help': 'Initial estimate for the population clearance',
                             },
                             {
                                 'name': '--vc_init',
                                 'type': float,
-                                'default': 0.1,
+                                'default': None,
                                 'help': 'Initial estimate for the central compartment population volume',
                             },
                             {
                                 'name': '--mat_init',
                                 'type': float,
-                                'default': 0.01,
+                                'default': None,
                                 'help': 'Initial estimate for the mean absorption time (not for iv models)',
+                            },
+                            {
+                                'name': '--b_init',
+                                'type': float,
+                                'default': None,
+                                'help': 'Initial estimate for the baseline (PKPD model)',
+                            },
+                            {
+                                'name': '--emax_init',
+                                'type': float,
+                                'default': None,
+                                'help': 'Initial estimate for E_max (PKPD model)',
+                            },
+                            {
+                                'name': '--ec50_init',
+                                'type': float,
+                                'default': None,
+                                'help': 'Initial estimate for EC_50 (PKPD model)',
+                            },
+                            {
+                                'name': '--met_init',
+                                'type': float,
+                                'default': None,
+                                'help': 'Initial estimate for mean equilibration time (PKPD model)',
                             },
                             {
                                 'name': '--search_space',
                                 'type': str,
                                 'default': None,
-                                'help': 'MFL for search space for structural model',
+                                'help': 'MFL for search space for structural and covariate model',
                             },
                             {
                                 'name': '--lloq_method',
                                 'type': str,
                                 'default': None,
-                                'help': 'Method for how to remove LOQ data. See '
-                                '`transform_blq` for list of available methods',
+                                'help': 'Method for how to remove LOQ data',
                             },
                             {
                                 'name': '--lloq_limit',
@@ -1152,12 +1321,6 @@ parser_definition = [
                                 'default': None,
                                 'help': 'Lower limit of quantification. If None LLOQ column '
                                 'from dataset will be used',
-                            },
-                            {
-                                'name': '--order',
-                                'type': comma_list,
-                                'default': None,
-                                'help': 'Runorder of components',
                             },
                             {
                                 'name': '--allometric_variable',
@@ -1172,16 +1335,60 @@ parser_definition = [
                                 'help': 'Name of occasion column',
                             },
                             {
-                                'name': '--path',
+                                'name': '--strictness',
+                                'type': str,
+                                'help': 'Strictness criteria',
+                                'default': "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+                            },
+                            {
+                                'name': '--dv_types',
+                                'type': str,
+                                'nargs': '+',
+                                'metavar': 'COLNAME=VALUE',
+                                'default': '',
+                            },
+                            {
+                                'name': '--mechanistic_covariates',
+                                'type': comma_list,
+                                'default': None,
+                                'help': 'List of covariates or tuple of covariate and parameter combination to run in '
+                                'a separate proioritized covsearch run',
+                            },
+                            {
+                                'name': '--retries_strategy',
+                                'type': str,
+                                'default': 'all_final',
+                                'help': 'Whether or not to run retries tool',
+                            },
+                            {
+                                'name': '--seed',
+                                'type': int,
+                                'default': None,
+                                'help': 'Seed to be used',
+                            },
+                            {
+                                'name': '--parameter_uncertainty_method',
                                 'type': str,
                                 'default': None,
-                                'help': 'Path to run AMD in',
+                                'help': 'Parameter uncertainty method',
+                            },
+                            {
+                                'name': '--ignore_datainfo_fallback',
+                                'type': bool,
+                                'default': None,
+                                'help': 'Ignore using datainfo to get information not given by the user',
                             },
                             {
                                 'name': '--resume',
                                 'type': bool,
                                 'default': True,
                                 'help': 'Whether to allow resuming previous run',
+                            },
+                            {
+                                'name': '--path',
+                                'type': str,
+                                'default': None,
+                                'help': 'Path to run AMD in',
                             },
                         ],
                     }
