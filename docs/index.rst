@@ -13,19 +13,24 @@ Welcome to Pharmpy
 ==================
 
 
-Pharmpy is a library and a set of tools for pharmacometrics. It can be used as a regular Python package, in R using the
-pharmr package or via its built-in command line interface. Current features include:
+Pharmpy is an open-source software package for pharmacometric modeling. It has functionality ranging from reading and
+manipulating model files and datasets, to full tools where subsequent results are collected and presented.
 
-* General model abstraction for pharmacometric models
-* Manipulation of models
-* Extraction of model estimation results
-* Manipulation of datasets
-* Various calculations and evaluations
-* Plugin system to support different model formats (NONMEM, nlmixr2, rxode2)
-* Running models (NONMEM, nlmixr2, rxode2)
-* Running higher level workflows or tools (NONMEM)
-* Parsing and updating NONMEM models
-* Model conversion to NONMEM, nlmixr2, and rxode2
+Features include:
+
+* A **model abstraction** which splits a model into core components which Pharmpy understands and can manipulate:
+  parameters, random variables, statements (including ODE system), dataset, and execution steps
+* An **abstraction for modelfit results** which splits a parsed results into core components: e.g. OFV, parameter
+  estimates, relative standard errors (RSEs), residuals, predictions
+* **Functions for manipulation of models and datasets** in the modeling-module: e.g. change structural model, add
+  time-after-dose column, deidentify dataset
+* **Tools to aid model development** in the tools-module: execution of models within Python/R scripts, automatic
+  development of models (e.g. AMD, IIVSearch, RUVSearch), comparison of estimation methods
+* Support for **multiple estimation tools**: parse NONMEM models, execute NONMEM, nlmixr2, and rxODE2 models, run all
+  Pharmpy tools with NONMEM and some with nlmixr2
+
+Pharmpy can be used as a regular Python package, in R via the pharmr package, or via its built in command line
+interface.
 
 We encourage your contribution to the Pharmpy project! You can report issues and post suggestions of features via
 GitHub issues (to `Pharmpy <https://github.com/pharmpy/pharmpy/issues>`_ or to
