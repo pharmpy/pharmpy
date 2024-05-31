@@ -1,8 +1,6 @@
 import io
-import re
 from glob import glob
 from os.path import abspath, basename, dirname, join, splitext
-from textwrap import dedent
 
 from setuptools import find_packages, setup
 
@@ -14,26 +12,12 @@ def read(*names, **kwargs):
     ).read()
 
 
-def strip_refs(text_str):
-    """Strip ref text roles (not valid long_description markup)"""
-    return re.sub(':[a-z]+:`~?(.*?)`', r'``\1``', text_str)
-
-
-def longdesc(text_str):
-    """Extract blocks between start-longdesc and end-longdesc directives"""
-    pat = r'(?<=^\.\. start-longdesc).*?(?=^\.\. end-longdesc)'
-    txt = re.compile(pat, re.MULTILINE | re.DOTALL).findall(text_str)
-    txt = [dedent(block).strip() for block in txt]
-    return '\n\n'.join(txt)
-
-
 setup(
     name='pharmpy-core',
     version='0.110.0',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modeling',
-    long_description='%s\n\n%s'
-    % (strip_refs(longdesc(read('README.rst'))), strip_refs(read('CHANGELOG.rst'))),
+    long_description=read('README.rst'),
     long_description_content_type='text/x-rst',
     author='Rikard Nordgren',
     author_email='rikard.nordgren@farmaci.uu.se',
