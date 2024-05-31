@@ -54,7 +54,7 @@ or via its built in command line interface.
 Getting started
 ===============
 
-The sections below are intended as first steps, please check our `website<https://pharmpy.github.io>`_ website for
+The sections below are intended as first steps, please check our `website <https://pharmpy.github.io>`_ website for
 more comprehensive documentation, such as user guides and API references.
 
 Installation
