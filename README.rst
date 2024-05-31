@@ -23,13 +23,11 @@
 |logo|
 ======
 
-.. |logo| image:: docs/Pharmpy_logo.svg
+.. |logo| image:: https://github.com/pharmpy/pharmpy/raw/main/docs/Pharmpy_logo.svg
    :width: 250
 
-.. start-longdesc
-
 Pharmpy is an open-source software package for pharmacometric modeling. It has functionality ranging from reading and
-manipulating model files and datasets, to full tools where subsequent results are collected and presented.
+manipulating model files and datasets to full tools where subsequent results are collected and presented.
 
 Features include:
 
@@ -48,8 +46,6 @@ For more comprehensive information and documentation, see: https://pharmpy.githu
 
 Pharmpy can be used as a regular Python package, in R via the `pharmr <https://github.com/pharmpy/pharmr>`_ package,
 or via its built in command line interface.
-
-.. end-longdesc
 
 Getting started
 ===============
