@@ -26,4 +26,20 @@ def create_report(results: Results, path: Union[Path, str]):
         tmp_path = Path(tmpdirname)
         json_path = tmp_path / 'results.json'
         results.to_json(json_path)
-        reporting.generate_report(results.rst_path, json_path, path)
+        reporting.generate_report(get_rst_path(results), json_path, path)
+
+
+def get_rst_path(results):
+    module = results.__module__
+    a = module.split('.')
+    if len(a) >= 3:
+        tool = a[2]
+    else:
+        return None
+    path = Path(__file__).parent / tool / 'report.rst'
+    return path
+
+
+def report_available(results):
+    path = get_rst_path(results)
+    return path is not None and path.is_file()

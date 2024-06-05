@@ -15,7 +15,6 @@ from pharmpy.workflows.results import ModelfitResults, Results
 
 @dataclass(frozen=True)
 class BootstrapResults(Results):
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     parameter_statistics: Optional[Any] = None

@@ -14,7 +14,6 @@ from pharmpy.tools.common import ToolResults
 class RUVSearchResults(ToolResults):
     """RUVSearch results class"""
 
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
     cwres_models: Optional[Any] = None
 
 

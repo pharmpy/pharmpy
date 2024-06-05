@@ -74,7 +74,9 @@ def execute_workflow(
 
     if isinstance(res, Results) and not isinstance(res, ModelfitResults):
         context.store_results(res)
-        if hasattr(res, 'rst_path'):
+        from pharmpy.tools.reporting import report_available
+
+        if report_available(res):
             from pharmpy.tools.reporting import create_report
 
             if os.name == 'nt':

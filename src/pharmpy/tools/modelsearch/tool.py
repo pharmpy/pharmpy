@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Literal, Optional, Union
 
 import pharmpy.tools.modelsearch.algorithms as algorithms
@@ -360,5 +359,4 @@ def validate_input(
 
 @dataclass(frozen=True)
 class ModelSearchResults(ToolResults):
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
     pass

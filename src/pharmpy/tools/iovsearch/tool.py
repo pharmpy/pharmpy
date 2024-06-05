@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from pathlib import Path
 from typing import Callable, Iterable, List, Literal, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
@@ -422,7 +421,6 @@ def validate_input(
 
 @dataclass(frozen=True)
 class IOVSearchResults(ToolResults):
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
     pass
 
 

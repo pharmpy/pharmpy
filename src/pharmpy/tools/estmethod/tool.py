@@ -1,6 +1,5 @@
 import warnings
 from dataclasses import dataclass
-from pathlib import Path
 from typing import Any, List, Literal, Optional, Union
 
 import pharmpy.tools.estmethod.algorithms as algorithms
@@ -151,7 +150,6 @@ def post_process(*model_entries):
 
 @dataclass(frozen=True)
 class EstMethodResults(ToolResults):
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
 
     summary_settings: Optional[Any] = None
 

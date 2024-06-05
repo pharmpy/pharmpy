@@ -22,8 +22,6 @@ from pharmpy.workflows.results import ModelfitResults, Results
 class SCMResults(Results):
     """SCM Results class"""
 
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
-
     steps: Optional[Any] = None
     ofv_summary: Optional[Any] = None
     candidate_summary: Optional[Any] = None

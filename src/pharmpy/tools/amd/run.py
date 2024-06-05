@@ -40,6 +40,7 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.statement import Statement
+from pharmpy.tools.reporting import get_rst_path
 from pharmpy.tools.run import summarize_errors_from_entries
 from pharmpy.workflows import ModelEntry, Results, default_context
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
@@ -614,7 +615,7 @@ def run_amd(
     results_path = ctx.path / 'results.json'
     write_results(results=res, path=results_path)
     write_results(results=res, path=ctx.path / 'results.csv', csv=True)
-    rst_path = Path(__file__).parent / 'report.rst'
+    rst_path = get_rst_path(res)
     target_path = ctx.path / 'results.html'
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")

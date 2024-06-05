@@ -166,8 +166,6 @@ class FREMResults(Results):
 
     """
 
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
-
     coefficients: Optional[Any] = None
     parameter_variability: Optional[Any] = None
     covariate_effects: Optional[Any] = None

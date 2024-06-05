@@ -18,8 +18,6 @@ from pharmpy.workflows import Results
 class CDDResults(Results):
     """CDD Results class"""
 
-    rst_path = Path(__file__).resolve().parent / 'report.rst'
-
     case_results: Optional[Any] = None
     case_column: Optional[Any] = None
     individual_predictions_plot: Optional[Any] = None
