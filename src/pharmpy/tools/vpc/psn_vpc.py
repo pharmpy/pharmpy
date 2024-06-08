@@ -24,9 +24,9 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
         return rpcdv
 
     rpcdv = correct(dv, factor, logdv, lb)
-    rpcdv_sim = [correct(sim['DV'], factor, logdv, lb) for sim in simdata]
+    rpcdv_sim = [correct(sim[dv.name], factor, logdv, lb) for sim in simdata]
 
-    refdvs = pd.concat((ref['DV'] for ref in refdata), axis=1)
+    refdvs = pd.concat((ref[dv.name] for ref in refdata), axis=1)
     rpcdvs = pd.concat(rpcdv_sim, axis=1)
 
     if logdv:
@@ -53,6 +53,7 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
 def reference_correction_from_psn_vpc(path):
     path = Path(path)
     opts = options_from_command(psn_command(path))
+    dv = opts.get('DV', 'DV')
     logdv = bool(int(opts.get('lnDV', '0')))  # NOTE: Not entirely correct
     lower_bound = opts.get('lower_bound', 0.0)
 
@@ -82,7 +83,7 @@ def reference_correction_from_psn_vpc(path):
 
     lb = evaluate_expression(model, lower_bound)[origdata.index]
     rcdv, rcdv_sim = calculate_reference_correction(
-        origdata['DV'], pred, predref, simdata, refdata, logdv, lb
+        origdata[dv], pred, predref, simdata, refdata, logdv, lb
     )
 
     simreffile_path = m1 / 'vpc_simulation.1.npctab.dta.refcorr'
