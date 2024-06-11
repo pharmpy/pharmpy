@@ -53,7 +53,7 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
 def reference_correction_from_psn_vpc(path):
     path = Path(path)
     opts = options_from_command(psn_command(path))
-    dv = opts.get('DV', 'DV')
+    dv = opts.get('dv', 'DV')
     logdv = bool(int(opts.get('lnDV', '0')))  # NOTE: Not entirely correct
     lower_bound = opts.get('lower_bound', 0.0)
 
@@ -66,7 +66,14 @@ def reference_correction_from_psn_vpc(path):
     origdata = origfile.tables[0].data_frame
     origdata = origdata[origdata['MDV'] == 0.0]
 
-    pred = origdata['PRED']
+    orig_pred_path = m1 / "vpc_pred.1.npctab.dta"
+    if orig_pred_path.is_file():
+        origpredfile = NONMEMTableFile(orig_pred_path)
+        origpreddata = origpredfile.tables[0].data_frame
+        origpreddata = origpreddata[origpreddata['MDV'] == 0.0]
+        pred = origpreddata[dv]
+    else:
+        pred = origdata['PRED']
 
     simfile_path = m1 / "vpc_simulation.1.npctab.dta"
     simfile = NONMEMTableFile(m1 / simfile_path)
@@ -79,7 +86,14 @@ def reference_correction_from_psn_vpc(path):
     ref = refdata[0]['REF'].astype(int) - 1
     refdata = [ser.reindex(ref).sort_index() for ser in refdata]
 
-    predref = refdata[0]['PRED']
+    ref_pred_path = m1 / "vpc_pred_refcorr.1.npctab.dta"
+    if ref_pred_path.is_file():
+        refpredfile = NONMEMTableFile(ref_pred_path)
+        refpreddata = refpredfile.tables[0].data_frame
+        refpreddata = refpreddata[refpreddata['MDV'] == 0.0]
+        predref = refpreddata[dv]
+    else:
+        predref = refdata[0]['PRED']
 
     lb = evaluate_expression(model, lower_bound)[origdata.index]
     rcdv, rcdv_sim = calculate_reference_correction(
@@ -97,7 +111,7 @@ def reference_correction_from_psn_vpc(path):
             elif re.match(r'\s*[A-Za-z]', line):
                 header = line.split()
                 mdv_index = header.index("MDV")
-                dv_index = header.index("DV")
+                dv_index = header.index(dv)
                 dh.write(line)
             else:
                 values = line.split()
@@ -118,7 +132,7 @@ def reference_correction_from_psn_vpc(path):
             elif re.match(r'\s*[A-Za-z]', line):
                 header = line.split()
                 mdv_index = header.index("MDV")
-                dv_index = header.index("DV")
+                dv_index = header.index(dv)
                 dh.write(line)
             else:
                 values = line.split()
