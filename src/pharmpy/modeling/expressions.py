@@ -329,6 +329,9 @@ def mu_reference_model(model: Model):
     S₁ = VC
 
     """
+    if has_mu_reference(model):
+        return model
+
     index = {Expr.symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
     etas = set(index)
 
@@ -358,6 +361,32 @@ def mu_reference_model(model: Model):
             # statement by two statements
     model = model.replace(statements=statements).update_source()
     return model
+
+
+def has_mu_reference(model: Model):
+    """Check if model is Mu-reference or not.
+
+    Will return True if each individual parameter is dependent on a Mu parameter.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    """
+    ind_parameters = get_individual_parameters(model)
+    mu_regex = r'^mu_\d*$'
+    for ind_param in ind_parameters:
+        ind_statement = model.statements.find_assignment(ind_param)
+        if not any(re.match(mu_regex, str(p)) for p in ind_statement.free_symbols):
+            return False
+
+    return True
 
 
 def simplify_expression(model: Model, expr: Union[str, TExpr]):

@@ -34,6 +34,7 @@ from pharmpy.modeling import (
     get_population_prediction_expression,
     get_rv_parameters,
     greekify_model,
+    has_mu_reference,
     has_random_effect,
     is_linearized,
     is_real,
@@ -189,6 +190,13 @@ def test_mu_reference_model_generic(statements, correct):
     )
     model = mu_reference_model(model)
     assert model.statements == Statements(correct)
+
+
+def test_has_mu_reference(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    assert not has_mu_reference(model)
+    model = mu_reference_model(model)
+    assert has_mu_reference(model)
 
 
 def test_simplify_expression():
