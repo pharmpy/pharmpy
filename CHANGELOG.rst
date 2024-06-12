@@ -1,3 +1,14 @@
+1.0.1 (2024-06-12)
+------------------
+
+Bugfixes
+========
+
+* Fix issue causing pharmr to crash directly before returning from some tools.
+* Fix crash in NONMEM parser for CALLFL=1 statement
+* Fix crashes in parsing of NONMEM dataset when AMT column had a synonym, e.g. DOSE=AMT
+* Correctly create the statement for F for NONMEM models using SC as scaling factor
+
 1.0.0 (2024-05-30)
 ------------------
 
