@@ -869,22 +869,25 @@ def parse_dataset(
     )
     # Let TIME be the idv in both $PK and $PRED models
     # Remove individuals without observations
-    col_names = list(df.columns)
     have_pk = control_stream.get_pk_record()
     if have_pk:
-        df = filter_observations(df, col_names)
+        df = filter_observations(df, di)
     return df
 
 
-def filter_observations(df, col_names):
-    if 'EVID' in col_names:
-        df_obs = df.astype({'EVID': 'float'}).query('EVID == 0')
-    elif 'MDV' in col_names:
-        df_obs = df.astype({'MDV': 'float'}).query('MDV == 0')
-    elif 'AMT' in col_names:
-        df_obs = df.astype({'AMT': 'float'}).query('AMT == 0')
-    else:
-        raise DatasetError('Could not identify observation rows in dataset')
+def filter_observations(df, di):
+    try:
+        label = di.typeix['mdv'][0].name
+    except IndexError:
+        try:
+            label = di.typeix['event'][0].name
+        except IndexError:
+            try:
+                label = di.typeix['dose'][0].name
+            except IndexError:
+                raise ValueError("Unable to find dosing records in the dataset")
+
+    df_obs = df.astype({label: 'float'}).query(f'{label} == 0')
     have_obs = set(df_obs['ID'].unique())
     all_ids = set(df['ID'].unique())
     ids_to_remove = all_ids - have_obs

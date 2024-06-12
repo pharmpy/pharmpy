@@ -374,13 +374,17 @@ def _f_link_assignment(
 
 
 def _find_observation_column(di):
-    colnames = di.names
-    if 'EVID' in colnames and not di['EVID'].drop:
-        return 'EVID'
-    elif 'MDV' in colnames and not di['MDV'].drop:
-        return 'MDV'
-    else:
-        return 'AMT'
+    try:
+        label = di.typeix['mdv'][0].name
+    except IndexError:
+        try:
+            label = di.typeix['event'][0].name
+        except IndexError:
+            try:
+                label = di.typeix['dose'][0].name
+            except IndexError:
+                raise ValueError("Unable to find dosing records in the dataset")
+    return label
 
 
 def _find_rates(control_stream: NMTranControlStream, ncomps: int):
@@ -598,7 +602,8 @@ def _advan12_trans(trans: str):
 def dosing(di: DataInfo, dataset, dose_comp: int):
     # Only check doses
     if dataset is not None:
-        dataset = dataset[dataset['AMT'] != 0]
+        amtcol = di.typeix["dose"][0].name
+        dataset = dataset[dataset[amtcol] != 0]
 
     cmt_loop = False
     admid_name = None
