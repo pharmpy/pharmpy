@@ -554,6 +554,8 @@ def has_first_order_elimination(model: Model):
 def set_michaelis_menten_elimination(model: Model):
     """Sets elimination to Michaelis-Menten.
 
+    Note that the parametrization is not the usual, but is instead using a CLMM parameter.
+
     Initial estimate for CLMM is set to CL and KM is set to :math:`max(DV)/2`.
 
     Parameters
