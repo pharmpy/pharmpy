@@ -221,6 +221,8 @@ def S(x):
         ('$PRED\nCL = 2\nEXIT 1 \n', S('CL'), 2),
         ('$PRED\nCL = 2\nEXIT 1 23 \n', S('CL'), 2),
         ('$PRED\nCL = 2\nCALL RANDOM (2, R)\n', S('CL'), 2),
+        ('$PRED\nCL = 2\nCALL  RANDOM (2, R)\n', S('CL'), 2),
+        ('$PRED CALLFL=0', S('CALLFL'), 0),
         ('$PRED\nCL = 2\n  RETURN  \n', S('CL'), 2),
         ('$PRED\nCOM(1) = 0\n', S('COM(1)'), 0),
         ('$PRED\nANYTHING(1) = 0\n', S('ANYTHING(1)'), 0),

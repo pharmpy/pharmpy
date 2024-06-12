@@ -54,7 +54,7 @@ block_if_else: ELSE _empty_lines _statements?
 block_if_end: ENDIF
 
 EXIT.9   : "EXIT"i
-CALL.9   : "CALL"i
+CALL.9   : /CALL\s+/i
 RETURN.9 : "RETURN"i
 DOWHILE.9: "DO WHILE"i
          | "DOWHILE"i
