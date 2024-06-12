@@ -124,6 +124,7 @@ from .expressions import (
     is_linearized,
     is_real,
     make_declarative,
+    mu_connected_to_parameter,
     mu_reference_model,
     simplify_expression,
 )
@@ -379,6 +380,7 @@ __all__ = [
     'load_dataset',
     'load_example_model',
     'make_declarative',
+    'mu_connected_to_parameter',
     'mu_reference_model',
     'omit_data',
     'plot_abs_cwres_vs_ipred',
