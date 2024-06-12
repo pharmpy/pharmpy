@@ -334,6 +334,12 @@ def _f_link_assignment(
     scaling = f'S{compno}'
     if pkrec.statements.find_assignment(scaling):
         fexpr = ffunc / Expr.symbol(scaling)
+    elif (
+        isinstance(compartment, Compartment)
+        and compartment.name == "CENTRAL"
+        and pkrec.statements.find_assignment("SC")
+    ):
+        fexpr = ffunc / Expr.symbol("SC")
     else:
         fexpr = ffunc
 
