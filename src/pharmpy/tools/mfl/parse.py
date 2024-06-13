@@ -949,6 +949,9 @@ class ModelFeatures:
             and self.peripherals == other.peripherals
             and self.lagtime == other.lagtime
             and self._eq_covariate(other)
+            and self.direct_effect == other.direct_effect
+            and self.effect_comp == other.effect_comp
+            and self.indirect_effect == other.indirect_effect
         )
 
     def _eq_transits(self, other):
