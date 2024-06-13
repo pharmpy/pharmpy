@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 from pharmpy.basic import Expr
 from pharmpy.internals.immutable import Immutable, frozenmapping
@@ -155,6 +155,7 @@ class EstimationStep(ExecutionStep):
         solver_atol: Optional[int] = None,
         tool_options: Optional[frozenmapping[str, Any]] = None,
         derivatives: Sequence[Sequence[Expr]] = (),
+        posterior_eta_type: Optional[str] = None,
     ):
         self._method = method
         self._interaction = interaction
@@ -169,6 +170,7 @@ class EstimationStep(ExecutionStep):
         self._residuals = residuals
         self._predictions = predictions
         self._derivatives = derivatives
+        self._posterior_eta_type = posterior_eta_type
         super().__init__(
             solver=solver,
             solver_rtol=solver_rtol,
@@ -196,6 +198,7 @@ class EstimationStep(ExecutionStep):
         solver_atol: Optional[int] = None,
         tool_options: Optional[Mapping[str, Any]] = None,
         derivatives: Sequence[Sequence[Expr]] = (),
+        posterior_eta_type: Literal[None, "mode", "mean"] = None,
     ):
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
@@ -235,6 +238,16 @@ class EstimationStep(ExecutionStep):
             )
         solver = ExecutionStep._canonicalize_solver(solver)
         tool_options = ExecutionStep._canonicalize_tool_options(tool_options)
+
+        # We dont support extracting some other ETA than that connected to the model
+        # so setting this value has no effect.
+        if method in ('FO', 'FOCE', 'ITS'):
+            posterior_eta_type = "mode"
+        elif method in ('IMPMAP', 'IMP', 'SAEM'):
+            posterior_eta_type = "mean"
+        elif method in ('BAYES',):
+            posterior_eta_type = None  # Random single sample, how to label?
+
         return cls(
             method=method,
             interaction=interaction,
@@ -253,6 +266,7 @@ class EstimationStep(ExecutionStep):
             solver_atol=solver_atol,
             tool_options=tool_options,
             derivatives=derivatives,
+            posterior_eta_type=posterior_eta_type,
         )
 
     def replace(self, **kwargs) -> EstimationStep:
@@ -383,6 +397,11 @@ class EstimationStep(ExecutionStep):
         """Dictionary of tool specific options"""
         return self._tool_options
 
+    @property
+    def posterior_eta_type(self) -> Optional[str]:
+        """Posterior eta type, mean or mode"""
+        return self._posterior_eta_type
+
     def __eq__(self, other):
         return (
             isinstance(other, EstimationStep)
@@ -399,6 +418,7 @@ class EstimationStep(ExecutionStep):
             and self.derivatives == other.derivatives
             and self.predictions == other.predictions
             and self.residuals == other.residuals
+            and self.posterior_eta_type == other.posterior_eta_type
             and super().__eq__(other)
         )
 
@@ -435,6 +455,7 @@ class EstimationStep(ExecutionStep):
             'derivatives': tuple(str(d) for d in self._derivatives),
             'predictions': self._predictions,
             'residuals': self._residuals,
+            'posterior_eta_type': self._posterior_eta_type,
         }
         super()._add_to_dict(d)
         return d
