@@ -857,7 +857,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         assert rate is not None
         if not rate.is_symbol():
             num, den = rate.as_numer_denom()
-            if num == 1 and den.is_Symbol:
+            if num == 1 and den.is_symbol():
                 symbol = den
             else:
                 symbol = None
