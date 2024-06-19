@@ -1,0 +1,29 @@
+name: 'Publish documentation'
+description: 'Build and publish the Pharmpy documentation'
+runs:
+  using: "composite"
+  steps:
+    - name: Checkout pharmpy/pharmpy.github.io
+      uses: actions/checkout@v4
+      with:
+        repository: pharmpy/pharmpy.github.io
+        path: pharmpy.github.io
+        token: ${{secrets.DOC_TOKEN}}
+    - name: Install graphviz
+      run: sudo apt install graphviz
+    - name: Build documentation
+      run: |
+        cd pharmpy
+        tox -e docs-build
+    - name: Publish documentation
+      run: |
+        cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
+        cd pharmpy.github.io
+        git config --local user.name "github-actions[bot]"
+        git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git add -A
+        git commit -m "Documentation update"
+        git push https://$USERNAME:$REPO_KEY@github.com/pharmpy/pharmpy.github.io.git
+      env:
+        REPO_KEY: ${{secrets.DOC_TOKEN}}
+        USERNAME: github-actions[bot]

@@ -1,0 +1,30 @@
+name: Publish Docs
+
+on:
+  workflow_dispatch:
+
+jobs:
+
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Checkout pharmpy/pharmpy
+        uses: actions/checkout@v4
+        with:
+            path: pharmpy
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+
+      - name: Install tox
+        shell: bash
+        working-directory: ./pharmpy
+        run: pip install -r pretest-requirements.txt
+
+      - name: Publish documentation
+        uses: ./.github/actions/publish-documentation
