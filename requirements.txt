@@ -62,7 +62,7 @@ partd==1.4.2
 pexpect==4.9.0
 platformdirs==4.2.2
 prompt-toolkit==3.0.47
-psutil==5.9.8
+psutil==6.0.0
 ptyprocess==0.7.0
 pure-eval==0.2.2
 Pygments==2.18.0
