@@ -1191,7 +1191,11 @@ def validate_input(
         if len(ss_mfl.mfl_statement_list()) == 0:
             raise ValueError(f'`search_space` evaluated to be empty : "{search_space}')
 
-        if administration == "oral" and "INST" in (a.name for a in ss_mfl.absorption.modes):
+        if (
+            administration == "oral"
+            and ss_mfl.absorption is not None
+            and "INST" in (a.name for a in ss_mfl.absorption.modes)
+        ):
             raise ValueError(
                 'The given search space have instantaneous absorption (´INST´)'
                 ' which is not allowed with ´oral´ administration.'
