@@ -41,7 +41,7 @@ class EffectComp(ModelFeature):
 
     def __eq__(self, other):
         if isinstance(other, EffectComp):
-            return set(self.modes) == set(other.modes)
+            return set(self.eval.modes) == set(other.eval.modes)
         else:
             return False
 
