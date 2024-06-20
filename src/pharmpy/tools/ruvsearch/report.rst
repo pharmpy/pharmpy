@@ -47,9 +47,10 @@ Eta shrinkage
 .. jupyter-execute::
    :hide-code:
 
-   res.final_model_eta_shrinkage.to_frame(name='eta shrinkage').style.format({
-       'eta shrinkage': '{:,.4f}'.format,
-   })
+   if res.final_model_eta_shrinkage is not None:
+       res.final_model_eta_shrinkage.to_frame(name='eta shrinkage').style.format({
+           'eta shrinkage': '{:,.4f}'.format,
+       })
 
 
 .. jupyter-execute::
