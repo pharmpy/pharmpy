@@ -139,17 +139,17 @@ ALGORITHMS = ('scm-forward', 'scm-forward-then-backward', 'SAMBA')
 
 
 def create_workflow(
-    search_space: Union[str, ModelFeatures],
-    p_forward: float = 0.01,
-    p_backward: float = 0.001,
-    max_steps: int = -1,
-    algorithm: Literal[ALGORITHMS] = 'scm-forward-then-backward',
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
-    max_eval: bool = False,
-    adaptive_scope_reduction: bool = False,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    naming_index_offset: Optional[int] = 0,
+        search_space: Union[str, ModelFeatures],
+        p_forward: float = 0.01,
+        p_backward: float = 0.001,
+        max_steps: int = -1,
+        algorithm: Literal[ALGORITHMS] = 'scm-forward-then-backward',
+        results: Optional[ModelfitResults] = None,
+        model: Optional[Model] = None,
+        max_eval: bool = False,
+        adaptive_scope_reduction: bool = False,
+        strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+        naming_index_offset: Optional[int] = 0,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -267,7 +267,6 @@ def _store_input_model(context, model, results, max_eval):
 
 
 def _start(model, results, max_eval):
-
     if max_eval:
         max_eval_number = round(3.1 * results.function_evaluations_iterations.loc[1])
         # Change last instead of first?
@@ -279,7 +278,7 @@ def _start(model, results, max_eval):
 
 
 def _init_search_state(
-    context, search_space: str, algorithm: str, modelentry: ModelEntry
+        context, search_space: str, algorithm: str, modelentry: ModelEntry
 ) -> SearchState:
     model = modelentry.model
     effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
@@ -293,7 +292,8 @@ def _init_search_state(
         filtered_model = set_estimation_step(
             filtered_model,
             "SAEM",
-            tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1, 'MAXEVAL': 9999},
+            maximum_evaluations=9999,  # Fix ValueError: MAXEVAL already set as attribute in estimation method object
+            tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1},
         )
 
         # Mu-reference model
@@ -361,9 +361,9 @@ def filter_search_space_and_model(search_space, model):
         for eff_descriptor, _ in effect_funcs.items():
             if model:
                 if (
-                    has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
-                    if add
-                    else not has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
+                        has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
+                        if add
+                        else not has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
                 ):
                     d.append(f'({eff_descriptor[1]}-{eff_descriptor[2]}-{eff_descriptor[3]})')
             else:
@@ -402,13 +402,13 @@ def filter_search_space_and_model(search_space, model):
 
 
 def task_greedy_forward_search(
-    context,
-    p_forward: float,
-    max_steps: int,
-    naming_index_offset: int,
-    strictness: Optional[str],
-    adaptive_scope_reduction: bool,
-    state_and_effect: Tuple[SearchState, dict],
+        context,
+        p_forward: float,
+        max_steps: int,
+        naming_index_offset: int,
+        strictness: Optional[str],
+        adaptive_scope_reduction: bool,
+        state_and_effect: Tuple[SearchState, dict],
 ) -> SearchState:
     for temp in state_and_effect:
         if isinstance(temp, SearchState):
@@ -419,10 +419,10 @@ def task_greedy_forward_search(
     assert state.all_candidates_so_far == [candidate]
 
     def handle_effects(
-        step: int,
-        parent: Candidate,
-        candidate_effect_funcs: dict,
-        index_offset: int,
+            step: int,
+            parent: Candidate,
+            candidate_effect_funcs: dict,
+            index_offset: int,
     ):
         index_offset = index_offset + naming_index_offset
         wf = wf_effects_addition(parent.modelentry, parent, candidate_effect_funcs, index_offset)
@@ -446,18 +446,18 @@ def task_greedy_forward_search(
 
 
 def task_greedy_backward_search(
-    context,
-    p_backward: float,
-    max_steps: int,
-    naming_index_offset,
-    strictness: Optional[str],
-    state: SearchState,
+        context,
+        p_backward: float,
+        max_steps: int,
+        naming_index_offset,
+        strictness: Optional[str],
+        state: SearchState,
 ) -> SearchState:
     def handle_effects(
-        step: int,
-        parent: Candidate,
-        candidate_effect_funcs: List[EffectLiteral],
-        index_offset: int,
+            step: int,
+            parent: Candidate,
+            candidate_effect_funcs: List[EffectLiteral],
+            index_offset: int,
     ):
         index_offset = index_offset + naming_index_offset
         wf = wf_effects_removal(parent, candidate_effect_funcs, index_offset)
@@ -507,13 +507,13 @@ def task_greedy_backward_search(
 
 
 def _greedy_search(
-    state: SearchState,
-    handle_effects: Callable[[int, Candidate, List[EffectLiteral], int], List[Candidate]],
-    candidate_effect_funcs: dict,
-    alpha: float,
-    max_steps: int,
-    strictness: Optional[str],
-    adaptive_scope_reduction: bool = False,
+        state: SearchState,
+        handle_effects: Callable[[int, Candidate, List[EffectLiteral], int], List[Candidate]],
+        candidate_effect_funcs: dict,
+        alpha: float,
+        max_steps: int,
+        strictness: Optional[str],
+        adaptive_scope_reduction: bool = False,
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
     all_candidates_so_far = list(
@@ -546,7 +546,7 @@ def _greedy_search(
             effect_description: effect_func
             for effect_description, effect_func in nonsignificant_effects.items()
             if effect_description[0] not in parameter_steps_taken
-            or effect_description[1] not in cov_steps_taken
+               or effect_description[1] not in cov_steps_taken
         }
 
         if nonsignificant_effects:
@@ -575,17 +575,16 @@ def _greedy_search(
 
 
 def perform_step_procedure(
-    steps,
-    candidate_effect_funcs,
-    handle_effects,
-    all_candidates_so_far,
-    best_candidate_so_far,
-    strictness,
-    alpha,
-    adaptive_scope_reduction,
-    add_adaptive_step=False,
+        steps,
+        candidate_effect_funcs,
+        handle_effects,
+        all_candidates_so_far,
+        best_candidate_so_far,
+        strictness,
+        alpha,
+        adaptive_scope_reduction,
+        add_adaptive_step=False,
 ):
-
     nonsignificant_effects = {}
 
     for step in steps:
@@ -617,7 +616,7 @@ def perform_step_procedure(
             (
                 np.nan
                 if modelentry.modelfit_results is None
-                or not is_strictness_fulfilled(
+                   or not is_strictness_fulfilled(
                     modelentry.model, modelentry.modelfit_results, strictness
                 )
                 else modelentry.modelfit_results.ofv
@@ -650,10 +649,10 @@ def perform_step_procedure(
             if not is_backward:
                 for new_cand in new_candidates:
                     if alpha <= lrt_p_value(
-                        parent_modelentry.model,
-                        new_cand.modelentry.model,
-                        parent_modelentry.modelfit_results.ofv,
-                        new_cand.modelentry.modelfit_results.ofv,
+                            parent_modelentry.model,
+                            new_cand.modelentry.model,
+                            parent_modelentry.modelfit_results.ofv,
+                            new_cand.modelentry.modelfit_results.ofv,
                     ):
                         last_step_effect = new_cand.steps[-1].effect
                         key = (
@@ -673,7 +672,7 @@ def perform_step_procedure(
             effect_description: effect_func
             for effect_description, effect_func in candidate_effect_funcs.items()
             if effect_description[0] != last_step_effect.parameter
-            or effect_description[1] != last_step_effect.covariate
+               or effect_description[1] != last_step_effect.covariate
         }
 
         # Filter away any stashed effects as well
@@ -689,10 +688,10 @@ def perform_step_procedure(
 
 
 def wf_effects_addition(
-    modelentry: ModelEntry,
-    candidate: Candidate,
-    candidate_effect_funcs: dict,
-    index_offset: int,
+        modelentry: ModelEntry,
+        candidate: Candidate,
+        candidate_effect_funcs: dict,
+        index_offset: int,
 ):
     wb = WorkflowBuilder()
 
@@ -716,7 +715,7 @@ def wf_effects_addition(
 
 
 def task_add_covariate_effect(
-    modelentry: ModelEntry, candidate: Candidate, effect: dict, effect_index: int
+        modelentry: ModelEntry, candidate: Candidate, effect: dict, effect_index: int
 ):
     model = modelentry.model
     name = f'covsearch_run{effect_index}'
@@ -759,9 +758,9 @@ def _create_description(effect_new: dict, steps_prev: Tuple[Step, ...], forward:
 
 
 def wf_effects_removal(
-    parent: Candidate,
-    candidate_effect_funcs: dict,
-    index_offset: int,
+        parent: Candidate,
+        candidate_effect_funcs: dict,
+        index_offset: int,
 ):
     wb = WorkflowBuilder()
 
@@ -801,12 +800,12 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
 
 
 def samba_search(
-    context,
-    max_steps,
-    p_forward,
-    strictness,
-    adaptive_scope_reduction,
-    state_and_effect: Tuple[SearchState, dict],
+        context,
+        max_steps,
+        p_forward,
+        strictness,
+        adaptive_scope_reduction,
+        state_and_effect: Tuple[SearchState, dict],
 ):
     for temp in state_and_effect:
         if isinstance(temp, SearchState):
@@ -878,12 +877,12 @@ def samba_search(
             )
 
             new_proxy_candidates = [base_candidate] + all_candidates_so_far[
-                no_candidates_so_far:
-            ]  # Ignore previous candidates
+                                                      no_candidates_so_far:
+                                                      ]  # Ignore previous candidates
             all_candidates_so_far = (
-                all_candidates_so_far[:no_candidates_so_far]
-                + [base_candidate]
-                + all_candidates_so_far[no_candidates_so_far:]
+                    all_candidates_so_far[:no_candidates_so_far]
+                    + [base_candidate]
+                    + all_candidates_so_far[no_candidates_so_far:]
             )  # ONÖDIGT
             all_nonsignificant_effects.update(nonsignificant_effects)
             all_proxy_models[current_step] = new_proxy_candidates
@@ -940,11 +939,11 @@ def samba_search(
         )
 
         if not lrt_test(
-            best_candidate.modelentry.model,
-            candidate_best_model_entry.model,
-            best_candidate.modelentry.modelfit_results.ofv,
-            candidate_best_model_entry.modelfit_results.ofv,
-            p_forward,
+                best_candidate.modelentry.model,
+                candidate_best_model_entry.model,
+                best_candidate.modelentry.modelfit_results.ofv,
+                candidate_best_model_entry.modelfit_results.ofv,
+                p_forward,
         ):
             break
 
@@ -1130,8 +1129,8 @@ def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
     ]
     index_offset = 0
     if not any(
-        children_count[c.modelentry.model.name] >= 1 or c.modelentry.model is best_model
-        for c in largest_forward_candidates
+            children_count[c.modelentry.model.name] >= 1 or c.modelentry.model is best_model
+            for c in largest_forward_candidates
     ):
         index_offset = 1
 
@@ -1149,11 +1148,11 @@ def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
 
 
 def _make_df_steps_row(
-    modelentries_dict: dict,
-    children_count: Counter,
-    best_model: Model,
-    candidate: Candidate,
-    index_offset=0,
+        modelentries_dict: dict,
+        children_count: Counter,
+        best_model: Model,
+        candidate: Candidate,
+        index_offset=0,
 ):
     modelentry = candidate.modelentry
     model = modelentry.model
@@ -1211,9 +1210,9 @@ def _make_df_steps_row(
         'step': (
             len(candidate.steps)
             if candidate.steps == tuple()
-            or isinstance(candidate.steps[-1], ForwardStep)
-            or isinstance(candidate.steps[-1], AdaptiveStep)
-            or isinstance(candidate.steps[-1], SambaStep)
+               or isinstance(candidate.steps[-1], ForwardStep)
+               or isinstance(candidate.steps[-1], AdaptiveStep)
+               or isinstance(candidate.steps[-1], SambaStep)
             else len(candidate.steps) + index_offset
         ),
         'parameter': parameter,
@@ -1236,7 +1235,7 @@ def _make_df_steps_row(
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    search_space, p_forward, p_backward, algorithm, model, strictness, naming_index_offset
+        search_space, p_forward, p_backward, algorithm, model, strictness, naming_index_offset
 ):
     if not 0 < p_forward <= 1:
         raise ValueError(
