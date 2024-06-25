@@ -292,7 +292,6 @@ def _init_search_state(
         filtered_model = set_estimation_step(
             filtered_model,
             "SAEM",
-            maximum_evaluations=9999,  # Fix ValueError: MAXEVAL already set as attribute in estimation method object
             tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1},
         )
 
