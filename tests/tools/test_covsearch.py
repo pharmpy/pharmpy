@@ -177,6 +177,17 @@ def test_covariate_filtering(load_model_for_test, testdata):
     assert len(get_covariate_effects(filtered_model)) == 2
     assert len(eff) == 0
 
+    # exploratory covariates should be removed before covsearch if present in model
+    for cov_effect in get_covariate_effects(model):
+        model = remove_covariate_effect(model, cov_effect[0], cov_effect[1].name)
+
+    model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
+    assert len(get_covariate_effects(model)) == 1
+    search_space = 'COVARIATE?([CL, V], WGT, pow, *)'
+    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    assert len(get_covariate_effects(filtered_model)) == 0
+    assert len(eff) == 2
+
 
 def test_max_eval(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')

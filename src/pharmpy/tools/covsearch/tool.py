@@ -314,91 +314,38 @@ def filter_search_space_and_model(search_space, model):
     if isinstance(search_space, str):
         search_space = ModelFeatures.create_from_mfl_string(search_space)
     ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
+
+    # Clean up all covariate effect in model
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
-
-    # Remove all covariates not part of the search space
-    to_be_removed = model_mfl - ss_mfl
-    covariate_list = to_be_removed.mfl_statement_list(["covariate"])
+    covariate_to_remove = model_mfl.mfl_statement_list(["covariate"])
     description = []
-    if len(covariate_list) != 0:
+    if len(covariate_to_remove) != 0:
         description.append("REMOVED")
-        for cov_effect in parse_spec(spec(filtered_model, covariate_list)):
-            if cov_effect[2].lower() == "custom":
-                try:
-                    filtered_model = remove_covariate_effect(
-                        filtered_model, cov_effect[0], cov_effect[1]
-                    )
-                    description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
-
-                except AssertionError:
-                    # All custom effects are grouped and therefor might not exist
-                    # FIXME : remove_covariate_effect not raise if non-existing ?
-                    pass
-            else:
-                filtered_model = remove_covariate_effect(
-                    filtered_model, cov_effect[0], cov_effect[1]
-                )
-                description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+        for cov_effect in parse_spec(spec(filtered_model, covariate_to_remove)):
+            filtered_model = remove_covariate_effect(
+                filtered_model, cov_effect[0], cov_effect[1]
+            )
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
         filtered_model = filtered_model.replace(description=';'.join(description))
 
-    all_forced_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
-    all_forced = all_funcs(Model(), all_forced_cov)
-    added_comb = set(k[1:3] for k in all_forced.keys())
+    # Add structural covariates in search space if any
+    structural_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
+    structural_cov_funcs = all_funcs(Model(), structural_cov)
+    if len(structural_cov_funcs) != 0:
+        description.append("ADDED")
+        for cov_effect, cov_func in structural_cov_funcs.items():
+            filtered_model = cov_func(filtered_model)
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+        filtered_model = filtered_model.replace(description=";".join(description))
 
-    ss_cov = ss_mfl - model_mfl
-    forced_add_cov = tuple([c for c in ss_cov.covariate if not c.optional.option])
-    mandatory_funcs = all_funcs(Model(), forced_add_cov)
+    # Exploratory covariates
+    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
+    exploratory_cov_funcs = all_funcs(Model(), exploratory_cov)
+    exploratory_cov_funcs = {cov_effect[1:-1]: cov_func
+                             for cov_effect, cov_func in exploratory_cov_funcs.items()
+                             if cov_effect[-1] == "ADD"}
 
-    optional_cov_list = tuple(c for c in ss_cov.covariate if c.optional.option)
-    optional_cov = ModelFeatures.create(covariate=optional_cov_list)
-    optional_funcs = optional_cov.convert_to_funcs()
-    optional_funcs = {k: v for k, v in optional_funcs.items() if not k[1:3] in added_comb}
-    optional_remove = {k: v for k, v in optional_funcs.items() if k[-1] == "REMOVE"}
-    optional_add = {k: v for k, v in optional_funcs.items() if k[-1] == "ADD"}
-
-    def func_description(effect_funcs, model=None, add=True):
-        d = []
-        for eff_descriptor, _ in effect_funcs.items():
-            if model:
-                if (
-                        has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
-                        if add
-                        else not has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
-                ):
-                    d.append(f'({eff_descriptor[1]}-{eff_descriptor[2]}-{eff_descriptor[3]})')
-            else:
-                d.append(f'({eff_descriptor[1]}-{eff_descriptor[2]}-{eff_descriptor[3]})')
-        return d
-
-    # Remove all optional covariates
-    if len(optional_remove) != 0:
-        potential_extension = func_description(optional_remove, filtered_model, add=True)
-        for _, optional_func in optional_remove.items():
-            filtered_model = optional_func(filtered_model)
-        if len(potential_extension) != 0:
-            if not description:
-                description.append("REMOVED")
-            description.extend(potential_extension)
-
-    # Add all mandatory covariates
-    if len(mandatory_funcs) != 0:
-        change_description = True
-        for eff_descriptor, mandatory_func in mandatory_funcs.items():
-            if not has_covariate_effect(filtered_model, eff_descriptor[1], eff_descriptor[2]):
-                if change_description:
-                    description.append("ADDED")
-                    description.extend(func_description(mandatory_funcs, filtered_model, add=False))
-                    change_description = False
-                filtered_model = mandatory_func(filtered_model)
-
-    # Filter unneccessary keys from fuctions
-    optional_add = {k[1:-1]: v for k, v in optional_add.items()}
-
-    if len(description) > 1:
-        filtered_model = filtered_model.replace(description=';'.join(description))
-        return (optional_add, filtered_model)
-    else:
-        return (optional_add, model)
+    return (exploratory_cov_funcs, filtered_model)
 
 
 def task_greedy_forward_search(
