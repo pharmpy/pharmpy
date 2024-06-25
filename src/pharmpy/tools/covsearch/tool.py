@@ -956,15 +956,16 @@ def _create_samba_proxy_model(modelentry, param, covariates, step):
 
 
 def _create_samba_dataset(model_entry, param, covariates):
-    # Store ETA as DV
-    # Store all covariates (that are needed)
-
+    # Get ETA values associated with the interested model parameter
     eta_name = get_parameter_rv(model_entry.model, param)[0]
-
     eta_column = model_entry.modelfit_results.individual_estimates[eta_name]
     eta_column = eta_column.rename("DV")
+
+    # Get the covariates dataset
+    covariates = list(set(covariates))  # drop duplicated covariates
     covariate_columns = model_entry.model.dataset[["ID"] + covariates]
 
+    # Merge ETAs and covariate dataset
     dataset = covariate_columns.join(eta_column, "ID")
 
     return dataset
