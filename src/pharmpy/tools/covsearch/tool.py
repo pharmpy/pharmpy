@@ -27,7 +27,9 @@ from pharmpy.modeling import (
     has_covariate_effect,
     mu_reference_model,
     remove_covariate_effect,
+    add_estimation_step,
     set_estimation_step,
+    remove_estimation_step,
 )
 from pharmpy.modeling.covariate_effect import (
     add_covariate_effect,
@@ -289,11 +291,10 @@ def _init_search_state(
         filtered_model = filtered_model.replace(name="Base_SAMBA_model")
 
         # Switch to SAEM (and hence mean posterior etas)
-        filtered_model = set_estimation_step(
-            filtered_model,
-            "SAEM",
-            tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1},
-        )
+        filtered_model = remove_estimation_step(filtered_model, idx=0)
+        filtered_model = add_estimation_step(filtered_model, method="SAEM", idx=0,
+                                         tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1},
+                                         )
 
         # Mu-reference model
         filtered_model = mu_reference_model(filtered_model)
