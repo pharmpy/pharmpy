@@ -76,14 +76,6 @@ class Effect:
     operation: str
 
 
-class AddEffect(Effect):
-    pass
-
-
-class RemoveEffect(Effect):
-    pass
-
-
 class DummyEffect(Effect):
     pass
 
@@ -94,39 +86,8 @@ class Step:
     effect: Effect
 
 
-class ForwardStep(Step):
-    pass
-
-
-class BackwardStep(Step):
-    pass
-
-
-class AdaptiveStep(Step):
-    pass
-
-
 class SambaStep(Step):
     pass
-
-
-def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
-    added_effects = defaultdict(list)
-    for i, step in enumerate(steps):
-        if isinstance(step, ForwardStep):
-            added_effects[astuple(step.effect)].append(i)
-        elif isinstance(step, BackwardStep):
-            added_effects[astuple(step.effect)].pop()
-        elif isinstance(step, (AdaptiveStep, SambaStep)):
-            pass
-        else:
-            raise ValueError("Unknown step ({step}) added")
-
-    pos = {effect: set(indices) for effect, indices in added_effects.items()}
-
-    for i, step in enumerate(steps):
-        if isinstance(step, ForwardStep) and i in pos[astuple(step.effect)]:
-            yield step.effect
 
 
 @dataclass
@@ -182,11 +143,8 @@ def samba_workflow(
     return Workflow(wb)
 
 
-# Commonly used
-# Tested: it returns the same as separately running _store_input_model and _start
-# thus, it is safe to modify the samba workflow
 def _store_input_model(context, model, results):
-    # store the input model
+    """Store the input model"""
     model = model.replace(name="input_model", description="")
     input_me = ModelEntry.create(model=model, modelfit_results=results)
     context.store_input_model_entry(input_me)
@@ -194,16 +152,15 @@ def _store_input_model(context, model, results):
     return input_me
 
 
-# TESTING MODE
 def _init_search_state(
-        # context,
+        context,
         alpha: float,
         search_space: str,
         modelentry: ModelEntry
 ):
     model = modelentry.model
     exploratory_cov_funcs, linear_cov_funcs, filtered_model = filter_search_space_and_model(search_space,
-                                                                                            model)  # exploratory effect functions, filtered model (cleaned cov effects)
+                                                                                            model)
 
     # nonlinear search state
     filtered_model = filtered_model.replace(name="samba_start_model")
@@ -213,20 +170,23 @@ def _init_search_state(
                                          tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1},
                                          )
 
-    # TESTING STARTS =======================
-    filtered_model_result = fit(filtered_model)
-    filtered_modelentry = ModelEntry.create(model=filtered_model, modelfit_results=filtered_model_result)
-    # TESTING ENDS  ========================
-    # REPLACE TEST CHUNK ===================
-    # filtered_modelentry = ModelEntry.create(model=filtered_model)
-    # filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
-    # filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+    # MANUAL RUN STARTS =======================
+    # filtered_model_result = fit(filtered_model)
+    # filtered_modelentry = ModelEntry.create(model=filtered_model, modelfit_results=filtered_model_result)
+    # MANUAL RUN ENDS  ========================
+    
+    # WORKFLOW() STARTS =======================
+    filtered_modelentry = ModelEntry.create(model=filtered_model)
+    filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
+    filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+    # WORKFLOW() ENDS   =======================
+    
     nonlinear_model_candidate = Candidate(filtered_modelentry, ())
     nonlinear_search_state = SearchState(modelentry, filtered_modelentry, nonlinear_model_candidate,
                                          [nonlinear_model_candidate])
 
     # linear_modelentries dict {param: [modelentries]}
-    param_indexed_funcs = {}  # container for cov_effect : cov_func pairs indexed by parameters {param: {cov_effect: cov_func}}
+    param_indexed_funcs = {}  # {param: {cov_effect: cov_func}}
     param_cov_list = {}  # {param : [covariates]}
     for cov_effect, cov_func in linear_cov_funcs.items():
         param = cov_effect[0]
@@ -242,14 +202,14 @@ def _init_search_state(
     for param, covariates in param_cov_list.items():
         param_base_model = _create_samba_base_model(filtered_modelentry, param, covariates)
         param_base_modelentry = ModelEntry.create(
-            model=param_base_model)  # update dataset and fit all linear models in samba step
+            model=param_base_model)
         proxy_model_dict[param] = [param_base_modelentry]
 
         # create linear covariate models for each parameter ("lin", "+")
         for cov_effect, linear_func in param_indexed_funcs[param].items():
             param_cov_model = linear_func(model=param_base_model)
-            name = "-".join(cov_effect[0:3])
-            param_cov_model = param_cov_model.replace(name=name)
+            description = "_".join(cov_effect[0:3])
+            param_cov_model = param_cov_model.replace(description=description)
             param_cov_modelentry = ModelEntry.create(model=param_cov_model)
             proxy_model_dict[param].append(param_cov_modelentry)
 
@@ -257,7 +217,11 @@ def _init_search_state(
 
 
 # init linear search state first, then use model = model.replace(dataset) to update the linear search state
-def samba_step(state_and_funcs):
+def samba_step(
+    context, 
+    step,
+    state_and_effect,
+):
     nonlinear_search_state, proxy_model_dict, exploratory_cov_funcs, param_cov_list = state_and_effect
     best_nlme_modelentry = nonlinear_search_state.best_candidate_so_far.modelentry
     print(best_nlme_modelentry.modelfit_results.ofv)
@@ -266,21 +230,32 @@ def samba_step(state_and_funcs):
         # update dataset
         updated_dataset = _create_samba_dataset(best_nlme_modelentry, param, covariates)
         # update linear covariate models
-        proxy_model_dict[param] = [ModelEntry.create(model=modelentry.model.replace(dataset=updated_dataset))
-                                   for modelentry in proxy_model_dict[param]]
+        covs = ["Base"] + covariates
+        proxy_model_dict[param] = [ModelEntry.create(model=me.model.replace(dataset=updated_dataset, 
+                                                                            name=f"step {step}_Lin_{param}_{covs[i]}"))
+                                   for i, me in enumerate(proxy_model_dict[param])]
     selected_explor_cov_funcs = []
     # fit linear covariate models
-    # FIXME: MINIMIZATION TERMINATED with potentially wrong OVF values
-    # TODO: Transform to Task() and Workflow()
+    # NOTE: MINIMIZATION TERMINATED may result in potentially wrong OVF values
     for param, linear_modelentries in proxy_model_dict.items():
-        # MANUAL RUN CHUNK STARTS =======
-        linear_modelentries = [modelentry.attach_results(fit(modelentry.model))
-                               for modelentry in linear_modelentries]
-        # MANUAL RUN CHUNK ENDS   =======
-        ###### Task() and Workflow() STARTS
-        # linear_fit_wf = create_fit_workflow(linear_modelentries)
-        # linear_modelentries = call_workflow(linear_fit_wf, 'fit_linear_models', context)
-        ###### Task() and Workflow() ENDS
+        # MANUAL RUN STARTS =======================
+        # linear_modelentries = [modelentry.attach_results(fit(modelentry.model))
+        #                        for modelentry in linear_modelentries]
+        # MANUAL RUN ENDS   =======================
+        
+        # WORKFLOW() STARTS =======================
+        # TODO: optimize the clumsy workflow building chuncks, a wf_func for similar code chunk (if not isintance(input, modelentry): to_modelentry)
+        wb = WorkflowBuilder()
+        for i in linear_modelentries:
+            task = Task("fit_linear_mes", lambda x: x, i)
+            wb.add_task(task)
+        linear_fit_wf = create_fit_workflow(n=len(linear_modelentries))
+        wb.insert_workflow(linear_fit_wf)
+        task_gather = Task("gather", lambda *models: models)
+        wb.add_task(task_gather, predecessors=wb.output_tasks)
+        linear_modelentries = call_workflow(Workflow(wb), 'fit_linear_models', context)
+        # WORKFLOW() ENDS   =======================
+        
         proxy_model_dict[param] = linear_modelentries
 
         # covariate model selection: best of many
@@ -292,31 +267,52 @@ def samba_step(state_and_funcs):
                 for modelentry in linear_modelentries]
         selected_cov = lrt_best_of_many(parent=linear_modelentries[0], models=linear_modelentries[1:],
                                         parent_ofv=ofvs[0], model_ofvs=ofvs[1:], alpha=0.5)
-        cov_model_index = selected_cov.model.name
+        cov_model_index = selected_cov.model.description
         print("Selected Covariate Effect: ", cov_model_index)
         if "base" not in cov_model_index:
-            selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
+            # selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
+            selected_explor_cov_funcs.append((exploratory_cov_funcs[cov_model_index], cov_model_index))
         else:
             selected_explor_cov_funcs.append(None)
 
     # nonlinear mixed effect model selection: best of two
     if any(selected_explor_cov_funcs):
-        # TODO: Transform to Task() and Workflow()
-        selected_explor_cov_funcs = [f for f in selected_explor_cov_funcs if f is not None]
-        new_nonlin_models = list(map(lambda cov_func: cov_func(best_nlme_modelentry.model), selected_explor_cov_funcs))
-        new_model_results = list(map(lambda model: fit(model), new_nonlin_models))
-        ofvs = [results.ofv for results in new_model_results]
-        new_nonlin_modelentries = [ModelEntry.create(model=model, modelfit_results=result) for model, result in
-                                   zip(new_nonlin_models, new_model_results)]
-        # Task() and Workflow() STARTS =======
-        # new_nonlin_modelentries = list(map(lambda model: ModelEntry.create(model), new_nonlin_models))
-        # nonlin_fit_wf = create_fit_workflow(new_nonlin_modelentries)
-        # new_nonlin_modelentries = call_workflow(nonlin_fit_wf, 'fit_nonlinear_models', context)
-        # ofvs = [modelentry.modelfit_results.ofv 
-        #         if modelentry.modelfit_results is not None
-        #         else np.nan
-        #         for modelentry in new_nonlin_modelentries]
-        # Task() and Workflow() ENDS   =======
+        # selected_explor_cov_funcs = [f for f in selected_explor_cov_funcs if f is not None]
+        # new_nonlin_models = list(map(lambda cov_func: cov_func(best_nlme_modelentry.model), selected_explor_cov_funcs))
+        new_nonlin_models = []
+        for fn_lbl in selected_explor_cov_funcs:
+            if fn_lbl is not None:
+                cov_func, cov_effect = fn_lbl
+                nonlin_model_added_effect = cov_func(best_nlme_modelentry.model)
+                nonlin_model_added_effect = nonlin_model_added_effect.replace(name=f"step {step}_NLin_{cov_effect}")
+                new_nonlin_models.append(nonlin_model_added_effect)
+        # new_nonlin_models = list(map(lambda model: model.relpace(name=f"step {step}_NonLin"), new_nonlin_models))
+        # MANUAL RUN STARTS =======================
+        # new_model_results = list(map(lambda model: fit(model), new_nonlin_models))
+        # ofvs = [results.ofv for results in new_model_results]
+        # new_nonlin_modelentries = [ModelEntry.create(model=model, modelfit_results=result) for model, result in
+        #                            zip(new_nonlin_models, new_model_results)]
+        # MANUAL RUN ENDS   =======================
+        
+        # WORKFLOW() STARTS =======================
+        # TODO: a wf_func for similar code chunk (if not isintance(input, modelentry): to_modelentry)
+        # TODO: a proper stop for samba search
+        wb = WorkflowBuilder()
+        model_to_modelentry = lambda model: ModelEntry.create(model)
+        for i, nonlin_model in enumerate(new_nonlin_models):
+            nonlin_me_task = Task("to_nonlin_modelentry", model_to_modelentry, nonlin_model)
+            wb.add_task(nonlin_me_task)
+        nonlin_fit_wf = create_fit_workflow(n=len(new_nonlin_models))
+        wb.insert_workflow(nonlin_fit_wf)
+        task_gather = Task("gather", lambda *models: models)
+        wb.add_task(task_gather, predecessors=wb.output_tasks)
+        new_nonlin_modelentries = call_workflow(Workflow(wb), 'fit_nonlinear_models', context)
+        # WORKFLOW() ENDS   =======================
+        
+        ofvs = [modelentry.modelfit_results.ofv 
+                if modelentry.modelfit_results is not None
+                else np.nan
+                for modelentry in new_nonlin_modelentries]
 
         best_nlme_modelentry = lrt_best_of_many(parent=best_nlme_modelentry,
                                                 models=new_nonlin_modelentries,
@@ -326,6 +322,9 @@ def samba_step(state_and_funcs):
         print(best_nlme_modelentry.modelfit_results.ofv)
 
     # update search states
+    # WORKFLOW() STARTS =======================
+    context.store_model_entry(ModelEntry.create(model=best_nlme_modelentry.model.replace(name=f"step {step}_selection")))
+    # WORKFLOW() ENDS   =======================
     best_candidate_so_far = Candidate(best_nlme_modelentry, ())
     nonlinear_search_state = replace(nonlinear_search_state,
                                      best_candidate_so_far=best_candidate_so_far)
@@ -334,10 +333,18 @@ def samba_step(state_and_funcs):
     return (nonlinear_search_state, proxy_model_dict, exploratory_cov_funcs, param_cov_list)
 
 
-def samba_search(max_steps, state_and_effect):
+# TODO: add alpha option, adjust the samba_step procedure to allow the setting p_values
+def samba_search(
+    context, 
+    max_steps, 
+    state_and_effect,
+):
     steps = range(1, max_steps + 1)
     for step in steps:
-        state_and_effect = samba_step(state_and_effect)
+        state_and_effect = samba_step(
+            context, 
+            step, 
+            state_and_effect)
     return state_and_effect
 
 
@@ -388,7 +395,7 @@ def filter_search_space_and_model(search_space, model):
                         for cov_effect in exploratory_cov_funcs.keys()}
 
     # indexed exploratory cov_funcs
-    indexed_explor_cov_funcs = {"-".join(cov_effect[0:3]): cov_func
+    indexed_explor_cov_funcs = {"_".join(cov_effect[0:3]): cov_func
                                 for cov_effect, cov_func in exploratory_cov_funcs.items()}
 
     return (indexed_explor_cov_funcs, linear_cov_funcs, filtered_model)
@@ -441,7 +448,7 @@ def _create_samba_base_model(
                           expression=Expr.symbol("IPRED") + Expr.symbol("epsilon"))
     statements = Statements([base, ipred, y])
 
-    name = f"samba_{param}_base"
+    name = f"samba_{param}_Base_Lin"
     est = EstimationStep.create(method="FO", maximum_evaluations=9999,
                                 tool_options={"NSIG": 6, "PRINT": 1, "NOHABORT": 0})
 
@@ -472,86 +479,22 @@ def _create_proxy_model_table(candidates, steps, proxy_models):
     return steps_df
 
 
-def _create_description(effect_new: dict, steps_prev: Tuple[Step, ...], forward: bool = True):
-    # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp);(MAT-AGE-exp-+)'
-    def _create_effect_str(effect):
-        if isinstance(effect, Tuple):
-            param, cov, fp, op = effect
-        elif isinstance(effect, Effect):
-            param, cov, fp, op = effect.parameter, effect.covariate, effect.fp, effect.operation
-        else:
-            raise ValueError('Effect must be a tuple or Effect dataclass')
-        effect_base = f'{param}-{cov}-{fp}'
-        if op == '+':
-            effect_base += f'-{op}'
-        return f'({effect_base})'
-
-    effect_new_str = _create_effect_str(effect_new)
-    effects = []
-    for effect_prev in _added_effects(steps_prev):
-        effect_prev_str = _create_effect_str(effect_prev)
-        if not forward and effect_prev_str == effect_new_str:
-            continue
-        effects.append(effect_prev_str)
-    if forward:
-        effects.append(effect_new_str)
-    return ';'.join(effects)
-
-
-def wf_effects_addition(
-        modelentry: ModelEntry,
-        candidate: Candidate,
-        candidate_effect_funcs: dict,
-        index_offset: int,
-):
-    wb = WorkflowBuilder()
-
-    for i, effect in enumerate(candidate_effect_funcs.items(), 1):
-        task = Task(
-            repr(effect[0]),
-            task_add_covariate_effect,
-            modelentry,
-            candidate,
-            effect,
-            index_offset + i,
-        )
-        wb.add_task(task)
-
-    wf_fit = create_fit_workflow(n=len(candidate_effect_funcs))
-    wb.insert_workflow(wf_fit)
-
-    task_gather = Task('gather', lambda *models: models)
-    wb.add_task(task_gather, predecessors=wb.output_tasks)
-    return Workflow(wb)
-
-
-def task_add_covariate_effect(
-        modelentry: ModelEntry, candidate: Candidate, effect: dict, effect_index: int
-):
-    model = modelentry.model
-    name = f'covsearch_run{effect_index}'
-    description = _create_description(effect[0], candidate.steps)
-    model_with_added_effect = model.replace(name=name, description=description)
-    model_with_added_effect = update_initial_estimates(
-        model_with_added_effect, modelentry.modelfit_results
-    )
-    func = effect[1]
-    model_with_added_effect = func(model_with_added_effect, allow_nested=True)
-    return ModelEntry.create(
-        model=model_with_added_effect, parent=candidate.modelentry.model, modelfit_results=None
-    )
-
-
 if __name__ == "__main__":
     #%%
     from pharmpy.modeling import load_example_model, print_model_code, read_model
     from pharmpy.tools import load_example_modelfit_results, fit
+    from pharmpy.workflows import execute_workflow
     import os
     import shutil
 
     for name in os.listdir():
         if name.startswith("modelfit"):
             shutil.rmtree(name)
+    
+    for name in os.listdir():
+        if name.startswith("samba_covsearch"):
+            shutil.rmtree(name)
+    
     #%%
     # model = load_example_model("pheno")
     # results = load_example_modelfit_results("pheno")
@@ -560,15 +503,28 @@ if __name__ == "__main__":
     model = read_model("sambas.ctl")
     modelentry = ModelEntry.create(model=model)
     search_space = "COVARIATE?([CL, V], [WT, AGE], POW); COVARIATE?([CL,V], SEX, EXP)"
+    
+    #%% WORKFLOW TESTING
+    # SAMBA WORKFLOW INIT
+    wf = samba_workflow(search_space=search_space,
+                        p_forward=0.05,
+                        max_steps=2,
+                        model=model,
+                        )
+    #%% WORKFLOW TESTING
+    # SAMBA WORKFLOW EXECUTE
+    execute_workflow(wf)
 
-    #%%
-    state_and_effect = _init_search_state(0.05, search_space, modelentry)
-    #%%
+    #%% MANUAL RUN TESTING
+    # # STATE INIT
+    # state_and_effect = _init_search_state(0.05, search_space, modelentry)
+    #%% MANUAL RUN TESTING
+    # # SIGNLE STEP
     # step = samba_step(state_and_effect)
 
-    for i in range(3):
-        state_and_effect = samba_step(state_and_effect)
+    # # MULTIPLE STEPS
+    # for i in range(3):
+    #     state_and_effect = samba_step(state_and_effect)
 
-    # final_step = samba_search(max_steps=3, state_and_effect=state_and_effect)  # FIXME: not working because the state_and_effect doesn't update itself at each step
-
-# %%
+    # # MULTIPLE STEPS FUNC
+    # final_step = samba_search(max_steps=2, state_and_effect=state_and_effect)
