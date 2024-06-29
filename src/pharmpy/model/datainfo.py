@@ -576,7 +576,7 @@ class DataInfo(Sequence, Immutable):
                 'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
             )
         if columns is None or len(columns) == 0:
-            cols: tuple[ColumnInfo, ...] = ()
+            cols = ()
         elif len(columns) > 0 and any(isinstance(col, str) for col in columns):
             cols = tuple(ColumnInfo.create(col) if isinstance(col, str) else col for col in columns)
         else:
