@@ -554,12 +554,10 @@ class DataInfo(Sequence, Immutable):
         columns: tuple[ColumnInfo, ...] = (),
         path: Optional[Path] = None,
         separator: str = ',',
-        force_absolute_path: bool = True,
     ):
         self._columns = columns
         self._path = path
         self._separator = separator
-        self._force_absolute_path = force_absolute_path
 
     @classmethod
     def create(
@@ -567,7 +565,6 @@ class DataInfo(Sequence, Immutable):
         columns: Optional[Union[Sequence[ColumnInfo], Sequence[str]]] = None,
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
-        force_absolute_path: bool = True,
     ):
         if columns and not all(
             isinstance(col, str) or isinstance(col, ColumnInfo) for col in columns
@@ -583,7 +580,6 @@ class DataInfo(Sequence, Immutable):
             cols = cast(tuple[ColumnInfo, ...], tuple(columns))
         if path is not None:
             path = Path(path)
-        assert not force_absolute_path or path is None or path.is_absolute()
         return cls(columns=cols, path=path, separator=separator)
 
     def replace(self, **kwargs) -> DataInfo:
@@ -963,7 +959,7 @@ class DataInfo(Sequence, Immutable):
         if path:
             path = Path(path)
         separator = d.get('separator', ',')
-        di = DataInfo.create(columns, path=path, separator=separator, force_absolute_path=False)
+        di = DataInfo.create(columns, path=path, separator=separator)
         return di
 
     @staticmethod
