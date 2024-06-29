@@ -581,7 +581,6 @@ class DataInfo(Sequence, Immutable):
             cols = tuple(ColumnInfo.create(col) if isinstance(col, str) else col for col in columns)
         else:
             cols = cast(tuple[ColumnInfo, ...], tuple(columns))
-        assert isinstance(cols, tuple)
         if path is not None:
             path = Path(path)
         assert not force_absolute_path or path is None or path.is_absolute()
