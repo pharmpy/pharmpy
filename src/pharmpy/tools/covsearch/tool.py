@@ -3,18 +3,36 @@ from dataclasses import astuple, dataclass, replace
 from itertools import count
 from typing import Any, Callable, Iterable, List, Literal, Optional, Tuple, Union
 
+from pharmpy.basic.expr import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
-from pharmpy.model import Model
+from pharmpy.model import (
+    Assignment,
+    EstimationStep,
+    ExecutionSteps,
+    Model,
+    NormalDistribution,
+    Parameter,
+    Parameters,
+    RandomVariables,
+    Statements,
+)
 from pharmpy.modeling import (
+    convert_model,
+    get_parameter_rv,
     get_pk_parameters,
+    get_sigmas,
     has_covariate_effect,
+    mu_reference_model,
     remove_covariate_effect,
     set_estimation_step,
 )
-from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
+from pharmpy.modeling.covariate_effect import (
+    add_covariate_effect,
+    get_covariates_allowed_in_covariate_effect,
+)
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
@@ -80,6 +98,10 @@ class AdaptiveStep(Step):
     pass
 
 
+class SambaStep(Step):
+    pass
+
+
 def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
     added_effects = defaultdict(list)
     for i, step in enumerate(steps):
@@ -87,7 +109,7 @@ def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
             added_effects[astuple(step.effect)].append(i)
         elif isinstance(step, BackwardStep):
             added_effects[astuple(step.effect)].pop()
-        elif isinstance(step, AdaptiveStep):
+        elif isinstance(step, (AdaptiveStep, SambaStep)):
             pass
         else:
             raise ValueError("Unknown step ({step}) added")
@@ -113,7 +135,7 @@ class SearchState:
     all_candidates_so_far: List[Candidate]
 
 
-ALGORITHMS = ('scm-forward', 'scm-forward-then-backward')
+ALGORITHMS = ('scm-forward', 'scm-forward-then-backward', 'SAMBA')
 
 
 def create_workflow(
@@ -141,7 +163,7 @@ def create_workflow(
         The p-value to use in the likelihood ratio test for backward steps
     max_steps : int
         The maximum number of search steps to make
-    algorithm : {'scm-forward', 'scm-forward-then-backward'}
+    algorithm : {'scm-forward', 'scm-forward-then-backward', 'SAMBA'}
         The search algorithm to use. Currently, 'scm-forward' and
         'scm-forward-then-backward' are supported.
     results : ModelfitResults
@@ -182,33 +204,46 @@ def create_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     start_task = Task("create_modelentry", _start, model, results)
     wb.add_task(start_task, predecessors=store_task)
-    init_task = Task("init", _init_search_state, search_space)
+    init_task = Task("init", _init_search_state, search_space, algorithm)
     wb.add_task(init_task, predecessors=start_task)
 
-    forward_search_task = Task(
-        'forward-search',
-        task_greedy_forward_search,
-        p_forward,
-        max_steps,
-        naming_index_offset,
-        strictness,
-        adaptive_scope_reduction,
-    )
-
-    wb.add_task(forward_search_task, predecessors=init_task)
-    search_output = wb.output_tasks
-
-    if algorithm == 'scm-forward-then-backward':
-        backward_search_task = Task(
-            'backward-search',
-            task_greedy_backward_search,
-            p_backward,
+    if algorithm != "SAMBA":
+        forward_search_task = Task(
+            'forward-search',
+            task_greedy_forward_search,
+            p_forward,
             max_steps,
             naming_index_offset,
             strictness,
+            adaptive_scope_reduction,
         )
 
-        wb.add_task(backward_search_task, predecessors=search_output)
+        wb.add_task(forward_search_task, predecessors=init_task)
+        search_output = wb.output_tasks
+
+        if algorithm == 'scm-forward-then-backward':
+            backward_search_task = Task(
+                'backward-search',
+                task_greedy_backward_search,
+                p_backward,
+                max_steps,
+                naming_index_offset,
+                strictness,
+            )
+
+            wb.add_task(backward_search_task, predecessors=search_output)
+            search_output = wb.output_tasks
+    else:
+        forward_samba_task = Task(
+            'forward-samba',
+            samba_search,
+            max_steps,
+            p_forward,
+            strictness,
+            adaptive_scope_reduction,
+        )
+        # FIXME : Adaptive scope reduction?
+        wb.add_task(forward_samba_task, predecessors=init_task)
         search_output = wb.output_tasks
 
     results_task = Task(
@@ -243,9 +278,27 @@ def _start(model, results, max_eval):
     )
 
 
-def _init_search_state(context, search_space: str, modelentry: ModelEntry) -> SearchState:
+def _init_search_state(
+    context, search_space: str, algorithm: str, modelentry: ModelEntry
+) -> SearchState:
     model = modelentry.model
     effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
+    if algorithm == "SAMBA":
+        # Add IIV to all individual parameters?
+        # FIXME : Add IIV to all parameters given in the covariate search space if not already there
+
+        filtered_model = filtered_model.replace(name="Base_SAMBA_model")
+
+        # Switch to SAEM (and hence mean posterior etas)
+        filtered_model = set_estimation_step(
+            filtered_model,
+            "SAEM",
+            tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1, 'MAXEVAL': 9999},
+        )
+
+        # Mu-reference model
+        filtered_model = mu_reference_model(filtered_model)
+
     if filtered_model != model:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
         filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
@@ -747,6 +800,230 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     )
 
 
+def samba_search(
+    context,
+    max_steps,
+    p_forward,
+    strictness,
+    adaptive_scope_reduction,
+    state_and_effect: Tuple[SearchState, dict],
+):
+    for temp in state_and_effect:
+        if isinstance(temp, SearchState):
+            state = temp
+        else:
+            candidate_effect_funcs = temp
+
+    param_effect_funcs = {}
+    param_cov = {}  # FIXME : Extract from param_effect_funcs instead as needed
+    for key, func in candidate_effect_funcs.items():
+        param = key[0]
+        if param in param_effect_funcs.keys():
+            param_effect_funcs[param].update({key: func})
+            param_cov[param].append(key[1])
+        else:
+            param_effect_funcs[param] = {key: func}
+            param_cov[param] = [key[1]]
+
+    steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
+
+    best_candidate = state.best_candidate_so_far
+    all_nonsignificant_effects = {}
+    all_proxy_models = {}
+    for current_step in steps:
+        for param, funcs in param_effect_funcs.items():
+            base_proxy_model = _create_samba_proxy_model(
+                best_candidate.modelentry, param, param_cov[param], current_step
+            )
+            # Run base proxy model
+            base_proxy_modelentry = ModelEntry.create(model=base_proxy_model)
+            base_proxy_fit_wf = create_fit_workflow(modelentries=[base_proxy_modelentry])
+            base_proxy_modelentry = call_workflow(base_proxy_fit_wf, 'fit_base_proxy', context)
+
+            base_candidate = Candidate(
+                base_proxy_modelentry,
+                best_candidate.steps + (SambaStep(p_forward, DummyEffect("", "", "", "")),),
+            )
+            state.all_candidates_so_far.extend([base_candidate])
+
+            def handle_samba_effects(step, parent, candidate_effect_funcs, index_offset):
+                # index_offset = index_offset + naming_index_offset
+                wf = wf_effects_addition(
+                    parent.modelentry, parent, candidate_effect_funcs, index_offset
+                )
+                new_candidate_modelentries = call_workflow(
+                    wf, f'{NAME_WF}-effects_addition-{step}', context
+                )
+                return [
+                    Candidate(
+                        modelentry, parent.steps + (ForwardStep(p_forward, AddEffect(*effect)),)
+                    )
+                    for modelentry, effect in zip(
+                        new_candidate_modelentries, candidate_effect_funcs.keys()
+                    )
+                ]
+
+            no_candidates_so_far = len(state.all_candidates_so_far)
+            nonsignificant_effects, all_candidates_so_far, best_candidate_so_far = (
+                perform_step_procedure(
+                    [current_step],
+                    funcs,
+                    handle_samba_effects,
+                    state.all_candidates_so_far,
+                    base_candidate,
+                    strictness,
+                    p_forward,
+                    adaptive_scope_reduction,
+                )
+            )
+
+            new_proxy_candidates = [base_candidate] + all_candidates_so_far[
+                no_candidates_so_far:
+            ]  # Ignore previous candidates
+            all_candidates_so_far = (
+                all_candidates_so_far[:no_candidates_so_far]
+                + [base_candidate]
+                + all_candidates_so_far[no_candidates_so_far:]
+            )  # ONÖDIGT
+            all_nonsignificant_effects.update(nonsignificant_effects)
+            all_proxy_models[current_step] = new_proxy_candidates
+
+        # Determine the best proxy model
+        # Should be the best_candidate_so_far -> ONÖDIGT
+        proxy_models_of_this_step = all_proxy_models[current_step]
+        first_proxy_model_entry = proxy_models_of_this_step[0].modelentry
+        rest_of_proxy_models = [m.modelentry for m in proxy_models_of_this_step[1:]]
+        rest_of_proxy_models_ofv = [
+            m.modelentry.modelfit_results.ofv for m in proxy_models_of_this_step[1:]
+        ]
+        best_proxy_model = lrt_best_of_many(
+            first_proxy_model_entry,
+            rest_of_proxy_models,
+            first_proxy_model_entry.modelfit_results.ofv,
+            rest_of_proxy_models_ofv,
+            p_forward,
+        )
+        best_proxy_candidate_so_far = next(
+            filter(lambda candidate: candidate.modelentry is best_proxy_model, new_proxy_candidates)
+        )
+
+        # Check that this is NOT the same as the base model.
+        # Should break if it is
+
+        # Add to base model and estimate
+        latest_added_effect = best_proxy_candidate_so_far.steps[-1].effect
+        steps_wo_samba = [
+            s for s in best_proxy_candidate_so_far.steps if not isinstance(s, SambaStep)
+        ]
+        candidate_best_model = best_candidate.modelentry.model.replace(
+            name=f"best_{current_step}",
+            description=_create_description(steps_wo_samba[-1].effect, steps_wo_samba[:-1]),
+        )
+        candidate_best_model = add_covariate_effect(
+            candidate_best_model,
+            latest_added_effect.parameter,
+            latest_added_effect.covariate,
+            latest_added_effect.fp,
+            latest_added_effect.operation,
+        )
+        candidate_best_model_entry = ModelEntry.create(
+            model=candidate_best_model, parent=best_candidate.modelentry.model
+        )
+        candidate_fit_wf = create_fit_workflow(modelentries=[candidate_best_model_entry])
+        candidate_best_model_entry = call_workflow(
+            candidate_fit_wf, 'fit_candidate_best_model', context
+        )
+
+        last_step = best_proxy_candidate_so_far.steps[-1]
+        state.all_candidates_so_far.extend(
+            [Candidate(candidate_best_model_entry, best_candidate.steps + (last_step,))]
+        )
+
+        if not lrt_test(
+            best_candidate.modelentry.model,
+            candidate_best_model_entry.model,
+            best_candidate.modelentry.modelfit_results.ofv,
+            candidate_best_model_entry.modelfit_results.ofv,
+            p_forward,
+        ):
+            break
+
+        # Create new best_candidate
+        last_step = best_proxy_candidate_so_far.steps[-1]
+        best_candidate = Candidate(candidate_best_model_entry, best_candidate.steps + (last_step,))
+
+        # Change the state to match the current iteration
+        state = SearchState(
+            state.user_input_modelentry,
+            state.start_modelentry,
+            best_candidate,
+            state.all_candidates_so_far,
+        )
+
+    # RETURN THE CORRECT THING
+    return state
+
+
+def _create_samba_proxy_model(modelentry, param, covariates, step):
+    dataset = _create_samba_dataset(modelentry, param, covariates)
+
+    model = modelentry.model
+
+    theta = Parameter('theta', 0.1)  # FIXME : Something else?
+    sigma = get_sigmas(model)[0]
+    params = Parameters((theta, sigma))
+
+    sigma_name = 'epsilon'
+    sigma = NormalDistribution.create(sigma_name, 'ruv', 0, sigma.symbol)
+    rvs = RandomVariables.create([sigma])
+
+    base = Assignment.create(Expr.symbol(param), theta.symbol)
+    ipred = Assignment.create(Expr.symbol("IPRED"), Expr.symbol(param))
+    y = Assignment.create(Expr.symbol('Y'), Expr.symbol("IPRED") + Expr.symbol(sigma_name))
+    statements = Statements([base, ipred, y])
+
+    name = f'samba_{step}_{param}'
+
+    est = EstimationStep.create('foce')
+
+    base_model = Model.create(
+        parameters=params,
+        random_variables=rvs,
+        statements=statements,
+        name=name,
+        description=name,
+        execution_steps=ExecutionSteps.create([est]),
+        dependent_variables={y.symbol: 1},
+    )
+
+    base_model = base_model.replace(dataset=dataset)
+
+    di = base_model.datainfo
+    di = di.set_dv_column("DV")
+    di = di.set_id_column("ID")
+
+    base_model = base_model.replace(datainfo=di)
+
+    base_model = convert_model(base_model, "nonmem")
+
+    return base_model
+
+
+def _create_samba_dataset(model_entry, param, covariates):
+    # Store ETA as DV
+    # Store all covariates (that are needed)
+
+    eta_name = get_parameter_rv(model_entry.model, param)[0]
+
+    eta_column = model_entry.modelfit_results.individual_estimates[eta_name]
+    eta_column = eta_column.rename("DV")
+    covariate_columns = model_entry.model.dataset[["ID"] + covariates]
+
+    dataset = covariate_columns.join(eta_column, "ID")
+
+    return dataset
+
+
 def task_results(context, p_forward: float, p_backward: float, strictness: str, state: SearchState):
     candidates = state.all_candidates_so_far
     modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
@@ -756,6 +1033,19 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     user_input_modelentry = state.user_input_modelentry
     if user_input_modelentry != base_modelentry:
         modelentries = [user_input_modelentry] + modelentries
+
+    steps = _make_df_steps(best_modelentry, candidates)
+
+    # Drop all proxy models from SAMBA algorithm
+    to_be_dropped = []
+    for c in candidates:
+        if any(isinstance(s, SambaStep) for s in c.steps):
+            to_be_dropped.append(c.modelentry.model.name)
+
+    # Create a new table with all the proxy models from each step.
+    # if to_be_dropped:
+    #     proxy_model_table = _create_proxy_model_table(candidates, steps, to_be_dropped)
+    # FIXME : Add proxy_model_table to the results object.
 
     res = create_results(
         COVSearchResults,
@@ -767,23 +1057,32 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
         context=context,
     )
 
-    steps = _make_df_steps(best_modelentry, candidates)
     res = replace(
         res,
         final_model=best_modelentry.model,
         steps=steps,
         candidate_summary=candidate_summary_dataframe(steps),
         ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
-        summary_tool=_modify_summary_tool(res.summary_tool, steps),
-        summary_models=_summarize_models(modelentries, steps),
+        summary_tool=_modify_summary_tool(res.summary_tool, steps, to_be_dropped),
+        summary_models=_summarize_models(modelentries, steps, to_be_dropped),
     )
 
     context.store_final_model_entry(best_modelentry)
-
     return res
 
 
-def _modify_summary_tool(summary_tool, steps):
+def _create_proxy_model_table(candidates, steps, proxy_models):
+    step_cols_to_keep = ['step', 'pvalue', 'model']
+    steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
+
+    steps_df = steps_df.reset_index()
+    steps_df = steps_df[steps_df['model'].isin(proxy_models)]
+    steps_df = steps_df.set_index(['step', 'model'])
+
+    return steps_df
+
+
+def _modify_summary_tool(summary_tool, steps, to_be_dropped):
     step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
     steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
 
@@ -791,12 +1090,22 @@ def _modify_summary_tool(summary_tool, steps):
     column_to_move = summary_tool_new.pop('description')
 
     summary_tool_new.insert(0, 'description', column_to_move)
+    if to_be_dropped:
+        summary_tool_new = summary_tool_new.reset_index()
+        summary_tool_new = summary_tool_new[~summary_tool_new['model'].isin(to_be_dropped)]
+        summary_tool_new = summary_tool_new.set_index(['step', 'model'])
+
     return summary_tool_new.drop(['rank'], axis=1)
 
 
-def _summarize_models(modelentries, steps):
+def _summarize_models(modelentries, steps, to_be_dropped):
     summary_models = summarize_modelfit_results_from_entries(modelentries)
     summary_models['step'] = steps.reset_index().set_index(['model'])['step']
+
+    if to_be_dropped:
+        summary_models = summary_models.reset_index()
+        summary_models = summary_models[~summary_models['model'].isin(to_be_dropped)]
+        summary_models = summary_models.set_index(['step', 'model'])
 
     return summary_models.reset_index().set_index(['step', 'model'])
 
@@ -904,6 +1213,7 @@ def _make_df_steps_row(
             if candidate.steps == tuple()
             or isinstance(candidate.steps[-1], ForwardStep)
             or isinstance(candidate.steps[-1], AdaptiveStep)
+            or isinstance(candidate.steps[-1], SambaStep)
             else len(candidate.steps) + index_offset
         ),
         'parameter': parameter,
