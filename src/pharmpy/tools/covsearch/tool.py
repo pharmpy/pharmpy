@@ -8,17 +8,14 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import (
-    get_pk_parameters,
-    remove_covariate_effect,
-    set_estimation_step,
-)
+from pharmpy.modeling import get_pk_parameters, remove_covariate_effect, set_estimation_step
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import create_results, update_initial_estimates
+from pharmpy.tools.covsearch.samba import samba_workflow
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
@@ -31,7 +28,7 @@ from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
-from pharmpy.tools.covsearch.samba import samba_workflow
+
 from ..mfl.filter import COVSEARCH_STATEMENT_TYPES
 from ..mfl.parse import ModelFeatures, get_model_features
 from .results import COVSearchResults

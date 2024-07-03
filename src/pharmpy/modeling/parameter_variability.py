@@ -265,7 +265,7 @@ def add_iov(
     if eta_names and len(eta_names) != sum(map(len, etas)) * len(categories):
         raise ValueError(
             'Number of given eta names is incorrect, '
-            f'need {sum(map(len,etas)) * len(categories)} names.'
+            f'need {sum(map(len, etas)) * len(categories)} names.'
         )
 
     if len(categories) == 1:

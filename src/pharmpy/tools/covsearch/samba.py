@@ -1,9 +1,10 @@
 # isolate the samba algorithm from tool.py
-from functools import partial
 from dataclasses import dataclass, replace
+from functools import partial
 from itertools import count
 from typing import Any, List, Optional, Tuple, Union
 
+import pharmpy.tools.covsearch.tool as scm_tool
 from pharmpy.basic.expr import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.model import (
@@ -18,23 +19,21 @@ from pharmpy.model import (
     Statements,
 )
 from pharmpy.modeling import (
+    add_estimation_step,
     convert_model,
     get_parameter_rv,
     mu_reference_model,
     remove_covariate_effect,
-    add_estimation_step,
     remove_estimation_step,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
+from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
-
-from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
-import pharmpy.tools.covsearch.tool as scm_tool
 
 NAME_WF = 'covsearch'
 
@@ -82,11 +81,11 @@ class SearchState:
 
 
 def samba_workflow(
-        search_space: Union[str, ModelFeatures],
-        max_steps: int = -1,
-        alpha: float = 0.05,
-        results: Optional[ModelfitResults] = None,
-        model: Optional[Model] = None,
+    search_space: Union[str, ModelFeatures],
+    max_steps: int = -1,
+    alpha: float = 0.05,
+    results: Optional[ModelfitResults] = None,
+    model: Optional[Model] = None,
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -214,12 +213,7 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry):
     return linear_modelentry_dict, param_cov_list
 
 
-def samba_step(
-        context,
-        step,
-        alpha,
-        state_and_effect,
-):
+def samba_step(context, step, alpha, state_and_effect):
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
         state_and_effect
     )
@@ -279,9 +273,7 @@ def samba_step(
 
     # NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
     # nonlinear mixed effect model selection
-    if (
-            selected_explor_cov_funcs
-    ):  # if any linear cov_model is selected, create corresponding nonlinear models
+    if selected_explor_cov_funcs:
         new_nonlin_models = []
         for cov_func in selected_explor_cov_funcs:
             cov_func_args = cov_func.keywords
@@ -313,17 +305,17 @@ def samba_step(
             nlme_candidate = Candidate(
                 me,
                 steps=best_nlme_candidate.steps
-                      + (
-                          ForwardStep(
-                              alpha,
-                              DummyEffect(
-                                  cov_func_args["parameter"],
-                                  cov_func_args["covariate"],
-                                  cov_func_args["effect"],
-                                  cov_func_args["operation"],
-                              ),
-                          ),
-                      ),
+                + (
+                    ForwardStep(
+                        alpha,
+                        DummyEffect(
+                            cov_func_args["parameter"],
+                            cov_func_args["covariate"],
+                            cov_func_args["effect"],
+                            cov_func_args["operation"],
+                        ),
+                    ),
+                ),
             )
             nonlinear_search_state.all_candidates_so_far.extend([nlme_candidate])
         # NOTE: some NLME models' OFV can be really off, due to poor convergence after averaging SAEM burn-in steps
@@ -379,12 +371,7 @@ def _select_nonlin_model():
     pass
 
 
-def samba_search(
-        context,
-        max_steps,
-        alpha,
-        state_and_effect,
-):
+def samba_search(context, max_steps, alpha, state_and_effect):
     steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
     for step in steps:
         prev_best = state_and_effect[0].best_candidate_so_far
@@ -485,11 +472,7 @@ def _create_samba_dataset(model_entry, param, covariates, log_transform=True):
     return dataset
 
 
-def _create_samba_base_model(
-        modelentry,
-        param,
-        covariates,
-):
+def _create_samba_base_model(modelentry, param, covariates):
     """
     Create linear base model [Y ~ THETA(1) + ERR(1)] for the parameters to be explored.
     ETA values associated with these model parameters are set as dependent variable (DV).
