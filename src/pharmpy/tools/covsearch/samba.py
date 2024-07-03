@@ -82,11 +82,11 @@ class SearchState:
 
 
 def samba_workflow(
-    search_space: Union[str, ModelFeatures],
-    max_steps: int = -1,
-    alpha: float = 0.05,
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
+        search_space: Union[str, ModelFeatures],
+        max_steps: int = -1,
+        alpha: float = 0.05,
+        results: Optional[ModelfitResults] = None,
+        model: Optional[Model] = None,
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -215,10 +215,10 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry):
 
 
 def samba_step(
-    context,
-    step,
-    alpha,
-    state_and_effect,
+        context,
+        step,
+        alpha,
+        state_and_effect,
 ):
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
         state_and_effect
@@ -280,7 +280,7 @@ def samba_step(
     # NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
     # nonlinear mixed effect model selection
     if (
-        selected_explor_cov_funcs
+            selected_explor_cov_funcs
     ):  # if any linear cov_model is selected, create corresponding nonlinear models
         new_nonlin_models = []
         for cov_func in selected_explor_cov_funcs:
@@ -295,9 +295,10 @@ def samba_step(
 
         # TODO: a task_func for similar code chunk (if not isinstance(input, modelentry): to_modelentry)
         wb = WorkflowBuilder()
-        model_to_modelentry = lambda model: ModelEntry.create(
-            model, parent=best_nlme_modelentry.model
-        )
+
+        def model_to_modelentry(model, parent=best_nlme_modelentry.model):
+            return ModelEntry.create(model, parent=parent)
+
         for nonlin_model in new_nonlin_models:
             nonlin_me_task = Task("to_nonlin_modelentry", model_to_modelentry, nonlin_model)
             wb.add_task(nonlin_me_task)
@@ -312,17 +313,17 @@ def samba_step(
             nlme_candidate = Candidate(
                 me,
                 steps=best_nlme_candidate.steps
-                + (
-                    ForwardStep(
-                        alpha,
-                        DummyEffect(
-                            cov_func_args["parameter"],
-                            cov_func_args["covariate"],
-                            cov_func_args["effect"],
-                            cov_func_args["operation"],
-                        ),
-                    ),
-                ),
+                      + (
+                          ForwardStep(
+                              alpha,
+                              DummyEffect(
+                                  cov_func_args["parameter"],
+                                  cov_func_args["covariate"],
+                                  cov_func_args["effect"],
+                                  cov_func_args["operation"],
+                              ),
+                          ),
+                      ),
             )
             nonlinear_search_state.all_candidates_so_far.extend([nlme_candidate])
         # NOTE: some NLME models' OFV can be really off, due to poor convergence after averaging SAEM burn-in steps
@@ -379,10 +380,10 @@ def _select_nonlin_model():
 
 
 def samba_search(
-    context,
-    max_steps,
-    alpha,
-    state_and_effect,
+        context,
+        max_steps,
+        alpha,
+        state_and_effect,
 ):
     steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
     for step in steps:
@@ -485,9 +486,9 @@ def _create_samba_dataset(model_entry, param, covariates, log_transform=True):
 
 
 def _create_samba_base_model(
-    modelentry,
-    param,
-    covariates,
+        modelentry,
+        param,
+        covariates,
 ):
     """
     Create linear base model [Y ~ THETA(1) + ERR(1)] for the parameters to be explored.
