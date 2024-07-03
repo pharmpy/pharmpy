@@ -7,7 +7,6 @@ from typing import Any, Callable, Iterable, List, Literal, Optional, Tuple, Unio
 
 from pharmpy.basic.expr import Expr
 from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
 from pharmpy.model import (
     Assignment,
     EstimationStep,
@@ -29,19 +28,17 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
-from pharmpy.tools.mfl.filter import COVSEARCH_STATEMENT_TYPES
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
-from pharmpy.tools.covsearch.results import COVSearchResults
-from pharmpy.tools.covsearch.tool import task_results
+from pharmpy.tools.covsearch.scm import task_results
+# from pharmpy.tools.covsearch.tool import task_results
 
-NAME_WF = 'samba_covsearch'
+NAME_WF = 'covsearch'
 
 DataFrame = Any  # NOTE: should be pd.DataFrame but we want lazy loading
 
@@ -141,7 +138,7 @@ def _init_search_state(
                                                                                             model)
 
     # init nonlinear search state
-    nonlinear_search_state = _init_nonlinear_search_state(context, filtered_model)
+    nonlinear_search_state = _init_nonlinear_search_state(context, modelentry, filtered_model)
     filtered_modelentry = nonlinear_search_state.start_modelentry
 
     # create linear covariate models
@@ -150,7 +147,7 @@ def _init_search_state(
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
 
 
-def _init_nonlinear_search_state(context, filtered_model):
+def _init_nonlinear_search_state(context, input_modelentry, filtered_model):
     # nonlinear mixed effect model setup
     filtered_model = filtered_model.replace(name="samba_start_model", description="start")
     filtered_model = mu_reference_model(filtered_model)
@@ -158,6 +155,12 @@ def _init_nonlinear_search_state(context, filtered_model):
     filtered_model = add_estimation_step(filtered_model, method="SAEM", idx=0,
                                          tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1},
                                          )
+    ############# TESTING ###################
+    # TODO: IMP est step for suitable OFV for LRT (TBD: EONLY setting)
+    # FIXME: Adding IMP est step bugs the summary_tool's ofv and dofv (empty)
+    # filtered_model = add_estimation_step(filtered_model, method="IMP", idx=1, isample=1000, niter=5, 
+    #                                      tool_options={"EONLY":"2", "MAPITER":"0"})
+    ############# TESTING ###################
     
     # nonlinear mixed effect modelentry creation and fit
     filtered_modelentry = ModelEntry.create(model=filtered_model)
@@ -166,7 +169,7 @@ def _init_nonlinear_search_state(context, filtered_model):
     
     # nonlinear search state
     nonlinear_model_candidate = Candidate(filtered_modelentry, ())
-    nonlinear_search_state = SearchState(modelentry, filtered_modelentry, nonlinear_model_candidate,
+    nonlinear_search_state = SearchState(input_modelentry, filtered_modelentry, nonlinear_model_candidate,
                                          [nonlinear_model_candidate])
     return nonlinear_search_state
 
@@ -195,7 +198,8 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry):
         # create linear covariate models for each parameter ("lin", "+")
         for cov_effect, linear_func in param_indexed_funcs[param].items():
             param_cov_model = linear_func(model=param_base_model)
-            description = "_".join(cov_effect[0:3])
+            # description = "_".join(cov_effect[0:3])
+            description = "_".join(cov_effect[0:2])
             param_cov_model = param_cov_model.replace(description=description)
             param_cov_modelentry = ModelEntry.create(model=param_cov_model)
             linear_modelentry_dict[param].append(param_cov_modelentry)
@@ -211,13 +215,13 @@ def samba_step(
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = state_and_effect
     best_nlme_candidate = nonlinear_search_state.best_candidate_so_far
     best_nlme_modelentry = nonlinear_search_state.best_candidate_so_far.modelentry
-    print(best_nlme_modelentry.modelfit_results.ofv)
+    # print(best_nlme_modelentry.modelfit_results.ofv)
     
     ################# LINEAR COVARIATE MODEL PROCESSING #####################
     # update dataset (etas) for all linear covariate candidate models
     for param, covariates in param_cov_list.items():
         # update dataset
-        updated_dataset = _create_samba_dataset(best_nlme_modelentry, param, covariates, log_transform=False)
+        updated_dataset = _create_samba_dataset(best_nlme_modelentry, param, covariates, log_transform=True)
         # update linear covariate models
         covs = ["Base"] + covariates
         linear_modelentry_dict[param] = [ModelEntry.create(model=me.model.replace(dataset=updated_dataset, 
@@ -249,7 +253,7 @@ def samba_step(
         cov_model_index = selected_cov.model.description
         print("Selected Covariate Effect: ", cov_model_index)
         if "Base" not in cov_model_index:
-            selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
+            selected_explor_cov_funcs.extend(exploratory_cov_funcs[cov_model_index])
 
     ################# NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
     # nonlinear mixed effect model selection
@@ -259,7 +263,6 @@ def samba_step(
             cov_func_args = cov_func.keywords
             cov_effect = f"{cov_func_args["parameter"]}-{cov_func_args["covariate"]}-{cov_func_args["effect"]}"
             nonlin_model_added_effect = cov_func(best_nlme_modelentry.model)
-            print(f"{best_nlme_modelentry.model.description};({cov_effect.lower()})")
             nonlin_model_added_effect = nonlin_model_added_effect.replace(name=f"step {step}_NLin_{cov_effect}",
                                                                             description=f"{best_nlme_modelentry.model.description};({cov_effect.lower()})")
             new_nonlin_models.append(nonlin_model_added_effect)
@@ -289,13 +292,13 @@ def samba_step(
                 if modelentry.modelfit_results is not None
                 else np.nan
                 for modelentry in new_nonlin_modelentries]
-
+        print(ofvs)
         new_best_nlme_modelentry = lrt_best_of_many(parent=best_nlme_modelentry,
                                                 models=new_nonlin_modelentries,
                                                 parent_ofv=best_nlme_modelentry.modelfit_results.ofv,
                                                 model_ofvs=ofvs,
                                                 alpha=alpha)
-        print(new_best_nlme_modelentry.modelfit_results.ofv)
+        # print(new_best_nlme_modelentry.modelfit_results.ofv)
         
         if new_best_nlme_modelentry != best_nlme_modelentry:
             # update search states
@@ -347,7 +350,7 @@ def samba_search(
         
         new_best = state_and_effect[0].best_candidate_so_far
         if new_best is prev_best:
-            print(f"Search stops at step {step} due to no signif decrease in ofv of nlme models.")
+            # print(f"Search stops at step {step} due to no signif decrease in ofv of nlme models.")
             break
     
     return state_and_effect[0]
@@ -396,16 +399,20 @@ def filter_search_space_and_model(search_space, model):
                              for cov_effect, cov_func in exploratory_cov_funcs.items()
                              if cov_effect[-1] == "ADD"}
     # indexed exploratory cov_funcs for nonlinear mixed effect models
-    indexed_explor_cov_funcs = {"_".join(cov_effect[0:3]): cov_func
-                                for cov_effect, cov_func in exploratory_cov_funcs.items()}
-    
-    # cov_funcs for linear covariate models
-    linear_cov_funcs = {cov_effect: partial(add_covariate_effect,
-                                            parameter=cov_effect[0],
-                                            covariate=cov_effect[1],
-                                            effect="lin",
-                                            operation="+")
-                        for cov_effect in exploratory_cov_funcs.keys()}
+    indexed_explor_cov_funcs = {}
+    linear_cov_funcs = {}
+    for cov_effect, cov_func in exploratory_cov_funcs.items():
+        param_index = "_".join(cov_effect[0:2])
+        if param_index not in indexed_explor_cov_funcs:
+            indexed_explor_cov_funcs[param_index] = [cov_func]
+            # cov_funcs for linear covariate models
+            linear_cov_funcs[cov_effect[0:2]] = partial(add_covariate_effect,
+                                                   parameter=cov_effect[0],
+                                                   covariate=cov_effect[1],
+                                                   effect="lin",
+                                                   operation="+")
+        else:
+            indexed_explor_cov_funcs[param_index].append(cov_func)
 
     return (indexed_explor_cov_funcs, linear_cov_funcs, filtered_model)
 
@@ -419,10 +426,13 @@ def _create_samba_dataset(model_entry, param, covariates, log_transform=True):
     # Extract the covariates dataset
     covariates = list(set(covariates))  # drop duplicated covariates
     covariate_columns = model_entry.model.dataset[["ID"] + covariates]
+    ############# TESTING ###################
+    # TODO: Log transformation of covariates
     if log_transform:
         covariate_columns.loc[:, covariates] = covariate_columns.loc[:, covariates].apply(
             np.log)  # for linear covariate models, covariates need to be log transformed
         covariate_columns = covariate_columns.replace([np.inf, -np.inf], 1)
+    ############# TESTING ###################
     # Merge the ETAs and Covariate dataset
     dataset = covariate_columns.join(eta_column, "ID")
 
@@ -439,7 +449,7 @@ def _create_samba_base_model(
     ETA values associated with these model parameters are set as dependent variable (DV).
     The OFVs of these base models are used as the basis of linear covariate model selection.
     """
-    dataset = _create_samba_dataset(modelentry, param, covariates, log_transform=False)
+    dataset = _create_samba_dataset(modelentry, param, covariates, log_transform=True)
 
     # parameters
     theta = Parameter(name="theta", init=0.1)
@@ -478,17 +488,6 @@ def _create_samba_base_model(
     return base_model
 
 
-def _create_proxy_model_table(candidates, steps, proxy_models):
-    step_cols_to_keep = ['step', 'pvalue', 'model']
-    steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
-
-    steps_df = steps_df.reset_index()
-    steps_df = steps_df[steps_df['model'].isin(proxy_models)]
-    steps_df = steps_df.set_index(['step', 'model'])
-
-    return steps_df
-
-
 def samba_task_results(context, p_forward, state):
     # set p_backward and strictness to None
     return task_results(context, p_forward, p_backward=None, strictness=None, state=state)
@@ -498,7 +497,7 @@ if __name__ == "__main__":
     #%%
     from pharmpy.modeling import load_example_model, print_model_code, read_model
     from pharmpy.tools import load_example_modelfit_results, fit
-    from pharmpy.workflows import execute_workflow  # , default_context
+    from pharmpy.workflows import execute_workflow, default_context
     import os
     import shutil
 
@@ -515,9 +514,11 @@ if __name__ == "__main__":
     # results = load_example_modelfit_results("pheno")
     # modelentry = ModelEntry.create(model=model, modelfit_results=results)
     # search_space = "COVARIATE?([CL, VC], WGT, [EXP, POW])"
-    model = read_model("sambas.ctl")
+    model = read_model("model/sambas.ctl")
     modelentry = ModelEntry.create(model=model)
-    search_space = "COVARIATE?([CL, V], [WT, AGE], POW); COVARIATE?([CL,V], SEX, EXP)"
+    # search_space = "COVARIATE?([CL, V], [WT, AGE], POW); COVARIATE?([CL,V], SEX, EXP)"
+    search_space = "COVARIATE?([CL, V], [WT, AGE], [EXP, POW]); COVARIATE?([CL,V], SEX, EXP)"
+    # search_space = "COVARIATE?(CL, WT, [POW, EXP])"
     
     #%% WORKFLOW TESTING
     # SAMBA WORKFLOW INIT
@@ -529,3 +530,4 @@ if __name__ == "__main__":
     #%% WORKFLOW TESTING
     # SAMBA WORKFLOW EXECUTE
     res = execute_workflow(wf)
+    
