@@ -387,6 +387,7 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         if (
             isinstance(new.dosing_compartments[0].doses[0], Bolus)
             and 'RATE' in model.datainfo.names
+            and model.dataset is not None
         ):
             df = model.dataset.drop(columns=['RATE'])
             model = model.replace(dataset=df)
