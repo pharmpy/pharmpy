@@ -170,7 +170,7 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
                 expr = str(st.children[0])
             elif st.data == 'operator':
                 operator_token = st.children[0]
-                tp = operator_token.type  # pyright: ignore [reportGeneralTypeIssues]
+                tp = operator_token.type  # pyright: ignore [reportAttributeAccessIssue]
                 if tp == 'OP_EQ':
                     operator = '=='
                     operator_type = float
