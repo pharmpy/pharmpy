@@ -1,3 +1,11 @@
+1.1.0
+-----
+
+Bugfixes
+========
+
+* (pharmr) Fix regression in input conversion of `keep`-option in IIVSearch
+
 1.0.1 (2024-06-12)
 ------------------
 
