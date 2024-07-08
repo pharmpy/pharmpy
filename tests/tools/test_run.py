@@ -570,19 +570,8 @@ def test_strictness_parameters(testdata):
             'TRANSITS([0,1,3,10],*);'
             'PERIPHERALS([0,1])',
             {},
-            [add_peripheral_compartment],
-            [4.39],
-        ),
-        (
-            [],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
-            {},
             [add_peripheral_compartment, set_zero_order_absorption],
-            [4.39, 4.39],
+            [3.58, 3.58],
         ),
         (
             [],
@@ -593,7 +582,7 @@ def test_strictness_parameters(testdata):
             'PERIPHERALS([0,1])',
             {},
             [add_peripheral_compartment, set_seq_zo_fo_absorption],
-            [4.39, 8.79],
+            [3.58, 7.17],
         ),
         (
             [split_joint_distribution],
@@ -656,27 +645,30 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
     [
         ('ABSORPTION([FO,ZO])', 'ABSORPTION(FO)', 0, 0),
         ('ABSORPTION([FO,ZO])', 'ABSORPTION(ZO)', 0, 0),
-        ('ABSORPTION([FO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 0),
-        ('ABSORPTION([FO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 1),
-        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 0),
-        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(ZO)', 2, 0),
-        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 1),
-        ('ELIMINATION([FO,MM])', 'ELIMINATION(MM)', 0, 0),
+        ('ABSORPTION([FO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 1, 0),
+        ('ABSORPTION([FO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 1, 1),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 1, 0),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(ZO)', 1, 0),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 1, 1),
+        ('ABSORPTION([INST,FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(INST)', 2, 0),
+        ('ABSORPTION([INST,FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 1),
+        ('ABSORPTION([INST,FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 2),
+        ('ELIMINATION([FO,MM])', 'ELIMINATION(FO)', 1, 0),
+        ('ELIMINATION([FO,MM])', 'ELIMINATION(MM)', 1, 1),
         ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(FO)', 2, 0),
-        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MM)', 2, 0),
-        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 1),
-        ('ELIMINATION([FO,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 1),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MM)', 2, 1),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 2),
         ('PERIPHERALS(0..2)', 'PERIPHERALS(0)', 2, 0),
         ('PERIPHERALS(0..2)', 'PERIPHERALS(1)', 2, 1),
         ('PERIPHERALS(0..2)', 'PERIPHERALS(2)', 2, 2),
-        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(0)', 3, 0),
-        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(1)', 3, 1),
-        ('TRANSITS([0,1,2],DEPOT)', 'TRANSITS(2)', 3, 1),
-        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(0,NODEPOT)', 2, 0),
-        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(1,NODEPOT)', 2, 0),
-        ('TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(2,NODEPOT)', 2, 0),
-        ('TRANSITS([0,1,2],*)', 'TRANSITS(2)', 4, 1),
-        ('TRANSITS([0,1,2],*)', 'TRANSITS(2,NODEPOT)', 4, 0),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],DEPOT)', 'TRANSITS(0)', 2, 0),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],DEPOT)', 'TRANSITS(1)', 2, 1),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],DEPOT)', 'TRANSITS(2)', 2, 1),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(0,NODEPOT)', 0, 0),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(1,NODEPOT)', 0, 0),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],NODEPOT)', 'TRANSITS(2,NODEPOT)', 0, 0),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],*)', 'TRANSITS(2)', 2, 1),
+        ('ABSORPTION(FO);TRANSITS([0,1,2],*)', 'TRANSITS(2,NODEPOT)', 2, 0),
         ('LAGTIME(ON)', 'LAGTIME(ON)', 0, 0),
         ('LAGTIME([OFF,ON])', 'LAGTIME(OFF)', 1, 0),
         ('LAGTIME([OFF,ON])', 'LAGTIME(ON)', 1, 1),
@@ -689,7 +681,7 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
             'TRANSITS([0,1,3,10],*);'
             'PERIPHERALS([0,1])',
             'PERIPHERALS(1);ABSORPTION(FO)',
-            9,
+            6,
             1,
         ),
         (
@@ -699,7 +691,7 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
             'TRANSITS([0,1,3,10],*);'
             'PERIPHERALS([0,1])',
             'PERIPHERALS(1);ABSORPTION(ZO)',
-            9,
+            6,
             1,
         ),
         (
@@ -709,7 +701,7 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
             'TRANSITS([0,1,3,10],*);'
             'PERIPHERALS([0,1])',
             'PERIPHERALS(1);ABSORPTION(SEQ-ZO-FO)',
-            9,
+            6,
             2,
         ),
         (
@@ -722,13 +714,13 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
             'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
             'PERIPHERALS(1);ELIMINATION(MM)',
             3,
-            1,
+            2,
         ),
         (
             'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
             'PERIPHERALS(1);ELIMINATION(MIX-FO-MM)',
             3,
-            2,
+            3,
         ),
     ],
 )

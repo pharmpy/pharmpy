@@ -34,7 +34,6 @@ from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
 from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
-from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
@@ -1364,50 +1363,61 @@ def calculate_bic_penalty(
 
 
 def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
-    def _get_len(attr):
-        if isinstance(attr, tuple):
-            return sum(len(feat) for feat in attr)
-        else:
-            return len(attr)
-
     p, k_p = 0, 0
     for attr_name, attr in vars(cand_mfl).items():
         if not attr:
             continue
         attr_search_space = getattr(search_space_mfl, attr_name)
-        if _get_len(attr_search_space) == 1:
+        if isinstance(attr, tuple):
+            assert len(attr) == 1 and len(attr_search_space) == 1
+            attr, attr_search_space = attr[0], attr_search_space[0]
+
+        if len(attr_search_space) == 1:
             continue
-        if isinstance(attr, Absorption) or isinstance(attr, Elimination):
-            feat_combo = 'SEQ-ZO-FO' if isinstance(attr, Absorption) else 'MIX-FO-MM'
-            assert len(attr.modes) == 1
-            if feat_combo in [node.name for node in attr_search_space.modes]:
-                p_attr = 2
+
+        if isinstance(attr, Absorption):
+            abs_search_space = [mode.name for mode in attr_search_space.modes]
+            if 'SEQ-ZO-FO' in abs_search_space:
+                p_attr = 1
             else:
                 p_attr = 0
             abs_type = attr.modes[0].name
-            if abs_type == feat_combo:
+            if abs_type == 'SEQ-ZO-FO':
                 k_p_attr = 1
             else:
+                k_p_attr = 0
+            if 'INST' in abs_search_space:
+                p_attr += 1
+                if abs_type != 'INST':
+                    k_p_attr += 1
+        elif isinstance(attr, Transits):
+
+            def _has_depot(attr):
+                return 'DEPOT' in [mode.name for mode in attr.depot]
+
+            if _has_depot(attr_search_space.eval):
+                p_attr = len([n for n in attr_search_space.counts if n > 0])
+                if _has_depot(attr):
+                    k_p_attr = 1 if attr.counts[0] > 0 else 0
+                else:
+                    k_p_attr = 0
+            else:
+                p_attr = 0
                 k_p_attr = 0
         elif isinstance(attr, LagTime):
             p_attr = 1
             k_p_attr = 1 if attr.modes[0].name == 'ON' else 0
-        elif isinstance(attr, tuple):
-            assert len(attr) == 1 and len(attr_search_space) == 1
-            attr, attr_search_space = attr[0], attr_search_space[0]
-            if isinstance(attr, Peripherals):
-                p_attr = len(attr_search_space) - 1
-                k_p_attr = attr.counts[0]
-            elif isinstance(attr, Transits):
-                p_attr = len([n for n in attr_search_space.counts if n > 0])
-                if 'DEPOT' in [node.name for node in attr_search_space.eval.depot]:
-                    p_attr += 1
-                if isinstance(attr_search_space.depot, Wildcard):
-                    p_attr += 1
-                if attr.depot[0].name == 'DEPOT' and attr.counts[0] > 0:
-                    k_p_attr = 1
-                else:
-                    k_p_attr = 0
+        elif isinstance(attr, Elimination):
+            attr_names = [mode.name for mode in attr_search_space.modes]
+            sort_val = {'FO': 0, 'MM': 1, 'MIX-FO-MM': 2}
+            attr_names.sort(key=lambda x: sort_val[x])
+            p_attr = len(attr_names) - 1
+            elim_type = attr.modes[0].name
+            k_p_attr = list(attr_names).index(elim_type)
+        elif isinstance(attr, Peripherals):
+            # FIXME: This will not work with e.g. `PERIPHERALS([0,2])`
+            p_attr = len(attr_search_space) - 1
+            k_p_attr = attr.counts[0]
         else:
             raise ValueError(f'MFL attribute of type `{type(attr)}` not supported.')
 
