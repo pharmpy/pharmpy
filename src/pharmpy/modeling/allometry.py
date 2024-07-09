@@ -74,13 +74,13 @@ def add_allometry(
                  ALLO_CL
             ⎛WGT⎞
          CL⋅⎜───⎟
-    CL =    ⎝ 70⎠
+    CL =    ⎝70 ⎠
               ETA_VC
     VC = TVV⋅ℯ
                  ALLO_VC
             ⎛WGT⎞
          VC⋅⎜───⎟
-    VC =    ⎝ 70⎠
+    VC =    ⎝70 ⎠
     V = VC
     S₁ = VC
 
