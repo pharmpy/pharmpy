@@ -62,10 +62,6 @@ class ForwardStep(Step):
     pass
 
 
-class SambaStep(Step):
-    pass
-
-
 @dataclass
 class Candidate:
     modelentry: ModelEntry
@@ -220,33 +216,27 @@ def samba_step(context, step, alpha, state_and_effect):
     best_nlme_candidate = nonlinear_search_state.best_candidate_so_far
     best_nlme_modelentry = nonlinear_search_state.best_candidate_so_far.modelentry
 
+    selected_explor_cov_funcs = []
     # LINEAR COVARIATE MODEL PROCESSING #####################
     # update dataset (etas) for all linear covariate candidate models
-    for param, covariates in param_cov_list.items():
+    for param, linear_modelentries in linear_modelentry_dict.items():
+        wb = WorkflowBuilder(name="linear model selection")
+        covariates = param_cov_list[param]
         # update dataset
         updated_dataset = _create_samba_dataset(
             best_nlme_modelentry, param, covariates, log_transform=True
         )
-        # update linear covariate models
         covs = ["Base"] + covariates
-        linear_modelentry_dict[param] = [
-            ModelEntry.create(
+        linear_modelentries = list(linear_modelentries)
+        for i, me in enumerate(linear_modelentries):
+            linear_modelentries[i] = ModelEntry.create(
                 model=me.model.replace(
-                    dataset=updated_dataset, name=f"step {step}_Lin_{param}_{covs[i]}"
+                    dataset=updated_dataset, name=f"step {step}_lin_{param}_{covs[i]}"
                 )
             )
-            for i, me in enumerate(linear_modelentry_dict[param])
-        ]
-    selected_explor_cov_funcs = []
-    # fit linear covariate models
-    # NOTE: MINIMIZATION TERMINATED may result in potentially wrong OVF values
-    for param, linear_modelentries in linear_modelentry_dict.items():
-        # TODO: optimize the clumsy workflow building chuncks,
-        #  a task_func for similar code chunk (if not isinstance(input, modelentry): to_modelentry)
-        wb = WorkflowBuilder()
-        for i in linear_modelentries:
-            task = Task("fit_linear_mes", lambda x: x, i)
+            task = Task("fit_lin_mes", lambda me: me, linear_modelentries[i])
             wb.add_task(task)
+        # fit linear covariate models
         linear_fit_wf = create_fit_workflow(n=len(linear_modelentries))
         wb.insert_workflow(linear_fit_wf)
         task_gather = Task("gather", lambda *models: models)
@@ -254,7 +244,7 @@ def samba_step(context, step, alpha, state_and_effect):
         linear_modelentries = call_workflow(Workflow(wb), 'fit_linear_models', context)
         linear_modelentry_dict[param] = linear_modelentries
 
-        # covariate model selection: best of many
+        # linear covariate model selection
         ofvs = [
             modelentry.modelfit_results.ofv if modelentry.modelfit_results is not None else np.nan
             for modelentry in linear_modelentries
@@ -285,8 +275,7 @@ def samba_step(context, step, alpha, state_and_effect):
             )
             new_nonlin_models.append(nonlin_model_added_effect)
 
-        # TODO: a task_func for similar code chunk (if not isinstance(input, modelentry): to_modelentry)
-        wb = WorkflowBuilder()
+        wb = WorkflowBuilder(name="nonlinear model selection")
 
         def model_to_modelentry(model, parent=best_nlme_modelentry.model):
             return ModelEntry.create(model, parent=parent)
@@ -331,7 +320,6 @@ def samba_step(context, step, alpha, state_and_effect):
             model_ofvs=ofvs,
             alpha=alpha,
         )
-        # print(new_best_nlme_modelentry.modelfit_results.ofv)
 
         if new_best_nlme_modelentry != best_nlme_modelentry:
             # update search states
@@ -353,24 +341,6 @@ def samba_step(context, step, alpha, state_and_effect):
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
 
 
-def _update_linear_covariate_dataset():
-    """Update the dataset of linear covariate models based on the current best nlme model.
-    Return updated linear_modelentry_dict
-    """
-    pass
-
-
-def _select_linear_covariate_model():
-    """Linear Covariate Model Selection
-    Return selected covariate effects
-    """
-    pass
-
-
-def _select_nonlin_model():
-    pass
-
-
 def samba_search(context, max_steps, alpha, state_and_effect):
     steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
     for step in steps:
@@ -380,7 +350,6 @@ def samba_search(context, max_steps, alpha, state_and_effect):
 
         new_best = state_and_effect[0].best_candidate_so_far
         if new_best is prev_best:
-            # print(f"Search stops at step {step} due to no signif decrease in ofv of nlme models.")
             break
 
     return state_and_effect[0]
@@ -428,6 +397,7 @@ def filter_search_space_and_model(search_space, model):
         for cov_effect, cov_func in exploratory_cov_funcs.items()
         if cov_effect[-1] == "ADD"
     }
+    # TODO: if algorithm=="SAMBA": INDEXED CODE CHUNK return (ind, lin, mod)
     # indexed exploratory cov_funcs for nonlinear mixed effect models
     indexed_explor_cov_funcs = {}
     linear_cov_funcs = {}
