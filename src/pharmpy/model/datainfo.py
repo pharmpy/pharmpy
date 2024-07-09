@@ -83,7 +83,9 @@ class ColumnInfo(Immutable):
     _all_descriptors = (
         None,
         'age',
+        'body height',
         'body weight',
+        'body surface area',
         'lean body mass',
         'fat free mass',
         'time after dose',
@@ -339,6 +341,8 @@ class ColumnInfo(Immutable):
         descriptor             Description
         ====================== ============================================
         age                    Age (since birth)
+        body height            Human body height
+        body surface area      Body surface area (calculated)
         body weight            Human body weight
         lean body mass         Lean body mass
         fat free mass          Fat free mass
