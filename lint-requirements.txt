@@ -6,7 +6,7 @@ flake8==7.1.0
 flake8-black==0.3.6
 isort==5.13.2
 pyright==1.1.370
-readme-renderer==43.0
+readme-renderer==44.0
 twine==5.1.0 
 # Indirect dependencies
 build==1.2.1
