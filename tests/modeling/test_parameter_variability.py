@@ -75,6 +75,14 @@ def S(x):
             'V = TVV*EXP(ETA(2)) + EXP(NEW_ETA1)\nS1 = V + EXP(NEW_ETA2)',
             3,
         ),
+        (
+            ['V', 'S1'],
+            ['exp'],
+            '+',
+            None,
+            'V = TVV*EXP(ETA(2)) + EXP(ETA_V)\nS1 = V + EXP(ETA_S1)',
+            3,
+        ),
     ],
 )
 def test_add_iiv(

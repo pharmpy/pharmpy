@@ -75,7 +75,9 @@ def _format_options(list_of_options, no_of_variables):
     options = []
     for option in list_of_options:
         if isinstance(option, str) or not option:
-            option = [option] * no_of_variables
+            option = [option]
+        if isinstance(option, list) and len(option) == 1:
+            option *= no_of_variables
         options.append(option)
 
     return options

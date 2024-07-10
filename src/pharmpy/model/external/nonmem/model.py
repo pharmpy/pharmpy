@@ -313,6 +313,11 @@ class Model(BaseModel):
             self.datainfo, self.internals.control_stream, raw=True, parse_columns=parse_columns
         )
 
+    @property
+    def internals(self) -> NONMEMModelInternals:
+        # NOTE: Overload for type hinting
+        return self._internals
+
 
 def parse_model(
     code: str, path: Optional[Path] = None, dataset: Optional[pd.DataFrame] = None, **_

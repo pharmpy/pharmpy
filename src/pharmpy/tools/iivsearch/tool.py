@@ -642,7 +642,7 @@ def validate_input(
             try:
                 has_random_effect(model, parameter, "iiv")
             except KeyError:
-                warnings.warn(f"Parameter {keep} has no iiv and is ignored")
+                warnings.warn(f"Parameter {parameter} has no iiv and is ignored")
 
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:

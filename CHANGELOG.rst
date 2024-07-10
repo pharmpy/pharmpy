@@ -1,3 +1,12 @@
+1.1.0
+-----
+
+Bugfixes
+========
+
+* (pharmr) Fix regression in input conversion of `keep`-option in IIVSearch
+* Allow lists in option arguments with length of 1 in modeling.add_iiv (e.g. `expression`)
+
 1.0.1 (2024-06-12)
 ------------------
 
