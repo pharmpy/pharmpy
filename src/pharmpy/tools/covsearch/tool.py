@@ -127,6 +127,7 @@ def create_workflow(
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
+    lin_est_tool: str = "python",
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -159,6 +160,9 @@ def create_workflow(
         Strictness criteria
     naming_index_offset: int
         index offset for naming of runs. Default is 0.
+    lin_est_tool: str {'python', None}
+        estimation tool for SAMBA linear covariate model fitting. 'python' calls statsmodel's
+        functionalities, whereas None calls nonmem.
 
     Returns
     -------
@@ -175,7 +179,7 @@ def create_workflow(
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
     if algorithm == "SAMBA":
-        return samba_workflow(search_space, max_steps, p_forward, results, model)
+        return samba_workflow(search_space, max_steps, p_forward, results, model, lin_est_tool)
 
     wb = WorkflowBuilder(name=NAME_WF)
 
