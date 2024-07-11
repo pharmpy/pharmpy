@@ -277,6 +277,36 @@ def set_name(model: Model, new_name: str):
     return model
 
 
+def set_description(model: Model, new_description: str):
+    """Set description of model object
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    new_description : str
+        New description of model
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import set_description, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.description
+    'PHENOBARB SIMPLE MODEL'
+    >>> model = set_description(model, "PHENOBARB run 2")
+    >>> model.description
+    'PHENOBARB run 2'
+
+    """
+    model = model.replace(description=new_description)
+    return model
+
+
 def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None):
     """If the model name ends in a number increase it
 
