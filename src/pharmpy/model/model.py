@@ -20,6 +20,7 @@ from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union
+from pharmpy.internals.typing import Self
 
 import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
@@ -286,7 +287,7 @@ class Model(Immutable):
                 raise TypeError("model.execution_steps must be of ExecutionSteps type")
             return steps
 
-    def replace(self, **kwargs) -> Model:
+    def replace(self, **kwargs) -> Self:
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
 
