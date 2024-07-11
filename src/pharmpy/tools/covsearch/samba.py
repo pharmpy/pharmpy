@@ -139,7 +139,7 @@ def _init_search_state(context, search_space: str, modelentry: ModelEntry):
 
     # create linear covariate models
     linear_modelentry_dict, param_cov_list = _param_indexed_linear_modelentries(
-        linear_cov_funcs, filtered_modelentry
+        linear_cov_funcs, filtered_modelentry, context
     )
 
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
@@ -159,8 +159,8 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model):
     # TESTING ###################
     # TODO: IMP est step for suitable OFV for LRT (TBD: EONLY setting)
     # FIXME: Adding IMP est step bugs the summary_tool's ofv and dofv (empty)
-    # filtered_model = add_estimation_step(filtered_model, method="IMP", idx=1, isample=1000, niter=5,
-    #                                      tool_options={"EONLY":"2", "MAPITER":"0"})
+    filtered_model = add_estimation_step(filtered_model, method="IMP", idx=1, isample=3000, niter=5, interaction=True,
+                                         tool_options={"EONLY": "2", "MAPITER": "0", "SIGL": "8", "PRINT":"1"})
     # TESTING ###################
 
     # nonlinear mixed effect modelentry creation and fit
@@ -179,7 +179,7 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model):
     return nonlinear_search_state
 
 
-def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry):
+def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, context):
     param_indexed_funcs = {}  # {param: {cov_effect: cov_func}}
     param_cov_list = {}  # {param: [covariates]}
     for cov_effect, cov_func in linear_cov_funcs.items():
@@ -195,7 +195,7 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry):
     linear_modelentry_dict = dict.fromkeys(param_cov_list.keys(), None)
     # create param_base_model
     for param, covariates in param_cov_list.items():
-        param_base_model = _create_samba_base_model(filtered_modelentry, param, covariates)
+        param_base_model = _create_samba_base_model(filtered_modelentry, param, covariates, context)
         param_base_modelentry = ModelEntry.create(model=param_base_model)
         linear_modelentry_dict[param] = [param_base_modelentry]
 
@@ -218,13 +218,14 @@ def samba_step(context, step, alpha, state_and_effect):
 
     selected_explor_cov_funcs = []
     # LINEAR COVARIATE MODEL PROCESSING #####################
+    # TODO: try statsmodels linear
     # update dataset (etas) for all linear covariate candidate models
     for param, linear_modelentries in linear_modelentry_dict.items():
         wb = WorkflowBuilder(name="linear model selection")
         covariates = param_cov_list[param]
         # update dataset
         updated_dataset = _create_samba_dataset(
-            best_nlme_modelentry, param, covariates, log_transform=True
+            best_nlme_modelentry, param, covariates, context, log_transform=True
         )
         covs = ["Base"] + covariates
         linear_modelentries = list(linear_modelentries)
@@ -419,7 +420,12 @@ def filter_search_space_and_model(search_space, model):
     return (indexed_explor_cov_funcs, linear_cov_funcs, filtered_model)
 
 
-def _create_samba_dataset(model_entry, param, covariates, log_transform=True):
+def _create_samba_dataset(model_entry, param, covariates, context, log_transform=True):
+    # if model_entry.model.execution_steps[-1].method != "SAEM":
+    #     m = remove_estimation_step(model_entry.model, idx=1)
+    #     me = ModelEntry.create(model=m)
+    #     me_fit = create_fit_workflow(modelentries=[me])
+    #     model_entry = call_workflow(me_fit, "fit_for_dataset", context)
     # Get ETA values associated with the interested model parameter
     eta_name = get_parameter_rv(model_entry.model, param)[0]
     eta_column = model_entry.modelfit_results.individual_estimates[eta_name]
@@ -429,12 +435,12 @@ def _create_samba_dataset(model_entry, param, covariates, log_transform=True):
     covariates = list(set(covariates))  # drop duplicated covariates
     covariate_columns = model_entry.model.dataset[["ID"] + covariates]
     # TESTING ###################
-    # TODO: Log transformation of covariates
     if log_transform:
-        covariate_columns.loc[:, covariates] = covariate_columns.loc[:, covariates].apply(
+        columns_to_trans = covariate_columns.columns[(covariate_columns>0).all(axis=0)]
+        columns_to_trans = columns_to_trans.drop("ID")
+        covariate_columns.loc[:, columns_to_trans] = covariate_columns.loc[:, columns_to_trans].apply(
             np.log
-        )  # for linear covariate models, covariates need to be log transformed
-        covariate_columns = covariate_columns.replace([np.inf, -np.inf], 1)
+        )
     # TESTING ###################
     # Merge the ETAs and Covariate dataset
     dataset = covariate_columns.join(eta_column, "ID")
@@ -442,13 +448,13 @@ def _create_samba_dataset(model_entry, param, covariates, log_transform=True):
     return dataset
 
 
-def _create_samba_base_model(modelentry, param, covariates):
+def _create_samba_base_model(modelentry, param, covariates, context):
     """
     Create linear base model [Y ~ THETA(1) + ERR(1)] for the parameters to be explored.
     ETA values associated with these model parameters are set as dependent variable (DV).
     The OFVs of these base models are used as the basis of linear covariate model selection.
     """
-    dataset = _create_samba_dataset(modelentry, param, covariates, log_transform=True)
+    dataset = _create_samba_dataset(modelentry, param, covariates, context, log_transform=True)
 
     # parameters
     theta = Parameter(name="theta", init=0.1)
@@ -495,3 +501,22 @@ def _create_samba_base_model(modelentry, param, covariates):
 def samba_task_results(context, p_forward, state):
     # set p_backward and strictness to None
     return scm_tool.task_results(context, p_forward, p_backward=None, strictness=None, state=state)
+
+
+if __name__ == "__main__":
+    from pharmpy.modeling import *
+    from pharmpy.tools import *
+    from pharmpy.workflows import execute_workflow
+    import time
+    #%%
+    model = read_model("sambas.ctl")
+    search_space = "COVARIATE?([CL, V], [WT, AGE], POW); COVARIATE?([CL,V], SEX, EXP)"
+    #%%
+    wf = samba_workflow(search_space=search_space, model=model, max_steps=5)
+
+    t1 = time.perf_counter()
+    res = execute_workflow(wf)
+    t2 = time.perf_counter()
+    print(f"runtime: t2 - t1")
+
+    
