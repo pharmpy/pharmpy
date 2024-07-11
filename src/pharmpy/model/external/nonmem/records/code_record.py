@@ -11,7 +11,6 @@ from typing import Iterator, Literal, Sequence, Set, Tuple
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy, sympy_printing
-from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.ds.ordered_set import OrderedSet
 from pharmpy.internals.expr.funcs import (
     INT,
@@ -636,16 +635,10 @@ class CodeRecord(Record):
 
 def create_dvs_node(dvs, dvid_name):
     """Create special dvs AST node"""
+    s = ""
     for i, (dv, dvid) in enumerate(dvs.items()):
-        cg = CodeGenerator()
-        cg.add(f'IF ({dvid_name}.EQ.{dvid}) Y = {dv}')
-
-        if i == 0:
-            node = CodeRecordParser(str(cg)).root.children[0]
-        elif i == len(dvs.items()) - 1:
-            node = node.add_node(CodeRecordParser(str(cg) + '\n').root.children[0])
-        else:
-            node = node.add_node(CodeRecordParser(str(cg)).root.children[0])
+        s += f'IF ({dvid_name}.EQ.{dvid}) Y = {dv}\n'
+    node = CodeRecordParser(s).root
     return node
 
 
