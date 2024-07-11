@@ -18,7 +18,7 @@ class Abbreviated:
         """Get all $ABBR REPLACE as a dictionary"""
         return dict(
             chain.from_iterable(
-                record.replace.items() for record in self.stream.get_records('ABBREVIATED')
+                record.replaceopt.items() for record in self.stream.get_records('ABBREVIATED')
             )
         )
 

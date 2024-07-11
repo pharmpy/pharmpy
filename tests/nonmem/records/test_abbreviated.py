@@ -10,7 +10,7 @@ def test_data_filename_set(testdata, load_model_for_test):
 
 def test_replace(parser):
     rec = parser.parse('$ABBR REPLACE K34="3,4"').records[0]
-    assert rec.replace == {'K34': '3,4'}
+    assert rec.replaceopt == {'K34': '3,4'}
 
 
 def test_translate_to_pharmpy_names(testdata, load_model_for_test):
