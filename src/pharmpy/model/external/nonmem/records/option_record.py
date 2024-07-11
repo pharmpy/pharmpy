@@ -7,6 +7,7 @@ Assumes 'KEY=VALUE' or 'VALUE' and does not support 'KEY VALUE' in general.
 from __future__ import annotations
 
 import re
+from abc import ABC
 from collections import namedtuple
 from typing import Iterable, Optional, Tuple, Union, cast
 
@@ -414,6 +415,7 @@ class Opts:
             # FIXME: This is special for $TABLE. Either have special case for this or have an Opt for it.
             m = re.match(r'ETAS\(?', key)
             if m:
+                assert isinstance(netas, int)
                 # join all keys that belong with the ETAS
                 etas = key
                 while ')' not in key:
@@ -452,7 +454,7 @@ class Opts:
                 continue
 
             # FIXME: What happens if key=value for nonoption?
-            if key in nonoptions:
+            if nonoptions is not None and key in nonoptions:
                 parsed.append((WildOpt(), key, None))
                 i += 1
                 continue
@@ -488,7 +490,9 @@ class Opts:
         return parsed
 
 
-class Opt:
+class Opt(ABC):
+    name: str
+
     def __init__(self, noabbrev=False):
         self.abbreviations = []
         self.noabbrev = noabbrev

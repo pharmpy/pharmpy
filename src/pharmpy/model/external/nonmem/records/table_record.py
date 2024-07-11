@@ -82,6 +82,7 @@ class TableRecord(OptionRecord):
         return derivs
 
     def parse_options(self, nonoptions, netas):
+        assert self.option_defs is not None
         return self.option_defs.parse_ast(self.root, nonoptions=nonoptions, netas=netas)
 
 
