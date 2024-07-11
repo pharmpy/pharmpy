@@ -4,6 +4,8 @@ Generic NONMEM option record class.
 Assumes 'KEY=VALUE' or 'VALUE' and does not support 'KEY VALUE' in general.
 """
 
+from __future__ import annotations
+
 import re
 from collections import namedtuple
 from typing import Iterable, Optional, Tuple, Union, cast
@@ -29,8 +31,10 @@ Option = namedtuple('Option', ['key', 'value'])
 
 
 class OptionRecord(Record):
+    option_defs: Optional[Opts] = None
+
     def __init__(self, name, raw_name, root):
-        if hasattr(self, 'option_defs'):
+        if self.option_defs is not None:
             self.parsed_options = self.option_defs.parse_ast(root)
         super().__init__(name, raw_name, root)
 
