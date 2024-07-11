@@ -114,7 +114,9 @@ class NormalDistribution(Distribution):
         self._variance = variance
 
     @classmethod
-    def create(cls, name: str, level: str, mean: Expr, variance: Expr):
+    def create(
+        cls, name: str, level: str, mean: Union[Expr, int, float], variance: Union[Expr, int, float]
+    ):
         level = level.upper()
         mean = Expr(mean)
         variance = Expr(variance)
