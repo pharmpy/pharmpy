@@ -118,7 +118,7 @@ def test_set_name(pheno):
     assert model.name == "run1"
 
 
-def test_set_dscription(pheno):
+def test_set_description(pheno):
     model = set_description(pheno, "run1")
     assert model.description == "run1"
 

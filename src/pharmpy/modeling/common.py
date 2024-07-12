@@ -247,7 +247,7 @@ def print_model_code(model: Model) -> None:
     print(model.code)
 
 
-def set_name(model: Model, new_name: str):
+def set_name(model: Model, new_name: str) -> Model:
     """Set name of model object
 
     Parameters
@@ -277,7 +277,7 @@ def set_name(model: Model, new_name: str):
     return model
 
 
-def set_description(model: Model, new_description: str):
+def set_description(model: Model, new_description: str) -> Model:
     """Set description of model object
 
     Parameters
