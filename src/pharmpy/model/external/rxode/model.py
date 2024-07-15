@@ -50,13 +50,16 @@ class Model(pharmpy.model.Model):
         create_fit(cg, self)
         code = str(cg).replace("AMT", "amt").replace("TIME", "time")
         path = None
-        internals = self.internals.replace(src=code, path=path)
+        internals = self.internals
+        assert isinstance(internals, RxODEModelInternals)
+        internals = internals.replace(src=code, path=path)
         model = self.replace(internals=internals)
         return model
 
     @property
     def code(self):
         model = self.update_source()
+        assert isinstance(model.internals, RxODEModelInternals)
         code = model.internals.src
         assert code is not None
         return code
@@ -82,9 +85,11 @@ def convert_model(model, skip_check=False):
     # Update dataset
     if model.dataset is not None:
         rxode_model = translate_nmtran_time(rxode_model)
+        assert rxode_model.dataset is not None
 
         if all(x in rxode_model.dataset.columns for x in ["RATE", "DUR"]):
             rxode_model = drop_columns(rxode_model, ["DUR"])
+            assert rxode_model.dataset is not None
         rxode_model = rxode_model.replace(
             datainfo=rxode_model.datainfo.replace(path=None),
             dataset=rxode_model.dataset.reset_index(drop=True),
