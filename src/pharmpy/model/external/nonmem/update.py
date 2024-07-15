@@ -6,9 +6,6 @@ from pathlib import Path
 from typing import TYPE_CHECKING, List, Optional
 
 from pharmpy.basic import Expr
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.parse import AttrTree
 from pharmpy.internals.parse.generic import AttrToken
@@ -36,7 +33,16 @@ from pharmpy.modeling import get_admid, get_cmt, get_ids, simplify_expression
 from .records.parsers import CodeRecordParser
 
 if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+    import sympy
+    import sympy.printing.fortran as fortran
     from .model import Model
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy, sympy_printing
+    fortran = sympy_printing.fortran
 
 from .nmtran_parser import NMTranControlStream
 from .parsing import extract_verbatim_derivatives, parse_column_info
@@ -2133,10 +2139,10 @@ def update_ccontra(model, path=None, force=False):
 
     with open(ccontr_path, 'w') as fh:
         fh.write(ccontr1)
-        e1 = sympy_printing.fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
+        e1 = fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
         fh.write(e1)
         fh.write(ccontr2)
-        e2 = sympy_printing.fortran.fcode(
+        e2 = fortran.fcode(
             sympy.Symbol('c1') + ll.subs(y, sympy.Symbol('y(1)')), assign_to='c1'
         )
         fh.write(e2)
