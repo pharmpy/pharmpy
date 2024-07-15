@@ -127,7 +127,8 @@ def create_workflow(
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
-    lin_est_tool: str = "python",
+    lin_est_tool: Literal["python", None] = "python",
+    imp_estimated_ofv: bool = False,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -160,9 +161,12 @@ def create_workflow(
         Strictness criteria
     naming_index_offset: int
         index offset for naming of runs. Default is 0.
-    lin_est_tool: str {'python', None}
+    lin_est_tool: {'python', None}
         estimation tool for SAMBA linear covariate model fitting. 'python' calls statsmodel's
         functionalities, whereas None calls nonmem.
+    imp_estimated_ofv: bool
+        additional IMP estimation step for stable OFV calculation for nonlinear mixed effects models in SAMBA.
+        Default is False, i.e. use SAEM's OFV for nonlinear model selection.
 
     Returns
     -------
@@ -179,7 +183,7 @@ def create_workflow(
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
     if algorithm == "SAMBA":
-        return samba_workflow(search_space, max_steps, p_forward, results, model, lin_est_tool)
+        return samba_workflow(search_space, max_steps, p_forward, results, model, lin_est_tool, imp_estimated_ofv)
 
     wb = WorkflowBuilder(name=NAME_WF)
 
@@ -271,14 +275,25 @@ def filter_search_space_and_model(search_space, model):
 
     # Clean up all covariate effect in model
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
-    covariate_to_remove = model_mfl.mfl_statement_list(["covariate"])
+    # covariate effects not in search space, should be kept as it is
+    covariate_to_keep = model_mfl - ss_mfl  
+    # covariate effects in both model and search space, should be removed for exploration in future searching steps
+    covariate_to_remove = model_mfl - covariate_to_keep 
+    covariate_to_remove = covariate_to_remove.mfl_statement_list(["covariate"])
     description = []
     if len(covariate_to_remove) != 0:
         description.append("REMOVED")
         for cov_effect in parse_spec(spec(filtered_model, covariate_to_remove)):
             filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
             description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
-        filtered_model = filtered_model.replace(description=';'.join(description))
+    # Remove all custom effects
+    covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
+    for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
+        if cov_effect[2].lower() == "custom":
+            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))   
+            
+    filtered_model = filtered_model.replace(description=';'.join(description))
 
     # Add structural covariates in search space if any
     structural_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
