@@ -67,9 +67,9 @@ def check_model(
     if rvs_same(model, sigma=True):
         print_warning("Sigma with value same not supported. Parameters are updated")
         model = change_rvs_same(model, sigma=True)
-    if rvs_same(model, omega=True):
+    if rvs_same(model):
         print_warning("Omega with value same not supported. Parameters are updated")
-        model = change_rvs_same(model, omega=True)
+        model = change_rvs_same(model)
 
     # Checks regarding esimation method
     method = model.execution_steps[0].method
@@ -139,8 +139,10 @@ def same_time(model: pharmpy.model.Model) -> bool:
         True if bolus and observation at the exact same time, for any datapoints.
 
     """
-    temp_model = model
-    temp_model = temp_model.replace(dataset=temp_model.dataset.reset_index())
+    if model.dataset is None:
+        return False
+
+    temp_model = model.replace(dataset=model.dataset.reset_index())
     dataset = temp_model.dataset
 
     if "RATE" in dataset.columns:
@@ -157,12 +159,14 @@ def same_time(model: pharmpy.model.Model) -> bool:
                     ID = row["ID"]
                     TIME = row["TIME"]
                     subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
-                    if any([x not in evid_ignore for x in subset["EVID"].unique()]) and any(
-                        [x in evid_ignore for x in subset["EVID"].unique()]
+                    unique_evid = subset["EVID"].unique()
+                    if any([x not in evid_ignore for x in unique_evid]) and any(
+                        [x in evid_ignore for x in unique_evid]
                     ):
+                        unique_rate = subset["RATE"].unique()
                         if rate:
-                            if any([x != 0 for x in subset["RATE"].unique()]) and any(
-                                [x == 0 for x in subset["RATE"].unique()]
+                            if any([x != 0 for x in unique_rate]) and any(
+                                [x == 0 for x in unique_rate]
                             ):
                                 return True
                         else:
@@ -187,6 +191,9 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
         The same model with a changed dataset.
 
     """
+    if model.dataset is None:
+        return model
+
     dataset = model.dataset.copy()
     dataset = dataset.reset_index(drop=True)
 
@@ -198,14 +205,18 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
     evid_ignore = [0, 3, 4]
 
     for index, row in dataset.iterrows():
+        assert isinstance(index, int)
         if index != 0:
             if row["ID"] == dataset.loc[index - 1]["ID"]:
                 if row["TIME"] == dataset.loc[index - 1]["TIME"]:
                     ID = row["ID"]
                     TIME = row["TIME"]
                     subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
-                    if any([x not in evid_ignore for x in subset["EVID"].unique()]) and any(
-                        [x in evid_ignore for x in subset["EVID"].unique()]
+                    unique_evid = subset[
+                        "EVID"
+                    ].unique()  # pyright: ignore [reportAttributeAccessIssue]
+                    if any([x not in evid_ignore for x in unique_evid]) and any(
+                        [x in evid_ignore for x in unique_evid]
                     ):
                         if rate:
                             dataset.loc[
@@ -227,7 +238,7 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
     return model
 
 
-def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = False) -> bool:
+def rvs_same(model: pharmpy.model.Model, sigma: bool = False) -> bool:
     """
     Check if there are random variables that are referencing the same
     distribution value.
@@ -238,9 +249,7 @@ def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = Fals
     model : pharmpy.model.Model
         A pharmpy model object.
     sigma : bool, optional
-        Check for same sigma values. The default is False.
-    omega : bool, optional
-        Check for same omega values. The default is False.
+        Check for same sigma values. The default is False meaning to check omegas.
 
     Returns
     -------
@@ -251,7 +260,7 @@ def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = Fals
     """
     if sigma:
         rvs = model.random_variables.epsilons
-    elif omega:
+    else:
         rvs = model.random_variables.etas
 
     checked_variance = []
@@ -264,9 +273,7 @@ def rvs_same(model: pharmpy.model.Model, sigma: bool = False, omega: bool = Fals
     return False
 
 
-def change_rvs_same(
-    model: pharmpy.model.Model, sigma: bool = False, omega: bool = False
-) -> pharmpy.model.Model:
+def change_rvs_same(model: pharmpy.model.Model, sigma: bool = False) -> pharmpy.model.Model:
     """
     Add more distribution parameters if mutiple random variables are referencing
     the same distribution. Done for sigma and omega values.
@@ -277,9 +284,7 @@ def change_rvs_same(
     model : pharmpy.model.Model
         A pharmpy model object.
     sigma : bool, optional
-        Check for same sigma values. The default is False.
-    omega : bool, optional
-        Check for same omega values. The default is False.
+        Check for same sigma values. The default is False meaning to check omegas
 
     Returns
     -------
@@ -289,7 +294,7 @@ def change_rvs_same(
     """
     if sigma:
         rvs = model.random_variables.epsilons
-    elif omega:
+    else:
         rvs = model.random_variables.etas
 
     checked_variance = []
