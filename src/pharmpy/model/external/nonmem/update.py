@@ -2073,7 +2073,7 @@ def solver_to_advan(solver):
     raise ValueError(solver)
 
 
-def update_ccontra(model: Model, path=None, force=False):
+def update_ccontra(model, path=None, force=False):
     # FIXME: Handle multiple DVs
     if len(model.observation_transformation) > 1:
         raise ValueError('Cannot create ccontra for multiple DVs')

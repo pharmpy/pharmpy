@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Callable, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 from pharmpy.basic import Expr
 
@@ -246,7 +246,7 @@ def parse_parameters(control_stream, statements, di):
 
 def parse_statements(
     di: DataInfo,
-    dataset: Callable[[], pd.DataFrame],
+    dataset,
     control_stream: NMTranControlStream,
 ) -> Tuple[Statements, Optional[Dict[str, int]]]:
     rec = control_stream.get_pred_pk_record()

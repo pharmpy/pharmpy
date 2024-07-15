@@ -8,4 +8,4 @@ import typing
 if typing.TYPE_CHECKING:
     Self = typing.Self
 else:
-	Self = typing.Any
+    Self = typing.Any
