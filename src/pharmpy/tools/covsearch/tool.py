@@ -183,7 +183,9 @@ def create_workflow(
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
     if algorithm == "SAMBA":
-        return samba_workflow(search_space, max_steps, p_forward, results, model, lin_est_tool, imp_estimated_ofv)
+        return samba_workflow(
+            search_space, max_steps, p_forward, results, model, lin_est_tool, imp_estimated_ofv
+        )
 
     wb = WorkflowBuilder(name=NAME_WF)
 
@@ -276,9 +278,9 @@ def filter_search_space_and_model(search_space, model):
     # Clean up all covariate effect in model
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
     # covariate effects not in search space, should be kept as it is
-    covariate_to_keep = model_mfl - ss_mfl  
+    covariate_to_keep = model_mfl - ss_mfl
     # covariate effects in both model and search space, should be removed for exploration in future searching steps
-    covariate_to_remove = model_mfl - covariate_to_keep 
+    covariate_to_remove = model_mfl - covariate_to_keep
     covariate_to_remove = covariate_to_remove.mfl_statement_list(["covariate"])
     description = []
     if len(covariate_to_remove) != 0:
@@ -291,8 +293,8 @@ def filter_search_space_and_model(search_space, model):
     for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
         if cov_effect[2].lower() == "custom":
             filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))   
-            
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+
     filtered_model = filtered_model.replace(description=';'.join(description))
 
     # Add structural covariates in search space if any

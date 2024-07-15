@@ -84,6 +84,7 @@ def samba_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     lin_est_tool="python",
+    imp_estimated_ofv=False,
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -95,7 +96,7 @@ def samba_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results)
     wb.add_task(store_task)
 
-    init_task = Task("init", _init_search_state, search_space)
+    init_task = Task("init", _init_search_state, search_space, imp_estimated_ofv)
     wb.add_task(init_task, predecessors=store_task)
 
     # SAMBA search task
@@ -129,7 +130,7 @@ def _store_input_model(context, model, results):
     return input_modelentry
 
 
-def _init_search_state(context, search_space: str, modelentry: ModelEntry):
+def _init_search_state(context, search_space: str, imp_estimated_ofv: bool, modelentry: ModelEntry):
     """Initialize SAMBA covariate search"""
     model = modelentry.model
     exploratory_cov_funcs, linear_cov_funcs, filtered_model = filter_search_space_and_model(
@@ -137,7 +138,9 @@ def _init_search_state(context, search_space: str, modelentry: ModelEntry):
     )
 
     # init nonlinear search state
-    nonlinear_search_state = _init_nonlinear_search_state(context, modelentry, filtered_model)
+    nonlinear_search_state = _init_nonlinear_search_state(
+        context, modelentry, filtered_model, imp_estimated_ofv
+    )
     filtered_modelentry = nonlinear_search_state.start_modelentry
 
     # create linear covariate models
@@ -148,7 +151,7 @@ def _init_search_state(context, search_space: str, modelentry: ModelEntry):
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
 
 
-def _init_nonlinear_search_state(context, input_modelentry, filtered_model):
+def _init_nonlinear_search_state(context, input_modelentry, filtered_model, imp_estimated_ofv):
     # nonlinear mixed effect model setup
     filtered_model = filtered_model.replace(name="samba_start_model", description="start")
     filtered_model = mu_reference_model(filtered_model)
@@ -159,18 +162,18 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model):
         idx=0,
         tool_options={'NITER': 1000, 'AUTO': 1, 'PHITYPE': 1},
     )
-    # TESTING ###################
-    # FIXME: Adding IMP est step bugs the summary_tool's ofv and dofv (empty)
-    filtered_model = add_estimation_step(
-        filtered_model,
-        method="IMP",
-        idx=1,
-        isample=3000,
-        niter=5,
-        interaction=True,
-        tool_options={"EONLY": "2", "MAPITER": "0", "SIGL": "8", "PRINT": "1"},
-    )
-    # TESTING ###################
+
+    # add IMP estimation after SAEM to obtain less stochastic OFV for nonlinear model selection
+    if imp_estimated_ofv:
+        filtered_model = add_estimation_step(
+            filtered_model,
+            method="IMP",
+            idx=1,
+            isample=3000,
+            niter=5,
+            interaction=True,
+            tool_options={"EONLY": "1", "MAPITER": "0", "SIGL": "8", "PRINT": "1", "AUTO": "1"},
+        )
 
     # nonlinear mixed effect modelentry creation and fit
     filtered_modelentry = ModelEntry.create(model=filtered_model)
@@ -233,12 +236,14 @@ def samba_step(context, step, alpha, lin_est_tool, state_and_effect):
     return state_and_effect
 
 
+# TODO: modify linear model selection, select only one covariate effect and fit only one NLME model at each iteration
 def linear_model_selection(context, step, alpha, state_and_effect, lin_est_tool=None):
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
         state_and_effect
     )
     best_nlme_modelentry = nonlinear_search_state.best_candidate_so_far.modelentry
     selected_explor_cov_funcs = []
+    selected_lin_model_ofv = []
 
     # update dataset (etas) for all linear covariate candidate models
     if lin_est_tool == "python":
@@ -254,9 +259,14 @@ def linear_model_selection(context, step, alpha, state_and_effect, lin_est_tool=
                 linear_models[0], linear_models[1:], ofvs[0], ofvs[1:], alpha=alpha
             )
             cov_model_index = "_".join([param, selected_cov.exog_names[-1]])
-            # print("Selected Covariate Effect: ", cov_model_index)
             if "Intercept" not in cov_model_index:
-                selected_explor_cov_funcs.extend(exploratory_cov_funcs[cov_model_index])
+                selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
+                parent_ofv = ofvs[0]
+                child_ofv = ofvs[1:]
+                best_index = np.nanargmin(child_ofv)
+                ofv_drop = parent_ofv - child_ofv[best_index]
+                selected_lin_model_ofv.append(ofv_drop)
+
     else:
         # nonmem as linear model estimation tool
         for param, linear_modelentries in linear_modelentry_dict.items():
@@ -299,9 +309,20 @@ def linear_model_selection(context, step, alpha, state_and_effect, lin_est_tool=
                 alpha=alpha,
             )
             cov_model_index = selected_cov.model.description
-            # print("Selected Covariate Effect: ", cov_model_index)
             if "Base" not in cov_model_index:
-                selected_explor_cov_funcs.extend(exploratory_cov_funcs[cov_model_index])
+                selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
+                # calculate the drop-off of ofv for selected linear models
+                parent_ofv = ofvs[0]
+                child_ofv = ofvs[1:]
+                best_index = np.nanargmin(child_ofv)
+                ofv_drop = parent_ofv - child_ofv[best_index]
+                selected_lin_model_ofv.append(ofv_drop)
+
+    # select the best linear model (covariate effect) with the largest drop-off in ofv
+    best_index = np.nanargmax(selected_lin_model_ofv)
+    selected_explor_cov_funcs = selected_explor_cov_funcs[best_index]
+    if not isinstance(selected_explor_cov_funcs, list):
+        selected_explor_cov_funcs = [selected_explor_cov_funcs]
 
     return selected_explor_cov_funcs, linear_modelentry_dict
 
@@ -422,7 +443,11 @@ def filter_search_space_and_model(search_space, model):
 
     # Clean up all covariate effect in model
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
-    covariate_to_remove = model_mfl.mfl_statement_list(["covariate"])
+    # covariate effects not in search space, should be kept as it is
+    covariate_to_keep = model_mfl - ss_mfl
+    # covariate effects in both model and search space, should be removed for exploration in future searching steps
+    covariate_to_remove = model_mfl - covariate_to_keep
+    covariate_to_remove = covariate_to_remove.mfl_statement_list(["covariate"])
     description = []
     if len(covariate_to_remove) != 0:
         description.append("REMOVED")
@@ -439,7 +464,14 @@ def filter_search_space_and_model(search_space, model):
         for cov_effect, cov_func in structural_cov_funcs.items():
             filtered_model = cov_func(filtered_model)
             description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
-        filtered_model = filtered_model.replace(description=";".join(description))
+    # Remove custom effects
+    covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
+    for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
+        if cov_effect[2].lower() == "custom":
+            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+
+    filtered_model = filtered_model.replace(description=";".join(description))
 
     # Exploratory covariates and cov_funcs
     exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
@@ -485,13 +517,12 @@ def _create_samba_dataset(model_entry, param, covariates):
     # Extract the covariates dataset
     covariates = list(set(covariates))  # drop duplicated covariates
     covariate_columns = model_entry.model.dataset[["ID"] + covariates]
-    # TESTING ###################
+    # Log-transform covariates with only positive values
     columns_to_trans = covariate_columns.columns[(covariate_columns > 0).all(axis=0)]
     columns_to_trans = columns_to_trans.drop("ID")
     covariate_columns.loc[:, columns_to_trans] = covariate_columns.loc[:, columns_to_trans].apply(
         np.log
     )
-    # TESTING ###################
     # Merge the ETAs and Covariate dataset
     dataset = covariate_columns.join(eta_column, "ID")
 
