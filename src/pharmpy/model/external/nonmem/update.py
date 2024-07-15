@@ -37,11 +37,13 @@ if TYPE_CHECKING:
     import pandas as pd
     import sympy
     import sympy.printing.fortran as fortran
+
     from .model import Model
 else:
     from pharmpy.deps import numpy as np
     from pharmpy.deps import pandas as pd
     from pharmpy.deps import sympy, sympy_printing
+
     fortran = sympy_printing.fortran
 
 from .nmtran_parser import NMTranControlStream
@@ -2142,9 +2144,7 @@ def update_ccontra(model, path=None, force=False):
         e1 = fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
         fh.write(e1)
         fh.write(ccontr2)
-        e2 = fortran.fcode(
-            sympy.Symbol('c1') + ll.subs(y, sympy.Symbol('y(1)')), assign_to='c1'
-        )
+        e2 = fortran.fcode(sympy.Symbol('c1') + ll.subs(y, sympy.Symbol('y(1)')), assign_to='c1')
         fh.write(e2)
         fh.write(ccontr3)
 
