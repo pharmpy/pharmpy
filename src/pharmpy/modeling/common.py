@@ -247,7 +247,7 @@ def print_model_code(model: Model) -> None:
     print(model.code)
 
 
-def set_name(model: Model, new_name: str):
+def set_name(model: Model, new_name: str) -> Model:
     """Set name of model object
 
     Parameters
@@ -274,6 +274,36 @@ def set_name(model: Model, new_name: str):
 
     """
     model = model.replace(name=new_name)
+    return model
+
+
+def set_description(model: Model, new_description: str) -> Model:
+    """Set description of model object
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    new_description : str
+        New description of model
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Example
+    -------
+    >>> from pharmpy.modeling import set_description, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> model.description
+    'PHENOBARB SIMPLE MODEL'
+    >>> model = set_description(model, "PHENOBARB run 2")
+    >>> model.description
+    'PHENOBARB run 2'
+
+    """
+    model = model.replace(description=new_description)
     return model
 
 
