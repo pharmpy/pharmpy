@@ -163,14 +163,12 @@ class Assignment(Statement):
         symbols = self._expression.free_symbols
         return funcs | symbols
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: Any):
+        if not isinstance(other, Assignment):
+            return NotImplemented
         if hash(self) != hash(other):
             return False
-        return (
-            isinstance(other, Assignment)
-            and self.symbol == other.symbol
-            and self.expression == other.expression
-        )
+        return self.symbol == other.symbol and self.expression == other.expression
 
     @cache_method
     def __hash__(self):
@@ -231,7 +229,9 @@ class Output(CompartmentBase):
     def from_dict(cls, d) -> Output:
         return cls.instance
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: Any):
+        if not isinstance(other, CompartmentBase):
+            return NotImplemented
         return self is other
 
 
@@ -765,9 +765,10 @@ class CompartmentalSystem(Statement):
         return atoms
 
     def __eq__(self, other):
+        if not isinstance(other, CompartmentalSystem):
+            return NotImplemented
         return (
-            isinstance(other, CompartmentalSystem)
-            and self._t == other._t
+            self._t == other._t
             and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
             and self.dosing_compartments == other.dosing_compartments
         )
@@ -1517,11 +1518,9 @@ class Bolus(Dose, Immutable):
         return Bolus(self._amount.subs(substitutions), admid=self._admid)
 
     def __eq__(self, other):
-        return (
-            isinstance(other, Bolus)
-            and self._amount == other._amount
-            and self._admid == other._admid
-        )
+        if not isinstance(other, Bolus):
+            return NotImplemented
+        return self._amount == other._amount and self._admid == other._admid
 
     def __hash__(self):
         return hash((self._amount, self._admid))
@@ -1664,9 +1663,10 @@ class Infusion(Dose, Immutable):
         return Infusion(amount, admid=self._admid, rate=rate, duration=duration)
 
     def __eq__(self, other):
+        if not isinstance(other, Infusion):
+            return NotImplemented
         return (
-            isinstance(other, Infusion)
-            and self._admid == other._admid
+            self._admid == other._admid
             and self._rate == other._rate
             and self._duration == other._duration
             and self._amount == other._amount
@@ -1881,9 +1881,10 @@ class Compartment(CompartmentBase):
         )
 
     def __eq__(self, other):
+        if not isinstance(other, Compartment):
+            return NotImplemented
         return (
-            isinstance(other, Compartment)
-            and self._name == other._name
+            self._name == other._name
             and self._amount == other._amount
             and self._doses == other._doses
             and self._input == other._input
@@ -2408,6 +2409,8 @@ class Statements(Sequence, Immutable):
         return expression
 
     def __eq__(self, other):
+        if not isinstance(other, Statements):
+            return NotImplemented
         if len(self) != len(other):
             return False
         else:

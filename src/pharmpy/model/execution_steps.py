@@ -384,9 +384,10 @@ class EstimationStep(ExecutionStep):
         return self._tool_options
 
     def __eq__(self, other):
+        if not isinstance(other, EstimationStep):
+            return NotImplemented
         return (
-            isinstance(other, EstimationStep)
-            and self.method == other.method
+            self.method == other.method
             and self.interaction == other.interaction
             and self.parameter_uncertainty_method == other.parameter_uncertainty_method
             and self.evaluation == other.evaluation
@@ -513,12 +514,9 @@ class SimulationStep(ExecutionStep):
         return self._seed
 
     def __eq__(self, other):
-        return (
-            isinstance(other, SimulationStep)
-            and self.n == other.n
-            and self.seed == other.seed
-            and super().__eq__(other)
-        )
+        if not isinstance(other, SimulationStep):
+            return NotImplemented
+        return self.n == other.n and self.seed == other.seed and super().__eq__(other)
 
     def __hash__(self):
         return hash((self._n, self._seed, super().__hash__()))
@@ -598,7 +596,7 @@ class ExecutionSteps(Sequence, Immutable):
 
     def __eq__(self, other: Any):
         if not isinstance(other, ExecutionSteps):
-            return False
+            return NotImplemented
         if len(self) != len(other):
             return False
         for s1, s2 in zip(self, other):

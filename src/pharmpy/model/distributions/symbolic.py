@@ -234,9 +234,10 @@ class NormalDistribution(Distribution):
             raise KeyError((name1, name2))
 
     def __eq__(self, other: Any):
+        if not isinstance(other, NormalDistribution):
+            return NotImplemented
         return (
-            isinstance(other, NormalDistribution)
-            and self._name == other._name
+            self._name == other._name
             and self._level == other._level
             and self._mean == other._mean
             and self._variance == other._variance
@@ -481,9 +482,10 @@ class JointNormalDistribution(Distribution):
         return cov
 
     def __eq__(self, other):
+        if not isinstance(other, JointNormalDistribution):
+            return NotImplemented
         return (
-            isinstance(other, JointNormalDistribution)
-            and self._names == other._names
+            self._names == other._names
             and self._level == other._level
             and self._mean == other._mean
             and self._variance == other._variance

@@ -514,9 +514,16 @@ def update_cmt(model, old, new):
 
 def is_nonlinear_odes(model: Model):
     """Check if ode system is nonlinear"""
-    odes = model.statements.ode_system
+    odes = get_odes(model)
     M = odes.compartmental_matrix
     return odes.t in M.free_symbols
+
+
+def get_odes(model) -> CompartmentalSystem:
+    # Gets and asserts the ode_system
+    odes = model.statements.ode_system
+    assert odes is not None
+    return odes
 
 
 def has_zero_order_inputs(model: Model):
@@ -916,8 +923,7 @@ def pk_param_conversion(model: Model, advan, trans):
     subs = all_subs[0]
     from_advan = subs.advan
     statements = model.statements
-    cs = statements.ode_system
-    assert isinstance(cs, CompartmentalSystem)
+    cs = get_odes(model)
     oldmap = model.internals.compartment_map
     assert oldmap is not None
     newmap = new_compartmental_map(cs)
@@ -1357,8 +1363,7 @@ def update_model_record(model: Model, advan):
 def update_needed_pk_parameters(model: Model, advan, trans):
     """Add missing pk parameters that NONMEM needs"""
     statements = model.statements
-    odes = statements.ode_system
-    assert isinstance(odes, CompartmentalSystem)
+    odes = get_odes(model)
     if advan == 'ADVAN2' or advan == 'ADVAN4' or advan == 'ADVAN12':
         if not statements.find_assignment('KA'):
             comp, rate = odes.get_compartment_outflows(odes.find_depot(statements))[0]
@@ -1457,8 +1462,7 @@ def update_needed_pk_parameters(model: Model, advan, trans):
 def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
     statements = model.statements
     if not statements.find_assignment(numpar) or not statements.find_assignment(denompar):
-        odes = statements.ode_system
-        assert isinstance(odes, CompartmentalSystem)
+        odes = get_odes(model)
         rate = odes.get_flow(source, dest)
         numer, denom = rate.as_numer_denom()
         par1 = Assignment.create(Expr.symbol(numpar), numer)
@@ -1508,6 +1512,7 @@ def define_parameter(
             return model, False
     new_ass = Assignment.create(Expr.symbol(name), value)
     # Put new rate before output rate in statements
+    assert isinstance(model.statements.ode_system, CompartmentalSystem)
     central = model.statements.ode_system.central_compartment
     output_rate = model.statements.ode_system.get_flow(central, output)
     if output_rate.is_symbol():
@@ -2092,7 +2097,7 @@ def update_ccontra(model, path=None, force=False):
     # FIXME: Handle other DVs?
     y = list(model.dependent_variables.keys())[0]
     dhdy = sympy.diff(h, y)
-    ll = -2 * sympy.log(dhdy)
+    ll = sympy.Integer(-2) * sympy.log(dhdy)
     ll = ll.subs(y, sympy.Symbol('y', real=True, positive=True))
     ll = simplify_expression(model, ll)
     ll = sympy.sympify(ll).subs(sympy.Symbol('y', real=True, positive=True), y)
@@ -2142,10 +2147,10 @@ def update_ccontra(model, path=None, force=False):
     with open(ccontr_path, 'w') as fh:
         fh.write(ccontr1)
         e1 = fortran.fcode(h.subs(y, sympy.Symbol('y(1)')), assign_to='y(1)')
-        fh.write(e1)
+        fh.write(str(e1))
         fh.write(ccontr2)
         e2 = fortran.fcode(sympy.Symbol('c1') + ll.subs(y, sympy.Symbol('y(1)')), assign_to='c1')
-        fh.write(e2)
+        fh.write(str(e2))
         fh.write(ccontr3)
 
 

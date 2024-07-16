@@ -244,9 +244,10 @@ class ColumnInfo(Immutable):
         return new
 
     def __eq__(self, other: Any):
+        if not isinstance(other, ColumnInfo):
+            return NotImplemented
         return (
-            isinstance(other, ColumnInfo)
-            and self._name == other._name
+            self._name == other._name
             and self._type == other._type
             and self._unit == other._unit
             and self._scale == other._scale
@@ -627,7 +628,7 @@ class DataInfo(Sequence, Immutable):
 
     def __eq__(self, other: Any):
         if not isinstance(other, DataInfo):
-            return False
+            return NotImplemented
         if len(self) != len(other):
             return False
         for col1, col2 in zip(self, other):

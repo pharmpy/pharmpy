@@ -400,7 +400,7 @@ class Model(Immutable):
             observation_transformation=observation_transformation,
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other):
         """Compare two models for equality
 
         Tests whether a model is equal to another model. This ignores
@@ -438,7 +438,7 @@ class Model(Immutable):
         if self is other:
             return True
         if not isinstance(other, Model):
-            raise NotImplementedError(f'Cannot compare Model with {type(other)}')
+            return NotImplemented
 
         if self.parameters != other.parameters:
             return False

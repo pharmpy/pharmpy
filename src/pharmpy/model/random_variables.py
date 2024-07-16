@@ -62,9 +62,10 @@ class VariabilityLevel(Immutable):
         return VariabilityLevel(name, bool(reference), group)
 
     def __eq__(self, other: Any):
+        if not isinstance(other, VariabilityLevel):
+            return NotImplemented
         return (
-            isinstance(other, VariabilityLevel)
-            and self._name == other._name
+            self._name == other._name
             and self._reference == other._reference
             and self._group == other._group
         )
@@ -135,7 +136,7 @@ class VariabilityHierarchy(Immutable):
 
     def __eq__(self, other: Any):
         if not isinstance(other, VariabilityHierarchy):
-            return False
+            return NotImplemented
 
         if len(self._levels) != len(other._levels):
             return False
@@ -383,7 +384,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     def __eq__(self, other: Any):
         if not isinstance(other, RandomVariables):
-            return False
+            return NotImplemented
         if len(self) == len(other):
             for s, o in zip(self._dists, other._dists):
                 if s != o:

@@ -144,11 +144,12 @@ class Parameter(Immutable):
 
     def __eq__(self, other: Any):
         """Two parameters are equal if they have the same name, init and constraints"""
+        if not isinstance(other, Parameter):
+            return NotImplemented
         if hash(self) != hash(other):
             return False
         return (
-            isinstance(other, Parameter)
-            and self._init == other._init
+            self._init == other._init
             and self._lower == other._lower
             and self._upper == other._upper
             and self._name == other._name
@@ -406,9 +407,9 @@ class Parameters(CollectionsSequence, Immutable):
             raise ValueError(f"Cannot add {other} to Parameters")
 
     def __eq__(self, other: Any):
-        if hash(self) != hash(other):
-            return False
         if not isinstance(other, Parameters):
+            return NotImplemented
+        if hash(self) != hash(other):
             return False
         if len(self) != len(other):
             return False
