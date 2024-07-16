@@ -419,14 +419,8 @@ class Model(Immutable):
         >>> a = load_example_model("pheno")
         >>> a == a
         True
-        >>> a == 0
-        Traceback (most recent call last):
-         ...
-        NotImplementedError: Cannot compare Model with <class 'int'>
         >>> a == None
-        Traceback (most recent call last):
-         ...
-        NotImplementedError: Cannot compare Model with <class 'NoneType'>
+        False
         >>> b = load_example_model("pheno")
         >>> b == a
         True
