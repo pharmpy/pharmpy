@@ -2,6 +2,7 @@ from collections import defaultdict
 from typing import Dict, List, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
+from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
@@ -421,12 +422,24 @@ def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
     for p in parameters:
         if p in iiv_names:
             iiv_set.add(p)
-
     for iiv_name in iiv_names:
+        if _is_iiv_on_ruv(model, iiv_name):
+            # Do not concider IIVs used on RUV
+            continue
         param = get_rv_parameters(model, iiv_name)
         if set(param).issubset(parameters) and len(param) > 0:
             iiv_set.add(iiv_name)
     return iiv_set
+
+
+def _is_iiv_on_ruv(model, name):
+    error = model.statements.error
+    for s in reversed(error):
+        if Expr.symbol(name) in s.free_symbols:
+            expr = error.full_expression(s.symbol)
+            if not set(model.random_variables.epsilons.symbols).isdisjoint(expr.free_symbols):
+                return True
+    return False
 
 
 def _get_fixed_etas(model: Model) -> List[str]:
