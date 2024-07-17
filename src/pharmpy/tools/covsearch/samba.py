@@ -83,7 +83,7 @@ def samba_workflow(
     alpha: float = 0.05,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    lin_est_tool="python",
+    lin_est_tool="statsmodels",
     imp_estimated_ofv=False,
 ):
     """
@@ -237,7 +237,7 @@ def samba_step(context, step, alpha, lin_est_tool, state_and_effect):
 
 
 # TODO: modify linear model selection, select only one covariate effect and fit only one NLME model at each iteration
-def linear_model_selection(context, step, alpha, state_and_effect, lin_est_tool=None):
+def linear_model_selection(context, step, alpha, state_and_effect, lin_est_tool):
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
         state_and_effect
     )
@@ -246,7 +246,7 @@ def linear_model_selection(context, step, alpha, state_and_effect, lin_est_tool=
     selected_lin_model_ofv = []
 
     # update dataset (etas) for all linear covariate candidate models
-    if lin_est_tool == "python":
+    if lin_est_tool == "statsmodels":
         # use python statsmodel package as linear model estimation tool
         for param, covariates in param_cov_list.items():
             # update dataset
@@ -319,10 +319,11 @@ def linear_model_selection(context, step, alpha, state_and_effect, lin_est_tool=
                 selected_lin_model_ofv.append(ofv_drop)
 
     # select the best linear model (covariate effect) with the largest drop-off in ofv
-    best_index = np.nanargmax(selected_lin_model_ofv)
-    selected_explor_cov_funcs = selected_explor_cov_funcs[best_index]
-    if not isinstance(selected_explor_cov_funcs, list):
-        selected_explor_cov_funcs = [selected_explor_cov_funcs]
+    if selected_lin_model_ofv:
+        best_index = np.nanargmax(selected_lin_model_ofv)
+        selected_explor_cov_funcs = selected_explor_cov_funcs[best_index]
+        if not isinstance(selected_explor_cov_funcs, list):
+            selected_explor_cov_funcs = [selected_explor_cov_funcs]
 
     return selected_explor_cov_funcs, linear_modelentry_dict
 

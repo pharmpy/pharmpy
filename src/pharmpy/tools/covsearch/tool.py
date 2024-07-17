@@ -127,7 +127,7 @@ def create_workflow(
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
-    lin_est_tool: Literal["python", None] = "python",
+    lin_est_tool: Literal["statsmodels", None] = "statsmodels",
     imp_estimated_ofv: bool = False,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
@@ -161,8 +161,8 @@ def create_workflow(
         Strictness criteria
     naming_index_offset: int
         index offset for naming of runs. Default is 0.
-    lin_est_tool: {'python', None}
-        estimation tool for SAMBA linear covariate model fitting. 'python' calls statsmodel's
+    lin_est_tool: {'statsmodels', None}
+        estimation tool for SAMBA linear covariate model fitting. 'statsmodels' calls statsmodel's
         functionalities, whereas None calls nonmem.
     imp_estimated_ofv: bool
         additional IMP estimation step for stable OFV calculation for nonlinear mixed effects models in SAMBA.
