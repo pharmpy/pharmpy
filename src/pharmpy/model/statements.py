@@ -371,7 +371,7 @@ class CompartmentalSystemBuilder:
     def set_dose(
         self,
         compartment: Compartment,
-        dose: Optional[tuple[Dose, ...]],
+        dose: Optional[Union[Dose, tuple[Dose, ...]]],
         replace: bool = True,
         admid: Optional[int] = None,
     ) -> Compartment:
@@ -814,7 +814,9 @@ class CompartmentalSystem(Statement):
 
         return cls(cb, t=Expr.deserialize(d['t']))
 
-    def get_flow(self, source: CompartmentBase, destination: CompartmentBase) -> Expr:
+    def get_flow(
+        self, source: Optional[CompartmentBase], destination: Optional[CompartmentBase]
+    ) -> Expr:
         """Get the rate of flow between two compartments
 
         Parameters
