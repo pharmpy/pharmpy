@@ -12,7 +12,7 @@ def degrees_of_freedom(parent: Union[Model, ModelEntry], child: Union[Model, Mod
     else:
         child_parameters = child.parameters
 
-    if isinstance(child, ModelEntry):
+    if isinstance(parent, ModelEntry):
         parent_parameters = parent.model.parameters
     else:
         parent_parameters = parent.parameters
