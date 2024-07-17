@@ -25,6 +25,7 @@ import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
+from pharmpy.internals.typing import Self
 from pharmpy.model.external import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
@@ -63,7 +64,7 @@ class ModelInternals:
     def __init__(self):
         pass
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Self:
         return dataclasses.replace(self, **kwargs)
 
 
@@ -286,7 +287,7 @@ class Model(Immutable):
                 raise TypeError("model.execution_steps must be of ExecutionSteps type")
             return steps
 
-    def replace(self, **kwargs) -> Model:
+    def replace(self, **kwargs) -> Self:
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
 
@@ -399,7 +400,7 @@ class Model(Immutable):
             observation_transformation=observation_transformation,
         )
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other):
         """Compare two models for equality
 
         Tests whether a model is equal to another model. This ignores
@@ -418,14 +419,8 @@ class Model(Immutable):
         >>> a = load_example_model("pheno")
         >>> a == a
         True
-        >>> a == 0
-        Traceback (most recent call last):
-         ...
-        NotImplementedError: Cannot compare Model with <class 'int'>
         >>> a == None
-        Traceback (most recent call last):
-         ...
-        NotImplementedError: Cannot compare Model with <class 'NoneType'>
+        False
         >>> b = load_example_model("pheno")
         >>> b == a
         True
@@ -437,7 +432,7 @@ class Model(Immutable):
         if self is other:
             return True
         if not isinstance(other, Model):
-            raise NotImplementedError(f'Cannot compare Model with {type(other)}')
+            return NotImplemented
 
         if self.parameters != other.parameters:
             return False

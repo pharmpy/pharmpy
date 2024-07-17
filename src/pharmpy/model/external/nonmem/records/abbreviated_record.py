@@ -22,7 +22,7 @@ def strip_quote(s):
 
 class AbbreviatedRecord(Record):
     @property
-    def replace(self):
+    def replaceopt(self):
         """Give a dict of all REPLACE in record"""
         d = {}
         for replace in self.root.subtrees('replace'):
@@ -33,4 +33,4 @@ class AbbreviatedRecord(Record):
         return d
 
     def translate_to_pharmpy_names(self):
-        return {value: re.sub(r'\((\w+)\)', r'_\1', key) for key, value in self.replace.items()}
+        return {value: re.sub(r'\((\w+)\)', r'_\1', key) for key, value in self.replaceopt.items()}

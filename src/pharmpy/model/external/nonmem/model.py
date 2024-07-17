@@ -5,10 +5,15 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 from pharmpy.basic import Expr
-from pharmpy.deps import pandas as pd
+
+if TYPE_CHECKING:
+    import pandas as pd
+else:
+    from pharmpy.deps import pandas as pd
+
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps
@@ -51,13 +56,13 @@ class NONMEMModelInternals(ModelInternals):
     old_name: str
     old_description: str
     old_execution_steps: ExecutionSteps
-    old_observation_transformation: Expr
+    old_observation_transformation: Optional[frozenmapping[Expr, Expr]]
     old_parameters: Parameters
     old_random_variables: RandomVariables
     old_statements: Statements
     old_initial_individual_estimates: Optional[pd.DataFrame]
     old_datainfo: DataInfo
-    old_dependent_variables: dict
+    old_dependent_variables: frozenmapping[Expr, int]
     compartment_map: Optional[Dict[str, int]]
     name_map: Dict[str, str]
 
@@ -128,7 +133,7 @@ class Model(BaseModel):
         assert isinstance(internals, NONMEMModelInternals)
         self._internals = internals
 
-    def update_source(self):
+    def update_source(self) -> Model:
         """Update the source
 
         path - path to modelfile
@@ -250,6 +255,8 @@ class Model(BaseModel):
         return model
 
     def write_files(self, path=None, force=False):
+        if path is not None:
+            path = Path(path)
         model = self.update_source()
 
         etas_record = model.internals.control_stream.get_records('ETAS')
@@ -270,6 +277,7 @@ class Model(BaseModel):
                 dir_path = Path(model.name + ".csv") if path is None else path.parent
                 model = write_csv(model, path=dir_path, force=force)
                 datapath = model.datainfo.path
+                assert datapath is not None
                 replace_dict['datainfo'] = model.datainfo.replace(path=datapath)
             assert (
                 not datapath.exists() or datapath.is_file()
@@ -283,23 +291,27 @@ class Model(BaseModel):
                 filename = str(path_absolute(datapath))
                 warnings.warn('Cannot resolve relative path, falling back to absolute path')
             newdata = data_record.set_filename(filename)
-            newcs = model.internals.control_stream.replace_records([data_record], [newdata])
-            replace_dict['internals'] = model.internals.replace(control_stream=newcs)
-            model = model.replace(**replace_dict)
+            internals = model.internals
+            assert isinstance(internals, NONMEMModelInternals)
+            newcs = internals.control_stream.replace_records([data_record], [newdata])
+            internals = internals.replace(control_stream=newcs)
 
             if (
                 len(model.execution_steps) > 0
                 and isinstance(model.execution_steps[-1], EstimationStep)
                 and model.execution_steps[-1].parameter_uncertainty_method == "EFIM"
             ):
-                data_record = model.internals.control_stream.get_records('DATA', 1)[0]
+                data_record = internals.control_stream.get_records('DATA', 1)[0]
                 if data_record.filename == 'DUMMYPATH' or force:
                     newdata = data_record.set_filename(filename)
-                    newcs = model.internals.control_stream.replace_records([data_record], [newdata])
-                    replace_dict['internals'] = model.internals.replace(control_stream=newcs)
-                    model = model.replace(**replace_dict)
+                    newcs = internals.control_stream.replace_records([data_record], [newdata])
+                    internals = internals.replace(control_stream=newcs)
+            replace_dict['internals'] = internals
+            model = model.replace(**replace_dict)
 
-        if model.observation_transformation != model.internals.old_observation_transformation:
+        internals = model.internals
+        assert isinstance(internals, NONMEMModelInternals)
+        if model.observation_transformation != internals.old_observation_transformation:
             update_ccontra(model, path, force)
 
         return model

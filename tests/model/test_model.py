@@ -78,10 +78,7 @@ def test_model_equality():
 
     assert hash(pheno1) != hash(pheno_linear1)
 
-    with pytest.raises(
-        NotImplementedError, match=re.escape("Cannot compare Model with <class 'str'>")
-    ):
-        pheno1 == 'model'
+    assert pheno1 != 'model'
 
     model1 = Model.create('model1')
     model2 = Model.create('model2')

@@ -7,11 +7,10 @@ from __future__ import annotations
 
 import re
 from operator import neg, pos, sub, truediv
-from typing import Iterator, Literal, Sequence, Set, Tuple
+from typing import Iterator, Literal, Sequence
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy, sympy_printing
-from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.ds.ordered_set import OrderedSet
 from pharmpy.internals.expr.funcs import (
     INT,
@@ -185,18 +184,22 @@ def _translate_sympy_piecewise(statement: Assignment, defined_symbols: set[Expr]
     expression = statement.expression._sympy_().args
     symbol = statement.symbol
     # Did we (possibly) add the default in the piecewise with 0 or symbol?
-    has_added_else = expression[-1][1] is sympy.true and (
-        expression[-1][0] == symbol or (expression[-1][0] == 0 and symbol not in defined_symbols)
+    has_added_else = expression[-1][1] is sympy.true and (  # pyright: ignore [reportIndexIssue]
+        expression[-1][0] == symbol  # pyright: ignore [reportIndexIssue]
+        or (
+            expression[-1][0] == 0  # pyright: ignore [reportIndexIssue]
+            and symbol not in defined_symbols
+        )
     )
     if has_added_else:
         expression = expression[0:-1]
-    has_else = expression[-1][1] is sympy.true
+    has_else = expression[-1][1] is sympy.true  # pyright: ignore [reportIndexIssue]
 
     expressions, _ = zip(*expression)
 
     if len(expression) == 1:
-        value = expression[0][0]
-        condition = expression[0][1]
+        value = expression[0][0]  # pyright: ignore [reportIndexIssue]
+        condition = expression[0][1]  # pyright: ignore [reportIndexIssue]
         condition_translated = _translate_condition(condition)
 
         statement_str = (
@@ -448,8 +451,8 @@ class ExpressionInterpreter(Interpreter):
 
 def _index_statements_diff(
     last_node_index: int,
-    index: Sequence[Tuple[int, int, int, int]],
-    it: Iterator[Tuple[Literal[-1, 0, 1], Statement]],
+    index: Sequence[tuple[int, int, int, int]],
+    it: Iterator[tuple[Literal[-1, 0, 1], Statement]],
 ):
     """This function reorders and groups a diff of statements according to the
     given index mapping"""
@@ -532,7 +535,7 @@ class CodeRecord(Record):
         new_children = []
         last_node_index = 0
         new_index = []
-        defined_symbols: Set[sympy.Symbol] = set()  # NOTE: Set of all defined symbols so far
+        defined_symbols = set()  # NOTE: Set of all defined symbols so far
         si = 0  # NOTE: We keep track of progress in the "new" statements sequence
 
         first_statement_index = (
@@ -576,7 +579,7 @@ class CodeRecord(Record):
         new_root = AttrTree(self.root.rule, tuple(new_children))
         return CodeRecord(self.name, self.raw_name, new_root, index=new_index, statements=new)
 
-    def _statement_to_nodes(self, defined_symbols: Set[sympy.Symbol], s: Assignment, rvs, trans):
+    def _statement_to_nodes(self, defined_symbols: set, s: Assignment, rvs, trans):
         statement_str = nmtran_assignment_string(s, defined_symbols, rvs, trans) + '\n'
         node_tree = CodeRecordParser(statement_str).root
         assert node_tree is not None
@@ -636,16 +639,10 @@ class CodeRecord(Record):
 
 def create_dvs_node(dvs, dvid_name):
     """Create special dvs AST node"""
+    s = ""
     for i, (dv, dvid) in enumerate(dvs.items()):
-        cg = CodeGenerator()
-        cg.add(f'IF ({dvid_name}.EQ.{dvid}) Y = {dv}')
-
-        if i == 0:
-            node = CodeRecordParser(str(cg)).root.children[0]
-        elif i == len(dvs.items()) - 1:
-            node = node.add_node(CodeRecordParser(str(cg) + '\n').root.children[0])
-        else:
-            node = node.add_node(CodeRecordParser(str(cg)).root.children[0])
+        s += f'IF ({dvid_name}.EQ.{dvid}) Y = {dv}\n'
+    node = CodeRecordParser(s).root
     return node
 
 

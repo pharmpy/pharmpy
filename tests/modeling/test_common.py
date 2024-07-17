@@ -22,6 +22,7 @@ from pharmpy.modeling import (
     read_model_from_string,
     remove_unused_parameters_and_rvs,
     set_dataset,
+    set_description,
     set_direct_effect,
     set_name,
     write_model,
@@ -115,6 +116,11 @@ def test_get_model_covariates(pheno, testdata, load_model_for_test):
 def test_set_name(pheno):
     model = set_name(pheno, "run1")
     assert model.name == "run1"
+
+
+def test_set_description(pheno):
+    model = set_description(pheno, "run1")
+    assert model.description == "run1"
 
 
 def test_convert_model():

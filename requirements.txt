@@ -18,7 +18,7 @@ decorator==5.1.1
 defusedxml==0.7.1
 distributed==2024.7.0
 docutils==0.21.2
-exceptiongroup==1.2.1
+exceptiongroup==1.2.2
 executing==2.0.1
 fastjsonschema==2.20.0
 fsspec==2024.6.1
@@ -81,7 +81,7 @@ six==1.16.0
 snowballstemmer==2.2.0
 sortedcontainers==2.4.0
 soupsieve==2.5
-Sphinx==7.3.7
+Sphinx==7.4.5
 sphinxcontrib-applehelp==1.0.8
 sphinxcontrib-devhelp==1.0.6
 sphinxcontrib-htmlhelp==2.0.5

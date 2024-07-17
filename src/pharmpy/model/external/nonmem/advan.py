@@ -272,9 +272,11 @@ def _compartmental_model(
                 continue
             cb.set_dose(comp, find_dose(doses, i))
             comp = cb.find_compartment(name)
+            assert comp is not None
             f = _get_bioavailability(control_stream, i)
             cb.set_bioavailability(comp, f)
             comp = cb.find_compartment(name)
+            assert comp is not None
             alag = _get_alag(control_stream, i)
             cb.set_lag_time(comp, alag)
 
@@ -321,13 +323,13 @@ def _f_link_assignment(
     di: DataInfo,
     dataset,
     comp_map,
-    compartment: Compartment,
+    compartment: Compartment | Expr,
     compno: int,
 ):
     f = Expr.symbol('F')
-    try:
+    if isinstance(compartment, Compartment):
         fexpr = compartment.amount
-    except AttributeError:
+    else:
         fexpr = compartment
     ffunc = Expr.function(fexpr.name, 't')
     pkrec = control_stream.get_records('PK')[0]

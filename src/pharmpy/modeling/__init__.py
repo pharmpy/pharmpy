@@ -16,6 +16,7 @@ from .common import (
     read_model_from_string,
     remove_unused_parameters_and_rvs,
     rename_symbols,
+    set_description,
     set_name,
     write_model,
 )
@@ -421,6 +422,7 @@ __all__ = [
     'set_combined_error_model',
     'set_covariates',
     'set_dataset',
+    'set_description',
     'set_direct_effect',
     'set_dtbs_error_model',
     'set_dvid',

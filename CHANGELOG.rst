@@ -1,11 +1,22 @@
-1.1.0
------
+1.1.0 (2024-07-17)
+------------------
+
+New features
+============
+
+* Add modeling.set_description 
 
 Bugfixes
 ========
 
 * (pharmr) Fix regression in input conversion of `keep`-option in IIVSearch
 * Allow lists in option arguments with length of 1 in modeling.add_iiv (e.g. `expression`)
+* Fix regression in setting transit compartments (#3116)
+* Fix crash in amd tool for search spaces with only covariate effects (#3113)
+* Fix bad error message when only supplying a model to run_iivsearch
+* Return NotImplemented instead of False for equality comparison of model objects
+* Calculate mBIC correctly for modelsearch
+* Fix crash of iivsearch for etas on epsilons in some cases, by not consider such etas in iivsearch
 
 1.0.1 (2024-06-12)
 ------------------

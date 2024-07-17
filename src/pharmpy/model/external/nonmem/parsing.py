@@ -3,11 +3,17 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import Callable, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional, Tuple
 
 from pharmpy.basic import Expr
-from pharmpy.deps import pandas as pd
-from pharmpy.deps import sympy
+
+if TYPE_CHECKING:
+    import pandas as pd
+    import sympy
+else:
+    from pharmpy.deps import pandas as pd
+    from pharmpy.deps import sympy
+
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.math import triangular_root
@@ -30,6 +36,7 @@ from pharmpy.model import (
 from .advan import _compartmental_model, des_assign_statements
 from .dataset import read_nonmem_dataset
 from .nmtran_parser import NMTranControlStream
+from .records.code_record import CodeRecord
 from .table import NONMEMTableFile, PhiTable
 
 
@@ -120,6 +127,7 @@ def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
     rvs = []
     previous_cov = None
     name_map = {}
+    n = 0  # Not strictly needed if NONMEM code is well formed
     for block_index, (_, inits, _, same) in enumerate(blocks):
         try:
             next_block = blocks[block_index + 1]
@@ -154,6 +162,7 @@ def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
 
         if same:
             cov = previous_cov
+            assert cov is not None
         else:
             if n == 1:
                 cov = parameters[parameters_index].symbol
@@ -237,7 +246,7 @@ def parse_parameters(control_stream, statements, di):
 
 def parse_statements(
     di: DataInfo,
-    dataset: Callable[[], pd.DataFrame],
+    dataset,
     control_stream: NMTranControlStream,
 ) -> Tuple[Statements, Optional[Dict[str, int]]]:
     rec = control_stream.get_pred_pk_record()
@@ -322,6 +331,7 @@ def convert_dvs(statements, control_stream, dvid_name):
         if change:  # $PRED
             rec = control_stream.get_records('PRED')[0]
     if change:
+        assert isinstance(rec, CodeRecord)  # pyright: ignore [reportPossiblyUnboundVariable]
         rec._statements = after[1:]
         first = True
         inds = []
