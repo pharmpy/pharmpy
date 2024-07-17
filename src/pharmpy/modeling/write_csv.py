@@ -45,6 +45,9 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
     """
     from pharmpy.model import data
 
+    if model.dataset is None:
+        raise ValueError("Model has no dataset")
+
     if path is not None:
         path = normalize_user_given_path(path)
 
