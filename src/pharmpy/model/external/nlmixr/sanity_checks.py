@@ -142,8 +142,7 @@ def same_time(model: pharmpy.model.Model) -> bool:
     if model.dataset is None:
         return False
 
-    temp_model = model.replace(dataset=model.dataset.reset_index())
-    dataset = temp_model.dataset
+    dataset = model.dataset.reset_index()
 
     if "RATE" in dataset.columns:
         rate = True
@@ -153,17 +152,22 @@ def same_time(model: pharmpy.model.Model) -> bool:
     evid_ignore = [0, 3, 4]
 
     for index, row in dataset.iterrows():
+        assert isinstance(index, int)
         if index != 0:
             if row["ID"] == dataset.loc[index - 1]["ID"]:
                 if row["TIME"] == dataset.loc[index - 1]["TIME"]:
                     ID = row["ID"]
                     TIME = row["TIME"]
                     subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
-                    unique_evid = subset["EVID"].unique()
+                    unique_evid = subset[
+                        "EVID"
+                    ].unique()  # pyright: ignore [reportAttributeAccessIssue]
                     if any([x not in evid_ignore for x in unique_evid]) and any(
                         [x in evid_ignore for x in unique_evid]
                     ):
-                        unique_rate = subset["RATE"].unique()
+                        unique_rate = subset[
+                            "RATE"
+                        ].unique()  # pyright: ignore[reportAttributeAccessIssue]
                         if rate:
                             if any([x != 0 for x in unique_rate]) and any(
                                 [x == 0 for x in unique_rate]
