@@ -13,7 +13,6 @@ Current team
 
 * Rikard Nordgren, rikard.nordgren@farmaci.uu.se (maintainer)
 * Stella Belin, stella.belin@farmaci.uu.se (maintainer)
-* Johan Borg
 * Antonia Hufnagl
 
 All developers past and present
