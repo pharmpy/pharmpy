@@ -2,7 +2,8 @@
 :meta private:
 """
 
-from typing import Optional
+from pathlib import Path
+from typing import Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.deps import sympy
@@ -34,7 +35,7 @@ from .parameters import set_initial_estimates
 
 def create_basic_pk_model(
     administration: str = 'iv',
-    dataset_path: Optional[str] = None,
+    dataset_path: Optional[Union[str, Path]] = None,
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
@@ -48,7 +49,7 @@ def create_basic_pk_model(
     ----------
     administration : str
         Type of PK model to create. Supported are 'iv', 'oral' and 'ivoral'
-    dataset_path : str
+    dataset_path : str or Path
         Optional path to a dataset
     cl_init : float
         Initial estimate of the clearance parameter
@@ -171,7 +172,9 @@ def create_basic_pk_model(
                         "Currently require CMT column with values 1 and 2 "
                     )
                 )
-        cb.set_dose(cb.find_compartment("CENTRAL"), dose=central_dose)
+        central = cb.find_compartment("CENTRAL")
+        assert central is not None
+        cb.set_dose(central, dose=central_dose)
 
         ode = CompartmentalSystem(cb)
         model = model.replace(
