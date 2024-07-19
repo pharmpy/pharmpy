@@ -1,6 +1,6 @@
 from typing import Iterable, Union
 
-from statsmodels.regression.linear_model import OLS
+from statsmodels.regression.linear_model import WLS
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps.scipy import stats
@@ -11,14 +11,14 @@ from pharmpy.workflows import ModelEntry
 def degrees_of_freedom(parent: Union[Model, ModelEntry], child: Union[Model, ModelEntry]) -> int:
     if isinstance(child, ModelEntry):
         child_parameters = len(child.model.parameters)
-    elif isinstance(child, OLS):
+    elif isinstance(child, WLS):
         child_parameters = child.df_model
     else:
         child_parameters = len(child.parameters)
 
     if isinstance(parent, ModelEntry):
         parent_parameters = len(parent.model.parameters)
-    elif isinstance(parent, OLS):
+    elif isinstance(parent, WLS):
         parent_parameters = parent.df_model
     else:
         parent_parameters = len(parent.parameters)
