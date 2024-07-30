@@ -306,8 +306,8 @@ Specifying input model and search space:
     res = run_amd(
                 input=start_model,
                 modeltype='basic_pk',
-                administration='iv'
-                search_space='ABSORPTION(FO);ELIMINATION(ZO);COVARIATE(CL, WGT, POW)',
+                administration='oral'
+                search_space='ABSORPTION(FO);ELIMINATION([FO,ZO]);COVARIATE(CL, WGT, POW)',
                 cl_init=2.0,
                 vc_init=5.0,
     )

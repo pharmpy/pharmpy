@@ -22,7 +22,7 @@ To initiate modelsearch in Python/R:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_modelsearch(search_space='PERIPHERALS(1);LAGTIME(ON)',
+    res = run_modelsearch(search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME(ON)',
                           algorithm='reduced_stepwise',
                           model=start_model,
                           results=start_model_results,
