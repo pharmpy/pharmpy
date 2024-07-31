@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     add_bioavailability,
     add_lag_time,
     add_peripheral_compartment,
+    create_basic_pk_model,
     find_clearance_parameters,
     find_volume_parameters,
     get_central_volume_and_clearance,
@@ -1683,6 +1684,14 @@ def test_transits_non_linear_elim_with_update(load_model_for_test, testdata):
     assert 'VC1 =' not in model.code
     assert 'CLMM = THETA(6)' in model.code
     assert 'CL = THETA(1) * EXP(ETA(1))' in model.code
+
+
+def test_transits_mat_to_mdt():
+    model = create_basic_pk_model(administration='oral')
+    model = set_transit_compartments(model, n=4, keep_depot=False)
+    assert not model.statements.find_assignment('MAT')
+    mdt_assign = model.statements.find_assignment('MDT')
+    assert model.statements.count(mdt_assign) == 1
 
 
 def test_bioavailability(load_model_for_test, testdata):

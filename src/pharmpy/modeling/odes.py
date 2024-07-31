@@ -879,7 +879,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         cb.remove_compartment(depot)
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         statements = statements.remove_symbol_definitions(rate.free_symbols, statements.ode_system)
-        if mdt_assign:
+        if mdt_assign and not statements.find_assignment('MDT'):
             statements = mdt_assign + statements
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
