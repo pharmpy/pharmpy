@@ -13,7 +13,6 @@ Current team
 
 * Rikard Nordgren, rikard.nordgren@farmaci.uu.se (maintainer)
 * Stella Belin, stella.belin@farmaci.uu.se (maintainer)
-* Antonia Hufnagl
 
 All developers past and present
 -------------------------------
@@ -61,6 +60,7 @@ Funding
 A warm thanks to all our sponsors!
 
 *  F\. Hoffman-La Roche Ltd.
+*  Bayer AG
 *  Pharmetheus
 *  Uppsala University
 
