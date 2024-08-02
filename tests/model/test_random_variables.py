@@ -46,6 +46,7 @@ def test_eq_rv():
     assert dist1 != dist3
     dist4 = NormalDistribution.create('ETA2', 'iiv', 0, 0.1)
     assert dist3 != dist4
+    assert dist1 != 'ETA1'
 
 
 def test_empty_rvs():
@@ -53,6 +54,12 @@ def test_empty_rvs():
     assert not rvs
     cov = rvs.covariance_matrix
     assert cov == Matrix()
+
+
+def test_create_rvs_with_single_dist():
+    dist = NormalDistribution.create('ETA1', 'iiv', 0, 1)
+    rvs = RandomVariables.create(dist)
+    assert rvs[0].names == ('ETA1',)
 
 
 def test_repr_rv():
@@ -121,6 +128,7 @@ def test_eq():
     rvs3 = RandomVariables.create([dist1, dist3])
     assert rvs != rvs3
     assert hash(rvs) != hash(rvs2)
+    assert rvs != dist1
 
 
 def test_add():
@@ -611,6 +619,10 @@ def test_unjoin():
     assert isinstance(new['eta1'], NormalDistribution)
     assert isinstance(new['eta2'], JointNormalDistribution)
 
+    expr = symbol('x') + symbol('y')
+    with pytest.raises(ValueError):
+        rvs.unjoin(expr)
+
 
 def test_join():
     dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, symbol('OMEGA(1,1)'))
@@ -673,6 +685,12 @@ def test_parameters_sdcorr():
     params = rvs.parameters_sdcorr({'x': 4, 'y': 0.5, 'z': 16, 'k': 23})
     assert params == {'x': 2.0, 'y': 0.0625, 'z': 4.0, 'k': 23}
 
+    expr = symbol('x') + symbol('y')
+    dist3 = NormalDistribution('ETA1', 'iiv', 0, expr)
+    rvs = RandomVariables.create([dist3])
+    with pytest.raises(NotImplementedError):
+        rvs.parameters_sdcorr({'x': 4})
+
 
 def test_variability_level():
     level = VariabilityLevel('IIV', reference=True, group='ID')
@@ -697,6 +715,8 @@ def test_variability_level():
     assert d == {'name': 'IIV', 'reference': True, 'group': 'ID'}
     level2 = VariabilityLevel.from_dict(d)
     assert level == level2
+
+    assert level != 'IIV'
 
 
 def test_variability_hierarchy():
