@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from pharmpy.basic import Unit
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import ColumnInfo, DataInfo
 
 
@@ -54,6 +55,21 @@ def test_columninfo_continuous():
         ColumnInfo.create("DUMMY", scale="nominal", continuous=True)
 
 
+def test_columninfo_categories():
+    col = ColumnInfo.create("DUMMY", categories={1: 'a', 2: 'b'})
+    assert col.categories == {1: 'a', 2: 'b'}
+    col = ColumnInfo.create("DUMMY", categories=frozenmapping({1: 'a', 2: 'b'}))
+    assert col.categories == {1: 'a', 2: 'b'}
+    col = ColumnInfo.create("DUMMY", categories=[1, 2, 3])
+    assert col.categories == (1, 2, 3)
+    col = ColumnInfo.create("DUMMY", categories=(1, 2, 3))
+    assert col.categories == (1, 2, 3)
+    col = ColumnInfo.create("DUMMY", categories=None)
+    assert col.categories is None
+    with pytest.raises(TypeError):
+        ColumnInfo.create("DUMMY", categories=1)
+
+
 def test_columninfo_is_numerical():
     col = ColumnInfo.create("DUMMY", scale='nominal')
     assert not col.is_numerical()
@@ -84,6 +100,23 @@ def test_columninfo_hash():
 def test_init():
     di = DataInfo.create()
     assert len(di) == 0
+
+
+def test_create():
+    di = DataInfo.create(columns=["COL1", "COL2"])
+    assert len(di) == 2
+    ci1 = ColumnInfo.create("COL1")
+    ci2 = ColumnInfo.create("COL2")
+    di = DataInfo.create(columns=[ci1, ci2])
+    assert len(di) == 2
+    di = DataInfo.create(path='dummy_path')
+    assert di.path is not None
+    di = DataInfo.create(separator=',')
+    assert di.separator == ','
+    with pytest.raises(TypeError):
+        DataInfo.create(columns=1)
+    with pytest.raises(TypeError):
+        DataInfo.create(columns=[1])
 
 
 def test_eq():
@@ -341,3 +374,5 @@ def test_get_all_categories():
     assert col1.get_all_categories() == [1, 2, 3]
     col2 = ColumnInfo.create("SCORE", categories={1: 'a', 2: 'b'})
     assert col2.get_all_categories() == [1, 2]
+    col3 = ColumnInfo.create("SCORE", categories=None)
+    assert col3.get_all_categories() == []

@@ -571,12 +571,13 @@ class DataInfo(Sequence, Immutable):
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
     ):
-        if columns and not all(
-            isinstance(col, str) or isinstance(col, ColumnInfo) for col in columns
-        ):
-            raise ValueError(
-                'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
-            )
+        if columns:
+            if not isinstance(columns, Sequence):
+                raise TypeError('Argument `columns` must be iterable')
+            if not all(isinstance(col, str) or isinstance(col, ColumnInfo) for col in columns):
+                raise TypeError(
+                    'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
+                )
         if columns is None or len(columns) == 0:
             cols = ()
         elif len(columns) > 0 and any(isinstance(col, str) for col in columns):

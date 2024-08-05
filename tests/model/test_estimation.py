@@ -41,6 +41,9 @@ def test_estimation_method():
     with pytest.raises(ValueError):
         EstimationStep.create('fo', maximum_evaluations=0)
 
+    with pytest.raises(ValueError):
+        EstimationStep.create('fo', parameter_uncertainty_method='x')
+
 
 def test_repr():
     steps = ExecutionSteps()
@@ -63,6 +66,7 @@ def test_eq():
     b = EstimationStep.create('fo')
     s4 = ExecutionSteps.create([a, b])
     assert s3 != s4
+    assert s3 != 'x'
 
 
 def test_len():
@@ -180,6 +184,12 @@ def test_dict():
     }
     s2 = ExecutionSteps.from_dict(d)
     assert s1 == s2
+
+    ss = SimulationStep(n=23)
+    s3 = s1 + ss
+    d = s3.to_dict()
+    s4 = ExecutionSteps.from_dict(d)
+    assert s3 == s4
 
 
 def test_getitem():
