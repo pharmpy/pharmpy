@@ -130,6 +130,7 @@ def create_workflow(
     esttool_linreg: Literal["statsmodels", None] = None,
     weighted_linreg: bool = False,
     imp_ofv: bool = False,
+    nsamples: int = 5,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -170,6 +171,10 @@ def create_workflow(
     imp_ofv: bool
         additional IMP estimation step for stable OFV calculation for nonlinear mixed effects models in SAMBA.
         Default is False, i.e. use SAEM's OFV for nonlinear model selection.
+    nsamples: int
+        Number of samples from individual parameter conditional distribution for linear covariate model selection.
+        The samples will be pooled to fit the linear model.
+        Default is 5, i.e. generating 5 samples per subject
 
     Returns
     -------
@@ -195,6 +200,7 @@ def create_workflow(
             esttool_linreg,
             weighted_linreg,
             imp_ofv,
+            nsamples,
         )
 
     wb = WorkflowBuilder(name=NAME_WF)

@@ -86,6 +86,7 @@ def samba_workflow(
     esttool_linreg="statsmodels",
     weighted_linreg=False,
     imp_ofv=False,
+    nsamples=5,
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -97,7 +98,7 @@ def samba_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results)
     wb.add_task(store_task)
 
-    init_task = Task("init", _init_search_state, search_space, imp_ofv)
+    init_task = Task("init", _init_search_state, search_space, imp_ofv, nsamples)
     wb.add_task(init_task, predecessors=store_task)
 
     # SAMBA search task
@@ -108,6 +109,7 @@ def samba_workflow(
         alpha,
         esttool_linreg,
         weighted_linreg,
+        nsamples,
     )
     wb.add_task(samba_search_task, predecessors=init_task)
     search_output = wb.output_tasks
@@ -132,7 +134,9 @@ def _store_input_model(context, model, results):
     return input_modelentry
 
 
-def _init_search_state(context, search_space: str, imp_ofv: bool, modelentry: ModelEntry):
+def _init_search_state(
+    context, search_space: str, imp_ofv: bool, nsamples: int, modelentry: ModelEntry
+):
     """Initialize SAMBA covariate search"""
     model = modelentry.model
     exploratory_cov_funcs, linear_cov_funcs, filtered_model = filter_search_space_and_model(
@@ -147,7 +151,7 @@ def _init_search_state(context, search_space: str, imp_ofv: bool, modelentry: Mo
 
     # create linear covariate models
     linear_modelentry_dict, param_cov_list = _param_indexed_linear_modelentries(
-        linear_cov_funcs, filtered_modelentry, context
+        linear_cov_funcs, filtered_modelentry, nsamples, context
     )
 
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
@@ -172,9 +176,9 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, imp_
             method="IMP",
             idx=1,
             isample=3000,
-            niter=5,
+            niter=20,
             interaction=True,
-            tool_options={"EONLY": "1", "MAPITER": "0", "SIGL": "8", "PRINT": "1", "AUTO": "1"},
+            tool_options={"EONLY": "2", "MAPITER": "0", "SIGL": "8", "PRINT": "1", "AUTO": "1"},
         )
 
     # nonlinear mixed effect modelentry creation and fit
@@ -193,7 +197,7 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, imp_
     return nonlinear_search_state
 
 
-def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, context):
+def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, nsamples, context):
     param_indexed_funcs = {}  # {param: {cov_effect: cov_func}}
     param_cov_list = {}  # {param: [covariates]}
     for cov_effect, cov_func in linear_cov_funcs.items():
@@ -209,7 +213,9 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, co
     linear_modelentry_dict = dict.fromkeys(param_cov_list.keys(), None)
     # create param_base_model
     for param, covariates in param_cov_list.items():
-        param_base_model = _create_samba_base_model(filtered_modelentry, param, covariates, context)
+        param_base_model = _create_samba_base_model(
+            filtered_modelentry, param, covariates, nsamples, context
+        )
         param_base_modelentry = ModelEntry.create(model=param_base_model)
         linear_modelentry_dict[param] = [param_base_modelentry]
 
@@ -223,11 +229,11 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, co
     return linear_modelentry_dict, param_cov_list
 
 
-def samba_step(context, step, alpha, esttool_linreg, weighted_linreg, state_and_effect):
+def samba_step(context, step, alpha, esttool_linreg, weighted_linreg, nsamples, state_and_effect):
 
     # LINEAR COVARIATE MODEL PROCESSING #####################
     selected_explor_cov_funcs, linear_modelentry_dict = linear_model_selection(
-        context, step, alpha, state_and_effect, esttool_linreg, weighted_linreg
+        context, step, alpha, state_and_effect, esttool_linreg, weighted_linreg, nsamples
     )
 
     # NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
@@ -238,7 +244,9 @@ def samba_step(context, step, alpha, esttool_linreg, weighted_linreg, state_and_
     return state_and_effect
 
 
-def linear_model_selection(context, step, alpha, state_and_effect, esttool_linreg, weighted_linreg):
+def linear_model_selection(
+    context, step, alpha, state_and_effect, esttool_linreg, weighted_linreg, nsamples
+):
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
         state_and_effect
     )
@@ -251,7 +259,9 @@ def linear_model_selection(context, step, alpha, state_and_effect, esttool_linre
         # use python statsmodel package as linear model estimation tool
         for param, covariates in param_cov_list.items():
             # update dataset
-            updated_dataset = _create_samba_dataset(best_nlme_modelentry, param, covariates)
+            updated_dataset = _create_samba_dataset(
+                best_nlme_modelentry, param, covariates, nsamples
+            )
             covs = ["1"] + covariates
             if weighted_linreg:
                 linear_models = [
@@ -282,7 +292,9 @@ def linear_model_selection(context, step, alpha, state_and_effect, esttool_linre
             wb = WorkflowBuilder(name="linear model selection")
             covariates = param_cov_list[param]
             # update dataset
-            updated_dataset = _create_samba_dataset(best_nlme_modelentry, param, covariates)
+            updated_dataset = _create_samba_dataset(
+                best_nlme_modelentry, param, covariates, nsamples
+            )
             covs = ["Base"] + covariates
             linear_modelentries = list(linear_modelentries)
             for i, me in enumerate(linear_modelentries):
@@ -423,13 +435,15 @@ def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_e
     return state_and_effect
 
 
-def samba_search(context, max_steps, alpha, esttool_linreg, weighted_linreg, state_and_effect):
+def samba_search(
+    context, max_steps, alpha, esttool_linreg, weighted_linreg, nsamples, state_and_effect
+):
     steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
     for step in steps:
         prev_best = state_and_effect[0].best_candidate_so_far
 
         state_and_effect = samba_step(
-            context, step, alpha, esttool_linreg, weighted_linreg, state_and_effect
+            context, step, alpha, esttool_linreg, weighted_linreg, nsamples, state_and_effect
         )
 
         new_best = state_and_effect[0].best_candidate_so_far
@@ -514,7 +528,7 @@ def filter_search_space_and_model(search_space, model):
     return (indexed_explor_cov_funcs, linear_cov_funcs, filtered_model)
 
 
-def _create_samba_dataset(model_entry, param, covariates):
+def _create_samba_dataset(model_entry, param, covariates, nsamples):
 
     eta_name = get_parameter_rv(model_entry.model, param)[0]
     # Extract the conditional means (ETA) for individual parameters
@@ -540,16 +554,25 @@ def _create_samba_dataset(model_entry, param, covariates):
         for subset in model_entry.modelfit_results.individual_estimates_covariance
     ]
 
+    # General samples from conditional distribution
+    # Multiple samples will be averaged
+    if nsamples >= 1:
+        dataset = dataset.rename(columns={"DV": "ETA"})
+        dataset["DV"] = dataset.apply(
+            lambda x: np.random.normal(loc=x["ETA"], scale=x["ETC"], size=nsamples).mean(), axis=1
+        )
+        dataset["DV"] = dataset["DV"].astype(np.float64)
+
     return dataset
 
 
-def _create_samba_base_model(modelentry, param, covariates, context):
+def _create_samba_base_model(modelentry, param, covariates, nsamples, context):
     """
     Create linear base model [Y ~ THETA(1) + ERR(1)] for the parameters to be explored.
     ETA values associated with these model parameters are set as dependent variable (DV).
     The OFVs of these base models are used as the basis of linear covariate model selection.
     """
-    dataset = _create_samba_dataset(modelentry, param, covariates)
+    dataset = _create_samba_dataset(modelentry, param, covariates, nsamples)
 
     # parameters
     theta = Parameter(name="theta", init=0.1)
