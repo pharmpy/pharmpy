@@ -129,8 +129,9 @@ def create_workflow(
     naming_index_offset: Optional[int] = 0,
     esttool_linreg: Literal["statsmodels", None] = None,
     weighted_linreg: bool = False,
-    imp_ofv: bool = False,
+    imp_ofv: bool = True,
     nsamples: int = 5,
+    lin_filter: int = 2,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -161,20 +162,25 @@ def create_workflow(
         Default is False
     strictness : str or None
         Strictness criteria
-    naming_index_offset: int
+    naming_index_offset : int
         index offset for naming of runs. Default is 0.
-    esttool_linreg: {'statsmodels', None}
+    esttool_linreg : {'statsmodels', None}
         estimation tool for SAMBA linear covariate model fitting. 'statsmodels' calls statsmodel's
         functionalities, whereas None calls nonmem.
-    weighted_linreg: bool
+    weighted_linreg : bool
         If `True`, SAMBA uses ETC weighted least squares to fit linear covariate models.
-    imp_ofv: bool
+    imp_ofv : bool
         additional IMP estimation step for stable OFV calculation for nonlinear mixed effects models in SAMBA.
         Default is False, i.e. use SAEM's OFV for nonlinear model selection.
-    nsamples: int
+    nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         The samples will be pooled to fit the linear model.
         Default is 5, i.e. generating 5 samples per subject
+    lin_filter : int
+        option to control the number of covariates passed to nonlinear selection
+         0: the one with the largest drop of OFV among all parameter-covariate pairs
+         1: pass the ones with the largest drop of OFV within each parameter scope
+         2: pass all LRT survivors (should have the most similar performance as SCM-Forward)
 
     Returns
     -------
@@ -201,6 +207,7 @@ def create_workflow(
             weighted_linreg,
             imp_ofv,
             nsamples,
+            lin_filter,
         )
 
     wb = WorkflowBuilder(name=NAME_WF)

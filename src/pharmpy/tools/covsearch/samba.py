@@ -29,6 +29,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
+from pharmpy.modeling.lrt import best_of_two as lrt_best_of_two
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
@@ -87,6 +88,7 @@ def samba_workflow(
     weighted_linreg=False,
     imp_ofv=False,
     nsamples=5,
+    lin_filter=2,
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -110,6 +112,7 @@ def samba_workflow(
         esttool_linreg,
         weighted_linreg,
         nsamples,
+        lin_filter,
     )
     wb.add_task(samba_search_task, predecessors=init_task)
     search_output = wb.output_tasks
@@ -229,11 +232,20 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, ns
     return linear_modelentry_dict, param_cov_list
 
 
-def samba_step(context, step, alpha, esttool_linreg, weighted_linreg, nsamples, state_and_effect):
+def samba_step(
+    context, step, alpha, esttool_linreg, weighted_linreg, nsamples, lin_filter, state_and_effect
+):
 
     # LINEAR COVARIATE MODEL PROCESSING #####################
     selected_explor_cov_funcs, linear_modelentry_dict = linear_model_selection(
-        context, step, alpha, state_and_effect, esttool_linreg, weighted_linreg, nsamples
+        context,
+        step,
+        alpha,
+        state_and_effect,
+        esttool_linreg,
+        weighted_linreg,
+        nsamples,
+        lin_filter,
     )
 
     # NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
@@ -245,7 +257,14 @@ def samba_step(context, step, alpha, esttool_linreg, weighted_linreg, nsamples, 
 
 
 def linear_model_selection(
-    context, step, alpha, state_and_effect, esttool_linreg, weighted_linreg, nsamples
+    context,
+    step,
+    alpha,
+    state_and_effect,
+    esttool_linreg,
+    weighted_linreg,
+    nsamples,
+    lin_filter,
 ):
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
         state_and_effect
@@ -273,18 +292,19 @@ def linear_model_selection(
                     smf.wls(f"DV~{cov}", data=updated_dataset, weights=1.0) for cov in covs
                 ]
             linear_fitres = [model.fit() for model in linear_models]
-            ofvs = [-res.llf for res in linear_fitres]
-            selected_cov = lrt_best_of_many(
-                linear_models[0], linear_models[1:], ofvs[0], ofvs[1:], alpha=alpha
+            # OFV = -2 * LogLikelihood (NONMEM OFV = - 2 * Loglikelihood - N*(2*pi))
+            ofvs = [-2 * res.llf for res in linear_fitres]
+
+            selected_explor_cov_funcs, selected_lin_model_ofv = _lin_filter_option(
+                lin_filter,
+                linear_models,
+                ofvs,
+                alpha,
+                param,
+                selected_explor_cov_funcs,
+                exploratory_cov_funcs,
+                selected_lin_model_ofv,
             )
-            cov_model_index = "_".join([param, selected_cov.exog_names[-1]])
-            if "Intercept" not in cov_model_index:
-                selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
-                parent_ofv = ofvs[0]
-                child_ofv = ofvs[1:]
-                best_index = np.nanargmin(child_ofv)
-                ofv_drop = parent_ofv - child_ofv[best_index]
-                selected_lin_model_ofv.append(ofv_drop)
 
     else:
         # nonmem as linear model estimation tool
@@ -322,22 +342,17 @@ def linear_model_selection(
                 )
                 for modelentry in linear_modelentries
             ]
-            selected_cov = lrt_best_of_many(
-                parent=linear_modelentries[0],
-                models=linear_modelentries[1:],
-                parent_ofv=ofvs[0],
-                model_ofvs=ofvs[1:],
-                alpha=alpha,
+
+            selected_explor_cov_funcs, selected_lin_model_ofv = _lin_filter_option(
+                lin_filter,
+                linear_modelentries,
+                ofvs,
+                alpha,
+                param,
+                selected_explor_cov_funcs,
+                exploratory_cov_funcs,
+                selected_lin_model_ofv,
             )
-            cov_model_index = selected_cov.model.description
-            if "Base" not in cov_model_index:
-                selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
-                # calculate the drop-off of ofv for selected linear models
-                parent_ofv = ofvs[0]
-                child_ofv = ofvs[1:]
-                best_index = np.nanargmin(child_ofv)
-                ofv_drop = parent_ofv - child_ofv[best_index]
-                selected_lin_model_ofv.append(ofv_drop)
 
     # select the best linear model (covariate effect) with the largest drop-off in ofv
     if selected_lin_model_ofv:
@@ -345,8 +360,67 @@ def linear_model_selection(
         selected_explor_cov_funcs = selected_explor_cov_funcs[best_index]
         if not isinstance(selected_explor_cov_funcs, list):
             selected_explor_cov_funcs = [selected_explor_cov_funcs]
-
     return selected_explor_cov_funcs, linear_modelentry_dict
+
+
+def _lin_filter_option(
+    lin_filter,
+    linear_models,
+    ofvs,
+    alpha,
+    param,
+    selected_explor_cov_funcs,
+    exploratory_cov_funcs,
+    selected_lin_model_ofv,
+):
+    print(ofvs)
+    if lin_filter in [0, 1]:
+        selected_cov = lrt_best_of_many(
+            parent=linear_models[0],
+            models=linear_models[1:],
+            parent_ofv=ofvs[0],
+            model_ofvs=ofvs[1:],
+            alpha=alpha,
+        )
+        if isinstance(linear_models[0], ModelEntry):
+            cov_model_index = selected_cov.model.description
+        else:
+            cov_model_index = "_".join([param, selected_cov.exog_names[-1]])
+
+        if ("Base" in cov_model_index) or ("Intercept" in cov_model_index):
+            cov_model_index = None
+
+        if cov_model_index and lin_filter == 0:
+            print(cov_model_index)
+            selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
+            # calculate the drop-off of ofv for selected linear models
+            parent_ofv = ofvs[0]
+            child_ofv = ofvs[1:]
+            best_index = np.nanargmin(child_ofv)
+            ofv_drop = parent_ofv - child_ofv[best_index]
+            selected_lin_model_ofv.append(ofv_drop)
+        if cov_model_index and lin_filter == 1:
+            print(cov_model_index)
+            selected_explor_cov_funcs.extend(exploratory_cov_funcs[cov_model_index])
+
+    elif lin_filter == 2:
+        selected_cov = [
+            lrt_best_of_two(linear_models[0], me, ofvs[0], ofv, alpha)
+            for me, ofv in zip(linear_models[1:], ofvs[1:])
+        ]
+        if isinstance(linear_models[0], ModelEntry):
+            cov_model_index = [me.model.description for me in selected_cov]
+        else:
+            cov_model_index = ["_".join([param, model.exog_names[-1]]) for model in selected_cov]
+        print(cov_model_index)
+        for cm_index in cov_model_index:
+            if ("Base" not in cm_index) and ("Intercept" not in cm_index):
+                print(cm_index)
+                selected_explor_cov_funcs.extend(exploratory_cov_funcs[cm_index])
+    else:
+        raise ValueError("lin_filter must be one from the list {0, 1, 2}")
+
+    return selected_explor_cov_funcs, selected_lin_model_ofv
 
 
 def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_explor_cov_funcs):
@@ -436,14 +510,28 @@ def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_e
 
 
 def samba_search(
-    context, max_steps, alpha, esttool_linreg, weighted_linreg, nsamples, state_and_effect
+    context,
+    max_steps,
+    alpha,
+    esttool_linreg,
+    weighted_linreg,
+    nsamples,
+    lin_filter,
+    state_and_effect,
 ):
     steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
     for step in steps:
         prev_best = state_and_effect[0].best_candidate_so_far
 
         state_and_effect = samba_step(
-            context, step, alpha, esttool_linreg, weighted_linreg, nsamples, state_and_effect
+            context,
+            step,
+            alpha,
+            esttool_linreg,
+            weighted_linreg,
+            nsamples,
+            lin_filter,
+            state_and_effect,
         )
 
         new_best = state_and_effect[0].best_candidate_so_far
