@@ -226,6 +226,14 @@ def test_pset_replace():
     assert len(pset2) == 2
 
 
+def test_param_eq():
+    p1 = Parameter.create('Y', 9)
+    p2 = Parameter.create('X', 3)
+    assert p1 == p1
+    assert p1 != p2
+    assert p1 != 'Y'
+
+
 def test_hash():
     p1 = Parameter.create('Y', 9)
     p2 = Parameter.create('Y', 9, upper=23)
@@ -319,6 +327,9 @@ def test_slice():
     assert len(sl) == 2
     assert sl['X'].init == 3
     assert 'Y' not in sl
+    expr = p1.symbol + p2.symbol
+    with pytest.raises(KeyError):
+        pset1[expr]
 
 
 def test_replace():

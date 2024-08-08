@@ -45,6 +45,12 @@ jobs:
           flags: unit,${{ matrix.platform }},python-${{ matrix.python-version }}
           files: ./.coverage.xml
 
+      - name: Check coverage level
+        if: matrix.tox-env == 'unit-cover'
+        shell: bash
+        run: |
+          tox -e coverage-check
+
 
   doctest:
     strategy:

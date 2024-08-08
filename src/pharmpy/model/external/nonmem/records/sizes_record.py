@@ -2,6 +2,8 @@
 The NONMEM $SIZES record
 """
 
+from pharmpy.internals.typing import Self
+
 from .option_record import OptionRecord
 
 
@@ -25,7 +27,7 @@ class SizesRecord(OptionRecord):
         assert pc is not None
         return int(pc)
 
-    def set_PC(self, value):
+    def set_PC(self, value) -> Self:
         if value > 99:
             raise ValueError(
                 f'Model has {value} compartments, but NONMEM only support a maximum of 99 '

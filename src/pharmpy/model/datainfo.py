@@ -673,6 +673,12 @@ class DataInfo(Sequence, Immutable):
 
         return self._columns[self._getindex(index)]
 
+    def __contains__(self, value: Any) -> bool:
+        for col in self:
+            if col == value or col.name == value:
+                return True
+        return False
+
     @property
     def path(self) -> Optional[Path]:
         r"""Path of dataset file

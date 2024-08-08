@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from itertools import product
 from pathlib import Path
-from typing import TYPE_CHECKING, List, Optional
+from typing import TYPE_CHECKING, Any, List, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.internals.code_generator import CodeGenerator
@@ -45,6 +45,7 @@ else:
     from pharmpy.deps import sympy, sympy_printing
 
     fortran = sympy_printing.fortran
+
 
 from .nmtran_parser import NMTranControlStream
 from .parsing import extract_verbatim_derivatives, parse_column_info
@@ -119,8 +120,8 @@ def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters
                 i += 1
             else:
                 # Added
-                new = create_theta_record(param)
-                new_theta_records.append(new)
+                newrec = create_theta_record(param)
+                new_theta_records.append(newrec)
         elif op == -1:
             if param.name not in kept_theta_names:
                 # Removed
@@ -416,22 +417,21 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
 
 
 def check_and_update_cmt_column(model, old, new):
-    try:
+    if 'CMT' in model.datainfo:
         cmt = model.datainfo['CMT']
-        cmt_exist = True
-    except IndexError:
-        cmt_exist = False
+    else:
+        cmt = None
 
     # TODO : Add admid column if non-existent?
 
     if len(new.dosing_compartments) > 1:
         # Add CMT if non-existent else update existing
-        if cmt_exist and not cmt.drop:
+        if cmt is not None and not cmt.drop:
             model, updated_dataset = update_cmt(model, old, new)
         else:
             model = _add_cmt(model)
             updated_dataset = True
-    elif cmt_exist and not cmt.drop:
+    elif cmt is not None and not cmt.drop:
         model, updated_dataset = update_cmt(model, old, new)
     else:
         # Single dose compartment without existing CMT column.
@@ -519,15 +519,18 @@ def is_nonlinear_odes(model: Model):
     return odes.t in M.free_symbols
 
 
-def get_odes(model) -> CompartmentalSystem:
+def get_odes(model_or_statements) -> CompartmentalSystem:
     # Gets and asserts the ode_system
-    odes = model.statements.ode_system
+    if isinstance(model_or_statements, Statements):
+        odes = model_or_statements.ode_system
+    else:
+        odes = model_or_statements.statements.ode_system
     assert odes is not None
     return odes
 
 
 def has_zero_order_inputs(model: Model):
-    odes = model.statements.ode_system
+    odes = get_odes(model)
     zo = odes.zero_order_inputs
     return not all(a == 0 for a in zo)
 
@@ -540,7 +543,7 @@ def update_infusion(model: Model, old: CompartmentalSystem):
         'D1'
     ):
         # Handle direct moving of Infusion dose
-        statements = statements.subs({'D2': 'D1'})
+        statements = statements.subs({Expr.symbol('D2'): Expr.symbol('D1')})
 
     if isinstance(new.dosing_compartments[0].doses[0], Infusion) and isinstance(
         old.dosing_compartments[0].doses[0], Bolus
@@ -548,6 +551,7 @@ def update_infusion(model: Model, old: CompartmentalSystem):
         dose = new.dosing_compartments[0].doses[0]
         if dose.rate is None:
             # FIXME: Not always D1 here!
+            assert dose.duration is not None
             ass = Assignment(Expr.symbol('D1'), dose.duration)
             cb = CompartmentalSystemBuilder(new)
             comp = cb.set_dose(
@@ -559,15 +563,14 @@ def update_infusion(model: Model, old: CompartmentalSystem):
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
-        statements = statements.before_odes + ass + statements.ode_system + statements.after_odes
-        try:
-            dataset = model.dataset.copy()
-        except AttributeError as e:
+        statements = statements.before_odes + ass + get_odes(statements) + statements.after_odes
+        if model.dataset is None:
             if model.datainfo and model.datainfo.path is None:
                 updated_dataset = None
             else:
-                raise e
+                updated_dataset = False
         else:
+            dataset = model.dataset.copy()
             rate = np.where(dataset['AMT'] == 0, 0.0, -2.0)
             dataset['RATE'] = rate
             updated_dataset = True
@@ -652,7 +655,7 @@ def to_des(model: Model, new: CompartmentalSystem):
 
     to_odes = []
     for s in model.statements.before_odes:
-        if model.statements.ode_system.t in s.free_symbols:
+        if get_odes(model).t in s.free_symbols:
             to_odes.append(s)
 
     newdes = des.from_odes(new, to_odes)
@@ -664,7 +667,7 @@ def to_des(model: Model, new: CompartmentalSystem):
     assert isinstance(mod, ModelRecord)
     dosecmt_name = new.dosing_compartments[0].name
     for eq in new.eqs:
-        name = eq.lhs.args[0].name[2:]
+        name = eq.lhs.args[0].name[2:]  # pyright: ignore [reportAttributeAccessIssue]
         if name == dosecmt_name:
             dose = True
         else:
@@ -799,11 +802,16 @@ def update_dependent_variables(model: Model, trans):
             else:
                 cg.add(f'ELSE IF (DVID.EQ.{dvid}) THEN')
             yass = model.statements.find_assignment(dv)
+            assert yass is not None
             cg.indent()
             cg.add(f'Y = {yass.expression.subs(trans)}')
             cg.dedent()
         cg.add('END IF')
-        node = CodeRecordParser(str(cg) + '\n').root.children[0]
+        node = CodeRecordParser(
+            str(cg) + '\n'
+        ).root.children[  # pyright: ignore [reportOptionalMemberAccess]
+            0
+        ]
 
         cs = model.internals.control_stream
         rec = cs.get_error_pred_record()
@@ -1224,7 +1232,7 @@ def new_advan_trans(model: Model):
         oldtrans = subs.get_option_startswith('TRANS')
     else:
         oldtrans = None
-    odes = model.statements.ode_system
+    odes = get_odes(model)
     nonlin = is_nonlinear_odes(model)
     has_zo = has_zero_order_inputs(model)
     if nonlin or has_zo:
@@ -1328,7 +1336,7 @@ def update_model_record(model: Model, advan):
         return model
     newmap = new_compartmental_map(odes)
 
-    replace_dict = {'compartment_map': newmap}
+    replace_dict: dict[str, Any] = {'compartment_map': newmap}
 
     if advan in ['ADVAN1', 'ADVAN2', 'ADVAN3', 'ADVAN4', 'ADVAN10', 'ADVAN11', 'ADVAN12']:
         newcs = model.internals.control_stream.remove_records(
@@ -1366,11 +1374,13 @@ def update_needed_pk_parameters(model: Model, advan, trans):
     odes = get_odes(model)
     if advan == 'ADVAN2' or advan == 'ADVAN4' or advan == 'ADVAN12':
         if not statements.find_assignment('KA'):
-            comp, rate = odes.get_compartment_outflows(odes.find_depot(statements))[0]
+            depot = odes.find_depot(statements)
+            assert depot is not None
+            comp, rate = odes.get_compartment_outflows(depot)[0]
             ass = Assignment.create(Expr.symbol('KA'), rate)
             if rate != ass.symbol:
                 cb = CompartmentalSystemBuilder(odes)
-                cb.add_flow(odes.find_depot(statements), comp, ass.symbol)
+                cb.add_flow(depot, comp, ass.symbol)
                 model = model.replace(
                     statements=statements.before_odes
                     + ass
@@ -1378,7 +1388,7 @@ def update_needed_pk_parameters(model: Model, advan, trans):
                     + statements.after_odes
                 )
                 statements = model.statements
-                odes = statements.ode_system
+                odes = get_odes(model)
     if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
         central = odes.central_compartment
         model = add_parameters_ratio(model, 'CL', 'V', central, output)
@@ -1427,7 +1437,7 @@ def update_needed_pk_parameters(model: Model, advan, trans):
                     if dest == 'OUTPUT':
                         dest_comp = output
                     else:
-                        dest_comp = odes.find_compartment(dest)
+                        dest_comp = odes.find_compartment_or_raise(dest)
                     rate = odes.get_flow(source_comp, dest_comp)
                     assert isinstance(source_comp, Compartment)
                     sn = newmap[source]
@@ -1490,9 +1500,7 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
     return model
 
 
-def define_parameter(
-    model: Model, name: str, value: sympy.Expr, synonyms: Optional[List[str]] = None
-):
+def define_parameter(model: Model, name: str, value: Expr, synonyms: Optional[List[str]] = None):
     """Define a parameter in statements if not defined
     Update if already defined as other value
     return True if new assignment was added
@@ -1537,9 +1545,9 @@ def define_parameter(
 def add_rate_assignment_if_missing(
     model: Model,
     name: str,
-    value: sympy.Expr,
+    value: Expr,
     source: Compartment,
-    dest: Compartment,
+    dest,
     synonyms: Optional[List[str]] = None,
 ):
     model, added = define_parameter(model, name, value, synonyms=synonyms)
@@ -1983,7 +1991,12 @@ def update_verbatim(cs, random_variables, to_add: dict = {}, to_remove: dict = {
             if to_add:
                 new_children = _add_verbatim_derivative(new_children, to_add)
             else:
-                if new_children[-1].children[0].value == '"LAST':
+                if (
+                    new_children[-1]
+                    .children[0]
+                    .value  # pyright: ignore [reportAttributeAccessIssue]
+                    == '"LAST'
+                ):
                     new_children = new_children[:-1]  # Remove entire verbatim block
         elif current_number == last_node and not verbatim_found:
             # Initiate new verbatim block

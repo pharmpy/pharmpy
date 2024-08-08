@@ -17,3 +17,4 @@ exclude_lines =
     pragma: no cover
     @overload
     @abstractmethod
+    if TYPE_CHECKING:

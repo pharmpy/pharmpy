@@ -1,9 +1,14 @@
 from __future__ import annotations
 
-from typing import TypeVar, Union
+from typing import TYPE_CHECKING, TypeVar, Union
 
 from pharmpy.basic import Unit
-from pharmpy.deps import sympy
+
+if TYPE_CHECKING:
+    import sympy
+else:
+    from pharmpy.deps import sympy
+
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
 from pharmpy.model import Assignment, CompartmentalSystem, Model
@@ -63,7 +68,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     input_units = {sympy.Symbol(col.name): col.unit._expr for col in di}
     pruned_nodes = {sympy.exp}
 
-    def pruning_predicate(e: sympy.Expr) -> bool:
+    def pruning_predicate(e: sympy.Basic) -> bool:
         return e.func in pruned_nodes
 
     unit_eqs = []

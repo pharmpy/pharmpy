@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import re
 from typing import Set, Union
 
@@ -5,7 +7,7 @@ import pharmpy.model
 from pharmpy.basic import BooleanExpr
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
-from pharmpy.model import Assignment, Infusion
+from pharmpy.model import Assignment, Infusion, Statements
 from pharmpy.modeling import get_bioavailability, get_lag_times
 
 from .error_model import res_error_term
@@ -35,7 +37,7 @@ class ExpressionPrinter(sympy_printing.str.StrPrinter):
 def add_statements(
     model: pharmpy.model.Model,
     cg: CodeGenerator,
-    statements: pharmpy.model.statements,
+    statements: Statements,
     only_piecewise: Union[bool, None] = None,
     dependencies: Set[sympy.Symbol] = set(),
     res_alias: Set[sympy.Symbol] = set(),

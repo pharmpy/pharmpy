@@ -42,7 +42,7 @@ def replace_non_random_rvs(model: Model):
     new_parameters = Parameters(tuple(p for p in model.parameters if p.name not in remove))
     new_statements = model.statements.subs(d)
     new_rvs = RandomVariables(
-        keep, eta_levels=dists.eta_levels, epsilon_levels=dists.epsilon_levels
+        tuple(keep), eta_levels=dists.eta_levels, epsilon_levels=dists.epsilon_levels
     )
 
     model = model.replace(

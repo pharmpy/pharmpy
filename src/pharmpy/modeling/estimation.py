@@ -1,8 +1,13 @@
 import math
-from typing import Dict, Union
+from typing import TYPE_CHECKING, Dict, Union
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
+if TYPE_CHECKING:
+    import numpy as np
+    import pandas as pd
+else:
+    from pharmpy.deps import numpy as np
+    from pharmpy.deps import pandas as pd
+
 from pharmpy.model import Model
 
 
