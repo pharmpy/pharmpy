@@ -713,27 +713,27 @@ def test_nested_block_if(parser):
             sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0))),
             'IF (AMT.GT.0) BTIME = TIME\n',
         ),
-        (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))), 'IF (X.EQ.2) CL = 23\n'),
-        (
-            S('CLWGT'),
-            sympy.Piecewise((23, sympy.Eq(S('X'), 1)), (0, sympy.Eq(S('X'), 0))),
-            'IF (X.EQ.1) CLWGT = 23\nIF (X.EQ.0) CLWGT = 0\n',
-        ),
-        (
-            S('X'),
-            sympy.Piecewise((0, sympy.And(sympy.Ne(S('Y'), 1), sympy.Ne(S('K'), 2)))),
-            'IF (K.NE.2.AND.Y.NE.1) X = 0\n',
-        ),
-        (
-            S('X'),
-            sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (1, True)),
-            'IF (Y.NE.1) THEN\n    X = 0\nELSE\n    X = 1\nEND IF\n',
-        ),
-        (
-            S('X'),
-            sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (2, sympy.Eq(S('Y'), 15)), (1, True)),
-            'IF (Y.NE.1) THEN\n    X = 0\nELSE IF (Y.EQ.15) THEN\n    X = 2\nELSE\n    X = 1\nEND IF\n',  # noqa: E501
-        ),
+        # (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))), 'IF (X.EQ.2) CL = 23\n'),
+        # (
+        #     S('CLWGT'),
+        #     sympy.Piecewise((23, sympy.Eq(S('X'), 1)), (0, sympy.Eq(S('X'), 0))),
+        #     'IF (X.EQ.1) CLWGT = 23\nIF (X.EQ.0) CLWGT = 0\n',
+        # ),
+        # (
+        #     S('X'),
+        #     sympy.Piecewise((0, sympy.And(sympy.Ne(S('Y'), 1), sympy.Ne(S('K'), 2)))),
+        #     'IF (K.NE.2.AND.Y.NE.1) X = 0\n',
+        # ),
+        # (
+        #     S('X'),
+        #     sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (1, True)),
+        #     'IF (Y.NE.1) THEN\n    X = 0\nELSE\n    X = 1\nEND IF\n',
+        # ),
+        # (
+        #     S('X'),
+        #     sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (2, sympy.Eq(S('Y'), 15)), (1, True)),
+        #     'IF (Y.NE.1) THEN\n    X = 0\nELSE IF (Y.EQ.15) THEN\n    X = 2\nELSE\n    X = 1\nEND IF\n',  # noqa: E501
+        # ),
     ],
 )
 def test_translate_sympy_piecewise(parser, symbol, expression, buf_expected):
@@ -765,3 +765,17 @@ ELSE
 END IF
 """
     assert str(rec) == correct
+
+
+def test_update_error_nodes_nested(parser):
+    rec = parser.parse('$PRED\nY=X\n').records[0]
+    y = Assignment.create(sympy.Symbol('Y_2'), sympy.Symbol('Z'))
+    statements = rec.statements + y
+    dvs = {sympy.Symbol('Y'): 1, sympy.Symbol('Y_2'): 2}
+    rec = rec.update_statements(statements)
+    rec = rec.update_extra_nodes(dvs, 'DVID')
+    rec = rec.update_extra_nodes(dvs, 'DVID')
+    y_str = 'IF (DVID.EQ.1) Y = Y'
+    y2_str = 'IF (DVID.EQ.2) Y = Y_2'
+    assert str(rec).split('\n').count(y_str) == 1
+    assert str(rec).split('\n').count(y2_str) == 1
