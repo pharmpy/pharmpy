@@ -216,6 +216,8 @@ def test_dict(load_model_for_test, testdata):
 def test_add():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     s2 = Assignment(S('Z'), Expr.integer(23) + S('M'))
+    new = s1 + s2
+    assert len(new) == 2
     s3 = Assignment(S('M'), Expr.integer(2))
     s = Statements([s1, s2])
     new = (s3,) + s
