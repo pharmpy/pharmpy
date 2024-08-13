@@ -22,6 +22,7 @@ jobs:
         include:
           - tox-env: 'unit'
           - python-version: '3.11'
+            platform: 'ubuntu-22.04'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
 
     runs-on: ${{ matrix.platform }}
