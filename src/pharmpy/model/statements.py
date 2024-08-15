@@ -765,6 +765,8 @@ class CompartmentalSystem(Statement):
         return atoms
 
     def __eq__(self, other):
+        if other is self:
+            return True
         if not isinstance(other, CompartmentalSystem):
             return NotImplemented
         return (

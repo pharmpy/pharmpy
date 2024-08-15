@@ -5,6 +5,7 @@ Bugfixes
 ========
 
 * Fix problems with the error "[WinError 6] The handle is invalid on Windows" when creating the context
+* Fix crash when updating some NONMEM models where a central compartment couldn't be found
 
 1.1.0 (2024-07-17)
 ------------------
