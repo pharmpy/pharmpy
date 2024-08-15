@@ -368,7 +368,7 @@ def _f_link_assignment(
                 func = Expr.function(f'A_{inv_map[val]}', 't')
                 s = f'S{int(val)}'
                 if pkrec.statements.find_assignment(s):
-                    expr = func / s
+                    expr = func / Expr.symbol(s)
                 else:
                     expr = func
                 pair = (expr, cond)
