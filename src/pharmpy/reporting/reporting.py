@@ -100,7 +100,15 @@ def generate_report(rst_path, results_path, target_path):
 def embed_css_and_js(html, target):
     """Embed all external css and javascript into an html"""
     with open(html, 'r', encoding='utf-8') as sh:
-        soup = BeautifulSoup(sh, features='lxml')
+        with warnings.catch_warnings():
+            # Don't display deprecation warnings.
+            # Deprecation warning with lxml 5.3.0
+            warnings.filterwarnings(
+                "ignore",
+                message=r"The 'strip_cdata' option of HTMLParser\(\) has never done anything",
+            )
+
+            soup = BeautifulSoup(sh, features='lxml')
 
     scripts = soup.findAll("script", attrs={"src": True})
 
