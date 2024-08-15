@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix problems with the error "[WinError 6] The handle is invalid on Windows" when creating the context
+
 1.1.0 (2024-07-17)
 ------------------
 
