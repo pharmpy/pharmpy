@@ -2413,6 +2413,8 @@ class Statements(Sequence, Immutable):
         return expression
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, Statements):
             return NotImplemented
         if len(self) != len(other):
