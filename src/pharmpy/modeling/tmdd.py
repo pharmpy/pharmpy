@@ -2,6 +2,8 @@
 :meta private:
 """
 
+from __future__ import annotations
+
 from typing import Literal, Optional
 
 from pharmpy.basic import Expr
@@ -328,7 +330,7 @@ def set_tmdd(
         raise ValueError(f'Unknown TMDD type "{type}".')
 
     model = model.replace(statements=before + CompartmentalSystem(cb) + after)
-    if type not in ['CR', 'CRIB', 'WAGNER', 'MMAPP']:
+    if type not in ('CR', 'CRIB', 'WAGNER', 'MMAPP'):
         model = set_initial_condition(model, "TARGET", r_0 * vc)
     if type == 'MMAPP':
         model = set_initial_condition(model, "TARGET", r_0)
@@ -339,7 +341,7 @@ def set_tmdd(
             raise ValueError('No dataset connected to model.')
         if 'dvid' not in model.datainfo.types and 'DVID' not in model.dataset.columns:
             raise ValueError("DVID column in dataset is needed when using dv_types.")
-        if type in ['FULL', 'IB']:
+        if type in ('FULL', 'IB'):
             if 'drug_tot' in dv_types.keys():
                 new_y = (central.amount + complex_comp.amount) / vc
                 after = model.statements.after_odes
@@ -416,7 +418,7 @@ def set_tmdd(
                 model = model.replace(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
-        elif type in ['CR', 'CRIB']:
+        elif type in ('CR', 'CRIB'):
             if 'drug_tot' in dv_types.keys():
                 new_y = (central.amount + complex_comp.amount) / vc
                 after = model.statements.after_odes
