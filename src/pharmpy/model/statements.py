@@ -74,7 +74,7 @@ class Assignment(Statement):
     @classmethod
     def create(cls, symbol: TExpr, expression: TExpr) -> Assignment:
         symbol = Expr(symbol)
-        if not symbol.is_symbol:
+        if not symbol.is_symbol():
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
         expression = Expr(expression)
         # To avoid nested piecewises
