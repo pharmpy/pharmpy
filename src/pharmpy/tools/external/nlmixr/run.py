@@ -542,8 +542,8 @@ def write_fix_eta(modelfit_results: ModelfitResults, path=None, force=True) -> s
         Return the path to fixated ETAs csv file.
 
     """
+    from pharmpy import conf
     from pharmpy.internals.fs.path import path_absolute
-    from pharmpy.model import data
 
     filename = "fix_eta.csv"
     path = path / filename
@@ -551,7 +551,7 @@ def write_fix_eta(modelfit_results: ModelfitResults, path=None, force=True) -> s
         raise FileExistsError(f'File at {path} already exists.')
 
     path = path_absolute(path)
-    modelfit_results.individual_estimates.to_csv(path, na_rep=data.conf.na_rep, index=False)
+    modelfit_results.individual_estimates.to_csv(path, na_rep=conf.missing_data_token, index=False)
     return path
 
 

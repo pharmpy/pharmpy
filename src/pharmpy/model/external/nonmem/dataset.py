@@ -5,9 +5,10 @@ from io import StringIO
 
 from lark import Lark
 
+from pharmpy import conf
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import DatasetError, DatasetWarning, data
+from pharmpy.model import DatasetError, DatasetWarning
 
 
 class NMTRANDataIO(StringIO):
@@ -88,12 +89,12 @@ def _convert_data_item(x, null_value):
         x = null_value
     if len(x) > 24:
         raise DatasetError("The dataset contains an item that is longer than 24 characters")
+    if x == conf.missing_data_token:
+        return np.nan
     try:
         converted = convert_fortran_number(x)
     except ValueError as e:
         raise DatasetError(str(e)) from e
-    if converted in data.conf.na_values:
-        return np.nan
     return converted
 
 

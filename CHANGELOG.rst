@@ -1,6 +1,11 @@
 next version
 ------------
 
+Changes
+=======
+
+* Replace configuration items pharmpy.data.na_rep and na_names with pharmpy.missing_data_token.
+
 Bugfixes
 ========
 
