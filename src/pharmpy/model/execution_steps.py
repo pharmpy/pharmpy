@@ -595,6 +595,8 @@ class ExecutionSteps(Sequence, Immutable):
         return len(self._steps)
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, ExecutionSteps):
             return NotImplemented
         if len(self) != len(other):
