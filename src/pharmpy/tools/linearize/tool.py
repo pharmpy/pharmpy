@@ -2,7 +2,7 @@ from typing import Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps, Model, Statements
+from pharmpy.model import Assignment, EstimationStep, ExecutionSteps, Model, Statements
 from pharmpy.modeling import (
     add_predictions,
     append_estimation_step_options,
@@ -109,25 +109,24 @@ def create_derivative_model(modelentry):
 
 def _create_linearized_model(model_name, description, model, derivative_model_entry):
     new_input_file = cleanup_columns(derivative_model_entry)
-    new_datainfo = DataInfo.create(list(new_input_file.columns))
-    new_datainfo = new_datainfo.set_dv_column("DV")
-    new_datainfo = new_datainfo.set_id_column("ID")
-    new_datainfo = new_datainfo.set_idv_column("TIME")
 
-    linbase = Model(
+    linbase = Model.create(
         parameters=derivative_model_entry.model.parameters,
         random_variables=derivative_model_entry.model.random_variables,
         dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
-        datainfo=model.datainfo,
+        dataset=new_input_file,
         name=model_name,
         description=description,
     )
+    di = linbase.datainfo
+    di = di.set_dv_column("DV")
+    di = di.set_id_column("ID")
+    di = di.set_idv_column("TIME")
+    linbase = linbase.replace(datainfo=di)
+
     linbase = set_initial_estimates(
         linbase, derivative_model_entry.modelfit_results.parameter_estimates
     )
-
-    linbase = linbase.replace(dataset=new_input_file)
-    linbase = linbase.replace(datainfo=new_datainfo)
 
     linbase = _create_linearized_model_statements(linbase, model)
 
