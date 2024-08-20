@@ -253,6 +253,14 @@ def test_repr():
     assert model.__repr__() == "<Pharmpy model object model1>"
 
 
+def test_repr_html(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    html_code = model._repr_html_()
+    assert 'TVCL &=' in html_code
+    assert 'POP_CL' in html_code
+    assert 'eta_{CL}' in html_code
+
+
 def test_has_same_dataset_as():
     pheno = load_example_model("pheno")
     model1 = Model.create('model1')

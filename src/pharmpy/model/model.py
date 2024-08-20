@@ -531,7 +531,8 @@ class Model(Immutable):
     def _repr_html_(self) -> str:
         stat = self.statements._repr_html_()
         rvs = self.random_variables._repr_latex_()
-        return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
+        params = self.parameters._repr_html_()
+        return f'<hr>{stat}<hr>${rvs}$<hr>{params}<hr>'
 
     @property
     def name(self) -> str:
