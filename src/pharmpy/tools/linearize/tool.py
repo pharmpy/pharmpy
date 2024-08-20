@@ -217,7 +217,7 @@ def cleanup_columns(modelentry):
             derivative_name_subs[der_col] = create_derivative_name(modelentry.model, names)
         else:
             if len(names) == 0:
-                raise ValueError(f"Unsupported derivaitve {der_col} ModelfitResults object")
+                raise ValueError(f"Unsupported derivative {der_col} ModelfitResults object")
     derivatives = derivatives.rename(derivative_name_subs, axis=1)
     new_input_file = predictions.join(amt_dv).join(derivatives)
 
@@ -230,7 +230,6 @@ def cleanup_columns(modelentry):
 
     new_input_file = new_input_file.reset_index(drop=True)
     new_input_file["MDV"] = get_mdv(modelentry.model)
-
     return new_input_file
 
 
@@ -240,16 +239,10 @@ def create_derivative_name(model, param_list):
     for name in param_list:
         if name in model.random_variables.etas:
             param_names += "ETA"
-            param_numbers.append(
-                str(model.random_variables.etas.index(model.random_variables.etas[name]) + 1)
-            )
+            param_numbers.append(str(model.random_variables.etas.names.index(name) + 1))
         elif name in model.random_variables.epsilons:
             param_names += "EPS"
-            param_numbers.append(
-                str(
-                    model.random_variables.epsilons.index(model.random_variables.epsilons[name]) + 1
-                )
-            )
+            param_numbers.append(str(model.random_variables.epsilons.names.index(name) + 1))
         else:
             raise ValueError(f"Derivatives with respect to parameter {name} not supported.")
 
