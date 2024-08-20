@@ -17,7 +17,7 @@ from pharmpy.model import (
 )
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.model.model import ModelInternals
-from pharmpy.modeling import convert_model, create_basic_pk_model, create_symbol, load_example_model
+from pharmpy.modeling import convert_model, create_basic_pk_model, create_symbol
 
 tabpath = Path(__file__).resolve().parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = read_nonmem_dataset(
@@ -54,19 +54,19 @@ def test_to_generic_model(load_model_for_test, testdata):
     assert isinstance(model, Model)
 
 
-def test_model_equality():
-    pheno1 = load_example_model("pheno")
+def test_model_equality(load_example_model_for_test):
+    pheno1 = load_example_model_for_test("pheno")
     assert pheno1 == pheno1
 
-    pheno2 = load_example_model("pheno")
+    pheno2 = load_example_model_for_test("pheno")
     assert pheno2 == pheno2
 
     assert pheno1 == pheno2
 
-    pheno_linear1 = load_example_model("pheno_linear")
+    pheno_linear1 = load_example_model_for_test("pheno_linear")
     assert pheno_linear1 == pheno_linear1
 
-    pheno_linear2 = load_example_model("pheno_linear")
+    pheno_linear2 = load_example_model_for_test("pheno_linear")
     assert pheno_linear2 == pheno_linear2
 
     assert pheno_linear1 == pheno_linear2
@@ -261,8 +261,8 @@ def test_repr_html(load_example_model_for_test):
     assert 'eta_{CL}' in html_code
 
 
-def test_has_same_dataset_as():
-    pheno = load_example_model("pheno")
+def test_has_same_dataset_as(load_example_model_for_test):
+    pheno = load_example_model_for_test("pheno")
     model1 = Model.create('model1')
     model2 = Model.create('model2')
     assert model1.has_same_dataset_as(model2)
@@ -281,8 +281,8 @@ def test_write_files():
     assert isinstance(model.write_files(), Model)
 
 
-def test_statements():
-    pheno = load_example_model('pheno')
+def test_statements(load_example_model_for_test):
+    pheno = load_example_model_for_test('pheno')
     model = Model.create(
         'model',
         parameters=pheno.parameters,
