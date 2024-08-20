@@ -1153,8 +1153,8 @@ def add_time_after_dose(model: Model):
                 if df.loc[i, ss] > 0:
                     ii_time = df.loc[i, ii]
                 else:
-                    assert ii_time is not None
-                    df.loc[i, 'TAD'] = ii_time
+                    if ii_time is not None:
+                        df.loc[i, 'TAD'] = ii_time
             return df
 
         df = df.groupby([idlab, idv, '_DOSEID'], group_keys=False)[df.columns].apply(fn)
