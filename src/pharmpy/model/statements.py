@@ -480,6 +480,7 @@ class CompartmentalSystemBuilder:
         for comp in self._g.nodes:
             if not isinstance(comp, Output) and comp.name == name:
                 return comp
+        return None
 
 
 def _is_positive(expr: sympy.Expr) -> bool:
@@ -1095,7 +1096,7 @@ class CompartmentalSystem(Statement):
         if name is not None:
             central = self.find_compartment(name)
             if central is None:
-                raise ValueError(f"{name} is not a name of a connected compartment")
+                raise ValueError(f"{name} is not a name of an existing compartment")
         else:
             central = self.central_compartment
         oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
@@ -1771,7 +1772,7 @@ class Compartment(CompartmentBase):
             amount_expr = Expr.function(f'A_{name}', 't')
         if not isinstance(doses, tuple):
             try:
-                tuple(doses)
+                doses = tuple(doses)
             except TypeError:
                 raise TypeError("dose(s) need to be given as a sequence")
         for d in doses:
@@ -2377,8 +2378,7 @@ class Statements(Sequence, Immutable):
         # Other dependencies after removed_ind
         additional = {down for up, down in graph.edges if up > removed_ind and down in candidates}
         for add in additional.copy():
-            if add in graph:
-                additional |= set(nx.dfs_preorder_nodes(graph, add))
+            additional |= set(nx.dfs_preorder_nodes(graph, add))
         remove = candidates - additional
         return Statements(tuple(self[i] for i in range(len(self)) if i not in remove))
 
