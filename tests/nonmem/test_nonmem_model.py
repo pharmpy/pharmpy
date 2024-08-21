@@ -1,6 +1,7 @@
 import shutil
 
 import numpy as np
+import pandas as pd
 import pytest
 
 from pharmpy.basic import Expr
@@ -35,6 +36,7 @@ from pharmpy.modeling import (
     set_transit_compartments,
     set_zero_order_elimination,
     set_zero_order_input,
+    write_csv,
 )
 from pharmpy.tools import read_modelfit_results
 
@@ -1282,7 +1284,7 @@ def test_des_assignments(load_model_for_test, testdata):
     assert stats[4] == Assignment.create("EXTRA", "2 * A_CENTRAL(t)")
 
 
-def test_missing_data(load_model_for_test, testdata):
+def test_missing_data(load_model_for_test, testdata, tmp_path):
     model = read_model(
         testdata / "nonmem" / "models" / "minimal_missing.mod", missing_data_token="-999"
     )
@@ -1291,6 +1293,9 @@ def test_missing_data(load_model_for_test, testdata):
     assert ser[1] == 55.0
     assert np.isnan(ser[2])
     assert np.isnan(ser[3])
+    write_csv(model, tmp_path / 'data.csv')
+    df = pd.read_csv(tmp_path / 'data.csv')
+    assert list(df['WGT']) == [55.0, 55.0, -999.0, -999.0]
 
     model = read_model(testdata / "nonmem" / "models" / "minimal_missing.mod")
     assert list(model.dataset['WGT']) == [55.0, 55.0, -999.0, -999.0]

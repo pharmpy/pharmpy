@@ -4,6 +4,7 @@ next version
 New features
 ============
 
+* Add `missing_data_token` to `DataInfo`. This will support a per dataset token for missing data
 * Add option `missing_data_token` to `modeling.read_model` 
 
 Changes
