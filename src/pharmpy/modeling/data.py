@@ -2062,6 +2062,10 @@ def create_default_datainfo(path_or_df):
             info = ColumnInfo.create(colname, type='lloq', scale='ratio')
         elif colname == 'DVID':
             info = ColumnInfo.create(colname, type='dvid', scale='nominal', datatype='int32')
+        elif colname == 'SS':
+            info = ColumnInfo.create(colname, type='ss', scale='nominal', datatype='int32')
+        elif colname == 'II':
+            info = ColumnInfo.create(colname, type='ii', scale='ratio')
         else:
             info = ColumnInfo.create(colname)
         column_info.append(info)
