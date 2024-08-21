@@ -191,6 +191,11 @@ def test_unit():
     assert di['ID'].unit == 1
 
 
+def test_missing_data_token():
+    di = DataInfo.create(['ID', 'TIME', 'DV', 'WGT', 'APGR'])
+    assert di.missing_data_token == '-99'
+
+
 def test_scale():
     col = ColumnInfo.create('WGT', scale='ratio')
     assert col
