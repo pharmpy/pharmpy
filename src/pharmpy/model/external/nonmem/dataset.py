@@ -84,12 +84,12 @@ def convert_fortran_number(number_string):
     raise ValueError(f"Could not convert the fortran number {number_string} to float")
 
 
-def _convert_data_item(x, null_value):
+def _convert_data_item(x, null_value, missing_data_token):
     if x is None or x == '.' or x == '':
         x = null_value
     if len(x) > 24:
         raise DatasetError("The dataset contains an item that is longer than 24 characters")
-    if x == conf.missing_data_token:
+    if x == missing_data_token:
         return np.nan
     try:
         converted = convert_fortran_number(x)
@@ -118,7 +118,7 @@ def _make_ids_unique(df, columns):
     return df
 
 
-def _filter_ignore_accept(df, ignore, accept, null_value):
+def _filter_ignore_accept(df, ignore, accept, null_value, missing_data_token):
     if ignore and accept:
         raise ValueError("Cannot have both IGNORE and ACCEPT")
 
@@ -212,7 +212,9 @@ def _filter_ignore_accept(df, ignore, accept, null_value):
             # for further information.
             # Using a name with spaces since this cannot collide with other NONMEM names
             magic_colname = 'a a'
-            df[magic_colname] = df[column].apply(_convert_data_item, args=(str(null_value),))
+            df[magic_colname] = df[column].apply(
+                _convert_data_item, args=(str(null_value), missing_data_token)
+            )
             expression = f'`{magic_colname}` {operator} {expr}'
             if ignore:
                 expression = 'not(' + expression + ')'
@@ -233,6 +235,7 @@ def read_nonmem_dataset(
     ignore=None,
     accept=None,
     dtype=None,
+    missing_data_token=None,
 ):
     """Read a nonmem dataset from file
      column types will be inferred from the column names
@@ -255,6 +258,10 @@ def read_nonmem_dataset(
     """
     if drop is None:
         drop = [False] * len(colnames)
+
+    missing_data_token = (
+        missing_data_token if missing_data_token is not None else conf.missing_data_token
+    )
 
     non_dropped = [name for name, dropped in zip(colnames, drop) if not dropped]
     if len(non_dropped) > len(set(non_dropped)):
@@ -289,7 +296,7 @@ def read_nonmem_dataset(
     else:
         df.columns = colnames
 
-    df = _filter_ignore_accept(df, ignore, accept, null_value)
+    df = _filter_ignore_accept(df, ignore, accept, null_value, missing_data_token)
 
     if not raw:
         parse_columns = [col for col, dropped in zip(df.columns, drop) if not dropped]
@@ -297,7 +304,9 @@ def read_nonmem_dataset(
             x for x in parse_columns if x not in ['TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3']
         ]
     for column in parse_columns:
-        df[column] = df[column].apply(_convert_data_item, args=(str(null_value),))
+        df[column] = df[column].apply(
+            _convert_data_item, args=(str(null_value), missing_data_token)
+        )
     df = _make_ids_unique(df, parse_columns)
 
     if not raw:
@@ -317,7 +326,9 @@ def read_nonmem_dataset(
             item in df.columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3']
         ):
             try:
-                df['TIME'] = df['TIME'].apply(_convert_data_item, args=(str(null_value),))
+                df['TIME'] = df['TIME'].apply(
+                    _convert_data_item, args=(str(null_value), missing_data_token)
+                )
             except DatasetError:
                 pass
 

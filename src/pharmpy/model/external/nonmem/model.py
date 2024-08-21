@@ -87,7 +87,9 @@ def convert_model(model):
         code += '$SUBROUTINES ADVAN1 TRANS2\n'
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B\n'
-    nm_model = parse_model(code, dataset=model.dataset)
+    nm_model = parse_model(
+        code, dataset=model.dataset, missing_data_token=model.datainfo.missing_data_token
+    )
     assert isinstance(nm_model, Model)
     nm_model._datainfo = model.datainfo
     nm_model._parameters = model.parameters
@@ -332,7 +334,11 @@ class Model(BaseModel):
 
 
 def parse_model(
-    code: str, path: Optional[Path] = None, dataset: Optional[pd.DataFrame] = None, **_
+    code: str,
+    path: Optional[Path] = None,
+    dataset: Optional[pd.DataFrame] = None,
+    missing_data_token: Optional[str] = None,
+    **_,
 ):
     parser = NMTranParser()
     if path is None:
@@ -348,6 +354,9 @@ def parse_model(
     # RATE column to decide dosing, meaning it needs the dataset before parsing statements
     if dataset is not None:
         di = update_datainfo(di.replace(path=None), dataset)
+
+    if missing_data_token is not None:
+        di = di.replace(missing_data_token=missing_data_token)
 
     try:
         dataset = parse_dataset(di, control_stream, raw=False)

@@ -876,6 +876,7 @@ def parse_dataset(
         ignore=ignore,
         accept=accept,
         dtype=None if raw else di.get_dtype_dict(),
+        missing_data_token=di.missing_data_token,
     )
     # Let TIME be the idv in both $PK and $PRED models
     # Remove individuals without observations

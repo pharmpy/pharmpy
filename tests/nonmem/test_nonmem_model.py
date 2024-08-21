@@ -1,5 +1,6 @@
 import shutil
 
+import numpy as np
 import pytest
 
 from pharmpy.basic import Expr
@@ -1279,3 +1280,17 @@ def test_des_assignments(load_model_for_test, testdata):
 
     assert stats[3] == Assignment.create("KE", "CL/VC")
     assert stats[4] == Assignment.create("EXTRA", "2 * A_CENTRAL(t)")
+
+
+def test_missing_data(load_model_for_test, testdata):
+    model = read_model(
+        testdata / "nonmem" / "models" / "minimal_missing.mod", missing_data_token="-999"
+    )
+    ser = model.dataset['WGT']
+    assert ser[0] == 55.0
+    assert ser[1] == 55.0
+    assert np.isnan(ser[2])
+    assert np.isnan(ser[3])
+
+    model = read_model(testdata / "nonmem" / "models" / "minimal_missing.mod")
+    assert list(model.dataset['WGT']) == [55.0, 55.0, -999.0, -999.0]

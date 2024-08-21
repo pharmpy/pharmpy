@@ -6,6 +6,7 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model as BaseModel
@@ -68,7 +69,7 @@ def parse_dataset(code, path):
     return df
 
 
-def parse_model(code: str, path: Path):
+def parse_model(code: str, path: Path, missing_data_token: Optional[str] = None):
     internals = FCONInternals(code=code, path=path)
     dataset = parse_dataset(code, path)
     return Model(internals=internals, dataset=dataset)

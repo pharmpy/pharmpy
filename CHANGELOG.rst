@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Add option `missing_data_token` to `modeling.read_model` 
+
 Changes
 =======
 

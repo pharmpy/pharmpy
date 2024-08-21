@@ -655,13 +655,15 @@ class Model(Immutable):
         return self._description
 
     @staticmethod
-    def parse_model(path: Union[Path, str]):
+    def parse_model(path: Union[Path, str], missing_data_token: Optional[str] = None):
         """Create a model object by parsing a model file of any supported type
 
         Parameters
         ----------
         path : Path or str
             Path to a model file
+        missing_data_token : str
+            Set to override the configuration
 
         Returns
         -------
@@ -673,7 +675,7 @@ class Model(Immutable):
             code = fp.read()
 
         model_module = detect_model(code)
-        model = model_module.parse_model(code, path)
+        model = model_module.parse_model(code, path, missing_data_token=missing_data_token)
         return model
 
     @staticmethod
