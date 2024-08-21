@@ -157,7 +157,7 @@ jobs:
       - name: Checkout Pharmpy
         uses: actions/checkout@v4
 
-	  - name: Setup gfortran
+      - name: Setup gfortran
         uses: fortran-lang/setup-fortran@v1
         with:
           compiler: gcc
