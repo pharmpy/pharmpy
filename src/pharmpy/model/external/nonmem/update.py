@@ -5,7 +5,6 @@ from itertools import product
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, List, Optional
 
-from pharmpy import conf
 from pharmpy.basic import Expr
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.parse import AttrTree
@@ -699,7 +698,7 @@ def update_ics(statements, odes):
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
-    trans['NaN'] = int(conf.missing_data_token)
+    trans['NaN'] = int(model.datainfo.missing_data_token)
 
     new_odes = new.ode_system
     updated_dataset = False
