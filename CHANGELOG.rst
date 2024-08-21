@@ -13,6 +13,8 @@ Bugfixes
 * Fix crash when updating some NONMEM models where a central compartment couldn't be found
 * Fix crash when parsing certain error models that use CMT in NONMEM
 * Fix multiple problems with running iivsearch with linearization
+* Recognize SS and II columns when running amd from dataset
+* Fix bad TAD for observation at the same time as SS dose. Was previously II. Now it is 0.
 
 1.1.0 (2024-07-17)
 ------------------
