@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix reading in NONMEM models with TIME column having hh:mm format (but no DATx column present)
+
 1.2.0 (2024-08-22)
 ------------------
 

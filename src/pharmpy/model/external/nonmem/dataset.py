@@ -330,6 +330,8 @@ def read_nonmem_dataset(
                     _convert_data_item, args=(str(null_value), missing_data_token)
                 )
             except DatasetError:
+                if dtype and 'TIME' in dtype:
+                    dtype['TIME'] = 'str'
                 pass
 
     if dtype:
