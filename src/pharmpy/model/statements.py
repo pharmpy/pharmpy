@@ -744,27 +744,6 @@ class CompartmentalSystem(Statement):
         nx.relabel_nodes(cb._g, mapping, copy=False)
         return CompartmentalSystem(cb)
 
-    def atoms(self, cls):
-        """Get set of all symbolic atoms of some kind
-
-        For more information see
-        https://docs.sympy.org/latest/modules/core.html#sympy.core.basic.Basic.atoms
-
-        Parameters
-        ----------
-        cls : type
-            Type of atoms to find
-
-        Returns
-        -------
-        set
-            Set of symbolic atoms
-        """
-        atoms = set()
-        for _, _, rate in self._g.edges.data('rate'):
-            atoms |= rate.atoms(cls)
-        return atoms
-
     def __eq__(self, other):
         if other is self:
             return True
