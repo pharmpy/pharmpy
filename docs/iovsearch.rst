@@ -90,6 +90,7 @@ Optional
 |                                             | Default is "minimization_successful or                               |
 |                                             | (rounding_errors and sigdigs>= 0.1)"                                 |
 +---------------------------------------------+----------------------------------------------------------------------+
+
 ~~~~~~~~~
 Algorithm
 ~~~~~~~~~
