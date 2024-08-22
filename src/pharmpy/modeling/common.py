@@ -32,7 +32,8 @@ def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None)
     path : str or Path
         Path to model
     missing_data_token : str
-        Use this token for missing data. This option will override the token from the config
+        Use this token for missing data. This option will override the token from the config.
+        (This option was added in Pharmpy version 1.2.0)
 
     Returns
     -------
