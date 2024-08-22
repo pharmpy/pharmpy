@@ -1194,19 +1194,19 @@ class CompartmentalSystem(Statement):
         depot = None
         for to_central, _ in self.get_compartment_inflows(central):
             outflows = self.get_compartment_outflows(to_central)
-            if len(outflows) == 1 or len(outflows) == 2:
-                if len(outflows) == 2:
-                    # FIXME: Use another method than compartment name
-                    metabolite = self.find_compartment("METABOLITE")
-                    if metabolite is None or not self.get_flow(to_central, metabolite):
-                        break
-                inflows = self.get_compartment_inflows(to_central)
-                for in_comp, _ in inflows:
-                    if in_comp == central:
-                        break
-                else:
-                    depot = to_central
+            assert len(outflows) == 1 or len(outflows) == 2
+            if len(outflows) == 2:
+                # FIXME: Use another method than compartment name
+                metabolite = self.find_compartment("METABOLITE")
+                if metabolite is None or not self.get_flow(to_central, metabolite):
                     break
+            inflows = self.get_compartment_inflows(to_central)
+            for in_comp, _ in inflows:
+                if in_comp == central:
+                    break
+            else:
+                depot = to_central
+                break
         return depot
 
     @property
@@ -1475,8 +1475,8 @@ class Bolus(Dose, Immutable):
     """
 
     def __init__(self, amount: Expr, admid: int = 1):
+        super().__init__(admid)
         self._amount = amount
-        self._admid = admid
 
     @classmethod
     def create(cls, amount: TExpr, admid: int = 1) -> Bolus:
@@ -1573,8 +1573,8 @@ class Infusion(Dose, Immutable):
         rate: Optional[Expr] = None,
         duration: Optional[Expr] = None,
     ):
+        super().__init__(admid)
         self._amount = amount
-        self._admid = admid
         self._rate = rate
         self._duration = duration
 
@@ -2254,7 +2254,8 @@ class Statements(Sequence, Immutable):
                 if isinstance(statement, Assignment):
                     if statement.symbol in rhs:
                         graph.add_edge(i, j)
-                elif isinstance(statement, CompartmentalSystem):
+                else:
+                    assert isinstance(statement, CompartmentalSystem)
                     amts = set(statement.amounts)
                     if not rhs.isdisjoint(amts):
                         graph.add_edge(i, j)

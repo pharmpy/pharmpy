@@ -11,6 +11,7 @@ from pharmpy.model import (
     Statements,
     output,
 )
+from pharmpy.model.statements import Output
 from pharmpy.modeling import add_effect_compartment, set_first_order_absorption
 
 
@@ -272,6 +273,10 @@ def test_assignment_add():
     s = Statements([s1, s2])
     new = (s3,) + s
     assert len(new) == 3
+    new = s1 + (s2,)
+    assert len(new) == 2
+    new = (s1,) + s2
+    assert len(new) == 2
 
 
 def test_assignment_create():
@@ -393,6 +398,8 @@ def test_find_compartment(load_model_for_test, testdata):
     cb = CompartmentalSystemBuilder(odes)
     comp = cb.find_compartment('CENTRAL')
     assert comp.name == 'CENTRAL'
+    comp = cb.find_compartment('NOTINMODEL')
+    assert comp is None
 
 
 def test_dosing_compartment(load_model_for_test, testdata):
@@ -411,11 +418,32 @@ def test_dosing_compartment(load_model_for_test, testdata):
     assert cs.dosing_compartments[1].name == 'CENTRAL'
 
 
-def test_central_compartment(load_model_for_test, testdata):
+def test_central_compartment(load_model_for_test, load_example_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     assert model.statements.ode_system.central_compartment.name == 'CENTRAL'
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     assert model.statements.ode_system.central_compartment.name == 'CENTRAL'
+
+    odes = model.statements.ode_system
+    cb = CompartmentalSystemBuilder(odes)
+    comp = Compartment.create('METABOLITE')
+    central = odes.central_compartment
+    cb.add_compartment(comp)
+    cb.add_flow(central, comp, 'X')
+    cb.remove_flow(central, output)
+    cb.add_flow(comp, output, 'Y')
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.name == 'CENTRAL'
+
+    cb = CompartmentalSystemBuilder(odes)
+    central = odes.central_compartment
+    cb.remove_compartment(central)
+    cb.add_compartment(comp)
+    cb.add_flow(comp, output, 'Y')
+    cs = CompartmentalSystem(cb)
+
+    with pytest.raises(ValueError):
+        cs.central_compartment
 
 
 def test_find_depot(load_model_for_test, testdata):
@@ -427,6 +455,20 @@ def test_find_depot(load_model_for_test, testdata):
     assert model.statements.ode_system.find_depot(model.statements).name == 'DEPOT'
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan5_nodepot.mod')
     assert model.statements.ode_system.find_depot(model.statements) is None
+
+
+def test_find_depot_multi_outflows(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
+    odes = model.statements.ode_system
+    cb = CompartmentalSystemBuilder(odes)
+    comp = Compartment.create(name='A')
+    cb.add_compartment(comp)
+    cb.add_flow(comp, output, 'X')
+    central = odes.central_compartment
+    cb.add_flow(central, comp, 'Y')
+    cs = CompartmentalSystem(cb)
+
+    assert cs.find_depot(model.statements) is None
 
 
 def test_find_peripheral_compartments(load_model_for_test, testdata):
@@ -445,6 +487,7 @@ def test_find_peripheral_compartments(load_model_for_test, testdata):
     odes = CompartmentalSystem(cb)
 
     peripherals = odes.find_peripheral_compartments()
+    odes.compartment_names
     assert len(peripherals) == 1
     assert peripherals[0].name == 'PERIPHERAL1'
 
@@ -468,9 +511,15 @@ def test_find_transit_compartments(load_model_for_test, testdata):
     assert transits[1].name == 'TRANS2'
 
 
-def test_get_compartment_inflows(load_model_for_test, pheno_path):
+def test_get_compartment_inflows(load_model_for_test, pheno_path, testdata):
     model = load_model_for_test(pheno_path)
     assert len(model.statements.ode_system.get_compartment_inflows(output)) == 1
+
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    assert len(model.statements.ode_system.get_compartment_inflows('CENTRAL')) == 1
+
+    with pytest.raises(ValueError):
+        model.statements.ode_system.get_compartment_inflows('NOTINMODEL')
 
 
 def test_cs_replace(load_model_for_test, pheno_path):
@@ -639,7 +688,7 @@ def test_assignment_create_numeric(load_model_for_test, testdata):
     assert Assignment.create('X', 1.0).free_symbols
 
 
-def test_multi_dose_comp_order(load_model_for_test, testdata):
+def test_multi_dosing_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = set_first_order_absorption(model)
 
@@ -665,3 +714,9 @@ def test_get_n_connected(load_model_for_test, testdata):
     odes = CompartmentalSystem(cb)
     assert odes.get_n_connected(peripheral) == 1
     assert odes.get_n_connected(central) == 2
+
+
+def test_output():
+    output_new = Output()
+    assert output == output_new
+    assert output != 'x'
