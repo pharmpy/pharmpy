@@ -30,13 +30,13 @@ class Statement(Immutable):
         elif isinstance(other, Statement):
             return Statements((self, other))
         elif isinstance(other, Iterable):
-            return Statements((self,) + tuple(other))
+            return Statements.create((self,) + tuple(other))
         else:
             return NotImplemented
 
     def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
         if isinstance(other, Iterable):
-            return Statements(tuple(other) + (self,))
+            return Statements.create(tuple(other) + (self,))
         else:
             return NotImplemented
 
@@ -1955,13 +1955,26 @@ class Statements(Sequence, Immutable):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements: Optional[Union[Statements, Iterable[Statement]]] = None):
+    def __init__(self, statements: Union[Statements, Iterable[Statement]] = ()):
+        if not isinstance(statements, tuple):
+            statements = tuple(statements)
+        self._statements = statements
+
+    @classmethod
+    def create(cls, statements: Optional[Union[Statements, Iterable[Statement]]] = None):
         if isinstance(statements, Statements):
-            self._statements = statements._statements
+            statements = statements
         elif statements is None:
-            self._statements = ()
+            statements = ()
+        elif isinstance(statements, Iterable):
+            if any(not isinstance(s, Statement) for s in statements):
+                raise TypeError('`statements` must consist of only type Statement')
+            statements = tuple(statements)
         else:
-            self._statements = tuple(statements)
+            raise TypeError(
+                f'`statements` must be of type Statements or an iterable of Statement: got `{type(statements)}`'
+            )
+        return cls(statements)
 
     @overload
     def __getitem__(self, ind: slice) -> Statements: ...
@@ -1984,13 +1997,13 @@ class Statements(Sequence, Immutable):
         elif isinstance(other, Statement):
             return Statements(self._statements + (other,))
         elif isinstance(other, Iterable):
-            return Statements(self._statements + tuple(other))
+            return Statements.create(self._statements + tuple(other))
         else:
             return NotImplemented
 
     def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
         if isinstance(other, Iterable):
-            return Statements(tuple(other) + self._statements)
+            return Statements.create(tuple(other) + self._statements)
         else:
             return NotImplemented
 

@@ -339,6 +339,31 @@ def test_compartmental_system_create(load_example_model_for_test):
     assert cs == odes
 
 
+def test_statements_create():
+    s1 = Assignment(S('KA'), S('X') + S('Y'))
+    sset1 = Statements.create([s1])
+    assert len(sset1) == 1
+
+    s2 = Assignment(S('A'), S('B'))
+    sset2 = Statements.create([s1, s2])
+    assert len(sset2) == 2
+
+    sset3 = Statements.create(sset1)
+    assert sset1 == sset3
+
+    sset4 = Statements.create(None)
+    assert len(sset4) == 0
+
+    with pytest.raises(TypeError):
+        Statements.create('x')
+
+    with pytest.raises(TypeError):
+        Statements.create((s1, 'x'))
+
+    with pytest.raises(TypeError):
+        Statements.create(1)
+
+
 def test_remove_symbol_definition():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     s2 = Assignment(S('Z'), Expr.integer(23) + S('M'))
