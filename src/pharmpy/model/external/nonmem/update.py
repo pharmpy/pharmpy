@@ -1870,6 +1870,7 @@ def update_estimation(control_stream, model):
         table = tables[-1]
         new_table = table
         derivative_regex = r'[HG]\d+'
+        have_noprint = False
         for item in table.all_options:
             if item.key in remove_param or item.key in pred_res_to_remove:
                 new_table = new_table.remove_option(item.key)
@@ -1883,13 +1884,17 @@ def update_estimation(control_stream, model):
                 new_table = new_table.remove_option(item.key)
             else:
                 # Unknown --> Leave as is
-                pass
+                if item.key == 'NOPRINT':
+                    have_noprint = True
 
         for option in sorted(predictions_subset.union(residuals_subset)):
             new_table = new_table.append_option(option)
 
         for option in sorted(single_deriv_subset):
             new_table = new_table.append_option(option)
+
+        if not have_noprint:
+            new_table = new_table.append_option('NOPRINT')
 
         # Check what already exist
         multi_deriv_subset = [
