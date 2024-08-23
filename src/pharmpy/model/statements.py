@@ -24,19 +24,21 @@ else:
 class Statement(Immutable):
     """Abstract base class for all types of statements"""
 
-    def __add__(self, other: Union[Statement, Statements, Sequence]) -> Statements:
+    def __add__(self, other: Union[Statement, Statements, Iterable[Statement]]) -> Statements:
         if isinstance(other, Statements):
             return Statements((self,) + other._statements)
         elif isinstance(other, Statement):
             return Statements((self, other))
-        else:
+        elif isinstance(other, Iterable):
             return Statements((self,) + tuple(other))
-
-    def __radd__(self, other: Union[Statement, Sequence]) -> Statements:
-        if isinstance(other, Statement):
-            return Statements((other, self))
         else:
+            return NotImplemented
+
+    def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
+        if isinstance(other, Iterable):
             return Statements(tuple(other) + (self,))
+        else:
+            return NotImplemented
 
     @abstractmethod
     def subs(self, substitutions: Mapping[Expr, Expr]) -> Statement:
@@ -1976,19 +1978,21 @@ class Statements(Sequence, Immutable):
     def __len__(self):
         return len(self._statements)
 
-    def __add__(self, other: Union[Statements, Statement, Sequence[Statement]]) -> Statements:
+    def __add__(self, other: Union[Statements, Statement, Iterable[Statement]]) -> Statements:
         if isinstance(other, Statements):
             return Statements(self._statements + other._statements)
         elif isinstance(other, Statement):
             return Statements(self._statements + (other,))
-        else:
+        elif isinstance(other, Iterable):
             return Statements(self._statements + tuple(other))
-
-    def __radd__(self, other: Union[Statement, Sequence[Statement]]) -> Statements:
-        if isinstance(other, Statement):
-            return Statements((other,) + self._statements)
         else:
+            return NotImplemented
+
+    def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
+        if isinstance(other, Iterable):
             return Statements(tuple(other) + self._statements)
+        else:
+            return NotImplemented
 
     @property
     def free_symbols(self) -> set[Expr]:

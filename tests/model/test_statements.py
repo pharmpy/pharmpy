@@ -264,19 +264,37 @@ def test_dict(load_model_for_test, testdata):
     assert odes == odes2
 
 
-def test_assignment_add():
+def test_add():
     s1 = Assignment(S('KA'), S('X') + S('Y'))
     s2 = Assignment(S('Z'), Expr.integer(23) + S('M'))
     new = s1 + s2
     assert len(new) == 2
     s3 = Assignment(S('M'), Expr.integer(2))
     s = Statements([s1, s2])
+    new = s + s3
+    assert len(new) == 3
+    new = s3 + s
+    assert len(new) == 3
     new = (s3,) + s
+    assert len(new) == 3
+    new = s + (s3,)
     assert len(new) == 3
     new = s1 + (s2,)
     assert len(new) == 2
     new = (s1,) + s2
     assert len(new) == 2
+    new = s + s
+    assert len(new) == 4
+
+    with pytest.raises(TypeError):
+        s1 + 1
+    with pytest.raises(TypeError):
+        1 + s1
+
+    with pytest.raises(TypeError):
+        s + 1
+    with pytest.raises(TypeError):
+        1 + s
 
 
 def test_assignment_create():
