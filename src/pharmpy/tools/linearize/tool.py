@@ -13,35 +13,41 @@ from pharmpy.modeling import (
 from pharmpy.modeling.estimation_steps import add_derivative
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows.results import ModelfitResults
 
 from .results import calculate_results
 
 
 def create_workflow(
-    model: Optional[Model] = None, model_name: str = "linbase", description: str = ""
+    model: Optional[Model] = None,
+    results: Optional[ModelfitResults] = None,
+    model_name: str = "linbase",
+    description: str = "",
 ):
     """
-    Run linaerization procedure
+    Linearize a model
 
     Parameters
     ----------
     model : Model
         Pharmpy model.
+    results : ModelfitResults
+        Results of estimation of model
     model_name : str, optional
         New name of linearized model. The default is "linbase".
     description : str, optional
-        Description of linaerized model. The default is "".
+        Description of linearized model. The default is "".
 
     Returns
     -------
     LinearizeResults
-        Linaerize tool results object.
+        Linearize tool results object.
 
     """
     wb = WorkflowBuilder(name="linearize")
 
     if model is not None:
-        start_task = Task('start_linearize', start_linearize, model)
+        start_task = Task('start_linearize', start_linearize, model, results)
     else:
         start_task = Task('start_linearize', start_linearize)
 
@@ -70,8 +76,8 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start_linearize(context, model):
-    start_model_entry = ModelEntry.create(model=model)
+def start_linearize(context, model, results):
+    start_model_entry = ModelEntry.create(model=model, modelfit_results=results)
 
     # Create links to input model
     context.store_input_model_entry(start_model_entry)
@@ -90,6 +96,10 @@ def postprocess(context, model_name, *modelentries):
         base.model, base.modelfit_results, linbase.model, linbase.modelfit_results
     )
 
+    context.log_progress(f"OFV of input model:                {res.ofv['base']:.3f}")
+    context.log_progress(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
+    context.log_progress(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
+
     res.to_csv(context.path / "results.csv")
 
     # Create links to final model
@@ -98,16 +108,24 @@ def postprocess(context, model_name, *modelentries):
     return res
 
 
-def create_derivative_model(modelentry):
-    der_model = modelentry.model.replace(name="derivative_model")
+def create_derivative_model(context, modelentry):
+    der_model = modelentry.model.replace(name="derivatives")
+    if (
+        modelentry.modelfit_results is not None
+        and modelentry.modelfit_results.parameter_estimates is not None
+    ):
+        der_model = set_initial_estimates(
+            der_model, modelentry.modelfit_results.parameter_estimates
+        )
     der_model = add_derivative(der_model)
     first_es = der_model.execution_steps[0]
     der_model = set_estimation_step(der_model, first_es.method, 0, maximum_evaluations=1)
     der_model = add_predictions(der_model, ["CIPREDI"])
+    context.log_progress("Running derivative model")
     return ModelEntry.create(model=der_model)
 
 
-def _create_linearized_model(model_name, description, model, derivative_model_entry):
+def _create_linearized_model(context, model_name, description, model, derivative_model_entry):
     new_input_file = cleanup_columns(derivative_model_entry)
 
     linbase = Model.create(
@@ -130,6 +148,7 @@ def _create_linearized_model(model_name, description, model, derivative_model_en
 
     linbase = _create_linearized_model_statements(linbase, model)
 
+    context.log_progress("Running linearized model")
     return ModelEntry.create(model=linbase)
 
 
