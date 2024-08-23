@@ -338,6 +338,13 @@ def test_compartmental_system_create(load_example_model_for_test):
 
     assert cs == odes
 
+    with pytest.raises(TypeError):
+        CompartmentalSystem.create(None)
+    with pytest.raises(TypeError):
+        CompartmentalSystem.create(1)
+    with pytest.raises(TypeError):
+        CompartmentalSystem.create(cb, 1)
+
 
 def test_statements_create():
     s1 = Assignment(S('KA'), S('X') + S('Y'))

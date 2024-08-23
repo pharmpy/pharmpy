@@ -627,44 +627,35 @@ class CompartmentalSystem(Statement):
 
     def __init__(
         self,
-        builder: Optional[CompartmentalSystemBuilder] = None,
-        graph=None,
+        builder: CompartmentalSystemBuilder,
         t: Expr = Expr.symbol('t'),
     ):
-        if builder is not None:
-            self._g = nx.freeze(builder._g.copy())
-        elif graph is not None:
-            self._g = graph
+        self._g = nx.freeze(builder._g.copy())
         self._t = t
 
     @classmethod
     def create(
         cls,
-        builder: Optional[CompartmentalSystemBuilder] = None,
-        graph=None,
-        eqs=None,
-        t: Expr = Expr.symbol('t'),
+        builder: CompartmentalSystemBuilder,
+        t: Optional[Union[Expr, str]] = Expr.symbol('t'),
     ) -> CompartmentalSystem:
-        numargs = (
-            (0 if builder is None else 1) + (0 if graph is None else 1) + (0 if eqs is None else 1)
-        )
-        if numargs != 1:
-            raise ValueError(
-                "Need exactly one of builder, graph or eqs to create a CompartmentalSystem"
+        if builder is None:
+            raise TypeError('Argument `builder` cannot be None`')
+        elif not isinstance(builder, CompartmentalSystemBuilder):
+            raise TypeError(
+                f'Argument `builder` must be of type CompartmentalSystemBuilder: got `{type(builder)}`'
             )
-        if eqs is not None:
-            pass
+        if not isinstance(t, Expr) or isinstance(t, str):
+            raise TypeError(f'Argument `t` must be of type str or Expr: got `{type(t)}`')
         t = Expr(t)
-        return cls(builder=builder, graph=graph, t=t)
+        return cls(builder=builder, t=t)
 
     def replace(self, **kwargs) -> CompartmentalSystem:
         t = kwargs.get('t', self._t)
         builder = kwargs.get('builder', None)
         if builder is None:
-            g = kwargs.get('graph', self._g)
-        else:
-            g = None
-        return CompartmentalSystem.create(builder=builder, graph=g, t=t)
+            builder = CompartmentalSystemBuilder(self)
+        return CompartmentalSystem.create(builder=builder, t=t)
 
     @property
     def t(self) -> Expr:
