@@ -12,6 +12,7 @@ from pharmpy.model import (
     VariabilityHierarchy,
     VariabilityLevel,
 )
+from pharmpy.model.distributions.numeric import NormalDistribution as NumericNormalDistribution
 
 
 def symbol(x):
@@ -813,6 +814,13 @@ def test_evalf():
     dist1 = NormalDistribution.create('ETA1', 'iiv', 0, var1)
     with pytest.raises(ValueError):
         dist1.evalf({})
+    x = symbol('x')
+    dist2 = NormalDistribution.create('ETA1', 'iiv', x, var1)
+    assert isinstance(dist2.evalf({x: 0.1, var1: 0.1}), NumericNormalDistribution)
+    y = symbol('y')
+    dist3 = NormalDistribution.create('ETA1', 'iiv', x + y, var1)
+    with pytest.raises(NotImplementedError):
+        dist3.evalf({})
 
 
 def test_levels():
