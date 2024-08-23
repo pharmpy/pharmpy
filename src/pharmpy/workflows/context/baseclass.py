@@ -115,9 +115,17 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def log_message(self, severity: Literal["error", "warning", "note"], message: str):
+    def log_message(self, severity: Literal["error", "warning", "info", "progress"], message: str):
         """Add a message to the log"""
         pass
+
+    def log_progress(self, message: str):
+        """Add a progress message to the log
+
+        Currently with echo to stdout. In the future this could be changed or be configurable.
+        """
+        self.log_message(severity="progress", message=message)
+        print(message)
 
     @abstractmethod
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
