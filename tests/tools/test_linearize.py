@@ -14,6 +14,7 @@ from pharmpy.tools.linearize.tool import (
 )
 from pharmpy.tools.psn_helpers import create_results
 from pharmpy.workflows import ModelEntry
+from pharmpy.workflows.context import NullContext
 
 
 def test_ofv(load_model_for_test, testdata):
@@ -22,13 +23,13 @@ def test_ofv(load_model_for_test, testdata):
     lin = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     linres = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, baseres, lin, linres)
-    correct = """,ofv
+    correct = """,OFV
 base,730.894727
 lin_evaluated,730.894727
 lin_estimated,730.847272
 """
-    correct = pd.read_csv(StringIO(correct), index_col=[0])
-    pd.testing.assert_frame_equal(res.ofv, correct, atol=1e-6)
+    correct = pd.read_csv(StringIO(correct), index_col=[0])['OFV']
+    pd.testing.assert_series_equal(res.ofv, correct, atol=1e-6)
 
 
 def test_iofv(load_model_for_test, testdata):
@@ -107,19 +108,20 @@ def test_psn_linearize_results(testdata):
     path = testdata / 'nonmem' / 'linearize' / 'linearize_dir1'
     res = psn_linearize_results(path)
     assert len(res.iofv) == 59
-    assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
+    assert res.ofv['base'] == pytest.approx(730.894727)
 
 
 def test_create_results(testdata):
     path = testdata / 'nonmem' / 'linearize' / 'linearize_dir1'
     res = create_results(path)
     assert len(res.iofv) == 59
-    assert res.ofv['ofv']['base'] == pytest.approx(730.894727)
+    assert res.ofv['base'] == pytest.approx(730.894727)
 
 
 def test_derivative_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    modelentry = create_derivative_model(ModelEntry.create(model=model))
+    ctx = NullContext()
+    modelentry = create_derivative_model(ctx, ModelEntry.create(model=model))
     assert len(modelentry.model.execution_steps[0].derivatives) == 5
     assert (
         modelentry.model.code
@@ -163,8 +165,9 @@ def test_create_linearized_model(load_model_for_test, testdata):
 
     derivative_modelentry = ModelEntry.create(model=derivative_model, modelfit_results=modelres)
 
+    ctx = NullContext()
     linearized_model = _create_linearized_model(
-        "linbase", "Linearized model", model, derivative_modelentry
+        ctx, "linbase", "Linearized model", model, derivative_modelentry
     )
     assert len(linearized_model.model.statements) == 9
 

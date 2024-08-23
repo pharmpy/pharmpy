@@ -1,10 +1,9 @@
 from .baseclass import Context
 from .local_directory import LocalDirectoryContext
-
-# from .null_database import NullContext
+from .null import NullContext
 
 __all__ = [
-    #    'NullContext',
-    'LocalDirectoryContext',
     'Context',
+    'LocalDirectoryContext',
+    'NullContext',
 ]

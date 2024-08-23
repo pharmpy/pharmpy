@@ -34,6 +34,7 @@ def calculate_results(base_model, base_model_results, linear_model, linear_model
             linear_model_results.ofv,
         ],
         index=['base', 'lin_evaluated', 'lin_estimated'],
+        name='OFV',
     )
     iofv1 = base_model_results.individual_ofv
     iofv2 = linear_model_results.individual_ofv
