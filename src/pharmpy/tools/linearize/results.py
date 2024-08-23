@@ -27,14 +27,12 @@ def calculate_results(base_model, base_model_results, linear_model, linear_model
             'delta': linear_model_results.individual_ofv - base_model_results.individual_ofv,
         }
     )
-    ofv = pd.DataFrame(
-        {
-            'ofv': [
-                base_model_results.ofv,
-                linear_model_results.ofv_iterations.iloc[0],
-                linear_model_results.ofv,
-            ]
-        },
+    ofv = pd.Series(
+        [
+            base_model_results.ofv,
+            linear_model_results.ofv_iterations.iloc[0],
+            linear_model_results.ofv,
+        ],
         index=['base', 'lin_evaluated', 'lin_estimated'],
     )
     iofv1 = base_model_results.individual_ofv
