@@ -27,7 +27,7 @@ import importlib
 import pharmpy.config as config
 
 from .args import split_common_options
-from .call import call_workflow
+from .call import abort_workflow, call_workflow
 from .context import Context, LocalDirectoryContext
 from .dispatchers import local_dask
 from .execute import execute_workflow
@@ -76,6 +76,7 @@ default_context = _importclass(conf.default_context)
 
 
 __all__ = [
+    'abort_workflow',
     'call_workflow',
     'default_dispatcher',
     'default_model_database',
