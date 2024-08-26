@@ -142,17 +142,6 @@ class Model(BaseModel):
         nofiles - Set to not write any files (i.e. dataset, phi input etc)
         """
         model = self
-        if (
-            model.initial_individual_estimates
-            is not model.internals.old_initial_individual_estimates
-        ):
-            cs = update_initial_individual_estimates(model, path='DUMMYPATH', nofiles=True)
-            model = model.replace(
-                internals=model.internals.replace(
-                    control_stream=cs,
-                    old_initial_individual_estimates=model.initial_individual_estimates,
-                )
-            )
 
         if not model.random_variables.etas:
             omega = Parameter('DUMMYOMEGA', init=0, fix=True)
@@ -252,6 +241,18 @@ class Model(BaseModel):
             model = model.replace(statements=new_statements)
             model, updated_dataset = update_statements(
                 model, model.internals.old_statements, model._statements, trans
+            )
+
+        if (
+            model.initial_individual_estimates
+            is not model.internals.old_initial_individual_estimates
+        ):
+            cs = update_initial_individual_estimates(model, path='DUMMYPATH', nofiles=True)
+            model = model.replace(
+                internals=model.internals.replace(
+                    control_stream=cs,
+                    old_initial_individual_estimates=model.initial_individual_estimates,
+                )
             )
 
         return model

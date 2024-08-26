@@ -2320,7 +2320,7 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
         record = create_record('$ETAS ')
         control_stream = control_stream.insert_record(record)
     assert isinstance(record, EtasRecord)
-    newrecord = record.set_path(phi_path)
+    newrecord = record.set_path(Path(phi_path).name)
     control_stream = control_stream.replace_records([record], [newrecord])
 
     first_est_record = control_stream.get_records('ESTIMATION')[0]

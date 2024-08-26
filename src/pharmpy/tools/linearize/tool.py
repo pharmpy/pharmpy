@@ -142,7 +142,10 @@ def _create_linearized_model(context, model_name, description, model, derivative
     di = di.set_dv_column("DV")
     di = di.set_id_column("ID")
     di = di.set_idv_column("TIME")
-    linbase = linbase.replace(datainfo=di)
+    linbase = linbase.replace(
+        datainfo=di,
+        initial_individual_estimates=derivative_model_entry.modelfit_results.individual_estimates,
+    )
 
     linbase = set_initial_estimates(
         linbase, derivative_model_entry.modelfit_results.parameter_estimates
@@ -201,10 +204,6 @@ def _create_linearized_model_statements(linbase, model):
     linbase = linbase.replace(execution_steps=ExecutionSteps.create([est]))
     linbase = linbase.replace(statements=Statements(ms))
     linbase = append_estimation_step_options(linbase, tool_options={"MCETA": 1000}, idx=0)
-
-    from pharmpy.modeling import convert_model
-
-    linbase = convert_model(linbase, "nonmem")
 
     return linbase
 
