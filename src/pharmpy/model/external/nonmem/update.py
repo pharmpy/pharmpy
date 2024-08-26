@@ -1958,6 +1958,9 @@ def add_multi_deriv(table, multi_deriv_subset, random_variables, control_stream,
         verbatim_to_add[new_param_name] = d
         table = table.append_option(new_param_name)
 
+    if not table.has_option("RFORMAT"):
+        table = table.append_option('RFORMAT', '"(1PE16.9,300(1PE24.16))"')
+
     if verbatim_to_add:
         control_stream = update_verbatim(control_stream, random_variables, to_add=verbatim_to_add)
         for new_param_name in verbatim_to_add:
