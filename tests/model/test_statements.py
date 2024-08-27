@@ -11,7 +11,7 @@ from pharmpy.model import (
     Statements,
     output,
 )
-from pharmpy.model.statements import Output
+from pharmpy.model.statements import Output, to_compartmental_system
 from pharmpy.modeling import add_effect_compartment, set_first_order_absorption
 
 
@@ -454,7 +454,9 @@ def test_find_compartment(load_model_for_test, testdata):
 
 def test_dosing_compartment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert model.statements.ode_system.dosing_compartments[0].name == 'CENTRAL'
+    cs = model.statements.ode_system
+    assert len(cs.dosing_compartments) == 1
+    assert cs.dosing_compartments[0].name == 'CENTRAL'
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     odes = model.statements.ode_system
@@ -464,8 +466,17 @@ def test_dosing_compartment(load_model_for_test, testdata):
     cb.set_dose(central, dose=dose)
     cs = CompartmentalSystem(cb)
 
-    assert cs.dosing_compartments[0].name == 'DEPOT'
-    assert cs.dosing_compartments[1].name == 'CENTRAL'
+    assert len(cs.dosing_compartments) == 2
+    assert cs.dosing_compartments[-1].name == 'CENTRAL'
+
+    peripheral = Compartment.create('PERIPHERAL')
+    cb.add_compartment(peripheral)
+    cb.add_flow(central, peripheral, S('X'))
+    cb.add_flow(peripheral, central, S('X'))
+    cb.set_dose(peripheral, dose=dose)
+    cs = CompartmentalSystem(cb)
+    assert len(cs.dosing_compartments) == 3
+    assert cs.dosing_compartments[-1].name == 'CENTRAL'
 
 
 def test_central_compartment(load_model_for_test, load_example_model_for_test, testdata):
@@ -490,6 +501,14 @@ def test_central_compartment(load_model_for_test, load_example_model_for_test, t
     cb.remove_compartment(central)
     cb.add_compartment(comp)
     cb.add_flow(comp, output, 'Y')
+    cs = CompartmentalSystem(cb)
+
+    with pytest.raises(ValueError):
+        cs.central_compartment
+
+    cb = CompartmentalSystemBuilder(odes)
+    central = odes.central_compartment
+    cb.remove_flow(central, output)
     cs = CompartmentalSystem(cb)
 
     with pytest.raises(ValueError):
@@ -537,7 +556,6 @@ def test_find_peripheral_compartments(load_model_for_test, testdata):
     odes = CompartmentalSystem(cb)
 
     peripherals = odes.find_peripheral_compartments()
-    odes.compartment_names
     assert len(peripherals) == 1
     assert peripherals[0].name == 'PERIPHERAL1'
 
@@ -613,6 +631,73 @@ def test_to_explicit_ode_system(load_model_for_test, pheno_path):
     assert len(cs.eqs) == 1
 
     assert cs.amounts == Matrix([Expr.function('A_CENTRAL', 't')])
+
+
+def test_repr(load_model_for_test, testdata):
+    def _remove_dose_lines(repr_str):
+        no_dose = [line for line in repr_str.split('\n') if not line.startswith('Bolus')]
+        return '\n'.join(no_dose)
+
+    cb = CompartmentalSystemBuilder()
+    dose = Bolus(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL', doses=(dose,))
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    cs = CompartmentalSystem(cb)
+    cs_repr = repr(cs)
+    assert 'Bolus(AMT, admid=1) → CENTRAL' in cs_repr
+    assert all(comp in _remove_dose_lines(cs_repr) for comp in cs.compartment_names)
+
+    cb = CompartmentalSystemBuilder(cs)
+    depot = Compartment.create('DEPOT')
+    cb.add_compartment(depot)
+    cb.add_flow(depot, central, S('KA'))
+    cb.move_dose(central, depot)  # Starts with dose
+    cs_depot = CompartmentalSystem(cb)
+    cs_depot_repr = repr(cs_depot)
+    assert 'Bolus(AMT, admid=1) → DEPOT' in cs_depot_repr
+    assert all(comp in _remove_dose_lines(cs_depot_repr) for comp in cs_depot.compartment_names)
+
+    cb = CompartmentalSystemBuilder(cs)
+    peripheral1 = Compartment.create('PERIPHERAL1')
+    cb.add_compartment(peripheral1)
+    cb.add_flow(peripheral1, central, S('X1'))  # Needs to be bidirectional
+    cb.add_flow(central, peripheral1, S('Y1'))
+    cs_p1 = CompartmentalSystem(cb)
+    assert all(comp in _remove_dose_lines(repr(cs_p1)) for comp in cs_p1.compartment_names)
+
+    cb = CompartmentalSystemBuilder(cs_p1)
+    peripheral2 = Compartment.create('PERIPHERAL2')
+    cb.add_compartment(peripheral2)
+    cb.add_flow(peripheral2, central, S('X2'))
+    cb.add_flow(central, peripheral2, S('Y2'))
+    cs_p2 = CompartmentalSystem(cb)
+    assert all(comp in _remove_dose_lines(repr(cs_p2)) for comp in cs_p2.compartment_names)
+
+    cb = CompartmentalSystemBuilder(cs_depot)
+    central = cs_depot.central_compartment
+    dose = Bolus(Expr.symbol('AMT'), admid=2)
+    cb.set_dose(central, dose)
+    cs_multi_dose = CompartmentalSystem(cb)
+    cs_multi_dose_repr = repr(cs_multi_dose)
+    assert 'Bolus(AMT, admid=1) → DEPOT' in cs_multi_dose_repr
+    assert 'Bolus(AMT, admid=2) → CENTRAL' in cs_multi_dose_repr
+    assert all(
+        comp in _remove_dose_lines(cs_multi_dose_repr) for comp in cs_multi_dose.compartment_names
+    )
+
+    cb = CompartmentalSystemBuilder(cs)
+    central = cs.central_compartment
+    comp = Compartment.create('A')
+    cb.add_compartment(comp)
+    cb.add_flow(comp, output, S('X'))
+    cb.add_flow(central, comp, S('Y'))
+    cs_extra_comp = CompartmentalSystem(cb)
+    cs_extra_comp_repr = repr(cs_extra_comp)
+    assert 'Bolus(AMT, admid=1) → CENTRAL' in cs_extra_comp_repr
+    assert all(
+        comp in _remove_dose_lines(cs_extra_comp_repr) for comp in cs_extra_comp.compartment_names
+    )
 
 
 def test_repr_latex():
@@ -770,3 +855,20 @@ def test_output():
     output_new = Output()
     assert output == output_new
     assert output != 'x'
+
+
+def test_to_compartmental_system(load_model_for_test, testdata):
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('X'))
+    depot = Compartment.create('DEPOT')
+    cb.add_compartment(depot)
+    cb.add_flow(depot, central, S('Y'))
+    cs_from_cb = CompartmentalSystem(cb)
+
+    names = {
+        Expr.function(f'A_{name}', cs_from_cb.t): name for name in cs_from_cb.compartment_names
+    }
+    cs_from_func = to_compartmental_system(names, cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
