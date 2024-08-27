@@ -1247,7 +1247,8 @@ class CompartmentalSystem(Statement):
             dosecmt = self.dosing_compartments[0]
         except ValueError:
             # Fallback for cases where no dose is available (yet)
-            return list(_comps(self._g))
+            comps = list(_comps(self._g))
+            return sorted(comps, key=lambda comp: comp.name)
         # Order compartments
 
         def sortfunc(x):
