@@ -7,6 +7,7 @@ from pharmpy.modeling import (
     add_predictions,
     append_estimation_step_options,
     get_mdv,
+    remove_parameter_uncertainty_step,
     set_estimation_step,
     set_initial_estimates,
 )
@@ -122,6 +123,7 @@ def create_derivative_model(context, modelentry):
     der_model = set_estimation_step(der_model, first_es.method, 0, maximum_evaluations=1)
     der_model = add_predictions(der_model, ["CIPREDI"])
     context.log_progress("Running derivative model")
+    der_model = remove_parameter_uncertainty_step(der_model)
     return ModelEntry.create(model=der_model)
 
 
