@@ -168,9 +168,14 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, imp_
     filtered_model = remove_estimation_step(filtered_model, idx=0)
     filtered_model = add_estimation_step(
         filtered_model,
+        method="ITS",
+        idx=0, interaction=True, auto=True, niter=500, keep_every_nth_iter=10,
+    )
+    filtered_model = add_estimation_step(
+        filtered_model,
         method="SAEM",
-        idx=0,
-        tool_options={'NITER': "1000", 'AUTO': "1", 'PHITYPE': "1", 'FNLETA': "0"},
+        idx=1, interaction=True, auto=True, niter=500, keep_every_nth_iter=50,
+        tool_options={'PHITYPE': "1", 'FNLETA': "0"},
     )
 
     # add IMP estimation after SAEM to obtain less stochastic OFV for nonlinear model selection
@@ -178,11 +183,8 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, imp_
         filtered_model = add_estimation_step(
             filtered_model,
             method="IMP",
-            idx=1,
-            isample=3000,
-            niter=20,
-            interaction=True,
-            tool_options={"EONLY": "2", "MAPITER": "0", "SIGL": "8", "PRINT": "1", "AUTO": "1"},
+            idx=2, interaction=True, auto=True, niter=20, isample=1000, keep_every_nth_iter=1,
+            tool_options={"EONLY": "1", "MAPITER": "0"},
         )
 
     # nonlinear mixed effect modelentry creation and fit
