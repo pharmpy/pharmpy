@@ -118,6 +118,13 @@ def create_derivative_model(context, modelentry):
         der_model = set_initial_estimates(
             der_model, modelentry.modelfit_results.parameter_estimates
         )
+    if (
+        modelentry.modelfit_results is not None
+        and modelentry.modelfit_results.individual_estimates is not None
+    ):
+        der_model = der_model.replace(
+            initial_individual_estimates=modelentry.modelfit_results.individual_estimates
+        )
     der_model = add_derivative(der_model)
     first_es = der_model.execution_steps[0]
     der_model = set_estimation_step(der_model, first_es.method, 0, maximum_evaluations=1)
