@@ -125,10 +125,10 @@ def create_derivative_model(context, modelentry):
         der_model = der_model.replace(
             initial_individual_estimates=modelentry.modelfit_results.individual_estimates
         )
+    der_model = add_predictions(der_model, ["CIPREDI"])
     der_model = add_derivative(der_model)
     first_es = der_model.execution_steps[0]
-    der_model = set_estimation_step(der_model, first_es.method, 0, maximum_evaluations=1)
-    der_model = add_predictions(der_model, ["CIPREDI"])
+    der_model = set_estimation_step(der_model, first_es.method, 0, evaluation=True)
     context.log_progress("Running derivative model")
     der_model = remove_parameter_uncertainty_step(der_model)
     return ModelEntry.create(model=der_model)
