@@ -408,7 +408,7 @@ def has_mu_reference(model: Model):
     """
     ind_index_assignments = list(_find_eta_assignments(model))
     ind_parameters = [a[1].symbol for a in ind_index_assignments]
-    mu_regex = r'^mu_\d*$'
+    mu_regex = re.compile(r'^mu_\d*$', re.IGNORECASE)
     for ind_param in ind_parameters:
         ind_statement = model.statements.find_assignment(ind_param)
         if not any(re.match(mu_regex, str(p)) for p in ind_statement.free_symbols):
