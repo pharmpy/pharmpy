@@ -85,7 +85,8 @@ def samba_workflow(
     alpha: float = 0.05,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    esttool_linreg="statsmodels",
+    # esttool_linreg="statsmodels",
+    statsmodels = True,
     weighted_linreg=False,
     imp_ofv=False,
     nsamples=5,
@@ -110,7 +111,7 @@ def samba_workflow(
         samba_search,
         max_steps,
         alpha,
-        esttool_linreg,
+        statsmodels,
         weighted_linreg,
         nsamples,
         lin_filter,
@@ -236,7 +237,7 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, ns
 
 
 def samba_step(
-    context, step, alpha, esttool_linreg, weighted_linreg, nsamples, lin_filter, state_and_effect
+    context, step, alpha, statsmodels, weighted_linreg, nsamples, lin_filter, state_and_effect
 ):
 
     # LINEAR COVARIATE MODEL PROCESSING #####################
@@ -245,7 +246,7 @@ def samba_step(
         step,
         alpha,
         state_and_effect,
-        esttool_linreg,
+        statsmodels,
         weighted_linreg,
         nsamples,
         lin_filter,
@@ -264,7 +265,7 @@ def linear_model_selection(
     step,
     alpha,
     state_and_effect,
-    esttool_linreg,
+    statsmodels,
     weighted_linreg,
     nsamples,
     lin_filter,
@@ -277,7 +278,7 @@ def linear_model_selection(
     selected_lin_model_ofv = []
 
     # update dataset (etas) for all linear covariate candidate models
-    if esttool_linreg == "statsmodels":
+    if statsmodels:
         # use python statsmodel package as linear model estimation tool
         for param, covariates in param_cov_list.items():
             # update dataset
@@ -519,7 +520,7 @@ def samba_search(
     context,
     max_steps,
     alpha,
-    esttool_linreg,
+    statsmodels,
     weighted_linreg,
     nsamples,
     lin_filter,
@@ -533,7 +534,7 @@ def samba_search(
             context,
             step,
             alpha,
-            esttool_linreg,
+            statsmodels,
             weighted_linreg,
             nsamples,
             lin_filter,

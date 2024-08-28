@@ -127,7 +127,7 @@ def create_workflow(
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
-    esttool_linreg: Literal["statsmodels", None] = None,
+    statsmodels: bool = False,
     weighted_linreg: bool = False,
     imp_ofv: bool = True,
     nsamples: int = 5,
@@ -164,9 +164,9 @@ def create_workflow(
         Strictness criteria
     naming_index_offset : int
         index offset for naming of runs. Default is 0.
-    esttool_linreg : {'statsmodels', None}
-        estimation tool for SAMBA linear covariate model fitting. 'statsmodels' calls statsmodel's
-        functionalities, whereas None calls nonmem.
+    statsmodels : bool
+        estimation tool for SAMBA linear covariate model fitting. 'True' calls statsmodel's
+        functionalities, whereas 'False' calls nonmem.
     weighted_linreg : bool
         If `True`, SAMBA uses ETC weighted least squares to fit linear covariate models.
     imp_ofv : bool
@@ -203,7 +203,7 @@ def create_workflow(
             p_forward,
             results,
             model,
-            esttool_linreg,
+            statsmodels,
             weighted_linreg,
             imp_ofv,
             nsamples,
