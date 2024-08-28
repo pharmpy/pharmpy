@@ -36,6 +36,7 @@ from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
+from pharmpy.tools.common import update_initial_estimates
 
 NAME_WF = 'covsearch'
 
@@ -162,7 +163,7 @@ def _init_search_state(
 
 def _init_nonlinear_search_state(context, input_modelentry, filtered_model, imp_ofv):
     # nonlinear mixed effect model setup
-    filtered_model = filtered_model.replace(name="samba_start_model", description="start")
+    filtered_model = filtered_model.replace(name="filtered_input_model", description="start")
     filtered_model = mu_reference_model(filtered_model)
     filtered_model = remove_estimation_step(filtered_model, idx=0)
     filtered_model = add_estimation_step(
@@ -373,7 +374,7 @@ def _lin_filter_option(
     exploratory_cov_funcs,
     selected_lin_model_ofv,
 ):
-    print(ofvs)
+    # print(ofvs)
     if lin_filter in [0, 1]:
         selected_cov = lrt_best_of_many(
             parent=linear_models[0],
@@ -391,7 +392,7 @@ def _lin_filter_option(
             cov_model_index = None
 
         if cov_model_index and lin_filter == 0:
-            print(cov_model_index)
+            # print(cov_model_index)
             selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
             # calculate the drop-off of ofv for selected linear models
             parent_ofv = ofvs[0]
@@ -400,7 +401,7 @@ def _lin_filter_option(
             ofv_drop = parent_ofv - child_ofv[best_index]
             selected_lin_model_ofv.append(ofv_drop)
         if cov_model_index and lin_filter == 1:
-            print(cov_model_index)
+            # print(cov_model_index)
             selected_explor_cov_funcs.extend(exploratory_cov_funcs[cov_model_index])
 
     elif lin_filter == 2:
@@ -412,10 +413,10 @@ def _lin_filter_option(
             cov_model_index = [me.model.description for me in selected_cov]
         else:
             cov_model_index = ["_".join([param, model.exog_names[-1]]) for model in selected_cov]
-        print(cov_model_index)
+        # print(cov_model_index)
         for cm_index in cov_model_index:
             if ("Base" not in cm_index) and ("Intercept" not in cm_index):
-                print(cm_index)
+                # print(cm_index)
                 selected_explor_cov_funcs.extend(exploratory_cov_funcs[cm_index])
     else:
         raise ValueError("lin_filter must be one from the list {0, 1, 2}")
@@ -435,11 +436,14 @@ def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_e
         for cov_func in selected_explor_cov_funcs:
             cov_func_args = cov_func.keywords
             cov_effect = f'{cov_func_args["parameter"]}-{cov_func_args["covariate"]}-{cov_func_args["effect"]}'
-            nonlin_model_added_effect = cov_func(best_nlme_modelentry.model)
-            nonlin_model_added_effect = nonlin_model_added_effect.replace(
+
+            nonlin_model_added_effect = best_nlme_modelentry.model.replace(
                 name=f"step {step}_NLin_{cov_effect}",
                 description=f"{best_nlme_modelentry.model.description};({cov_effect.lower()})",
             )
+            nonlin_model_added_effect = update_initial_estimates(
+                nonlin_model_added_effect, best_nlme_modelentry.modelfit_results)
+            nonlin_model_added_effect = cov_func(nonlin_model_added_effect)
             new_nonlin_models.append(nonlin_model_added_effect)
 
         wb = WorkflowBuilder(name="nonlinear model selection")
@@ -474,7 +478,7 @@ def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_e
                 ),
             )
             nonlinear_search_state.all_candidates_so_far.extend([nlme_candidate])
-        # NOTE: some NLME models' OFV can be really off, due to poor convergence after averaging SAEM burn-in steps
+
         ofvs = [
             modelentry.modelfit_results.ofv if modelentry.modelfit_results is not None else np.nan
             for modelentry in new_nonlin_modelentries
