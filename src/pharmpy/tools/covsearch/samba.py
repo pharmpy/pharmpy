@@ -37,6 +37,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 from pharmpy.tools.common import update_initial_estimates
+from pharmpy.tools.covsearch.util import set_maxevals
 
 NAME_WF = 'covsearch'
 
@@ -85,9 +86,9 @@ def samba_workflow(
     alpha: float = 0.05,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
-    # esttool_linreg="statsmodels",
-    statsmodels = True,
-    weighted_linreg=False,
+    max_eval: bool = False,
+    statsmodels: bool = True,
+    weighted_linreg: bool = False,
     imp_ofv=False,
     nsamples=5,
     lin_filter=2,
@@ -99,7 +100,7 @@ def samba_workflow(
     wb = WorkflowBuilder(name=NAME_WF)
 
     # Initiate model and search state
-    store_task = Task("store_input_model", _store_input_model, model, results)
+    store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     wb.add_task(store_task)
 
     init_task = Task("init", _init_search_state, search_space, imp_ofv, nsamples)
@@ -130,10 +131,13 @@ def samba_workflow(
     return Workflow(wb)
 
 
-def _store_input_model(context, model, results):
+def _store_input_model(context, model, results, max_eval):
     """Store the input model"""
     model = model.replace(name="input_model", description="input")
-    input_modelentry = ModelEntry.create(model=model, modelfit_results=results)
+    if max_eval:
+        input_modelentry = set_maxevals(model, results)
+    else:
+        input_modelentry = ModelEntry.create(model=model, modelfit_results=results)
     context.store_input_model_entry(input_modelentry)
 
     return input_modelentry

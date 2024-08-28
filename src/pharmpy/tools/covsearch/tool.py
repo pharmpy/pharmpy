@@ -203,6 +203,7 @@ def create_workflow(
             p_forward,
             results,
             model,
+            max_eval,
             statsmodels,
             weighted_linreg,
             imp_ofv,
