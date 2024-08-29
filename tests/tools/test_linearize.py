@@ -189,7 +189,8 @@ def test_delinearize_model(load_model_for_test, testdata):
         ]
     )
     linbase = model.replace(datainfo=datainfo)
-    linbase = _create_linearized_model_statements(linbase, model)
+    statements = _create_linearized_model_statements(linbase, model)
+    linbase = linbase.replace(statements=statements)
 
     delinearized_model = delinearize_model(linbase, model)
     assert model == delinearized_model

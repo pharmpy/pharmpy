@@ -2,10 +2,10 @@ from typing import Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Assignment, EstimationStep, ExecutionSteps, Model, Statements
+from pharmpy.model import Assignment, Model, Statements
 from pharmpy.modeling import (
+    add_estimation_step,
     add_predictions,
-    append_estimation_step_options,
     get_mdv,
     get_omegas,
     get_sigmas,
@@ -129,8 +129,7 @@ def create_derivative_model(context, modelentry):
         )
     der_model = add_predictions(der_model, ["CIPREDI"])
     der_model = add_derivative(der_model)
-    first_es = der_model.execution_steps[0]
-    der_model = set_estimation_step(der_model, first_es.method, 0, evaluation=True)
+    der_model = set_estimation_step(der_model, "FOCE", 0, evaluation=True)
     context.log_progress("Running derivative model")
     der_model = remove_parameter_uncertainty_step(der_model)
     return ModelEntry.create(model=der_model)
@@ -162,8 +161,12 @@ def _create_linearized_model(context, model_name, description, model, derivative
     linbase = set_initial_estimates(
         linbase, derivative_model_entry.modelfit_results.parameter_estimates
     )
+    linbase = add_estimation_step(
+        linbase, "FOCE", maximum_evaluations=999999, interaction=True, tool_options={"MCETA": 1000}
+    )
 
-    linbase = _create_linearized_model_statements(linbase, model)
+    statements = _create_linearized_model_statements(linbase, model)
+    linbase = linbase.replace(statements=statements)
 
     context.log_progress("Running linearized model")
     return ModelEntry.create(model=linbase)
@@ -212,12 +215,7 @@ def _create_linearized_model_statements(linbase, model):
 
     ms.append(y_assignment)
 
-    est = EstimationStep.create('foce', interaction=True)
-    linbase = linbase.replace(execution_steps=ExecutionSteps.create([est]))
-    linbase = linbase.replace(statements=Statements(ms))
-    linbase = append_estimation_step_options(linbase, tool_options={"MCETA": 1000}, idx=0)
-
-    return linbase
+    return Statements(ms)
 
 
 def cleanup_columns(modelentry):
