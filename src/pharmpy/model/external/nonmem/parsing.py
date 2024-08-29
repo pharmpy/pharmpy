@@ -489,6 +489,8 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
         if record.has_option('INTERACTION') or record.has_option('INTER'):
             interaction = True
         maxeval_opt = record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
+        if maxeval_opt is None:
+            maxeval_opt = record.get_option('MAX')
         if maxeval_opt is not None:
             if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
                 evaluation = True
@@ -523,6 +525,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
             'INTER',
             'LAPLACE',
             'LAPLACIAN',
+            'MAX',
             'MAXEVAL',
             'MAXEVALS',
             'METHOD',

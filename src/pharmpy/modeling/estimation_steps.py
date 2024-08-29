@@ -57,6 +57,8 @@ def set_estimation_step(model: Model, method: Literal[ESTIMATION_METHODS], idx: 
 
     d = kwargs
     d['method'] = method
+    if 'evaluation' in d:
+        d['maximum_evaluations'] = None
     steps = model.execution_steps
     newstep = steps[idx].replace(**d)
     newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
@@ -395,7 +397,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
         raise TypeError(f'Index must be integer: {idx}')
 
     steps = model.execution_steps
-    newstep = steps[idx].replace(evaluation=True)
+    newstep = steps[idx].replace(evaluation=True, maximum_evaluations=None)
     if idx != -1:
         newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
     else:
