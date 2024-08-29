@@ -6,7 +6,7 @@ from pharmpy.model import Assignment, Model, Statements
 from pharmpy.modeling import (
     add_estimation_step,
     add_predictions,
-    get_mdv,
+    get_observations,
     get_omegas,
     get_sigmas,
     remove_parameter_uncertainty_step,
@@ -248,18 +248,19 @@ def cleanup_columns(modelentry):
             if len(names) == 0:
                 raise ValueError(f"Unsupported derivative {der_col} ModelfitResults object")
     derivatives = derivatives.rename(derivative_name_subs, axis=1)
-    new_input_file = predictions.join(amt_dv).join(derivatives)
+    df = predictions.join(amt_dv).join(derivatives)
 
     etas = modelentry.modelfit_results.individual_estimates
     eta_name_subs = {}
     for n, eta in enumerate(modelentry.model.random_variables.iiv.names, start=1):
         eta_name_subs[eta] = f"OETA_{n}"
     etas = etas.rename(eta_name_subs, axis=1)
-    new_input_file = new_input_file.join(etas, on="ID")
+    df = df.join(etas, on="ID")
 
-    new_input_file = new_input_file.reset_index(drop=True)
-    new_input_file["MDV"] = get_mdv(modelentry.model)
-    return new_input_file
+    df = df.reset_index(drop=True)
+    obs = get_observations(modelentry.model, keep_index=True)
+    df = df.loc[obs.index]
+    return df
 
 
 def create_derivative_name(model, param_list):
