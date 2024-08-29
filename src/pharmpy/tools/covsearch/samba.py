@@ -1,7 +1,8 @@
-from dataclasses import dataclass, replace
+import logging
+from dataclasses import replace
 from functools import partial
 from itertools import count
-from typing import Any, List, Optional, Tuple, Union
+from typing import Literal, Optional, Union
 
 import statsmodels.formula.api as smf
 
@@ -30,54 +31,22 @@ from pharmpy.modeling import (
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import best_of_two as lrt_best_of_two
+from pharmpy.tools.common import update_initial_estimates
+from pharmpy.tools.covsearch.util import (
+    Candidate,
+    DummyEffect,
+    ForwardStep,
+    SearchState,
+    set_maxevals,
+)
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
-from pharmpy.tools.common import update_initial_estimates
-from pharmpy.tools.covsearch.util import set_maxevals
 
 NAME_WF = 'covsearch'
-
-DataFrame = Any  # NOTE: should be pd.DataFrame but we want lazy loading
-
-
-@dataclass(frozen=True)
-class Effect:
-    parameter: str
-    covariate: str
-    fp: str
-    operation: str
-
-
-class DummyEffect(Effect):
-    pass
-
-
-@dataclass(frozen=True)
-class Step:
-    alpha: float
-    effect: Effect
-
-
-class ForwardStep(Step):
-    pass
-
-
-@dataclass
-class Candidate:
-    modelentry: ModelEntry
-    steps: Tuple[Step, ...]
-
-
-@dataclass
-class SearchState:
-    user_input_modelentry: ModelEntry
-    start_modelentry: ModelEntry
-    best_candidate_so_far: Candidate
-    all_candidates_so_far: List[Candidate]
 
 
 def samba_workflow(
@@ -89,9 +58,9 @@ def samba_workflow(
     max_eval: bool = False,
     statsmodels: bool = True,
     weighted_linreg: bool = False,
-    imp_ofv=False,
-    nsamples=5,
-    lin_filter=2,
+    est_method: Literal['ORIG', 'ITS', 'SAEM'] = "ORIG",
+    nsamples: int = 5,
+    lin_filter: int = 2,
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -103,7 +72,7 @@ def samba_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     wb.add_task(store_task)
 
-    init_task = Task("init", _init_search_state, search_space, imp_ofv, nsamples)
+    init_task = Task("init", _init_search_state, search_space, est_method, nsamples)
     wb.add_task(init_task, predecessors=store_task)
 
     # SAMBA search task
@@ -144,7 +113,7 @@ def _store_input_model(context, model, results, max_eval):
 
 
 def _init_search_state(
-    context, search_space: str, imp_ofv: bool, nsamples: int, modelentry: ModelEntry
+    context, search_space: str, est_method: str, nsamples: int, modelentry: ModelEntry
 ):
     """Initialize SAMBA covariate search"""
     model = modelentry.model
@@ -154,7 +123,7 @@ def _init_search_state(
 
     # init nonlinear search state
     nonlinear_search_state = _init_nonlinear_search_state(
-        context, modelentry, filtered_model, imp_ofv
+        context, modelentry, filtered_model, est_method
     )
     filtered_modelentry = nonlinear_search_state.start_modelentry
 
@@ -166,36 +135,58 @@ def _init_search_state(
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
 
 
-def _init_nonlinear_search_state(context, input_modelentry, filtered_model, imp_ofv):
-    # nonlinear mixed effect model setup
+def _init_nonlinear_search_state(context, input_modelentry, filtered_model, est_method="ORIG"):
     filtered_model = filtered_model.replace(name="filtered_input_model", description="start")
-    filtered_model = mu_reference_model(filtered_model)
-    filtered_model = remove_estimation_step(filtered_model, idx=0)
-    filtered_model = add_estimation_step(
-        filtered_model,
-        method="ITS",
-        idx=0, interaction=True, auto=True, niter=500, keep_every_nth_iter=10,
-    )
-    filtered_model = add_estimation_step(
-        filtered_model,
-        method="SAEM",
-        idx=1, interaction=True, auto=True, niter=500, keep_every_nth_iter=50,
-        tool_options={'PHITYPE': "1", 'FNLETA': "0"},
-    )
 
-    # add IMP estimation after SAEM to obtain less stochastic OFV for nonlinear model selection
-    if imp_ofv:
+    if est_method in ["SAEM", "ITS"]:
+        filtered_model = mu_reference_model(filtered_model)
+        filtered_model = remove_estimation_step(filtered_model, idx=0)
         filtered_model = add_estimation_step(
             filtered_model,
-            method="IMP",
-            idx=2, interaction=True, auto=True, niter=20, isample=1000, keep_every_nth_iter=1,
-            tool_options={"EONLY": "1", "MAPITER": "0"},
+            method="ITS",
+            idx=0,
+            interaction=True,
+            auto=True,
+            niter=500,
+            keep_every_nth_iter=10,
         )
+        if est_method == "SAEM":
+            filtered_model = add_estimation_step(
+                filtered_model,
+                method="SAEM",
+                idx=1,
+                interaction=True,
+                auto=True,
+                niter=500,
+                keep_every_nth_iter=50,
+                tool_options={'PHITYPE': "1", 'FNLETA': "0"},
+            )
+
+            # add IMP estimation after SAEM to obtain less stochastic OFV for nonlinear model selection
+            filtered_model = add_estimation_step(
+                filtered_model,
+                method="IMP",
+                idx=2,
+                interaction=True,
+                auto=True,
+                niter=20,
+                isample=1000,
+                keep_every_nth_iter=1,
+                tool_options={"EONLY": "1", "MAPITER": "0"},
+            )
+    logger = logging.getLogger("covsearch_est_info")
+    ml = []
+    for i in range(len(filtered_model.execution_steps)):
+        ml.append(filtered_model.execution_steps[i].method)
+    logger.warning(f"$EST uses {'-'.join(ml)} for nonlinear model selection.")
 
     # nonlinear mixed effect modelentry creation and fit
-    filtered_modelentry = ModelEntry.create(model=filtered_model)
-    filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
-    filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+    if filtered_model != input_modelentry.model:
+        filtered_modelentry = ModelEntry.create(model=filtered_model)
+        filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
+        filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+    else:
+        filtered_modelentry = input_modelentry
 
     # nonlinear search state
     nonlinear_model_candidate = Candidate(filtered_modelentry, ())
@@ -449,7 +440,8 @@ def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_e
                 description=f"{best_nlme_modelentry.model.description};({cov_effect.lower()})",
             )
             nonlin_model_added_effect = update_initial_estimates(
-                nonlin_model_added_effect, best_nlme_modelentry.modelfit_results)
+                nonlin_model_added_effect, best_nlme_modelentry.modelfit_results
+            )
             nonlin_model_added_effect = cov_func(nonlin_model_added_effect)
             new_nonlin_models.append(nonlin_model_added_effect)
 

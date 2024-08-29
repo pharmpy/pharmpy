@@ -129,7 +129,7 @@ def create_workflow(
     naming_index_offset: Optional[int] = 0,
     statsmodels: bool = False,
     weighted_linreg: bool = False,
-    imp_ofv: bool = True,
+    est_method: Literal['ORIG', 'ITS', 'SAEM'] = "ORIG",
     nsamples: int = 5,
     lin_filter: int = 2,
 ):
@@ -169,15 +169,16 @@ def create_workflow(
         functionalities, whereas 'False' calls nonmem.
     weighted_linreg : bool
         If `True`, SAMBA uses ETC weighted least squares to fit linear covariate models.
-    imp_ofv : bool
-        additional IMP estimation step for stable OFV calculation for nonlinear mixed effects models in SAMBA.
-        Default is False, i.e. use SAEM's OFV for nonlinear model selection.
+    est_method : {'ORIG', 'ITS', 'SAEM'}
+        The estimation method to use for nonlinear mixed effects models in SAMBA. Currently,
+        ITS and SAEM are supported. Default is ORIG, i.e. use original $EST from input model
+        for nonlinear model selection.
     nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         The samples will be pooled to fit the linear model.
         Default is 5, i.e. generating 5 samples per subject
     lin_filter : int
-        option to control the number of covariates passed to nonlinear selection
+        Option to control the number of covariates passed to nonlinear selection
          0: the one with the largest drop of OFV among all parameter-covariate pairs
          1: pass the ones with the largest drop of OFV within each parameter scope
          2: pass all LRT survivors (should have the most similar performance as SCM-Forward)
@@ -206,7 +207,7 @@ def create_workflow(
             max_eval,
             statsmodels,
             weighted_linreg,
-            imp_ofv,
+            est_method,
             nsamples,
             lin_filter,
         )
