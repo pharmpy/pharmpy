@@ -7,6 +7,8 @@ from pharmpy.modeling import (
     add_predictions,
     append_estimation_step_options,
     get_mdv,
+    get_omegas,
+    get_sigmas,
     remove_parameter_uncertainty_step,
     set_estimation_step,
     set_initial_estimates,
@@ -139,8 +141,9 @@ def _create_linearized_model(context, model_name, description, model, derivative
         abort_workflow(context, "Error while running the derivative model")
     new_input_file = cleanup_columns(derivative_model_entry)
 
+    derivative_model = derivative_model_entry.model
     linbase = Model.create(
-        parameters=derivative_model_entry.model.parameters,
+        parameters=get_omegas(derivative_model) + get_sigmas(derivative_model),
         random_variables=derivative_model_entry.model.random_variables,
         dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
         dataset=new_input_file,
