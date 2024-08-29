@@ -2285,8 +2285,9 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
             phi_path = path.parent
         phi_path /= f'{model.name}_input.phi'
 
-    estimates = model.initial_individual_estimates.copy()
+    estimates = model.initial_individual_estimates
     assert estimates is not None
+    estimates = estimates.copy()
     eta_names = model.random_variables.etas.names
     columns = set(estimates.columns)
     diff = columns - set(eta_names)
