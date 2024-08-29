@@ -2285,31 +2285,33 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
             phi_path = path.parent
         phi_path /= f'{model.name}_input.phi'
 
-    estimates = model.initial_individual_estimates
+    estimates = model.initial_individual_estimates.copy()
     assert estimates is not None
-    rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
+    eta_names = model.random_variables.etas.names
     columns = set(estimates.columns)
-    if columns < rv_names:
+    diff = columns - set(eta_names)
+    if columns < set(eta_names):
         raise ValueError(
             f'Cannot set initial estimate for random variable not in the model:'
-            f' {rv_names - columns}'
+            f' {set(eta_names) - columns}'
         )
-    diff = columns - rv_names
     # If not setting all etas automatically set remaining to 0 for all individuals
     if len(diff) > 0:
         for name in diff:
-            estimates = estimates.copy(deep=True)
             estimates[name] = 0
-        estimates = _sort_eta_columns(estimates)
 
-    etas = estimates
     zero_fix = get_zero_fix_rvs(model, eta=True)
     if zero_fix:
         for eta in zero_fix:
-            etas[eta] = 0
-    etas = _sort_eta_columns(etas)
+            estimates[eta] = 0
+
+    estimates = _sort_eta_columns(estimates, eta_names)
+    estimates = estimates.set_axis(
+        [f'ETA({i})' for i in range(1, len(estimates.columns) + 1)], axis=1
+    )
+
     if not nofiles:
-        phi = PhiTable(df=etas)
+        phi = PhiTable(df=estimates)
         table_file = NONMEMTableFile(tables=[phi])
         table_file.write(phi_path)
     control_stream = model.internals.control_stream
@@ -2332,8 +2334,8 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
     return control_stream
 
 
-def _sort_eta_columns(df: pd.DataFrame):
-    return df.reindex(sorted(df.columns), axis=1)
+def _sort_eta_columns(df: pd.DataFrame, rv_names):
+    return df.reindex(rv_names, axis=1)
 
 
 def abbr_translation(model: Model, rv_trans):
