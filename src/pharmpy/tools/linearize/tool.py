@@ -1,7 +1,6 @@
 from typing import Optional
 
 from pharmpy.basic import Expr
-from pharmpy.deps import pandas as pd
 from pharmpy.model import Assignment, Model, Statements
 from pharmpy.modeling import (
     add_estimation_step,
@@ -138,14 +137,14 @@ def create_derivative_model(context, modelentry):
 def _create_linearized_model(context, model_name, description, model, derivative_model_entry):
     if derivative_model_entry.modelfit_results is None:
         abort_workflow(context, "Error while running the derivative model")
-    new_input_file = cleanup_columns(derivative_model_entry)
+    df = cleanup_columns(derivative_model_entry)
 
     derivative_model = derivative_model_entry.model
     linbase = Model.create(
         parameters=get_omegas(derivative_model) + get_sigmas(derivative_model),
         random_variables=derivative_model_entry.model.random_variables,
         dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
-        dataset=new_input_file,
+        dataset=df,
         name=model_name,
         description=description,
     )
@@ -218,45 +217,42 @@ def _create_linearized_model_statements(linbase, model):
 
 def cleanup_columns(modelentry):
     predictions = modelentry.modelfit_results.predictions
+    model = modelentry.model
     if predictions is None:
         raise ValueError("Require PREDICTIONS to be calculated")
     else:
-        pred_found = False
-        for p in ["IPRED", "CIPREDI"]:
-            try:
-                pred_col = predictions[p]  # TODO : Allow other prediction values?
-                predictions = pd.DataFrame(pred_col)
-                predictions = predictions.rename({p: "OPRED"}, axis=1)
-                pred_found = True
-                break
-            except KeyError:
-                pass
+        if "CIPREDI" in predictions:
+            predcol = "CIPREDI"
+        elif "IPRED" in predictions:
+            predcol = "IPRED"
+        else:
+            raise ValueError("Cannot find IPRED or CIPREDI for the input model")
+        ipred = predictions[predcol]
 
-        if not pred_found:
-            raise ValueError("Cannot determine OPRED to use for linearized model")
+    df = model.dataset[["ID", "TIME", "DV"]].copy()  # Assume existence
+    df['OPRED'] = ipred
 
     derivatives = modelentry.modelfit_results.derivatives
-    amt_dv = modelentry.model.dataset[["ID", "TIME", "AMT", "DV"]]  # Assume existance
     derivative_name_subs = {}
     for der_col in derivatives.columns:
         names = der_col.split(";")
         if 1 <= len(names) <= 2:
-            derivative_name_subs[der_col] = create_derivative_name(modelentry.model, names)
+            derivative_name_subs[der_col] = create_derivative_name(model, names)
         else:
             if len(names) == 0:
                 raise ValueError(f"Unsupported derivative {der_col} ModelfitResults object")
     derivatives = derivatives.rename(derivative_name_subs, axis=1)
-    df = predictions.join(amt_dv).join(derivatives)
+    df = df.join(derivatives)
 
     etas = modelentry.modelfit_results.individual_estimates
     eta_name_subs = {}
-    for n, eta in enumerate(modelentry.model.random_variables.iiv.names, start=1):
+    for n, eta in enumerate(model.random_variables.iiv.names, start=1):
         eta_name_subs[eta] = f"OETA_{n}"
     etas = etas.rename(eta_name_subs, axis=1)
     df = df.join(etas, on="ID")
 
     df = df.reset_index(drop=True)
-    obs = get_observations(modelentry.model, keep_index=True)
+    obs = get_observations(model, keep_index=True)
     df = df.loc[obs.index]
     return df
 

@@ -911,7 +911,7 @@ def filter_observations(df, di):
 def parse_table_columns(control_stream, netas, problem_no=0):
     # Handle synonyms and appended columns
 
-    reserved = {'PRED', 'IPRED', 'CIPREDI'}
+    reserved = {'PRED', 'IPRED', 'CIPREDI', 'WRES'}
     synonyms = dict()
     all_columns = []
 
@@ -926,7 +926,7 @@ def parse_table_columns(control_stream, netas, problem_no=0):
             symbs.add(s.symbol.name)
 
     (colnames, _, _, _) = parse_column_info(control_stream)
-    symbs |= set(colnames)
+    symbs |= set(colnames) | reserved
 
     for table_record in control_stream.get_records('TABLE', problem_no=problem_no):
         noappend = False
