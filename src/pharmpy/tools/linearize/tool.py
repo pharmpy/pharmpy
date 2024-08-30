@@ -191,7 +191,7 @@ def _create_linearized_model_statements(linbase, model):
     err_terms_sum = 0
     for epsno, eps in enumerate(model.random_variables.epsilons, start=1):
         err = Assignment(
-            Expr.symbol(f'ERR_{epsno}'), Expr.symbol(eps.names[0]) * Expr.symbol(f'D_EPS_{epsno}')
+            Expr.symbol(f'ERR{epsno}'), Expr.symbol(eps.names[0]) * Expr.symbol(f'D_EPS_{epsno}')
         )
         err_terms_sum += err.symbol
         ms.append(err)
