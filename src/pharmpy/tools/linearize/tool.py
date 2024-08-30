@@ -161,9 +161,7 @@ def _create_linearized_model(context, model_name, description, model, derivative
     linbase = set_initial_estimates(
         linbase, derivative_model_entry.modelfit_results.parameter_estimates
     )
-    linbase = add_estimation_step(
-        linbase, "FOCE", maximum_evaluations=999999, interaction=True, tool_options={"MCETA": 1000}
-    )
+    linbase = add_estimation_step(linbase, "FOCE", maximum_evaluations=999999, interaction=True)
 
     statements = _create_linearized_model_statements(linbase, model)
     linbase = linbase.replace(statements=statements)
