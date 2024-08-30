@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Optional
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import plot_iofv_vs_iofv
@@ -20,11 +21,18 @@ class LinearizeResults(Results):
 
 
 def calculate_results(base_model, base_model_results, linear_model, linear_model_results):
+    base_iofv = base_model_results.individual_ofv
+    linear_iofv = linear_model_results.individual_ofv
+    if base_iofv is not None and linear_iofv is not None:
+        delta_iofv = linear_iofv - base_iofv
+    else:
+        delta_iofv = np.nan
+
     iofv = pd.DataFrame(
         {
-            'base': base_model_results.individual_ofv,
-            'linear': linear_model_results.individual_ofv,
-            'delta': linear_model_results.individual_ofv - base_model_results.individual_ofv,
+            'base': base_iofv,
+            'linear': linear_iofv,
+            'delta': delta_iofv,
         }
     )
     ofv = pd.Series(
