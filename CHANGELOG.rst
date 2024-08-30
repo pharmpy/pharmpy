@@ -5,6 +5,7 @@ Bugfixes
 ========
 
 * Fix reading in NONMEM models with TIME column having hh:mm format (but no DATx column present)
+* Fix NONMEM parsing issues where having WRES in $TABLE could lead to parsing other columns incorrectly
 
 1.2.0 (2024-08-22)
 ------------------
