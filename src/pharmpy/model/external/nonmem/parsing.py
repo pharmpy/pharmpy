@@ -501,6 +501,10 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 raise ValueError('Currently only AUTO=0 and AUTO=1 is supported')
         if record.has_option('PRINT'):
             keep_every_nth_iter = int(record.get_option('PRINT'))
+        if record.has_option('ETASAMPLES'):
+            individual_eta_samples = bool(int(record.get_option('ETASAMPLES')))
+        else:
+            individual_eta_samples = False
 
         protected_names = [
             name.upper(),
@@ -519,6 +523,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
             'AUTO',
             'PRINT',
             'MSFO',
+            'ETASAMPLES',
         ]
 
         tool_options = {
@@ -548,6 +553,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 derivatives=derivatives,
                 predictions=predictions,
                 residuals=residuals,
+                individual_eta_samples=individual_eta_samples,
             )
         except ValueError:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')

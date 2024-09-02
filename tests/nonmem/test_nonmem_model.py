@@ -693,6 +693,14 @@ def test_cmt_update(load_model_for_test, testdata, tmp_path):
             '$ESTIMATION METH=COND ISAMPLE=10 NITER=5 AUTO=1 PRINT=2',
             [EstimationStep.create('foce', isample=10, niter=5, auto=True, keep_every_nth_iter=2)],
         ),
+        (
+            '$ESTIMATION METH=SAEM ETASAMPLES=1',
+            [EstimationStep.create('saem', individual_eta_samples=True)],
+        ),
+        (
+            '$ESTIMATION METH=SAEM ETASAMPLES=0',
+            [EstimationStep.create('saem', individual_eta_samples=False)],
+        ),
     ],
 )
 def test_execution_steps_getter(estcode, est_steps):
