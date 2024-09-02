@@ -147,6 +147,8 @@ def _parse_modelfit_results(
     if final_zero_gradient:
         warnings.append('final_zero_gradient')
 
+    indetas = _parse_ets(path, etas, subproblem)
+
     res = ModelfitResults(
         minimization_successful=minimization_successful[last_est_ind],
         minimization_successful_iterations=minsucc_iters,
@@ -183,6 +185,7 @@ def _parse_modelfit_results(
         gradients=gradients,
         gradients_iterations=gradients_iterations,
         warnings=warnings,
+        individual_eta_samples=indetas,
     )
     return res
 
@@ -464,6 +467,27 @@ def _parse_grd(
     last_row = last_row.squeeze(axis=0).rename('gradients')
     final_zero_gradient = (last_row == 0).any() or last_row.isnull().any()
     return gradients_table, final_zero_gradient, last_row
+
+
+def _parse_ets(path, etas, subproblem):
+    try:
+        ets_tables = NONMEMTableFile(path.with_suffix('.ets'))
+    except FileNotFoundError:
+        return None
+    if subproblem is None:
+        table = ets_tables.tables[-1]
+    else:
+        table = ets_tables.tables[subproblem - 1]
+
+    if table is None:
+        return None
+
+    df = table.data_frame
+    df = df.drop(columns=['SUBJECT_NO'])
+    d = {f'ETA({i})': name for i, name in enumerate(etas.names, start=1)}
+    d['SAMPLE'] = 'sample'
+    df = df.rename(columns=d).set_index(['ID', 'sample'])
+    return df
 
 
 def _parse_tables(

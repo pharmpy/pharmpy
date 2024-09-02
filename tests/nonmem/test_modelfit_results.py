@@ -320,7 +320,8 @@ def test_saem(testdata):
         testdata / 'nonmem' / 'modelfit_results' / 'saem' / 'pheno_saem.mod'
     )
     assert res.individual_ofv is not None
-    assert res.ofv == 140.234139194478
+    assert res.ofv == 366.33573391569922
+    assert res.individual_eta_samples.loc[(1, 1), 'ETA_1'] == -0.113378
 
 
 def test_derivative_results(testdata):

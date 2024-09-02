@@ -428,6 +428,8 @@ class ModelfitResults(Results):
         All recorded parameter gradients
     warnings : List
         List of warnings
+    individual_eta_samples : pd.DataFrame
+        Individual eta samples
     """
 
     ofv: Optional[float] = None
@@ -465,6 +467,7 @@ class ModelfitResults(Results):
     gradients: Optional[pd.Series] = None
     gradients_iterations: Optional[pd.DataFrame] = (None,)
     warnings: Optional[List[str]] = None
+    individual_eta_samples: Optional[pd.DataFrame] = None
 
     def __repr__(self):
         return '<Pharmpy modelfit results object>'
