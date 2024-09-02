@@ -769,6 +769,11 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
             '$ESTIMATION METHOD=COND INTER AUTO=1 PRINT=2',
         ),
         ('$EST METH=COND INTER', {'auto': False}, '$ESTIMATION METHOD=COND INTER AUTO=0'),
+        (
+            '$EST METH=COND',
+            {'individual_eta_samples': True},
+            '$ESTIMATION METHOD=COND ETASAMPLES=1',
+        ),
     ],
 )
 def test_execution_steps_setter(estcode, kwargs, rec_ref):

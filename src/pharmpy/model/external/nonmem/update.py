@@ -1722,6 +1722,8 @@ def update_estimation(control_stream, model):
                 est_code += f' AUTO={int(est.auto)}'
             if est.keep_every_nth_iter is not None:
                 est_code += f' PRINT={est.keep_every_nth_iter}'
+            if est.individual_eta_samples:
+                est_code += ' ETASAMPLES=1'
             if est.tool_options:
                 option_names = set(est.tool_options.keys())
                 overlapping_attributes = set(protected_attributes).intersection(option_names)
