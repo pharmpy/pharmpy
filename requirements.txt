@@ -19,7 +19,7 @@ defusedxml==0.7.1
 distributed==2024.8.1
 docutils==0.21.2
 exceptiongroup==1.2.2
-executing==2.0.1
+executing==2.1.0
 fastjsonschema==2.20.0
 fsspec==2024.6.1
 idna==3.8
