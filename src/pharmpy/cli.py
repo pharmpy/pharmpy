@@ -919,7 +919,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--linearize',
-                                'type': bool,
+                                'action': 'store_true',
                                 'help': 'Whether or not use linearization when running the tool',
                                 'default': False,
                             },
