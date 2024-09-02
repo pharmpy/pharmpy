@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import dataclasses
 import json
-import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -178,12 +177,6 @@ class Model(Immutable):
         inits = params.inits
         if not rvs.validate_parameters(inits):
             nearest = rvs.nearest_valid_parameters(inits)
-            before, after = compare_before_after_params(inits, nearest)
-            warnings.warn(
-                f"Adjusting initial estimates to create positive semidefinite "
-                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
-                f"After adjusting: {after}"
-            )
             params = params.set_initial_estimates(nearest)
         return params
 
@@ -704,17 +697,6 @@ class Model(Immutable):
     def write_files(self, path: Optional[Union[Path, str]] = None, force: bool = False) -> Model:
         """Write all extra files needed for a specific external format."""
         return self
-
-
-def compare_before_after_params(old, new):
-    # FIXME: Move this to the right module
-    before = {}
-    after = {}
-    for key, value in old.items():
-        if new[key] != value:
-            before[key] = value
-            after[key] = new[key]
-    return before, after
 
 
 def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:

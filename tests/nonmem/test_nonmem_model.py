@@ -142,8 +142,7 @@ def test_set_parameters(pheno_path, load_model_for_test):
     assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=float("inf"))
 
     model = create_joint_distribution(pheno, individual_estimates=res.individual_estimates)
-    with pytest.raises(UserWarning, match='Adjusting initial'):
-        set_initial_estimates(model, {'IVV': 0.000001})
+    set_initial_estimates(model, {'IVV': 0.000001})
 
 
 def test_adjust_iovs(load_model_for_test, testdata):

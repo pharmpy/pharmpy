@@ -212,8 +212,7 @@ def test_create_model():
     py = Parameter('y', 0)
     pz = Parameter('z', -1)
     params = Parameters((px, py, pz))
-    with pytest.warns(UserWarning):
-        m = Model.create(name='model', random_variables=rvs, parameters=params)
+    m = Model.create(name='model', random_variables=rvs, parameters=params)
     assert m.parameters.inits == {'x': 0.0, 'y': 0.0, 'z': 0.0}
 
     # random variables

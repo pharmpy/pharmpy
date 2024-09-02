@@ -146,21 +146,15 @@ def create_random_init_model(
 
         for try_number in range(1, maximum_tests + 1):
             new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, seed)
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "error",
-                    message="Adjusting initial estimates to create positive semidefinite omega/sigma matrices",
-                    category=UserWarning,
-                )
-                try:
-                    new_candidate_model = set_initial_estimates(new_candidate_model, new_parameters)
-                    break
-                except UserWarning:
-                    if try_number == maximum_tests:
-                        raise ValueError(
-                            f"{new_candidate_model.name} could not be determined"
-                            f" to be positive semi-definite."
-                        )
+            try:
+                new_candidate_model = set_initial_estimates(new_candidate_model, new_parameters)
+                break
+            except UserWarning:
+                if try_number == maximum_tests:
+                    raise ValueError(
+                        f"{new_candidate_model.name} could not be determined"
+                        f" to be positive semi-definite."
+                    )
     elif scale == "UCP":
         new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, seed)
         new_candidate_model = set_initial_estimates(new_candidate_model, new_parameters)

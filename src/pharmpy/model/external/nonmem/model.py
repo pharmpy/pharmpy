@@ -19,7 +19,7 @@ from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
-from pharmpy.model.model import ModelInternals, compare_before_after_params, update_datainfo
+from pharmpy.model.model import ModelInternals, update_datainfo
 from pharmpy.modeling.write_csv import write_csv
 
 from .nmtran_parser import NMTranControlStream, NMTranParser
@@ -379,12 +379,6 @@ def parse_model(
     # FIXME: Handle by creation of new model object
     if not rvs.validate_parameters(parameters.inits):
         nearest = rvs.nearest_valid_parameters(parameters.inits)
-        before, after = compare_before_after_params(parameters.inits, nearest)
-        warnings.warn(
-            f"Adjusting initial estimates to create positive semidefinite "
-            f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
-            f"After adjusting: {after}"
-        )
         parameters = parameters.set_initial_estimates(nearest)
 
     execution_steps = parse_execution_steps(control_stream, rvs)
