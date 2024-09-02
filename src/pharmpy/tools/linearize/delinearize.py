@@ -37,7 +37,6 @@ def delinearize_model(
     Model.
 
     """
-    print(param_mapping)
     if param_mapping:
 
         for param in param_mapping.values():
