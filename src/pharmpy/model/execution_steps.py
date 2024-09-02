@@ -155,6 +155,7 @@ class EstimationStep(ExecutionStep):
         solver_atol: Optional[int] = None,
         tool_options: Optional[frozenmapping[str, Any]] = None,
         derivatives: Sequence[Sequence[Expr]] = (),
+        individual_eta_samples: bool = False,
     ):
         self._method = method
         self._interaction = interaction
@@ -169,6 +170,7 @@ class EstimationStep(ExecutionStep):
         self._residuals = residuals
         self._predictions = predictions
         self._derivatives = derivatives
+        self._individual_eta_samples = individual_eta_samples
         super().__init__(
             solver=solver,
             solver_rtol=solver_rtol,
@@ -196,6 +198,7 @@ class EstimationStep(ExecutionStep):
         solver_atol: Optional[int] = None,
         tool_options: Optional[Mapping[str, Any]] = None,
         derivatives: Sequence[Sequence[Expr]] = (),
+        individual_eta_samples: bool = False,
     ):
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
@@ -253,6 +256,7 @@ class EstimationStep(ExecutionStep):
             solver_atol=solver_atol,
             tool_options=tool_options,
             derivatives=derivatives,
+            individual_eta_samples=bool(individual_eta_samples),
         )
 
     def replace(self, **kwargs) -> EstimationStep:
@@ -379,6 +383,11 @@ class EstimationStep(ExecutionStep):
         return self._derivatives
 
     @property
+    def individual_eta_samples(self) -> bool:
+        """Should individual eta samples be generated"""
+        return self._individual_eta_samples
+
+    @property
     def tool_options(self) -> Optional[frozenmapping[str, Any]]:
         """Dictionary of tool specific options"""
         return self._tool_options
@@ -400,6 +409,7 @@ class EstimationStep(ExecutionStep):
             and self.derivatives == other.derivatives
             and self.predictions == other.predictions
             and self.residuals == other.residuals
+            and self.individual_eta_samples == other.individual_eta_samples
             and super().__eq__(other)
         )
 
@@ -416,6 +426,7 @@ class EstimationStep(ExecutionStep):
                 self._niter,
                 self._auto,
                 self._keep_every_nth_iter,
+                self._individual_eta_samples,
                 super().__hash__(),
             )
         )
@@ -436,6 +447,7 @@ class EstimationStep(ExecutionStep):
             'derivatives': tuple(str(d) for d in self._derivatives),
             'predictions': self._predictions,
             'residuals': self._residuals,
+            'individual_eta_samples': self._individual_eta_samples,
         }
         super()._add_to_dict(d)
         return d
@@ -457,7 +469,8 @@ class EstimationStep(ExecutionStep):
             f"parameter_uncertainty_method={parameter_uncertainty_method}, evaluation={self.evaluation}, "
             f"maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, "
             f"isample={self.isample}, niter={self.niter}, auto={self.auto}, "
-            f"keep_every_nth_iter={self.keep_every_nth_iter}, {super()._partial_repr()})"
+            f"keep_every_nth_iter={self.keep_every_nth_iter}, "
+            f"individual_eta_samples={self.individual_eta_samples}, {super()._partial_repr()})"
         )
 
 

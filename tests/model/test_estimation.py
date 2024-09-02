@@ -34,7 +34,7 @@ def test_estimation_method():
         repr(a)
         == "EstimationStep('FO', interaction=False, parameter_uncertainty_method='SANDWICH', evaluation=False, "
         "maximum_evaluations=None, laplace=False, isample=None, niter=None, auto=None, "
-        "keep_every_nth_iter=None, solver=None, solver_rtol=None, solver_atol=None, "
+        "keep_every_nth_iter=None, individual_eta_samples=False, solver=None, solver_rtol=None, solver_atol=None, "
         "tool_options={})"
     )
 
@@ -131,6 +131,7 @@ def test_dict():
         'derivatives': (),
         'predictions': (),
         'residuals': (),
+        'individual_eta_samples': False,
     }
     step2 = EstimationStep.from_dict(d)
     assert step2 == a
@@ -159,6 +160,7 @@ def test_dict():
                 'derivatives': (),
                 'predictions': (),
                 'residuals': (),
+                'individual_eta_samples': False,
             },
             {
                 'method': 'FO',
@@ -179,6 +181,7 @@ def test_dict():
                 'derivatives': (),
                 'predictions': (),
                 'residuals': (),
+                'individual_eta_samples': False,
             },
         )
     }
@@ -243,6 +246,11 @@ def test_properties():
         a = EstimationStep.create('foce', predictions=13)
     with pytest.raises(TypeError, match="Residuals could not be converted to tuple"):
         a = EstimationStep.create('foce', residuals=13)
+
+    e1 = EstimationStep.create('foce', individual_eta_samples=True)
+    assert e1.individual_eta_samples
+    e2 = EstimationStep.create('foce')
+    assert not e2.individual_eta_samples
 
 
 def test_replace():
