@@ -519,7 +519,6 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
     neweqs = list(eqs)  # Remaining flows
 
     for eq in eqs:
-        checked_terms = set()
         rhs = eq.rhs
         assert isinstance(rhs, sympy.Expr)
         for comp_func in concentrations.intersection(free_images(rhs)):
@@ -527,55 +526,50 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
             terms = sympy.Add.make_args(dep.expand())
             for term in terms:
                 assert isinstance(term, sympy.Expr)
-                if term not in checked_terms:
-                    checked_terms.add(term)
-                    from_comp = None
-                    to_comp = None
-                    if len(concentrations.intersection(free_images(term))) >= 2:
-                        # This means second order absorption -> find matching term
-                        # to determine flow
-                        if _is_positive(term):
-                            for second_comp in concentrations.intersection(free_images(term)):
-                                for eq_2 in eqs:
-                                    if eq_2.lhs.args[0].name == second_comp.name:  # pyright: ignore
-                                        if -term in sympy.Add.make_args(
-                                            eq_2.rhs.expand()  # pyright: ignore
-                                        ):
-                                            from_comp = compartments[names[Expr(second_comp)]]
-                                            to_comp = compartments[names[Expr(eq.lhs.args[0])]]
-                    else:
-                        # Find matching term to determine if flow is between
-                        # compartments or not
-                        if _is_positive(term):
+                from_comp = None
+                to_comp = None
+                if len(concentrations.intersection(free_images(term))) >= 2:
+                    # This means second order absorption -> find matching term
+                    # to determine flow
+                    if _is_positive(term):
+                        for second_comp in concentrations.intersection(free_images(term)):
                             for eq_2 in eqs:
-                                if -term in sympy.Add.make_args(
-                                    eq_2.rhs.expand()  # pyright: ignore
-                                ):
-                                    from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
-                                    to_comp = compartments[names[Expr(eq.lhs.args[0])]]
+                                if eq_2.lhs.args[0].name == second_comp.name:  # pyright: ignore
+                                    # If this is False, then input to compartment is of second order
+                                    if -term in sympy.Add.make_args(
+                                        eq_2.rhs.expand()  # pyright: ignore
+                                    ):
+                                        from_comp = compartments[names[Expr(second_comp)]]
+                                        to_comp = compartments[names[Expr(eq.lhs.args[0])]]
+                else:
+                    # Find matching term to determine if flow is between
+                    # compartments or not
+                    if _is_positive(term):
+                        for eq_2 in eqs:
+                            if -term in sympy.Add.make_args(eq_2.rhs.expand()):  # pyright: ignore
+                                from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
+                                to_comp = compartments[names[Expr(eq.lhs.args[0])]]
 
-                    if from_comp is not None and to_comp is not None:
-                        # FIXME: Get current flow from builder instead?
-                        cs = CompartmentalSystem(cb)
-                        current_flow = cs.get_flow(from_comp, to_comp)
-
-                        if isinstance(current_flow, sympy.core.numbers.Zero):
-                            cb.add_flow(from_comp, to_comp, term / comp_func)
-                        else:
-                            new_flow = term / comp_func + current_flow
-                            cb.add_flow(from_comp, to_comp, new_flow)
-
-                        for i, neweq in enumerate(neweqs):
-                            xrhs = neweq.rhs
-                            assert isinstance(xrhs, sympy.Expr)
-                            if neweq.lhs.args[0].name == eq.lhs.args[0].name:  # pyright: ignore
-                                neweqs[i] = sympy.Eq(
-                                    neweq.lhs, sympy.expand(xrhs - term)  # pyright: ignore
-                                )
-                            elif neweq.lhs.args[0].name == comp_func.name:  # pyright: ignore
-                                neweqs[i] = sympy.Eq(
-                                    neweq.lhs, sympy.expand(xrhs + term)  # pyright: ignore
-                                )
+                if from_comp is not None and to_comp is not None:
+                    # FIXME: Get current flow from builder instead?
+                    cs = CompartmentalSystem(cb)
+                    current_flow = cs.get_flow(from_comp, to_comp)
+                    if current_flow == 0:
+                        cb.add_flow(from_comp, to_comp, term / comp_func)
+                    else:
+                        new_flow = term / comp_func + current_flow
+                        cb.add_flow(from_comp, to_comp, new_flow)
+                    for i, neweq in enumerate(neweqs):
+                        xrhs = neweq.rhs
+                        assert isinstance(xrhs, sympy.Expr)
+                        if neweq.lhs.args[0].name == eq.lhs.args[0].name:  # pyright: ignore
+                            neweqs[i] = sympy.Eq(
+                                neweq.lhs, sympy.expand(xrhs - term)  # pyright: ignore
+                            )
+                        elif neweq.lhs.args[0].name == comp_func.name:  # pyright: ignore
+                            neweqs[i] = sympy.Eq(
+                                neweq.lhs, sympy.expand(xrhs + term)  # pyright: ignore
+                            )
     for eq in neweqs:
         if eq.rhs != 0:
             i = sympy.Integer(0)
@@ -998,7 +992,8 @@ class CompartmentalSystem(Statement):
         (Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1)),)
         """
         dosing_comps = tuple()
-        for node in _comps(self._g):
+        comps = sorted(list(_comps(self._g)), key=lambda comp: comp.name)
+        for node in comps:
             if node.doses:
                 if node.name != self.central_compartment.name:
                     if len(dosing_comps) >= 2:

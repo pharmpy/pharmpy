@@ -833,6 +833,15 @@ def test_multi_dosing_compartment(load_model_for_test, testdata):
     ode = CompartmentalSystem(cb)
     assert ode.dosing_compartments[0].name == "DEPOT"
 
+    dose = Bolus.create('AMT')
+    comp = Compartment.create('A', doses=(dose,))
+    central = ode.find_compartment('CENTRAL')
+    cb.add_compartment(comp)
+    cb.add_flow(comp, central, S('X'))
+    cb.add_flow(central, comp, S('Y'))
+    ode = CompartmentalSystem(cb)
+    assert ode.dosing_compartments[-1].name == "CENTRAL"
+
 
 def test_get_n_connected(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
@@ -858,6 +867,9 @@ def test_output():
 
 
 def test_to_compartmental_system(load_model_for_test, testdata):
+    def _create_names(cs):
+        return {Expr.function(f'A_{name}', cs.t): name for name in cs.compartment_names}
+
     cb = CompartmentalSystemBuilder()
     central = Compartment.create('CENTRAL')
     cb.add_compartment(central)
@@ -866,9 +878,51 @@ def test_to_compartmental_system(load_model_for_test, testdata):
     cb.add_compartment(depot)
     cb.add_flow(depot, central, S('Y'))
     cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+    assert cs_from_cb.get_flow(central, output) == cs_from_func.get_flow(central, output)
+    assert cs_from_cb.get_flow(depot, central) == cs_from_func.get_flow(depot, central)
 
-    names = {
-        Expr.function(f'A_{name}', cs_from_cb.t): name for name in cs_from_cb.compartment_names
-    }
-    cs_from_func = to_compartmental_system(names, cs_from_cb.eqs)
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, 0)
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+    assert cs_from_cb.get_flow(central, output) == cs_from_func.get_flow(central, output) == 0
+
+    # Second order absorption
+    k, v = S('k'), S('V')
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_flow(central, output, k)
+    complex = Compartment.create('COMPLEX')
+    target = Compartment.create('TARGET')
+    cb.add_flow(target, complex, central.amount / v)
+    cb.add_flow(complex, target, k)
+    cb.add_flow(target, output, k)
+    cb.add_flow(complex, output, k)
+    cb.set_input(target, v)
+    cb.set_input(central, k * complex.amount - central.amount * target.amount / v)
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+    # assert cs_from_cb.zero_order_inputs == cs_from_func.zero_order_inputs
+
+    # Second order input
+    central = cs_from_cb.find_compartment('CENTRAL')
+    complex = cs_from_cb.find_compartment('COMPLEX')
+    cb.set_input(complex, central.amount / target.amount)
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+
+    # No output
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.set_input(central, S('X'))
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
     assert cs_from_cb.compartment_names == cs_from_func.compartment_names
