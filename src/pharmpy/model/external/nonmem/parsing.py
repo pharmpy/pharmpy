@@ -92,19 +92,11 @@ def parameters_from_blocks(blocks, all_names, record_name):
             col = row
             for i, name in enumerate(names):
                 if name in all_names:
-                    duplicated_name = name
                     name = None
-                else:
-                    duplicated_name = None
                 if name is None:
                     name = f'{record_name}_{row}_{col}'
                     while name in all_names:
                         name += "_"
-                if duplicated_name is not None:
-                    warnings.warn(
-                        f'The parameter name {duplicated_name} is duplicated. '
-                        f'Falling back to using {name} instead.'
-                    )
                 all_names.add(name)
                 nonmem_name = f'{record_name}({row},{col})'
                 name_map[nonmem_name] = name
@@ -202,19 +194,11 @@ def parse_parameters(control_stream, statements, di):
         if nonmem_name in abbr_map:
             name = abbr_map[nonmem_name]
         if name in all_names:
-            duplicated_name = name
             name = None
-        else:
-            duplicated_name = None
         if name is None:
             name = f'THETA_{i + 1}'
             while name in all_names:
                 name += "_"
-        if duplicated_name is not None:
-            warnings.warn(
-                f'The parameter name {duplicated_name} is duplicated. '
-                f'Falling back to using {name} instead.'
-            )
         name_map[nonmem_name] = name
         all_names.add(name)
         parameter = Parameter.create(

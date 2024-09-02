@@ -411,9 +411,8 @@ $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['THETA_1', 'OMEGA_1_1', 'SIGMA_1_1']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['THETA_1', 'OMEGA_1_1', 'SIGMA_1_1']
 
 
 def test_symbol_names_in_abbr(load_model_for_test, testdata):
@@ -425,8 +424,7 @@ def test_symbol_names_in_abbr(load_model_for_test, testdata):
 
 
 def test_clashing_parameter_names(load_model_for_test, datadir):
-    with pytest.warns(UserWarning):
-        model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
+    model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
     assert model.parameters.names == ['THETA_1', 'TVV', 'IVCL', 'OMEGA_2_2', 'SIGMA_1_1']
 
     code = """$PROBLEM base model
@@ -441,9 +439,8 @@ $OMEGA 0.01 ; TV
 $SIGMA 1 ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['TV', 'OMEGA_1_1', 'SIGMA_1_1']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['TV', 'OMEGA_1_1', 'SIGMA_1_1']
 
     code = """$PROBLEM base model
 $INPUT ID DV TIME
@@ -456,9 +453,8 @@ $THETA 0.1  ; TV
 $THETA 0.1  ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['TV', 'THETA_2']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['TV', 'THETA_2']
 
     code = """$PROBLEM base model
 $INPUT ID TIME WGT DROP DV
@@ -470,9 +466,8 @@ $OMEGA 0.01 ; OM
 $SIGMA 1 ; SI
 $ESTIMATION METHOD=1 INTER
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['THETA_1', 'OM', 'SI']
 
     code = """$PROBLEM base model
 $INPUT ID TIME DROP DROP DV
@@ -485,9 +480,8 @@ $OMEGA 0.01 ; OM
 $SIGMA 1 ; SI
 $ESTIMATION METHOD=1 INTER
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['THETA_1', 'OM', 'SI']
 
 
 def test_abbr_write(load_model_for_test, pheno_path):
@@ -921,9 +915,8 @@ $COVARIANCE UNCONDITIONAL
 $TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
             NOPRINT ONEHEADER FILE=mytab3
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        model.update_source()
+    model = Model.parse_model_from_string(code)
+    model.update_source()
 
 
 def test_convert_model(testdata):
