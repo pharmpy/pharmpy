@@ -245,6 +245,8 @@ class ColumnInfo(Immutable):
         return new
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, ColumnInfo):
             return NotImplemented
         return (
@@ -647,6 +649,8 @@ class DataInfo(Sequence, Immutable):
             )
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, DataInfo):
             return NotImplemented
         if len(self) != len(other):
