@@ -393,23 +393,25 @@ class EstimationStep(ExecutionStep):
         return self._tool_options
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, EstimationStep):
             return NotImplemented
         return (
-            self.method == other.method
-            and self.interaction == other.interaction
-            and self.parameter_uncertainty_method == other.parameter_uncertainty_method
-            and self.evaluation == other.evaluation
-            and self.maximum_evaluations == other.maximum_evaluations
-            and self.laplace == other.laplace
-            and self.isample == other.isample
-            and self.niter == other.niter
-            and self.auto == other.auto
-            and self.keep_every_nth_iter == other.keep_every_nth_iter
-            and self.derivatives == other.derivatives
-            and self.predictions == other.predictions
-            and self.residuals == other.residuals
-            and self.individual_eta_samples == other.individual_eta_samples
+            self._method == other._method
+            and self._interaction == other._interaction
+            and self._parameter_uncertainty_method == other._parameter_uncertainty_method
+            and self._evaluation == other._evaluation
+            and self._maximum_evaluations == other._maximum_evaluations
+            and self._laplace == other._laplace
+            and self._isample == other._isample
+            and self._niter == other._niter
+            and self._auto == other._auto
+            and self._keep_every_nth_iter == other._keep_every_nth_iter
+            and self._derivatives == other._derivatives
+            and self._predictions == other._predictions
+            and self._residuals == other._residuals
+            and self._individual_eta_samples == other._individual_eta_samples
             and super().__eq__(other)
         )
 
@@ -527,9 +529,11 @@ class SimulationStep(ExecutionStep):
         return self._seed
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, SimulationStep):
             return NotImplemented
-        return self.n == other.n and self.seed == other.seed and super().__eq__(other)
+        return self._n == other._n and self._seed == other._seed and super().__eq__(other)
 
     def __hash__(self):
         return hash((self._n, self._seed, super().__hash__()))
