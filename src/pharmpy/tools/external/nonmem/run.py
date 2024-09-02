@@ -124,7 +124,7 @@ def execute_model(model_entry, context):
             for file in path.glob('*'):
                 txn.store_local_file(file)
         else:
-            for suffix in ['.lst', '.ext', '.phi', '.cov', '.cor', '.coi', '.grd']:
+            for suffix in ('.lst', '.ext', '.phi', '.cov', '.cor', '.coi', '.grd', '.ets'):
                 file_path = (model_path / basename).with_suffix(suffix)
                 txn.store_local_file(file_path)
 
