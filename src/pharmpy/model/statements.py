@@ -339,7 +339,6 @@ class CompartmentalSystemBuilder:
         source: Compartment,
         destination: Compartment,
         admid: Optional[int] = None,
-        replace: bool = True,
     ) -> tuple[Compartment, Compartment]:
         """Move a dose input from one compartment to another
 
@@ -351,21 +350,27 @@ class CompartmentalSystemBuilder:
             Destination compartment
         admid : int
             Move dose with specified admid, move all if None. Default is None.
-        replace : bool
-            Replace dose of destination or add to. Default to True
 
         """
+        if source is None:
+            raise ValueError('Option `source` cannot be None')
+        if destination is None:
+            raise ValueError('Option `destination` cannot be None')
+        if not source.doses:
+            raise ValueError(f'No doses to move in compartment: `{source.name}`')
+
+        if destination.doses:
+            new_dest_dose = destination.doses
+        else:
+            new_dest_dose = tuple()
         if admid:
             new_source_dose = tuple([d for d in source.doses if d.admid != admid])
-            new_dest_dose = tuple([d for d in source.doses if d.admid == admid])
+            new_dest_dose += tuple([d for d in source.doses if d.admid == admid])
         else:
             new_source_dose = tuple()
-            new_dest_dose = source.doses
+            new_dest_dose += source.doses
         new_source = source.replace(doses=new_source_dose)
-        if replace:
-            new_dest = destination.replace(doses=source.doses)
-        else:
-            new_dest = destination.replace(doses=destination.doses + new_dest_dose)
+        new_dest = destination.replace(doses=new_dest_dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_source, new_dest
@@ -374,47 +379,90 @@ class CompartmentalSystemBuilder:
         self,
         compartment: Compartment,
         dose: Optional[Union[Dose, tuple[Dose, ...]]],
-        replace: bool = True,
-        admid: Optional[int] = None,
     ) -> Compartment:
-        """Set dose of compartment, replacing the previous by default.
-
-        Set replace to False to instead add the dose to existing ones.
-
-        Given an admid, the given dose will replace the corresponding dose
-        based on that admid. This will ignore the 'replace' argument.
+        """Set dose of compartment, replacing the previous.
 
         Parameters
         ----------
         compartment : Compartment
-            Compartment for which to change dose
+            Compartment for which to set dose
         dose : Dose
             New dose
-        replace : bool
-            Replace existing doses or not. Default is True
-        admid : Optional[int]
-            Option to replace doses with specified admid.
 
         Returns
         -------
         Compartment
             The new updated compartment
         """
+        if compartment is None:
+            raise ValueError('Option `compartment` cannot be None')
         if dose is None:
             dose = tuple()
         elif isinstance(dose, Dose):
             dose = (dose,)
 
-        elif admid:
-            replace = True
-            old_dose = tuple([d for d in compartment.doses if d.admid != admid])
-            dose = old_dose + dose
-
-        if replace or not compartment.doses:
-            new_comp = compartment.replace(doses=dose)
-        else:
-            new_comp = compartment.replace(doses=compartment.doses + dose)
+        new_comp = compartment.replace(doses=dose)
         mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+
+    def add_dose(self, compartment: Compartment, dose: Union[Dose, tuple[Dose, ...]]):
+        """Add dose to compartment.
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to add dose
+        dose : Dose
+            New dose
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        if compartment is None:
+            raise ValueError('Option `compartment` cannot be None')
+        if dose is None:
+            raise ValueError('Option `dose` cannot be None')
+        elif isinstance(dose, Dose):
+            dose = (dose,)
+
+        new_comp = compartment.replace(doses=compartment.doses + dose)
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+
+    def remove_dose(self, compartment: Compartment, admid: Optional[int] = None):
+        """Remove dose of compartment.
+
+        Removes dose(s) of compartment. If admid is specified, only doses of that
+        admid will be removed.
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to remove dose
+        admid : int
+            Remove dose of compartment with specified admid, remove all if None.
+            Default is None.
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        if compartment is None:
+            raise ValueError('Option `compartment` cannot be None')
+
+        mapping = dict()
+        if admid:
+            doses = tuple(dose for dose in compartment.doses if dose.admid != admid)
+        else:
+            doses = tuple()
+        new_comp = compartment.replace(doses=doses)
+        mapping[compartment] = new_comp
+
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 

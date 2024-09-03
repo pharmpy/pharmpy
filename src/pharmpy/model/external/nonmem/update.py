@@ -558,7 +558,7 @@ def update_infusion(model: Model, old: CompartmentalSystem):
                 Infusion(dose.amount, admid=dose.admid, duration=ass.symbol),
             )
             if len(new.dosing_compartments[0].doses) > 1:
-                cb.set_dose(comp, new.dosing_compartments[0].doses[1:], replace=False)
+                cb.add_dose(comp, new.dosing_compartments[0].doses[1:])
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")

@@ -784,6 +784,129 @@ def test_builder():
     assert hash(cm) != hash(cm2)
 
 
+def test_add_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    cb.add_dose(central, dose1)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (dose1,)
+
+    dose2 = Infusion.create('AMT', rate='R1')
+    cb.add_dose(cs.central_compartment, dose2)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (
+        dose2,
+        dose1,
+    )
+
+    with pytest.raises(ValueError):
+        cb.add_dose(None, dose1)
+    with pytest.raises(ValueError):
+        cb.add_dose(cs.central_compartment, None)
+
+
+def test_set_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    cb.set_dose(central, dose1)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (dose1,)
+
+    dose2 = Infusion.create('AMT', rate='R1')
+    cb.set_dose(cs.central_compartment, dose2)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (dose2,)
+
+    with pytest.raises(ValueError):
+        cb.set_dose(None, dose1)
+
+
+def test_remove_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    depot = Compartment.create('DEPOT', doses=(dose1,))
+    cb.add_compartment(depot)
+    cb.add_flow(depot, central, S('KA'))
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == (dose1,)
+
+    cb.remove_dose(depot)
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == tuple()
+
+    dose2 = Infusion.create('AMT', rate='R1', admid=2)
+    cb.add_dose(cs.find_compartment('DEPOT'), dose1)
+    cb.add_dose(cs.central_compartment, dose2)
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == (dose1,)
+    assert cs.central_compartment.doses == (dose2,)
+
+    cb1 = CompartmentalSystemBuilder(cs)
+    cb1.remove_dose(cs.central_compartment)
+    cs1 = CompartmentalSystem(cb1)
+    assert cs1.find_compartment('DEPOT').doses == (dose1,)
+    assert cs1.central_compartment.doses == tuple()
+
+    cb2 = CompartmentalSystemBuilder(cs)
+    cb2.remove_dose(cs.central_compartment, admid=2)
+    cs2 = CompartmentalSystem(cb2)
+    assert cs2.find_compartment('DEPOT').doses == (dose1,)
+    assert cs2.central_compartment.doses == tuple()
+
+    with pytest.raises(ValueError):
+        cb.remove_dose(None, dose1)
+
+
+def test_move_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    depot = Compartment.create('DEPOT', doses=(dose1,))
+    cb.add_compartment(depot)
+    cb.add_flow(depot, central, S('KA'))
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == (dose1,)
+    assert cs.central_compartment.doses == tuple()
+
+    cb1 = CompartmentalSystemBuilder(cs)
+    cb1.move_dose(depot, central)
+    cs1 = CompartmentalSystem(cb1)
+    assert cs1.find_compartment('DEPOT').doses == tuple()
+    assert cs1.central_compartment.doses == (dose1,)
+
+    cb2 = CompartmentalSystemBuilder(cs)
+    dose2 = Infusion.create('AMT', rate='R1', admid=2)
+    central = cb2.add_dose(cs.central_compartment, dose2)
+    depot, central = cb2.move_dose(depot, central)
+    cs2 = CompartmentalSystem(cb2)
+    assert cs2.find_compartment('DEPOT').doses == tuple()
+    assert cs2.central_compartment.doses == (dose2, dose1)
+
+    central, _ = cb2.move_dose(central, depot, admid=2)
+    cs3 = CompartmentalSystem(cb2)
+    assert cs3.find_compartment('DEPOT').doses == (dose2,)
+    assert cs3.central_compartment.doses == (dose1,)
+
+    central = cb2.remove_dose(central)
+    with pytest.raises(ValueError):
+        cb.move_dose(None, central)
+    with pytest.raises(ValueError):
+        cb.move_dose(central, None)
+    with pytest.raises(ValueError):
+        cb2.move_dose(central, depot)
+
+
 def test_infusion_repr():
     inf = Infusion.create('AMT', rate='R1')
     assert repr(inf) == 'Infusion(AMT, admid=1, rate=R1)'

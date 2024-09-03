@@ -921,13 +921,13 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         if len(dosing_comp.doses) == 1 and dosing_comp.doses[0].admid == 2:
             dosing_comp = cb.set_dose(dosing_comp, dosing_comp.doses[0].replace(admid=1))
 
-        cb.move_dose(dosing_comp, comp, admid=1, replace=False)
+        cb.move_dose(dosing_comp, comp, admid=1)
 
         if len(dosing_comp.doses) == 1:
-            cb.move_dose(dosing_comp, comp)
+            cb.set_dose(comp, dosing_comp.doses)
         else:
             dose = _sorted_doses(dosing_comp, model)[0]
-            cb.set_dose(comp, dose, replace=False)
+            cb.add_dose(comp, dose)
             cb.set_dose(dosing_comp, _sorted_doses(dosing_comp, model)[1:])
 
         statements = (
@@ -1201,7 +1201,7 @@ def set_zero_order_absorption(model: Model):
             assert ka is not None
             cb = CompartmentalSystemBuilder(odes)
             cb.remove_compartment(depot)
-            to_comp = cb.set_dose(to_comp, dose, replace=False)
+            to_comp = cb.add_dose(to_comp, dose)
             to_comp = cb.set_lag_time(to_comp, depot.lag_time)
             cb.set_bioavailability(to_comp, depot.bioavailability)
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
@@ -1281,9 +1281,9 @@ def set_first_order_absorption(model: Model):
         bio = dose_comp.bioavailability
         cb = CompartmentalSystemBuilder(cs)
         if depot and depot == dose_comp:
-            dose_comp = cb.set_dose(
-                dose_comp, Bolus(dose_comp.doses[0].amount), admid=dose_comp.doses[0].admid
-            )
+            dose = dose_comp.doses[0]
+            dose_comp = cb.remove_dose(dose_comp, admid=dose.admid)
+            dose_comp = cb.set_dose(dose_comp, Bolus(dose.amount))
             dose_comp = cb.set_lag_time(dose_comp, Expr.integer(0))
         if not depot:
             # TODO : Add another way of removing dependencies
@@ -1693,7 +1693,10 @@ def _add_zero_order_absorption(
     cb = CompartmentalSystemBuilder(model.statements.ode_system)
     dose_list = [new_dose] + list(to_comp.doses)
     dose_list.remove(old_dose)
-    cb.set_dose(to_comp, tuple(dose_list), replace=replace)
+    if replace:
+        cb.set_dose(to_comp, tuple(dose_list))
+    else:
+        cb.add_dose(to_comp, tuple(dose_list))
     if lag_time is not None and lag_time != 0:
         cb.set_lag_time(model.statements.ode_system.dosing_compartments[0], lag_time)
     model = model.replace(

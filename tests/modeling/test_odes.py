@@ -2715,7 +2715,7 @@ def test_multi_dose_change_absorption(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     ode = model.statements.ode_system
     cb = CompartmentalSystemBuilder(ode)
-    cb.set_dose(cb.find_compartment("CENTRAL"), Bolus(Expr.symbol('AMT'), admid=2), replace=False)
+    cb.add_dose(cb.find_compartment("CENTRAL"), Bolus(Expr.symbol('AMT'), admid=2))
     ode = CompartmentalSystem(cb)
     model = model.replace(
         statements=model.statements.before_odes + ode + model.statements.after_odes
