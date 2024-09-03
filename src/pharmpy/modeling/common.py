@@ -24,13 +24,16 @@ from pharmpy.model import (
 )
 
 
-def read_model(path: Union[str, Path]):
+def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None):
     """Read model from file
 
     Parameters
     ----------
     path : str or Path
         Path to model
+    missing_data_token : str
+        Use this token for missing data. This option will override the token from the config.
+        (This option was added in Pharmpy version 1.2.0)
 
     Returns
     -------
@@ -49,7 +52,7 @@ def read_model(path: Union[str, Path]):
 
     """
     path = normalize_user_given_path(path)
-    model = Model.parse_model(path)
+    model = Model.parse_model(path, missing_data_token=missing_data_token)
     return model
 
 

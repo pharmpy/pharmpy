@@ -180,11 +180,11 @@ def _match(typing, value):
         return (
             _match(Sized, value)
             and _match(
-                Container[t] if t else Container,  # pyright: ignore [reportGeneralTypeIssues]
+                Container[t] if t else Container,
                 value,
             )
             and _match(
-                Iterable[t] if t else Iterable,  # pyright: ignore [reportGeneralTypeIssues]
+                Iterable[t] if t else Iterable,
                 value,
             )
         )

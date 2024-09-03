@@ -43,8 +43,6 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
     >>> model = write_csv(model, path="newdataset.csv")    # doctest: +SKIP
 
     """
-    from pharmpy.model import data
-
     if model.dataset is None:
         raise ValueError("Model has no dataset")
 
@@ -56,6 +54,6 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
         raise FileExistsError(f'File at {path} already exists.')
 
     path = path_absolute(path)
-    model.dataset.to_csv(path, na_rep=data.conf.na_rep, index=False)
+    model.dataset.to_csv(path, na_rep=model.datainfo.missing_data_token, index=False)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
     return model

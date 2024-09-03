@@ -472,8 +472,7 @@ def test_get_params(load_model_for_test, create_model_for_test, testdata):
 
 
 def test_psn_frem_results(testdata):
-    with pytest.warns(UserWarning):
-        res = psn_frem_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+    res = psn_frem_results(testdata / 'psn' / 'frem_dir1', method='bipp')
     ofv = res.ofv['ofv']
     assert len(ofv) == 5
     assert ofv['model_1'] == approx(730.894727)
@@ -535,15 +534,13 @@ each,V,0.0503961,0.551581
 
 
 def test_create_results(testdata):
-    with pytest.warns(UserWarning):
-        res = create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+    res = create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
     ofv = res.ofv['ofv']
     assert len(ofv) == 5
 
 
 def test_modeling_create_results(testdata):
-    with pytest.warns(UserWarning):
-        res = tools.run.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
+    res = tools.run.create_results(testdata / 'psn' / 'frem_dir1', method='bipp')
     ofv = res.ofv['ofv']
     assert len(ofv) == 5
 

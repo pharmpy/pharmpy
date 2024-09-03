@@ -228,7 +228,7 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:16])
-    assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 12.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
+    assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 0.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
 
 
 def test_get_concentration_parameters_from_data(load_example_model_for_test):

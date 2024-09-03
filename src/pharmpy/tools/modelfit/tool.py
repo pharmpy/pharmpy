@@ -85,6 +85,8 @@ def post_process_results_many(context, *modelentries: ModelEntry):
 
 def retrieve_from_database_or_execute_model_with_tool():
     def task(context, model_entry):
+        if model_entry.modelfit_results is not None:
+            return model_entry
         tool = context.retrieve_common_options().get('esttool', None)
         assert isinstance(model_entry, ModelEntry)
         model = model_entry.model

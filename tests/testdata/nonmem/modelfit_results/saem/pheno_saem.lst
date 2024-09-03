@@ -1,44 +1,44 @@
-Thu Apr 11 09:33:39 AM CEST 2024
+fre 30 aug 2024 14:57:23 CEST
 $PROBLEM PHENOBARB SIMPLE MODEL
-$DATA ../.datasets/pheno.csv IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+
+$INPUT ID TIME AMT WGT APGR DV
+$DATA pheno.dta IGNORE=@
+
 $SUBROUTINE ADVAN1 TRANS2
 
 $PK
-IF(AMT.GT.0) BTIME=TIME
-TAD=TIME-BTIME
-TVCL=THETA(1)*WGT
-TVV=THETA(2)*WGT
-IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
-CL=TVCL*EXP(ETA(1))
-V=TVV*EXP(ETA(2))
-S1=V
+CL=THETA(1)*EXP(ETA(1))
+VC=THETA(2)*EXP(ETA(2))
+V=VC
 
 $ERROR
-W=F
-Y=F+W*EPS(1)
-IPRED=F
-IRES=DV-IPRED
-IWRES=IRES/W
+CONC=A(1)/VC
+IPRED=CONC
+Y=CONC+CONC*EPS(1)
 
-$THETA (0,0.00469307) ; PTVCL
-$THETA (0,1.00916) ; PTVV
-$THETA (-.99,.1)
-$OMEGA DIAGONAL(2)
- 0.0309626  ;       IVCL
- 0.031128  ;        IVV
-
+$THETA (0,0.00469307) ; POP_CL
+$THETA (0,1.00916) ; POP_V
+$OMEGA 0.0309626 ; IVCL
+$OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
-$ESTIMATION METHOD=1 INTERACTION
-$ESTIMATION METHOD=SAEM
-$TABLE ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
-       NOPRINT ONEHEADER FILE=pheno.tab
+
+
+$ESTIMATION METHOD=SAEM ISAMPLE=5 ETASAMPLES=1
+$COV
+
+$TABLE ID TIME DV PRED CWRES IPRED CIPREDI ETA1 NOAPPEND FILE=sdtab_pheno
 
 NM-TRAN MESSAGES
   
  WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
              
  (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+             
+ (WARNING  121) INTERACTION IS IMPLIED WITH EM/BAYES ESTIMATION METHODS
+             
+ (WARNING  23) $PK DOES NOT DEFINE A SCALE PARAMETER FOR THE CENTRAL
+ COMPARTMENT.  WITH THIS TRANS, IT MAY NOT BE POSSIBLE TO SEPARATELY
+ OBTAIN ESTIMATES OF PARAMETERS AFFECTING CLEARANCE AND VOLUME.
   
 Note: Analytical 2nd Derivatives are constructed in FSUBS but are never used.
       You may insert $ABBR DERIV2=NO after the first $PROB to save FSUBS construction and compilation time
@@ -46,8 +46,8 @@ Note: Analytical 2nd Derivatives are constructed in FSUBS but are never used.
 
 License Registered to: Uppsala University Department of Pharmacy
 Expiration Date:    14 MAR 2025
-Current Date:       11 APR 2024
-Days until program expires : 338
+Current Date:       30 AUG 2024
+Days until program expires : 199
 1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1
  ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
  CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
@@ -60,22 +60,22 @@ Days until program expires : 338
  DATA SET LOCATED ON UNIT NO.:    2
  THIS UNIT TO BE REWOUND:        NO
  NO. OF DATA RECS IN DATA SET:      744
- NO. OF DATA ITEMS IN DATA SET:  10
+ NO. OF DATA ITEMS IN DATA SET:   8
  ID DATA ITEM IS DATA ITEM NO.:   1
  DEP VARIABLE IS DATA ITEM NO.:   6
- MDV DATA ITEM IS DATA ITEM NO.: 10
+ MDV DATA ITEM IS DATA ITEM NO.:  8
 0INDICES PASSED TO SUBROUTINE PRED:
-   9   2   3   0   0   0   0   0   0   0   0
+   7   2   3   0   0   0   0   0   0   0   0
 0LABELS FOR DATA ITEMS:
- ID TIME AMT WGT APGR DV FA1 FA2 EVID MDV
+ ID TIME AMT WGT APGR DV EVID MDV
 0(NONBLANK) LABELS FOR PRED-DEFINED ITEMS:
- TAD IPRED
+ IPRED
 0FORMAT FOR DATA:
- (8E6.0,2F2.0)
+ (6E6.0,2F2.0)
 
  TOT. NO. OF OBS RECS:      155
  TOT. NO. OF INDIVIDUALS:       59
-0LENGTH OF THETA:   3
+0LENGTH OF THETA:   2
 0DEFAULT THETA BOUNDARY TEST OMITTED:    NO
 0OMEGA HAS SIMPLE DIAGONAL FORM WITH DIMENSION:   2
 0DEFAULT OMEGA BOUNDARY TEST OMITTED:    NO
@@ -85,12 +85,30 @@ Days until program expires : 338
  LOWER BOUND    INITIAL EST    UPPER BOUND
   0.0000E+00     0.4693E-02     0.1000E+07
   0.0000E+00     0.1009E+01     0.1000E+07
- -0.9900E+00     0.1000E+00     0.1000E+07
 0INITIAL ESTIMATE OF OMEGA:
  0.3096E-01
  0.0000E+00   0.3113E-01
 0INITIAL ESTIMATE OF SIGMA:
  0.1324E-01
+0COVARIANCE STEP OMITTED:        NO
+ EIGENVLS. PRINTED:              NO
+ SPECIAL COMPUTATION:            NO
+ COMPRESSED FORMAT:              NO
+ GRADIENT METHOD USED:     NOSLOW
+ SIGDIGITS ETAHAT (SIGLO):                  -1
+ SIGDIGITS GRADIENTS (SIGL):                -1
+ EXCLUDE COV FOR FOCE (NOFCOV):              NO
+ Cholesky Transposition of R Matrix (CHOLROFF):0
+ KNUTHSUMOFF:                                -1
+ RESUME COV ANALYSIS (RESUME):               NO
+ SIR SAMPLE SIZE (SIRSAMPLE):
+ NON-LINEARLY TRANSFORM THETAS DURING COV (THBND): 1
+ PRECONDTIONING CYCLES (PRECOND):        0
+ PRECONDTIONING TYPES (PRECONDS):        TOS
+ FORCED PRECONDTIONING CYCLES (PFCOND):0
+ PRECONDTIONING TYPE (PRETYPE):        0
+ FORCED POS. DEFINITE SETTING DURING PRECONDITIONING: (FPOSDEF):0
+ SIMPLE POS. DEFINITE SETTING: (POSDEF):-1
 0TABLES STEP OMITTED:    NO
  NO. OF TABLES:           1
  SEED NUMBER (SEED):    11456
@@ -102,7 +120,8 @@ Days until program expires : 338
 0-- TABLE   1 --
 0RECORDS ONLY:    ALL
 04 COLUMNS APPENDED:    NO
- PRINTED:                NO
+ PRINTED:               YES
+ FOR TABLE FILE,
  HEADER:                YES
  FILE TO BE FORWARDED:   NO
  FORMAT:                S1PE11.4
@@ -111,7 +130,7 @@ Days until program expires : 338
  RFORMAT:
  FIXED_EFFECT_ETAS:
 0USER-CHOSEN ITEMS:
- ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE
+ ID TIME DV PRED CWRES IPRED CIPREDI ETA1
 1DOUBLE PRECISION PREDPP VERSION 7.5.1
 
  ONE COMPARTMENT MODEL (ADVAN1)
@@ -131,224 +150,24 @@ Days until program expires : 338
  COMPT. NO.                             INDICES
               SCALE      BIOAVAIL.   ZERO-ORDER  ZERO-ORDER  ABSORB
                          FRACTION    RATE        DURATION    LAG
-    1            3           *           *           *           *
+    1            *           *           *           *           *
     2            *           -           -           -           -
              - PARAMETER IS NOT ALLOWED FOR THIS MODEL
              * PARAMETER IS NOT SUPPLIED BY PK SUBROUTINE;
                WILL DEFAULT TO ONE IF APPLICABLE
 0DATA ITEM INDICES USED BY PRED ARE:
-   EVENT ID DATA ITEM IS DATA ITEM NO.:      9
+   EVENT ID DATA ITEM IS DATA ITEM NO.:      7
    TIME DATA ITEM IS DATA ITEM NO.:          2
    DOSE AMOUNT DATA ITEM IS DATA ITEM NO.:   3
 
 0PK SUBROUTINE CALLED WITH EVERY EVENT RECORD.
  PK SUBROUTINE NOT CALLED AT NONEVENT (ADDITIONAL OR LAGGED) DOSE TIMES.
 0ERROR SUBROUTINE CALLED WITH EVERY EVENT RECORD.
+0ERROR SUBROUTINE INDICATES THAT DERIVATIVES OF COMPARTMENT AMOUNTS ARE USED.
 1
 
 
  #TBLN:      1
- #METH: First Order Conditional Estimation with Interaction
-
- ESTIMATION STEP OMITTED:                 NO
- ANALYSIS TYPE:                           POPULATION
- NUMBER OF SADDLE POINT RESET ITERATIONS:      0
- GRADIENT METHOD USED:               NOSLOW
- CONDITIONAL ESTIMATES USED:              YES
- CENTERED ETA:                            NO
- EPS-ETA INTERACTION:                     YES
- LAPLACIAN OBJ. FUNC.:                    NO
- NO. OF FUNCT. EVALS. ALLOWED:            288
- NO. OF SIG. FIGURES REQUIRED:            3
- INTERMEDIATE PRINTOUT:                   YES
- ESTIMATE OUTPUT TO MSF:                  NO
- IND. OBJ. FUNC. VALUES SORTED:           NO
- NUMERICAL DERIVATIVE
-       FILE REQUEST (NUMDER):               NONE
- MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0
- ETA HESSIAN EVALUATION METHOD (ETADER):    0
- INITIAL ETA FOR MAP ESTIMATION (MCETA):    0
- SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100
- GRADIENT SIGDIGITS OF
-       FIXED EFFECTS PARAMETERS (SIGL):     100
- NOPRIOR SETTING (NOPRIOR):                 0
- NOCOV SETTING (NOCOV):                     OFF
- DERCONT SETTING (DERCONT):                 OFF
- FINAL ETA RE-EVALUATION (FNLETA):          1
- EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS
-       IN SHRINKAGE (ETASTYPE):             NO
- NON-INFL. ETA CORRECTION (NONINFETA):      0
- RAW OUTPUT FILE (FILE): pheno.ext
- EXCLUDE TITLE (NOTITLE):                   NO
- EXCLUDE COLUMN LABELS (NOLABEL):           NO
- FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
- PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
- KNUTHSUMOFF:                               0
- INCLUDE LNTWOPI:                           NO
- INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO
- INCLUDE CONSTANT TERM TO OMEGA (ETA) (OLNTWOPI):NO
- ADDITIONAL CONVERGENCE TEST (CTYPE=4)?:    NO
- EM OR BAYESIAN METHOD USED:                 NONE
-
-
- THE FOLLOWING LABELS ARE EQUIVALENT
- PRED=PREDI
- RES=RESI
- WRES=WRESI
- IWRS=IWRESI
- IPRD=IPREDI
- IRS=IRESI
-
- MONITORING OF SEARCH:
-
-
-0ITERATION NO.:    0    OBJECTIVE VALUE:   587.371448512679        NO. OF FUNC. EVALS.:   6
- CUMULATIVE NO. OF FUNC. EVALS.:        6
- NPARAMETR:  4.6931E-03  1.0092E+00  1.0000E-01  3.0963E-02  3.1128E-02  1.3241E-02
- PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01
- GRADIENT:   6.2529E+00  4.5793E+01 -1.3012E+01  5.6695E-01  5.2698E+00  1.8146E+00
-
-0ITERATION NO.:   12    OBJECTIVE VALUE:   586.276056298158        NO. OF FUNC. EVALS.: 103
- CUMULATIVE NO. OF FUNC. EVALS.:      109
- NPARAMETR:  4.6956E-03  9.8426E-01  1.5892E-01  2.9351E-02  2.7907E-02  1.3241E-02
- PARAMETER:  1.0053E-01  7.5014E-02  1.5265E-01  7.3265E-02  4.5379E-02  9.9999E-02
- GRADIENT:   7.7123E-03  4.2202E-02  1.4826E-03  1.1102E-04  2.2880E-03  1.0953E-03
-
- #TERM:
-0MINIMIZATION SUCCESSFUL
- NO. OF FUNCTION EVALUATIONS USED:      109
- NO. OF SIG. DIGITS IN FINAL EST.:  3.7
-
- ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
- AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
-
- ETABAR:         1.6882E-03 -1.1974E-03
- SE:             1.1692E-02  1.8795E-02
- N:                      59          59
-
- P VAL.:         8.8519E-01  9.4920E-01
-
- ETASHRINKSD(%)  4.7581E+01  1.3581E+01
- ETASHRINKVR(%)  7.2522E+01  2.5318E+01
- EBVSHRINKSD(%)  4.7738E+01  1.3692E+01
- EBVSHRINKVR(%)  7.2687E+01  2.5509E+01
- RELATIVEINF(%)  2.5952E+01  7.0778E+01
- EPSSHRINKSD(%)  2.1199E+01
- EPSSHRINKVR(%)  3.7903E+01
-
-  
- TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
- N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
- OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    586.27605629815832     
- OBJECTIVE FUNCTION VALUE WITH CONSTANT:       871.14700159160680     
- REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
-  
- TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
-  
- #TERE:
- Elapsed estimation  time in seconds:     0.21
-1
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- 
- ************************************************************************************************************************
- ********************                                                                                ********************
- ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
- #OBJT:**************                       MINIMUM VALUE OF OBJECTIVE FUNCTION                      ********************
- ********************                                                                                ********************
- ************************************************************************************************************************
- 
-
-
-
-
-
- #OBJV:********************************************      586.276       **************************************************
-1
- ************************************************************************************************************************
- ********************                                                                                ********************
- ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
- ********************                             FINAL PARAMETER ESTIMATE                           ********************
- ********************                                                                                ********************
- ************************************************************************************************************************
- 
-
-
- THETA - VECTOR OF FIXED EFFECTS PARAMETERS   *********
-
-
-         TH 1      TH 2      TH 3     
- 
-         4.70E-03  9.84E-01  1.59E-01
- 
-
-
- OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
-
-
-         ETA1      ETA2     
- 
- ETA1
-+        2.94E-02
- 
- ETA2
-+        0.00E+00  2.79E-02
- 
-
-
- SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
-
-
-         EPS1     
- 
- EPS1
-+        1.32E-02
- 
-1
-
-
- OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
-
-
-         ETA1      ETA2     
- 
- ETA1
-+        1.71E-01
- 
- ETA2
-+        0.00E+00  1.67E-01
- 
-
-
- SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
-
-
-         EPS1     
- 
- EPS1
-+        1.15E-01
- 
-1
-
-
- #TBLN:      2
  #METH: Stochastic Approximation Expectation-Maximization
 
  ESTIMATION STEP OMITTED:                 NO
@@ -359,7 +178,7 @@ Days until program expires : 338
  CENTERED ETA:                            NO
  EPS-ETA INTERACTION:                     YES
  LAPLACIAN OBJ. FUNC.:                    NO
- NO. OF FUNCT. EVALS. ALLOWED:            288
+ NO. OF FUNCT. EVALS. ALLOWED:            224
  NO. OF SIG. FIGURES REQUIRED:            3
  INTERMEDIATE PRINTOUT:                   YES
  ESTIMATE OUTPUT TO MSF:                  NO
@@ -398,7 +217,7 @@ Days until program expires : 338
  ITERATIONS (NITER):                        1000
  ANNEAL SETTING (CONSTRAIN):                 1
  STARTING SEED FOR MC METHODS (SEED):       11456
- MC SAMPLES PER SUBJECT (ISAMPLE):          2
+ MC SAMPLES PER SUBJECT (ISAMPLE):          5
  RANDOM SAMPLING METHOD (RANMETHOD):        3U
  EXPECTATION ONLY (EONLY):                  0
  PROPOSAL DENSITY SCALING RANGE
@@ -431,10 +250,10 @@ Days until program expires : 338
  MONITORING OF SEARCH:
 
  Stochastic/Burn-in Mode
- iteration        -1000  SAEMOBJ=   146.50142273370429
+ iteration        -1000  SAEMOBJ=   642.91760259650175
  Reduced Stochastic/Accumulation Mode
- iteration            0  SAEMOBJ=   163.53007249853215
- iteration         1000  SAEMOBJ=   140.23413919447799
+ iteration            0  SAEMOBJ=   366.51912976007611
+ iteration         1000  SAEMOBJ=   366.33573391569922
 
  #TERM:
  STOCHASTIC PORTION WAS NOT TESTED FOR CONVERGENCE
@@ -443,35 +262,36 @@ Days until program expires : 338
  ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
  AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
 
- ETABAR:         1.9372E-04 -3.1923E-03
- SE:             1.2980E-02  1.8880E-02
+ ETABAR:         2.1341E-03  2.0535E-02
+ SE:             3.0102E-02  5.6227E-02
  N:                      59          59
 
- P VAL.:         9.8809E-01  8.6573E-01
+ P VAL.:         9.4348E-01  7.1495E-01
 
- ETASHRINKSD(%)  4.6226E+01  1.3434E+01
- ETASHRINKVR(%)  7.1084E+01  2.5064E+01
- EBVSHRINKSD(%)  4.6227E+01  1.3409E+01
- EBVSHRINKVR(%)  7.1085E+01  2.5020E+01
- RELATIVEINF(%)  2.7443E+01  7.1163E+01
- EPSSHRINKSD(%)  2.0713E+01
- EPSSHRINKVR(%)  3.7136E+01
+ ETASHRINKSD(%)  3.6441E+01  3.2768E+00
+ ETASHRINKVR(%)  5.9603E+01  6.4462E+00
+ EBVSHRINKSD(%)  3.6438E+01  3.1671E+00
+ EBVSHRINKVR(%)  5.9598E+01  6.2338E+00
+ RELATIVEINF(%)  3.9915E+01  9.2635E+01
+ EPSSHRINKSD(%)  2.8030E+01
+ EPSSHRINKVR(%)  4.8204E+01
 
   
  TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          155
  N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    284.87094529344853     
- OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    140.23413919447799     
- OBJECTIVE FUNCTION VALUE WITH CONSTANT:       425.10508448792655     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    366.33573391569922     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       651.20667920914775     
  REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
   
  TOTAL EFFECTIVE ETAS (NIND*NETA):                           118
  NIND*NETA*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    216.86949383630275     
- OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    140.23413919447799     
- OBJECTIVE FUNCTION VALUE WITH CONSTANT:       357.10363303078077     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    366.33573391569922     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       583.20522775200197     
  REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
   
  #TERE:
- Elapsed estimation  time in seconds:    11.17
+ Elapsed estimation  time in seconds:    31.27
+ Elapsed covariance  time in seconds:     0.01
 1
  
  
@@ -505,7 +325,7 @@ Days until program expires : 338
 
 
 
- #OBJV:********************************************      140.234       **************************************************
+ #OBJV:********************************************      366.336       **************************************************
 1
  ************************************************************************************************************************
  ********************                                                                                ********************
@@ -519,9 +339,9 @@ Days until program expires : 338
  THETA - VECTOR OF FIXED EFFECTS PARAMETERS   *********
 
 
-         TH 1      TH 2      TH 3     
+         TH 1      TH 2     
  
-         4.59E-03  9.80E-01  1.52E-01
+         5.62E-03  1.40E+00
  
 
 
@@ -531,10 +351,10 @@ Days until program expires : 338
          ETA1      ETA2     
  
  ETA1
-+        3.44E-02
++        1.32E-01
  
  ETA2
-+        0.00E+00  2.81E-02
++        0.00E+00  1.99E-01
  
 
 
@@ -544,7 +364,7 @@ Days until program expires : 338
          EPS1     
  
  EPS1
-+        1.24E-02
++        1.52E-02
  
 1
 
@@ -555,10 +375,10 @@ Days until program expires : 338
          ETA1      ETA2     
  
  ETA1
-+        1.85E-01
++        3.64E-01
  
  ETA2
-+        0.00E+00  1.68E-01
++        0.00E+00  4.47E-01
  
 
 
@@ -568,10 +388,2539 @@ Days until program expires : 338
          EPS1     
  
  EPS1
-+        1.11E-01
++        1.23E-01
  
- Elapsed postprocess time in seconds:     0.08
- Elapsed finaloutput time in seconds:     0.01
- #CPUT: Total CPU Time in Seconds,       11.507
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                STOCHASTIC APPROXIMATION EXPECTATION-MAXIMIZATION               ********************
+ ********************                          STANDARD ERROR OF ESTIMATE (S)                        ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+
+ THETA - VECTOR OF FIXED EFFECTS PARAMETERS   *********
+
+
+         TH 1      TH 2     
+ 
+         5.24E-04  1.27E-01
+ 
+
+
+ OMEGA - COV MATRIX FOR RANDOM EFFECTS - ETAS  ********
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        4.44E-02
+ 
+ ETA2
++        0.00E+00  4.09E-02
+ 
+
+
+ SIGMA - COV MATRIX FOR RANDOM EFFECTS - EPSILONS  ****
+
+
+         EPS1     
+ 
+ EPS1
++        3.22E-03
+ 
+1
+
+
+ OMEGA - CORR MATRIX FOR RANDOM EFFECTS - ETAS  *******
+
+
+         ETA1      ETA2     
+ 
+ ETA1
++        6.10E-02
+ 
+ ETA2
++       .........  4.58E-02
+ 
+
+
+ SIGMA - CORR MATRIX FOR RANDOM EFFECTS - EPSILONS  ***
+
+
+         EPS1     
+ 
+ EPS1
++        1.30E-02
+ 
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                STOCHASTIC APPROXIMATION EXPECTATION-MAXIMIZATION               ********************
+ ********************                        COVARIANCE MATRIX OF ESTIMATE (S)                       ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+            TH 1      TH 2      OM11      OM12      OM22      SG11  
+ 
+ TH 1
++        2.74E-07
+ 
+ TH 2
++       -3.91E-05  1.62E-02
+ 
+ OM11
++        1.93E-06 -5.43E-04  1.97E-03
+ 
+ OM12
++       ......... ......... ......... .........
+ 
+ OM22
++        2.84E-06 -2.66E-03 -1.99E-04  0.00E+00  1.67E-03
+ 
+ SG11
++        9.73E-08  6.22E-06 -7.00E-05  0.00E+00 -3.04E-05  1.04E-05
+ 
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                STOCHASTIC APPROXIMATION EXPECTATION-MAXIMIZATION               ********************
+ ********************                        CORRELATION MATRIX OF ESTIMATE (S)                      ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+            TH 1      TH 2      OM11      OM12      OM22      SG11  
+ 
+ TH 1
++        5.24E-04
+ 
+ TH 2
++       -5.87E-01  1.27E-01
+ 
+ OM11
++        8.30E-02 -9.62E-02  4.44E-02
+ 
+ OM12
++       ......... ......... ......... .........
+ 
+ OM22
++        1.33E-01 -5.11E-01 -1.10E-01  0.00E+00  4.09E-02
+ 
+ SG11
++        5.77E-02  1.52E-02 -4.90E-01  0.00E+00 -2.31E-01  3.22E-03
+ 
+1
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                STOCHASTIC APPROXIMATION EXPECTATION-MAXIMIZATION               ********************
+ ********************                    INVERSE COVARIANCE MATRIX OF ESTIMATE (S)                   ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+            TH 1      TH 2      OM11      OM12      OM22      SG11  
+ 
+ TH 1
++        5.90E+06
+ 
+ TH 2
++        1.70E+04  1.42E+02
+ 
+ OM11
++        7.95E+00  7.82E+01  7.83E+02
+ 
+ OM12
++       ......... ......... ......... .........
+ 
+ OM22
++        1.67E+04  2.23E+02  3.31E+02  0.00E+00  1.06E+03
+ 
+ SG11
++       -1.65E+04  9.35E+02  6.21E+03  0.00E+00  5.03E+03  1.53E+05
+ 
+ Elapsed postprocess time in seconds:     0.02
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************                STOCHASTIC APPROXIMATION EXPECTATION-MAXIMIZATION               ********************
+ ********************                          TABLES OF DATA AND PREDICTIONS                        ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+1TABLE NO.  1
+
+
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+     1
++        1.00E+00  0.00E+00  0.00E+00  1.79E+01  0.00E+00  1.75E+01  1.77E+01 -5.74E-02
+ 
+     2
++        1.00E+00  2.00E+00  1.73E+01  1.78E+01 -2.24E-01  1.74E+01  1.75E+01 -5.74E-02
+ 
+     3
++        1.00E+00  1.25E+01  0.00E+00  1.95E+01  0.00E+00  1.92E+01  1.94E+01 -5.74E-02
+ 
+     4
++        1.00E+00  2.45E+01  0.00E+00  2.11E+01  0.00E+00  2.08E+01  2.10E+01 -5.74E-02
+ 
+     5
++        1.00E+00  3.70E+01  0.00E+00  2.26E+01  0.00E+00  2.23E+01  2.26E+01 -5.74E-02
+ 
+     6
++        1.00E+00  4.80E+01  0.00E+00  2.41E+01  0.00E+00  2.39E+01  2.42E+01 -5.74E-02
+ 
+     7
++        1.00E+00  6.05E+01  0.00E+00  2.54E+01  0.00E+00  2.52E+01  2.56E+01 -5.74E-02
+ 
+     8
++        1.00E+00  7.25E+01  0.00E+00  2.67E+01  0.00E+00  2.66E+01  2.69E+01 -5.74E-02
+ 
+     9
++        1.00E+00  8.53E+01  0.00E+00  2.79E+01  0.00E+00  2.78E+01  2.82E+01 -5.74E-02
+ 
+    10
++        1.00E+00  9.65E+01  0.00E+00  2.92E+01  0.00E+00  2.91E+01  2.96E+01 -5.74E-02
+ 
+    11
++        1.00E+00  1.08E+02  0.00E+00  3.03E+01  0.00E+00  3.03E+01  3.08E+01 -5.74E-02
+ 
+    12
++        1.00E+00  1.12E+02  3.10E+01  2.98E+01  2.19E-01  2.98E+01  3.03E+01 -5.74E-02
+ 
+    13
++        2.00E+00  0.00E+00  0.00E+00  1.07E+01  0.00E+00  1.12E+01  1.13E+01 -2.26E-01
+ 
+    14
++        2.00E+00  2.00E+00  9.70E+00  1.07E+01 -1.31E+00  1.11E+01  1.13E+01 -2.26E-01
+ 
+    15
++        2.00E+00  4.00E+00  0.00E+00  1.33E+01  0.00E+00  1.39E+01  1.40E+01 -2.26E-01
+ 
+    16
++        2.00E+00  1.60E+01  0.00E+00  1.54E+01  0.00E+00  1.62E+01  1.64E+01 -2.26E-01
+ 
+    17
++        2.00E+00  2.78E+01  0.00E+00  1.74E+01  0.00E+00  1.84E+01  1.86E+01 -2.26E-01
+ 
+    18
++        2.00E+00  4.00E+01  0.00E+00  1.93E+01  0.00E+00  2.05E+01  2.07E+01 -2.26E-01
+ 
+    19
++        2.00E+00  5.20E+01  0.00E+00  2.11E+01  0.00E+00  2.25E+01  2.28E+01 -2.26E-01
+ 
+    20
++        2.00E+00  6.35E+01  2.46E+01  2.01E+01  9.34E-01  2.17E+01  2.20E+01 -2.26E-01
+ 
+    21
++        2.00E+00  6.40E+01  0.00E+00  2.28E+01  0.00E+00  2.45E+01  2.48E+01 -2.26E-01
+ 
+    22
++        2.00E+00  7.60E+01  0.00E+00  2.45E+01  0.00E+00  2.64E+01  2.67E+01 -2.26E-01
+ 
+    23
++        2.00E+00  8.80E+01  0.00E+00  2.60E+01  0.00E+00  2.82E+01  2.85E+01 -2.26E-01
+ 
+    24
++        2.00E+00  1.00E+02  0.00E+00  2.75E+01  0.00E+00  2.99E+01  3.03E+01 -2.26E-01
+ 
+    25
++        2.00E+00  1.12E+02  0.00E+00  2.89E+01  0.00E+00  3.16E+01  3.20E+01 -2.26E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+    26
++        2.00E+00  1.24E+02  0.00E+00  3.03E+01  0.00E+00  3.32E+01  3.36E+01 -2.26E-01
+ 
+    27
++        2.00E+00  1.36E+02  3.30E+01  2.89E+01  3.26E-01  3.19E+01  3.23E+01 -2.26E-01
+ 
+    28
++        3.00E+00  0.00E+00  0.00E+00  2.15E+01  0.00E+00  1.73E+01  1.73E+01  3.00E-01
+ 
+    29
++        3.00E+00  1.50E+00  1.80E+01  2.13E+01  2.99E-01  1.72E+01  1.72E+01  3.00E-01
+ 
+    30
++        3.00E+00  1.15E+01  0.00E+00  2.32E+01  0.00E+00  1.86E+01  1.87E+01  3.00E-01
+ 
+    31
++        3.00E+00  2.35E+01  0.00E+00  2.47E+01  0.00E+00  1.97E+01  1.99E+01  3.00E-01
+ 
+    32
++        3.00E+00  3.55E+01  0.00E+00  2.62E+01  0.00E+00  2.09E+01  2.11E+01  3.00E-01
+ 
+    33
++        3.00E+00  4.75E+01  0.00E+00  2.76E+01  0.00E+00  2.19E+01  2.22E+01  3.00E-01
+ 
+    34
++        3.00E+00  5.93E+01  0.00E+00  2.90E+01  0.00E+00  2.30E+01  2.33E+01  3.00E-01
+ 
+    35
++        3.00E+00  7.30E+01  0.00E+00  3.01E+01  0.00E+00  2.38E+01  2.41E+01  3.00E-01
+ 
+    36
++        3.00E+00  8.35E+01  2.38E+01  2.88E+01  5.20E-02  2.27E+01  2.31E+01  3.00E-01
+ 
+    37
++        3.00E+00  8.40E+01  0.00E+00  3.14E+01  0.00E+00  2.48E+01  2.52E+01  3.00E-01
+ 
+    38
++        3.00E+00  9.65E+01  0.00E+00  3.25E+01  0.00E+00  2.56E+01  2.61E+01  3.00E-01
+ 
+    39
++        3.00E+00  1.08E+02  0.00E+00  3.36E+01  0.00E+00  2.64E+01  2.70E+01  3.00E-01
+ 
+    40
++        3.00E+00  1.20E+02  0.00E+00  3.48E+01  0.00E+00  2.72E+01  2.78E+01  3.00E-01
+ 
+    41
++        3.00E+00  1.32E+02  0.00E+00  3.58E+01  0.00E+00  2.80E+01  2.86E+01  3.00E-01
+ 
+    42
++        3.00E+00  1.34E+02  2.43E+01  3.55E+01 -1.44E+00  2.77E+01  2.84E+01  3.00E-01
+ 
+    43
++        4.00E+00  0.00E+00  0.00E+00  1.33E+01  0.00E+00  2.05E+01  2.05E+01 -2.19E-01
+ 
+    44
++        4.00E+00  1.80E+00  2.08E+01  1.32E+01  4.92E-01  2.03E+01  2.03E+01 -2.19E-01
+ 
+    45
++        4.00E+00  1.20E+01  0.00E+00  1.43E+01  0.00E+00  2.19E+01  2.19E+01 -2.19E-01
+ 
+    46
++        4.00E+00  2.43E+01  0.00E+00  1.53E+01  0.00E+00  2.31E+01  2.32E+01 -2.19E-01
+ 
+    47
++        4.00E+00  3.58E+01  0.00E+00  1.62E+01  0.00E+00  2.44E+01  2.45E+01 -2.19E-01
+ 
+    48
++        4.00E+00  4.81E+01  0.00E+00  1.71E+01  0.00E+00  2.54E+01  2.56E+01 -2.19E-01
+ 
+    49
++        4.00E+00  5.93E+01  2.39E+01  1.64E+01  3.54E-01  2.41E+01  2.43E+01 -2.19E-01
+ 
+    50
++        4.00E+00  5.98E+01  0.00E+00  1.80E+01  0.00E+00  2.65E+01  2.68E+01 -2.19E-01
+ 
+    51
++        4.00E+00  7.18E+01  0.00E+00  1.88E+01  0.00E+00  2.75E+01  2.78E+01 -2.19E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+    52
++        4.00E+00  8.38E+01  0.00E+00  1.95E+01  0.00E+00  2.85E+01  2.88E+01 -2.19E-01
+ 
+    53
++        4.00E+00  9.58E+01  0.00E+00  2.03E+01  0.00E+00  2.94E+01  2.97E+01 -2.19E-01
+ 
+    54
++        4.00E+00  1.08E+02  0.00E+00  2.09E+01  0.00E+00  3.02E+01  3.06E+01 -2.19E-01
+ 
+    55
++        4.00E+00  1.20E+02  0.00E+00  2.16E+01  0.00E+00  3.10E+01  3.15E+01 -2.19E-01
+ 
+    56
++        4.00E+00  1.31E+02  3.17E+01  2.07E+01  1.16E+00  2.93E+01  2.98E+01 -2.19E-01
+ 
+    57
++        5.00E+00  0.00E+00  0.00E+00  1.93E+01  0.00E+00  1.39E+01  1.39E+01  2.33E-01
+ 
+    58
++        5.00E+00  2.00E+00  1.42E+01  1.92E+01 -3.85E-02  1.38E+01  1.38E+01  2.33E-01
+ 
+    59
++        5.00E+00  1.20E+01  0.00E+00  2.08E+01  0.00E+00  1.50E+01  1.51E+01  2.33E-01
+ 
+    60
++        5.00E+00  2.40E+01  0.00E+00  2.23E+01  0.00E+00  1.61E+01  1.62E+01  2.33E-01
+ 
+    61
++        5.00E+00  3.60E+01  0.00E+00  2.37E+01  0.00E+00  1.72E+01  1.73E+01  2.33E-01
+ 
+    62
++        5.00E+00  4.80E+01  0.00E+00  2.50E+01  0.00E+00  1.82E+01  1.84E+01  2.33E-01
+ 
+    63
++        5.00E+00  5.95E+01  1.82E+01  2.39E+01 -6.55E-02  1.74E+01  1.77E+01  2.33E-01
+ 
+    64
++        5.00E+00  6.00E+01  0.00E+00  2.63E+01  0.00E+00  1.92E+01  1.94E+01  2.33E-01
+ 
+    65
++        5.00E+00  7.20E+01  0.00E+00  2.75E+01  0.00E+00  2.01E+01  2.04E+01  2.33E-01
+ 
+    66
++        5.00E+00  8.40E+01  0.00E+00  2.86E+01  0.00E+00  2.10E+01  2.13E+01  2.33E-01
+ 
+    67
++        5.00E+00  9.60E+01  0.00E+00  2.97E+01  0.00E+00  2.18E+01  2.22E+01  2.33E-01
+ 
+    68
++        5.00E+00  1.08E+02  0.00E+00  3.07E+01  0.00E+00  2.26E+01  2.30E+01  2.33E-01
+ 
+    69
++        5.00E+00  1.20E+02  0.00E+00  3.17E+01  0.00E+00  2.34E+01  2.38E+01  2.33E-01
+ 
+    70
++        5.00E+00  1.32E+02  2.03E+01  3.02E+01 -1.30E+00  2.24E+01  2.29E+01  2.33E-01
+ 
+    71
++        6.00E+00  0.00E+00  0.00E+00  1.72E+01  0.00E+00  1.77E+01  1.78E+01 -8.16E-02
+ 
+    72
++        6.00E+00  1.80E+00  1.90E+01  1.71E+01  7.12E-01  1.75E+01  1.76E+01 -8.16E-02
+ 
+    73
++        6.00E+00  1.18E+01  0.00E+00  1.85E+01  0.00E+00  1.91E+01  1.92E+01 -8.16E-02
+ 
+    74
++        6.00E+00  2.38E+01  0.00E+00  1.98E+01  0.00E+00  2.05E+01  2.06E+01 -8.16E-02
+ 
+    75
++        6.00E+00  3.58E+01  0.00E+00  2.10E+01  0.00E+00  2.18E+01  2.20E+01 -8.16E-02
+ 
+    76
++        6.00E+00  4.78E+01  0.00E+00  2.22E+01  0.00E+00  2.30E+01  2.32E+01 -8.16E-02
+ 
+    77
++        6.00E+00  5.93E+01  1.73E+01  2.12E+01 -1.64E+00  2.20E+01  2.23E+01 -8.16E-02
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+    78
++        6.00E+00  5.98E+01  0.00E+00  2.33E+01  0.00E+00  2.42E+01  2.44E+01 -8.16E-02
+ 
+    79
++        6.00E+00  7.18E+01  0.00E+00  2.43E+01  0.00E+00  2.53E+01  2.56E+01 -8.16E-02
+ 
+    80
++        6.00E+00  8.38E+01  0.00E+00  2.53E+01  0.00E+00  2.64E+01  2.67E+01 -8.16E-02
+ 
+    81
++        6.00E+00  9.58E+01  0.00E+00  2.63E+01  0.00E+00  2.74E+01  2.78E+01 -8.16E-02
+ 
+    82
++        6.00E+00  1.08E+02  0.00E+00  2.72E+01  0.00E+00  2.84E+01  2.88E+01 -8.16E-02
+ 
+    83
++        6.00E+00  1.20E+02  0.00E+00  2.80E+01  0.00E+00  2.93E+01  2.98E+01 -8.16E-02
+ 
+    84
++        6.00E+00  1.32E+02  0.00E+00  2.89E+01  0.00E+00  3.02E+01  3.07E+01 -8.16E-02
+ 
+    85
++        6.00E+00  1.43E+02  3.25E+01  2.76E+01  1.07E+00  2.90E+01  2.95E+01 -8.16E-02
+ 
+    86
++        7.00E+00  0.00E+00  0.00E+00  1.36E+01  0.00E+00  1.80E+01  1.80E+01 -5.93E-02
+ 
+    87
++        7.00E+00  2.00E+00  1.79E+01  1.35E+01  2.54E-01  1.78E+01  1.79E+01 -5.93E-02
+ 
+    88
++        7.00E+00  1.13E+01  0.00E+00  1.47E+01  0.00E+00  1.93E+01  1.94E+01 -5.93E-02
+ 
+    89
++        7.00E+00  2.33E+01  0.00E+00  1.57E+01  0.00E+00  2.04E+01  2.06E+01 -5.93E-02
+ 
+    90
++        7.00E+00  3.65E+01  0.00E+00  1.66E+01  0.00E+00  2.14E+01  2.16E+01 -5.93E-02
+ 
+    91
++        7.00E+00  4.82E+01  0.00E+00  1.76E+01  0.00E+00  2.25E+01  2.27E+01 -5.93E-02
+ 
+    92
++        7.00E+00  6.03E+01  0.00E+00  1.85E+01  0.00E+00  2.34E+01  2.37E+01 -5.93E-02
+ 
+    93
++        7.00E+00  7.38E+01  2.34E+01  1.75E+01  7.76E-01  2.19E+01  2.22E+01 -5.93E-02
+ 
+    94
++        7.00E+00  7.58E+01  0.00E+00  1.91E+01  0.00E+00  2.39E+01  2.43E+01 -5.93E-02
+ 
+    95
++        7.00E+00  8.43E+01  0.00E+00  2.02E+01  0.00E+00  2.52E+01  2.56E+01 -5.93E-02
+ 
+    96
++        7.00E+00  9.63E+01  0.00E+00  2.09E+01  0.00E+00  2.60E+01  2.65E+01 -5.93E-02
+ 
+    97
++        7.00E+00  1.08E+02  0.00E+00  2.17E+01  0.00E+00  2.68E+01  2.73E+01 -5.93E-02
+ 
+    98
++        7.00E+00  1.20E+02  0.00E+00  2.24E+01  0.00E+00  2.75E+01  2.80E+01 -5.93E-02
+ 
+    99
++        7.00E+00  1.32E+02  0.00E+00  2.30E+01  0.00E+00  2.82E+01  2.88E+01 -5.93E-02
+ 
+   100
++        7.00E+00  1.44E+02  0.00E+00  2.36E+01  0.00E+00  2.88E+01  2.94E+01 -5.93E-02
+ 
+   101
++        7.00E+00  1.65E+02  2.58E+01  2.17E+01  1.72E-01  2.59E+01  2.66E+01 -5.93E-02
+ 
+   102
++        8.00E+00  0.00E+00  0.00E+00  1.72E+01  0.00E+00  2.54E+01  2.54E+01  7.15E-04
+ 
+   103
++        8.00E+00  1.70E+00  2.58E+01  1.71E+01  6.17E-01  2.51E+01  2.52E+01  7.15E-04
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   104
++        8.00E+00  1.18E+01  0.00E+00  1.85E+01  0.00E+00  2.69E+01  2.70E+01  7.15E-04
+ 
+   105
++        8.00E+00  2.37E+01  0.00E+00  1.98E+01  0.00E+00  2.82E+01  2.84E+01  7.15E-04
+ 
+   106
++        8.00E+00  3.57E+01  0.00E+00  2.10E+01  0.00E+00  2.94E+01  2.97E+01  7.15E-04
+ 
+   107
++        8.00E+00  4.77E+01  0.00E+00  2.22E+01  0.00E+00  3.06E+01  3.09E+01  7.15E-04
+ 
+   108
++        8.00E+00  5.97E+01  0.00E+00  2.33E+01  0.00E+00  3.16E+01  3.21E+01  7.15E-04
+ 
+   109
++        8.00E+00  7.17E+01  0.00E+00  2.43E+01  0.00E+00  3.26E+01  3.31E+01  7.15E-04
+ 
+   110
++        8.00E+00  7.37E+01  3.42E+01  2.41E+01  7.97E-01  3.23E+01  3.28E+01  7.15E-04
+ 
+   111
++        8.00E+00  8.37E+01  0.00E+00  2.53E+01  0.00E+00  3.36E+01  3.41E+01  7.15E-04
+ 
+   112
++        8.00E+00  9.57E+01  0.00E+00  2.63E+01  0.00E+00  3.44E+01  3.51E+01  7.15E-04
+ 
+   113
++        8.00E+00  1.08E+02  0.00E+00  2.72E+01  0.00E+00  3.52E+01  3.60E+01  7.15E-04
+ 
+   114
++        8.00E+00  1.20E+02  0.00E+00  2.81E+01  0.00E+00  3.60E+01  3.68E+01  7.15E-04
+ 
+   115
++        8.00E+00  1.32E+02  0.00E+00  2.89E+01  0.00E+00  3.67E+01  3.75E+01  7.15E-04
+ 
+   116
++        8.00E+00  1.44E+02  0.00E+00  2.97E+01  0.00E+00  3.73E+01  3.82E+01  7.15E-04
+ 
+   117
++        8.00E+00  1.47E+02  3.61E+01  2.93E+01  9.03E-02  3.67E+01  3.76E+01  7.15E-04
+ 
+   118
++        9.00E+00  0.00E+00  0.00E+00  1.93E+01  0.00E+00  2.16E+01  2.14E+01 -1.50E-01
+ 
+   119
++        9.00E+00  1.10E+00  2.21E+01  1.92E+01  2.11E-01  2.15E+01  2.13E+01 -1.50E-01
+ 
+   120
++        9.00E+00  1.11E+01  0.00E+00  2.08E+01  0.00E+00  2.32E+01  2.31E+01 -1.50E-01
+ 
+   121
++        9.00E+00  2.23E+01  0.00E+00  2.21E+01  0.00E+00  2.48E+01  2.47E+01 -1.50E-01
+ 
+   122
++        9.00E+00  3.46E+01  0.00E+00  2.34E+01  0.00E+00  2.62E+01  2.61E+01 -1.50E-01
+ 
+   123
++        9.00E+00  4.66E+01  0.00E+00  2.46E+01  0.00E+00  2.76E+01  2.75E+01 -1.50E-01
+ 
+   124
++        9.00E+00  5.87E+01  0.00E+00  2.57E+01  0.00E+00  2.89E+01  2.89E+01 -1.50E-01
+ 
+   125
++        9.00E+00  7.09E+01  0.00E+00  2.67E+01  0.00E+00  3.01E+01  3.01E+01 -1.50E-01
+ 
+   126
++        9.00E+00  8.27E+01  2.92E+01  2.55E+01  1.96E-01  2.88E+01  2.88E+01 -1.50E-01
+ 
+   127
++        9.00E+00  8.32E+01  0.00E+00  2.77E+01  0.00E+00  3.13E+01  3.13E+01 -1.50E-01
+ 
+   128
++        9.00E+00  9.46E+01  0.00E+00  2.88E+01  0.00E+00  3.25E+01  3.26E+01 -1.50E-01
+ 
+   129
++        9.00E+00  1.07E+02  0.00E+00  2.97E+01  0.00E+00  3.36E+01  3.37E+01 -1.50E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   130
++        9.00E+00  1.19E+02  0.00E+00  3.06E+01  0.00E+00  3.46E+01  3.48E+01 -1.50E-01
+ 
+   131
++        9.00E+00  1.31E+02  0.00E+00  3.15E+01  0.00E+00  3.56E+01  3.58E+01 -1.50E-01
+ 
+   132
++        9.00E+00  1.42E+02  3.42E+01  3.00E+01  1.73E-01  3.40E+01  3.43E+01 -1.50E-01
+ 
+   133
++        9.00E+00  1.43E+02  0.00E+00  3.23E+01  0.00E+00  3.65E+01  3.68E+01 -1.50E-01
+ 
+   134
++        9.00E+00  3.13E+02  1.96E+01  1.63E+01  4.59E-01  1.89E+01  1.96E+01 -1.50E-01
+ 
+   135
++        1.00E+01  0.00E+00  0.00E+00  1.93E+01  0.00E+00  1.90E+01  1.91E+01  1.04E-01
+ 
+   136
++        1.00E+01  1.20E+00  1.99E+01  1.92E+01  3.96E-01  1.89E+01  1.90E+01  1.04E-01
+ 
+   137
++        1.00E+01  1.12E+01  0.00E+00  2.10E+01  0.00E+00  2.06E+01  2.07E+01  1.04E-01
+ 
+   138
++        1.00E+01  2.32E+01  0.00E+00  2.25E+01  0.00E+00  2.20E+01  2.21E+01  1.04E-01
+ 
+   139
++        1.00E+01  3.53E+01  0.00E+00  2.39E+01  0.00E+00  2.33E+01  2.35E+01  1.04E-01
+ 
+   140
++        1.00E+01  4.72E+01  0.00E+00  2.53E+01  0.00E+00  2.46E+01  2.49E+01  1.04E-01
+ 
+   141
++        1.00E+01  5.92E+01  0.00E+00  2.66E+01  0.00E+00  2.58E+01  2.61E+01  1.04E-01
+ 
+   142
++        1.00E+01  7.07E+01  2.34E+01  2.54E+01 -4.77E-01  2.45E+01  2.49E+01  1.04E-01
+ 
+   143
++        1.00E+01  7.12E+01  0.00E+00  2.79E+01  0.00E+00  2.69E+01  2.73E+01  1.04E-01
+ 
+   144
++        1.00E+01  8.32E+01  0.00E+00  2.91E+01  0.00E+00  2.80E+01  2.85E+01  1.04E-01
+ 
+   145
++        1.00E+01  9.52E+01  0.00E+00  3.02E+01  0.00E+00  2.90E+01  2.96E+01  1.04E-01
+ 
+   146
++        1.00E+01  1.07E+02  0.00E+00  3.13E+01  0.00E+00  3.00E+01  3.06E+01  1.04E-01
+ 
+   147
++        1.00E+01  1.19E+02  0.00E+00  3.23E+01  0.00E+00  3.09E+01  3.16E+01  1.04E-01
+ 
+   148
++        1.00E+01  1.31E+02  0.00E+00  3.33E+01  0.00E+00  3.18E+01  3.25E+01  1.04E-01
+ 
+   149
++        1.00E+01  1.42E+02  3.09E+01  3.19E+01 -3.73E-02  3.03E+01  3.11E+01  1.04E-01
+ 
+   150
++        1.10E+01  0.00E+00  0.00E+00  1.72E+01  0.00E+00  1.19E+01  1.25E+01  3.78E-02
+ 
+   151
++        1.10E+01  1.15E+01  0.00E+00  3.36E+01  0.00E+00  2.35E+01  2.45E+01  3.78E-02
+ 
+   152
++        1.10E+01  2.35E+01  0.00E+00  3.41E+01  0.00E+00  2.41E+01  2.52E+01  3.78E-02
+ 
+   153
++        1.10E+01  3.55E+01  0.00E+00  3.47E+01  0.00E+00  2.48E+01  2.58E+01  3.78E-02
+ 
+   154
++        1.10E+01  4.75E+01  0.00E+00  3.52E+01  0.00E+00  2.55E+01  2.64E+01  3.78E-02
+ 
+   155
++        1.10E+01  5.75E+01  2.43E+01  3.38E+01 -8.25E-01  2.47E+01  2.56E+01  3.78E-02
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   156
++        1.20E+01  0.00E+00  0.00E+00  1.86E+01  0.00E+00  1.83E+01  1.81E+01  3.50E-02
+ 
+   157
++        1.20E+01  2.00E+00  1.70E+01  1.85E+01 -6.74E-01  1.81E+01  1.80E+01  3.50E-02
+ 
+   158
++        1.20E+01  1.20E+01  0.00E+00  2.01E+01  0.00E+00  1.97E+01  1.96E+01  3.50E-02
+ 
+   159
++        1.20E+01  1.30E+01  0.00E+00  2.36E+01  0.00E+00  2.31E+01  2.30E+01  3.50E-02
+ 
+   160
++        1.20E+01  2.45E+01  0.00E+00  2.49E+01  0.00E+00  2.44E+01  2.43E+01  3.50E-02
+ 
+   161
++        1.20E+01  3.60E+01  0.00E+00  2.61E+01  0.00E+00  2.56E+01  2.56E+01  3.50E-02
+ 
+   162
++        1.20E+01  4.85E+01  0.00E+00  2.72E+01  0.00E+00  2.66E+01  2.67E+01  3.50E-02
+ 
+   163
++        1.20E+01  6.00E+01  0.00E+00  2.83E+01  0.00E+00  2.77E+01  2.78E+01  3.50E-02
+ 
+   164
++        1.20E+01  7.20E+01  0.00E+00  2.94E+01  0.00E+00  2.87E+01  2.88E+01  3.50E-02
+ 
+   165
++        1.20E+01  8.40E+01  0.00E+00  3.03E+01  0.00E+00  2.97E+01  2.98E+01  3.50E-02
+ 
+   166
++        1.20E+01  9.60E+01  0.00E+00  3.13E+01  0.00E+00  3.06E+01  3.08E+01  3.50E-02
+ 
+   167
++        1.20E+01  1.08E+02  0.00E+00  3.22E+01  0.00E+00  3.14E+01  3.17E+01  3.50E-02
+ 
+   168
++        1.20E+01  1.20E+02  0.00E+00  3.30E+01  0.00E+00  3.22E+01  3.25E+01  3.50E-02
+ 
+   169
++        1.20E+01  1.32E+02  3.41E+01  3.14E+01  6.79E-01  3.07E+01  3.10E+01  3.50E-02
+ 
+   170
++        1.20E+01  1.32E+02  0.00E+00  3.38E+01  0.00E+00  3.29E+01  3.33E+01  3.50E-02
+ 
+   171
++        1.20E+01  3.02E+02  1.60E+01  1.70E+01 -4.14E-01  1.65E+01  1.73E+01  3.50E-02
+ 
+   172
++        1.30E+01  0.00E+00  0.00E+00  7.87E+00  0.00E+00  1.20E+01  1.21E+01 -2.06E-01
+ 
+   173
++        1.30E+01  1.20E+01  0.00E+00  1.54E+01  0.00E+00  2.33E+01  2.36E+01 -2.06E-01
+ 
+   174
++        1.30E+01  2.50E+01  0.00E+00  1.66E+01  0.00E+00  2.49E+01  2.53E+01 -2.06E-01
+ 
+   175
++        1.30E+01  3.65E+01  2.41E+01  1.58E+01  6.08E-01  2.35E+01  2.39E+01 -2.06E-01
+ 
+   176
++        1.30E+01  3.70E+01  0.00E+00  1.78E+01  0.00E+00  2.65E+01  2.69E+01 -2.06E-01
+ 
+   177
++        1.30E+01  4.90E+01  0.00E+00  1.90E+01  0.00E+00  2.80E+01  2.85E+01 -2.06E-01
+ 
+   178
++        1.30E+01  6.10E+01  0.00E+00  2.01E+01  0.00E+00  2.95E+01  3.00E+01 -2.06E-01
+ 
+   179
++        1.30E+01  7.40E+01  0.00E+00  2.11E+01  0.00E+00  3.07E+01  3.13E+01 -2.06E-01
+ 
+   180
++        1.30E+01  8.50E+01  0.00E+00  2.22E+01  0.00E+00  3.21E+01  3.27E+01 -2.06E-01
+ 
+   181
++        1.30E+01  9.80E+01  0.00E+00  2.30E+01  0.00E+00  3.31E+01  3.39E+01 -2.06E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   182
++        1.30E+01  1.10E+02  0.00E+00  2.40E+01  0.00E+00  3.43E+01  3.50E+01 -2.06E-01
+ 
+   183
++        1.30E+01  1.21E+02  0.00E+00  2.49E+01  0.00E+00  3.54E+01  3.63E+01 -2.06E-01
+ 
+   184
++        1.30E+01  1.34E+02  0.00E+00  2.57E+01  0.00E+00  3.63E+01  3.72E+01 -2.06E-01
+ 
+   185
++        1.30E+01  1.45E+02  0.00E+00  2.66E+01  0.00E+00  3.74E+01  3.84E+01 -2.06E-01
+ 
+   186
++        1.30E+01  1.57E+02  0.00E+00  2.73E+01  0.00E+00  3.83E+01  3.93E+01 -2.06E-01
+ 
+   187
++        1.30E+01  1.69E+02  3.82E+01  2.60E+01  1.04E+00  3.61E+01  3.71E+01 -2.06E-01
+ 
+   188
++        1.40E+01  0.00E+00  0.00E+00  1.57E+01  0.00E+00  2.27E+01  2.26E+01  7.95E-03
+ 
+   189
++        1.40E+01  2.30E+00  2.56E+01  1.56E+01  1.66E+00  2.24E+01  2.23E+01  7.95E-03
+ 
+   190
++        1.40E+01  1.18E+01  0.00E+00  1.70E+01  0.00E+00  2.41E+01  2.40E+01  7.95E-03
+ 
+   191
++        1.40E+01  2.38E+01  0.00E+00  1.82E+01  0.00E+00  2.54E+01  2.53E+01  7.95E-03
+ 
+   192
++        1.40E+01  3.58E+01  0.00E+00  1.94E+01  0.00E+00  2.65E+01  2.65E+01  7.95E-03
+ 
+   193
++        1.40E+01  4.78E+01  0.00E+00  2.05E+01  0.00E+00  2.76E+01  2.77E+01  7.95E-03
+ 
+   194
++        1.40E+01  5.93E+01  2.56E+01  1.95E+01  3.70E-01  2.58E+01  2.59E+01  7.95E-03
+ 
+   195
++        1.40E+01  5.98E+01  0.00E+00  2.15E+01  0.00E+00  2.87E+01  2.87E+01  7.95E-03
+ 
+   196
++        1.40E+01  7.18E+01  0.00E+00  2.25E+01  0.00E+00  2.96E+01  2.97E+01  7.95E-03
+ 
+   197
++        1.40E+01  8.38E+01  0.00E+00  2.34E+01  0.00E+00  3.05E+01  3.06E+01  7.95E-03
+ 
+   198
++        1.40E+01  9.58E+01  0.00E+00  2.43E+01  0.00E+00  3.13E+01  3.15E+01  7.95E-03
+ 
+   199
++        1.40E+01  1.07E+02  0.00E+00  2.52E+01  0.00E+00  3.22E+01  3.24E+01  7.95E-03
+ 
+   200
++        1.40E+01  1.20E+02  0.00E+00  2.60E+01  0.00E+00  3.28E+01  3.30E+01  7.95E-03
+ 
+   201
++        1.40E+01  1.32E+02  2.57E+01  2.48E+01 -9.03E-01  3.06E+01  3.09E+01  7.95E-03
+ 
+   202
++        1.40E+01  1.32E+02  0.00E+00  2.68E+01  0.00E+00  3.35E+01  3.37E+01  7.95E-03
+ 
+   203
++        1.40E+01  1.44E+02  0.00E+00  2.75E+01  0.00E+00  3.41E+01  3.44E+01  7.95E-03
+ 
+   204
++        1.40E+01  3.03E+02  1.43E+01  1.45E+01  5.00E-01  1.34E+01  1.39E+01  7.95E-03
+ 
+   205
++        1.50E+01  0.00E+00  0.00E+00  1.86E+01  0.00E+00  1.82E+01  1.85E+01  4.25E-02
+ 
+   206
++        1.50E+01  1.22E+01  0.00E+00  2.01E+01  0.00E+00  1.96E+01  2.00E+01  4.25E-02
+ 
+   207
++        1.50E+01  2.22E+01  1.93E+01  1.93E+01  8.56E-02  1.88E+01  1.92E+01  4.25E-02
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   208
++        1.50E+01  2.42E+01  0.00E+00  2.15E+01  0.00E+00  2.10E+01  2.14E+01  4.25E-02
+ 
+   209
++        1.50E+01  3.62E+01  0.00E+00  2.28E+01  0.00E+00  2.23E+01  2.27E+01  4.25E-02
+ 
+   210
++        1.50E+01  4.78E+01  0.00E+00  2.42E+01  0.00E+00  2.36E+01  2.40E+01  4.25E-02
+ 
+   211
++        1.50E+01  7.02E+01  0.00E+00  2.44E+01  0.00E+00  2.38E+01  2.43E+01  4.25E-02
+ 
+   212
++        1.50E+01  8.56E+01  0.00E+00  2.53E+01  0.00E+00  2.47E+01  2.52E+01  4.25E-02
+ 
+   213
++        1.50E+01  9.62E+01  0.00E+00  2.66E+01  0.00E+00  2.59E+01  2.65E+01  4.25E-02
+ 
+   214
++        1.50E+01  1.08E+02  0.00E+00  2.78E+01  0.00E+00  2.70E+01  2.76E+01  4.25E-02
+ 
+   215
++        1.50E+01  1.20E+02  0.00E+00  2.88E+01  0.00E+00  2.80E+01  2.86E+01  4.25E-02
+ 
+   216
++        1.50E+01  1.32E+02  0.00E+00  2.98E+01  0.00E+00  2.90E+01  2.96E+01  4.25E-02
+ 
+   217
++        1.50E+01  1.44E+02  0.00E+00  3.08E+01  0.00E+00  3.00E+01  3.06E+01  4.25E-02
+ 
+   218
++        1.50E+01  1.46E+02  2.97E+01  3.06E+01 -1.35E-01  2.97E+01  3.04E+01  4.25E-02
+ 
+   219
++        1.60E+01  0.00E+00  0.00E+00  8.59E+00  0.00E+00  9.53E+00  9.58E+00 -2.20E-01
+ 
+   220
++        1.60E+01  9.00E+00  0.00E+00  1.69E+01  0.00E+00  1.88E+01  1.89E+01 -2.20E-01
+ 
+   221
++        1.60E+01  1.20E+01  1.73E+01  1.67E+01 -6.98E-01  1.86E+01  1.87E+01 -2.20E-01
+ 
+   222
++        1.60E+01  1.54E+01  0.00E+00  1.93E+01  0.00E+00  2.15E+01  2.16E+01 -2.20E-01
+ 
+   223
++        1.60E+01  2.13E+01  0.00E+00  2.10E+01  0.00E+00  2.34E+01  2.36E+01 -2.20E-01
+ 
+   224
++        1.60E+01  3.30E+01  0.00E+00  2.22E+01  0.00E+00  2.49E+01  2.51E+01 -2.20E-01
+ 
+   225
++        1.60E+01  4.50E+01  0.00E+00  2.33E+01  0.00E+00  2.62E+01  2.64E+01 -2.20E-01
+ 
+   226
++        1.60E+01  5.60E+01  2.68E+01  2.23E+01  4.80E-01  2.52E+01  2.55E+01 -2.20E-01
+ 
+   227
++        1.60E+01  5.70E+01  0.00E+00  2.43E+01  0.00E+00  2.75E+01  2.78E+01 -2.20E-01
+ 
+   228
++        1.60E+01  6.90E+01  0.00E+00  2.53E+01  0.00E+00  2.87E+01  2.90E+01 -2.20E-01
+ 
+   229
++        1.60E+01  8.10E+01  0.00E+00  2.63E+01  0.00E+00  2.99E+01  3.02E+01 -2.20E-01
+ 
+   230
++        1.60E+01  9.30E+01  0.00E+00  2.72E+01  0.00E+00  3.10E+01  3.14E+01 -2.20E-01
+ 
+   231
++        1.60E+01  1.05E+02  0.00E+00  2.81E+01  0.00E+00  3.21E+01  3.25E+01 -2.20E-01
+ 
+   232
++        1.60E+01  1.17E+02  0.00E+00  2.89E+01  0.00E+00  3.31E+01  3.36E+01 -2.20E-01
+ 
+   233
++        1.60E+01  1.30E+02  0.00E+00  2.96E+01  0.00E+00  3.41E+01  3.46E+01 -2.20E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   234
++        1.60E+01  1.42E+02  0.00E+00  3.04E+01  0.00E+00  3.50E+01  3.56E+01 -2.20E-01
+ 
+   235
++        1.60E+01  1.53E+02  0.00E+00  3.12E+01  0.00E+00  3.60E+01  3.66E+01 -2.20E-01
+ 
+   236
++        1.60E+01  1.54E+02  3.84E+01  3.11E+01  7.39E-01  3.59E+01  3.65E+01 -2.20E-01
+ 
+   237
++        1.70E+01  0.00E+00  0.00E+00  1.57E+01  0.00E+00  2.04E+01  2.07E+01 -2.10E-01
+ 
+   238
++        1.70E+01  1.20E+01  0.00E+00  1.70E+01  0.00E+00  2.20E+01  2.23E+01 -2.10E-01
+ 
+   239
++        1.70E+01  2.40E+01  0.00E+00  1.82E+01  0.00E+00  2.35E+01  2.39E+01 -2.10E-01
+ 
+   240
++        1.70E+01  3.20E+01  2.13E+01  1.76E+01 -3.73E-01  2.28E+01  2.31E+01 -2.10E-01
+ 
+   241
++        1.70E+01  3.55E+01  0.00E+00  1.94E+01  0.00E+00  2.50E+01  2.54E+01 -2.10E-01
+ 
+   242
++        1.70E+01  4.80E+01  0.00E+00  2.04E+01  0.00E+00  2.63E+01  2.67E+01 -2.10E-01
+ 
+   243
++        1.70E+01  6.00E+01  0.00E+00  2.15E+01  0.00E+00  2.76E+01  2.81E+01 -2.10E-01
+ 
+   244
++        1.70E+01  7.20E+01  2.88E+01  2.05E+01  9.92E-01  2.63E+01  2.67E+01 -2.10E-01
+ 
+   245
++        1.70E+01  7.23E+01  0.00E+00  2.25E+01  0.00E+00  2.88E+01  2.93E+01 -2.10E-01
+ 
+   246
++        1.70E+01  8.43E+01  0.00E+00  2.34E+01  0.00E+00  3.00E+01  3.05E+01 -2.10E-01
+ 
+   247
++        1.70E+01  9.58E+01  0.00E+00  2.44E+01  0.00E+00  3.12E+01  3.17E+01 -2.10E-01
+ 
+   248
++        1.70E+01  1.08E+02  0.00E+00  2.52E+01  0.00E+00  3.22E+01  3.28E+01 -2.10E-01
+ 
+   249
++        1.70E+01  1.20E+02  0.00E+00  2.60E+01  0.00E+00  3.32E+01  3.38E+01 -2.10E-01
+ 
+   250
++        1.70E+01  1.32E+02  0.00E+00  2.68E+01  0.00E+00  3.42E+01  3.48E+01 -2.10E-01
+ 
+   251
++        1.70E+01  1.44E+02  0.00E+00  2.75E+01  0.00E+00  3.51E+01  3.58E+01 -2.10E-01
+ 
+   252
++        1.70E+01  1.55E+02  3.49E+01  2.63E+01  7.05E-01  3.35E+01  3.42E+01 -2.10E-01
+ 
+   253
++        1.80E+01  0.00E+00  0.00E+00  1.43E+01  0.00E+00  1.87E+01  1.87E+01  2.04E-01
+ 
+   254
++        1.80E+01  2.80E+00  2.19E+01  1.42E+01  2.16E+00  1.84E+01  1.83E+01  2.04E-01
+ 
+   255
++        1.80E+01  1.18E+01  0.00E+00  2.80E+01  0.00E+00  3.61E+01  3.60E+01  2.04E-01
+ 
+   256
++        1.80E+01  2.38E+01  0.00E+00  2.84E+01  0.00E+00  3.57E+01  3.57E+01  2.04E-01
+ 
+   257
++        1.80E+01  3.58E+01  0.00E+00  2.89E+01  0.00E+00  3.54E+01  3.54E+01  2.04E-01
+ 
+   258
++        1.80E+01  4.81E+01  0.00E+00  2.93E+01  0.00E+00  3.50E+01  3.51E+01  2.04E-01
+ 
+   259
++        1.80E+01  5.93E+01  0.00E+00  2.98E+01  0.00E+00  3.49E+01  3.50E+01  2.04E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   260
++        1.80E+01  7.13E+01  2.59E+01  2.84E+01 -1.14E+00  3.23E+01  3.25E+01  2.04E-01
+ 
+   261
++        1.80E+01  7.18E+01  0.00E+00  3.01E+01  0.00E+00  3.46E+01  3.47E+01  2.04E-01
+ 
+   262
++        1.80E+01  8.28E+01  0.00E+00  3.06E+01  0.00E+00  3.46E+01  3.47E+01  2.04E-01
+ 
+   263
++        1.80E+01  9.58E+01  0.00E+00  3.08E+01  0.00E+00  3.41E+01  3.43E+01  2.04E-01
+ 
+   264
++        1.80E+01  1.08E+02  0.00E+00  3.12E+01  0.00E+00  3.39E+01  3.41E+01  2.04E-01
+ 
+   265
++        1.80E+01  1.20E+02  0.00E+00  3.15E+01  0.00E+00  3.37E+01  3.40E+01  2.04E-01
+ 
+   266
++        1.80E+01  1.32E+02  0.00E+00  3.18E+01  0.00E+00  3.36E+01  3.38E+01  2.04E-01
+ 
+   267
++        1.80E+01  1.44E+02  2.89E+01  3.03E+01 -3.71E-01  3.11E+01  3.13E+01  2.04E-01
+ 
+   268
++        1.80E+01  3.90E+02  6.70E+00  1.13E+01  1.11E-01  6.37E+00  6.62E+00  2.04E-01
+ 
+   269
++        1.90E+01  0.00E+00  0.00E+00  7.16E+00  0.00E+00  9.23E+00  9.26E+00 -3.41E-02
+ 
+   270
++        1.90E+01  4.00E+00  0.00E+00  1.42E+01  0.00E+00  1.83E+01  1.83E+01 -3.41E-02
+ 
+   271
++        1.90E+01  9.50E+00  1.89E+01  1.39E+01  7.50E-01  1.78E+01  1.79E+01 -3.41E-02
+ 
+   272
++        1.90E+01  1.30E+01  0.00E+00  1.55E+01  0.00E+00  1.98E+01  1.99E+01 -3.41E-02
+ 
+   273
++        1.90E+01  2.40E+01  0.00E+00  1.66E+01  0.00E+00  2.10E+01  2.12E+01 -3.41E-02
+ 
+   274
++        1.90E+01  3.59E+01  0.00E+00  1.80E+01  0.00E+00  2.26E+01  2.28E+01 -3.41E-02
+ 
+   275
++        1.90E+01  4.80E+01  0.00E+00  1.93E+01  0.00E+00  2.40E+01  2.43E+01 -3.41E-02
+ 
+   276
++        1.90E+01  5.99E+01  0.00E+00  2.05E+01  0.00E+00  2.54E+01  2.57E+01 -3.41E-02
+ 
+   277
++        1.90E+01  7.20E+01  0.00E+00  2.17E+01  0.00E+00  2.67E+01  2.70E+01 -3.41E-02
+ 
+   278
++        1.90E+01  8.35E+01  2.32E+01  2.07E+01 -4.02E-01  2.52E+01  2.56E+01 -3.41E-02
+ 
+   279
++        1.90E+01  8.43E+01  0.00E+00  2.28E+01  0.00E+00  2.79E+01  2.83E+01 -3.41E-02
+ 
+   280
++        1.90E+01  9.60E+01  0.00E+00  2.39E+01  0.00E+00  2.90E+01  2.95E+01 -3.41E-02
+ 
+   281
++        1.90E+01  1.08E+02  0.00E+00  2.49E+01  0.00E+00  3.01E+01  3.06E+01 -3.41E-02
+ 
+   282
++        1.90E+01  1.20E+02  0.00E+00  2.59E+01  0.00E+00  3.11E+01  3.17E+01 -3.41E-02
+ 
+   283
++        1.90E+01  1.32E+02  0.00E+00  2.68E+01  0.00E+00  3.21E+01  3.27E+01 -3.41E-02
+ 
+   284
++        1.90E+01  1.44E+02  0.00E+00  2.77E+01  0.00E+00  3.30E+01  3.37E+01 -3.41E-02
+ 
+   285
++        1.90E+01  1.58E+02  3.29E+01  2.62E+01  7.41E-01  3.07E+01  3.15E+01 -3.41E-02
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   286
++        2.00E+01  0.00E+00  0.00E+00  1.72E+01  0.00E+00  2.23E+01  2.24E+01  2.69E-02
+ 
+   287
++        2.00E+01  2.00E+00  2.31E+01  1.70E+01  6.35E-01  2.20E+01  2.21E+01  2.69E-02
+ 
+   288
++        2.00E+01  1.20E+01  0.00E+00  1.85E+01  0.00E+00  2.37E+01  2.38E+01  2.69E-02
+ 
+   289
++        2.00E+01  2.40E+01  0.00E+00  1.98E+01  0.00E+00  2.50E+01  2.52E+01  2.69E-02
+ 
+   290
++        2.00E+01  3.60E+01  0.00E+00  2.10E+01  0.00E+00  2.62E+01  2.65E+01  2.69E-02
+ 
+   291
++        2.00E+01  4.80E+01  0.00E+00  2.22E+01  0.00E+00  2.74E+01  2.77E+01  2.69E-02
+ 
+   292
++        2.00E+01  6.05E+01  0.00E+00  2.32E+01  0.00E+00  2.84E+01  2.88E+01  2.69E-02
+ 
+   293
++        2.00E+01  6.25E+01  2.78E+01  2.30E+01  1.09E-01  2.81E+01  2.85E+01  2.69E-02
+ 
+   294
++        2.00E+01  7.20E+01  0.00E+00  2.43E+01  0.00E+00  2.95E+01  2.99E+01  2.69E-02
+ 
+   295
++        2.00E+01  8.40E+01  0.00E+00  2.53E+01  0.00E+00  3.04E+01  3.10E+01  2.69E-02
+ 
+   296
++        2.00E+01  9.55E+01  0.00E+00  2.63E+01  0.00E+00  3.14E+01  3.20E+01  2.69E-02
+ 
+   297
++        2.00E+01  1.08E+02  0.00E+00  2.72E+01  0.00E+00  3.21E+01  3.28E+01  2.69E-02
+ 
+   298
++        2.00E+01  1.20E+02  0.00E+00  2.81E+01  0.00E+00  3.29E+01  3.36E+01  2.69E-02
+ 
+   299
++        2.00E+01  1.32E+02  0.00E+00  2.89E+01  0.00E+00  3.37E+01  3.44E+01  2.69E-02
+ 
+   300
++        2.00E+01  1.34E+02  3.40E+01  2.86E+01  2.79E-01  3.33E+01  3.41E+01  2.69E-02
+ 
+   301
++        2.10E+01  0.00E+00  0.00E+00  1.25E+01  0.00E+00  1.05E+01  1.05E+01  2.94E-01
+ 
+   302
++        2.10E+01  4.20E+00  0.00E+00  2.48E+01  0.00E+00  2.09E+01  2.07E+01  2.94E-01
+ 
+   303
++        2.10E+01  8.30E+00  2.11E+01  2.44E+01  3.57E-02  2.05E+01  2.04E+01  2.94E-01
+ 
+   304
++        2.10E+01  1.58E+01  0.00E+00  2.69E+01  0.00E+00  2.25E+01  2.24E+01  2.94E-01
+ 
+   305
++        2.10E+01  2.80E+01  0.00E+00  2.89E+01  0.00E+00  2.40E+01  2.40E+01  2.94E-01
+ 
+   306
++        2.10E+01  3.98E+01  0.00E+00  3.07E+01  0.00E+00  2.55E+01  2.55E+01  2.94E-01
+ 
+   307
++        2.10E+01  5.18E+01  0.00E+00  3.25E+01  0.00E+00  2.68E+01  2.69E+01  2.94E-01
+ 
+   308
++        2.10E+01  6.38E+01  0.00E+00  3.42E+01  0.00E+00  2.81E+01  2.82E+01  2.94E-01
+ 
+   309
++        2.10E+01  7.68E+01  0.00E+00  3.57E+01  0.00E+00  2.92E+01  2.94E+01  2.94E-01
+ 
+   310
++        2.10E+01  8.83E+01  0.00E+00  3.73E+01  0.00E+00  3.04E+01  3.07E+01  2.94E-01
+ 
+   311
++        2.10E+01  1.01E+02  0.00E+00  3.87E+01  0.00E+00  3.15E+01  3.18E+01  2.94E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   312
++        2.10E+01  1.12E+02  2.91E+01  3.69E+01 -6.47E-01  2.99E+01  3.02E+01  2.94E-01
+ 
+   313
++        2.10E+01  1.13E+02  0.00E+00  4.01E+01  0.00E+00  3.25E+01  3.29E+01  2.94E-01
+ 
+   314
++        2.10E+01  1.24E+02  0.00E+00  4.15E+01  0.00E+00  3.36E+01  3.40E+01  2.94E-01
+ 
+   315
++        2.10E+01  1.36E+02  0.00E+00  4.28E+01  0.00E+00  3.45E+01  3.50E+01  2.94E-01
+ 
+   316
++        2.10E+01  1.49E+02  0.00E+00  4.39E+01  0.00E+00  3.53E+01  3.58E+01  2.94E-01
+ 
+   317
++        2.10E+01  2.61E+02  2.11E+01  2.80E+01 -6.72E-01  2.13E+01  2.22E+01  2.94E-01
+ 
+   318
++        2.20E+01  0.00E+00  0.00E+00  1.07E+01  0.00E+00  1.07E+01  1.08E+01  3.45E-02
+ 
+   319
++        2.20E+01  4.00E+00  0.00E+00  2.13E+01  0.00E+00  2.12E+01  2.15E+01  3.45E-02
+ 
+   320
++        2.20E+01  6.00E+00  2.18E+01  2.11E+01  1.97E-01  2.11E+01  2.13E+01  3.45E-02
+ 
+   321
++        2.20E+01  1.60E+01  0.00E+00  2.32E+01  0.00E+00  2.31E+01  2.33E+01  3.45E-02
+ 
+   322
++        2.20E+01  2.80E+01  0.00E+00  2.49E+01  0.00E+00  2.48E+01  2.51E+01  3.45E-02
+ 
+   323
++        2.20E+01  4.00E+01  0.00E+00  2.66E+01  0.00E+00  2.64E+01  2.68E+01  3.45E-02
+ 
+   324
++        2.20E+01  5.10E+01  2.50E+01  2.55E+01 -1.76E-01  2.53E+01  2.56E+01  3.45E-02
+ 
+   325
++        2.30E+01  0.00E+00  0.00E+00  4.29E+01  0.00E+00  2.06E+01  2.09E+01  5.43E-01
+ 
+   326
++        2.30E+01  1.10E+01  2.23E+01  4.11E+01  6.60E-01  1.98E+01  2.02E+01  5.43E-01
+ 
+   327
++        2.30E+01  1.15E+01  0.00E+00  4.64E+01  0.00E+00  2.24E+01  2.28E+01  5.43E-01
+ 
+   328
++        2.30E+01  2.40E+01  0.00E+00  4.95E+01  0.00E+00  2.40E+01  2.45E+01  5.43E-01
+ 
+   329
++        2.30E+01  3.55E+01  0.00E+00  5.26E+01  0.00E+00  2.57E+01  2.62E+01  5.43E-01
+ 
+   330
++        2.30E+01  4.70E+01  0.00E+00  5.56E+01  0.00E+00  2.73E+01  2.79E+01  5.43E-01
+ 
+   331
++        2.30E+01  5.95E+01  0.00E+00  5.82E+01  0.00E+00  2.88E+01  2.94E+01  5.43E-01
+ 
+   332
++        2.30E+01  7.05E+01  2.66E+01  5.57E+01 -1.00E+00  2.77E+01  2.84E+01  5.43E-01
+ 
+   333
++        2.30E+01  7.15E+01  0.00E+00  6.09E+01  0.00E+00  3.02E+01  3.09E+01  5.43E-01
+ 
+   334
++        2.30E+01  8.40E+01  0.00E+00  6.33E+01  0.00E+00  3.16E+01  3.23E+01  5.43E-01
+ 
+   335
++        2.30E+01  9.58E+01  0.00E+00  6.57E+01  0.00E+00  3.29E+01  3.37E+01  5.43E-01
+ 
+   336
++        2.30E+01  1.08E+02  0.00E+00  6.80E+01  0.00E+00  3.42E+01  3.51E+01  5.43E-01
+ 
+   337
++        2.30E+01  1.20E+02  0.00E+00  7.01E+01  0.00E+00  3.54E+01  3.63E+01  5.43E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   338
++        2.30E+01  1.32E+02  0.00E+00  7.20E+01  0.00E+00  3.66E+01  3.75E+01  5.43E-01
+ 
+   339
++        2.30E+01  1.40E+02  2.77E+01  6.99E+01 -2.77E+00  3.57E+01  3.66E+01  5.43E-01
+ 
+   340
++        2.40E+01  0.00E+00  0.00E+00  4.51E+01  0.00E+00  1.70E+01  1.70E+01  8.67E-01
+ 
+   341
++        2.40E+01  7.00E-01  0.00E+00  9.01E+01  0.00E+00  3.40E+01  3.39E+01  8.67E-01
+ 
+   342
++        2.40E+01  2.00E+00  3.73E+01  8.96E+01  2.92E-01  3.39E+01  3.38E+01  8.67E-01
+ 
+   343
++        2.40E+01  6.50E+00  0.00E+00  1.11E+02  0.00E+00  4.20E+01  4.19E+01  8.67E-01
+ 
+   344
++        2.40E+01  1.60E+01  0.00E+00  1.14E+02  0.00E+00  4.33E+01  4.34E+01  8.67E-01
+ 
+   345
++        2.40E+01  2.80E+01  0.00E+00  1.16E+02  0.00E+00  4.41E+01  4.45E+01  8.67E-01
+ 
+   346
++        2.40E+01  4.00E+01  0.00E+00  1.17E+02  0.00E+00  4.50E+01  4.56E+01  8.67E-01
+ 
+   347
++        2.40E+01  5.27E+01  0.00E+00  1.19E+02  0.00E+00  4.57E+01  4.65E+01  8.67E-01
+ 
+   348
++        2.40E+01  6.40E+01  0.00E+00  1.21E+02  0.00E+00  4.65E+01  4.76E+01  8.67E-01
+ 
+   349
++        2.40E+01  7.60E+01  0.00E+00  1.22E+02  0.00E+00  4.73E+01  4.85E+01  8.67E-01
+ 
+   350
++        2.40E+01  7.90E+01  4.17E+01  1.21E+02 -2.09E+00  4.68E+01  4.81E+01  8.67E-01
+ 
+   351
++        2.40E+01  8.80E+01  0.00E+00  1.23E+02  0.00E+00  4.80E+01  4.94E+01  8.67E-01
+ 
+   352
++        2.40E+01  1.00E+02  0.00E+00  1.25E+02  0.00E+00  4.86E+01  5.03E+01  8.67E-01
+ 
+   353
++        2.40E+01  1.12E+02  0.00E+00  1.26E+02  0.00E+00  4.93E+01  5.12E+01  8.67E-01
+ 
+   354
++        2.40E+01  1.24E+02  0.00E+00  1.27E+02  0.00E+00  4.99E+01  5.20E+01  8.67E-01
+ 
+   355
++        2.40E+01  1.36E+02  0.00E+00  1.28E+02  0.00E+00  5.05E+01  5.28E+01  8.67E-01
+ 
+   356
++        2.40E+01  1.48E+02  0.00E+00  1.30E+02  0.00E+00  5.11E+01  5.36E+01  8.67E-01
+ 
+   357
++        2.40E+01  1.76E+02  3.81E+01  1.16E+02 -3.03E+00  4.61E+01  4.91E+01  8.67E-01
+ 
+   358
++        2.50E+01  0.00E+00  0.00E+00  1.07E+01  0.00E+00  1.37E+01  1.37E+01 -3.45E-01
+ 
+   359
++        2.50E+01  2.00E+00  1.37E+01  1.07E+01  2.90E-02  1.36E+01  1.37E+01 -3.45E-01
+ 
+   360
++        2.50E+01  1.20E+01  0.00E+00  1.16E+01  0.00E+00  1.49E+01  1.49E+01 -3.45E-01
+ 
+   361
++        2.50E+01  1.85E+01  0.00E+00  1.67E+01  0.00E+00  2.14E+01  2.15E+01 -3.45E-01
+ 
+   362
++        2.50E+01  2.10E+01  2.18E+01  1.65E+01  2.78E-01  2.12E+01  2.13E+01 -3.45E-01
+ 
+   363
++        2.50E+01  2.37E+01  0.00E+00  1.74E+01  0.00E+00  2.24E+01  2.24E+01 -3.45E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   364
++        2.50E+01  3.58E+01  0.00E+00  1.76E+01  0.00E+00  2.28E+01  2.29E+01 -3.45E-01
+ 
+   365
++        2.50E+01  4.83E+01  0.00E+00  1.78E+01  0.00E+00  2.31E+01  2.33E+01 -3.45E-01
+ 
+   366
++        2.50E+01  6.05E+01  0.00E+00  1.81E+01  0.00E+00  2.35E+01  2.37E+01 -3.45E-01
+ 
+   367
++        2.50E+01  6.15E+01  1.67E+01  1.80E+01 -2.12E+00  2.34E+01  2.36E+01 -3.45E-01
+ 
+   368
++        2.50E+01  7.07E+01  0.00E+00  2.09E+01  0.00E+00  2.72E+01  2.74E+01 -3.45E-01
+ 
+   369
++        2.50E+01  7.20E+01  0.00E+00  2.22E+01  0.00E+00  2.89E+01  2.91E+01 -3.45E-01
+ 
+   370
++        2.50E+01  8.40E+01  0.00E+00  2.26E+01  0.00E+00  2.95E+01  2.97E+01 -3.45E-01
+ 
+   371
++        2.50E+01  9.05E+01  2.98E+01  2.20E+01  5.49E-01  2.88E+01  2.91E+01 -3.45E-01
+ 
+   372
++        2.50E+01  9.58E+01  0.00E+00  2.30E+01  0.00E+00  3.01E+01  3.04E+01 -3.45E-01
+ 
+   373
++        2.50E+01  1.08E+02  0.00E+00  2.33E+01  0.00E+00  3.06E+01  3.09E+01 -3.45E-01
+ 
+   374
++        2.50E+01  1.20E+02  0.00E+00  2.37E+01  0.00E+00  3.12E+01  3.15E+01 -3.45E-01
+ 
+   375
++        2.50E+01  1.22E+02  3.80E+01  2.35E+01  2.19E+00  3.10E+01  3.13E+01 -3.45E-01
+ 
+   376
++        2.50E+01  1.32E+02  0.00E+00  2.40E+01  0.00E+00  3.17E+01  3.20E+01 -3.45E-01
+ 
+   377
++        2.50E+01  1.38E+02  3.13E+01  2.34E+01  5.08E-01  3.10E+01  3.13E+01 -3.45E-01
+ 
+   378
++        2.60E+01  0.00E+00  0.00E+00  5.01E+01  0.00E+00  2.10E+01  2.15E+01  1.24E-01
+ 
+   379
++        2.60E+01  1.15E+01  0.00E+00  5.43E+01  0.00E+00  2.32E+01  2.37E+01  1.24E-01
+ 
+   380
++        2.60E+01  2.35E+01  0.00E+00  5.82E+01  0.00E+00  2.54E+01  2.59E+01  1.24E-01
+ 
+   381
++        2.60E+01  3.55E+01  0.00E+00  6.19E+01  0.00E+00  2.75E+01  2.81E+01  1.24E-01
+ 
+   382
++        2.60E+01  3.75E+01  2.86E+01  6.14E+01 -6.58E-01  2.74E+01  2.80E+01  1.24E-01
+ 
+   383
++        2.60E+01  4.75E+01  0.00E+00  6.54E+01  0.00E+00  2.96E+01  3.02E+01  1.24E-01
+ 
+   384
++        2.60E+01  5.95E+01  0.00E+00  6.88E+01  0.00E+00  3.16E+01  3.22E+01  1.24E-01
+ 
+   385
++        2.60E+01  7.15E+01  0.00E+00  7.20E+01  0.00E+00  3.36E+01  3.42E+01  1.24E-01
+ 
+   386
++        2.60E+01  8.35E+01  0.00E+00  7.50E+01  0.00E+00  3.55E+01  3.61E+01  1.24E-01
+ 
+   387
++        2.60E+01  9.55E+01  0.00E+00  7.79E+01  0.00E+00  3.74E+01  3.80E+01  1.24E-01
+ 
+   388
++        2.60E+01  1.08E+02  0.00E+00  8.07E+01  0.00E+00  3.93E+01  3.99E+01  1.24E-01
+ 
+   389
++        2.60E+01  1.10E+02  3.49E+01  7.97E+01 -2.08E+00  3.91E+01  3.97E+01  1.24E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   390
++        2.70E+01  0.00E+00  0.00E+00  2.51E+01  0.00E+00  2.52E+01  2.54E+01  1.46E-01
+ 
+   391
++        2.70E+01  1.70E+00  2.64E+01  2.49E+01  4.71E-01  2.50E+01  2.52E+01  1.46E-01
+ 
+   392
++        2.70E+01  1.24E+01  0.00E+00  2.74E+01  0.00E+00  2.74E+01  2.77E+01  1.46E-01
+ 
+   393
++        2.70E+01  2.37E+01  0.00E+00  2.98E+01  0.00E+00  2.96E+01  2.99E+01  1.46E-01
+ 
+   394
++        2.70E+01  3.52E+01  0.00E+00  3.20E+01  0.00E+00  3.16E+01  3.20E+01  1.46E-01
+ 
+   395
++        2.70E+01  4.80E+01  0.00E+00  3.40E+01  0.00E+00  3.34E+01  3.39E+01  1.46E-01
+ 
+   396
++        2.70E+01  5.97E+01  0.00E+00  3.60E+01  0.00E+00  3.52E+01  3.57E+01  1.46E-01
+ 
+   397
++        2.70E+01  7.17E+01  0.00E+00  3.79E+01  0.00E+00  3.69E+01  3.75E+01  1.46E-01
+ 
+   398
++        2.70E+01  8.32E+01  3.33E+01  3.62E+01 -5.13E-01  3.50E+01  3.56E+01  1.46E-01
+ 
+   399
++        2.80E+01  0.00E+00  0.00E+00  4.29E+01  0.00E+00  1.79E+01  1.83E+01  1.96E-03
+ 
+   400
++        2.80E+01  2.00E+00  1.69E+01  4.26E+01 -2.00E+00  1.79E+01  1.83E+01  1.96E-03
+ 
+   401
++        2.90E+01  0.00E+00  0.00E+00  1.43E+01  0.00E+00  1.97E+01  2.07E+01 -5.66E-02
+ 
+   402
++        2.90E+01  1.20E+01  0.00E+00  1.54E+01  0.00E+00  2.10E+01  2.20E+01 -5.66E-02
+ 
+   403
++        2.90E+01  2.35E+01  0.00E+00  1.65E+01  0.00E+00  2.22E+01  2.32E+01 -5.66E-02
+ 
+   404
++        2.90E+01  3.65E+01  0.00E+00  1.75E+01  0.00E+00  2.32E+01  2.42E+01 -5.66E-02
+ 
+   405
++        2.90E+01  4.75E+01  2.29E+01  1.67E+01  8.07E-01  2.19E+01  2.27E+01 -5.66E-02
+ 
+   406
++        3.00E+01  0.00E+00  0.00E+00  1.29E+01  0.00E+00  9.12E+00  9.13E+00  4.05E-01
+ 
+   407
++        3.00E+01  2.20E+00  0.00E+00  2.57E+01  0.00E+00  1.82E+01  1.82E+01  4.05E-01
+ 
+   408
++        3.00E+01  6.30E+00  1.79E+01  2.52E+01 -5.36E-01  1.78E+01  1.79E+01  4.05E-01
+ 
+   409
++        3.00E+01  1.53E+01  0.00E+00  2.68E+01  0.00E+00  1.89E+01  1.90E+01  4.05E-01
+ 
+   410
++        3.00E+01  2.63E+01  0.00E+00  2.82E+01  0.00E+00  1.98E+01  2.00E+01  4.05E-01
+ 
+   411
++        3.00E+01  3.88E+01  0.00E+00  2.93E+01  0.00E+00  2.06E+01  2.08E+01  4.05E-01
+ 
+   412
++        3.00E+01  5.08E+01  0.00E+00  3.04E+01  0.00E+00  2.13E+01  2.16E+01  4.05E-01
+ 
+   413
++        3.00E+01  6.28E+01  0.00E+00  3.15E+01  0.00E+00  2.20E+01  2.24E+01  4.05E-01
+ 
+   414
++        3.00E+01  7.53E+01  0.00E+00  3.25E+01  0.00E+00  2.27E+01  2.31E+01  4.05E-01
+ 
+   415
++        3.00E+01  8.73E+01  0.00E+00  3.34E+01  0.00E+00  2.33E+01  2.38E+01  4.05E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   416
++        3.00E+01  9.88E+01  0.00E+00  3.44E+01  0.00E+00  2.40E+01  2.45E+01  4.05E-01
+ 
+   417
++        3.00E+01  1.11E+02  0.00E+00  3.53E+01  0.00E+00  2.45E+01  2.52E+01  4.05E-01
+ 
+   418
++        3.00E+01  1.23E+02  0.00E+00  3.61E+01  0.00E+00  2.50E+01  2.57E+01  4.05E-01
+ 
+   419
++        3.00E+01  1.35E+02  0.00E+00  3.70E+01  0.00E+00  2.56E+01  2.64E+01  4.05E-01
+ 
+   420
++        3.00E+01  2.26E+02  1.65E+01  2.56E+01 -1.29E+00  1.73E+01  1.83E+01  4.05E-01
+ 
+   421
++        3.10E+01  0.00E+00  0.00E+00  2.15E+01  0.00E+00  2.48E+01  2.52E+01 -4.43E-04
+ 
+   422
++        3.10E+01  1.00E+00  2.53E+01  2.14E+01  3.64E-01  2.47E+01  2.51E+01 -4.43E-04
+ 
+   423
++        3.20E+01  0.00E+00  0.00E+00  5.01E+01  0.00E+00  1.29E+01  1.30E+01  9.37E-02
+ 
+   424
++        3.20E+01  6.50E+00  1.27E+01  4.88E+01 -1.09E+00  1.29E+01  1.29E+01  9.37E-02
+ 
+   425
++        3.20E+01  1.20E+01  0.00E+00  5.31E+01  0.00E+00  1.42E+01  1.42E+01  9.37E-02
+ 
+   426
++        3.20E+01  2.16E+01  0.00E+00  7.62E+01  0.00E+00  2.05E+01  2.06E+01  9.37E-02
+ 
+   427
++        3.20E+01  2.40E+01  2.21E+01  7.54E+01 -8.24E-01  2.04E+01  2.06E+01  9.37E-02
+ 
+   428
++        3.20E+01  2.43E+01  0.00E+00  8.07E+01  0.00E+00  2.18E+01  2.19E+01  9.37E-02
+ 
+   429
++        3.20E+01  3.56E+01  0.00E+00  8.25E+01  0.00E+00  2.29E+01  2.31E+01  9.37E-02
+ 
+   430
++        3.20E+01  4.80E+01  0.00E+00  8.38E+01  0.00E+00  2.40E+01  2.41E+01  9.37E-02
+ 
+   431
++        3.20E+01  6.10E+01  0.00E+00  8.49E+01  0.00E+00  2.50E+01  2.52E+01  9.37E-02
+ 
+   432
++        3.20E+01  7.20E+01  0.00E+00  8.66E+01  0.00E+00  2.61E+01  2.62E+01  9.37E-02
+ 
+   433
++        3.20E+01  8.35E+01  2.12E+01  8.27E+01 -3.14E+00  2.57E+01  2.59E+01  9.37E-02
+ 
+   434
++        3.30E+01  0.00E+00  0.00E+00  1.22E+01  0.00E+00  1.07E+01  1.08E+01 -4.99E-03
+ 
+   435
++        3.30E+01  4.00E+00  0.00E+00  2.41E+01  0.00E+00  2.13E+01  2.15E+01 -4.99E-03
+ 
+   436
++        3.30E+01  5.50E+00  2.12E+01  2.40E+01 -2.60E-01  2.12E+01  2.14E+01 -4.99E-03
+ 
+   437
++        3.30E+01  1.60E+01  0.00E+00  2.61E+01  0.00E+00  2.31E+01  2.34E+01 -4.99E-03
+ 
+   438
++        3.30E+01  2.80E+01  0.00E+00  2.79E+01  0.00E+00  2.49E+01  2.52E+01 -4.99E-03
+ 
+   439
++        3.30E+01  4.03E+01  0.00E+00  2.97E+01  0.00E+00  2.65E+01  2.69E+01 -4.99E-03
+ 
+   440
++        3.30E+01  5.20E+01  0.00E+00  3.14E+01  0.00E+00  2.81E+01  2.85E+01 -4.99E-03
+ 
+   441
++        3.30E+01  6.50E+01  2.74E+01  2.98E+01 -9.80E-02  2.69E+01  2.73E+01 -4.99E-03
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   442
++        3.40E+01  0.00E+00  0.00E+00  2.43E+01  0.00E+00  2.16E+01  2.19E+01  6.87E-02
+ 
+   443
++        3.40E+01  1.80E+00  2.21E+01  2.42E+01  3.03E-02  2.14E+01  2.17E+01  6.87E-02
+ 
+   444
++        3.40E+01  1.18E+01  0.00E+00  2.63E+01  0.00E+00  2.34E+01  2.37E+01  6.87E-02
+ 
+   445
++        3.40E+01  2.38E+01  0.00E+00  2.81E+01  0.00E+00  2.51E+01  2.54E+01  6.87E-02
+ 
+   446
++        3.40E+01  4.78E+01  0.00E+00  2.86E+01  0.00E+00  2.56E+01  2.60E+01  6.87E-02
+ 
+   447
++        3.40E+01  5.98E+01  0.00E+00  3.01E+01  0.00E+00  2.70E+01  2.74E+01  6.87E-02
+ 
+   448
++        3.40E+01  7.18E+01  0.00E+00  3.16E+01  0.00E+00  2.83E+01  2.88E+01  6.87E-02
+ 
+   449
++        3.40E+01  8.38E+01  0.00E+00  3.30E+01  0.00E+00  2.96E+01  3.01E+01  6.87E-02
+ 
+   450
++        3.40E+01  8.68E+01  2.87E+01  3.26E+01 -4.04E-01  2.92E+01  2.97E+01  6.87E-02
+ 
+   451
++        3.50E+01  0.00E+00  0.00E+00  1.79E+01  0.00E+00  1.22E+01  1.24E+01 -1.74E-02
+ 
+   452
++        3.50E+01  3.50E+00  0.00E+00  3.55E+01  0.00E+00  2.42E+01  2.46E+01 -1.74E-02
+ 
+   453
++        3.50E+01  1.50E+01  0.00E+00  3.82E+01  0.00E+00  2.64E+01  2.68E+01 -1.74E-02
+ 
+   454
++        3.50E+01  1.90E+01  2.52E+01  3.76E+01 -8.79E-01  2.61E+01  2.65E+01 -1.74E-02
+ 
+   455
++        3.50E+01  2.70E+01  0.00E+00  4.07E+01  0.00E+00  2.85E+01  2.89E+01 -1.74E-02
+ 
+   456
++        3.50E+01  3.90E+01  0.00E+00  4.31E+01  0.00E+00  3.05E+01  3.10E+01 -1.74E-02
+ 
+   457
++        3.50E+01  5.10E+01  0.00E+00  4.54E+01  0.00E+00  3.24E+01  3.30E+01 -1.74E-02
+ 
+   458
++        3.50E+01  6.30E+01  0.00E+00  4.75E+01  0.00E+00  3.43E+01  3.49E+01 -1.74E-02
+ 
+   459
++        3.50E+01  7.50E+01  0.00E+00  4.96E+01  0.00E+00  3.61E+01  3.67E+01 -1.74E-02
+ 
+   460
++        3.50E+01  8.70E+01  0.00E+00  5.15E+01  0.00E+00  3.79E+01  3.85E+01 -1.74E-02
+ 
+   461
++        3.50E+01  9.90E+01  3.80E+01  4.91E+01 -3.28E-01  3.67E+01  3.73E+01 -1.74E-02
+ 
+   462
++        3.60E+01  0.00E+00  0.00E+00  2.15E+01  0.00E+00  2.17E+01  2.17E+01  3.46E-01
+ 
+   463
++        3.60E+01  2.00E+00  2.32E+01  2.13E+01  7.89E-01  2.15E+01  2.15E+01  3.46E-01
+ 
+   464
++        3.60E+01  1.20E+01  0.00E+00  2.33E+01  0.00E+00  2.31E+01  2.32E+01  3.46E-01
+ 
+   465
++        3.60E+01  2.35E+01  0.00E+00  2.51E+01  0.00E+00  2.46E+01  2.47E+01  3.46E-01
+ 
+   466
++        3.60E+01  3.60E+01  0.00E+00  2.68E+01  0.00E+00  2.58E+01  2.59E+01  3.46E-01
+ 
+   467
++        3.60E+01  4.80E+01  0.00E+00  2.84E+01  0.00E+00  2.69E+01  2.71E+01  3.46E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   468
++        3.60E+01  6.00E+01  0.00E+00  2.99E+01  0.00E+00  2.80E+01  2.82E+01  3.46E-01
+ 
+   469
++        3.60E+01  7.20E+01  0.00E+00  3.14E+01  0.00E+00  2.91E+01  2.93E+01  3.46E-01
+ 
+   470
++        3.60E+01  8.50E+01  0.00E+00  3.26E+01  0.00E+00  2.99E+01  3.02E+01  3.46E-01
+ 
+   471
++        3.60E+01  9.60E+01  0.00E+00  3.41E+01  0.00E+00  3.09E+01  3.13E+01  3.46E-01
+ 
+   472
++        3.60E+01  1.08E+02  0.00E+00  3.53E+01  0.00E+00  3.18E+01  3.21E+01  3.46E-01
+ 
+   473
++        3.60E+01  1.20E+02  0.00E+00  3.65E+01  0.00E+00  3.25E+01  3.29E+01  3.46E-01
+ 
+   474
++        3.60E+01  1.32E+02  0.00E+00  3.77E+01  0.00E+00  3.33E+01  3.37E+01  3.46E-01
+ 
+   475
++        3.60E+01  1.34E+02  2.89E+01  3.74E+01 -1.23E+00  3.29E+01  3.33E+01  3.46E-01
+ 
+   476
++        3.60E+01  3.04E+02  1.27E+01  1.89E+01 -4.04E-01  1.24E+01  1.29E+01  3.46E-01
+ 
+   477
++        3.70E+01  0.00E+00  0.00E+00  1.72E+01  0.00E+00  1.93E+01  1.95E+01 -3.31E-02
+ 
+   478
++        3.70E+01  2.30E+00  1.95E+01  1.70E+01  1.85E-01  1.91E+01  1.93E+01 -3.31E-02
+ 
+   479
++        3.70E+01  1.18E+01  0.00E+00  1.85E+01  0.00E+00  2.08E+01  2.10E+01 -3.31E-02
+ 
+   480
++        3.70E+01  2.43E+01  0.00E+00  1.98E+01  0.00E+00  2.21E+01  2.24E+01 -3.31E-02
+ 
+   481
++        3.70E+01  3.63E+01  0.00E+00  2.10E+01  0.00E+00  2.34E+01  2.37E+01 -3.31E-02
+ 
+   482
++        3.70E+01  4.83E+01  0.00E+00  2.21E+01  0.00E+00  2.46E+01  2.50E+01 -3.31E-02
+ 
+   483
++        3.70E+01  6.03E+01  0.00E+00  2.32E+01  0.00E+00  2.58E+01  2.62E+01 -3.31E-02
+ 
+   484
++        3.70E+01  7.28E+01  0.00E+00  2.43E+01  0.00E+00  2.68E+01  2.73E+01 -3.31E-02
+ 
+   485
++        3.70E+01  8.43E+01  0.00E+00  2.53E+01  0.00E+00  2.79E+01  2.84E+01 -3.31E-02
+ 
+   486
++        3.70E+01  9.63E+01  0.00E+00  2.63E+01  0.00E+00  2.89E+01  2.95E+01 -3.31E-02
+ 
+   487
++        3.70E+01  1.08E+02  0.00E+00  2.72E+01  0.00E+00  2.98E+01  3.05E+01 -3.31E-02
+ 
+   488
++        3.70E+01  1.20E+02  0.00E+00  2.81E+01  0.00E+00  3.08E+01  3.15E+01 -3.31E-02
+ 
+   489
++        3.70E+01  1.32E+02  0.00E+00  2.89E+01  0.00E+00  3.16E+01  3.23E+01 -3.31E-02
+ 
+   490
++        3.70E+01  1.44E+02  0.00E+00  2.97E+01  0.00E+00  3.24E+01  3.31E+01 -3.31E-02
+ 
+   491
++        3.70E+01  1.56E+02  0.00E+00  3.04E+01  0.00E+00  3.31E+01  3.39E+01 -3.31E-02
+ 
+   492
++        3.70E+01  1.60E+02  3.34E+01  3.00E+01  2.77E-01  3.26E+01  3.34E+01 -3.31E-02
+ 
+   493
++        3.80E+01  0.00E+00  0.00E+00  1.86E+01  0.00E+00  1.83E+01  1.81E+01  2.47E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   494
++        3.80E+01  1.80E+00  1.79E+01  1.85E+01 -6.83E-02  1.81E+01  1.80E+01  2.47E-01
+ 
+   495
++        3.80E+01  1.16E+01  0.00E+00  1.99E+01  0.00E+00  1.94E+01  1.92E+01  2.47E-01
+ 
+   496
++        3.80E+01  2.33E+01  0.00E+00  2.11E+01  0.00E+00  2.04E+01  2.02E+01  2.47E-01
+ 
+   497
++        3.80E+01  3.53E+01  0.00E+00  2.23E+01  0.00E+00  2.13E+01  2.12E+01  2.47E-01
+ 
+   498
++        3.80E+01  4.73E+01  0.00E+00  2.34E+01  0.00E+00  2.21E+01  2.21E+01  2.47E-01
+ 
+   499
++        3.80E+01  5.93E+01  0.00E+00  2.44E+01  0.00E+00  2.29E+01  2.29E+01  2.47E-01
+ 
+   500
++        3.80E+01  7.13E+01  0.00E+00  2.54E+01  0.00E+00  2.37E+01  2.37E+01  2.47E-01
+ 
+   501
++        3.80E+01  8.33E+01  0.00E+00  2.64E+01  0.00E+00  2.44E+01  2.45E+01  2.47E-01
+ 
+   502
++        3.80E+01  9.53E+01  0.00E+00  2.73E+01  0.00E+00  2.51E+01  2.52E+01  2.47E-01
+ 
+   503
++        3.80E+01  1.07E+02  0.00E+00  2.82E+01  0.00E+00  2.57E+01  2.59E+01  2.47E-01
+ 
+   504
++        3.80E+01  1.19E+02  2.16E+01  2.69E+01 -1.12E+00  2.43E+01  2.45E+01  2.47E-01
+ 
+   505
++        3.80E+01  1.19E+02  0.00E+00  2.90E+01  0.00E+00  2.63E+01  2.65E+01  2.47E-01
+ 
+   506
++        3.80E+01  1.31E+02  0.00E+00  2.98E+01  0.00E+00  2.69E+01  2.71E+01  2.47E-01
+ 
+   507
++        3.80E+01  1.43E+02  0.00E+00  3.05E+01  0.00E+00  2.74E+01  2.77E+01  2.47E-01
+ 
+   508
++        3.80E+01  1.55E+02  0.00E+00  3.12E+01  0.00E+00  2.79E+01  2.82E+01  2.47E-01
+ 
+   509
++        3.80E+01  1.67E+02  0.00E+00  3.19E+01  0.00E+00  2.84E+01  2.87E+01  2.47E-01
+ 
+   510
++        3.80E+01  1.83E+02  3.05E+01  2.99E+01  9.61E-01  2.62E+01  2.66E+01  2.47E-01
+ 
+   511
++        3.80E+01  3.10E+02  1.30E+01  1.79E+01 -9.95E-01  1.38E+01  1.44E+01  2.47E-01
+ 
+   512
++        3.90E+01  0.00E+00  0.00E+00  4.01E+01  0.00E+00  3.09E+01  3.07E+01  5.32E-01
+ 
+   513
++        3.90E+01  1.40E+00  3.00E+01  3.99E+01 -5.23E-01  3.07E+01  3.04E+01  5.32E-01
+ 
+   514
++        3.90E+01  1.27E+01  0.00E+00  4.17E+01  0.00E+00  3.17E+01  3.15E+01  5.32E-01
+ 
+   515
++        3.90E+01  2.44E+01  0.00E+00  4.33E+01  0.00E+00  3.25E+01  3.25E+01  5.32E-01
+ 
+   516
++        3.90E+01  3.64E+01  0.00E+00  4.49E+01  0.00E+00  3.33E+01  3.33E+01  5.32E-01
+ 
+   517
++        3.90E+01  4.84E+01  0.00E+00  4.63E+01  0.00E+00  3.40E+01  3.41E+01  5.32E-01
+ 
+   518
++        3.90E+01  6.04E+01  0.00E+00  4.77E+01  0.00E+00  3.47E+01  3.49E+01  5.32E-01
+ 
+   519
++        3.90E+01  7.23E+01  0.00E+00  4.91E+01  0.00E+00  3.53E+01  3.56E+01  5.32E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   520
++        3.90E+01  8.48E+01  0.00E+00  5.03E+01  0.00E+00  3.58E+01  3.62E+01  5.32E-01
+ 
+   521
++        3.90E+01  9.64E+01  0.00E+00  5.15E+01  0.00E+00  3.65E+01  3.69E+01  5.32E-01
+ 
+   522
++        3.90E+01  1.08E+02  0.00E+00  5.27E+01  0.00E+00  3.70E+01  3.75E+01  5.32E-01
+ 
+   523
++        3.90E+01  1.10E+02  3.77E+01  5.23E+01 -5.73E-01  3.66E+01  3.71E+01  5.32E-01
+ 
+   524
++        3.90E+01  1.20E+02  0.00E+00  5.38E+01  0.00E+00  3.75E+01  3.81E+01  5.32E-01
+ 
+   525
++        3.90E+01  1.32E+02  0.00E+00  5.48E+01  0.00E+00  3.79E+01  3.86E+01  5.32E-01
+ 
+   526
++        3.90E+01  2.60E+02  1.84E+01  3.28E+01 -1.43E+00  1.93E+01  2.04E+01  5.32E-01
+ 
+   527
++        4.00E+01  0.00E+00  0.00E+00  1.36E+01  0.00E+00  1.37E+01  1.38E+01 -7.39E-04
+ 
+   528
++        4.00E+01  1.00E+00  1.37E+01  1.35E+01 -9.17E-02  1.37E+01  1.38E+01 -7.39E-04
+ 
+   529
++        4.00E+01  2.00E+00  0.00E+00  1.56E+01  0.00E+00  1.58E+01  1.59E+01 -7.39E-04
+ 
+   530
++        4.00E+01  3.80E+00  0.00E+00  2.41E+01  0.00E+00  2.43E+01  2.45E+01 -7.39E-04
+ 
+   531
++        4.00E+01  4.00E+00  2.50E+01  2.41E+01  1.28E-01  2.43E+01  2.45E+01 -7.39E-04
+ 
+   532
++        4.10E+01  0.00E+00  0.00E+00  2.43E+01  0.00E+00  1.74E+01  1.76E+01  7.06E-02
+ 
+   533
++        4.10E+01  2.00E+00  1.86E+01  2.41E+01  2.57E-01  1.73E+01  1.75E+01  7.06E-02
+ 
+   534
++        4.10E+01  7.30E+00  0.00E+00  2.65E+01  0.00E+00  1.91E+01  1.93E+01  7.06E-02
+ 
+   535
++        4.10E+01  1.20E+01  0.00E+00  2.89E+01  0.00E+00  2.09E+01  2.11E+01  7.06E-02
+ 
+   536
++        4.10E+01  2.48E+01  0.00E+00  3.03E+01  0.00E+00  2.21E+01  2.23E+01  7.06E-02
+ 
+   537
++        4.10E+01  3.39E+01  0.00E+00  3.21E+01  0.00E+00  2.35E+01  2.38E+01  7.06E-02
+ 
+   538
++        4.10E+01  3.60E+01  2.10E+01  3.18E+01 -1.23E+00  2.34E+01  2.36E+01  7.06E-02
+ 
+   539
++        4.10E+01  4.83E+01  0.00E+00  3.31E+01  0.00E+00  2.46E+01  2.48E+01  7.06E-02
+ 
+   540
++        4.10E+01  5.87E+01  0.00E+00  3.46E+01  0.00E+00  2.58E+01  2.61E+01  7.06E-02
+ 
+   541
++        4.10E+01  5.90E+01  2.64E+01  3.46E+01 -2.50E-01  2.58E+01  2.60E+01  7.06E-02
+ 
+   542
++        4.20E+01  0.00E+00  0.00E+00  2.00E+01  0.00E+00  6.07E+00  6.15E+00  1.74E-01
+ 
+   543
++        4.20E+01  1.20E+01  0.00E+00  3.91E+01  0.00E+00  1.20E+01  1.22E+01  1.74E-01
+ 
+   544
++        4.20E+01  1.40E+01  1.33E+01  3.88E+01 -1.15E-02  1.20E+01  1.22E+01  1.74E-01
+ 
+   545
++        4.20E+01  2.37E+01  0.00E+00  4.24E+01  0.00E+00  1.34E+01  1.35E+01  1.74E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   546
++        4.20E+01  3.62E+01  0.00E+00  4.53E+01  0.00E+00  1.46E+01  1.48E+01  1.74E-01
+ 
+   547
++        4.20E+01  4.78E+01  0.00E+00  4.82E+01  0.00E+00  1.59E+01  1.61E+01  1.74E-01
+ 
+   548
++        4.20E+01  6.00E+01  0.00E+00  5.09E+01  0.00E+00  1.71E+01  1.73E+01  1.74E-01
+ 
+   549
++        4.20E+01  7.20E+01  0.00E+00  5.35E+01  0.00E+00  1.84E+01  1.86E+01  1.74E-01
+ 
+   550
++        4.20E+01  8.40E+01  0.00E+00  5.60E+01  0.00E+00  1.96E+01  1.98E+01  1.74E-01
+ 
+   551
++        4.20E+01  9.55E+01  1.39E+01  5.35E+01 -3.60E+00  1.92E+01  1.95E+01  1.74E-01
+ 
+   552
++        4.30E+01  0.00E+00  0.00E+00  1.29E+01  0.00E+00  2.15E+01  2.18E+01 -4.59E-03
+ 
+   553
++        4.30E+01  2.00E+00  2.23E+01  1.28E+01  1.21E+00  2.12E+01  2.15E+01 -4.59E-03
+ 
+   554
++        4.40E+01  0.00E+00  0.00E+00  1.00E+01  0.00E+00  9.29E+00  9.22E+00  1.96E-01
+ 
+   555
++        4.40E+01  5.00E+00  0.00E+00  1.98E+01  0.00E+00  1.84E+01  1.82E+01  1.96E-01
+ 
+   556
++        4.40E+01  1.10E+01  1.78E+01  1.94E+01 -2.08E-01  1.79E+01  1.78E+01  1.96E-01
+ 
+   557
++        4.40E+01  1.70E+01  0.00E+00  2.14E+01  0.00E+00  1.97E+01  1.96E+01  1.96E-01
+ 
+   558
++        4.40E+01  2.90E+01  0.00E+00  2.29E+01  0.00E+00  2.10E+01  2.09E+01  1.96E-01
+ 
+   559
++        4.40E+01  4.10E+01  0.00E+00  2.43E+01  0.00E+00  2.22E+01  2.22E+01  1.96E-01
+ 
+   560
++        4.40E+01  5.45E+01  0.00E+00  2.56E+01  0.00E+00  2.32E+01  2.32E+01  1.96E-01
+ 
+   561
++        4.40E+01  6.50E+01  0.00E+00  2.70E+01  0.00E+00  2.45E+01  2.45E+01  1.96E-01
+ 
+   562
++        4.40E+01  7.75E+01  0.00E+00  2.82E+01  0.00E+00  2.54E+01  2.55E+01  1.96E-01
+ 
+   563
++        4.40E+01  8.90E+01  0.00E+00  2.94E+01  0.00E+00  2.65E+01  2.66E+01  1.96E-01
+ 
+   564
++        4.40E+01  1.01E+02  0.00E+00  3.05E+01  0.00E+00  2.74E+01  2.76E+01  1.96E-01
+ 
+   565
++        4.40E+01  1.13E+02  0.00E+00  3.16E+01  0.00E+00  2.83E+01  2.85E+01  1.96E-01
+ 
+   566
++        4.40E+01  1.25E+02  2.76E+01  3.01E+01 -9.45E-02  2.68E+01  2.71E+01  1.96E-01
+ 
+   567
++        4.40E+01  1.26E+02  0.00E+00  3.26E+01  0.00E+00  2.90E+01  2.93E+01  1.96E-01
+ 
+   568
++        4.40E+01  2.92E+02  1.35E+01  1.67E+01 -5.44E-01  1.36E+01  1.43E+01  1.96E-01
+ 
+   569
++        4.50E+01  0.00E+00  0.00E+00  1.15E+01  0.00E+00  1.71E+01  1.72E+01 -1.81E-01
+ 
+   570
++        4.50E+01  4.50E+00  1.66E+01  1.12E+01  2.01E-01  1.68E+01  1.69E+01 -1.81E-01
+ 
+   571
++        4.50E+01  1.25E+01  0.00E+00  1.23E+01  0.00E+00  1.82E+01  1.84E+01 -1.81E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   572
++        4.50E+01  2.45E+01  0.00E+00  1.32E+01  0.00E+00  1.93E+01  1.95E+01 -1.81E-01
+ 
+   573
++        4.50E+01  3.65E+01  0.00E+00  1.40E+01  0.00E+00  2.03E+01  2.06E+01 -1.81E-01
+ 
+   574
++        4.50E+01  4.83E+01  2.02E+01  1.33E+01  7.88E-01  1.92E+01  1.94E+01 -1.81E-01
+ 
+   575
++        4.50E+01  4.85E+01  0.00E+00  1.48E+01  0.00E+00  2.13E+01  2.16E+01 -1.81E-01
+ 
+   576
++        4.50E+01  6.05E+01  0.00E+00  1.55E+01  0.00E+00  2.22E+01  2.25E+01 -1.81E-01
+ 
+   577
++        4.50E+01  7.25E+01  0.00E+00  1.62E+01  0.00E+00  2.30E+01  2.34E+01 -1.81E-01
+ 
+   578
++        4.50E+01  8.45E+01  0.00E+00  1.69E+01  0.00E+00  2.38E+01  2.42E+01 -1.81E-01
+ 
+   579
++        4.50E+01  9.65E+01  0.00E+00  1.75E+01  0.00E+00  2.46E+01  2.50E+01 -1.81E-01
+ 
+   580
++        4.50E+01  1.06E+02  2.45E+01  1.68E+01  8.40E-01  2.34E+01  2.38E+01 -1.81E-01
+ 
+   581
++        4.60E+01  0.00E+00  0.00E+00  7.87E+00  0.00E+00  9.83E+00  9.96E+00 -1.30E-03
+ 
+   582
++        4.60E+01  5.00E-01  0.00E+00  1.57E+01  0.00E+00  1.96E+01  1.99E+01 -1.30E-03
+ 
+   583
++        4.60E+01  2.00E+00  2.01E+01  1.56E+01  5.46E-01  1.95E+01  1.97E+01 -1.30E-03
+ 
+   584
++        4.70E+01  0.00E+00  0.00E+00  2.86E+01  0.00E+00  1.66E+01  1.71E+01  2.60E-02
+ 
+   585
++        4.70E+01  9.30E+00  0.00E+00  3.24E+01  0.00E+00  1.90E+01  1.95E+01  2.60E-02
+ 
+   586
++        4.70E+01  1.93E+01  0.00E+00  3.59E+01  0.00E+00  2.13E+01  2.19E+01  2.60E-02
+ 
+   587
++        4.70E+01  3.33E+01  0.00E+00  3.87E+01  0.00E+00  2.34E+01  2.40E+01  2.60E-02
+ 
+   588
++        4.70E+01  3.63E+01  0.00E+00  4.31E+01  0.00E+00  2.60E+01  2.67E+01  2.60E-02
+ 
+   589
++        4.70E+01  3.83E+01  2.51E+01  4.27E+01 -1.24E+00  2.59E+01  2.66E+01  2.60E-02
+ 
+   590
++        4.80E+01  0.00E+00  0.00E+00  1.00E+01  0.00E+00  1.87E+01  1.88E+01 -8.50E-01
+ 
+   591
++        4.80E+01  2.80E+00  1.29E+01  9.91E+00 -2.51E+00  1.86E+01  1.86E+01 -8.50E-01
+ 
+   592
++        4.80E+01  1.13E+01  0.00E+00  1.08E+01  0.00E+00  2.03E+01  2.04E+01 -8.50E-01
+ 
+   593
++        4.80E+01  2.33E+01  0.00E+00  1.15E+01  0.00E+00  2.18E+01  2.19E+01 -8.50E-01
+ 
+   594
++        4.80E+01  2.88E+01  0.00E+00  1.84E+01  0.00E+00  3.48E+01  3.49E+01 -8.50E-01
+ 
+   595
++        4.80E+01  3.53E+01  0.00E+00  1.91E+01  0.00E+00  3.64E+01  3.65E+01 -8.50E-01
+ 
+   596
++        4.80E+01  4.75E+01  0.00E+00  1.94E+01  0.00E+00  3.73E+01  3.74E+01 -8.50E-01
+ 
+   597
++        4.80E+01  5.93E+01  0.00E+00  1.98E+01  0.00E+00  3.82E+01  3.83E+01 -8.50E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   598
++        4.80E+01  6.58E+01  4.11E+01  1.93E+01  1.28E+00  3.74E+01  3.76E+01 -8.50E-01
+ 
+   599
++        4.80E+01  7.18E+01  0.00E+00  2.00E+01  0.00E+00  3.89E+01  3.92E+01 -8.50E-01
+ 
+   600
++        4.80E+01  8.48E+01  4.03E+01  1.90E+01  1.26E+00  3.73E+01  3.76E+01 -8.50E-01
+ 
+   601
++        4.80E+01  1.12E+02  3.68E+01  1.70E+01  1.44E+00  3.42E+01  3.45E+01 -8.50E-01
+ 
+   602
++        4.80E+01  1.38E+02  3.58E+01  1.53E+01  2.09E+00  3.15E+01  3.18E+01 -8.50E-01
+ 
+   603
++        4.90E+01  0.00E+00  0.00E+00  1.86E+01  0.00E+00  1.79E+01  1.80E+01  2.63E-02
+ 
+   604
++        4.90E+01  2.00E+00  1.88E+01  1.85E+01  4.33E-01  1.77E+01  1.78E+01  2.63E-02
+ 
+   605
++        4.90E+01  1.20E+01  0.00E+00  2.06E+01  0.00E+00  1.98E+01  1.99E+01  2.63E-02
+ 
+   606
++        4.90E+01  2.40E+01  0.00E+00  2.25E+01  0.00E+00  2.16E+01  2.18E+01  2.63E-02
+ 
+   607
++        4.90E+01  3.60E+01  0.00E+00  2.43E+01  0.00E+00  2.34E+01  2.36E+01  2.63E-02
+ 
+   608
++        4.90E+01  4.80E+01  0.00E+00  2.60E+01  0.00E+00  2.50E+01  2.53E+01  2.63E-02
+ 
+   609
++        4.90E+01  6.05E+01  0.00E+00  2.76E+01  0.00E+00  2.66E+01  2.69E+01  2.63E-02
+ 
+   610
++        4.90E+01  7.20E+01  0.00E+00  2.92E+01  0.00E+00  2.81E+01  2.85E+01  2.63E-02
+ 
+   611
++        4.90E+01  7.40E+01  2.51E+01  2.90E+01 -8.91E-01  2.79E+01  2.83E+01  2.63E-02
+ 
+   612
++        4.90E+01  8.40E+01  0.00E+00  3.07E+01  0.00E+00  2.96E+01  3.00E+01  2.63E-02
+ 
+   613
++        4.90E+01  9.60E+01  0.00E+00  3.21E+01  0.00E+00  3.10E+01  3.14E+01  2.63E-02
+ 
+   614
++        4.90E+01  1.08E+02  0.00E+00  3.34E+01  0.00E+00  3.22E+01  3.27E+01  2.63E-02
+ 
+   615
++        4.90E+01  1.20E+02  0.00E+00  3.48E+01  0.00E+00  3.35E+01  3.41E+01  2.63E-02
+ 
+   616
++        4.90E+01  1.32E+02  0.00E+00  3.60E+01  0.00E+00  3.47E+01  3.53E+01  2.63E-02
+ 
+   617
++        4.90E+01  1.44E+02  0.00E+00  3.72E+01  0.00E+00  3.59E+01  3.65E+01  2.63E-02
+ 
+   618
++        4.90E+01  1.50E+02  3.72E+01  3.63E+01  3.84E-01  3.50E+01  3.57E+01  2.63E-02
+ 
+   619
++        5.00E+01  0.00E+00  0.00E+00  1.43E+01  0.00E+00  2.29E+01  2.30E+01 -1.13E-01
+ 
+   620
++        5.00E+01  3.00E+00  2.22E+01  1.41E+01  2.74E-02  2.25E+01  2.26E+01 -1.13E-01
+ 
+   621
++        5.00E+01  1.25E+01  0.00E+00  1.54E+01  0.00E+00  2.42E+01  2.43E+01 -1.13E-01
+ 
+   622
++        5.00E+01  2.45E+01  0.00E+00  1.65E+01  0.00E+00  2.55E+01  2.56E+01 -1.13E-01
+ 
+   623
++        5.00E+01  3.65E+01  0.00E+00  1.75E+01  0.00E+00  2.66E+01  2.69E+01 -1.13E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   624
++        5.00E+01  4.80E+01  0.00E+00  1.85E+01  0.00E+00  2.78E+01  2.81E+01 -1.13E-01
+ 
+   625
++        5.00E+01  6.05E+01  0.00E+00  1.94E+01  0.00E+00  2.87E+01  2.91E+01 -1.13E-01
+ 
+   626
++        5.00E+01  7.25E+01  0.00E+00  2.02E+01  0.00E+00  2.97E+01  3.01E+01 -1.13E-01
+ 
+   627
++        5.00E+01  8.10E+01  3.05E+01  1.96E+01  8.43E-01  2.83E+01  2.87E+01 -1.13E-01
+ 
+   628
++        5.00E+01  8.45E+01  0.00E+00  2.11E+01  0.00E+00  3.06E+01  3.10E+01 -1.13E-01
+ 
+   629
++        5.00E+01  8.80E+01  0.00E+00  4.23E+01  0.00E+00  6.44E+01  6.49E+01 -1.13E-01
+ 
+   630
++        5.00E+01  8.90E+01  6.79E+01  4.21E+01  1.04E+00  6.40E+01  6.45E+01 -1.13E-01
+ 
+   631
++        5.00E+01  9.65E+01  0.00E+00  4.26E+01  0.00E+00  6.42E+01  6.48E+01 -1.13E-01
+ 
+   632
++        5.00E+01  1.08E+02  0.00E+00  4.24E+01  0.00E+00  6.28E+01  6.35E+01 -1.13E-01
+ 
+   633
++        5.00E+01  1.20E+02  0.00E+00  4.29E+01  0.00E+00  6.26E+01  6.35E+01 -1.13E-01
+ 
+   634
++        5.00E+01  1.32E+02  0.00E+00  4.34E+01  0.00E+00  6.24E+01  6.35E+01 -1.13E-01
+ 
+   635
++        5.00E+01  1.44E+02  0.00E+00  4.39E+01  0.00E+00  6.23E+01  6.34E+01 -1.13E-01
+ 
+   636
++        5.00E+01  1.57E+02  0.00E+00  4.42E+01  0.00E+00  6.20E+01  6.32E+01 -1.13E-01
+ 
+   637
++        5.00E+01  1.62E+02  5.87E+01  4.33E+01  2.49E-01  6.02E+01  6.15E+01 -1.13E-01
+ 
+   638
++        5.10E+01  0.00E+00  0.00E+00  1.29E+01  0.00E+00  1.53E+01  1.54E+01 -2.58E-01
+ 
+   639
++        5.10E+01  3.00E+00  1.27E+01  1.27E+01 -1.38E+00  1.51E+01  1.53E+01 -2.58E-01
+ 
+   640
++        5.10E+01  1.15E+01  0.00E+00  1.41E+01  0.00E+00  1.68E+01  1.69E+01 -2.58E-01
+ 
+   641
++        5.10E+01  1.25E+01  0.00E+00  2.05E+01  0.00E+00  2.44E+01  2.46E+01 -2.58E-01
+ 
+   642
++        5.10E+01  2.45E+01  0.00E+00  2.13E+01  0.00E+00  2.54E+01  2.57E+01 -2.58E-01
+ 
+   643
++        5.10E+01  3.65E+01  0.00E+00  2.21E+01  0.00E+00  2.65E+01  2.67E+01 -2.58E-01
+ 
+   644
++        5.10E+01  4.90E+01  0.00E+00  2.28E+01  0.00E+00  2.74E+01  2.77E+01 -2.58E-01
+ 
+   645
++        5.10E+01  6.00E+01  3.13E+01  2.18E+01  1.62E+00  2.63E+01  2.66E+01 -2.58E-01
+ 
+   646
++        5.10E+01  6.05E+01  0.00E+00  2.36E+01  0.00E+00  2.84E+01  2.87E+01 -2.58E-01
+ 
+   647
++        5.10E+01  7.25E+01  0.00E+00  2.42E+01  0.00E+00  2.93E+01  2.97E+01 -2.58E-01
+ 
+   648
++        5.10E+01  8.45E+01  0.00E+00  2.49E+01  0.00E+00  3.01E+01  3.05E+01 -2.58E-01
+ 
+   649
++        5.10E+01  9.65E+01  0.00E+00  2.55E+01  0.00E+00  3.10E+01  3.14E+01 -2.58E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   650
++        5.10E+01  1.08E+02  0.00E+00  2.61E+01  0.00E+00  3.18E+01  3.22E+01 -2.58E-01
+ 
+   651
++        5.10E+01  1.20E+02  0.00E+00  2.67E+01  0.00E+00  3.25E+01  3.30E+01 -2.58E-01
+ 
+   652
++        5.10E+01  1.32E+02  3.11E+01  2.54E+01  2.97E-01  3.12E+01  3.16E+01 -2.58E-01
+ 
+   653
++        5.20E+01  0.00E+00  0.00E+00  6.80E+00  0.00E+00  1.42E+01  1.42E+01 -4.63E-03
+ 
+   654
++        5.20E+01  2.00E+00  1.43E+01  6.75E+00  9.92E-01  1.39E+01  1.39E+01 -4.63E-03
+ 
+   655
++        5.20E+01  4.00E+00  0.00E+00  1.35E+01  0.00E+00  2.79E+01  2.79E+01 -4.63E-03
+ 
+   656
++        5.20E+01  1.25E+01  0.00E+00  1.95E+01  0.00E+00  3.94E+01  3.95E+01 -4.63E-03
+ 
+   657
++        5.20E+01  3.55E+01  0.00E+00  1.95E+01  0.00E+00  3.63E+01  3.66E+01 -4.63E-03
+ 
+   658
++        5.20E+01  3.75E+01  0.00E+00  2.12E+01  0.00E+00  3.94E+01  3.97E+01 -4.63E-03
+ 
+   659
++        5.20E+01  5.95E+01  0.00E+00  2.12E+01  0.00E+00  3.65E+01  3.71E+01 -4.63E-03
+ 
+   660
++        5.20E+01  7.15E+01  0.00E+00  2.20E+01  0.00E+00  3.68E+01  3.74E+01 -4.63E-03
+ 
+   661
++        5.20E+01  8.30E+01  3.81E+01  2.10E+01  1.82E+00  3.34E+01  3.42E+01 -4.63E-03
+ 
+   662
++        5.20E+01  8.35E+01  0.00E+00  2.27E+01  0.00E+00  3.70E+01  3.78E+01 -4.63E-03
+ 
+   663
++        5.20E+01  9.55E+01  0.00E+00  2.34E+01  0.00E+00  3.72E+01  3.80E+01 -4.63E-03
+ 
+   664
++        5.20E+01  1.08E+02  0.00E+00  2.41E+01  0.00E+00  3.74E+01  3.83E+01 -4.63E-03
+ 
+   665
++        5.20E+01  1.20E+02  0.00E+00  2.48E+01  0.00E+00  3.76E+01  3.85E+01 -4.63E-03
+ 
+   666
++        5.20E+01  1.32E+02  0.00E+00  2.54E+01  0.00E+00  3.77E+01  3.88E+01 -4.63E-03
+ 
+   667
++        5.20E+01  1.44E+02  0.00E+00  2.60E+01  0.00E+00  3.79E+01  3.90E+01 -4.63E-03
+ 
+   668
++        5.20E+01  1.55E+02  3.12E+01  2.48E+01 -4.73E-01  3.44E+01  3.56E+01 -4.63E-03
+ 
+   669
++        5.30E+01  0.00E+00  0.00E+00  1.22E+01  0.00E+00  1.07E+01  1.08E+01 -8.80E-02
+ 
+   670
++        5.30E+01  4.00E+00  0.00E+00  2.41E+01  0.00E+00  2.13E+01  2.15E+01 -8.80E-02
+ 
+   671
++        5.30E+01  6.00E+00  1.91E+01  2.39E+01 -1.06E+00  2.11E+01  2.14E+01 -8.80E-02
+ 
+   672
++        5.30E+01  2.38E+01  0.00E+00  2.52E+01  0.00E+00  2.25E+01  2.27E+01 -8.80E-02
+ 
+   673
++        5.30E+01  2.70E+01  0.00E+00  3.02E+01  0.00E+00  2.70E+01  2.72E+01 -8.80E-02
+ 
+   674
++        5.30E+01  2.80E+01  0.00E+00  3.29E+01  0.00E+00  2.94E+01  2.97E+01 -8.80E-02
+ 
+   675
++        5.30E+01  3.95E+01  0.00E+00  3.43E+01  0.00E+00  3.08E+01  3.11E+01 -8.80E-02
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   676
++        5.30E+01  4.70E+01  3.33E+01  3.33E+01  5.78E-01  3.01E+01  3.04E+01 -8.80E-02
+ 
+   677
++        5.40E+01  0.00E+00  0.00E+00  1.29E+01  0.00E+00  1.27E+01  1.28E+01  2.00E-02
+ 
+   678
++        5.40E+01  3.70E+00  0.00E+00  2.56E+01  0.00E+00  2.52E+01  2.53E+01  2.00E-02
+ 
+   679
++        5.40E+01  9.70E+00  2.55E+01  2.50E+01  1.77E-01  2.46E+01  2.48E+01  2.00E-02
+ 
+   680
++        5.40E+01  1.57E+01  0.00E+00  2.75E+01  0.00E+00  2.72E+01  2.73E+01  2.00E-02
+ 
+   681
++        5.40E+01  2.77E+01  0.00E+00  2.94E+01  0.00E+00  2.90E+01  2.92E+01  2.00E-02
+ 
+   682
++        5.40E+01  2.97E+01  2.94E+01  2.91E+01  7.90E-02  2.87E+01  2.89E+01  2.00E-02
+ 
+   683
++        5.40E+01  3.97E+01  0.00E+00  3.11E+01  0.00E+00  3.07E+01  3.10E+01  2.00E-02
+ 
+   684
++        5.40E+01  5.17E+01  0.00E+00  3.28E+01  0.00E+00  3.24E+01  3.27E+01  2.00E-02
+ 
+   685
++        5.40E+01  6.32E+01  2.95E+01  3.13E+01 -4.67E-01  3.09E+01  3.12E+01  2.00E-02
+ 
+   686
++        5.40E+01  6.37E+01  0.00E+00  3.44E+01  0.00E+00  3.39E+01  3.43E+01  2.00E-02
+ 
+   687
++        5.40E+01  7.57E+01  0.00E+00  3.60E+01  0.00E+00  3.54E+01  3.59E+01  2.00E-02
+ 
+   688
++        5.40E+01  8.77E+01  0.00E+00  3.74E+01  0.00E+00  3.69E+01  3.73E+01  2.00E-02
+ 
+   689
++        5.40E+01  9.97E+01  0.00E+00  3.88E+01  0.00E+00  3.82E+01  3.88E+01  2.00E-02
+ 
+   690
++        5.40E+01  1.11E+02  3.79E+01  3.70E+01  2.03E-01  3.65E+01  3.70E+01  2.00E-02
+ 
+   691
++        5.50E+01  0.00E+00  0.00E+00  1.79E+01  0.00E+00  1.46E+01  1.55E+01  3.00E-02
+ 
+   692
++        5.50E+01  1.20E+01  0.00E+00  1.92E+01  0.00E+00  1.58E+01  1.67E+01  3.00E-02
+ 
+   693
++        5.50E+01  2.40E+01  0.00E+00  2.04E+01  0.00E+00  1.69E+01  1.78E+01  3.00E-02
+ 
+   694
++        5.50E+01  3.60E+01  0.00E+00  2.16E+01  0.00E+00  1.80E+01  1.89E+01  3.00E-02
+ 
+   695
++        5.50E+01  4.80E+01  0.00E+00  2.28E+01  0.00E+00  1.91E+01  2.00E+01  3.00E-02
+ 
+   696
++        5.50E+01  6.00E+01  0.00E+00  2.38E+01  0.00E+00  2.01E+01  2.10E+01  3.00E-02
+ 
+   697
++        5.50E+01  7.20E+01  0.00E+00  2.49E+01  0.00E+00  2.10E+01  2.19E+01  3.00E-02
+ 
+   698
++        5.50E+01  7.40E+01  2.08E+01  2.47E+01 -4.41E-01  2.09E+01  2.17E+01  3.00E-02
+ 
+   699
++        5.60E+01  0.00E+00  0.00E+00  8.59E+00  0.00E+00  1.79E+01  1.84E+01 -8.14E-02
+ 
+   700
++        5.60E+01  1.27E+01  0.00E+00  9.24E+00  0.00E+00  1.85E+01  1.89E+01 -8.14E-02
+ 
+   701
++        5.60E+01  2.00E+01  1.88E+01  8.97E+00  1.77E+00  1.75E+01  1.79E+01 -8.14E-02
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   702
++        5.70E+01  0.00E+00  0.00E+00  1.43E+01  0.00E+00  9.60E+00  9.72E+00  2.20E-01
+ 
+   703
++        5.70E+01  5.00E-01  0.00E+00  2.86E+01  0.00E+00  1.92E+01  1.94E+01  2.20E-01
+ 
+   704
++        5.70E+01  1.70E+00  2.02E+01  2.85E+01  6.30E-02  1.91E+01  1.94E+01  2.20E-01
+ 
+   705
++        5.70E+01  1.22E+01  0.00E+00  3.09E+01  0.00E+00  2.08E+01  2.11E+01  2.20E-01
+ 
+   706
++        5.70E+01  2.47E+01  0.00E+00  3.29E+01  0.00E+00  2.24E+01  2.27E+01  2.20E-01
+ 
+   707
++        5.70E+01  3.72E+01  0.00E+00  3.49E+01  0.00E+00  2.39E+01  2.42E+01  2.20E-01
+ 
+   708
++        5.70E+01  4.78E+01  0.00E+00  3.70E+01  0.00E+00  2.54E+01  2.58E+01  2.20E-01
+ 
+   709
++        5.70E+01  6.02E+01  0.00E+00  3.88E+01  0.00E+00  2.68E+01  2.72E+01  2.20E-01
+ 
+   710
++        5.70E+01  7.22E+01  0.00E+00  4.13E+01  0.00E+00  2.86E+01  2.91E+01  2.20E-01
+ 
+   711
++        5.70E+01  8.42E+01  0.00E+00  4.36E+01  0.00E+00  3.04E+01  3.08E+01  2.20E-01
+ 
+   712
++        5.70E+01  9.62E+01  0.00E+00  4.59E+01  0.00E+00  3.21E+01  3.26E+01  2.20E-01
+ 
+   713
++        5.70E+01  1.09E+02  2.78E+01  4.36E+01 -1.39E+00  3.07E+01  3.12E+01  2.20E-01
+ 
+   714
++        5.80E+01  0.00E+00  0.00E+00  1.00E+01  0.00E+00  1.16E+01  1.16E+01  1.17E-01
+ 
+   715
++        5.80E+01  5.00E-01  0.00E+00  2.00E+01  0.00E+00  2.32E+01  2.32E+01  1.17E-01
+ 
+   716
++        5.80E+01  8.50E+00  2.24E+01  1.94E+01  1.93E-01  2.23E+01  2.23E+01  1.17E-01
+ 
+   717
++        5.80E+01  1.20E+01  0.00E+00  2.16E+01  0.00E+00  2.48E+01  2.49E+01  1.17E-01
+ 
+   718
++        5.80E+01  2.43E+01  0.00E+00  2.31E+01  0.00E+00  2.61E+01  2.63E+01  1.17E-01
+ 
+   719
++        5.80E+01  3.58E+01  0.00E+00  2.45E+01  0.00E+00  2.75E+01  2.78E+01  1.17E-01
+ 
+   720
++        5.80E+01  4.75E+01  2.79E+01  2.34E+01  7.02E-01  2.59E+01  2.62E+01  1.17E-01
+ 
+   721
++        5.80E+01  4.80E+01  0.00E+00  2.59E+01  0.00E+00  2.87E+01  2.91E+01  1.17E-01
+ 
+   722
++        5.80E+01  5.95E+01  0.00E+00  2.72E+01  0.00E+00  2.99E+01  3.04E+01  1.17E-01
+ 
+   723
++        5.80E+01  7.20E+01  0.00E+00  2.84E+01  0.00E+00  3.10E+01  3.15E+01  1.17E-01
+ 
+   724
++        5.80E+01  8.40E+01  0.00E+00  2.96E+01  0.00E+00  3.20E+01  3.26E+01  1.17E-01
+ 
+   725
++        5.80E+01  9.63E+01  0.00E+00  3.06E+01  0.00E+00  3.29E+01  3.36E+01  1.17E-01
+ 
+   726
++        5.80E+01  1.07E+02  0.00E+00  3.18E+01  0.00E+00  3.40E+01  3.47E+01  1.17E-01
+ 
+   727
++        5.80E+01  1.20E+02  0.00E+00  3.27E+01  0.00E+00  3.46E+01  3.55E+01  1.17E-01
+ 
+1
+
+ LINE NO.ID        TIME      DV        PRED      CWRES     IPRED     CIPREDI   ETA1     
+ 
+   728
++        5.80E+01  1.32E+02  3.10E+01  3.12E+01 -4.42E-01  3.26E+01  3.35E+01  1.17E-01
+ 
+   729
++        5.90E+01  0.00E+00  0.00E+00  1.63E+01  0.00E+00  2.31E+01  2.32E+01 -1.99E-01
+ 
+   730
++        5.90E+01  1.80E+00  2.26E+01  1.62E+01  3.56E-02  2.29E+01  2.30E+01 -1.99E-01
+ 
+   731
++        5.90E+01  1.25E+01  0.00E+00  1.77E+01  0.00E+00  2.49E+01  2.50E+01 -1.99E-01
+ 
+   732
++        5.90E+01  2.43E+01  0.00E+00  1.90E+01  0.00E+00  2.66E+01  2.68E+01 -1.99E-01
+ 
+   733
++        5.90E+01  3.63E+01  0.00E+00  2.02E+01  0.00E+00  2.82E+01  2.84E+01 -1.99E-01
+ 
+   734
++        5.90E+01  4.88E+01  0.00E+00  2.14E+01  0.00E+00  2.96E+01  2.99E+01 -1.99E-01
+ 
+   735
++        5.90E+01  6.03E+01  0.00E+00  2.26E+01  0.00E+00  3.11E+01  3.15E+01 -1.99E-01
+ 
+   736
++        5.90E+01  7.23E+01  0.00E+00  2.37E+01  0.00E+00  3.24E+01  3.29E+01 -1.99E-01
+ 
+   737
++        5.90E+01  7.38E+01  3.43E+01  2.35E+01  8.36E-01  3.22E+01  3.26E+01 -1.99E-01
+ 
+   738
++        5.90E+01  8.43E+01  0.00E+00  2.47E+01  0.00E+00  3.37E+01  3.42E+01 -1.99E-01
+ 
+   739
++        5.90E+01  9.60E+01  0.00E+00  2.57E+01  0.00E+00  3.50E+01  3.55E+01 -1.99E-01
+ 
+   740
++        5.90E+01  1.08E+02  0.00E+00  2.66E+01  0.00E+00  3.61E+01  3.66E+01 -1.99E-01
+ 
+   741
++        5.90E+01  1.20E+02  0.00E+00  2.75E+01  0.00E+00  3.71E+01  3.77E+01 -1.99E-01
+ 
+   742
++        5.90E+01  1.32E+02  0.00E+00  2.84E+01  0.00E+00  3.82E+01  3.88E+01 -1.99E-01
+ 
+   743
++        5.90E+01  1.45E+02  0.00E+00  2.91E+01  0.00E+00  3.90E+01  3.98E+01 -1.99E-01
+ 
+   744
++        5.90E+01  1.47E+02  4.02E+01  2.89E+01  7.43E-01  3.87E+01  3.94E+01 -1.99E-01
+ 
+ Elapsed finaloutput time in seconds:     0.03
+ #CPUT: Total CPU Time in Seconds,       31.379
 Stop Time:
-Thu Apr 11 09:33:53 AM CEST 2024
+fre 30 aug 2024 14:57:55 CEST

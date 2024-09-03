@@ -92,19 +92,11 @@ def parameters_from_blocks(blocks, all_names, record_name):
             col = row
             for i, name in enumerate(names):
                 if name in all_names:
-                    duplicated_name = name
                     name = None
-                else:
-                    duplicated_name = None
                 if name is None:
                     name = f'{record_name}_{row}_{col}'
                     while name in all_names:
                         name += "_"
-                if duplicated_name is not None:
-                    warnings.warn(
-                        f'The parameter name {duplicated_name} is duplicated. '
-                        f'Falling back to using {name} instead.'
-                    )
                 all_names.add(name)
                 nonmem_name = f'{record_name}({row},{col})'
                 name_map[nonmem_name] = name
@@ -202,19 +194,11 @@ def parse_parameters(control_stream, statements, di):
         if nonmem_name in abbr_map:
             name = abbr_map[nonmem_name]
         if name in all_names:
-            duplicated_name = name
             name = None
-        else:
-            duplicated_name = None
         if name is None:
             name = f'THETA_{i + 1}'
             while name in all_names:
                 name += "_"
-        if duplicated_name is not None:
-            warnings.warn(
-                f'The parameter name {duplicated_name} is duplicated. '
-                f'Falling back to using {name} instead.'
-            )
         name_map[nonmem_name] = name
         all_names.add(name)
         parameter = Parameter.create(
@@ -489,6 +473,8 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
         if record.has_option('INTERACTION') or record.has_option('INTER'):
             interaction = True
         maxeval_opt = record.get_option('MAXEVAL') if not None else record.get_option('MAXEVALS')
+        if maxeval_opt is None:
+            maxeval_opt = record.get_option('MAX')
         if maxeval_opt is not None:
             if (name.upper() == 'FO' or name.upper() == 'FOCE') and int(maxeval_opt) == 0:
                 evaluation = True
@@ -515,6 +501,10 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 raise ValueError('Currently only AUTO=0 and AUTO=1 is supported')
         if record.has_option('PRINT'):
             keep_every_nth_iter = int(record.get_option('PRINT'))
+        if record.has_option('ETASAMPLES'):
+            individual_eta_samples = bool(int(record.get_option('ETASAMPLES')))
+        else:
+            individual_eta_samples = False
 
         protected_names = [
             name.upper(),
@@ -523,6 +513,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
             'INTER',
             'LAPLACE',
             'LAPLACIAN',
+            'MAX',
             'MAXEVAL',
             'MAXEVALS',
             'METHOD',
@@ -532,6 +523,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
             'AUTO',
             'PRINT',
             'MSFO',
+            'ETASAMPLES',
         ]
 
         tool_options = {
@@ -561,6 +553,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 derivatives=derivatives,
                 predictions=predictions,
                 residuals=residuals,
+                individual_eta_samples=individual_eta_samples,
             )
         except ValueError:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
@@ -876,6 +869,7 @@ def parse_dataset(
         ignore=ignore,
         accept=accept,
         dtype=None if raw else di.get_dtype_dict(),
+        missing_data_token=di.missing_data_token,
     )
     # Let TIME be the idv in both $PK and $PRED models
     # Remove individuals without observations
@@ -907,7 +901,7 @@ def filter_observations(df, di):
 def parse_table_columns(control_stream, netas, problem_no=0):
     # Handle synonyms and appended columns
 
-    reserved = {'PRED', 'IPRED', 'CIPREDI'}
+    reserved = {'PRED', 'IPRED', 'CIPREDI', 'WRES'}
     synonyms = dict()
     all_columns = []
 
@@ -922,7 +916,7 @@ def parse_table_columns(control_stream, netas, problem_no=0):
             symbs.add(s.symbol.name)
 
     (colnames, _, _, _) = parse_column_info(control_stream)
-    symbs |= set(colnames)
+    symbs |= set(colnames) | reserved
 
     for table_record in control_stream.get_records('TABLE', problem_no=problem_no):
         noappend = False

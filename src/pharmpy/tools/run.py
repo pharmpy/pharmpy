@@ -246,7 +246,7 @@ def run_tool_with_name(
     assert wf.name == name
 
     res = execute_workflow(wf, dispatcher=dispatcher, context=ctx)
-    assert name == 'modelfit' or isinstance(res, Results) or name == 'simulation'
+    assert name == 'modelfit' or isinstance(res, Results) or name == 'simulation' or res is None
 
     tool_metadata = _update_metadata(tool_metadata, res)
     ctx.store_metadata(tool_metadata)

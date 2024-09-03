@@ -8,6 +8,8 @@ def test_init():
     assert expr == 1
     expr2 = Expr(expr)
     assert expr == expr2
+    with pytest.raises(TypeError):
+        Expr(Exception)
 
 
 def test_symbol():

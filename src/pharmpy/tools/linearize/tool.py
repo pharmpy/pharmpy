@@ -1,47 +1,55 @@
 from typing import Optional
 
 from pharmpy.basic import Expr
-from pharmpy.deps import pandas as pd
-from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps, Model, Statements
+from pharmpy.model import Assignment, Model, Statements
 from pharmpy.modeling import (
+    add_estimation_step,
     add_predictions,
-    append_estimation_step_options,
-    get_mdv,
+    get_observations,
+    get_omegas,
+    get_sigmas,
+    remove_parameter_uncertainty_step,
     set_estimation_step,
     set_initial_estimates,
 )
 from pharmpy.modeling.estimation_steps import add_derivative
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, abort_workflow
+from pharmpy.workflows.results import ModelfitResults
 
 from .results import calculate_results
 
 
 def create_workflow(
-    model: Optional[Model] = None, model_name: str = "linbase", description: str = ""
+    model: Optional[Model] = None,
+    results: Optional[ModelfitResults] = None,
+    model_name: str = "linbase",
+    description: str = "",
 ):
     """
-    Run linaerization procedure
+    Linearize a model
 
     Parameters
     ----------
     model : Model
         Pharmpy model.
+    results : ModelfitResults
+        Results of estimation of model
     model_name : str, optional
         New name of linearized model. The default is "linbase".
     description : str, optional
-        Description of linaerized model. The default is "".
+        Description of linearized model. The default is "".
 
     Returns
     -------
     LinearizeResults
-        Linaerize tool results object.
+        Linearize tool results object.
 
     """
     wb = WorkflowBuilder(name="linearize")
 
     if model is not None:
-        start_task = Task('start_linearize', start_linearize, model)
+        start_task = Task('start_linearize', start_linearize, model, results)
     else:
         start_task = Task('start_linearize', start_linearize)
 
@@ -70,8 +78,8 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start_linearize(context, model):
-    start_model_entry = ModelEntry.create(model=model)
+def start_linearize(context, model, results):
+    start_model_entry = ModelEntry.create(model=model, modelfit_results=results)
 
     # Create links to input model
     context.store_input_model_entry(start_model_entry)
@@ -90,6 +98,10 @@ def postprocess(context, model_name, *modelentries):
         base.model, base.modelfit_results, linbase.model, linbase.modelfit_results
     )
 
+    context.log_progress(f"OFV of input model:                {res.ofv['base']:.3f}")
+    context.log_progress(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
+    context.log_progress(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
+
     res.to_csv(context.path / "results.csv")
 
     # Create links to final model
@@ -98,39 +110,62 @@ def postprocess(context, model_name, *modelentries):
     return res
 
 
-def create_derivative_model(modelentry):
-    der_model = modelentry.model.replace(name="derivative_model")
-    der_model = add_derivative(der_model)
-    first_es = der_model.execution_steps[0]
-    der_model = set_estimation_step(der_model, first_es.method, 0, maximum_evaluations=1)
+def create_derivative_model(context, modelentry):
+    der_model = modelentry.model.replace(name="derivatives")
+    if (
+        modelentry.modelfit_results is not None
+        and modelentry.modelfit_results.parameter_estimates is not None
+    ):
+        der_model = set_initial_estimates(
+            der_model, modelentry.modelfit_results.parameter_estimates
+        )
+    if (
+        modelentry.modelfit_results is not None
+        and modelentry.modelfit_results.individual_estimates is not None
+    ):
+        der_model = der_model.replace(
+            initial_individual_estimates=modelentry.modelfit_results.individual_estimates
+        )
     der_model = add_predictions(der_model, ["CIPREDI"])
+    der_model = add_derivative(der_model)
+    der_model = set_estimation_step(der_model, "FOCE", 0, evaluation=True)
+    context.log_progress("Running derivative model")
+    der_model = remove_parameter_uncertainty_step(der_model)
     return ModelEntry.create(model=der_model)
 
 
-def _create_linearized_model(model_name, description, model, derivative_model_entry):
-    new_input_file = cleanup_columns(derivative_model_entry)
-    new_datainfo = DataInfo.create(list(new_input_file.columns))
-    new_datainfo = new_datainfo.set_dv_column("DV")
-    new_datainfo = new_datainfo.set_id_column("ID")
-    new_datainfo = new_datainfo.set_idv_column("TIME")
+def _create_linearized_model(context, model_name, description, model, derivative_model_entry):
+    if derivative_model_entry.modelfit_results is None:
+        abort_workflow(context, "Error while running the derivative model")
+    df = cleanup_columns(derivative_model_entry)
 
-    linbase = Model(
-        parameters=derivative_model_entry.model.parameters,
+    derivative_model = derivative_model_entry.model
+    linbase = Model.create(
+        parameters=get_omegas(derivative_model) + get_sigmas(derivative_model),
         random_variables=derivative_model_entry.model.random_variables,
         dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
-        datainfo=model.datainfo,
+        dataset=df,
         name=model_name,
         description=description,
     )
+    di = linbase.datainfo
+    di = di.set_dv_column("DV")
+    di = di.set_id_column("ID")
+    di = di.set_idv_column("TIME")
+    linbase = linbase.replace(
+        datainfo=di,
+        initial_individual_estimates=derivative_model_entry.modelfit_results.individual_estimates,
+    )
+
     linbase = set_initial_estimates(
         linbase, derivative_model_entry.modelfit_results.parameter_estimates
     )
+    linbase = add_estimation_step(linbase, "FOCE", maximum_evaluations=999999, interaction=True)
 
-    linbase = linbase.replace(dataset=new_input_file)
-    linbase = linbase.replace(datainfo=new_datainfo)
+    statements = _create_linearized_model_statements(linbase, model)
+    linbase = linbase.replace(statements=statements)
 
-    linbase = _create_linearized_model_statements(linbase, model)
-
+    context.log_progress("Running linearized model")
     return ModelEntry.create(model=linbase)
 
 
@@ -153,7 +188,7 @@ def _create_linearized_model_statements(linbase, model):
     err_terms_sum = 0
     for epsno, eps in enumerate(model.random_variables.epsilons, start=1):
         err = Assignment(
-            Expr.symbol(f'ERR_{epsno}'), Expr.symbol(eps.names[0]) * Expr.symbol(f'D_EPS_{epsno}')
+            Expr.symbol(f'ERR{epsno}'), Expr.symbol(eps.names[0]) * Expr.symbol(f'D_EPS_{epsno}')
         )
         err_terms_sum += err.symbol
         ms.append(err)
@@ -177,61 +212,49 @@ def _create_linearized_model_statements(linbase, model):
 
     ms.append(y_assignment)
 
-    est = EstimationStep.create('foce', interaction=True)
-    linbase = linbase.replace(execution_steps=ExecutionSteps.create([est]))
-    linbase = linbase.replace(statements=Statements(ms))
-    linbase = append_estimation_step_options(linbase, tool_options={"MCETA": 1000}, idx=0)
-
-    from pharmpy.modeling import convert_model
-
-    linbase = convert_model(linbase, "nonmem")
-
-    return linbase
+    return Statements(ms)
 
 
 def cleanup_columns(modelentry):
     predictions = modelentry.modelfit_results.predictions
+    model = modelentry.model
     if predictions is None:
         raise ValueError("Require PREDICTIONS to be calculated")
     else:
-        pred_found = False
-        for p in ["IPRED", "CIPREDI"]:
-            try:
-                pred_col = predictions[p]  # TODO : Allow other prediction values?
-                predictions = pd.DataFrame(pred_col)
-                predictions = predictions.rename({p: "OPRED"}, axis=1)
-                pred_found = True
-                break
-            except KeyError:
-                pass
+        if "CIPREDI" in predictions:
+            predcol = "CIPREDI"
+        elif "IPRED" in predictions:
+            predcol = "IPRED"
+        else:
+            raise ValueError("Cannot find IPRED or CIPREDI for the input model")
+        ipred = predictions[predcol]
 
-        if not pred_found:
-            raise ValueError("Cannot determine OPRED to use for linearized model")
+    df = model.dataset[["ID", "TIME", "DV"]].copy()  # Assume existence
+    df['OPRED'] = ipred
 
     derivatives = modelentry.modelfit_results.derivatives
-    amt_dv = modelentry.model.dataset[["ID", "TIME", "AMT", "DV"]]  # Assume existance
     derivative_name_subs = {}
     for der_col in derivatives.columns:
         names = der_col.split(";")
         if 1 <= len(names) <= 2:
-            derivative_name_subs[der_col] = create_derivative_name(modelentry.model, names)
+            derivative_name_subs[der_col] = create_derivative_name(model, names)
         else:
             if len(names) == 0:
-                raise ValueError(f"Unsupported derivaitve {der_col} ModelfitResults object")
+                raise ValueError(f"Unsupported derivative {der_col} ModelfitResults object")
     derivatives = derivatives.rename(derivative_name_subs, axis=1)
-    new_input_file = predictions.join(amt_dv).join(derivatives)
+    df = df.join(derivatives)
 
     etas = modelentry.modelfit_results.individual_estimates
     eta_name_subs = {}
-    for n, eta in enumerate(modelentry.model.random_variables.iiv.names, start=1):
+    for n, eta in enumerate(model.random_variables.iiv.names, start=1):
         eta_name_subs[eta] = f"OETA_{n}"
     etas = etas.rename(eta_name_subs, axis=1)
-    new_input_file = new_input_file.join(etas, on="ID")
+    df = df.join(etas, on="ID")
 
-    new_input_file = new_input_file.reset_index(drop=True)
-    new_input_file["MDV"] = get_mdv(modelentry.model)
-
-    return new_input_file
+    df = df.reset_index(drop=True)
+    obs = get_observations(model, keep_index=True)
+    df = df.loc[obs.index]
+    return df
 
 
 def create_derivative_name(model, param_list):
@@ -240,16 +263,10 @@ def create_derivative_name(model, param_list):
     for name in param_list:
         if name in model.random_variables.etas:
             param_names += "ETA"
-            param_numbers.append(
-                str(model.random_variables.etas.index(model.random_variables.etas[name]) + 1)
-            )
+            param_numbers.append(str(model.random_variables.etas.names.index(name) + 1))
         elif name in model.random_variables.epsilons:
             param_names += "EPS"
-            param_numbers.append(
-                str(
-                    model.random_variables.epsilons.index(model.random_variables.epsilons[name]) + 1
-                )
-            )
+            param_numbers.append(str(model.random_variables.epsilons.names.index(name) + 1))
         else:
             raise ValueError(f"Derivatives with respect to parameter {name} not supported.")
 

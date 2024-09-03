@@ -5,6 +5,20 @@ import zipfile
 from pathlib import Path
 
 
+def get_psn_option(path, option, remove_quotes=True):
+    path = Path(path)
+    with open(path / 'meta.yaml') as meta:
+        for row in meta:
+            row = row.strip()
+            if row.startswith(option + ':'):
+                token = row[len(option) + 2 :]
+                if remove_quotes:
+                    if token[0] in ("'", '"'):
+                        token = token[1:-1]
+                return token
+    return None
+
+
 def options_from_command(command):
     p = re.compile('^-+([^=]+)=?(.*)')
     return {

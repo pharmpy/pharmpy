@@ -383,6 +383,8 @@ class RandomVariables(CollectionsSequence, Immutable):
         return n
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, RandomVariables):
             return NotImplemented
         if len(self) == len(other):

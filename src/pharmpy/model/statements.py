@@ -24,19 +24,21 @@ else:
 class Statement(Immutable):
     """Abstract base class for all types of statements"""
 
-    def __add__(self, other: Union[Statement, Statements, Sequence]) -> Statements:
+    def __add__(self, other: Union[Statement, Statements, Iterable[Statement]]) -> Statements:
         if isinstance(other, Statements):
             return Statements((self,) + other._statements)
         elif isinstance(other, Statement):
             return Statements((self, other))
+        elif isinstance(other, Iterable):
+            return Statements.create((self,) + tuple(other))
         else:
-            return Statements((self,) + tuple(other))
+            return NotImplemented
 
-    def __radd__(self, other: Union[Statement, Sequence]) -> Statements:
-        if isinstance(other, Statement):
-            return Statements((other, self))
+    def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
+        if isinstance(other, Iterable):
+            return Statements.create(tuple(other) + (self,))
         else:
-            return Statements(tuple(other) + (self,))
+            return NotImplemented
 
     @abstractmethod
     def subs(self, substitutions: Mapping[Expr, Expr]) -> Statement:
@@ -74,7 +76,7 @@ class Assignment(Statement):
     @classmethod
     def create(cls, symbol: TExpr, expression: TExpr) -> Assignment:
         symbol = Expr(symbol)
-        if not symbol.is_symbol:
+        if not symbol.is_symbol():
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
         expression = Expr(expression)
         # To avoid nested piecewises
@@ -480,6 +482,7 @@ class CompartmentalSystemBuilder:
         for comp in self._g.nodes:
             if not isinstance(comp, Output) and comp.name == name:
                 return comp
+        return None
 
 
 def _is_positive(expr: sympy.Expr) -> bool:
@@ -624,44 +627,35 @@ class CompartmentalSystem(Statement):
 
     def __init__(
         self,
-        builder: Optional[CompartmentalSystemBuilder] = None,
-        graph=None,
+        builder: CompartmentalSystemBuilder,
         t: Expr = Expr.symbol('t'),
     ):
-        if builder is not None:
-            self._g = nx.freeze(builder._g.copy())
-        elif graph is not None:
-            self._g = graph
+        self._g = nx.freeze(builder._g.copy())
         self._t = t
 
     @classmethod
     def create(
         cls,
-        builder: Optional[CompartmentalSystemBuilder] = None,
-        graph=None,
-        eqs=None,
-        t: Expr = Expr.symbol('t'),
+        builder: CompartmentalSystemBuilder,
+        t: Optional[Union[Expr, str]] = Expr.symbol('t'),
     ) -> CompartmentalSystem:
-        numargs = (
-            (0 if builder is None else 1) + (0 if graph is None else 1) + (0 if eqs is None else 1)
-        )
-        if numargs != 1:
-            raise ValueError(
-                "Need exactly one of builder, graph or eqs to create a CompartmentalSystem"
+        if builder is None:
+            raise TypeError('Argument `builder` cannot be None`')
+        elif not isinstance(builder, CompartmentalSystemBuilder):
+            raise TypeError(
+                f'Argument `builder` must be of type CompartmentalSystemBuilder: got `{type(builder)}`'
             )
-        if eqs is not None:
-            pass
+        if not isinstance(t, Expr) or isinstance(t, str):
+            raise TypeError(f'Argument `t` must be of type str or Expr: got `{type(t)}`')
         t = Expr(t)
-        return cls(builder=builder, graph=graph, t=t)
+        return cls(builder=builder, t=t)
 
     def replace(self, **kwargs) -> CompartmentalSystem:
         t = kwargs.get('t', self._t)
         builder = kwargs.get('builder', None)
         if builder is None:
-            g = kwargs.get('graph', self._g)
-        else:
-            g = None
-        return CompartmentalSystem.create(builder=builder, graph=g, t=t)
+            builder = CompartmentalSystemBuilder(self)
+        return CompartmentalSystem.create(builder=builder, t=t)
 
     @property
     def t(self) -> Expr:
@@ -743,28 +737,9 @@ class CompartmentalSystem(Statement):
         nx.relabel_nodes(cb._g, mapping, copy=False)
         return CompartmentalSystem(cb)
 
-    def atoms(self, cls):
-        """Get set of all symbolic atoms of some kind
-
-        For more information see
-        https://docs.sympy.org/latest/modules/core.html#sympy.core.basic.Basic.atoms
-
-        Parameters
-        ----------
-        cls : type
-            Type of atoms to find
-
-        Returns
-        -------
-        set
-            Set of symbolic atoms
-        """
-        atoms = set()
-        for _, _, rate in self._g.edges.data('rate'):
-            atoms |= rate.atoms(cls)
-        return atoms
-
     def __eq__(self, other):
+        if other is self:
+            return True
         if not isinstance(other, CompartmentalSystem):
             return NotImplemented
         return (
@@ -1093,7 +1068,7 @@ class CompartmentalSystem(Statement):
         if name is not None:
             central = self.find_compartment(name)
             if central is None:
-                raise ValueError(f"{name} is not a name of a connected compartment")
+                raise ValueError(f"{name} is not a name of an existing compartment")
         else:
             central = self.central_compartment
         oneout = {node for node, out_degree in self._g.out_degree() if out_degree == 1}
@@ -1191,19 +1166,19 @@ class CompartmentalSystem(Statement):
         depot = None
         for to_central, _ in self.get_compartment_inflows(central):
             outflows = self.get_compartment_outflows(to_central)
-            if len(outflows) == 1 or len(outflows) == 2:
-                if len(outflows) == 2:
-                    # FIXME: Use another method than compartment name
-                    metabolite = self.find_compartment("METABOLITE")
-                    if metabolite is None or not self.get_flow(to_central, metabolite):
-                        break
-                inflows = self.get_compartment_inflows(to_central)
-                for in_comp, _ in inflows:
-                    if in_comp == central:
-                        break
-                else:
-                    depot = to_central
+            assert len(outflows) == 1 or len(outflows) == 2
+            if len(outflows) == 2:
+                # FIXME: Use another method than compartment name
+                metabolite = self.find_compartment("METABOLITE")
+                if metabolite is None or not self.get_flow(to_central, metabolite):
                     break
+            inflows = self.get_compartment_inflows(to_central)
+            for in_comp, _ in inflows:
+                if in_comp == central:
+                    break
+            else:
+                depot = to_central
+                break
         return depot
 
     @property
@@ -1272,7 +1247,8 @@ class CompartmentalSystem(Statement):
             dosecmt = self.dosing_compartments[0]
         except ValueError:
             # Fallback for cases where no dose is available (yet)
-            return list(_comps(self._g))
+            comps = list(_comps(self._g))
+            return sorted(comps, key=lambda comp: comp.name)
         # Order compartments
 
         def sortfunc(x):
@@ -1472,8 +1448,8 @@ class Bolus(Dose, Immutable):
     """
 
     def __init__(self, amount: Expr, admid: int = 1):
+        super().__init__(admid)
         self._amount = amount
-        self._admid = admid
 
     @classmethod
     def create(cls, amount: TExpr, admid: int = 1) -> Bolus:
@@ -1570,8 +1546,8 @@ class Infusion(Dose, Immutable):
         rate: Optional[Expr] = None,
         duration: Optional[Expr] = None,
     ):
+        super().__init__(admid)
         self._amount = amount
-        self._admid = admid
         self._rate = rate
         self._duration = duration
 
@@ -1769,7 +1745,7 @@ class Compartment(CompartmentBase):
             amount_expr = Expr.function(f'A_{name}', 't')
         if not isinstance(doses, tuple):
             try:
-                tuple(doses)
+                doses = tuple(doses)
             except TypeError:
                 raise TypeError("dose(s) need to be given as a sequence")
         for d in doses:
@@ -1971,13 +1947,26 @@ class Statements(Sequence, Immutable):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements: Optional[Union[Statements, Iterable[Statement]]] = None):
+    def __init__(self, statements: Union[Statements, Iterable[Statement]] = ()):
+        if not isinstance(statements, tuple):
+            statements = tuple(statements)
+        self._statements = statements
+
+    @classmethod
+    def create(cls, statements: Optional[Union[Statements, Iterable[Statement]]] = None):
         if isinstance(statements, Statements):
-            self._statements = statements._statements
+            statements = statements
         elif statements is None:
-            self._statements = ()
+            statements = ()
+        elif isinstance(statements, Iterable):
+            if any(not isinstance(s, Statement) for s in statements):
+                raise TypeError('`statements` must consist of only type Statement')
+            statements = tuple(statements)
         else:
-            self._statements = tuple(statements)
+            raise TypeError(
+                f'`statements` must be of type Statements or an iterable of Statement: got `{type(statements)}`'
+            )
+        return cls(statements)
 
     @overload
     def __getitem__(self, ind: slice) -> Statements: ...
@@ -1994,19 +1983,21 @@ class Statements(Sequence, Immutable):
     def __len__(self):
         return len(self._statements)
 
-    def __add__(self, other: Union[Statements, Statement, Sequence[Statement]]) -> Statements:
+    def __add__(self, other: Union[Statements, Statement, Iterable[Statement]]) -> Statements:
         if isinstance(other, Statements):
             return Statements(self._statements + other._statements)
         elif isinstance(other, Statement):
             return Statements(self._statements + (other,))
+        elif isinstance(other, Iterable):
+            return Statements.create(self._statements + tuple(other))
         else:
-            return Statements(self._statements + tuple(other))
+            return NotImplemented
 
-    def __radd__(self, other: Union[Statement, Sequence[Statement]]) -> Statements:
-        if isinstance(other, Statement):
-            return Statements((other,) + self._statements)
+    def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
+        if isinstance(other, Iterable):
+            return Statements.create(tuple(other) + self._statements)
         else:
-            return Statements(tuple(other) + self._statements)
+            return NotImplemented
 
     @property
     def free_symbols(self) -> set[Expr]:
@@ -2251,7 +2242,8 @@ class Statements(Sequence, Immutable):
                 if isinstance(statement, Assignment):
                     if statement.symbol in rhs:
                         graph.add_edge(i, j)
-                elif isinstance(statement, CompartmentalSystem):
+                else:
+                    assert isinstance(statement, CompartmentalSystem)
                     amts = set(statement.amounts)
                     if not rhs.isdisjoint(amts):
                         graph.add_edge(i, j)
@@ -2375,8 +2367,7 @@ class Statements(Sequence, Immutable):
         # Other dependencies after removed_ind
         additional = {down for up, down in graph.edges if up > removed_ind and down in candidates}
         for add in additional.copy():
-            if add in graph:
-                additional |= set(nx.dfs_preorder_nodes(graph, add))
+            additional |= set(nx.dfs_preorder_nodes(graph, add))
         remove = candidates - additional
         return Statements(tuple(self[i] for i in range(len(self)) if i not in remove))
 
@@ -2411,6 +2402,8 @@ class Statements(Sequence, Immutable):
         return expression
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, Statements):
             return NotImplemented
         if len(self) != len(other):

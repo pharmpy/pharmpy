@@ -83,7 +83,7 @@ class TemporaryDirectory:
                     raise
 
         if sys.version_info.minor >= 12:
-            _shutil.rmtree(name, onexc=onerror)  # pyright: ignore
+            _shutil.rmtree(name, onexc=onerror)
         else:
             # This was deprecated in Python 3.12
             _shutil.rmtree(name, onerror=onerror)

@@ -8,6 +8,7 @@ from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
 
+from pharmpy import conf
 from pharmpy.basic import TUnit, Unit
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import Immutable, frozenmapping
@@ -244,6 +245,8 @@ class ColumnInfo(Immutable):
         return new
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, ColumnInfo):
             return NotImplemented
         return (
@@ -552,6 +555,8 @@ class DataInfo(Sequence, Immutable):
         Path to dataset file
     separator : str
         Character or regexp separator for dataset
+    missing_data_token : str
+        Token for missing data
     """
 
     def __init__(
@@ -559,10 +564,15 @@ class DataInfo(Sequence, Immutable):
         columns: tuple[ColumnInfo, ...] = (),
         path: Optional[Path] = None,
         separator: str = ',',
+        missing_data_token: Optional[str] = None,
     ):
         self._columns = columns
         self._path = path
         self._separator = separator
+        if missing_data_token is None:
+            self._missing_data_token = conf.missing_data_token
+        else:
+            self._missing_data_token = missing_data_token
 
     @classmethod
     def create(
@@ -570,13 +580,15 @@ class DataInfo(Sequence, Immutable):
         columns: Optional[Union[Sequence[ColumnInfo], Sequence[str]]] = None,
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
+        missing_data_token: Optional[str] = None,
     ):
-        if columns and not all(
-            isinstance(col, str) or isinstance(col, ColumnInfo) for col in columns
-        ):
-            raise ValueError(
-                'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
-            )
+        if columns:
+            if not isinstance(columns, Sequence):
+                raise TypeError('Argument `columns` must be iterable')
+            if not all(isinstance(col, str) or isinstance(col, ColumnInfo) for col in columns):
+                raise TypeError(
+                    'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
+                )
         if columns is None or len(columns) == 0:
             cols = ()
         elif len(columns) > 0 and any(isinstance(col, str) for col in columns):
@@ -585,7 +597,11 @@ class DataInfo(Sequence, Immutable):
             cols = cast(tuple[ColumnInfo, ...], tuple(columns))
         if path is not None:
             path = Path(path)
-        return cls(columns=cols, path=path, separator=separator)
+        if missing_data_token is None:
+            missing_data_token = conf.missing_data_token
+        return cls(
+            columns=cols, path=path, separator=separator, missing_data_token=str(missing_data_token)
+        )
 
     def replace(self, **kwargs) -> DataInfo:
         if 'columns' in kwargs:
@@ -600,7 +616,13 @@ class DataInfo(Sequence, Immutable):
         else:
             path = self._path
         separator = kwargs.get('separator', self._separator)
-        return DataInfo.create(columns=columns, path=path, separator=separator)
+        missing_data_token = kwargs.get('missing_data_token', self._missing_data_token)
+        return DataInfo.create(
+            columns=columns,
+            path=path,
+            separator=separator,
+            missing_data_token=str(missing_data_token),
+        )
 
     def __add__(self, other: DataInfo) -> DataInfo:
         if isinstance(other, DataInfo):
@@ -627,6 +649,8 @@ class DataInfo(Sequence, Immutable):
             )
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, DataInfo):
             return NotImplemented
         if len(self) != len(other):
@@ -700,6 +724,11 @@ class DataInfo(Sequence, Immutable):
         string.
         """
         return self._separator
+
+    @property
+    def missing_data_token(self) -> str:
+        """Token for missing data"""
+        return self._missing_data_token
 
     @property
     def typeix(self) -> TypeIndexer:
@@ -899,7 +928,14 @@ class DataInfo(Sequence, Immutable):
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> DataInfo:
         columns = tuple(ColumnInfo.from_dict(col) for col in d['columns'])
-        return cls(columns=columns, path=d['path'], separator=d['separator'])
+        # For backwards compatibility
+        missing_data_token = d.get('missing_data_token', conf.missing_data_token)
+        return cls(
+            columns=columns,
+            path=d['path'],
+            separator=d['separator'],
+            missing_data_token=missing_data_token,
+        )
 
     def _to_dict(self, path: Optional[str]) -> dict[str, Any]:
         a = []
@@ -921,6 +957,7 @@ class DataInfo(Sequence, Immutable):
             "columns": a,
             "path": path,
             "separator": self._separator,
+            "missing_data_token": self._missing_data_token,
         }
 
     def to_json(self, path: Optional[Union[Path, str]] = None):

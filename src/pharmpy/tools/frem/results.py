@@ -26,6 +26,7 @@ from pharmpy.modeling import (
     set_covariates,
 )
 from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.psn_helpers import get_psn_option
 from pharmpy.workflows import Results
 
 
@@ -996,17 +997,16 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     :return: A :class:`FREMResults` object
 
     """
+    missing_data_token = get_psn_option(path, "missing_data_token")
     path = Path(path)
 
     model_4_path = path / 'final_models' / 'model_4.mod'
     if not model_4_path.is_file():
         raise IOError(f'Could not find FREM model 4: {str(model_4_path)}')
-    model_4 = Model.parse_model(model_4_path)
+    model_4 = Model.parse_model(model_4_path, missing_data_token=missing_data_token)
     model_4_results = read_modelfit_results(model_4_path)
-    with warnings.catch_warnings():
-        warnings.filterwarnings("ignore", message="Adjusting initial estimates")
-        if model_4_results is None:
-            raise ValueError('Model 4 has no results')
+    if model_4_results is None:
+        raise ValueError('Model 4 has no results')
     cov_model_results = None
     if method == 'cov_sampling':
         try:
@@ -1059,12 +1059,12 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     for m in intmod_names:
         intmod_path = path / 'm1' / m
         if intmod_path.is_file():
-            intmod = Model.parse_model(intmod_path)
+            intmod = Model.parse_model(intmod_path, missing_data_token=missing_data_token)
             intmods.append(intmod)
             res = read_modelfit_results(intmod_path)
             intmodres.append(res)
 
-    model1b = Model.parse_model(path / 'm1' / 'model_1b.mod')
+    model1b = Model.parse_model(path / 'm1' / 'model_1b.mod', missing_data_token=missing_data_token)
     model1 = intmods[0]
     model1_res = replace(
         intmodres[0], parameter_estimates=pd.Series(model1b.parameters.nonfixed.inits)

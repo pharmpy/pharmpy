@@ -30,5 +30,5 @@ def hash_df_runtime(df: pd.DataFrame) -> int:
 def hash_df_fs(df: pd.DataFrame) -> str:
     h = sha256()
     for series in _df_hash_values(df):
-        h.update(series.to_numpy())  # pyright: ignore [reportArgumentType]
+        h.update(series.to_numpy())
     return h.hexdigest()

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Optional, Union, overload
 
 from pharmpy.basic import Expr
 from pharmpy.internals.immutable import Immutable, frozenmapping
@@ -155,7 +155,7 @@ class EstimationStep(ExecutionStep):
         solver_atol: Optional[int] = None,
         tool_options: Optional[frozenmapping[str, Any]] = None,
         derivatives: Sequence[Sequence[Expr]] = (),
-        posterior_eta_type: Optional[str] = None,
+        individual_eta_samples: bool = False,
     ):
         self._method = method
         self._interaction = interaction
@@ -170,7 +170,7 @@ class EstimationStep(ExecutionStep):
         self._residuals = residuals
         self._predictions = predictions
         self._derivatives = derivatives
-        self._posterior_eta_type = posterior_eta_type
+        self._individual_eta_samples = individual_eta_samples
         super().__init__(
             solver=solver,
             solver_rtol=solver_rtol,
@@ -198,7 +198,7 @@ class EstimationStep(ExecutionStep):
         solver_atol: Optional[int] = None,
         tool_options: Optional[Mapping[str, Any]] = None,
         derivatives: Sequence[Sequence[Expr]] = (),
-        posterior_eta_type: Literal[None, "mode", "mean"] = None,
+        individual_eta_samples: bool = False,
     ):
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
@@ -238,16 +238,6 @@ class EstimationStep(ExecutionStep):
             )
         solver = ExecutionStep._canonicalize_solver(solver)
         tool_options = ExecutionStep._canonicalize_tool_options(tool_options)
-
-        # We dont support extracting some other ETA than that connected to the model
-        # so setting this value has no effect.
-        if method in ('FO', 'FOCE', 'ITS'):
-            posterior_eta_type = "mode"
-        elif method in ('IMPMAP', 'IMP', 'SAEM'):
-            posterior_eta_type = "mean"
-        elif method in ('BAYES',):
-            posterior_eta_type = None  # Random single sample, how to label?
-
         return cls(
             method=method,
             interaction=interaction,
@@ -266,7 +256,7 @@ class EstimationStep(ExecutionStep):
             solver_atol=solver_atol,
             tool_options=tool_options,
             derivatives=derivatives,
-            posterior_eta_type=posterior_eta_type,
+            individual_eta_samples=bool(individual_eta_samples),
         )
 
     def replace(self, **kwargs) -> EstimationStep:
@@ -393,33 +383,35 @@ class EstimationStep(ExecutionStep):
         return self._derivatives
 
     @property
+    def individual_eta_samples(self) -> bool:
+        """Should individual eta samples be generated"""
+        return self._individual_eta_samples
+
+    @property
     def tool_options(self) -> Optional[frozenmapping[str, Any]]:
         """Dictionary of tool specific options"""
         return self._tool_options
 
-    @property
-    def posterior_eta_type(self) -> Optional[str]:
-        """Posterior eta type, mean or mode"""
-        return self._posterior_eta_type
-
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, EstimationStep):
             return NotImplemented
         return (
-            self.method == other.method
-            and self.interaction == other.interaction
-            and self.parameter_uncertainty_method == other.parameter_uncertainty_method
-            and self.evaluation == other.evaluation
-            and self.maximum_evaluations == other.maximum_evaluations
-            and self.laplace == other.laplace
-            and self.isample == other.isample
-            and self.niter == other.niter
-            and self.auto == other.auto
-            and self.keep_every_nth_iter == other.keep_every_nth_iter
-            and self.derivatives == other.derivatives
-            and self.predictions == other.predictions
-            and self.residuals == other.residuals
-            and self.posterior_eta_type == other.posterior_eta_type
+            self._method == other._method
+            and self._interaction == other._interaction
+            and self._parameter_uncertainty_method == other._parameter_uncertainty_method
+            and self._evaluation == other._evaluation
+            and self._maximum_evaluations == other._maximum_evaluations
+            and self._laplace == other._laplace
+            and self._isample == other._isample
+            and self._niter == other._niter
+            and self._auto == other._auto
+            and self._keep_every_nth_iter == other._keep_every_nth_iter
+            and self._derivatives == other._derivatives
+            and self._predictions == other._predictions
+            and self._residuals == other._residuals
+            and self._individual_eta_samples == other._individual_eta_samples
             and super().__eq__(other)
         )
 
@@ -436,6 +428,7 @@ class EstimationStep(ExecutionStep):
                 self._niter,
                 self._auto,
                 self._keep_every_nth_iter,
+                self._individual_eta_samples,
                 super().__hash__(),
             )
         )
@@ -456,7 +449,7 @@ class EstimationStep(ExecutionStep):
             'derivatives': tuple(str(d) for d in self._derivatives),
             'predictions': self._predictions,
             'residuals': self._residuals,
-            'posterior_eta_type': self._posterior_eta_type,
+            'individual_eta_samples': self._individual_eta_samples,
         }
         super()._add_to_dict(d)
         return d
@@ -478,7 +471,8 @@ class EstimationStep(ExecutionStep):
             f"parameter_uncertainty_method={parameter_uncertainty_method}, evaluation={self.evaluation}, "
             f"maximum_evaluations={self.maximum_evaluations}, laplace={self.laplace}, "
             f"isample={self.isample}, niter={self.niter}, auto={self.auto}, "
-            f"keep_every_nth_iter={self.keep_every_nth_iter}, {super()._partial_repr()})"
+            f"keep_every_nth_iter={self.keep_every_nth_iter}, "
+            f"individual_eta_samples={self.individual_eta_samples}, {super()._partial_repr()})"
         )
 
 
@@ -535,9 +529,11 @@ class SimulationStep(ExecutionStep):
         return self._seed
 
     def __eq__(self, other):
+        if self is other:
+            return True
         if not isinstance(other, SimulationStep):
             return NotImplemented
-        return self.n == other.n and self.seed == other.seed and super().__eq__(other)
+        return self._n == other._n and self._seed == other._seed and super().__eq__(other)
 
     def __hash__(self):
         return hash((self._n, self._seed, super().__hash__()))
@@ -616,6 +612,8 @@ class ExecutionSteps(Sequence, Immutable):
         return len(self._steps)
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, ExecutionSteps):
             return NotImplemented
         if len(self) != len(other):

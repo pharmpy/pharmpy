@@ -273,14 +273,20 @@ def test_no_of_etas_iiv_strategies(
     'ignore::UserWarning',
 )
 @pytest.mark.parametrize(
-    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models'),
+    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models', 'strategy'),
     (
-        ('top_down_exhaustive', 'skip', 7),
-        ('bottom_up_stepwise', 'skip', 4),
+        ('top_down_exhaustive', 'skip', 7, 'fullblock'),
+        ('bottom_up_stepwise', 'skip', 4, 'no_add'),
     ),
 )
 def test_no_of_etas_linearization(
-    tmp_path, start_modelres, model_count, algorithm, correlation_algorithm, no_of_candidate_models
+    tmp_path,
+    start_modelres,
+    model_count,
+    algorithm,
+    correlation_algorithm,
+    no_of_candidate_models,
+    strategy,
 ):
     with chdir(tmp_path):
         res = run_iivsearch(
@@ -289,6 +295,7 @@ def test_no_of_etas_linearization(
             model=start_modelres[0],
             linearize=True,
             correlation_algorithm=correlation_algorithm,
+            iiv_strategy=strategy,
         )
 
         assert len(res.summary_tool) == no_of_candidate_models + 4

@@ -34,12 +34,15 @@ def test_estimation_method():
         repr(a)
         == "EstimationStep('FO', interaction=False, parameter_uncertainty_method='SANDWICH', evaluation=False, "
         "maximum_evaluations=None, laplace=False, isample=None, niter=None, auto=None, "
-        "keep_every_nth_iter=None, solver=None, solver_rtol=None, solver_atol=None, "
+        "keep_every_nth_iter=None, individual_eta_samples=False, solver=None, solver_rtol=None, solver_atol=None, "
         "tool_options={})"
     )
 
     with pytest.raises(ValueError):
         EstimationStep.create('fo', maximum_evaluations=0)
+
+    with pytest.raises(ValueError):
+        EstimationStep.create('fo', parameter_uncertainty_method='x')
 
 
 def test_repr():
@@ -63,6 +66,7 @@ def test_eq():
     b = EstimationStep.create('fo')
     s4 = ExecutionSteps.create([a, b])
     assert s3 != s4
+    assert s3 != 'x'
 
 
 def test_len():
@@ -127,7 +131,7 @@ def test_dict():
         'derivatives': (),
         'predictions': (),
         'residuals': (),
-        'posterior_eta_type': 'mode',
+        'individual_eta_samples': False,
     }
     step2 = EstimationStep.from_dict(d)
     assert step2 == a
@@ -156,7 +160,7 @@ def test_dict():
                 'derivatives': (),
                 'predictions': (),
                 'residuals': (),
-                'posterior_eta_type': 'mode',
+                'individual_eta_samples': False,
             },
             {
                 'method': 'FO',
@@ -177,12 +181,18 @@ def test_dict():
                 'derivatives': (),
                 'predictions': (),
                 'residuals': (),
-                'posterior_eta_type': 'mode',
+                'individual_eta_samples': False,
             },
         )
     }
     s2 = ExecutionSteps.from_dict(d)
     assert s1 == s2
+
+    ss = SimulationStep(n=23)
+    s3 = s1 + ss
+    d = s3.to_dict()
+    s4 = ExecutionSteps.from_dict(d)
+    assert s3 == s4
 
 
 def test_getitem():
@@ -236,6 +246,11 @@ def test_properties():
         a = EstimationStep.create('foce', predictions=13)
     with pytest.raises(TypeError, match="Residuals could not be converted to tuple"):
         a = EstimationStep.create('foce', residuals=13)
+
+    e1 = EstimationStep.create('foce', individual_eta_samples=True)
+    assert e1.individual_eta_samples
+    e2 = EstimationStep.create('foce')
+    assert not e2.individual_eta_samples
 
 
 def test_replace():

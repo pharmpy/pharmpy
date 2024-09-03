@@ -222,15 +222,17 @@ class LocalDirectoryContext(Context):
                         return a[1][:-1]
         raise KeyError(f"No annotation for {name} available")
 
-    def log_message(self, severity, msg: str):
+    def log_message(self, severity, message: str):
         log_path = self._log_path
         with self._write_lock(log_path):
             with open(log_path, 'a') as fh:
 
-                def mangle_message(msg):
-                    return '"' + msg.replace('"', '""') + '"'
+                def mangle_message(message):
+                    return '"' + message.replace('"', '""') + '"'
 
-                fh.write(f'{self.context_path},{datetime.now()},{severity},{mangle_message(msg)}\n')
+                fh.write(
+                    f'{self.context_path},{datetime.now()},{severity},{mangle_message(message)}\n'
+                )
 
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
         log_path = self._log_path

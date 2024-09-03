@@ -15,7 +15,6 @@ from __future__ import annotations
 
 import dataclasses
 import json
-import warnings
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -178,12 +177,6 @@ class Model(Immutable):
         inits = params.inits
         if not rvs.validate_parameters(inits):
             nearest = rvs.nearest_valid_parameters(inits)
-            before, after = compare_before_after_params(inits, nearest)
-            warnings.warn(
-                f"Adjusting initial estimates to create positive semidefinite "
-                f"omega/sigma matrices.\nBefore adjusting:  {before}.\n"
-                f"After adjusting: {after}"
-            )
             params = params.set_initial_estimates(nearest)
         return params
 
@@ -531,7 +524,8 @@ class Model(Immutable):
     def _repr_html_(self) -> str:
         stat = self.statements._repr_html_()
         rvs = self.random_variables._repr_latex_()
-        return f'<hr>{stat}<hr>${rvs}$<hr>{self.parameters._repr_html_()}<hr>'
+        params = self.parameters._repr_html_()
+        return f'<hr>{stat}<hr>${rvs}$<hr>{params}<hr>'
 
     @property
     def name(self) -> str:
@@ -654,13 +648,15 @@ class Model(Immutable):
         return self._description
 
     @staticmethod
-    def parse_model(path: Union[Path, str]):
+    def parse_model(path: Union[Path, str], missing_data_token: Optional[str] = None):
         """Create a model object by parsing a model file of any supported type
 
         Parameters
         ----------
         path : Path or str
             Path to a model file
+        missing_data_token : str
+            Set to override the configuration
 
         Returns
         -------
@@ -672,7 +668,7 @@ class Model(Immutable):
             code = fp.read()
 
         model_module = detect_model(code)
-        model = model_module.parse_model(code, path)
+        model = model_module.parse_model(code, path, missing_data_token=missing_data_token)
         return model
 
     @staticmethod
@@ -701,17 +697,6 @@ class Model(Immutable):
     def write_files(self, path: Optional[Union[Path, str]] = None, force: bool = False) -> Model:
         """Write all extra files needed for a specific external format."""
         return self
-
-
-def compare_before_after_params(old, new):
-    # FIXME: Move this to the right module
-    before = {}
-    after = {}
-    for key, value in old.items():
-        if new[key] != value:
-            before[key] = value
-            after[key] = new[key]
-    return before, after
 
 
 def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:

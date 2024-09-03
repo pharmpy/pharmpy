@@ -151,6 +151,7 @@ def create_step_workflow(
     linearize,
     param_mapping,
     context,
+    stepno,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
@@ -183,6 +184,7 @@ def create_step_workflow(
         linearize,
         param_mapping,
         context,
+        stepno,
     )
 
     post_process_tasks = [base_model_task] + wb.output_tasks
@@ -274,7 +276,7 @@ def start(
         param_mapping = None
 
     applied_algorithms = []
-    for algorithm_cur in list_of_algorithms:
+    for i, algorithm_cur in enumerate(list_of_algorithms, start=1):
         if (
             algorithm_cur == 'td_exhaustive_block_structure'
             and len(
@@ -336,6 +338,7 @@ def start(
             linearize=linearize,
             param_mapping=param_mapping,
             context=context,
+            stepno=i,
         )
         res = call_workflow(wf, f'results_{algorithm}', context)
 
@@ -498,6 +501,7 @@ def post_process(
     linearize,
     param_mapping,
     context,
+    stepno,
     *model_entries,
 ):
     res_model_entries = []
@@ -557,17 +561,17 @@ def post_process(
     if linearize:
         final_linearized_model = res.final_model
         flm_etas = final_linearized_model.random_variables.iiv.names
-        final_param_mapp = {k: v for k, v in param_mapping.items() if k in flm_etas}
+        final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
         final_delinearized_model = delinearize_model(
-            final_linearized_model, input_model_entry.model, final_param_mapp
+            final_linearized_model, input_model_entry.model, final_param_map
         )
         final_delinearized_model = final_delinearized_model.replace(
-            name=f'delinerized_{final_delinearized_model.name}',
+            name=f'delinearized{stepno}',
             description=algorithms.create_description(final_delinearized_model),
         )
 
         lin_model_entry = ModelEntry.create(
-            model=final_delinearized_model, parent=final_linearized_model
+            model=final_delinearized_model,
         )
         dl_wf = WorkflowBuilder(name="delinearization_workflow")
         l_start = Task("START", _start_algorithm, lin_model_entry)

@@ -1,7 +1,7 @@
 import pytest
 
 import pharmpy.config as config
-from pharmpy.model import data
+from pharmpy import conf
 
 
 def test_config_item():
@@ -16,5 +16,5 @@ def test_config_item():
         obj.item1 = "A"
 
 
-def test_data_config():
-    assert data.conf.na_values == [-99]
+def test_config():
+    assert conf.missing_data_token == '-99'

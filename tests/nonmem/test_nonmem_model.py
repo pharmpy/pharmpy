@@ -1,5 +1,7 @@
 import shutil
 
+import numpy as np
+import pandas as pd
 import pytest
 
 from pharmpy.basic import Expr
@@ -34,6 +36,7 @@ from pharmpy.modeling import (
     set_transit_compartments,
     set_zero_order_elimination,
     set_zero_order_input,
+    write_csv,
 )
 from pharmpy.tools import read_modelfit_results
 
@@ -139,8 +142,7 @@ def test_set_parameters(pheno_path, load_model_for_test):
     assert model.parameters['PTVV'] == Parameter('PTVV', 1.00916, lower=0, upper=float("inf"))
 
     model = create_joint_distribution(pheno, individual_estimates=res.individual_estimates)
-    with pytest.raises(UserWarning, match='Adjusting initial'):
-        set_initial_estimates(model, {'IVV': 0.000001})
+    set_initial_estimates(model, {'IVV': 0.000001})
 
 
 def test_adjust_iovs(load_model_for_test, testdata):
@@ -408,9 +410,8 @@ $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['THETA_1', 'OMEGA_1_1', 'SIGMA_1_1']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['THETA_1', 'OMEGA_1_1', 'SIGMA_1_1']
 
 
 def test_symbol_names_in_abbr(load_model_for_test, testdata):
@@ -422,8 +423,7 @@ def test_symbol_names_in_abbr(load_model_for_test, testdata):
 
 
 def test_clashing_parameter_names(load_model_for_test, datadir):
-    with pytest.warns(UserWarning):
-        model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
+    model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
     assert model.parameters.names == ['THETA_1', 'TVV', 'IVCL', 'OMEGA_2_2', 'SIGMA_1_1']
 
     code = """$PROBLEM base model
@@ -438,9 +438,8 @@ $OMEGA 0.01 ; TV
 $SIGMA 1 ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['TV', 'OMEGA_1_1', 'SIGMA_1_1']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['TV', 'OMEGA_1_1', 'SIGMA_1_1']
 
     code = """$PROBLEM base model
 $INPUT ID DV TIME
@@ -453,9 +452,8 @@ $THETA 0.1  ; TV
 $THETA 0.1  ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['TV', 'THETA_2']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['TV', 'THETA_2']
 
     code = """$PROBLEM base model
 $INPUT ID TIME WGT DROP DV
@@ -467,9 +465,8 @@ $OMEGA 0.01 ; OM
 $SIGMA 1 ; SI
 $ESTIMATION METHOD=1 INTER
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['THETA_1', 'OM', 'SI']
 
     code = """$PROBLEM base model
 $INPUT ID TIME DROP DROP DV
@@ -482,9 +479,8 @@ $OMEGA 0.01 ; OM
 $SIGMA 1 ; SI
 $ESTIMATION METHOD=1 INTER
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+    model = Model.parse_model_from_string(code)
+    assert model.parameters.names == ['THETA_1', 'OM', 'SI']
 
 
 def test_abbr_write(load_model_for_test, pheno_path):
@@ -697,6 +693,14 @@ def test_cmt_update(load_model_for_test, testdata, tmp_path):
             '$ESTIMATION METH=COND ISAMPLE=10 NITER=5 AUTO=1 PRINT=2',
             [EstimationStep.create('foce', isample=10, niter=5, auto=True, keep_every_nth_iter=2)],
         ),
+        (
+            '$ESTIMATION METH=SAEM ETASAMPLES=1',
+            [EstimationStep.create('saem', individual_eta_samples=True)],
+        ),
+        (
+            '$ESTIMATION METH=SAEM ETASAMPLES=0',
+            [EstimationStep.create('saem', individual_eta_samples=False)],
+        ),
     ],
 )
 def test_execution_steps_getter(estcode, est_steps):
@@ -773,6 +777,11 @@ $ESTIMATION METHOD=1 SADDLE_RESET=1
             '$ESTIMATION METHOD=COND INTER AUTO=1 PRINT=2',
         ),
         ('$EST METH=COND INTER', {'auto': False}, '$ESTIMATION METHOD=COND INTER AUTO=0'),
+        (
+            '$EST METH=COND',
+            {'individual_eta_samples': True},
+            '$ESTIMATION METHOD=COND ETASAMPLES=1',
+        ),
     ],
 )
 def test_execution_steps_setter(estcode, kwargs, rec_ref):
@@ -918,9 +927,8 @@ $COVARIANCE UNCONDITIONAL
 $TABLE      ID TIME AMT WGT APGR IPRED PRED TAD CWRES NPDE NOAPPEND
             NOPRINT ONEHEADER FILE=mytab3
 """
-    with pytest.warns(UserWarning):
-        model = Model.parse_model_from_string(code)
-        model.update_source()
+    model = Model.parse_model_from_string(code)
+    model.update_source()
 
 
 def test_convert_model(testdata):
@@ -1279,3 +1287,20 @@ def test_des_assignments(load_model_for_test, testdata):
 
     assert stats[3] == Assignment.create("KE", "CL/VC")
     assert stats[4] == Assignment.create("EXTRA", "2 * A_CENTRAL(t)")
+
+
+def test_missing_data(load_model_for_test, testdata, tmp_path):
+    model = read_model(
+        testdata / "nonmem" / "models" / "minimal_missing.mod", missing_data_token="-999"
+    )
+    ser = model.dataset['WGT']
+    assert ser[0] == 55.0
+    assert ser[1] == 55.0
+    assert np.isnan(ser[2])
+    assert np.isnan(ser[3])
+    write_csv(model, tmp_path / 'data.csv')
+    df = pd.read_csv(tmp_path / 'data.csv')
+    assert list(df['WGT']) == [55.0, 55.0, -999.0, -999.0]
+
+    model = read_model(testdata / "nonmem" / "models" / "minimal_missing.mod")
+    assert list(model.dataset['WGT']) == [55.0, 55.0, -999.0, -999.0]

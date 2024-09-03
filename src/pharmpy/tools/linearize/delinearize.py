@@ -37,7 +37,6 @@ def delinearize_model(
     Model.
 
     """
-
     if param_mapping:
 
         for param in param_mapping.values():
@@ -55,11 +54,15 @@ def delinearize_model(
             if len(block) > 1:
                 # Add diagonal elements
                 for eta in block:
-                    eta_name = eta.variance
-                    parameter = param_mapping[eta_name]
-                    initial_estimate = linearized_model.parameters[eta_name].init
+                    omega = eta.variance
+                    parameter = param_mapping[eta.names[0]]
+                    initial_estimate = linearized_model.parameters[omega].init
                     dl_model = add_iiv(
-                        dl_model, parameter, "exp", initial_estimate=initial_estimate
+                        dl_model,
+                        parameter,
+                        "exp",
+                        initial_estimate=initial_estimate,
+                        eta_names=eta.names[0],
                     )
                 added_etas = dl_model.random_variables.etas[-len(block) :]
                 added_etas_names = [eta.names[0] for eta in added_etas]
@@ -80,7 +83,13 @@ def delinearize_model(
                 eta_variance = block.variance
                 parameter = param_mapping[eta_name]
                 initial_estimate = linearized_model.parameters[eta_variance].init
-                dl_model = add_iiv(dl_model, parameter, "exp", initial_estimate=initial_estimate)
+                dl_model = add_iiv(
+                    dl_model,
+                    parameter,
+                    "exp",
+                    initial_estimate=initial_estimate,
+                    eta_names=eta_name,
+                )
 
         dl_model = unfix_parameters(dl_model, "DUMMYOMEGA")
         dl_model = remove_iiv(dl_model, "eta_dummy")

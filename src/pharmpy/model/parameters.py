@@ -149,11 +149,11 @@ class Parameter(Immutable):
         if hash(self) != hash(other):
             return False
         return (
-            self._init == other._init
-            and self._lower == other._lower
-            and self._upper == other._upper
-            and self._name == other._name
-            and self._fix == other._fix
+            self._init == other._init  # pragma: no cover
+            and self._lower == other._lower  # pragma: no cover
+            and self._upper == other._upper  # pragma: no cover
+            and self._name == other._name  # pragma: no cover
+            and self._fix == other._fix  # pragma: no cover
         )
 
     def __repr__(self):
@@ -412,10 +412,10 @@ class Parameters(CollectionsSequence, Immutable):
         if hash(self) != hash(other):
             return False
         if len(self) != len(other):
-            return False
+            return False  # pragma: no cover
         for p1, p2 in zip(self, other):
             if p1 != p2:
-                return False
+                return False  # pragma: no cover
         return True
 
     @cache_method

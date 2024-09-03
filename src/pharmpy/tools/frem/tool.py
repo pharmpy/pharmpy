@@ -11,12 +11,13 @@ from pharmpy.modeling import (
     write_model,
 )
 from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.psn_helpers import get_psn_option
 
 from .models import create_model3b
 
 
-def setup(model_path, covariates):
-    input_model = Model.parse_model(model_path)
+def setup(model_path, covariates, missing_data_token):
+    input_model = Model.parse_model(model_path, missing_data_token=missing_data_token)
     covariates = check_covariates(input_model, covariates)
     return covariates
 
@@ -78,9 +79,10 @@ def update_model3b_for_psn(rundir, ncovs):
     NOTE: This function lets pharmpy tie in to the PsN workflow
           and is a temporary solution
     """
+    missing_data_token = get_psn_option(rundir, "missing_data_token")
     model_path = Path(rundir) / 'm1'
-    model1b = Model.parse_model(model_path / 'model_1b.mod')
-    model3 = Model.parse_model(model_path / 'model_3.mod')
+    model1b = Model.parse_model(model_path / 'model_1b.mod', missing_data_token=missing_data_token)
+    model3 = Model.parse_model(model_path / 'model_3.mod', missing_data_token=missing_data_token)
     model3_res = read_modelfit_results(model_path / 'model_3.mod')
     model3b = create_model3b(model1b, model3, model3_res, int(ncovs))
     write_model(model3b, model_path / "model_3b.mod", force=True)

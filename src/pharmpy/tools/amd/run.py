@@ -96,7 +96,7 @@ def run_amd(
     administration : str
         Route of administration. Either 'iv', 'oral' or 'ivoral'
     strategy : str
-        Run algorithm for AMD procedure. Valid options are 'default', 'reevaluation'. Default is 'default'
+        Run algorithm for AMD procedure. Valid options are 'default', 'reevaluation', 'SIR', 'SRI', and 'RSI'.
     cl_init : float
         Initial estimate for the population clearance
     vc_init : float

@@ -615,16 +615,20 @@ class CodeRecord(Record):
         for ni, nj, _, _ in self._index:
             for n in range(curn, ni):
                 node = self.root.children[n]
-                if node.find('block_if') or node.find('logical_if'):
-                    found = n
-                    break
+                statement_nodes = list(node.subtrees('statement'))
+                for s_node in statement_nodes:
+                    if s_node.find('block_if') or s_node.find('logical_if'):
+                        found = n
+                        break
             curn = nj
         if curn < len(self.root.children):
             for n in range(curn, len(self.root.children)):
                 node = self.root.children[n]
-                if node.find('block_if') or node.find('logical_if'):
-                    found = n
-                    break
+                statement_nodes = list(node.subtrees('statement'))
+                for s_node in statement_nodes:
+                    if s_node.find('block_if') or s_node.find('logical_if'):
+                        found = n
+                        break
 
         if found is None:
             node = create_dvs_node(dvs, dvid_name)

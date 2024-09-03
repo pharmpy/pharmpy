@@ -298,6 +298,18 @@ def run_amd(args):
     )
 
 
+def run_linearize(args):
+    from pharmpy.tools import run_tool
+
+    model, res = args.model
+    run_tool(
+        'linearize',
+        results=res,
+        model=model,
+        path=args.path,
+    )
+
+
 def run_retries(args):
     from pharmpy.tools import run_tool
 
@@ -907,7 +919,7 @@ parser_definition = [
                             },
                             {
                                 'name': '--linearize',
-                                'type': bool,
+                                'action': 'store_true',
                                 'help': 'Whether or not use linearization when running the tool',
                                 'default': False,
                             },
@@ -1389,6 +1401,20 @@ parser_definition = [
                                 'type': str,
                                 'default': None,
                                 'help': 'Path to run AMD in',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'linearize': {
+                        'help': 'Linearize a model',
+                        'func': run_linearize,
+                        'parents': [args_model_input],
+                        'args': [
+                            {
+                                'name': '--path',
+                                'type': Path,
+                                'help': 'Path to output directory',
                             },
                         ],
                     }

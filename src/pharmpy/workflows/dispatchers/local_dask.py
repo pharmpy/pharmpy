@@ -81,5 +81,8 @@ def run(workflow: Workflow[T]) -> T:
                     ) as cluster, Client(cluster) as client:
                         print(client)
                         dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
-                        res = client.get(dsk_optimized, 'results')
+                        try:
+                            res = client.get(dsk_optimized, 'results')
+                        except dask.distributed.client.FutureCancelledError:
+                            res = None
     return res  # pyright: ignore [reportGeneralTypeIssues]

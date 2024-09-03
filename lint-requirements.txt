@@ -5,18 +5,18 @@ docutils==0.21.2
 flake8==7.1.1
 flake8-black==0.3.6
 isort==5.13.2
-pyright==1.1.373
+pyright==1.1.378
 readme-renderer==44.0
 twine==5.1.0 
 # Indirect dependencies
 build==1.2.1
-certifi==2024.7.4
+certifi==2024.8.30
 cffi==1.17.0
 charset-normalizer==3.3.2
 click==8.1.7
 cryptography==43.0.0
-idna==3.7
-importlib-metadata==8.2.0
+idna==3.8
+importlib-metadata==8.4.0
 jaraco.classes==3.4.0
 jeepney==0.8.0
 keyring==25.3.0
@@ -39,9 +39,9 @@ pyproject_hooks==1.1.0
 requests==2.32.3
 requests-toolbelt==1.0.0
 rfc3986==2.0.0
-rich==13.7.1
+rich==13.8.0
 SecretStorage==3.3.3
 tomli==2.0.1
 typing-extensions==4.12.2
 urllib3==2.2.2
-zipp==3.19.2
+zipp==3.20.1

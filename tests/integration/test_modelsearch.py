@@ -1,11 +1,8 @@
-import shutil
-
 import pytest
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import read_model
-from pharmpy.tools import fit, run_modelsearch
+from pharmpy.tools import run_modelsearch
 
 
 def test_exhaustive_exhaustive(tmp_path, model_count, start_modelres):
@@ -152,36 +149,6 @@ def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_modelres):
         assert ',999999) ; POP_VP1' in res.models[-1].code
 
 
-def test_summary_individuals(tmp_path, testdata):
-    with chdir(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-        m = read_model('pheno_real.mod')
-        start_res = fit(m)
-        res = run_modelsearch(
-            model=m,
-            results=start_res,
-            search_space='ABSORPTION(ZO);PERIPHERALS([1, 2])',
-            algorithm='reduced_stepwise',
-            rank_type='mbic',
-            E=1.0,
-        )
-        summary = res.summary_individuals
-        columns = (
-            'description',
-            'parent_model',
-            'outlier_count',
-            'ofv',
-            'dofv_vs_parent',
-            'predicted_dofv',
-            'predicted_residual',
-        )
-        assert summary is not None
-        assert tuple(summary.columns) == columns
-        assert summary.loc[("BASE", 1), "parent_model"] is None
-        assert summary.loc[("modelsearch_run1", 1), "parent_model"] == "BASE"
-
-
 def test_exhaustive_exhaustive_dummy(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
@@ -204,3 +171,19 @@ def test_exhaustive_exhaustive_dummy(tmp_path, model_count, start_modelres):
         assert (rundir / 'metadata.json').exists()
         assert (rundir / 'models' / 'modelsearch_run1' / 'model_results.json').exists()
         assert not (rundir / 'models' / 'modelsearch_run1' / 'model.lst').exists()
+
+        summary = res.summary_individuals
+        columns = (
+            'description',
+            'parent_model',
+            'outlier_count',
+            'ofv',
+            'dofv_vs_parent',
+            'predicted_dofv',
+            'predicted_residual',
+        )
+        assert summary is not None
+        assert tuple(summary.columns) == columns
+        print(summary)
+        assert summary.loc[("input", 110), "parent_model"] is None
+        assert summary.loc[("modelsearch_run1", 110), "parent_model"] == "input"

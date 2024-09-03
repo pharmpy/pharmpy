@@ -34,7 +34,12 @@ class Expr:
         if isinstance(source, Expr):
             self._expr = source._expr
         else:
-            self._expr = symengine.sympify(source)
+            try:
+                self._expr = symengine.sympify(source)
+            except symengine.SympifyError:
+                raise TypeError(
+                    f'Cannot convert input to Expr: expression `{source}` of type `{type(source)}`'
+                )
 
     @property
     def name(self) -> str:

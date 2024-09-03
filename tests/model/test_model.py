@@ -17,7 +17,7 @@ from pharmpy.model import (
 )
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.model.model import ModelInternals
-from pharmpy.modeling import convert_model, create_basic_pk_model, create_symbol, load_example_model
+from pharmpy.modeling import convert_model, create_basic_pk_model, create_symbol
 
 tabpath = Path(__file__).resolve().parent.parent / 'testdata' / 'nonmem' / 'pheno_real_linbase.tab'
 lincorrect = read_nonmem_dataset(
@@ -54,19 +54,19 @@ def test_to_generic_model(load_model_for_test, testdata):
     assert isinstance(model, Model)
 
 
-def test_model_equality():
-    pheno1 = load_example_model("pheno")
+def test_model_equality(load_example_model_for_test):
+    pheno1 = load_example_model_for_test("pheno")
     assert pheno1 == pheno1
 
-    pheno2 = load_example_model("pheno")
+    pheno2 = load_example_model_for_test("pheno")
     assert pheno2 == pheno2
 
     assert pheno1 == pheno2
 
-    pheno_linear1 = load_example_model("pheno_linear")
+    pheno_linear1 = load_example_model_for_test("pheno_linear")
     assert pheno_linear1 == pheno_linear1
 
-    pheno_linear2 = load_example_model("pheno_linear")
+    pheno_linear2 = load_example_model_for_test("pheno_linear")
     assert pheno_linear2 == pheno_linear2
 
     assert pheno_linear1 == pheno_linear2
@@ -212,8 +212,7 @@ def test_create_model():
     py = Parameter('y', 0)
     pz = Parameter('z', -1)
     params = Parameters((px, py, pz))
-    with pytest.warns(UserWarning):
-        m = Model.create(name='model', random_variables=rvs, parameters=params)
+    m = Model.create(name='model', random_variables=rvs, parameters=params)
     assert m.parameters.inits == {'x': 0.0, 'y': 0.0, 'z': 0.0}
 
     # random variables
@@ -253,8 +252,16 @@ def test_repr():
     assert model.__repr__() == "<Pharmpy model object model1>"
 
 
-def test_has_same_dataset_as():
-    pheno = load_example_model("pheno")
+def test_repr_html(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    html_code = model._repr_html_()
+    assert 'TVCL &=' in html_code
+    assert 'POP_CL' in html_code
+    assert 'eta_{CL}' in html_code
+
+
+def test_has_same_dataset_as(load_example_model_for_test):
+    pheno = load_example_model_for_test("pheno")
     model1 = Model.create('model1')
     model2 = Model.create('model2')
     assert model1.has_same_dataset_as(model2)
@@ -273,8 +280,8 @@ def test_write_files():
     assert isinstance(model.write_files(), Model)
 
 
-def test_statements():
-    pheno = load_example_model('pheno')
+def test_statements(load_example_model_for_test):
+    pheno = load_example_model_for_test('pheno')
     model = Model.create(
         'model',
         parameters=pheno.parameters,

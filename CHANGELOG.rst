@@ -1,3 +1,36 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix reading in NONMEM models with TIME column having hh:mm format (but no DATx column present)
+* Fix NONMEM parsing issues where having WRES in $TABLE could lead to parsing other columns incorrectly
+
+1.2.0 (2024-08-22)
+------------------
+
+New features
+============
+
+* Add `missing_data_token` to `DataInfo`. This will support a per dataset token for missing data
+* Add option `missing_data_token` to `modeling.read_model` 
+
+Changes
+=======
+
+* Replace configuration items pharmpy.data.na_rep and na_names with pharmpy.missing_data_token.
+
+Bugfixes
+========
+
+* Fix problems with the error "[WinError 6] The handle is invalid on Windows" when creating the context
+* Fix crash when updating some NONMEM models where a central compartment couldn't be found
+* Fix crash when parsing certain error models that use CMT in NONMEM
+* Fix multiple problems with running iivsearch with linearization
+* Recognize SS and II columns when running amd from dataset
+* Fix bad TAD for observation at the same time as SS dose. Was previously II. Now it is 0.
+
 1.1.0 (2024-07-17)
 ------------------
 

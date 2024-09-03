@@ -24,7 +24,6 @@ from pharmpy.model import (
     RandomVariables,
     SimulationStep,
     Statements,
-    data,
     output,
 )
 from pharmpy.model.model import update_datainfo
@@ -699,7 +698,7 @@ def update_ics(statements, odes):
 
 
 def update_statements(model: Model, old: Statements, new: Statements, trans):
-    trans['NaN'] = int(data.conf.na_rep)
+    trans['NaN'] = int(model.datainfo.missing_data_token)
 
     new_odes = new.ode_system
     updated_dataset = False
@@ -1723,6 +1722,8 @@ def update_estimation(control_stream, model):
                 est_code += f' AUTO={int(est.auto)}'
             if est.keep_every_nth_iter is not None:
                 est_code += f' PRINT={est.keep_every_nth_iter}'
+            if est.individual_eta_samples:
+                est_code += ' ETASAMPLES=1'
             if est.tool_options:
                 option_names = set(est.tool_options.keys())
                 overlapping_attributes = set(protected_attributes).intersection(option_names)
@@ -1871,6 +1872,7 @@ def update_estimation(control_stream, model):
         table = tables[-1]
         new_table = table
         derivative_regex = r'[HG]\d+'
+        have_noprint = False
         for item in table.all_options:
             if item.key in remove_param or item.key in pred_res_to_remove:
                 new_table = new_table.remove_option(item.key)
@@ -1884,13 +1886,17 @@ def update_estimation(control_stream, model):
                 new_table = new_table.remove_option(item.key)
             else:
                 # Unknown --> Leave as is
-                pass
+                if item.key == 'NOPRINT':
+                    have_noprint = True
 
         for option in sorted(predictions_subset.union(residuals_subset)):
             new_table = new_table.append_option(option)
 
         for option in sorted(single_deriv_subset):
             new_table = new_table.append_option(option)
+
+        if not have_noprint:
+            new_table = new_table.append_option('NOPRINT')
 
         # Check what already exist
         multi_deriv_subset = [
@@ -1953,6 +1959,9 @@ def add_multi_deriv(table, multi_deriv_subset, random_variables, control_stream,
         d = convert_derive_to_nonmem(derive, random_variables)
         verbatim_to_add[new_param_name] = d
         table = table.append_option(new_param_name)
+
+    if not table.has_option("RFORMAT"):
+        table = table.append_option('RFORMAT', '"(1PE16.9,300(1PE24.16))"')
 
     if verbatim_to_add:
         control_stream = update_verbatim(control_stream, random_variables, to_add=verbatim_to_add)
@@ -2280,29 +2289,32 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
 
     estimates = model.initial_individual_estimates
     assert estimates is not None
-    rv_names = {rv for rv in model.random_variables.names if rv.startswith('ETA')}
+    estimates = estimates.copy()
+    eta_names = model.random_variables.etas.names
     columns = set(estimates.columns)
-    if columns < rv_names:
+    diff = columns - set(eta_names)
+    if columns < set(eta_names):
         raise ValueError(
             f'Cannot set initial estimate for random variable not in the model:'
-            f' {rv_names - columns}'
+            f' {set(eta_names) - columns}'
         )
-    diff = columns - rv_names
     # If not setting all etas automatically set remaining to 0 for all individuals
     if len(diff) > 0:
         for name in diff:
-            estimates = estimates.copy(deep=True)
             estimates[name] = 0
-        estimates = _sort_eta_columns(estimates)
 
-    etas = estimates
     zero_fix = get_zero_fix_rvs(model, eta=True)
     if zero_fix:
         for eta in zero_fix:
-            etas[eta] = 0
-    etas = _sort_eta_columns(etas)
+            estimates[eta] = 0
+
+    estimates = _sort_eta_columns(estimates, eta_names)
+    estimates = estimates.set_axis(
+        [f'ETA({i})' for i in range(1, len(estimates.columns) + 1)], axis=1
+    )
+
     if not nofiles:
-        phi = PhiTable(df=etas)
+        phi = PhiTable(df=estimates)
         table_file = NONMEMTableFile(tables=[phi])
         table_file.write(phi_path)
     control_stream = model.internals.control_stream
@@ -2310,10 +2322,10 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
     if eta_records:
         record = eta_records[0]
     else:
-        record = create_record('$ETAS ')
+        record = create_record('$ETAS \n')
         control_stream = control_stream.insert_record(record)
     assert isinstance(record, EtasRecord)
-    newrecord = record.set_path(phi_path)
+    newrecord = record.set_path(Path(phi_path).name)
     control_stream = control_stream.replace_records([record], [newrecord])
 
     first_est_record = control_stream.get_records('ESTIMATION')[0]
@@ -2325,8 +2337,8 @@ def update_initial_individual_estimates(model: Model, path, nofiles=False):
     return control_stream
 
 
-def _sort_eta_columns(df: pd.DataFrame):
-    return df.reindex(sorted(df.columns), axis=1)
+def _sort_eta_columns(df: pd.DataFrame, rv_names):
+    return df.reindex(rv_names, axis=1)
 
 
 def abbr_translation(model: Model, rv_trans):
