@@ -936,6 +936,36 @@ def test_compartment_names(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert model.statements.ode_system.compartment_names == ['CENTRAL']
 
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    assert model.statements.ode_system.compartment_names == ['DEPOT', 'CENTRAL']
+
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('X'))
+    dose = Bolus.create('AMT')
+    cb.set_dose(central, dose=(dose,))
+    effect1 = Compartment.create('EFFECT1', input=0)
+    cb.add_compartment(effect1)
+    cb.add_flow(effect1, output, S('Y'))
+    effect2 = Compartment.create('EFFECT2', input=S('Y') * central.amount)
+    cb.add_compartment(effect2)
+    cb.add_flow(effect2, output, S('Y'))
+    cs = CompartmentalSystem(cb)
+    assert cs.compartment_names == ['CENTRAL', 'EFFECT2', 'EFFECT1']
+
+    # Compartment upstream of dosing
+    cb = CompartmentalSystemBuilder()
+    dose = Bolus.create('AMT')
+    central = Compartment.create('CENTRAL', doses=(dose,))
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('X'))
+    comp = Compartment.create('COMP')
+    cb.add_compartment(comp)
+    cb.add_flow(comp, central, S('Y'))
+    cs = CompartmentalSystem(cb)
+    assert cs.compartment_names == ['CENTRAL', 'COMP']
+
 
 def test_assignment_create_numeric(load_model_for_test, testdata):
     with pytest.raises(AttributeError):
