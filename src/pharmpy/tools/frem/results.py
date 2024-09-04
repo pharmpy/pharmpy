@@ -642,7 +642,13 @@ def calculate_results_from_samples(
 
     for sample_no, params in parvecs.iterrows():
         sigma = sigma_symb.subs(dict(params))
-        sigma = np.array(sigma).astype(np.float64)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message="__array__ implementation doesn't accept a copy keyword",
+            )
+            sigma = np.array(sigma).astype(np.float64)
         if scaling is not None:
             sigma = scaling @ sigma @ scaling
         if sample_no != 'estimates':
@@ -925,7 +931,13 @@ def calculate_results_using_bipp(
     )
     ishr = ishr[pool.columns]
     lower_indices = np.tril_indices(len(etas))
-    pop_params = np.array(dist.variance).astype(str)[lower_indices]
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            category=DeprecationWarning,
+            message="__array__ implementation doesn't accept a copy keyword",
+        )
+        pop_params = np.array(dist.variance).astype(str)[lower_indices]
     parameter_samples = np.empty((samples, len(pop_params)))
     remaining_samples = samples
     k = 0

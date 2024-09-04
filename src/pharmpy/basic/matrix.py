@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from collections.abc import Iterable, Mapping, Sequence
 from typing import TYPE_CHECKING, Union, overload
 
@@ -110,7 +111,13 @@ class Matrix:
         return Matrix(other._m @ self._m)
 
     def evalf(self, d: Mapping) -> np.ndarray:
-        A = np.array(self._m.xreplace(d)).astype(np.float64)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message="__array__ implementation doesn't accept a copy keyword",
+            )
+            A = np.array(self._m.xreplace(d)).astype(np.float64)
         return A
 
     @classmethod
@@ -141,13 +148,26 @@ class Matrix:
 
     def to_numpy(self) -> np.ndarray:
         if not self._m.free_symbols:  # Not fully numeric
-            a = np.array(self._m).astype(np.float64)
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    "ignore",
+                    category=DeprecationWarning,
+                    message="__array__ implementation doesn't accept a copy keyword",
+                )
+                a = np.array(self._m).astype(np.float64)
         else:
             raise TypeError("Symbolic matrix cannot be converted to numeric")
         return a
 
     def __array__(self) -> np.ndarray:
-        return np.array(self._m)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                category=DeprecationWarning,
+                message="__array__ implementation doesn't accept a copy keyword",
+            )
+            a = np.array(self._m)
+        return a
 
     def _sympy_(self) -> sympy.Expr:
         return sympy.sympify(self._m)

@@ -1,5 +1,7 @@
 import sys
 
+import numpy as np
+import packaging
 import pytest
 
 from pharmpy.modeling import load_example_model
@@ -14,6 +16,7 @@ tflite_condition = (
     and sys.platform == 'win32'
     or sys.version_info >= (3, 12)
     and sys.platform == 'darwin'
+    or packaging.version.parse(np.__version__) >= packaging.version.parse("2.0.0")
 )
 
 
