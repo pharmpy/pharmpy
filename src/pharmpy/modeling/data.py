@@ -2285,17 +2285,17 @@ def bin_observations(
     >>> model = load_example_model("pheno")
     >>> bins, boundaries = bin_observations(model, method="equal_width", nbins=10)
     >>> bins
-    421     0
-    527     0
-    118     0
-    135     0
-    512     0
-           ..
-    203     7
-    475     7
-    510     7
-    133     8
-    267     9
+    527    0
+    421    0
+    118    0
+    135    0
+    512    0
+          ..
+    203    7
+    475    7
+    510    7
+    133    8
+    267    9
     Name: TIME, Length: 155, dtype: int64
     >>> boundaries
     array([  0.  ,  39.88,  78.76, 117.64, 156.52, 195.4 , 234.28, 273.16,
