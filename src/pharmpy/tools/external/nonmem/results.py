@@ -52,7 +52,7 @@ def _parse_modelfit_results(
             log = log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
             return ModelfitResults(
                 minimization_successful=False,
-                ofv=np.nan,
+                ofv=float("NaN"),
                 parameter_estimates=_create_failed_parameter_estimates(model.parameters),
                 log=log,
             )
@@ -680,7 +680,7 @@ def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
     else:
         final_ofv = final_table.final_ofv
     ofv_iterations = create_ofv_iterations_series(ofv, step, iteration)
-    return final_ofv, ofv_iterations
+    return float(final_ofv), ofv_iterations
 
 
 def _get_iter_df(df):
