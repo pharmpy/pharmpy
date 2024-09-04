@@ -73,7 +73,7 @@ def test_crib(pheno_path, load_model_for_test):
 def test_ib(pheno_path, load_model_for_test):
     model = load_model_for_test(pheno_path)
     model = set_tmdd(model, type="ib")
-    assert model.statements.ode_system.eqs[2].rhs == Expr(
+    assert model.statements.ode_system.eqs[1].rhs == Expr(
         '-KDEG*A_TARGET(t) - KON*A_CENTRAL(t)*A_TARGET(t)/V + KSYN*V'
     )
 

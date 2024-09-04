@@ -1259,20 +1259,21 @@ class CompartmentalSystem(Statement):
             return iter(a)
 
         nodes = list(nx.bfs_tree(self._g, dosecmt, sort_neighbors=sortfunc))
-        remaining = set(self._g.nodes) - {output} - set(nodes)
-        while remaining:  # Disjoint graph
-            comp = sorted(remaining, key=lambda x: x.name)[0]
-            # Start with a compartment having a zero order input
-            for c in remaining:
-                if comp is None and c.input != 0:
-                    comp = c
-            ordered_remaining = list(nx.bfs_tree(self._g, comp, sort_neighbors=sortfunc))
-            cleaned_ordered_remaining = []
-            for c in ordered_remaining:
-                if c not in set(nodes):
-                    cleaned_ordered_remaining.append(c)
-            nodes += cleaned_ordered_remaining
-            remaining = set(self._g.nodes) - {output} - set(nodes)
+        remaining_unsorted = set(self._g.nodes) - {output} - set(nodes)
+        remaining_with_input = {comp for comp in remaining_unsorted if comp.input != 0}
+        remaining_without_input = remaining_unsorted - remaining_with_input
+        remaining = sorted(remaining_with_input, key=lambda x: x.name) + sorted(
+            remaining_without_input, key=lambda x: x.name
+        )
+
+        while remaining:  # Disjoint or upstream of dosing
+            comp = remaining.pop(0)
+            connected = list(nx.bfs_tree(self._g, comp, sort_neighbors=sortfunc))
+            for c in connected:
+                if c not in nodes:
+                    nodes.append(c)
+                    if c != comp:
+                        remaining.remove(c)
         return nodes
 
     @property
