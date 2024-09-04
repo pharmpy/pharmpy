@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -110,7 +110,9 @@ def stepwise_BU_algorithm(
     clearance_parameter,
     base_model_entry,
 ):
-    base_model = base_model.replace(description=create_description(base_model))
+    base_model = base_model.replace(
+        description=create_description(base_model, param_dict=param_mapping)
+    )
 
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names  # All ETAs in the base model
@@ -254,7 +256,9 @@ def stepwise_BU_algorithm(
 def td_exhaustive_block_structure(base_model, index_offset=0, param_mapping=None):
     wb = WorkflowBuilder(name='td_exhaustive_block_structure')
 
-    base_model = base_model.replace(description=create_description(base_model))
+    base_model = base_model.replace(
+        description=create_description(base_model, param_dict=param_mapping)
+    )
 
     iivs = base_model.random_variables.iiv
     model_no = 1 + index_offset
@@ -320,7 +324,7 @@ def create_block_structure_candidate_entry(name, block_structure, etas, param_na
         block_structure, candidate_model, model_entry.modelfit_results
     )
     candidate_model = candidate_model.replace(
-        name=name, description=create_description(candidate_model, param_mapping)
+        name=name, description=create_description(candidate_model, param_dict=param_mapping)
     )
 
     return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
@@ -373,13 +377,15 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
     return param_dict
 
 
-def create_description(model: Model, iov: bool = False, param_dict: Dict[str, str] = {}) -> str:
+def create_description(
+    model: Model, iov: bool = False, param_dict: Optional[Dict[str, str]] = None
+) -> str:
     if iov:
         dists = model.random_variables.iov
     else:
         dists = model.random_variables.iiv
 
-    if not param_dict:
+    if param_dict is None:
         param_dict = _create_param_dict(model, dists)
     if len(param_dict) == 0:
         return '[]'
