@@ -17,7 +17,7 @@ from pharmpy.model.model import update_datainfo
 from .iterators import resample_data
 
 
-def get_ids(model: Model):
+def get_ids(model: Model) -> list[int]:
     """Retrieve a list of all subject ids of the dataset
 
     Parameters
@@ -38,7 +38,7 @@ def get_ids(model: Model):
     [1, 2, 3, ..., 57, 58, 59]
     """
     idcol = model.datainfo.id_column.name
-    ids = list(model.dataset[idcol].unique())
+    ids = list(int(x) for x in model.dataset[idcol].unique())
     return ids
 
 
