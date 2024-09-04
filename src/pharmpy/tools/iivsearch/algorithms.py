@@ -399,7 +399,8 @@ def create_description(model: Model, iov: bool = False, param_dict: Dict[str, st
                 same_names.extend(dists.get_rvs_with_same_dist(name).names)
             same.extend(same_names)
 
-    return '+'.join(blocks)
+    description = '+'.join(blocks)
+    return description
 
 
 def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res: ModelfitResults):

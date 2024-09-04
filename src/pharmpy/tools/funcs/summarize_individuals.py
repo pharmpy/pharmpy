@@ -4,6 +4,8 @@ import importlib.util
 import warnings
 from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union
 
+import packaging.version
+
 from pharmpy.model import Model, ModelfitResultsError
 from pharmpy.workflows import ModelEntry, ModelfitResults
 
@@ -15,6 +17,15 @@ else:
     from pharmpy.deps import pandas as pd
 
 from .ml import predict_influential_individuals, predict_outliers
+
+
+def check_tflite():
+    spec = importlib.util.find_spec('tflite_runtime')
+    if spec is None:
+        warnings.warn("tflite is not installed, using NaN for predictions")
+    numpy_version = packaging.version.parse(np.__version__)
+    if numpy_version >= packaging.version.parse("2.0.0"):
+        warnings.warn("tflite can currently not work together with numpy 2.0.0 or later")
 
 
 def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
@@ -57,9 +68,7 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
 
     resDict = {model.name: res for model, res in zip(models, models_res)}
 
-    spec = importlib.util.find_spec('tflite_runtime')
-    if spec is None:
-        warnings.warn("tflite is not installed, using NaN for predictions")
+    check_tflite()
 
     df = pd.concat(
         map(
@@ -104,6 +113,8 @@ def _predicted(predict, model: Model, res: ModelfitResults, column: str) -> Unio
     except ModelfitResultsError:
         return np.nan
     except ImportError:
+        return np.nan
+    except SystemError:  # for numpy/tflite mismatch on MacOS
         return np.nan
     if predicted is None:
         return np.nan
