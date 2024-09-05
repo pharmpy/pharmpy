@@ -63,7 +63,7 @@ class ModelInternals:
     def __init__(self):
         pass
 
-    def replace(self, **kwargs) -> Self:
+    def replace(self, **kwargs) -> Self:  # pyright: ignore [reportInvalidTypeForm]
         return dataclasses.replace(self, **kwargs)
 
 
@@ -280,7 +280,7 @@ class Model(Immutable):
                 raise TypeError("model.execution_steps must be of ExecutionSteps type")
             return steps
 
-    def replace(self, **kwargs) -> Self:
+    def replace(self, **kwargs) -> Self:  # pyright: ignore [reportInvalidTypeForm]
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
 
