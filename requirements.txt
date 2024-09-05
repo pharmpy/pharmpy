@@ -21,7 +21,7 @@ docutils==0.21.2
 exceptiongroup==1.2.2
 executing==2.1.0
 fastjsonschema==2.20.0
-fsspec==2024.6.1
+fsspec==2024.9.0
 idna==3.8
 imagesize==1.4.1
 importlib_metadata==8.4.0
