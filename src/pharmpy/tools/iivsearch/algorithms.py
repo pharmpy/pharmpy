@@ -385,7 +385,7 @@ def create_description(
     else:
         dists = model.random_variables.iiv
 
-    if param_dict is None:
+    if not param_dict:
         param_dict = _create_param_dict(model, dists)
     if len(param_dict) == 0:
         return '[]'
