@@ -1,5 +1,5 @@
 import logging
-from dataclasses import replace
+from dataclasses import replace, dataclass
 from functools import partial
 from itertools import count
 from typing import Literal, Optional, Union
@@ -47,6 +47,18 @@ from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_
 from pharmpy.workflows.results import ModelfitResults
 
 NAME_WF = 'covsearch'
+
+
+@dataclass
+class StateAndEffect:
+    search_state: SearchState
+    effect_funcs: dict
+
+
+@dataclass
+class LinStateAndEffect(StateAndEffect):
+    linear_modelentries: dict
+    param_cov_list: dict
 
 
 def samba_workflow(
@@ -113,7 +125,7 @@ def _store_input_model(context, model, results, max_eval):
 
 
 def _init_search_state(
-    context, search_space: str, est_method: str, nsamples: int, modelentry: ModelEntry
+    context, search_space, est_method, nsamples, modelentry
 ):
     """Initialize SAMBA covariate search"""
     model = modelentry.model
@@ -129,7 +141,7 @@ def _init_search_state(
 
     # create linear covariate models
     linear_modelentry_dict, param_cov_list = _param_indexed_linear_modelentries(
-        linear_cov_funcs, filtered_modelentry, nsamples, context
+        linear_cov_funcs, filtered_modelentry, nsamples
     )
 
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
@@ -147,7 +159,7 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, est_
             idx=0,
             interaction=True,
             auto=True,
-            niter=500,
+            # niter=500,
             keep_every_nth_iter=10,
         )
         if est_method == "SAEM":
@@ -199,7 +211,7 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, est_
     return nonlinear_search_state
 
 
-def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, nsamples, context):
+def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, nsamples):
     param_indexed_funcs = {}  # {param: {cov_effect: cov_func}}
     param_cov_list = {}  # {param: [covariates]}
     for cov_effect, cov_func in linear_cov_funcs.items():
@@ -216,7 +228,7 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, ns
     # create param_base_model
     for param, covariates in param_cov_list.items():
         param_base_model = _create_samba_base_model(
-            filtered_modelentry, param, covariates, nsamples, context
+            filtered_modelentry, param, covariates, nsamples
         )
         param_base_modelentry = ModelEntry.create(model=param_base_model)
         linear_modelentry_dict[param] = [param_base_modelentry]
@@ -445,16 +457,10 @@ def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_e
             nonlin_model_added_effect = cov_func(nonlin_model_added_effect)
             new_nonlin_models.append(nonlin_model_added_effect)
 
-        wb = WorkflowBuilder(name="nonlinear model selection")
-
-        def model_to_modelentry(model, parent=best_nlme_modelentry.model):
-            return ModelEntry.create(model, parent=parent)
-
-        for nonlin_model in new_nonlin_models:
-            nonlin_me_task = Task("to_nonlin_modelentry", model_to_modelentry, nonlin_model)
-            wb.add_task(nonlin_me_task)
-        nonlin_fit_wf = create_fit_workflow(n=len(new_nonlin_models))
-        wb.insert_workflow(nonlin_fit_wf)
+        new_modelentries = [ModelEntry.create(model, best_nlme_modelentry.model)
+                            for model in new_nonlin_models]
+        nonlin_fit_wf = create_fit_workflow(modelentries=new_modelentries)
+        wb = WorkflowBuilder(nonlin_fit_wf)
         task_gather = Task("gather", lambda *models: models)
         wb.add_task(task_gather, predecessors=wb.output_tasks)
         new_nonlin_modelentries = call_workflow(Workflow(wb), 'fit_nonlinear_models', context)
@@ -657,7 +663,7 @@ def _create_samba_dataset(model_entry, param, covariates, nsamples):
     return dataset
 
 
-def _create_samba_base_model(modelentry, param, covariates, nsamples, context):
+def _create_samba_base_model(modelentry, param, covariates, nsamples):
     """
     Create linear base model [Y ~ THETA(1) + ERR(1)] for the parameters to be explored.
     ETA values associated with these model parameters are set as dependent variable (DV).
