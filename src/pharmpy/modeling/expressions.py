@@ -523,7 +523,7 @@ def cleanup_model(model: Model):
     Returns
     -------
     Model
-        Reference to the same model
+        Updated model
 
     Examples
     --------

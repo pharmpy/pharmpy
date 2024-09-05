@@ -145,8 +145,8 @@ def run_amd(
 
     Returns
     -------
-    Model
-        Reference to the same model object
+    AMDResults
+        Results for the run
 
     Examples
     --------
@@ -154,7 +154,7 @@ def run_amd(
     >>> from pharmpy.tools import run_amd, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_amd(model, results=results)      # doctest: +SKIP
+    >>> res = run_amd(model, results=results)      # doctest: +SKIP
 
     See also
     --------

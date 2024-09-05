@@ -1493,8 +1493,8 @@ def has_zero_order_absorption(model: Model):
 
     Return
     ------
-    Model
-        Reference to same model
+    bool
+        Whether the model has zero order absorption or not
 
     Examples
     --------
