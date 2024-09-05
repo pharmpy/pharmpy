@@ -343,7 +343,7 @@ def _extract_clearance_parameter(model, param_mapping, clearance_parameter, iiv_
     return base_parameter
 
 
-def _rv_block_structures(etas: RandomVariables):
+def _rv_block_structures(etas):
     # NOTE: All possible partitions of etas into block structures
     return partitions(etas)
 
