@@ -35,6 +35,7 @@ from pharmpy.model import (
 )
 
 from .parameters import get_omegas, get_sigmas, get_thetas
+from .random_variables import replace_non_random_rvs
 
 if TYPE_CHECKING:
     import networkx as nx
@@ -507,6 +508,7 @@ def cleanup_model(model: Model):
 
     * Make model statements declarative, i.e. only one assignment per symbol
     * Inline all assignments of one symbol, e.g. X = Y
+    * Remove all random variables with no variability (i.e. with omegas fixed to zero)
 
     Notes
     -----
@@ -580,7 +582,8 @@ def cleanup_model(model: Model):
             newstats.append(n)
 
     model = model.replace(statements=Statements(newstats))
-    return model.update_source()
+    model = replace_non_random_rvs(model)
+    return model
 
 
 def greekify_model(model: Model, named_subscripts: bool = False):
