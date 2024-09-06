@@ -4,6 +4,7 @@ from functools import partial
 from itertools import count
 from typing import Literal, Optional, Union
 
+import pandas as pd
 import statsmodels.formula.api as smf
 
 import pharmpy.tools.covsearch.tool as scm_tool
@@ -69,8 +70,7 @@ def samba_workflow(
     model: Optional[Model] = None,
     max_eval: bool = False,
     statsmodels: bool = True,
-    weighted_linreg: bool = False,
-    est_method: Literal['ORIG', 'ITS', 'SAEM'] = "ORIG",
+    algorithm: Literal['samba'] = 'samba',
     nsamples: int = 5,
     lin_filter: int = 2,
 ):
@@ -84,7 +84,7 @@ def samba_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     wb.add_task(store_task)
 
-    init_task = Task("init", _init_search_state, search_space, est_method, nsamples)
+    init_task = Task("init", _init_search_state, search_space, algorithm, nsamples)
     wb.add_task(init_task, predecessors=store_task)
 
     # SAMBA search task
@@ -94,9 +94,9 @@ def samba_workflow(
         max_steps,
         alpha,
         statsmodels,
-        weighted_linreg,
         nsamples,
         lin_filter,
+        algorithm,
     )
     wb.add_task(samba_search_task, predecessors=init_task)
     search_output = wb.output_tasks
@@ -125,7 +125,7 @@ def _store_input_model(context, model, results, max_eval):
 
 
 def _init_search_state(
-    context, search_space, est_method, nsamples, modelentry
+    context, search_space, algorithm, nsamples, modelentry
 ):
     """Initialize SAMBA covariate search"""
     model = modelentry.model
@@ -135,62 +135,58 @@ def _init_search_state(
 
     # init nonlinear search state
     nonlinear_search_state = _init_nonlinear_search_state(
-        context, modelentry, filtered_model, est_method
+        context, modelentry, filtered_model, algorithm, nsamples
     )
     filtered_modelentry = nonlinear_search_state.start_modelentry
 
     # create linear covariate models
     linear_modelentry_dict, param_cov_list = _param_indexed_linear_modelentries(
-        linear_cov_funcs, filtered_modelentry, nsamples
+        linear_cov_funcs, filtered_modelentry, nsamples, algorithm
     )
 
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
 
 
-def _init_nonlinear_search_state(context, input_modelentry, filtered_model, est_method="ORIG"):
+def _init_nonlinear_search_state(context, input_modelentry, filtered_model, algorithm, nsamples):
     filtered_model = filtered_model.replace(name="filtered_input_model", description="start")
-
-    if est_method in ["SAEM", "ITS"]:
+    if algorithm == "samba":
         filtered_model = mu_reference_model(filtered_model)
-        filtered_model = remove_estimation_step(filtered_model, idx=0)
+        if filtered_model.execution_steps[0].method != "FOCE":
+            filtered_model = remove_estimation_step(filtered_model, idx=0)
+            filtered_model = add_estimation_step(
+                filtered_model,
+                method="FOCE",
+                idx=0,
+                interaction=True,
+                auto=True,
+            )
         filtered_model = add_estimation_step(
             filtered_model,
-            method="ITS",
-            idx=0,
+            method="SAEM",
+            idx=1,
             interaction=True,
             auto=True,
-            # niter=500,
-            keep_every_nth_iter=10,
+            niter=500,
+            keep_every_nth_iter=50,
+            tool_options={'PHITYPE': "1", 'FNLETA': "0"},
         )
-        if est_method == "SAEM":
+        if nsamples > 0:
             filtered_model = add_estimation_step(
                 filtered_model,
                 method="SAEM",
-                idx=1,
-                interaction=True,
-                auto=True,
-                niter=500,
-                keep_every_nth_iter=50,
-                tool_options={'PHITYPE': "1", 'FNLETA': "0"},
-            )
-
-            # add IMP estimation after SAEM to obtain less stochastic OFV for nonlinear model selection
-            filtered_model = add_estimation_step(
-                filtered_model,
-                method="IMP",
                 idx=2,
-                interaction=True,
-                auto=True,
-                niter=20,
-                isample=1000,
-                keep_every_nth_iter=1,
-                tool_options={"EONLY": "1", "MAPITER": "0"},
+                niter=0,
+                tool_options={"EONLY": "1", "NBURN": "0", "MASSRESET": "0", "ETASAMPLES": "1", "ISAMPLE": f"{nsamples}"}
             )
-    logger = logging.getLogger("covsearch_est_info")
-    ml = []
-    for i in range(len(filtered_model.execution_steps)):
-        ml.append(filtered_model.execution_steps[i].method)
-    logger.warning(f"$EST uses {'-'.join(ml)} for nonlinear model selection.")
+    if algorithm != "samba" and filtered_model.execution_steps[0].method != "FOCE":
+        filtered_model = remove_estimation_step(filtered_model, idx=0)
+        filtered_model = add_estimation_step(
+            filtered_model,
+            method="FOCE",
+            idx=0,
+            interaction=True,
+            auto=True,
+        )
 
     # nonlinear mixed effect modelentry creation and fit
     if filtered_model != input_modelentry.model:
@@ -200,18 +196,11 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, est_
     else:
         filtered_modelentry = input_modelentry
 
-    # nonlinear search state
-    nonlinear_model_candidate = Candidate(filtered_modelentry, ())
-    nonlinear_search_state = SearchState(
-        input_modelentry,
-        filtered_modelentry,
-        nonlinear_model_candidate,
-        [nonlinear_model_candidate],
-    )
-    return nonlinear_search_state
+    candidate = Candidate(filtered_modelentry, ())
+    return SearchState(input_modelentry, filtered_modelentry, candidate, [candidate])
 
 
-def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, nsamples):
+def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, nsamples, algorithm):
     param_indexed_funcs = {}  # {param: {cov_effect: cov_func}}
     param_cov_list = {}  # {param: [covariates]}
     for cov_effect, cov_func in linear_cov_funcs.items():
@@ -228,7 +217,7 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, ns
     # create param_base_model
     for param, covariates in param_cov_list.items():
         param_base_model = _create_samba_base_model(
-            filtered_modelentry, param, covariates, nsamples
+            filtered_modelentry, param, covariates, nsamples, algorithm
         )
         param_base_modelentry = ModelEntry.create(model=param_base_model)
         linear_modelentry_dict[param] = [param_base_modelentry]
@@ -244,7 +233,7 @@ def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, ns
 
 
 def samba_step(
-    context, step, alpha, statsmodels, weighted_linreg, nsamples, lin_filter, state_and_effect
+    context, step, alpha, statsmodels, nsamples, lin_filter, algorithm, state_and_effect
 ):
 
     # LINEAR COVARIATE MODEL PROCESSING #####################
@@ -254,9 +243,9 @@ def samba_step(
         alpha,
         state_and_effect,
         statsmodels,
-        weighted_linreg,
         nsamples,
         lin_filter,
+        algorithm
     )
 
     # NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
@@ -273,9 +262,9 @@ def linear_model_selection(
     alpha,
     state_and_effect,
     statsmodels,
-    weighted_linreg,
     nsamples,
     lin_filter,
+    algorithm,
 ):
     nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
         state_and_effect
@@ -290,17 +279,23 @@ def linear_model_selection(
         for param, covariates in param_cov_list.items():
             # update dataset
             updated_dataset = _create_samba_dataset(
-                best_nlme_modelentry, param, covariates, nsamples
+                best_nlme_modelentry, param, covariates, nsamples, algorithm
             )
             covs = ["1"] + covariates
-            if weighted_linreg:
+            if algorithm == "samba" and nsamples >=2:
                 linear_models = [
-                    smf.wls(f"DV~{cov}", data=updated_dataset, weights=1.0 / updated_dataset["ETC"])
+                    smf.mixedlm(f"DV~{cov}", data=updated_dataset, groups=updated_dataset["ID"])
+                    for cov in covs
+                ]
+            elif algorithm == "samba" and nsamples == 1:
+                linear_models = [
+                    smf.ols(f"DV~{cov}", data=updated_dataset)
                     for cov in covs
                 ]
             else:
                 linear_models = [
-                    smf.wls(f"DV~{cov}", data=updated_dataset, weights=1.0) for cov in covs
+                    smf.wls(f"DV~{cov}", data=updated_dataset, weights=1.0 / updated_dataset["ETC"])
+                    for cov in covs
                 ]
             linear_fitres = [model.fit() for model in linear_models]
             # OFV = -2 * LogLikelihood (NONMEM OFV = - 2 * Loglikelihood - N*(2*pi))
@@ -324,7 +319,7 @@ def linear_model_selection(
             covariates = param_cov_list[param]
             # update dataset
             updated_dataset = _create_samba_dataset(
-                best_nlme_modelentry, param, covariates, nsamples
+                best_nlme_modelentry, param, covariates, nsamples, algorithm
             )
             covs = ["Base"] + covariates
             linear_modelentries = list(linear_modelentries)
@@ -523,9 +518,9 @@ def samba_search(
     max_steps,
     alpha,
     statsmodels,
-    weighted_linreg,
     nsamples,
     lin_filter,
+    algorithm,
     state_and_effect,
 ):
     steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
@@ -537,9 +532,9 @@ def samba_search(
             step,
             alpha,
             statsmodels,
-            weighted_linreg,
             nsamples,
             lin_filter,
+            algorithm,
             state_and_effect,
         )
 
@@ -603,7 +598,6 @@ def filter_search_space_and_model(search_space, model):
         for cov_effect, cov_func in exploratory_cov_funcs.items()
         if cov_effect[-1] == "ADD"
     }
-    # TODO: if algorithm=="SAMBA": INDEXED CODE CHUNK return (ind, lin, mod)
     # indexed exploratory cov_funcs for nonlinear mixed effect models
     indexed_explor_cov_funcs = {}
     linear_cov_funcs = {}
@@ -625,11 +619,14 @@ def filter_search_space_and_model(search_space, model):
     return (indexed_explor_cov_funcs, linear_cov_funcs, filtered_model)
 
 
-def _create_samba_dataset(model_entry, param, covariates, nsamples):
+def _create_samba_dataset(model_entry, param, covariates, nsamples, algorithm):
 
     eta_name = get_parameter_rv(model_entry.model, param)[0]
     # Extract the conditional means (ETA) for individual parameters
-    eta_column = model_entry.modelfit_results.individual_estimates[eta_name]
+    if algorithm == "samba" and nsamples >= 1:
+        eta_column = model_entry.modelfit_results.individual_eta_samples[eta_name]
+    else:
+        eta_column = model_entry.modelfit_results.individual_estimates[eta_name]
     eta_column = eta_column.rename("DV")
 
     # Extract the covariates dataset
@@ -643,33 +640,27 @@ def _create_samba_dataset(model_entry, param, covariates, nsamples):
         np.log
     )
     # Merge the ETAs and Covariate dataset
-    dataset = covariate_columns.join(eta_column, "ID")
+    dataset = covariate_columns.merge(eta_column, on="ID")
 
     # Extract the conditional variance (ETC) for individual parameters
-    dataset["ETC"] = [
+    etc = [
         subset.loc[eta_name, eta_name].squeeze()
         for subset in model_entry.modelfit_results.individual_estimates_covariance
     ]
-
-    # General samples from conditional distribution
-    # Multiple samples will be averaged
-    if nsamples >= 1:
-        dataset = dataset.rename(columns={"DV": "ETA"})
-        dataset["DV"] = dataset.apply(
-            lambda x: np.random.normal(loc=x["ETA"], scale=x["ETC"], size=nsamples).mean(), axis=1
-        )
-        dataset["DV"] = dataset["DV"].astype(np.float64)
+    subject_id = model_entry.modelfit_results.individual_estimates.index
+    etc_columns = pd.DataFrame({"ID": subject_id, "ETC": etc})
+    dataset = dataset.merge(etc_columns, on="ID")
 
     return dataset
 
 
-def _create_samba_base_model(modelentry, param, covariates, nsamples):
+def _create_samba_base_model(modelentry, param, covariates, nsamples, algorithm):
     """
     Create linear base model [Y ~ THETA(1) + ERR(1)] for the parameters to be explored.
     ETA values associated with these model parameters are set as dependent variable (DV).
     The OFVs of these base models are used as the basis of linear covariate model selection.
     """
-    dataset = _create_samba_dataset(modelentry, param, covariates, nsamples)
+    dataset = _create_samba_dataset(modelentry, param, covariates, nsamples, algorithm)
 
     # parameters
     theta = Parameter(name="theta", init=0.1)

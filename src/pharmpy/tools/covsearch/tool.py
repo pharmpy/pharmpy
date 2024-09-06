@@ -119,7 +119,7 @@ def create_workflow(
     p_backward: float = 0.001,
     max_steps: int = -1,
     algorithm: Literal[
-        'scm-forward', 'scm-forward-then-backward', 'SAMBA'
+        'scm-forward', 'scm-forward-then-backward', 'samba'
     ] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -128,8 +128,6 @@ def create_workflow(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
     statsmodels: bool = False,
-    weighted_linreg: bool = False,
-    est_method: Literal['ORIG', 'ITS', 'SAEM'] = "ORIG",
     nsamples: int = 5,
     lin_filter: int = 2,
 ):
@@ -145,7 +143,7 @@ def create_workflow(
         The p-value to use in the likelihood ratio test for backward steps
     max_steps : int
         The maximum number of search steps to make
-    algorithm : {'scm-forward', 'scm-forward-then-backward', 'SAMBA'}
+    algorithm : {'scm-forward', 'scm-forward-then-backward', 'samba'}
         The search algorithm to use. Currently, 'scm-forward' and
         'scm-forward-then-backward' are supported.
     results : ModelfitResults
@@ -167,12 +165,6 @@ def create_workflow(
     statsmodels : bool
         estimation tool for SAMBA linear covariate model fitting. 'True' calls statsmodel's
         functionalities, whereas 'False' calls nonmem.
-    weighted_linreg : bool
-        If `True`, SAMBA uses ETC weighted least squares to fit linear covariate models.
-    est_method : {'ORIG', 'ITS', 'SAEM'}
-        The estimation method to use for nonlinear mixed effects models in SAMBA. Currently,
-        ITS and SAEM are supported. Default is ORIG, i.e. use original $EST from input model
-        for nonlinear model selection.
     nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         The samples will be pooled to fit the linear model.
@@ -197,7 +189,7 @@ def create_workflow(
     >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
-    if algorithm == "SAMBA":
+    if algorithm == "samba":
         return samba_workflow(
             search_space,
             max_steps,
@@ -206,8 +198,7 @@ def create_workflow(
             model,
             max_eval,
             statsmodels,
-            weighted_linreg,
-            est_method,
+            algorithm,
             nsamples,
             lin_filter,
         )

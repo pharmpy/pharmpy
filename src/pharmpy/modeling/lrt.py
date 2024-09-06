@@ -1,6 +1,7 @@
 from typing import Iterable, Union
 
 from statsmodels.regression.linear_model import WLS
+from statsmodels.regression.mixed_linear_model import MixedLM
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps.scipy import stats
@@ -13,6 +14,8 @@ def degrees_of_freedom(parent: Union[Model, ModelEntry], child: Union[Model, Mod
         child_parameters = len(child.model.parameters)
     elif isinstance(child, WLS):
         child_parameters = child.df_model
+    elif isinstance(child, MixedLM):
+        child_parameters = child.k_params
     else:
         child_parameters = len(child.parameters)
 
@@ -20,6 +23,8 @@ def degrees_of_freedom(parent: Union[Model, ModelEntry], child: Union[Model, Mod
         parent_parameters = len(parent.model.parameters)
     elif isinstance(parent, WLS):
         parent_parameters = parent.df_model
+    elif isinstance(parent, MixedLM):
+        parent_parameters = parent.k_params
     else:
         parent_parameters = len(parent.parameters)
     return child_parameters - parent_parameters
