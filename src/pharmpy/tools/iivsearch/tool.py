@@ -193,39 +193,36 @@ def create_step_workflow(
     return Workflow(wb)
 
 
-def start(
-    context,
-    input_model,
-    input_res,
-    algorithm,
-    correlation_algorithm,
-    iiv_strategy,
-    rank_type,
-    E_p,
-    E_q,
-    linearize,
-    cutoff,
-    keep,
-    strictness,
-):
+def prepare_input_model(input_model, input_res):
     input_model = input_model.replace(
         name="input", description=algorithms.create_description(input_model)
     )
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
-    context.store_input_model_entry(input_model_entry)
+    return input_model, input_model_entry
 
+
+def prepare_base_model(input_model_entry, iiv_strategy):
     if iiv_strategy != 'no_add':
-        base_model = update_initial_estimates(input_model, modelfit_results=input_res)
-        base_model = _add_iiv(iiv_strategy, base_model, modelfit_results=input_res)
+        base_model = update_initial_estimates(
+            input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
+        )
+        base_model = _add_iiv(
+            iiv_strategy, base_model, modelfit_results=input_model_entry.modelfit_results
+        )
         base_model = base_model.replace(
             name='base', description=algorithms.create_description(base_model)
         )
         # FIXME: Set parent model once create_results can do different things for different tools
         base_model_entry = ModelEntry.create(base_model, modelfit_results=None)
     else:
-        base_model = input_model.replace(name='base')
-        base_model_entry = ModelEntry.create(base_model, modelfit_results=input_res)
+        base_model = input_model_entry.model.replace(name='base')
+        base_model_entry = ModelEntry.create(
+            base_model, modelfit_results=input_model_entry.modelfit_results
+        )
+    return base_model, base_model_entry
 
+
+def prepare_algorithms(algorithm, correlation_algorithm):
     algorithm_sub = {
         "top_down_exhaustive": "td_exhaustive_no_of_etas",
         "bottom_up_stepwise": "bu_stepwise_no_of_etas",
@@ -244,16 +241,37 @@ def start(
             else:
                 correlation_algorithm = "top_down_exhaustive"
         list_of_algorithms.append(correlation_algorithm_sub[correlation_algorithm])
+    return list_of_algorithms
 
-    sum_tools, sum_models, sum_inds, sum_inds_count, sum_errs = [], [], [], [], []
 
+def start(
+    context,
+    input_model,
+    input_res,
+    algorithm,
+    correlation_algorithm,
+    iiv_strategy,
+    rank_type,
+    E_p,
+    E_q,
+    linearize,
+    cutoff,
+    keep,
+    strictness,
+):
+    input_model, input_model_entry = prepare_input_model(input_model, input_res)
+    context.store_input_model_entry(input_model_entry)
+
+    list_of_algorithms = prepare_algorithms(algorithm, correlation_algorithm)
+
+    sum_tools, sum_inds, sum_inds_count, sum_errs = [], [], [], []
     no_of_models = 0
     last_res = None
     final_model_entry = None
-
     sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
 
-    # LINEARIZE
+    base_model, base_model_entry = prepare_base_model(input_model_entry, iiv_strategy)
+
     if linearize:
         # Create param map for ETA
         from .algorithms import _create_param_dict
@@ -265,7 +283,6 @@ def start(
         linearize_context = context.create_subcontext('linearization')
         linear_workflow = create_linearize_workflow(
             model=base_model_entry.model,
-            model_name="linear_base_model",
             description=algorithms.create_description(base_model_entry.model),
         )
         linear_results = call_workflow(linear_workflow, "running_linearization", linearize_context)
