@@ -99,16 +99,37 @@ class Matrix:
         return hash(sympy.ImmutableMatrix(self._m))
 
     def __add__(self, other) -> Matrix:
+        other = self._convert_input(other)
+        if not isinstance(other, Matrix):
+            return NotImplemented
         return Matrix(self._m + other)
 
     def __radd__(self, other) -> Matrix:
+        other = self._convert_input(other)
+        if not isinstance(other, Matrix):
+            return NotImplemented
         return Matrix(self._m + other)
 
     def __matmul__(self, other) -> Matrix:
+        other = self._convert_input(other)
+        if not isinstance(other, Matrix):
+            return NotImplemented
         return Matrix(self._m @ other)
 
     def __rmatmul__(self, other) -> Matrix:
+        other = self._convert_input(other)
+        if not isinstance(other, Matrix):
+            return NotImplemented
         return Matrix(other._m @ self._m)
+
+    @staticmethod
+    def _convert_input(m):
+        if isinstance(m, Matrix):
+            return m
+        elif isinstance(m, Sequence) and isinstance(m[0], Sequence):
+            return Matrix(m)
+        else:
+            return m
 
     def evalf(self, d: Mapping) -> np.ndarray:
         with warnings.catch_warnings():
