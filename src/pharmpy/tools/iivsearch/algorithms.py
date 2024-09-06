@@ -37,7 +37,12 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mappin
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names
     if keep:
-        iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(base_model, keep))
+        if param_mapping is None:
+            iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(base_model, keep))
+        else:
+            iiv_names = [
+                name for name in iiv_names if name not in keep and param_mapping[name] not in keep
+            ]
 
     # Remove fixed etas
     fixed_etas = _get_fixed_etas(base_model)
