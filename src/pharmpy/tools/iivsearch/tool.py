@@ -14,7 +14,9 @@ from pharmpy.modeling import (
     add_pk_iiv,
     create_joint_distribution,
     find_clearance_parameters,
+    fix_parameters,
     has_random_effect,
+    unfix_parameters,
 )
 from pharmpy.tools.common import (
     RANK_TYPES,
@@ -201,13 +203,16 @@ def prepare_input_model(input_model, input_res):
     return input_model, input_model_entry
 
 
-def prepare_base_model(input_model_entry, iiv_strategy):
+def prepare_base_model(input_model_entry, iiv_strategy, linearize):
     if iiv_strategy != 'no_add':
         base_model = update_initial_estimates(
             input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
         )
-        base_model = _add_iiv(
-            iiv_strategy, base_model, modelfit_results=input_model_entry.modelfit_results
+        base_model = add_iiv(
+            iiv_strategy,
+            base_model,
+            modelfit_results=input_model_entry.modelfit_results,
+            linearize=linearize,
         )
         base_model = base_model.replace(
             name='base', description=algorithms.create_description(base_model)
@@ -244,6 +249,39 @@ def prepare_algorithms(algorithm, correlation_algorithm):
     return list_of_algorithms
 
 
+def create_param_mapping(me, linearize):
+    if linearize:
+        from .algorithms import _create_param_dict
+
+        param_mapping = _create_param_dict(me.model, dists=me.model.random_variables.iiv)
+    else:
+        param_mapping = None
+    return param_mapping
+
+
+def run_linearization(context, baseme):
+    linearize_context = context.create_subcontext('linearization')
+    linear_workflow = create_linearize_workflow(
+        model=baseme.model,
+        description=algorithms.create_description(baseme.model),
+    )
+    linear_results = call_workflow(linear_workflow, "running_linearization", linearize_context)
+    linbaseme = ModelEntry.create(
+        model=linear_results.final_model, modelfit_results=linear_results.final_model_results
+    )
+    return linbaseme
+
+
+def update_linearized_base_model(baseme, input_model, iiv_strategy):
+    added_params = baseme.model.parameters - input_model.parameters
+    model = unfix_parameters(baseme.model, added_params.names)
+    if iiv_strategy in ('fullblock', 'pd_fullblock'):
+        model = create_joint_distribution(
+            model, individual_estimates=baseme.modelfit_results.individual_estimates
+        )
+    return ModelEntry.create(model=model, modelfit_results=None)
+
+
 def start(
     context,
     input_model,
@@ -270,27 +308,13 @@ def start(
     final_model_entry = None
     sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
 
-    base_model, base_model_entry = prepare_base_model(input_model_entry, iiv_strategy)
+    base_model, base_model_entry = prepare_base_model(input_model_entry, iiv_strategy, linearize)
+
+    param_mapping = create_param_mapping(base_model_entry, linearize)
 
     if linearize:
-        # Create param map for ETA
-        from .algorithms import _create_param_dict
-
-        param_mapping = _create_param_dict(
-            base_model_entry.model, dists=base_model_entry.model.random_variables.iiv
-        )
-
-        linearize_context = context.create_subcontext('linearization')
-        linear_workflow = create_linearize_workflow(
-            model=base_model_entry.model,
-            description=algorithms.create_description(base_model_entry.model),
-        )
-        linear_results = call_workflow(linear_workflow, "running_linearization", linearize_context)
-        base_model_entry = ModelEntry.create(
-            model=linear_results.final_model, modelfit_results=linear_results.final_model_results
-        )
-    else:
-        param_mapping = None
+        base_model_entry = run_linearization(context, base_model_entry)
+        base_model_entry = update_linearized_base_model(base_model_entry, input_model, iiv_strategy)
 
     applied_algorithms = []
     for i, algorithm_cur in enumerate(list_of_algorithms, start=1):
@@ -486,22 +510,26 @@ def rename_linbase(model, linbase_model_entry):
     return ModelEntry.create(model=linbase_model)
 
 
-def _add_iiv(iiv_strategy, model, modelfit_results):
-    # IF LINEARIZED - inital value should be 0.00001
-    assert iiv_strategy in ['add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock']
-    if iiv_strategy in ['add_diagonal', 'fullblock']:
-        model = add_pk_iiv(model)
-        if iiv_strategy == 'fullblock':
-            model = create_joint_distribution(
-                model, individual_estimates=modelfit_results.individual_estimates
-            )
-    elif iiv_strategy in ['pd_add_diagonal', 'pd_fullblock']:
-        model = add_pd_iiv(model)
-        if iiv_strategy == 'pd_fullblock':
-            model = create_joint_distribution(
-                model, individual_estimates=modelfit_results.individual_estimates
-            )
-    return model
+def add_iiv(iiv_strategy, model, modelfit_results, linearize=False):
+    assert iiv_strategy in ('add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
+
+    if linearize:
+        init = 0.000001
+    else:
+        init = 0.09
+
+    if iiv_strategy in ('add_diagonal', 'fullblock'):
+        new = add_pk_iiv(model, initial_estimate=init)
+    elif iiv_strategy in ('pd_add_diagonal', 'pd_fullblock'):
+        new = add_pd_iiv(model, initial_estimate=init)
+    if linearize:
+        added_params = new.parameters - model.parameters
+        new = fix_parameters(new, added_params.names)
+    elif iiv_strategy in ('fullblock', 'pd_fullblock'):
+        new = create_joint_distribution(
+            new, individual_estimates=modelfit_results.individual_estimates
+        )
+    return new
 
 
 def post_process(
