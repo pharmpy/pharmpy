@@ -17,6 +17,12 @@ else:
 from .ml import predict_influential_individuals, predict_outliers
 
 
+def check_tflite():
+    spec = importlib.util.find_spec('tflite_runtime')
+    if spec is None:
+        warnings.warn("tflite is not installed, using NaN for predictions")
+
+
 def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
     """Creates a summary dataframe keyed by model-individual pairs for an input
     list of models.
@@ -57,9 +63,7 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
 
     resDict = {model.name: res for model, res in zip(models, models_res)}
 
-    spec = importlib.util.find_spec('tflite_runtime')
-    if spec is None:
-        warnings.warn("tflite is not installed, using NaN for predictions")
+    check_tflite()
 
     df = pd.concat(
         map(
@@ -104,6 +108,8 @@ def _predicted(predict, model: Model, res: ModelfitResults, column: str) -> Unio
     except ModelfitResultsError:
         return np.nan
     except ImportError:
+        return np.nan
+    except SystemError:  # for numpy/tflite mismatch on MacOS
         return np.nan
     if predicted is None:
         return np.nan

@@ -1,4 +1,3 @@
-import logging
 from dataclasses import replace, dataclass
 from functools import partial
 from itertools import count
@@ -124,9 +123,7 @@ def _store_input_model(context, model, results, max_eval):
     return input_modelentry
 
 
-def _init_search_state(
-    context, search_space, algorithm, nsamples, modelentry
-):
+def _init_search_state(context, search_space, algorithm, nsamples, modelentry):
     """Initialize SAMBA covariate search"""
     model = modelentry.model
     exploratory_cov_funcs, linear_cov_funcs, filtered_model = filter_search_space_and_model(
@@ -176,7 +173,13 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, algo
                 method="SAEM",
                 idx=2,
                 niter=0,
-                tool_options={"EONLY": "1", "NBURN": "0", "MASSRESET": "0", "ETASAMPLES": "1", "ISAMPLE": f"{nsamples}"}
+                tool_options={
+                    "EONLY": "1",
+                    "NBURN": "0",
+                    "MASSRESET": "0",
+                    "ETASAMPLES": "1",
+                    "ISAMPLE": f"{nsamples}",
+                },
             )
     if algorithm != "samba" and filtered_model.execution_steps[0].method != "FOCE":
         filtered_model = remove_estimation_step(filtered_model, idx=0)
@@ -238,14 +241,7 @@ def samba_step(
 
     # LINEAR COVARIATE MODEL PROCESSING #####################
     selected_explor_cov_funcs, linear_modelentry_dict = linear_model_selection(
-        context,
-        step,
-        alpha,
-        state_and_effect,
-        statsmodels,
-        nsamples,
-        lin_filter,
-        algorithm
+        context, step, alpha, state_and_effect, statsmodels, nsamples, lin_filter, algorithm
     )
 
     # NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
@@ -282,16 +278,13 @@ def linear_model_selection(
                 best_nlme_modelentry, param, covariates, nsamples, algorithm
             )
             covs = ["1"] + covariates
-            if algorithm == "samba" and nsamples >=2:
+            if algorithm == "samba" and nsamples >= 2:
                 linear_models = [
                     smf.mixedlm(f"DV~{cov}", data=updated_dataset, groups=updated_dataset["ID"])
                     for cov in covs
                 ]
             elif algorithm == "samba" and nsamples == 1:
-                linear_models = [
-                    smf.ols(f"DV~{cov}", data=updated_dataset)
-                    for cov in covs
-                ]
+                linear_models = [smf.ols(f"DV~{cov}", data=updated_dataset) for cov in covs]
             else:
                 linear_models = [
                     smf.wls(f"DV~{cov}", data=updated_dataset, weights=1.0 / updated_dataset["ETC"])
@@ -452,8 +445,9 @@ def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_e
             nonlin_model_added_effect = cov_func(nonlin_model_added_effect)
             new_nonlin_models.append(nonlin_model_added_effect)
 
-        new_modelentries = [ModelEntry.create(model, best_nlme_modelentry.model)
-                            for model in new_nonlin_models]
+        new_modelentries = [
+            ModelEntry.create(model, best_nlme_modelentry.model) for model in new_nonlin_models
+        ]
         nonlin_fit_wf = create_fit_workflow(modelentries=new_modelentries)
         wb = WorkflowBuilder(nonlin_fit_wf)
         task_gather = Task("gather", lambda *models: models)

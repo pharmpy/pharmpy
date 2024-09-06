@@ -17,7 +17,7 @@ from pharmpy.model.model import update_datainfo
 from .iterators import resample_data
 
 
-def get_ids(model: Model):
+def get_ids(model: Model) -> list[int]:
     """Retrieve a list of all subject ids of the dataset
 
     Parameters
@@ -38,7 +38,7 @@ def get_ids(model: Model):
     [1, 2, 3, ..., 57, 58, 59]
     """
     idcol = model.datainfo.id_column.name
-    ids = list(model.dataset[idcol].unique())
+    ids = list(int(x) for x in model.dataset[idcol].unique())
     return ids
 
 
@@ -2285,17 +2285,17 @@ def bin_observations(
     >>> model = load_example_model("pheno")
     >>> bins, boundaries = bin_observations(model, method="equal_width", nbins=10)
     >>> bins
-    421     0
-    527     0
-    118     0
-    135     0
-    512     0
-           ..
-    203     7
-    475     7
-    510     7
-    133     8
-    267     9
+    527    0
+    421    0
+    118    0
+    135    0
+    512    0
+          ..
+    203    7
+    475    7
+    510    7
+    133    8
+    267    9
     Name: TIME, Length: 155, dtype: int64
     >>> boundaries
     array([  0.  ,  39.88,  78.76, 117.64, 156.52, 195.4 , 234.28, 273.16,

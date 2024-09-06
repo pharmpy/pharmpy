@@ -27,7 +27,7 @@ class SizesRecord(OptionRecord):
         assert pc is not None
         return int(pc)
 
-    def set_PC(self, value) -> Self:
+    def set_PC(self, value) -> Self:  # pyright: ignore [reportInvalidTypeForm]
         if value > 99:
             raise ValueError(
                 f'Model has {value} compartments, but NONMEM only support a maximum of 99 '

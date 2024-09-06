@@ -784,6 +784,129 @@ def test_builder():
     assert hash(cm) != hash(cm2)
 
 
+def test_add_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    cb.add_dose(central, dose1)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (dose1,)
+
+    dose2 = Infusion.create('AMT', rate='R1')
+    cb.add_dose(cs.central_compartment, dose2)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (
+        dose2,
+        dose1,
+    )
+
+    with pytest.raises(ValueError):
+        cb.add_dose(None, dose1)
+    with pytest.raises(ValueError):
+        cb.add_dose(cs.central_compartment, None)
+
+
+def test_set_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    cb.set_dose(central, dose1)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (dose1,)
+
+    dose2 = Infusion.create('AMT', rate='R1')
+    cb.set_dose(cs.central_compartment, dose2)
+    cs = CompartmentalSystem(cb)
+    assert cs.central_compartment.doses == (dose2,)
+
+    with pytest.raises(ValueError):
+        cb.set_dose(None, dose1)
+
+
+def test_remove_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    depot = Compartment.create('DEPOT', doses=(dose1,))
+    cb.add_compartment(depot)
+    cb.add_flow(depot, central, S('KA'))
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == (dose1,)
+
+    cb.remove_dose(depot)
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == tuple()
+
+    dose2 = Infusion.create('AMT', rate='R1', admid=2)
+    cb.add_dose(cs.find_compartment('DEPOT'), dose1)
+    cb.add_dose(cs.central_compartment, dose2)
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == (dose1,)
+    assert cs.central_compartment.doses == (dose2,)
+
+    cb1 = CompartmentalSystemBuilder(cs)
+    cb1.remove_dose(cs.central_compartment)
+    cs1 = CompartmentalSystem(cb1)
+    assert cs1.find_compartment('DEPOT').doses == (dose1,)
+    assert cs1.central_compartment.doses == tuple()
+
+    cb2 = CompartmentalSystemBuilder(cs)
+    cb2.remove_dose(cs.central_compartment, admid=2)
+    cs2 = CompartmentalSystem(cb2)
+    assert cs2.find_compartment('DEPOT').doses == (dose1,)
+    assert cs2.central_compartment.doses == tuple()
+
+    with pytest.raises(ValueError):
+        cb.remove_dose(None, dose1)
+
+
+def test_move_dose():
+    cb = CompartmentalSystemBuilder()
+    dose1 = Bolus.create(Expr.symbol('AMT'))
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    depot = Compartment.create('DEPOT', doses=(dose1,))
+    cb.add_compartment(depot)
+    cb.add_flow(depot, central, S('KA'))
+    cs = CompartmentalSystem(cb)
+    assert cs.find_compartment('DEPOT').doses == (dose1,)
+    assert cs.central_compartment.doses == tuple()
+
+    cb1 = CompartmentalSystemBuilder(cs)
+    cb1.move_dose(depot, central)
+    cs1 = CompartmentalSystem(cb1)
+    assert cs1.find_compartment('DEPOT').doses == tuple()
+    assert cs1.central_compartment.doses == (dose1,)
+
+    cb2 = CompartmentalSystemBuilder(cs)
+    dose2 = Infusion.create('AMT', rate='R1', admid=2)
+    central = cb2.add_dose(cs.central_compartment, dose2)
+    depot, central = cb2.move_dose(depot, central)
+    cs2 = CompartmentalSystem(cb2)
+    assert cs2.find_compartment('DEPOT').doses == tuple()
+    assert cs2.central_compartment.doses == (dose2, dose1)
+
+    central, _ = cb2.move_dose(central, depot, admid=2)
+    cs3 = CompartmentalSystem(cb2)
+    assert cs3.find_compartment('DEPOT').doses == (dose2,)
+    assert cs3.central_compartment.doses == (dose1,)
+
+    central = cb2.remove_dose(central)
+    with pytest.raises(ValueError):
+        cb.move_dose(None, central)
+    with pytest.raises(ValueError):
+        cb.move_dose(central, None)
+    with pytest.raises(ValueError):
+        cb2.move_dose(central, depot)
+
+
 def test_infusion_repr():
     inf = Infusion.create('AMT', rate='R1')
     assert repr(inf) == 'Infusion(AMT, admid=1, rate=R1)'
@@ -813,6 +936,36 @@ def test_compartment_names(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert model.statements.ode_system.compartment_names == ['CENTRAL']
 
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    assert model.statements.ode_system.compartment_names == ['DEPOT', 'CENTRAL']
+
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('X'))
+    dose = Bolus.create('AMT')
+    cb.set_dose(central, dose=(dose,))
+    effect1 = Compartment.create('EFFECT1', input=0)
+    cb.add_compartment(effect1)
+    cb.add_flow(effect1, output, S('Y'))
+    effect2 = Compartment.create('EFFECT2', input=S('Y') * central.amount)
+    cb.add_compartment(effect2)
+    cb.add_flow(effect2, output, S('Y'))
+    cs = CompartmentalSystem(cb)
+    assert cs.compartment_names == ['CENTRAL', 'EFFECT2', 'EFFECT1']
+
+    # Compartment upstream of dosing
+    cb = CompartmentalSystemBuilder()
+    dose = Bolus.create('AMT')
+    central = Compartment.create('CENTRAL', doses=(dose,))
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('X'))
+    comp = Compartment.create('COMP')
+    cb.add_compartment(comp)
+    cb.add_flow(comp, central, S('Y'))
+    cs = CompartmentalSystem(cb)
+    assert cs.compartment_names == ['CENTRAL', 'COMP']
+
 
 def test_assignment_create_numeric(load_model_for_test, testdata):
     with pytest.raises(AttributeError):
@@ -832,6 +985,15 @@ def test_multi_dosing_compartment(load_model_for_test, testdata):
     cb.set_dose(cb.find_compartment("CENTRAL"), cb.find_compartment("DEPOT").doses)
     ode = CompartmentalSystem(cb)
     assert ode.dosing_compartments[0].name == "DEPOT"
+
+    dose = Bolus.create('AMT')
+    comp = Compartment.create('A', doses=(dose,))
+    central = ode.find_compartment('CENTRAL')
+    cb.add_compartment(comp)
+    cb.add_flow(comp, central, S('X'))
+    cb.add_flow(central, comp, S('Y'))
+    ode = CompartmentalSystem(cb)
+    assert ode.dosing_compartments[-1].name == "CENTRAL"
 
 
 def test_get_n_connected(load_model_for_test, testdata):
@@ -858,6 +1020,9 @@ def test_output():
 
 
 def test_to_compartmental_system(load_model_for_test, testdata):
+    def _create_names(cs):
+        return {Expr.function(f'A_{name}', cs.t): name for name in cs.compartment_names}
+
     cb = CompartmentalSystemBuilder()
     central = Compartment.create('CENTRAL')
     cb.add_compartment(central)
@@ -866,9 +1031,51 @@ def test_to_compartmental_system(load_model_for_test, testdata):
     cb.add_compartment(depot)
     cb.add_flow(depot, central, S('Y'))
     cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+    assert cs_from_cb.get_flow(central, output) == cs_from_func.get_flow(central, output)
+    assert cs_from_cb.get_flow(depot, central) == cs_from_func.get_flow(depot, central)
 
-    names = {
-        Expr.function(f'A_{name}', cs_from_cb.t): name for name in cs_from_cb.compartment_names
-    }
-    cs_from_func = to_compartmental_system(names, cs_from_cb.eqs)
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, 0)
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+    assert cs_from_cb.get_flow(central, output) == cs_from_func.get_flow(central, output) == 0
+
+    # Second order absorption
+    k, v = S('k'), S('V')
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_flow(central, output, k)
+    complex = Compartment.create('COMPLEX')
+    target = Compartment.create('TARGET')
+    cb.add_flow(target, complex, central.amount / v)
+    cb.add_flow(complex, target, k)
+    cb.add_flow(target, output, k)
+    cb.add_flow(complex, output, k)
+    cb.set_input(target, v)
+    cb.set_input(central, k * complex.amount - central.amount * target.amount / v)
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+    # assert cs_from_cb.zero_order_inputs == cs_from_func.zero_order_inputs
+
+    # Second order input
+    central = cs_from_cb.find_compartment('CENTRAL')
+    complex = cs_from_cb.find_compartment('COMPLEX')
+    cb.set_input(complex, central.amount / target.amount)
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
+    assert cs_from_cb.compartment_names == cs_from_func.compartment_names
+
+    # No output
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.set_input(central, S('X'))
+    cs_from_cb = CompartmentalSystem(cb)
+    cs_from_func = to_compartmental_system(_create_names(cs_from_cb), cs_from_cb.eqs)
     assert cs_from_cb.compartment_names == cs_from_func.compartment_names

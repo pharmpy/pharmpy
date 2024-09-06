@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Set, Tuple
+from typing import Dict, List, Optional, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -37,7 +37,12 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mappin
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names
     if keep:
-        iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(base_model, keep))
+        if param_mapping is None:
+            iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(base_model, keep))
+        else:
+            iiv_names = [
+                name for name in iiv_names if name not in keep and param_mapping[name] not in keep
+            ]
 
     # Remove fixed etas
     fixed_etas = _get_fixed_etas(base_model)
@@ -110,7 +115,9 @@ def stepwise_BU_algorithm(
     clearance_parameter,
     base_model_entry,
 ):
-    base_model = base_model.replace(description=create_description(base_model))
+    base_model = base_model.replace(
+        description=create_description(base_model, param_dict=param_mapping)
+    )
 
     iivs = base_model.random_variables.iiv
     iiv_names = iivs.names  # All ETAs in the base model
@@ -254,7 +261,9 @@ def stepwise_BU_algorithm(
 def td_exhaustive_block_structure(base_model, index_offset=0, param_mapping=None):
     wb = WorkflowBuilder(name='td_exhaustive_block_structure')
 
-    base_model = base_model.replace(description=create_description(base_model))
+    base_model = base_model.replace(
+        description=create_description(base_model, param_dict=param_mapping)
+    )
 
     iivs = base_model.random_variables.iiv
     model_no = 1 + index_offset
@@ -320,7 +329,7 @@ def create_block_structure_candidate_entry(name, block_structure, etas, param_na
         block_structure, candidate_model, model_entry.modelfit_results
     )
     candidate_model = candidate_model.replace(
-        name=name, description=create_description(candidate_model, param_mapping)
+        name=name, description=create_description(candidate_model, param_dict=param_mapping)
     )
 
     return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
@@ -339,7 +348,7 @@ def _extract_clearance_parameter(model, param_mapping, clearance_parameter, iiv_
     return base_parameter
 
 
-def _rv_block_structures(etas: RandomVariables):
+def _rv_block_structures(etas):
     # NOTE: All possible partitions of etas into block structures
     return partitions(etas)
 
@@ -373,7 +382,9 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
     return param_dict
 
 
-def create_description(model: Model, iov: bool = False, param_dict: Dict[str, str] = {}) -> str:
+def create_description(
+    model: Model, iov: bool = False, param_dict: Optional[Dict[str, str]] = None
+) -> str:
     if iov:
         dists = model.random_variables.iov
     else:
@@ -399,7 +410,8 @@ def create_description(model: Model, iov: bool = False, param_dict: Dict[str, st
                 same_names.extend(dists.get_rvs_with_same_dist(name).names)
             same.extend(same_names)
 
-    return '+'.join(blocks)
+    description = '+'.join(blocks)
+    return description
 
 
 def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res: ModelfitResults):

@@ -591,7 +591,7 @@ def calculate_bic(
     model: Model,
     likelihood: float,
     type: Literal['mixed', 'fixed', 'random', 'iiv'] = 'mixed',
-):
+) -> float:
     """Calculate BIC
 
     Different variations of the BIC can be calculated:
@@ -628,11 +628,11 @@ def calculate_bic(
     >>> results = load_example_modelfit_results("pheno")
     >>> ofv = results.ofv
     >>> calculate_bic(model, ofv)
-        611.7071686216575
+    611.7071686216575
     >>> calculate_bic(model, ofv, type='fixed')
     616.5366069867251
     >>> calculate_bic(model, ofv, type='random')
-        610.741280948644
+    610.741280948644
     >>> calculate_bic(model, ofv, type='iiv')
     594.4311311730211
     """

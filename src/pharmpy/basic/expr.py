@@ -218,8 +218,7 @@ class Expr:
     def piecewise_fold(self) -> Expr:
         if isinstance(self._expr, symengine.Piecewise):
             expr = sympy.sympify(self._expr)
-            if expr.is_Piecewise:
-                expr = sympy.piecewise_fold(expr)
+            expr = sympy.piecewise_fold(expr)
             return Expr(expr)
         else:
             return self
@@ -303,6 +302,9 @@ class BooleanExpr:
             return Expr(lhs)
         else:
             return Expr(rhs)
+
+    def __eq__(self, other) -> bool:
+        return self._expr == other
 
     def __and__(self, other: BooleanExpr) -> BooleanExpr:
         return BooleanExpr(sympy.And(self._expr, other._expr))

@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Union
 
+import packaging
+
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model, ModelfitResultsError
@@ -292,6 +294,10 @@ def predict_influential_outliers(
 
 def _predict_with_tflite(model_path: Union[str, Path], data: pd.DataFrame):
     import tflite_runtime.interpreter as tflite
+
+    numpy_version = packaging.version.parse(np.__version__)
+    if numpy_version >= packaging.version.parse("2.0.0"):
+        raise ImportError("tflite cannot use numpy >= 2.0.0")
 
     interpreter = tflite.Interpreter(str(model_path))
     interpreter.allocate_tensors()

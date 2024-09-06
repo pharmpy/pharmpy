@@ -339,7 +339,6 @@ class CompartmentalSystemBuilder:
         source: Compartment,
         destination: Compartment,
         admid: Optional[int] = None,
-        replace: bool = True,
     ) -> tuple[Compartment, Compartment]:
         """Move a dose input from one compartment to another
 
@@ -351,21 +350,27 @@ class CompartmentalSystemBuilder:
             Destination compartment
         admid : int
             Move dose with specified admid, move all if None. Default is None.
-        replace : bool
-            Replace dose of destination or add to. Default to True
 
         """
+        if source is None:
+            raise ValueError('Option `source` cannot be None')
+        if destination is None:
+            raise ValueError('Option `destination` cannot be None')
+        if not source.doses:
+            raise ValueError(f'No doses to move in compartment: `{source.name}`')
+
+        if destination.doses:
+            new_dest_dose = destination.doses
+        else:
+            new_dest_dose = tuple()
         if admid:
             new_source_dose = tuple([d for d in source.doses if d.admid != admid])
-            new_dest_dose = tuple([d for d in source.doses if d.admid == admid])
+            new_dest_dose += tuple([d for d in source.doses if d.admid == admid])
         else:
             new_source_dose = tuple()
-            new_dest_dose = source.doses
+            new_dest_dose += source.doses
         new_source = source.replace(doses=new_source_dose)
-        if replace:
-            new_dest = destination.replace(doses=source.doses)
-        else:
-            new_dest = destination.replace(doses=destination.doses + new_dest_dose)
+        new_dest = destination.replace(doses=new_dest_dose)
         mapping = {source: new_source, destination: new_dest}
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_source, new_dest
@@ -374,47 +379,90 @@ class CompartmentalSystemBuilder:
         self,
         compartment: Compartment,
         dose: Optional[Union[Dose, tuple[Dose, ...]]],
-        replace: bool = True,
-        admid: Optional[int] = None,
     ) -> Compartment:
-        """Set dose of compartment, replacing the previous by default.
-
-        Set replace to False to instead add the dose to existing ones.
-
-        Given an admid, the given dose will replace the corresponding dose
-        based on that admid. This will ignore the 'replace' argument.
+        """Set dose of compartment, replacing the previous.
 
         Parameters
         ----------
         compartment : Compartment
-            Compartment for which to change dose
+            Compartment for which to set dose
         dose : Dose
             New dose
-        replace : bool
-            Replace existing doses or not. Default is True
-        admid : Optional[int]
-            Option to replace doses with specified admid.
 
         Returns
         -------
         Compartment
             The new updated compartment
         """
+        if compartment is None:
+            raise ValueError('Option `compartment` cannot be None')
         if dose is None:
             dose = tuple()
         elif isinstance(dose, Dose):
             dose = (dose,)
 
-        elif admid:
-            replace = True
-            old_dose = tuple([d for d in compartment.doses if d.admid != admid])
-            dose = old_dose + dose
-
-        if replace or not compartment.doses:
-            new_comp = compartment.replace(doses=dose)
-        else:
-            new_comp = compartment.replace(doses=compartment.doses + dose)
+        new_comp = compartment.replace(doses=dose)
         mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+
+    def add_dose(self, compartment: Compartment, dose: Union[Dose, tuple[Dose, ...]]):
+        """Add dose to compartment.
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to add dose
+        dose : Dose
+            New dose
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        if compartment is None:
+            raise ValueError('Option `compartment` cannot be None')
+        if dose is None:
+            raise ValueError('Option `dose` cannot be None')
+        elif isinstance(dose, Dose):
+            dose = (dose,)
+
+        new_comp = compartment.replace(doses=compartment.doses + dose)
+        mapping = {compartment: new_comp}
+        nx.relabel_nodes(self._g, mapping, copy=False)
+        return new_comp
+
+    def remove_dose(self, compartment: Compartment, admid: Optional[int] = None):
+        """Remove dose of compartment.
+
+        Removes dose(s) of compartment. If admid is specified, only doses of that
+        admid will be removed.
+
+        Parameters
+        ----------
+        compartment : Compartment
+            Compartment for which to remove dose
+        admid : int
+            Remove dose of compartment with specified admid, remove all if None.
+            Default is None.
+
+        Returns
+        -------
+        Compartment
+            The new updated compartment
+        """
+        if compartment is None:
+            raise ValueError('Option `compartment` cannot be None')
+
+        mapping = dict()
+        if admid:
+            doses = tuple(dose for dose in compartment.doses if dose.admid != admid)
+        else:
+            doses = tuple()
+        new_comp = compartment.replace(doses=doses)
+        mapping[compartment] = new_comp
+
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
@@ -519,7 +567,6 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
     neweqs = list(eqs)  # Remaining flows
 
     for eq in eqs:
-        checked_terms = set()
         rhs = eq.rhs
         assert isinstance(rhs, sympy.Expr)
         for comp_func in concentrations.intersection(free_images(rhs)):
@@ -527,55 +574,50 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
             terms = sympy.Add.make_args(dep.expand())
             for term in terms:
                 assert isinstance(term, sympy.Expr)
-                if term not in checked_terms:
-                    checked_terms.add(term)
-                    from_comp = None
-                    to_comp = None
-                    if len(concentrations.intersection(free_images(term))) >= 2:
-                        # This means second order absorption -> find matching term
-                        # to determine flow
-                        if _is_positive(term):
-                            for second_comp in concentrations.intersection(free_images(term)):
-                                for eq_2 in eqs:
-                                    if eq_2.lhs.args[0].name == second_comp.name:  # pyright: ignore
-                                        if -term in sympy.Add.make_args(
-                                            eq_2.rhs.expand()  # pyright: ignore
-                                        ):
-                                            from_comp = compartments[names[Expr(second_comp)]]
-                                            to_comp = compartments[names[Expr(eq.lhs.args[0])]]
-                    else:
-                        # Find matching term to determine if flow is between
-                        # compartments or not
-                        if _is_positive(term):
+                from_comp = None
+                to_comp = None
+                if len(concentrations.intersection(free_images(term))) >= 2:
+                    # This means second order absorption -> find matching term
+                    # to determine flow
+                    if _is_positive(term):
+                        for second_comp in concentrations.intersection(free_images(term)):
                             for eq_2 in eqs:
-                                if -term in sympy.Add.make_args(
-                                    eq_2.rhs.expand()  # pyright: ignore
-                                ):
-                                    from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
-                                    to_comp = compartments[names[Expr(eq.lhs.args[0])]]
+                                if eq_2.lhs.args[0].name == second_comp.name:  # pyright: ignore
+                                    # If this is False, then input to compartment is of second order
+                                    if -term in sympy.Add.make_args(
+                                        eq_2.rhs.expand()  # pyright: ignore
+                                    ):
+                                        from_comp = compartments[names[Expr(second_comp)]]
+                                        to_comp = compartments[names[Expr(eq.lhs.args[0])]]
+                else:
+                    # Find matching term to determine if flow is between
+                    # compartments or not
+                    if _is_positive(term):
+                        for eq_2 in eqs:
+                            if -term in sympy.Add.make_args(eq_2.rhs.expand()):  # pyright: ignore
+                                from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
+                                to_comp = compartments[names[Expr(eq.lhs.args[0])]]
 
-                    if from_comp is not None and to_comp is not None:
-                        # FIXME: Get current flow from builder instead?
-                        cs = CompartmentalSystem(cb)
-                        current_flow = cs.get_flow(from_comp, to_comp)
-
-                        if isinstance(current_flow, sympy.core.numbers.Zero):
-                            cb.add_flow(from_comp, to_comp, term / comp_func)
-                        else:
-                            new_flow = term / comp_func + current_flow
-                            cb.add_flow(from_comp, to_comp, new_flow)
-
-                        for i, neweq in enumerate(neweqs):
-                            xrhs = neweq.rhs
-                            assert isinstance(xrhs, sympy.Expr)
-                            if neweq.lhs.args[0].name == eq.lhs.args[0].name:  # pyright: ignore
-                                neweqs[i] = sympy.Eq(
-                                    neweq.lhs, sympy.expand(xrhs - term)  # pyright: ignore
-                                )
-                            elif neweq.lhs.args[0].name == comp_func.name:  # pyright: ignore
-                                neweqs[i] = sympy.Eq(
-                                    neweq.lhs, sympy.expand(xrhs + term)  # pyright: ignore
-                                )
+                if from_comp is not None and to_comp is not None:
+                    # FIXME: Get current flow from builder instead?
+                    cs = CompartmentalSystem(cb)
+                    current_flow = cs.get_flow(from_comp, to_comp)
+                    if current_flow == 0:
+                        cb.add_flow(from_comp, to_comp, term / comp_func)
+                    else:
+                        new_flow = term / comp_func + current_flow
+                        cb.add_flow(from_comp, to_comp, new_flow)
+                    for i, neweq in enumerate(neweqs):
+                        xrhs = neweq.rhs
+                        assert isinstance(xrhs, sympy.Expr)
+                        if neweq.lhs.args[0].name == eq.lhs.args[0].name:  # pyright: ignore
+                            neweqs[i] = sympy.Eq(
+                                neweq.lhs, sympy.expand(xrhs - term)  # pyright: ignore
+                            )
+                        elif neweq.lhs.args[0].name == comp_func.name:  # pyright: ignore
+                            neweqs[i] = sympy.Eq(
+                                neweq.lhs, sympy.expand(xrhs + term)  # pyright: ignore
+                            )
     for eq in neweqs:
         if eq.rhs != 0:
             i = sympy.Integer(0)
@@ -998,7 +1040,8 @@ class CompartmentalSystem(Statement):
         (Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1)),)
         """
         dosing_comps = tuple()
-        for node in _comps(self._g):
+        comps = sorted(list(_comps(self._g)), key=lambda comp: comp.name)
+        for node in comps:
             if node.doses:
                 if node.name != self.central_compartment.name:
                     if len(dosing_comps) >= 2:
@@ -1259,20 +1302,21 @@ class CompartmentalSystem(Statement):
             return iter(a)
 
         nodes = list(nx.bfs_tree(self._g, dosecmt, sort_neighbors=sortfunc))
-        remaining = set(self._g.nodes) - {output} - set(nodes)
-        while remaining:  # Disjoint graph
-            comp = sorted(remaining, key=lambda x: x.name)[0]
-            # Start with a compartment having a zero order input
-            for c in remaining:
-                if comp is None and c.input != 0:
-                    comp = c
-            ordered_remaining = list(nx.bfs_tree(self._g, comp, sort_neighbors=sortfunc))
-            cleaned_ordered_remaining = []
-            for c in ordered_remaining:
-                if c not in set(nodes):
-                    cleaned_ordered_remaining.append(c)
-            nodes += cleaned_ordered_remaining
-            remaining = set(self._g.nodes) - {output} - set(nodes)
+        remaining_unsorted = set(self._g.nodes) - {output} - set(nodes)
+        remaining_with_input = {comp for comp in remaining_unsorted if comp.input != 0}
+        remaining_without_input = remaining_unsorted - remaining_with_input
+        remaining = sorted(remaining_with_input, key=lambda x: x.name) + sorted(
+            remaining_without_input, key=lambda x: x.name
+        )
+
+        while remaining:  # Disjoint or upstream of dosing
+            comp = remaining.pop(0)
+            connected = list(nx.bfs_tree(self._g, comp, sort_neighbors=sortfunc))
+            for c in connected:
+                if c not in nodes:
+                    nodes.append(c)
+                    if c != comp:
+                        remaining.remove(c)
         return nodes
 
     @property
