@@ -123,10 +123,10 @@ def test_sub():
     assert [q1, q2, q3] - pset1 == aftersub2
 
     with pytest.raises(ValueError):
-        pset1 + 23
+        pset1 - 23
 
     with pytest.raises(ValueError):
-        23 + pset1
+        23 - pset1
 
     aftersub3 = Parameters((p2, p3))
     assert pset1 - p1 == aftersub3
