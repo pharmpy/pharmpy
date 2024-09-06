@@ -104,6 +104,36 @@ def test_pset_radd():
         23 + pset1
 
 
+def test_sub():
+    p1 = Parameter.create('Y', 9)
+    p2 = Parameter.create('X', 3)
+    p3 = Parameter.create('Z', 1)
+    pset1 = Parameters((p1, p2, p3))
+
+    q1 = Parameter.create('A', 9)
+    q2 = Parameter.create('B', 3)
+    q3 = Parameter.create('X', 1)
+    pset2 = Parameters((q1, q2, q3))
+
+    aftersub = Parameters((p1, p3))
+    assert pset1 - pset2 == aftersub
+    assert pset1 - [q1, q2, q3] == aftersub
+    aftersub2 = Parameters((q1, q2))
+    assert pset2 - pset1 == aftersub2
+    assert [q1, q2, q3] - pset1 == aftersub2
+
+    with pytest.raises(ValueError):
+        pset1 + 23
+
+    with pytest.raises(ValueError):
+        23 + pset1
+
+    aftersub3 = Parameters((p2, p3))
+    assert pset1 - p1 == aftersub3
+    assert p1 - pset1 == Parameters()
+    assert q1 - pset1 == Parameters((q1,))
+
+
 def test_pset_init():
     p = Parameter.create('Y', 9)
     pset = Parameters((p,))

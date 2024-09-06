@@ -406,6 +406,23 @@ class Parameters(CollectionsSequence, Immutable):
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
 
+    def __sub__(self, other: Union[Parameter, Parameters, Sequence[Parameter]]) -> Parameters:
+        if isinstance(other, Parameter):
+            return Parameters(tuple(p for p in self._params if p.name != other.name))
+        elif isinstance(other, Parameters) or isinstance(other, Sequence):
+            names = [p.name for p in other]
+            return Parameters(tuple(p for p in self._params if p.name not in names))
+        else:
+            raise ValueError(f"Cannot remove {other} from Parameters")
+
+    def __rsub__(self, other: Union[Parameter, Sequence[Parameter]]) -> Parameters:
+        if isinstance(other, Parameter):
+            return Parameters(()) if other.name in self.names else Parameters((other,))
+        elif isinstance(other, Sequence):
+            return Parameters(tuple(p for p in other if p.name not in self.names))
+        else:
+            raise ValueError(f"Cannot remove Parameters from {other}")
+
     def __eq__(self, other: Any):
         if not isinstance(other, Parameters):
             return NotImplemented
