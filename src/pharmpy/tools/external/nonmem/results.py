@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 import pharmpy.modeling as modeling
 from pharmpy.basic import Expr
@@ -806,7 +806,7 @@ def _parse_evaluation(execution_steps: ExecutionSteps):
     return pd.Series(evaluation, index=index, name='evaluation', dtype='float64')
 
 
-def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translation: Dict):
+def _get_fixed_parameters(table: ExtTable, parameters: Parameters, pe_translation: dict):
     try:
         return table.fixed
     except KeyError:

@@ -1,6 +1,6 @@
 import re
 from datetime import datetime
-from typing import Dict, Optional, Union
+from typing import Optional, Union
 
 import dateutil.parser
 from packaging import version
@@ -71,11 +71,11 @@ class NONMEMResultsFile:
         )
 
     @staticmethod
-    def unknown_covariance() -> Dict[str, Optional[Union[bool, float]]]:
+    def unknown_covariance() -> dict[str, Optional[Union[bool, float]]]:
         return {'covariance_step_ok': None}
 
     @staticmethod
-    def unknown_termination() -> Dict[str, Optional[Union[bool, float]]]:
+    def unknown_termination() -> dict[str, Optional[Union[bool, float]]]:
         return {
             'minimization_successful': None,
             'estimate_near_boundary': None,

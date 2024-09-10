@@ -1,17 +1,6 @@
 from collections.abc import Collection, Container, Iterable, Iterator, Sequence, Sized
 from inspect import signature
-from typing import (
-    Any,
-    Dict,
-    List,
-    Literal,
-    Optional,
-    Type,
-    Union,
-    get_args,
-    get_origin,
-    get_type_hints,
-)
+from typing import Any, List, Literal, Optional, Type, Union, get_args, get_origin, get_type_hints
 
 from ..unicode import itemize_strings
 
@@ -188,7 +177,7 @@ def _match(typing, value):
             )
         )
 
-    if origin is dict or origin is Dict:
+    if origin is dict:
         args = get_args(typing)
         if value is not None:
             return _match_sequence_items((args[0],), value.keys()) & _match_sequence_items(

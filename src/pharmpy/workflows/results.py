@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
@@ -103,7 +103,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
             # TODO: Consider using other representation, e.g. path
             return None
         elif isinstance(obj, Log):
-            d: Dict[Any, Any] = obj.to_dict()
+            d: dict[Any, Any] = obj.to_dict()
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Path):

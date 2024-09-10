@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from pharmpy.model import Model, ModelfitResultsError
 from pharmpy.workflows import ModelEntry, ModelfitResults
@@ -135,7 +135,7 @@ def dofv(
 
 
 def groupedByIDAddColumnsOneModel(
-    resDict: Dict[str, ModelfitResults], me: ModelEntry
+    resDict: dict[str, ModelfitResults], me: ModelEntry
 ) -> pd.DataFrame:
     model = me.model
     model_res = me.modelfit_results

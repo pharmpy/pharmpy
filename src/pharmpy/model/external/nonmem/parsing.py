@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pharmpy.basic import Expr
 
@@ -232,7 +232,7 @@ def parse_statements(
     di: DataInfo,
     dataset,
     control_stream: NMTranControlStream,
-) -> tuple[Statements, Optional[Dict[str, int]]]:
+) -> tuple[Statements, Optional[dict[str, int]]]:
     rec = control_stream.get_pred_pk_record()
     statements = rec.statements
 

@@ -1,6 +1,6 @@
 from functools import partial
 from itertools import product
-from typing import Dict, Iterable, Sequence, TypeVar, Union
+from typing import Iterable, Sequence, TypeVar, Union
 
 from pharmpy.model import Model
 from pharmpy.modeling import get_bioavailability
@@ -71,7 +71,7 @@ def features(model: Model, statements: Iterable[Statement], remove=False) -> Ite
             )
 
 
-Definitions = Dict[str, tuple[str, ...]]
+Definitions = dict[str, tuple[str, ...]]
 
 
 def _partition_statements(statements: Iterable[Statement]) -> tuple[list[Covariate], Definitions]:

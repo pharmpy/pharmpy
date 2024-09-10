@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Dict, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import Expr, Unit
 from pharmpy.deps import numpy as np
@@ -1631,7 +1631,7 @@ def set_lloq_data(
     return model
 
 
-def set_reference_values(model: Model, refs: Dict[str, Union[int, float]]):
+def set_reference_values(model: Model, refs: dict[str, Union[int, float]]):
     """Set reference values for selected columns
 
         All values for each selected column will be replaced. For dose columns

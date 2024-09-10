@@ -1,5 +1,5 @@
 import math
-from typing import TYPE_CHECKING, Dict, Union
+from typing import TYPE_CHECKING, Union
 
 if TYPE_CHECKING:
     import numpy as np
@@ -93,7 +93,7 @@ def _scale_matrix(A):
 
 
 def calculate_parameters_from_ucp(
-    model: Model, scale: UCPScale, ucps: Union[pd.Series, Dict[str, float]]
+    model: Model, scale: UCPScale, ucps: Union[pd.Series, dict[str, float]]
 ):
     """Scale parameter values from ucp to normal scale
 

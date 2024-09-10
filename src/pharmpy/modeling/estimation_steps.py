@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Any, Dict, Literal, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Sequence, Union
 
 from pharmpy.basic import Expr
 from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
@@ -219,7 +219,7 @@ def remove_estimation_step(model: Model, idx: int):
     return model.update_source()
 
 
-def append_estimation_step_options(model: Model, tool_options: Dict[str, Any], idx: int):
+def append_estimation_step_options(model: Model, tool_options: dict[str, Any], idx: int):
     """Append estimation step options
 
     Appends options to an existing estimation step.

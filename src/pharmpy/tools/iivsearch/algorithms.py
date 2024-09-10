@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Optional
+from typing import Optional
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -366,7 +366,7 @@ def _is_rv_block_structure(
     return all(map(lambda dist: dist in parts, list_of_tuples))
 
 
-def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
+def _create_param_dict(model: Model, dists: RandomVariables) -> dict[str, str]:
     param_subs = {
         parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
     }
@@ -383,7 +383,7 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
 
 
 def create_description(
-    model: Model, iov: bool = False, param_dict: Optional[Dict[str, str]] = None
+    model: Model, iov: bool = False, param_dict: Optional[dict[str, str]] = None
 ) -> str:
     if iov:
         dists = model.random_variables.iov

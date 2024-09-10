@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
-from typing import Any, Dict, Optional, Union
+from typing import Any, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -183,7 +183,7 @@ def calculate_results(
 
 def psn_cdd_options(path: Union[str, Path]):
     path = Path(path)
-    options: Dict[str, Any] = dict(model_path=None, outside_n_sd_check=None, case_column='ID')
+    options: dict[str, Any] = dict(model_path=None, outside_n_sd_check=None, case_column='ID')
     with open(path / 'meta.yaml') as meta:
         cmd = None
         for row in meta:

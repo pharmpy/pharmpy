@@ -5,7 +5,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional
+from typing import TYPE_CHECKING, Optional
 
 from pharmpy.basic import Expr
 
@@ -63,8 +63,8 @@ class NONMEMModelInternals(ModelInternals):
     old_initial_individual_estimates: Optional[pd.DataFrame]
     old_datainfo: DataInfo
     old_dependent_variables: frozenmapping[Expr, int]
-    compartment_map: Optional[Dict[str, int]]
-    name_map: Dict[str, str]
+    compartment_map: Optional[dict[str, int]]
+    name_map: dict[str, str]
 
 
 def convert_model(model):

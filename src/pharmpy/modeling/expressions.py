@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import TYPE_CHECKING, Dict, Iterable, Literal, Optional, Sequence, TypeVar, Union
+from typing import TYPE_CHECKING, Iterable, Literal, Optional, Sequence, TypeVar, Union
 
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.expr.assumptions import assume_all
@@ -1186,11 +1186,11 @@ def get_parameter_rv(
 class AssignmentGraphNode:
     expression: Expr
     index: int
-    previous: Dict[Expr, AssignmentGraphNode]
+    previous: dict[Expr, AssignmentGraphNode]
 
 
-def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, AssignmentGraphNode]:
-    last_assignments: Dict[Expr, AssignmentGraphNode] = {}
+def _make_assignments_graph(statements: Statements) -> dict[sympy.Symbol, AssignmentGraphNode]:
+    last_assignments: dict[Expr, AssignmentGraphNode] = {}
 
     for i, statement in enumerate(statements):
         if not isinstance(statement, Assignment):
@@ -1313,7 +1313,7 @@ class ExpressionTreeNode:
     contains_theta: bool
 
 
-def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr: sympy.Expr):
+def _full_expression(assignments: dict[sympy.Symbol, AssignmentGraphNode], expr: sympy.Expr):
     return expr.xreplace(
         {
             symbol: _full_expression(node.previous, node.expression)
@@ -1324,7 +1324,7 @@ def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr:
 
 def _remove_covariate_effect_from_statements_recursive(
     thetas: set[Expr],
-    assignments: Dict[Expr, AssignmentGraphNode],
+    assignments: dict[Expr, AssignmentGraphNode],
     statements: list[Assignment],
     symbol: Expr,
     expression: Expr,
@@ -1703,7 +1703,7 @@ def _assignments(sset: Statements):
 
 
 def _filter_symbols(
-    dependency_graph: Dict[sympy.Symbol, set[sympy.Symbol]],
+    dependency_graph: dict[sympy.Symbol, set[sympy.Symbol]],
     roots: set[sympy.Symbol],
     leaves: Union[set[sympy.Symbol], None] = None,
 ) -> set[sympy.Symbol]:
