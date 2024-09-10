@@ -9,7 +9,7 @@ import logging
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Generic, Optional, Tuple, TypeVar, Union
+from typing import Callable, Generic, Optional, TypeVar, Union
 
 
 class BranchStyle(Enum):
@@ -47,7 +47,7 @@ class Node(Generic[T]):
         obj: T,
         cls_str: Union[str, Callable[[T], str]] = '__str__',
         style: Optional[NodeStyle] = None,
-        children: Tuple[Node, ...] = (),
+        children: tuple[Node, ...] = (),
     ):
         self._obj = obj
         self._cls_str = cls_str

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import Generic, List, Tuple, TypeVar, Union
+from typing import Generic, TypeVar, Union
 
 from pharmpy.internals.immutable import Immutable
 
@@ -19,7 +19,7 @@ class Leaf(Immutable):
 @dataclass(frozen=True)
 class Tree(Generic[T, L], Immutable):
     rule: str
-    children: Tuple[Union[T, L], ...]
+    children: tuple[Union[T, L], ...]
 
 
 R = TypeVar('R')
@@ -33,7 +33,7 @@ class Interpreter(Generic[T, L, R], ABC):
         f = getattr(self, tree.rule)
         return f(tree)
 
-    def visit_subtrees(self, tree: Tree[T, L]) -> List:
+    def visit_subtrees(self, tree: Tree[T, L]) -> list:
         """Does not visit and discards tokens"""
         return [self.visit_tree(child) for child in tree.children if isinstance(child, Tree)]
 

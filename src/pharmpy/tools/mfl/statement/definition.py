@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Tuple
 
 from lark.visitors import Interpreter
 
@@ -7,7 +6,7 @@ from lark.visitors import Interpreter
 @dataclass(frozen=True)
 class Let:
     name: str
-    value: Tuple[str, ...]
+    value: tuple[str, ...]
 
 
 class DefinitionInterpreter(Interpreter):

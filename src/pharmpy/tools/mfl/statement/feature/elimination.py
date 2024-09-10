@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 from lark.visitors import Interpreter
 
@@ -11,7 +11,7 @@ ELIMINATION_WILDCARD = tuple([Name(x) for x in ('FO', 'ZO', 'MM', 'MIX-FO-MM')])
 
 @dataclass(frozen=True)
 class Elimination(ModelFeature):
-    modes: Union[Tuple[Name[Literal['FO', 'ZO', 'MM', 'MIX-FO-MM']], ...], Wildcard]
+    modes: Union[tuple[Name[Literal['FO', 'ZO', 'MM', 'MIX-FO-MM']], ...], Wildcard]
 
     def __add__(self, other):
         if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):

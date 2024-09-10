@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 from lark.visitors import Interpreter
 
@@ -11,7 +11,7 @@ EFFECTCOMP_WILDCARD = tuple([Name(x) for x in ('LINEAR', 'EMAX', 'SIGMOID')])
 
 @dataclass(frozen=True)
 class EffectComp(ModelFeature):
-    modes: Union[Tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
+    modes: Union[tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
 
     def __add__(self, other):
         if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):

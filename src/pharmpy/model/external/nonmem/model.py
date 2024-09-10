@@ -5,7 +5,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, Optional, Tuple
+from typing import TYPE_CHECKING, Dict, Optional
 
 from pharmpy.basic import Expr
 
@@ -323,7 +323,7 @@ class Model(BaseModel):
     def code(self):
         return str(self.internals.control_stream)
 
-    def read_raw_dataset(self, parse_columns: Tuple[str, ...] = ()):
+    def read_raw_dataset(self, parse_columns: tuple[str, ...] = ()):
         return parse_dataset(
             self.datainfo, self.internals.control_stream, raw=True, parse_columns=parse_columns
         )

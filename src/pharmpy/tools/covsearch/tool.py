@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass, replace
 from itertools import count
-from typing import Any, Callable, Iterable, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -80,7 +80,7 @@ class AdaptiveStep(Step):
     pass
 
 
-def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
+def _added_effects(steps: tuple[Step, ...]) -> Iterable[Effect]:
     added_effects = defaultdict(list)
     for i, step in enumerate(steps):
         if isinstance(step, ForwardStep):
@@ -102,7 +102,7 @@ def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
 @dataclass
 class Candidate:
     modelentry: ModelEntry
-    steps: Tuple[Step, ...]
+    steps: tuple[Step, ...]
 
 
 @dataclass
@@ -355,7 +355,7 @@ def task_greedy_forward_search(
     naming_index_offset: int,
     strictness: Optional[str],
     adaptive_scope_reduction: bool,
-    state_and_effect: Tuple[SearchState, dict],
+    state_and_effect: tuple[SearchState, dict],
 ) -> SearchState:
     for temp in state_and_effect:
         if isinstance(temp, SearchState):
@@ -679,10 +679,10 @@ def task_add_covariate_effect(
     )
 
 
-def _create_description(effect_new: dict, steps_prev: Tuple[Step, ...], forward: bool = True):
+def _create_description(effect_new: dict, steps_prev: tuple[Step, ...], forward: bool = True):
     # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp);(MAT-AGE-exp-+)'
     def _create_effect_str(effect):
-        if isinstance(effect, Tuple):
+        if isinstance(effect, tuple):
             param, cov, fp, op = effect
         elif isinstance(effect, Effect):
             param, cov, fp, op = effect.parameter, effect.covariate, effect.fp, effect.operation

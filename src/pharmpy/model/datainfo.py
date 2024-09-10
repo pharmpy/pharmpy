@@ -34,7 +34,7 @@ class ColumnInfo(Immutable):
         Scale of measurement (see the "scale" attribute)
     continuous : bool
         True if continuous or False if discrete
-    categories : Optional[Union[Tuple, Dict]]
+    categories : Optional[Union[tuple, Dict]]
         Tuple of all possible categories or dict from value to label for each category
     drop : bool
         Should column be dropped (i.e. barred from being used)

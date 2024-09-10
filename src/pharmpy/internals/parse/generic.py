@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from abc import ABC
 from itertools import chain
-from typing import Callable, Iterable, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterable, Optional, Sequence, Union
 
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
@@ -65,7 +65,7 @@ def _parse_create_input(rule: Optional[str], items):
         if isinstance(items, str):
             raise TypeError(str)
         length = len(items)
-        names: Tuple[Optional[str], ...] = (None,) * length
+        names: tuple[Optional[str], ...] = (None,) * length
     if not items:
         raise ValueError(f'refusing empty tree {repr(rule)} (only tokens are childless)')
 
@@ -185,10 +185,10 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 
         return AttrTree(self.rule, self.children[:i] + (new_child,) + self.children[i + 1 :])
 
-    def partition(self, rule) -> Tuple[
-        Tuple[Union[AttrTree, AttrToken], ...],
-        Tuple[Union[AttrTree, AttrToken], ...],
-        Tuple[Union[AttrTree, AttrToken], ...],
+    def partition(self, rule) -> tuple[
+        tuple[Union[AttrTree, AttrToken], ...],
+        tuple[Union[AttrTree, AttrToken], ...],
+        tuple[Union[AttrTree, AttrToken], ...],
     ]:
         """Partition children into (head, item, tail).
 
@@ -376,7 +376,7 @@ class GenericParser(ABC):
         debug=False,
         cache=False,
     )
-    post_process: Tuple[Union[Visitor, Transformer, Callable[[str, Tree], Tree]], ...] = ()
+    post_process: tuple[Union[Visitor, Transformer, Callable[[str, Tree], Tree]], ...] = ()
 
     def __init__(self, buf=None):
         self.root = self.parse(buf)

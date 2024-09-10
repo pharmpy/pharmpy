@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Optional, Set, Tuple
+from typing import Dict, Optional, Set
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -354,7 +354,7 @@ def _rv_block_structures(etas):
 
 
 def _is_rv_block_structure(
-    etas: RandomVariables, partition: Tuple[Tuple[str, ...], ...], fixed_etas
+    etas: RandomVariables, partition: tuple[tuple[str, ...], ...], fixed_etas
 ):
     parts = set(partition)
     # Remove fixed etas from etas
@@ -414,7 +414,7 @@ def create_description(
     return description
 
 
-def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res: ModelfitResults):
+def create_eta_blocks(partition: tuple[tuple[str, ...], ...], model: Model, res: ModelfitResults):
     for part in partition:
         if len(part) == 1:
             model = split_joint_distribution(model, part)

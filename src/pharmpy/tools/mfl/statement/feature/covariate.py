@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from itertools import product
-from typing import Literal, Optional, Tuple, Union
+from typing import Literal, Optional, Union
 
 from lark.visitors import Interpreter
 
@@ -13,9 +13,9 @@ from .symbols import Option, Symbol, Wildcard
 
 @dataclass(frozen=True)
 class Covariate(ModelFeature):
-    parameter: Union[Symbol, Tuple[str, ...]]
-    covariate: Union[Symbol, Tuple[str, ...]]
-    fp: Tuple[str, ...]
+    parameter: Union[Symbol, tuple[str, ...]]
+    covariate: Union[Symbol, tuple[str, ...]]
+    fp: tuple[str, ...]
     op: Literal['*', '+'] = '*'
     optional: Option = Option(False)
 

@@ -1,6 +1,6 @@
 from collections import defaultdict
 from itertools import chain, product
-from typing import Callable, Dict, Iterable, Tuple
+from typing import Callable, Dict, Iterable
 
 from pharmpy.model import Model
 
@@ -65,7 +65,7 @@ def _group_incompatible_features(funcs):
     return grouped.values()
 
 
-def all_combinations(fns: Dict[FeatureKey, FeatureFn]) -> Iterable[Tuple[FeatureKey]]:
+def all_combinations(fns: Dict[FeatureKey, FeatureFn]) -> Iterable[tuple[FeatureKey]]:
     grouped = _group_incompatible_features(fns)
     feats = ((None, *group) for group in grouped)
     for t in product(*feats):

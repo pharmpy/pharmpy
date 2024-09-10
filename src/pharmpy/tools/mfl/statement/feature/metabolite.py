@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 from lark.visitors import Interpreter
 
@@ -11,7 +11,7 @@ METABOLITE_WILDCARD = tuple([Name(x) for x in ('PSC', 'BASIC')])
 
 @dataclass(frozen=True)
 class Metabolite(ModelFeature):
-    modes: Union[Tuple[Name[Literal['PSC', 'BASIC']], ...], Wildcard]
+    modes: Union[tuple[Name[Literal['PSC', 'BASIC']], ...], Wildcard]
 
     def __add__(self, other):
         if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):

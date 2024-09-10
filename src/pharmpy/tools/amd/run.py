@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Callable, Literal, Optional, Tuple, Union
+from typing import Callable, Literal, Optional, Union
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
@@ -693,7 +693,7 @@ def _subfunc_retires(tool, strictness, seed, ctx):
     return _run_retries
 
 
-def _subfunc_modelsearch(search_space: Tuple[Statement, ...], strictness, ctx) -> SubFunc:
+def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, ctx) -> SubFunc:
     subctx = ctx.create_subcontext('modelsearch')
 
     def _run_modelsearch(model, modelfit_results):

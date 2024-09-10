@@ -6,7 +6,6 @@ from typing import (
     List,
     Literal,
     Optional,
-    Tuple,
     Type,
     Union,
     get_args,
@@ -128,7 +127,7 @@ def _match(typing, value):
     if origin is Sequence:
         return isinstance(value, Sequence) and _match_sequence_items(get_args(typing), value)
 
-    if origin is tuple or origin is Tuple:
+    if origin is tuple or origin is tuple:
         if not isinstance(value, tuple):
             return False
 

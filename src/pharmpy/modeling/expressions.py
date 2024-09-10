@@ -3,18 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Iterable,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Dict, Iterable, Literal, Optional, Sequence, Set, TypeVar, Union
 
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.expr.assumptions import assume_all
@@ -1681,7 +1670,7 @@ def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
 def _get_component_free_symbols(
     is_central: bool,
     vertices: Set[Compartment],
-    edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
+    edges: Iterable[tuple[Compartment, Compartment, sympy.Expr]],
 ) -> Iterable[sympy.Symbol]:
     for u, v, rate in edges:
         # NOTE: These must not necessarily be outgoing edges
@@ -1776,7 +1765,7 @@ def _classify_assignments(assignments: Sequence[Assignment]):
         yield 'natural', assignment
 
 
-def _remove_synthetic_assignments(classified_assignments: list[Tuple[str, Assignment]]):
+def _remove_synthetic_assignments(classified_assignments: list[tuple[str, Assignment]]):
     assignments = []
     last_defined = {}
 

@@ -1,10 +1,10 @@
-from typing import Iterable, Iterator, Sequence, Sized, Tuple, TypeVar
+from typing import Iterable, Iterator, Sequence, Sized, TypeVar
 
 T = TypeVar('T')
 S = TypeVar('S', bound=Sized)
 
 
-def partitions(elements: Iterable[T]) -> Iterator[Tuple[Tuple[T, ...], ...]]:
+def partitions(elements: Iterable[T]) -> Iterator[tuple[tuple[T, ...], ...]]:
     """Returns all partitions of a set of elements
 
     Each partition is represented canonically as a shortlex-sorted tuple of
@@ -27,7 +27,7 @@ def partitions(elements: Iterable[T]) -> Iterator[Tuple[Tuple[T, ...], ...]]:
     )
 
 
-def _partitions(elements: Sequence[T], n: int) -> Iterator[Tuple[Tuple[T, ...], ...]]:
+def _partitions(elements: Sequence[T], n: int) -> Iterator[tuple[tuple[T, ...], ...]]:
     if n == 0:
         yield ()
 
@@ -40,11 +40,11 @@ def _partitions(elements: Sequence[T], n: int) -> Iterator[Tuple[Tuple[T, ...], 
                 yield partition[:i] + (part + suffix,) + partition[i + 1 :]
 
 
-def _partitionkey(x: Tuple[S]) -> Tuple[int, Tuple[int, ...], Tuple[S]]:
+def _partitionkey(x: tuple[S]) -> tuple[int, tuple[int, ...], tuple[S]]:
     return (len(x), tuple(map(len, x)), x)
 
 
-def _shortlexkey(x: S) -> Tuple[int, S]:
+def _shortlexkey(x: S) -> tuple[int, S]:
     return (len(x), x)
 
 

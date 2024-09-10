@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 from .count_interpreter import CountInterpreter
 from .feature import ModelFeature, feature
@@ -10,8 +10,8 @@ PERIPHERALS_MODES_WILDCARD = tuple([Name(x) for x in ('DRUG', 'MET')])
 
 @dataclass(frozen=True)
 class Peripherals(ModelFeature):
-    counts: Tuple[int, ...]
-    modes: Union[Tuple[Name[Literal['DRUG', 'MET']], ...], Wildcard] = (Name('DRUG'),)
+    counts: tuple[int, ...]
+    modes: Union[tuple[Name[Literal['DRUG', 'MET']], ...], Wildcard] = (Name('DRUG'),)
 
     def __add__(self, other):
         return Peripherals(

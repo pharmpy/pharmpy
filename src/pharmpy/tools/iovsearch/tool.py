@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Callable, Iterable, Literal, Optional, Tuple, TypeVar, Union
+from typing import Callable, Iterable, Literal, Optional, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
 from pharmpy.basic import Expr
@@ -263,7 +263,7 @@ def task_remove_etas_subset(
 def wf_etas_removal(
     remove: Callable[[Model, list[str]], None],
     model_entry: ModelEntry,
-    etas_subsets: Iterable[Tuple[str]],
+    etas_subsets: Iterable[tuple[str]],
     i: int,
 ):
     wb = WorkflowBuilder()
