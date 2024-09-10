@@ -7,7 +7,7 @@ import re
 import warnings
 from collections import defaultdict
 from operator import add, mul
-from typing import Literal, Set, Union
+from typing import Literal, Union
 
 from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -801,7 +801,7 @@ class CovariateEffect:
         return str(self.template)
 
 
-def get_covariates_allowed_in_covariate_effect(model: Model) -> Set[str]:
+def get_covariates_allowed_in_covariate_effect(model: Model) -> set[str]:
     try:
         di_covariate = model.datainfo.typeix['covariate'].names
     except IndexError:

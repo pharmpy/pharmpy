@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import TYPE_CHECKING, Dict, Iterable, Literal, Optional, Sequence, Set, TypeVar, Union
+from typing import TYPE_CHECKING, Dict, Iterable, Literal, Optional, Sequence, TypeVar, Union
 
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.expr.assumptions import assume_all
@@ -1256,20 +1256,20 @@ def _neutral(expr: Expr) -> sympy.Integer:
     raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
 
 
-def _theta_symbols(model: Model) -> Set[sympy.Symbol]:
+def _theta_symbols(model: Model) -> set[sympy.Symbol]:
     rvs_fs = model.random_variables.free_symbols
     return {p.symbol for p in model.parameters if p.symbol not in rvs_fs}
 
 
-def _depends_on_any(symbols: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+def _depends_on_any(symbols: set[sympy.Symbol], expr: sympy.Expr) -> bool:
     return any(map(lambda s: s in symbols, expr.free_symbols))
 
 
-def _is_constant(thetas: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+def _is_constant(thetas: set[sympy.Symbol], expr: sympy.Expr) -> bool:
     return all(map(lambda s: s in thetas, expr.free_symbols))
 
 
-def _is_univariate(thetas: Set[sympy.Symbol], expr: sympy.Expr, variable: sympy.Symbol) -> bool:
+def _is_univariate(thetas: set[sympy.Symbol], expr: sympy.Expr, variable: sympy.Symbol) -> bool:
     return all(map(lambda s: s in thetas, expr.free_symbols - {variable}))
 
 
@@ -1323,7 +1323,7 @@ def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr:
 
 
 def _remove_covariate_effect_from_statements_recursive(
-    thetas: Set[Expr],
+    thetas: set[Expr],
     assignments: Dict[Expr, AssignmentGraphNode],
     statements: list[Assignment],
     symbol: Expr,
@@ -1638,7 +1638,7 @@ def _pk_free_symbols_from_compartment(
     return _get_component_free_symbols(is_central, vertices, edges)
 
 
-def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Compartment]:
+def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> set[Compartment]:
     central_component_vertices = strongly_connected_component_of(
         cs.central_compartment,
         lambda u: map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
@@ -1659,7 +1659,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Com
     )
 
 
-def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
+def _get_component_edges(cs: CompartmentalSystem, vertices: set[Compartment]):
     return (
         ((u, v, rate) for v in vertices for u, rate in cs.get_compartment_inflows(v))
         if output in vertices
@@ -1669,7 +1669,7 @@ def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
 
 def _get_component_free_symbols(
     is_central: bool,
-    vertices: Set[Compartment],
+    vertices: set[Compartment],
     edges: Iterable[tuple[Compartment, Compartment, sympy.Expr]],
 ) -> Iterable[sympy.Symbol]:
     for u, v, rate in edges:
@@ -1703,10 +1703,10 @@ def _assignments(sset: Statements):
 
 
 def _filter_symbols(
-    dependency_graph: Dict[sympy.Symbol, Set[sympy.Symbol]],
-    roots: Set[sympy.Symbol],
-    leaves: Union[Set[sympy.Symbol], None] = None,
-) -> Set[sympy.Symbol]:
+    dependency_graph: Dict[sympy.Symbol, set[sympy.Symbol]],
+    roots: set[sympy.Symbol],
+    leaves: Union[set[sympy.Symbol], None] = None,
+) -> set[sympy.Symbol]:
     dependents = graph_inverse(dependency_graph)
 
     free_symbols = reachable_from(roots, lambda x: dependency_graph.get(x, []))

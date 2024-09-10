@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, Optional, Set
+from typing import Dict, Optional
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -425,7 +425,7 @@ def create_eta_blocks(partition: tuple[tuple[str, ...], ...], model: Model, res:
     return model
 
 
-def _get_eta_from_parameter(model: Model, parameters: list[str]) -> Set[str]:
+def _get_eta_from_parameter(model: Model, parameters: list[str]) -> set[str]:
     # returns list of eta names from parameter names
     # ETA names in parameters are allowed and will be returned as is
     iiv_set = set()

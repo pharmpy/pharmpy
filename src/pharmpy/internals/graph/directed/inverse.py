@@ -1,10 +1,10 @@
-from typing import Dict, Set, TypeVar
+from typing import Dict, TypeVar
 
 T = TypeVar('T')
 U = TypeVar('U')
 
 
-def inverse(g: Dict[T, Set[U]]) -> Dict[U, Set[T]]:
+def inverse(g: Dict[T, set[U]]) -> Dict[U, set[T]]:
     h = {}
 
     for left, deps in g.items():

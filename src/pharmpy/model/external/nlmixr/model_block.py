@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Set, Union
+from typing import Union
 
 import pharmpy.model
 from pharmpy.basic import BooleanExpr
@@ -39,8 +39,8 @@ def add_statements(
     cg: CodeGenerator,
     statements: Statements,
     only_piecewise: Union[bool, None] = None,
-    dependencies: Set[sympy.Symbol] = set(),
-    res_alias: Set[sympy.Symbol] = set(),
+    dependencies: set[sympy.Symbol] = set(),
+    res_alias: set[sympy.Symbol] = set(),
 ):
     """
     Will add the provided statements to the code generator objects, translated
@@ -173,7 +173,7 @@ def add_statements(
         cg.add(f'{dv} ~ add(add_error) + prop(prop_error)')
 
 
-def extract_add_prop(s, res_alias: Set[sympy.symbols], model: pharmpy.model.Model):
+def extract_add_prop(s, res_alias: set[sympy.symbols], model: pharmpy.model.Model):
     """
         Extract additive and proportional error terms from a sympy expression
 
