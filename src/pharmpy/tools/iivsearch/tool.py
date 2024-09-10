@@ -204,26 +204,24 @@ def prepare_input_model(input_model, input_res):
 
 
 def prepare_base_model(input_model_entry, iiv_strategy, linearize):
+    base_model = update_initial_estimates(
+        input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
+    )
     if iiv_strategy != 'no_add':
-        base_model = update_initial_estimates(
-            input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
-        )
         base_model = add_iiv(
             iiv_strategy,
             base_model,
             modelfit_results=input_model_entry.modelfit_results,
             linearize=linearize,
         )
-        base_model = base_model.replace(
-            name='base', description=algorithms.create_description(base_model)
-        )
         # FIXME: Set parent model once create_results can do different things for different tools
-        base_model_entry = ModelEntry.create(base_model, modelfit_results=None)
+        mfr = None
     else:
-        base_model = input_model_entry.model.replace(name='base')
-        base_model_entry = ModelEntry.create(
-            base_model, modelfit_results=input_model_entry.modelfit_results
-        )
+        mfr = input_model_entry.modelfit_results
+    base_model = base_model.replace(
+        name='base', description=algorithms.create_description(base_model)
+    )
+    base_model_entry = ModelEntry.create(base_model, modelfit_results=mfr)
     return base_model, base_model_entry
 
 
