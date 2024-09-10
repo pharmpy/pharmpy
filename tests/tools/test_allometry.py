@@ -1,7 +1,14 @@
 import pytest
 
-from pharmpy.tools.allometry.tool import create_workflow, validate_input
-from pharmpy.workflows import Workflow
+from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.allometry.tool import (
+    add_allometry_on_model,
+    create_result_tables,
+    create_workflow,
+    get_best_model,
+    validate_input,
+)
+from pharmpy.workflows import ModelEntry, Workflow
 
 
 def test_create_workflow():
@@ -11,6 +18,54 @@ def test_create_workflow():
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert isinstance(create_workflow(model=model, allometric_variable='WGT'), Workflow)
+
+
+def test_add_allometry_on_model(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+    me_cand = add_allometry_on_model(
+        me_start,
+        allometric_variable='WGT',
+        reference_value=70,
+        parameters=None,
+        initials=None,
+        lower_bounds=None,
+        upper_bounds=None,
+        fixed=None,
+    )
+    assert me_cand.parent.name == 'pheno'
+    model_cand = me_cand.model
+    assert model_cand.parameters['TVCL'].init != model_start.parameters['TVCL'].init
+    assert len(model_cand.parameters) > len(model_start.parameters)
+
+
+def test_get_best_model(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    model_allometry = model_start.replace(description='allometry')
+
+    me_start = ModelEntry(model_start, modelfit_results=res_start)
+    me_allometry = ModelEntry(model_allometry, modelfit_results=res_start)
+    best_model, _ = get_best_model(me_start, me_allometry)
+    assert best_model.name == 'final'
+    assert best_model.description == 'allometry'
+
+    me_allometry = ModelEntry(model_allometry, modelfit_results=None)
+    best_model, _ = get_best_model(me_start, me_allometry)
+    assert best_model.name == 'final'
+    assert best_model.description != 'allometry'
+
+
+def test_create_result_tables(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    model_allometry = model_start.replace(name='allometry', description='allometry')
+
+    me_start = ModelEntry(model_start, modelfit_results=res_start)
+    me_allometry = ModelEntry(model_allometry, modelfit_results=res_start)
+    summods, _, _, _ = create_result_tables(me_start, me_allometry)
+    assert len(summods) == 2
 
 
 def test_validate_input():
