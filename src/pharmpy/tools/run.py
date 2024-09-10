@@ -236,7 +236,7 @@ def run_tool_with_name(
         esttool = common_options["esttool"]
         if results:
             if esttool != model_type:
-                if not (esttool is None and model_type == "nonmeme"):
+                if not (esttool is None and model_type == "nonmem"):
                     warnings.warn(
                         f"Not recommended to run tools with different estimation tool ({esttool})"
                         f" than that of the input model ({model_type})"
