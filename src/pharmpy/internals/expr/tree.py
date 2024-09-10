@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from operator import is_
-from typing import TYPE_CHECKING, Callable, List, Type
+from typing import TYPE_CHECKING, Callable, Type
 
 if TYPE_CHECKING:
     import sympy
@@ -9,7 +9,7 @@ else:
     from pharmpy.deps import sympy
 
 
-def replace_root_children(expr: sympy.Expr, args: List[sympy.Expr]):
+def replace_root_children(expr: sympy.Expr, args: list[sympy.Expr]):
     # NOTE: This creates a new tree by replacing the children of the root node.
     # If the children have not changed it returns the original tree which
     # allows certain downstream optimizations.

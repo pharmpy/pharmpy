@@ -1,4 +1,4 @@
-from typing import List, Union
+from typing import Union
 
 from pharmpy.model import Model
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -11,7 +11,7 @@ from ..mfl.parse import parse as mfl_parse
 
 def create_drug_metabolite_models(
     model: Model, results, search_space: Union[str, ModelFeatures]
-) -> tuple[List[Model], Model]:
+) -> tuple[list[Model], Model]:
     # FIXME : Implement ModelFeatures when we can extract METABOLITE information
 
     if isinstance(search_space, str):

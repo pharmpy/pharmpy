@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Dict, Literal, Optional, Union, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
@@ -426,7 +426,7 @@ class ModelfitResults(Results):
         Final parameter gradients
     gradients_iterations : pd.DataFrame
         All recorded parameter gradients
-    warnings : List
+    warnings : list
         List of warnings
     individual_eta_samples : pd.DataFrame
         Individual eta samples
@@ -466,7 +466,7 @@ class ModelfitResults(Results):
     covstep_successful: Optional[bool, None] = None
     gradients: Optional[pd.Series] = None
     gradients_iterations: Optional[pd.DataFrame] = (None,)
-    warnings: Optional[List[str]] = None
+    warnings: Optional[list[str]] = None
     individual_eta_samples: Optional[pd.DataFrame] = None
 
     def __repr__(self):

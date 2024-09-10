@@ -1,5 +1,3 @@
-from typing import List
-
 from lark.visitors import Interpreter
 
 
@@ -10,7 +8,7 @@ class CountInterpreter(Interpreter):
         child = children[0]
         return child if isinstance(child, list) else [child]
 
-    def range(self, tree) -> List[int]:
+    def range(self, tree) -> list[int]:
         children = self.visit_children(tree)
         assert len(children) == 2
         left, right = children

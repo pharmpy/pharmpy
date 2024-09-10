@@ -1,4 +1,4 @@
-from typing import Iterable, Iterator, List, Sequence, Sized, Tuple, TypeVar
+from typing import Iterable, Iterator, Sequence, Sized, Tuple, TypeVar
 
 T = TypeVar('T')
 S = TypeVar('S', bound=Sized)
@@ -48,5 +48,5 @@ def _shortlexkey(x: S) -> Tuple[int, S]:
     return (len(x), x)
 
 
-def _shortlexsorted(iterable: Iterable[S]) -> List[S]:
+def _shortlexsorted(iterable: Iterable[S]) -> list[S]:
     return sorted(iterable, key=_shortlexkey)

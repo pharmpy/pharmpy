@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass, replace
 from itertools import count
-from typing import Any, Callable, Iterable, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Literal, Optional, Tuple, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -110,7 +110,7 @@ class SearchState:
     user_input_modelentry: ModelEntry
     start_modelentry: ModelEntry
     best_candidate_so_far: Candidate
-    all_candidates_so_far: List[Candidate]
+    all_candidates_so_far: list[Candidate]
 
 
 ALGORITHMS = ('scm-forward', 'scm-forward-then-backward')
@@ -403,7 +403,7 @@ def task_greedy_backward_search(
     def handle_effects(
         step: int,
         parent: Candidate,
-        candidate_effect_funcs: List[EffectLiteral],
+        candidate_effect_funcs: list[EffectLiteral],
         index_offset: int,
     ):
         index_offset = index_offset + naming_index_offset
@@ -455,7 +455,7 @@ def task_greedy_backward_search(
 
 def _greedy_search(
     state: SearchState,
-    handle_effects: Callable[[int, Candidate, List[EffectLiteral], int], List[Candidate]],
+    handle_effects: Callable[[int, Candidate, list[EffectLiteral], int], list[Candidate]],
     candidate_effect_funcs: dict,
     alpha: float,
     max_steps: int,
@@ -801,7 +801,7 @@ def _summarize_models(modelentries, steps):
     return summary_models.reset_index().set_index(['step', 'model'])
 
 
-def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
+def _make_df_steps(best_modelentry: ModelEntry, candidates: list[Candidate]):
     best_model = best_modelentry.model
     modelentries_dict = {
         candidate.modelentry.model.name: candidate.modelentry for candidate in candidates

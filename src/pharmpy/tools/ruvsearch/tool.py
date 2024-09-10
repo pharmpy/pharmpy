@@ -1,5 +1,5 @@
 from functools import partial
-from typing import List, Literal, Optional
+from typing import Literal, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -53,7 +53,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     groups: int = 4,
     p_value: float = 0.001,
-    skip: Optional[List[Literal[tuple(SKIP)]]] = None,
+    skip: Optional[list[Literal[tuple(SKIP)]]] = None,
     max_iter: int = 3,
     dv: Optional[int] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",

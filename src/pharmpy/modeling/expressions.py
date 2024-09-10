@@ -7,7 +7,6 @@ from typing import (
     TYPE_CHECKING,
     Dict,
     Iterable,
-    List,
     Literal,
     Optional,
     Sequence,
@@ -705,7 +704,7 @@ def get_individual_parameters(
     model: Model,
     level: Literal['iiv', 'iov', 'random', 'all'] = 'all',
     dv: Union[TSymbol, int, None] = None,
-) -> List[str]:
+) -> list[str]:
     """Retrieves all individual parameters in a :class:`pharmpy.model`.
 
     By default all individual parameters will be found even ones having no random effect. The level
@@ -1098,7 +1097,7 @@ def has_random_effect(
     return _depends_on_any_of(model.statements.before_odes, symbol, rvs.symbols)
 
 
-def get_rv_parameters(model: Model, rv: str) -> List[str]:
+def get_rv_parameters(model: Model, rv: str) -> list[str]:
     """Retrieves parameters in :class:`pharmpy.model.Model` given a random variable.
 
     Parameters
@@ -1144,7 +1143,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
 
 def get_parameter_rv(
     model: Model, parameter: str, var_type: Literal['iiv', 'iov'] = 'iiv'
-) -> List[str]:
+) -> list[str]:
     """Retrieves name of random variable in :class:`pharmpy.model.Model` given a parameter.
 
     Parameters
@@ -1337,7 +1336,7 @@ def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr:
 def _remove_covariate_effect_from_statements_recursive(
     thetas: Set[Expr],
     assignments: Dict[Expr, AssignmentGraphNode],
-    statements: List[Assignment],
+    statements: list[Assignment],
     symbol: Expr,
     expression: Expr,
     covariate: Expr,
@@ -1448,7 +1447,7 @@ def _remove_covariate_effect_from_statements_recursive(
 
 def get_pk_parameters(
     model: Model, kind: Literal['absorption', 'distribution', 'elimination', 'all'] = 'all'
-) -> List[str]:
+) -> list[str]:
     """Retrieves PK parameters in :class:`pharmpy.model.Model`.
 
     Parameters
@@ -1777,7 +1776,7 @@ def _classify_assignments(assignments: Sequence[Assignment]):
         yield 'natural', assignment
 
 
-def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assignment]]):
+def _remove_synthetic_assignments(classified_assignments: list[Tuple[str, Assignment]]):
     assignments = []
     last_defined = {}
 

@@ -45,9 +45,9 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
 
     Parameters
     ----------
-    models : List[Model]
+    models : list[Model]
         Input models
-    models_res : List[ModelfitResults]
+    models_res : list[ModelfitResults]
         Input results
 
     Return
@@ -185,7 +185,7 @@ def summarize_individuals_count_table(
     ----------
     model_entries : list of model_entries
         List of model_entries to summarize.
-    models_res : List[ModelfitResults]
+    models_res : list[ModelfitResults]
         Input results
     df : pd.DataFrame
         Output from a previous call to summarize_individuals.

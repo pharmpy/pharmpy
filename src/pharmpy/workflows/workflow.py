@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import inspect
 import uuid
-from typing import TYPE_CHECKING, Generic, List, Optional, TypeVar, Union
+from typing import TYPE_CHECKING, Generic, Optional, TypeVar, Union
 
 from pharmpy.internals.immutable import Immutable
 
@@ -22,21 +22,21 @@ class WorkflowBase:
     _g: nx.DiGraph
 
     @property
-    def tasks(self) -> List[Task]:
+    def tasks(self) -> list[Task]:
         """All tasks in workflow"""
         return list(self._g.nodes())
 
     @property
-    def input_tasks(self) -> List[Task]:
+    def input_tasks(self) -> list[Task]:
         """All input (source) tasks of entire workflow"""
         return [node for node in self._g.nodes if self._g.in_degree(node) == 0]
 
     @property
-    def output_tasks(self) -> List[Task]:
+    def output_tasks(self) -> list[Task]:
         """All output tasks (sink) tasks of entire workflow"""
         return [node for node in self._g.nodes if self._g.out_degree(node) == 0]
 
-    def get_upstream_tasks(self, task: Task) -> List[Task]:
+    def get_upstream_tasks(self, task: Task) -> list[Task]:
         """Get all tasks upstream of a certain task
 
         Parameters
@@ -52,7 +52,7 @@ class WorkflowBase:
         edges = nx.edge_dfs(self._g, task, orientation='reverse')
         return [node for node, _, _ in edges]
 
-    def get_predecessors(self, task: Task) -> List[Task]:
+    def get_predecessors(self, task: Task) -> list[Task]:
         """Get all predecessors of task
 
         Parameters
@@ -67,7 +67,7 @@ class WorkflowBase:
         """
         return list(self._g.predecessors(task))
 
-    def get_successors(self, task: Task) -> List[Task]:
+    def get_successors(self, task: Task) -> list[Task]:
         """Get all successors of task
 
         Parameters
@@ -100,7 +100,7 @@ class WorkflowBuilder(WorkflowBase):
             for task in tasks:
                 self.add_task(task)
 
-    def add_task(self, task: Task, predecessors: Optional[Union[Task, List[Task]]] = None):
+    def add_task(self, task: Task, predecessors: Optional[Union[Task, list[Task]]] = None):
         """Add a task to the workflow
 
         Predecessors will be connected if given.
@@ -134,7 +134,7 @@ class WorkflowBuilder(WorkflowBase):
         nx.relabel_nodes(self._g, mapping, copy=False)
 
     def insert_workflow(
-        self, other: Workflow, predecessors: Optional[Union[Task, List[Task]]] = None
+        self, other: Workflow, predecessors: Optional[Union[Task, list[Task]]] = None
     ):
         """Insert other workflow
 

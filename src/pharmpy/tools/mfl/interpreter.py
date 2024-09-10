@@ -1,5 +1,3 @@
-from typing import List
-
 from lark.visitors import Interpreter
 
 from .statement.definition import DefinitionInterpreter
@@ -17,7 +15,7 @@ from .statement.statement import Statement
 
 
 class MFLInterpreter(Interpreter):
-    def interpret(self, tree) -> List[Statement]:
+    def interpret(self, tree) -> list[Statement]:
         return self.visit_children(tree)
 
     def definition(self, tree):

@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Dict, Optional, Set, Tuple
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -425,7 +425,7 @@ def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res:
     return model
 
 
-def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
+def _get_eta_from_parameter(model: Model, parameters: list[str]) -> Set[str]:
     # returns list of eta names from parameter names
     # ETA names in parameters are allowed and will be returned as is
     iiv_set = set()
@@ -454,7 +454,7 @@ def _is_iiv_on_ruv(model, name):
     return False
 
 
-def _get_fixed_etas(model: Model) -> List[str]:
+def _get_fixed_etas(model: Model) -> list[str]:
     fixed_omegas = get_omegas(model).fixed.names
     iivs = model.random_variables.iiv
     if len(fixed_omegas) > 0:

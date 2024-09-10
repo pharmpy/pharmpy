@@ -10,7 +10,7 @@ from __future__ import annotations
 import re
 from abc import ABC
 from itertools import chain
-from typing import Callable, Iterable, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Iterable, Optional, Sequence, Tuple, Union
 
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
@@ -156,7 +156,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 
     # -- public interface ----------------------------------------------
     @property
-    def rules(self) -> List[str]:
+    def rules(self) -> list[str]:
         """All rules of (immediate) children."""
         return [node.rule for node in self.children]
 

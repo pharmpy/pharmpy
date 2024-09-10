@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from itertools import product
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, List, Optional
+from typing import TYPE_CHECKING, Any, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.internals.code_generator import CodeGenerator
@@ -1499,7 +1499,7 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
     return model
 
 
-def define_parameter(model: Model, name: str, value: Expr, synonyms: Optional[List[str]] = None):
+def define_parameter(model: Model, name: str, value: Expr, synonyms: Optional[list[str]] = None):
     """Define a parameter in statements if not defined
     Update if already defined as other value
     return True if new assignment was added
@@ -1547,7 +1547,7 @@ def add_rate_assignment_if_missing(
     value: Expr,
     source: Compartment,
     dest,
-    synonyms: Optional[List[str]] = None,
+    synonyms: Optional[list[str]] = None,
 ):
     model, added = define_parameter(model, name, value, synonyms=synonyms)
     if added:

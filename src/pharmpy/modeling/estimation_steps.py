@@ -1,5 +1,5 @@
 from itertools import product
-from typing import Any, Dict, List, Literal, Optional, Sequence, Union
+from typing import Any, Dict, Literal, Optional, Sequence, Union
 
 from pharmpy.basic import Expr
 from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
@@ -536,7 +536,7 @@ def remove_derivative(
     return model.update_source()
 
 
-def add_predictions(model: Model, pred: List[str]):
+def add_predictions(model: Model, pred: list[str]):
     """Add predictions and/or residuals
 
     Add predictions to estimation step.
@@ -591,7 +591,7 @@ def add_predictions(model: Model, pred: List[str]):
     return model.update_source()
 
 
-def add_residuals(model: Model, res: List[str]):
+def add_residuals(model: Model, res: list[str]):
     """Add predictions and/or residuals
 
     Add residuals to estimation step.
@@ -648,7 +648,7 @@ def add_residuals(model: Model, res: List[str]):
     return model.update_source()
 
 
-def remove_predictions(model: Model, to_remove: List[str] = 'all'):
+def remove_predictions(model: Model, to_remove: list[str] = 'all'):
     """Remove predictions and/or residuals
 
     Remove predictions from estimation step.
@@ -657,7 +657,7 @@ def remove_predictions(model: Model, to_remove: List[str] = 'all'):
     ----------
     model : Model
         Pharmpy model
-    to_remove : List[str]
+    to_remove : list[str]
         List of predictions to remove
 
     Returns
@@ -702,7 +702,7 @@ def remove_predictions(model: Model, to_remove: List[str] = 'all'):
     return model
 
 
-def remove_residuals(model: Model, to_remove: List[str] = None):
+def remove_residuals(model: Model, to_remove: list[str] = None):
     """Remove predictions and/or residuals
 
     Remove residuals from estimation step.
@@ -711,7 +711,7 @@ def remove_residuals(model: Model, to_remove: List[str] = None):
     ----------
     model : Model
         Pharmpy model
-    to_remove : List[str]
+    to_remove : list[str]
         List of predictions to remove
 
     Returns

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, replace
-from typing import Callable, Iterable, List, Literal, Optional, Tuple, TypeVar, Union
+from typing import Callable, Iterable, Literal, Optional, Tuple, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
 from pharmpy.basic import Expr
@@ -31,7 +31,7 @@ T = TypeVar('T')
 
 def create_workflow(
     column: str = 'OCC',
-    list_of_parameters: Optional[List[Union[str, List[str]]]] = None,
+    list_of_parameters: Optional[list[Union[str, list[str]]]] = None,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
@@ -246,7 +246,7 @@ def _create_description(model):
 
 
 def task_remove_etas_subset(
-    remove: Callable[[Model, List[str]], None], model_entry: ModelEntry, subset: List[str], n: int
+    remove: Callable[[Model, list[str]], None], model_entry: ModelEntry, subset: list[str], n: int
 ):
     parent_model, parent_res = model_entry.model, model_entry.modelfit_results
     model_with_some_etas_removed = parent_model.replace(name=f'iovsearch_run{n}')
@@ -261,7 +261,7 @@ def task_remove_etas_subset(
 
 
 def wf_etas_removal(
-    remove: Callable[[Model, List[str]], None],
+    remove: Callable[[Model, list[str]], None],
     model_entry: ModelEntry,
     etas_subsets: Iterable[Tuple[str]],
     i: int,
@@ -291,7 +291,7 @@ def wf_etas_removal(
 
 def best_model(
     base_entry: ModelEntry,
-    model_entries: List[ModelEntry],
+    model_entries: list[ModelEntry],
     rank_type: str,
     penalties: Union[None, list[float]],
     cutoff: Union[None, float],

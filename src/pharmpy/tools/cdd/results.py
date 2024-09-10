@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -83,7 +83,7 @@ def compute_covariance_ratios(cdd_model_results, covariance_matrix):
 def calculate_results(
     base_model: Model,
     base_model_results,
-    cdd_models: List[Model],
+    cdd_models: list[Model],
     cdd_model_results,
     case_column,
     skipped_individuals,

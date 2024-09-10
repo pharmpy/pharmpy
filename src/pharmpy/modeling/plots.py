@@ -2,7 +2,7 @@ import re
 import warnings
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Dict, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Dict, Literal, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.basic import Expr
@@ -76,7 +76,7 @@ def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str
 
 
 def plot_individual_predictions(
-    model: Model, predictions: pd.DataFrame, individuals: Optional[List[int]] = None
+    model: Model, predictions: pd.DataFrame, individuals: Optional[list[int]] = None
 ):
     """Plot DV and predictions grouped on individuals
 

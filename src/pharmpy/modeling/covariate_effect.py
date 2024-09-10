@@ -7,7 +7,7 @@ import re
 import warnings
 from collections import defaultdict
 from operator import add, mul
-from typing import List, Literal, Set, Union
+from typing import Literal, Set, Union
 
 from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -234,7 +234,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
             model, model.statements.before_odes, parameter, covariate
         ),
     )
-    ode_system: List[Statement] = (
+    ode_system: list[Statement] = (
         [] if model.statements.ode_system is None else [model.statements.ode_system]
     )
     after_odes = list(model.statements.after_odes)
