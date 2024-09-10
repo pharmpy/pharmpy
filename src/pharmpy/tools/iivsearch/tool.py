@@ -277,6 +277,7 @@ def update_linearized_base_model(baseme, input_model, iiv_strategy):
         model = create_joint_distribution(
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
+    model = model.replace(name="base", description=algorithms.create_description(model))
     return ModelEntry.create(model=model, modelfit_results=None)
 
 
