@@ -1472,6 +1472,8 @@ def translate_nmtran_time(model: Model):
     Model
         Pharmpy model object
     """
+    if model.dataset is None:
+        return model
     timecol, datecol = _find_time_and_date_columns(model)
     df = model.dataset.copy()
     di = model.datainfo

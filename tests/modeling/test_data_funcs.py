@@ -438,6 +438,10 @@ def test_nmtran_time(load_example_model_for_test):
     m = load_example_model_for_test("pheno_linear")
     translate_nmtran_time(m)
 
+    m_nodata = m.replace(dataset=None)
+    m2 = translate_nmtran_time(m_nodata)
+    assert m2.dataset is None
+
 
 def test_expand_additional_doses(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
