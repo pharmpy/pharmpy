@@ -270,14 +270,15 @@ def run_linearization(context, baseme):
     return linbaseme
 
 
-def update_linearized_base_model(baseme, input_model, iiv_strategy):
+def update_linearized_base_model(baseme, input_model, iiv_strategy, param_mapping):
     added_params = baseme.model.parameters - input_model.parameters
     model = unfix_parameters(baseme.model, added_params.names)
     if iiv_strategy in ('fullblock', 'pd_fullblock'):
         model = create_joint_distribution(
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
-    model = model.replace(name="base", description=algorithms.create_description(model))
+    descr = f"[{','.join(param_mapping.values())}]"
+    model = model.replace(name="base", description=descr)
     return ModelEntry.create(model=model, modelfit_results=None)
 
 
@@ -313,7 +314,9 @@ def start(
 
     if linearize:
         base_model_entry = run_linearization(context, base_model_entry)
-        base_model_entry = update_linearized_base_model(base_model_entry, input_model, iiv_strategy)
+        base_model_entry = update_linearized_base_model(
+            base_model_entry, input_model, iiv_strategy, param_mapping
+        )
 
     applied_algorithms = []
     for i, algorithm_cur in enumerate(list_of_algorithms, start=1):
