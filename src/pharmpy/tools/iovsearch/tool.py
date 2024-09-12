@@ -141,14 +141,9 @@ def task_brute_force_search(
     # Create links to input model
     context.store_input_model_entry(input_model_entry)
 
-    input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
+    input_model = input_model_entry.model
     # NOTE: Default is to try all IIV ETAs.
-    if list_of_parameters is None:
-        iiv = _get_nonfixed_iivs(input_model)
-        iiv_before_odes = iiv.free_symbols.intersection(
-            input_model.statements.before_odes.free_symbols
-        )
-        list_of_parameters = [iiv.name for iiv in iiv_before_odes]
+    list_of_parameters = prepare_list_of_parameters(input_model, list_of_parameters)
 
     current_step = 0
     step_mapping = {current_step: [input_model.name]}
@@ -157,17 +152,12 @@ def task_brute_force_search(
     if not list_of_parameters:
         return step_mapping, [input_model_entry]
 
-    # NOTE: Add IOVs on given parameters or all parameters with IIVs.
-    name = 'iovsearch_run1'
-    model_with_iov = input_model.replace(name=name)
-    model_with_iov = update_initial_estimates(model_with_iov, input_res)
-    # TODO: Should we exclude already present IOVs?
-    model_with_iov = add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
-    model_with_iov = model_with_iov.replace(description=_create_description(model_with_iov))
-    # NOTE: Fit the new model.
-    model_with_iov_entry = ModelEntry.create(model_with_iov, parent=input_model)
+    model_with_iov_entry = create_iov_base_model_entry(
+        input_model_entry, occ, list_of_parameters, distribution
+    )
     wf = create_fit_workflow(modelentries=[model_with_iov_entry])
     model_with_iov_entry = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
+    model_with_iov = model_with_iov_entry.model
 
     # NOTE: Remove IOVs. Test all subsets (~2^n).
     # TODO: Should we exclude already present IOVs?
@@ -194,7 +184,7 @@ def task_brute_force_search(
         penalties = None
 
     # NOTE: Keep the best candidate.
-    best_model_entry_so_far = best_model(
+    best_model_entry_so_far = get_best_model(
         input_model_entry,
         [model_with_iov_entry, *iov_candidate_entries],
         rank_type=rank_type,
@@ -239,21 +229,46 @@ def task_brute_force_search(
     ]
 
 
+def prepare_list_of_parameters(input_model, list_of_parameters):
+    # NOTE: Default is to try all IIV ETAs.
+    if list_of_parameters is None:
+        iiv = _get_nonfixed_iivs(input_model)
+        iiv_before_odes = iiv.free_symbols.intersection(
+            input_model.statements.before_odes.free_symbols
+        )
+        list_of_parameters = [iiv.name for iiv in iiv_before_odes]
+    return list_of_parameters
+
+
+def create_iov_base_model_entry(input_model_entry, occ, list_of_parameters, distribution):
+    # NOTE: Add IOVs on given parameters or all parameters with IIVs.
+    input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
+    model_with_iov = input_model.replace(name='iovsearch_run1')
+    model_with_iov = update_initial_estimates(model_with_iov, input_res)
+    # TODO: Should we exclude already present IOVs?
+    model_with_iov = add_iov(model_with_iov, occ, list_of_parameters, distribution=distribution)
+    model_with_iov = model_with_iov.replace(description=_create_description(model_with_iov))
+    return ModelEntry.create(model_with_iov, parent=input_model)
+
+
 def _create_description(model):
     iiv_desc = pharmpy.tools.iivsearch.algorithms.create_description(model)
     iov_desc = pharmpy.tools.iivsearch.algorithms.create_description(model, iov=True)
     return f'IIV({iiv_desc});IOV({iov_desc})'
 
 
-def task_remove_etas_subset(
-    remove: Callable[[Model, list[str]], None], model_entry: ModelEntry, subset: list[str], n: int
+def create_candidate_model_entry(
+    remove_func: Callable[[Model, list[str]], None],
+    model_entry: ModelEntry,
+    subset: list[str],
+    n: int,
 ):
     parent_model, parent_res = model_entry.model, model_entry.modelfit_results
     model_with_some_etas_removed = parent_model.replace(name=f'iovsearch_run{n}')
     model_with_some_etas_removed = update_initial_estimates(
         model_with_some_etas_removed, parent_res
     )
-    model_with_some_etas_removed = remove(model_with_some_etas_removed, subset)
+    model_with_some_etas_removed = remove_func(model_with_some_etas_removed, subset)
     model_with_some_etas_removed = model_with_some_etas_removed.replace(
         description=_create_description(model_with_some_etas_removed)
     )
@@ -271,7 +286,7 @@ def wf_etas_removal(
     for subset_of_iiv_parameters in etas_subsets:
         task = Task(
             repr(subset_of_iiv_parameters),
-            task_remove_etas_subset,
+            create_candidate_model_entry,
             remove,
             model_entry,
             list(subset_of_iiv_parameters),
@@ -289,7 +304,7 @@ def wf_etas_removal(
     return Workflow(wb)
 
 
-def best_model(
+def get_best_model(
     base_entry: ModelEntry,
     model_entries: list[ModelEntry],
     rank_type: str,
