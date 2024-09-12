@@ -13,6 +13,7 @@
 # covariate(p, c, e) - p is a parameter name, a list of parameter names, or a reference
 #                    - c is a covariate name, a list of covariate names, or a reference
 #                    - e is an effect, a list of effects, or * for all continuous effects
+# allometry(c[, ref]) - c is a covariate name and ref is an optional reference value
 #
 # LET(variable_name, values) defines a new variable to be a value or list of values
 
@@ -26,7 +27,7 @@ _statement: definition | _feature
 definition: "LET"i "(" VARIABLE_NAME "," values ")"
 
 _feature: absorption | elimination | peripherals | transits | lagtime
-            | covariate | direct_effect | effect_comp | indirect_effect
+            | covariate | allometry | direct_effect | effect_comp | indirect_effect
             | metabolite
 
 absorption: "ABSORPTION"i "(" (_absorption_option) ")"
@@ -35,6 +36,7 @@ peripherals: "PERIPHERALS"i "(" (_counts) ["," _peripheral_comp] ")"
 transits: "TRANSITS"i "(" _counts ["," _depot_option] ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
 covariate: "COVARIATE"i [optional_cov] "(" parameter_option "," covariate_option "," (_fp_options) ["," op_option] ")"
+allometry: "ALLOMETRY"i "(" value ["," decimal] ")"
 
 direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
 effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
@@ -109,4 +111,5 @@ count_array: "[" [number ("," number)*] "]"
 count: number | range
 range: number ".." number
 number: /\d+/
+decimal: /\d+(\.\d+)?/
 """

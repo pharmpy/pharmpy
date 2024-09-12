@@ -367,6 +367,10 @@ class ModelFeatures:
         return self._covariate
 
     @property
+    def allometry(self):
+        return self._allometry
+
+    @property
     def direct_effect(self):
         return self._direct_effect
 

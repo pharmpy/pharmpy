@@ -2,6 +2,7 @@ from lark.visitors import Interpreter
 
 from .statement.definition import DefinitionInterpreter
 from .statement.feature.absorption import AbsorptionInterpreter
+from .statement.feature.allometry import AllometryInterpreter
 from .statement.feature.covariate import CovariateInterpreter
 from .statement.feature.direct_effect import DirectEffectInterpreter
 from .statement.feature.effect_comp import EffectCompInterpreter
@@ -38,6 +39,9 @@ class MFLInterpreter(Interpreter):
 
     def covariate(self, tree):
         return CovariateInterpreter().interpret(tree)
+
+    def allometry(self, tree):
+        return AllometryInterpreter().interpret(tree)
 
     def direct_effect(self, tree):
         return DirectEffectInterpreter().interpret(tree)

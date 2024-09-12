@@ -5,6 +5,7 @@ from typing import Callable, Iterable
 from pharmpy.model import Model
 
 from .feature.absorption import features as absorption_features
+from .feature.allometry import features as allometry_features
 from .feature.covariate import features as covariate_features
 from .feature.direct_effect import features as direct_effect_features
 from .feature.effect_comp import features as effect_comp_features
@@ -37,6 +38,7 @@ def all_funcs(model: Model, statements: Iterable[Statement]):
         (
             *modelsearch_features,
             covariate_features,
+            allometry_features,
             *structsearch_pd_features,
             *structsearch_metabolite_features,
         ),
