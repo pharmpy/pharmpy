@@ -58,7 +58,7 @@ class StateAndEffect:
 
 @dataclass
 class LinStateAndEffect(StateAndEffect):
-    linear_modelentries: dict
+    linear_models: dict
     param_cov_list: dict
 
 
@@ -85,19 +85,20 @@ def samba_workflow(
     store_task = Task("store_input_model", store_input_model, model, results, max_eval)
     wb.add_task(store_task)
 
-    init_task = Task("init", init_search_state, search_space, algorithm, nsamples, weighted_linreg)
+    init_task = Task("init", init_search_state, search_space, algorithm, nsamples)
     wb.add_task(init_task, predecessors=store_task)
 
     # SAMBA search task
     samba_search_task = Task(
         "samba_search",
-        samba_search,
-        max_steps,
+        fast_forward,
         alpha,
-        statsmodels,
-        nsamples,
-        lin_filter,
+        max_steps,
         algorithm,
+        nsamples,
+        weighted_linreg,
+        statsmodels,
+        lin_filter,
     )
     wb.add_task(samba_search_task, predecessors=init_task)
     search_output = wb.output_tasks
@@ -276,21 +277,28 @@ def create_linear_covmodels(linear_cov_funcs, modelentry, nsamples, algorithm, w
     return linear_modelentry_dict, param_covariate_lst
 
 
-def samba_step(
-    context, step, alpha, statsmodels, nsamples, lin_filter, algorithm, state_and_effect
-):
+def fast_forward(context, p_forward, max_steps, algorithm, nsamples, weighted_linreg, statsmodels, lin_filter, state_and_effect):
+    lin_state_and_effect = init_linear_state_and_effect(nsamples, algorithm, weighted_linreg, state_and_effect)
 
-    # LINEAR COVARIATE MODEL PROCESSING #####################
-    selected_explor_cov_funcs, linear_modelentry_dict = linear_model_selection(
-        context, step, alpha, state_and_effect, statsmodels, nsamples, lin_filter, algorithm
-    )
+    steps = range(1, max_steps+1) if max_steps>=1 else count(1)
+    for step in steps:
+        prev_best = state_and_effect.search_state.best_candidate_so_far
+        if statsmodels:
+            state_and_effect = statsmodels_linear_selection(
+                step, p_forward, lin_state_and_effect, nsamples, lin_filter, algorithm
+            )
+        else:
+            state_and_effect = nonmem_linear_selection(
+                context, step, p_forward, lin_state_and_effect, nsamples, lin_filter, algorithm
+            )
+        search_state = nonlinear_model_selection(context, step, p_forward, state_and_effect)
+        new_best = search_state.best_candidate_so_far
+        if new_best is prev_best:
+            break
+        else:
+            lin_state_and_effect = replace(lin_state_and_effect, search_state=search_state)
 
-    # NONLINEAR MIXED EFFECT MODEL PROCESSING #####################
-    state_and_effect = nonlinear_model_selection(
-        context, step, alpha, state_and_effect, selected_explor_cov_funcs
-    )
-
-    return state_and_effect
+    return search_state
 
 
 def statsmodels_linear_selection(
