@@ -149,22 +149,22 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, algo
     filtered_model = filtered_model.replace(name="filtered_input_model", description="start")
     if algorithm == "samba":
         filtered_model = mu_reference_model(filtered_model)
-        if filtered_model.execution_steps[0].method != "FOCE":
-            filtered_model = remove_estimation_step(filtered_model, idx=0)
-            filtered_model = add_estimation_step(
-                filtered_model,
-                method="FOCE",
-                idx=0,
-                interaction=True,
-                auto=True,
-            )
+        filtered_model = remove_estimation_step(filtered_model, idx=0)
+        filtered_model = add_estimation_step(
+            filtered_model,
+            method="ITS",
+            idx=0,
+            interaction=True,
+            auto=True,
+            niter=5,
+        )
         filtered_model = add_estimation_step(
             filtered_model,
             method="SAEM",
             idx=1,
             interaction=True,
             auto=True,
-            niter=500,
+            niter=200,
             keep_every_nth_iter=50,
             tool_options={'PHITYPE': "1", 'FNLETA': "0"},
         )
@@ -180,6 +180,20 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, algo
                     "MASSRESET": "0",
                     "ETASAMPLES": "1",
                     "ISAMPLE": f"{nsamples}",
+                },
+            )
+        if nsamples == 1:
+            filtered_model = add_estimation_step(
+                filtered_model,
+                method="IMP",
+                idx=3,
+                auto=True,
+                interaction=True,
+                niter=20,
+                tool_options={
+                    "EONLY": "1",
+                    "MASSRESET": "1",
+                    "ISAMPLE": "1000",
                 },
             )
     if algorithm != "samba" and filtered_model.execution_steps[0].method != "FOCE":
