@@ -293,114 +293,138 @@ def samba_step(
     return state_and_effect
 
 
-def linear_model_selection(
-    context,
+def statsmodels_linear_selection(
     step,
     alpha,
-    state_and_effect,
-    statsmodels,
+    linear_state_and_effect,
     nsamples,
     lin_filter,
     algorithm,
 ):
-    nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
-        state_and_effect
-    )
-    best_nlme_modelentry = nonlinear_search_state.best_candidate_so_far.modelentry
-    selected_explor_cov_funcs = []
+    effect_funcs = linear_state_and_effect.effect_funcs
+    search_state = linear_state_and_effect.search_state
+    param_cov_list = linear_state_and_effect.param_cov_list
+    best_modelentry = search_state.best_candidate_so_far.modelentry
+    selected_effect_funcs = []
     selected_lin_model_ofv = []
 
-    # update dataset (etas) for all linear covariate candidate models
-    if statsmodels:
-        # use python statsmodel package as linear model estimation tool
-        for param, covariates in param_cov_list.items():
-            # update dataset
-            updated_dataset = create_covmodel_dataset(
-                best_nlme_modelentry, param, covariates, nsamples, algorithm
-            )
-            covs = ["1"] + covariates
-            if algorithm == "samba" and nsamples >= 2:
-                linear_models = [
-                    smf.mixedlm(f"DV~{cov}", data=updated_dataset, groups=updated_dataset["ID"])
-                    for cov in covs
-                ]
-            elif algorithm == "samba" and nsamples == 1:
-                linear_models = [smf.ols(f"DV~{cov}", data=updated_dataset) for cov in covs]
-            else:
-                linear_models = [
-                    smf.wls(f"DV~{cov}", data=updated_dataset, weights=1.0 / updated_dataset["ETC"])
-                    for cov in covs
-                ]
-            linear_fitres = [model.fit() for model in linear_models]
-            # OFV = -2 * LogLikelihood (NONMEM OFV = - 2 * Loglikelihood - N*(2*pi))
-            ofvs = [-2 * res.llf for res in linear_fitres]
-
-            selected_explor_cov_funcs, selected_lin_model_ofv = _lin_filter_option(
-                lin_filter,
-                linear_models,
-                ofvs,
-                alpha,
-                param,
-                selected_explor_cov_funcs,
-                exploratory_cov_funcs,
-                selected_lin_model_ofv,
-            )
-
-    else:
-        # nonmem as linear model estimation tool
-        for param, linear_modelentries in linear_modelentry_dict.items():
-            wb = WorkflowBuilder(name="linear model selection")
-            covariates = param_cov_list[param]
-            # update dataset
-            updated_dataset = create_covmodel_dataset(
-                best_nlme_modelentry, param, covariates, nsamples, algorithm
-            )
-            covs = ["Base"] + covariates
-            linear_modelentries = list(linear_modelentries)
-            for i, me in enumerate(linear_modelentries):
-                linear_modelentries[i] = ModelEntry.create(
-                    model=me.model.replace(
-                        dataset=updated_dataset, name=f"step {step}_lin_{param}_{covs[i]}"
-                    )
-                )
-                task = Task("fit_lin_mes", lambda me: me, linear_modelentries[i])
-                wb.add_task(task)
-            # fit linear covariate models
-            linear_fit_wf = create_fit_workflow(n=len(linear_modelentries))
-            wb.insert_workflow(linear_fit_wf)
-            task_gather = Task("gather", lambda *models: models)
-            wb.add_task(task_gather, predecessors=wb.output_tasks)
-            linear_modelentries = call_workflow(Workflow(wb), 'fit_linear_models', context)
-            linear_modelentry_dict[param] = linear_modelentries
-
-            # linear covariate model selection
-            ofvs = [
-                (
-                    modelentry.modelfit_results.ofv
-                    if modelentry.modelfit_results is not None
-                    else np.nan
-                )
-                for modelentry in linear_modelentries
+    for param, covariates in param_cov_list.items():
+        # update dataset
+        updated_data = create_covmodel_dataset(best_modelentry, param, covariates, nsamples, algorithm)
+        covs = ["1"] + covariates
+        if algorithm == "samba" and nsamples > 1:
+            linear_models = [
+                smf.mixedlm(f"DV~{cov}", data=updated_data, groups=updated_data["ID"])
+                for cov in covs
             ]
+        elif algorithm == "samba" and nsamples == 1:
+            linear_models = [smf.ols(f"DV~{cov}", data=updated_data) for cov in covs]
+        else:
+            linear_models = [
+                smf.wls(f"DV~{cov}", data=updated_data, weights=1.0 / updated_data["ETC"])
+                for cov in covs
+            ]
+        linear_fitres = [model.fit() for model in linear_models]
+        ofvs = [-2 * res.llf for res in linear_fitres]
 
-            selected_explor_cov_funcs, selected_lin_model_ofv = _lin_filter_option(
-                lin_filter,
-                linear_modelentries,
-                ofvs,
-                alpha,
-                param,
-                selected_explor_cov_funcs,
-                exploratory_cov_funcs,
-                selected_lin_model_ofv,
+        selected_effect_funcs, selected_lin_model_ofv = _lin_filter_option(
+            lin_filter,
+            linear_models,
+            ofvs,
+            alpha,
+            param,
+            selected_effect_funcs,
+            effect_funcs,
+            selected_lin_model_ofv,
+        )
+    # select the best linear model (covariate effect) with the largest drop-off in ofv
+    if selected_lin_model_ofv:
+        best_index = np.nanargmax(selected_lin_model_ofv)
+        selected_effect_funcs = selected_effect_funcs[best_index]
+        if not isinstance(selected_effect_funcs, list):
+            selected_effect_funcs = [selected_effect_funcs]
+    if selected_effect_funcs:
+        selected_effect_funcs = {
+            tuple(func.keywords.values()): func for func in selected_effect_funcs
+        }
+
+    return StateAndEffect(effect_funcs=selected_effect_funcs, search_state=search_state)
+
+
+def nonmem_linear_selection(
+    context,
+    step,
+    alpha,
+    linear_state_and_effect,
+    nsamples,
+    lin_filter,
+    algorithm,
+):
+    effect_funcs = linear_state_and_effect.effect_funcs
+    search_state = linear_state_and_effect.search_state
+    linear_modelentry_dict = linear_state_and_effect.linear_models
+    param_cov_list = linear_state_and_effect.param_cov_list
+    best_modelentry = search_state.best_candidate_so_far.modelentry
+    selected_effect_funcs = []
+    selected_lin_model_ofv = []
+
+    for param, linear_modelentries in linear_modelentry_dict.items():
+        wb = WorkflowBuilder(name="linear model selection")
+        covariates = param_cov_list[param]
+        # update dataset
+        updated_dataset = create_covmodel_dataset(
+            best_modelentry, param, covariates, nsamples, algorithm
+        )
+        covs = ["Base"] + covariates
+        linear_modelentries = list(linear_modelentries)
+        for i, me in enumerate(linear_modelentries):
+            linear_modelentries[i] = ModelEntry.create(
+                model=me.model.replace(
+                    dataset=updated_dataset, name=f"step {step}_lin_{param}_{covs[i]}"
+                )
             )
+            task = Task("fit_lin_mes", lambda me: me, linear_modelentries[i])
+            wb.add_task(task)
+        # fit linear covariate models
+        linear_fit_wf = create_fit_workflow(n=len(linear_modelentries))
+        wb.insert_workflow(linear_fit_wf)
+        task_gather = Task("gather", lambda *models: models)
+        wb.add_task(task_gather, predecessors=wb.output_tasks)
+        linear_modelentries = call_workflow(Workflow(wb), 'fit_linear_models', context)
+        linear_modelentry_dict[param] = linear_modelentries
+
+        # linear covariate model selection
+        ofvs = [
+            (
+                modelentry.modelfit_results.ofv
+                if modelentry.modelfit_results is not None
+                else np.nan
+            )
+            for modelentry in linear_modelentries
+        ]
+
+        selected_effect_funcs, selected_lin_model_ofv = _lin_filter_option(
+            lin_filter,
+            linear_modelentries,
+            ofvs,
+            alpha,
+            param,
+            selected_effect_funcs,
+            effect_funcs,
+            selected_lin_model_ofv,
+        )
 
     # select the best linear model (covariate effect) with the largest drop-off in ofv
     if selected_lin_model_ofv:
         best_index = np.nanargmax(selected_lin_model_ofv)
-        selected_explor_cov_funcs = selected_explor_cov_funcs[best_index]
-        if not isinstance(selected_explor_cov_funcs, list):
-            selected_explor_cov_funcs = [selected_explor_cov_funcs]
-    return selected_explor_cov_funcs, linear_modelentry_dict
+        selected_effect_funcs = selected_effect_funcs[best_index]
+        if not isinstance(selected_effect_funcs, list):
+            selected_effect_funcs = [selected_effect_funcs]
+    if selected_effect_funcs:
+        selected_effect_funcs = {
+            tuple(func.keywords.values()): func for func in selected_effect_funcs
+        }
+    return StateAndEffect(effect_funcs=selected_effect_funcs, search_state=search_state)
 
 
 def _lin_filter_option(
@@ -409,12 +433,11 @@ def _lin_filter_option(
     ofvs,
     alpha,
     param,
-    selected_explor_cov_funcs,
-    exploratory_cov_funcs,
+    selected_effect_funcs,
+    effect_funcs,
     selected_lin_model_ofv,
 ):
-    # print(ofvs)
-    if lin_filter in [0, 1]:
+    if lin_filter in [1, 2]:
         selected_cov = lrt_best_of_many(
             parent=linear_models[0],
             models=linear_models[1:],
@@ -430,8 +453,8 @@ def _lin_filter_option(
         if ("Base" in cov_model_index) or ("Intercept" in cov_model_index):
             cov_model_index = None
 
-        if cov_model_index and lin_filter == 0:
-            selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
+        if cov_model_index and lin_filter == 2:
+            selected_effect_funcs.append(effect_funcs[cov_model_index])
             # calculate the drop-off of ofv for selected linear models
             parent_ofv = ofvs[0]
             child_ofv = ofvs[1:]
@@ -439,9 +462,9 @@ def _lin_filter_option(
             ofv_drop = parent_ofv - child_ofv[best_index]
             selected_lin_model_ofv.append(ofv_drop)
         if cov_model_index and lin_filter == 1:
-            selected_explor_cov_funcs.extend(exploratory_cov_funcs[cov_model_index])
+            selected_effect_funcs.extend(effect_funcs[cov_model_index])
 
-    elif lin_filter == 2:
+    elif lin_filter == 0:
         selected_cov = [
             lrt_best_of_two(linear_models[0], me, ofvs[0], ofv, alpha)
             for me, ofv in zip(linear_models[1:], ofvs[1:])
@@ -452,11 +475,11 @@ def _lin_filter_option(
             cov_model_index = ["_".join([param, model.exog_names[-1]]) for model in selected_cov]
         for cm_index in cov_model_index:
             if ("Base" not in cm_index) and ("Intercept" not in cm_index):
-                selected_explor_cov_funcs.extend(exploratory_cov_funcs[cm_index])
+                selected_effect_funcs.extend(effect_funcs[cm_index])
     else:
         raise ValueError("lin_filter must be one from the list {0, 1, 2}")
 
-    return selected_explor_cov_funcs, selected_lin_model_ofv
+    return selected_effect_funcs, selected_lin_model_ofv
 
 
 def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_explor_cov_funcs):
