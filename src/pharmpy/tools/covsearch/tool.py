@@ -128,7 +128,8 @@ def create_workflow(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
     statsmodels: bool = False,
-    nsamples: int = 5,
+    nsamples: int = 10,
+    weighted_linreg: bool = False,
     lin_filter: int = 2,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
@@ -169,6 +170,8 @@ def create_workflow(
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         The samples will be pooled to fit the linear model.
         Default is 5, i.e. generating 5 samples per subject
+    weighted_linreg : bool
+        When using nonmem to run linear covariate models, 'True' uses ETC information to run WLS.
     lin_filter : int
         Option to control the number of covariates passed to nonlinear selection
          0: the one with the largest drop of OFV among all parameter-covariate pairs
@@ -200,6 +203,7 @@ def create_workflow(
             statsmodels,
             algorithm,
             nsamples,
+            weighted_linreg,
             lin_filter,
         )
 

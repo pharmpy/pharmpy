@@ -27,6 +27,7 @@ from pharmpy.modeling import (
     mu_reference_model,
     remove_covariate_effect,
     remove_estimation_step,
+    unconstrain_parameters,
 )
 from pharmpy.modeling.covariate_effect import add_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
@@ -70,7 +71,8 @@ def samba_workflow(
     max_eval: bool = False,
     statsmodels: bool = True,
     algorithm: Literal['samba'] = 'samba',
-    nsamples: int = 5,
+    nsamples: int = 10,
+    weighted_linreg: bool = False,
     lin_filter: int = 2,
 ):
     """
@@ -80,10 +82,10 @@ def samba_workflow(
     wb = WorkflowBuilder(name=NAME_WF)
 
     # Initiate model and search state
-    store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
+    store_task = Task("store_input_model", store_input_model, model, results, max_eval)
     wb.add_task(store_task)
 
-    init_task = Task("init", _init_search_state, search_space, algorithm, nsamples)
+    init_task = Task("init", init_search_state, search_space, algorithm, nsamples, weighted_linreg)
     wb.add_task(init_task, predecessors=store_task)
 
     # SAMBA search task
@@ -111,19 +113,18 @@ def samba_workflow(
     return Workflow(wb)
 
 
-def _store_input_model(context, model, results, max_eval):
+def store_input_model(context, model, results, max_eval):
     """Store the input model"""
-    model = model.replace(name="input_model", description="input")
+    model = model.replace(name="input", description="")
     if max_eval:
         input_modelentry = set_maxevals(model, results)
     else:
         input_modelentry = ModelEntry.create(model=model, modelfit_results=results)
     context.store_input_model_entry(input_modelentry)
-
     return input_modelentry
 
 
-def _init_search_state(context, search_space, algorithm, nsamples, modelentry):
+def init_search_state(context, search_space, algorithm, nsamples, weighted_linreg, modelentry):
     """Initialize SAMBA covariate search"""
     model = modelentry.model
     exploratory_cov_funcs, linear_cov_funcs, filtered_model = filter_search_space_and_model(
@@ -131,14 +132,14 @@ def _init_search_state(context, search_space, algorithm, nsamples, modelentry):
     )
 
     # init nonlinear search state
-    nonlinear_search_state = _init_nonlinear_search_state(
+    nonlinear_search_state = init_nonlinear_search_state(
         context, modelentry, filtered_model, algorithm, nsamples
     )
     filtered_modelentry = nonlinear_search_state.start_modelentry
 
     # create linear covariate models
-    linear_modelentry_dict, param_cov_list = _param_indexed_linear_modelentries(
-        linear_cov_funcs, filtered_modelentry, nsamples, algorithm
+    linear_modelentry_dict, param_cov_list = create_linear_covmodels(
+        linear_cov_funcs, filtered_modelentry, nsamples, algorithm, weighted_linreg
     )
 
     return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
@@ -203,36 +204,36 @@ def _init_nonlinear_search_state(context, input_modelentry, filtered_model, algo
     return SearchState(input_modelentry, filtered_modelentry, candidate, [candidate])
 
 
-def _param_indexed_linear_modelentries(linear_cov_funcs, filtered_modelentry, nsamples, algorithm):
+def create_linear_covmodels(linear_cov_funcs, modelentry, nsamples, algorithm, weighted_linreg):
     param_indexed_funcs = {}  # {param: {cov_effect: cov_func}}
-    param_cov_list = {}  # {param: [covariates]}
+    param_covariate_lst = {}  # {param: [covariates]}
     for cov_effect, cov_func in linear_cov_funcs.items():
         param = cov_effect[0]
         if param not in param_indexed_funcs.keys():
             param_indexed_funcs[param] = {cov_effect: cov_func}
-            param_cov_list[param] = [cov_effect[1]]
+            param_covariate_lst[param] = [cov_effect[1]]
         else:
             param_indexed_funcs[param].update({cov_effect: cov_func})
-            param_cov_list[param].append(cov_effect[1])
+            param_covariate_lst[param].append(cov_effect[1])
 
     # linear_modelentry_dict: {param: [linear_base, linear_covariate]}
-    linear_modelentry_dict = dict.fromkeys(param_cov_list.keys(), None)
-    # create param_base_model
-    for param, covariates in param_cov_list.items():
-        param_base_model = _create_samba_base_model(
-            filtered_modelentry, param, covariates, nsamples, algorithm
-        )
+    linear_modelentry_dict = dict.fromkeys(param_covariate_lst.keys(), None)
+    # create param_base_covmodel
+    for param, covariates in param_covariate_lst.items():
+        data = create_covmodel_dataset(modelentry, param, covariates, nsamples, algorithm)
+        param_base_model = create_base_covmodel(data, param, nsamples, weighted_linreg)
         param_base_modelentry = ModelEntry.create(model=param_base_model)
         linear_modelentry_dict[param] = [param_base_modelentry]
 
         # create linear covariate models for each parameter ("lin", "+")
         for cov_effect, linear_func in param_indexed_funcs[param].items():
             param_cov_model = linear_func(model=param_base_model)
+            param_cov_model = unconstrain_parameters(param_cov_model, f"POP_{cov_effect[0]}{cov_effect[1]}")
             description = "_".join(cov_effect[0:2])
             param_cov_model = param_cov_model.replace(description=description)
             param_cov_modelentry = ModelEntry.create(model=param_cov_model)
             linear_modelentry_dict[param].append(param_cov_modelentry)
-    return linear_modelentry_dict, param_cov_list
+    return linear_modelentry_dict, param_covariate_lst
 
 
 def samba_step(
@@ -274,7 +275,7 @@ def linear_model_selection(
         # use python statsmodel package as linear model estimation tool
         for param, covariates in param_cov_list.items():
             # update dataset
-            updated_dataset = _create_samba_dataset(
+            updated_dataset = create_covmodel_dataset(
                 best_nlme_modelentry, param, covariates, nsamples, algorithm
             )
             covs = ["1"] + covariates
@@ -311,7 +312,7 @@ def linear_model_selection(
             wb = WorkflowBuilder(name="linear model selection")
             covariates = param_cov_list[param]
             # update dataset
-            updated_dataset = _create_samba_dataset(
+            updated_dataset = create_covmodel_dataset(
                 best_nlme_modelentry, param, covariates, nsamples, algorithm
             )
             covs = ["Base"] + covariates
@@ -390,7 +391,6 @@ def _lin_filter_option(
             cov_model_index = None
 
         if cov_model_index and lin_filter == 0:
-            # print(cov_model_index)
             selected_explor_cov_funcs.append(exploratory_cov_funcs[cov_model_index])
             # calculate the drop-off of ofv for selected linear models
             parent_ofv = ofvs[0]
@@ -399,7 +399,6 @@ def _lin_filter_option(
             ofv_drop = parent_ofv - child_ofv[best_index]
             selected_lin_model_ofv.append(ofv_drop)
         if cov_model_index and lin_filter == 1:
-            # print(cov_model_index)
             selected_explor_cov_funcs.extend(exploratory_cov_funcs[cov_model_index])
 
     elif lin_filter == 2:
@@ -411,10 +410,8 @@ def _lin_filter_option(
             cov_model_index = [me.model.description for me in selected_cov]
         else:
             cov_model_index = ["_".join([param, model.exog_names[-1]]) for model in selected_cov]
-        # print(cov_model_index)
         for cm_index in cov_model_index:
             if ("Base" not in cm_index) and ("Intercept" not in cm_index):
-                # print(cm_index)
                 selected_explor_cov_funcs.extend(exploratory_cov_funcs[cm_index])
     else:
         raise ValueError("lin_filter must be one from the list {0, 1, 2}")
@@ -613,10 +610,10 @@ def filter_search_space_and_model(search_space, model):
     return (indexed_explor_cov_funcs, linear_cov_funcs, filtered_model)
 
 
-def _create_samba_dataset(model_entry, param, covariates, nsamples, algorithm):
+def create_covmodel_dataset(model_entry, param, covariates, nsamples, algorithm):
 
     eta_name = get_parameter_rv(model_entry.model, param)[0]
-    # Extract the conditional means (ETA) for individual parameters
+    # Extract individual parameters
     if algorithm == "samba" and nsamples >= 1:
         eta_column = model_entry.modelfit_results.individual_eta_samples[eta_name]
     else:
@@ -648,46 +645,16 @@ def _create_samba_dataset(model_entry, param, covariates, nsamples, algorithm):
     return dataset
 
 
-def _create_samba_base_model(modelentry, param, covariates, nsamples, algorithm):
+def create_base_covmodel(data, parameter, nsamples, weighted_linreg=False):
     """
     Create linear base model [Y ~ THETA(1) + ERR(1)] for the parameters to be explored.
     ETA values associated with these model parameters are set as dependent variable (DV).
     The OFVs of these base models are used as the basis of linear covariate model selection.
     """
-    dataset = _create_samba_dataset(modelentry, param, covariates, nsamples, algorithm)
-
-    # parameters
-    theta = Parameter(name="theta", init=0.1)
-    sigma = Parameter(name="sigma", init=0.2)
-    params = Parameters((theta, sigma))
-
-    # random variables
-    eps_dist = NormalDistribution.create(name="epsilon", level="ruv", mean=0, variance=sigma.symbol)
-    random_vars = RandomVariables.create(dists=[eps_dist])
-
-    # assignments
-    base = Assignment.create(symbol=Expr.symbol(param), expression=theta.symbol)
-    ipred = Assignment.create(symbol=Expr.symbol("IPRED"), expression=base.symbol)
-    y = Assignment.create(
-        symbol=Expr.symbol("Y"), expression=Expr.symbol("IPRED") + Expr.symbol("epsilon")
-    )
-    statements = Statements([base, ipred, y])
-
-    name = f"samba_{param}_Base_Lin"
-    est = EstimationStep.create(
-        method="FO", maximum_evaluations=9999, tool_options={"NSIG": 6, "PRINT": 1, "NOHABORT": 0}
-    )
-
-    base_model = Model.create(
-        name=name,
-        parameters=params,
-        random_variables=random_vars,
-        statements=statements,
-        dataset=dataset,
-        description=name,
-        execution_steps=ExecutionSteps.create([est]),
-        dependent_variables={y.symbol: 1},
-    )
+    if nsamples>1:
+        base_model = _mixed_effects_base_model(data, parameter)
+    else:
+        base_model = _linear_base_model(data, parameter, weighted_linreg)
 
     di = base_model.datainfo
     di = di.set_dv_column("DV")
@@ -695,6 +662,94 @@ def _create_samba_base_model(modelentry, param, covariates, nsamples, algorithm)
     base_model = base_model.replace(datainfo=di)
 
     base_model = convert_model(base_model, to_format="nonmem")
+    return base_model
+
+
+def _linear_base_model(data, parameter, weighted_linreg=False):
+    # parameters
+    theta = Parameter(name="theta", init=0.1)
+    sigma = Parameter(name="sigma", init=0.2)
+    params = Parameters((theta, sigma))
+    # random variables
+    eps_dist = NormalDistribution.create(name="epsilon", level="ruv", mean=0, variance=sigma.symbol)
+    random_vars = RandomVariables.create(dists=[eps_dist])
+    # assignments
+    base = Assignment.create(symbol=Expr.symbol(parameter), expression=theta.symbol)
+    ipred = Assignment.create(symbol=Expr.symbol("IPRED"), expression=base.symbol)
+    if weighted_linreg:
+        y = Assignment.create(
+            symbol=Expr.symbol("Y"), expression=Expr.symbol("IPRED") +
+                                                Expr.symbol("epsilon") * Expr.sqrt(Expr.symbol("ETC"))
+        )
+        name = f"{parameter}_Weighted_Base"
+    else:
+        y = Assignment.create(
+            symbol=Expr.symbol("Y"), expression=Expr.symbol("IPRED") +
+                                                Expr.symbol("epsilon")
+        )
+        name = f"{parameter}_Base"
+    statements = Statements([base, ipred, y])
+
+    est = EstimationStep.create(
+        method="FO", maximum_evaluations=9999, tool_options={"NSIG": 6, "PRINT": 1, "NOHABORT": 0}
+    )
+    base_model = Model.create(
+        name=name,
+        parameters=params,
+        random_variables=random_vars,
+        statements=statements,
+        dataset=data,
+        description=name,
+        execution_steps=ExecutionSteps.create([est]),
+        dependent_variables={y.symbol: 1},
+    )
+    return base_model
+
+
+def _mixed_effects_base_model(data, parameter):
+    # parameters
+    theta = Parameter(name="theta", init=0.1)
+    sigma = Parameter(name="sigma", init=0.2)
+    omega0 = Parameter(name="DUMMYOMEGA", init=0, fix=True)
+    omega1 = Parameter(name="OMEGA_ETA_INT", init=0.1)
+    omega2 = Parameter(name="OMEGA_ETA_EPS", init=0.1)
+    params = Parameters((theta, sigma, omega0, omega1, omega2))
+    # random variables
+    eps_dist = NormalDistribution.create(name="epsilon", level="ruv", mean=0, variance=sigma.symbol)
+    eta0_dist = NormalDistribution.create(name="DUMMYETA", level="iiv", mean=0, variance=omega0.symbol)
+    eta1_dist = NormalDistribution.create(name="ETA_INT", level="iiv", mean=0, variance=omega1.symbol)
+    eta2_dist = NormalDistribution.create(name="ETA_EPS", level="iiv", mean=0, variance=omega2.symbol)
+    random_vars = RandomVariables.create(dists=[eps_dist, eta0_dist, eta1_dist, eta2_dist])
+    # assignments
+    base = Assignment.create(symbol=Expr.symbol(parameter), expression=theta.symbol)
+    ipred = Assignment.create(symbol=Expr.symbol("IPRED"), expression=base.symbol * Expr.exp(Expr.symbol("DUMMYETA")))
+    y = Assignment.create(
+        symbol=Expr.symbol("Y"), expression=Expr.symbol("IPRED") +
+                                            Expr.symbol("ETA_INT") +
+                                            Expr.symbol("epsilon") * Expr.exp(Expr.symbol("ETA_EPS"))
+    )
+    # y = Assignment.create(
+    #     symbol=Expr.symbol("Y"), expression=Expr.symbol("IPRED") +
+    #                                         Expr.symbol("ETA_INT") +
+    #                                         Expr.symbol("epsilon")*(1+Expr.symbol("ETA_EPS"))
+    # )
+    statements = Statements([base, ipred, y])
+    name = f"{parameter}_Mixed_Effects_Base"
+    est = EstimationStep.create(
+        method="FOCE", maximum_evaluations=9999, interaction=True,
+        tool_options={"NSIG": 6, "PRINT": 1, "NOHABORT": 0}
+    )
+    base_model = Model.create(
+        name=name,
+        parameters=params,
+        random_variables=random_vars,
+        statements=statements,
+        dataset=data,
+        description=name,
+        execution_steps=ExecutionSteps.create([est]),
+        dependent_variables={y.symbol: 1},
+    )
+
     return base_model
 
 
