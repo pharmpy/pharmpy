@@ -124,29 +124,55 @@ def store_input_model(context, model, results, max_eval):
     return input_modelentry
 
 
-def init_search_state(context, search_space, algorithm, nsamples, weighted_linreg, modelentry):
-    """Initialize SAMBA covariate search"""
+def init_search_state(context, search_space, algorithm, nsamples, modelentry):
     model = modelentry.model
-    exploratory_cov_funcs, linear_cov_funcs, filtered_model = filter_search_space_and_model(
-        search_space, model
-    )
-
-    # init nonlinear search state
-    nonlinear_search_state = init_nonlinear_search_state(
+    effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
+    search_state = init_nonlinear_search_state(
         context, modelentry, filtered_model, algorithm, nsamples
     )
-    filtered_modelentry = nonlinear_search_state.start_modelentry
+    return StateAndEffect(search_state=search_state, effect_funcs=effect_funcs)
 
-    # create linear covariate models
-    linear_modelentry_dict, param_cov_list = create_linear_covmodels(
-        linear_cov_funcs, filtered_modelentry, nsamples, algorithm, weighted_linreg
+
+def init_linear_state_and_effect(nsamples, algorithm, weighted_linreg, state_and_effect):
+    """
+    initialize the elements required for linear covariate model selection
+    """
+    effect_funcs, search_state = state_and_effect.effect_funcs, state_and_effect.search_state
+    effect_funcs, linear_effect_funcs = linearize_coveffects(effect_funcs)
+    linear_modelentries, param_covariate_lst = create_linear_covmodels(
+        linear_effect_funcs, search_state.start_modelentry, nsamples, algorithm, weighted_linreg
+    )
+    return LinStateAndEffect(
+        effect_funcs=effect_funcs,
+        search_state=search_state,
+        linear_models=linear_modelentries,
+        param_cov_list=param_covariate_lst,
     )
 
-    return (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
+
+def linearize_coveffects(exploratory_cov_funcs):
+    """
+    change covariate effect function's effect to "lin" and operation to "+"
+    """
+    explor_cov_funcs = {}
+    linear_cov_funcs = {}
+    for cov_effect, cov_func in exploratory_cov_funcs.items():
+        param_index = "_".join(cov_effect[0:2])
+        if param_index not in explor_cov_funcs:
+            explor_cov_funcs[param_index] = [cov_func]
+            linear_cov_funcs[cov_effect[0:2]] = partial(
+                add_covariate_effect,
+                parameter=cov_effect[0],
+                covariate=cov_effect[1],
+                effect="lin",
+                operation="+",
+            )
+        else:
+            explor_cov_funcs[param_index].append(cov_func)
+    return (explor_cov_funcs, linear_cov_funcs)
 
 
-def _init_nonlinear_search_state(context, input_modelentry, filtered_model, algorithm, nsamples):
-    filtered_model = filtered_model.replace(name="filtered_input_model", description="start")
+def init_nonlinear_search_state(context, input_modelentry, filtered_model, algorithm, nsamples):
     if algorithm == "samba":
         filtered_model = mu_reference_model(filtered_model)
         filtered_model = remove_estimation_step(filtered_model, idx=0)
