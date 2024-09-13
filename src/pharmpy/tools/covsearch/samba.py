@@ -532,51 +532,37 @@ def nonlinear_model_selection(context, step, p_forward, state_and_effect):
 
 
 def filter_search_space_and_model(search_space, model):
-    """Prepare the input model based on the search space.
-    Preparation includes:
-    (1) cleaning up all covariate effect present in the input model
-    (2) adding structural covariates in the search space if any
-    (3) preparing the exploratory covariate effect indexed covariate functions for nonlinear mixed effect model
-    (4) preparing the exploratory covariate effect indexed covariate functions for linear covariate models
-    """
     filtered_model = model.replace(name="filtered_input_model")
     if isinstance(search_space, str):
         search_space = ModelFeatures.create_from_mfl_string(search_space)
-    ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
-
-    # Clean up all covariate effect in model
+    ss_mfl = search_space.expand(filtered_model)  # expand to remove LET / REF
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
-    # covariate effects not in search space, should be kept as it is
+
     covariate_to_keep = model_mfl - ss_mfl
-    # covariate effects in both model and search space, should be removed for exploration in future searching steps
     covariate_to_remove = model_mfl - covariate_to_keep
     covariate_to_remove = covariate_to_remove.mfl_statement_list(["covariate"])
-    description = []
+    description = ["REMOVE"]
     if len(covariate_to_remove) != 0:
-        description.append("REMOVED")
         for cov_effect in parse_spec(spec(filtered_model, covariate_to_remove)):
             filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
-        filtered_model = filtered_model.replace(description=';'.join(description))
+            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
 
-    # Add structural covariates in search space if any
-    structural_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
-    structural_cov_funcs = all_funcs(Model(), structural_cov)
-    if len(structural_cov_funcs) != 0:
-        description.append("ADDED")
-        for cov_effect, cov_func in structural_cov_funcs.items():
-            filtered_model = cov_func(filtered_model)
-            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
-    # Remove custom effects
     covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
     for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
         if cov_effect[2].lower() == "custom":
             filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
 
+    structural_cov = tuple(c for c in ss_mfl.covariate if not c.optional.option)
+    structural_cov_funcs = all_funcs(Model(), structural_cov)
+    if len(structural_cov_funcs) != 0:
+        description.append("ADD_STRUCT")
+        for cov_effect, cov_func in structural_cov_funcs.items():
+            filtered_model = cov_func(filtered_model)
+            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+    description.append("ADD_EXPLOR")
     filtered_model = filtered_model.replace(description=";".join(description))
 
-    # Exploratory covariates and cov_funcs
     exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
     exploratory_cov_funcs = all_funcs(Model(), exploratory_cov)
     exploratory_cov_funcs = {
@@ -584,25 +570,7 @@ def filter_search_space_and_model(search_space, model):
         for cov_effect, cov_func in exploratory_cov_funcs.items()
         if cov_effect[-1] == "ADD"
     }
-    # indexed exploratory cov_funcs for nonlinear mixed effect models
-    indexed_explor_cov_funcs = {}
-    linear_cov_funcs = {}
-    for cov_effect, cov_func in exploratory_cov_funcs.items():
-        param_index = "_".join(cov_effect[0:2])
-        if param_index not in indexed_explor_cov_funcs:
-            indexed_explor_cov_funcs[param_index] = [cov_func]
-            # cov_funcs for linear covariate models
-            linear_cov_funcs[cov_effect[0:2]] = partial(
-                add_covariate_effect,
-                parameter=cov_effect[0],
-                covariate=cov_effect[1],
-                effect="lin",
-                operation="+",
-            )
-        else:
-            indexed_explor_cov_funcs[param_index].append(cov_func)
-
-    return (indexed_explor_cov_funcs, linear_cov_funcs, filtered_model)
+    return (exploratory_cov_funcs, filtered_model)
 
 
 def create_covmodel_dataset(model_entry, param, covariates, nsamples, algorithm):
