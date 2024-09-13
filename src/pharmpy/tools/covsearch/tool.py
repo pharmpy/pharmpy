@@ -170,9 +170,9 @@ def create_workflow(
         When using nonmem to run linear covariate models, 'True' uses ETC information to run WLS.
     lin_filter : int
         Option to control the number of covariates passed to nonlinear selection
-         0: the one with the largest drop of OFV among all parameter-covariate pairs
+         0: pass all LRT survivors (should have the most similar performance as SCM-Forward)
          1: pass the ones with the largest drop of OFV within each parameter scope
-         2: pass all LRT survivors (should have the most similar performance as SCM-Forward)
+         2: the one with the largest drop of OFV among all parameter-covariate pairs
 
     Returns
     -------

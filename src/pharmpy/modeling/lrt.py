@@ -9,7 +9,9 @@ from pharmpy.model import Model
 from pharmpy.workflows import ModelEntry
 
 
-def degrees_of_freedom(parent: Union[Model, ModelEntry], child: Union[Model, ModelEntry]) -> int:
+def degrees_of_freedom(
+    parent: Union[Model, ModelEntry], child: Union[Model, ModelEntry]
+) -> int | float:
     if isinstance(child, ModelEntry):
         child_parameters = len(child.model.parameters)
     elif isinstance(child, WLS):
