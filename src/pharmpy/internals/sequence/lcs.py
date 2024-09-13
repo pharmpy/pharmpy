@@ -1,10 +1,10 @@
-from typing import Iterator, Literal, Sequence, Tuple, TypeVar
+from typing import Iterator, Literal, Sequence, TypeVar
 
 T = TypeVar('T')
 C = Literal[-1, 0, 1]
 
 
-def diff(old: Sequence[T], new: Sequence[T]) -> Iterator[Tuple[C, T]]:
+def diff(old: Sequence[T], new: Sequence[T]) -> Iterator[tuple[C, T]]:
     """Get diff between a and b in order for all elements
 
     Optimizes by first handling equal elements from the head and tail
@@ -53,7 +53,7 @@ def _matrix(a: Sequence[T], b: Sequence[T]) -> Sequence[Sequence[int]]:
 
 def _diff(
     c: Sequence[Sequence[int]], x: Sequence[T], y: Sequence[T], i: int, j: int
-) -> Iterator[Tuple[C, T]]:
+) -> Iterator[tuple[C, T]]:
     """Print the diff using LCS length matrix using backtracking"""
     if i < 0 and j < 0:
         return

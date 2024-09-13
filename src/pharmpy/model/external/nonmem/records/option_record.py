@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from abc import ABC
 from collections import namedtuple
-from typing import Iterable, Optional, Tuple, Union, cast
+from typing import Iterable, Optional, Union, cast
 
 from pharmpy.internals.parse import AttrToken, AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.generic import eval_token
@@ -168,7 +168,7 @@ class OptionRecord(Record):
         newrec = self.append_option_node(node)
         return newrec
 
-    def _append_option_args(self) -> Tuple[int, int, AttrToken]:
+    def _append_option_args(self) -> tuple[int, int, AttrToken]:
         children = self.root.children
         n = len(children)
         # NOTE: Pop trailing whitespace if any

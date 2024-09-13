@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import importlib.util
 import warnings
-from typing import TYPE_CHECKING, Dict, Optional, Sequence, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from pharmpy.model import Model, ModelfitResultsError
 from pharmpy.workflows import ModelEntry, ModelfitResults
@@ -45,9 +45,9 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
 
     Parameters
     ----------
-    models : List[Model]
+    models : list[Model]
         Input models
-    models_res : List[ModelfitResults]
+    models_res : list[ModelfitResults]
         Input results
 
     Return
@@ -135,7 +135,7 @@ def dofv(
 
 
 def groupedByIDAddColumnsOneModel(
-    resDict: Dict[str, ModelfitResults], me: ModelEntry
+    resDict: dict[str, ModelfitResults], me: ModelEntry
 ) -> pd.DataFrame:
     model = me.model
     model_res = me.modelfit_results
@@ -185,7 +185,7 @@ def summarize_individuals_count_table(
     ----------
     model_entries : list of model_entries
         List of model_entries to summarize.
-    models_res : List[ModelfitResults]
+    models_res : list[ModelfitResults]
         Input results
     df : pd.DataFrame
         Output from a previous call to summarize_individuals.

@@ -3,19 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import (
-    TYPE_CHECKING,
-    Dict,
-    Iterable,
-    List,
-    Literal,
-    Optional,
-    Sequence,
-    Set,
-    Tuple,
-    TypeVar,
-    Union,
-)
+from typing import TYPE_CHECKING, Iterable, Literal, Optional, Sequence, TypeVar, Union
 
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.expr.assumptions import assume_all
@@ -787,7 +775,7 @@ def get_individual_parameters(
     model: Model,
     level: Literal['iiv', 'iov', 'random', 'all'] = 'all',
     dv: Union[TSymbol, int, None] = None,
-) -> List[str]:
+) -> list[str]:
     """Retrieves all individual parameters in a :class:`pharmpy.model`.
 
     By default all individual parameters will be found even ones having no random effect. The level
@@ -1180,7 +1168,7 @@ def has_random_effect(
     return _depends_on_any_of(model.statements.before_odes, symbol, rvs.symbols)
 
 
-def get_rv_parameters(model: Model, rv: str) -> List[str]:
+def get_rv_parameters(model: Model, rv: str) -> list[str]:
     """Retrieves parameters in :class:`pharmpy.model.Model` given a random variable.
 
     Parameters
@@ -1226,7 +1214,7 @@ def get_rv_parameters(model: Model, rv: str) -> List[str]:
 
 def get_parameter_rv(
     model: Model, parameter: str, var_type: Literal['iiv', 'iov'] = 'iiv'
-) -> List[str]:
+) -> list[str]:
     """Retrieves name of random variable in :class:`pharmpy.model.Model` given a parameter.
 
     Parameters
@@ -1280,11 +1268,11 @@ def get_parameter_rv(
 class AssignmentGraphNode:
     expression: Expr
     index: int
-    previous: Dict[Expr, AssignmentGraphNode]
+    previous: dict[Expr, AssignmentGraphNode]
 
 
-def _make_assignments_graph(statements: Statements) -> Dict[sympy.Symbol, AssignmentGraphNode]:
-    last_assignments: Dict[Expr, AssignmentGraphNode] = {}
+def _make_assignments_graph(statements: Statements) -> dict[sympy.Symbol, AssignmentGraphNode]:
+    last_assignments: dict[Expr, AssignmentGraphNode] = {}
 
     for i, statement in enumerate(statements):
         if not isinstance(statement, Assignment):
@@ -1350,20 +1338,20 @@ def _neutral(expr: Expr) -> sympy.Integer:
     raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
 
 
-def _theta_symbols(model: Model) -> Set[sympy.Symbol]:
+def _theta_symbols(model: Model) -> set[sympy.Symbol]:
     rvs_fs = model.random_variables.free_symbols
     return {p.symbol for p in model.parameters if p.symbol not in rvs_fs}
 
 
-def _depends_on_any(symbols: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+def _depends_on_any(symbols: set[sympy.Symbol], expr: sympy.Expr) -> bool:
     return any(map(lambda s: s in symbols, expr.free_symbols))
 
 
-def _is_constant(thetas: Set[sympy.Symbol], expr: sympy.Expr) -> bool:
+def _is_constant(thetas: set[sympy.Symbol], expr: sympy.Expr) -> bool:
     return all(map(lambda s: s in thetas, expr.free_symbols))
 
 
-def _is_univariate(thetas: Set[sympy.Symbol], expr: sympy.Expr, variable: sympy.Symbol) -> bool:
+def _is_univariate(thetas: set[sympy.Symbol], expr: sympy.Expr, variable: sympy.Symbol) -> bool:
     return all(map(lambda s: s in thetas, expr.free_symbols - {variable}))
 
 
@@ -1407,7 +1395,7 @@ class ExpressionTreeNode:
     contains_theta: bool
 
 
-def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr: sympy.Expr):
+def _full_expression(assignments: dict[sympy.Symbol, AssignmentGraphNode], expr: sympy.Expr):
     return expr.xreplace(
         {
             symbol: _full_expression(node.previous, node.expression)
@@ -1417,9 +1405,9 @@ def _full_expression(assignments: Dict[sympy.Symbol, AssignmentGraphNode], expr:
 
 
 def _remove_covariate_effect_from_statements_recursive(
-    thetas: Set[Expr],
-    assignments: Dict[Expr, AssignmentGraphNode],
-    statements: List[Assignment],
+    thetas: set[Expr],
+    assignments: dict[Expr, AssignmentGraphNode],
+    statements: list[Assignment],
     symbol: Expr,
     expression: Expr,
     covariate: Expr,
@@ -1530,7 +1518,7 @@ def _remove_covariate_effect_from_statements_recursive(
 
 def get_pk_parameters(
     model: Model, kind: Literal['absorption', 'distribution', 'elimination', 'all'] = 'all'
-) -> List[str]:
+) -> list[str]:
     """Retrieves PK parameters in :class:`pharmpy.model.Model`.
 
     Parameters
@@ -1732,7 +1720,7 @@ def _pk_free_symbols_from_compartment(
     return _get_component_free_symbols(is_central, vertices, edges)
 
 
-def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Compartment]:
+def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> set[Compartment]:
     central_component_vertices = strongly_connected_component_of(
         cs.central_compartment,
         lambda u: map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
@@ -1753,7 +1741,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> Set[Com
     )
 
 
-def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
+def _get_component_edges(cs: CompartmentalSystem, vertices: set[Compartment]):
     return (
         ((u, v, rate) for v in vertices for u, rate in cs.get_compartment_inflows(v))
         if output in vertices
@@ -1763,8 +1751,8 @@ def _get_component_edges(cs: CompartmentalSystem, vertices: Set[Compartment]):
 
 def _get_component_free_symbols(
     is_central: bool,
-    vertices: Set[Compartment],
-    edges: Iterable[Tuple[Compartment, Compartment, sympy.Expr]],
+    vertices: set[Compartment],
+    edges: Iterable[tuple[Compartment, Compartment, sympy.Expr]],
 ) -> Iterable[sympy.Symbol]:
     for u, v, rate in edges:
         # NOTE: These must not necessarily be outgoing edges
@@ -1797,10 +1785,10 @@ def _assignments(sset: Statements):
 
 
 def _filter_symbols(
-    dependency_graph: Dict[sympy.Symbol, Set[sympy.Symbol]],
-    roots: Set[sympy.Symbol],
-    leaves: Union[Set[sympy.Symbol], None] = None,
-) -> Set[sympy.Symbol]:
+    dependency_graph: dict[sympy.Symbol, set[sympy.Symbol]],
+    roots: set[sympy.Symbol],
+    leaves: Union[set[sympy.Symbol], None] = None,
+) -> set[sympy.Symbol]:
     dependents = graph_inverse(dependency_graph)
 
     free_symbols = reachable_from(roots, lambda x: dependency_graph.get(x, []))
@@ -1859,7 +1847,7 @@ def _classify_assignments(assignments: Sequence[Assignment]):
         yield 'natural', assignment
 
 
-def _remove_synthetic_assignments(classified_assignments: List[Tuple[str, Assignment]]):
+def _remove_synthetic_assignments(classified_assignments: list[tuple[str, Assignment]]):
     assignments = []
     last_defined = {}
 

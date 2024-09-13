@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.deps import sympy
@@ -1099,9 +1099,9 @@ def get_ipred(model, dv=None):
 def set_iiv_on_ruv(
     model: Model,
     dv: Union[TSymbol, int, None] = None,
-    list_of_eps: Optional[Union[List[str], str]] = None,
+    list_of_eps: Optional[Union[list[str], str]] = None,
     same_eta: bool = True,
-    eta_names: Optional[Union[List[str], str]] = None,
+    eta_names: Optional[Union[list[str], str]] = None,
 ):
     """
     Multiplies epsilons with exponential (new) etas.

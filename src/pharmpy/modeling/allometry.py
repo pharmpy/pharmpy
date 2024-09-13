@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from pharmpy.basic import TExpr, TSymbol
 from pharmpy.internals.expr.parse import parse as parse_expr
@@ -14,10 +14,10 @@ def add_allometry(
     model: Model,
     allometric_variable: Optional[TSymbol] = None,
     reference_value: TExpr = 70,
-    parameters: Optional[List[TExpr]] = None,
-    initials: Optional[List[Union[int, float]]] = None,
-    lower_bounds: Optional[List[Union[int, float]]] = None,
-    upper_bounds: Optional[List[Union[int, float]]] = None,
+    parameters: Optional[list[TExpr]] = None,
+    initials: Optional[list[Union[int, float]]] = None,
+    lower_bounds: Optional[list[Union[int, float]]] = None,
+    upper_bounds: Optional[list[Union[int, float]]] = None,
     fixed: bool = True,
 ):
     """Add allometric scaling of parameters

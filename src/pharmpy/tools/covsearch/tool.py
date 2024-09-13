@@ -1,7 +1,7 @@
 from collections import Counter, defaultdict
 from dataclasses import astuple, dataclass, replace
 from itertools import count
-from typing import Any, Callable, Iterable, List, Literal, Optional, Tuple, Union
+from typing import Any, Callable, Iterable, Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -76,18 +76,14 @@ class AdaptiveStep(Step):
     pass
 
 
-class SambaStep(Step):
-    pass
-
-
-def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
+def _added_effects(steps: tuple[Step, ...]) -> Iterable[Effect]:
     added_effects = defaultdict(list)
     for i, step in enumerate(steps):
         if isinstance(step, ForwardStep):
             added_effects[astuple(step.effect)].append(i)
         elif isinstance(step, BackwardStep):
             added_effects[astuple(step.effect)].pop()
-        elif isinstance(step, (AdaptiveStep, SambaStep)):
+        elif isinstance(step, AdaptiveStep):
             pass
         else:
             raise ValueError("Unknown step ({step}) added")
@@ -102,7 +98,7 @@ def _added_effects(steps: Tuple[Step, ...]) -> Iterable[Effect]:
 @dataclass
 class Candidate:
     modelentry: ModelEntry
-    steps: Tuple[Step, ...]
+    steps: tuple[Step, ...]
 
 
 @dataclass
@@ -110,7 +106,7 @@ class SearchState:
     user_input_modelentry: ModelEntry
     start_modelentry: ModelEntry
     best_candidate_so_far: Candidate
-    all_candidates_so_far: List[Candidate]
+    all_candidates_so_far: list[Candidate]
 
 
 def create_workflow(
@@ -346,7 +342,7 @@ def task_greedy_forward_search(
     naming_index_offset: int,
     strictness: Optional[str],
     adaptive_scope_reduction: bool,
-    state_and_effect: Tuple[SearchState, dict],
+    state_and_effect: tuple[SearchState, dict],
 ) -> SearchState:
     for temp in state_and_effect:
         if isinstance(temp, SearchState):
@@ -394,7 +390,7 @@ def task_greedy_backward_search(
     def handle_effects(
         step: int,
         parent: Candidate,
-        candidate_effect_funcs: List[EffectLiteral],
+        candidate_effect_funcs: list[EffectLiteral],
         index_offset: int,
     ):
         index_offset = index_offset + naming_index_offset
@@ -446,7 +442,7 @@ def task_greedy_backward_search(
 
 def _greedy_search(
     state: SearchState,
-    handle_effects: Callable[[int, Candidate, List[EffectLiteral], int], List[Candidate]],
+    handle_effects: Callable[[int, Candidate, list[EffectLiteral], int], list[Candidate]],
     candidate_effect_funcs: dict,
     alpha: float,
     max_steps: int,
@@ -669,10 +665,10 @@ def task_add_covariate_effect(
     )
 
 
-def _create_description(effect_new: dict, steps_prev: Tuple[Step, ...], forward: bool = True):
+def _create_description(effect_new: dict, steps_prev: tuple[Step, ...], forward: bool = True):
     # Will create this type of description: '(CL-AGE-exp);(MAT-AGE-exp);(MAT-AGE-exp-+)'
     def _create_effect_str(effect):
-        if isinstance(effect, Tuple):
+        if isinstance(effect, tuple):
             param, cov, fp, op = effect
         elif isinstance(effect, Effect):
             param, cov, fp, op = effect.parameter, effect.covariate, effect.fp, effect.operation
@@ -802,7 +798,7 @@ def _summarize_models(modelentries, steps):
     return summary_models.reset_index().set_index(['step', 'model'])
 
 
-def _make_df_steps(best_modelentry: ModelEntry, candidates: List[Candidate]):
+def _make_df_steps(best_modelentry: ModelEntry, candidates: list[Candidate]):
     best_model = best_modelentry.model
     modelentries_dict = {
         candidate.modelentry.model.name: candidate.modelentry for candidate in candidates
@@ -905,7 +901,6 @@ def _make_df_steps_row(
             if candidate.steps == tuple()
             or isinstance(candidate.steps[-1], ForwardStep)
             or isinstance(candidate.steps[-1], AdaptiveStep)
-            or isinstance(candidate.steps[-1], SambaStep)
             else len(candidate.steps) + index_offset
         ),
         'parameter': parameter,

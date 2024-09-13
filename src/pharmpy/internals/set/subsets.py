@@ -1,10 +1,10 @@
 from itertools import chain, combinations
-from typing import Iterable, Tuple, TypeVar
+from typing import Iterable, TypeVar
 
 T = TypeVar('T')
 
 
-def subsets(iterable: Iterable[T], min_size: int = 0, max_size: int = -1) -> Iterable[Tuple[T]]:
+def subsets(iterable: Iterable[T], min_size: int = 0, max_size: int = -1) -> Iterable[tuple[T]]:
     """Returns an iterable over all the subsets of the input iterable with
     minimum and maximum size constraints. Allows maximum_size to be given
     relatively to iterable "length" by specifying a negative value.
@@ -20,7 +20,7 @@ def subsets(iterable: Iterable[T], min_size: int = 0, max_size: int = -1) -> Ite
     return chain.from_iterable(combs)  # pyright: ignore [reportReturnType]
 
 
-def non_empty_proper_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
+def non_empty_proper_subsets(iterable: Iterable[T]) -> Iterable[tuple[T]]:
     """Returns an iterable over all the non-empty proper subsets of the input
     iterable.
 
@@ -29,7 +29,7 @@ def non_empty_proper_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
     return subsets(iterable, min_size=1, max_size=-2)
 
 
-def non_empty_subsets(iterable: Iterable[T]) -> Iterable[Tuple[T]]:
+def non_empty_subsets(iterable: Iterable[T]) -> Iterable[tuple[T]]:
     """Returns an iterable over all the non-empty subsets of the input
     iterable.
 

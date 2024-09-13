@@ -1,4 +1,4 @@
-from typing import Any, List
+from typing import Any
 
 from pharmpy.modeling import add_iiv, add_pk_iiv, create_joint_distribution, set_upper_bounds
 from pharmpy.tools.common import update_initial_estimates
@@ -272,7 +272,7 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
 
 
 def _is_allowed_peripheral(func_current, peripheral_previous, mfl_funcs):
-    n_all: List[Any] = list(args[0] for (kind, *args) in mfl_funcs if kind == 'PERIPHERALS')
+    n_all: list[Any] = list(args[0] for (kind, *args) in mfl_funcs if kind == 'PERIPHERALS')
     n = func_current.keywords['n']
     if peripheral_previous:
         n_prev = [func.keywords['n'] for func in peripheral_previous]

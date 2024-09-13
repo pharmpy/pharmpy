@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Dict, List, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import Expr, Unit
 from pharmpy.deps import numpy as np
@@ -374,7 +374,7 @@ def get_baselines(model: Model):
     return baselines
 
 
-def set_covariates(model: Model, covariates: List[str]):
+def set_covariates(model: Model, covariates: list[str]):
     """Set columns in the dataset to be covariates in the datainfo
 
     Parameters
@@ -1250,7 +1250,7 @@ def drop_dropped_columns(model: Model):
     return model.update_source()
 
 
-def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool = False):
+def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool = False):
     """Drop columns from the dataset or mark as dropped
 
     Parameters
@@ -1301,7 +1301,7 @@ def drop_columns(model: Model, column_names: Union[List[str], str], mark: bool =
     return model.update_source()
 
 
-def undrop_columns(model: Model, column_names: Union[List[str], str]):
+def undrop_columns(model: Model, column_names: Union[list[str], str]):
     """Undrop columns of model
 
     Parameters
@@ -1472,6 +1472,8 @@ def translate_nmtran_time(model: Model):
     Model
         Pharmpy model object
     """
+    if model.dataset is None:
+        return model
     timecol, datecol = _find_time_and_date_columns(model)
     df = model.dataset.copy()
     di = model.datainfo
@@ -1631,7 +1633,7 @@ def set_lloq_data(
     return model
 
 
-def set_reference_values(model: Model, refs: Dict[str, Union[int, float]]):
+def set_reference_values(model: Model, refs: dict[str, Union[int, float]]):
     """Set reference values for selected columns
 
         All values for each selected column will be replaced. For dose columns
@@ -2051,7 +2053,7 @@ def create_default_datainfo(path_or_df):
 
 
 def deidentify_data(
-    df: pd.DataFrame, id_column: str = 'ID', date_columns: Optional[List[str]] = None
+    df: pd.DataFrame, id_column: str = 'ID', date_columns: Optional[list[str]] = None
 ):
     """Deidentify a dataset
 

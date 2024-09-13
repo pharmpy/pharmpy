@@ -1,5 +1,5 @@
 from importlib.metadata import version
-from typing import Iterable, Iterator, List, Tuple, Union
+from typing import Iterable, Iterator, List, Union
 
 from lark import Token, Transformer, Tree
 from lark.tree import Meta
@@ -45,7 +45,7 @@ def _tokenize_ignored_characters(s: str, i: int, j: int) -> Iterable[Token]:
         i = head
 
 
-def _item_range(x: Union[Tree, Token]) -> Tuple[int, int]:
+def _item_range(x: Union[Tree, Token]) -> tuple[int, int]:
     if isinstance(x, Tree):
         i = x.meta.start_pos
         j = x.meta.end_pos

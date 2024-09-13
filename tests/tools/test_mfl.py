@@ -383,6 +383,7 @@ from pharmpy.tools.mfl.stringify import stringify
                 ('METABOLITE', 'PSC'),
             ),
         ),
+        ('ALLOMETRY(WGT, 70)', (('ALLOMETRY', 'WGT', 70.0),)),
     ),
     ids=repr,
 )
@@ -390,6 +391,7 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
     pheno = load_model_for_test(pheno_path)
     statements = parse(source)
     funcs = all_funcs(pheno, statements)
+    print(funcs)
     keys = funcs.keys()
     assert set(keys) == set(expected)
 

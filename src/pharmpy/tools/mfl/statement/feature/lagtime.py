@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Tuple, Union
+from typing import Literal, Union
 
 from lark.visitors import Interpreter
 
@@ -11,7 +11,7 @@ LAGTIME_WILDCARD = tuple([Name(x) for x in ('ON', 'OFF')])
 
 @dataclass(frozen=True)
 class LagTime(ModelFeature):
-    modes: Union[Tuple[Name[Literal['ON', 'OFF']], ...], Wildcard]
+    modes: Union[tuple[Name[Literal['ON', 'OFF']], ...], Wildcard]
 
     def __add__(self, other):
         if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):

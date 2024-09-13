@@ -1,7 +1,7 @@
 import warnings
 from collections import defaultdict
 from itertools import product
-from typing import List, Optional
+from typing import Optional
 
 from lark import Lark
 
@@ -49,7 +49,7 @@ from .statement.statement import Statement
 from .stringify import stringify as mfl_stringify
 
 
-def parse(code: str, mfl_class=False) -> List[Statement]:
+def parse(code: str, mfl_class=False) -> list[Statement]:
     mfl_statement_list = _parse(code)
 
     # TODO : only return class once it has been implemented everywhere
@@ -367,6 +367,10 @@ class ModelFeatures:
         return self._covariate
 
     @property
+    def allometry(self):
+        return self._allometry
+
+    @property
     def direct_effect(self):
         return self._direct_effect
 
@@ -443,7 +447,7 @@ class ModelFeatures:
             metabolite=self.metabolite.eval if self.metabolite else None,
         )
 
-    def mfl_statement_list(self, attribute_type: Optional[List[str]] = []):
+    def mfl_statement_list(self, attribute_type: Optional[list[str]] = []):
         """Add the repspective MFL attributes to a list"""
 
         # NOTE : This function is needed to be able to convert the classes to functions
@@ -521,7 +525,7 @@ class ModelFeatures:
 
     def convert_to_funcs(
         self,
-        attribute_type: Optional[List[str]] = None,
+        attribute_type: Optional[list[str]] = None,
         model: Optional[Model] = None,
         subset_features=None,
     ):

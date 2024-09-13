@@ -6,7 +6,7 @@ import importlib
 import re
 import warnings
 from pathlib import Path
-from typing import Dict, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import pharmpy.config as config
 from pharmpy.basic import Expr, TSymbol
@@ -624,7 +624,7 @@ def _get_unused_parameters_and_rvs(statements, parameters, random_variables):
     return new_rvs, Parameters.create(new_params)
 
 
-def rename_symbols(model: Model, new_names: Dict[TSymbol, TSymbol]):
+def rename_symbols(model: Model, new_names: dict[TSymbol, TSymbol]):
     """Rename symbols in the model
 
     Make sure that no name clash occur.

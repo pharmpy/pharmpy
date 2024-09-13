@@ -7,7 +7,7 @@ import re
 import warnings
 from collections import defaultdict
 from operator import add, mul
-from typing import List, Literal, Set, Union
+from typing import Literal, Union
 
 from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -237,7 +237,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
             model, model.statements.before_odes, parameter, covariate
         ),
     )
-    ode_system: List[Statement] = (
+    ode_system: list[Statement] = (
         [] if model.statements.ode_system is None else [model.statements.ode_system]
     )
     after_odes = list(model.statements.after_odes)
@@ -828,7 +828,7 @@ class CovariateEffect:
         return str(self.template)
 
 
-def get_covariates_allowed_in_covariate_effect(model: Model) -> Set[str]:
+def get_covariates_allowed_in_covariate_effect(model: Model) -> set[str]:
     try:
         di_covariate = model.datainfo.typeix['covariate'].names
     except IndexError:

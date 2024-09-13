@@ -1,10 +1,11 @@
 from collections import defaultdict
 from itertools import chain, product
-from typing import Callable, Dict, Iterable, Tuple
+from typing import Callable, Iterable
 
 from pharmpy.model import Model
 
 from .feature.absorption import features as absorption_features
+from .feature.allometry import features as allometry_features
 from .feature.covariate import features as covariate_features
 from .feature.direct_effect import features as direct_effect_features
 from .feature.effect_comp import features as effect_comp_features
@@ -37,6 +38,7 @@ def all_funcs(model: Model, statements: Iterable[Statement]):
         (
             *modelsearch_features,
             covariate_features,
+            allometry_features,
             *structsearch_pd_features,
             *structsearch_metabolite_features,
         ),
@@ -45,7 +47,7 @@ def all_funcs(model: Model, statements: Iterable[Statement]):
 
 def funcs(
     model: Model, statements: Iterable[Statement], generators: Iterable[FeatureGenerator]
-) -> Dict[FeatureKey, FeatureFn]:
+) -> dict[FeatureKey, FeatureFn]:
     statements_list = list(statements)  # TODO: Only read statements once
 
     features = chain.from_iterable(
@@ -65,7 +67,7 @@ def _group_incompatible_features(funcs):
     return grouped.values()
 
 
-def all_combinations(fns: Dict[FeatureKey, FeatureFn]) -> Iterable[Tuple[FeatureKey]]:
+def all_combinations(fns: dict[FeatureKey, FeatureFn]) -> Iterable[tuple[FeatureKey]]:
     grouped = _group_incompatible_features(fns)
     feats = ((None, *group) for group in grouped)
     for t in product(*feats):

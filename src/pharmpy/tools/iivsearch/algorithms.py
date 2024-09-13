@@ -1,5 +1,5 @@
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Tuple
+from typing import Optional
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -354,7 +354,7 @@ def _rv_block_structures(etas):
 
 
 def _is_rv_block_structure(
-    etas: RandomVariables, partition: Tuple[Tuple[str, ...], ...], fixed_etas
+    etas: RandomVariables, partition: tuple[tuple[str, ...], ...], fixed_etas
 ):
     parts = set(partition)
     # Remove fixed etas from etas
@@ -366,7 +366,7 @@ def _is_rv_block_structure(
     return all(map(lambda dist: dist in parts, list_of_tuples))
 
 
-def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
+def _create_param_dict(model: Model, dists: RandomVariables) -> dict[str, str]:
     param_subs = {
         parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
     }
@@ -383,7 +383,7 @@ def _create_param_dict(model: Model, dists: RandomVariables) -> Dict[str, str]:
 
 
 def create_description(
-    model: Model, iov: bool = False, param_dict: Optional[Dict[str, str]] = None
+    model: Model, iov: bool = False, param_dict: Optional[dict[str, str]] = None
 ) -> str:
     if iov:
         dists = model.random_variables.iov
@@ -414,7 +414,7 @@ def create_description(
     return description
 
 
-def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res: ModelfitResults):
+def create_eta_blocks(partition: tuple[tuple[str, ...], ...], model: Model, res: ModelfitResults):
     for part in partition:
         if len(part) == 1:
             model = split_joint_distribution(model, part)
@@ -425,7 +425,7 @@ def create_eta_blocks(partition: Tuple[Tuple[str, ...], ...], model: Model, res:
     return model
 
 
-def _get_eta_from_parameter(model: Model, parameters: List[str]) -> Set[str]:
+def _get_eta_from_parameter(model: Model, parameters: list[str]) -> set[str]:
     # returns list of eta names from parameter names
     # ETA names in parameters are allowed and will be returned as is
     iiv_set = set()
@@ -454,7 +454,7 @@ def _is_iiv_on_ruv(model, name):
     return False
 
 
-def _get_fixed_etas(model: Model) -> List[str]:
+def _get_fixed_etas(model: Model) -> list[str]:
     fixed_omegas = get_omegas(model).fixed.names
     iivs = model.random_variables.iiv
     if len(fixed_omegas) > 0:

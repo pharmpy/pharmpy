@@ -204,26 +204,24 @@ def prepare_input_model(input_model, input_res):
 
 
 def prepare_base_model(input_model_entry, iiv_strategy, linearize):
+    base_model = update_initial_estimates(
+        input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
+    )
     if iiv_strategy != 'no_add':
-        base_model = update_initial_estimates(
-            input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
-        )
         base_model = add_iiv(
             iiv_strategy,
             base_model,
             modelfit_results=input_model_entry.modelfit_results,
             linearize=linearize,
         )
-        base_model = base_model.replace(
-            name='base', description=algorithms.create_description(base_model)
-        )
         # FIXME: Set parent model once create_results can do different things for different tools
-        base_model_entry = ModelEntry.create(base_model, modelfit_results=None)
+        mfr = None
     else:
-        base_model = input_model_entry.model.replace(name='base')
-        base_model_entry = ModelEntry.create(
-            base_model, modelfit_results=input_model_entry.modelfit_results
-        )
+        mfr = input_model_entry.modelfit_results
+    base_model = base_model.replace(
+        name='base', description=algorithms.create_description(base_model)
+    )
+    base_model_entry = ModelEntry.create(base_model, modelfit_results=mfr)
     return base_model, base_model_entry
 
 
@@ -272,13 +270,15 @@ def run_linearization(context, baseme):
     return linbaseme
 
 
-def update_linearized_base_model(baseme, input_model, iiv_strategy):
+def update_linearized_base_model(baseme, input_model, iiv_strategy, param_mapping):
     added_params = baseme.model.parameters - input_model.parameters
     model = unfix_parameters(baseme.model, added_params.names)
     if iiv_strategy in ('fullblock', 'pd_fullblock'):
         model = create_joint_distribution(
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
+    descr = f"[{','.join(param_mapping.values())}]"
+    model = model.replace(name="base", description=descr)
     return ModelEntry.create(model=model, modelfit_results=None)
 
 
@@ -314,7 +314,9 @@ def start(
 
     if linearize:
         base_model_entry = run_linearization(context, base_model_entry)
-        base_model_entry = update_linearized_base_model(base_model_entry, input_model, iiv_strategy)
+        base_model_entry = update_linearized_base_model(
+            base_model_entry, input_model, iiv_strategy, param_mapping
+        )
 
     applied_algorithms = []
     for i, algorithm_cur in enumerate(list_of_algorithms, start=1):

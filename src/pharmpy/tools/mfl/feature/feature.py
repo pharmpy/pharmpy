@@ -1,7 +1,7 @@
-from typing import Callable, Hashable, Optional, Tuple
+from typing import Callable, Hashable, Optional
 
 from pharmpy.model import Model
 
-FeatureKey = Tuple[Hashable, ...]
+FeatureKey = tuple[Hashable, ...]
 FeatureFn = Callable[[Model], Optional[Model]]
-Feature = Tuple[FeatureKey, FeatureFn]
+Feature = tuple[FeatureKey, FeatureFn]

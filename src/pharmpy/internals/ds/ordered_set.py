@@ -1,13 +1,13 @@
 from collections.abc import MutableSet
 from itertools import chain
-from typing import AbstractSet, Any, Dict, Generic, Iterable, Literal, Optional, Tuple, TypeVar
+from typing import AbstractSet, Any, Generic, Iterable, Literal, Optional, TypeVar
 
 T = TypeVar('T')
 
 NIL = 0
 
 
-def _map(iterable: Iterable[T]) -> Iterable[Tuple[T, Literal[0]]]:
+def _map(iterable: Iterable[T]) -> Iterable[tuple[T, Literal[0]]]:
     return map(lambda x: (x, NIL), iterable)
 
 
@@ -17,7 +17,7 @@ class OrderedSet(Generic[T], MutableSet, AbstractSet[T]):
         # Python 3.6 in CPython and since Python 3.7 for all compliant
         # implementations. This implementation tries to work with these version
         # constraints.
-        self._dict: Dict[T, Literal[0]] = {} if iterable is None else dict(_map(iterable))
+        self._dict: dict[T, Literal[0]] = {} if iterable is None else dict(_map(iterable))
 
     # NOTE: The following are required by the MutableSet ABC
 

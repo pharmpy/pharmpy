@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Optional
 
 from pharmpy.model import Model
 from pharmpy.modeling import (
@@ -14,7 +14,7 @@ from pharmpy.modeling import (
 
 
 def delinearize_model(
-    linearized_model: Model, base_model: Model, param_mapping: Optional[Dict] = None
+    linearized_model: Model, base_model: Model, param_mapping: Optional[dict] = None
 ):
     """
     Delinearize a model given a base_model to linearize to. If param_mapping is
@@ -29,7 +29,7 @@ def delinearize_model(
         Linearized model
     base_model : Model
         Model to use for the different
-    param_mapping : None, Dict
+    param_mapping : None, dict
         Use special mapping, given as a dict. The default is None.
 
     Returns

@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any, List, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 import pharmpy.tools.estmethod.algorithms as algorithms
 from pharmpy.deps import numpy as np
@@ -24,10 +24,10 @@ ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only
 
 def create_workflow(
     algorithm: Literal[tuple(ALGORITHMS)],
-    methods: Optional[Union[List[Literal[METHODS]], Literal['all']]] = None,
-    solvers: Optional[Union[List[Literal[SOLVERS]], Literal[SOLVERS]]] = None,
+    methods: Optional[Union[list[Literal[METHODS]], Literal['all']]] = None,
+    solvers: Optional[Union[list[Literal[SOLVERS]], Literal[SOLVERS]]] = None,
     parameter_uncertainty_methods: Optional[
-        Union[List[Literal[PARAMETER_UNCERTAINTY_METHODS]], Literal[PARAMETER_UNCERTAINTY_METHODS]]
+        Union[list[Literal[PARAMETER_UNCERTAINTY_METHODS]], Literal[PARAMETER_UNCERTAINTY_METHODS]]
     ] = None,
     compare_ofv: bool = True,
     results: Optional[ModelfitResults] = None,

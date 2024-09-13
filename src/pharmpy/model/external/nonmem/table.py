@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from io import StringIO
 from pathlib import Path
-from typing import List, Optional, Union
+from typing import Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -16,7 +16,7 @@ class NONMEMTableFile:
     def __init__(
         self,
         path: Optional[Union[str, Path]] = None,
-        tables: Optional[List[NONMEMTable]] = None,
+        tables: Optional[list[NONMEMTable]] = None,
         notitle: bool = False,
         nolabel: bool = False,
     ):
@@ -52,7 +52,7 @@ class NONMEMTableFile:
 
     def _parse_table(
         self,
-        content: List[str],
+        content: list[str],
         suffix: Optional[str] = None,
         notitle: bool = False,
         nolabel: bool = False,

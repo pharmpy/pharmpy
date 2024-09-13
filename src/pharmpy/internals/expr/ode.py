@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Set
+from typing import TYPE_CHECKING
 
 from .leaves import free_images
 
@@ -15,7 +15,7 @@ def canonical_ode_rhs(expr: sympy.Expr):
     return sympy.collect(_expand_rates(expr, fi), sorted(fi, key=str))
 
 
-def _expand_rates(expr: sympy.Expr, free_images: Set[sympy.Expr]):
+def _expand_rates(expr: sympy.Expr, free_images: set[sympy.Expr]):
     if isinstance(expr, sympy.Add):
         return sympy.expand(
             sympy.Add(*map(lambda x: _expand_rates(x, free_images), expr.args)), deep=False

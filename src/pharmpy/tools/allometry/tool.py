@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from functools import partial
-from typing import Iterable, List, Optional, Union
+from typing import Iterable, Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -22,10 +22,10 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     allometric_variable: Union[str, Expr] = 'WT',
     reference_value: Union[str, int, float, Expr] = 70,
-    parameters: Optional[List[Union[str, Expr]]] = None,
-    initials: Optional[List[Union[int, float]]] = None,
-    lower_bounds: Optional[List[Union[int, float]]] = None,
-    upper_bounds: Optional[List[Union[int, float]]] = None,
+    parameters: Optional[list[Union[str, Expr]]] = None,
+    initials: Optional[list[Union[int, float]]] = None,
+    lower_bounds: Optional[list[Union[int, float]]] = None,
+    upper_bounds: Optional[list[Union[int, float]]] = None,
     fixed: bool = True,
 ):
     """Run allometry tool. For more details, see :ref:`allometry`.

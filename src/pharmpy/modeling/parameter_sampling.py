@@ -1,6 +1,6 @@
 import warnings
 from functools import partial
-from typing import TYPE_CHECKING, List, Literal, Optional, Union
+from typing import TYPE_CHECKING, Literal, Optional, Union
 
 from pharmpy.internals.math import is_posdef, nearest_positive_semidefinite
 from pharmpy.model import Model
@@ -284,7 +284,7 @@ def sample_individual_estimates(
     model: Model,
     individual_estimates: pd.DataFrame,
     individual_estimates_covariance: pd.DataFrame,
-    parameters: Optional[List[str]] = None,
+    parameters: Optional[list[str]] = None,
     samples_per_id: int = 100,
     seed: Optional[Union[np.random.Generator, int]] = None,
 ):

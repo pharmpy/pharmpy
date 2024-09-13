@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Dict, List, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
@@ -103,7 +103,7 @@ class ResultsJSONEncoder(json.JSONEncoder):
             # TODO: Consider using other representation, e.g. path
             return None
         elif isinstance(obj, Log):
-            d: Dict[Any, Any] = obj.to_dict()
+            d: dict[Any, Any] = obj.to_dict()
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Path):
@@ -426,7 +426,7 @@ class ModelfitResults(Results):
         Final parameter gradients
     gradients_iterations : pd.DataFrame
         All recorded parameter gradients
-    warnings : List
+    warnings : list
         List of warnings
     individual_eta_samples : pd.DataFrame
         Individual eta samples
@@ -466,7 +466,7 @@ class ModelfitResults(Results):
     covstep_successful: Optional[bool, None] = None
     gradients: Optional[pd.Series] = None
     gradients_iterations: Optional[pd.DataFrame] = (None,)
-    warnings: Optional[List[str]] = None
+    warnings: Optional[list[str]] = None
     individual_eta_samples: Optional[pd.DataFrame] = None
 
     def __repr__(self):

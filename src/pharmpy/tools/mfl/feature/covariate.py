@@ -1,6 +1,6 @@
 from functools import partial
 from itertools import product
-from typing import Dict, Iterable, List, Sequence, Tuple, TypeVar, Union
+from typing import Iterable, Sequence, TypeVar, Union
 
 from pharmpy.model import Model
 from pharmpy.modeling import get_bioavailability
@@ -31,10 +31,10 @@ from .feature import Feature
 
 T = TypeVar('T')
 
-EffectLiteral = Tuple[str, str, EffectType, OperationType]
-EffectSpecFeature = Union[T, Tuple[T, ...]]
+EffectLiteral = tuple[str, str, EffectType, OperationType]
+EffectSpecFeature = Union[T, tuple[T, ...]]
 InputEffectSpecFeature = Union[T, Sequence[T]]
-Spec = Tuple[
+Spec = tuple[
     EffectSpecFeature[str],
     EffectSpecFeature[str],
     EffectSpecFeature[EffectType],
@@ -71,10 +71,10 @@ def features(model: Model, statements: Iterable[Statement], remove=False) -> Ite
             )
 
 
-Definitions = Dict[str, Tuple[str, ...]]
+Definitions = dict[str, tuple[str, ...]]
 
 
-def _partition_statements(statements: Iterable[Statement]) -> Tuple[List[Covariate], Definitions]:
+def _partition_statements(statements: Iterable[Statement]) -> tuple[list[Covariate], Definitions]:
     effects = []
     definitions = {}
     for statement in statements:
@@ -132,7 +132,7 @@ def _effect_to_tuple(model: Model, definitions: Definitions, effect: Covariate) 
 
 def _effect_to_covariates(
     model: Model, definition: Definitions, effect: Covariate
-) -> Tuple[str, ...]:
+) -> tuple[str, ...]:
     return (
         _interpret_symbol(model, definition, effect.covariate)
         if isinstance(effect.covariate, Symbol)
@@ -140,7 +140,7 @@ def _effect_to_covariates(
     )
 
 
-def _interpret_symbol(model: Model, definition, symbol: Symbol) -> Tuple[str, ...]:
+def _interpret_symbol(model: Model, definition, symbol: Symbol) -> tuple[str, ...]:
     if isinstance(symbol, Ref):
         try:
             return definition[symbol.name]
