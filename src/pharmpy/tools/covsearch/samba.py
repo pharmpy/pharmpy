@@ -482,121 +482,53 @@ def _lin_filter_option(
     return selected_effect_funcs, selected_lin_model_ofv
 
 
-def nonlinear_model_selection(context, step, alpha, state_and_effect, selected_explor_cov_funcs):
-    nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list = (
-        state_and_effect
-    )
-    best_nlme_candidate = nonlinear_search_state.best_candidate_so_far
-    best_nlme_modelentry = nonlinear_search_state.best_candidate_so_far.modelentry
-    # nonlinear mixed effect model selection
-    if selected_explor_cov_funcs:
-        new_nonlin_models = []
-        for cov_func in selected_explor_cov_funcs:
-            cov_func_args = cov_func.keywords
-            cov_effect = f'{cov_func_args["parameter"]}-{cov_func_args["covariate"]}-{cov_func_args["effect"]}'
-
-            nonlin_model_added_effect = best_nlme_modelentry.model.replace(
-                name=f"step {step}_NLin_{cov_effect}",
-                description=f"{best_nlme_modelentry.model.description};({cov_effect.lower()})",
-            )
-            nonlin_model_added_effect = update_initial_estimates(
-                nonlin_model_added_effect, best_nlme_modelentry.modelfit_results
-            )
-            nonlin_model_added_effect = cov_func(nonlin_model_added_effect)
-            new_nonlin_models.append(nonlin_model_added_effect)
+def nonlinear_model_selection(context, step, p_forward, state_and_effect):
+    effect_funcs, search_state = state_and_effect.effect_funcs, state_and_effect.search_state
+    best_candidate = search_state.best_candidate_so_far
+    best_model = best_candidate.modelentry.model
+    if effect_funcs:
+        new_models = []
+        for cov_effect, cov_func in effect_funcs.items():
+            name = f"step {step}_NLin_"+"-".join(cov_effect[:3])
+            desc = best_model.description + f";({'-'.join(cov_effect[:3])})"
+            model = best_model.replace(name=name, description=desc)
+            model = update_initial_estimates(model, best_candidate.modelentry.modelfit_results)
+            model = cov_func(model)
+            new_models.append(model)
 
         new_modelentries = [
-            ModelEntry.create(model, best_nlme_modelentry.model) for model in new_nonlin_models
+            ModelEntry.create(model=model, parent=best_model) for model in new_models
         ]
-        nonlin_fit_wf = create_fit_workflow(modelentries=new_modelentries)
-        wb = WorkflowBuilder(nonlin_fit_wf)
+        fit_wf = create_fit_workflow(modelentries=new_modelentries)
+        wb = WorkflowBuilder(fit_wf)
         task_gather = Task("gather", lambda *models: models)
         wb.add_task(task_gather, predecessors=wb.output_tasks)
-        new_nonlin_modelentries = call_workflow(Workflow(wb), 'fit_nonlinear_models', context)
-
-        for me, cov_func in zip(new_nonlin_modelentries, selected_explor_cov_funcs):
-            cov_func_args = cov_func.keywords
-            nlme_candidate = Candidate(
-                me,
-                steps=best_nlme_candidate.steps
-                + (
-                    ForwardStep(
-                        alpha,
-                        DummyEffect(
-                            cov_func_args["parameter"],
-                            cov_func_args["covariate"],
-                            cov_func_args["effect"],
-                            cov_func_args["operation"],
-                        ),
-                    ),
-                ),
-            )
-            nonlinear_search_state.all_candidates_so_far.extend([nlme_candidate])
-
-        ofvs = [
-            modelentry.modelfit_results.ofv if modelentry.modelfit_results is not None else np.nan
-            for modelentry in new_nonlin_modelentries
+        new_modelentries = call_workflow(Workflow(wb), 'fit_nonlinear_models', context)
+        new_candidates = [
+            Candidate(me, best_candidate.steps + (ForwardStep(p_forward, DummyEffect(*effect)),))
+            for me, effect in zip(new_modelentries, effect_funcs.keys())
         ]
-        new_best_nlme_modelentry = lrt_best_of_many(
-            parent=best_nlme_modelentry,
-            models=new_nonlin_modelentries,
-            parent_ofv=best_nlme_modelentry.modelfit_results.ofv,
+        search_state.all_candidates_so_far.extend(new_candidates)
+        ofvs = [
+            me.modelfit_results.ofv if me.modelfit_results is not None else np.nan
+            for me in new_modelentries
+        ]
+        new_best_modelentry = lrt_best_of_many(
+            parent=best_candidate.modelentry,
+            models=new_modelentries,
+            parent_ofv=best_candidate.modelentry.modelfit_results.ofv,
             model_ofvs=ofvs,
-            alpha=alpha,
+            alpha=p_forward,
         )
-
-        if new_best_nlme_modelentry != best_nlme_modelentry:
-            # update search states
-            context.store_model_entry(
-                ModelEntry.create(
-                    model=new_best_nlme_modelentry.model.replace(name=f"step {step}_selection")
-                )
-            )
+        if new_best_modelentry != best_candidate.modelentry:
             best_candidate_so_far = next(
                 filter(
-                    lambda candidate: candidate.modelentry is new_best_nlme_modelentry,
-                    nonlinear_search_state.all_candidates_so_far,
+                    lambda candidate: candidate.modelentry is new_best_modelentry,
+                    search_state.all_candidates_so_far,
                 )
             )
-            nonlinear_search_state = replace(
-                nonlinear_search_state, best_candidate_so_far=best_candidate_so_far
-            )
-    state_and_effect = tuple(
-        (nonlinear_search_state, linear_modelentry_dict, exploratory_cov_funcs, param_cov_list)
-    )
-    return state_and_effect
-
-
-def samba_search(
-    context,
-    max_steps,
-    alpha,
-    statsmodels,
-    nsamples,
-    lin_filter,
-    algorithm,
-    state_and_effect,
-):
-    steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
-    for step in steps:
-        prev_best = state_and_effect[0].best_candidate_so_far
-
-        state_and_effect = samba_step(
-            context,
-            step,
-            alpha,
-            statsmodels,
-            nsamples,
-            lin_filter,
-            algorithm,
-            state_and_effect,
-        )
-
-        new_best = state_and_effect[0].best_candidate_so_far
-        if new_best is prev_best:
-            break
-
-    return state_and_effect[0]
+            search_state = replace(search_state, best_candidate_so_far=best_candidate_so_far)
+    return search_state
 
 
 def filter_search_space_and_model(search_space, model):
