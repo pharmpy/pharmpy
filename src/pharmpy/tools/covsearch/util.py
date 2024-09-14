@@ -153,37 +153,38 @@ def init_nonlinear_search_state(context, input_modelentry, filtered_model, algor
             interaction=True,
             auto=True,
             niter=200,
+            isample=10,
             keep_every_nth_iter=50,
             tool_options={'PHITYPE': "1", 'FNLETA': "0"},
         )
         if nsamples > 0:
+            # FIXME: nsamples = 1 results in ETC = 0, add IMP step to get usable ETC
             filtered_model = add_estimation_step(
                 filtered_model,
                 method="SAEM",
                 idx=2,
                 niter=0,
+                isample=nsamples,
                 tool_options={
                     "EONLY": "1",
                     "NBURN": "0",
                     "MASSRESET": "0",
                     "ETASAMPLES": "1",
-                    "ISAMPLE": f"{nsamples}",
                 },
             )
-        if nsamples == 1:
-            filtered_model = add_estimation_step(
-                filtered_model,
-                method="IMP",
-                idx=3,
-                auto=True,
-                interaction=True,
-                niter=20,
-                tool_options={
-                    "EONLY": "1",
-                    "MASSRESET": "1",
-                    "ISAMPLE": "1000",
-                },
-            )
+        filtered_model = add_estimation_step(
+            filtered_model,
+            method="IMP",
+            idx=3,
+            auto=True,
+            niter=20,
+            isample=1000,
+            tool_options={
+                "EONLY": "1",
+                "MASSRESET": "1",
+                "ETASAMPLES": "0",
+            },
+        )
     if algorithm != "samba" and filtered_model.execution_steps[0].method != "FOCE":
         filtered_model = remove_estimation_step(filtered_model, idx=0)
         filtered_model = add_estimation_step(
