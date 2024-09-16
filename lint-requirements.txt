@@ -15,7 +15,7 @@ cffi==1.17.1
 charset-normalizer==3.3.2
 click==8.1.7
 cryptography==43.0.1
-idna==3.8
+idna==3.10
 importlib-metadata==8.5.0
 jaraco.classes==3.4.0
 jeepney==0.8.0
