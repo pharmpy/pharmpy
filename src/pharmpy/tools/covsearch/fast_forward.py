@@ -374,6 +374,11 @@ def nonlinear_model_selection(context, step, p_forward, state_and_effect):
             alpha=p_forward,
         )
         if new_best_modelentry != best_candidate.modelentry:
+            context.store_model_entry(
+                ModelEntry.create(
+                    model=new_best_modelentry.model.replace(name=f"step {step}_selection")
+                )
+            )
             best_candidate_so_far = next(
                 filter(
                     lambda candidate: candidate.modelentry is new_best_modelentry,

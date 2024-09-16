@@ -158,7 +158,6 @@ def init_nonlinear_search_state(context, input_modelentry, filtered_model, algor
             tool_options={'PHITYPE': "1", 'FNLETA': "0"},
         )
         if nsamples > 0:
-            # FIXME: nsamples = 1 results in ETC = 0, add IMP step to get usable ETC
             filtered_model = add_estimation_step(
                 filtered_model,
                 method="SAEM",
