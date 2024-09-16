@@ -54,8 +54,9 @@ def fast_forward(
     )
 
     steps = range(1, max_steps + 1) if max_steps >= 1 else count(1)
+    search_state = state_and_effect.search_state
     for step in steps:
-        prev_best = state_and_effect.search_state.best_candidate_so_far
+        prev_best = search_state.best_candidate_so_far
         if statsmodels:
             state_and_effect = statsmodels_linear_selection(
                 step, p_forward, lin_state_and_effect, nsamples, lin_filter, algorithm
