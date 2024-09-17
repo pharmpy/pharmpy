@@ -95,7 +95,7 @@ def _added_effects(steps: tuple[Step, ...]) -> Iterable[Effect]:
         elif isinstance(step, AdaptiveStep):
             pass
         else:
-            raise ValueError("Unknown step ({step}) added")
+            raise ValueError(f"Unknown step ({step}) added")
 
     pos = {effect: set(indices) for effect, indices in added_effects.items()}
 
