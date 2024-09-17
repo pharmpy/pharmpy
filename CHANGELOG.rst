@@ -5,6 +5,7 @@ Changes
 =======
 
 * Added replacement of deterministic random variables (0 FIX) in modeling.cleanup_model
+* Set ONEHEADER to newly created $TABLES for NONMEM
 
 Bugfixes
 ========
