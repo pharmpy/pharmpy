@@ -12,17 +12,17 @@ click==8.1.7
 cloudpickle==3.0.0
 comm==0.2.2
 csscompressor==0.9.5
-dask==2024.8.2
+dask==2024.9.0
 debugpy==1.8.5
 decorator==5.1.1
 defusedxml==0.7.1
-distributed==2024.8.2
+distributed==2024.9.0
 docutils==0.21.2
 exceptiongroup==1.2.2
 executing==2.1.0
 fastjsonschema==2.20.0
 fsspec==2024.9.0
-idna==3.8
+idna==3.10
 imagesize==1.4.1
 importlib_metadata==8.5.0
 ipykernel==6.29.5
@@ -60,7 +60,7 @@ pandocfilters==1.5.1
 parso==0.8.4
 partd==1.4.2
 pexpect==4.9.0
-platformdirs==4.3.2
+platformdirs==4.3.3
 prompt-toolkit==3.0.47
 psutil==6.0.0
 ptyprocess==0.7.0
@@ -105,7 +105,7 @@ wcwidth==0.2.13
 webencodings==0.5.1
 widgetsnbextension==4.0.13
 zict==3.0.0
-zipp==3.20.1
+zipp==3.20.2
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-linux_x86_64.whl ; sys_platform == 'linux' and python_version == '3.10'
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp311-cp311-linux_x86_64.whl ; sys_platform == 'linux' and python_version == '3.11'
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp312-cp312-linux_x86_64.whl ; sys_platform == 'linux' and python_version == '3.12'

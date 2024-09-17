@@ -6,3 +6,10 @@ updates:
       interval: "daily"
       time: "01:00"
     open-pull-requests-limit: 20
+    labels:
+      - "dependencies"
+    groups:
+      dask:
+        patterns:
+          - "dask"
+          - "distributed"

@@ -1853,7 +1853,7 @@ def update_estimation(control_stream, model):
         last_rec_ix = control_stream.records.index(control_stream.records[-1])
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
-        s += f'{" ".join(cols)} FILE=mytab NOAPPEND NOPRINT'
+        s += f'{" ".join(cols)} FILE=mytab ONEHEADER NOAPPEND NOPRINT'
         if model.dataset is not None and any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
         s += '\n'

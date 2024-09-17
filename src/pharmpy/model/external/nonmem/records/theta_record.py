@@ -41,6 +41,117 @@ def upper_token(theta):
     return upper
 
 
+def add_upper_bound(theta, bound):
+    comma = AttrToken('COMMA', ',')
+    upper = AttrToken('NUMERIC', format_number(bound))
+    up_node = AttrTree('up', (upper,))
+    keep = []
+    for node in theta.children:
+        keep.append(node)
+        if node.rule == 'init':
+            keep.extend((comma, up_node))
+    theta = AttrTree(theta.rule, tuple(keep))
+    return theta
+
+
+def add_lower_bound(theta, bound):
+    comma = AttrToken('COMMA', ',')
+    lower = AttrToken('NUMERIC', format_number(bound))
+    low_node = AttrTree('low', (lower,))
+    keep = []
+    for node in theta.children:
+        if node.rule == 'init':
+            keep.extend((low_node, comma))
+        keep.append(node)
+    theta = AttrTree(theta.rule, tuple(keep))
+    return theta
+
+
+def remove_upper_bound(theta):
+    keep = []
+    in_upper = False
+    for node in theta.children:
+        if not in_upper:
+            keep.append(node)
+        if node.rule == 'init':
+            in_upper = True
+        elif node.rule == 'up':
+            in_upper = False
+    theta = AttrTree(theta.rule, tuple(keep))
+    return theta
+
+
+def remove_lower_bound(theta):
+    keep = []
+    in_lower = False
+    for node in theta.children:
+        if node.rule == 'low':
+            in_lower = True
+        elif node.rule == 'init':
+            in_lower = False
+        if not in_lower:
+            keep.append(node)
+    theta = AttrTree(theta.rule, tuple(keep))
+    return theta
+
+
+def format_number(x):
+    if not math.isinf(x) and int(x) == x:
+        return str(int(x))
+    else:
+        return str(x)
+
+
+def replace_bound(theta, which, bound):
+    # which is either low or up
+    val = AttrToken('NUMERIC', format_number(bound))
+    new_node = AttrTree(which, (val,))
+    keep = []
+    for node in theta.children:
+        if node.rule == which:
+            keep.append(new_node)
+        else:
+            keep.append(node)
+    theta = AttrTree(theta.rule, tuple(keep))
+    return theta
+
+
+def replace_lower_bound(theta, bound):
+    theta = replace_bound(theta, 'low', bound)
+    return theta
+
+
+def replace_upper_bound(theta, bound):
+    theta = replace_bound(theta, 'up', bound)
+    return theta
+
+
+def remove_parentheses(theta):
+    keep = [node for node in theta.children if node.rule not in ("LPAR", "RPAR")]
+    theta = AttrTree(theta.rule, tuple(keep))
+    return theta
+
+
+def add_parentheses(theta):
+    keep = []
+    up = theta.find('up')
+    for node in theta.children:
+        if node.rule == "LPAR":
+            return theta
+        elif node.rule == "low":
+            lpar = AttrToken('LPAR', '(')
+            keep.append(lpar)
+            keep.append(node)
+        elif up is None and node.rule == "init" or up is not None and node.rule == "up":
+            rpar = AttrToken('RPAR', ')')
+            keep.append(node)
+            keep.append(rpar)
+        else:
+            keep.append(node)
+    theta = AttrTree(theta.rule, tuple(keep))
+    return theta
+
+
 class ThetaRecord(Record):
     def _multiple(self, theta: AttrTree) -> int:
         """Return the multiple (xn) of a theta or 1 if no multiple"""
@@ -198,35 +309,34 @@ class ThetaRecord(Record):
                     theta = remove_token_and_space(theta, 'FIX')
 
             up = theta.find('up')
-            if up != param.upper:
-                if up is None and param.upper < 1000000:
-                    comma = AttrToken('COMMA', ',')
-                    upper = AttrToken('NUMERIC', param.upper)
-                    up_node = AttrTree('up', (upper,))
-                    keep = []
-                    for node in theta.children:
-                        keep.append(node)
-                        if node.rule == 'init':
-                            keep.extend((comma, up_node))
-                    theta = AttrTree(theta.rule, tuple(keep))
-
             low = theta.find('low')
-            if low != param.lower:
-                comma = AttrToken('COMMA', ',')
-                if not math.isinf(param.lower) and int(param.lower) == param.lower:
-                    lower = AttrToken('NUMERIC', str(int(param.lower)))
-                else:
-                    lower = AttrToken('NUMERIC', param.lower)
-                low_node = AttrTree('low', (lower,))
-                keep = []
-                for node in theta.children:
-                    keep.append(node)
-                    if node.rule == 'low':
-                        keep.remove(node)
-                        keep.extend((low_node,))
-                theta = AttrTree(theta.rule, tuple(keep))
+            n = self._multiple(theta)
 
-            i += self._multiple(theta)
+            need_upper_bound = param.upper < 1000000
+
+            if up != param.upper:
+                have_upper_bound = up is not None
+                if not have_upper_bound and need_upper_bound:
+                    theta = add_upper_bound(theta, param.upper)
+                elif have_upper_bound and not need_upper_bound:
+                    theta = remove_upper_bound(theta)
+                else:
+                    theta = replace_upper_bound(theta, param.upper)
+
+            if low != param.lower:
+                have_lower_bound = low is not None
+                need_lower_bound = param.lower > -1000000 or need_upper_bound
+                if not have_lower_bound and need_lower_bound:
+                    theta = add_lower_bound(theta, param.lower)
+                    theta = add_parentheses(theta)
+                elif have_lower_bound and not need_lower_bound:
+                    theta = remove_lower_bound(theta)
+                    if n == 1:
+                        theta = remove_parentheses(theta)
+                else:
+                    theta = replace_lower_bound(theta, param.lower)
+
+            i += n
 
             return theta
 
