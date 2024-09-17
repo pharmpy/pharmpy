@@ -177,7 +177,7 @@ def task_brute_force_search(
     if rank_type == "mbic":
         ref = model_with_iov
         penalties = [
-            calculate_bic_penalty(me.model, ['iiv_diag', 'iov'], base_model=ref, E_p=E)
+            calculate_bic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
             for me in [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
         ]
     else:
@@ -364,7 +364,7 @@ def task_results(
         models = [me.model for me in [base_model_entry] + res_model_entries]
         ref = sorted(models, key=lambda model: len(model.parameters), reverse=True)[0]
         penalties = [
-            calculate_bic_penalty(me.model, ['iiv_diag', 'iov'], base_model=ref, E_p=E)
+            calculate_bic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
             for me in [base_model_entry] + res_model_entries
         ]
     else:

@@ -620,10 +620,10 @@ def test_strictness_parameters(testdata):
         ),
         (
             [partial(add_iov, occ='FA1')],
-            ['iiv_diag', 'iov'],
+            ['iov'],
             {'base_model': None},
-            [partial(remove_iov, to_remove='ETA_MAT'), partial(remove_iiv, to_remove='ETA_CL')],
-            [17.92, 14.33],
+            [partial(remove_iov, to_remove='ETA_IOV_1_1'), partial(remove_iiv, to_remove='ETA_CL')],
+            [4.39, 4.39],
         ),
     ],
 )
@@ -825,33 +825,15 @@ def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected
             0,
             0,
         ),
-        ([partial(add_iov, occ='FA1')], {'search_space': ['iiv_diag', 'iov']}, [], 6, 6, 0, 0),
+        ([partial(add_iov, occ='FA1')], {'search_space': ['iov']}, [], 3, 3, 0, 0),
         (
             [partial(add_iov, occ='FA1')],
-            {'search_space': ['iiv_diag', 'iov']},
-            [partial(remove_iiv, to_remove=['ETA_CL'])],
-            6,
-            5,
-            0,
-            0,
-        ),
-        (
-            [partial(add_iov, occ='FA1')],
-            {'search_space': ['iiv_diag', 'iov']},
+            {'search_space': ['iov']},
             [
-                partial(remove_iov, to_remove='ETA_MAT'),
+                partial(remove_iov, to_remove='ETA_IOV_1_1'),
             ],
-            6,
-            5,
-            0,
-            0,
-        ),
-        (
-            [partial(add_iov, occ='FA1')],
-            {'search_space': ['iiv_diag', 'iov']},
-            [partial(remove_iov, to_remove='ETA_MAT'), partial(remove_iiv, to_remove='ETA_CL')],
-            6,
-            4,
+            3,
+            2,
             0,
             0,
         ),
@@ -873,6 +855,5 @@ def test_get_penalty_parameters_rvs(
     candidate = base_model
     for func in candidate_funcs:
         candidate = func(candidate)
-
     p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate, **kwargs)
     assert (p, k_p, q, k_q) == (p_expected, k_p_expected, q_expected, k_q_expected)
