@@ -68,8 +68,6 @@ def test_parse_nonmem_model(testdata):
 
 
 def test_set_initial_estimates(load_model_for_test, pheno_path):
-    from pharmpy.modeling import set_initial_estimates
-
     model = load_model_for_test(pheno_path)
     res = read_modelfit_results(pheno_path)
     model = set_initial_estimates(model, res.parameter_estimates)
@@ -143,6 +141,73 @@ def test_set_parameters(pheno_path, load_model_for_test):
 
     model = create_joint_distribution(pheno, individual_estimates=res.individual_estimates)
     set_initial_estimates(model, {'IVV': 0.000001})
+
+
+@pytest.mark.parametrize(
+    'p1,p2,before,after',
+    [
+        (
+            Parameter.create('PTVCL', 0.2, lower=-1, upper=2),
+            Parameter.create('PTVCL', 0.2),
+            '$THETA (-1,0.2,2) ; PTVCL',
+            '$THETA 0.2 ; PTVCL',
+        ),
+        (
+            Parameter.create('PTVCL', 0.2, lower=-1, upper=2),
+            Parameter.create('PTVCL', 0.2, lower=-2),
+            '$THETA (-1,0.2,2) ; PTVCL',
+            '$THETA (-2,0.2) ; PTVCL',
+        ),
+        (
+            Parameter.create('PTVCL', 0.2, lower=-1, upper=2),
+            Parameter.create('PTVCL', 0.2, upper=100.2),
+            '$THETA (-1,0.2,2) ; PTVCL',
+            '$THETA (-inf,0.2,100.2) ; PTVCL',
+        ),
+        (
+            Parameter.create('PTVCL', 0.2, upper=2),
+            Parameter.create('PTVCL', 0.2),
+            '$THETA (-inf,0.2,2) ; PTVCL',
+            '$THETA 0.2 ; PTVCL',
+        ),
+        (
+            Parameter.create('PTVCL', 0.2, lower=0.1),
+            Parameter.create('PTVCL', 0.2),
+            '$THETA (0.1,0.2) ; PTVCL',
+            '$THETA 0.2 ; PTVCL',
+        ),
+        (
+            Parameter.create('PTVCL', 0.2),
+            Parameter.create('PTVCL', 0.2, lower=-1, upper=2.4),
+            '$THETA 0.2 ; PTVCL',
+            '$THETA (-1,0.2,2.4) ; PTVCL',
+        ),
+        (
+            Parameter.create('PTVCL', 0.2),
+            Parameter.create('PTVCL', 0.2, upper=2.4),
+            '$THETA 0.2 ; PTVCL',
+            '$THETA (-inf,0.2,2.4) ; PTVCL',
+        ),
+        (
+            Parameter.create('PTVCL', 0.2),
+            Parameter.create('PTVCL', 0.2, lower=-1.3),
+            '$THETA 0.2 ; PTVCL',
+            '$THETA (-1.3,0.2) ; PTVCL',
+        ),
+    ],
+)
+def test_theta_bounds(p1, p2, before, after, pheno_path, load_model_for_test):
+    pheno = load_model_for_test(pheno_path)
+    parameters = p1 + pheno.parameters[1:]
+    pheno = pheno.replace(parameters=parameters)
+    pheno = pheno.update_source()
+    theta = pheno.internals.control_stream.get_records('THETA')[0]
+    assert str(theta).rstrip() == before
+    parameters = p2 + pheno.parameters[1:]
+    pheno = pheno.replace(parameters=parameters)
+    pheno = pheno.update_source()
+    theta = pheno.internals.control_stream.get_records('THETA')[0]
+    assert str(theta).rstrip() == after
 
 
 def test_adjust_iovs(load_model_for_test, testdata):
