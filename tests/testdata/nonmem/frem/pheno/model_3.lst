@@ -1,4 +1,4 @@
-fre 17 apr 2020 17:04:55 CEST
+ons 18 sep 2024 11:33:09 CEST
 ;; 1. Based on: 5
 $PROBLEM    PHENOBARB SIMPLE MODEL
 $DATA      ../../frem_dataset.dta IGNORE=@
@@ -14,7 +14,6 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
       CL=TVCL*EXP(ETA(1))
       V=TVV*EXP(ETA(2))
       S1=V
-
 
     SDC3 = 0.704564727537
     SDC4 = 2.23763568135
@@ -40,22 +39,21 @@ $ERROR
        IPRED = THETA(5) + ETA(4)*SDC4
     END IF
 ;;;FREM CODE END COMPACT
-$THETA  (0,0.00469555) FIX ; CL
-$THETA  (0,0.984258) FIX ; V
+$THETA  (0,0.00469555) FIX ; pCL
+$THETA  (0,0.984258) FIX ; pV
 $THETA  (-.99,0.15892) FIX
 $THETA  1.52542372881 FIX ; TV_WGT
  6.42372881356 FIX ; TV_APGR
 $OMEGA  BLOCK(4)
  0.0293508  ;       IVCL
  0.00028619284142 0.027906  ;        IVV
- 0.012369731232 0.000153348133264 1  ;    BSV_WGT
- -0.0298392034216 0.0158110712412 0.244579 1  ;   BSV_APGR
+ 0.0123697311238 0.000153348133264 1  ;    BSV_WGT
+ -0.0298392031851 0.0158110712412 0.244579 1  ;   BSV_APGR
 $SIGMA  0.013241  FIX
 $SIGMA  0.0000001  FIX  ;     EPSCOV
-$ESTIMATION METHOD=1 INTERACTION NONINFETA=1 MCETA=1 MAXEVALS=0
+$ESTIMATION METHOD=1 INTERACTION NONINFETA=1 MAXEVALS=0
 $TABLE      ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
             NOAPPEND NOPRINT ONEHEADER FILE=sdtab1
-$ETAS       FILE=model_3_input.phi
 
 
 NM-TRAN MESSAGES
@@ -63,12 +61,16 @@ NM-TRAN MESSAGES
  WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
              
  (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+  
+Note: Analytical 2nd Derivatives are constructed in FSUBS but are never used.
+      You may insert $ABBR DERIV2=NO after the first $PROB to save FSUBS construction and compilation time
+  
 
-License Registered to: Uppsala University
-Expiration Date:    14 MAR 2021
-Current Date:       17 APR 2020
-Days until program expires : 332
-1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.4.4
+License Registered to: Uppsala University Department of Pharmacy
+Expiration Date:    14 MAR 2025
+Current Date:       18 SEP 2024
+Days until program expires : 181
+1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1
  ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
  CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
  AND ALISON BOECKMANN. IMPLEMENTATION, EFFICIENCY, AND STANDARDIZATION
@@ -126,6 +128,8 @@ Days until program expires : 332
 0TABLES STEP OMITTED:    NO 
  NO. OF TABLES:           1
  SEED NUMBER (SEED):    11456       
+ NPDTYPE:    0           
+ INTERPTYPE:    0           
  RANMETHOD:             3U                  
  MC SAMPLES (ESAMPLE):    300         
  WRES SQUARE ROOT TYPE (WRESCHOL): EIGENVALUE
@@ -136,12 +140,13 @@ Days until program expires : 332
  HEADER:                YES
  FILE TO BE FORWARDED:   NO 
  FORMAT:                S1PE11.4
+ IDFORMAT:                
  LFORMAT:               
  RFORMAT:               
  FIXED_EFFECT_ETAS:     
 0USER-CHOSEN ITEMS:
  ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
-1DOUBLE PRECISION PREDPP VERSION 7.4.4
+1DOUBLE PRECISION PREDPP VERSION 7.5.1
  
  ONE COMPARTMENT MODEL (ADVAN1)
 0MAXIMUM NO. OF BASIC PK PARAMETERS:   2
@@ -189,23 +194,22 @@ Days until program expires : 332
        FILE REQUEST (NUMDER):               NONE
  MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
  ETA HESSIAN EVALUATION METHOD (ETADER):    0           
- INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    0           
  SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
  GRADIENT SIGDIGITS OF 
        FIXED EFFECTS PARAMETERS (SIGL):     100         
- NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOPRIOR SETTING (NOPRIOR):                 0           
  NOCOV SETTING (NOCOV):                     OFF       
  DERCONT SETTING (DERCONT):                 OFF       
- FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ FINAL ETA RE-EVALUATION (FNLETA):          1           
  EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
        IN SHRINKAGE (ETASTYPE):             NO        
- NON-INFL. ETA CORRECTION (NONINFETA):      ON        
- RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ NON-INFL. ETA CORRECTION (NONINFETA):      1           
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
  EXCLUDE TITLE (NOTITLE):                   NO        
  EXCLUDE COLUMN LABELS (NOLABEL):           NO        
  FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
  PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
- WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
  KNUTHSUMOFF:                               0           
  INCLUDE LNTWOPI:                           NO        
  INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
@@ -222,9 +226,8 @@ Days until program expires : 332
  IPRD=IPREDI
  IRS=IRESI
 
-LOADED PHI/ETA DATA FROM FILE model_3_input.phi
  Elapsed evaluation time in seconds:     0.01
- Elapsed postprocess time in seconds:     0.12
+ Elapsed postprocess time in seconds:     0.14
 1
  
  
@@ -342,6 +345,6 @@ LOADED PHI/ETA DATA FROM FILE model_3_input.phi
 +        0.00E+00  3.16E-04
  
  Elapsed finaloutput time in seconds:     0.02
- #CPUT: Total CPU Time in Seconds,        0.159
+ #CPUT: Total CPU Time in Seconds,        0.234
 Stop Time:
-fre 17 apr 2020 17:04:55 CEST
+ons 18 sep 2024 11:33:10 CEST
