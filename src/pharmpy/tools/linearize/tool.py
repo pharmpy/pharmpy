@@ -158,7 +158,7 @@ def _create_linearized_model(context, model_name, description, model, derivative
     )
 
     linbase = set_initial_estimates(
-        linbase, derivative_model_entry.modelfit_results.parameter_estimates
+        linbase, derivative_model_entry.modelfit_results.parameter_estimates, strict=False
     )
     linbase = add_estimation_step(linbase, "FOCE", maximum_evaluations=999999, interaction=True)
 

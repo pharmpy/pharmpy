@@ -55,6 +55,16 @@ def test_fix_parameters(load_model_for_test, testdata):
     model = fix_parameters(model, 'THETA_1')
     assert model.parameters['THETA_1'].fix
 
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    assert 'x' not in model.parameters.names
+
+    with pytest.raises(ValueError):
+        fix_parameters(model, ['x'])
+
+    params_before = model.parameters
+    model = fix_parameters(model, ['x'], strict=False)
+    assert params_before == model.parameters
+
 
 def test_unfix_parameters(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
