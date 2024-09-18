@@ -93,20 +93,22 @@ def create_pkpd_models(
 
         # Initial values
         if b_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, {'POP_B': b_init})
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_B': b_init}, strict=False)
         if ests is not None:
-            pkpd_model = fix_parameters_to(pkpd_model, ests)
+            pkpd_model = fix_parameters_to(pkpd_model, ests, strict=False)
         if emax_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init})
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init}, strict=False)
         if ec50_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init})
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init}, strict=False)
         if emax_init is not None and ec50_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, {'POP_SLOPE': emax_init / ec50_init})
+            pkpd_model = set_initial_estimates(
+                pkpd_model, {'POP_SLOPE': emax_init / ec50_init}, strict=False
+            )
         if met_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, {'POP_MET': met_init})
+            pkpd_model = set_initial_estimates(pkpd_model, {'POP_MET': met_init}, strict=False)
 
-        pkpd_model = unconstrain_parameters(pkpd_model, ['POP_SLOPE'])
-        pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1.0})
+        pkpd_model = unconstrain_parameters(pkpd_model, ['POP_SLOPE'], strict=False)
+        pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1.0}, strict=False)
 
         # Set iiv
         for parameter in ["E_MAX", "SLOPE"]:

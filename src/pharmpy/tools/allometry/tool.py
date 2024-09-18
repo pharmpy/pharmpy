@@ -67,12 +67,9 @@ def create_workflow(
     """
 
     wb = WorkflowBuilder(name="allometry")
-    if model is not None:
-        start_task = Task('start_allometry', start, results, model)
-    else:
-        start_task = Task('start_allometry', start)
+    start_task = Task('start_allometry', start, results, model)
     _add_allometry = partial(
-        _add_allometry_on_model,
+        add_allometry_on_model,
         allometric_variable=allometric_variable,
         reference_value=reference_value,
         parameters=parameters,
@@ -90,22 +87,16 @@ def create_workflow(
     return Workflow(wb)
 
 
-def start(context, modelfit_results, model_or_model_entry):
-    if isinstance(model_or_model_entry, ModelEntry):
-        log = model_or_model_entry.log
-        mfr = model_or_model_entry.modelfit_results
-        model = model_or_model_entry.model
-    else:
-        log = modelfit_results.log if modelfit_results else None
-        mfr = modelfit_results
-        model = model_or_model_entry
+def start(context, modelfit_results, model):
+    log = modelfit_results.log if modelfit_results else None
+    mfr = modelfit_results
     input_model = model.replace(name="input", description="")
     me = ModelEntry(input_model, modelfit_results=mfr, log=log)
     context.store_input_model_entry(me)
     return me
 
 
-def _add_allometry_on_model(
+def add_allometry_on_model(
     input_model_entry,
     allometric_variable,
     reference_value,
@@ -171,21 +162,12 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, E
 
 
 def results(context, start_model_entry, allometry_model_entry):
-    start_model = start_model_entry.model
-    allometry_model = allometry_model_entry.model
-    allometry_res = allometry_model_entry.modelfit_results
-
-    allometry_model_failed = allometry_res is None
-    best_model = start_model if allometry_model_failed else allometry_model
-    best_model = best_model.replace(name="final")
+    best_model, best_model_res = get_best_model(start_model_entry, allometry_model_entry)
     context.store_final_model_entry(best_model)
 
-    summod = summarize_modelfit_results_from_entries([start_model_entry, allometry_model_entry])
-    summod['step'] = [0, 1]
-    summods = summod.reset_index().set_index(['step', 'model'])
-    suminds = summarize_individuals([start_model_entry, allometry_model_entry])
-    sumcount = summarize_individuals_count_table(df=suminds)
-    sumerrs = summarize_errors_from_entries([start_model_entry, allometry_model_entry])
+    summods, suminds, sumcount, sumerrs = create_result_tables(
+        start_model_entry, allometry_model_entry
+    )
 
     res = AllometryResults(
         summary_models=summods,
@@ -193,10 +175,33 @@ def results(context, start_model_entry, allometry_model_entry):
         summary_individuals_count=sumcount,
         summary_errors=sumerrs,
         final_model=best_model,
-        final_results=allometry_res,
+        final_results=best_model_res,
     )
 
     return res
+
+
+def get_best_model(start_model_entry, allometry_model_entry):
+    start_model = start_model_entry.model
+    start_res = start_model_entry.modelfit_results
+    allometry_model = allometry_model_entry.model
+    allometry_res = allometry_model_entry.modelfit_results
+
+    allometry_model_failed = allometry_res is None
+    best_model = start_model if allometry_model_failed else allometry_model
+    best_model = best_model.replace(name="final")
+    best_model_res = start_res if allometry_model_failed else allometry_res
+    return best_model, best_model_res
+
+
+def create_result_tables(start_model_entry, allometry_model_entry):
+    summod = summarize_modelfit_results_from_entries([start_model_entry, allometry_model_entry])
+    summod['step'] = [0, 1]
+    summods = summod.reset_index().set_index(['step', 'model'])
+    suminds = summarize_individuals([start_model_entry, allometry_model_entry])
+    sumcount = summarize_individuals_count_table(df=suminds)
+    sumerrs = summarize_errors_from_entries([start_model_entry, allometry_model_entry])
+    return summods, suminds, sumcount, sumerrs
 
 
 @dataclass(frozen=True)

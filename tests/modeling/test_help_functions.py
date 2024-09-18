@@ -22,10 +22,9 @@ def test_get_etas(pheno_path, testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_block.mod')
     rvs = _get_etas(model, None)
     assert rvs[0] == 'ETA_CL'
-
-    fix_parameters(model, ['OMEGA_1_1'])
+    model = fix_parameters(model, ['IVCL'])
     rvs = _get_etas(model, None)
-    assert rvs[0] == 'ETA_CL'
+    assert rvs[0] == 'ETA_V'
 
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_block.mod')
     new_eta = model.random_variables['ETA_CL'].replace(level='IOV')

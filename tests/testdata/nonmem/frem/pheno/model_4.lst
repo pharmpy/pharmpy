@@ -1,4 +1,4 @@
-mån 23 mar 2020 08:55:23 CET
+ons 18 sep 2024 11:33:14 CEST
 ;; 1. Based on: 5
 $PROBLEM    PHENOBARB SIMPLE MODEL
 $DATA      ../../frem_dataset.dta IGNORE=@
@@ -15,9 +15,8 @@ IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
       V=TVV*EXP(ETA(2))
       S1=V
 
-
-    SDC3 = 2.23763568135
-    SDC4 = 0.704564727537
+    SDC3 = 0.704564727537
+    SDC4 = 2.23763568135
 $ERROR
 
       W=F
@@ -30,33 +29,32 @@ $ERROR
 ;;;FREM CODE BEGIN COMPACT
 ;;;DO NOT MODIFY
     IF (FREMTYPE.EQ.100) THEN
-;      APGR  2.23763568135
+;      WGT  0.704564727537
        Y = THETA(4) + ETA(3)*SDC3 + EPS(2)
        IPRED = THETA(4) + ETA(3)*SDC3
     END IF
     IF (FREMTYPE.EQ.200) THEN
-;      WGT  0.704564727537
+;      APGR  2.23763568135
        Y = THETA(5) + ETA(4)*SDC4 + EPS(2)
        IPRED = THETA(5) + ETA(4)*SDC4
     END IF
 ;;;FREM CODE END COMPACT
-$THETA  (0,0.00469555) ; CL
-$THETA  (0,0.984258) ; V
-$THETA  (-.99,0.15892)
-$THETA  6.42372881356 FIX ; TV_APGR
- 1.52542372881 FIX ; TV_WGT
+$THETA  (0,0.00469555) ; pCL
+$THETA  (0,0.984258) ; pV
+$THETA  (-0.99,0.15892)
+$THETA  1.52542372881 FIX ; TV_WGT
+ 6.42372881356 FIX ; TV_APGR
 $OMEGA  BLOCK(4)
  0.0293508  ;       IVCL
  0.000286193 0.027906  ;        IVV
- -0.0676481 0.0235094 1  ;   BSV_APGR
- 0.0256033 -0.00161838 0.24458 1  ;    BSV_WGT
+ 0.0256033 -0.00161838 1  ;    BSV_WGT
+ -0.0676481 0.0235094 0.244579 1  ;   BSV_APGR
 $SIGMA  0.013241
 $SIGMA  0.0000001  FIX  ;     EPSCOV
-$ESTIMATION METHOD=1 INTERACTION NONINFETA=1 MCETA=1
-$COVARIANCE UNCONDITIONAL
+$ESTIMATION METHOD=1 INTERACTION NONINFETA=1
+$COVARIANCE UNCONDITIONAL PRINT=E
 $TABLE      ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
             NOAPPEND NOPRINT ONEHEADER FILE=sdtab1
-$ETAS       FILE=model_4_input.phi
 
 
 NM-TRAN MESSAGES
@@ -64,13 +62,16 @@ NM-TRAN MESSAGES
  WARNINGS AND ERRORS (IF ANY) FOR PROBLEM    1
              
  (WARNING  2) NM-TRAN INFERS THAT THE DATA ARE POPULATION.
+  
+Note: Analytical 2nd Derivatives are constructed in FSUBS but are never used.
+      You may insert $ABBR DERIV2=NO after the first $PROB to save FSUBS construction and compilation time
+  
 
-License Registered to: Uppsala University
-Expiration Date:    14 APR 2020
-Current Date:       23 MAR 2020
-  **** WARNING!!! Days until program expires :  21 ****
-  **** CONTACT idssoftware@iconplc.com FOR RENEWAL ****
-1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.4.4
+License Registered to: Uppsala University Department of Pharmacy
+Expiration Date:    14 MAR 2025
+Current Date:       18 SEP 2024
+Days until program expires : 181
+1NONLINEAR MIXED EFFECTS MODEL PROGRAM (NONMEM) VERSION 7.5.1
  ORIGINALLY DEVELOPED BY STUART BEAL, LEWIS SHEINER, AND ALISON BOECKMANN
  CURRENT DEVELOPERS ARE ROBERT BAUER, ICON DEVELOPMENT SOLUTIONS,
  AND ALISON BOECKMANN. IMPLEMENTATION, EFFICIENCY, AND STANDARDIZATION
@@ -114,15 +115,15 @@ Current Date:       23 MAR 2020
   0.0000E+00     0.4696E-02     0.1000E+07
   0.0000E+00     0.9843E+00     0.1000E+07
  -0.9900E+00     0.1589E+00     0.1000E+07
-  0.6424E+01     0.6424E+01     0.6424E+01
   0.1525E+01     0.1525E+01     0.1525E+01
+  0.6424E+01     0.6424E+01     0.6424E+01
 0INITIAL ESTIMATE OF OMEGA:
  BLOCK SET NO.   BLOCK                                                                    FIXED
         1                                                                                   NO 
                   0.2935E-01
                   0.2862E-03   0.2791E-01
-                 -0.6765E-01   0.2351E-01   0.1000E+01
-                  0.2560E-01  -0.1618E-02   0.2446E+00   0.1000E+01
+                  0.2560E-01  -0.1618E-02   0.1000E+01
+                 -0.6765E-01   0.2351E-01   0.2446E+00   0.1000E+01
 0INITIAL ESTIMATE OF SIGMA:
  BLOCK SET NO.   BLOCK                                                                    FIXED
         1                                                                                   NO 
@@ -130,26 +131,29 @@ Current Date:       23 MAR 2020
         2                                                                                  YES 
                   0.1000E-06
 0COVARIANCE STEP OMITTED:        NO 
- EIGENVLS. PRINTED:              NO 
+ EIGENVLS. PRINTED:             YES 
  SPECIAL COMPUTATION:            NO 
  COMPRESSED FORMAT:              NO 
  GRADIENT METHOD USED:     NOSLOW
  SIGDIGITS ETAHAT (SIGLO):                  -1          
  SIGDIGITS GRADIENTS (SIGL):                -1          
  EXCLUDE COV FOR FOCE (NOFCOV):              NO   
- TURN OFF Cholesky Transposition of R Matrix (CHOLROFF): NO   
+ Cholesky Transposition of R Matrix (CHOLROFF):0
  KNUTHSUMOFF:                                -1          
  RESUME COV ANALYSIS (RESUME):               NO   
- SIR SAMPLE SIZE (SIRSAMPLE):              -1          
+ SIR SAMPLE SIZE (SIRSAMPLE):              
  NON-LINEARLY TRANSFORM THETAS DURING COV (THBND): 1           
  PRECONDTIONING CYCLES (PRECOND):        0           
  PRECONDTIONING TYPES (PRECONDS):        TOS       
  FORCED PRECONDTIONING CYCLES (PFCOND):0           
  PRECONDTIONING TYPE (PRETYPE):        0           
- FORCED POS. DEFINITE SETTING: (FPOSDEF):0           
+ FORCED POS. DEFINITE SETTING DURING PRECONDITIONING: (FPOSDEF):0           
+ SIMPLE POS. DEFINITE SETTING: (POSDEF):-1          
 0TABLES STEP OMITTED:    NO 
  NO. OF TABLES:           1
  SEED NUMBER (SEED):    11456       
+ NPDTYPE:    0           
+ INTERPTYPE:    0           
  RANMETHOD:             3U                  
  MC SAMPLES (ESAMPLE):    300         
  WRES SQUARE ROOT TYPE (WRESCHOL): EIGENVALUE
@@ -160,12 +164,13 @@ Current Date:       23 MAR 2020
  HEADER:                YES
  FILE TO BE FORWARDED:   NO 
  FORMAT:                S1PE11.4
+ IDFORMAT:                
  LFORMAT:               
  RFORMAT:               
  FIXED_EFFECT_ETAS:     
 0USER-CHOSEN ITEMS:
  ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
-1DOUBLE PRECISION PREDPP VERSION 7.4.4
+1DOUBLE PRECISION PREDPP VERSION 7.5.1
  
  ONE COMPARTMENT MODEL (ADVAN1)
 0MAXIMUM NO. OF BASIC PK PARAMETERS:   2
@@ -220,23 +225,22 @@ Current Date:       23 MAR 2020
        FILE REQUEST (NUMDER):               NONE
  MAP (ETAHAT) ESTIMATION METHOD (OPTMAP):   0           
  ETA HESSIAN EVALUATION METHOD (ETADER):    0           
- INITIAL ETA FOR MAP ESTIMATION (MCETA):    1           
+ INITIAL ETA FOR MAP ESTIMATION (MCETA):    0           
  SIGDIGITS FOR MAP ESTIMATION (SIGLO):      100         
  GRADIENT SIGDIGITS OF 
        FIXED EFFECTS PARAMETERS (SIGL):     100         
- NOPRIOR SETTING (NOPRIOR):                 OFF       
+ NOPRIOR SETTING (NOPRIOR):                 0           
  NOCOV SETTING (NOCOV):                     OFF       
  DERCONT SETTING (DERCONT):                 OFF       
- FINAL ETA RE-EVALUATION (FNLETA):          ON        
+ FINAL ETA RE-EVALUATION (FNLETA):          1           
  EXCLUDE NON-INFLUENTIAL (NON-INFL.) ETAS   
        IN SHRINKAGE (ETASTYPE):             NO        
- NON-INFL. ETA CORRECTION (NONINFETA):      ON        
- RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                         
+ NON-INFL. ETA CORRECTION (NONINFETA):      1           
+ RAW OUTPUT FILE (FILE): psn.ext                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                         
  EXCLUDE TITLE (NOTITLE):                   NO        
  EXCLUDE COLUMN LABELS (NOLABEL):           NO        
  FORMAT FOR ADDITIONAL FILES (FORMAT):      S1PE12.5
  PARAMETER ORDER FOR OUTPUTS (ORDER):       TSOL
- WISHART PRIOR DF INTERPRETATION (WISHTYPE):0           
  KNUTHSUMOFF:                               0           
  INCLUDE LNTWOPI:                           NO        
  INCLUDE CONSTANT TERM TO PRIOR (PRIORC):   NO        
@@ -255,60 +259,60 @@ Current Date:       23 MAR 2020
 
  MONITORING OF SEARCH:
 
-LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 
-0ITERATION NO.:    0    OBJECTIVE VALUE:   747.712633038720        NO. OF FUNC. EVALS.:   6
+0ITERATION NO.:    0    OBJECTIVE VALUE:   747.712633056610        NO. OF FUNC. EVALS.:   6
  CUMULATIVE NO. OF FUNC. EVALS.:        6
- NPARAMETR:  4.6955E-03  9.8426E-01  1.5892E-01  2.9351E-02  2.8619E-04 -6.7648E-02  2.5603E-02  2.7906E-02  2.3509E-02 -1.6184E-03
+ NPARAMETR:  4.6955E-03  9.8426E-01  1.5892E-01  2.9351E-02  2.8619E-04  2.5603E-02 -6.7648E-02  2.7906E-02 -1.6184E-03  2.3509E-02
              1.0000E+00  2.4458E-01  1.0000E+00  1.3241E-02
- PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01 -1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01 -1.0000E-01
+ PARAMETER:  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01 -1.0000E-01  1.0000E-01 -1.0000E-01  1.0000E-01
              1.0000E-01  1.0000E-01  1.0000E-01  1.0000E-01
- GRADIENT:  -1.7173E+01  4.8800E+00 -1.3088E+01 -2.2150E+00 -5.9193E-01 -6.0496E+00  4.2661E+00 -5.9659E-01 -9.6112E+00  4.9387E-01
-             2.8034E+00  1.2009E+00  9.5539E-01  4.5365E+00
+ GRADIENT:  -1.7173E+01  4.8800E+00 -1.3088E+01 -2.2150E+00 -5.9193E-01  4.2662E+00 -6.0498E+00 -5.9658E-01  4.9387E-01 -9.6112E+00
+             1.0755E+00  3.2008E+00  2.4833E+00  4.5365E+00
 
-0ITERATION NO.:   29    OBJECTIVE VALUE:   742.277582010579        NO. OF FUNC. EVALS.: 248
- CUMULATIVE NO. OF FUNC. EVALS.:      254
- NPARAMETR:  4.8525E-03  9.5521E-01  3.2966E-01  3.9348E-02  1.6837E-02 -4.4229E-02  4.2676E-02  2.5937E-02  6.5488E-02 -1.6806E-03
-             9.8303E-01  2.4042E-01  9.8305E-01  1.2805E-02
- PARAMETER:  1.3288E-01  7.0043E-02  2.3855E-01  2.4656E-01  5.0810E+00 -5.6467E-02  1.4396E-01 -9.9228E-02  4.2626E-01 -1.3029E+00
-            -9.8946E-02  1.5121E-01 -3.7323E-02  8.3249E-02
- GRADIENT:   4.5879E-03  6.2192E-03  1.2804E-03  1.1675E-03 -2.4823E-04  8.8577E-03 -1.1757E-03 -5.5296E-05 -1.2270E-03 -5.8453E-05
-            -2.6858E-03  7.6384E-05  5.7882E-04 -1.1247E-03
+0ITERATION NO.:   29    OBJECTIVE VALUE:   742.277585568294        NO. OF FUNC. EVALS.: 236
+ CUMULATIVE NO. OF FUNC. EVALS.:      242
+ NPARAMETR:  4.8526E-03  9.5521E-01  3.2957E-01  3.9345E-02  1.6836E-02  4.2690E-02 -4.4192E-02  2.5937E-02 -1.6893E-03  6.5449E-02
+             9.8305E-01  2.4043E-01  9.8305E-01  1.2804E-02
+ PARAMETER:  1.3289E-01  7.0047E-02  2.3848E-01  2.4653E-01  5.0811E+00  1.4401E-01 -5.6422E-02 -9.9250E-02 -1.3039E+00  4.2600E-01
+             6.7198E-02  1.2806E-01 -2.0281E-01  8.3206E-02
+ GRADIENT:   3.6354E-02 -3.8722E-02  9.8730E-03 -7.4511E-04  2.1054E-04 -2.2051E-03 -7.2372E-03 -2.0866E-03 -1.1716E-04 -5.2632E-03
+             4.8102E-04 -3.7513E-03  9.6378E-03 -4.2279E-03
 
  #TERM:
 0MINIMIZATION SUCCESSFUL
- NO. OF FUNCTION EVALUATIONS USED:      254
- NO. OF SIG. DIGITS IN FINAL EST.:  3.2
+ NO. OF FUNCTION EVALUATIONS USED:      242
+ NO. OF SIG. DIGITS IN FINAL EST.:  3.1
 
  ETABAR IS THE ARITHMETIC MEAN OF THE ETA-ESTIMATES,
  AND THE P-VALUE IS GIVEN FOR THE NULL HYPOTHESIS THAT THE TRUE MEAN IS 0.
 
- ETABAR:         8.4641E-04 -3.7304E-04 -2.5039E-10  1.4214E-09
- SE:             2.1367E-02  1.8873E-02  1.2908E-01  1.2908E-01
+ ETABAR:         8.4598E-04 -3.7115E-04  1.4169E-09 -2.4938E-10
+ SE:             2.1364E-02  1.8872E-02  1.2908E-01  1.2908E-01
  N:                      59          59          59          59
 
- P VAL.:         9.6840E-01  9.8423E-01  1.0000E+00  1.0000E+00
+ P VAL.:         9.6841E-01  9.8431E-01  1.0000E+00  1.0000E+00
 
- ETASHRINKSD(%)  1.6552E+01  9.2166E+00  1.0000E-10  1.0000E-10
- ETASHRINKVR(%)  3.0364E+01  1.7584E+01  1.0000E-10  1.0000E-10
- EBVSHRINKSD(%)  1.7287E+01  9.9589E+00  1.0158E-06  1.0246E-05
- EBVSHRINKVR(%)  3.1585E+01  1.8926E+01  2.0317E-06  2.0492E-05
- EPSSHRINKSD(%)  1.8792E+01  9.9964E+01
- EPSSHRINKVR(%)  3.4052E+01  1.0000E+02
+ ETASHRINKSD(%)  1.7272E+01  9.9911E+00  1.0000E-10  1.0000E-10
+ ETASHRINKVR(%)  3.1561E+01  1.8984E+01  1.0000E-10  1.0000E-10
+ EBVSHRINKSD(%)  1.7296E+01  9.9613E+00  1.0246E-05  1.0158E-06
+ EBVSHRINKVR(%)  3.1600E+01  1.8930E+01  2.0492E-05  2.0316E-06
+ RELATIVEINF(%)  1.5929E+01  3.3420E+01  1.0000E+02  1.0000E+02
+ EPSSHRINKSD(%)  1.8794E+01  9.9964E+01
+ EPSSHRINKVR(%)  3.4056E+01  1.0000E+02
 
   
  TOTAL DATA POINTS NORMALLY DISTRIBUTED (N):          273
  N*LOG(2PI) CONSTANT TO OBJECTIVE FUNCTION:    501.74043912975128     
- OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    742.27758201057873     
- OBJECTIVE FUNCTION VALUE WITH CONSTANT:       1244.0180211403299     
+ OBJECTIVE FUNCTION VALUE WITHOUT CONSTANT:    742.27758556829394     
+ OBJECTIVE FUNCTION VALUE WITH CONSTANT:       1244.0180246980453     
  REPORTED OBJECTIVE FUNCTION DOES NOT CONTAIN CONSTANT
   
  TOTAL EFFECTIVE ETAS (NIND*NETA):                           236
   
  #TERE:
- Elapsed estimation  time in seconds:     0.74
- Elapsed covariance  time in seconds:     0.50
- Elapsed postprocess time in seconds:     0.12
+ Elapsed estimation  time in seconds:     0.87
+ Elapsed covariance  time in seconds:     0.71
+ Elapsed postprocess time in seconds:     0.14
 1
  
  
@@ -358,7 +362,7 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 
          TH 1      TH 2      TH 3      TH 4      TH 5     
  
-         4.85E-03  9.55E-01  3.30E-01  6.42E+00  1.53E+00
+         4.85E-03  9.55E-01  3.30E-01  1.53E+00  6.42E+00
  
 
 
@@ -374,10 +378,10 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +        1.68E-02  2.59E-02
  
  ETA3
-+       -4.42E-02  6.55E-02  9.83E-01
++        4.27E-02 -1.69E-03  9.83E-01
  
  ETA4
-+        4.27E-02 -1.68E-03  2.40E-01  9.83E-01
++       -4.42E-02  6.54E-02  2.40E-01  9.83E-01
  
 
 
@@ -407,10 +411,10 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +        5.27E-01  1.61E-01
  
  ETA3
-+       -2.25E-01  4.10E-01  9.91E-01
++        2.17E-01 -1.06E-02  9.91E-01
  
  ETA4
-+        2.17E-01 -1.05E-02  2.45E-01  9.91E-01
++       -2.25E-01  4.10E-01  2.45E-01  9.91E-01
  
 
 
@@ -453,13 +457,13 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +        2.03E-02
  
  ETA2
-+        1.16E-02  8.39E-03
++        1.17E-02  8.38E-03
  
  ETA3
-+        4.74E-02  3.70E-02  1.85E-01
++        6.19E-02  3.62E-02  2.41E-01
  
  ETA4
-+        6.19E-02  3.62E-02  1.66E-01  2.41E-01
++        4.74E-02  3.70E-02  1.66E-01  1.85E-01
  
 
 
@@ -469,7 +473,7 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
          EPS1      EPS2     
  
  EPS1
-+        2.48E-03
++        2.47E-03
  
  EPS2
 +       ......... .........
@@ -486,13 +490,13 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +        5.12E-02
  
  ETA2
-+        2.65E-01  2.61E-02
++        2.66E-01  2.60E-02
  
  ETA3
-+        2.66E-01  1.88E-01  9.31E-02
++        2.80E-01  2.27E-01  1.21E-01
  
  ETA4
-+        2.80E-01  2.27E-01  1.61E-01  1.21E-01
++        2.66E-01  1.88E-01  1.61E-01  9.31E-02
  
 
 
@@ -520,13 +524,13 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
              OM33      OM34      OM44      SG11      SG12      SG22  
  
  TH 1
-+        4.32E-08
++        4.31E-08
  
  TH 2
-+        9.15E-07  5.96E-04
++        9.19E-07  5.96E-04
  
  TH 3
-+       -6.86E-07 -1.38E-03  1.78E-02
++       -7.05E-07 -1.38E-03  1.78E-02
  
  TH 4
 +       ......... ......... ......... .........
@@ -535,41 +539,41 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +       ......... ......... ......... ......... .........
  
  OM11
-+       -2.39E-07  1.07E-04  1.68E-04 ......... .........  4.12E-04
++       -2.40E-07  1.07E-04  1.66E-04 ......... .........  4.13E-04
  
  OM12
-+        6.16E-07  6.54E-05  1.32E-04 ......... .........  1.89E-04  1.36E-04
++        6.11E-07  6.55E-05  1.29E-04 ......... .........  1.90E-04  1.36E-04
  
  OM13
-+        1.60E-06  2.78E-04  6.99E-04 ......... .........  3.07E-04  3.53E-04  2.25E-03
++       -1.34E-06  4.92E-04  5.84E-04 ......... .........  6.84E-04  3.38E-04  3.83E-03
  
  OM14
-+       -1.37E-06  4.93E-04  5.80E-04 ......... .........  6.84E-04  3.36E-04  1.98E-03  3.83E-03
++        1.61E-06  2.77E-04  6.97E-04 ......... .........  3.08E-04  3.54E-04  1.98E-03  2.25E-03
  
  OM22
-+        6.71E-08 -4.07E-06  5.23E-04 ......... ......... -3.32E-06  1.31E-05  1.28E-04  1.90E-04  7.04E-05
++        7.40E-08 -4.29E-06  5.25E-04 ......... ......... -3.44E-06  1.31E-05  1.88E-04  1.27E-04  7.02E-05
  
  OM23
-+        5.90E-07 -2.72E-04  3.29E-03 ......... .........  1.20E-04  6.85E-05  2.11E-04  5.39E-04  2.07E-04  1.37E-03
++        2.13E-06  7.58E-05  9.33E-04 ......... .........  1.04E-04  1.70E-04  3.48E-04  5.39E-04  4.91E-05  1.31E-03
  
  OM24
-+        2.14E-06  7.57E-05  9.34E-04 ......... .........  1.04E-04  1.70E-04  5.38E-04  3.46E-04  4.89E-05  4.10E-04  1.31E-03
++        5.91E-07 -2.71E-04  3.29E-03 ......... .........  1.19E-04  6.80E-05  5.39E-04  2.10E-04  2.07E-04  4.10E-04  1.37E-03
  
  OM33
-+        5.26E-07  1.55E-04  2.12E-03 ......... ......... -9.15E-05 -1.73E-04 -1.87E-04  1.88E-03  3.42E-04  1.85E-03 -4.67E-04
-          3.41E-02
++        2.21E-06  7.01E-04  1.48E-03 ......... .........  5.06E-04  2.98E-04  4.91E-03  1.19E-03  7.42E-04  1.38E-03  2.61E-03
+          5.80E-02
  
  OM34
-+        3.55E-06  6.50E-04  3.46E-03 ......... .........  3.24E-04  5.72E-04  2.65E-03  6.55E-04  1.37E-04  1.33E-04  3.36E-03
-          8.11E-03  2.76E-02
++        3.56E-06  6.50E-04  3.47E-03 ......... .........  3.23E-04  5.72E-04  6.51E-04  2.65E-03  1.37E-04  3.36E-03  1.33E-04
+          9.19E-03  2.76E-02
  
  OM44
-+        2.16E-06  7.03E-04  1.47E-03 ......... .........  5.08E-04  2.98E-04  1.20E-03  4.93E-03  7.45E-04  2.61E-03  1.38E-03
-          1.22E-02  9.19E-03  5.80E-02
++        5.63E-07  1.55E-04  2.13E-03 ......... ......... -9.47E-05 -1.74E-04  1.87E-03 -1.97E-04  3.41E-04 -4.67E-04  1.85E-03
+          1.22E-02  8.11E-03  3.41E-02
  
  SG11
-+        1.42E-07  1.52E-06  6.54E-05 ......... ......... -4.02E-06 -4.52E-06 -3.17E-05 -4.12E-05 -1.64E-06  3.80E-06 -1.08E-06
-          2.81E-05  4.56E-06 -3.18E-05  6.13E-06
++        1.39E-07  1.76E-06  6.52E-05 ......... ......... -4.22E-06 -4.79E-06 -4.02E-05 -3.16E-05 -1.35E-06 -1.26E-06  3.99E-06
+         -2.91E-05  5.30E-06  3.06E-05  6.08E-06
  
  SG12
 +       ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... .........
@@ -595,10 +599,10 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +        2.08E-04
  
  TH 2
-+        1.80E-01  2.44E-02
++        1.81E-01  2.44E-02
  
  TH 3
-+       -2.47E-02 -4.25E-01  1.34E-01
++       -2.54E-02 -4.24E-01  1.34E-01
  
  TH 4
 +       ......... ......... ......... .........
@@ -607,41 +611,41 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +       ......... ......... ......... ......... .........
  
  OM11
-+       -5.66E-02  2.15E-01  6.20E-02 ......... .........  2.03E-02
++       -5.70E-02  2.15E-01  6.11E-02 ......... .........  2.03E-02
  
  OM12
-+        2.54E-01  2.30E-01  8.46E-02 ......... .........  8.01E-01  1.16E-02
++        2.53E-01  2.30E-01  8.26E-02 ......... .........  8.01E-01  1.17E-02
  
  OM13
-+        1.62E-01  2.40E-01  1.10E-01 ......... .........  3.19E-01  6.39E-01  4.74E-02
++       -1.04E-01  3.26E-01  7.07E-02 ......... .........  5.45E-01  4.68E-01  6.19E-02
  
  OM14
-+       -1.06E-01  3.26E-01  7.02E-02 ......... .........  5.44E-01  4.66E-01  6.74E-01  6.19E-02
++        1.64E-01  2.39E-01  1.10E-01 ......... .........  3.20E-01  6.41E-01  6.74E-01  4.74E-02
  
  OM22
-+        3.85E-02 -1.99E-02  4.67E-01 ......... ......... -1.95E-02  1.34E-01  3.21E-01  3.67E-01  8.39E-03
++        4.26E-02 -2.10E-02  4.69E-01 ......... ......... -2.02E-02  1.34E-01  3.64E-01  3.18E-01  8.38E-03
  
  OM23
-+        7.66E-02 -3.01E-01  6.66E-01 ......... .........  1.59E-01  1.59E-01  1.20E-01  2.35E-01  6.67E-01  3.70E-02
++        2.84E-01  8.58E-02  1.93E-01 ......... .........  1.41E-01  4.04E-01  1.55E-01  3.14E-01  1.62E-01  3.62E-02
  
  OM24
-+        2.84E-01  8.56E-02  1.93E-01 ......... .........  1.41E-01  4.04E-01  3.14E-01  1.54E-01  1.61E-01  3.06E-01  3.62E-02
++        7.69E-02 -3.00E-01  6.66E-01 ......... .........  1.58E-01  1.58E-01  2.35E-01  1.20E-01  6.69E-01  3.06E-01  3.70E-02
  
  OM33
-+        1.37E-02  3.43E-02  8.60E-02 ......... ......... -2.44E-02 -8.03E-02 -2.14E-02  1.64E-01  2.21E-01  2.71E-01 -6.99E-02
-          1.85E-01
++        4.42E-02  1.19E-01  4.61E-02 ......... .........  1.03E-01  1.06E-01  3.30E-01  1.04E-01  3.68E-01  1.58E-01  2.93E-01
+          2.41E-01
  
  OM34
-+        1.03E-01  1.60E-01  1.56E-01 ......... .........  9.61E-02  2.96E-01  3.37E-01  6.37E-02  9.86E-02  2.16E-02  5.59E-01
-          2.64E-01  1.66E-01
++        1.03E-01  1.60E-01  1.56E-01 ......... .........  9.59E-02  2.95E-01  6.34E-02  3.36E-01  9.85E-02  5.59E-01  2.17E-02
+          2.30E-01  1.66E-01
  
  OM44
-+        4.32E-02  1.20E-01  4.58E-02 ......... .........  1.04E-01  1.06E-01  1.05E-01  3.30E-01  3.68E-01  2.93E-01  1.58E-01
-          2.74E-01  2.30E-01  2.41E-01
++        1.47E-02  3.45E-02  8.63E-02 ......... ......... -2.53E-02 -8.11E-02  1.64E-01 -2.25E-02  2.21E-01 -6.98E-02  2.71E-01
+          2.74E-01  2.65E-01  1.85E-01
  
  SG11
-+        2.77E-01  2.51E-02  1.98E-01 ......... ......... -8.00E-02 -1.57E-01 -2.70E-01 -2.69E-01 -7.87E-02  4.14E-02 -1.20E-02
-          6.15E-02  1.11E-02 -5.34E-02  2.48E-03
++        2.71E-01  2.93E-02  1.98E-01 ......... ......... -8.43E-02 -1.67E-01 -2.64E-01 -2.70E-01 -6.53E-02 -1.41E-02  4.37E-02
+         -4.89E-02  1.29E-02  6.72E-02  2.47E-03
  
  SG12
 +       ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... .........
@@ -667,7 +671,7 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +        4.53E+07
  
  TH 2
-+       -7.81E+04  3.18E+03
++       -7.79E+04  3.19E+03
  
  TH 3
 +        8.90E+03  2.46E+02  1.59E+02
@@ -679,41 +683,41 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +       ......... ......... ......... ......... .........
  
  OM11
-+        6.07E+05 -1.08E+03  3.28E+02 ......... .........  5.19E+04
++        6.09E+05 -1.07E+03  3.30E+02 ......... .........  5.21E+04
  
  OM12
-+       -1.19E+06  1.18E+03 -5.53E+02 ......... ......... -8.92E+04  1.69E+05
++       -1.19E+06  1.16E+03 -5.59E+02 ......... ......... -8.98E+04  1.70E+05
  
  OM13
-+        7.27E+04  8.30E+01  8.45E+01 ......... .........  1.36E+04 -2.50E+04  5.25E+03
++       -3.68E+04 -4.31E+02 -1.09E+02 ......... ......... -1.03E+04  1.73E+04  3.01E+03
  
  OM14
-+       -3.66E+04 -4.30E+02 -1.08E+02 ......... ......... -1.03E+04  1.72E+04 -3.52E+03  3.00E+03
++        7.33E+04  8.52E+01  8.51E+01 ......... .........  1.37E+04 -2.51E+04 -3.53E+03  5.26E+03
  
  OM22
-+        3.61E+05 -3.14E+03 -1.26E+02 ......... .........  3.15E+04 -4.90E+04  6.23E+03 -6.08E+03  5.44E+04
++        3.66E+05 -3.13E+03 -1.20E+02 ......... .........  3.19E+04 -4.98E+04 -6.15E+03  6.33E+03  5.48E+04
  
  OM23
-+       -1.04E+05  7.80E+02 -3.93E+02 ......... ......... -8.13E+03  1.27E+04 -1.84E+03  1.57E+03 -1.01E+04  4.36E+03
++        2.25E+04 -1.62E+02  1.55E+02 ......... .........  8.24E+03 -1.45E+04 -1.89E+03  2.39E+03  6.23E+03  3.21E+03
  
  OM24
-+        2.21E+04 -1.64E+02  1.54E+02 ......... .........  8.20E+03 -1.44E+04  2.38E+03 -1.88E+03  6.17E+03 -2.38E+03  3.20E+03
++       -1.05E+05  7.78E+02 -3.94E+02 ......... ......... -8.21E+03  1.28E+04  1.59E+03 -1.86E+03 -1.02E+04 -2.40E+03  4.38E+03
  
  OM33
-+        3.31E+01  3.40E+00  2.66E+01 ......... .........  7.61E+02 -1.16E+03  2.68E+02 -2.25E+02  5.20E+02 -2.76E+02  2.64E+02
-          6.38E+01
++       -1.46E+02  1.43E+01  1.76E+01 ......... .........  3.89E+02 -6.63E+02 -1.35E+02  1.65E+02  2.95E+01  8.63E+01 -1.07E+02
+          2.98E+01
  
  OM34
-+        2.52E+03 -7.84E+01 -5.44E+01 ......... ......... -1.38E+03  2.23E+03 -5.29E+02  4.22E+02 -9.00E+02  4.52E+02 -5.16E+02
-         -6.34E+01  1.49E+02
++        2.48E+03 -7.87E+01 -5.44E+01 ......... ......... -1.39E+03  2.24E+03  4.23E+02 -5.30E+02 -9.09E+02 -5.17E+02  4.54E+02
+         -2.84E+01  1.49E+02
  
  OM44
-+       -1.74E+02  1.42E+01  1.75E+01 ......... .........  3.87E+02 -6.59E+02  1.65E+02 -1.35E+02  2.67E+01 -1.06E+02  8.59E+01
-          7.88E+00 -2.83E+01  2.98E+01
++        1.05E+02  3.60E+00  2.67E+01 ......... .........  7.67E+02 -1.17E+03 -2.26E+02  2.69E+02  5.27E+02  2.65E+02 -2.77E+02
+          7.92E+00 -6.35E+01  6.39E+01
  
  SG11
-+       -1.31E+06 -5.12E+03 -2.20E+03 ......... ......... -3.35E+04  6.19E+04 -5.34E+03  7.10E+03 -1.01E+04  6.02E+03 -4.37E+03
-         -6.16E+02  7.94E+02 -2.45E+02  2.56E+05
++       -1.33E+06 -5.13E+03 -2.21E+03 ......... ......... -3.58E+04  6.66E+04  7.49E+03 -5.92E+03 -1.27E+04 -4.76E+03  6.51E+03
+         -2.57E+02  8.41E+02 -6.53E+02  2.60E+05
  
  SG12
 +       ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... .........
@@ -723,7 +727,42 @@ LOADED PHI/ETA DATA FROM FILE model_4_input.phi
 +       ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... ......... .........
          ......... ......... ......... ......... ......... .........
  
+1
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ ************************************************************************************************************************
+ ********************                                                                                ********************
+ ********************               FIRST ORDER CONDITIONAL ESTIMATION WITH INTERACTION              ********************
+ ********************                      EIGENVALUES OF COR MATRIX OF ESTIMATE                     ********************
+ ********************                                                                                ********************
+ ************************************************************************************************************************
+ 
+
+             1         2         3         4         5         6         7         8         9        10        11        12
+             13        14
+ 
+         1.46E-02  1.25E-01  1.50E-01  2.65E-01  3.97E-01  5.04E-01  6.84E-01  7.54E-01  9.65E-01  1.11E+00  1.42E+00  1.63E+00
+          2.36E+00  3.62E+00
+ 
  Elapsed finaloutput time in seconds:     0.02
- #CPUT: Total CPU Time in Seconds,        1.401
+ #CPUT: Total CPU Time in Seconds,        1.808
 Stop Time:
-mån 23 mar 2020 08:55:25 CET
+ons 18 sep 2024 11:33:16 CEST

@@ -104,6 +104,7 @@ def set_initial_estimates(
     model: Model,
     inits: Mapping[str, float],
     move_est_close_to_bounds: bool = False,
+    strict: bool = True,
 ):
     """Update initial parameter estimate for a model
 
@@ -119,6 +120,8 @@ def set_initial_estimates(
     move_est_close_to_bounds : bool
         Move estimates that are close to bounds. If correlation >0.99 the correlation will
         be set to 0.9, if variance is <0.001 the variance will be set to 0.01.
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Returns
     -------
@@ -147,7 +150,8 @@ def set_initial_estimates(
     unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
 
     """
-
+    if strict:
+        _check_input_params(model, inits.keys())
     if move_est_close_to_bounds:
         inits = _move_est_close_to_bounds(model, inits)
 
@@ -202,7 +206,7 @@ def _is_zero_fix(param):
     return param.init == 0 and param.fix
 
 
-def set_upper_bounds(model: Model, bounds: dict[str, float]):
+def set_upper_bounds(model: Model, bounds: dict[str, float], strict: bool = True):
     """Set parameter upper bounds
 
     Parameters
@@ -211,6 +215,8 @@ def set_upper_bounds(model: Model, bounds: dict[str, float]):
         Pharmpy model
     bounds : dict
         A dictionary of parameter bounds for parameters to change
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Returns
     -------
@@ -230,6 +236,8 @@ def set_upper_bounds(model: Model, bounds: dict[str, float]):
     set_lower_bounds : Set parameter lower bounds
     unconstrain_parameters : Remove all constraints of parameters
     """
+    if strict:
+        _check_input_params(model, bounds.keys())
     new = []
     for p in model.parameters:
         if p.name in bounds:
@@ -243,7 +251,7 @@ def set_upper_bounds(model: Model, bounds: dict[str, float]):
     return model.update_source()
 
 
-def set_lower_bounds(model: Model, bounds: dict[str, float]):
+def set_lower_bounds(model: Model, bounds: dict[str, float], strict: bool = True):
     """Set parameter lower bounds
 
     Parameters
@@ -252,6 +260,8 @@ def set_lower_bounds(model: Model, bounds: dict[str, float]):
         Pharmpy model
     bounds : dict
         A dictionary of parameter bounds for parameters to change
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Returns
     -------
@@ -271,6 +281,8 @@ def set_lower_bounds(model: Model, bounds: dict[str, float]):
     set_upper_bounds : Set parameter upper bounds
     unconstrain_parameters : Remove all constraints of parameters
     """
+    if strict:
+        _check_input_params(model, bounds.keys())
     new = []
     for p in model.parameters:
         if p.name in bounds:
@@ -285,7 +297,7 @@ def set_lower_bounds(model: Model, bounds: dict[str, float]):
     return model
 
 
-def fix_parameters(model: Model, parameter_names: Union[list[str], str]):
+def fix_parameters(model: Model, parameter_names: Union[list[str], str], strict: bool = True):
     """Fix parameters
 
     Fix all listed parameters
@@ -296,6 +308,8 @@ def fix_parameters(model: Model, parameter_names: Union[list[str], str]):
         Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Returns
     -------
@@ -323,6 +337,8 @@ def fix_parameters(model: Model, parameter_names: Union[list[str], str]):
     """
     if isinstance(parameter_names, str):
         parameter_names = [parameter_names]
+    if strict:
+        _check_input_params(model, parameter_names)
     params = model.parameters
     new = []
     for p in params:
@@ -335,7 +351,15 @@ def fix_parameters(model: Model, parameter_names: Union[list[str], str]):
     return model.update_source()
 
 
-def unfix_parameters(model: Model, parameter_names: Union[list[str], str]):
+def _check_input_params(model, parameter_names):
+    params_not_in_model = [
+        p_name for p_name in parameter_names if p_name not in model.parameters.names
+    ]
+    if params_not_in_model:
+        raise ValueError(f'Parameters not found in model: {params_not_in_model}')
+
+
+def unfix_parameters(model: Model, parameter_names: Union[list[str], str], strict: bool = True):
     """Unfix parameters
 
     Unfix all listed parameters
@@ -346,6 +370,8 @@ def unfix_parameters(model: Model, parameter_names: Union[list[str], str]):
         Pharmpy model
     parameter_names : list or str
         one parameter name or a list of parameter names
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Returns
     -------
@@ -375,6 +401,8 @@ def unfix_parameters(model: Model, parameter_names: Union[list[str], str]):
     """
     if isinstance(parameter_names, str):
         parameter_names = [parameter_names]
+    if strict:
+        _check_input_params(model, parameter_names)
     params = model.parameters
     new = []
     for p in params:
@@ -388,7 +416,7 @@ def unfix_parameters(model: Model, parameter_names: Union[list[str], str]):
     return model
 
 
-def fix_parameters_to(model: Model, inits: dict[str, float]):
+def fix_parameters_to(model: Model, inits: dict[str, float], strict: bool = True):
     """Fix parameters to
 
     Fix all listed parameters to specified value/values
@@ -399,6 +427,8 @@ def fix_parameters_to(model: Model, inits: dict[str, float]):
         Pharmpy model
     inits : dict
         Inits for all parameters to fix and set init
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Returns
     -------
@@ -424,12 +454,12 @@ def fix_parameters_to(model: Model, inits: dict[str, float]):
         function
 
     """
-    model = fix_parameters(model, inits.keys())
-    model = set_initial_estimates(model, inits)
+    model = fix_parameters(model, inits.keys(), strict=strict)
+    model = set_initial_estimates(model, inits, strict=strict)
     return model
 
 
-def unfix_parameters_to(model: Model, inits: dict[str, float]):
+def unfix_parameters_to(model: Model, inits: dict[str, float], strict: bool = True):
     """Unfix parameters to
 
     Unfix all listed parameters to specified value/values
@@ -440,6 +470,8 @@ def unfix_parameters_to(model: Model, inits: dict[str, float]):
         Pharmpy model
     inits : dict
         Inits for all parameters to unfix and change init
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Examples
     --------
@@ -467,12 +499,12 @@ def unfix_parameters_to(model: Model, inits: dict[str, float]):
     fix_paramaters_to : Fixing parameters and setting a new initial estimate in the same
         function
     """
-    model = unfix_parameters(model, inits.keys())
-    model = set_initial_estimates(model, inits)
+    model = unfix_parameters(model, inits.keys(), strict=strict)
+    model = set_initial_estimates(model, inits, strict=strict)
     return model
 
 
-def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool]):
+def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool], strict: bool = True):
     """Fix or unfix parameters
 
     Set fixedness of parameters to specified values
@@ -483,6 +515,8 @@ def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool]):
         Pharmpy model
     parameters : dict
         Set fix/unfix for these parameters
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Examples
     --------
@@ -508,6 +542,8 @@ def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool]):
     unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
         function
     """
+    if strict:
+        _check_input_params(model, parameters.keys())
     params = model.parameters
     new = []
     for p in params:
@@ -521,7 +557,7 @@ def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool]):
     return model
 
 
-def unconstrain_parameters(model: Model, parameter_names: list[str]):
+def unconstrain_parameters(model: Model, parameter_names: list[str], strict: bool = True):
     """Remove all constraints from parameters
 
     Parameters
@@ -530,6 +566,8 @@ def unconstrain_parameters(model: Model, parameter_names: list[str]):
         Pharmpy model
     parameter_names : list
         Remove all constraints for the listed parameters
+    strict : bool
+        Whether all parameters in input need to exist in the model. Default is True
 
     Examples
     --------
@@ -554,6 +592,8 @@ def unconstrain_parameters(model: Model, parameter_names: list[str]):
     """
     if isinstance(parameter_names, str):
         parameter_names = [parameter_names]
+    if strict:
+        _check_input_params(model, parameter_names)
     new = []
     for p in model.parameters:
         if p.name in parameter_names:

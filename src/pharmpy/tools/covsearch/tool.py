@@ -21,6 +21,7 @@ from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import parse as mfl_parse
+from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -29,9 +30,13 @@ from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_d
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
-from ..mfl.filter import COVSEARCH_STATEMENT_TYPES
 from ..mfl.parse import ModelFeatures, get_model_features
 from .results import COVSearchResults
+
+COVSEARCH_STATEMENT_TYPES = (
+    Let,
+    Covariate,
+)
 
 NAME_WF = 'covsearch'
 
@@ -86,7 +91,7 @@ def _added_effects(steps: tuple[Step, ...]) -> Iterable[Effect]:
         elif isinstance(step, AdaptiveStep):
             pass
         else:
-            raise ValueError("Unknown step ({step}) added")
+            raise ValueError(f"Unknown step ({step}) added")
 
     pos = {effect: set(indices) for effect, indices in added_effects.items()}
 
