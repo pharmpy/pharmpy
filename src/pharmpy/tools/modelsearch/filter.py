@@ -1,4 +1,5 @@
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
+from pharmpy.tools.mfl.statement.feature.allometry import Allometry
 from pharmpy.tools.mfl.statement.feature.direct_effect import DirectEffect
 from pharmpy.tools.mfl.statement.feature.effect_comp import EffectComp
 from pharmpy.tools.mfl.statement.feature.elimination import Elimination
@@ -14,6 +15,7 @@ MODELSEARCH_STATEMENT_TYPES = (
     Elimination,
     LagTime,
     Transits,
+    Allometry,
 )
 
 

@@ -114,6 +114,11 @@ def start(
     else:
         mfl_statements = search_space
 
+    if mfl_statements.allometry is not None:
+        mfl_allometry = mfl_statements.allometry
+        print(mfl_allometry)
+        mfl_statements = mfl_statements.replace(allometry=None)
+
     # Add base model task
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)

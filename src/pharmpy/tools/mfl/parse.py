@@ -23,6 +23,7 @@ from pharmpy.modeling.odes import (
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
+from pharmpy.tools.mfl.statement.feature.allometry import Allometry
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.direct_effect import DirectEffect
 from pharmpy.tools.mfl.statement.feature.effect_comp import EffectComp
@@ -119,6 +120,7 @@ class ModelFeatures:
         effect_comp=None,
         indirect_effect=tuple(),
         metabolite=None,
+        allometry=None,
     ):
         self._absorption = absorption
         self._elimination = elimination
@@ -130,6 +132,7 @@ class ModelFeatures:
         self._effect_comp = effect_comp
         self._indirect_effect = indirect_effect
         self._metabolite = metabolite
+        self._allometry = allometry
 
     @classmethod
     def create(
@@ -144,6 +147,7 @@ class ModelFeatures:
         effect_comp=None,
         indirect_effect=tuple(),
         metabolite=None,
+        allometry=None,
     ):
         # TODO : Check if allowed input value
         if absorption is not None and not isinstance(absorption, Absorption):
@@ -208,6 +212,7 @@ class ModelFeatures:
             effect_comp=effect_comp,
             indirect_effect=indirect_effect,
             metabolite=metabolite,
+            allometry=allometry,
         )
 
     @classmethod
@@ -222,6 +227,7 @@ class ModelFeatures:
         effect_comp = None
         indirect_effect = tuple()
         metabolite = None
+        allometry = None
         let = {}
 
         for statement in mfl_list:
@@ -247,6 +253,8 @@ class ModelFeatures:
                 indirect_effect += (statement,)
             elif isinstance(statement, Metabolite):
                 metabolite = metabolite + statement if metabolite else statement
+            elif isinstance(statement, Allometry):
+                allometry = statement
             else:
                 raise ValueError(f'Unknown ({type(statement)} statement ({statement}) given.')
 
@@ -284,6 +292,7 @@ class ModelFeatures:
             effect_comp=effect_comp,
             indirect_effect=indirect_effect,
             metabolite=metabolite,
+            allometry=allometry,
         )
         return mfl
 
@@ -302,6 +311,7 @@ class ModelFeatures:
         effect_comp = kwargs.get("effect_comp", self._effect_comp)
         indirect_effect = kwargs.get("indirect_effect", self._indirect_effect)
         metabolite = kwargs.get("metabolite", self._metabolite)
+        allometry = kwargs.get("allometry", self._allometry)
         return ModelFeatures.create(
             absorption=absorption,
             elimination=elimination,
@@ -313,6 +323,7 @@ class ModelFeatures:
             effect_comp=effect_comp,
             indirect_effect=indirect_effect,
             metabolite=metabolite,
+            allometry=allometry,
         )
 
     def replace_features(self, mfl_str):
@@ -327,6 +338,7 @@ class ModelFeatures:
             EffectComp: 'effect_comp',
             IndirectEffect: 'indirect_effect',
             Metabolite: 'metabolite',
+            Allometry: 'allometry',
         }
         mfl_list = _parse(mfl_str)
         kwargs = {}
