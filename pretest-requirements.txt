@@ -10,6 +10,6 @@ filelock==3.16.0
 packaging==24.1
 platformdirs==4.3.3
 pluggy==1.5.0
-pyproject-api==1.7.1
+pyproject-api==1.7.2
 tomli==2.0.1
 virtualenv==20.26.4
