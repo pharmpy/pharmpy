@@ -13,8 +13,8 @@ from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
 from pharmpy.workflows.results import ModelfitResults
 
-from ..mfl.filter import mfl_filtering
 from ..mfl.parse import parse as mfl_parse
+from .filter import mfl_filtering
 
 
 def create_workflow(
