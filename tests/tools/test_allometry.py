@@ -1,3 +1,7 @@
+import sys
+
+import numpy as np
+import packaging
 import pytest
 
 from pharmpy.tools import read_modelfit_results
@@ -9,6 +13,14 @@ from pharmpy.tools.allometry.tool import (
     validate_input,
 )
 from pharmpy.workflows import ModelEntry, Workflow
+
+tflite_condition = (
+    sys.version_info >= (3, 12)
+    and sys.platform == 'win32'
+    or sys.version_info >= (3, 12)
+    and sys.platform == 'darwin'
+    or packaging.version.parse(np.__version__) >= packaging.version.parse("2.0.0")
+)
 
 
 def test_create_workflow():
@@ -57,6 +69,7 @@ def test_get_best_model(load_model_for_test, testdata):
     assert best_model.description != 'allometry'
 
 
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite")
 def test_create_result_tables(load_model_for_test, testdata):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
