@@ -1,3 +1,4 @@
+import pharmpy.deps.scipy as scipy
 from pharmpy.deps import numpy as np
 
 
@@ -28,3 +29,31 @@ def descale_matrix(A, S):
     M2 = M * S
     L = np.tril(M2)
     return L @ L.T
+
+
+def build_initial_values_matrix(rvs, parameters):
+    # Only omegas/sigmas to estimate will be included
+    # so fixed omegas/sigmas will not be included and
+    # omegas for IOV will only be included once
+    blocks = []
+    seen_parameters = []
+    for dist in rvs:
+        if len(dist) == 1:
+            parameter = parameters[dist.variance.name]
+            if parameter.name in seen_parameters:
+                continue
+            seen_parameters.append(parameter.name)
+            if parameter.fix:
+                continue
+            block = parameter.init
+        else:
+            var = dist.variance
+            parameter = parameters[var[0, 0].name]
+            if parameter.name in seen_parameters:
+                continue
+            seen_parameters.append(parameter.name)
+            if parameter.fix:
+                continue
+            block = var.subs(parameters.inits).to_numpy()
+        blocks.append(block)
+    return scipy.linalg.block_diag(*blocks)
