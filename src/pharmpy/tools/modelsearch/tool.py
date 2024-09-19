@@ -14,6 +14,7 @@ from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.parse import parse as mfl_parse
+from .algorithms import _add_allometry
 from .filter import mfl_filtering
 
 
@@ -116,14 +117,15 @@ def start(
 
     if mfl_statements.allometry is not None:
         mfl_allometry = mfl_statements.allometry
-        print(mfl_allometry)
         mfl_statements = mfl_statements.replace(allometry=None)
+    else:
+        mfl_allometry = None
 
     # Add base model task
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
     if not mfl_statements.contain_subset(model_mfl, tool="modelsearch"):
-        base_task = Task("create_base_model", create_base_model, mfl_statements)
+        base_task = Task("create_base_model", create_base_model, mfl_statements, mfl_allometry)
         wb.add_task(base_task, predecessors=start_task)
 
         base_fit = create_fit_workflow(n=1)
@@ -146,10 +148,14 @@ def start(
     )
 
     # Filter the mfl_statements from base model attributes
-    mfl_funcs = filter_mfl_statements(mfl_statements, create_base_model(mfl_statements, model))
+    mfl_funcs = filter_mfl_statements(
+        mfl_statements, create_base_model(mfl_statements, mfl_allometry, model)
+    )
 
     # TODO : Implement task for filtering the search space instead
-    wf_search, candidate_model_tasks = algorithm_func(mfl_funcs, iiv_strategy)
+    wf_search, candidate_model_tasks = algorithm_func(
+        mfl_funcs, iiv_strategy, allometry=mfl_allometry
+    )
 
     if candidate_model_tasks:
         # Clear base description to not interfere with candidate models
@@ -241,7 +247,7 @@ def _update_results(base):
     )
 
 
-def create_base_model(ss, model_or_model_entry):
+def create_base_model(ss, allometry, model_or_model_entry):
     if isinstance(model_or_model_entry, ModelEntry):
         model = model_or_model_entry.model
         res = model_or_model_entry.modelfit_results
@@ -261,6 +267,7 @@ def create_base_model(ss, model_or_model_entry):
     # UPDATE_DESCRIPTION
     # FIXME : Need to be its own parent if the input model shouldn't be ranked with the others
     base = base.replace(name="BASE", description=added_features[1:])
+    base = _add_allometry(base, allometry)
 
     return ModelEntry.create(base, modelfit_results=None, parent=None)
 
