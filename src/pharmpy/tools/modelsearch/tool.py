@@ -266,7 +266,7 @@ def create_base_model(ss, allometry, model_or_model_entry):
         added_features += f';{name[0]}({name[1]})'
     # UPDATE_DESCRIPTION
     # FIXME : Need to be its own parent if the input model shouldn't be ranked with the others
-    base = base.replace(name="BASE", description=added_features[1:])
+    base = base.replace(name="base", description=added_features[1:])
     base = _add_allometry(base, allometry)
 
     return ModelEntry.create(base, modelfit_results=None, parent=None)
@@ -278,10 +278,10 @@ def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries)
     base_model_entry = None
     for model_entry in model_entries:
         model = model_entry.model
-        if not model.name.startswith('modelsearch_run') and model.name == "BASE":
+        if not model.name.startswith('modelsearch_run') and model.name == "base":
             input_model_entry = model_entry
             base_model_entry = model_entry
-        elif not model.name.startswith('modelsearch_run') and model.name != "BASE":
+        elif not model.name.startswith('modelsearch_run') and model.name != "base":
             user_input_model_entry = model_entry
         else:
             res_model_entries.append(model_entry)
