@@ -71,11 +71,24 @@ def build_parameter_coordinates(A):
     return coords
 
 
-def unpack_ucp_matrix(x, n, coords):
+def unpack_ucp_matrix(x, coords):
     # Create an n times n matrix
     # Put each value in the vector x at the position of coords
     # Let rest of elements be zero
+    n = coords[-1][0] + 1
     A = np.zeros((n, n))
     for val, (row, col) in zip(x, coords):
         A[row, col] = val
     return A
+
+
+def split_ucps(x, omega_coords, sigma_coords):
+    # Split the ucp vector into a theta vector, an omega matrix and a sigma matrix
+    # All still on the ucp scale
+    nomegas = len(omega_coords)
+    nsigmas = len(sigma_coords)
+    nthetas = len(x) - nomegas - nsigmas
+    theta_ucp = x[0:nthetas]
+    omega_ucp = unpack_ucp_matrix(x[nthetas : nthetas + nomegas], omega_coords)
+    sigma_ucp = unpack_ucp_matrix(x[nthetas + nomegas :], sigma_coords)
+    return theta_ucp, omega_ucp, sigma_ucp
