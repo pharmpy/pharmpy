@@ -1,3 +1,5 @@
+import math
+
 import pharmpy.deps.scipy as scipy
 from pharmpy.deps import numpy as np
 
@@ -92,3 +94,44 @@ def split_ucps(x, omega_coords, sigma_coords):
     omega_ucp = unpack_ucp_matrix(x[nthetas : nthetas + nomegas], omega_coords)
     sigma_ucp = unpack_ucp_matrix(x[nthetas + nomegas :], sigma_coords)
     return theta_ucp, omega_ucp, sigma_ucp
+
+
+def scale_thetas(parameters):
+    # parameters should only contain non-fix thetas
+    # returns vectors of scaled theta, lower bound (or None if no bounds)
+    # range_ul, the range between lower and upper bound (or None if no bounds)
+    theta = []
+    lb = []
+    range_ul_vec = []
+
+    for p in parameters:
+        if p.lower <= -1000000 and p.upper >= 1000000:
+            # Unbounded
+            theta.append(p.init / 0.1)
+            lb.append(None)
+            range_ul_vec.append(None)
+        else:
+            # Bounded in both or one direction
+            upper = p.upper if p.upper < 1000000 else 1000000
+            lower = p.lower if p.lower > -1000000 else -1000000
+            range_ul = upper - lower
+            range_prop = (p.init - lower) / range_ul
+            scaled = 0.1 - math.log(range_prop / (1.0 - range_prop))
+            theta.append(scaled)
+            lb.append(lower)
+            range_ul_vec.append(range_ul)
+    return (theta, lb, range_ul_vec)
+
+
+def descale_thetas(x, scale):
+    # Descale thetas in vector x given theta scale tuple
+    # * scale theta if no bounds
+    descaled = []
+    for ucp, scale_theta, lb, range_ul in zip(x, scale[0], scale[1], scale[2]):
+        if lb is None:
+            descaled.append(ucp * scale_theta)
+        else:
+            diff_scale = ucp - scale_theta
+            prop_scale = np.exp(diff_scale) / (1.0 + np.exp(diff_scale))
+            descaled.append(prop_scale * range_ul + lb)
+    return np.array(descaled)

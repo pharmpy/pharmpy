@@ -4,7 +4,9 @@ from pharmpy.tools.modelfit.ucp import (
     build_initial_values_matrix,
     build_parameter_coordinates,
     descale_matrix,
+    descale_thetas,
     scale_matrix,
+    scale_thetas,
     split_ucps,
     unpack_ucp_matrix,
 )
@@ -73,3 +75,14 @@ def test_split_ucps(load_model_for_test, testdata):
     assert np.array_equal(thetas, [1.0, 2.0, 3.0])
     assert np.array_equal(omegas, [[4.0, 0.0, 0.0], [5.0, 6.0, 0.0], [0.0, 0.0, 7.0]])
     assert np.array_equal(sigmas, [[8.0]])
+
+
+def test_scale_thetas(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    parameters = model.parameters[(0, 1, 2)]
+    scale = scale_thetas(parameters)
+    x = descale_thetas([0.1, 0.1, 0.1], scale)
+    assert np.allclose(x, np.array([0.00469307, 1.00916, 0.1]))
+
+    x = descale_thetas([1.0053e-01, 7.5015e-02, 1.5264e-01], scale)
+    assert np.allclose(x, np.array([4.6955e-03, 9.8426e-01, 1.5892e-01]), atol=1e-5)
