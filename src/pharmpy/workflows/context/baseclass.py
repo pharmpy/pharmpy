@@ -129,6 +129,14 @@ class Context(ABC):
         self.log_message(severity="info", message=message)
         print(message)
 
+    def log_error(self, message: str):
+        """Add an error message to the log"""
+        self.log_message(severity="error", message=message)
+
+    def log_warning(self, message: str):
+        """Add a warning message to the log"""
+        self.log_message(severity="warning", message=message)
+
     @abstractmethod
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
         """Retrieve the entire log

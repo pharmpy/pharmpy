@@ -58,7 +58,7 @@ def test_common_options(tmp_path):
 def test_log(tmp_path):
     ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     ctx.log_message('error', "This didn't work")
-    ctx.log_message('warning', "Potential disaster")
+    ctx.log_warning("Potential disaster")
     df = ctx.retrieve_log()
     assert tuple(df.columns) == ('path', 'time', 'severity', 'message')
     assert tuple(df['path']) == ('mycontext', 'mycontext')
@@ -82,7 +82,8 @@ def test_log(tmp_path):
     s = 'String, with, commas'
     s2 = '"Quoted"'
     ctx.log_message('error', s)
-    ctx.log_message('error', s2)
+    ctx.log_error(s2)
+    ctx.log_info(s2)
     df = ctx.retrieve_log()
     assert df.loc[3, 'message'] == s
     assert df.loc[4, 'message'] == s2
