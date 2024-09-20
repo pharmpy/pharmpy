@@ -69,14 +69,14 @@ def test_get_best_model(load_model_for_test, testdata):
     assert best_model.description != 'allometry'
 
 
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite")
-def test_create_result_tables(load_model_for_test, testdata):
+@pytest.mark.filterwarnings("ignore:UserWarning")
+def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
     model_allometry = model_start.replace(name='allometry', description='allometry')
 
     me_start = ModelEntry(model_start, modelfit_results=res_start)
-    me_allometry = ModelEntry(model_allometry, modelfit_results=res_start)
+    me_allometry = model_entry_factory([model_allometry])[0]
     summods, _, _, _ = create_result_tables(me_start, me_allometry)
     assert len(summods) == 2
 
