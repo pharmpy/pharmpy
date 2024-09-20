@@ -14,7 +14,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.estimation_steps import add_derivative
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, abort_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from .results import calculate_results
@@ -136,7 +136,7 @@ def create_derivative_model(context, modelentry):
 
 def _create_linearized_model(context, model_name, description, model, derivative_model_entry):
     if derivative_model_entry.modelfit_results is None:
-        abort_workflow(context, "Error while running the derivative model")
+        context.abort_workflow("Error while running the derivative model")
     df = cleanup_columns(derivative_model_entry)
 
     derivative_model = derivative_model_entry.model

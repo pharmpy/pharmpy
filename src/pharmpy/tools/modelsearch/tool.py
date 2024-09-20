@@ -10,7 +10,7 @@ from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.parse import parse as mfl_parse
@@ -174,7 +174,7 @@ def start(
         else:
             wb.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
-    res = call_workflow(wb, 'run_candidate_models', context)
+    res = context.call_workflow(wb, 'run_candidate_models')
 
     context.store_final_model_entry(res.final_model)
 

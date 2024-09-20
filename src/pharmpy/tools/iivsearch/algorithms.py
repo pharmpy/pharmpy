@@ -16,14 +16,7 @@ from pharmpy.modeling import (
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.run import calculate_bic_penalty, get_rankval
-from pharmpy.workflows import (
-    ModelEntry,
-    ModelfitResults,
-    Task,
-    Workflow,
-    WorkflowBuilder,
-    call_workflow,
-)
+from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
 
 
@@ -164,7 +157,7 @@ def stepwise_BU_algorithm(
     bu_base_model_wb.add_task(bu_base_entry)
     wf_fit = modelfit.create_fit_workflow(n=len(bu_base_model_wb.output_tasks))
     bu_base_model_wb.insert_workflow(wf_fit)
-    best_model_entry = call_workflow(Workflow(bu_base_model_wb), 'fit_BU_base_model', context)
+    best_model_entry = context.call_workflow(Workflow(bu_base_model_wb), 'fit_BU_base_model')
     # Filter IIV names to contain all combination with the base parameter in it
     iiv_names_to_add = list(non_empty_subsets(iiv_names))
     if parameters_to_ignore != {""}:
@@ -221,8 +214,8 @@ def stepwise_BU_algorithm(
         temp_wb.insert_workflow(wf_fit, predecessors=temp_wb.output_tasks)
         task_gather = Task('gather', lambda *model_entries: model_entries)
         temp_wb.add_task(task_gather, predecessors=temp_wb.output_tasks)
-        new_candidate_modelentries = call_workflow(
-            Workflow(temp_wb), f'td_exhaustive_no_of_etas-fit-{step_number}', context
+        new_candidate_modelentries = context.call_workflow(
+            Workflow(temp_wb), f'td_exhaustive_no_of_etas-fit-{step_number}'
         )
         all_modelentries.extend(new_candidate_modelentries)
         old_best_name = best_model_entry.model.name

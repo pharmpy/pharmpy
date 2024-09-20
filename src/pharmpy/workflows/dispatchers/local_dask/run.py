@@ -6,7 +6,7 @@ import pharmpy.workflows.dispatchers
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 
-from ..workflow import Workflow
+from ...workflow import Workflow
 
 T = TypeVar('T')
 
@@ -39,7 +39,7 @@ def run(workflow: Workflow[T]) -> T:
             import dask
             from dask.distributed import Client, LocalCluster
 
-            from ..optimize import optimize_task_graph_for_dask_distributed
+            from .optimize import optimize_task_graph_for_dask_distributed
 
             # NOTE: We set the dask temporary directory to avoid permission
             # errors in the dask-worker-space directory in case for

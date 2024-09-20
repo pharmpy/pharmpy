@@ -207,3 +207,15 @@ class Context(ABC):
     def retrieve_final_model_entry(self) -> ModelEntry:
         model = self._retrieve_me(FINAL_MODEL_NAME)
         return model
+
+    def call_workflow(self, workflow, unique_name: str):
+        from pharmpy.workflows.dispatchers.local_dask import call_workflow
+
+        res = call_workflow(workflow, unique_name, self)
+        return res
+
+    def abort_workflow(self, message):
+        self.log_message("critical", message)
+        from pharmpy.workflows.dispatchers.local_dask import abort_workflow
+
+        abort_workflow()

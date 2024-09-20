@@ -4,7 +4,7 @@ from typing import Optional
 
 from pharmpy.model import Model
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 
 def create_workflow(
@@ -43,7 +43,7 @@ def run_simulations(context, model):
     wb = WorkflowBuilder(wf)
     task_results = Task('results', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
-    modelentry_simulation = call_workflow(Workflow(wb), 'results_remaining', context)[0]
+    modelentry_simulation = context.call_workflow(Workflow(wb), 'results_remaining')[0]
     return modelentry_simulation.simulation_results
 
 

@@ -23,7 +23,7 @@ from pharmpy.modeling import (
 from pharmpy.tools.common import ToolResults, create_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 SCALES = frozenset(('normal', 'UCP'))
@@ -168,7 +168,7 @@ def create_random_init_model(
         parent=original_model,
     )
     new_candidate_model_fit_wf = create_fit_workflow(modelentries=[new_candidate_model_entry])
-    new_modelentry = call_workflow(new_candidate_model_fit_wf, f'fit_candidate_run{index}', context)
+    new_modelentry = context.call_workflow(new_candidate_model_fit_wf, f'fit_candidate_run{index}')
     return Retry(
         modelentry=new_modelentry,
         number_of_retries=try_number,

@@ -6,7 +6,7 @@ import pytest
 import pharmpy.workflows.dispatchers
 from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder, call_workflow, execute_workflow
+from pharmpy.workflows import Task, Workflow, WorkflowBuilder, execute_workflow
 
 
 def ignore_scratch_warning():
@@ -32,7 +32,7 @@ def f(context, a, b):
     name = str(uuid4())
     with warnings.catch_warnings():
         ignore_scratch_warning()
-        res = call_workflow(wf, name, context)
+        res = context.call_workflow(wf, name)
     return res
 
 
