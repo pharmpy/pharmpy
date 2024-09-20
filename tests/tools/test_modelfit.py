@@ -1,6 +1,11 @@
 import numpy as np
 
-from pharmpy.tools.modelfit.ucp import build_initial_values_matrix, descale_matrix, scale_matrix
+from pharmpy.tools.modelfit.ucp import (
+    build_initial_values_matrix,
+    build_parameter_coordinates,
+    descale_matrix,
+    scale_matrix,
+)
 
 
 def test_scale_matrix():
@@ -36,3 +41,13 @@ def test_build_initial_values_matrix(load_model_for_test, testdata):
     omega = build_initial_values_matrix(model.random_variables.etas, model.parameters)
     correct = np.array([[0.075, 0.0467, 0.0], [0.0467, 0.0564, 0.0], [0.0, 0.0, 2.82]])
     assert np.allclose(omega, correct)
+
+
+def test_build_parameter_coordinates(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    omega = build_initial_values_matrix(model.random_variables.etas, model.parameters)
+    coords = build_parameter_coordinates(omega)
+    assert coords == [(0, 0), (1, 0), (1, 1), (2, 2)]
+    sigma = build_initial_values_matrix(model.random_variables.epsilons, model.parameters)
+    coords = build_parameter_coordinates(sigma)
+    assert coords == [(0, 0)]

@@ -57,3 +57,15 @@ def build_initial_values_matrix(rvs, parameters):
             block = var.subs(parameters.inits).to_numpy()
         blocks.append(block)
     return scipy.linalg.block_diag(*blocks)
+
+
+def build_parameter_coordinates(A):
+    # From an initial values matrix list tuples of
+    # coordinates of estimated parameters
+    # only consider the lower triangle
+    coords = []
+    for row in range(len(A)):
+        for col in range(row + 1):
+            if A[row, col] != 0.0:
+                coords.append((row, col))
+    return coords
