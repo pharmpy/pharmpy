@@ -98,9 +98,9 @@ def postprocess(context, model_name, *modelentries):
         base.model, base.modelfit_results, linbase.model, linbase.modelfit_results
     )
 
-    context.log_progress(f"OFV of input model:                {res.ofv['base']:.3f}")
-    context.log_progress(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
-    context.log_progress(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
+    context.log_info(f"OFV of input model:                {res.ofv['base']:.3f}")
+    context.log_info(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
+    context.log_info(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
 
     res.to_csv(context.path / "results.csv")
 
@@ -129,7 +129,7 @@ def create_derivative_model(context, modelentry):
     der_model = add_predictions(der_model, ["CIPREDI"])
     der_model = add_derivative(der_model)
     der_model = set_estimation_step(der_model, "FOCE", 0, evaluation=True)
-    context.log_progress("Running derivative model")
+    context.log_info("Running derivative model")
     der_model = remove_parameter_uncertainty_step(der_model)
     return ModelEntry.create(model=der_model)
 
@@ -165,7 +165,7 @@ def _create_linearized_model(context, model_name, description, model, derivative
     statements = _create_linearized_model_statements(linbase, model)
     linbase = linbase.replace(statements=statements)
 
-    context.log_progress("Running linearized model")
+    context.log_info("Running linearized model")
     return ModelEntry.create(model=linbase)
 
 

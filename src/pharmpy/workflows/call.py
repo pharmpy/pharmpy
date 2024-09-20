@@ -47,7 +47,7 @@ def abort_workflow(ctx, msg):
     from dask.distributed import get_client
 
     prefixed_message = "ABORTING: " + msg
-    ctx.log_message("error", prefixed_message)
+    ctx.log_message("critical", prefixed_message)
     print(prefixed_message)
     client = get_client()
     client.close()
