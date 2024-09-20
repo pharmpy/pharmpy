@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Support `DataFrame` as input to `run_amd`
+  
 Changes
 =======
 
