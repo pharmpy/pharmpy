@@ -227,26 +227,19 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     if delta_ofv < cutoff:
         model_entry = input_model_entry
 
-    sumind = summarize_individuals(selected_model_entries)
-    sumcount = summarize_individuals_count_table(df=sumind)
-    sum_models = summarize_modelfit_results_from_entries(selected_model_entries)
-    sum_models['step'] = list(range(len(sum_models)))
-    summf = sum_models.reset_index().set_index(['step', 'model'])
-    summary_tool = _create_summary_tool(selected_model_entries, cutoff, strictness)
-    summary_errors = summarize_errors_from_entries(selected_model_entries)
-
+    tables = create_result_tables(selected_model_entries, cutoff, strictness)
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
     final_model = model_entry.model.replace(name="final")
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
-        summary_individuals=sumind,
-        summary_individuals_count=sumcount,
+        summary_individuals=tables['summary_individuals'],
+        summary_individuals_count=tables['summary_individuals_count'],
         final_model=final_model,
         final_results=model_entry.modelfit_results,
-        summary_models=summf,
-        summary_tool=summary_tool,
-        summary_errors=summary_errors,
+        summary_models=tables['summary_models'],
+        summary_tool=tables['summary_tool'],
+        summary_errors=tables['summary_errors'],
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
         final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
@@ -261,6 +254,24 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     context.store_final_model_entry(final_model)
 
     return res
+
+
+def create_result_tables(model_entries, cutoff, strictness):
+    sumind = summarize_individuals(model_entries)
+    sumcount = summarize_individuals_count_table(df=sumind)
+    sum_models = summarize_modelfit_results_from_entries(model_entries)
+    sum_models['step'] = list(range(len(sum_models)))
+    summf = sum_models.reset_index().set_index(['step', 'model'])
+    summary_tool = _create_summary_tool(model_entries, cutoff, strictness)
+    summary_errors = summarize_errors_from_entries(model_entries)
+    tables = {
+        'summary_individuals': sumind,
+        'summary_individuals_count': sumcount,
+        'summary_models': summf,
+        'summary_tool': summary_tool,
+        'summary_errors': summary_errors,
+    }
+    return tables
 
 
 def _create_summary_tool(selected_model_entries, cutoff, strictness):

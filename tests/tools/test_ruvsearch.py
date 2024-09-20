@@ -4,10 +4,20 @@ from dataclasses import replace
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import remove_parameter_uncertainty_step, transform_blq
+from pharmpy.modeling import (
+    remove_parameter_uncertainty_step,
+    set_combined_error_model,
+    set_iiv_on_ruv,
+    transform_blq,
+)
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
-from pharmpy.tools.ruvsearch.tool import _create_dataset, create_workflow, validate_input
+from pharmpy.tools.ruvsearch.tool import (
+    _create_dataset,
+    create_result_tables,
+    create_workflow,
+    validate_input,
+)
 from pharmpy.workflows import ModelEntry, Workflow
 
 
@@ -106,6 +116,33 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
 
         assert len(df) == 1005
         assert (df['DV'] != 0).all()
+
+
+def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    model_1 = set_combined_error_model(model_start)
+    model_1 = model_1.replace(name='model_1')
+    model_2 = set_iiv_on_ruv(model_1)
+    model_2 = model_2.replace(name='model_2')
+
+    candidate_entries = model_entry_factory([model_1, model_2])
+    model_entries = [me_start] + candidate_entries
+    tables = create_result_tables(model_entries, cutoff=3.84, strictness='minimization_successful')
+
+    summary_models = tables['summary_models']
+    assert len(summary_models) == len(model_entries)
+    steps = list(summary_models.index.get_level_values('step'))
+    assert steps == [0, 1, 2]
+
+    summary_tool = tables['summary_tool']
+    assert len(summary_tool) == len(model_entries)
+    steps = list(summary_tool.index.get_level_values('step'))
+    assert steps == [0, 1, 2]
+    n_params = summary_tool['n_params'].values
+    assert list(n_params) == [5, 6, 7]
 
 
 @pytest.mark.parametrize(
