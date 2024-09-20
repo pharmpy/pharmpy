@@ -5,6 +5,7 @@ from pharmpy.tools.modelfit.ucp import (
     build_parameter_coordinates,
     descale_matrix,
     scale_matrix,
+    unpack_ucp_matrix,
 )
 
 
@@ -51,3 +52,10 @@ def test_build_parameter_coordinates(load_model_for_test, testdata):
     sigma = build_initial_values_matrix(model.random_variables.epsilons, model.parameters)
     coords = build_parameter_coordinates(sigma)
     assert coords == [(0, 0)]
+
+
+def test_unpack_ucp_matrix():
+    coords = [(0, 0), (1, 0), (1, 1), (2, 2)]
+    A = unpack_ucp_matrix([1.0, 2.0, 3.0, 4.0], 3, coords)
+    correct = np.array([[1.0, 0.0, 0.0], [2.0, 3.0, 0.0], [0.0, 0.0, 4.0]])
+    assert np.array_equal(A, correct)

@@ -69,3 +69,13 @@ def build_parameter_coordinates(A):
             if A[row, col] != 0.0:
                 coords.append((row, col))
     return coords
+
+
+def unpack_ucp_matrix(x, n, coords):
+    # Create an n times n matrix
+    # Put each value in the vector x at the position of coords
+    # Let rest of elements be zero
+    A = np.zeros((n, n))
+    for val, (row, col) in zip(x, coords):
+        A[row, col] = val
+    return A
