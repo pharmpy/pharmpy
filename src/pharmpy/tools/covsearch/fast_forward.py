@@ -430,7 +430,7 @@ def _linear_base_model(data, parameter, weighted_linreg=False):
     statements = Statements([base, ipred, y])
 
     est = EstimationStep.create(
-        method="FO", maximum_evaluations=9999, tool_options={"NSIG": 6, "PRINT": 1, "NOHABORT": 0}
+        method="FO", maximum_evaluations=99999, tool_options={"NSIG": 2, "PRINT": 1, "NOHABORT": 0}
     )
     base_model = Model.create(
         name=name,
@@ -485,9 +485,9 @@ def _mixed_effects_base_model(data, parameter):
     name = f"{parameter}_Mixed_Effects_Base"
     est = EstimationStep.create(
         method="FOCE",
-        maximum_evaluations=9999,
+        maximum_evaluations=99999,
         interaction=True,
-        tool_options={"NSIG": 6, "PRINT": 1, "NOHABORT": 0},
+        tool_options={"NSIG": 2, "PRINT": 1, "NOHABORT": 0},
     )
     base_model = Model.create(
         name=name,

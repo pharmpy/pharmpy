@@ -1,21 +1,28 @@
+from typing import Literal, Optional, Union
+
 import pharmpy.tools.covsearch.tool as scm_tool
+from pharmpy.model import Model
 from pharmpy.tools.covsearch.fast_forward import fast_forward
 from pharmpy.tools.covsearch.util import init_search_state, store_input_model
-from pharmpy.workflows import Task, Workflow, WorkflowBuilder
+from pharmpy.tools.mfl.parse import ModelFeatures
+from pharmpy.workflows import ModelfitResults, Task, Workflow, WorkflowBuilder
 
 
 def fast_scm_workflow(
-    model,
-    results,
-    max_eval,
-    search_space,
-    strictness,
-    naming_index_offset,
-    algorithm="scm-fastforward",
-    nsamples=0,
-    p_forward=0.05,
-    max_steps=-1,
-    p_backward=0.01,
+    search_space: Union[str, ModelFeatures],
+    max_steps: int = -1,
+    p_forward: float = 0.05,
+    p_backward: float = 0.01,
+    results: Optional[ModelfitResults] = None,
+    model: Optional[Model] = None,
+    max_eval: bool = False,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    naming_index_offset: Optional[int] = 0,
+    statsmodels: bool = True,
+    algorithm: Literal["scm-fastforward", "scm-fastforward-then-backward"] = "scm-fastforward",
+    nsamples: int = 0,
+    weighted_linreg: bool = True,
+    lin_filter: int = 0,
 ):
     wb = WorkflowBuilder(name="covsearch")
     store_task = Task("store_input_model", store_input_model, model, results, max_eval)
@@ -24,7 +31,17 @@ def fast_scm_workflow(
     init_task = Task("init", init_search_state, search_space, algorithm, nsamples)
     wb.add_task(init_task, predecessors=store_task)
 
-    fast_forward_task = Task("fast_forward", fast_forward, p_forward, max_steps, nsamples)
+    fast_forward_task = Task(
+        "fast_forward",
+        fast_forward,
+        p_forward,
+        max_steps,
+        algorithm,
+        nsamples,
+        weighted_linreg,
+        statsmodels,
+        lin_filter,
+    )
     wb.add_task(fast_forward_task, predecessors=init_task)
     search_output = wb.output_tasks
 
