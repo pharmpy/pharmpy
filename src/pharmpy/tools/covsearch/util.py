@@ -12,7 +12,7 @@ from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import ModelEntry, call_workflow
+from pharmpy.workflows import ModelEntry
 
 
 @dataclass(frozen=True)
@@ -198,7 +198,7 @@ def init_nonlinear_search_state(context, input_modelentry, filtered_model, algor
     if filtered_model != input_modelentry.model:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
         filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
-        filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+        filtered_modelentry = context.call_workflow(filtered_fit_wf, 'fit_filtered_model')
     else:
         filtered_modelentry = input_modelentry
 

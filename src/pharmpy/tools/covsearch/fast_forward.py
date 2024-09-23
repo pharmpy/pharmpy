@@ -35,7 +35,7 @@ from pharmpy.tools.covsearch.util import (
     StateAndEffect,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 
 def fast_forward(
@@ -247,7 +247,7 @@ def nonmem_linear_selection(
         wb.insert_workflow(linear_fit_wf)
         task_gather = Task("gather", lambda *models: models)
         wb.add_task(task_gather, predecessors=wb.output_tasks)
-        linear_modelentries = call_workflow(Workflow(wb), 'fit_linear_models', context)
+        linear_modelentries = context.call_workflow(Workflow(wb), 'fit_linear_models')
         linear_modelentry_dict[param] = linear_modelentries
 
         # linear covariate model selection
@@ -356,7 +356,7 @@ def nonlinear_model_selection(context, step, p_forward, state_and_effect):
         wb = WorkflowBuilder(fit_wf)
         task_gather = Task("gather", lambda *models: models)
         wb.add_task(task_gather, predecessors=wb.output_tasks)
-        new_modelentries = call_workflow(Workflow(wb), 'fit_nonlinear_models', context)
+        new_modelentries = context.call_workflow(Workflow(wb), 'fit_nonlinear_models')
         new_candidates = [
             Candidate(me, best_candidate.steps + (ForwardStep(p_forward, DummyEffect(*effect)),))
             for me, effect in zip(new_modelentries, effect_funcs.keys())
