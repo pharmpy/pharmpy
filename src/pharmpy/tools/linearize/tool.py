@@ -14,7 +14,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.estimation_steps import add_derivative
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, abort_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from .results import calculate_results
@@ -98,9 +98,9 @@ def postprocess(context, model_name, *modelentries):
         base.model, base.modelfit_results, linbase.model, linbase.modelfit_results
     )
 
-    context.log_progress(f"OFV of input model:                {res.ofv['base']:.3f}")
-    context.log_progress(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
-    context.log_progress(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
+    context.log_info(f"OFV of input model:                {res.ofv['base']:.3f}")
+    context.log_info(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
+    context.log_info(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
 
     res.to_csv(context.path / "results.csv")
 
@@ -129,14 +129,14 @@ def create_derivative_model(context, modelentry):
     der_model = add_predictions(der_model, ["CIPREDI"])
     der_model = add_derivative(der_model)
     der_model = set_estimation_step(der_model, "FOCE", 0, evaluation=True)
-    context.log_progress("Running derivative model")
+    context.log_info("Running derivative model")
     der_model = remove_parameter_uncertainty_step(der_model)
     return ModelEntry.create(model=der_model)
 
 
 def _create_linearized_model(context, model_name, description, model, derivative_model_entry):
     if derivative_model_entry.modelfit_results is None:
-        abort_workflow(context, "Error while running the derivative model")
+        context.abort_workflow("Error while running the derivative model")
     df = cleanup_columns(derivative_model_entry)
 
     derivative_model = derivative_model_entry.model
@@ -165,7 +165,7 @@ def _create_linearized_model(context, model_name, description, model, derivative
     statements = _create_linearized_model_statements(linbase, model)
     linbase = linbase.replace(statements=statements)
 
-    context.log_progress("Running linearized model")
+    context.log_info("Running linearized model")
     return ModelEntry.create(model=linbase)
 
 

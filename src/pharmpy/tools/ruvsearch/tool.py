@@ -40,7 +40,7 @@ from pharmpy.tools.common import (
 from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from .results import RUVSearchResults, calculate_results
@@ -119,7 +119,7 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
     if 'IIV_on_RUV' not in skip:
         task_iiv = Task(
             'create_iiv_on_ruv_model',
-            partial(_create_iiv_on_ruv_model, current_iteration=current_iteration, dv=None),
+            partial(_create_iiv_on_ruv_model, current_iteration=current_iteration),
         )
         tasks.append(task_iiv)
         wb.add_task(task_iiv, predecessors=task_base_model)
@@ -127,7 +127,7 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
     if 'power' not in skip and 'combined' not in skip:
         task_power = Task(
             'create_power_model',
-            partial(_create_power_model, current_iteration=current_iteration, dv=None),
+            partial(_create_power_model, current_iteration=current_iteration),
         )
         wb.add_task(task_power, predecessors=task_base_model)
         tasks.append(task_power)
@@ -145,7 +145,6 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
                 groups=groups,
                 i=i,
                 current_iteration=current_iteration,
-                dv=None,
             )
             task = Task(f"create_time_varying_model{i}", tvar)
             tasks.append(task)
@@ -196,7 +195,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
 
     # Check if model has a proportional error
     proportional_workflow = proportional_error_workflow(input_model_entry)
-    model_entry = call_workflow(proportional_workflow, 'Convert_error_model', context)
+    model_entry = context.call_workflow(proportional_workflow, 'Convert_error_model')
 
     if model_entry.model == input_model_entry.model:
         selected_model_entries = [model_entry]
@@ -205,8 +204,8 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     cwres_models = []
     for current_iteration in range(1, max_iter + 1):
         wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
-        res, best_model_entry, selected_model_name = call_workflow(
-            wf, f'results{current_iteration}', context
+        res, best_model_entry, selected_model_name = context.call_workflow(
+            wf, f'results{current_iteration}'
         )
         cwres_models.append(res.cwres_models)
 
@@ -227,26 +226,19 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     if delta_ofv < cutoff:
         model_entry = input_model_entry
 
-    sumind = summarize_individuals(selected_model_entries)
-    sumcount = summarize_individuals_count_table(df=sumind)
-    sum_models = summarize_modelfit_results_from_entries(selected_model_entries)
-    sum_models['step'] = list(range(len(sum_models)))
-    summf = sum_models.reset_index().set_index(['step', 'model'])
-    summary_tool = _create_summary_tool(selected_model_entries, cutoff, strictness)
-    summary_errors = summarize_errors_from_entries(selected_model_entries)
-
+    tables = create_result_tables(selected_model_entries, cutoff, strictness)
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
     final_model = model_entry.model.replace(name="final")
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
-        summary_individuals=sumind,
-        summary_individuals_count=sumcount,
+        summary_individuals=tables['summary_individuals'],
+        summary_individuals_count=tables['summary_individuals_count'],
         final_model=final_model,
         final_results=model_entry.modelfit_results,
-        summary_models=summf,
-        summary_tool=summary_tool,
-        summary_errors=summary_errors,
+        summary_models=tables['summary_models'],
+        summary_tool=tables['summary_tool'],
+        summary_errors=tables['summary_errors'],
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
         final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
@@ -261,6 +253,24 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     context.store_final_model_entry(final_model)
 
     return res
+
+
+def create_result_tables(model_entries, cutoff, strictness):
+    sumind = summarize_individuals(model_entries)
+    sumcount = summarize_individuals_count_table(df=sumind)
+    sum_models = summarize_modelfit_results_from_entries(model_entries)
+    sum_models['step'] = list(range(len(sum_models)))
+    summf = sum_models.reset_index().set_index(['step', 'model'])
+    summary_tool = _create_summary_tool(model_entries, cutoff, strictness)
+    summary_errors = summarize_errors_from_entries(model_entries)
+    tables = {
+        'summary_individuals': sumind,
+        'summary_individuals_count': sumcount,
+        'summary_models': summf,
+        'summary_tool': summary_tool,
+        'summary_errors': summary_errors,
+    }
+    return tables
 
 
 def _create_summary_tool(selected_model_entries, cutoff, strictness):
@@ -301,7 +311,7 @@ def post_process(context, start_model_entry, *model_entries, cutoff, current_ite
     )
     if best_model_unfitted is not None:
         fit_wf = create_fit_workflow(modelentries=[best_model_unfitted])
-        best_model_entry = call_workflow(fit_wf, f'fit{current_iteration}', context)
+        best_model_entry = context.call_workflow(fit_wf, f'fit{current_iteration}')
         if best_model_entry.modelfit_results is not None:
             best_model_check = [
                 best_model_entry.modelfit_results.ofv,
@@ -353,37 +363,35 @@ def _create_base_model(input_model_entry, current_iteration, dv):
     return ModelEntry.create(base_model, modelfit_results=None, parent=input_model)
 
 
-def _create_iiv_on_ruv_model(input_model_entry, current_iteration, dv):
-    input_model = input_model_entry.model
-    model = set_iiv_on_ruv(input_model, dv)
+def _create_iiv_on_ruv_model(base_model_entry, current_iteration):
+    base_model = base_model_entry.model
+    model = set_iiv_on_ruv(base_model)
     name = f'IIV_on_RUV_{current_iteration}'
     model = model.replace(name=name, description=name)
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
-def _create_power_model(input_model_entry, current_iteration, dv):
-    input_model = input_model_entry.model
-    model = set_power_on_ruv(
-        input_model, ipred='IPRED', lower_limit=None, zero_protection=True, dv=dv
-    )
+def _create_power_model(base_model_entry, current_iteration):
+    base_model = base_model_entry.model
+    model = set_power_on_ruv(base_model, ipred='IPRED', lower_limit=None, zero_protection=True)
     name = f'power_{current_iteration}'
     model = model.replace(name=name, description=name)
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
-def _create_time_varying_model(input_model_entry, groups, i, current_iteration, dv):
-    input_model = input_model_entry.model
+def _create_time_varying_model(base_model_entry, groups, i, current_iteration):
+    base_model = base_model_entry.model
     quantile = i / groups
-    cutoff = input_model.dataset['TAD'].quantile(q=quantile)
-    model = set_time_varying_error_model(input_model, cutoff=cutoff, idv='TAD', dv=dv)
+    cutoff = base_model.dataset['TAD'].quantile(q=quantile)
+    model = set_time_varying_error_model(base_model, cutoff=cutoff, idv='TAD')
     name = f"time_varying{i}_{current_iteration}"
     model = model.replace(name=name, description=name)
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
-def _create_combined_model(input_model_entry, current_iteration):
-    input_model = input_model_entry.model
-    model = remove_error_model(input_model)
+def _create_combined_model(base_model_entry, current_iteration):
+    base_model = base_model_entry.model
+    model = remove_error_model(base_model)
     sset = model.statements
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
@@ -413,7 +421,7 @@ def _create_combined_model(input_model_entry, current_iteration):
         name=name,
         description=name,
     )
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
 def _create_dataset(input_model_entry: ModelEntry, dv):
@@ -488,9 +496,8 @@ def _time_after_dose(model):
 
 
 def _create_best_model(model_entry, res, current_iteration, dv, groups=4, cutoff=3.84):
-    if not res.cwres_models.empty and any(res.cwres_models['dofv'] > cutoff):
+    if any(res.cwres_models['dofv'] > cutoff):
         model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
-        selected_model_name = f'base_{current_iteration}'
         idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
 
@@ -600,11 +607,15 @@ def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictne
             if 'DVID' not in model.dataset.columns and 'dvid' not in model.datainfo.types:
                 raise ValueError("No DVID column in dataset.")
             else:
-                if dv not in set(model.dataset['DVID']):
-                    raise ValueError(f"No DVID = {dv} in dataset.")
+                try:
+                    dvid_name = model.datainfo.typeix['dvid'][0].name
+                except IndexError:
+                    dvid_name = 'DVID'
+                if dv not in set(model.dataset[dvid_name]):
+                    raise ValueError(f"No {dvid_name} = {dv} in dataset.")
 
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
-                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
             )

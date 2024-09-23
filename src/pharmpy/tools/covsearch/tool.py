@@ -28,7 +28,7 @@ from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.parse import ModelFeatures, get_model_features
@@ -301,7 +301,7 @@ def _init_search_state(
     if filtered_model != model:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
         filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
-        filtered_modelentry = call_workflow(filtered_fit_wf, 'fit_filtered_model', context)
+        filtered_modelentry = context.call_workflow(filtered_fit_wf, 'fit_filtered_model')
     else:
         filtered_modelentry = modelentry
     candidate = Candidate(filtered_modelentry, ())
@@ -383,9 +383,7 @@ def task_greedy_forward_search(
     ):
         index_offset = index_offset + naming_index_offset
         wf = wf_effects_addition(parent.modelentry, parent, candidate_effect_funcs, index_offset)
-        new_candidate_modelentries = call_workflow(
-            wf, f'{NAME_WF}-effects_addition-{step}', context
-        )
+        new_candidate_modelentries = context.call_workflow(wf, f'{NAME_WF}-effects_addition-{step}')
         return [
             Candidate(modelentry, parent.steps + (ForwardStep(p_forward, AddEffect(*effect)),))
             for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
@@ -418,7 +416,7 @@ def task_greedy_backward_search(
     ):
         index_offset = index_offset + naming_index_offset
         wf = wf_effects_removal(parent, candidate_effect_funcs, index_offset)
-        new_candidate_modelentries = call_workflow(wf, f'{NAME_WF}-effects_removal-{step}', context)
+        new_candidate_modelentries = context.call_workflow(wf, f'{NAME_WF}-effects_removal-{step}')
 
         return [
             Candidate(modelentry, parent.steps + (BackwardStep(p_backward, RemoveEffect(*effect)),))

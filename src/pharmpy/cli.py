@@ -267,6 +267,8 @@ def run_amd(args):
 
     input = args.model_or_dataset
     dv_types = key_vals(args.dv_types)
+    for key, value in dv_types.items():
+        dv_types[key] = int(value)
 
     run_amd(
         input,
@@ -294,7 +296,7 @@ def run_amd(args):
         retries_strategy=args.retries_strategy,
         seed=args.seed,
         parameter_uncertainty_method=args.parameter_uncertainty_method,
-        ignore_datainfo_fallback=args.ignore_datainfo_fallback,
+        ignore_datainfo_fallback=bool(args.ignore_datainfo_fallback),
     )
 
 

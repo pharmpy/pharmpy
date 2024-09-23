@@ -14,7 +14,9 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
     if logdv:
         factor = predref - pred
     else:
-        factor = (predref - lb) / (pred - lb)
+        num = predref - lb
+        den = pred - lb
+        factor = np.divide(num, den, out=np.ones_like(num), where=den != 0.0)
 
     def correct(dv, factor, logdv, lb):
         if logdv:
@@ -35,7 +37,7 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
     else:
         refdv_sd = np.log(refdvs).std(axis=1)
         rpcdvs_sd = np.log(rpcdvs).std(axis=1)
-    var_factor = refdv_sd / rpcdvs_sd
+    var_factor = np.divide(refdv_sd, rpcdvs_sd, out=np.ones_like(refdv_sd), where=rpcdvs_sd != 0.0)
 
     def varcorrect(dv, factor, predref, logdv):
         if logdv:

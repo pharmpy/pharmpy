@@ -1,6 +1,12 @@
 from typing import Any
 
-from pharmpy.modeling import add_iiv, add_pk_iiv, create_joint_distribution, set_upper_bounds
+from pharmpy.modeling import (
+    add_allometry,
+    add_iiv,
+    add_pk_iiv,
+    create_joint_distribution,
+    set_upper_bounds,
+)
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -11,7 +17,7 @@ ALGORITHMS = frozenset(('exhaustive', 'exhaustive_stepwise', 'reduced_stepwise')
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
 
 
-def exhaustive(mfl_funcs, iiv_strategy: str):
+def exhaustive(mfl_funcs, iiv_strategy: str, allometry=None):
     # TODO: rewrite using _create_model_workflow
     wb_search = WorkflowBuilder()
 
@@ -26,7 +32,13 @@ def exhaustive(mfl_funcs, iiv_strategy: str):
         funcs = set(mfl_funcs[feat] for feat in combo)
 
         task_create_candidate = Task(
-            'create_candidate', create_candidate_exhaustive, model_name, combo, funcs, iiv_strategy
+            'create_candidate',
+            create_candidate_exhaustive,
+            model_name,
+            combo,
+            funcs,
+            iiv_strategy,
+            allometry,
         )
         wb_search.add_task(task_create_candidate)
 
@@ -38,7 +50,9 @@ def exhaustive(mfl_funcs, iiv_strategy: str):
     return Workflow(wb_search), model_tasks
 
 
-def exhaustive_stepwise(mfl_funcs, iiv_strategy: str, wb_search=None, tool_name="modelsearch"):
+def exhaustive_stepwise(
+    mfl_funcs, iiv_strategy: str, wb_search=None, tool_name="modelsearch", allometry=None
+):
     if not wb_search:
         wb_search = WorkflowBuilder()
     model_tasks = []
@@ -58,6 +72,7 @@ def exhaustive_stepwise(mfl_funcs, iiv_strategy: str, wb_search=None, tool_name=
                     feat,
                     mfl_funcs[feat],
                     iiv_strategy,
+                    allometry,
                 )
 
                 if task_parent:
@@ -77,7 +92,7 @@ def exhaustive_stepwise(mfl_funcs, iiv_strategy: str, wb_search=None, tool_name=
     return Workflow(wb_search), model_tasks
 
 
-def reduced_stepwise(mfl_funcs, iiv_strategy: str):
+def reduced_stepwise(mfl_funcs, iiv_strategy: str, allometry=None):
     wb_search = WorkflowBuilder()
     model_tasks = []
 
@@ -106,6 +121,7 @@ def reduced_stepwise(mfl_funcs, iiv_strategy: str):
                     feat,
                     mfl_funcs[feat],
                     iiv_strategy,
+                    allometry,
                 )
 
                 if task_parent:
@@ -187,7 +203,7 @@ def _get_previous_features(wf, task, mfl_funcs):
     return features_previous
 
 
-def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, model_entry):
+def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, allometry, model_entry):
     input_model, input_res = model_entry.model, model_entry.modelfit_results
     model = _update_name_and_description(model_name, combo, model_entry)
     model = update_initial_estimates(model, input_res)
@@ -195,17 +211,26 @@ def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, model_en
         model = func(model)
         if iiv_strategy != 'no_add':
             model = _add_iiv_to_func(iiv_strategy, model, model_entry)
+    model = _add_allometry(model, allometry)
     return ModelEntry.create(model, modelfit_results=None, parent=input_model)
 
 
-def create_candidate_stepwise(model_name, feat, func, iiv_strategy, model_entry):
+def create_candidate_stepwise(model_name, feat, func, iiv_strategy, allometry, model_entry):
     input_model, input_res = model_entry.model, model_entry.modelfit_results
     model = _update_name_and_description(model_name, (feat,), model_entry)
     model = update_initial_estimates(model, input_res)
     model = _apply_transformation(feat, func, model)
     if iiv_strategy != 'no_add':
         model = _add_iiv_to_func(iiv_strategy, model, model_entry)
+    model = _add_allometry(model, allometry)
     return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+
+
+def _add_allometry(model, allometry):
+    if allometry is None:
+        return model
+    model = add_allometry(model, allometry.covariate, allometry.reference)
+    return model
 
 
 def _apply_transformation(feat, func, model):

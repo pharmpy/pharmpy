@@ -10,10 +10,11 @@ from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.parse import parse as mfl_parse
+from .algorithms import _add_allometry
 from .filter import mfl_filtering
 
 
@@ -116,14 +117,15 @@ def start(
 
     if mfl_statements.allometry is not None:
         mfl_allometry = mfl_statements.allometry
-        print(mfl_allometry)
         mfl_statements = mfl_statements.replace(allometry=None)
+    else:
+        mfl_allometry = None
 
     # Add base model task
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
     if not mfl_statements.contain_subset(model_mfl, tool="modelsearch"):
-        base_task = Task("create_base_model", create_base_model, mfl_statements)
+        base_task = Task("create_base_model", create_base_model, mfl_statements, mfl_allometry)
         wb.add_task(base_task, predecessors=start_task)
 
         base_fit = create_fit_workflow(n=1)
@@ -146,10 +148,14 @@ def start(
     )
 
     # Filter the mfl_statements from base model attributes
-    mfl_funcs = filter_mfl_statements(mfl_statements, create_base_model(mfl_statements, model))
+    mfl_funcs = filter_mfl_statements(
+        mfl_statements, create_base_model(mfl_statements, mfl_allometry, model)
+    )
 
     # TODO : Implement task for filtering the search space instead
-    wf_search, candidate_model_tasks = algorithm_func(mfl_funcs, iiv_strategy)
+    wf_search, candidate_model_tasks = algorithm_func(
+        mfl_funcs, iiv_strategy, allometry=mfl_allometry
+    )
 
     if candidate_model_tasks:
         # Clear base description to not interfere with candidate models
@@ -168,7 +174,7 @@ def start(
         else:
             wb.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
-    res = call_workflow(wb, 'run_candidate_models', context)
+    res = context.call_workflow(wb, 'run_candidate_models')
 
     context.store_final_model_entry(res.final_model)
 
@@ -241,7 +247,7 @@ def _update_results(base):
     )
 
 
-def create_base_model(ss, model_or_model_entry):
+def create_base_model(ss, allometry, model_or_model_entry):
     if isinstance(model_or_model_entry, ModelEntry):
         model = model_or_model_entry.model
         res = model_or_model_entry.modelfit_results
@@ -260,7 +266,8 @@ def create_base_model(ss, model_or_model_entry):
         added_features += f';{name[0]}({name[1]})'
     # UPDATE_DESCRIPTION
     # FIXME : Need to be its own parent if the input model shouldn't be ranked with the others
-    base = base.replace(name="BASE", description=added_features[1:])
+    base = base.replace(name="base", description=added_features[1:])
+    base = _add_allometry(base, allometry)
 
     return ModelEntry.create(base, modelfit_results=None, parent=None)
 
@@ -271,10 +278,10 @@ def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries)
     base_model_entry = None
     for model_entry in model_entries:
         model = model_entry.model
-        if not model.name.startswith('modelsearch_run') and model.name == "BASE":
+        if not model.name.startswith('modelsearch_run') and model.name == "base":
             input_model_entry = model_entry
             base_model_entry = model_entry
-        elif not model.name.startswith('modelsearch_run') and model.name != "BASE":
+        elif not model.name.startswith('modelsearch_run') and model.name != "base":
             user_input_model_entry = model_entry
         else:
             res_model_entries.append(model_entry)

@@ -21,7 +21,7 @@ from pharmpy.tools.common import (
 )
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 NAME_WF = 'iovsearch'
@@ -156,7 +156,7 @@ def task_brute_force_search(
         input_model_entry, occ, list_of_parameters, distribution
     )
     wf = create_fit_workflow(modelentries=[model_with_iov_entry])
-    model_with_iov_entry = call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs', context)
+    model_with_iov_entry = context.call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs')
     model_with_iov = model_with_iov_entry.model
 
     # NOTE: Remove IOVs. Test all subsets (~2^n).
@@ -172,7 +172,7 @@ def task_brute_force_search(
         non_empty_proper_subsets(all_iov_parameters),
         no_of_models + 1,
     )
-    iov_candidate_entries = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs', context)
+    iov_candidate_entries = context.call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs')
 
     if rank_type == "mbic":
         ref = model_with_iov
@@ -217,7 +217,7 @@ def task_brute_force_search(
         non_empty_subsets(iiv_parameters_with_associated_iov),
         no_of_models + 1,
     )
-    iiv_candidate_entries = call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs', context)
+    iiv_candidate_entries = context.call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs')
     current_step += 1
     step_mapping[current_step] = [model_entry.model.name for model_entry in iiv_candidate_entries]
 

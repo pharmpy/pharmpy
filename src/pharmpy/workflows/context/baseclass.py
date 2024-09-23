@@ -115,17 +115,27 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def log_message(self, severity: Literal["error", "warning", "info", "progress"], message: str):
+    def log_message(
+        self, severity: Literal["critical", "error", "warning", "info", "trace"], message: str
+    ):
         """Add a message to the log"""
         pass
 
-    def log_progress(self, message: str):
-        """Add a progress message to the log
+    def log_info(self, message: str):
+        """Add an info message to the log
 
         Currently with echo to stdout. In the future this could be changed or be configurable.
         """
-        self.log_message(severity="progress", message=message)
+        self.log_message(severity="info", message=message)
         print(message)
+
+    def log_error(self, message: str):
+        """Add an error message to the log"""
+        self.log_message(severity="error", message=message)
+
+    def log_warning(self, message: str):
+        """Add a warning message to the log"""
+        self.log_message(severity="warning", message=message)
 
     @abstractmethod
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
@@ -197,3 +207,15 @@ class Context(ABC):
     def retrieve_final_model_entry(self) -> ModelEntry:
         model = self._retrieve_me(FINAL_MODEL_NAME)
         return model
+
+    def call_workflow(self, workflow, unique_name: str):
+        from pharmpy.workflows.dispatchers.local_dask import call_workflow
+
+        res = call_workflow(workflow, unique_name, self)
+        return res
+
+    def abort_workflow(self, message):
+        self.log_message("critical", message)
+        from pharmpy.workflows.dispatchers.local_dask import abort_workflow
+
+        abort_workflow()

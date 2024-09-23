@@ -32,7 +32,7 @@ from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.tool import create_workflow as create_linearize_workflow
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 IIV_STRATEGIES = frozenset(
@@ -263,7 +263,7 @@ def run_linearization(context, baseme):
         model=baseme.model,
         description=algorithms.create_description(baseme.model),
     )
-    linear_results = call_workflow(linear_workflow, "running_linearization", linearize_context)
+    linear_results = linearize_context.call_workflow(linear_workflow, "running_linearization")
     linbaseme = ModelEntry.create(
         model=linear_results.final_model, modelfit_results=linear_results.final_model_results
     )
@@ -383,7 +383,7 @@ def start(
             context=context,
             stepno=i,
         )
-        res = call_workflow(wf, f'results_{algorithm}', context)
+        res = context.call_workflow(wf, f'results_{algorithm}')
 
         if base_model_entry.model.name in sum_models[-1].index.values:
             summary_models = res.summary_models.drop(base_model_entry.model.name, axis=0)
@@ -625,7 +625,7 @@ def post_process(
         dl_wf.add_task(l_start)
         fit_wf = create_fit_workflow(n=1)
         dl_wf.insert_workflow(fit_wf)
-        dlin_model_entry = call_workflow(Workflow(dl_wf), "running_delinearization", context)
+        dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
 
         res_model_entries.append(dlin_model_entry)
         res = create_results(

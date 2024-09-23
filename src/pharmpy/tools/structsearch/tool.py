@@ -14,7 +14,7 @@ from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder, call_workflow
+from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from .drugmetabolite import create_drug_metabolite_models
@@ -140,7 +140,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb = WorkflowBuilder(wf)
     task_results = Task('results', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
-    qss_run_entries = call_workflow(Workflow(wb), 'results_QSS', context)
+    qss_run_entries = context.call_workflow(Workflow(wb), 'results_QSS')
 
     ofvs = [
         model_entry.modelfit_results.ofv if model_entry.modelfit_results is not None else np.nan
@@ -167,7 +167,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb2 = WorkflowBuilder(wf2)
     task_results = Task('results', bundle_results)
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
-    run_model_entries = call_workflow(Workflow(wb2), 'results_remaining', context)
+    run_model_entries = context.call_workflow(Workflow(wb2), 'results_remaining')
 
     summary_input = summarize_modelfit_results_from_entries([model_entry])
     summary_candidates = summarize_modelfit_results_from_entries(
@@ -205,7 +205,7 @@ def run_pkpd(
     wb = WorkflowBuilder(wf)
     task_results = Task('results2', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
-    pd_baseline_fit = call_workflow(Workflow(wb), 'results_remaining', context)
+    pd_baseline_fit = context.call_workflow(Workflow(wb), 'results_remaining')
 
     pkpd_models = create_pkpd_models(
         input_model,
@@ -225,7 +225,7 @@ def run_pkpd(
     wb2 = WorkflowBuilder(wf2)
     task_results = Task('results2', bundle_results)
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
-    pkpd_models_fit = call_workflow(Workflow(wb2), 'results_remaining', context)
+    pkpd_models_fit = context.call_workflow(Workflow(wb2), 'results_remaining')
 
     summary_input = summarize_modelfit_results_from_entries([model_entry])
     summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
@@ -268,7 +268,7 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
     )
 
     wb.add_task(task_results, predecessors=candidate_model_tasks)
-    results = call_workflow(Workflow(wb), "results_remaining", context)
+    results = context.call_workflow(Workflow(wb), "results_remaining")
 
     final_model = results.final_model.replace(name="final")
     context.store_final_model_entry(final_model)

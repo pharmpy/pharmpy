@@ -1,6 +1,6 @@
 from typing import TypeVar
 
-from .workflow import Workflow, WorkflowBuilder, insert_context
+from ...workflow import Workflow, WorkflowBuilder, insert_context
 
 T = TypeVar('T')
 
@@ -43,11 +43,8 @@ def call_workflow(wf: Workflow[T], unique_name, ctx) -> T:
     return res
 
 
-def abort_workflow(ctx, msg):
+def abort_workflow():
     from dask.distributed import get_client
 
-    prefixed_message = "ABORTING: " + msg
-    ctx.log_message("error", prefixed_message)
-    print(prefixed_message)
     client = get_client()
     client.close()

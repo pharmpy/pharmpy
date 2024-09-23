@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     plot_dv_vs_pred,
     plot_eta_distributions,
     plot_vpc,
+    set_dataset,
     set_simulation,
 )
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
@@ -56,7 +57,7 @@ RETRIES_STRATEGIES = ["final", "all_final", "skip"]
 
 
 def run_amd(
-    input: Union[Model, Path, str],
+    input: Union[Model, Path, str, pd.DataFrame],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -87,8 +88,8 @@ def run_amd(
 
     Parameters
     ----------
-    input : Model or Path
-        Read model object/Path to a dataset
+    input : Model, Path or DataFrame
+        Starting model or dataset
     results : ModelfitResults
         Reults of input if input is a model
     modeltype : str
@@ -182,6 +183,9 @@ def run_amd(
         iiv_strategy = 'fullblock'
 
     if isinstance(input, str):
+        input = Path(str)
+
+    if isinstance(input, Path):
         model = create_basic_pk_model(
             administration,
             dataset_path=input,
@@ -189,6 +193,15 @@ def run_amd(
             vc_init=vc_init,
             mat_init=mat_init,
         )
+        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+    elif isinstance(input, pd.DataFrame):
+        model = create_basic_pk_model(
+            administration,
+            cl_init=cl_init,
+            vc_init=vc_init,
+            mat_init=mat_init,
+        )
+        model = set_dataset(model, input, datatype='nonmem')
         model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
     elif isinstance(input, nonmem.model.Model):
         model = input
