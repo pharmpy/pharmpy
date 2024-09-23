@@ -119,7 +119,7 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
     if 'IIV_on_RUV' not in skip:
         task_iiv = Task(
             'create_iiv_on_ruv_model',
-            partial(_create_iiv_on_ruv_model, current_iteration=current_iteration, dv=None),
+            partial(_create_iiv_on_ruv_model, current_iteration=current_iteration),
         )
         tasks.append(task_iiv)
         wb.add_task(task_iiv, predecessors=task_base_model)
@@ -127,7 +127,7 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
     if 'power' not in skip and 'combined' not in skip:
         task_power = Task(
             'create_power_model',
-            partial(_create_power_model, current_iteration=current_iteration, dv=None),
+            partial(_create_power_model, current_iteration=current_iteration),
         )
         wb.add_task(task_power, predecessors=task_base_model)
         tasks.append(task_power)
@@ -145,7 +145,6 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
                 groups=groups,
                 i=i,
                 current_iteration=current_iteration,
-                dv=None,
             )
             task = Task(f"create_time_varying_model{i}", tvar)
             tasks.append(task)
@@ -364,37 +363,35 @@ def _create_base_model(input_model_entry, current_iteration, dv):
     return ModelEntry.create(base_model, modelfit_results=None, parent=input_model)
 
 
-def _create_iiv_on_ruv_model(input_model_entry, current_iteration, dv):
-    input_model = input_model_entry.model
-    model = set_iiv_on_ruv(input_model, dv)
+def _create_iiv_on_ruv_model(base_model_entry, current_iteration):
+    base_model = base_model_entry.model
+    model = set_iiv_on_ruv(base_model)
     name = f'IIV_on_RUV_{current_iteration}'
     model = model.replace(name=name, description=name)
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
-def _create_power_model(input_model_entry, current_iteration, dv):
-    input_model = input_model_entry.model
-    model = set_power_on_ruv(
-        input_model, ipred='IPRED', lower_limit=None, zero_protection=True, dv=dv
-    )
+def _create_power_model(base_model_entry, current_iteration):
+    base_model = base_model_entry.model
+    model = set_power_on_ruv(base_model, ipred='IPRED', lower_limit=None, zero_protection=True)
     name = f'power_{current_iteration}'
     model = model.replace(name=name, description=name)
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
-def _create_time_varying_model(input_model_entry, groups, i, current_iteration, dv):
-    input_model = input_model_entry.model
+def _create_time_varying_model(base_model_entry, groups, i, current_iteration):
+    base_model = base_model_entry.model
     quantile = i / groups
-    cutoff = input_model.dataset['TAD'].quantile(q=quantile)
-    model = set_time_varying_error_model(input_model, cutoff=cutoff, idv='TAD', dv=dv)
+    cutoff = base_model.dataset['TAD'].quantile(q=quantile)
+    model = set_time_varying_error_model(base_model, cutoff=cutoff, idv='TAD')
     name = f"time_varying{i}_{current_iteration}"
     model = model.replace(name=name, description=name)
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
-def _create_combined_model(input_model_entry, current_iteration):
-    input_model = input_model_entry.model
-    model = remove_error_model(input_model)
+def _create_combined_model(base_model_entry, current_iteration):
+    base_model = base_model_entry.model
+    model = remove_error_model(base_model)
     sset = model.statements
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
@@ -424,7 +421,7 @@ def _create_combined_model(input_model_entry, current_iteration):
         name=name,
         description=name,
     )
-    return ModelEntry.create(model, modelfit_results=None, parent=input_model)
+    return ModelEntry.create(model, modelfit_results=None, parent=base_model)
 
 
 def _create_dataset(input_model_entry: ModelEntry, dv):
@@ -499,9 +496,8 @@ def _time_after_dose(model):
 
 
 def _create_best_model(model_entry, res, current_iteration, dv, groups=4, cutoff=3.84):
-    if not res.cwres_models.empty and any(res.cwres_models['dofv'] > cutoff):
+    if any(res.cwres_models['dofv'] > cutoff):
         model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
-        selected_model_name = f'base_{current_iteration}'
         idx = res.cwres_models['dofv'].idxmax()
         name = idx[0]
 
@@ -611,11 +607,15 @@ def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictne
             if 'DVID' not in model.dataset.columns and 'dvid' not in model.datainfo.types:
                 raise ValueError("No DVID column in dataset.")
             else:
-                if dv not in set(model.dataset['DVID']):
-                    raise ValueError(f"No DVID = {dv} in dataset.")
+                try:
+                    dvid_name = model.datainfo.typeix['dvid'][0].name
+                except IndexError:
+                    dvid_name = 'DVID'
+                if dv not in set(model.dataset[dvid_name]):
+                    raise ValueError(f"No {dvid_name} = {dv} in dataset.")
 
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
-                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
             )
