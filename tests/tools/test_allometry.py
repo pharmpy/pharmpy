@@ -69,7 +69,7 @@ def test_get_best_model(load_model_for_test, testdata):
     assert best_model.description != 'allometry'
 
 
-@pytest.mark.filterwarnings("ignore:UserWarning")
+@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')

@@ -78,9 +78,7 @@ def set_maxevals(model, results, max_evals=3.1):
     max_eval_number = round(max_evals * results.function_evaluations_iterations.loc[1])
     first_es = model.execution_steps[0]
     model = set_estimation_step(model, first_es.method, 0, maximum_evaluations=max_eval_number)
-    return ModelEntry.create(
-        model=model, parent=None, modelfit_results=results
-    )
+    return ModelEntry.create(model=model, parent=None, modelfit_results=results)
 
 
 def init_search_state(context, search_space, algorithm, nsamples, modelentry):
