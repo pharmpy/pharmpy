@@ -65,7 +65,7 @@ class LinStateAndEffect(StateAndEffect):
 
 def store_input_model(context, model, results, max_eval):
     """Store the input model"""
-    model = model.replace(name="input", description="")
+    model = model.replace(name="input", description="input")
     if max_eval:
         input_modelentry = set_maxevals(model, results)
     else:
@@ -79,7 +79,7 @@ def set_maxevals(model, results, max_evals=3.1):
     first_es = model.execution_steps[0]
     model = set_estimation_step(model, first_es.method, 0, maximum_evaluations=max_eval_number)
     return ModelEntry.create(
-        model=model.replace(name="input", description=""), parent=None, modelfit_results=results
+        model=model, parent=None, modelfit_results=results
     )
 
 
@@ -122,7 +122,7 @@ def filter_search_space_and_model(search_space, model):
             filtered_model = cov_func(filtered_model)
             description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
     description.append("ADD_EXPLOR")
-    filtered_model = filtered_model.replace(description=";".join(description))
+    filtered_model = filtered_model.replace(description="input;" + ";".join(description))
 
     exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
     exploratory_cov_funcs = all_funcs(Model(), exploratory_cov)
