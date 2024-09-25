@@ -137,6 +137,12 @@ def descale_thetas(x, scale):
     return np.array(descaled)
 
 
+def build_starting_ucp_vector(theta_scale, omega_coords, sigma_coords):
+    n = len(theta_scale) + len(omega_coords) + len(sigma_coords)
+    x = np.full(n, 0.1)
+    return x
+
+
 def calculate_matrix_gradient_scale(x, scale, coords):
     # For diagonal elements: scale(x_ii) = 2 * s_ii * exp(2 * x_ii)
     # For off diagonals: scale(x_ij) = s_ij * s_jj * exp(x_jj)
