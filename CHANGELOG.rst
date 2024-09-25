@@ -12,6 +12,7 @@ Changes
 
 * Added replacement of deterministic random variables (0 FIX) in modeling.cleanup_model
 * Set ONEHEADER to newly created $TABLES for NONMEM
+* Make an added RATE column for ZO absorption be int32 instead of float64
 
 Bugfixes
 ========

@@ -570,7 +570,7 @@ def update_infusion(model: Model, old: CompartmentalSystem):
                 updated_dataset = False
         else:
             dataset = model.dataset.copy()
-            rate = np.where(dataset['AMT'] == 0, 0.0, -2.0)
+            rate = np.where(dataset['AMT'] == 0, np.int32(0), np.int32(-2))
             dataset['RATE'] = rate
             updated_dataset = True
             model = model.replace(dataset=dataset)
