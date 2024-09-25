@@ -22,7 +22,7 @@ from pharmpy.model import (
     output,
 )
 
-from .parameters import get_omegas, get_sigmas, get_thetas
+from .parameters import get_omegas, get_sigmas, get_thetas, replace_fixed_thetas
 from .random_variables import replace_non_random_rvs
 
 if TYPE_CHECKING:
@@ -497,6 +497,7 @@ def cleanup_model(model: Model):
     * Make model statements declarative, i.e. only one assignment per symbol
     * Inline all assignments of one symbol, e.g. X = Y
     * Remove all random variables with no variability (i.e. with omegas fixed to zero)
+    * Put fixed thetas directly in the model statements
 
     Notes
     -----
@@ -571,6 +572,7 @@ def cleanup_model(model: Model):
 
     model = model.replace(statements=Statements(newstats))
     model = replace_non_random_rvs(model)
+    model = replace_fixed_thetas(model)
     return model
 
 
