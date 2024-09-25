@@ -656,3 +656,31 @@ def add_population_parameter(
     params = model.parameters + param
     model = model.replace(parameters=params)
     return model.update_source()
+
+
+def replace_fixed_thetas(model: Model):
+    """Replace all fixed thetas with constants in the model statements
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        A new model
+    """
+
+    keep = []
+    d = {}
+
+    for p in model.parameters:
+        if p.fix:
+            d[p.symbol] = p.init
+        else:
+            keep.append(p)
+
+    model = model.replace(parameters=Parameters(keep), statements=model.statements.subs(d))
+    model = model.update_source()
+    return model

@@ -3,6 +3,7 @@ from dataclasses import replace
 
 import pytest
 
+from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
@@ -16,6 +17,7 @@ from pharmpy.modeling import (
     get_omegas,
     get_sigmas,
     get_thetas,
+    replace_fixed_thetas,
     set_initial_estimates,
     set_lower_bounds,
     set_upper_bounds,
@@ -229,3 +231,13 @@ def test_set_initial_estimates_subset_parameters_w_correlation(load_model_for_te
     assert model.parameters['IIV_S1'].init == 0.09
     assert updated_model.parameters['IIV_S1'].init == 0.5
     assert updated_model.parameters['IIV_CL_IIV_V'].init == 0.0285
+
+
+def test_replace_fixed_thetas(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = fix_parameters(model, ["POP_CL"])
+    model = replace_fixed_thetas(model)
+    assert len(model.parameters) == 5
+    assert 'POP_CL' not in model.parameters
+    assert len(model.statements[0].free_symbols) == 2
+    assert Expr.symbol('POP_CL') not in model.statements[0].free_symbols
