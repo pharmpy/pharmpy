@@ -56,6 +56,7 @@ def reference_correction_from_psn_vpc(path):
     path = Path(path)
     opts = options_from_command(psn_command(path))
     dv = opts.get('dv', 'DV')
+    idv = opts.get('idv', 'TIME')
     logdv = bool(int(opts.get('lnDV', '0')))  # NOTE: Not entirely correct
     lower_bound = opts.get('lower_bound', 0.0)
 
@@ -74,6 +75,7 @@ def reference_correction_from_psn_vpc(path):
         origpreddata = origpredfile.tables[0].data_frame
         origpreddata = origpreddata[origpreddata['MDV'] == 0.0]
         pred = origpreddata[dv]
+        idvpred = origpreddata[idv]
     else:
         pred = origdata['PRED']
 
@@ -94,12 +96,17 @@ def reference_correction_from_psn_vpc(path):
         refpreddata = refpredfile.tables[0].data_frame
         refpreddata = refpreddata[refpreddata['MDV'] == 0.0]
         predref = refpreddata[dv]
+        idvpredref = refpreddata[idv]
     else:
         predref = refdata[0]['PRED']
 
     lb = evaluate_expression(model, lower_bound)[origdata.index]
     rcdv, rcdv_sim = calculate_reference_correction(
         origdata[dv], pred, predref, simdata, refdata, logdv, lb
+    )
+
+    rcidv, rcidv_sim = calculate_reference_correction(
+        origdata[idv], idvpred, idvpredref, simdata, refdata, logdv, lb
     )
 
     simreffile_path = m1 / 'vpc_simulation.1.npctab.dta.refcorr'
@@ -113,6 +120,7 @@ def reference_correction_from_psn_vpc(path):
             elif re.match(r'\s*[A-Za-z]', line):
                 header = line.split()
                 mdv_index = header.index("MDV")
+                idv_index = header.index(idv)
                 dv_index = header.index(dv)
                 dh.write(line)
             else:
@@ -121,6 +129,7 @@ def reference_correction_from_psn_vpc(path):
                     dh.write(line)
                 else:
                     values[dv_index] = str(rcdv_sim[tab][row])
+                    values[idv_index] = str(rcidv_sim[tab][row])
                     new_line = ' ' + ' '.join(values) + '\n'
                     dh.write(new_line)
                 row += 1
@@ -134,6 +143,7 @@ def reference_correction_from_psn_vpc(path):
             elif re.match(r'\s*[A-Za-z]', line):
                 header = line.split()
                 mdv_index = header.index("MDV")
+                idv_index = header.index(idv)
                 dv_index = header.index(dv)
                 dh.write(line)
             else:
@@ -142,6 +152,7 @@ def reference_correction_from_psn_vpc(path):
                     dh.write(line)
                 else:
                     values[dv_index] = str(rcdv[row])
+                    values[idv_index] = str(rcidv[row])
                     new_line = ' ' + ' '.join(values) + '\n'
                     dh.write(new_line)
                 row += 1
