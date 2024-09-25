@@ -20,6 +20,7 @@ Bugfixes
 * Let translate_nmtran_time return the input model if the input model has no dataset
 * Fix bug causing NONMEM code to keep bounds on thetas after unconstrain_parameters
 * Fix crashes when starting amd using the command line interface
+* Fix crashes in modelsearch when running TMDD and drug metabolite in amd (issue #3203)
 
 1.2.0 (2024-08-22)
 ------------------
