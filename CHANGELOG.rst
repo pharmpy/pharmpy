@@ -5,6 +5,7 @@ New features
 ============
 
 * Support `DataFrame` as input to `run_amd`
+* Recognize "HESSIAN OF POSTERIOR DENSITY..." error from NONMEM (issue #3326)
   
 Changes
 =======
