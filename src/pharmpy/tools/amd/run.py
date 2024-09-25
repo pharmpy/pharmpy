@@ -346,6 +346,7 @@ def run_amd(
         orig_dataset = model.dataset
         if dv_types is not None:
             model = filter_dataset(model, f'{dvid_name} < 2')
+            model = model.replace(dataset=model.dataset.reset_index())
 
     n = 1
     while True:
@@ -490,6 +491,7 @@ def run_amd(
         orig_dataset = model.dataset
         # FIXME : remove
         model = filter_dataset(model, f'{dvid_name} != 2')
+        model = model.replace(dataset=model.dataset.reset_index())
 
     if results is None:
         results = run_tool('modelfit', model, path=ctx.path, resume=resume)
