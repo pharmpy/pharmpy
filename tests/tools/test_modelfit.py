@@ -3,6 +3,8 @@ import numpy as np
 from pharmpy.tools.modelfit.ucp import (
     build_initial_values_matrix,
     build_parameter_coordinates,
+    calculate_matrix_gradient_scale,
+    calculate_theta_gradient_scale,
     descale_matrix,
     descale_thetas,
     scale_matrix,
@@ -86,3 +88,18 @@ def test_scale_thetas(load_example_model_for_test):
 
     x = descale_thetas([1.0053e-01, 7.5015e-02, 1.5264e-01], scale)
     assert np.allclose(x, np.array([4.6955e-03, 9.8426e-01, 1.5892e-01]), atol=1e-5)
+
+
+def test_calculate_theta_gradient_scale(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    theta_ucp = np.array([0.1])
+    scale = scale_thetas(model.parameters[(0,)])
+    grad = calculate_theta_gradient_scale(theta_ucp, scale)
+    assert list(grad) == list(theta_ucp)
+
+
+def test_calculate_matrix_gradient_scale():
+    omega_ucp = np.array([[0.1]])
+    scale = scale_matrix(omega_ucp)
+    grad = calculate_matrix_gradient_scale(omega_ucp, scale, build_parameter_coordinates(omega_ucp))
+    assert np.allclose(grad, np.array([0.69897146]))

@@ -135,3 +135,56 @@ def descale_thetas(x, scale):
             prop_scale = np.exp(diff_scale) / (1.0 + np.exp(diff_scale))
             descaled.append(prop_scale * range_ul + lb)
     return np.array(descaled)
+
+
+def calculate_matrix_gradient_scale(x, scale, coords):
+    # For diagonal elements: scale(x_ii) = 2 * s_ii * exp(2 * x_ii)
+    # For off diagonals: scale(x_ij) = s_ij * s_jj * exp(x_jj)
+    values = []
+    for row, col in coords:
+        if row == col:
+            val = 2.0 * scale[row, col] * math.exp(2.0 * x[row, col])
+        else:
+            val = 2.0 * scale[row, col] * scale[col, col] * math.exp(x[col, col])
+        values.append(val)
+    return np.array(values)
+
+
+def calculate_theta_gradient_scale(x, scale):
+    # scale value for unbounded
+    # For bounded:
+    #     -s + x        -2⋅s + 2⋅x
+    # rul⋅ℯ         rul⋅ℯ
+    # ─────────── - ───────────────
+    # -s + x                     2
+    # ℯ       + 1    ⎛ -s + x    ⎞
+    #               ⎝ℯ       + 1⎠
+    s, _, range_ul = scale
+    values = []
+
+    for ucp, selt, rul in zip(x, s, range_ul):
+        if rul is None:
+            val = selt * ucp
+        else:
+            pw = math.exp(ucp - selt)
+            val = rul * pw / (pw + 1.0) - rul * math.exp(2.0 * ucp - 2.0 * selt) / (pw + 1.0) ** 2
+        values.append(val)
+    return np.array(values)
+
+
+def calculate_gradient_scale(
+    theta_ucp,
+    omega_ucp,
+    sigma_ucp,
+    theta_scale,
+    omega_scale,
+    sigma_scale,
+    omega_coords,
+    sigma_coords,
+):
+    # This is the inner derivative of the transformation
+    # derivative of the function to go from ucp to normal parameter space
+    theta = calculate_theta_gradient_scale(theta_ucp, theta_scale)
+    omega = calculate_matrix_gradient_scale(omega_ucp, omega_scale, omega_coords)
+    sigma = calculate_matrix_gradient_scale(sigma_ucp, sigma_scale, sigma_coords)
+    return np.concatenate((theta, omega, sigma))
