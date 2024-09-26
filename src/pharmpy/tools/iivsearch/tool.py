@@ -383,6 +383,7 @@ def start(
             context=context,
             stepno=i,
         )
+        context.log_info(f"Starting step {algorithm_cur}")
         res = context.call_workflow(wf, f'results_{algorithm}')
 
         if base_model_entry.model.name in sum_models[-1].index.values:
@@ -404,6 +405,9 @@ def start(
         else:
             final_res = input_model_entry.modelfit_results
             final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
+        descr = final_model_entry.model.description
+        ofv = final_model_entry.modelfit_results.ofv
+        context.log_info(f"Finished step {algorithm_cur}. Best model: {descr}, OFV: {ofv}")
 
         # FIXME: Add parent model
         base_model_entry = final_model_entry
