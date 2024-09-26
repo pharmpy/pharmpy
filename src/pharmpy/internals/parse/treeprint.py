@@ -5,7 +5,6 @@ Baker). In development.
 
 from __future__ import annotations
 
-import logging
 from collections import namedtuple
 from dataclasses import dataclass
 from enum import Enum
@@ -30,9 +29,6 @@ class NodeStyle:
     char: CharSet = CharSet(fork='├', horiz='│', vert='─', inline='┌', lfork='└', end=' ')
 
     def __post_init__(self):
-        log = logging.getLogger(__name__ + '.' + self.__class__.__name__)
-        if self.indent.header > self.indent.node:
-            log.warning("Indent of header > indent of node. Might break assumptions.")
         for x in self.char:
             if len(x) != 1:
                 raise ValueError(f'len({x}) != 1 (got {len(x)})')
