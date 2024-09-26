@@ -2,6 +2,7 @@ import math
 
 import pharmpy.deps.scipy as scipy
 from pharmpy.deps import numpy as np
+from pharmpy.deps import symengine
 
 
 def scale_matrix(A):
@@ -138,7 +139,7 @@ def descale_thetas(x, scale):
 
 
 def build_starting_ucp_vector(theta_scale, omega_coords, sigma_coords):
-    n = len(theta_scale) + len(omega_coords) + len(sigma_coords)
+    n = len(theta_scale[0]) + len(omega_coords) + len(sigma_coords)
     x = np.full(n, 0.1)
     return x
 
@@ -149,7 +150,7 @@ def calculate_matrix_gradient_scale(x, scale, coords):
     values = []
     for row, col in coords:
         if row == col:
-            val = 2.0 * scale[row, col] * math.exp(2.0 * x[row, col])
+            val = 2.0 * scale[row, col] ** 2 * math.exp(2.0 * x[row, col])
         else:
             val = 2.0 * scale[row, col] * scale[col, col] * math.exp(x[col, col])
         values.append(val)
@@ -164,13 +165,13 @@ def calculate_theta_gradient_scale(x, scale):
     # ─────────── - ───────────────
     # -s + x                     2
     # ℯ       + 1    ⎛ -s + x    ⎞
-    #               ⎝ℯ       + 1⎠
+    #                ⎝ℯ       + 1⎠
     s, _, range_ul = scale
     values = []
 
     for ucp, selt, rul in zip(x, s, range_ul):
         if rul is None:
-            val = selt * ucp
+            val = selt
         else:
             pw = math.exp(ucp - selt)
             val = rul * pw / (pw + 1.0) - rul * math.exp(2.0 * ucp - 2.0 * selt) / (pw + 1.0) ** 2
@@ -194,3 +195,8 @@ def calculate_gradient_scale(
     omega = calculate_matrix_gradient_scale(omega_ucp, omega_scale, omega_coords)
     sigma = calculate_matrix_gradient_scale(sigma_ucp, sigma_scale, sigma_coords)
     return np.concatenate((theta, omega, sigma))
+
+
+def get_parameter_symbols(model):
+    symbols = (symengine.Symbol(s) for s in model.parameters.nonfixed.names)
+    return tuple(symbols)

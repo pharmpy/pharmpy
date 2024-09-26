@@ -95,11 +95,11 @@ def test_calculate_theta_gradient_scale(load_model_for_test, testdata):
     theta_ucp = np.array([0.1])
     scale = scale_thetas(model.parameters[(0,)])
     grad = calculate_theta_gradient_scale(theta_ucp, scale)
-    assert list(grad) == list(theta_ucp)
+    assert list(grad) == [1.0]
 
 
 def test_calculate_matrix_gradient_scale():
     omega_ucp = np.array([[0.1]])
     scale = scale_matrix(omega_ucp)
     grad = calculate_matrix_gradient_scale(omega_ucp, scale, build_parameter_coordinates(omega_ucp))
-    assert np.allclose(grad, np.array([0.69897146]))
+    assert np.allclose(grad, np.array([0.2]))
