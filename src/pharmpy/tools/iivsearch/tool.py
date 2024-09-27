@@ -297,6 +297,7 @@ def start(
     keep,
     strictness,
 ):
+    context.log_info("Starting iivsearch")
     input_model, input_model_entry = prepare_input_model(input_model, input_res)
     context.store_input_model_entry(input_model_entry)
 
@@ -501,7 +502,8 @@ def _concat_summaries(summaries, keys):
         return pd.concat(summaries, keys=keys, names=['step'])
 
 
-def _results(res):
+def _results(context, res):
+    context.log_info("Finishing iivsearch")
     return res
 
 

@@ -79,6 +79,7 @@ def create_workflow(
 
 
 def start_linearize(context, model, results):
+    context.log_info("Starting linearize")
     start_model_entry = ModelEntry.create(model=model, modelfit_results=results)
 
     # Create links to input model
@@ -107,6 +108,7 @@ def postprocess(context, model_name, *modelentries):
     # Create links to final model
     context.store_final_model_entry(res.final_model)
 
+    context.log_info("Finishing linearize")
     return res
 
 
