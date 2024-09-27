@@ -6,6 +6,7 @@ from typing import Any, Literal, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
+from pharmpy.workflows.context.broadcasters.terminal import broadcast_message
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
@@ -34,6 +35,7 @@ class Context(ABC):
         # An implementation needs to create the model database here
         # If ref is None an implementation specific default ref will be used
         self._name = name
+        self.broadcast_message = broadcast_message
 
     @property
     def model_database(self) -> ModelDatabase:
@@ -141,6 +143,7 @@ class Context(ABC):
             ctxpath = self.get_model_context_path(model)
         date = datetime.now()
         self.store_message(severity, ctxpath, date, message)
+        self.broadcast_message(severity, ctxpath, date, message)
 
     def log_info(self, message: str, model: Optional[Model] = None):
         """Add an info message to the log
@@ -148,7 +151,6 @@ class Context(ABC):
         Currently with echo to stdout. In the future this could be changed or be configurable.
         """
         self.log_message(severity="info", message=message, model=model)
-        print(message)
 
     def log_error(self, message: str, model: Optional[Model] = None):
         """Add an error message to the log"""

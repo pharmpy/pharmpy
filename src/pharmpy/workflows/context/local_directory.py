@@ -35,7 +35,6 @@ class LocalDirectoryContext(Context):
         if ref is None:
             ref = Path.cwd()
         path = Path(ref) / name
-        self.name = name
 
         self._init_path(path)
         self._init_top_path()
@@ -44,6 +43,7 @@ class LocalDirectoryContext(Context):
         self._init_model_name_map()
         self._init_log()
         self._store_common_options(common_options)
+        super().__init__(name, ref, common_options)
 
     def _init_path(self, path):
         self.path = path_absolute(path)
