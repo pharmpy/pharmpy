@@ -452,7 +452,7 @@ def start(
         best_model_name = summary_final_step['rank'].idxmin()
 
         if best_model_name == input_model.name:
-            warnings.warn(
+            context.log_warning(
                 f'Worse {rank_type} in final model {final_model.name} '
                 f'than {input_model.name}, selecting input model'
             )
