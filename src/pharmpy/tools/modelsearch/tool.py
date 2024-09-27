@@ -159,7 +159,7 @@ def start(
 
     if candidate_model_tasks:
         # Clear base description to not interfere with candidate models
-        base_clear_task = Task("Clear_base_description", clear_description)
+        base_clear_task = Task("clear_base_description", clear_description)
         wb.add_task(base_clear_task, predecessors=base_fit)
 
         wb.insert_workflow(wf_search, predecessors=base_clear_task)
@@ -203,50 +203,6 @@ def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry
     return {k: v for k, v in sorted(res.items(), key=lambda x: (x[0][0], x[0][1]))}
 
 
-def _update_results(base):
-    """
-    Changes the name and description of the connected ModelfitResults object
-    to match the one found in the model object"""
-    base_results = base.modelfit_results
-    # Workaround due to not having a replace method
-    return base.replace(
-        modelfit_results=ModelfitResults(
-            name=base.name,
-            description=base.description,
-            ofv=base_results.ofv,
-            ofv_iterations=base_results.ofv_iterations,
-            parameter_estimates=base_results.parameter_estimates,
-            parameter_estimates_sdcorr=base_results.parameter_estimates_sdcorr,
-            parameter_estimates_iterations=base_results.parameter_estimates_iterations,
-            covariance_matrix=base_results.covariance_matrix,
-            correlation_matrix=base_results.correlation_matrix,
-            precision_matrix=base_results.precision_matrix,
-            standard_errors=base_results.standard_errors,
-            standard_errors_sdcorr=base_results.standard_errors_sdcorr,
-            relative_standard_errors=base_results.relative_standard_errors,
-            minimization_successful=base_results.minimization_successful,
-            minimization_successful_iterations=base_results.minimization_successful_iterations,
-            estimation_runtime=base_results.estimation_runtime,
-            estimation_runtime_iterations=base_results.estimation_runtime_iterations,
-            individual_ofv=base_results.individual_ofv,
-            individual_estimates=base_results.individual_estimates,
-            individual_estimates_covariance=base_results.individual_estimates_covariance,
-            residuals=base_results.residuals,
-            predictions=base_results.predictions,
-            runtime_total=base_results.runtime_total,
-            termination_cause=base_results.termination_cause,
-            termination_cause_iterations=base_results.termination_cause,
-            function_evaluations=base_results.function_evaluations,
-            function_evaluations_iterations=base_results.function_evaluations_iterations,
-            significant_digits=base_results.significant_digits,
-            significant_digits_iterations=base_results.significant_digits_iterations,
-            log_likelihood=base_results.log_likelihood,
-            log=base_results.log,
-            evaluation=base_results.evaluation,
-        )
-    )
-
-
 def create_base_model(ss, allometry, model_or_model_entry):
     if isinstance(model_or_model_entry, ModelEntry):
         model = model_or_model_entry.model
@@ -264,8 +220,6 @@ def create_base_model(ss, allometry, model_or_model_entry):
     for name, func in lnt.items():
         base = func(base)
         added_features += f';{name[0]}({name[1]})'
-    # UPDATE_DESCRIPTION
-    # FIXME : Need to be its own parent if the input model shouldn't be ranked with the others
     base = base.replace(name="base", description=added_features[1:])
     base = _add_allometry(base, allometry)
 
@@ -273,33 +227,9 @@ def create_base_model(ss, allometry, model_or_model_entry):
 
 
 def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries):
-    res_model_entries = []
-    input_model_entry = None
-    base_model_entry = None
-    for model_entry in model_entries:
-        model = model_entry.model
-        if not model.name.startswith('modelsearch_run') and model.name == "base":
-            input_model_entry = model_entry
-            base_model_entry = model_entry
-        elif not model.name.startswith('modelsearch_run') and model.name != "base":
-            user_input_model_entry = model_entry
-        else:
-            res_model_entries.append(model_entry)
-    if not base_model_entry:
-        input_model_entry = user_input_model_entry
-        base_model_entry = user_input_model_entry
-    if not input_model_entry:
-        raise ValueError('Error in workflow: No input model')
+    input_model_entry, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
 
-    entries_to_summarize = [user_input_model_entry]
-
-    if user_input_model_entry != base_model_entry:
-        entries_to_summarize.append(base_model_entry)
-
-    if res_model_entries:
-        entries_to_summarize += res_model_entries
-
-    summary_models = summarize_modelfit_results_from_entries(entries_to_summarize)
+    summary_models = summarize_modelfit_results_from_entries(model_entries)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
 
@@ -324,6 +254,27 @@ def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries)
         context=context,
     )
     return res
+
+
+def categorize_model_entries(model_entries):
+    res_model_entries = []
+    input_model_entry = None
+    base_model_entry = None
+    for model_entry in model_entries:
+        model = model_entry.model
+        if model.name.startswith('modelsearch_run'):
+            res_model_entries.append(model_entry)
+        elif model.name == "base":
+            base_model_entry = model_entry
+        else:
+            input_model_entry = model_entry
+    if not input_model_entry:
+        raise ValueError('Error in workflow: No input model')
+    if not base_model_entry:
+        input_model_entry = input_model_entry
+        base_model_entry = input_model_entry
+
+    return input_model_entry, base_model_entry, res_model_entries
 
 
 @with_runtime_arguments_type_check
@@ -358,7 +309,7 @@ def validate_input(
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
-                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
             )
     if rank_type != 'mbic' and E is not None:
         raise ValueError(f'E can only be provided when `rank_type` is mbic: got `{rank_type}`')

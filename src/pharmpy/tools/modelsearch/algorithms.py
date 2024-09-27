@@ -104,7 +104,7 @@ def reduced_stepwise(mfl_funcs, iiv_strategy: str, allometry=None):
             for group in groups:
                 # Only add collector nodes to tasks with possible actions (i.e. not to leaf nodes)
                 if all(len(actions[task]) > 0 for task in group):
-                    task_best_model = Task('choose_best_model', _get_best_model)
+                    task_best_model = Task('choose_best_model', get_best_model)
                     wb_search.add_task(task_best_model, predecessors=group)
             # Overwrite actions with new collector nodes
             actions = _get_possible_actions(wb_search, mfl_funcs)
@@ -164,7 +164,7 @@ def _find_same_model_groups(wf, mfl_funcs):
     return all_groups
 
 
-def _get_best_model(*model_entries):
+def get_best_model(*model_entries):
     models_with_res = [model_entry for model_entry in model_entries if model_entry.modelfit_results]
     if models_with_res:
         return min(models_with_res, key=lambda x: x.modelfit_results.ofv)
@@ -208,7 +208,7 @@ def create_candidate_exhaustive(model_name, combo, funcs, iiv_strategy, allometr
     model = _update_name_and_description(model_name, combo, model_entry)
     model = update_initial_estimates(model, input_res)
     for feat, func in zip(combo, funcs):
-        model = func(model)
+        model = _apply_transformation(feat, func, model)
         if iiv_strategy != 'no_add':
             model = _add_iiv_to_func(iiv_strategy, model, model_entry)
     model = _add_allometry(model, allometry)
