@@ -183,7 +183,7 @@ def run_amd(
         iiv_strategy = 'fullblock'
 
     if isinstance(input, str):
-        input = Path(str)
+        input = Path(input)
 
     if isinstance(input, Path):
         model = create_basic_pk_model(
