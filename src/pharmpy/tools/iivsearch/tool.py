@@ -407,7 +407,7 @@ def start(
             final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
         descr = final_model_entry.model.description
         ofv = final_model_entry.modelfit_results.ofv
-        context.log_info(f"Finished step {algorithm_cur}. Best model: {descr}, OFV: {ofv}")
+        context.log_info(f"Finished step {algorithm_cur}. Best model: {descr}, OFV: {ofv:.3f}")
 
         # FIXME: Add parent model
         base_model_entry = final_model_entry
