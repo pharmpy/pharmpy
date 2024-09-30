@@ -165,12 +165,11 @@ def proportional_error_workflow(model_entry):
     prop_start = Task('Check_proportional', _start_iteration, model_entry)
     wb.add_task(prop_start)
 
-    if not has_proportional_error_model(model_entry.model):
-        convert_to_prop_task = Task("convert_to_proportional", _change_proportional_model)
-        wb.add_task(convert_to_prop_task, predecessors=prop_start)
+    convert_to_prop_task = Task("convert_to_proportional", _change_proportional_model)
+    wb.add_task(convert_to_prop_task, predecessors=prop_start)
 
-        fit_wf = create_fit_workflow(n=1)
-        wb.insert_workflow(fit_wf, predecessors=convert_to_prop_task)
+    fit_wf = create_fit_workflow(n=1)
+    wb.insert_workflow(fit_wf, predecessors=convert_to_prop_task)
     return Workflow(wb)
 
 
@@ -185,6 +184,7 @@ def _change_proportional_model(model_entry):
 
 
 def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, strictness):
+    context.log_info("Starting tool ruvsearch")
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -192,17 +192,25 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     input_model = input_model.replace(name="input", description="")
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
     context.store_input_model_entry(input_model_entry)
+    context.log_info(f"Input model OFV: {input_res.ofv:.3f}")
 
-    # Check if model has a proportional error
-    proportional_workflow = proportional_error_workflow(input_model_entry)
-    model_entry = context.call_workflow(proportional_workflow, 'Convert_error_model')
-
-    if model_entry.model == input_model_entry.model:
-        selected_model_entries = [model_entry]
-    else:
+    if not has_proportional_error_model(input_model_entry.model):
+        context.log_info("Fitting input model with proportional error")
+        proportional_workflow = proportional_error_workflow(input_model_entry)
+        model_entry = context.call_workflow(proportional_workflow, 'Convert_error_model')
+        prop_model_entry = model_entry
         selected_model_entries = [input_model_entry, model_entry]
+        context.log_info(
+            f"Input model with proportional error OFV: {model_entry.modelfit_results.ofv:.3f}"
+        )
+    else:
+        model_entry = input_model_entry
+        prop_model_entry = None
+        selected_model_entries = [model_entry]
+
     cwres_models = []
     for current_iteration in range(1, max_iter + 1):
+        context.log_info(f"Starting iteration {current_iteration}")
         wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
         res, best_model_entry, selected_model_name = context.call_workflow(
             wf, f'results{current_iteration}'
@@ -213,6 +221,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
             selected_model_entries.append(best_model_entry)
 
         model_entry = best_model_entry
+        context.log_info(f"Best model after iteration OFV: {model_entry.modelfit_results.ofv:.3f}")
 
         if selected_model_name.startswith('base'):
             break
@@ -225,6 +234,18 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     delta_ofv = input_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
     if delta_ofv < cutoff:
         model_entry = input_model_entry
+        changing = "input"
+    else:
+        changing = None
+    if prop_model_entry is not None:
+        delta_ofv = prop_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
+        if delta_ofv < cutoff:
+            model_entry = prop_model_entry
+            changing = "prop_error"
+    if changing is not None and changing != model_entry.model.name:
+        context.log_info(
+            f"The {changing} model with OFV {model_entry.modelfit_results.ofv:.3f} was better than the selected model"
+        )
 
     tables = create_result_tables(selected_model_entries, cutoff, strictness)
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
@@ -249,7 +270,6 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         ),
     )
 
-    # Create links to final model
     context.store_final_model_entry(final_model)
 
     return res
@@ -300,7 +320,8 @@ def _start_iteration(model_or_model_entry):
     return model_or_model_entry
 
 
-def _results(res):
+def _results(context, res):
+    context.log_info("Finishing tool ruvsearch")
     return res
 
 
