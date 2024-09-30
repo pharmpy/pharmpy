@@ -11,7 +11,7 @@ from ...workflow import Workflow
 T = TypeVar('T')
 
 
-def run(workflow: Workflow[T]) -> T:
+def run(workflow: Workflow[T], context) -> T:
     # NOTE: We change to a new temporary directory so that all files generated
     # by the workflow end-up in the same root directory. Each task of a
     # workflow has the responsibility to avoid collisions on the file system
@@ -79,10 +79,11 @@ def run(workflow: Workflow[T]) -> T:
                     with LocalCluster(
                         processes=False, dashboard_address=':31058'
                     ) as cluster, Client(cluster) as client:
-                        print(client)
+                        context.log_info(f"Dispatching workflow: {client}")
                         dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
                         try:
                             res = client.get(dsk_optimized, 'results')
                         except dask.distributed.client.FutureCancelledError:
                             res = None
+                        context.log_info("End dispatch")
     return res  # pyright: ignore [reportGeneralTypeIssues]
