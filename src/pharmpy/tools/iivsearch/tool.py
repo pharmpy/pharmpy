@@ -297,7 +297,7 @@ def start(
     keep,
     strictness,
 ):
-    context.log_info("Starting iivsearch")
+    context.log_info("Starting tool iivsearch")
     input_model, input_model_entry = prepare_input_model(input_model, input_res)
     context.store_input_model_entry(input_model_entry)
 
@@ -503,7 +503,7 @@ def _concat_summaries(summaries, keys):
 
 
 def _results(context, res):
-    context.log_info("Finishing iivsearch")
+    context.log_info("Finishing tool iivsearch")
     return res
 
 
