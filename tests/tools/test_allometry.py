@@ -13,6 +13,7 @@ from pharmpy.tools.allometry.tool import (
     validate_input,
 )
 from pharmpy.workflows import ModelEntry, Workflow
+from pharmpy.workflows.context import NullContext
 
 tflite_condition = (
     sys.version_info >= (3, 12)
@@ -53,18 +54,19 @@ def test_add_allometry_on_model(load_model_for_test, testdata):
 
 
 def test_get_best_model(load_model_for_test, testdata):
+    ctx = NullContext()
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
     model_allometry = model_start.replace(description='allometry')
 
     me_start = ModelEntry(model_start, modelfit_results=res_start)
     me_allometry = ModelEntry(model_allometry, modelfit_results=res_start)
-    best_model, _ = get_best_model(me_start, me_allometry)
+    best_model, _ = get_best_model(ctx, me_start, me_allometry)
     assert best_model.name == 'final'
     assert best_model.description == 'allometry'
 
     me_allometry = ModelEntry(model_allometry, modelfit_results=None)
-    best_model, _ = get_best_model(me_start, me_allometry)
+    best_model, _ = get_best_model(ctx, me_start, me_allometry)
     assert best_model.name == 'final'
     assert best_model.description != 'allometry'
 
