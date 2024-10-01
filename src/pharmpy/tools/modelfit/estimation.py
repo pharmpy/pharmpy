@@ -2,6 +2,7 @@ import time
 from functools import partial
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.deps import scipy, symengine
 from pharmpy.modeling import cleanup_model, get_thetas
 from pharmpy.tools.modelfit.ucp import (
@@ -16,6 +17,11 @@ from pharmpy.tools.modelfit.ucp import (
     scale_thetas,
     split_ucps,
 )
+from pharmpy.workflows import ModelfitResults
+
+
+class EstimationState:
+    pass
 
 
 def build_matrix_gradients(coords):
@@ -86,6 +92,9 @@ def init(model):
     )
     x = build_starting_ucp_vector(theta_scale, omega_coords, sigma_coords)
 
+    state = EstimationState()
+    state.parameter_symbols = parameter_symbols
+
     func = partial(
         ofv_func,
         theta_scale,
@@ -105,8 +114,9 @@ def init(model):
         symbolic_dH_dx_all,
         omega_grads,
         sigma_grads,
+        state,
     )
-    return x, func
+    return x, func, state
 
 
 def ofv_func(
@@ -127,6 +137,7 @@ def ofv_func(
     symbolic_dH_dx_all,
     omega_grads,
     sigma_grads,
+    state,
     x,
 ):
 
@@ -135,6 +146,10 @@ def ofv_func(
     theta = descale_thetas(theta_ucp, theta_scale)
     omega = descale_matrix(omega_ucp, omega_scale)
     sigma = descale_matrix(sigma_ucp, sigma_scale)
+
+    state.theta = theta
+    state.omega = omega
+    state.sigma = sigma
 
     print(theta, omega, sigma)
 
@@ -202,16 +217,34 @@ def ofv_func(
     grad = gradsum * grad_scale
 
     print("OFV", OFVsum)
-    print("Gradient", grad)
     return OFVsum, grad
 
 
+def get_parameter_estimates(state):
+    names = [s.name for s in state.parameter_symbols]
+    values = list(state.theta)
+    omega_inds = np.tril_indices_from(state.omega)
+    values.extend(list(state.omega[omega_inds]))
+    sigma_inds = np.tril_indices_from(state.sigma)
+    values.extend(list(state.sigma[sigma_inds]))
+    pe = pd.Series(values, index=names, name="estimates")
+    return pe
+
+
 def estimate(model):
-    x, func = init(model)
+    x, func, state = init(model)
 
     start_time = time.time()
-    res = scipy.optimize.minimize(func, x, jac=True, method='BFGS')
+    optres = scipy.optimize.minimize(func, x, jac=True, method='BFGS')
     end_time = time.time()
-    print(res)
 
-    print(f"Estimation time: {end_time - start_time} s")
+    parameter_estimates = get_parameter_estimates(state)
+
+    res = ModelfitResults(
+        estimation_runtime=end_time - start_time,
+        function_evaluations=optres.nfev,
+        minimization_successful=optres.success,
+        ofv=float(optres.fun),
+        parameter_estimates=parameter_estimates,
+    )
+    return res
