@@ -15,6 +15,9 @@ Changes
 * Add replacement of fixed thetas in modeling.cleanup_model
 * Set ONEHEADER to newly created $TABLES for NONMEM
 * Make an added RATE column for ZO absorption be int32 instead of float64
+* Fix issue with different sample sequences for multivariate normal distribution between arm Macs
+  and other platforms. The fix will use another sampling method, which means that it will not
+  be possible to reproduce sampled values between this version of Pharmpy and the previous
 
 Bugfixes
 ========
@@ -25,6 +28,7 @@ Bugfixes
 * Fix bug causing NONMEM code to keep bounds on thetas after unconstrain_parameters
 * Fix crashes when starting amd using the command line interface
 * Fix crashes in modelsearch when running TMDD and drug metabolite in amd (issue #3203)
+* Now all digits of the OFV for a NONMEM run will be read. Previously only about 13 decimals were read correctly
 
 1.2.0 (2024-08-22)
 ------------------
