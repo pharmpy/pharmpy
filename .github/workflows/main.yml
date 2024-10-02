@@ -98,7 +98,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-22.04]
-        python-version: ['3.11']
+        python-version: ['3.12']
 
     runs-on: ${{ matrix.platform }}
 
@@ -157,22 +157,18 @@ jobs:
           tox -e docs-test
 
 
-
   docs-lint:
     strategy:
       matrix:
         platform: [ubuntu-22.04]
-        python-version: ['3.11']
+        python-version: ['3.12']
 
     runs-on: ${{ matrix.platform }}
 
     steps:
-
       - uses: actions/checkout@v4
-
       - uses: ./.github/actions/setup-tox
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Lint docs
         run: tox -e docs-lint
