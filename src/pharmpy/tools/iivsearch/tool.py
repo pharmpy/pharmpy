@@ -277,7 +277,7 @@ def update_linearized_base_model(baseme, input_model, iiv_strategy, param_mappin
         model = create_joint_distribution(
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
-    descr = f"[{','.join(param_mapping.values())}]"
+    descr = algorithms.create_description(model, iov=False, param_dict=param_mapping)
     model = model.replace(name="base", description=descr)
     return ModelEntry.create(model=model, modelfit_results=None)
 
@@ -511,13 +511,6 @@ def _start_algorithm(model_entry):
     return model_entry
 
 
-def rename_linbase(model, linbase_model_entry):
-    linbase_model = linbase_model_entry.replace(
-        name="linear_base_model", description=algorithms.create_description(model)
-    )
-    return ModelEntry.create(model=linbase_model)
-
-
 def add_iiv(iiv_strategy, model, modelfit_results, linearize=False):
     assert iiv_strategy in ('add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
 
@@ -704,7 +697,7 @@ def validate_input(
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
-                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
             )
 
     if algorithm == correlation_algorithm == "skip":

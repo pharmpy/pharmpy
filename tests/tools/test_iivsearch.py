@@ -2,11 +2,14 @@ import pytest
 
 from pharmpy.modeling import (
     add_iiv,
+    add_iov,
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
     find_clearance_parameters,
     fix_parameters,
+    remove_iiv,
+    set_direct_effect,
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
@@ -14,12 +17,270 @@ from pharmpy.tools.iivsearch.algorithms import (
     _extract_clearance_parameter,
     _is_rv_block_structure,
     _rv_block_structures,
+    create_block_structure_candidate_entry,
+    create_description,
     create_eta_blocks,
+    create_no_of_etas_candidate_entry,
     td_exhaustive_block_structure,
     td_exhaustive_no_of_etas,
 )
-from pharmpy.tools.iivsearch.tool import create_workflow, validate_input
-from pharmpy.workflows import Workflow
+from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
+from pharmpy.tools.iivsearch.tool import (
+    create_param_mapping,
+    create_workflow,
+    prepare_algorithms,
+    prepare_base_model,
+    prepare_input_model,
+    update_linearized_base_model,
+    validate_input,
+)
+from pharmpy.workflows import ModelEntry, Workflow
+
+
+def test_prepare_input_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_input, me_input = prepare_input_model(model, res)
+
+    assert model_input.description == '[CL]+[VC]+[MAT]'
+    assert me_input.modelfit_results is not None
+
+
+@pytest.mark.parametrize(
+    'iiv_strategy, linearize, no_of_params_added, description, has_mfr',
+    [
+        ('no_add', False, 0, '[CL]+[VC]+[MAT]', True),
+        ('add_diagonal', False, 2, '[CL]+[VC]+[MAT]+[QP1]+[VP1]', False),
+        ('fullblock', False, 12, '[CL,VC,MAT,QP1,VP1]', False),
+        ('add_diagonal', True, 0, '[CL]+[VC]+[MAT]+[QP1]+[VP1]', False),
+    ],
+)
+def test_prepare_base_model(
+    load_model_for_test, testdata, iiv_strategy, linearize, no_of_params_added, description, has_mfr
+):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_input = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_input = add_peripheral_compartment(model_start)
+    me_input = ModelEntry.create(model_input, modelfit_results=res_input)
+    model_base, me_base = prepare_base_model(me_input, iiv_strategy, linearize)
+
+    assert model_input.parameters['POP_CL'] != model_base.parameters['POP_CL']
+    no_of_params_input = len(model_input.random_variables.parameter_names)
+    param_names = model_base.random_variables.parameter_names
+    no_of_params_base = len(model_base.parameters[param_names].nonfixed.names)
+    assert no_of_params_base - no_of_params_input == no_of_params_added
+    assert model_base.description == description
+    assert bool(me_base.modelfit_results) is has_mfr
+
+
+@pytest.mark.parametrize(
+    'iiv_strategy, param_mapping, description',
+    [
+        ('no_add', {'ETA_1': 'CL', 'ETA_2': 'VC'}, '[CL]+[VC]'),
+        ('add_diagonal', {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}, '[CL]+[VC]+[MAT]'),
+        ('fullblock', {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}, '[CL,VC,MAT]'),
+    ],
+)
+def test_update_linearized_base_model(
+    load_model_for_test, testdata, iiv_strategy, param_mapping, description
+):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_start = remove_iiv(model_start, ['ETA_3'])
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    if iiv_strategy != 'no_add':
+        model_base = iivsearch_add_iiv(iiv_strategy, model_start, res_start, linearize=True)
+    else:
+        model_base = model_start
+    me_base = ModelEntry.create(model_base, modelfit_results=res_start)
+    me_updated = update_linearized_base_model(me_base, model_start, iiv_strategy, param_mapping)
+    assert not me_updated.modelfit_results
+    assert me_updated.model.description == description
+    if iiv_strategy != 'no_add':
+        assert len(model_base.parameters.fixed) > 0
+    assert len(me_updated.model.parameters.fixed) == 0
+
+
+@pytest.mark.parametrize(
+    'algorithm, correlation_algorithm, list_of_algorithms',
+    [
+        ('top_down_exhaustive', 'skip', ['td_exhaustive_no_of_etas']),
+        ('bottom_up_stepwise', 'skip', ['bu_stepwise_no_of_etas']),
+        (
+            'top_down_exhaustive',
+            'top_down_exhaustive',
+            ['td_exhaustive_no_of_etas', 'td_exhaustive_block_structure'],
+        ),
+        ('skip', 'top_down_exhaustive', ['td_exhaustive_block_structure']),
+        (
+            'top_down_exhaustive',
+            None,
+            ['td_exhaustive_no_of_etas', 'td_exhaustive_block_structure'],
+        ),
+        ('bottom_up_stepwise', None, ['bu_stepwise_no_of_etas', 'td_exhaustive_block_structure']),
+    ],
+)
+def test_prepare_algorithms(algorithm, correlation_algorithm, list_of_algorithms):
+    assert prepare_algorithms(algorithm, correlation_algorithm) == list_of_algorithms
+
+
+def test_create_param_mapping(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_input = ModelEntry.create(model, modelfit_results=res)
+
+    param_mapping = create_param_mapping(me_input, linearize=False)
+    assert param_mapping is None
+
+    param_mapping = create_param_mapping(me_input, linearize=True)
+    assert param_mapping == {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
+
+
+@pytest.mark.parametrize(
+    'iiv_strategy, linearize, no_of_added_params',
+    [
+        ('add_diagonal', False, 2),
+        ('fullblock', False, 12),
+        ('add_diagonal', True, 0),
+        ('pd_add_diagonal', False, 2),
+        ('pd_fullblock', False, 3),
+    ],
+)
+def test_add_iiv(load_model_for_test, testdata, iiv_strategy, linearize, no_of_added_params):
+    if not iiv_strategy.startswith('pd'):
+        model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+        res_input = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+        model_input = add_peripheral_compartment(model_start)
+    else:
+        model_start = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+        res_input = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+        model_start = fix_parameters(model_start, model_start.parameters.names)
+        model_input = set_direct_effect(model_start, expr='linear')
+
+    model_iiv = iivsearch_add_iiv(iiv_strategy, model_input, res_input, linearize=linearize)
+    assert (
+        len(model_iiv.parameters.nonfixed) - len(model_input.parameters.nonfixed)
+        == no_of_added_params
+    )
+
+
+@pytest.mark.parametrize(
+    'to_remove, no_of_etas, description',
+    [
+        (('ETA_1',), 2, '[VC]+[MAT]'),
+        (('ETA_1', 'ETA_2'), 1, '[MAT]'),
+    ],
+)
+def test_create_no_of_etas_candidate_entry(
+    load_model_for_test, testdata, to_remove, no_of_etas, description
+):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    me_candidate = create_no_of_etas_candidate_entry(
+        'cand', to_remove, tuple(), tuple(), False, None, me_start
+    )
+    assert len(me_candidate.model.random_variables.iiv.names) == no_of_etas
+    assert me_candidate.model.description == description
+    assert me_candidate.model.parameters['POP_CL'].init == res_start.parameter_estimates['POP_CL']
+    assert me_candidate.modelfit_results is None
+    assert me_candidate.parent == model_start
+
+    etas = ['ETA_1', 'ETA_2', 'ETA_3']
+    param_names = ['CL', 'VC', 'MAT']
+    me_candidate_param_mapping = create_no_of_etas_candidate_entry(
+        'cand', to_remove, etas, param_names, False, None, me_start
+    )
+    assert me_candidate.model == me_candidate_param_mapping.model
+
+    me_candidate_base = create_no_of_etas_candidate_entry(
+        'cand', to_remove, tuple(), tuple(), True, me_candidate, me_start
+    )
+    assert me_candidate.model.statements == me_candidate_base.model.statements
+    assert me_candidate_base.parent == model_start
+
+
+@pytest.mark.parametrize(
+    'block_structure, no_of_dists, description',
+    [
+        ((('ETA_1', 'ETA_2', 'ETA_3'),), 1, '[CL,VC,MAT]'),
+        (
+            (
+                ('ETA_1',),
+                ('ETA_2', 'ETA_3'),
+            ),
+            2,
+            '[CL]+[VC,MAT]',
+        ),
+        (
+            (
+                ('ETA_1',),
+                ('ETA_2',),
+                ('ETA_3',),
+            ),
+            3,
+            '[CL]+[VC]+[MAT]',
+        ),
+    ],
+)
+def test_create_block_structure_candidate_entry(
+    load_model_for_test, testdata, block_structure, no_of_dists, description
+):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    me_candidate = create_block_structure_candidate_entry(
+        'cand', block_structure, tuple(), tuple(), me_start
+    )
+    assert len(me_candidate.model.random_variables.iiv) == no_of_dists
+    assert me_candidate.model.description == description
+    assert me_candidate.model.parameters['POP_CL'].init == res_start.parameter_estimates['POP_CL']
+    assert me_candidate.modelfit_results is None
+    assert me_candidate.parent == model_start
+
+    etas = ['ETA_1', 'ETA_2', 'ETA_3']
+    param_names = ['CL', 'VC', 'MAT']
+    me_candidate_param_mapping = create_block_structure_candidate_entry(
+        'cand', block_structure, etas, param_names, me_start
+    )
+    assert me_candidate.model == me_candidate_param_mapping.model
+
+
+@pytest.mark.parametrize(
+    'iivs_to_remove, param_dict, description',
+    [
+        (('ETA_1',), None, '[VC]+[MAT]'),
+        (
+            (
+                'ETA_1',
+                'ETA_2',
+                'ETA_3',
+            ),
+            None,
+            '[]',
+        ),
+        (
+            (
+                'ETA_1',
+                'ETA_2',
+            ),
+            {'ETA_3': 'MAT'},
+            '[MAT]',
+        ),
+    ],
+)
+def test_create_description(load_model_for_test, testdata, iivs_to_remove, param_dict, description):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = remove_iiv(model, iivs_to_remove)
+    assert create_description(model, False, param_dict) == description
+
+
+def test_create_description_iov(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = add_iov(model, 'VISI')
+    assert create_description(model, True, None) == '[CL]+[VC]+[MAT]'
 
 
 @pytest.mark.parametrize(
@@ -264,6 +525,24 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             dict(model=1),
             TypeError,
             'Invalid `model`',
+        ),
+        (
+            ('nonmem/pheno.mod',),
+            dict(strictness='rse'),
+            ValueError,
+            '`parameter_uncertainty_method` not set',
+        ),
+        (
+            None,
+            dict(algorithm='skip', correlation_algorithm='skip'),
+            ValueError,
+            'Both algorithm and correlation_algorithm',
+        ),
+        (
+            None,
+            dict(algorithm='skip', correlation_algorithm=None),
+            ValueError,
+            'correlation_algorithm need to be specified',
         ),
         (None, {'rank_type': 'ofv', 'E_p': 1.0}, ValueError, 'E_p and E_q can only be provided'),
         (None, {'rank_type': 'ofv', 'E_q': 1.0}, ValueError, 'E_p and E_q can only be provided'),
