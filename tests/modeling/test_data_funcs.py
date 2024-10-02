@@ -580,7 +580,7 @@ def test_bin_observations(load_example_model_for_test):
     ser, bin_edges = bin_observations(model, method="equal_width", nbins=10)
     assert ser.iloc[0] == 0
     assert ser[267] == 9
-    assert ser.iloc[152] == 7
+    assert ser.iloc[153] == 1
     assert len(ser) == 155
     assert bin_edges[0] == 0
     assert bin_edges[1] == 39.88

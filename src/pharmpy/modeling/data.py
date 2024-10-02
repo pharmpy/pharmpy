@@ -2287,17 +2287,17 @@ def bin_observations(
     >>> model = load_example_model("pheno")
     >>> bins, boundaries = bin_observations(model, method="equal_width", nbins=10)
     >>> bins
-    527    0
-    421    0
-    118    0
-    135    0
-    512    0
-          ..
-    203    7
-    475    7
-    510    7
-    133    8
-    267    9
+    1      0
+    11     2
+    13     0
+    19     1
+    26     3
+           ..
+    719    1
+    727    3
+    729    0
+    736    1
+    743    3
     Name: TIME, Length: 155, dtype: int64
     >>> boundaries
     array([  0.  ,  39.88,  78.76, 117.64, 156.52, 195.4 , 234.28, 273.16,
@@ -2320,7 +2320,8 @@ def bin_observations(
         )
     else:
         raise ValueError(f"Unknown binning method {method}")
-    return bincol, boundaries
+    sorted_bincol = bincol.sort_index()
+    return sorted_bincol, boundaries
 
 
 def _get_bin_edges_psn(data, n_bins):
