@@ -59,7 +59,9 @@ def _sample_truncated_joint_normal(sigma, mu, a, b, n, rng):
     kept_samples = np.empty((0, len(mu)))
     remaining = n
     while remaining > 0:
-        samples = rng.multivariate_normal(mu, sigma, size=remaining, check_valid='ignore')
+        samples = rng.multivariate_normal(
+            mu, sigma, size=remaining, method="cholesky", check_valid='ignore'
+        )
         in_range = np.logical_and(samples > a, samples < b).all(axis=1)
         kept_samples = np.concatenate((kept_samples, samples[in_range]))
         remaining = n - len(kept_samples)
@@ -248,9 +250,9 @@ def sample_parameters_from_covariance_matrix(
     >>> pe = results.parameter_estimates
     >>> sample_parameters_from_covariance_matrix(model, pe, cov, n=3, seed=rng)
          POP_CL    POP_VC   COVAPGR    IIV_CL    IIV_VC     SIGMA
-    0  0.005068  0.974989  0.204626  0.024753  0.012099  0.012925
-    1  0.004690  0.958425  0.233222  0.038871  0.028991  0.012530
-    2  0.004901  0.950785  0.128391  0.019000  0.023869  0.013401
+    0  0.004887  1.000761  0.198184  0.034860  0.031391  0.013750
+    1  0.004631  1.024746  0.071056  0.031726  0.026824  0.012597
+    2  0.004631  0.991088  0.130841  0.027464  0.024589  0.013215
 
     See also
     --------
