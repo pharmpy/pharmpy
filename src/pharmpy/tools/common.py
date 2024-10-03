@@ -31,7 +31,9 @@ DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
 
-def update_initial_estimates(model: Model, modelfit_results: Optional[ModelfitResults]):
+def update_initial_estimates(
+    model: Model, modelfit_results: Optional[ModelfitResults], move_est_close_to_bounds=True
+):
     if modelfit_results is None:
         return model
     if not modelfit_results.minimization_successful:
@@ -40,7 +42,9 @@ def update_initial_estimates(model: Model, modelfit_results: Optional[ModelfitRe
 
     try:
         model = set_initial_estimates(
-            model, modelfit_results.parameter_estimates, move_est_close_to_bounds=True
+            model,
+            modelfit_results.parameter_estimates,
+            move_est_close_to_bounds=move_est_close_to_bounds,
         )
     except (ValueError, np.linalg.LinAlgError):
         pass

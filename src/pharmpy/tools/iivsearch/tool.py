@@ -205,7 +205,9 @@ def prepare_input_model(input_model, input_res):
 
 def prepare_base_model(input_model_entry, iiv_strategy, linearize):
     base_model = update_initial_estimates(
-        input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
+        input_model_entry.model,
+        modelfit_results=input_model_entry.modelfit_results,
+        move_est_close_to_bounds=not linearize,
     )
     if iiv_strategy != 'no_add':
         base_model = add_iiv(
