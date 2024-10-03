@@ -562,7 +562,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         Examples
         --------
         >>> from pharmpy.basic import Expr
-        >>> from pharmpy.model import RandomVariables, Parameter
+        >>> from pharmpy.model import NormalDistribution, RandomVariables, Parameter
         >>> omega = Parameter("OMEGA_CL", 0.1)
         >>> dist = NormalDistribution.create("IIV_CL", "IIV", 0, omega.symbol)
         >>> rvs = RandomVariables.create([dist])
