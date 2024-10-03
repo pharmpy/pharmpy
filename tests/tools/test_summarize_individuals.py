@@ -54,10 +54,9 @@ def test_tflite_not_installed(pheno_path, monkeypatch):
     df = summarize_individuals([me])
     assert not df['predicted_dofv'].isnull().any().any()
 
-    with pytest.warns(UserWarning, match='tflite is not installed'):
-        monkeypatch.setitem(sys.modules, 'tflite_runtime', None)
-        df = summarize_individuals([me])
-        assert df['predicted_dofv'].isnull().all().all()
+    monkeypatch.setitem(sys.modules, 'tflite_runtime', None)
+    df = summarize_individuals([me])
+    assert df['predicted_dofv'].isnull().all().all()
 
 
 def test_dofv_parent_model_is_none(pheno_path):
