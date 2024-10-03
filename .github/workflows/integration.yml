@@ -84,12 +84,6 @@ jobs:
           echo 'key ^J' >>lynxcmds
           echo 'key Q' >>lynxcmds
           lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
-      - name: Upload cache workaround
-        uses: actions/upload-artifact@v3
-        with:
-          name: cache-workaround
-          path: 751.zip
-          retention-days: 1
 
 
   integration-ubuntu:
@@ -100,7 +94,7 @@ jobs:
       - name: Checkout Pharmpy
         uses: actions/checkout@v4
 
-      - name: Cache NONMEM
+      - name: Get NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
@@ -213,11 +207,6 @@ jobs:
           version: 12
 
       - name: Get NONMEM
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: cache-workaround
-
-      - name: Cache NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
