@@ -12,7 +12,7 @@ on:
 jobs:
 
   get-nonmem:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
 
       - name: Cache NONMEM
@@ -94,7 +94,7 @@ jobs:
 
   integration-ubuntu:
     needs: [get-nonmem]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
 
       - name: Checkout Pharmpy
@@ -148,7 +148,7 @@ jobs:
 
   integration-macos:
     needs: [get-nonmem]
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
 
       - name: Checkout Pharmpy
