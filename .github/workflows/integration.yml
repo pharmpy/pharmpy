@@ -160,9 +160,6 @@ jobs:
           compiler: gcc
           version: 12
 
-      - name: Install realpath
-        run: brew install coreutils
-
       - name: Get NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
