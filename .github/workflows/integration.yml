@@ -21,6 +21,7 @@ jobs:
         with:
             path: 751.zip
             key: nonmem-751
+            enableCrossOsArchive: true
 
       - name: Download NONMEM
         if: steps.cache-nonmem.outputs.cache-hit != 'true'
@@ -212,6 +213,7 @@ jobs:
         with:
             path: 751.zip
             key: nonmem-751
+            enableCrossOsArchive: true
 
       - name: Unzip NONMEM
         run: 7z x 751.zip -p%ZIP_KEY%
