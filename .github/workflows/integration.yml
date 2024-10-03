@@ -140,7 +140,7 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Run integration tests
         run: tox -e integration
@@ -195,7 +195,7 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Run integration tests
         run: tox -e integration
@@ -257,7 +257,7 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Run integration tests
         run: tox -e integration
