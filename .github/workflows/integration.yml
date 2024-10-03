@@ -112,14 +112,11 @@ jobs:
         env:
           ZIP_KEY: ${{secrets.ZIP_751_KEY}}
 
-      - name: Install gfortran
-        run: sudo apt install gfortran
-
-      - name: Print gfortran and gcc version
-        run: |
-          gfortran --version
-          gcc --version
-        shell: bash
+      - name: Setup gfortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+          version: 12
 
       - name: NONMEM license
         run: echo $LICENSE_KEY > nm751CD/nonmem.lic
@@ -165,12 +162,6 @@ jobs:
 
       - name: Install realpath
         run: brew install coreutils
-
-      - name: Print gfortran and gcc version
-        run: |
-          gfortran --version
-          gcc --version
-        shell: bash
 
       - name: Get NONMEM
         id: cache-nonmem
@@ -218,21 +209,11 @@ jobs:
       - name: Checkout Pharmpy
         uses: actions/checkout@v4
 
-      # https://github.com/modflowpy/install-gfortran-action/blob/dfc32754e541304f2e7b7ca001e40dce094a5cd6/action.yml#L22-L30
       - name: Setup gfortran
-        shell: bash
-        run: |
-          FCDIR=/c/ProgramData/Chocolatey/bin
-          LNDIR=/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64/bin
-          if [ -d "$FCDIR" ] && [ -f "$LNDIR/libgfortran-5.dll" ] && [ ! -f "$FCDIR/libgfortran-5.dll" ]; then
-              ln -s "$LNDIR/libgfortran-5.dll" "$FCDIR/libgfortran-5.dll"
-          fi
-
-      - name: Print gfortran and gcc version
-        run: |
-          gfortran --version
-          gcc --version
-        shell: bash
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+          version: 12
 
       - name: Get NONMEM
         uses: actions/download-artifact@v4.1.7
