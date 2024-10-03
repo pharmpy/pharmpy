@@ -175,6 +175,7 @@ jobs:
       - name: Install NONMEM
         run: |
           cd nm751CD
+          mkdir ../nm751
           /bin/bash SETUP75 $(realpath .) $(realpath ../nm751) gfortran y ar same rec q
 
       - name: Create pharmpy.conf
