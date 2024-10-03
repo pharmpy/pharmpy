@@ -112,21 +112,17 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-24.04]
-        python-version: ['3.11']
+        python-version: ['3.12']
 
     runs-on: ${{ matrix.platform }}
 
     steps:
-
       - uses: actions/checkout@v4
-
       - uses: ./.github/actions/setup-tox
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Install graphviz
         run: sudo apt install graphviz
-
       - name: Build docs
         run: tox -e docs-build
 
@@ -136,18 +132,15 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-24.04]
-        python-version: ['3.11']
+        python-version: ['3.12']
 
     runs-on: ${{ matrix.platform }}
 
     steps:
-
       - uses: actions/checkout@v4
-
       - uses: ./.github/actions/setup-tox
         with:
           python-version: ${{ matrix.python-version }}
-
       - name: Test docs
         run: |
           tox -e docs-test
