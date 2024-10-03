@@ -126,26 +126,6 @@ jobs:
       - name: Build docs
         run: tox -e docs-build
 
-  # This is only needed to test that doctests properly import everything needed
-  # The pytest doctest autoimports the current module
-  docs-test:
-    strategy:
-      matrix:
-        platform: [ubuntu-24.04]
-        python-version: ['3.12']
-
-    runs-on: ${{ matrix.platform }}
-
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/setup-tox
-        with:
-          python-version: ${{ matrix.python-version }}
-      - name: Test docs
-        run: |
-          tox -e docs-test
-          tox -e docs-test
-
 
   docs-lint:
     strategy:

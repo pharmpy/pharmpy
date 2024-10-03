@@ -113,7 +113,7 @@ The local version of the documentation can now be found in ``dist/docs/``.
 
 Documentation tests are run with::
 
-    tox -e docs-test
+    tox -e doctest
 
 This will test all code given in examples of function documentation and check their output.
 
