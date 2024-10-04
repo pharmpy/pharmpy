@@ -1848,9 +1848,14 @@ def update_estimation(control_stream, model):
 
     if not tables and (cols or multi_deriv_subset):
         last_rec_ix = control_stream.records.index(control_stream.records[-1])
+        if len(problems) > 1:
+            # FIXME: This is a workaround for multiple problems
+            filename = "mytabb"
+        else:
+            filename = "mytab"
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
-        s += f'{" ".join(cols)} FILE=mytab ONEHEADER NOAPPEND NOPRINT'
+        s += f'{" ".join(cols)} FILE={filename} ONEHEADER NOAPPEND NOPRINT'
         if model.dataset is not None and any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
         s += '\n'
