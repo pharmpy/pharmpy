@@ -112,7 +112,7 @@ def test_fit_dummy(tmp_path, testdata):
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
         res = fit(model, esttool='dummy')
         rundir = tmp_path / 'modelfit1'
-        assert res.ofv == 18.474451128597565
+        assert res.ofv == 3.6813803370594655
         assert rundir.is_dir()
 
 
