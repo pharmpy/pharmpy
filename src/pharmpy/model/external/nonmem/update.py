@@ -1796,10 +1796,7 @@ def update_estimation(control_stream, model):
     # Check if there are multiple $PROBLEMs
     # FIXME: At the moment we always take the last $PROBLEM. What to do with multiple $PROBLEMs?
     problems = [record.name for record in control_stream.records if record.name == "PROBLEM"]
-    if len(problems) > 1:
-        problem_no = len(problems) - 1
-    else:
-        problem_no = 0
+    problem_no = len(problems) - 1
     tables = control_stream.get_records("TABLE", problem_no)
 
     predictions_subset = set()
