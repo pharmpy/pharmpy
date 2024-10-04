@@ -2,6 +2,7 @@ from functools import partial
 from typing import Literal, Optional
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -429,7 +430,10 @@ def _create_combined_model(base_model_entry, current_iteration):
     df['IPRED'] = df['IPRED'].replace(0, 2.225e-307)
     model = model.replace(dataset=df)
     ipred_min = df['IPRED'].min()
-    sigma_add_init = abs(ipred_min) / 2 if ipred_min != 0 else 0.001
+    if ipred_min == 0 or np.isnan(ipred_min):
+        sigma_add_init = 0.001
+    else:
+        sigma_add_init = abs(ipred_min) / 2
     add_name = 'sigma_add'
     model = add_population_parameter(model, add_name, sigma_add_init, lower=0)
 
