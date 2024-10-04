@@ -66,7 +66,7 @@ def execute_model(model_entry, context):
         ofv_parent = None
 
     # Create dummy ModelfitResults object
-    modelfit_results = create_dummy_modelfit_results(model, ref=ofv_parent)
+    modelfit_results = create_dummy_modelfit_results(model_entry.model, ref=ofv_parent)
 
     log = modelfit_results.log if modelfit_results else None
     model_entry = model_entry.attach_results(modelfit_results=modelfit_results, log=log)
