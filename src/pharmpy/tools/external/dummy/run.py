@@ -1,4 +1,4 @@
-import os
+import hashlib
 import os.path
 import uuid
 from itertools import repeat
@@ -59,7 +59,7 @@ def execute_model(model_entry, context):
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
     # Create dummy ModelfitResults object
-    modelfit_results = create_dummy_modelfit_results(model, seed=2)
+    modelfit_results = create_dummy_modelfit_results(model)
 
     log = modelfit_results.log if modelfit_results else None
     model_entry = model_entry.attach_results(modelfit_results=modelfit_results, log=log)
@@ -74,7 +74,7 @@ def execute_model(model_entry, context):
     return model_entry
 
 
-def create_dummy_modelfit_results(model, seed):
+def create_dummy_modelfit_results(model):
     try:
         obs = get_observations(model)
     except IndexError:
@@ -91,6 +91,8 @@ def create_dummy_modelfit_results(model, seed):
 
     log = Log()
 
+    h = hashlib.sha1(model.name.encode('utf-8')).hexdigest()
+    seed = int(h, 16)
     rng = create_rng(seed)
 
     params = pd.Series(model.parameters.inits)
