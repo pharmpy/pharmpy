@@ -18,13 +18,12 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union
+from typing import TYPE_CHECKING, Any, Optional, Self, Union
 
 import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
-from pharmpy.internals.typing import Self
 from pharmpy.model.external import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
@@ -63,7 +62,7 @@ class ModelInternals:
     def __init__(self):
         pass
 
-    def replace(self, **kwargs) -> Self:  # pyright: ignore [reportInvalidTypeForm]
+    def replace(self, **kwargs) -> Self:
         return dataclasses.replace(self, **kwargs)
 
 
@@ -280,7 +279,7 @@ class Model(Immutable):
                 raise TypeError("model.execution_steps must be of ExecutionSteps type")
             return steps
 
-    def replace(self, **kwargs) -> Self:  # pyright: ignore [reportInvalidTypeForm]
+    def replace(self, **kwargs) -> Self:
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
 
