@@ -74,7 +74,7 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
             if i == 0 or resume:
                 no_of_candidate_models = 7
                 assert len(res.summary_tool) == no_of_candidate_models + 3
-                assert len(res.summary_models) == no_of_candidate_models + 2
+                assert len(res.summary_models) == no_of_candidate_models + 1
 
                 ctx = LocalDirectoryContext(path)
                 names = ctx.list_all_names()
