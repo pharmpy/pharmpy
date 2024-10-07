@@ -58,7 +58,7 @@ def execute_model(model_entry, context):
     model = write_csv(model, path=dataset_path, force=True)
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
-    if model_entry.parent:
+    if model_entry.parent and model_entry.parent.name in context.list_all_names():
         key = context.retrieve_key(model_entry.parent.name)
         res = context.model_database.retrieve_modelfit_results(key)
         ofv_parent = res.ofv
