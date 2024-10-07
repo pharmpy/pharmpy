@@ -18,6 +18,7 @@ Changes
 * Fix issue with different sample sequences for multivariate normal distribution between arm Macs
   and other platforms. The fix will use another sampling method, which means that it will not
   be possible to reproduce sampled values between this version of Pharmpy and the previous
+* Make the default option to remove all in modeling.remove_residuals and modeling.remove_predictions None instead of 'all'
 
 Bugfixes
 ========

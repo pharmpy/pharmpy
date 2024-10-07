@@ -272,8 +272,8 @@ $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
  CIPREDI IRES NOAPPEND NOPRINT ONEHEADER FILE=sdtab1\n"""
     assert model_code == model.code
-    model = remove_predictions(model, 'all')
-    model = remove_residuals(model, 'all')
+    model = remove_predictions(model)
+    model = remove_residuals(model)
     assert model.execution_steps[-1].predictions == ()
     assert model.execution_steps[-1].residuals == ()
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL
@@ -384,7 +384,7 @@ $TABLE ID TIME DV IPRED FILE=mytabb ONEHEADER NOAPPEND NOPRINT
 $DESIGN APPROX=FO FIMDIAG=1 GROUPSIZE=1 OFVTYPE=1\n"""
     assert model_code == model.code
     model = add_residuals(model, res=['RES'])
-    model = remove_predictions(model, 'all')
+    model = remove_predictions(model)
     assert model.execution_steps[-1].predictions == ()
     assert model.execution_steps[-1].residuals == ('RES',)
     model_code = """$PROBLEM PHENOBARB SIMPLE MODEL

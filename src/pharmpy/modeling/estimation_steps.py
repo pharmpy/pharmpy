@@ -1,14 +1,16 @@
+from __future__ import annotations
+
 from itertools import product
-from typing import Any, Literal, Optional, Sequence, Union
+from typing import Any, Iterable, Literal, Optional, Sequence, Union
 
 from pharmpy.basic import Expr
 from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
-ESTIMATION_METHODS = ('FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES')
+MethodType = Literal['FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
 
 
-def set_estimation_step(model: Model, method: Literal[ESTIMATION_METHODS], idx: int = 0, **kwargs):
+def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs):
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -66,9 +68,7 @@ def set_estimation_step(model: Model, method: Literal[ESTIMATION_METHODS], idx: 
     return model.update_source()
 
 
-def add_estimation_step(
-    model: Model, method: Literal[ESTIMATION_METHODS], idx: Optional[int] = None, **kwargs
-):
+def add_estimation_step(model: Model, method: MethodType, idx: Optional[int] = None, **kwargs):
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -648,7 +648,7 @@ def add_residuals(model: Model, res: list[str]):
     return model.update_source()
 
 
-def remove_predictions(model: Model, to_remove: list[str] = 'all'):
+def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None):
     """Remove predictions and/or residuals
 
     Remove predictions from estimation step.
@@ -657,8 +657,8 @@ def remove_predictions(model: Model, to_remove: list[str] = 'all'):
     ----------
     model : Model
         Pharmpy model
-    to_remove : list[str]
-        List of predictions to remove
+    to_remove : Optional[Iterable[str]]
+        Predictions to remove
 
     Returns
     -------
@@ -669,7 +669,7 @@ def remove_predictions(model: Model, to_remove: list[str] = 'all'):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = remove_predictions(model, 'all')
+    >>> model = remove_predictions(model)
     >>> model.execution_steps[-1].predictions
     ()
 
@@ -685,25 +685,23 @@ def remove_predictions(model: Model, to_remove: list[str] = 'all'):
     remove_parameter_uncertainty_step
     """
     steps = model.execution_steps
-    old_predictions = steps[-1].predictions
-    newstep = steps[-1].replace(predictions=())
-    newsteps = steps[0:-1] + newstep
-    model = model.replace(execution_steps=newsteps)
-    model = model.update_source()
-    if to_remove != 'all':
+    if to_remove is not None:
+        old_predictions = steps[-1].predictions
         for value in to_remove:
             if value not in old_predictions:
                 raise ValueError(f"{value} not in predictions")
         new_predictions = tuple(sorted(set(old_predictions) - set(to_remove)))
         newstep = steps[-1].replace(predictions=new_predictions)
-        newsteps = steps[0:-1] + newstep
-        model = model.replace(execution_steps=newsteps)
-        model = model.update_source()
+    else:
+        newstep = steps[-1].replace(predictions=())
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(execution_steps=newsteps)
+    model = model.update_source()
     return model
 
 
-def remove_residuals(model: Model, to_remove: list[str] = None):
-    """Remove predictions and/or residuals
+def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None):
+    """Remove residuals
 
     Remove residuals from estimation step.
 
@@ -711,8 +709,8 @@ def remove_residuals(model: Model, to_remove: list[str] = None):
     ----------
     model : Model
         Pharmpy model
-    to_remove : list[str]
-        List of predictions to remove
+    to_remove : Optional[Iterable[str]]
+        Residuals to remove
 
     Returns
     -------
@@ -723,7 +721,7 @@ def remove_residuals(model: Model, to_remove: list[str] = None):
     --------
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
-    >>> model = remove_residuals(model, 'all')
+    >>> model = remove_residuals(model)
     >>> model.execution_steps[-1].residuals
     ()
 
@@ -739,18 +737,17 @@ def remove_residuals(model: Model, to_remove: list[str] = None):
     remove_parameter_uncertainty_step
     """
     steps = model.execution_steps
-    old_residuals = steps[-1].residuals
-    newstep = steps[-1].replace(residuals=())
-    newsteps = steps[0:-1] + newstep
-    model = model.replace(execution_steps=newsteps)
-    model = model.update_source()
-    if to_remove != 'all':
+    if to_remove is not None:
+        old_residuals = steps[-1].residuals
         for value in to_remove:
             if value not in old_residuals:
                 raise ValueError(f"{value} not in residuals")
         new_residuals = tuple(sorted(set(old_residuals) - set(to_remove)))
         newstep = steps[-1].replace(residuals=new_residuals)
         newsteps = steps[0:-1] + newstep
-        model = model.replace(execution_steps=newsteps)
-        model.update_source()
+    else:
+        newstep = steps[-1].replace(residuals=())
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(execution_steps=newsteps)
+    model = model.update_source()
     return model
