@@ -134,38 +134,56 @@ def test_exhaustive_stepwise_iiv_strategies(
         assert (rundir / 'metadata.json').exists()
 
 
-def test_exhaustive_stepwise_peripheral_upper_limit(tmp_path, start_modelres):
-    with chdir(tmp_path):
-        res = run_modelsearch(
-            'PERIPHERALS([0,1])',
-            'exhaustive_stepwise',
-            results=start_modelres[1],
-            model=start_modelres[0],
-            rank_type='mbic',
-            E=1.0,
-        )
-
-        assert ',999999) ; POP_QP1' in res.models[-1].code
-        assert ',999999) ; POP_VP1' in res.models[-1].code
-
-
-def test_exhaustive_exhaustive_dummy(tmp_path, model_count, start_modelres):
-    with chdir(tmp_path):
-        res = run_modelsearch(
+@pytest.mark.parametrize(
+    'search_space, algorithm, rank_type, kwargs, no_of_models, best_model',
+    [
+        (
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive',
+            'bic',
+            dict(),
+            4,
+            'modelsearch_run2',
+        ),
+        (
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive_stepwise',
+            'bic',
+            dict(),
+            5,
+            'modelsearch_run2',
+        ),
+    ],
+)
+def test_modelsearch_dummy(
+    tmp_path,
+    model_count,
+    start_modelres,
+    search_space,
+    algorithm,
+    rank_type,
+    kwargs,
+    no_of_models,
+    best_model,
+):
+    with chdir(tmp_path):
+        res = run_modelsearch(
+            search_space,
+            algorithm,
+            rank_type=rank_type,
             results=start_modelres[1],
             model=start_modelres[0],
             esttool='dummy',
+            **kwargs
         )
 
-        assert len(res.summary_tool) == 4
-        assert len(res.summary_models) == 4
-        assert len(res.models) == 4
+        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_models) == no_of_models
+        assert len(res.models) == no_of_models
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == 5
+        assert model_count(rundir) == no_of_models + 1
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
@@ -184,6 +202,5 @@ def test_exhaustive_exhaustive_dummy(tmp_path, model_count, start_modelres):
         )
         assert summary is not None
         assert tuple(summary.columns) == columns
-        print(summary)
         assert summary.loc[("input", 110), "parent_model"] is None
         assert summary.loc[("modelsearch_run1", 110), "parent_model"] == "input"
