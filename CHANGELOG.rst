@@ -29,6 +29,7 @@ Bugfixes
 * Fix crashes when starting amd using the command line interface
 * Fix crashes in modelsearch when running TMDD and drug metabolite in amd (issue #3203)
 * Now all digits of the OFV for a NONMEM run will be read. Previously only about 13 decimals were read correctly
+* Check for strictness in ruvsearch
 
 1.2.0 (2024-08-22)
 ------------------

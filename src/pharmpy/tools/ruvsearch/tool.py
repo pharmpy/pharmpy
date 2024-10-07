@@ -40,7 +40,11 @@ from pharmpy.tools.common import (
 )
 from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    is_strictness_fulfilled,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -105,7 +109,7 @@ def create_workflow(
     return Workflow(wb)
 
 
-def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv):
+def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, strictness, dv):
     wb = WorkflowBuilder()
 
     start_task = Task('start_iteration', _start_iteration, model_entry)
@@ -153,7 +157,13 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wb.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration, dv=dv)
+    post_pro = partial(
+        post_process,
+        cutoff=cutoff,
+        current_iteration=current_iteration,
+        strictness=strictness,
+        dv=dv,
+    )
     task_post_process = Task('post_process', post_pro)
     wb.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
@@ -212,7 +222,9 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     cwres_models = []
     for current_iteration in range(1, max_iter + 1):
         context.log_info(f"Starting iteration {current_iteration}")
-        wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
+        wf = create_iteration_workflow(
+            model_entry, groups, cutoff, skip, current_iteration, strictness=strictness, dv=dv
+        )
         res, best_model_entry, selected_model_name = context.call_workflow(
             wf, f'results{current_iteration}'
         )
@@ -326,7 +338,9 @@ def _results(context, res):
     return res
 
 
-def post_process(context, start_model_entry, *model_entries, cutoff, current_iteration, dv):
+def post_process(
+    context, start_model_entry, *model_entries, cutoff, current_iteration, strictness, dv
+):
     res = calculate_results(model_entries)
     best_model_unfitted, selected_model_name = _create_best_model(
         start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv
@@ -344,7 +358,12 @@ def post_process(context, start_model_entry, *model_entries, cutoff, current_ite
                 delta_ofv = (
                     start_model_entry.modelfit_results.ofv - best_model_entry.modelfit_results.ofv
                 )
-                if delta_ofv > cutoff:
+                if (
+                    is_strictness_fulfilled(
+                        best_model_entry.model, best_model_entry.modelfit_results, strictness
+                    )
+                    and delta_ofv > cutoff
+                ):
                     return (res, best_model_entry, selected_model_name)
 
     return (res, start_model_entry, f"base_{current_iteration}")
