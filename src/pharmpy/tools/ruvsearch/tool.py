@@ -303,7 +303,7 @@ def _create_summary_tool(selected_model_entries, cutoff, strictness):
     ruvsearch_model_entries = selected_model_entries[1:]
 
     sum_tool = summarize_tool(
-        ruvsearch_model_entries, base_model_entry, 'ofv', cutoff, strictness
+        ruvsearch_model_entries, base_model_entry, 'ofv', cutoff, strictness=strictness
     ).reset_index()
     sum_tool['step'] = sum_tool['model'].map(iteration_map)
     sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
