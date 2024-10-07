@@ -192,10 +192,10 @@ class Expr:
         return isinstance(self._expr, symengine.Number)
 
     def is_mul(self) -> bool:
-        return self._expr.func == symengine.Mul
+        return hasattr(self._expr, 'func') and self._expr.func == symengine.Mul
 
     def is_add(self) -> bool:
-        return self._expr.func == symengine.Add
+        return hasattr(self._expr, 'func') and self._expr.func == symengine.Add
 
     def is_exp(self) -> bool:
         return self.is_pow() and self._expr.args[0] == symengine.E
@@ -207,7 +207,7 @@ class Expr:
         return self._expr.is_Function
 
     def is_derivative(self) -> bool:
-        return self._expr.func == symengine.Derivative
+        return hasattr(self._expr, 'func') and self._expr.func == symengine.Derivative
 
     def is_piecewise(self) -> bool:
         return isinstance(self._expr, symengine.Piecewise)
