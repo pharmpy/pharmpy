@@ -950,9 +950,12 @@ def is_strictness_fulfilled(
     >>> is_strictness_fulfilled(model, res, "minimization_successful or rounding_errors")
     True
     """
-    if results is None or np.isnan(results.ofv):
+    assert results is not None
+    if np.isnan(results.ofv):
         return False
-    if strictness is not None:
+    elif strictness == "":
+        return True
+    else:
         strictness = strictness.lower()
         allowed_args = [
             'minimization_successful',
@@ -1050,8 +1053,6 @@ def is_strictness_fulfilled(
                 ).any()
 
         return eval(strictness)
-    else:
-        return True
 
 
 def get_rankval(model, res, strictness, rank_type, **kwargs):
