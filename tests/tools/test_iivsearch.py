@@ -64,7 +64,13 @@ def test_prepare_base_model(
     me_input = ModelEntry.create(model_input, modelfit_results=res_input)
     model_base, me_base = prepare_base_model(me_input, iiv_strategy, linearize)
 
-    assert model_input.parameters['POP_CL'] != model_base.parameters['POP_CL']
+    has_updated_initial_ests = model_input.parameters['POP_CL'] != model_base.parameters['POP_CL']
+
+    if iiv_strategy != 'no_add':
+        assert has_updated_initial_ests
+    else:
+        assert not has_updated_initial_ests
+
     no_of_params_input = len(model_input.random_variables.parameter_names)
     param_names = model_base.random_variables.parameter_names
     no_of_params_base = len(model_base.parameters[param_names].nonfixed.names)
