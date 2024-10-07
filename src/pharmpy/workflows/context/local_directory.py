@@ -191,7 +191,7 @@ class LocalDirectoryContext(Context):
             digest = resolved.name
             if digest == mydigest:
                 return link_path.name
-        raise KeyError("Model with key {mydigest} could not be found.")
+        raise KeyError(f"Model with key {mydigest} could not be found.")
 
     def store_annotation(self, name: str, annotation: str):
         path = self._annotations_path
