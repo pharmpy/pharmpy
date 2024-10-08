@@ -9,7 +9,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import set_instantaneous_absorption
 from pharmpy.tools import read_results
 from pharmpy.workflows import Results, Task, Workflow, WorkflowBuilder, execute_workflow, local_dask
-from pharmpy.workflows.context import NullContext
+from pharmpy.workflows.contexts import NullContext
 from pharmpy.workflows.results import ModelfitResults
 
 # All workflow tests are run by the same xdist test worker

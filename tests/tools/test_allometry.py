@@ -13,7 +13,7 @@ from pharmpy.tools.allometry.tool import (
     validate_input,
 )
 from pharmpy.workflows import ModelEntry, Workflow
-from pharmpy.workflows.context import NullContext
+from pharmpy.workflows.contexts import NullContext
 
 tflite_condition = (
     sys.version_info >= (3, 12)
