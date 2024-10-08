@@ -17,12 +17,12 @@ from pharmpy.model import (
 from pharmpy.modeling import get_central_volume_and_clearance, set_initial_condition
 
 from .error import set_proportional_error_model
-from .odes import add_individual_parameter, set_initial_estimates
+from .odes import add_individual_parameter, get_and_check_odes, set_initial_estimates
 
-PD_TYPES = ('linear', 'emax', 'sigmoid', 'step', 'loglin')
+PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin']
 
 
-def add_effect_compartment(model: Model, expr: Literal[PD_TYPES]):
+def add_effect_compartment(model: Model, expr: PDTypes):
     r"""Add an effect compartment.
 
     Implemented PD models are:
@@ -73,7 +73,7 @@ def add_effect_compartment(model: Model, expr: Literal[PD_TYPES]):
     """
     vc, cl = get_central_volume_and_clearance(model)
 
-    odes = model.statements.ode_system
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     cb = CompartmentalSystemBuilder(odes)
 
@@ -99,7 +99,7 @@ def add_effect_compartment(model: Model, expr: Literal[PD_TYPES]):
     return model
 
 
-def set_direct_effect(model: Model, expr: Literal[PD_TYPES]):
+def set_direct_effect(model: Model, expr: PDTypes):
     r"""Add an effect to a model.
 
     Implemented PD models are:
@@ -152,7 +152,8 @@ def set_direct_effect(model: Model, expr: Literal[PD_TYPES]):
 
     """
     vc, cl = get_central_volume_and_clearance(model)
-    conc = model.statements.ode_system.central_compartment.amount / vc
+    odes = get_and_check_odes(model)
+    conc = odes.central_compartment.amount / vc
 
     model = _add_effect(model, expr, conc)
 
@@ -162,12 +163,6 @@ def set_direct_effect(model: Model, expr: Literal[PD_TYPES]):
 def _add_effect(model: Model, expr: str, conc):
     e0 = Expr.symbol("B")
     model = add_individual_parameter(model, e0.name)
-    if expr in ["emax", "sigmoid", "step"]:
-        emax = Expr.symbol("E_MAX")
-        model = add_individual_parameter(model, emax.name)
-    if expr in ["emax", "sigmoid"]:
-        ec50 = Expr.symbol("EC_50")
-        model = add_individual_parameter(model, ec50.name)
 
     # Add effect E
     if expr == "linear":
@@ -175,10 +170,20 @@ def _add_effect(model: Model, expr: str, conc):
         model = add_individual_parameter(model, s.name)
         E = Assignment(Expr.symbol('E'), e0 * (1 + (s * conc)))
     elif expr == "emax":
+        emax = Expr.symbol("E_MAX")
+        model = add_individual_parameter(model, emax.name)
+        ec50 = Expr.symbol("EC_50")
+        model = add_individual_parameter(model, ec50.name)
         E = Assignment(Expr.symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
     elif expr == "step":
+        emax = Expr.symbol("E_MAX")
+        model = add_individual_parameter(model, emax.name)
         E = Assignment(Expr.symbol("E"), Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
     elif expr == "sigmoid":
+        emax = Expr.symbol("E_MAX")
+        model = add_individual_parameter(model, emax.name)
+        ec50 = Expr.symbol("EC_50")
+        model = add_individual_parameter(model, ec50.name)
         n = Expr.symbol("N")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_N": 1})
@@ -264,7 +269,7 @@ def add_indirect_effect(
 
     """
     vc, cl = get_central_volume_and_clearance(model)
-    odes = model.statements.ode_system
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     conc_c = central.amount / vc
 
