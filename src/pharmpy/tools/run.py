@@ -950,11 +950,14 @@ def is_strictness_fulfilled(
     >>> is_strictness_fulfilled(model, res, "minimization_successful or rounding_errors")
     True
     """
-    if results is None or np.isnan(results.ofv):
+    assert results is not None
+    if np.isnan(results.ofv):
         return False
-    if strictness is not None:
+    elif strictness == "":
+        return True
+    else:
         strictness = strictness.lower()
-        allowed_args = [
+        allowed_args = (
             'minimization_successful',
             'rounding_errors',
             'sigdigs',
@@ -972,8 +975,8 @@ def is_strictness_fulfilled(
             'estimate_near_boundary_theta',
             'estimate_near_boundary_omega',
             'estimate_near_boundary_sigma',
-        ]
-        unwanted_args = ['and', 'or', 'not']
+        )
+        unwanted_args = ('and', 'or', 'not')
         find_all_words = re.findall(r'[^\d\W]+', strictness)
         args_in_statement = [w for w in find_all_words if w not in unwanted_args]
         find_all_non_allowed_operators = re.findall(r"[^\w\s\.\<\>\=\!\(\)]", strictness)
@@ -1050,8 +1053,6 @@ def is_strictness_fulfilled(
                 ).any()
 
         return eval(strictness)
-    else:
-        return True
 
 
 def get_rankval(model, res, strictness, rank_type, **kwargs):

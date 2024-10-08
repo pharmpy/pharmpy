@@ -2,6 +2,7 @@ from functools import partial
 from typing import Literal, Optional
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -39,7 +40,11 @@ from pharmpy.tools.common import (
 )
 from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    is_strictness_fulfilled,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -104,7 +109,7 @@ def create_workflow(
     return Workflow(wb)
 
 
-def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv):
+def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, strictness, dv):
     wb = WorkflowBuilder()
 
     start_task = Task('start_iteration', _start_iteration, model_entry)
@@ -152,7 +157,13 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
 
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wb.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
-    post_pro = partial(post_process, cutoff=cutoff, current_iteration=current_iteration, dv=dv)
+    post_pro = partial(
+        post_process,
+        cutoff=cutoff,
+        current_iteration=current_iteration,
+        strictness=strictness,
+        dv=dv,
+    )
     task_post_process = Task('post_process', post_pro)
     wb.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
 
@@ -165,12 +176,11 @@ def proportional_error_workflow(model_entry):
     prop_start = Task('Check_proportional', _start_iteration, model_entry)
     wb.add_task(prop_start)
 
-    if not has_proportional_error_model(model_entry.model):
-        convert_to_prop_task = Task("convert_to_proportional", _change_proportional_model)
-        wb.add_task(convert_to_prop_task, predecessors=prop_start)
+    convert_to_prop_task = Task("convert_to_proportional", _change_proportional_model)
+    wb.add_task(convert_to_prop_task, predecessors=prop_start)
 
-        fit_wf = create_fit_workflow(n=1)
-        wb.insert_workflow(fit_wf, predecessors=convert_to_prop_task)
+    fit_wf = create_fit_workflow(n=1)
+    wb.insert_workflow(fit_wf, predecessors=convert_to_prop_task)
     return Workflow(wb)
 
 
@@ -185,6 +195,7 @@ def _change_proportional_model(model_entry):
 
 
 def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, strictness):
+    context.log_info("Starting tool ruvsearch")
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
         skip = []
@@ -192,18 +203,28 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     input_model = input_model.replace(name="input", description="")
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
     context.store_input_model_entry(input_model_entry)
+    context.log_info(f"Input model OFV: {input_res.ofv:.3f}")
 
-    # Check if model has a proportional error
-    proportional_workflow = proportional_error_workflow(input_model_entry)
-    model_entry = context.call_workflow(proportional_workflow, 'Convert_error_model')
-
-    if model_entry.model == input_model_entry.model:
-        selected_model_entries = [model_entry]
-    else:
+    if not has_proportional_error_model(input_model_entry.model):
+        context.log_info("Fitting input model with proportional error")
+        proportional_workflow = proportional_error_workflow(input_model_entry)
+        model_entry = context.call_workflow(proportional_workflow, 'Convert_error_model')
+        prop_model_entry = model_entry
         selected_model_entries = [input_model_entry, model_entry]
+        context.log_info(
+            f"Input model with proportional error OFV: {model_entry.modelfit_results.ofv:.3f}"
+        )
+    else:
+        model_entry = input_model_entry
+        prop_model_entry = None
+        selected_model_entries = [model_entry]
+
     cwres_models = []
     for current_iteration in range(1, max_iter + 1):
-        wf = create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, dv=dv)
+        context.log_info(f"Starting iteration {current_iteration}")
+        wf = create_iteration_workflow(
+            model_entry, groups, cutoff, skip, current_iteration, strictness=strictness, dv=dv
+        )
         res, best_model_entry, selected_model_name = context.call_workflow(
             wf, f'results{current_iteration}'
         )
@@ -213,6 +234,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
             selected_model_entries.append(best_model_entry)
 
         model_entry = best_model_entry
+        context.log_info(f"Best model after iteration OFV: {model_entry.modelfit_results.ofv:.3f}")
 
         if selected_model_name.startswith('base'):
             break
@@ -225,6 +247,18 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     delta_ofv = input_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
     if delta_ofv < cutoff:
         model_entry = input_model_entry
+        changing = "input"
+    else:
+        changing = None
+    if prop_model_entry is not None:
+        delta_ofv = prop_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
+        if delta_ofv < cutoff:
+            model_entry = prop_model_entry
+            changing = "prop_error"
+    if changing is not None and changing != model_entry.model.name:
+        context.log_info(
+            f"The {changing} model with OFV {model_entry.modelfit_results.ofv:.3f} was better than the selected model"
+        )
 
     tables = create_result_tables(selected_model_entries, cutoff, strictness)
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
@@ -249,7 +283,6 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         ),
     )
 
-    # Create links to final model
     context.store_final_model_entry(final_model)
 
     return res
@@ -282,7 +315,7 @@ def _create_summary_tool(selected_model_entries, cutoff, strictness):
     ruvsearch_model_entries = selected_model_entries[1:]
 
     sum_tool = summarize_tool(
-        ruvsearch_model_entries, base_model_entry, 'ofv', cutoff, strictness
+        ruvsearch_model_entries, base_model_entry, 'ofv', cutoff, strictness=strictness
     ).reset_index()
     sum_tool['step'] = sum_tool['model'].map(iteration_map)
     sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
@@ -300,11 +333,14 @@ def _start_iteration(model_or_model_entry):
     return model_or_model_entry
 
 
-def _results(res):
+def _results(context, res):
+    context.log_info("Finishing tool ruvsearch")
     return res
 
 
-def post_process(context, start_model_entry, *model_entries, cutoff, current_iteration, dv):
+def post_process(
+    context, start_model_entry, *model_entries, cutoff, current_iteration, strictness, dv
+):
     res = calculate_results(model_entries)
     best_model_unfitted, selected_model_name = _create_best_model(
         start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv
@@ -322,7 +358,12 @@ def post_process(context, start_model_entry, *model_entries, cutoff, current_ite
                 delta_ofv = (
                     start_model_entry.modelfit_results.ofv - best_model_entry.modelfit_results.ofv
                 )
-                if delta_ofv > cutoff:
+                if (
+                    is_strictness_fulfilled(
+                        best_model_entry.model, best_model_entry.modelfit_results, strictness
+                    )
+                    and delta_ofv > cutoff
+                ):
                     return (res, best_model_entry, selected_model_name)
 
     return (res, start_model_entry, f"base_{current_iteration}")
@@ -408,7 +449,10 @@ def _create_combined_model(base_model_entry, current_iteration):
     df['IPRED'] = df['IPRED'].replace(0, 2.225e-307)
     model = model.replace(dataset=df)
     ipred_min = df['IPRED'].min()
-    sigma_add_init = abs(ipred_min) / 2 if ipred_min != 0 else 0.001
+    if ipred_min == 0 or np.isnan(ipred_min):
+        sigma_add_init = 0.001
+    else:
+        sigma_add_init = abs(ipred_min) / 2
     add_name = 'sigma_add'
     model = add_population_parameter(model, add_name, sigma_add_init, lower=0)
 

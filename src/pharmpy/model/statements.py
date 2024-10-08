@@ -279,7 +279,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy.model import CompartmentalSystemBuilder
+        >>> from pharmpy.model import Compartment, CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> central = Compartment.create("CENTRAL")
         >>> cb.add_compartment(central)
@@ -323,7 +323,7 @@ class CompartmentalSystemBuilder:
 
         Examples
         --------
-        >>> from pharmpy.model import CompartmentalSystemBuilder
+        >>> from pharmpy.model import Compartment, CompartmentalSystemBuilder
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment.create("DEPOT")
         >>> cb.add_compartment(depot)
@@ -850,7 +850,8 @@ class CompartmentalSystem(Statement):
 
         Examples
         --------
-        >>> from pharmpy.model import CompartmentalSystem, Compartment
+        >>> from pharmpy.model import Compartment, CompartmentalSystemBuilder
+        >>> from pharmpy.model import CompartmentalSystem
         >>> cb = CompartmentalSystemBuilder()
         >>> depot = Compartment.create("DEPOT")
         >>> cb.add_compartment(depot)
@@ -916,6 +917,7 @@ class CompartmentalSystem(Statement):
         Examples
         --------
         >>> from pharmpy.modeling import load_example_model
+        >>> from pharmpy.model import output
         >>> model = load_example_model("pheno")
         >>> model.statements.ode_system.get_compartment_inflows(output)
         [(Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1)), CL/V)]

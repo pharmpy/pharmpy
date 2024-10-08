@@ -12,7 +12,7 @@ on:
 jobs:
 
   get-nonmem:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
 
       - name: Cache NONMEM
@@ -21,6 +21,7 @@ jobs:
         with:
             path: 751.zip
             key: nonmem-751
+            enableCrossOsArchive: true
 
       - name: Download NONMEM
         if: steps.cache-nonmem.outputs.cache-hit != 'true'
@@ -84,23 +85,17 @@ jobs:
           echo 'key ^J' >>lynxcmds
           echo 'key Q' >>lynxcmds
           lynx -accept-all-cookies nonmem.iconplc.com -cmd_script=lynxcmds
-      - name: Upload cache workaround
-        uses: actions/upload-artifact@v3
-        with:
-          name: cache-workaround
-          path: 751.zip
-          retention-days: 1
 
 
   integration-ubuntu:
     needs: [get-nonmem]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
 
       - name: Checkout Pharmpy
         uses: actions/checkout@v4
 
-      - name: Cache NONMEM
+      - name: Get NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
@@ -112,14 +107,11 @@ jobs:
         env:
           ZIP_KEY: ${{secrets.ZIP_751_KEY}}
 
-      - name: Install gfortran
-        run: sudo apt install gfortran
-
-      - name: Print gfortran and gcc version
-        run: |
-          gfortran --version
-          gcc --version
-        shell: bash
+      - name: Setup gfortran
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+          version: 12
 
       - name: NONMEM license
         run: echo $LICENSE_KEY > nm751CD/nonmem.lic
@@ -143,7 +135,7 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Run integration tests
         run: tox -e integration
@@ -151,7 +143,7 @@ jobs:
 
   integration-macos:
     needs: [get-nonmem]
-    runs-on: macos-12
+    runs-on: macos-13
     steps:
 
       - name: Checkout Pharmpy
@@ -162,15 +154,6 @@ jobs:
         with:
           compiler: gcc
           version: 12
-
-      - name: Install realpath
-        run: brew install coreutils
-
-      - name: Print gfortran and gcc version
-        run: |
-          gfortran --version
-          gcc --version
-        shell: bash
 
       - name: Get NONMEM
         id: cache-nonmem
@@ -192,6 +175,7 @@ jobs:
       - name: Install NONMEM
         run: |
           cd nm751CD
+          mkdir ../nm751
           /bin/bash SETUP75 $(realpath .) $(realpath ../nm751) gfortran y ar same rec q
 
       - name: Create pharmpy.conf
@@ -204,7 +188,7 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Run integration tests
         run: tox -e integration
@@ -218,33 +202,19 @@ jobs:
       - name: Checkout Pharmpy
         uses: actions/checkout@v4
 
-      # https://github.com/modflowpy/install-gfortran-action/blob/dfc32754e541304f2e7b7ca001e40dce094a5cd6/action.yml#L22-L30
       - name: Setup gfortran
-        shell: bash
-        run: |
-          FCDIR=/c/ProgramData/Chocolatey/bin
-          LNDIR=/c/ProgramData/Chocolatey/lib/mingw/tools/install/mingw64/bin
-          if [ -d "$FCDIR" ] && [ -f "$LNDIR/libgfortran-5.dll" ] && [ ! -f "$FCDIR/libgfortran-5.dll" ]; then
-              ln -s "$LNDIR/libgfortran-5.dll" "$FCDIR/libgfortran-5.dll"
-          fi
-
-      - name: Print gfortran and gcc version
-        run: |
-          gfortran --version
-          gcc --version
-        shell: bash
+        uses: fortran-lang/setup-fortran@v1
+        with:
+          compiler: gcc
+          version: 12
 
       - name: Get NONMEM
-        uses: actions/download-artifact@v4.1.7
-        with:
-          name: cache-workaround
-
-      - name: Cache NONMEM
         id: cache-nonmem
         uses: actions/cache@v3
         with:
             path: 751.zip
             key: nonmem-751
+            enableCrossOsArchive: true
 
       - name: Unzip NONMEM
         run: 7z x 751.zip -p%ZIP_KEY%
@@ -276,7 +246,7 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.11
+          python-version: 3.12
 
       - name: Run integration tests
         run: tox -e integration

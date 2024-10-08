@@ -12,11 +12,11 @@ click==8.1.7
 cloudpickle==3.0.0
 comm==0.2.2
 csscompressor==0.9.5
-dask==2024.9.0
-debugpy==1.8.5
+dask==2024.9.1
+debugpy==1.8.6
 decorator==5.1.1
 defusedxml==0.7.1
-distributed==2024.9.0
+distributed==2024.9.1
 docutils==0.21.2
 exceptiongroup==1.2.2
 executing==2.1.0
@@ -26,7 +26,7 @@ idna==3.10
 imagesize==1.4.1
 importlib_metadata==8.5.0
 ipykernel==6.29.5
-ipython==8.27.0
+ipython==8.28.0
 ipywidgets==8.1.5
 jedi==0.19.1
 Jinja2==3.1.4
@@ -41,19 +41,20 @@ lark==1.2.2
 locket==1.0.0
 lxml==5.3.0
 markdown-it-py==3.0.0
-MarkupSafe==2.1.5
+MarkupSafe==3.0.0
 matplotlib-inline==0.1.7
 mdurl==0.1.2
 mistune==3.0.2
 mpmath==1.3.0
 msgpack==1.1.0
+narwhals==1.9.1
 nbclient==0.10.0
 nbconvert==7.16.4
 nbformat==5.10.4
 nest-asyncio==1.6.0
 networkx==3.3
 numexpr==2.10.1
-numpy==2.1.1
+numpy==2.1.2
 packaging==24.1
 pandas==2.2.3
 pandocfilters==1.5.1
@@ -61,7 +62,7 @@ parso==0.8.4
 partd==1.4.2
 pexpect==4.9.0
 platformdirs==4.3.6
-prompt-toolkit==3.0.47
+prompt-toolkit==3.0.48
 psutil==6.0.0
 ptyprocess==0.7.0
 pure-eval==0.2.3
@@ -74,7 +75,7 @@ PyYAML==6.0.2
 pyzmq==26.2.0
 referencing==0.35.1
 requests==2.32.3
-rich==13.8.1
+rich==13.9.2
 rpds-py==0.20.0
 scipy==1.14.1
 six==1.16.0
@@ -89,17 +90,17 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==2.0.0
 sphinxcontrib-serializinghtml==2.0.0
 stack-data==0.6.3
+symengine==0.13.0
 statsmodels==0.14.2
-symengine==0.11.0
 sympy==1.13.3
 tblib==3.0.0
 tinycss2==1.3.0
-tomli==2.0.1
-toolz==0.12.1
+tomli==2.0.2
+toolz==1.0.0
 tornado==6.4.1
 traitlets==5.14.3
 typing-extensions==4.12.2
-tzdata==2024.1
+tzdata==2024.2
 urllib3==2.2.3
 wcwidth==0.2.13
 webencodings==0.5.1
@@ -109,7 +110,7 @@ zipp==3.20.2
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-linux_x86_64.whl ; sys_platform == 'linux' and python_version == '3.10'
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp311-cp311-linux_x86_64.whl ; sys_platform == 'linux' and python_version == '3.11'
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp312-cp312-linux_x86_64.whl ; sys_platform == 'linux' and python_version == '3.12'
-tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-macosx_12_0_x86_64.whl ; sys_platform == 'darwin' and python_version == '3.10'
-tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp311-cp311-macosx_12_0_universal2.whl ; sys_platform == 'darwin' and python_version == '3.11'
+tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-macosx_12_0_x86_64.whl ; sys_platform == 'darwin' and platform_machine != 'arm64' and python_version == '3.10'
+tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp311-cp311-macosx_12_0_universal2.whl ; sys_platform == 'darwin' and platform_machine != 'arm64' and python_version == '3.11'
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-win_amd64.whl ; sys_platform == 'win32' and python_version == '3.10'
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp311-cp311-win_amd64.whl ; sys_platform == 'win32' and python_version == '3.11'

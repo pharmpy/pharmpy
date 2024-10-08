@@ -88,11 +88,14 @@ def create_workflow(
 
 
 def start(context, modelfit_results, model):
+    context.log_info("Starting tool allometry")
     log = modelfit_results.log if modelfit_results else None
     mfr = modelfit_results
     input_model = model.replace(name="input", description="")
     me = ModelEntry(input_model, modelfit_results=mfr, log=log)
     context.store_input_model_entry(me)
+    if mfr is not None:
+        context.log_info(f"Input model OFV: {mfr.ofv:.3f}")
     return me
 
 
@@ -162,7 +165,7 @@ def validate_parameters(model: Model, parameters: Optional[Iterable[Union[str, E
 
 
 def results(context, start_model_entry, allometry_model_entry):
-    best_model, best_model_res = get_best_model(start_model_entry, allometry_model_entry)
+    best_model, best_model_res = get_best_model(context, start_model_entry, allometry_model_entry)
     context.store_final_model_entry(best_model)
 
     summods, suminds, sumcount, sumerrs = create_result_tables(
@@ -178,16 +181,21 @@ def results(context, start_model_entry, allometry_model_entry):
         final_results=best_model_res,
     )
 
+    context.log_info("Finishing tool allometry")
     return res
 
 
-def get_best_model(start_model_entry, allometry_model_entry):
+def get_best_model(context, start_model_entry, allometry_model_entry):
     start_model = start_model_entry.model
     start_res = start_model_entry.modelfit_results
     allometry_model = allometry_model_entry.model
     allometry_res = allometry_model_entry.modelfit_results
 
     allometry_model_failed = allometry_res is None
+    if allometry_model_failed:
+        context.log_error("Allometry model failed. Falling back to model without allometry")
+    else:
+        context.log_info(f"Allometry model OFV: {allometry_res.ofv:.3f}")
     best_model = start_model if allometry_model_failed else allometry_model
     best_model = best_model.replace(name="final")
     best_model_res = start_res if allometry_model_failed else allometry_res

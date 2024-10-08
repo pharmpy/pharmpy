@@ -1,7 +1,8 @@
 from collections.abc import Mapping
 from typing import Optional, Union
 
-from pharmpy.model import Model, Parameter, Parameters, RandomVariables
+from pharmpy.basic import Expr
+from pharmpy.model import Assignment, Model, Parameter, Parameters, RandomVariables
 
 
 def get_thetas(model: Model):
@@ -656,3 +657,34 @@ def add_population_parameter(
     params = model.parameters + param
     model = model.replace(parameters=params)
     return model.update_source()
+
+
+def replace_fixed_thetas(model: Model):
+    """Replace all fixed thetas with constants in the model statements
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        A new model
+    """
+
+    keep = []
+    new_assignments = []
+
+    for p in model.parameters:
+        if p.fix:
+            ass = Assignment(p.symbol, Expr.float(p.init))
+            new_assignments.append(ass)
+        else:
+            keep.append(p)
+
+    model = model.replace(
+        parameters=Parameters(keep), statements=new_assignments + model.statements
+    )
+    model = model.update_source()
+    return model

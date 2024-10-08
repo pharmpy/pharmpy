@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
-import warnings
 from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from pharmpy.model import Model, ModelfitResultsError
@@ -15,12 +13,6 @@ else:
     from pharmpy.deps import pandas as pd
 
 from .ml import predict_influential_individuals, predict_outliers
-
-
-def check_tflite():
-    spec = importlib.util.find_spec('tflite_runtime')
-    if spec is None:
-        warnings.warn("tflite is not installed, using NaN for predictions")
 
 
 def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
@@ -62,8 +54,6 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
         raise ValueError('Different length of `models` and `models_res`')
 
     resDict = {model.name: res for model, res in zip(models, models_res)}
-
-    check_tflite()
 
     df = pd.concat(
         map(

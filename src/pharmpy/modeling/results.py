@@ -267,9 +267,9 @@ def calculate_individual_parameter_statistics(
     >>> calculate_individual_parameter_statistics(model, "K=CL/V", pe, cov, seed=rng)
                               mean  variance    stderr
     parameter covariates
-    K         p5          0.004234  0.000001  0.001138
-              median      0.004907  0.000001  0.001247
-              p95         0.004907  0.000001  0.001247
+    K         p5          0.004234  0.000001  0.001100
+              median      0.004907  0.000001  0.001201
+              p95         0.004907  0.000001  0.001201
     """
     rng = create_rng(seed)
     if isinstance(expr_or_exprs, str):
@@ -445,12 +445,12 @@ def calculate_pk_parameters_statistics(
     >>> calculate_pk_parameters_statistics(model, pe, cov, seed=rng)
                                   mean     variance     stderr
     parameter   covariates
-    t_half_elim p5          173.337164  1769.493756  42.842434
-                median      149.567842  1317.474199  36.230160
-                p95         149.567842  1317.474199  36.230160
-    k_e         p5            0.004234     0.000001   0.001138
-                median        0.004907     0.000001   0.001247
-                p95           0.004907     0.000001   0.001247
+    t_half_elim p5          173.337164  1769.493756  44.852625
+                median      149.567842  1317.474199  37.819338
+                p95         149.567842  1317.474199  37.819338
+    k_e         p5            0.004234     0.000001   0.001100
+                median        0.004907     0.000001   0.001201
+                p95           0.004907     0.000001   0.001201
 
     See Also
     --------

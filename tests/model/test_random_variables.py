@@ -486,7 +486,9 @@ def test_nearest_valid_parameters():
     assert values == new
     values = {'x': 1, 'y': 1.1, 'z': 1}
     new = rvs.nearest_valid_parameters(values)
-    assert new == {'x': 1.0500000000000005, 'y': 1.0500000000000003, 'z': 1.050000000000001}
+    assert new == pytest.approx(
+        {'x': 1.0500000000000005, 'y': 1.0500000000000003, 'z': 1.050000000000001}
+    )
 
     dist2 = NormalDistribution.create('ETA(3)', 'iiv', 2, 1)
     rvs = RandomVariables.create([dist2])

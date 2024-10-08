@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any, Literal, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
+from pharmpy.workflows.context.broadcasters.terminal import broadcast_message
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
@@ -33,11 +35,21 @@ class Context(ABC):
         # An implementation needs to create the model database here
         # If ref is None an implementation specific default ref will be used
         self._name = name
+        self.broadcast_message = broadcast_message
 
     @property
     def model_database(self) -> ModelDatabase:
         """ModelDatabase to store results of models run in context"""
         return self._model_database
+
+    @property
+    @abstractmethod
+    def context_path(self) -> str:
+        pass
+
+    def get_model_context_path(self, model: Model) -> str:
+        ctxpath = f"{self.context_path}/@{model.name}"
+        return ctxpath
 
     @staticmethod
     @abstractmethod
@@ -115,27 +127,38 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def log_message(
-        self, severity: Literal["critical", "error", "warning", "info", "trace"], message: str
-    ):
-        """Add a message to the log"""
+    def store_message(self, severity, ctxpath: str, date, message: str):
         pass
 
-    def log_info(self, message: str):
+    def log_message(
+        self,
+        severity: Literal["critical", "error", "warning", "info", "trace"],
+        message: str,
+        model: Optional[Model] = None,
+    ):
+        """Add a message to the log"""
+        if model is None:
+            ctxpath = self.context_path
+        else:
+            ctxpath = self.get_model_context_path(model)
+        date = datetime.now()
+        self.store_message(severity, ctxpath, date, message)
+        self.broadcast_message(severity, ctxpath, date, message)
+
+    def log_info(self, message: str, model: Optional[Model] = None):
         """Add an info message to the log
 
         Currently with echo to stdout. In the future this could be changed or be configurable.
         """
-        self.log_message(severity="info", message=message)
-        print(message)
+        self.log_message(severity="info", message=message, model=model)
 
-    def log_error(self, message: str):
+    def log_error(self, message: str, model: Optional[Model] = None):
         """Add an error message to the log"""
-        self.log_message(severity="error", message=message)
+        self.log_message(severity="error", message=message, model=model)
 
-    def log_warning(self, message: str):
+    def log_warning(self, message: str, model: Optional[Model] = None):
         """Add a warning message to the log"""
-        self.log_message(severity="warning", message=message)
+        self.log_message(severity="warning", message=message, model=model)
 
     @abstractmethod
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:

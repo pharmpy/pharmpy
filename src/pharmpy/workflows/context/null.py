@@ -9,7 +9,11 @@ class NullContext(Context):
     """
 
     def __init__(self, *args, **kwargs):
-        pass
+        self.broadcast_message = lambda *args, **kwargs: None
+
+    @property
+    def context_path(self) -> str:
+        return ""
 
     def store_local_file(self, source_path):
         pass
@@ -50,7 +54,7 @@ class NullContext(Context):
     def retrieve_annotation(self, name):
         pass
 
-    def log_message(self, *args, **kwargs):
+    def store_message(self, severity, ctxpath, date, message):
         pass
 
     def retrieve_log(self, *args, **kwargs):

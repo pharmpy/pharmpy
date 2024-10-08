@@ -80,7 +80,7 @@ def create_workflow(
 
     wb = WorkflowBuilder(name=NAME_WF)
 
-    init_task = init(model, results)
+    init_task = create_init(model, results)
     wb.add_task(init_task)
 
     bic_type = 'random'
@@ -114,17 +114,19 @@ def create_workflow(
     return Workflow(wb)
 
 
-def init(model, modelfit_results):
-    return (
-        Task('init', _model_entry, model)
-        if model is None
-        else Task('init', _model_entry, modelfit_results, model)
-    )
+def create_init(model, modelfit_results):
+    if model is None:
+        task = Task('init', _init, model)
+    else:
+        task = Task('init', _init, modelfit_results, model)
+    return task
 
 
-def _model_entry(modelfit_results, model):
+def _init(context, modelfit_results, model):
+    context.log_info("Starting tool iovsearch")
     model = model.replace(name="input", description="")
-    return ModelEntry.create(model, modelfit_results=modelfit_results)
+    me = ModelEntry.create(model, modelfit_results=modelfit_results)
+    return me
 
 
 def task_brute_force_search(
@@ -390,6 +392,7 @@ def task_results(
     final_model = res.final_model.replace(name="final")
     context.store_final_model_entry(final_model)
 
+    context.log_info("Finisihing tool iovsearch")
     return res
 
 

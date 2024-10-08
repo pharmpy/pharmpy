@@ -5,12 +5,20 @@ New features
 ============
 
 * Support `DataFrame` as input to `run_amd`
+* Recognize "HESSIAN OF POSTERIOR DENSITY..." error from NONMEM (issue #3326)
+* Add modeling.replace_fixed_thetas
   
 Changes
 =======
 
-* Added replacement of deterministic random variables (0 FIX) in modeling.cleanup_model
+* Add replacement of deterministic random variables (0 FIX) in modeling.cleanup_model
+* Add replacement of fixed thetas in modeling.cleanup_model
 * Set ONEHEADER to newly created $TABLES for NONMEM
+* Make an added RATE column for ZO absorption be int32 instead of float64
+* Fix issue with different sample sequences for multivariate normal distribution between arm Macs
+  and other platforms. The fix will use another sampling method, which means that it will not
+  be possible to reproduce sampled values between this version of Pharmpy and the previous
+* Make the default option to remove all in modeling.remove_residuals and modeling.remove_predictions None instead of 'all'
 
 Bugfixes
 ========
@@ -20,6 +28,9 @@ Bugfixes
 * Let translate_nmtran_time return the input model if the input model has no dataset
 * Fix bug causing NONMEM code to keep bounds on thetas after unconstrain_parameters
 * Fix crashes when starting amd using the command line interface
+* Fix crashes in modelsearch when running TMDD and drug metabolite in amd (issue #3203)
+* Now all digits of the OFV for a NONMEM run will be read. Previously only about 13 decimals were read correctly
+* Check for strictness in ruvsearch
 
 1.2.0 (2024-08-22)
 ------------------

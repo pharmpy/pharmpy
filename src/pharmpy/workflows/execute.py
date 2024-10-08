@@ -70,7 +70,7 @@ def execute_workflow(
     insert_context(wb, context)
     workflow = Workflow(wb)
 
-    res: T = dispatcher.run(workflow)
+    res: T = dispatcher.run(workflow, context)
 
     if isinstance(res, Results) and not isinstance(res, ModelfitResults):
         context.store_results(res)

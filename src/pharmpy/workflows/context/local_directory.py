@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import json
 import os.path
-from datetime import datetime
 from pathlib import Path
 from typing import Any, Literal, Optional
 
@@ -36,7 +35,6 @@ class LocalDirectoryContext(Context):
         if ref is None:
             ref = Path.cwd()
         path = Path(ref) / name
-        self.name = name
 
         self._init_path(path)
         self._init_top_path()
@@ -45,6 +43,7 @@ class LocalDirectoryContext(Context):
         self._init_model_name_map()
         self._init_log()
         self._store_common_options(common_options)
+        super().__init__(name, ref, common_options)
 
     def _init_path(self, path):
         self.path = path_absolute(path)
@@ -192,7 +191,7 @@ class LocalDirectoryContext(Context):
             digest = resolved.name
             if digest == mydigest:
                 return link_path.name
-        raise KeyError("Model with key {mydigest} could not be found.")
+        raise KeyError(f"Model with key {mydigest} could not be found.")
 
     def store_annotation(self, name: str, annotation: str):
         path = self._annotations_path
@@ -222,7 +221,7 @@ class LocalDirectoryContext(Context):
                         return a[1][:-1]
         raise KeyError(f"No annotation for {name} available")
 
-    def log_message(self, severity, message: str):
+    def store_message(self, severity, ctxpath: str, date, message: str):
         log_path = self._log_path
         with self._write_lock(log_path):
             with open(log_path, 'a') as fh:
@@ -230,9 +229,7 @@ class LocalDirectoryContext(Context):
                 def mangle_message(message):
                     return '"' + message.replace('"', '""') + '"'
 
-                fh.write(
-                    f'{self.context_path},{datetime.now()},{severity},{mangle_message(message)}\n'
-                )
+                fh.write(f'{ctxpath},{date},{severity},{mangle_message(message)}\n')
 
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
         log_path = self._log_path

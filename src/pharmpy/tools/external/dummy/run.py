@@ -1,4 +1,4 @@
-import os
+import hashlib
 import os.path
 import uuid
 from itertools import repeat
@@ -58,8 +58,15 @@ def execute_model(model_entry, context):
     model = write_csv(model, path=dataset_path, force=True)
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
+    if model_entry.parent and model_entry.parent.name in context.list_all_names():
+        key = context.retrieve_key(model_entry.parent.name)
+        res = context.model_database.retrieve_modelfit_results(key)
+        ofv_parent = res.ofv
+    else:
+        ofv_parent = None
+
     # Create dummy ModelfitResults object
-    modelfit_results = create_dummy_modelfit_results(model, seed=2)
+    modelfit_results = create_dummy_modelfit_results(model_entry.model, ref=ofv_parent)
 
     log = modelfit_results.log if modelfit_results else None
     model_entry = model_entry.attach_results(modelfit_results=modelfit_results, log=log)
@@ -74,7 +81,7 @@ def execute_model(model_entry, context):
     return model_entry
 
 
-def create_dummy_modelfit_results(model, seed):
+def create_dummy_modelfit_results(model, ref=None):
     try:
         obs = get_observations(model)
     except IndexError:
@@ -91,7 +98,15 @@ def create_dummy_modelfit_results(model, seed):
 
     log = Log()
 
+    h = hashlib.sha1(model.name.encode('utf-8')).hexdigest()
+    seed = int(h, 16)
     rng = create_rng(seed)
+
+    if ref:
+        low = ref / 2 if ref > 0 else ref * 2
+        ofv = rng.uniform(low, ref)
+    else:
+        ofv = rng.uniform(-20, 20)
 
     params = pd.Series(model.parameters.inits)
     params = params.apply(lambda x: x + rng.random() * 0.1)
@@ -139,7 +154,7 @@ def create_dummy_modelfit_results(model, seed):
     results_dict = {
         'parameter_estimates': params,
         'log': log,
-        'ofv': rng.uniform(-20, 20),
+        'ofv': ofv,
         'minimization_successful': True,
         'warnings': [],
         'relative_standard_errors': rse,

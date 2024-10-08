@@ -16,6 +16,7 @@ from pharmpy.modeling import (
     get_omegas,
     get_sigmas,
     get_thetas,
+    replace_fixed_thetas,
     set_initial_estimates,
     set_lower_bounds,
     set_upper_bounds,
@@ -229,3 +230,13 @@ def test_set_initial_estimates_subset_parameters_w_correlation(load_model_for_te
     assert model.parameters['IIV_S1'].init == 0.09
     assert updated_model.parameters['IIV_S1'].init == 0.5
     assert updated_model.parameters['IIV_CL_IIV_V'].init == 0.0285
+
+
+def test_replace_fixed_thetas(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = fix_parameters(model, ["POP_CL"])
+    m2 = replace_fixed_thetas(model)
+    assert len(m2.parameters) == len(model.parameters) - 1
+    assert 'POP_CL' not in m2.parameters
+    assert len(m2.statements) == len(model.statements) + 1
+    assert m2.statements[0].symbol.name == 'POP_CL'

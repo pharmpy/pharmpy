@@ -28,11 +28,7 @@ Definitions
 
 __version__ = '1.2.0'
 
-import logging
-
 import pharmpy.config as config
-
-logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
 class PharmpyConfiguration(config.Configuration):

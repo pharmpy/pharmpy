@@ -448,7 +448,7 @@ def test_read_modelfit_results(testdata):
     assert res.relative_standard_errors.to_dict() == expected_rse
 
     res = read_modelfit_results(testdata / 'nonmem' / 'pheno_design.mod')
-    assert res.ofv == 730.9699060285753
+    assert res.ofv == 730.96990602857545127
     expected_rse = {
         'TVCL': 0.07540090004436839,
         'TVV': 0.06030486531634996,

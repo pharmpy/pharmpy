@@ -204,10 +204,12 @@ def prepare_input_model(input_model, input_res):
 
 
 def prepare_base_model(input_model_entry, iiv_strategy, linearize):
-    base_model = update_initial_estimates(
-        input_model_entry.model, modelfit_results=input_model_entry.modelfit_results
-    )
     if iiv_strategy != 'no_add':
+        base_model = update_initial_estimates(
+            input_model_entry.model,
+            modelfit_results=input_model_entry.modelfit_results,
+            move_est_close_to_bounds=not linearize,
+        )
         base_model = add_iiv(
             iiv_strategy,
             base_model,
@@ -215,12 +217,12 @@ def prepare_base_model(input_model_entry, iiv_strategy, linearize):
             linearize=linearize,
         )
         # FIXME: Set parent model once create_results can do different things for different tools
+        base_model = base_model.replace(name='base')
         mfr = None
     else:
+        base_model = input_model_entry.model
         mfr = input_model_entry.modelfit_results
-    base_model = base_model.replace(
-        name='base', description=algorithms.create_description(base_model)
-    )
+    base_model = base_model.replace(description=algorithms.create_description(base_model))
     base_model_entry = ModelEntry.create(base_model, modelfit_results=mfr)
     return base_model, base_model_entry
 
@@ -277,7 +279,7 @@ def update_linearized_base_model(baseme, input_model, iiv_strategy, param_mappin
         model = create_joint_distribution(
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
-    descr = f"[{','.join(param_mapping.values())}]"
+    descr = algorithms.create_description(model, iov=False, param_dict=param_mapping)
     model = model.replace(name="base", description=descr)
     return ModelEntry.create(model=model, modelfit_results=None)
 
@@ -297,6 +299,7 @@ def start(
     keep,
     strictness,
 ):
+    context.log_info("Starting tool iivsearch")
     input_model, input_model_entry = prepare_input_model(input_model, input_res)
     context.store_input_model_entry(input_model_entry)
 
@@ -383,6 +386,7 @@ def start(
             context=context,
             stepno=i,
         )
+        context.log_info(f"Starting step {algorithm_cur}")
         res = context.call_workflow(wf, f'results_{algorithm}')
 
         if base_model_entry.model.name in sum_models[-1].index.values:
@@ -404,6 +408,9 @@ def start(
         else:
             final_res = input_model_entry.modelfit_results
             final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
+        descr = final_model_entry.model.description
+        ofv = final_model_entry.modelfit_results.ofv
+        context.log_info(f"Finished step {algorithm_cur}. Best model: {descr}, OFV: {ofv:.3f}")
 
         # FIXME: Add parent model
         base_model_entry = final_model_entry
@@ -448,7 +455,7 @@ def start(
         best_model_name = summary_final_step['rank'].idxmin()
 
         if best_model_name == input_model.name:
-            warnings.warn(
+            context.log_warning(
                 f'Worse {rank_type} in final model {final_model.name} '
                 f'than {input_model.name}, selecting input model'
             )
@@ -497,19 +504,13 @@ def _concat_summaries(summaries, keys):
         return pd.concat(summaries, keys=keys, names=['step'])
 
 
-def _results(res):
+def _results(context, res):
+    context.log_info("Finishing tool iivsearch")
     return res
 
 
 def _start_algorithm(model_entry):
     return model_entry
-
-
-def rename_linbase(model, linbase_model_entry):
-    linbase_model = linbase_model_entry.replace(
-        name="linear_base_model", description=algorithms.create_description(model)
-    )
-    return ModelEntry.create(model=linbase_model)
 
 
 def add_iiv(iiv_strategy, model, modelfit_results, linearize=False):
@@ -698,7 +699,7 @@ def validate_input(
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
-                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
             )
 
     if algorithm == correlation_algorithm == "skip":

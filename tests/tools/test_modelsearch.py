@@ -4,9 +4,13 @@ import pytest
 
 from pharmpy.model import Model
 from pharmpy.modeling import (
+    add_lag_time,
     add_peripheral_compartment,
+    has_first_order_absorption,
+    has_seq_zo_fo_absorption,
     set_mixed_mm_fo_elimination,
     set_peripheral_compartments,
+    set_seq_zo_fo_absorption,
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
@@ -17,11 +21,21 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelsearch.algorithms import (
     _add_iiv_to_func,
     _is_allowed,
+    create_candidate_exhaustive,
+    create_candidate_stepwise,
     exhaustive,
     exhaustive_stepwise,
+    get_best_model,
     reduced_stepwise,
 )
-from pharmpy.tools.modelsearch.tool import create_workflow, validate_input
+from pharmpy.tools.modelsearch.tool import (
+    categorize_model_entries,
+    clear_description,
+    create_base_model,
+    create_workflow,
+    filter_mfl_statements,
+    validate_input,
+)
 from pharmpy.workflows import ModelEntry, Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
@@ -262,6 +276,147 @@ def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_a
     assert len(model.random_variables) - no_of_etas_start == no_of_added_etas
 
 
+def test_get_best_model(load_model_for_test, testdata, model_entry_factory):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    model_candidate = model_start.replace(name='cand')
+    me_candidate = model_entry_factory([model_candidate], ref_val=res_start.ofv)[0]
+
+    assert get_best_model(me_start, me_candidate).model.name == 'cand'
+
+    me_no_res_1 = ModelEntry.create(model_start)
+    me_no_res_2 = ModelEntry.create(model_candidate)
+    assert get_best_model(me_no_res_1, me_no_res_2).model.name == 'mox2'
+    assert get_best_model(me_no_res_2, me_no_res_1).model.name == 'cand'
+    assert get_best_model(me_no_res_2, me_start).model.name == 'mox2'
+
+
+def test_create_base_model(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+    search_space = mfl_parse('ABSORPTION([SEQ-ZO-FO])', mfl_class=True)
+    assert has_first_order_absorption(model_start)
+    model_base = create_base_model(search_space, None, me_start).model
+    assert has_seq_zo_fo_absorption(model_base)
+    assert model_base.description == 'ABSORPTION(SEQ-ZO-FO)'
+
+    search_space = mfl_parse('ABSORPTION([FO]);PERIPHERALS(1)', mfl_class=True)
+    mfl_allometry = mfl_parse('ALLOMETRY(WT, 70)', mfl_class=True).allometry
+    model_base = create_base_model(search_space, mfl_allometry, me_start).model
+    assert len([p for p in model_base.parameters if p.name.startswith('ALLO')]) == 4
+    assert model_base.description == 'PERIPHERALS(1)'
+
+
+def test_clear_description(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+    model_no_desc = clear_description(me_start).model
+    assert model_start.description != ''
+    assert model_no_desc.description == ''
+
+
+@pytest.mark.parametrize(
+    ('iiv_strategy', 'allometry', 'params_added'),
+    [
+        ('no_add', None, {'POP_VP1', 'POP_QP1'}),
+        ('add_diagonal', None, {'POP_VP1', 'POP_QP1', 'IIV_QP1', 'IIV_VP1'}),
+        (
+            'no_add',
+            'ALLOMETRY(WT, 70)',
+            {'POP_VP1', 'POP_QP1', 'ALLO_QP1', 'ALLO_CL', 'ALLO_VC', 'ALLO_VP1'},
+        ),
+    ],
+)
+def test_create_candidate(load_model_for_test, testdata, iiv_strategy, allometry, params_added):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    search_space_exhaustive = 'ABSORPTION(ZO);PERIPHERALS(1)'
+    mfl = mfl_parse(search_space_exhaustive, mfl_class=True)
+    mfl_funcs = mfl.convert_to_funcs()
+    feats, funcs = mfl_funcs.keys(), mfl_funcs.values()
+
+    if allometry:
+        allometry = mfl_parse('ALLOMETRY(WT, 70)', mfl_class=True).allometry
+
+    me_cand_exhaustive = create_candidate_exhaustive(
+        'cand', feats, funcs, iiv_strategy, allometry, me_start
+    )
+    model_exhaustive = me_cand_exhaustive.model
+    assert model_exhaustive.name == 'cand'
+    assert len(model_exhaustive.statements.ode_system.find_peripheral_compartments()) == 1
+    assert me_cand_exhaustive.modelfit_results is None
+    assert me_cand_exhaustive.parent == model_start
+    params_start = model_start.parameters.names
+    params_cand = model_exhaustive.parameters.names
+    assert set(params_cand) - set(params_start) == params_added
+
+    model_base = set_zero_order_absorption(model_start)
+    me_base = ModelEntry.create(model_base, modelfit_results=res_start)
+    feats = ('PERIPHERALS', 1)
+    funcs = mfl_funcs[feats]
+    me_stepwise = create_candidate_stepwise('cand', feats, funcs, iiv_strategy, allometry, me_base)
+    assert me_stepwise.model == model_exhaustive
+
+
+@pytest.mark.parametrize(
+    ('funcs', 'search_space', 'mfl_funcs'),
+    [
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO])',
+            {('ABSORPTION', 'ZO'), ('ABSORPTION', 'SEQ-ZO-FO')},
+        ),
+        (
+            [set_zero_order_absorption],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO])',
+            {('ABSORPTION', 'FO'), ('ABSORPTION', 'SEQ-ZO-FO')},
+        ),
+        (
+            [set_zero_order_absorption, add_peripheral_compartment],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);PERIPHERALS(1..2)',
+            {('ABSORPTION', 'FO'), ('ABSORPTION', 'SEQ-ZO-FO'), ('PERIPHERALS', 2)},
+        ),
+    ],
+)
+def test_filter_mfl_statements(load_model_for_test, testdata, funcs, search_space, mfl_funcs):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model_start = func(model_start)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+    search_space = mfl_parse(search_space, mfl_class=True)
+    assert set(filter_mfl_statements(search_space, me_start).keys()) == mfl_funcs
+
+
+def test_categorize_model_entries(load_model_for_test, testdata, model_entry_factory):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+    model_base = set_zero_order_absorption(model_start).replace(name='base')
+    me_base = ModelEntry.create(model_base)
+    funcs = [set_seq_zo_fo_absorption, add_peripheral_compartment, add_lag_time]
+    candidates = []
+    for i, func in enumerate(funcs):
+        model_cand = func(model_base).replace(name=f'modelsearch_run{i}')
+        me_cand = ModelEntry.create(model_cand)
+        candidates.append(me_cand)
+
+    model_entries = [me_start, me_base] + candidates
+    input_model_entry, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
+    assert input_model_entry.model == model_start
+    assert base_model_entry.model == model_base
+    assert len(res_model_entries) == len(funcs)
+
+    with pytest.raises(ValueError):
+        categorize_model_entries(candidates)
+
+
 def test_create_workflow():
     assert isinstance(create_workflow(MINIMAL_VALID_MFL_STRING, 'exhaustive'), Workflow)
 
@@ -355,6 +510,12 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             dict(model=1),
             TypeError,
             'Invalid `model`',
+        ),
+        (
+            ('nonmem/ruvsearch/mox3.mod',),
+            dict(strictness='rse'),
+            ValueError,
+            '`parameter_uncertainty_method` not set',
         ),
         (None, {'rank_type': 'ofv', 'E': 1.0}, ValueError, 'E can only be provided'),
         (None, {'rank_type': 'mbic'}, ValueError, 'Value `E` must be provided when using mbic'),

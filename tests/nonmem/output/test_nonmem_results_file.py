@@ -390,6 +390,13 @@ def test_ofv_table_gap(testdata):
             0,
             2,
         ),
+        (
+            'hessian.lst',
+            'HESSIAN OF',
+            1,
+            0,
+            1,
+        ),
     ],
 )
 def test_errors(testdata, file_name, ref_start, no_of_rows, idx, no_of_errors):

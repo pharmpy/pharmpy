@@ -146,6 +146,7 @@ class NONMEMResultsFile:
             re.compile(r'0MINIMIZATION TERMINATED'),
             re.compile(r'0SEARCH WITH ESTIMATION STEP WILL NOT PROCEED'),
             re.compile(r'\s*INDIVIDUAL OBJECTIVE FUNCTION VALUES ARE ALL ZERO\. PROBLEM ENDED'),
+            re.compile(r'0HESSIAN OF POSTERIOR DENSITY IS NON-POSITIVE-DEFINITE DURING SEARCH'),
         ]
         maybe = re.compile(
             r' (REDUCED STOCHASTIC PORTION|OPTIMIZATION|'
@@ -338,6 +339,8 @@ class NONMEMResultsFile:
                 r'RESIDUALS IS INFINITE)\n'
             ),
             re.compile(r'\s*(NO. OF SIG. DIGITS UNREPORTABLE)\s*\n'),
+            # This is duplicated in termination
+            re.compile(r'0(HESSIAN OF POSTERIOR DENSITY IS NON-POSITIVE-DEFINITE DURING SEARCH)'),
         ]
 
         for pattern in error_patterns:
@@ -414,6 +417,10 @@ class NONMEMResultsFile:
                             raise NotImplementedError('Two TERM tags without TERE in between')
                         found_TERM = True
                         TERM = []
+                        # This termination error is not in the TERM block
+                        hessian = '0HESSIAN OF POSTERIOR DENSITY'
+                        if lines[i - 2].startswith(hessian):
+                            TERM.append(lines[i - 2])
                     elif m.group(1) == 'TERE':
                         if not found_TERM:
                             raise NotImplementedError('TERE tag without TERM tag')

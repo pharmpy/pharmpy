@@ -570,7 +570,7 @@ def update_infusion(model: Model, old: CompartmentalSystem):
                 updated_dataset = False
         else:
             dataset = model.dataset.copy()
-            rate = np.where(dataset['AMT'] == 0, 0.0, -2.0)
+            rate = np.where(dataset['AMT'] == 0, np.int32(0), np.int32(-2))
             dataset['RATE'] = rate
             updated_dataset = True
             model = model.replace(dataset=dataset)
@@ -1796,10 +1796,7 @@ def update_estimation(control_stream, model):
     # Check if there are multiple $PROBLEMs
     # FIXME: At the moment we always take the last $PROBLEM. What to do with multiple $PROBLEMs?
     problems = [record.name for record in control_stream.records if record.name == "PROBLEM"]
-    if len(problems) > 1:
-        problem_no = len(problems) - 1
-    else:
-        problem_no = 0
+    problem_no = len(problems) - 1
     tables = control_stream.get_records("TABLE", problem_no)
 
     predictions_subset = set()
@@ -1851,9 +1848,14 @@ def update_estimation(control_stream, model):
 
     if not tables and (cols or multi_deriv_subset):
         last_rec_ix = control_stream.records.index(control_stream.records[-1])
+        if len(problems) > 1:
+            # FIXME: This is a workaround for multiple problems
+            filename = "mytabb"
+        else:
+            filename = "mytab"
         s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
         s += f'{model.datainfo.dv_column.name} '
-        s += f'{" ".join(cols)} FILE=mytab ONEHEADER NOAPPEND NOPRINT'
+        s += f'{" ".join(cols)} FILE={filename} ONEHEADER NOAPPEND NOPRINT'
         if model.dataset is not None and any(id_val > 99999 for id_val in get_ids(model)):
             s += ' FORMAT=s1PE16.8'
         s += '\n'
