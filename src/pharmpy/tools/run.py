@@ -957,7 +957,7 @@ def is_strictness_fulfilled(
         return True
     else:
         strictness = strictness.lower()
-        allowed_args = [
+        allowed_args = (
             'minimization_successful',
             'rounding_errors',
             'sigdigs',
@@ -975,8 +975,8 @@ def is_strictness_fulfilled(
             'estimate_near_boundary_theta',
             'estimate_near_boundary_omega',
             'estimate_near_boundary_sigma',
-        ]
-        unwanted_args = ['and', 'or', 'not']
+        )
+        unwanted_args = ('and', 'or', 'not')
         find_all_words = re.findall(r'[^\d\W]+', strictness)
         args_in_statement = [w for w in find_all_words if w not in unwanted_args]
         find_all_non_allowed_operators = re.findall(r"[^\w\s\.\<\>\=\!\(\)]", strictness)
