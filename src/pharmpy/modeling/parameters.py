@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Optional, Union
+from typing import Iterable, Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.model import Assignment, Model, Parameter, Parameters, RandomVariables
@@ -207,7 +207,7 @@ def _is_zero_fix(param):
     return param.init == 0 and param.fix
 
 
-def set_upper_bounds(model: Model, bounds: dict[str, float], strict: bool = True):
+def set_upper_bounds(model: Model, bounds: Mapping[str, float], strict: bool = True):
     """Set parameter upper bounds
 
     Parameters
@@ -252,7 +252,7 @@ def set_upper_bounds(model: Model, bounds: dict[str, float], strict: bool = True
     return model.update_source()
 
 
-def set_lower_bounds(model: Model, bounds: dict[str, float], strict: bool = True):
+def set_lower_bounds(model: Model, bounds: Mapping[str, float], strict: bool = True):
     """Set parameter lower bounds
 
     Parameters
@@ -298,7 +298,7 @@ def set_lower_bounds(model: Model, bounds: dict[str, float], strict: bool = True
     return model
 
 
-def fix_parameters(model: Model, parameter_names: Union[list[str], str], strict: bool = True):
+def fix_parameters(model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True):
     """Fix parameters
 
     Fix all listed parameters
@@ -360,7 +360,7 @@ def _check_input_params(model, parameter_names):
         raise ValueError(f'Parameters not found in model: {params_not_in_model}')
 
 
-def unfix_parameters(model: Model, parameter_names: Union[list[str], str], strict: bool = True):
+def unfix_parameters(model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True):
     """Unfix parameters
 
     Unfix all listed parameters
@@ -417,7 +417,7 @@ def unfix_parameters(model: Model, parameter_names: Union[list[str], str], stric
     return model
 
 
-def fix_parameters_to(model: Model, inits: dict[str, float], strict: bool = True):
+def fix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = True):
     """Fix parameters to
 
     Fix all listed parameters to specified value/values
@@ -460,7 +460,7 @@ def fix_parameters_to(model: Model, inits: dict[str, float], strict: bool = True
     return model
 
 
-def unfix_parameters_to(model: Model, inits: dict[str, float], strict: bool = True):
+def unfix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = True):
     """Unfix parameters to
 
     Unfix all listed parameters to specified value/values
@@ -505,7 +505,7 @@ def unfix_parameters_to(model: Model, inits: dict[str, float], strict: bool = Tr
     return model
 
 
-def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool], strict: bool = True):
+def fix_or_unfix_parameters(model: Model, parameters: Mapping[str, bool], strict: bool = True):
     """Fix or unfix parameters
 
     Set fixedness of parameters to specified values
@@ -558,7 +558,7 @@ def fix_or_unfix_parameters(model: Model, parameters: dict[str, bool], strict: b
     return model
 
 
-def unconstrain_parameters(model: Model, parameter_names: list[str], strict: bool = True):
+def unconstrain_parameters(model: Model, parameter_names: Iterable[str], strict: bool = True):
     """Remove all constraints from parameters
 
     Parameters
@@ -684,7 +684,7 @@ def replace_fixed_thetas(model: Model):
             keep.append(p)
 
     model = model.replace(
-        parameters=Parameters(keep), statements=new_assignments + model.statements
+        parameters=Parameters(tuple(keep)), statements=new_assignments + model.statements
     )
     model = model.update_source()
     return model
