@@ -1456,13 +1456,19 @@ class CompartmentalSystem(Statement):
 class Dose(ABC):
     """Abstract base class for different types of doses"""
 
-    def __init__(self, admid: int):
+    def __init__(self, amount: Expr, admid: int):
         self._admid = admid
+        self._amount = amount
 
     @property
     def admid(self) -> int:
         """Administration ID of dose"""
         return self._admid
+
+    @property
+    def amount(self) -> Expr:
+        """Symbolic amount of dose"""
+        return self._amount
 
     @abstractmethod
     def subs(self, substitutions) -> Dose: ...
@@ -1494,8 +1500,7 @@ class Bolus(Dose, Immutable):
     """
 
     def __init__(self, amount: Expr, admid: int = 1):
-        super().__init__(admid)
-        self._amount = amount
+        super().__init__(amount, admid)
 
     @classmethod
     def create(cls, amount: TExpr, admid: int = 1) -> Bolus:
@@ -1592,8 +1597,7 @@ class Infusion(Dose, Immutable):
         rate: Optional[Expr] = None,
         duration: Optional[Expr] = None,
     ):
-        super().__init__(admid)
-        self._amount = amount
+        super().__init__(amount, admid)
         self._rate = rate
         self._duration = duration
 
@@ -1621,11 +1625,6 @@ class Infusion(Dose, Immutable):
         rate = kwargs.get("rate", self._rate)
         duration = kwargs.get("duration", self._duration)
         return Infusion.create(amount=amount, admid=admid, rate=rate, duration=duration)
-
-    @property
-    def amount(self) -> Expr:
-        """Symbolic amount of dose"""
-        return self._amount
 
     @property
     def rate(self) -> Optional[Expr]:
