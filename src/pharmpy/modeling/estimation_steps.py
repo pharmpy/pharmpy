@@ -439,14 +439,14 @@ def add_derivative(
     if with_respect_to is None:
         etas = model.random_variables.etas.symbols
         eps = model.random_variables.epsilons.symbols
-        with_respect_to = tuple(
+        wrt = tuple(
             tuple((e,) for e in etas) + tuple((e,) for e in eps) + tuple(product(eps, etas))
         )
 
     elif isinstance(with_respect_to, str):
-        with_respect_to = ((Expr.symbol(with_respect_to),),)
+        wrt = ((Expr.symbol(with_respect_to),),)
     elif isinstance(with_respect_to, Sequence):
-        with_respect_to = tuple(
+        wrt = tuple(
             (Expr.symbol(w),) if isinstance(w, str) else tuple(map(Expr.symbol, w))
             for w in with_respect_to
         )
@@ -455,7 +455,7 @@ def add_derivative(
             f"with_respect_to argument need to be tuple, str or None. Recieved {type(with_respect_to)}"
         )
 
-    for derivative in with_respect_to:
+    for derivative in wrt:
         for parameter in derivative:
             if parameter not in model.random_variables.symbols:
                 raise ValueError(f"Parameter '{parameter}' not part of ETAs or EPS")
@@ -463,7 +463,7 @@ def add_derivative(
     steps = model.execution_steps
     new_step = steps[-1]
 
-    for new_derivative in with_respect_to:
+    for new_derivative in wrt:
         derivatives = tuple(set(d) for d in new_step.derivatives)
 
         if set(new_derivative) not in derivatives:
@@ -507,14 +507,14 @@ def remove_derivative(
     if with_respect_to is None:
         etas = model.random_variables.etas.symbols
         eps = model.random_variables.epsilons.symbols
-        with_respect_to = tuple(
+        wrt = tuple(
             tuple((e,) for e in etas) + tuple((e,) for e in eps) + tuple(product(eps, etas))
         )
 
     elif isinstance(with_respect_to, str):
-        with_respect_to = ((Expr.symbol(with_respect_to),),)
+        wrt = ((Expr.symbol(with_respect_to),),)
     elif isinstance(with_respect_to, Sequence):
-        with_respect_to = tuple(
+        wrt = tuple(
             (Expr.symbol(w),) if isinstance(w, str) else tuple(map(Expr.symbol, w))
             for w in with_respect_to
         )
@@ -523,11 +523,11 @@ def remove_derivative(
             f"with_respect_to argument need to be tuple, str or None. Recieved {type(with_respect_to)}"
         )
 
-    with_respect_to = tuple(set(d) for d in with_respect_to)
+    wrt = tuple(set(d) for d in wrt)
     new_steps = model.execution_steps
     derivatives = new_steps[-1].derivatives
 
-    derivatives = tuple(d for d in derivatives if set(d) not in with_respect_to)
+    derivatives = tuple(d for d in derivatives if set(d) not in wrt)
     new_step = new_steps[-1].replace(derivatives=derivatives)
     new_steps = new_steps[:-1] + new_step
 
