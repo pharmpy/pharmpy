@@ -531,8 +531,6 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
             for option in record.all_options
             if option.key not in protected_names
         }
-        if not tool_options:
-            tool_options = None
 
         try:
             meth = EstimationStep.create(

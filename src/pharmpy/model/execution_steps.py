@@ -21,7 +21,7 @@ class ExecutionStep(Immutable):
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
-        tool_options: Optional[frozenmapping[str, Any]] = None,
+        tool_options: frozenmapping[str, Any] = frozenmapping({}),
     ):
         self._solver = solver
         self._solver_rtol = solver_rtol
@@ -40,10 +40,7 @@ class ExecutionStep(Immutable):
 
     @staticmethod
     def _canonicalize_tool_options(tool_options):
-        if tool_options is None:
-            tool_options = frozenmapping({})
-        else:
-            tool_options = frozenmapping(tool_options)
+        tool_options = frozenmapping(tool_options)
         return tool_options
 
     @property
@@ -80,15 +77,12 @@ class ExecutionStep(Immutable):
         return self._solver_atol
 
     @property
-    def tool_options(self) -> Optional[frozenmapping[str, Any]]:
+    def tool_options(self) -> frozenmapping[str, Any]:
         """Dictionary of tool specific options"""
         return self._tool_options
 
     def _add_to_dict(self, d):
-        if self._tool_options is not None:
-            tool_options = dict(self._tool_options)
-        else:
-            tool_options = self._tool_options  # self._tool_options is None
+        tool_options = dict(self._tool_options)
         d['solver'] = self._solver
         d['solver_rtol'] = self._solver_rtol
         d['solver_atol'] = self._solver_atol
@@ -153,7 +147,7 @@ class EstimationStep(ExecutionStep):
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
-        tool_options: Optional[frozenmapping[str, Any]] = None,
+        tool_options: frozenmapping[str, Any] = frozenmapping({}),
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
     ):
@@ -196,7 +190,7 @@ class EstimationStep(ExecutionStep):
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
-        tool_options: Optional[Mapping[str, Any]] = None,
+        tool_options: Mapping[str, Any] = frozenmapping({}),
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
     ):
@@ -388,7 +382,7 @@ class EstimationStep(ExecutionStep):
         return self._individual_eta_samples
 
     @property
-    def tool_options(self) -> Optional[frozenmapping[str, Any]]:
+    def tool_options(self) -> frozenmapping[str, Any]:
         """Dictionary of tool specific options"""
         return self._tool_options
 
@@ -486,7 +480,7 @@ class SimulationStep(ExecutionStep):
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
-        tool_options: Optional[frozenmapping[str, Any]] = None,
+        tool_options: frozenmapping[str, Any] = frozenmapping({}),
     ):
         self._n = n
         self._seed = seed
@@ -505,7 +499,7 @@ class SimulationStep(ExecutionStep):
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
-        tool_options: Optional[Mapping[str, Any]] = None,
+        tool_options: Mapping[str, Any] = frozenmapping({}),
     ):
         if n < 1:
             raise ValueError("Need at least one replicate in SimulationStep")

@@ -19,6 +19,7 @@ Changes
   and other platforms. The fix will use another sampling method, which means that it will not
   be possible to reproduce sampled values between this version of Pharmpy and the previous
 * Make the default option to remove all in modeling.remove_residuals and modeling.remove_predictions None instead of 'all'
+* Do not allow None for ExecutionStep.tool_option. Instead have an empty frozendict as default
 
 Bugfixes
 ========
