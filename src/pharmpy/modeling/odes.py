@@ -21,6 +21,7 @@ from pharmpy.model import (
     Parameter,
     Parameters,
     Statements,
+    get_and_check_odes,
     output,
 )
 from pharmpy.modeling.help_functions import _as_integer
@@ -36,15 +37,6 @@ from .parameters import (
     set_upper_bounds,
     unfix_parameters,
 )
-
-
-def get_and_check_odes(model: Model) -> CompartmentalSystem:
-    # Get the ode_system from model and raise if not a CompartmentalSystem
-    odes = model.statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        return odes
-    else:
-        raise ValueError(f'Model {model.name} has no ODE system')
 
 
 def _extract_params_from_symb(

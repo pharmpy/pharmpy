@@ -12,12 +12,13 @@ from pharmpy.model import (
     CompartmentalSystemBuilder,
     Model,
     Statements,
+    get_and_check_odes,
     output,
 )
 from pharmpy.modeling import get_central_volume_and_clearance, set_initial_condition
 
 from .error import set_proportional_error_model
-from .odes import add_individual_parameter, get_and_check_odes, set_initial_estimates
+from .odes import add_individual_parameter, set_initial_estimates
 
 PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin']
 

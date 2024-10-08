@@ -2,7 +2,7 @@ from .data import DatasetError, DatasetWarning
 from .datainfo import ColumnInfo, DataInfo
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
 from .execution_steps import EstimationStep, ExecutionSteps, SimulationStep
-from .model import Model, ModelError, ModelfitResultsError, ModelSyntaxError
+from .model import Model, ModelError, ModelfitResultsError, ModelSyntaxError, get_and_check_odes
 from .parameters import Parameter, Parameters
 from .random_variables import RandomVariables, VariabilityHierarchy, VariabilityLevel
 from .statements import (
@@ -31,6 +31,7 @@ __all__ = (
     'Distribution',
     'EstimationStep',
     'ExecutionSteps',
+    'get_and_check_odes',
     'Infusion',
     'JointNormalDistribution',
     'Model',
