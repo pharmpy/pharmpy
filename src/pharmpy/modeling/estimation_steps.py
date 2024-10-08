@@ -20,7 +20,7 @@ def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs
     ----------
     model : Model
         Pharmpy model
-    method : {'FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'}
+    method : MethodType
         estimation method to change to
     idx : int
         index of estimation step, default is 0 (first estimation step)
@@ -78,7 +78,7 @@ def add_estimation_step(model: Model, method: MethodType, idx: Optional[int] = N
     ----------
     model : Model
         Pharmpy model
-    method : {'FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES'}
+    method : MethodType
         estimation method to change to
     idx : int
         index of estimation step (starting from 0), default is None (adds step at the end)
