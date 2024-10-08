@@ -20,7 +20,7 @@ tflite_condition = (
 )
 
 
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_predict_outliers():
     model = load_example_model('pheno')
     results = load_example_modelfit_results('pheno')
@@ -29,7 +29,7 @@ def test_predict_outliers():
     assert res['residual'][1] == pytest.approx(-0.28144291043281555)
 
 
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_predict_influential_individuals():
     model = load_example_model('pheno')
     results = load_example_modelfit_results('pheno')
