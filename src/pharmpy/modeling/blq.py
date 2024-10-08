@@ -126,24 +126,24 @@ def transform_blq(
     set_lloq_data
 
     """
-    method = method.lower()
-    check_list("method", method, SUPPORTED_METHODS)
+    lometh = method.lower()
+    check_list("method", lometh, SUPPORTED_METHODS)
 
     blq_col, lloq_col = _get_blq_and_lloq_columns(model)
     indicator, indicator_type, level, level_type = _which_indicator_and_level(
-        lloq, lloq_col, blq_col, method
+        lloq, lloq_col, blq_col, lometh
     )
 
-    if method == 'm1':
+    if lometh == 'm1':
         model = _m1_method(model, indicator, indicator_type)
-    elif method in ('m3', 'm4'):
+    elif lometh in ('m3', 'm4'):
         _verify_model(model, method)
-        model = _m3_m4_method(model, indicator, indicator_type, level, level_type, method)
-    elif method == 'm5':
+        model = _m3_m4_method(model, indicator, indicator_type, level, level_type, lometh)
+    elif lometh == 'm5':
         model = _m5_method(model, indicator, indicator_type, level, level_type)
-    elif method == 'm6':
+    elif lometh == 'm6':
         model = _m6_method(model, indicator, indicator_type, level, level_type)
-    elif method == 'm7':
+    elif lometh == 'm7':
         model = _m7_method(model, indicator, indicator_type)
 
     return model
@@ -191,7 +191,7 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     sset = model.statements
 
     est_steps = model.execution_steps
-    est_steps_new = ExecutionSteps([est_step.replace(laplace=True) for est_step in est_steps])
+    est_steps_new = ExecutionSteps(tuple(est_step.replace(laplace=True) for est_step in est_steps))
     model = model.replace(execution_steps=est_steps_new)
 
     # FIXME: Handle other DVs?
@@ -263,7 +263,7 @@ def has_blq_transformation(model: Model):
     y_expr = y.expression
     if not y_expr.is_piecewise():
         return False
-    for statement, cond in y_expr.args:
+    for statement, cond in y_expr.args:  # pyright: ignore [reportGeneralTypeIssues]
         blq_symb, _ = get_blq_symb_and_type(model)
         if blq_symb in cond.free_symbols:
             break
