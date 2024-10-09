@@ -140,9 +140,6 @@ def test_replace(load_model_for_test, testdata):
     sset_new = sset.reassign(cl.symbol, cl.expression + Expr.symbol('TIME'))
     model.replace(statements=sset_new)
 
-    # with pytest.raises(TypeError, match='Filename extension has to be of string type'):
-    #    model.replace(filename_extension=8)
-
     with pytest.raises(TypeError, match='model.datainfo must be of DataInfo type'):
         model.replace(datainfo=9)
 
