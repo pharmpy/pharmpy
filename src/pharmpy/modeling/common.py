@@ -6,7 +6,7 @@ import importlib
 import re
 import warnings
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Mapping, Optional, Union
 
 import pharmpy.config as config
 from pharmpy.basic import Expr, TSymbol
@@ -21,10 +21,11 @@ from pharmpy.model import (
     Parameter,
     Parameters,
     RandomVariables,
+    get_and_check_dataset,
 )
 
 
-def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None):
+def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None) -> Model:
     """Read model from file
 
     Parameters
@@ -56,7 +57,7 @@ def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None)
     return model
 
 
-def read_model_from_string(code: str):
+def read_model_from_string(code: str) -> Model:
     """Read model from the model code in a string
 
     Parameters
@@ -94,7 +95,7 @@ def read_model_from_string(code: str):
     return model
 
 
-def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
+def write_model(model: Model, path: Union[str, Path] = '', force: bool = True) -> Model:
     """Write model code to file
 
     Parameters
@@ -144,7 +145,9 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True):
     return model
 
 
-def convert_model(model: Model, to_format: Literal['generic', 'nlmixr', 'nonmem', 'rxode']):
+def convert_model(
+    model: Model, to_format: Literal['generic', 'nlmixr', 'nonmem', 'rxode']
+) -> Model:
     """Convert model to other format
 
     Note that the operation is not done inplace.
@@ -177,7 +180,7 @@ def convert_model(model: Model, to_format: Literal['generic', 'nlmixr', 'nonmem'
     return new
 
 
-def get_model_code(model: Model):
+def get_model_code(model: Model) -> str:
     """Get the model code of the underlying model language
 
     Parameters
@@ -310,7 +313,7 @@ def set_description(model: Model, new_description: str) -> Model:
     return model
 
 
-def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None):
+def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None) -> Model:
     """If the model name ends in a number increase it
 
     If path is set increase the number until no file exists
@@ -357,7 +360,7 @@ def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None):
     return model
 
 
-def load_example_model(name: str):
+def load_example_model(name: str) -> Model:
     """Load an example model
 
     Load an example model from models built into Pharmpy
@@ -406,7 +409,7 @@ def load_example_model(name: str):
     return model
 
 
-def get_model_covariates(model: Model, strings: bool = False):
+def get_model_covariates(model: Model, strings: bool = False) -> Union[list[str], list[Expr]]:
     """List of covariates used in model
 
     A covariate in the model is here defined to be a data item
@@ -461,7 +464,7 @@ def get_model_covariates(model: Model, strings: bool = False):
     covs = covs - {Expr.symbol(model.datainfo.id_column.name)}
 
     covs = list(covs)
-    covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
+    covs = list(sorted(covs, key=lambda x: x.name))  # sort to make order deterministic
     if strings:
         covs = [str(x) for x in covs]
     return covs
@@ -514,7 +517,7 @@ def print_model_symbols(model: Model) -> None:
     print(s)
 
 
-def get_config_path():
+def get_config_path() -> Optional[str]:
     r"""Returns path to the user config path
 
     Returns
@@ -543,7 +546,7 @@ def get_config_path():
         return None
 
 
-def create_config_template():
+def create_config_template() -> None:
     r"""Create a basic config file template
 
     If a configuration file already exists it will not be overwritten
@@ -569,7 +572,7 @@ def create_config_template():
         warnings.warn('User config file is disabled')
 
 
-def remove_unused_parameters_and_rvs(model: Model):
+def remove_unused_parameters_and_rvs(model: Model) -> Model:
     """Remove any parameters and rvs that are not used in the model statements
 
     Parameters
@@ -624,7 +627,7 @@ def _get_unused_parameters_and_rvs(statements, parameters, random_variables):
     return new_rvs, Parameters.create(new_params)
 
 
-def rename_symbols(model: Model, new_names: dict[TSymbol, TSymbol]):
+def rename_symbols(model: Model, new_names: Mapping[TSymbol, TSymbol]) -> Model:
     """Rename symbols in the model
 
     Make sure that no name clash occur.
@@ -662,7 +665,7 @@ def rename_symbols(model: Model, new_names: dict[TSymbol, TSymbol]):
     # FIXME: Only handles parameters, statements and random_variables and no clashes and circular renaming
 
 
-def filter_dataset(model: Model, expr: str):
+def filter_dataset(model: Model, expr: str) -> Model:
     """Filter dataset according to expr and return a model with the filtered dataset.
 
     Example: "DVID == 1" will filter the dataset so that only the rows with DVID = 1 remain.
@@ -716,7 +719,7 @@ def filter_dataset(model: Model, expr: str):
     [400 rows x 8 columns]
 
     """
-    original_dataset = model.dataset
+    original_dataset = get_and_check_dataset(model)
     try:
         new_dataset = original_dataset.query(expr)
         new_model = model.replace(
