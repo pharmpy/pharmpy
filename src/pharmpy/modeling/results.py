@@ -8,7 +8,13 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, output
+from pharmpy.model import (
+    CompartmentalSystem,
+    CompartmentalSystemBuilder,
+    Model,
+    get_and_check_dataset,
+    output,
+)
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (
     eval_expr,
@@ -319,11 +325,7 @@ def calculate_individual_parameter_statistics(
     if not all_covariate_free_symbols:
         cases = {'median': {}}
     else:
-        dataset = model.dataset
-        if dataset is None:
-            raise ValueError(
-                "Model needs to have dataset for calculate_individual_parameter_statistics"
-            )
+        dataset = get_and_check_dataset(model)
         column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
         q5 = dataset[column_filter].groupby('ID').median().quantile(0.05)
         q95 = dataset[column_filter].groupby('ID').median().quantile(0.95)
