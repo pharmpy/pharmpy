@@ -165,6 +165,16 @@ def run_amd(
     """
     args = locals()
 
+    n = 1
+    while True:
+        name = f"amd{n}"
+        if not default_context.exists(name):
+            ctx = default_context(name)
+            break
+        n += 1
+
+    ctx = default_context(name, ref=path)
+
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
     if search_space is not None:
@@ -206,6 +216,7 @@ def run_amd(
     elif isinstance(input, nonmem.model.Model):
         model = input
         model = model.replace(name='start')
+        ctx.store_input_model_entry(model)
     else:
         # Redundant with validation
         raise TypeError(
@@ -348,15 +359,6 @@ def run_amd(
             model = filter_dataset(model, f'{dvid_name} < 2')
             model = model.replace(dataset=model.dataset.reset_index())
 
-    n = 1
-    while True:
-        name = f"amd{n}"
-        if not default_context.exists(name):
-            ctx = default_context(name)
-            break
-        n += 1
-
-    ctx = default_context(name, ref=path)
     run_subfuncs = {}
 
     for section in order:
@@ -494,7 +496,11 @@ def run_amd(
         model = model.replace(dataset=model.dataset.reset_index())
 
     if results is None:
-        results = run_tool('modelfit', model, path=ctx.path, resume=resume)
+        subctx = ctx.create_subcontext('modelfit')
+        results = run_tool('modelfit', model, path=subctx.path, resume=resume)
+        model = model.replace(name='base')
+        ctx.store_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
     next_model_entry = model_entry
     sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
@@ -509,17 +515,22 @@ def run_amd(
             sum_models.append(None)
             sum_inds_counts.append(None)
         else:
-            if subresults.final_model.name != next_model.name:
+            final_model = subresults.final_model.replace(name=f"final_{tool_name}")
+            final_model_entry = ModelEntry.create(
+                model=final_model, modelfit_results=subresults.final_results, parent=next_model
+            )
+            ctx.store_model_entry(final_model_entry)
+            if final_model_entry.model.name != next_model.name:
                 if tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]:
                     cov_before = ModelFeatures.create_from_mfl_string(
-                        get_model_features(next_model)
+                        get_model_features(final_model)
                     )
                     cov_after = ModelFeatures.create_from_mfl_string(
-                        get_model_features(subresults.final_model)
+                        get_model_features(final_model)
                     )
                     cov_differences = cov_after - cov_before
                     if cov_differences:
-                        covsearch_features = covsearch_features.expand(subresults.final_model)
+                        covsearch_features = covsearch_features.expand(final_model)
                         covsearch_features += cov_differences
                         func = _subfunc_mechanistic_exploratory_covariates(
                             amd_start_model=model,
@@ -529,10 +540,8 @@ def run_amd(
                             ctx=ctx,
                         )
                         run_subfuncs['covsearch'] = func
-                next_model = subresults.final_model
-                next_model_entry = ModelEntry.create(
-                    model=next_model, modelfit_results=subresults.final_results
-                )
+                next_model = final_model
+                next_model_entry = final_model_entry
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
             sum_models.append(subresults.summary_models.reset_index())
             sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
@@ -575,6 +584,8 @@ def run_amd(
     final_model = next_model_entry.model
     final_results = next_model_entry.modelfit_results
     summary_errors = summarize_errors_from_entries([next_model_entry])
+
+    ctx.store_final_model_entry(final_model)
 
     # run simulation for VPC plot
     sim_model = set_simulation(final_model, n=300)
