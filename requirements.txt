@@ -41,7 +41,7 @@ lark==1.2.2
 locket==1.0.0
 lxml==5.3.0
 markdown-it-py==3.0.0
-MarkupSafe==3.0.0
+MarkupSafe==3.0.1
 matplotlib-inline==0.1.7
 mdurl==0.1.2
 mistune==3.0.2
