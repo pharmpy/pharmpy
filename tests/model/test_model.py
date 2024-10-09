@@ -14,6 +14,7 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
     Statements,
+    get_and_check_dataset,
     get_and_check_odes,
 )
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
@@ -362,3 +363,11 @@ def test_get_and_check_odes(load_example_model_for_test, load_model_for_test, te
     model_min = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     with pytest.raises(ValueError):
         get_and_check_odes(model_min)
+
+
+def test_get_and_check_dataset(load_example_model_for_test):
+    pheno = load_example_model_for_test('pheno')
+    assert get_and_check_dataset(pheno) is pheno.dataset
+    m = pheno.replace(dataset=None)
+    with pytest.raises(ValueError):
+        get_and_check_dataset(m)

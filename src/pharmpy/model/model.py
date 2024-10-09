@@ -729,7 +729,26 @@ def get_and_check_odes(model: Model) -> CompartmentalSystem:
     """
 
     odes = model.statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        return odes
-    else:
+    if not isinstance(odes, CompartmentalSystem):
         raise ValueError(f'Model {model.name} has no ODE system')
+    return odes
+
+
+def get_and_check_dataset(model: Model) -> pd.DataFrame:
+    """Get the ode_system from model and raise if not a CompartmentalSystem
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    pd.DataFrame
+        The dataset if it exists
+    """
+
+    dataset = model.dataset
+    if dataset is None:
+        raise ValueError(f"Model {model.name} has no dataset")
+    return dataset
