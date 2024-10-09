@@ -1,5 +1,5 @@
 #Direct dependencies except those that are already dependencies of Pharmpy itself
-sphinx-tabs==3.4.5
+sphinx-tabs==3.4.7
 pydata-sphinx-theme==0.15.4
 sphinxcontrib-autoprogram==0.1.9
 sphinx-automodapi==0.18.0
