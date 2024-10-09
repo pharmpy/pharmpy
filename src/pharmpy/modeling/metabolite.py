@@ -9,6 +9,7 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Model,
+    get_and_check_odes,
     output,
 )
 
@@ -17,7 +18,7 @@ from .odes import _find_noncov_theta, add_individual_parameter, set_first_order_
 from .parameters import set_initial_estimates, set_lower_bounds, set_upper_bounds
 
 
-def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
+def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) -> Model:
     """Adds a metabolite compartment to a model
 
     The flow from the central compartment to the metabolite compartment
@@ -48,20 +49,23 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     >>> model = add_metabolite(model)
 
     """
-
     if presystemic:
-        depot = model.statements.ode_system.find_depot(model.statements)
+        odes = get_and_check_odes(model)
+        depot = odes.find_depot(model.statements)
         if not depot:
             model = set_first_order_absorption(model)
-            depot = model.statements.ode_system.find_depot(model.statements)
-        if not depot:
-            transits = model.statements.ode_system.find_transit_compartments(model.statements)
-            if transits:
-                depot = transits[-1]
-            else:
-                raise ValueError(
-                    "Pre-systemic metabolite model is not compatible with input model."
-                )
+            odes = get_and_check_odes(model)
+            depot = odes.find_depot(model.statements)
+            if not depot:
+                transits = odes.find_transit_compartments(model.statements)
+                if transits:
+                    depot = transits[-1]
+                else:
+                    raise ValueError(
+                        "Pre-systemic metabolite model is not compatible with input model."
+                    )
+    else:
+        depot = None
 
     # TODO: Implement possibility of converting plain metabolite to presystemic
 
@@ -70,13 +74,13 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
     vm = Expr.symbol('VM')
     model = add_individual_parameter(model, vm.name)
 
-    odes = model.statements.ode_system
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     ke = odes.get_flow(central, output)
     if ke.is_symbol():
-        ke_expression = model.statements.find_assignment(ke).expression
-        if ke_expression is not None:
-            ke = ke_expression
+        ke_ass = model.statements.find_assignment(ke)
+        if ke_ass is not None:
+            ke = ke_ass.expression
     cl, vc = ke.as_numer_denom()
 
     if vc != 1:
@@ -93,27 +97,26 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
 
     cb.add_flow(central, metacomp, ke)
     cb.remove_flow(central, output)
+    amount = metacomp.amount
     if presystemic:
+        assert isinstance(depot, Compartment)
         fpre = Expr.symbol('FPRE')
         model = add_individual_parameter(model, fpre.name)
         model = set_lower_bounds(model, {'POP_FPRE': 0.0})
         model = set_upper_bounds(model, {'POP_FPRE': 1.0})
         ka = odes.get_flow(depot, central)
         if ka.is_symbol():
-            ka_expression = model.statements.find_assignment(ka).expression
-            if ka_expression is not None:
-                ka = ka_expression
+            ka_ass = model.statements.find_assignment(ka)
+            if ka_ass is not None:
+                ka = ka_ass.expression
         cb.add_flow(depot, metacomp, fpre * ka)
         cb.remove_flow(depot, central)
         cb.add_flow(depot, central, ka * (1 - fpre))
 
-    # FIXME: drug_dvid is never used, use it here?
-    # dvid_col = model.datainfo.typeix['dvid'][0]
-    # dvids = dvid_col.categories
+        # FIXME: drug_dvid is never used, use it here?
+        # dvid_col = model.datainfo.typeix['dvid'][0]
+        # dvids = dvid_col.categories
 
-    amount = metacomp.amount
-
-    if presystemic:
         # QUESTION: Add bioavailability to depot?
         cb.set_bioavailability(depot, 1 / (1 - fpre))
         model = model.replace(
@@ -122,8 +125,8 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False):
             + model.statements.after_odes
         )
         model = model.update_source()
-        cs = model.statements.ode_system
-        bio = model.statements.ode_system.find_compartment(depot.name).bioavailability
+        cs = get_and_check_odes(model)
+        bio = cs.find_compartment(depot.name).bioavailability
         conc = Assignment(Expr.symbol('CONC_M'), amount / vm / bio)
     else:
         cs = CompartmentalSystem(cb)
@@ -168,6 +171,8 @@ def has_presystemic_metabolite(model: Model):
 
     """
     odes = model.statements.ode_system
+    if odes is None:
+        return False
     central = odes.central_compartment
     metabolite = odes.find_compartment("METABOLITE")
     depot = odes.find_depot(model.statements)
