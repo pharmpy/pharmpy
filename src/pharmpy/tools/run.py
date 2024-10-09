@@ -200,17 +200,13 @@ def run_tool_with_name(
 
     create_workflow = tool.create_workflow
 
-    dispatcher, ctx = _get_run_setup(dispatching_options, common_options, name)
+    dispatcher, ctx = get_run_setup(dispatching_options, common_options, name)
 
-    tool_params = inspect.signature(create_workflow).parameters
-    tool_param_types = get_type_hints(create_workflow)
-
-    tool_metadata = _create_metadata(
+    tool_metadata = create_metadata(
         database=ctx,
         dispatcher=dispatcher,
         tool_name=name,
-        tool_params=tool_params,
-        tool_param_types=tool_param_types,
+        tool_func=create_workflow,
         args=args,
         tool_options=tool_options,
         common_options=common_options,
@@ -254,19 +250,16 @@ def run_tool_with_name(
     return res
 
 
-def _create_metadata(
+def create_metadata(
     database: Context,
     dispatcher,
     tool_name: str,
-    tool_params,
-    tool_param_types,
+    tool_func,
     args: Sequence,
     tool_options: Mapping[str, Any],
     common_options: Mapping[str, Any],
 ):
-    tool_metadata = _create_metadata_tool(
-        database, tool_name, tool_params, tool_param_types, args, tool_options
-    )
+    tool_metadata = _create_metadata_tool(database, tool_name, tool_func, args, tool_options)
     setup_metadata = _create_metadata_common(database, dispatcher, tool_name, common_options)
     tool_metadata['common_options'] = setup_metadata
 
@@ -390,11 +383,12 @@ def _parse_args_kwargs_from_tool_options(tool_params, tool_options):
 def _create_metadata_tool(
     database: Context,
     tool_name: str,
-    tool_params,
-    tool_param_types,
+    tool_func,
     args: Sequence,
     kwargs: Mapping[str, Any],
 ):
+    tool_params = inspect.signature(tool_func).parameters
+    tool_param_types = get_type_hints(tool_func)
     # FIXME: Add config file dump, estimation tool etc.
     tool_metadata = {
         'pharmpy_version': pharmpy.__version__,
@@ -502,7 +496,7 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
-def _get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, Context]:
+def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, Context]:
     try:
         dispatcher = dispatching_options['dispatcher']
     except KeyError:
