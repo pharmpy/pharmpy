@@ -19,7 +19,7 @@ from pharmpy.model.random_variables import (
 
 from .data import get_ids, get_observations
 from .expressions import get_individual_parameters
-from .odes import get_initial_conditions
+from .odes import get_and_check_odes, get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 from .parameters import get_omegas
 from .random_variables import replace_non_random_rvs
@@ -320,6 +320,10 @@ def calculate_individual_parameter_statistics(
         cases = {'median': {}}
     else:
         dataset = model.dataset
+        if dataset is None:
+            raise ValueError(
+                "Model needs to have dataset for calculate_individual_parameter_statistics"
+            )
         column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
         q5 = dataset[column_filter].groupby('ID').median().quantile(0.05)
         q95 = dataset[column_filter].groupby('ID').median().quantile(0.95)
@@ -458,9 +462,9 @@ def calculate_pk_parameters_statistics(
 
     """
 
-    statements = model.statements
-    odes = statements.ode_system
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
+    statements = model.statements
     depot = odes.find_depot(statements)
     peripherals = odes.find_peripheral_compartments()
     elimination_rate = odes.get_flow(central, output)
@@ -484,7 +488,7 @@ def calculate_pk_parameters_statistics(
 
     # Any abs + 1comp + FO elimination
     if not peripherals and odes.t not in elimination_rate.free_symbols:
-        elimination_system = statements.ode_system
+        elimination_system = odes
         for name in elimination_system.compartment_names:
             if name != central.name:  # NOTE: Keep central
                 cb = CompartmentalSystemBuilder(elimination_system)
