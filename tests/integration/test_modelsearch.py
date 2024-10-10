@@ -5,7 +5,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_modelsearch
 
 
-def test_exhaustive_exhaustive(tmp_path, model_count, start_modelres):
+def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
@@ -29,129 +29,55 @@ def test_exhaustive_exhaustive(tmp_path, model_count, start_modelres):
 
 
 @pytest.mark.parametrize(
-    'search_space, no_of_models, last_model_parent_name, model_with_error, ref',
-    [
-        (
-            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
-            4,
-            'modelsearch_run2',
-            'modelsearch_run3',
-            ('modelsearch_run2', ['PERIPHERALS(1)', 'VP1 = ']),
-        ),
-        (
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);PERIPHERALS([0,1])',
-            7,
-            'modelsearch_run3',
-            'modelsearch_run5',
-            ('modelsearch_run3', ['PERIPHERALS(1)', 'VP1 = ']),
-        ),
-    ],
-)
-def test_exhaustive_stepwise_basic(
-    tmp_path,
-    model_count,
-    start_modelres,
-    search_space,
-    no_of_models,
-    last_model_parent_name,
-    model_with_error,
-    ref,
-):
-    with chdir(tmp_path):
-        res = run_modelsearch(
-            search_space,
-            'exhaustive_stepwise',
-            results=start_modelres[1],
-            model=start_modelres[0],
-            rank_type='mbic',
-            E=1.0,
-        )
-
-        assert len(res.summary_tool) == no_of_models + 1
-        assert len(res.summary_models) == no_of_models + 1
-        assert len(res.models) == no_of_models + 1
-
-        if model_with_error:
-            assert model_with_error in res.summary_errors.index.get_level_values('model')
-
-        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
-        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
-        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
-        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
-
-        rundir = tmp_path / 'modelsearch1'
-        assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models + 2
-        assert (rundir / 'results.json').exists()
-        assert (rundir / 'results.csv').exists()
-        assert (rundir / 'metadata.json').exists()
-
-
-@pytest.mark.parametrize(
-    'search_space, iiv_strategy, no_of_models, no_of_added_etas',
-    [
-        ('ABSORPTION([FO,ZO]);PERIPHERALS([0,1])', 'add_diagonal', 4, 2),
-        ('ABSORPTION([FO,ZO]);PERIPHERALS([0,1])', 'fullblock', 4, 2),
-        ('ABSORPTION(FO);PERIPHERALS([0,1]);LAGTIME([OFF,ON])', 'absorption_delay', 4, 1),
-    ],
-)
-def test_exhaustive_stepwise_iiv_strategies(
-    tmp_path,
-    model_count,
-    start_modelres,
-    search_space,
-    iiv_strategy,
-    no_of_models,
-    no_of_added_etas,
-):
-    with chdir(tmp_path):
-        res = run_modelsearch(
-            search_space,
-            'exhaustive_stepwise',
-            iiv_strategy=iiv_strategy,
-            results=start_modelres[1],
-            model=start_modelres[0],
-            rank_type='mbic',
-            E=1.0,
-        )
-
-        assert len(res.summary_tool) == no_of_models + 1
-        assert len(res.summary_models) == no_of_models + 1
-        assert len(res.models) == no_of_models + 1
-        model_last = res.models[no_of_models - 1]
-        assert (
-            len(model_last.random_variables.etas.names)
-            - len(start_modelres[0].random_variables.etas.names)
-            == no_of_added_etas
-        )
-
-        rundir = tmp_path / 'modelsearch1'
-        assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models + 2
-        assert (rundir / 'results.json').exists()
-        assert (rundir / 'results.csv').exists()
-        assert (rundir / 'metadata.json').exists()
-
-
-@pytest.mark.parametrize(
-    'search_space, algorithm, rank_type, kwargs, no_of_models, best_model',
+    'search_space, algorithm, kwargs, no_of_models, max_added_params, best_model',
     [
         (
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive',
-            'bic',
             dict(),
-            4,
+            3,
+            2,
             'modelsearch_run2',
         ),
         (
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive_stepwise',
-            'bic',
             dict(),
-            5,
-            'modelsearch_run2',
+            4,
+            2,
+            'modelsearch_run4',
+        ),
+        (
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);PERIPHERALS([0,1])',
+            'exhaustive_stepwise',
+            dict(),
+            7,
+            4,
+            'modelsearch_run5',
+        ),
+        (
+            'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
+            'exhaustive_stepwise',
+            {'iiv_strategy': 'no_add'},
+            4,
+            1,
+            'modelsearch_run4',
+        ),
+        (
+            'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
+            'exhaustive_stepwise',
+            {'iiv_strategy': 'add_diagonal'},
+            4,
+            2,
+            'modelsearch_run4',
+        ),
+        (
+            'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
+            'exhaustive_stepwise',
+            {'iiv_strategy': 'fullblock'},
+            4,
+            8,
+            'modelsearch_run4',
         ),
     ],
 )
@@ -161,29 +87,38 @@ def test_modelsearch_dummy(
     start_modelres,
     search_space,
     algorithm,
-    rank_type,
     kwargs,
     no_of_models,
+    max_added_params,
     best_model,
 ):
     with chdir(tmp_path):
         res = run_modelsearch(
             search_space,
             algorithm,
-            rank_type=rank_type,
             results=start_modelres[1],
             model=start_modelres[0],
             esttool='dummy',
             **kwargs
         )
 
-        assert len(res.summary_tool) == no_of_models
-        assert len(res.summary_models) == no_of_models
-        assert len(res.models) == no_of_models
+        assert len(res.summary_tool) == no_of_models + 1
+        assert len(res.summary_models) == no_of_models + 1
+        assert len(res.models) == no_of_models + 1
+        assert res.summary_tool['d_params'].max() == max_added_params
+
+        # FIXME: move to unit test
+        summary_tool_sorted_by_dbic = res.summary_tool.sort_values(by=['dbic'], ascending=False)
+        summary_tool_sorted_by_bic = res.summary_tool.sort_values(by=['bic'])
+        summary_tool_sorted_by_rank = res.summary_tool.sort_values(by=['rank'])
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_rank)
+        pd.testing.assert_frame_equal(summary_tool_sorted_by_dbic, summary_tool_sorted_by_bic)
+
+        assert res.final_model.name == best_model
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models + 1
+        assert model_count(rundir) == no_of_models + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
