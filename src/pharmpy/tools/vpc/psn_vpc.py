@@ -63,6 +63,9 @@ def reference_correction_from_psn_vpc(path):
     m1 = path / 'm1'
 
     model = read_model(m1 / "vpc_original.mod")
+    have_eta_on_idv = not model.statements.before_odes.full_expression(
+        "CLE"
+    ).free_symbols.isdisjoint(set(model.random_variables.symbols))
 
     origfile_path = m1 / "vpc_original.npctab.dta"
     origfile = NONMEMTableFile(origfile_path)
@@ -75,7 +78,8 @@ def reference_correction_from_psn_vpc(path):
         origpreddata = origpredfile.tables[0].data_frame
         origpreddata = origpreddata[origpreddata['MDV'] == 0.0]
         pred = origpreddata[dv]
-        idvpred = origpreddata[idv]
+        if have_eta_on_idv:
+            idvpred = origpreddata[idv]
     else:
         pred = origdata['PRED']
 
@@ -105,9 +109,10 @@ def reference_correction_from_psn_vpc(path):
         origdata[dv], pred, predref, simdata, refdata, logdv, lb
     )
 
-    rcidv, rcidv_sim = calculate_reference_correction(
-        origdata[idv], idvpred, idvpredref, simdata, refdata, logdv, lb
-    )
+    if have_eta_on_idv:
+        rcidv, rcidv_sim = calculate_reference_correction(
+            origdata[idv], idvpred, idvpredref, simdata, refdata, logdv, lb
+        )
 
     simreffile_path = m1 / 'vpc_simulation.1.npctab.dta.refcorr'
     with open(simfile_path, "r") as sh, open(simreffile_path, "w") as dh:
@@ -129,7 +134,8 @@ def reference_correction_from_psn_vpc(path):
                     dh.write(line)
                 else:
                     values[dv_index] = str(rcdv_sim[tab][row])
-                    values[idv_index] = str(rcidv_sim[tab][row])
+                    if have_eta_on_idv:
+                        values[idv_index] = str(rcidv_sim[tab][row])
                     new_line = ' ' + ' '.join(values) + '\n'
                     dh.write(new_line)
                 row += 1
@@ -152,7 +158,8 @@ def reference_correction_from_psn_vpc(path):
                     dh.write(line)
                 else:
                     values[dv_index] = str(rcdv[row])
-                    values[idv_index] = str(rcidv[row])
+                    if have_eta_on_idv:
+                        values[idv_index] = str(rcidv[row])
                     new_line = ' ' + ' '.join(values) + '\n'
                     dh.write(new_line)
                 row += 1
