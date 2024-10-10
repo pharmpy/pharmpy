@@ -12,7 +12,7 @@ twine==5.1.0
 build==1.2.2.post1
 certifi==2024.8.30
 cffi==1.17.1
-charset-normalizer==3.3.2
+charset-normalizer==3.4.0
 click==8.1.7
 cryptography==43.0.1
 idna==3.10
