@@ -6,7 +6,7 @@ from typing import TYPE_CHECKING, Literal, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.basic import Expr
-from pharmpy.model import Assignment, Model
+from pharmpy.model import Assignment, Model, get_and_check_dataset
 from pharmpy.modeling import bin_observations
 
 from .data import get_observations
@@ -112,7 +112,8 @@ def plot_individual_predictions(
     idcol = model.datainfo.id_column.name
     idvcol = model.datainfo.idv_column.name
     columns = (idcol, idvcol, model.datainfo.dv_column.name)
-    df = model.dataset.loc[obs.index, columns]
+    dataset = get_and_check_dataset(model)
+    df = dataset.loc[obs.index, columns]
 
     data = df.join(predictions)
     data = data.melt(id_vars=(idcol, idvcol))
@@ -279,7 +280,7 @@ def plot_eta_distributions(
 def plot_dv_vs_pred(
     model: Model,
     predictions: pd.DataFrame,
-    stratify_on: str = None,
+    stratify_on: Optional[str] = None,
     bins: int = 8,
 ) -> alt.Chart:
     """Plot DV vs PRED
@@ -334,7 +335,7 @@ def plot_dv_vs_pred(
 def plot_dv_vs_ipred(
     model: Model,
     predictions: pd.DataFrame,
-    stratify_on: str = None,
+    stratify_on: Optional[str] = None,
     bins: int = 8,
 ) -> alt.Chart:
     """Plot DV vs IPRED
@@ -392,7 +393,7 @@ def plot_abs_cwres_vs_ipred(
     model: Model,
     predictions: pd.DataFrame,
     residuals: pd.DataFrame,
-    stratify_on: str = None,
+    stratify_on: Optional[str] = None,
     bins: int = 8,
 ) -> alt.Chart:
     r"""Plot \|CWRES\| vs IPRED
@@ -452,7 +453,8 @@ def plot_abs_cwres_vs_ipred(
     if stratify_on is not None:
         _validate_strat(model, stratify_on)
         columns.append(stratify_on)
-    df = model.dataset.loc[residuals.index, columns]
+    df = get_and_check_dataset(model)
+    df = df.loc[residuals.index, columns]
     df = df.join(residuals[['CWRES']]).join(predictions[[ipred]])
 
     if stratify_on is not None:
@@ -539,7 +541,7 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on,
 def plot_cwres_vs_idv(
     model: Model,
     residuals: pd.DataFrame,
-    stratify_on: str = None,
+    stratify_on: Optional[str] = None,
     bins: int = 8,
 ) -> alt.Chart:
     """Plot CWRES vs idv
@@ -594,7 +596,8 @@ def plot_cwres_vs_idv(
     if stratify_on is not None:
         _validate_strat(model, stratify_on)
         columns.append(stratify_on)
-    df = model.dataset.loc[residuals.index, columns]
+    df = get_and_check_dataset(model)
+    df = df.loc[residuals.index, columns]
     df = df.join(residuals[['CWRES']])
 
     if stratify_on is not None:
@@ -990,15 +993,14 @@ def plot_vpc(
         simulations = simulations.set_index(['SIM', 'index'])
 
     if stratify_on is not None:
-        if f'{stratify_on}' not in model.dataset.columns:
+        df = get_and_check_dataset(model)
+        if f'{stratify_on}' not in df.columns:
             raise ValueError(f'{stratify_on} column does not exist in dataset.')
         charts = []
-        unique_values = model.dataset[f'{stratify_on}'].unique()
+        unique_values = df[f'{stratify_on}'].unique()
         n_unique = len(unique_values)
         if n_unique > 8:
-            bin_stratification = np.linspace(
-                model.dataset[stratify_on].min(), model.dataset[stratify_on].max(), 9
-            )
+            bin_stratification = np.linspace(df[stratify_on].min(), df[stratify_on].max(), 9)
             for i in range(len(bin_stratification) - 1):
                 query = f'{stratify_on} >= {bin_stratification[i] and {stratify_on} < {bin_stratification[i+1]}}'
                 charts.append(
@@ -1042,7 +1044,7 @@ def _concat(charts):
     n = len(charts)
     if n == 1:
         return charts[0]
-    elif n > 1:
+    else:
         chart = alt.hconcat(charts[0], charts[1])
     if n == 3:
         chart = alt.vconcat(chart, charts[2])
@@ -1061,5 +1063,4 @@ def _concat(charts):
         chart = alt.vconcat(chart, chart_tmp)
     if n > 8:
         raise ValueError('No more than 8 subplots allowed.')
-        return None
     return chart
