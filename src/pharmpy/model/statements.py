@@ -3,22 +3,16 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union, overload
+from typing import Any, Optional, Union, overload
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
-from pharmpy.deps import symengine
+from pharmpy.deps import networkx as nx
+from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.immutable import Immutable, cache_method
-
-if TYPE_CHECKING:
-    import networkx as nx
-    import sympy
-else:
-    from pharmpy.deps import networkx as nx
-    from pharmpy.deps import sympy
 
 
 class Statement(Immutable):

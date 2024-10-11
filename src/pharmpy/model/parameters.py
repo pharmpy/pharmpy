@@ -2,17 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from collections.abc import Sequence as CollectionsSequence
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Union, overload
+from typing import Any, Optional, Sequence, Union, overload
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.immutable import Immutable, cache_method
-
-if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import pandas as pd
 
 
 class Parameter(Immutable):

@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from itertools import chain
-from typing import TYPE_CHECKING, Iterable
+from typing import Iterable
 
-if TYPE_CHECKING:
-    import sympy
-else:
-    from pharmpy.deps import sympy
+from pharmpy.deps import sympy
 
 
 def free_images(expr: sympy.Expr) -> set[sympy.Expr]:

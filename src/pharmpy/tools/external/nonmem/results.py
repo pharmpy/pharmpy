@@ -3,10 +3,12 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
 import pharmpy.modeling as modeling
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import nearest_positive_semidefinite
 from pharmpy.model import ExecutionSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
@@ -17,13 +19,6 @@ from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults, SimulationResults
 
 from .results_file import NONMEMResultsFile
-
-if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import pandas as pd
 
 
 def _parse_modelfit_results(

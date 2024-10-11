@@ -1,15 +1,10 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Union
+from typing import Union
 
-if TYPE_CHECKING:
-    import symengine
-    import sympy
-    import sympy.printing.pretty.pretty as pretty
-else:
-    from pharmpy.deps import symengine, sympy
-    from pharmpy.deps.sympy_printing import pretty
+from pharmpy.deps import symengine, sympy
+from pharmpy.deps.sympy_printing import pretty
 
 
 class ExprPrinter(pretty.PrettyPrinter):

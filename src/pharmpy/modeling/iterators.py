@@ -11,14 +11,10 @@ Currently, contains:
 
 import warnings
 from collections.abc import Mapping
-from typing import TYPE_CHECKING, Optional, Union
+from typing import Optional, Union
 
-if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import pandas as pd
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import round_and_keep_sum
 from pharmpy.model import Model
 

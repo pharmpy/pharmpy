@@ -2,27 +2,18 @@ import re
 import warnings
 from functools import partial
 from pathlib import Path
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.basic import Expr
+from pharmpy.deps import altair as alt
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import scipy, sympy, sympy_stats
 from pharmpy.model import Assignment, Model, get_and_check_dataset
 from pharmpy.modeling import bin_observations
 
 from .data import get_observations
-
-if TYPE_CHECKING:
-    import altair as alt
-    import numpy as np
-    import pandas as pd
-    import scipy
-    import sympy
-    import sympy.stats as sympy_stats
-else:
-    from pharmpy.deps import altair as alt
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import pandas as pd
-    from pharmpy.deps import scipy, sympy, sympy_stats
 
 norm = scipy.stats.norm
 

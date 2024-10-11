@@ -2,15 +2,10 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Union, overload
+from typing import Union, overload
 
-if TYPE_CHECKING:
-    import numpy as np
-    import symengine
-    import sympy
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import symengine, sympy
+from pharmpy.deps import numpy as np
+from pharmpy.deps import symengine, sympy
 
 from .expr import Expr
 

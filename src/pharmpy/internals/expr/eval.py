@@ -2,14 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Mapping
 from functools import lru_cache
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    import numpy as np
-    import sympy
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import sympy
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy
 
 
 def eval_expr(

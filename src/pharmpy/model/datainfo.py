@@ -6,17 +6,13 @@ from __future__ import annotations
 import json
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Union, cast, overload
+from typing import Any, Optional, Union, cast, overload
 
 from pharmpy import conf
 from pharmpy.basic import TUnit, Unit
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import Immutable, frozenmapping
-
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    from pharmpy.deps import pandas as pd
 
 
 class ColumnInfo(Immutable):

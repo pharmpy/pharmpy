@@ -1,16 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Union, overload
+from typing import Any, Optional, Union, overload
 
 from pharmpy.basic import Expr
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.immutable import Immutable, frozenmapping
-
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    from pharmpy.deps import pandas as pd
-
 
 SUPPORTED_SOLVERS = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI'))
 

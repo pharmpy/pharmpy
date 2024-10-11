@@ -3,17 +3,11 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from pharmpy.basic import Expr
-
-if TYPE_CHECKING:
-    import pandas as pd
-    import sympy
-else:
-    from pharmpy.deps import pandas as pd
-    from pharmpy.deps import sympy
-
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.math import triangular_root

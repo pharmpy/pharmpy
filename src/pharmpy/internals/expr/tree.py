@@ -1,12 +1,9 @@
 from __future__ import annotations
 
 from operator import is_
-from typing import TYPE_CHECKING, Callable, Type
+from typing import Callable, Type
 
-if TYPE_CHECKING:
-    import sympy
-else:
-    from pharmpy.deps import sympy
+from pharmpy.deps import sympy
 
 
 def replace_root_children(expr: sympy.Expr, args: list[sympy.Expr]):
