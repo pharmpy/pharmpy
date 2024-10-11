@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import retrieve_models, run_estmethod
-from pharmpy.workflows.context import LocalDirectoryContext
+from pharmpy.workflows.contexts import LocalDirectoryContext
 
 
 @pytest.mark.parametrize(

@@ -8,7 +8,13 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig
-from pharmpy.model import CompartmentalSystem, CompartmentalSystemBuilder, Model, output
+from pharmpy.model import (
+    CompartmentalSystem,
+    CompartmentalSystemBuilder,
+    Model,
+    get_and_check_dataset,
+    output,
+)
 from pharmpy.model.distributions.numeric import ConstantDistribution
 from pharmpy.model.random_variables import (
     eval_expr,
@@ -19,7 +25,7 @@ from pharmpy.model.random_variables import (
 
 from .data import get_ids, get_observations
 from .expressions import get_individual_parameters
-from .odes import get_initial_conditions
+from .odes import get_and_check_odes, get_initial_conditions
 from .parameter_sampling import create_rng, sample_parameters_from_covariance_matrix
 from .parameters import get_omegas
 from .random_variables import replace_non_random_rvs
@@ -319,7 +325,7 @@ def calculate_individual_parameter_statistics(
     if not all_covariate_free_symbols:
         cases = {'median': {}}
     else:
-        dataset = model.dataset
+        dataset = get_and_check_dataset(model)
         column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
         q5 = dataset[column_filter].groupby('ID').median().quantile(0.05)
         q95 = dataset[column_filter].groupby('ID').median().quantile(0.95)
@@ -458,9 +464,9 @@ def calculate_pk_parameters_statistics(
 
     """
 
-    statements = model.statements
-    odes = statements.ode_system
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
+    statements = model.statements
     depot = odes.find_depot(statements)
     peripherals = odes.find_peripheral_compartments()
     elimination_rate = odes.get_flow(central, output)
@@ -484,7 +490,7 @@ def calculate_pk_parameters_statistics(
 
     # Any abs + 1comp + FO elimination
     if not peripherals and odes.t not in elimination_rate.free_symbols:
-        elimination_system = statements.ode_system
+        elimination_system = odes
         for name in elimination_system.compartment_names:
             if name != central.name:  # NOTE: Keep central
                 cb = CompartmentalSystemBuilder(elimination_system)

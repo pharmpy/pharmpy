@@ -93,6 +93,7 @@ def create_workflow(
         cutoff,
         bic_type,
         E,
+        strictness,
         distribution,
     )
 
@@ -137,6 +138,7 @@ def task_brute_force_search(
     cutoff: Union[None, float],
     bic_type: Union[None, str],
     E: Optional[float],
+    strictness: str,
     distribution: str,
     input_model_entry: ModelEntry,
 ):
@@ -193,6 +195,7 @@ def task_brute_force_search(
         penalties=penalties,
         cutoff=cutoff,
         bic_type=bic_type,
+        strictness=strictness,
     )
 
     current_step += 1
@@ -313,6 +316,7 @@ def get_best_model(
     penalties: Union[None, list[float]],
     cutoff: Union[None, float],
     bic_type: Union[None, str],
+    strictness: str,
 ):
     candidate_entries = [base_entry, *model_entries]
     df = summarize_tool(
@@ -322,6 +326,7 @@ def get_best_model(
         penalties=penalties,
         cutoff=cutoff,
         bic_type=bic_type,
+        strictness=strictness,
     )
     best_model_name = df['rank'].idxmin()
 
@@ -356,7 +361,12 @@ def task_results(
         if step >= 1:
             ref_model_entry = model_dict[candidate_entries[0].parent.name]
             sum_tool_step = summarize_tool(
-                candidate_entries, ref_model_entry, rank_type, cutoff, bic_type
+                candidate_entries,
+                ref_model_entry,
+                rank_type=rank_type,
+                cutoff=cutoff,
+                bic_type=bic_type,
+                strictness=strictness,
             )
             sum_tool.append(sum_tool_step)
 

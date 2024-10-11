@@ -355,6 +355,8 @@ def test_create_candidate(load_model_for_test, testdata, iiv_strategy, allometry
     params_start = model_start.parameters.names
     params_cand = model_exhaustive.parameters.names
     assert set(params_cand) - set(params_start) == params_added
+    assert model_exhaustive.parameters['POP_QP1'].upper == 999999
+    assert model_exhaustive.parameters['POP_VP1'].upper == 999999
 
     model_base = set_zero_order_absorption(model_start)
     me_base = ModelEntry.create(model_base, modelfit_results=res_start)

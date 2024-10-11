@@ -45,7 +45,7 @@ tflite_condition = (
 )
 
 
-@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.10")
+@pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
 def test_tflite_not_installed(pheno_path, monkeypatch):
     model = read_model(pheno_path)
     results = read_modelfit_results(pheno_path)

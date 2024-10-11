@@ -6,7 +6,7 @@ from typing import Any, Literal, Optional, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.workflows.context.broadcasters.terminal import broadcast_message
+from pharmpy.workflows.contexts.broadcasters.terminal import broadcast_message
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry

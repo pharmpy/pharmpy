@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import EstimationStep, ExecutionSteps, SimulationStep
 
 
@@ -295,11 +296,13 @@ def test_simulation_step():
         'solver': None,
         'solver_atol': None,
         'solver_rtol': None,
-        'tool_options': None,
+        'tool_options': {},
     }
+    assert ss2 == SimulationStep.from_dict(d)
+    d['tool_options'] = frozenmapping({})
     assert ss2 == SimulationStep.from_dict(d)
 
     assert (
         repr(ss2)
-        == 'SimulationStep(n=2, seed=64206, solver=None, solver_rtol=None, solver_atol=None, tool_options=None)'
+        == 'SimulationStep(n=2, seed=64206, solver=None, solver_rtol=None, solver_atol=None, tool_options={})'
     )

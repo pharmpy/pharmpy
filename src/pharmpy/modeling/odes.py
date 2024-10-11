@@ -21,6 +21,7 @@ from pharmpy.model import (
     Parameter,
     Parameters,
     Statements,
+    get_and_check_odes,
     output,
 )
 from pharmpy.modeling.help_functions import _as_integer
@@ -36,15 +37,6 @@ from .parameters import (
     set_upper_bounds,
     unfix_parameters,
 )
-
-
-def get_and_check_odes(model: Model) -> CompartmentalSystem:
-    # Get the ode_system from model and raise if not a CompartmentalSystem
-    odes = model.statements.ode_system
-    if isinstance(odes, CompartmentalSystem):
-        return odes
-    else:
-        raise ValueError(f'Model {model.name} has no ODE system')
 
 
 def _extract_params_from_symb(
@@ -441,7 +433,9 @@ def has_michaelis_menten_elimination(model: Model):
     >>> has_michaelis_menten_elimination(model)
     True
     """
-    odes = get_and_check_odes(model)
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -476,7 +470,9 @@ def has_zero_order_elimination(model: Model):
     >>> has_zero_order_elimination(model)
     True
     """
-    odes = get_and_check_odes(model)
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -511,7 +507,9 @@ def has_mixed_mm_fo_elimination(model: Model):
     >>> has_mixed_mm_fo_elimination(model)
     True
     """
-    odes = get_and_check_odes(model)
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -544,7 +542,9 @@ def has_first_order_elimination(model: Model):
     True
 
     """
-    odes = get_and_check_odes(model)
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
     central = odes.central_compartment
     rate = odes.get_flow(central, output)
     is_nonlinear = odes.t in rate.free_symbols
@@ -836,9 +836,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
 
     """
     statements = model.statements
-    cs = statements.ode_system
-    if cs is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    cs = get_and_check_odes(model)
     transits = cs.find_transit_compartments(statements)
     try:
         n = _as_integer(n)
@@ -1504,8 +1502,10 @@ def has_zero_order_absorption(model: Model):
     False
 
     """
-    cs = get_and_check_odes(model)
-    dosing = cs.dosing_compartments[0]
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
+    dosing = odes.dosing_compartments[0]
     dose = dosing.doses[0]
     return _dose_zo(model, dose)
 
@@ -1553,7 +1553,9 @@ def has_first_order_absorption(model: Model):
 
     """
 
-    odes = get_and_check_odes(model)
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
     dosing = odes.dosing_compartments[0]
     central = odes.central_compartment
     if dosing == central:
@@ -1583,7 +1585,9 @@ def has_instantaneous_absorption(model: Model):
     -------
         Bool : True if model has instantaneous absorption
     """
-    odes = get_and_check_odes(model)
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
     dosing = odes.dosing_compartments[0]
     central = odes.central_compartment
     if dosing != central:
@@ -1664,10 +1668,9 @@ def has_lag_time(model: Model):
     -------
         Bool : True if model is defined with lagtime
     """
-    # Redundant function ?
     odes = model.statements.ode_system
     if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+        return False
 
     dosing = odes.dosing_compartments[0]
     if dosing.lag_time:
@@ -2401,11 +2404,11 @@ def has_linear_odes_with_real_eigenvalues(model: Model):
     True
     """
 
-    if not has_odes(model):
+    odes = model.statements.ode_system
+    if odes is None:
         return False
     if not has_linear_odes(model):
         return False
-    odes = model.statements.ode_system
     M = odes.compartmental_matrix
     eigs = M.eigenvals().keys()
     for eig in eigs:
@@ -2736,11 +2739,8 @@ def get_central_volume_and_clearance(model: Model):
     vcs = set()
     cls = set()
     sset = model.statements
-    odes = sset.ode_system
-    if odes is None:
-        raise ValueError(f'Model {model.name} has no ODE system')
+    odes = get_and_check_odes(model)
     t = odes.t
-    odes = model.statements.ode_system
     central_comp = odes.central_compartment
 
     from .metabolite import has_presystemic_metabolite  # Circular import issue

@@ -712,3 +712,43 @@ def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
 
     # NOTE: Remove path if dataset has been updated
     return curdi if newdi == curdi else newdi.replace(path=None)
+
+
+def get_and_check_odes(model: Model) -> CompartmentalSystem:
+    """Get the ode_system from model and raise if not a CompartmentalSystem
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    CompartmentalSystem
+        The compartmental system if it exists
+    """
+
+    odes = model.statements.ode_system
+    if not isinstance(odes, CompartmentalSystem):
+        raise ValueError(f'Model {model.name} has no ODE system')
+    return odes
+
+
+def get_and_check_dataset(model: Model) -> pd.DataFrame:
+    """Get the ode_system from model and raise if not a CompartmentalSystem
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    pd.DataFrame
+        The dataset if it exists
+    """
+
+    dataset = model.dataset
+    if dataset is None:
+        raise ValueError(f"Model {model.name} has no dataset")
+    return dataset

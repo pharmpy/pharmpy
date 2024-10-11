@@ -1,4 +1,4 @@
-from pharmpy.workflows.context import LocalDirectoryContext
+from pharmpy.workflows.contexts import LocalDirectoryContext
 
 
 def create_context(name: str, path=None):

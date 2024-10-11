@@ -14,6 +14,8 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
     Statements,
+    get_and_check_dataset,
+    get_and_check_odes,
 )
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.model.model import ModelInternals
@@ -137,9 +139,6 @@ def test_replace(load_model_for_test, testdata):
 
     sset_new = sset.reassign(cl.symbol, cl.expression + Expr.symbol('TIME'))
     model.replace(statements=sset_new)
-
-    # with pytest.raises(TypeError, match='Filename extension has to be of string type'):
-    #    model.replace(filename_extension=8)
 
     with pytest.raises(TypeError, match='model.datainfo must be of DataInfo type'):
         model.replace(datainfo=9)
@@ -353,3 +352,19 @@ def test_statements(load_example_model_for_test):
     assign2 = Assignment(Expr.symbol('B'), Expr.symbol('0'))
     with pytest.raises(ValueError, match='Symbol B defined after being used'):
         Model.create('model', statements=Statements() + assign1 + assign2)
+
+
+def test_get_and_check_odes(load_example_model_for_test, load_model_for_test, testdata):
+    pheno = load_example_model_for_test('pheno')
+    assert get_and_check_odes(pheno) is pheno.statements.ode_system
+    model_min = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    with pytest.raises(ValueError):
+        get_and_check_odes(model_min)
+
+
+def test_get_and_check_dataset(load_example_model_for_test):
+    pheno = load_example_model_for_test('pheno')
+    assert get_and_check_dataset(pheno) is pheno.dataset
+    m = pheno.replace(dataset=None)
+    with pytest.raises(ValueError):
+        get_and_check_dataset(m)

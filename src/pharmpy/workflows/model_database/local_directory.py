@@ -235,6 +235,11 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
         model = self.model_entry.model
         datasets_path = self.database.path / DIRECTORY_DATASETS
+        model_path = self.database.path / str(self.key)
+        model_file_path = model_path / ("model" + model.filename_extension)
+
+        if model_file_path.is_file():
+            return model
 
         # NOTE: Get the hash of the dataset and list filenames with contents
         # matching this hash only
@@ -280,7 +285,6 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             model.datainfo.to_json(datasets_path / (dataset_basename + '.datainfo'))
 
         # NOTE: Write the model
-        model_path = self.database.path / str(self.key)
         model_path.mkdir(exist_ok=True)
         write_model(model, model_path / ("model" + model.filename_extension), force=True)
         return model

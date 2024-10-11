@@ -27,7 +27,7 @@ import importlib
 import pharmpy.config as config
 
 from .args import split_common_options
-from .context import Context, LocalDirectoryContext
+from .contexts import Context, LocalDirectoryContext
 from .dispatchers import local_dask
 from .execute import execute_workflow
 from .log import Log

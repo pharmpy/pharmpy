@@ -1,10 +1,7 @@
-import inspect
-
 # import os
 import shutil
 from functools import partial
 from pathlib import Path
-from typing import get_type_hints
 
 import pytest
 
@@ -65,14 +62,11 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
         tool_name = 'modelsearch'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
-        tool_params = inspect.signature(tool.create_workflow).parameters
-        tool_param_types = get_type_hints(tool.create_workflow)
 
         metadata = _create_metadata_tool(
             database=database,
             tool_name=tool_name,
-            tool_params=tool_params,
-            tool_param_types=tool_param_types,
+            tool_func=tool.create_workflow,
             args=args,
             kwargs={'model': pheno, **kwargs},
         )
@@ -95,14 +89,11 @@ def test_create_metadata_tool_raises(tmp_path, pheno):
         tool_name = 'modelsearch'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
-        tool_params = inspect.signature(tool.create_workflow).parameters
-        tool_param_types = get_type_hints(tool.create_workflow)
         with pytest.raises(Exception, match='modelsearch: \'algorithm\' was not set'):
             _create_metadata_tool(
                 database=database,
                 tool_name=tool_name,
-                tool_params=tool_params,
-                tool_param_types=tool_param_types,
+                tool_func=tool.create_workflow,
                 args=('ABSORPTION(ZO)',),
                 kwargs={'model': pheno},
             )

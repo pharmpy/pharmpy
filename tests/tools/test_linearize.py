@@ -14,7 +14,7 @@ from pharmpy.tools.linearize.tool import (
 )
 from pharmpy.tools.psn_helpers import create_results
 from pharmpy.workflows import ModelEntry
-from pharmpy.workflows.context import NullContext
+from pharmpy.workflows.contexts import NullContext
 
 
 def test_ofv(load_model_for_test, testdata):

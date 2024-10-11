@@ -24,6 +24,7 @@ def _model_count(rundir: Path):
         (
             'default',
             [
+                'modelfit',
                 'modelsearch',
                 'iivsearch',
                 'ruvsearch',
@@ -38,6 +39,7 @@ def _model_count(rundir: Path):
         (
             'reevaluation',
             [
+                'modelfit',
                 'modelsearch',
                 'iivsearch',
                 'ruvsearch',
