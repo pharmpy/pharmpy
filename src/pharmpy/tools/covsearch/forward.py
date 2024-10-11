@@ -169,12 +169,13 @@ def statsmodels_linear_selection(
             best_modelentry, param, covariates, nsamples, algorithm
         )
         covs = ["1"] + covariates
-        if algorithm == "samba" and nsamples > 1:
+        # nsamples determines the method to fit linear models in SAMBA: >1 -> mixedlm; =1 -> OLS; =0 -> WLS
+        if "samba" in algorithm and nsamples > 1:
             linear_models = [
                 smf.mixedlm(f"DV~{cov}", data=updated_data, groups=updated_data["ID"])
                 for cov in covs
             ]
-        elif algorithm == "samba" and nsamples == 1:
+        elif "samba" in algorithm and nsamples == 1:
             linear_models = [smf.ols(f"DV~{cov}", data=updated_data) for cov in covs]
         else:
             linear_models = [
@@ -507,7 +508,7 @@ def create_covmodel_dataset(modelentry, param, covariates, nsamples, algorithm):
 
     eta_name = get_parameter_rv(modelentry.model, param)[0]
     # Extract the conditional means (ETA) for individual parameters
-    if algorithm == "samba" and nsamples >= 1:
+    if "samba" in algorithm and nsamples >= 1:
         eta_column = modelentry.modelfit_results.individual_eta_samples[eta_name]
     else:
         eta_column = modelentry.modelfit_results.individual_estimates[eta_name]

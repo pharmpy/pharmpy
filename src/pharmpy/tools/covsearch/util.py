@@ -133,7 +133,46 @@ def filter_search_space_and_model(search_space, model):
 
 
 def init_nonlinear_search_state(context, input_modelentry, filtered_model, algorithm, nsamples):
-    if algorithm == "samba":
+
+    if "samba" in algorithm:
+        filtered_model = set_samba_estimation(filtered_model, algorithm, nsamples)
+
+    elif filtered_model.execution_steps[0].method != "FOCE":
+        filtered_model = remove_estimation_step(filtered_model, idx=0)
+        filtered_model = add_estimation_step(
+            filtered_model,
+            method="FOCE",
+            idx=0,
+            interaction=True,
+            auto=True,
+            tool_options={'PHITYPE': "1", 'FNLETA': "0"},
+        )
+
+    # nonlinear mixed effect modelentry creation and fit
+    if filtered_model != input_modelentry.model:
+        filtered_modelentry = ModelEntry.create(model=filtered_model)
+        filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
+        filtered_modelentry = context.call_workflow(filtered_fit_wf, 'fit_filtered_model')
+    else:
+        filtered_modelentry = input_modelentry
+
+    candidate = Candidate(filtered_modelentry, ())
+    return SearchState(input_modelentry, filtered_modelentry, candidate, [candidate])
+
+
+def set_samba_estimation(filtered_model, algorithm, nsamples):
+    # estimation method 1 for population parameters
+    if "foce" in algorithm and filtered_model.execution_steps[0] != "FOCE":
+        filtered_model = remove_estimation_step(filtered_model, idx=0)
+        filtered_model = add_estimation_step(
+            filtered_model,
+            method="FOCE",
+            idx=0,
+            interaction=True,
+            auto=True,
+            tool_options={'PHITYPE': "1", 'FNLETA': "0"},
+        )
+    else:
         filtered_model = mu_reference_model(filtered_model)
         filtered_model = remove_estimation_step(filtered_model, idx=0)
         filtered_model = add_estimation_step(
@@ -155,50 +194,35 @@ def init_nonlinear_search_state(context, input_modelentry, filtered_model, algor
             keep_every_nth_iter=50,
             tool_options={'PHITYPE': "1", 'FNLETA': "0"},
         )
-        if nsamples > 0:
-            filtered_model = add_estimation_step(
-                filtered_model,
-                method="SAEM",
-                idx=2,
-                niter=0,
-                isample=nsamples,
-                tool_options={
-                    "EONLY": "1",
-                    "NBURN": "0",
-                    "MASSRESET": "0",
-                    "ETASAMPLES": "1",
-                },
-            )
+    # estimation method 2 for individual parameters
+    if nsamples > 0:
         filtered_model = add_estimation_step(
             filtered_model,
-            method="IMP",
-            idx=3,
-            auto=True,
-            niter=20,
-            isample=1000,
+            method="SAEM",
+            idx=2,
+            niter=0 if 'saem' in algorithm else 10,
+            isample=nsamples,
             tool_options={
                 "EONLY": "1",
-                "MASSRESET": "1",
-                "ETASAMPLES": "0",
+                "NBURN": "0",
+                "MASSRESET": "0",
+                "ETASAMPLES": "1",
             },
         )
-    if algorithm != "samba" and filtered_model.execution_steps[0].method != "FOCE":
-        filtered_model = remove_estimation_step(filtered_model, idx=0)
-        filtered_model = add_estimation_step(
-            filtered_model,
-            method="FOCE",
-            idx=0,
-            interaction=True,
-            auto=True,
-        )
 
-    # nonlinear mixed effect modelentry creation and fit
-    if filtered_model != input_modelentry.model:
-        filtered_modelentry = ModelEntry.create(model=filtered_model)
-        filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
-        filtered_modelentry = context.call_workflow(filtered_fit_wf, 'fit_filtered_model')
-    else:
-        filtered_modelentry = input_modelentry
+    # estimation method 3 for stable OFV
+    filtered_model = add_estimation_step(
+        filtered_model,
+        method="IMP",
+        idx=3,
+        auto=True,
+        niter=20,
+        isample=1000,
+        tool_options={
+            "EONLY": "1",
+            "MASSRESET": "1",
+            "ETASAMPLES": "0",
+        },
+    )
 
-    candidate = Candidate(filtered_modelentry, ())
-    return SearchState(input_modelentry, filtered_modelentry, candidate, [candidate])
+    return filtered_model

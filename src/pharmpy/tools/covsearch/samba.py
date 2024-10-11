@@ -2,7 +2,7 @@ from typing import Literal, Optional, Union
 
 import pharmpy.tools.covsearch.tool as scm_tool
 from pharmpy.model import Model
-from pharmpy.tools.covsearch.fast_forward import fast_forward
+from pharmpy.tools.covsearch.forward import fast_forward
 from pharmpy.tools.covsearch.util import init_search_state, store_input_model
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder
@@ -19,7 +19,7 @@ def samba_workflow(
     model: Optional[Model] = None,
     max_eval: bool = False,
     statsmodels: bool = True,
-    algorithm: Literal['samba'] = 'samba',
+    algorithm: Literal['samba-saem', 'samba-foce'] = 'samba-saem',
     nsamples: int = 10,
     weighted_linreg: bool = False,
     lin_filter: int = 2,

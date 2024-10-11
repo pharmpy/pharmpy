@@ -121,7 +121,7 @@ def create_workflow(
     p_backward: float = 0.001,
     max_steps: int = -1,
     algorithm: Literal[
-        'scm-forward', 'scm-forward-then-backward', 'samba', 'scm-fastforward'
+        'scm-forward', 'scm-forward-then-backward', 'samba-saem', 'samba-foce', 'scm-fastforward'
     ] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -132,7 +132,7 @@ def create_workflow(
     statsmodels: bool = False,
     nsamples: int = 10,
     weighted_linreg: bool = False,
-    lin_filter: int = 2,
+    lin_filter: int = 0,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -170,13 +170,15 @@ def create_workflow(
         functionalities, whereas 'False' calls nonmem.
     nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
-        The samples will be pooled to fit the linear model.
-        Default is 5, i.e. generating 5 samples per subject
+        `nsamples=0` uses ETAs to for linear model selection, whereas `nsample`>=1 generates MCMC samples with an
+        additional SAEM estimation step. When multiple samples are generated, linear mixed effects model will be
+        used to fit the linear models.
+        Default is 10, i.e. generating 10 samples per subject
     weighted_linreg : bool
-        When using nonmem to run linear covariate models, 'True' uses ETC information to run WLS.
+        When using nonmem to run linear covariate models, 'True' uses ETC as weight to run WLS.
     lin_filter : int
         Option to control the number of covariates passed to nonlinear selection
-         0: pass all LRT survivors (should have the most similar performance as SCM-Forward)
+         0: pass all LRT positive covariate effects from linear selection step
          1: pass the ones with the largest drop of OFV within each parameter scope
          2: the one with the largest drop of OFV among all parameter-covariate pairs
 
@@ -194,7 +196,7 @@ def create_workflow(
     >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
-    if algorithm == "samba":
+    if algorithm in ["samba-saem", "samba-foce"]:
         return samba_workflow(
             search_space,
             max_steps,
