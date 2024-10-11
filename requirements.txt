@@ -52,7 +52,7 @@ nbclient==0.10.0
 nbconvert==7.16.4
 nbformat==5.10.4
 nest-asyncio==1.6.0
-networkx==3.3
+networkx==3.4
 numexpr==2.10.1
 numpy==2.1.2
 packaging==24.1
