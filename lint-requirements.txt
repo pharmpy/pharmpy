@@ -29,7 +29,7 @@ nh3==0.2.18
 nodeenv==1.9.1
 packaging==24.1
 pathspec==0.12.1
-pkginfo==1.11.1
+pkginfo==1.11.2
 platformdirs==4.3.6
 pycodestyle==2.12.1
 pycparser==2.22
