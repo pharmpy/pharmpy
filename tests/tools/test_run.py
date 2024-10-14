@@ -632,6 +632,59 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
 
 
 @pytest.mark.parametrize(
+    'kwargs, error',
+    [
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': 0},
+            'E-values cannot be 0',
+        ),
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'base_model': None},
+            'Cannot provide both `search_space` and `base_model`',
+        ),
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': None},
+            'Missing value for `E_p`',
+        ),
+        (
+            {'search_space': ['iiv_diag', 'x']},
+            'Unknown `search_space`: x',
+        ),
+        (
+            {'search_space': ['iiv_block', 'iov']},
+            'Incorrect `search_space`: `iiv_block` and `iov`',
+        ),
+        (
+            {'search_space': ['iiv_block'], 'E_q': None},
+            'Missing value for `E_q`',
+        ),
+        (
+            {'search_space': ['iiv_diag'], 'E_p': None},
+            'Missing value for `E_p`',
+        ),
+        (
+            {'search_space': ['iiv_diag']},
+            'Missing `base_model`:',
+        ),
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': 10},
+            '`E_p` cannot be bigger than `p`',
+        ),
+        (
+            {'search_space': ['iiv_block'], 'E_q': 10, 'base_model': None},
+            '`E_q` cannot be bigger than `q`',
+        ),
+    ],
+)
+def test_bic_penalty_raises(testdata, kwargs, error):
+    model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    if 'base_model' in kwargs.keys():
+        kwargs['base_model'] = model
+    with pytest.raises(ValueError, match=error):
+        calculate_bic_penalty(model, **kwargs)
+
+
+@pytest.mark.parametrize(
     ('search_space', 'candidate_features', 'p_expected', 'k_p_expected'),
     [
         ('ABSORPTION([FO,ZO])', 'ABSORPTION(FO)', 0, 0),

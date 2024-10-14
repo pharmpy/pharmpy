@@ -1291,9 +1291,11 @@ def calculate_bic_penalty(
     E_q: Optional[float] = 1.0,
     keep: Optional[list[str]] = None,
 ):
+    if E_p == 0 or E_q == 0:
+        raise ValueError('E-values cannot be 0')
     if isinstance(search_space, str) or isinstance(search_space, ModelFeatures):
         if base_model:
-            raise ValueError('Cannot provide both `search_space` as MFL as well as `base_model`')
+            raise ValueError('Cannot provide both `search_space` and `base_model`')
         if E_p is None:
             raise ValueError(
                 'Missing value for `E_p`, must be specified when using MFL in `search_space`'
@@ -1353,6 +1355,11 @@ def calculate_bic_penalty(
     # If either are omitted
     E_p = E_p if E_p is not None else 1
     E_q = E_q if E_q is not None else 1
+
+    if E_p > p:
+        raise ValueError(f'`E_p` cannot be bigger than `p`: E_p={E_p}, p={p}')
+    if E_q > q:
+        raise ValueError(f'`E_q` cannot be bigger than `q`: E_p={E_q}, p={q}')
 
     return 2 * k_p * math.log(p / E_p) + 2 * k_q * math.log(q / E_q)
 
