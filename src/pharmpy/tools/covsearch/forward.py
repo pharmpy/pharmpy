@@ -59,7 +59,7 @@ def fast_forward(
         prev_best = search_state.best_candidate_so_far
         if statsmodels:
             state_and_effect = statsmodels_linear_selection(
-                step, p_forward, lin_state_and_effect, nsamples, lin_filter, algorithm
+                step, p_forward, lin_state_and_effect, nsamples, lin_filter, algorithm, weighted_linreg
             )
         else:
             state_and_effect = nonmem_linear_selection(
@@ -155,6 +155,7 @@ def statsmodels_linear_selection(
     nsamples,
     lin_filter,
     algorithm,
+    weighted_linreg,
 ):
     effect_funcs = linear_state_and_effect.effect_funcs
     search_state = linear_state_and_effect.search_state
@@ -169,19 +170,20 @@ def statsmodels_linear_selection(
             best_modelentry, param, covariates, nsamples, algorithm
         )
         covs = ["1"] + covariates
-        # nsamples determines the method to fit linear models in SAMBA: >1 -> mixedlm; =1 -> OLS; =0 -> WLS
+
         if "samba" in algorithm and nsamples > 1:
             linear_models = [
                 smf.mixedlm(f"DV~{cov}", data=updated_data, groups=updated_data["ID"])
                 for cov in covs
             ]
-        elif "samba" in algorithm and nsamples == 1:
-            linear_models = [smf.ols(f"DV~{cov}", data=updated_data) for cov in covs]
-        else:
+        elif weighted_linreg:
             linear_models = [
                 smf.wls(f"DV~{cov}", data=updated_data, weights=1.0 / updated_data["ETC"])
                 for cov in covs
             ]
+        else:
+            linear_models = [smf.ols(f"DV~{cov}", data=updated_data) for cov in covs]
+
         linear_fitres = [model.fit() for model in linear_models]
         ofvs = [-2 * res.llf for res in linear_fitres]
 
