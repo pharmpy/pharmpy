@@ -15,7 +15,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.tools.run import calculate_bic_penalty, get_rankval
+from pharmpy.tools.run import calculate_mbic_penalty, get_rankval
 from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
 
@@ -236,10 +236,10 @@ def stepwise_BU_algorithm(
             )
             if not np.isnan(rankval_me) and not np.isnan(rankval_best):
                 if rank_type == 'mbic':
-                    rankval_me += calculate_bic_penalty(
+                    rankval_me += calculate_mbic_penalty(
                         me.model, search_space, base_model=base_model, keep=keep
                     )
-                    rankval_best += calculate_bic_penalty(
+                    rankval_best += calculate_mbic_penalty(
                         best_model_entry.model, search_space, base_model=base_model, keep=keep
                     )
                 if rankval_best > rankval_me:

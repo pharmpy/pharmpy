@@ -30,7 +30,7 @@ from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
-    calculate_bic_penalty,
+    calculate_mbic_penalty,
     get_penalty_parameters_mfl,
     get_penalty_parameters_rvs,
     import_tool,
@@ -618,7 +618,7 @@ def test_strictness_parameters(testdata):
         ),
     ],
 )
-def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):
+def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):
     base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
     for func in base_funcs:
         base_model = func(base_model)
@@ -627,7 +627,7 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
     candidate = base_model
     for func, ref in zip(candidate_funcs, penalties):
         candidate = func(candidate)
-        penalty = calculate_bic_penalty(candidate, search_space=search_space, **kwargs)
+        penalty = calculate_mbic_penalty(candidate, search_space=search_space, **kwargs)
         assert round(penalty, 2) == ref
 
 
@@ -676,12 +676,12 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
         ),
     ],
 )
-def test_bic_penalty_raises(testdata, kwargs, error):
+def test_mbic_penalty_raises(testdata, kwargs, error):
     model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
     if 'base_model' in kwargs.keys():
         kwargs['base_model'] = model
     with pytest.raises(ValueError, match=error):
-        calculate_bic_penalty(model, **kwargs)
+        calculate_mbic_penalty(model, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -768,7 +768,9 @@ def test_bic_penalty_raises(testdata, kwargs, error):
         ),
     ],
 )
-def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected, k_p_expected):
+def test_get_mbic_penalty_parameters_mfl(
+    search_space, candidate_features, p_expected, k_p_expected
+):
     search_space_mfl = parse(search_space, mfl_class=True)
     cand_mfl = parse(candidate_features, mfl_class=True)
     assert get_penalty_parameters_mfl(search_space_mfl, cand_mfl) == (p_expected, k_p_expected)
@@ -883,7 +885,7 @@ def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected
         ),
     ],
 )
-def test_get_penalty_parameters_rvs(
+def test_get_mbic_penalty_parameters_rvs(
     testdata,
     base_funcs,
     kwargs,

@@ -31,7 +31,7 @@ from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.tool import create_workflow as create_linearize_workflow
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -661,7 +661,7 @@ def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms,
     if any('block' in algorithm for algorithm in list_of_algorithms):
         search_space.append('iiv_block')
     penalties = [
-        calculate_bic_penalty(
+        calculate_mbic_penalty(
             me.model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
         )
         for me in candidate_model_entries

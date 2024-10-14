@@ -1283,7 +1283,7 @@ def load_example_modelfit_results(name: str):
     return res
 
 
-def calculate_bic_penalty(
+def calculate_mbic_penalty(
     candidate_model: Model,
     search_space: Union[str, list[str], ModelFeatures],
     base_model: Optional[Model] = None,
