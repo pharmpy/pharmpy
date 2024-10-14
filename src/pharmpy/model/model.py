@@ -18,10 +18,11 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional, Self, Union
+from typing import Any, Optional, Self, Union
 
 import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
 from pharmpy.model.external import detect_model
@@ -31,11 +32,6 @@ from .execution_steps import ExecutionSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
 from .statements import CompartmentalSystem, Statements
-
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    from pharmpy.deps import pandas as pd
 
 
 class ModelError(Exception):

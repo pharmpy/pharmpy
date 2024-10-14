@@ -28,7 +28,7 @@ def PSQRT(x):
 
 
 def INT(x):
-    return sympy.sign(x) * sympy.floor(sympy.Abs(x))
+    return sympy.sign(x) * sympy.floor(sympy.Abs(x))  # pyright: ignore [reportOperatorIssue]
 
 
 def PDZ(x):

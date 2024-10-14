@@ -45,7 +45,7 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
         self.trans = trans
         super().__init__(**kwargs)
 
-    def _print_Add(self, expr):
+    def _print_Add(self, expr, order=None):
         if self.rvs is None:
             return super()._print_Add(expr)
         else:
@@ -99,7 +99,7 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
         return super()._print_Add(sympy.Add(*terms, evaluate=False), order='none')
 
     def _print_Float(self, expr):
-        printed = sympy_printing.codeprinter.CodePrinter._print_Float(self, expr)
+        printed = super()._print_Float(expr)
         return printed.upper()
 
     def _print_Integer(self, expr):
@@ -112,20 +112,23 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
             name = expr.__class__.__name__.upper()
         return f'{name}({super().doprint(expr.args[0])})'
 
-    def _print_Pow(self, expr):
+    def _print_Pow(self, expr, rational=False):
         if expr.exp == sympy.Rational(1, 2):
             return f"SQRT({self.doprint(expr.base)})"
         elif expr.exp == -1:
             if (
                 isinstance(expr.base, sympy.Expr)
                 and not isinstance(expr.base, sympy.Symbol)
-                and len(expr.base.make_args(expr.base)) > 1
+                and len(
+                    expr.base.make_args(expr.base)  # pyright: ignore [reportAttributeAccessIssue]
+                )
+                > 1
             ):
                 return f"1/({expr.base})"
             else:
                 return f"1/{expr.base}"
         else:
-            return super()._print_Pow(expr)
+            return super()._print_Pow(expr, rational=rational)
 
     def _do_infix(self, expr, op):
         return super()._print(expr.args[0]) + op + super()._print(expr.args[1])

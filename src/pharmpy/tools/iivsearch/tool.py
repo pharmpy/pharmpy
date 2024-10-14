@@ -470,7 +470,6 @@ def start(
 
     plots = create_plots(final_final_model, final_results)
 
-    final_final_model = final_final_model.replace(name="final")
     context.store_final_model_entry(final_final_model)
 
     final_results = IIVSearchResults(

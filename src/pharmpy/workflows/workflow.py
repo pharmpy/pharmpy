@@ -2,16 +2,12 @@ from __future__ import annotations
 
 import inspect
 import uuid
-from typing import TYPE_CHECKING, Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
+from pharmpy.deps import networkx as nx
 from pharmpy.internals.immutable import Immutable
 
 from .task import Task
-
-if TYPE_CHECKING:
-    import networkx as nx
-else:
-    from pharmpy.deps import networkx as nx
 
 T = TypeVar('T')
 

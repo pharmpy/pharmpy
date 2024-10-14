@@ -4,9 +4,11 @@ from collections.abc import Container as CollectionsContainer
 from collections.abc import Iterable, Mapping
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
-from typing import TYPE_CHECKING, Any, Collection, Container, Optional, Sequence, Union, overload
+from typing import Any, Collection, Container, Optional, Sequence, Union, overload
 
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
+from pharmpy.deps import numpy as np
+from pharmpy.deps import sympy, sympy_stats
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
@@ -15,14 +17,6 @@ from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_p
 
 from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
-
-if TYPE_CHECKING:
-    import numpy as np
-    import sympy
-    import sympy.stats as sympy_stats
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import sympy, sympy_stats
 
 
 def _create_rng(seed: Optional[Union[int, np.random.Generator]] = None) -> np.random.Generator:

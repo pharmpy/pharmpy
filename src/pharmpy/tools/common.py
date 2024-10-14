@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import TYPE_CHECKING, Any, Optional, Sequence, Type, TypeVar
+from typing import Any, Optional, Sequence, Type, TypeVar
 
 from pharmpy.deps import altair as alt
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_eta_shrinkage,
@@ -18,13 +20,6 @@ from pharmpy.tools.run import rank_models, summarize_errors_from_entries
 from pharmpy.workflows import ModelEntry, ModelfitResults, Results
 
 from .funcs import summarize_individuals, summarize_individuals_count_table
-
-if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import pandas as pd
 
 DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 

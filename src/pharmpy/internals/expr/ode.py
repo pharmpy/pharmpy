@@ -1,13 +1,8 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
+from pharmpy.deps import sympy
 
 from .leaves import free_images
-
-if TYPE_CHECKING:
-    import sympy
-else:
-    from pharmpy.deps import sympy
 
 
 def canonical_ode_rhs(expr: sympy.Expr):

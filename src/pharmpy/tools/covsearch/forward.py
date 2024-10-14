@@ -59,7 +59,13 @@ def fast_forward(
         prev_best = search_state.best_candidate_so_far
         if statsmodels:
             state_and_effect = statsmodels_linear_selection(
-                step, p_forward, lin_state_and_effect, nsamples, lin_filter, algorithm, weighted_linreg
+                step,
+                p_forward,
+                lin_state_and_effect,
+                nsamples,
+                lin_filter,
+                algorithm,
+                weighted_linreg,
             )
         else:
             state_and_effect = nonmem_linear_selection(

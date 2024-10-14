@@ -3,9 +3,11 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import TYPE_CHECKING, Iterable, Literal, Optional, Sequence, TypeVar, Union
+from typing import Iterable, Literal, Optional, Sequence, TypeVar, Union
 
 from pharmpy.basic import Expr, TExpr, TSymbol
+from pharmpy.deps import networkx as nx
+from pharmpy.deps import sympy
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images_and_symbols
 from pharmpy.internals.expr.subs import subs
@@ -24,13 +26,6 @@ from pharmpy.model import (
 
 from .parameters import get_omegas, get_sigmas, get_thetas, replace_fixed_thetas
 from .random_variables import replace_non_random_rvs
-
-if TYPE_CHECKING:
-    import networkx as nx
-    import sympy
-else:
-    from pharmpy.deps import networkx as nx
-    from pharmpy.deps import sympy
 
 T = TypeVar('T')
 U = TypeVar('U')
