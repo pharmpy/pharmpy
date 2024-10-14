@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Callable, Literal, Optional, Union
+from typing import Callable, Literal, Optional, Sequence, Union
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
@@ -88,6 +88,7 @@ def run_amd(
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
+    _E: Optional[dict[str, Union[float, str]]] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -148,6 +149,8 @@ def run_amd(
         Parameter uncertainty method.
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
+    _E: dict
+        EXPERIMENTAL FEATURE. Dictionary of different E-values used in mBIC.
 
     Returns
     -------
@@ -391,7 +394,7 @@ def run_amd(
                 run_subfuncs['structsearch'] = func
             else:
                 func = _subfunc_modelsearch(
-                    search_space=modelsearch_features, strictness=strictness, ctx=ctx
+                    search_space=modelsearch_features, strictness=strictness, E=_E, ctx=ctx
                 )
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
@@ -408,6 +411,7 @@ def run_amd(
                 func = _subfunc_iiv(
                     iiv_strategy='no_add',
                     strictness=strictness,
+                    E=_E,
                     ctx=ctx,
                     dir_name="rerun_iivsearch",
                 )
@@ -416,13 +420,14 @@ def run_amd(
                 func = _subfunc_iiv(
                     iiv_strategy=iiv_strategy,
                     strictness=strictness,
+                    E=_E,
                     ctx=ctx,
                     dir_name="iivsearch",
                 )
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
             func = _subfunc_iov(
-                amd_start_model=model, occasion=occasion, strictness=strictness, ctx=ctx
+                amd_start_model=model, occasion=occasion, strictness=strictness, E=_E, ctx=ctx
             )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
@@ -742,17 +747,31 @@ def _subfunc_retires(tool, strictness, seed, ctx):
     return _run_retries
 
 
-def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, ctx) -> SubFunc:
+def _prepare_E_values(tool, e_dict):
+    e_values = e_dict[tool]
+    e_values = e_values if isinstance(e_values, tuple) else (e_values,)
+    return tuple(float(e.strip('%')) / 100 if isinstance(e, str) else e for e in e_values)
+
+
+def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx) -> SubFunc:
     subctx = ctx.create_subcontext('modelsearch')
 
     def _run_modelsearch(model, modelfit_results):
+        if E and 'modelsearch' in E.keys():
+            rank_type = 'mbic'
+            e = _prepare_E_values('modelsearch', E)[0]
+        else:
+            rank_type = 'bic'
+            e = None
+
         res = run_tool(
             'modelsearch',
             search_space=search_space,
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
-            rank_type='bic',
+            rank_type=rank_type,
+            E=e,
             results=modelfit_results,
             path=subctx.path,
         )
@@ -881,10 +900,19 @@ def _subfunc_structsearch_tmdd(
     return _run_structsearch_tmdd
 
 
-def _subfunc_iiv(iiv_strategy, strictness, ctx, dir_name) -> SubFunc:
+def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
     subctx = ctx.create_subcontext(dir_name)
 
     def _run_iiv(model, modelfit_results):
+        if E and 'iivsearch' in E.keys():
+            rank_type = 'mbic'
+            e_values = _prepare_E_values('iivsearch', E)
+            e_p = e_values[0]
+            e_q = e_values[1]
+        else:
+            rank_type = 'bic'
+            e_p, e_q = None, None
+
         keep = [
             str(symbol)
             for symbol in get_central_volume_and_clearance(model)
@@ -897,7 +925,9 @@ def _subfunc_iiv(iiv_strategy, strictness, ctx, dir_name) -> SubFunc:
             model=model,
             results=modelfit_results,
             strictness=strictness,
-            rank_type='bic',
+            rank_type=rank_type,
+            E_p=e_p,
+            E_q=e_q,
             keep=keep,
             path=subctx.path,
         )
@@ -1156,17 +1186,25 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
     return _run_allometry
 
 
-def _subfunc_iov(amd_start_model, occasion, strictness, ctx) -> SubFunc:
+def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
     subctx = ctx.create_subcontext("iovsearch")
 
     def _run_iov(model, modelfit_results):
+        if E and 'iovsearch' in E.keys():
+            rank_type = 'mbic'
+            e = _prepare_E_values('iovsearch', E)[0]
+        else:
+            rank_type = 'bic'
+            e = None
+
         res = run_tool(
             'iovsearch',
             model=model,
             results=modelfit_results,
             column=occasion,
             strictness=strictness,
-            rank_type='bic',
+            rank_type=rank_type,
+            E=e,
             path=subctx.path,
         )
         assert isinstance(res, Results)
@@ -1203,6 +1241,7 @@ def validate_input(
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
+    _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
 ):
     model = input
     to_be_skipped = []
@@ -1380,5 +1419,8 @@ def validate_input(
                 ' and .datainfo usage of "covariate" type and "continuous" flag.'
             )
             to_be_skipped.append("covariates")
+    if _E:
+        if any(value in (0.0, '0%') for value in _E.values()):
+            raise ValueError('E-values in `_E` cannot be 0')
 
     return to_be_skipped

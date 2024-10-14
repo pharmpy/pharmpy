@@ -6,9 +6,15 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results, run_amd
-from pharmpy.tools.amd.run import _mechanistic_cov_extraction, validate_input
+from pharmpy.tools.amd.run import _mechanistic_cov_extraction, _prepare_E_values, validate_input
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.workflows import default_context
+
+
+def test_prepare_E_values():
+    e_dict = {'modelsearch': 0.1, 'iivsearch': ('10%', '20%')}
+    assert _prepare_E_values('modelsearch', e_dict) == (0.1,)
+    assert _prepare_E_values('iivsearch', e_dict) == (0.1, 0.2)
 
 
 @pytest.mark.parametrize(
