@@ -14,15 +14,12 @@ from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.immutable import Immutable
 from pharmpy.model import Model
 
 if TYPE_CHECKING:
-    import pandas as pd
-
     from pharmpy.workflows import Log
-else:
-    from pharmpy.deps import pandas as pd
 
 
 def mfr(res: ModelfitResults) -> ModelfitResults:

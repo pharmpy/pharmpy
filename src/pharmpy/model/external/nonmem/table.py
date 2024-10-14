@@ -237,7 +237,11 @@ class PhiTable(NONMEMTable):
     def etcs(self):
         ids, eta_col_names, matrix_array = self.etc_data()
         etc_frames = [
-            pd.DataFrame(matrix, columns=eta_col_names, index=eta_col_names)
+            pd.DataFrame(
+                matrix,
+                columns=eta_col_names,  # pyright: ignore [reportArgumentType]
+                index=eta_col_names,  # pyright: ignore [reportArgumentType]
+            )
             for matrix in matrix_array
         ]
         etcs = pd.Series(etc_frames, index=ids, dtype='object')
@@ -264,12 +268,10 @@ class ExtTable(NONMEMTable):
             raise ValueError('Broken table in ext-file')
         return df
 
-    def _get_parameters(self, iteration, include_thetas=True):
+    def _get_parameters(self, iteration, include_thetas=True) -> pd.Series:
         df = self.data_frame
         row = df.loc[df['ITERATION'] == iteration]
-        if df['ITERATION'].isnull().values.all():
-            return np.nan
-        elif row.empty:
+        if row.empty:
             raise KeyError(f'Row {iteration} not available in ext-file')
         del row['ITERATION']
         del row['OBJ']

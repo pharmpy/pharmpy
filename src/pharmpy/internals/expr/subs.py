@@ -2,12 +2,9 @@ from __future__ import annotations
 
 from collections.abc import Callable, Mapping
 from functools import lru_cache
-from typing import TYPE_CHECKING, Any
+from typing import Any
 
-if TYPE_CHECKING:
-    import sympy
-else:
-    from pharmpy.deps import sympy
+from pharmpy.deps import sympy
 
 from .tree import replace_root_children
 

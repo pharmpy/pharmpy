@@ -26,7 +26,7 @@ class Unit:
 
     @classmethod
     def unitless(cls) -> Unit:
-        return cls(sympy.Integer(1))
+        return cls("1")
 
     def __eq__(self, other):
         return isinstance(other, Unit) and self._expr == other._expr or self._expr == other

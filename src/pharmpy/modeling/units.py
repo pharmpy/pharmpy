@@ -1,14 +1,9 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, TypeVar, Union
+from typing import TypeVar, Union
 
 from pharmpy.basic import Unit
-
-if TYPE_CHECKING:
-    import sympy
-else:
-    from pharmpy.deps import sympy
-
+from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.expr.tree import prune
 from pharmpy.model import Assignment, CompartmentalSystem, Model

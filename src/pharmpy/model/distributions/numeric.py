@@ -1,14 +1,10 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Union
+from typing import Union
 
+from pharmpy.deps import numpy as np
 from pharmpy.internals.immutable import Immutable
-
-if TYPE_CHECKING:
-    import numpy as np
-else:
-    from pharmpy.deps import numpy as np
 
 
 class NumericDistribution(Immutable):

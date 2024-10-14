@@ -32,19 +32,11 @@ from pharmpy.modeling import get_admid, get_cmt, get_ids, simplify_expression
 from .records.parsers import CodeRecordParser
 
 if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
-    import sympy
-    import sympy.printing.fortran as fortran
-
     from .model import Model
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import pandas as pd
-    from pharmpy.deps import sympy, sympy_printing
 
-    fortran = sympy_printing.fortran
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.deps import sympy, sympy_printing
 
 from .nmtran_parser import NMTranControlStream
 from .parsing import extract_verbatim_derivatives, parse_column_info
@@ -54,6 +46,8 @@ from .records.factory import create_record
 from .records.model_record import ModelRecord
 from .records.sizes_record import SizesRecord
 from .table import NONMEMTableFile, PhiTable
+
+fortran = sympy_printing.fortran
 
 
 def update_description(control_stream, old, new):

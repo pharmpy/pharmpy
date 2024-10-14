@@ -5,15 +5,10 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import TYPE_CHECKING, Optional
+from typing import Optional
 
 from pharmpy.basic import Expr
-
-if TYPE_CHECKING:
-    import pandas as pd
-else:
-    from pharmpy.deps import pandas as pd
-
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps

@@ -1,14 +1,9 @@
 import warnings
 from dataclasses import dataclass, replace
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
-if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
-else:
-    from pharmpy.deps import numpy as np
-    import pandas as pd
-
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.math import is_posdef, nearest_positive_definite

@@ -1,16 +1,11 @@
 import warnings
 from functools import partial
-from typing import TYPE_CHECKING, Literal, Optional, Union
+from typing import Literal, Optional, Union
 
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import is_posdef, nearest_positive_semidefinite
 from pharmpy.model import Model
-
-if TYPE_CHECKING:
-    import numpy as np
-    import pandas as pd
-else:
-    from pharmpy.deps import numpy as np
-    from pharmpy.deps import pandas as pd
 
 
 def create_rng(seed: Optional[Union[np.random.Generator, int]] = None):
