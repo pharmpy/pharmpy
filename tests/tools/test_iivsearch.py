@@ -580,6 +580,23 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             ValueError,
             'Value `E_q` must be more than 0',
         ),
+        (
+            None,
+            {'rank_type': 'mbic', 'E_p': '10'},
+            ValueError,
+            'Value `E_p` must be denoted with `%`',
+        ),
+        (
+            None,
+            {
+                'rank_type': 'mbic',
+                'algorithm': 'skip',
+                'correlation_algorithm': 'top_down_exhaustive',
+                'E_q': '10',
+            },
+            ValueError,
+            'Value `E_q` must be denoted with `%`',
+        ),
     ],
 )
 def test_validate_input_raises(

@@ -38,7 +38,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    E: Optional[float] = None,
+    E: Optional[Union[float, str]] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -443,8 +443,10 @@ def validate_input(
     if rank_type == 'mbic':
         if E is None:
             raise ValueError('Value `E` must be provided when using mbic')
-        if E <= 0.0:
+        if isinstance(E, float) and E <= 0.0:
             raise ValueError(f'Value `E` must be more than 0: got `{E}`')
+        if isinstance(E, str) and not E.endswith('%'):
+            raise ValueError(f'Value `E` must be denoted with `%`: got `{E}`')
 
 
 @dataclass(frozen=True)

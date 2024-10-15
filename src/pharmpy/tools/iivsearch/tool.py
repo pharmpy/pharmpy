@@ -64,8 +64,8 @@ def create_workflow(
     keep: Optional[Iterable[str]] = ("CL",),
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
-    E_p: Optional[float] = None,
-    E_q: Optional[float] = None,
+    E_p: Optional[Union[float, str]] = None,
+    E_q: Optional[Union[float, str]] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -719,10 +719,14 @@ def validate_input(
             raise ValueError(
                 'Value `E_q` must be provided for `correlation_algorithm` when using mbic'
             )
-        if E_p is not None and E_p <= 0.0:
+        if isinstance(E_p, float) and E_p <= 0.0:
             raise ValueError(f'Value `E_p` must be more than 0: got `{E_p}`')
-        if E_q is not None and E_q <= 0.0:
+        if isinstance(E_q, float) and E_q <= 0.0:
             raise ValueError(f'Value `E_q` must be more than 0: got `{E_q}`')
+        if isinstance(E_p, str) and not E_p.endswith('%'):
+            raise ValueError(f'Value `E_p` must be denoted with `%`: got `{E_p}`')
+        if isinstance(E_q, str) and not E_q.endswith('%'):
+            raise ValueError(f'Value `E_q` must be denoted with `%`: got `{E_q}`')
 
 
 @dataclass(frozen=True)
