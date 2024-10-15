@@ -9,6 +9,8 @@ Currently, contains:
 2. Resample - Can be used by bootstrap
 """
 
+from __future__ import annotations
+
 import warnings
 from collections.abc import Mapping
 from typing import Optional, Union

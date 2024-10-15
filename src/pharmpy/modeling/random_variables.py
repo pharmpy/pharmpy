@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pharmpy.basic import Expr
 from pharmpy.model import Model, Parameters, RandomVariables
 

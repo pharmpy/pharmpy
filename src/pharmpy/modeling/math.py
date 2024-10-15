@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import cov2corr

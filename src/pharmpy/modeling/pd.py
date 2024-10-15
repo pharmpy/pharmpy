@@ -2,6 +2,8 @@
 :meta private:
 """
 
+from __future__ import annotations
+
 from typing import Literal
 
 from pharmpy.basic import Expr

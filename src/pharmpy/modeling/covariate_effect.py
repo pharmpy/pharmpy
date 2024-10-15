@@ -2,6 +2,8 @@
 :meta private:
 """
 
+from __future__ import annotations
+
 import math
 import re
 import warnings
