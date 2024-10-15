@@ -114,6 +114,8 @@ def embed_css_and_js(html, target):
 
     for script in scripts:
         source = script.attrs['src']
+        # Remove versioning of scripts that was added by Sphinx 8.1
+        source = re.sub(r'\?v=.*', '', source)
         if source.startswith('http'):
             ctx = ssl.create_default_context()
             ctx.check_hostname = False
@@ -141,6 +143,8 @@ def embed_css_and_js(html, target):
 
     for stylesheet in stylesheets:
         stylesheet_src = stylesheet.attrs['href']
+        # Remove versioning of css files that was added by Sphinx 8.1
+        stylesheet_src = re.sub(r'\?v=.*', '', stylesheet_src)
         tag = soup.new_tag("style")
         tag['type'] = 'text/css'
         path = html.parent / stylesheet_src
