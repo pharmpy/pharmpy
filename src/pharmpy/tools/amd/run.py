@@ -747,19 +747,13 @@ def _subfunc_retires(tool, strictness, seed, ctx):
     return _run_retries
 
 
-def _prepare_E_values(tool, e_dict):
-    e_values = e_dict[tool]
-    e_values = e_values if isinstance(e_values, tuple) else (e_values,)
-    return tuple(float(e.strip('%')) / 100 if isinstance(e, str) else e for e in e_values)
-
-
 def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx) -> SubFunc:
     subctx = ctx.create_subcontext('modelsearch')
 
     def _run_modelsearch(model, modelfit_results):
         if E and 'modelsearch' in E.keys():
             rank_type = 'mbic'
-            e = _prepare_E_values('modelsearch', E)[0]
+            e = E['modelsearch']
         else:
             rank_type = 'bic'
             e = None
@@ -906,9 +900,7 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
     def _run_iiv(model, modelfit_results):
         if E and 'iivsearch' in E.keys():
             rank_type = 'mbic'
-            e_values = _prepare_E_values('iivsearch', E)
-            e_p = e_values[0]
-            e_q = e_values[1]
+            e_p, e_q = E['iivsearch']
         else:
             rank_type = 'bic'
             e_p, e_q = None, None
@@ -1192,7 +1184,7 @@ def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
     def _run_iov(model, modelfit_results):
         if E and 'iovsearch' in E.keys():
             rank_type = 'mbic'
-            e = _prepare_E_values('iovsearch', E)[0]
+            e = E['iovsearch']
         else:
             rank_type = 'bic'
             e = None
