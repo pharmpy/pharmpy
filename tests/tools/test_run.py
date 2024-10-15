@@ -616,6 +616,42 @@ def test_strictness_parameters(testdata):
             [partial(remove_iov, to_remove='ETA_IOV_1_1'), partial(remove_iiv, to_remove='ETA_CL')],
             [4.39, 4.39],
         ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {'E_p': 3},
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [1.39, 1.39],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {'E_p': '50%'},
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [1.39, 1.39],
+        ),
+        (
+            [create_joint_distribution],
+            ['iiv_diag', 'iiv_block'],
+            {'base_model': None, 'E_p': 1.5},
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [4.97, 1.39],
+        ),
+        (
+            [create_joint_distribution],
+            ['iiv_diag', 'iiv_block'],
+            {'base_model': None, 'E_p': '50%'},
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [4.97, 1.39],
+        ),
     ],
 )
 def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):

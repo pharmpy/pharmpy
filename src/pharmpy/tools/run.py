@@ -1287,8 +1287,8 @@ def calculate_mbic_penalty(
     candidate_model: Model,
     search_space: Union[str, list[str], ModelFeatures],
     base_model: Optional[Model] = None,
-    E_p: Optional[float] = 1.0,
-    E_q: Optional[float] = 1.0,
+    E_p: Optional[Union[float, str]] = 1.0,
+    E_q: Optional[Union[float, str]] = 1.0,
     keep: Optional[list[str]] = None,
 ):
     if E_p == 0 or E_q == 0:
@@ -1353,15 +1353,22 @@ def calculate_mbic_penalty(
     p = p if k_p != 0 else 1
     q = q if k_q != 0 else 1
     # If either are omitted
-    E_p = E_p if E_p is not None else 1
-    E_q = E_q if E_q is not None else 1
-
-    if E_p > p:
-        raise ValueError(f'`E_p` cannot be bigger than `p`: E_p={E_p}, p={p}')
-    if E_q > q:
-        raise ValueError(f'`E_q` cannot be bigger than `q`: E_p={E_q}, p={q}')
+    E_p = _prepare_E_value(E_p, p, type='p')
+    E_q = _prepare_E_value(E_q, q, type='q')
 
     return 2 * k_p * math.log(p / E_p) + 2 * k_q * math.log(q / E_q)
+
+
+def _prepare_E_value(e, p, type='p'):
+    if isinstance(e, str):
+        e = (float(e.strip('%')) / 100) * p
+    elif e is None:
+        e = 1
+    else:
+        e = e
+    if e > p:
+        raise ValueError(f'`E_{type}` cannot be bigger than `{type}`: E_{type}={e}, {type}={p}')
+    return e
 
 
 def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
