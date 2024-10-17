@@ -115,6 +115,7 @@ def create_workflow(
 
 
 def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
+    context.log_info("Starting tool structsearch")
     model = store_input_model(context, model, results)
 
     model = update_initial_estimates(model, results)
@@ -189,12 +190,14 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     final_model = res.final_model.replace(name="final")
     context.store_final_model_entry(final_model)
 
+    context.log_info("Finishing tool structsearch")
     return res
 
 
 def run_pkpd(
     context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
 ):
+    context.log_info("Starting tool structsearch")
     input_model = store_input_model(context, input_model, results)
 
     model_entry = ModelEntry.create(input_model, modelfit_results=results)
@@ -245,10 +248,12 @@ def run_pkpd(
     final_model = res.final_model.replace(name="final")
     context.store_final_model_entry(final_model)
 
+    context.log_info("Finishing tool structsearch")
     return res
 
 
 def run_drug_metabolite(context, model, search_space, results, strictness):
+    context.log_info("Starting tool structsearch")
     # Create links to input model
     model = store_input_model(context, model, results)
 
@@ -273,6 +278,7 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
     final_model = results.final_model.replace(name="final")
     context.store_final_model_entry(final_model)
 
+    context.log_info("Finishing tool structsearch")
     return results
 
 
