@@ -174,6 +174,7 @@ def run_amd(
     args = locals()
 
     ctx = _setup_run(args)
+    ctx.log_info("Starting tool amd")
 
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
@@ -648,6 +649,7 @@ def run_amd(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         generate_report(rst_path, results_path, target_path)
+    ctx.log_info("Finishing tool amd")
     return res
 
 
