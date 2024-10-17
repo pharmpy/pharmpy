@@ -99,6 +99,7 @@ def start(
     strictness,
     E,
 ):
+    context.log_info("Starting tool modelsearch")
     # Create links to input model
     model = model.replace(name="input", description="")
     context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
@@ -185,7 +186,8 @@ def _start(model, modelfit_results):
     return ModelEntry.create(model, modelfit_results=modelfit_results)
 
 
-def _results(res):
+def _results(context, res):
+    context.log_info("Finishing tool modelsearch")
     return res
 
 
