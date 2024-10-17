@@ -15,6 +15,7 @@ from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model, Parameter, Parameters, Statement, Statements
 
 from .common import get_model_covariates
@@ -22,6 +23,8 @@ from .data import get_baselines
 from .expressions import (
     depends_on,
     get_individual_parameters,
+    has_mu_reference,
+    mu_connected_to_parameter,
     remove_covariate_effect_from_statements,
     simplify_model,
 )
@@ -420,7 +423,11 @@ def add_covariate_effect(
     # before declaring them. We also avoid duplicate statements.
     sset = [s for s in covariate_effect.statistic_statements if s not in sset] + sset
 
-    last_existing_parameter_assignment = sset.find_assignment(parameter)
+    if has_mu_reference(model):
+        mu_symbol = mu_connected_to_parameter(model, parameter)
+        last_existing_parameter_assignment = sset.find_assignment(mu_symbol)
+    else:
+        last_existing_parameter_assignment = sset.find_assignment(parameter)
     assert last_existing_parameter_assignment is not None
     insertion_index = sset.index(last_existing_parameter_assignment) + 1
 
@@ -434,10 +441,31 @@ def add_covariate_effect(
 
     statements.append(covariate_effect.template)
     statements.append(effect_statement)
-
     cov_possible = {Expr.symbol(parameter)} | {
         Expr.symbol(f'{parameter}{col_name}') for col_name in model.datainfo.names
     }
+
+    if has_mu_reference(model):
+        mu_assignment = sset.find_assignment(mu_symbol)
+        parameter_assignment = sset.find_assignment(parameter)
+
+        index = {Expr.symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
+        etas = set(index)
+        eta = next(iter(etas.intersection(parameter_assignment.expression.free_symbols)))
+
+        old_def = parameter_assignment.subs(
+            {mu_assignment.symbol: mu_assignment.expression}
+        ).expression._sympy_()
+        remove_iiv_def = old_def.as_independent(eta)[0]
+        new_mu_expression = sympy.solve(
+            subs(old_def, {remove_iiv_def: remove_iiv_def * statements[0].symbol})
+            - parameter_assignment.expression,
+            mu_assignment.symbol,
+        )[0]
+
+        statements[-1] = Assignment.create(effect_statement.symbol, new_mu_expression)
+        sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
+        insertion_index -= 1
 
     # NOTE: This is a heuristic that simplifies the NONMEM statements by
     # grouping multiple effect statements in a single statement.
@@ -452,7 +480,6 @@ def add_covariate_effect(
         )
         sset = sset[0 : insertion_index - 1] + sset[insertion_index:]
         insertion_index -= 1
-
     sset = sset[0:insertion_index] + statements + sset[insertion_index:]
     model = model.replace(parameters=pset, statements=sset)
     return model.update_source()

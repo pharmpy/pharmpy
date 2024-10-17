@@ -2,23 +2,36 @@ from __future__ import annotations
 
 from typing import Iterable, Union
 
+from statsmodels.regression.linear_model import WLS
+from statsmodels.regression.mixed_linear_model import MixedLM
+
 from pharmpy.deps import numpy as np
 from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
 from pharmpy.workflows import ModelEntry
 
 
-def degrees_of_freedom(parent: Union[Model, ModelEntry], child: Union[Model, ModelEntry]) -> int:
+def degrees_of_freedom(
+    parent: Union[Model, ModelEntry], child: Union[Model, ModelEntry]
+) -> int | float:
     if isinstance(child, ModelEntry):
-        child_parameters = child.model.parameters
+        child_parameters = len(child.model.parameters)
+    elif isinstance(child, WLS):
+        child_parameters = child.df_model
+    elif isinstance(child, MixedLM):
+        child_parameters = child.k_params
     else:
-        child_parameters = child.parameters
+        child_parameters = len(child.parameters)
 
     if isinstance(parent, ModelEntry):
-        parent_parameters = parent.model.parameters
+        parent_parameters = len(parent.model.parameters)
+    elif isinstance(parent, WLS):
+        parent_parameters = parent.df_model
+    elif isinstance(parent, MixedLM):
+        parent_parameters = parent.k_params
     else:
-        parent_parameters = parent.parameters
-    return len(child_parameters) - len(parent_parameters)
+        parent_parameters = len(parent.parameters)
+    return child_parameters - parent_parameters
 
 
 def cutoff(parent: Model, child: Model, alpha: float) -> float:
