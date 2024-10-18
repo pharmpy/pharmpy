@@ -259,6 +259,7 @@ def create_workflow(
 
 
 def _store_input_model(context, model, results, max_eval):
+    context.log_info("Starting tool covsearch")
     model = model.replace(name="input", description="")
     me = ModelEntry.create(model=model, modelfit_results=results)
     context.store_input_model_entry(me)
@@ -771,6 +772,7 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     )
 
     context.store_final_model_entry(best_modelentry)
+    context.log_info("Finishing tool covsearch")
     return res
 
 
