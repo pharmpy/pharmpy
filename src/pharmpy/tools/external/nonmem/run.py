@@ -120,8 +120,10 @@ def execute_model(model_entry, context):
             not (model_path / basename).with_suffix('.lst').is_file()
             or not (model_path / basename).with_suffix('.ext').is_file()
         ):
-            warnings.warn(f'Expected result files do not exist, copying everything: {basename}')
-            for file in path.glob('*'):
+            warnings.warn(
+                f'Expected result files do not exist, copying everything: {model_entry.model.name}'
+            )
+            for file in path.glob('x/*'):
                 txn.store_local_file(file)
         else:
             for suffix in ('.lst', '.ext', '.phi', '.cov', '.cor', '.coi', '.grd', '.ets'):
