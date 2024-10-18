@@ -27,6 +27,7 @@ All developers past and present
 * Antonia Hufnagl
 * Viktor Rognås
 * David Sjöberg
+* Peng Man
 
 Scientific input
 ~~~~~~~~~~~~~~~~
