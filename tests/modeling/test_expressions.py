@@ -15,6 +15,7 @@ from pharmpy.model import (
     Statements,
 )
 from pharmpy.modeling import (
+    add_covariate_effect,
     add_effect_compartment,
     add_indirect_effect,
     add_metabolite,
@@ -34,12 +35,14 @@ from pharmpy.modeling import (
     get_population_prediction_expression,
     get_rv_parameters,
     greekify_model,
+    has_mu_reference,
     has_random_effect,
     is_linearized,
     is_real,
     make_declarative,
     mu_reference_model,
     read_model_from_string,
+    remove_covariate_effect,
     set_direct_effect,
     set_first_order_absorption,
     set_transit_compartments,
@@ -189,6 +192,159 @@ def test_mu_reference_model_generic(statements, correct):
     )
     model = mu_reference_model(model)
     assert model.statements == Statements(correct)
+
+
+def test_mu_reference_covariate_effect(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    model = remove_covariate_effect(model, "CL", "WGT")  # Define using template instead
+    model = add_covariate_effect(model, "CL", "WGT", "pow")
+
+    model = mu_reference_model(model)
+
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA 'pheno.dta' IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+WGT_MEDIAN = 1.30000000000000
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL = THETA(1)
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CL = TVCL
+CLWGT = (WGT/WGT_MEDIAN)**THETA(4)
+MU_1 = LOG(CL*CLWGT)
+CL = EXP(MU_1 + ETA(1))
+MU_2 = LOG(TVV)
+V = EXP(MU_2 + ETA(2))
+S1=V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$THETA  (-100,0.001,100000) ; POP_CLWGT
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+"""
+    )
+
+
+def test_add_covariate_effect_on_mu_referenced_model(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    model = remove_covariate_effect(model, "CL", "WGT")  # Define using template instead
+    model = mu_reference_model(model)
+
+    model = add_covariate_effect(model, "CL", "WGT", "pow")
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA 'pheno.dta' IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+WGT_MEDIAN = 1.30000000000000
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL = THETA(1)
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+CLWGT = (WGT/WGT_MEDIAN)**THETA(4)
+MU_1 = LOG(CLWGT*TVCL)
+CL = EXP(MU_1 + ETA(1))
+MU_2 = LOG(TVV)
+V = EXP(MU_2 + ETA(2))
+S1=V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$THETA  (-100,0.001,100000) ; POP_CLWGT
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+"""
+    )
+
+    model = remove_covariate_effect(model, "CL", "WGT")
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
+$DATA 'pheno.dta' IGNORE=@
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$SUBROUTINE ADVAN1 TRANS2
+
+$PK
+IF(AMT.GT.0) BTIME=TIME
+TAD=TIME-BTIME
+TVCL = THETA(1)
+TVV=THETA(2)*WGT
+IF(APGR.LT.5) TVV=TVV*(1+THETA(3))
+MU_1 = LOG(TVCL)
+CL = EXP(MU_1 + ETA(1))
+MU_2 = LOG(TVV)
+V = EXP(MU_2 + ETA(2))
+S1=V
+
+$ERROR
+W=F
+Y=F+W*EPS(1)
+IPRED=F
+IRES=DV-IPRED
+IWRES=IRES/W
+
+$THETA (0,0.00469307) ; PTVCL
+$THETA (0,1.00916) ; PTVV
+$THETA (-.99,.1)
+$OMEGA DIAGONAL(2)
+ 0.0309626  ;       IVCL
+ 0.031128  ;        IVV
+
+$SIGMA 0.013241
+$ESTIMATION METHOD=1 INTERACTION
+$COVARIANCE UNCONDITIONAL
+$TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
+       NOPRINT ONEHEADER FILE=sdtab1
+"""
+    )
+
+
+def test_has_mu_reference(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    assert not has_mu_reference(model)
+    model = mu_reference_model(model)
+    assert has_mu_reference(model)
 
 
 def test_simplify_expression():

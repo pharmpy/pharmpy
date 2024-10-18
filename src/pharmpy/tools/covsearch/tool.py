@@ -8,18 +8,15 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import (
-    get_pk_parameters,
-    has_covariate_effect,
-    remove_covariate_effect,
-    set_estimation_step,
-)
+from pharmpy.modeling import get_pk_parameters, remove_covariate_effect, set_estimation_step
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import create_results, update_initial_estimates
+from pharmpy.tools.covsearch.fast_scm import fast_scm_workflow
+from pharmpy.tools.covsearch.samba import samba_workflow
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
 from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
@@ -118,21 +115,24 @@ class SearchState:
     all_candidates_so_far: list[Candidate]
 
 
-ALGORITHMS = ('scm-forward', 'scm-forward-then-backward')
-
-
 def create_workflow(
     search_space: Union[str, ModelFeatures],
     p_forward: float = 0.01,
     p_backward: float = 0.001,
     max_steps: int = -1,
-    algorithm: Literal[ALGORITHMS] = 'scm-forward-then-backward',
+    algorithm: Literal[
+        'scm-forward', 'scm-forward-then-backward', 'samba-saem', 'samba-foce', 'scm-fastforward'
+    ] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     max_eval: bool = False,
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
+    statsmodels: bool = False,
+    nsamples: int = 10,
+    weighted_linreg: bool = False,
+    lin_filter: int = 0,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -146,7 +146,7 @@ def create_workflow(
         The p-value to use in the likelihood ratio test for backward steps
     max_steps : int
         The maximum number of search steps to make
-    algorithm : {'scm-forward', 'scm-forward-then-backward'}
+    algorithm : {'scm-forward', 'scm-forward-then-backward', 'samba'}
         The search algorithm to use. Currently, 'scm-forward' and
         'scm-forward-then-backward' are supported.
     results : ModelfitResults
@@ -163,8 +163,24 @@ def create_workflow(
         Default is False
     strictness : str or None
         Strictness criteria
-    naming_index_offset: int
+    naming_index_offset : int
         index offset for naming of runs. Default is 0.
+    statsmodels : bool
+        estimation tool for SAMBA linear covariate model fitting. 'True' calls statsmodel's
+        functionalities, whereas 'False' calls nonmem.
+    nsamples : int
+        Number of samples from individual parameter conditional distribution for linear covariate model selection.
+        `nsamples=0` uses ETAs to for linear model selection, whereas `nsample`>=1 generates MCMC samples with an
+        additional SAEM estimation step. When multiple samples are generated, linear mixed effects model will be
+        used to fit the linear models.
+        Default is 10, i.e. generating 10 samples per subject
+    weighted_linreg : bool
+        When using nonmem to run linear covariate models, 'True' uses ETC as weight to run WLS.
+    lin_filter : int
+        Option to control the number of covariates passed to nonlinear selection
+         0: pass all LRT positive covariate effects from linear selection step
+         1: pass the ones with the largest drop of OFV within each parameter scope
+         2: the one with the largest drop of OFV among all parameter-covariate pairs
 
     Returns
     -------
@@ -180,6 +196,37 @@ def create_workflow(
     >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
+    if algorithm in ["samba-saem", "samba-foce"]:
+        return samba_workflow(
+            search_space,
+            max_steps,
+            p_forward,
+            results,
+            model,
+            max_eval,
+            statsmodels,
+            algorithm,
+            nsamples,
+            weighted_linreg,
+            lin_filter,
+        )
+    if algorithm == "scm-fastforward":
+        return fast_scm_workflow(
+            search_space,
+            max_steps,
+            p_forward,
+            p_backward,
+            results,
+            model,
+            max_eval,
+            strictness,
+            naming_index_offset,
+            statsmodels,
+            algorithm,
+            nsamples,
+            weighted_linreg,
+            lin_filter,
+        )
 
     wb = WorkflowBuilder(name=NAME_WF)
 
@@ -187,7 +234,7 @@ def create_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     start_task = Task("create_modelentry", _start, model, results)
     wb.add_task(start_task, predecessors=store_task)
-    init_task = Task("init", _init_search_state, search_space)
+    init_task = Task("init", _init_search_state, search_space, algorithm)
     wb.add_task(init_task, predecessors=start_task)
 
     forward_search_task = Task(
@@ -237,7 +284,6 @@ def _store_input_model(context, model, results, max_eval):
 
 
 def _start(model, results, max_eval):
-
     if max_eval:
         max_eval_number = round(3.1 * results.function_evaluations_iterations.loc[1])
         # Change last instead of first?
@@ -248,9 +294,12 @@ def _start(model, results, max_eval):
     )
 
 
-def _init_search_state(context, search_space: str, modelentry: ModelEntry) -> SearchState:
+def _init_search_state(
+    context, search_space: str, algorithm: str, modelentry: ModelEntry
+) -> SearchState:
     model = modelentry.model
     effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
+
     if filtered_model != model:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
         filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
@@ -266,91 +315,49 @@ def filter_search_space_and_model(search_space, model):
     if isinstance(search_space, str):
         search_space = ModelFeatures.create_from_mfl_string(search_space)
     ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
+
+    # Clean up all covariate effect in model
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
-
-    # Remove all covariates not part of the search space
-    to_be_removed = model_mfl - ss_mfl
-    covariate_list = to_be_removed.mfl_statement_list(["covariate"])
+    # covariate effects not in search space, should be kept as it is
+    covariate_to_keep = model_mfl - ss_mfl
+    # covariate effects in both model and search space, should be removed for exploration in future searching steps
+    covariate_to_remove = model_mfl - covariate_to_keep
+    covariate_to_remove = covariate_to_remove.mfl_statement_list(["covariate"])
     description = []
-    if len(covariate_list) != 0:
+    if len(covariate_to_remove) != 0:
         description.append("REMOVED")
-        for cov_effect in parse_spec(spec(filtered_model, covariate_list)):
-            if cov_effect[2].lower() == "custom":
-                try:
-                    filtered_model = remove_covariate_effect(
-                        filtered_model, cov_effect[0], cov_effect[1]
-                    )
-                    description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+        for cov_effect in parse_spec(spec(filtered_model, covariate_to_remove)):
+            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+    # Remove all custom effects
+    covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
+    for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
+        if cov_effect[2].lower() == "custom":
+            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
 
-                except AssertionError:
-                    # All custom effects are grouped and therefor might not exist
-                    # FIXME : remove_covariate_effect not raise if non-existing ?
-                    pass
-            else:
-                filtered_model = remove_covariate_effect(
-                    filtered_model, cov_effect[0], cov_effect[1]
-                )
-                description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
-        filtered_model = filtered_model.replace(description=';'.join(description))
+    filtered_model = filtered_model.replace(description=';'.join(description))
 
-    all_forced_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
-    all_forced = all_funcs(Model(), all_forced_cov)
-    added_comb = set(k[1:3] for k in all_forced.keys())
+    # Add structural covariates in search space if any
+    structural_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
+    structural_cov_funcs = all_funcs(Model(), structural_cov)
+    if len(structural_cov_funcs) != 0:
+        description.append("ADDED")
+        for cov_effect, cov_func in structural_cov_funcs.items():
+            filtered_model = cov_func(filtered_model)
+            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+        filtered_model = filtered_model.replace(description=";".join(description))
 
-    ss_cov = ss_mfl - model_mfl
-    forced_add_cov = tuple([c for c in ss_cov.covariate if not c.optional.option])
-    mandatory_funcs = all_funcs(Model(), forced_add_cov)
+    # Exploratory covariates
+    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
+    exploratory_cov_funcs = all_funcs(Model(), exploratory_cov)
+    exploratory_cov_funcs = {
+        cov_effect[1:-1]: cov_func
+        for cov_effect, cov_func in exploratory_cov_funcs.items()
+        if cov_effect[-1] == "ADD"
+    }
 
-    optional_cov_list = tuple(c for c in ss_cov.covariate if c.optional.option)
-    optional_cov = ModelFeatures.create(covariate=optional_cov_list)
-    optional_funcs = optional_cov.convert_to_funcs()
-    optional_funcs = {k: v for k, v in optional_funcs.items() if not k[1:3] in added_comb}
-    optional_remove = {k: v for k, v in optional_funcs.items() if k[-1] == "REMOVE"}
-    optional_add = {k: v for k, v in optional_funcs.items() if k[-1] == "ADD"}
-
-    def func_description(effect_funcs, model=None, add=True):
-        d = []
-        for eff_descriptor, _ in effect_funcs.items():
-            if model:
-                if (
-                    has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
-                    if add
-                    else not has_covariate_effect(model, eff_descriptor[1], eff_descriptor[2])
-                ):
-                    d.append(f'({eff_descriptor[1]}-{eff_descriptor[2]}-{eff_descriptor[3]})')
-            else:
-                d.append(f'({eff_descriptor[1]}-{eff_descriptor[2]}-{eff_descriptor[3]})')
-        return d
-
-    # Remove all optional covariates
-    if len(optional_remove) != 0:
-        potential_extension = func_description(optional_remove, filtered_model, add=True)
-        for _, optional_func in optional_remove.items():
-            filtered_model = optional_func(filtered_model)
-        if len(potential_extension) != 0:
-            if not description:
-                description.append("REMOVED")
-            description.extend(potential_extension)
-
-    # Add all mandatory covariates
-    if len(mandatory_funcs) != 0:
-        change_description = True
-        for eff_descriptor, mandatory_func in mandatory_funcs.items():
-            if not has_covariate_effect(filtered_model, eff_descriptor[1], eff_descriptor[2]):
-                if change_description:
-                    description.append("ADDED")
-                    description.extend(func_description(mandatory_funcs, filtered_model, add=False))
-                    change_description = False
-                filtered_model = mandatory_func(filtered_model)
-
-    # Filter unneccessary keys from fuctions
-    optional_add = {k[1:-1]: v for k, v in optional_add.items()}
-
-    if len(description) > 1:
-        filtered_model = filtered_model.replace(description=';'.join(description))
-        return (optional_add, filtered_model)
-    else:
-        return (optional_add, model)
+    return (exploratory_cov_funcs, filtered_model)
 
 
 def task_greedy_forward_search(
@@ -535,7 +542,6 @@ def perform_step_procedure(
     adaptive_scope_reduction,
     add_adaptive_step=False,
 ):
-
     nonsignificant_effects = {}
 
     for step in steps:
@@ -760,6 +766,8 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     if user_input_modelentry != base_modelentry:
         modelentries = [user_input_modelentry] + modelentries
 
+    steps = _make_df_steps(best_modelentry, candidates)
+
     res = create_results(
         COVSearchResults,
         base_modelentry,
@@ -770,7 +778,6 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
         context=context,
     )
 
-    steps = _make_df_steps(best_modelentry, candidates)
     res = replace(
         res,
         final_model=best_modelentry.model,
@@ -782,8 +789,18 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     )
 
     context.store_final_model_entry(best_modelentry)
-
     return res
+
+
+def _create_proxy_model_table(candidates, steps, proxy_models):
+    step_cols_to_keep = ['step', 'pvalue', 'model']
+    steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
+
+    steps_df = steps_df.reset_index()
+    steps_df = steps_df[steps_df['model'].isin(proxy_models)]
+    steps_df = steps_df.set_index(['step', 'model'])
+
+    return steps_df
 
 
 def _modify_summary_tool(summary_tool, steps):
@@ -794,13 +811,13 @@ def _modify_summary_tool(summary_tool, steps):
     column_to_move = summary_tool_new.pop('description')
 
     summary_tool_new.insert(0, 'description', column_to_move)
+
     return summary_tool_new.drop(['rank'], axis=1)
 
 
 def _summarize_models(modelentries, steps):
     summary_models = summarize_modelfit_results_from_entries(modelentries)
     summary_models['step'] = steps.reset_index().set_index(['model'])['step']
-
     return summary_models.reset_index().set_index(['step', 'model'])
 
 
