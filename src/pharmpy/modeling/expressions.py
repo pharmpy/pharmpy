@@ -331,44 +331,43 @@ def mu_reference_model(model: Model):
         if mu in old_def.free_symbols:
             # If mu reference is already used, ignore
             pass
+        elif old_ind == model.statements.find_assignment_index(assignment.symbol):
+            new_def = subs(dep, {eta: mu + eta})
+            mu_expr = sympy.solve(old_def - new_def, mu)[0]
+            insertion_ind = offset + old_ind
+            statements = (
+                statements[0:insertion_ind]
+                + Assignment.create(mu, mu_expr)
+                + Assignment.create(assignment.symbol, new_def)
+                + statements[insertion_ind + 1 :]
+            )
+            offset += 1  # NOTE: We need this offset because we replace one
+            # statement by two statements
         else:
-            if old_ind == model.statements.find_assignment_index(assignment.symbol):
-                new_def = subs(dep, {eta: mu + eta})
-                mu_expr = sympy.solve(old_def - new_def, mu)[0]
-                insertion_ind = offset + old_ind
-                statements = (
-                    statements[0:insertion_ind]
-                    + Assignment.create(mu, mu_expr)
-                    + Assignment.create(assignment.symbol, new_def)
-                    + statements[insertion_ind + 1 :]
-                )
-                offset += 1  # NOTE: We need this offset because we replace one
-                # statement by two statements
-            else:
-                # Parameter is manipulated 'after' adding IIV
-                old_def = assignment.expression._sympy_()
-                # Remove IIV from first definition
-                remove_iiv_def = old_def.as_independent(eta)[0]
-                insertion_ind = offset + old_ind
-                statements = (
-                    statements[0:insertion_ind]
-                    + Assignment.create(assignment.symbol, remove_iiv_def)
-                    + statements[insertion_ind + 1 :]
-                )
-                # Add mu referencing to last definition of parameter instead
-                last_ind = model.statements.find_assignment_index(assignment.symbol)
-                last_def = model.statements.find_assignment(assignment.symbol).expression
-                new_def = subs(dep, {eta: mu + eta})
-                mu_expr = sympy.solve(subs(old_def, {remove_iiv_def: last_def}) - new_def, mu)[0]
-                insertion_ind = offset + last_ind
-                statements = (
-                    statements[0:insertion_ind]
-                    + Assignment.create(mu, mu_expr)
-                    + Assignment.create(assignment.symbol, new_def)
-                    + statements[insertion_ind + 1 :]
-                )
-                offset += 1  # NOTE: We need this offset because we replace one
-                # statement by two statements
+            # Parameter is manipulated 'after' adding IIV
+            old_def = assignment.expression._sympy_()
+            # Remove IIV from first definition
+            remove_iiv_def = old_def.as_independent(eta)[0]
+            insertion_ind = offset + old_ind
+            statements = (
+                statements[0:insertion_ind]
+                + Assignment.create(assignment.symbol, remove_iiv_def)
+                + statements[insertion_ind + 1 :]
+            )
+            # Add mu referencing to last definition of parameter instead
+            last_ind = model.statements.find_assignment_index(assignment.symbol)
+            last_def = model.statements.find_assignment(assignment.symbol).expression
+            new_def = subs(dep, {eta: mu + eta})
+            mu_expr = sympy.solve(subs(old_def, {remove_iiv_def: last_def}) - new_def, mu)[0]
+            insertion_ind = offset + last_ind
+            statements = (
+                statements[0:insertion_ind]
+                + Assignment.create(mu, mu_expr)
+                + Assignment.create(assignment.symbol, new_def)
+                + statements[insertion_ind + 1 :]
+            )
+            offset += 1  # NOTE: We need this offset because we replace one
+            # statement by two statements
 
     model = model.replace(statements=statements).update_source()
     return model
@@ -386,8 +385,8 @@ def has_mu_reference(model: Model) -> bool:
 
     Returns
     -------
-    Model
-        Pharmpy model object
+    bool
+        Whether the model is mu referenced
 
     """
     ind_index_assignments = list(_find_eta_assignments(model))
