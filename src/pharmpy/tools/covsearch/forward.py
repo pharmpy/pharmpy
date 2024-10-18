@@ -485,11 +485,6 @@ def _mixed_effects_base_model(data, parameter):
         + Expr.symbol("ETA_INT")
         + Expr.symbol("epsilon") * Expr.exp(Expr.symbol("ETA_EPS")),
     )
-    # y = Assignment.create(
-    #     symbol=Expr.symbol("Y"), expression=Expr.symbol("IPRED") +
-    #                                         Expr.symbol("ETA_INT") +
-    #                                         Expr.symbol("epsilon")*(1+Expr.symbol("ETA_EPS"))
-    # )
     statements = Statements([base, ipred, y])
     name = f"{parameter}_Mixed_Effects_Base"
     est = EstimationStep.create(
