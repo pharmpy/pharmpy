@@ -7,7 +7,7 @@ from __future__ import annotations
 from typing import Literal, Optional
 
 from pharmpy.basic import BooleanExpr, Expr
-from pharmpy.deps import sympy
+from pharmpy.deps import sympy, sympy_stats
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.internals.fn.type import check_list
 from pharmpy.model import Assignment, ExecutionSteps, JointNormalDistribution, Model
@@ -364,7 +364,7 @@ def get_sd_expr(y_expr, rvs, params):
                 'more than one random variable'
             )
         expr = rvs.replace_with_sympy_rvs(term)
-        sd_expr.append(sympy.stats.std(expr))
+        sd_expr.append(sympy_stats.std(expr))
 
     return _simplify_expression_from_parameters(
         sympy.sqrt(sympy.Add(*[expr**2 for expr in sd_expr])), params
