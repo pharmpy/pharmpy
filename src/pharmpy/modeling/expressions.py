@@ -374,7 +374,7 @@ def mu_reference_model(model: Model):
     return model
 
 
-def has_mu_reference(model: Model):
+def has_mu_reference(model: Model) -> bool:
     """Check if model is Mu-reference or not.
 
     Will return True if each parameter with an ETA is dependent on a Mu parameter.
