@@ -15,7 +15,6 @@ from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.covsearch.fast_scm import fast_scm_workflow
 from pharmpy.tools.covsearch.samba import samba_workflow
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
@@ -121,7 +120,7 @@ def create_workflow(
     p_backward: float = 0.001,
     max_steps: int = -1,
     algorithm: Literal[
-        'scm-forward', 'scm-forward-then-backward', 'samba-saem', 'samba-foce', 'scm-fastforward'
+        'scm-forward', 'scm-forward-then-backward', 'samba-saem', 'samba-foce'
     ] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -204,23 +203,6 @@ def create_workflow(
             results,
             model,
             max_eval,
-            statsmodels,
-            algorithm,
-            nsamples,
-            weighted_linreg,
-            lin_filter,
-        )
-    if algorithm == "scm-fastforward":
-        return fast_scm_workflow(
-            search_space,
-            max_steps,
-            p_forward,
-            p_backward,
-            results,
-            model,
-            max_eval,
-            strictness,
-            naming_index_offset,
             statsmodels,
             algorithm,
             nsamples,
