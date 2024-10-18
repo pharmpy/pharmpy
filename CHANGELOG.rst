@@ -7,6 +7,8 @@ New features
 * Support `DataFrame` as input to `run_amd`
 * Recognize "HESSIAN OF POSTERIOR DENSITY..." error from NONMEM (issue #3326)
 * Add modeling.replace_fixed_thetas
+* Add two version of the SAMBA method to covsearch
+* Add modeling.get_mu_connected_to_parameter and modeling.has_mu_reference
   
 Changes
 =======
