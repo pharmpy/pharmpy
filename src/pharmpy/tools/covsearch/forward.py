@@ -2,8 +2,6 @@ from dataclasses import replace
 from functools import partial
 from itertools import count
 
-import statsmodels.formula.api as smf
-
 from pharmpy.basic.expr import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -163,6 +161,8 @@ def statsmodels_linear_selection(
     algorithm,
     weighted_linreg,
 ):
+    import statsmodels.formula.api as smf
+
     effect_funcs = linear_state_and_effect.effect_funcs
     search_state = linear_state_and_effect.search_state
     param_cov_list = linear_state_and_effect.param_cov_list

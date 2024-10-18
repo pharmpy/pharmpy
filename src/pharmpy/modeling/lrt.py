@@ -2,9 +2,6 @@ from __future__ import annotations
 
 from typing import Iterable, Union
 
-from statsmodels.regression.linear_model import WLS
-from statsmodels.regression.mixed_linear_model import MixedLM
-
 from pharmpy.deps import numpy as np
 from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
@@ -14,6 +11,9 @@ from pharmpy.workflows import ModelEntry
 def degrees_of_freedom(
     parent: Union[Model, ModelEntry], child: Union[Model, ModelEntry]
 ) -> int | float:
+    from statsmodels.regression.linear_model import WLS
+    from statsmodels.regression.mixed_linear_model import MixedLM
+
     if isinstance(child, ModelEntry):
         child_parameters = len(child.model.parameters)
     elif isinstance(child, WLS):
