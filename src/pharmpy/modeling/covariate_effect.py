@@ -23,8 +23,8 @@ from .data import get_baselines
 from .expressions import (
     depends_on,
     get_individual_parameters,
+    get_mu_connected_to_parameter,
     has_mu_reference,
-    mu_connected_to_parameter,
     remove_covariate_effect_from_statements,
     simplify_model,
 )
@@ -424,7 +424,7 @@ def add_covariate_effect(
     sset = [s for s in covariate_effect.statistic_statements if s not in sset] + sset
 
     if has_mu_reference(model):
-        mu_symbol = mu_connected_to_parameter(model, parameter)
+        mu_symbol = get_mu_connected_to_parameter(model, parameter)
         last_existing_parameter_assignment = sset.find_assignment(mu_symbol)
     else:
         last_existing_parameter_assignment = sset.find_assignment(parameter)

@@ -400,7 +400,7 @@ def has_mu_reference(model: Model) -> bool:
     return True
 
 
-def mu_connected_to_parameter(model: Model, parameter: str):
+def get_mu_connected_to_parameter(model: Model, parameter: str) -> str:
     """Return Mu name connected to parameter
 
     If the given parameter is not dependent on any Mu, None is returned
