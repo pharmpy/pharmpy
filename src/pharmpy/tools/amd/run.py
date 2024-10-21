@@ -125,7 +125,8 @@ def run_amd(
     lloq_limit : float
         Lower limit of quantification. If None LLOQ column from dataset will be used
     allometric_variable: str or Symbol
-        Variable to use for allometry
+        Variable to use for allometry. This option is deprecated.
+        Please use ALLOMETRY in the mfl instead.
     occasion : str
         Name of occasion column
     path : str or Path
@@ -185,6 +186,17 @@ def run_amd(
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
     else:
         ss_mfl = ModelFeatures()
+
+    if ss_mfl.allometry is not None:
+        # Take it out and put back later
+        if allometric_variable is not None:
+            raise ValueError(
+                "Having both allometric_variable and ALLOMETRY in the mfl is not allowed"
+            )
+        mfl_allometry = ss_mfl.allometry
+        ss_mfl = ss_mfl.replace(allometry=None)
+    else:
+        mfl_allometry = None
 
     if modeltype == 'pkpd':
         dv = 2
@@ -337,6 +349,8 @@ def run_amd(
             )
         else:
             modelsearch_features = mfl_parse("ELIMINATION(FO);" "PERIPHERALS(0..2)", True)
+    if mfl_allometry is not None:
+        ss_mfl = ss_mfl.replace(allometry=mfl_allometry)
 
     covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
     if not covsearch_features.covariate:
