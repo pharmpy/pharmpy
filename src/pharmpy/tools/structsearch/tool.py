@@ -26,13 +26,13 @@ TYPES = frozenset(('pkpd', 'drug_metabolite', 'tmdd'))
 
 def create_workflow(
     type: Literal[tuple(TYPES)],
+    model: Model,
+    results: ModelfitResults,
     search_space: Optional[Union[str, ModelFeatures]] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
     ec50_init: Optional[Union[int, float]] = None,
     met_init: Optional[Union[int, float]] = None,
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
     extra_model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: Optional[ModelfitResults] = None,
