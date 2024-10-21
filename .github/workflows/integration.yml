@@ -138,7 +138,14 @@ jobs:
           python-version: 3.12
 
       - name: Run integration tests
-        run: tox -e integration
+        run: tox -e integration -- --basetemp=/tmp/pytest-pharmpy
+
+      - name: Upload failed integration test directories artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+            name: integration-tests-ubuntu
+            path: /tmp/pytest-pharmpy
 
 
   integration-macos:
