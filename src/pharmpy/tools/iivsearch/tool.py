@@ -273,6 +273,8 @@ def run_linearization(context, baseme):
 
 
 def update_linearized_base_model(baseme, input_model, iiv_strategy, param_mapping):
+    if iiv_strategy == 'no_add':
+        return baseme
     added_params = baseme.model.parameters - input_model.parameters
     model = unfix_parameters(baseme.model, added_params.names)
     if iiv_strategy in ('fullblock', 'pd_fullblock'):

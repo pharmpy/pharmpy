@@ -82,7 +82,7 @@ def test_prepare_base_model(
 @pytest.mark.parametrize(
     'iiv_strategy, param_mapping, description',
     [
-        ('no_add', {'ETA_1': 'CL', 'ETA_2': 'VC'}, '[CL]+[VC]'),
+        ('no_add', {'ETA_1': 'CL', 'ETA_2': 'VC'}, ''),
         ('add_diagonal', {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}, '[CL]+[VC]+[MAT]'),
         ('fullblock', {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}, '[CL,VC,MAT]'),
     ],
@@ -100,10 +100,12 @@ def test_update_linearized_base_model(
         model_base = model_start
     me_base = ModelEntry.create(model_base, modelfit_results=res_start)
     me_updated = update_linearized_base_model(me_base, model_start, iiv_strategy, param_mapping)
-    assert not me_updated.modelfit_results
     assert me_updated.model.description == description
     if iiv_strategy != 'no_add':
+        assert not me_updated.modelfit_results
         assert len(model_base.parameters.fixed) > 0
+    else:
+        assert me_updated.modelfit_results
     assert len(me_updated.model.parameters.fixed) == 0
 
 
