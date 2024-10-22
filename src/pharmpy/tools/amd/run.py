@@ -350,7 +350,7 @@ def run_amd(
         else:
             modelsearch_features = mfl_parse("ELIMINATION(FO);" "PERIPHERALS(0..2)", True)
     if mfl_allometry is not None:
-        ss_mfl = ss_mfl.replace(allometry=mfl_allometry)
+        modelsearch_features = modelsearch_features.replace(allometry=mfl_allometry)
 
     covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
     if not covsearch_features.covariate:
