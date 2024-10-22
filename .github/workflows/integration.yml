@@ -145,7 +145,7 @@ jobs:
         if: ${{ failure() }}
         with:
             name: integration-tests-ubuntu
-            path: /tmp/pytest-pharmpy
+            path: /tmp/pytest-of-*
 
 
   integration-macos:
