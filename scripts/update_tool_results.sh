@@ -65,7 +65,7 @@ if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
 fi
 
 if [ "$TOOL" == 'iivsearch' ] || [ "$TOOL" == 'all' ]; then
-  pharmpy run iivsearch $TESTPATH/mox2.mod 'brute_force' --path $TESTPATH/iivsearch/
+  pharmpy run iivsearch $TESTPATH/mox2.mod --algorithm 'top_down_exhaustive' --correlation_algorithm 'top_down_exhaustive' --path $TESTPATH/iivsearch/
   cp_results $TESTPATH/iivsearch/results.json $DEST/iivsearch_results.json
 fi
 
