@@ -159,14 +159,19 @@ def create_step_workflow(
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
     wb.add_task(start_task)
 
-    if (wf_algorithm.name == 'td_exhaustive_no_of_etas' and iiv_strategy != 'no_add') or (
-        wf_algorithm.name == 'bu_stepwise_no_of_etas' and iiv_strategy != 'no_add' and not linearize
-    ):
+    if wf_algorithm.name == 'td_exhaustive_no_of_etas' and iiv_strategy != 'no_add':
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
-        base_model_task = wf_fit.output_tasks[0]
+        base_model_task = [wf_fit.output_tasks[0]]
+    elif wf_algorithm.name == 'bu_stepwise_no_of_etas':
+        base_model_task = []
     else:
-        base_model_task = start_task
+        base_model_task = [start_task]
+
+    if wf_algorithm.name == 'bu_stepwise_no_of_etas':
+        ref_model_name = 'iivsearch_run1'
+    else:
+        ref_model_name = base_model_entry.model.name
 
     wb.insert_workflow(wf_algorithm)
 
@@ -177,7 +182,7 @@ def create_step_workflow(
         cutoff,
         strictness,
         input_model_entry,
-        base_model_entry.model.name,
+        ref_model_name,
         list_of_algorithms,
         ref_model,
         E_p,
@@ -189,7 +194,7 @@ def create_step_workflow(
         stepno,
     )
 
-    post_process_tasks = [base_model_task] + wb.output_tasks
+    post_process_tasks = base_model_task + wb.output_tasks
     wb.add_task(task_result, predecessors=post_process_tasks)
 
     return Workflow(wb)
@@ -391,7 +396,12 @@ def start(
         context.log_info(f"Starting step {algorithm_cur}")
         res = context.call_workflow(wf, f'results_{algorithm}')
 
-        if base_model_entry.model.name in sum_models[-1].index.values:
+        if wf_algorithm.name == 'bu_stepwise_no_of_etas':
+            ref_model_name = 'iivsearch_run1'
+        else:
+            ref_model_name = base_model_entry.model.name
+
+        if ref_model_name in sum_models[-1].index.values:
             summary_models = res.summary_models.drop(base_model_entry.model.name, axis=0)
         else:
             summary_models = res.summary_models
@@ -417,6 +427,8 @@ def start(
         iiv_strategy = 'no_add'
         last_res = res
         no_of_models = len(res.summary_tool) - 1
+        if wf_algorithm.name == 'bu_stepwise_no_of_etas':
+            no_of_models += 1
 
         assert base_model_entry is not None
 
@@ -567,6 +579,13 @@ def post_process(
             base_model_entry = model_entry
         else:
             res_model_entries.append(model_entry)
+
+    if 'bu_stepwise_no_of_etas' in list_of_algorithms:
+        base_model_entry = ModelEntry.create(
+            base_model_entry.model,
+            modelfit_results=base_model_entry.modelfit_results,
+            parent=input_model_entry.model,
+        )
 
     assert len(res_model_entries) > 0
 
