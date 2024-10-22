@@ -276,7 +276,7 @@ def run_amd(
             'residual',
         ]
     elif strategy == 'SIR':
-        order = ['structural', 'iivsearch', 'residual']
+        order = ['structural', 'iivsearch']
     elif strategy == 'SRI':
         order = ['structural', 'residual', 'iivsearch']
     elif strategy == 'RSI':
@@ -520,7 +520,8 @@ def run_amd(
 
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
     next_model_entry = model_entry
-    sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
+    sum_subtools = []
+    sum_models = dict()
     sum_subtools.append(_create_sum_subtool('start', model_entry))
     for tool_name, func in run_subfuncs.items():
         next_model, next_res = next_model_entry.model, next_model_entry.modelfit_results
@@ -529,8 +530,7 @@ def run_amd(
         subresults = func(next_model, next_res)
 
         if subresults is None:
-            sum_models.append(None)
-            sum_inds_counts.append(None)
+            continue
         else:
             final_model = subresults.final_model.replace(name=f"final_{tool_name}")
             final_model_entry = ModelEntry.create(
@@ -560,42 +560,15 @@ def run_amd(
                 next_model = final_model
                 next_model_entry = final_model_entry
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
-            sum_models.append(subresults.summary_models.reset_index())
-            sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
+            sum_models[tool_name] = subresults.summary_models
 
-    for sums in [sum_models, sum_inds_counts]:
-        filtered_results = list(
-            zip(*filter(lambda t: t[1] is not None, zip(list(run_subfuncs.keys()), sums)))
-        )
-
-        if not filtered_results:
-            sum_amd.append(None)
-            continue
-
-        sums = pd.concat(
-            filtered_results[1], keys=list(filtered_results[0]), names=['tool', 'default index']
-        ).reset_index()
-        if 'step' in sums.columns:
-            sums['step'] = sums['step'].fillna(1).astype('int64')
-        else:
-            sums['step'] = 1
-
-        sums.set_index(['tool', 'step', 'model'], inplace=True)
-        sums.drop('default index', axis=1, inplace=True)
-        sum_amd.append(sums)
-
-    summary_models, summary_individuals_count = sum_amd
+    # FIXME: add start model
+    summary_models = _create_model_summary(sum_models)
     summary_tool = _create_tool_summary(sum_subtools)
 
     if summary_models is None:
         warnings.warn(
             'AMDResults.summary_models is None because none of the tools yielded a summary.'
-        )
-
-    if summary_individuals_count is None:
-        warnings.warn(
-            'AMDResults.summary_individuals_count is None because none of the tools yielded '
-            'a summary.'
         )
 
     final_model = next_model_entry.model
@@ -641,7 +614,6 @@ def run_amd(
         final_model=final_model.name,
         summary_tool=summary_tool,
         summary_models=summary_models,
-        summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
         final_model_parameter_estimates=_table_final_parameter_estimates(
             final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
@@ -709,6 +681,17 @@ def _create_sum_subtool(tool_name, selected_model_entry):
         'n_params': len(model.parameters.nonfixed),
         'ofv': res.ofv,
     }
+
+
+def _create_model_summary(summaries):
+    dfs = []
+    for tool_name, df in summaries.items():
+        df = df.reset_index()
+        df['tool'] = [tool_name] * len(df)
+        df.set_index(['tool', 'step', 'model'], inplace=True)
+        dfs.append(df)
+    model_summary = pd.concat(dfs, axis=0)
+    return model_summary
 
 
 def _create_tool_summary(rows):

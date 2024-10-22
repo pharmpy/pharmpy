@@ -307,7 +307,7 @@ def start(
 
     list_of_algorithms = prepare_algorithms(algorithm, correlation_algorithm)
 
-    sum_tools, sum_inds, sum_inds_count, sum_errs = [], [], [], []
+    sum_tools, sum_errs = [], []
     no_of_models = 0
     last_res = None
     final_model_entry = None
@@ -398,8 +398,6 @@ def start(
 
         sum_tools.append(res.summary_tool)
         sum_models.append(summary_models)
-        sum_inds.append(res.summary_individuals)
-        sum_inds_count.append(res.summary_individuals_count)
         sum_errs.append(res.summary_errors)
 
         final_model = res.final_model
@@ -479,8 +477,6 @@ def start(
             sum_tools, keys + [len(keys) + 1]
         ),  # To include step comparing input to final
         summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
-        summary_individuals=_concat_summaries(sum_inds, keys),
-        summary_individuals_count=_concat_summaries(sum_inds_count, keys),
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
         final_results=final_results,

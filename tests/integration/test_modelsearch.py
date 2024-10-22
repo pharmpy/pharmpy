@@ -124,18 +124,3 @@ def test_modelsearch_dummy(
         assert (rundir / 'metadata.json').exists()
         assert (rundir / 'models' / 'modelsearch_run1' / 'model_results.json').exists()
         assert not (rundir / 'models' / 'modelsearch_run1' / 'model.lst').exists()
-
-        summary = res.summary_individuals
-        columns = (
-            'description',
-            'parent_model',
-            'outlier_count',
-            'ofv',
-            'dofv_vs_parent',
-            'predicted_dofv',
-            'predicted_residual',
-        )
-        assert summary is not None
-        assert tuple(summary.columns) == columns
-        assert summary.loc[("input", 110), "parent_model"] is None
-        assert summary.loc[("modelsearch_run1", 110), "parent_model"] == "input"

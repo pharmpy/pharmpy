@@ -38,7 +38,6 @@ from pharmpy.tools.common import (
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
-from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import (
     is_strictness_fulfilled,
@@ -266,8 +265,6 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
 
     res = RUVSearchResults(
         cwres_models=pd.concat(cwres_models),
-        summary_individuals=tables['summary_individuals'],
-        summary_individuals_count=tables['summary_individuals_count'],
         final_model=final_model,
         final_results=model_entry.modelfit_results,
         summary_models=tables['summary_models'],
@@ -289,16 +286,12 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
 
 
 def create_result_tables(model_entries, cutoff, strictness):
-    sumind = summarize_individuals(model_entries)
-    sumcount = summarize_individuals_count_table(df=sumind)
     sum_models = summarize_modelfit_results_from_entries(model_entries)
     sum_models['step'] = list(range(len(sum_models)))
     summf = sum_models.reset_index().set_index(['step', 'model'])
     summary_tool = _create_summary_tool(model_entries, cutoff, strictness)
     summary_errors = summarize_errors_from_entries(model_entries)
     tables = {
-        'summary_individuals': sumind,
-        'summary_individuals_count': sumcount,
         'summary_models': summf,
         'summary_tool': summary_tool,
         'summary_errors': summary_errors,

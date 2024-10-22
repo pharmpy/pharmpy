@@ -5,10 +5,19 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.tools import read_modelfit_results, run_amd
-from pharmpy.tools.amd.run import _mechanistic_cov_extraction, validate_input
+from pharmpy.tools import read_modelfit_results, read_results, run_amd
+from pharmpy.tools.amd.run import _create_model_summary, _mechanistic_cov_extraction, validate_input
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.workflows import default_context
+
+
+def test_create_model_summary(testdata):
+    sum_m = read_results(testdata / 'results' / 'modelsearch_results.json').summary_models
+    sum_i = read_results(testdata / 'results' / 'iivsearch_results.json').summary_models
+
+    summary_models = _create_model_summary({'modelsearch': sum_m, 'iivsearch': sum_i})
+
+    assert len(summary_models) == len(sum_m) + len(sum_i)
 
 
 @pytest.mark.parametrize(

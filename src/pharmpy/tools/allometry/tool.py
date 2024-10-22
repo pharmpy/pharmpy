@@ -10,7 +10,6 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import add_allometry, get_pk_parameters
 from pharmpy.tools.common import ToolResults, update_initial_estimates
-from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -168,14 +167,10 @@ def results(context, start_model_entry, allometry_model_entry):
     best_model, best_model_res = get_best_model(context, start_model_entry, allometry_model_entry)
     context.store_final_model_entry(best_model)
 
-    summods, suminds, sumcount, sumerrs = create_result_tables(
-        start_model_entry, allometry_model_entry
-    )
+    summods, sumerrs = create_result_tables(start_model_entry, allometry_model_entry)
 
     res = AllometryResults(
         summary_models=summods,
-        summary_individuals=suminds,
-        summary_individuals_count=sumcount,
         summary_errors=sumerrs,
         final_model=best_model,
         final_results=best_model_res,
@@ -206,10 +201,8 @@ def create_result_tables(start_model_entry, allometry_model_entry):
     summod = summarize_modelfit_results_from_entries([start_model_entry, allometry_model_entry])
     summod['step'] = [0, 1]
     summods = summod.reset_index().set_index(['step', 'model'])
-    suminds = summarize_individuals([start_model_entry, allometry_model_entry])
-    sumcount = summarize_individuals_count_table(df=suminds)
     sumerrs = summarize_errors_from_entries([start_model_entry, allometry_model_entry])
-    return summods, suminds, sumcount, sumerrs
+    return summods, sumerrs
 
 
 @dataclass(frozen=True)

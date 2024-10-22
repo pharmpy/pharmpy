@@ -19,8 +19,6 @@ from pharmpy.modeling import (
 from pharmpy.tools.run import rank_models, summarize_errors_from_entries
 from pharmpy.workflows import ModelEntry, ModelfitResults, Results
 
-from .funcs import summarize_individuals, summarize_individuals_count_table
-
 DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
 
 RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
@@ -54,8 +52,6 @@ class ToolResults(Results):
     final_model: Optional[Model] = None
     final_results: Optional[ModelfitResults] = None
     models: Sequence[Model] = ()
-    summary_individuals: Optional[pd.DataFrame] = None
-    summary_individuals_count: Optional[pd.DataFrame] = None
     final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
     final_model_dv_vs_pred_plot: Optional[alt.Chart] = None
     final_model_cwres_vs_idv_plot: Optional[alt.Chart] = None
@@ -83,21 +79,9 @@ def create_results(
     summary_tool = summarize_tool(
         cand_model_entries, base_model_entry, rank_type, cutoff, bic_type, strictness, penalties
     )
-    if rank_type == 'lrt':
-        delta_name = 'dofv'
-    elif rank_type == 'mbic':
-        delta_name = 'dbic'
-    else:
-        delta_name = f'd{rank_type}'
-
     base_model = base_model_entry.model
     cand_models = [model_entry.model for model_entry in cand_model_entries]
 
-    summary_individuals, summary_individuals_count = summarize_tool_individuals(
-        [base_model_entry] + cand_model_entries,
-        summary_tool['description'],
-        summary_tool[delta_name],
-    )
     summary_errors = summarize_errors_from_entries([base_model_entry] + cand_model_entries)
 
     if summary_tool['rank'].isnull().all():
@@ -131,8 +115,6 @@ def create_results(
     # FIXME: Remove best_model, input_model, models when there is function to read db
     res = res_class(
         summary_tool=summary_tool,
-        summary_individuals=summary_individuals,
-        summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
         final_model=best_model,
         final_results=final_results,
@@ -205,29 +187,6 @@ def summarize_tool(
 
     assert df_sorted is not None
     return df_sorted
-
-
-def summarize_tool_individuals(
-    mes: Sequence[ModelEntry],
-    description_col: pd.Series,
-    rank_type_col: pd.Series,
-):
-    summary_individuals = summarize_individuals(mes)
-    summary_individuals = summary_individuals.join(description_col, how='inner')
-    col_to_move = summary_individuals.pop('description')
-    summary_individuals.insert(0, 'description', col_to_move)
-
-    suminds_count = summarize_individuals_count_table(df=summary_individuals)
-    if suminds_count is None:
-        summary_individuals_count = None
-    else:
-        suminds_count.insert(0, description_col.name, description_col)
-        suminds_count.insert(1, rank_type_col.name, rank_type_col)
-        suminds_count['parent_model'] = suminds_count.pop('parent_model')
-        summary_individuals_count = suminds_count.sort_values(
-            by=[rank_type_col.name], ascending=False
-        )
-    return summary_individuals, summary_individuals_count
 
 
 def create_plots(model: Model, results: ModelfitResults):
