@@ -1,6 +1,6 @@
 # See issue #20
 # extensions = ['altair.sphinxext.altairplot']
-extensions = ['pharmpy.reporting.altairplot', 'jupyter_sphinx']  # TODO: Remove altairplot
+extensions = ['pharmpy.reporting.altairplot', 'pharmpy.reporting.jupyter_sphinx']  # TODO: Remove altairplot
 html_sidebars = {
     '**': ['localtoc.html'],
 }

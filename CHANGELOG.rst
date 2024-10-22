@@ -34,6 +34,9 @@ Bugfixes
 * Fix crashes in modelsearch when running TMDD and drug metabolite in amd (issue #3203)
 * Now all digits of the OFV for a NONMEM run will be read. Previously only about 13 decimals were read correctly
 * Check for strictness in ruvsearch
+* Fix permission denied error on multi user system for the `jupyter_execute` temp directory. This issue will
+  trigger if multiple users happen to run the report generation at the same time or if a previous run crashed without
+  removing the temp directory.
 
 1.2.0 (2024-08-22)
 ------------------
