@@ -39,9 +39,8 @@ else:
         return logger_adapter
 
 
-import nbformat
-
 import jupyter_sphinx as js
+import nbformat
 
 from .ast import (
     CellOutputNode,
@@ -53,13 +52,7 @@ from .ast import (
     get_widgets,
 )
 from .thebelab import ThebeButtonNode, add_thebelab_library
-from .utils import (
-    blank_nb,
-    default_notebook_names,
-    output_directory,
-    sphinx_abs_dir,
-    split_on,
-)
+from .utils import blank_nb, default_notebook_names, output_directory, sphinx_abs_dir, split_on
 
 
 class JupyterKernel(Directive):

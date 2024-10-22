@@ -1,11 +1,11 @@
 """Inserting interactive links with Thebelab."""
+
 import json
 from pathlib import Path
 
 import docutils
-from docutils.parsers.rst import Directive
-
 import jupyter_sphinx as js
+from docutils.parsers.rst import Directive
 
 
 class ThebeSourceNode(docutils.nodes.container):
