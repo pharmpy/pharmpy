@@ -103,11 +103,6 @@ def test_no_of_etas_linearization(
             correlation_algorithm=correlation_algorithm,
             iiv_strategy=strategy,
         )
-        import pandas as pd
-
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)
-        print(res.summary_tool)
 
         assert res
         # assert len(res.summary_tool) == no_of_candidate_models + 4
