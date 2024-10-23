@@ -36,23 +36,23 @@ def _model_count(rundir: Path):
                 'simulation',
             ],
         ),
-        # (
-        #     'reevaluation',
-        #     [
-        #         'modelfit',
-        #         'modelsearch',
-        #         'iivsearch',
-        #         'ruvsearch',
-        #         'iovsearch',
-        #         'allometry',
-        #         'covsearch_exploratory',
-        #         'covsearch_mechanistic',  # FIXME: Theses two are currently created as empty
-        #         'covsearch_structural',
-        #         'rerun_iivsearch',
-        #         'rerun_ruvsearch',
-        #         'simulation',
-        #     ],
-        # ),
+        (
+            'reevaluation',
+            [
+                'modelfit',
+                'modelsearch',
+                'iivsearch',
+                'ruvsearch',
+                'iovsearch',
+                'allometry',
+                'covsearch_exploratory',
+                'covsearch_mechanistic',  # FIXME: Theses two are currently created as empty
+                'covsearch_structural',
+                'rerun_iivsearch',
+                'rerun_ruvsearch',
+                'simulation',
+            ],
+        ),
     ],
 )
 @pytest.mark.filterwarnings(
@@ -64,11 +64,6 @@ def test_amd_basic(tmp_path, testdata, strategy, subrundir):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
         input = 'moxo_simulated_amd.csv'
-        import pandas as pd
-
-        pd.set_option('display.max_columns', None)
-        pd.set_option('display.max_rows', None)
-
         res = run_amd(
             input,
             modeltype='basic_pk',
