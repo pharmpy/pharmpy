@@ -128,10 +128,10 @@ def create_workflow(
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
-    statsmodels: bool = False,
     nsamples: int = 10,
-    weighted_linreg: bool = False,
-    lin_filter: int = 0,
+    _statsmodels: bool = False,
+    _weighted_linreg: bool = False,
+    _lin_filter: int = 0,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -164,18 +164,21 @@ def create_workflow(
         Strictness criteria
     naming_index_offset : int
         index offset for naming of runs. Default is 0.
-    statsmodels : bool
-        estimation tool for SAMBA linear covariate model fitting. 'True' calls statsmodel's
-        functionalities, whereas 'False' calls nonmem.
     nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         `nsamples=0` uses ETAs to for linear model selection, whereas `nsample`>=1 generates MCMC samples with an
         additional SAEM estimation step. When multiple samples are generated, linear mixed effects model will be
         used to fit the linear models.
         Default is 10, i.e. generating 10 samples per subject
-    weighted_linreg : bool
+    _statsmodels : bool
+        NOTE: This is an experimental option. Do not use.
+        Estimation tool for SAMBA linear covariate model fitting. 'True' calls statsmodel's
+        functionalities, whereas 'False' calls nonmem.
+    _weighted_linreg : bool
+        NOTE: This is an experimental option. Do not use.
         When using nonmem to run linear covariate models, 'True' uses ETC as weight to run WLS.
-    lin_filter : int
+    _lin_filter : int
+        NOTE: This is an experimental option. Do not use.
         Option to control the number of covariates passed to nonlinear selection
          0: pass all LRT positive covariate effects from linear selection step
          1: pass the ones with the largest drop of OFV within each parameter scope
@@ -203,11 +206,11 @@ def create_workflow(
             results,
             model,
             max_eval,
-            statsmodels,
+            _statsmodels,
             algorithm,
             nsamples,
-            weighted_linreg,
-            lin_filter,
+            _weighted_linreg,
+            _lin_filter,
         )
 
     wb = WorkflowBuilder(name=NAME_WF)
