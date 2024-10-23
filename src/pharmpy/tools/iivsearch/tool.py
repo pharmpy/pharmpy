@@ -437,6 +437,33 @@ def start(
     assert last_res is not None
     assert final_model_entry is not None
 
+    if linearize:
+        final_linearized_model = final_model_entry.model
+        dl_wf = create_delinearize_workflow(
+            input_model_entry.model, final_linearized_model, param_mapping, i
+        )
+        dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
+        sum_tool = summarize_tool(
+            [dlin_model_entry],
+            dlin_model_entry,
+            rank_type=rank_type,
+            cutoff=cutoff,
+            bic_type='iiv',
+            strictness=strictness,
+            penalties=None,
+        )
+        sum_model = summarize_modelfit_results_from_entries([dlin_model_entry])
+        last_res = IIVSearchResults(
+            summary_tool=sum_tool,
+            summary_models=sum_model,
+            final_model=dlin_model_entry.model,
+            final_results=dlin_model_entry.modelfit_results,
+        )
+
+        sum_tools.append(sum_tool)
+        sum_models.append(summarize_modelfit_results_from_entries([dlin_model_entry]))
+        final_model_entry = dlin_model_entry
+
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     final_model, final_res = final_model_entry.model, final_model_entry.modelfit_results
 
@@ -473,8 +500,6 @@ def start(
             )
             final_final_model = input_model
 
-    keys = list(range(1, len(applied_algorithms) + 1))
-
     if final_final_model.name == final_model.name:
         final_results = final_res
     elif final_final_model.name == input_model.name:
@@ -484,11 +509,18 @@ def start(
 
     context.store_final_model_entry(final_final_model)
 
+    keys = list(range(1, len(applied_algorithms) + 1))
+    keys_summary_tool = keys + [len(keys) + 1]  # Include step comparing input to final
+    keys_summary_models = [0] + keys  # Include input model
+    if linearize:
+        keys_summary_tool += [len(keys) + 2]
+        keys_summary_models += [len(keys) + 1]
+
     final_results = IIVSearchResults(
         summary_tool=_concat_summaries(
-            sum_tools, keys + [len(keys) + 1]
+            sum_tools, keys_summary_tool
         ),  # To include step comparing input to final
-        summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
+        summary_models=_concat_summaries(sum_models, keys_summary_models),  # To include input model
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
         final_results=final_results,
@@ -622,55 +654,32 @@ def post_process(
         context=context,
     )
 
-    if linearize:
-        final_linearized_model = res.final_model
-        flm_etas = final_linearized_model.random_variables.iiv.names
-        final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
-        final_delinearized_model = delinearize_model(
-            final_linearized_model, input_model_entry.model, final_param_map
-        )
-        final_delinearized_model = final_delinearized_model.replace(
-            name=f'delinearized{stepno}',
-            description=algorithms.create_description(final_delinearized_model),
-        )
-
-        lin_model_entry = ModelEntry.create(
-            model=final_delinearized_model,
-        )
-        dl_wf = WorkflowBuilder(name="delinearization_workflow")
-        l_start = Task("START", _start_algorithm, lin_model_entry)
-        dl_wf.add_task(l_start)
-        fit_wf = create_fit_workflow(n=1)
-        dl_wf.insert_workflow(fit_wf)
-        dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
-
-        res_model_entries.append(dlin_model_entry)
-        res = create_results(
-            IIVSearchResults,
-            input_model_entry,
-            base_model_entry,
-            res_model_entries,
-            rank_type,
-            cutoff,
-            bic_type='iiv',
-            strictness=strictness,
-            context=context,
-        )
-
-        res = replace(
-            res, final_model=dlin_model_entry.model, final_results=dlin_model_entry.modelfit_results
-        )
-        summary_tool = res.summary_tool
-        assert summary_tool is not None
-        summary_tool = modify_summary_tool(res.summary_tool, dlin_model_entry.model.name)
-        res = replace(res, summary_tool=summary_tool)
-        summary_models = summarize_modelfit_results_from_entries(model_entries)
-    else:
-        summary_tool = res.summary_tool
-        assert summary_tool is not None
-        summary_models = summarize_modelfit_results_from_entries(model_entries)
+    summary_tool = res.summary_tool
+    assert summary_tool is not None
+    summary_models = summarize_modelfit_results_from_entries(model_entries)
 
     return replace(res, summary_models=summary_models)
+
+
+def create_delinearize_workflow(input_model, final_model, param_mapping, stepno):
+    flm_etas = final_model.random_variables.iiv.names
+    final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
+    final_delinearized_model = delinearize_model(final_model, input_model, final_param_map)
+    final_delinearized_model = final_delinearized_model.replace(
+        name=f'delinearized{stepno}',
+        description=algorithms.create_description(final_delinearized_model),
+    )
+
+    lin_model_entry = ModelEntry.create(
+        model=final_delinearized_model,
+    )
+    dl_wf = WorkflowBuilder(name="delinearization_workflow")
+    l_start = Task("START", _start_algorithm, lin_model_entry)
+    dl_wf.add_task(l_start)
+    fit_wf = create_fit_workflow(n=1)
+    dl_wf.insert_workflow(fit_wf)
+
+    return dl_wf
 
 
 def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms, E_p, E_q):
