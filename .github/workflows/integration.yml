@@ -258,11 +258,6 @@ jobs:
       - name: Run integration tests
         run: tox -e integration
 
-      - name: Test temp dir
-        run: |
-          ls ${{ runner.temp }}
-          ls ${{ $env:USERPROFILE }}
-
       - name: Upload failed integration test directories artifact
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}
