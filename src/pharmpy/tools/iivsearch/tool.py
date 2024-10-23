@@ -657,7 +657,9 @@ def post_process(
             context=context,
         )
 
-        res = replace(res, final_model=dlin_model_entry.model)
+        res = replace(
+            res, final_model=dlin_model_entry.model, final_results=dlin_model_entry.modelfit_results
+        )
         summary_tool = res.summary_tool
         assert summary_tool is not None
         summary_tool = modify_summary_tool(res.summary_tool, dlin_model_entry.model.name)
