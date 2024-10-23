@@ -30,7 +30,9 @@ def update_initial_estimates(
     if modelfit_results is None:
         return model
     if not modelfit_results.minimization_successful:
-        if modelfit_results.termination_cause != 'rounding_errors':
+        if modelfit_results.termination_cause != 'rounding_errors' or np.isnan(
+            modelfit_results.significant_digits
+        ):
             return model
 
     try:
