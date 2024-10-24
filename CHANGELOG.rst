@@ -1,5 +1,5 @@
-next version
-------------
+1.3.0 (2024-10-24)
+------------------
 
 New features
 ============
@@ -9,7 +9,9 @@ New features
 * Add modeling.replace_fixed_thetas
 * Add two version of the SAMBA method to covsearch
 * Add modeling.get_mu_connected_to_parameter and modeling.has_mu_reference
-  
+* Support percentages for E-value in mBIC calculations
+* Add strict-option in modeling.parameters-functions
+
 Changes
 =======
 
@@ -22,6 +24,11 @@ Changes
   be possible to reproduce sampled values between this version of Pharmpy and the previous
 * Make the default option to remove all in modeling.remove_residuals and modeling.remove_predictions None instead of 'all'
 * Do not allow None for ExecutionStep.tool_option. Instead have an empty frozendict as default
+* Add separate step for delinearized model in IIVSearch results
+* Do not update initial estimates in tools from a model with number of significant digits unreportable
+* Remove influential individual and outlier prediction tables in all tools
+* Run start model in AMD in subcontext
+* Add selected models to AMD models-directory
 
 Bugfixes
 ========
@@ -38,6 +45,14 @@ Bugfixes
   trigger if multiple users happen to run the report generation at the same time or if a previous run crashed without
   removing the temp directory.
 * Make remove_iiv handle cases where multiple assignments to same variable is made. For example when allometry has been added.
+* IIVSearch bottom up algorithm does no longer run the base model
+* Fix issue where delinearized model had the wrong BIC reported in result summary
+* Fix bug where results from input model was not used in linearized workflow in IIVSearch
+* Fix bug where files where not copied from a failed NONMEM run
+* Fix AMD metadata (#3328)
+* Fix bug where strictness was not checked in IOVSearch
+* Fix bug where model files were overwritten if they already existed in model database
+* Calculate mBIC correctly for IOVSearch
 
 1.2.0 (2024-08-22)
 ------------------
