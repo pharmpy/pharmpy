@@ -83,6 +83,8 @@ def test_iivsearch_dummy(
     (
         ('top_down_exhaustive', 'skip', 3, 'fullblock'),
         ('bottom_up_stepwise', 'skip', 4, 'no_add'),
+        # ('bottom_up_stepwise', 'skip', 4, 'fullblock'),
+        ('bottom_up_stepwise', 'skip', 4, 'add_diagonal'),
     ),
 )
 def test_no_of_etas_linearization(
