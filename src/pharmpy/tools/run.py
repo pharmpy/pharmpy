@@ -944,7 +944,10 @@ def is_strictness_fulfilled(
     >>> is_strictness_fulfilled(model, res, "minimization_successful or rounding_errors")
     True
     """
-    assert results is not None, f"results is None for model {model.name}"
+    if results is None:
+        return False
+    # FIXME: We should have the assert instead of the is is None
+    # assert results is not None, f"results is None for model {model.name}"
     if np.isnan(results.ofv):
         return False
     elif strictness == "":
