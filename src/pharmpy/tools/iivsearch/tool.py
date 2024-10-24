@@ -442,16 +442,20 @@ def start(
         dl_wf = create_delinearize_workflow(
             input_model_entry.model, final_linearized_model, param_mapping, i
         )
+        context.log_info('Running delinearized model')
         dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
-        sum_tool = summarize_tool(
-            [dlin_model_entry],
-            dlin_model_entry,
-            rank_type=rank_type,
-            cutoff=cutoff,
-            bic_type='iiv',
-            strictness=strictness,
-            penalties=None,
-        )
+        try:
+            sum_tool = summarize_tool(
+                [dlin_model_entry],
+                dlin_model_entry,
+                rank_type=rank_type,
+                cutoff=cutoff,
+                bic_type='iiv',
+                strictness=strictness,
+                penalties=None,
+            )
+        except ValueError:
+            context.abort_workflow('Delinearized model failed strictness criteria')
         sum_model = summarize_modelfit_results_from_entries([dlin_model_entry])
         last_res = IIVSearchResults(
             summary_tool=sum_tool,
