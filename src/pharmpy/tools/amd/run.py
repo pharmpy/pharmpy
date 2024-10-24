@@ -1046,7 +1046,7 @@ def _subfunc_mechanistic_exploratory_covariates(
     def _run_mechanistic_exploratory_covariates(model, modelfit_results):
         index_offset = 0  # For naming runs
 
-        effects = search_space.convert_to_funcs()
+        effects = search_space.convert_to_funcs(model=model)
 
         if not effects:
             warnings.warn(
