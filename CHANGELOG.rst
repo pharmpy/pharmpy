@@ -37,6 +37,7 @@ Bugfixes
 * Fix permission denied error on multi user system for the `jupyter_execute` temp directory. This issue will
   trigger if multiple users happen to run the report generation at the same time or if a previous run crashed without
   removing the temp directory.
+* Make remove_iiv handle cases where multiple assignments to same variable is made. For example when allometry has been added.
 
 1.2.0 (2024-08-22)
 ------------------

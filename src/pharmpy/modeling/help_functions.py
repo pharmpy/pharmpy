@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import warnings
 
+from pharmpy.basic import Expr
+
 
 def _get_epsilons(model, list_of_eps):
     rvs = model.random_variables
@@ -51,10 +53,18 @@ def _get_etas(model, list_of_etas, include_symbols=False, fixed_allowed=False, i
 
 
 def _get_eta_symbs(eta_str, rvs, sset):
-    try:
-        exp_symbs = sset.find_assignment(eta_str).expression.free_symbols
-    except AttributeError:
-        raise KeyError(f'Symbol "{eta_str}" does not exist')
+    expr = sset.before_odes.full_expression(eta_str)
+    if expr == Expr(eta_str):
+        ass = sset.find_assignment(eta_str)
+        if ass is not None:
+            expr = ass.expression
+        else:
+            raise KeyError(f'Symbol "{eta_str}" does not exist')
+    exp_symbs = expr.free_symbols
+    # try:
+    #    exp_symbs = sset.before_odes.full_expression(eta_str).free_symbols
+    # except AttributeError:
+    #    raise KeyError(f'Symbol "{eta_str}" does not exist')
     return [str(e) for e in exp_symbs.intersection(rvs.etas.free_symbols)]
 
 
