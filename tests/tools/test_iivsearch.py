@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     fix_parameters,
     remove_iiv,
     set_direct_effect,
+    set_name,
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
@@ -28,6 +29,7 @@ from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     create_param_mapping,
     create_workflow,
+    get_ref_model,
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
@@ -498,6 +500,24 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     param_dict = _create_param_dict(model, model.random_variables.iiv)
 
     assert param_dict == param_dict_ref
+
+
+def test_get_ref_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    max_iiv_diag = set_name(model, 'max_iiv_diag')
+    cand = set_name(model, 'cand')
+    cand = remove_iiv(cand, ['VC'])
+    min_iiv = set_name(model, 'min_iiv')
+    min_iiv = remove_iiv(min_iiv, ['VC', 'MAT'])
+    models = [max_iiv_diag, cand, min_iiv]
+    assert get_ref_model(models, 'td_exhaustive_no_of_etas').name == 'max_iiv_diag'
+    assert get_ref_model(models, 'bu_stepwise_no_of_etas').name == 'min_iiv'
+
+    max_iiv_block = set_name(model, 'max_iiv_block')
+    max_iiv_block = create_joint_distribution(max_iiv_block, None)
+    models = [max_iiv_block, max_iiv_diag]
+    assert get_ref_model(models, 'td_exhaustive_block_structure').name == 'max_iiv_block'
 
 
 def test_create_workflow():

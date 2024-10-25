@@ -147,13 +147,9 @@ def create_step_workflow(
     E_q,
     cutoff,
     strictness,
-    list_of_algorithms,
     ref_model,
     keep,
-    linearize,
-    param_mapping,
     context,
-    stepno,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
@@ -168,11 +164,6 @@ def create_step_workflow(
     else:
         base_model_task = [start_task]
 
-    if wf_algorithm.name == 'bu_stepwise_no_of_etas':
-        ref_model_name = 'iivsearch_run1'
-    else:
-        ref_model_name = base_model_entry.model.name
-
     wb.insert_workflow(wf_algorithm)
 
     task_result = Task(
@@ -182,16 +173,12 @@ def create_step_workflow(
         cutoff,
         strictness,
         input_model_entry,
-        ref_model_name,
-        list_of_algorithms,
+        wf_algorithm.name,
         ref_model,
         E_p,
         E_q,
         keep,
-        linearize,
-        param_mapping,
         context,
-        stepno,
     )
 
     post_process_tasks = base_model_task + wb.output_tasks
@@ -385,13 +372,9 @@ def start(
             E_q=E_q,
             cutoff=cutoff,
             strictness=strictness,
-            list_of_algorithms=list_of_algorithms,
             ref_model=base_model,
             keep=keep,
-            linearize=linearize,
-            param_mapping=param_mapping,
             context=context,
-            stepno=i,
         )
         context.log_info(f"Starting step {algorithm_cur}")
         res = context.call_workflow(wf, f'results_{algorithm}')
@@ -479,7 +462,6 @@ def start(
                 base_model,
                 [input_model_entry, final_model_entry],
                 keep=keep,
-                list_of_algorithms=list_of_algorithms,
                 E_p=E_p,
                 E_q=E_q,
             )
@@ -539,6 +521,16 @@ def start(
     return final_results
 
 
+def get_ref_model(models, algorithm):
+    def _no_of_params(model):
+        return len(model.random_variables.iiv.parameter_names)
+
+    if algorithm.startswith('td'):
+        return max(models, key=_no_of_params)
+    else:
+        return min(models, key=_no_of_params)
+
+
 def _concat_summaries(summaries, keys):
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -585,16 +577,12 @@ def post_process(
     cutoff,
     strictness,
     input_model_entry,
-    base_model_name,
-    list_of_algorithms,
+    algorithm,
     ref_model,
     E_p,
     E_q,
     keep,
-    linearize,
-    param_mapping,
     context,
-    stepno,
     *model_entries,
 ):
     res_model_entries = []
@@ -610,13 +598,16 @@ def post_process(
         return result
 
     model_entries = flatten_list(model_entries)
+
+    base_model_name = get_ref_model([me.model for me in model_entries], algorithm).name
+
     for model_entry in model_entries:
         if model_entry.model.name == base_model_name:
             base_model_entry = model_entry
         else:
             res_model_entries.append(model_entry)
 
-    if 'bu_stepwise_no_of_etas' in list_of_algorithms:
+    if algorithm == 'bu_stepwise_no_of_etas':
         base_model_entry = ModelEntry.create(
             base_model_entry.model,
             modelfit_results=base_model_entry.modelfit_results,
@@ -639,9 +630,7 @@ def post_process(
         )
 
     if rank_type == "mbic":
-        penalties = _get_penalties(
-            ref_model, model_entries, keep, list_of_algorithms, E_p=E_p, E_q=E_q
-        )
+        penalties = _get_penalties(ref_model, model_entries, keep, E_p=E_p, E_q=E_q)
     else:
         penalties = None
 
@@ -686,11 +675,11 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno)
     return dl_wf
 
 
-def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms, E_p, E_q):
+def _get_penalties(ref_model, candidate_model_entries, keep, E_p, E_q):
     search_space = []
-    if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
+    if E_p:
         search_space.append('iiv_diag')
-    if any('block' in algorithm for algorithm in list_of_algorithms):
+    if E_q:
         search_space.append('iiv_block')
     penalties = [
         calculate_mbic_penalty(
