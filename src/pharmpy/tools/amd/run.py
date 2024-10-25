@@ -481,7 +481,7 @@ def run_amd(
             else:
                 func = _subfunc_ruvsearch(dv=dv, strictness=strictness, ctx=ctx, dir_name=run_name)
                 run_subfuncs[f'{run_name}'] = func
-        elif section == 'allometry':
+        elif section == 'allometry' and mfl_allometry is not None:
             func = _subfunc_allometry(
                 amd_start_model=model, allometric_variable=allometric_variable, ctx=ctx
             )
@@ -537,28 +537,25 @@ def run_amd(
                 model=final_model, modelfit_results=subresults.final_results, parent=next_model
             )
             ctx.store_model_entry(final_model_entry)
-            if final_model_entry.model.name != next_model.name:
-                if tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]:
-                    cov_before = ModelFeatures.create_from_mfl_string(
-                        get_model_features(final_model)
+            if (mfl_allometry is not None and tool_name == 'modelsearch') or (
+                tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]
+            ):
+                cov_before = ModelFeatures.create_from_mfl_string(get_model_features(next_model))
+                cov_after = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
+                cov_differences = cov_after - cov_before
+                if cov_differences:
+                    covsearch_features = covsearch_features.expand(final_model)
+                    covsearch_features += cov_differences
+                    func = _subfunc_mechanistic_exploratory_covariates(
+                        amd_start_model=model,
+                        search_space=covsearch_features,
+                        strictness=strictness,
+                        mechanistic_covariates=mechanistic_covariates,
+                        ctx=ctx,
                     )
-                    cov_after = ModelFeatures.create_from_mfl_string(
-                        get_model_features(final_model)
-                    )
-                    cov_differences = cov_after - cov_before
-                    if cov_differences:
-                        covsearch_features = covsearch_features.expand(final_model)
-                        covsearch_features += cov_differences
-                        func = _subfunc_mechanistic_exploratory_covariates(
-                            amd_start_model=model,
-                            search_space=covsearch_features,
-                            strictness=strictness,
-                            mechanistic_covariates=mechanistic_covariates,
-                            ctx=ctx,
-                        )
-                        run_subfuncs['covsearch'] = func
-                next_model = final_model
-                next_model_entry = final_model_entry
+                    run_subfuncs['covsearch'] = func
+            next_model = final_model
+            next_model_entry = final_model_entry
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
             sum_models[tool_name] = subresults.summary_models
 
