@@ -481,11 +481,12 @@ def run_amd(
             else:
                 func = _subfunc_ruvsearch(dv=dv, strictness=strictness, ctx=ctx, dir_name=run_name)
                 run_subfuncs[f'{run_name}'] = func
-        elif section == 'allometry' and mfl_allometry is not None:
-            func = _subfunc_allometry(
-                amd_start_model=model, allometric_variable=allometric_variable, ctx=ctx
-            )
-            run_subfuncs['allometry'] = func
+        elif section == 'allometry':
+            if mfl_allometry is not None:
+                func = _subfunc_allometry(
+                    amd_start_model=model, allometric_variable=allometric_variable, ctx=ctx
+                )
+                run_subfuncs['allometry'] = func
         elif section == 'covariates':
             func = _subfunc_mechanistic_exploratory_covariates(
                 amd_start_model=model,
