@@ -57,15 +57,19 @@ def reference_correction_from_psn_vpc(path):
     opts = options_from_command(psn_command(path))
     dv = opts.get('dv', 'DV')
     idv = opts.get('idv', 'TIME')
+    refcorr_idv = opts.get('refcorr_idv', False)
     logdv = bool(int(opts.get('lnDV', '0')))  # NOTE: Not entirely correct
     lower_bound = opts.get('lower_bound', 0.0)
 
     m1 = path / 'm1'
 
     model = read_model(m1 / "vpc_original.mod")
-    have_eta_on_idv = not model.statements.before_odes.full_expression(
-        "CLE"
-    ).free_symbols.isdisjoint(set(model.random_variables.symbols))
+    if refcorr_idv:
+        have_eta_on_idv = not model.statements.before_odes.full_expression(
+            idv
+        ).free_symbols.isdisjoint(set(model.random_variables.symbols))
+    else:
+        have_eta_on_idv = False
 
     origfile_path = m1 / "vpc_original.npctab.dta"
     origfile = NONMEMTableFile(origfile_path)
