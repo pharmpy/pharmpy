@@ -29,6 +29,7 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
     rpcdv_sim = [correct(sim[dv.name], factor, logdv, lb) for sim in simdata]
 
     refdvs = pd.concat((ref[dv.name] for ref in refdata), axis=1)
+    refdvs.columns = range(len(refdvs.columns))  # To get unique column names
     rpcdvs = pd.concat(rpcdv_sim, axis=1)
 
     if logdv:
@@ -36,7 +37,7 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
         rpcdvs_sd = rpcdvs.std(axis=1)
     else:
         refdv_sd = np.log(refdvs - lb).std(axis=1)
-        rpcdvs_sd = np.log(rpcdvs).std(axis=1)
+        rpcdvs_sd = np.log(rpcdvs - lb).std(axis=1)
     var_factor = np.divide(refdv_sd, rpcdvs_sd, out=np.ones_like(refdv_sd), where=rpcdvs_sd != 0.0)
 
     def varcorrect(dv, factor, predref, logdv, lb):
@@ -44,7 +45,7 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
             rpvcdv = predref + (dv - predref) * factor
         else:
             log_predref = np.log(predref - lb)
-            rpvcdv = np.exp(log_predref + (np.log(dv) - log_predref) * factor)
+            rpvcdv = np.exp(log_predref + (np.log(dv - lb) - log_predref) * factor)
         return rpvcdv
 
     rpvcdv = varcorrect(rpcdv, var_factor, predref, logdv, lb)
