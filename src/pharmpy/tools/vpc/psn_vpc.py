@@ -35,24 +35,25 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
         refdv_sd = refdvs.std(axis=1)
         rpcdvs_sd = rpcdvs.std(axis=1)
     else:
-        refdv_sd = np.log(refdvs).std(axis=1)
+        refdv_sd = np.log(refdvs - lb).std(axis=1)
         rpcdvs_sd = np.log(rpcdvs).std(axis=1)
     var_factor = np.divide(refdv_sd, rpcdvs_sd, out=np.ones_like(refdv_sd), where=rpcdvs_sd != 0.0)
 
-    def varcorrect(dv, factor, predref, logdv):
+    def varcorrect(dv, factor, predref, logdv, lb):
         if logdv:
             rpvcdv = predref + (dv - predref) * factor
         else:
-            log_predref = np.log(predref)
+            log_predref = np.log(predref - lb)
             rpvcdv = np.exp(log_predref + (np.log(dv) - log_predref) * factor)
         return rpvcdv
 
-    rpvcdv = varcorrect(rpcdv, var_factor, predref, logdv)
-    rpvcdv_sim = [varcorrect(x, var_factor, predref, logdv) for x in rpcdv_sim]
+    rpvcdv = varcorrect(rpcdv, var_factor, predref, logdv, lb)
+    rpvcdv_sim = [varcorrect(x, var_factor, predref, logdv, lb) for x in rpcdv_sim]
     return rpvcdv, rpvcdv_sim
 
 
 def reference_correction_from_psn_vpc(path):
+    np.seterr(invalid='raise')
     path = Path(path)
     opts = options_from_command(psn_command(path))
     dv = opts.get('dv', 'DV')
