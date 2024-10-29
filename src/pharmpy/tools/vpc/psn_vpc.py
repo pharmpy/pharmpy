@@ -45,7 +45,7 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
             rpvcdv = predref + (dv - predref) * factor
         else:
             log_predref = np.log(predref - lb)
-            rpvcdv = np.exp(log_predref + (np.log(dv - lb) - log_predref) * factor)
+            rpvcdv = lb + np.exp(log_predref + (np.log(dv - lb) - log_predref) * factor)
         return rpvcdv
 
     rpvcdv = varcorrect(rpcdv, var_factor, predref, logdv, lb)
