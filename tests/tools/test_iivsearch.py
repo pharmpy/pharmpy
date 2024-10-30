@@ -29,6 +29,7 @@ from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     create_param_mapping,
     create_workflow,
+    get_mbic_penalties,
     get_ref_model,
     prepare_algorithms,
     prepare_base_model,
@@ -518,6 +519,30 @@ def test_get_ref_model(load_model_for_test, testdata):
     max_iiv_block = create_joint_distribution(max_iiv_block, None)
     models = [max_iiv_block, max_iiv_diag]
     assert get_ref_model(models, 'td_exhaustive_block_structure').name == 'max_iiv_block'
+
+    with pytest.raises(ValueError):
+        get_ref_model([models], 'x')
+
+
+@pytest.mark.parametrize(
+    'as_fullblock, penalties_ref',
+    [
+        (
+            False,
+            [2.77, 1.39, 0],
+        ),
+        (True, [9.36, 3.58, 0]),
+    ],
+)
+def test_get_mbic_penalties(load_model_for_test, testdata, as_fullblock, penalties_ref):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    if as_fullblock:
+        model_base = create_joint_distribution(model_base)
+    cand1 = remove_iiv(model_base, 'VC')
+    cand2 = remove_iiv(model_base, ['VC', 'MAT'])
+
+    penalties = get_mbic_penalties(model_base, [model_base, cand1, cand2], ['CL'], E_p=1, E_q=1)
+    assert [round(p, 2) for p in penalties] == penalties_ref
 
 
 def test_create_workflow():

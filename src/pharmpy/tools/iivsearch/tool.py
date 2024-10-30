@@ -147,7 +147,6 @@ def create_step_workflow(
     E_q,
     cutoff,
     strictness,
-    ref_model,
     keep,
     context,
 ):
@@ -174,7 +173,6 @@ def create_step_workflow(
         strictness,
         input_model_entry,
         wf_algorithm.name,
-        ref_model,
         E_p,
         E_q,
         keep,
@@ -372,7 +370,6 @@ def start(
             E_q=E_q,
             cutoff=cutoff,
             strictness=strictness,
-            ref_model=base_model,
             keep=keep,
             context=context,
         )
@@ -458,9 +455,9 @@ def start(
     final_final_model = last_res.final_model
     if input_res and final_res:
         if rank_type == 'mbic':
-            penalties = _get_penalties(
+            penalties = get_mbic_penalties(
                 base_model,
-                [input_model_entry, final_model_entry],
+                [input_model, final_model],
                 keep=keep,
                 E_p=E_p,
                 E_q=E_q,
@@ -527,8 +524,10 @@ def get_ref_model(models, algorithm):
 
     if algorithm.startswith('td'):
         return max(models, key=_no_of_params)
-    else:
+    elif algorithm.startswith('bu'):
         return min(models, key=_no_of_params)
+    else:
+        raise ValueError(f'Unknown ref model type: {algorithm}')
 
 
 def _concat_summaries(summaries, keys):
@@ -578,7 +577,6 @@ def post_process(
     strictness,
     input_model_entry,
     algorithm,
-    ref_model,
     E_p,
     E_q,
     keep,
@@ -599,10 +597,9 @@ def post_process(
 
     model_entries = flatten_list(model_entries)
 
-    base_model_name = get_ref_model([me.model for me in model_entries], algorithm).name
-
+    base_model = get_ref_model([me.model for me in model_entries], algorithm)
     for model_entry in model_entries:
-        if model_entry.model.name == base_model_name:
+        if model_entry.model.name == base_model.name:
             base_model_entry = model_entry
         else:
             res_model_entries.append(model_entry)
@@ -630,7 +627,12 @@ def post_process(
         )
 
     if rank_type == "mbic":
-        penalties = _get_penalties(ref_model, model_entries, keep, E_p=E_p, E_q=E_q)
+        models = [me.model for me in model_entries]
+        if algorithm == 'bu_stepwise_no_of_etas':
+            ref_model = get_ref_model(models, 'td')
+        else:
+            ref_model = base_model
+        penalties = get_mbic_penalties(ref_model, models, keep, E_p=E_p, E_q=E_q)
     else:
         penalties = None
 
@@ -675,7 +677,7 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno)
     return dl_wf
 
 
-def _get_penalties(ref_model, candidate_model_entries, keep, E_p, E_q):
+def get_mbic_penalties(ref_model, candidate_models, keep, E_p, E_q):
     search_space = []
     if E_p:
         search_space.append('iiv_diag')
@@ -683,9 +685,9 @@ def _get_penalties(ref_model, candidate_model_entries, keep, E_p, E_q):
         search_space.append('iiv_block')
     penalties = [
         calculate_mbic_penalty(
-            me.model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
+            model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
         )
-        for me in candidate_model_entries
+        for model in candidate_models
     ]
     return penalties
 
