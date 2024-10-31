@@ -351,6 +351,8 @@ def start(
                 input_model_entry=input_model_entry,
                 list_of_algorithms=list_of_algorithms,
                 rank_type=rank_type,
+                E_p=E_p,
+                E_q=E_q,
                 keep=keep,
                 param_mapping=param_mapping,
                 clearance_parameter=clearance_parameter,

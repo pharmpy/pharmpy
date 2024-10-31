@@ -19,6 +19,22 @@ from pharmpy.workflows import LocalDirectoryContext
         ('top_down_exhaustive', 'skip', {'iiv_strategy': 'add_diagonal'}, 7, 3, 'input'),
         ('top_down_exhaustive', 'skip', {'iiv_strategy': 'fullblock'}, 7, 9, 'input'),
         ('bottom_up_stepwise', 'skip', {'iiv_strategy': 'fullblock'}, 4, 2, 'iivsearch_run1'),
+        (
+            'top_down_exhaustive',
+            None,
+            {'rank_type': 'mbic', 'E_p': '50%', 'E_q': '50%'},
+            4,
+            2,
+            'iivsearch_run4',
+        ),
+        (
+            'bottom_up_stepwise',
+            None,
+            {'rank_type': 'mbic', 'E_p': '50%', 'E_q': '50%'},
+            8,
+            3,
+            'iivsearch_run8',
+        ),
     ],
 )
 def test_iivsearch_dummy(
