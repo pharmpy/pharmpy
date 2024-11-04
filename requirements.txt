@@ -76,7 +76,7 @@ PyYAML==6.0.2
 pyzmq==26.2.0
 referencing==0.35.1
 requests==2.32.3
-rich==13.9.3
+rich==13.9.4
 rpds-py==0.20.1
 scipy==1.14.1
 six==1.16.0
