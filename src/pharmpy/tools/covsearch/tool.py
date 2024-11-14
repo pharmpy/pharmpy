@@ -301,9 +301,13 @@ def filter_search_space_and_model(search_space, model):
     if isinstance(search_space, str):
         search_space = ModelFeatures.create_from_mfl_string(search_space)
     ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
-
-    # Clean up all covariate effect in model
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
+
+    exploratory_cov_funcs = get_exploratory_covariates(ss_mfl)
+
+    if is_model_in_search_space(model, model_mfl, ss_mfl):
+        return exploratory_cov_funcs, model
+
     # covariate effects not in search space, should be kept as it is
     covariate_to_keep = model_mfl - ss_mfl
     # covariate effects in both model and search space, should be removed for exploration in future searching steps
@@ -334,8 +338,6 @@ def filter_search_space_and_model(search_space, model):
             description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
         filtered_model = filtered_model.replace(description=";".join(description))
 
-    # Exploratory covariates
-    exploratory_cov_funcs = get_exploratory_covariates(ss_mfl)
     return (exploratory_cov_funcs, filtered_model)
 
 
@@ -355,6 +357,9 @@ def is_model_in_search_space(model, model_mfl, cov_mfl):
     model_mfl = ModelFeatures.create_from_mfl_statement_list(
         model_mfl.mfl_statement_list(["covariate"])
     )
+    cov_mfl = ModelFeatures.create_from_mfl_statement_list(
+        cov_mfl.mfl_statement_list(["covariate"])
+    )
 
     def _is_optional(cov):
         return cov.optional == Option(True)
@@ -363,12 +368,17 @@ def is_model_in_search_space(model, model_mfl, cov_mfl):
     cov_struct_mfl = ModelFeatures.create_from_mfl_statement_list(cov_struct)
 
     # Check if all obligatory covariates are in model
-    if model_mfl.contain_subset(cov_struct_mfl, model=model):
-        return True
-    # Check if all covariates in model are in original search space
-    elif model_mfl.covariate and cov_mfl.contain_subset(model_mfl, model=model):
-        return True
-    return False
+    if not model_mfl.contain_subset(cov_struct_mfl, model=model):
+        return False
+    elif model_mfl.covariate:
+        # Check if all covariates in model are in original search space
+        if not cov_mfl.contain_subset(model_mfl, model=model):
+            return False
+        # FIXME: workaround, check if model is simplest model in search space
+        cov_exploratory = cov_mfl - cov_struct_mfl
+        if cov_exploratory.contain_subset(model_mfl, model=model):
+            return False
+    return True
 
 
 def task_greedy_forward_search(
@@ -556,7 +566,6 @@ def perform_step_procedure(
     nonsignificant_effects = {}
 
     for step in steps:
-        print(step, nonsignificant_effects)
         if not candidate_effect_funcs:
             break
         if add_adaptive_step and step == 1:

@@ -63,12 +63,12 @@ def test_validate_input_with_model(load_model_for_test, testdata, model_path):
         (
             [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
             'COVARIATE?([CL,VC],WT,EXP)',
-            True,
+            False,
         ),
         (
             [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
             'COVARIATE([CL,VC],WT,EXP)',
-            True,
+            False,
         ),
         (
             [add_peripheral_compartment, add_allometry],

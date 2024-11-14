@@ -482,7 +482,7 @@ def run_amd(
                 func = _subfunc_ruvsearch(dv=dv, strictness=strictness, ctx=ctx, dir_name=run_name)
                 run_subfuncs[f'{run_name}'] = func
         elif section == 'allometry':
-            if mfl_allometry is not None:
+            if mfl_allometry is None:
                 func = _subfunc_allometry(
                     amd_start_model=model, allometric_variable=allometric_variable, ctx=ctx
                 )
