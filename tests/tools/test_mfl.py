@@ -1488,3 +1488,42 @@ def test_mfl_structsearch(load_model_for_test, pheno_path, source, expected):
     funcs = all_funcs(model, statements)
     keys = funcs.keys()
     assert set(keys) == set(expected)
+
+
+@pytest.mark.parametrize(
+    'search_space_full, search_space_subset, contain_subset',
+    (
+        (
+            'ABSORPTION(ZO);PERIPHERALS(0..1)',
+            'ABSORPTION(ZO);PERIPHERALS(1)',
+            True,
+        ),
+        (
+            'ABSORPTION(ZO);PERIPHERALS(0..1)',
+            'ABSORPTION(ZO);PERIPHERALS(2)',
+            False,
+        ),
+        (
+            'COVARIATE?([CL,VC],WT,EXP)',
+            'COVARIATE(CL,WT,EXP)',
+            True,
+        ),
+        (
+            'LET(CONTINUOUS,[WT]);COVARIATE?(@IIV,@CONTINUOUS,[EXP,LIN])',
+            'COVARIATE(CL,WT,EXP);COVARIATE(V,WT,LIN)',
+            True,
+        ),
+        (
+            'LET(CONTINUOUS,[WT]);COVARIATE?(@IIV,@CONTINUOUS,[EXP,LIN])',
+            'COVARIATE([CL,V],WT,EXP)',
+            True,
+        ),
+    ),
+)
+def test_contain_subset(
+    load_model_for_test, pheno_path, search_space_full, search_space_subset, contain_subset
+):
+    mfl_full = parse(search_space_full, mfl_class=True)
+    mfl_subset = parse(search_space_subset, mfl_class=True)
+    model = load_model_for_test(pheno_path)
+    assert mfl_full.contain_subset(mfl_subset, model=model) == contain_subset
