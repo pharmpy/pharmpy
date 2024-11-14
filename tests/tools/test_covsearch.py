@@ -1,8 +1,15 @@
 from dataclasses import replace
+from functools import partial
 
 import pytest
 
-from pharmpy.modeling import add_covariate_effect, get_covariate_effects, remove_covariate_effect
+from pharmpy.modeling import (
+    add_allometry,
+    add_covariate_effect,
+    add_peripheral_compartment,
+    get_covariate_effects,
+    remove_covariate_effect,
+)
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.covsearch.tool import (
     AdaptiveStep,
@@ -14,9 +21,12 @@ from pharmpy.tools.covsearch.tool import (
     _start,
     create_workflow,
     filter_search_space_and_model,
+    get_exploratory_covariates,
+    is_model_in_search_space,
     task_add_covariate_effect,
     validate_input,
 )
+from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.workflows import ModelEntry, Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
@@ -43,6 +53,53 @@ def test_validate_input():
 def test_validate_input_with_model(load_model_for_test, testdata, model_path):
     model = load_model_for_test(testdata.joinpath(*model_path))
     validate_input(LARGE_VALID_MFL_STRING, model=model)
+
+
+@pytest.mark.parametrize(
+    'funcs, search_space, is_in_search_space',
+    [
+        ([], 'COVARIATE?([CL,VC],WT,EXP)', True),
+        ([], 'COVARIATE([CL,VC],WT,EXP)', False),
+        (
+            [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
+            'COVARIATE?([CL,VC],WT,EXP)',
+            True,
+        ),
+        (
+            [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
+            'COVARIATE([CL,VC],WT,EXP)',
+            True,
+        ),
+        (
+            [add_peripheral_compartment, add_allometry],
+            'COVARIATE([QP1,CL,VC,VP1],WT,POW);COVARIATE?([CL,VC],AGE,[EXP,LIN]);COVARIATE?([CL,VC],SEX,CAT)',
+            True,
+        ),
+    ],
+)
+def test_is_model_in_search_space(
+    load_model_for_test, testdata, funcs, search_space, is_in_search_space
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+
+    ss_mfl = ModelFeatures.create_from_mfl_string(search_space)
+    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
+
+    assert is_model_in_search_space(model, model_mfl, ss_mfl) == is_in_search_space
+
+
+@pytest.mark.parametrize(
+    'search_space, no_of_exploratory_covs',
+    [
+        ('COVARIATE?([CL,VC],WT,EXP)', 2),
+        ('COVARIATE(CL,WT,EXP);COVARIATE?(VC,WT,EXP)', 1),
+    ],
+)
+def test_get_exploratory_covariates(search_space, no_of_exploratory_covs):
+    search_space = ModelFeatures.create_from_mfl_string(search_space)
+    assert len(get_exploratory_covariates(search_space)) == no_of_exploratory_covs
 
 
 @pytest.mark.parametrize(

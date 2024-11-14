@@ -23,7 +23,7 @@ from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
-from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
+from pharmpy.tools.mfl.statement.feature.symbols import Option, Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
@@ -335,15 +335,40 @@ def filter_search_space_and_model(search_space, model):
         filtered_model = filtered_model.replace(description=";".join(description))
 
     # Exploratory covariates
-    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
-    exploratory_cov_funcs = all_funcs(Model(), exploratory_cov)
-    exploratory_cov_funcs = {
-        cov_effect[1:-1]: cov_func
-        for cov_effect, cov_func in exploratory_cov_funcs.items()
-        if cov_effect[-1] == "ADD"
-    }
-
+    exploratory_cov_funcs = get_exploratory_covariates(ss_mfl)
     return (exploratory_cov_funcs, filtered_model)
+
+
+def get_exploratory_covariates(ss_mfl):
+    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
+    cov_funcs = all_funcs(Model(), exploratory_cov)
+    exploratory_cov_funcs = dict()
+    for cov_effect, cov_func in cov_funcs.items():
+        if cov_effect[-1] == "ADD":
+            effect = cov_effect[1:-1]  # Everything except "ADD", e.g. ('CL', 'WT', 'exp', '*')
+            exploratory_cov_funcs[effect] = cov_func
+    return exploratory_cov_funcs
+
+
+def is_model_in_search_space(model, model_mfl, cov_mfl):
+    # FIXME: split into separate function to prep MFLs
+    model_mfl = ModelFeatures.create_from_mfl_statement_list(
+        model_mfl.mfl_statement_list(["covariate"])
+    )
+
+    def _is_optional(cov):
+        return cov.optional == Option(True)
+
+    cov_struct = [cov for cov in cov_mfl.covariate if not _is_optional(cov)]
+    cov_struct_mfl = ModelFeatures.create_from_mfl_statement_list(cov_struct)
+
+    # Check if all obligatory covariates are in model
+    if model_mfl.contain_subset(cov_struct_mfl, model=model):
+        return True
+    # Check if all covariates in model are in original search space
+    elif model_mfl.covariate and cov_mfl.contain_subset(model_mfl, model=model):
+        return True
+    return False
 
 
 def task_greedy_forward_search(
@@ -531,6 +556,7 @@ def perform_step_procedure(
     nonsignificant_effects = {}
 
     for step in steps:
+        print(step, nonsignificant_effects)
         if not candidate_effect_funcs:
             break
         if add_adaptive_step and step == 1:
