@@ -297,17 +297,13 @@ def _init_search_state(
 
 
 def filter_search_space_and_model(search_space, model):
-    filtered_model = model.replace(name="filtered_input_model")
-    if isinstance(search_space, str):
-        search_space = ModelFeatures.create_from_mfl_string(search_space)
-    ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
-
+    ss_mfl, model_mfl = prepare_mfls(model, search_space)
     exploratory_cov_funcs = get_exploratory_covariates(ss_mfl)
 
     if is_model_in_search_space(model, model_mfl, ss_mfl):
         return exploratory_cov_funcs, model
 
+    filtered_model = model.replace(name="filtered_input_model")
     # covariate effects not in search space, should be kept as it is
     covariate_to_keep = model_mfl - ss_mfl
     # covariate effects in both model and search space, should be removed for exploration in future searching steps
@@ -341,6 +337,20 @@ def filter_search_space_and_model(search_space, model):
     return (exploratory_cov_funcs, filtered_model)
 
 
+def prepare_mfls(model, search_space):
+    if isinstance(search_space, str):
+        search_space = ModelFeatures.create_from_mfl_string(search_space)
+    ss_mfl = search_space.expand(model)  # Expand to remove LET/REF
+    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
+
+    ss_mfl = ModelFeatures.create_from_mfl_statement_list(ss_mfl.mfl_statement_list(["covariate"]))
+    model_mfl = ModelFeatures.create_from_mfl_statement_list(
+        model_mfl.mfl_statement_list(["covariate"])
+    )
+
+    return ss_mfl, model_mfl
+
+
 def get_exploratory_covariates(ss_mfl):
     exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
     cov_funcs = all_funcs(Model(), exploratory_cov)
@@ -353,14 +363,6 @@ def get_exploratory_covariates(ss_mfl):
 
 
 def is_model_in_search_space(model, model_mfl, cov_mfl):
-    # FIXME: split into separate function to prep MFLs
-    model_mfl = ModelFeatures.create_from_mfl_statement_list(
-        model_mfl.mfl_statement_list(["covariate"])
-    )
-    cov_mfl = ModelFeatures.create_from_mfl_statement_list(
-        cov_mfl.mfl_statement_list(["covariate"])
-    )
-
     def _is_optional(cov):
         return cov.optional == Option(True)
 

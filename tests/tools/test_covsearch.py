@@ -23,6 +23,7 @@ from pharmpy.tools.covsearch.tool import (
     filter_search_space_and_model,
     get_exploratory_covariates,
     is_model_in_search_space,
+    prepare_mfls,
     task_add_covariate_effect,
     validate_input,
 )
@@ -86,6 +87,9 @@ def test_is_model_in_search_space(
 
     ss_mfl = ModelFeatures.create_from_mfl_string(search_space)
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
+    model_mfl = ModelFeatures.create_from_mfl_statement_list(
+        model_mfl.mfl_statement_list(["covariate"])
+    )
 
     assert is_model_in_search_space(model, model_mfl, ss_mfl) == is_in_search_space
 
@@ -100,6 +104,26 @@ def test_is_model_in_search_space(
 def test_get_exploratory_covariates(search_space, no_of_exploratory_covs):
     search_space = ModelFeatures.create_from_mfl_string(search_space)
     assert len(get_exploratory_covariates(search_space)) == no_of_exploratory_covs
+
+
+@pytest.mark.parametrize(
+    'search_space, no_of_covariates',
+    [
+        ('COVARIATE?([CL,VC],WT,EXP)', 1),
+        (
+            'LET(CONTINUOUS,[AGE,WT]);LET(CATEGORICAL,SEX)\n'
+            'COVARIATE?([CL,VC],@CONTINUOUS,exp,*)\n'
+            'COVARIATE?([CL,VC],@CATEGORICAL,cat,*)',
+            2,
+        ),
+    ],
+)
+def test_prepare_mfls(load_model_for_test, testdata, search_space, no_of_covariates):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    ss_mfl, model_mfl = prepare_mfls(model, search_space)
+    assert model_mfl.absorption is None
+    assert len(ss_mfl.covariate) == no_of_covariates
+    assert prepare_mfls(model, ss_mfl)[0] == ss_mfl
 
 
 @pytest.mark.parametrize(
