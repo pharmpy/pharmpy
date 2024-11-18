@@ -13,6 +13,7 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Model,
+    get_and_check_odes,
     output,
 )
 from pharmpy.modeling import get_central_volume_and_clearance
@@ -27,7 +28,11 @@ DV_TYPES = ('drug', 'drug_tot', 'target', 'target_tot', 'complex')
 
 
 def set_tmdd(
-    model: Model, type: Literal[TMDD_TYPE], dv_types: Optional[dict[Literal[DV_TYPES], int]] = None
+    model: Model,
+    type: Literal['full', 'ib', 'cr', 'crib', 'qss', 'wagner', 'mmapp'],
+    dv_types: Optional[
+        dict[Literal['drug', 'drug_tot', 'target', 'target_tot', 'complex'], int]
+    ] = None,
 ):
     """Sets target mediated drug disposition
 
@@ -69,12 +74,12 @@ def set_tmdd(
     if dv_types is not None:
         _validate_dv_types(dv_types)
 
-    type = type.upper()
+    uptype = type.upper()
 
     model = _replace_trivial_redefinitions(model)
     model = set_first_order_elimination(model)
 
-    odes = model.statements.ode_system
+    odes = get_and_check_odes(model)
     central = odes.central_compartment
     cb = CompartmentalSystemBuilder(odes)
 
@@ -87,7 +92,7 @@ def set_tmdd(
 
     y_symbol = _get_y_symbol(model)
 
-    if type == "FULL":
+    if uptype == "FULL":
         model, kon, koff, kdeg = _create_parameters(model, ['KON', 'KOFF', 'KDEG'])
         target_comp, complex_comp = _create_compartments(cb, ['TARGET', 'COMPLEX'])
         ksyn, ksyn_ass = _create_ksyn()
@@ -103,7 +108,7 @@ def set_tmdd(
 
         before = model.statements.before_odes + ksyn_ass
         after = model.statements.after_odes
-    elif type == "IB":
+    elif uptype == "IB":
         model, kdeg, kon = _create_parameters(model, ['KDEG', 'KON'])
         target_comp, complex_comp = _create_compartments(cb, ['TARGET', 'COMPLEX'])
         ksyn, ksyn_ass = _create_ksyn()
@@ -116,7 +121,7 @@ def set_tmdd(
 
         before = model.statements.before_odes + ksyn_ass
         after = model.statements.after_odes
-    elif type == "CR":
+    elif uptype == "CR":
         model, kon, koff = _create_parameters(model, ['KON', 'KOFF'])
         complex_comp = _create_compartments(cb, ['COMPLEX'])
 
@@ -126,7 +131,7 @@ def set_tmdd(
 
         before = model.statements.before_odes
         after = model.statements.after_odes
-    elif type == "CRIB":
+    elif uptype == "CRIB":
         model, kon = _create_parameters(model, ['KON'])
         complex_comp = _create_compartments(cb, ['COMPLEX'])
 
@@ -136,7 +141,7 @@ def set_tmdd(
 
         before = model.statements.before_odes
         after = model.statements.after_odes
-    elif type == "QSS":
+    elif uptype == "QSS":
         model, kdc, kdeg = _create_parameters(model, ['KDC', 'KDEG'])
         target_comp = _create_compartments(cb, ['TARGET'])
 
@@ -243,7 +248,7 @@ def set_tmdd(
             after = after.reassign(y_symbol, ipred)
         else:
             raise ValueError('More than 2 peripheral compartments are not supported.')
-    elif type == 'WAGNER':
+    elif uptype == 'WAGNER':
         model, km = _create_parameters(model, ['KM'])
 
         kel = odes.get_flow(central, output)
@@ -310,7 +315,7 @@ def set_tmdd(
         after = lafree_final + model.statements.after_odes
         ipred = lafreef / vc
         after = after.reassign(y_symbol, ipred)
-    elif type == 'MMAPP':
+    elif uptype == 'MMAPP':
         model, km, kdeg = _create_parameters(model, ['KM', 'KDEG'])
         target_comp = _create_compartments(cb, ['TARGET'])
         ksyn, ksyn_ass = _create_ksyn()
@@ -330,9 +335,9 @@ def set_tmdd(
         raise ValueError(f'Unknown TMDD type "{type}".')
 
     model = model.replace(statements=before + CompartmentalSystem(cb) + after)
-    if type not in ('CR', 'CRIB', 'WAGNER', 'MMAPP'):
+    if uptype not in ('CR', 'CRIB', 'WAGNER', 'MMAPP'):
         model = set_initial_condition(model, "TARGET", r_0 * vc)
-    if type == 'MMAPP':
+    if uptype == 'MMAPP':
         model = set_initial_condition(model, "TARGET", r_0)
 
     # Multiple DVs:
@@ -341,7 +346,7 @@ def set_tmdd(
             raise ValueError('No dataset connected to model.')
         if 'dvid' not in model.datainfo.types and 'DVID' not in model.dataset.columns:
             raise ValueError("DVID column in dataset is needed when using dv_types.")
-        if type in ('FULL', 'IB'):
+        if uptype in ('FULL', 'IB'):
             if 'drug_tot' in dv_types.keys():
                 new_y = (central.amount + complex_comp.amount) / vc
                 after = model.statements.after_odes
@@ -372,7 +377,7 @@ def set_tmdd(
                 model = model.replace(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
-        elif type == 'QSS':
+        elif uptype == 'QSS':
             if 'drug_tot' in dv_types.keys():
                 new_y = central.amount / vc
                 after = model.statements.after_odes
@@ -403,7 +408,7 @@ def set_tmdd(
                 model = model.replace(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
-        elif type == 'MMAPP':
+        elif uptype == 'MMAPP':
             if 'target' in dv_types.keys():
                 y_target = Expr.symbol("Y_TARGET")
                 ytarget = Assignment.create(y_target, target_comp.amount / vc)
@@ -418,7 +423,7 @@ def set_tmdd(
                 model = model.replace(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
-        elif type in ('CR', 'CRIB'):
+        elif uptype in ('CR', 'CRIB'):
             if 'drug_tot' in dv_types.keys():
                 new_y = (central.amount + complex_comp.amount) / vc
                 after = model.statements.after_odes
@@ -433,7 +438,7 @@ def set_tmdd(
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
-        elif type == 'WAGNER':
+        elif uptype == 'WAGNER':
             if 'drug_tot' in dv_types.keys():
                 new_y = central.amount / vc
                 after = model.statements.after_odes
