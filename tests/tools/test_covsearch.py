@@ -20,7 +20,7 @@ from pharmpy.tools.covsearch.tool import (
     _greedy_search,
     _start,
     create_workflow,
-    filter_search_space_and_model,
+    get_effect_funcs_and_base_model,
     get_exploratory_covariates,
     is_model_in_search_space,
     prepare_mfls,
@@ -242,7 +242,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
     orig_cov = get_covariate_effects(model)
     assert len(orig_cov) == 3
 
-    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    eff, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     assert len(eff) == 2
     expected_cov_eff = set((('CL', 'APGR', 'cat', '*'), ('V', 'APGR', 'cat', '*')))
     assert set(eff.keys()) == expected_cov_eff
@@ -254,7 +254,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
     model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
     assert len(get_covariate_effects(model)) == 1
     search_space = 'COVARIATE([CL, V],WGT,pow,*)'
-    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    eff, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     assert len(get_covariate_effects(filtered_model)) == 2
     assert len(eff) == 0
 
@@ -265,7 +265,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
     model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
     assert len(get_covariate_effects(model)) == 1
     search_space = 'COVARIATE?([CL, V], WGT, pow, *)'
-    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    eff, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     assert len(get_covariate_effects(filtered_model)) == 0
     assert len(eff) == 2
 
@@ -349,7 +349,7 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     modelres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
 
-    candidate_effect_funcs, start = filter_search_space_and_model(search_space, model)
+    candidate_effect_funcs, start = get_effect_funcs_and_base_model(search_space, model)
     start = _start(start, modelres, False)
     candidate = Candidate(start, ())
     state = SearchState(start, start, candidate, [candidate])
@@ -370,7 +370,6 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
             best_candidate = c
 
     for c in res.all_candidates_so_far:
-        print(c.modelentry.modelfit_results.ofv, c.steps)
         if len(c.steps) == 1:
             assert (
                 best_candidate.modelentry.modelfit_results.ofv <= c.modelentry.modelfit_results.ofv

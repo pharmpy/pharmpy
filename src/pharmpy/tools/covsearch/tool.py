@@ -219,7 +219,7 @@ def create_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     start_task = Task("create_modelentry", _start, model, results)
     wb.add_task(start_task, predecessors=store_task)
-    init_task = Task("init", _init_search_state, search_space, algorithm)
+    init_task = Task("init", _init_search_state, search_space)
     wb.add_task(init_task, predecessors=start_task)
 
     forward_search_task = Task(
@@ -281,22 +281,24 @@ def _start(model, results, max_eval):
 
 
 def _init_search_state(
-    context, search_space: str, algorithm: str, modelentry: ModelEntry
-) -> SearchState:
+    context, search_space: Union[str, ModelFeatures], modelentry: ModelEntry
+) -> tuple[dict[tuple[str], callable], SearchState]:
     model = modelentry.model
-    effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
+    effect_funcs, base_model = get_effect_funcs_and_base_model(search_space, model)
 
-    if filtered_model != model:
-        filtered_modelentry = ModelEntry.create(model=filtered_model)
-        filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
-        filtered_modelentry = context.call_workflow(filtered_fit_wf, 'fit_filtered_model')
+    if base_model != model:
+        base_modelentry = ModelEntry.create(model=base_model)
+        base_fit_wf = create_fit_workflow(modelentries=[base_modelentry])
+        base_modelentry = context.call_workflow(base_fit_wf, 'fit_filtered_model')
     else:
-        filtered_modelentry = modelentry
-    candidate = Candidate(filtered_modelentry, ())
-    return (effect_funcs, SearchState(modelentry, filtered_modelentry, candidate, [candidate]))
+        base_modelentry = modelentry
+    base_candidate = Candidate(base_modelentry, ())
+    search_state_init = SearchState(modelentry, base_modelentry, base_candidate, [base_candidate])
+
+    return effect_funcs, search_state_init
 
 
-def filter_search_space_and_model(search_space, model):
+def get_effect_funcs_and_base_model(search_space, model):
     ss_mfl, model_mfl = prepare_mfls(model, search_space)
     exploratory_cov_funcs = get_exploratory_covariates(ss_mfl)
 
