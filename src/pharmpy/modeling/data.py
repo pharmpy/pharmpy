@@ -13,7 +13,14 @@ from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
-from pharmpy.model import ColumnInfo, CompartmentalSystem, DataInfo, DatasetError, Model
+from pharmpy.model import (
+    ColumnInfo,
+    CompartmentalSystem,
+    DataInfo,
+    DatasetError,
+    Model,
+    get_and_check_dataset,
+)
 from pharmpy.model.model import update_datainfo
 
 from .iterators import resample_data
@@ -39,8 +46,9 @@ def get_ids(model: Model) -> list[int]:
     >>> get_ids(model)      # doctest: +ELLIPSIS
     [1, 2, 3, ..., 57, 58, 59]
     """
+    df = get_and_check_dataset(model)
     idcol = model.datainfo.id_column.name
-    ids = list(int(x) for x in model.dataset[idcol].unique())
+    ids = list(int(x) for x in df[idcol].unique())
     return ids
 
 
@@ -266,13 +274,15 @@ def get_observations(model: Model, keep_index: bool = False) -> pd.Series:
     idvcol = model.datainfo.idv_column.name
     dvcol = model.datainfo.dv_column.name
 
+    df = get_and_check_dataset(model)
+
     if label:
-        df = model.dataset.query(f'{label} == 0')
+        df = df.query(f'{label} == 0')
         if df.empty:
-            df = model.dataset.astype({label: 'float'})
+            df = df.astype({label: 'float'})
             df = df.query(f'{label} == 0')
     else:
-        df = model.dataset.copy()
+        df = df.copy()
 
     if not keep_index:
         df = df[[idcol, idvcol, dvcol]]
@@ -675,7 +685,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
     idv = model.datainfo.idv_column.name
     idcol = model.datainfo.id_column.name
 
-    df = model.dataset.copy()
+    df = get_and_check_dataset(model).copy()
 
     try:
         event = model.datainfo.typeix['event'][0].name
@@ -824,7 +834,7 @@ def get_mdv(model: Model):
     else:
         label = model.datainfo.dv_column.name
 
-    data = model.dataset[label].astype('float64').squeeze()
+    data = get_and_check_dataset(model)[label].astype('float64').squeeze()
 
     series = data.where(data == 0, other=1) if found else pd.Series(np.zeros(len(data)))
 
@@ -1105,7 +1115,7 @@ def add_time_after_dose(model: Model):
     temp = translate_nmtran_time(model)
     idv = temp.datainfo.idv_column.name
     idlab = temp.datainfo.id_column.name
-    df = model.dataset.copy()
+    df = get_and_check_dataset(model).copy()
     df['_NEWTIME'] = temp.dataset[idv]
 
     try:
@@ -1185,7 +1195,7 @@ def get_concentration_parameters_from_data(model: Model):
     """
     model = add_time_after_dose(model)
     doseid = get_doseid(model)
-    df = model.dataset.copy()
+    df = get_and_check_dataset(model).copy()
     df['DOSEID'] = doseid
     idlab = model.datainfo.id_column.name
     dv = model.datainfo.dv_column.name
@@ -1247,7 +1257,8 @@ def drop_dropped_columns(model: Model):
         for colname in datainfo.names
         if datainfo[colname].drop and datainfo[colname].datatype != 'nmtran-date'
     ]
-    todrop += list(set(model.dataset.columns) - set(datainfo.names))
+    df = get_and_check_dataset(model)
+    todrop += list(set(df.columns) - set(datainfo.names))
     model = drop_columns(model, todrop)
     return model.update_source()
 
@@ -1297,7 +1308,7 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
             newcols.append(col)
     replace_dict = {'datainfo': di.replace(columns=newcols)}
     if to_drop:
-        df = model.dataset.copy()
+        df = get_and_check_dataset(model).copy()
         replace_dict['dataset'] = df.drop(to_drop, axis=1)
     model = model.replace(**replace_dict)
     return model.update_source()
@@ -1510,7 +1521,7 @@ def _loq_mask(
         raise ValueError("Cannot specify blq and lloq at the same time")
     if alq and uloq:
         raise ValueError("Cannot specify alq and uloq at the same time")
-    df = model.dataset
+    df = get_and_check_dataset(model)
     if lloq is not None or uloq is not None:
         dv = model.datainfo.dv_column.name
     mdv = get_mdv(model)
@@ -1536,7 +1547,7 @@ def remove_loq_data(
     uloq: Optional[Union[float, str]] = None,
     blq: Optional[str] = None,
     alq: Optional[str] = None,
-    keep: Optional[int] = 0,
+    keep: int = 0,
 ):
     """Remove loq data records from the dataset
 
@@ -1577,7 +1588,7 @@ def remove_loq_data(
 
     """
     which_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
-    df = model.dataset
+    df = get_and_check_dataset(model)
     if keep > 0:
         idcol = model.datainfo.id_column.name
         keep_df = pd.DataFrame(
@@ -2307,8 +2318,9 @@ def bin_observations(
 
     """
 
+    df = get_and_check_dataset(model)
     observations = get_observations(model, keep_index=True)
-    obs = model.dataset.loc[observations.index]
+    obs = df.loc[observations.index]
     idv = model.datainfo.idv_column.name
     sorted_idvs = obs[idv].sort_values()
     method_lower = method.lower()
