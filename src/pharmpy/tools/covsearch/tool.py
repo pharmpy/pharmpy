@@ -806,6 +806,7 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     res = replace(
         res,
         final_model=best_modelentry.model,
+        final_results=best_modelentry.modelfit_results,
         steps=steps,
         candidate_summary=candidate_summary_dataframe(steps),
         ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
