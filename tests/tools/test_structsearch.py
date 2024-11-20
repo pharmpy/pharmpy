@@ -116,7 +116,11 @@ def test_create_remaining_models_multiple_dvs(load_example_model_for_test):
 
 
 def test_pkpd(load_model_for_test, testdata):
-    search_space = "DIRECTEFFECT(*); EFFECTCOMP(*); INDIRECTEFFECT(*,*)"
+    search_space = (
+        "DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);"
+        "EFFECTCOMP([LINEAR,EMAX,SIGMOID]);"
+        "INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],*)"
+    )
     res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
     ests = res.parameter_estimates
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
