@@ -592,37 +592,16 @@ def perform_step_procedure(
         new_candidate_modelentries = list(
             map(lambda candidate: candidate.modelentry, new_candidates)
         )
-
-        parent_modelentry = best_candidate_so_far.modelentry
-        ofvs = [
-            (
-                np.nan
-                if modelentry.modelfit_results is None
-                or not is_strictness_fulfilled(
-                    modelentry.model, modelentry.modelfit_results, strictness
-                )
-                else modelentry.modelfit_results.ofv
-            )
-            for modelentry in new_candidate_modelentries
-        ]
         # NOTE: We assume parent_modelentry.modelfit_results is not None
+        parent_modelentry = best_candidate_so_far.modelentry
         assert parent_modelentry.modelfit_results is not None
-        best_model_so_far = lrt_best_of_many(
-            parent_modelentry,
-            new_candidate_modelentries,
-            parent_modelentry.modelfit_results.ofv,
-            ofvs,
-            alpha,
+
+        best_candidate_so_far = get_best_candidate_so_far(
+            parent_modelentry, new_candidate_modelentries, all_candidates_so_far, strictness, alpha
         )
 
-        if best_model_so_far is parent_modelentry:
+        if best_candidate_so_far.modelentry is parent_modelentry:
             break
-
-        best_candidate_so_far = next(
-            filter(
-                lambda candidate: candidate.modelentry is best_model_so_far, all_candidates_so_far
-            )
-        )
 
         # TODO : Find all non-significant models and stash the most recently added effect
         if adaptive_scope_reduction:
@@ -646,27 +625,61 @@ def perform_step_procedure(
                         nonsignificant_effects[key] = candidate_effect_funcs[key]
 
         # NOTE: Filter out incompatible effects
-
-        # Filter effects with same parameter or covariate
         last_step_effect = best_candidate_so_far.steps[-1].effect
-
-        candidate_effect_funcs = {
-            effect_description: effect_func
-            for effect_description, effect_func in candidate_effect_funcs.items()
-            if effect_description[0] != last_step_effect.parameter
-            or effect_description[1] != last_step_effect.covariate
-        }
-
-        # Filter away any stashed effects as well
-        nonsig_param_cov_eff = tuple((eff[0], eff[1]) for eff in nonsignificant_effects.keys())
-
-        candidate_effect_funcs = {
-            effect_description: effect_func
-            for effect_description, effect_func in candidate_effect_funcs.items()
-            if (effect_description[0], effect_description[1]) not in nonsig_param_cov_eff
-        }
+        candidate_effect_funcs = filter_effects(
+            candidate_effect_funcs, last_step_effect, nonsignificant_effects
+        )
 
     return nonsignificant_effects, all_candidates_so_far, best_candidate_so_far
+
+
+def get_best_candidate_so_far(
+    parent_modelentry, new_candidate_modelentries, all_candidates_so_far, strictness, alpha
+):
+    ofvs = [
+        (
+            np.nan
+            if modelentry.modelfit_results is None
+            or not is_strictness_fulfilled(
+                modelentry.model, modelentry.modelfit_results, strictness
+            )
+            else modelentry.modelfit_results.ofv
+        )
+        for modelentry in new_candidate_modelentries
+    ]
+    best_model_so_far = lrt_best_of_many(
+        parent_modelentry,
+        new_candidate_modelentries,
+        parent_modelentry.modelfit_results.ofv,
+        ofvs,
+        alpha,
+    )
+
+    best_candidate_so_far = next(
+        filter(lambda candidate: candidate.modelentry is best_model_so_far, all_candidates_so_far)
+    )
+
+    return best_candidate_so_far
+
+
+def filter_effects(effect_funcs, last_step_effect, nonsignificant_effects):
+    candidate_effect_funcs = {
+        effect_description: effect_func
+        for effect_description, effect_func in effect_funcs.items()
+        if effect_description[0] != last_step_effect.parameter
+        or effect_description[1] != last_step_effect.covariate
+    }
+
+    # Filter away any stashed effects as well
+    nonsig_param_cov_eff = tuple((eff[0], eff[1]) for eff in nonsignificant_effects.keys())
+
+    candidate_effect_funcs = {
+        effect_description: effect_func
+        for effect_description, effect_func in candidate_effect_funcs.items()
+        if (effect_description[0], effect_description[1]) not in nonsig_param_cov_eff
+    }
+
+    return candidate_effect_funcs
 
 
 def wf_effects_addition(

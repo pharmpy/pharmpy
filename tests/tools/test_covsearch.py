@@ -15,11 +15,14 @@ from pharmpy.tools.covsearch.tool import (
     AdaptiveStep,
     AddEffect,
     Candidate,
+    Effect,
     ForwardStep,
     SearchState,
     _greedy_search,
     _start,
     create_workflow,
+    filter_effects,
+    get_best_candidate_so_far,
     get_effect_funcs_and_base_model,
     get_exploratory_covariates,
     is_model_in_search_space,
@@ -104,6 +107,24 @@ def test_is_model_in_search_space(
 def test_get_exploratory_covariates(search_space, no_of_exploratory_covs):
     search_space = ModelFeatures.create_from_mfl_string(search_space)
     assert len(get_exploratory_covariates(search_space)) == no_of_exploratory_covs
+
+
+def test_filter_effects():
+    search_space = 'COVARIATE?([CL,VC],[WT,AGE],EXP)'
+    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    effect_funcs = get_exploratory_covariates(mfl)
+    assert len(effect_funcs) == 4
+    effect_args_1 = ('CL', 'WT', 'exp', '*')
+    last_effect = Effect(*effect_args_1)
+    filtered_1 = filter_effects(effect_funcs, last_effect, {})
+    assert len(filtered_1) == 3
+    assert effect_args_1 in effect_funcs.keys()
+    assert effect_args_1 not in filtered_1.keys()
+    nonsignificant_effects = {effect_args_1: effect_funcs[effect_args_1]}
+    effect_args_2 = ('CL', 'AGE', 'exp', '*')
+    last_effect = Effect(*effect_args_2)
+    filtered_2 = filter_effects(effect_funcs, last_effect, nonsignificant_effects)
+    assert len(filtered_2) == 2
 
 
 @pytest.mark.parametrize(
@@ -388,3 +409,29 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
             assert (
                 c.modelentry.modelfit_results.ofv > best_candidate.modelentry.modelfit_results.ofv
             )
+
+
+def test_get_best_model_so_far(load_model_for_test, testdata, model_entry_factory):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    params = ['CL', 'V', 'MAT']
+    kwargs = {'covariate': 'WT', 'effect': 'exp', 'operation': '*'}
+    funcs = [partial(add_covariate_effect, parameter=p, **kwargs) for p in params]
+    cov_funcs = [funcs, funcs[1:2], [funcs[2]]]
+
+    p_value = 0.01
+    strictness = 'minimization_successful'
+    parent_model_entry = ModelEntry(model, modelfit_results=modelres)
+    candidates = [Candidate(parent_model_entry, steps=tuple())]
+    for i, funcs in enumerate(cov_funcs, 1):
+        new_cands = [func(model=parent_model_entry.model) for func in funcs]
+        cand_model_entries = model_entry_factory(new_cands, parent_model_entry.modelfit_results.ofv)
+        # Attribute Steps are not relevant to this test
+        candidates.extend([Candidate(me, steps=()) for me in cand_model_entries])
+        best_candidate_so_far = get_best_candidate_so_far(
+            parent_model_entry, cand_model_entries, candidates, strictness, p_value
+        )
+        model_entry_lowest_ofv = min(cand_model_entries, key=lambda me: me.modelfit_results.ofv)
+        assert best_candidate_so_far.modelentry == model_entry_lowest_ofv
+        parent_model_entry = best_candidate_so_far.modelentry
