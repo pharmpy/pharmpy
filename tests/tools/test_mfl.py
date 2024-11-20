@@ -1468,6 +1468,8 @@ def test_replace_features(load_model_for_test, pheno_path, search_space, expecte
                 ('DIRECT', 'LINEAR'),
                 ('DIRECT', 'EMAX'),
                 ('DIRECT', 'SIGMOID'),
+                ('DIRECT', 'STEP'),
+                ('DIRECT', 'LOGLIN'),
                 ('EFFECTCOMP', 'LINEAR'),
                 ('EFFECTCOMP', 'EMAX'),
                 ('EFFECTCOMP', 'SIGMOID'),
