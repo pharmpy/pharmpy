@@ -6,12 +6,12 @@ from lark.visitors import Interpreter
 from .feature import ModelFeature, feature
 from .symbols import Name, Wildcard
 
-EFFECTCOMP_WILDCARD = tuple([Name(x) for x in ('LINEAR', 'EMAX', 'SIGMOID')])
+EFFECTCOMP_WILDCARD = tuple([Name(x) for x in ('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN')])
 
 
 @dataclass(frozen=True)
 class EffectComp(ModelFeature):
-    modes: Union[tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
+    modes: Union[tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN']], ...], Wildcard]
 
     def __add__(self, other):
         if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):
