@@ -297,7 +297,10 @@ def run_amd(
         if len(structsearch_features.mfl_statement_list()) == 0:
             if modeltype == 'pkpd':
                 structsearch_features = mfl_parse(
-                    "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)", True
+                    "DIRECTEFFECT([LINEAR, EMAX, SIGMOID]);"
+                    "EFFECTCOMP([LINEAR, EMAX, SIGMOID]);"
+                    "INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)",
+                    True,
                 )
             else:
                 if administration in ['oral', 'ivoral']:
