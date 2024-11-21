@@ -2380,4 +2380,8 @@ def _get_bin_edges_psn(data, n_bins):
             bin_index += 1
             local_error = -ideal_count[bin_index] + obs
 
+    # FIXME: This is a trick to not have 0 and 0
+    if len(bin_ceilings) > 1 and bin_ceilings[0] == bin_ceilings[1]:
+        bin_ceilings[1] += 0.00000001
+
     return bin_ceilings
