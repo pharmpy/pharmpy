@@ -1306,7 +1306,7 @@ def validate_input(
     met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
-    lloq_limit: Optional[str] = None,
+    lloq_limit: Optional[float] = None,
     allometric_variable: Optional[TSymbol] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,

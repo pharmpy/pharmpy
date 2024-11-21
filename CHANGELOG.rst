@@ -8,6 +8,7 @@ Bugfixes
 * Fix crashes in vpc plotting in amd
 * Attempt fix of crashed with error "zmq.error.ZMQError: Address already in use"
 * Handle amd input check warnings in context log
+* Fix bug causing amd option `lloq_limit` to not work (issue #3404)
 
 1.3.0 (2024-10-24)
 ------------------
