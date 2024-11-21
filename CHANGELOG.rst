@@ -1,3 +1,14 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix bug causing retries crash with error "Parameters not found in model: ['0']"
+* Fix crashes in vpc plotting in amd
+* Attempt fix of crashed with error "zmq.error.ZMQError: Address already in use"
+* Handle amd input check warnings in context log
+
 1.3.0 (2024-10-24)
 ------------------
 
