@@ -1,4 +1,3 @@
-import warnings
 from dataclasses import dataclass, replace
 from typing import Literal, Optional, Union
 
@@ -260,11 +259,6 @@ def convert_to_posdef(model):
             for col in range(len(sigma)):
                 new_parameter_estimates[str(sigma_symbolic[row, col])] = sigma[row, col]
     if new_parameter_estimates:
-        warnings.warn(
-            f'{model.name} required adjusted value to becom'
-            f'postive definite. Adjusted values for parameters : '
-            f'{new_parameter_estimates.keys()}'
-        )
         return set_initial_estimates(model, new_parameter_estimates)
     else:
         return model
