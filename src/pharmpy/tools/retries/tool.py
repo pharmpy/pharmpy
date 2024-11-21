@@ -248,7 +248,9 @@ def convert_to_posdef(model):
         omega = nearest_positive_definite(omega)
         for row in range(len(omega)):
             for col in range(len(omega)):
-                new_parameter_estimates[str(omega_symbolic[row, col])] = omega[row, col]
+                e = omega_symbolic[row, col]
+                if e != 0:
+                    new_parameter_estimates[str(e)] = omega[row, col]
 
     sigma_symbolic = model.random_variables.epsilons.covariance_matrix
     sigma = sigma_symbolic.subs(model.parameters.inits)
@@ -257,7 +259,9 @@ def convert_to_posdef(model):
         sigma = nearest_positive_definite(sigma)
         for row in range(len(sigma)):
             for col in range(len(sigma)):
-                new_parameter_estimates[str(sigma_symbolic[row, col])] = sigma[row, col]
+                e = sigma_symbolic[row, col]
+                if e != 0:
+                    new_parameter_estimates[str(e)] = sigma[row, col]
     if new_parameter_estimates:
         return set_initial_estimates(model, new_parameter_estimates)
     else:
