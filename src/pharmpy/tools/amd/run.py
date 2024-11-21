@@ -250,7 +250,10 @@ def run_amd(
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
     args['input'] = model
-    to_be_skipped = validate_input(**args)
+    validate_input(**args)
+    to_be_skipped = check_skip(
+        ctx, model, occasion, allometric_variable, ignore_datainfo_fallback, search_space
+    )
 
     if parameter_uncertainty_method is not None:
         model = add_parameter_uncertainty_step(model, parameter_uncertainty_method)
@@ -283,7 +286,7 @@ def run_amd(
         order = ['residual', 'structural', 'iivsearch']
 
     if modeltype == 'pkpd' and 'allometry' in order:
-        warnings.warn('Skipping allometry since modeltype is "pkpd"')
+        ctx.log_warning('Skipping allometry since modeltype is "pkpd"')
         order.remove('allometry')
 
     if to_be_skipped:
@@ -568,7 +571,7 @@ def run_amd(
     summary_tool = _create_tool_summary(sum_subtools)
 
     if summary_models is None:
-        warnings.warn(
+        ctx.log_warning(
             'AMDResults.summary_models is None because none of the tools yielded a summary.'
         )
 
@@ -989,7 +992,7 @@ def _subfunc_structural_covariates(
 
         # Ignore warning?
         if skipped_parameters:
-            warnings.warn(
+            ctx.log_warning(
                 f'{skipped_parameters} missing in start model and structural covariate effect cannot be added'
                 ' Might be added during a later COVsearch step if possible.'
             )
@@ -997,7 +1000,7 @@ def _subfunc_structural_covariates(
             # Uneccessary to warn (?)
             return None
         elif not structural_searchspace:
-            warnings.warn(
+            ctx.log_warning(
                 'No applicable structural covariates found in search space. Skipping structural_COVsearch'
             )
             return None
@@ -1034,7 +1037,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                     f' must be in {sorted(allowed_covariates)}.'
                 )
     else:
-        warnings.warn(
+        ctx.log_warning(
             'COVsearch will most likely be skipped because no covariates could be found.'
             ' Check search_space definition'
             ' and .datainfo usage of "covariate" type and "continuous" flag.'
@@ -1050,7 +1053,7 @@ def _subfunc_mechanistic_exploratory_covariates(
         effects = search_space.convert_to_funcs(model=model)
 
         if not effects:
-            warnings.warn(
+            ctx.log_warning(
                 'Skipping COVsearch because no effect candidates could be generated.'
                 ' Check search_space definition'
                 ' and .datainfo usage of "covariate" type and "continuous" flag.'
@@ -1064,7 +1067,7 @@ def _subfunc_mechanistic_exploratory_covariates(
 
             # FIXME : Move to validation
             if not mechanistic_searchspace:
-                warnings.warn(
+                ctx.log_warning(
                     'No covariate effect for given mechanistic covariates found.'
                     ' Skipping mechanistic COVsearch.'
                 )
@@ -1205,6 +1208,88 @@ def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
     return _run_iov
 
 
+def check_skip(
+    context,
+    model: Model,
+    occasion: str,
+    allometric_variable: str,
+    ignore_datainfo_fallback: bool = False,
+    search_space: Optional[str] = None,
+):
+    to_be_skipped = []
+
+    # IOVSEARCH
+    if occasion is None:
+        context.log_warning('IOVsearch will be skipped because occasion is None.')
+        to_be_skipped.append("iovsearch")
+    else:
+        categories = get_occasion_levels(model.dataset, occasion)
+        if len(categories) < 2:
+            context.log_warning(
+                f'Skipping IOVsearch because there are less than two '
+                f'occasion categories in column "{occasion}": {categories}.'
+            )
+            to_be_skipped.append("iovsearch")
+
+    # ALLOMETRY
+    if allometric_variable is None:
+        if not ignore_datainfo_fallback:
+            try:
+                model.datainfo.descriptorix["body weight"]
+            except IndexError:
+                context.log_warning(
+                    'Allometry will be skipped because allometric_variable is None and could'
+                    ' not be inferred through .datainfo via "body weight" descriptor.'
+                )
+                to_be_skipped.append("allometry")
+        else:
+            context.log_warning(
+                'Allometry will be skipped because allometric_variable is None and'
+                ' ignore_datainfo_fallback is True'
+            )
+            to_be_skipped.append("allometry")
+
+    if search_space is not None:
+        ss_mfl = mfl_parse(search_space, True)
+        covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
+        covsearch_features = covsearch_features.expand(model)
+        covariates = []
+        if cov_attr := covsearch_features.covariate:
+            covariates.extend([x for cov in cov_attr for x in cov.covariate])
+        if not covariates:
+            if ignore_datainfo_fallback:
+                context.log_warning(
+                    'COVsearch will be skipped because no covariates were given'
+                    ' and ignore_datainfo_fallback is True.'
+                )
+                to_be_skipped.append("covariates")
+            elif not any(column.type == 'covariate' for column in model.datainfo):
+                context.log_warning(
+                    'COVsearch will be skipped because no covariates were given'
+                    ' or could be extracted.'
+                    ' Check search_space definition'
+                    ' and .datainfo usage of "covariate" type and "continuous" flag.'
+                )
+                to_be_skipped.append("covariates")
+    else:
+        if ignore_datainfo_fallback:
+            context.log_warning(
+                'COVsearch will be skipped because no covariates were given'
+                ' and ignore_datainfo_fallback is True.'
+            )
+            to_be_skipped.append("covariates")
+        elif not any(column.type == 'covariate' for column in model.datainfo):
+            context.log_warning(
+                'COVsearch will be skipped because no covariates were given'
+                ' or could be extracted.'
+                ' Check search_space definition'
+                ' and .datainfo usage of "covariate" type and "continuous" flag.'
+            )
+            to_be_skipped.append("covariates")
+
+    return to_be_skipped
+
+
 @with_runtime_arguments_type_check
 def validate_input(
     input: Model,
@@ -1236,7 +1321,6 @@ def validate_input(
     _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
 ):
     model = input
-    to_be_skipped = []
 
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
 
@@ -1284,41 +1368,14 @@ def validate_input(
     check_list("retries_strategy", retries_strategy, RETRIES_STRATEGIES)
 
     # IOVSEARCH
-    if occasion is None:
-        warnings.warn('IOVsearch will be skipped because occasion is None.')
-        to_be_skipped.append("iovsearch")
-    else:
-        if occasion not in model.dataset:
-            raise ValueError(
-                f'Invalid `occasion`: got `{occasion}`,'
-                f' must be one of {sorted(model.datainfo.names)}.'
-            )
-        categories = get_occasion_levels(model.dataset, occasion)
-        if len(categories) < 2:
-            warnings.warn(
-                f'Skipping IOVsearch because there are less than two '
-                f'occasion categories in column "{occasion}": {categories}.'
-            )
-            to_be_skipped.append("iovsearch")
+    if occasion is not None and occasion not in model.dataset:
+        raise ValueError(
+            f'Invalid `occasion`: got `{occasion}`,'
+            f' must be one of {sorted(model.datainfo.names)}.'
+        )
 
     # ALLOMETRY
-    if allometric_variable is None:
-        if not ignore_datainfo_fallback:
-            try:
-                model.datainfo.descriptorix["body weight"]
-            except IndexError:
-                warnings.warn(
-                    'Allometry will be skipped because allometric_variable is None and could'
-                    ' not be inferred through .datainfo via "body weight" descriptor.'
-                )
-                to_be_skipped.append("allometry")
-        else:
-            warnings.warn(
-                'Allometry will be skipped because allometric_variable is None and'
-                ' ignore_datainfo_fallback is True'
-            )
-            to_be_skipped.append("allometry")
-    else:
+    if allometric_variable is not None:
         validate_allometric_variable(model, allometric_variable)
 
     # COVSEARCH
@@ -1381,38 +1438,6 @@ def validate_input(
                         f' search_space: got `{covariate}`,'
                         f' must be in {sorted(allowed_covariates)}.'
                     )
-        else:
-            if ignore_datainfo_fallback:
-                warnings.warn(
-                    'COVsearch will be skipped because no covariates were given'
-                    ' and ignore_datainfo_fallback is True.'
-                )
-                to_be_skipped.append("covariates")
-            elif not any(column.type == 'covariate' for column in model.datainfo):
-                warnings.warn(
-                    'COVsearch will be skipped because no covariates were given'
-                    ' or could be extracted.'
-                    ' Check search_space definition'
-                    ' and .datainfo usage of "covariate" type and "continuous" flag.'
-                )
-                to_be_skipped.append("covariates")
-    else:
-        if ignore_datainfo_fallback:
-            warnings.warn(
-                'COVsearch will be skipped because no covariates were given'
-                ' and ignore_datainfo_fallback is True.'
-            )
-            to_be_skipped.append("covariates")
-        elif not any(column.type == 'covariate' for column in model.datainfo):
-            warnings.warn(
-                'COVsearch will be skipped because no covariates were given'
-                ' or could be extracted.'
-                ' Check search_space definition'
-                ' and .datainfo usage of "covariate" type and "continuous" flag.'
-            )
-            to_be_skipped.append("covariates")
     if _E:
         if any(value in (0.0, '0%') for value in _E.values()):
             raise ValueError('E-values in `_E` cannot be 0')
-
-    return to_be_skipped

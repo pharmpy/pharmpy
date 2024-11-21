@@ -6,9 +6,15 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results, read_results, run_amd
-from pharmpy.tools.amd.run import _create_model_summary, _mechanistic_cov_extraction, validate_input
+from pharmpy.tools.amd.run import (
+    _create_model_summary,
+    _mechanistic_cov_extraction,
+    check_skip,
+    validate_input,
+)
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.workflows import default_context
+from pharmpy.workflows.contexts import NullContext
 
 
 def test_create_model_summary(testdata):
@@ -61,7 +67,7 @@ def test_skip_most(tmp_path, testdata):
     with chdir(tmp_path):
         db, model, res = _load_model(testdata)
 
-        to_be_skipped = validate_input(
+        validate_input(
             model,
             results=res,
             modeltype='basic_pk',
@@ -73,6 +79,15 @@ def test_skip_most(tmp_path, testdata):
             cl_init=1.0,
             vc_init=10.0,
             mat_init=1.0,
+        )
+
+        to_be_skipped = check_skip(
+            NullContext(),
+            model,
+            occasion=None,
+            allometric_variable=None,
+            ignore_datainfo_fallback=False,
+            search_space=None,
         )
 
     assert len(to_be_skipped) == 3
@@ -136,7 +151,7 @@ def test_raise_empty_search_space(tmp_path, testdata):
 def test_skip_covsearch(tmp_path, testdata):
     with chdir(tmp_path):
         db, model, res = _load_model(testdata)
-        to_be_skipped = validate_input(
+        validate_input(
             model,
             results=res,
             modeltype='basic_pk',
@@ -151,6 +166,16 @@ def test_skip_covsearch(tmp_path, testdata):
             mat_init=1.0,
             ignore_datainfo_fallback=True,
         )
+
+        to_be_skipped = check_skip(
+            NullContext(),
+            model,
+            occasion='VISI',
+            allometric_variable='WT',
+            ignore_datainfo_fallback=True,
+            search_space=None,
+        )
+
     assert "covariates" in to_be_skipped
 
 
@@ -161,7 +186,7 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
     with chdir(tmp_path):
         db, model, res = _load_model(testdata, with_datainfo=True)
 
-        to_be_skipped = validate_input(
+        validate_input(
             model,
             results=res,
             modeltype='basic_pk',
@@ -173,6 +198,15 @@ def test_skip_iovsearch_one_occasion(tmp_path, testdata):
             cl_init=1.0,
             vc_init=10.0,
             mat_init=1.0,
+        )
+
+        to_be_skipped = check_skip(
+            NullContext(),
+            model,
+            occasion='XAT2',
+            allometric_variable=None,
+            ignore_datainfo_fallback=False,
+            search_space=None,
         )
 
     assert len(to_be_skipped) == 1
@@ -211,7 +245,7 @@ def test_ignore_datainfo_fallback(tmp_path, testdata):
     with chdir(tmp_path):
         db, model, res = _load_model(testdata, with_datainfo=True)
 
-        to_be_skipped = validate_input(
+        validate_input(
             model,
             results=res,
             modeltype='basic_pk',
@@ -223,6 +257,15 @@ def test_ignore_datainfo_fallback(tmp_path, testdata):
             cl_init=1.0,
             vc_init=10.0,
             mat_init=1.0,
+        )
+
+        to_be_skipped = check_skip(
+            NullContext(),
+            model,
+            occasion=None,
+            allometric_variable=None,
+            ignore_datainfo_fallback=True,
+            search_space=None,
         )
 
     assert len(to_be_skipped) == 3
