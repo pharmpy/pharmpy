@@ -58,7 +58,7 @@ def _append_kwargs_to_doc(doc_wrapper: str, doc_run_tool: str) -> str:
     assert search_wrapper is not None
 
     # NOTE: Get documentation for kwargs from run_tool
-    m_run_tool = re.compile(r'(\s*kwargs\n(.+\n))\n\s*Returns*\s*\n\s*-+')
+    m_run_tool = re.compile(r'(\s*kwargs\n(.+\n))\n\s*Returns\s*\n\s*-+')
     search_run_tool = re.search(m_run_tool, doc_run_tool)
     assert search_run_tool is not None
 
