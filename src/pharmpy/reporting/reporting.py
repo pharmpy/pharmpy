@@ -63,6 +63,11 @@ def generate_report(rst_path, results_path, target_path):
                         "ignore",
                         "zmq.eventloop.ioloop is deprecated in pyzmq 17.",
                     )
+                    # From Python 3.13 and nbclient
+                    warnings.filterwarnings(
+                        "ignore",
+                        "Parsing dates involving a day of month without",
+                    )
 
                     app = Sphinx(
                         str(source_path),
