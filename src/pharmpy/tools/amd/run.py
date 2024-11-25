@@ -173,6 +173,7 @@ def run_amd(
 
     """
     args = locals()
+    validate_input(**args)
 
     ctx = _setup_run(args)
     ctx.log_info("Starting tool amd")
@@ -250,7 +251,7 @@ def run_amd(
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
     args['input'] = model
-    validate_input(**args)
+    later_input_validation(**args)
     to_be_skipped = check_skip(
         ctx, model, occasion, allometric_variable, ignore_datainfo_fallback, search_space
     )
@@ -1292,7 +1293,7 @@ def check_skip(
 
 @with_runtime_arguments_type_check
 def validate_input(
-    input: Model,
+    input: Union[Model, Path, str, pd.DataFrame],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -1320,8 +1321,6 @@ def validate_input(
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
 ):
-    model = input
-
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
 
     check_list("administration", administration, ALLOWED_ADMINISTRATION)
@@ -1366,6 +1365,45 @@ def validate_input(
             )
 
     check_list("retries_strategy", retries_strategy, RETRIES_STRATEGIES)
+
+    if _E:
+        if any(value in (0.0, '0%') for value in _E.values()):
+            raise ValueError('E-values in `_E` cannot be 0')
+
+
+def later_input_validation(
+    input: Model,
+    results: Optional[ModelfitResults] = None,
+    modeltype: str = 'basic_pk',
+    administration: str = 'oral',
+    strategy: str = "default",
+    cl_init: Optional[float] = None,
+    vc_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    b_init: Optional[float] = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
+    search_space: Optional[str] = None,
+    lloq_method: Optional[str] = None,
+    lloq_limit: Optional[float] = None,
+    allometric_variable: Optional[TSymbol] = None,
+    occasion: Optional[str] = None,
+    path: Optional[Union[str, Path]] = None,
+    resume: bool = False,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
+    mechanistic_covariates: Optional[list[Union[str, tuple]]] = None,
+    retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
+    seed: Optional[Union[np.random.Generator, int]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    ignore_datainfo_fallback: bool = False,
+    _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
+):
+    # FIXME: This function should be removed and refactored into validate_inputs
+    # and optionally give warnings/errors during the run
+    # it currently depends on a model being created if a dataset was input to AMD.
+    model = input
 
     # IOVSEARCH
     if occasion is not None and occasion not in model.dataset:
@@ -1424,6 +1462,7 @@ def validate_input(
                         )
 
     if search_space is not None:
+        ss_mfl = mfl_parse(search_space, True)
         covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
         covsearch_features = covsearch_features.expand(model)
         covariates = []
@@ -1438,6 +1477,3 @@ def validate_input(
                         f' search_space: got `{covariate}`,'
                         f' must be in {sorted(allowed_covariates)}.'
                     )
-    if _E:
-        if any(value in (0.0, '0%') for value in _E.values()):
-            raise ValueError('E-values in `_E` cannot be 0')

@@ -10,6 +10,7 @@ from pharmpy.tools.amd.run import (
     _create_model_summary,
     _mechanistic_cov_extraction,
     check_skip,
+    later_input_validation,
     validate_input,
 )
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -324,7 +325,7 @@ def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates
                 ValueError,
                 match=error,
             ):
-                validate_input(
+                later_input_validation(
                     model,
                     results=res,
                     modeltype='basic_pk',
@@ -339,7 +340,7 @@ def test_mechanistic_covariate_option(tmp_path, testdata, mechanistic_covariates
                 )
         else:
             # Should not raise any errors
-            validate_input(
+            later_input_validation(
                 model,
                 results=res,
                 modeltype='basic_pk',
