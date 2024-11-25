@@ -80,7 +80,10 @@ def execute_model(model_entry, context):
     while not results_path.is_file():
         elapsed_time = time.time() - start
         if elapsed_time >= timeout:
-            warnings.warn(f'UNEXPECTED Could not find .lst-file after waiting {elapsed_time}s')
+            context.log_warning(
+                f'UNEXPECTED Could not find .lst-file after waiting {elapsed_time}s',
+                model_entry.model,
+            )
             break
         else:
             time.sleep(1)
@@ -120,8 +123,8 @@ def execute_model(model_entry, context):
             not (model_path / basename).with_suffix('.lst').is_file()
             or not (model_path / basename).with_suffix('.ext').is_file()
         ):
-            warnings.warn(
-                f'Expected result files do not exist, copying everything: {model_entry.model.name}'
+            context.log_warning(
+                'Expected result files do not exist, copying everything', model=model_entry.model
             )
             for file in path.glob('x/*'):
                 txn.store_local_file(file)
