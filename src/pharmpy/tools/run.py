@@ -170,8 +170,8 @@ def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Mode
     kwargs
         Arguments to pass to tool
 
-    Return
-    ------
+    Returns
+    -------
     Results
         Results object for tool
 
