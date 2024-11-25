@@ -608,21 +608,10 @@ def perform_step_procedure(
             last_step = best_candidate_so_far.steps[-1]
             is_backward = isinstance(last_step, BackwardStep)
             if not is_backward:
-                for new_cand in new_candidates:
-                    if alpha <= lrt_p_value(
-                        parent_modelentry.model,
-                        new_cand.modelentry.model,
-                        parent_modelentry.modelfit_results.ofv,
-                        new_cand.modelentry.modelfit_results.ofv,
-                    ):
-                        last_step_effect = new_cand.steps[-1].effect
-                        key = (
-                            last_step_effect.parameter,
-                            last_step_effect.covariate,
-                            last_step_effect.fp,
-                            last_step_effect.operation,
-                        )
-                        nonsignificant_effects[key] = candidate_effect_funcs[key]
+                nonsignificant_effects_step = extract_nonsignificant_effects(
+                    parent_modelentry, new_candidates, candidate_effect_funcs, alpha
+                )
+                nonsignificant_effects.update(nonsignificant_effects_step)
 
         # NOTE: Filter out incompatible effects
         last_step_effect = best_candidate_so_far.steps[-1].effect
@@ -680,6 +669,27 @@ def filter_effects(effect_funcs, last_step_effect, nonsignificant_effects):
     }
 
     return candidate_effect_funcs
+
+
+def extract_nonsignificant_effects(parent_modelentry, new_candidates, effect_funcs, alpha):
+    nonsignificant_effects = {}
+    for new_cand in new_candidates:
+        p_value = lrt_p_value(
+            parent_modelentry.model,
+            new_cand.modelentry.model,
+            parent_modelentry.modelfit_results.ofv,
+            new_cand.modelentry.modelfit_results.ofv,
+        )
+        if alpha <= p_value:
+            last_step_effect = new_cand.steps[-1].effect
+            key = (
+                last_step_effect.parameter,
+                last_step_effect.covariate,
+                last_step_effect.fp,
+                last_step_effect.operation,
+            )
+            nonsignificant_effects[key] = effect_funcs[key]
+    return nonsignificant_effects
 
 
 def wf_effects_addition(

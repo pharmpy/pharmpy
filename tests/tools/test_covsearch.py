@@ -21,6 +21,7 @@ from pharmpy.tools.covsearch.tool import (
     _greedy_search,
     _start,
     create_workflow,
+    extract_nonsignificant_effects,
     filter_effects,
     get_best_candidate_so_far,
     get_effect_funcs_and_base_model,
@@ -125,6 +126,31 @@ def test_filter_effects():
     last_effect = Effect(*effect_args_2)
     filtered_2 = filter_effects(effect_funcs, last_effect, nonsignificant_effects)
     assert len(filtered_2) == 2
+
+
+@pytest.mark.parametrize(
+    'p_value, no_of_nonsignificant_effects',
+    [(0, 4), (100000000000000000, 0), (10**-195, 1)],
+)
+def test_extract_nonsignificant_effects(
+    load_model_for_test, testdata, model_entry_factory, p_value, no_of_nonsignificant_effects
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    parent_modelentry = ModelEntry(model, modelfit_results=modelres)
+
+    search_space = 'COVARIATE?([CL,VC],[WT, AGE],EXP)'
+    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    effect_funcs = get_exploratory_covariates(mfl)
+    models = [func(model) for func in effect_funcs.values()]
+    model_entries = model_entry_factory(models, ref_val=modelres.ofv)
+    steps = [ForwardStep(p_value, Effect(*key)) for key in effect_funcs.keys()]
+    candidates = [Candidate(me, (step,)) for me, step in zip(model_entries, steps)]
+    nonsignificant_effects = extract_nonsignificant_effects(
+        parent_modelentry, candidates, effect_funcs, p_value
+    )
+
+    assert len(nonsignificant_effects) == no_of_nonsignificant_effects
 
 
 @pytest.mark.parametrize(
