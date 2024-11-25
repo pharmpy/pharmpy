@@ -1,6 +1,7 @@
 from threading import Lock
 
 __all__ = (
+    'create_context',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
     'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -54,6 +55,7 @@ _not_wrapped = {
         'predict_influential_individuals',
         'predict_influential_outliers',
     ),
+    '.context': ('create_context',),
 }
 
 _not_wrapped_module_name_index = {
