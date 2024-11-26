@@ -280,7 +280,7 @@ def run_amd(
             'residual',
         ]
     elif strategy == 'SIR':
-        order = ['structural', 'iivsearch']
+        order = ['structural', 'iivsearch', 'residual']
     elif strategy == 'SRI':
         order = ['structural', 'residual', 'iivsearch']
     elif strategy == 'RSI':
