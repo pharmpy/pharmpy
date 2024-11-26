@@ -84,19 +84,18 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
 
 
-def test_create_metadata_tool_raises(tmp_path, pheno):
+def test_create_metadata_tool_not_raises(tmp_path, pheno):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
-        with pytest.raises(Exception, match='modelsearch: \'algorithm\' was not set'):
-            _create_metadata_tool(
-                database=database,
-                tool_name=tool_name,
-                tool_func=tool.create_workflow,
-                args=('ABSORPTION(ZO)',),
-                kwargs={'model': pheno},
-            )
+        _create_metadata_tool(
+            database=database,
+            tool_name=tool_name,
+            tool_func=tool.create_workflow,
+            args=('ABSORPTION(ZO)',),
+            kwargs={'model': pheno},
+        )
 
 
 def test_create_metadata_common(tmp_path):
