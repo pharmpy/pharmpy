@@ -20,7 +20,7 @@ from .filter import mfl_filtering
 
 def create_workflow(
     search_space: Union[str, ModelFeatures],
-    algorithm: Literal[tuple(algorithms.ALGORITHMS)],
+    algorithm: Literal[tuple(algorithms.ALGORITHMS)] = 'reduced_stepwise',
     iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
