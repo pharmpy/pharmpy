@@ -9,6 +9,7 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     get_covariate_effects,
     remove_covariate_effect,
+    set_name,
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.covsearch.tool import (
@@ -20,6 +21,7 @@ from pharmpy.tools.covsearch.tool import (
     SearchState,
     _greedy_search,
     _start,
+    create_result_tables,
     create_workflow,
     extract_nonsignificant_effects,
     filter_effects,
@@ -437,27 +439,116 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
             )
 
 
+def _create_candidates(model_entry_factory, funcs, parent_cand, i, p_value):
+    parent_model = parent_cand.modelentry.model
+    parent_res = parent_cand.modelentry.modelfit_results
+    candidates = []
+    for key, func in funcs.items():
+        cand_model = func(parent_model)
+        cand_model = set_name(cand_model, f'run{i}')
+        cand_me = model_entry_factory([cand_model], ref_val=parent_res.ofv, parent=parent_model)[0]
+        steps = parent_cand.steps + (ForwardStep(p_value, Effect(*key)),)
+        cand = Candidate(cand_me, steps)
+        candidates.append(cand)
+        i += 1
+    return candidates
+
+
 def test_get_best_model_so_far(load_model_for_test, testdata, model_entry_factory):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    parent_model_entry = ModelEntry(model, modelfit_results=modelres)
+    parent_cand = Candidate(parent_model_entry, steps=tuple())
 
-    params = ['CL', 'V', 'MAT']
-    kwargs = {'covariate': 'WT', 'effect': 'exp', 'operation': '*'}
-    funcs = [partial(add_covariate_effect, parameter=p, **kwargs) for p in params]
-    cov_funcs = [funcs, funcs[1:2], [funcs[2]]]
+    search_space = 'COVARIATE?([CL,VC,MAT],WT,EXP)'
+    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    effect_funcs = get_exploratory_covariates(mfl)
 
     p_value = 0.01
     strictness = 'minimization_successful'
-    parent_model_entry = ModelEntry(model, modelfit_results=modelres)
+
     candidates = [Candidate(parent_model_entry, steps=tuple())]
-    for i, funcs in enumerate(cov_funcs, 1):
-        new_cands = [func(model=parent_model_entry.model) for func in funcs]
-        cand_model_entries = model_entry_factory(new_cands, parent_model_entry.modelfit_results.ofv)
-        # Attribute Steps are not relevant to this test
-        candidates.extend([Candidate(me, steps=()) for me in cand_model_entries])
-        best_candidate_so_far = get_best_candidate_so_far(
-            parent_model_entry, cand_model_entries, candidates, strictness, p_value
-        )
-        model_entry_lowest_ofv = min(cand_model_entries, key=lambda me: me.modelfit_results.ofv)
-        assert best_candidate_so_far.modelentry == model_entry_lowest_ofv
-        parent_model_entry = best_candidate_so_far.modelentry
+    candidates_step_1 = _create_candidates(
+        model_entry_factory, effect_funcs, parent_cand, 1, p_value
+    )
+    candidates.extend(candidates_step_1)
+    model_entries_step_1 = [cand.modelentry for cand in candidates_step_1]
+
+    best_candidate_so_far = get_best_candidate_so_far(
+        parent_model_entry, model_entries_step_1, candidates, strictness, p_value
+    )
+    model_entry_lowest_ofv = min(model_entries_step_1, key=lambda me: me.modelfit_results.ofv)
+    assert best_candidate_so_far.modelentry == model_entry_lowest_ofv
+
+    candidates_step_2 = _create_candidates(
+        model_entry_factory, effect_funcs, parent_cand, len(candidates_step_1) + 1, p_value
+    )
+    candidates.extend(candidates_step_2)
+    model_entries_step_2 = [cand.modelentry for cand in candidates_step_2]
+
+    best_candidate_so_far = get_best_candidate_so_far(
+        parent_model_entry, model_entries_step_2, candidates, strictness, p_value
+    )
+    model_entry_lowest_ofv = min(model_entries_step_2, key=lambda me: me.modelfit_results.ofv)
+    assert best_candidate_so_far.modelentry == model_entry_lowest_ofv
+
+
+def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    parent_model_entry = ModelEntry(model, modelfit_results=modelres)
+    parent_cand = Candidate(parent_model_entry, steps=tuple())
+
+    search_space = 'COVARIATE?([CL,VC],[WT,AGE],EXP)'
+    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    effect_funcs = get_exploratory_covariates(mfl)
+
+    p_value = 0.01
+    strictness = 'minimization_successful'
+
+    candidates_step_1 = _create_candidates(
+        model_entry_factory, effect_funcs, parent_cand, 1, p_value
+    )
+    selected_cand = min(candidates_step_1, key=lambda cand: cand.modelentry.modelfit_results.ofv)
+    eff = selected_cand.steps[0].effect
+    key = (eff.parameter, eff.covariate, eff.fp, eff.operation)
+    effect_funcs.pop(key)
+
+    candidates_step_2 = _create_candidates(
+        model_entry_factory, effect_funcs, selected_cand, len(candidates_step_1) + 1, p_value
+    )
+    candidates = [parent_cand] + candidates_step_1 + candidates_step_2
+    candidate_model_entries = [cand.modelentry for cand in candidates_step_1 + candidates_step_2]
+
+    tables = create_result_tables(
+        candidates,
+        candidates[-1].modelentry,
+        parent_model_entry,
+        parent_model_entry,
+        candidate_model_entries,
+        (p_value, None),
+        strictness,
+    )
+
+    summary_models = tables['summary_models']
+    assert len(summary_models) == len(candidates)
+    steps = set(summary_models.index.get_level_values('step'))
+    assert steps == {0, 1, 2}
+
+    summary_tool = tables['summary_tool']
+    assert len(summary_tool) == len(candidates)
+    steps = set(summary_tool.index.get_level_values('step'))
+    assert steps == {0, 1, 2}
+    d_params = summary_tool['d_params'].values
+    assert set(d_params) == {0, 1, 2}
+
+    steps = tables['steps']
+    assert len(steps) == len(candidates)
+    assert 'CL' in steps.index[1] and 'WT' in steps.index[1]
+    assert 'CL' in steps.index[2] and 'WT' not in steps.index[2]
+
+    ofv_summary = tables['ofv_summary']
+    assert len(ofv_summary) == 3
+
+    candidate_summary = tables['candidate_summary']
+    assert len(candidate_summary) == 4
