@@ -10,6 +10,7 @@ __all__ = (
     'predict_influential_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'print_fit_summary',  # pyright: ignore [reportUnsupportedDunderAll]
+    'print_log',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_model',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -57,7 +58,10 @@ _not_wrapped = {
         'predict_influential_individuals',
         'predict_influential_outliers',
     ),
-    '.context': ('create_context',),
+    '.context': (
+        'create_context',
+        'print_log',
+    ),
 }
 
 _not_wrapped_module_name_index = {
