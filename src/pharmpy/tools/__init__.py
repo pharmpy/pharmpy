@@ -14,6 +14,7 @@ __all__ = (
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_model',  # pyright: ignore [reportUnsupportedDunderAll]
+    'retrieve_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_allometry',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_amd',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -61,6 +62,7 @@ _not_wrapped = {
     '.context': (
         'create_context',
         'print_log',
+        'retrieve_modelfit_results',
     ),
 }
 

@@ -538,7 +538,7 @@ def _open_context(source):
 def retrieve_model(
     source: Union[str, Path, Context],
     name: str,
-) -> list[Model]:
+) -> Model:
     """Retrieve a model from a context/tool run
 
     Any models created and run by the tool can be
