@@ -12,6 +12,7 @@ __all__ = (
     'print_fit_summary',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
+    'retrieve_model',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_allometry',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_amd',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -45,6 +46,7 @@ _not_wrapped = {
         'print_fit_summary',
         'read_modelfit_results',
         'read_results',
+        'retrieve_model',
         'retrieve_models',
         'run_tool',
         'summarize_modelfit_results',

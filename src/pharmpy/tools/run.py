@@ -524,6 +524,50 @@ def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, C
     return dispatcher, ctx
 
 
+def _open_context(source):
+    if isinstance(source, Path) or isinstance(source, str):
+        path = Path(source)
+        context = LocalDirectoryContext(path)
+    elif isinstance(source, Context):
+        context = source
+    else:
+        raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
+    return context
+
+
+def retrieve_model(
+    source: Union[str, Path, Context],
+    name: str,
+) -> list[Model]:
+    """Retrieve a model from a context/tool run
+
+    Any models created and run by the tool can be
+    retrieved.
+
+    Parameters
+    ----------
+    source : str, Path, Context
+        Source where to find models. Can be a path (as str or Path), or a
+        Context
+    name : str
+        Name of the model
+
+    Return
+    ------
+    Model
+        The model object
+
+    Examples
+    --------
+    >>> from pharmpy.tools import retrieve_model
+    >>> tooldir_path = 'path/to/tool/directory'
+    >>> model = retrieve_model(tooldir_path, 'run1')      # doctest: +SKIP
+
+    """
+    context = _open_context(source)
+    return context.retrieve_model_entry(name).model
+
+
 def retrieve_models(
     source: Union[str, Path, Context],
     names: Optional[list[str]] = None,
@@ -553,14 +597,7 @@ def retrieve_models(
     >>> models = retrieve_models(tooldir_path, names=['run1'])      # doctest: +SKIP
 
     """
-    if isinstance(source, Path) or isinstance(source, str):
-        path = Path(source)
-        context = LocalDirectoryContext(path)
-    elif isinstance(source, Context):
-        context = source
-    else:
-        raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
-
+    context = _open_context(source)
     names_all = context.list_all_names()
     if names is None:
         names = names_all
