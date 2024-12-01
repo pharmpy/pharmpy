@@ -121,7 +121,7 @@ def create_workflow(
     p_backward: float = 0.001,
     max_steps: int = -1,
     algorithm: Literal[
-        'scm-forward', 'scm-forward-then-backward', 'samba-saem', 'samba-foce', 'scm-fastforward'
+        'scm-forward', 'scm-forward-then-backward', 'samba', 'samba-foce', 'scm-fastforward'
     ] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -133,6 +133,9 @@ def create_workflow(
     nsamples: int = 10,
     weighted_linreg: bool = False,
     lin_filter: int = 0,
+    samba_max_covariates: int = 3,
+    samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
+    samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -181,6 +184,14 @@ def create_workflow(
          0: pass all LRT positive covariate effects from linear selection step
          1: pass the ones with the largest drop of OFV within each parameter scope
          2: the one with the largest drop of OFV among all parameter-covariate pairs
+    samba_max_covariates: int
+        Maximum number of covariate inclusion allowed in linear covariate screening for each parameter.
+    samba_linreg_method: str
+        Method used to fit linear covariate models. Currently, Ordinary Least Squares (ols),
+        Weighted Least Squares (wls), and Linear Mixed-Effects (lme) are supported.
+    samba_selection_criterion: str
+        Method used for linear and nonlinear model selection in SAMBA methods. Currently, BIC and LRT are
+        supported.
 
     Returns
     -------
@@ -196,19 +207,19 @@ def create_workflow(
     >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
-    if algorithm in ["samba-saem", "samba-foce"]:
+    if algorithm in ["samba", "samba-foce"]:
         return samba_workflow(
-            search_space,
-            max_steps,
-            p_forward,
-            results,
-            model,
-            max_eval,
-            statsmodels,
-            algorithm,
-            nsamples,
-            weighted_linreg,
-            lin_filter,
+            search_space=search_space,
+            max_steps=max_steps,
+            p_forward=p_forward,
+            model=model,
+            results=results,
+            max_eval=max_eval,
+            algorithm=algorithm,
+            nsamples=nsamples,
+            max_covariates=samba_max_covariates,
+            selection_criterion=samba_selection_criterion,
+            linreg_method=samba_linreg_method,
         )
     if algorithm == "scm-fastforward":
         return fast_scm_workflow(
