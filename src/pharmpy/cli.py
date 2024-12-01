@@ -848,6 +848,7 @@ parser_definition = [
                                 'name': 'algorithm',
                                 'type': str,
                                 'help': 'Algorithm to use',
+                                'default': 'reduced_stepwise',
                             },
                             {
                                 'name': '--iiv_strategy',

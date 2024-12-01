@@ -65,6 +65,7 @@ class LinStateAndEffect(StateAndEffect):
 
 def store_input_model(context, model, results, max_eval):
     """Store the input model"""
+    context.log_info("Starting tool covsearch")
     model = model.replace(name="input", description="input")
     if max_eval:
         input_modelentry = set_maxevals(model, results)

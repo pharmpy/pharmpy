@@ -29,43 +29,49 @@ def calculate_reference_correction(dv, pred, predref, simdata, refdata, logdv=Fa
     rpcdv_sim = [correct(sim[dv.name], factor, logdv, lb) for sim in simdata]
 
     refdvs = pd.concat((ref[dv.name] for ref in refdata), axis=1)
+    refdvs.columns = range(len(refdvs.columns))  # To get unique column names
     rpcdvs = pd.concat(rpcdv_sim, axis=1)
 
     if logdv:
         refdv_sd = refdvs.std(axis=1)
         rpcdvs_sd = rpcdvs.std(axis=1)
     else:
-        refdv_sd = np.log(refdvs).std(axis=1)
-        rpcdvs_sd = np.log(rpcdvs).std(axis=1)
+        refdv_sd = np.log(refdvs - lb).std(axis=1)
+        rpcdvs_sd = np.log(rpcdvs - lb).std(axis=1)
     var_factor = np.divide(refdv_sd, rpcdvs_sd, out=np.ones_like(refdv_sd), where=rpcdvs_sd != 0.0)
 
-    def varcorrect(dv, factor, predref, logdv):
+    def varcorrect(dv, factor, predref, logdv, lb):
         if logdv:
             rpvcdv = predref + (dv - predref) * factor
         else:
-            log_predref = np.log(predref)
-            rpvcdv = np.exp(log_predref + (np.log(dv) - log_predref) * factor)
+            log_predref = np.log(predref - lb)
+            rpvcdv = lb + np.exp(log_predref + (np.log(dv - lb) - log_predref) * factor)
         return rpvcdv
 
-    rpvcdv = varcorrect(rpcdv, var_factor, predref, logdv)
-    rpvcdv_sim = [varcorrect(x, var_factor, predref, logdv) for x in rpcdv_sim]
+    rpvcdv = varcorrect(rpcdv, var_factor, predref, logdv, lb)
+    rpvcdv_sim = [varcorrect(x, var_factor, predref, logdv, lb) for x in rpcdv_sim]
     return rpvcdv, rpvcdv_sim
 
 
 def reference_correction_from_psn_vpc(path):
+    np.seterr(invalid='raise')
     path = Path(path)
     opts = options_from_command(psn_command(path))
     dv = opts.get('dv', 'DV')
     idv = opts.get('idv', 'TIME')
+    refcorr_idv = opts.get('refcorr_idv', False)
     logdv = bool(int(opts.get('lnDV', '0')))  # NOTE: Not entirely correct
     lower_bound = opts.get('lower_bound', 0.0)
 
     m1 = path / 'm1'
 
     model = read_model(m1 / "vpc_original.mod")
-    have_eta_on_idv = not model.statements.before_odes.full_expression(
-        "CLE"
-    ).free_symbols.isdisjoint(set(model.random_variables.symbols))
+    if refcorr_idv:
+        have_eta_on_idv = not model.statements.before_odes.full_expression(
+            idv
+        ).free_symbols.isdisjoint(set(model.random_variables.symbols))
+    else:
+        have_eta_on_idv = False
 
     origfile_path = m1 / "vpc_original.npctab.dta"
     origfile = NONMEMTableFile(origfile_path)

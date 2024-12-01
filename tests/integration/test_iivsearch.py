@@ -5,9 +5,6 @@ from pharmpy.modeling import add_lag_time
 from pharmpy.tools import fit, run_iivsearch
 from pharmpy.workflows import LocalDirectoryContext
 
-# FIXME: Tests including modelfit_results are commented out, uncomment once function retrieve_models
-#  return model entries or we have a separate function for this
-
 
 @pytest.mark.parametrize(
     'algorithm, correlation_algorithm, kwargs, no_of_candidate_models, max_diff_params, best_model',
@@ -21,6 +18,23 @@ from pharmpy.workflows import LocalDirectoryContext
         ('bottom_up_stepwise', None, {'keep': []}, 8, 3, 'iivsearch_run8'),
         ('top_down_exhaustive', 'skip', {'iiv_strategy': 'add_diagonal'}, 7, 3, 'input'),
         ('top_down_exhaustive', 'skip', {'iiv_strategy': 'fullblock'}, 7, 9, 'input'),
+        ('bottom_up_stepwise', 'skip', {'iiv_strategy': 'fullblock'}, 4, 2, 'iivsearch_run1'),
+        (
+            'top_down_exhaustive',
+            None,
+            {'rank_type': 'mbic', 'E_p': '50%', 'E_q': '50%'},
+            4,
+            2,
+            'iivsearch_run4',
+        ),
+        (
+            'bottom_up_stepwise',
+            None,
+            {'rank_type': 'mbic', 'E_p': '50%', 'E_q': '50%'},
+            8,
+            3,
+            'iivsearch_run8',
+        ),
     ],
 )
 def test_iivsearch_dummy(
@@ -40,7 +54,8 @@ def test_iivsearch_dummy(
         if has_iiv_strategy:
             start_model = add_lag_time(start_modelres[0])
             start_res = fit(start_model, esttool='dummy')
-            no_of_models_total += 1  # Include base
+            if algorithm != 'bottom_up_stepwise':
+                no_of_models_total += 1  # Include base
         else:
             start_model = start_modelres[0]
             start_res = start_modelres[1]
@@ -84,6 +99,8 @@ def test_iivsearch_dummy(
     (
         ('top_down_exhaustive', 'skip', 3, 'fullblock'),
         ('bottom_up_stepwise', 'skip', 4, 'no_add'),
+        # ('bottom_up_stepwise', 'skip', 4, 'fullblock'),
+        ('bottom_up_stepwise', 'skip', 4, 'add_diagonal'),
     ),
 )
 def test_no_of_etas_linearization(

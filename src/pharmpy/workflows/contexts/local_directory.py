@@ -234,7 +234,7 @@ class LocalDirectoryContext(Context):
     def retrieve_log(self, level: Literal['all', 'current', 'lower'] = 'all') -> pd.DataFrame:
         log_path = self._log_path
         with self._read_lock(log_path):
-            df = pd.read_csv(log_path)
+            df = pd.read_csv(log_path, parse_dates=['time'])
         count = df['path'].str.count('/')
         curlevel = self.context_path.count('/')
         if level == 'lower':

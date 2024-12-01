@@ -30,7 +30,7 @@ from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     _create_metadata_common,
     _create_metadata_tool,
-    calculate_bic_penalty,
+    calculate_mbic_penalty,
     get_penalty_parameters_mfl,
     get_penalty_parameters_rvs,
     import_tool,
@@ -84,19 +84,18 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
 
 
-def test_create_metadata_tool_raises(tmp_path, pheno):
+def test_create_metadata_tool_not_raises(tmp_path, pheno):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
-        with pytest.raises(Exception, match='modelsearch: \'algorithm\' was not set'):
-            _create_metadata_tool(
-                database=database,
-                tool_name=tool_name,
-                tool_func=tool.create_workflow,
-                args=('ABSORPTION(ZO)',),
-                kwargs={'model': pheno},
-            )
+        _create_metadata_tool(
+            database=database,
+            tool_name=tool_name,
+            tool_func=tool.create_workflow,
+            args=('ABSORPTION(ZO)',),
+            kwargs={'model': pheno},
+        )
 
 
 def test_create_metadata_common(tmp_path):
@@ -616,9 +615,45 @@ def test_strictness_parameters(testdata):
             [partial(remove_iov, to_remove='ETA_IOV_1_1'), partial(remove_iiv, to_remove='ETA_CL')],
             [4.39, 4.39],
         ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {'E_p': 3},
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [1.39, 1.39],
+        ),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+            'ELIMINATION(FO);'
+            'LAGTIME([OFF,ON]);'
+            'TRANSITS([0,1,3,10],*);'
+            'PERIPHERALS([0,1])',
+            {'E_p': '50%'},
+            [add_peripheral_compartment, set_zero_order_absorption],
+            [1.39, 1.39],
+        ),
+        (
+            [create_joint_distribution],
+            ['iiv_diag', 'iiv_block'],
+            {'base_model': None, 'E_p': 1.5},
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [4.97, 1.39],
+        ),
+        (
+            [create_joint_distribution],
+            ['iiv_diag', 'iiv_block'],
+            {'base_model': None, 'E_p': '50%'},
+            [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
+            [4.97, 1.39],
+        ),
     ],
 )
-def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):
+def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs, penalties):
     base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
     for func in base_funcs:
         base_model = func(base_model)
@@ -627,8 +662,61 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
     candidate = base_model
     for func, ref in zip(candidate_funcs, penalties):
         candidate = func(candidate)
-        penalty = calculate_bic_penalty(candidate, search_space=search_space, **kwargs)
+        penalty = calculate_mbic_penalty(candidate, search_space=search_space, **kwargs)
         assert round(penalty, 2) == ref
+
+
+@pytest.mark.parametrize(
+    'kwargs, error',
+    [
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': 0},
+            'E-values cannot be 0',
+        ),
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'base_model': None},
+            'Cannot provide both `search_space` and `base_model`',
+        ),
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': None},
+            'Missing value for `E_p`',
+        ),
+        (
+            {'search_space': ['iiv_diag', 'x']},
+            'Unknown `search_space`: x',
+        ),
+        (
+            {'search_space': ['iiv_block', 'iov']},
+            'Incorrect `search_space`: `iiv_block` and `iov`',
+        ),
+        (
+            {'search_space': ['iiv_block'], 'E_q': None},
+            'Missing value for `E_q`',
+        ),
+        (
+            {'search_space': ['iiv_diag'], 'E_p': None},
+            'Missing value for `E_p`',
+        ),
+        (
+            {'search_space': ['iiv_diag']},
+            'Missing `base_model`:',
+        ),
+        (
+            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': 10},
+            '`E_p` cannot be bigger than `p`',
+        ),
+        (
+            {'search_space': ['iiv_block'], 'E_q': 10, 'base_model': None},
+            '`E_q` cannot be bigger than `q`',
+        ),
+    ],
+)
+def test_mbic_penalty_raises(testdata, kwargs, error):
+    model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
+    if 'base_model' in kwargs.keys():
+        kwargs['base_model'] = model
+    with pytest.raises(ValueError, match=error):
+        calculate_mbic_penalty(model, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -715,7 +803,9 @@ def test_bic_penalty(testdata, base_funcs, search_space, kwargs, candidate_funcs
         ),
     ],
 )
-def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected, k_p_expected):
+def test_get_mbic_penalty_parameters_mfl(
+    search_space, candidate_features, p_expected, k_p_expected
+):
     search_space_mfl = parse(search_space, mfl_class=True)
     cand_mfl = parse(candidate_features, mfl_class=True)
     assert get_penalty_parameters_mfl(search_space_mfl, cand_mfl) == (p_expected, k_p_expected)
@@ -830,7 +920,7 @@ def test_get_penalty_parameters_mfl(search_space, candidate_features, p_expected
         ),
     ],
 )
-def test_get_penalty_parameters_rvs(
+def test_get_mbic_penalty_parameters_rvs(
     testdata,
     base_funcs,
     kwargs,

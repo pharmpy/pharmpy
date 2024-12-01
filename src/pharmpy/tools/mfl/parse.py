@@ -566,31 +566,36 @@ class ModelFeatures:
 
     def contain_subset(self, mfl, model: Optional[Model] = None, tool: Optional[str] = None):
         """See if class contain specified subset"""
+        # FIXME: Handle PD and drug metabolite
         transits = self._subset_transits(mfl)
         peripheral_lhs = self._extract_peripherals()
         peripheral_rhs = mfl._extract_peripherals()
-
-        if (
-            all([s in self.absorption.eval.modes for s in mfl.absorption.eval.modes])
-            and all([s in self.elimination.eval.modes for s in mfl.elimination.eval.modes])
+        if not (
+            self._has_same_modes(self.absorption, mfl.absorption)
+            and self._has_same_modes(self.elimination, mfl.elimination)
             and transits
-            and all([s in self.lagtime.eval.modes for s in mfl.lagtime.eval.modes])
+            and self._has_same_modes(self.lagtime, mfl.lagtime)
         ):
-            if tool is None or tool in ["modelsearch"]:
-                return all(p in peripheral_lhs["DRUG"] for p in list(peripheral_rhs["DRUG"]))
-            else:
-                if not (
-                    all(p in peripheral_lhs["DRUG"] for p in list(peripheral_rhs["DRUG"]))
-                    and all(p in peripheral_lhs["MET"] for p in list(peripheral_rhs["MET"]))
-                ):
-                    return False
-                if self.covariate != tuple() or mfl.covariate != tuple():
-                    if model is None:
-                        warnings.warn("Need argument 'model' in order to compare covariates")
-                    else:
-                        return True if self._subset_covariate(mfl, model) else False
-        else:
             return False
+        if not all(p in peripheral_lhs["DRUG"] for p in list(peripheral_rhs["DRUG"])):
+            return False
+        if not all(p in peripheral_lhs["MET"] for p in list(peripheral_rhs["MET"])):
+            return False
+        # FIXME: to keep old behavior, remove
+        if tool == 'modelsearch':
+            return True
+        if self.covariate != tuple() or mfl.covariate != tuple():
+            if model is None:
+                warnings.warn("Need argument 'model' in order to compare covariates")
+            else:
+                return self._subset_covariates(mfl, model)
+        return True
+
+    @staticmethod
+    def _has_same_modes(feature_1, feature_2):
+        if feature_1 and feature_2:
+            return all([s in feature_1.eval.modes for s in feature_2.eval.modes])
+        return feature_1 == feature_2
 
     def _subset_transits(self, mfl):
         lhs_counts = set([c for t in self.transits for c in t.counts])
@@ -605,28 +610,19 @@ class ModelFeatures:
         )
 
     def _subset_covariates(self, mfl, model):
-        lhs = defaultdict(list)
-        rhs = defaultdict(list)
+        def _get_effects(mfl):
+            effects = []
+            for cov in mfl.covariate:
+                cov_eval = cov.eval(model)
+                cov_prod = list(
+                    product(cov_eval.parameter, cov_eval.covariate, cov_eval.fp, cov_eval.op)
+                )
+                effects.extend(cov_prod)
+            return effects
 
-        for cov in self.covariate:
-            cov_eval = cov.eval(model)
-            for effect in cov_eval.fp:
-                for op in cov_eval.op:
-                    lhs[(effect, op)].append(product(cov_eval.parameter, cov_eval.covariate))
-        for cov in mfl.covariate:
-            cov_eval = cov.eval(model)
-            for effect in cov_eval.fp:
-                for op in cov_eval.op:
-                    rhs[(effect, op)].append(product(cov_eval.parameter, cov_eval.covariate))
-
-        for key in rhs.keys():
-            if key not in lhs.keys():
-                return False
-            if all(p in lhs[key] for p in rhs[key]):
-                continue
-            else:
-                return False
-        return True
+        lhs_effects = _get_effects(self)
+        rhs_effects = _get_effects(mfl)
+        return set(rhs_effects).issubset(lhs_effects)
 
     def least_number_of_transformations(
         self, other, model: Optional[Model] = None, tool: Optional[str] = None
@@ -721,7 +717,7 @@ class ModelFeatures:
     def _lnt_peripherals(self, other, lnt, subset):
         if subset == "pk":
             keys = ["DRUG"]
-        if subset == "metabolite":
+        elif subset == "metabolite":
             keys = ["MET"]
         else:
             keys = ["DRUG", "MET"]

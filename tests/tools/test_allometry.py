@@ -1,7 +1,3 @@
-import sys
-
-import numpy as np
-import packaging
 import pytest
 
 from pharmpy.tools import read_modelfit_results
@@ -14,14 +10,6 @@ from pharmpy.tools.allometry.tool import (
 )
 from pharmpy.workflows import ModelEntry, Workflow
 from pharmpy.workflows.contexts import NullContext
-
-tflite_condition = (
-    sys.version_info >= (3, 12)
-    and sys.platform == 'win32'
-    or sys.version_info >= (3, 12)
-    and sys.platform == 'darwin'
-    or packaging.version.parse(np.__version__) >= packaging.version.parse("2.0.0")
-)
 
 
 def test_create_workflow():
@@ -71,7 +59,6 @@ def test_get_best_model(load_model_for_test, testdata):
     assert best_model.description != 'allometry'
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
@@ -79,7 +66,7 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
     me_start = ModelEntry(model_start, modelfit_results=res_start)
     me_allometry = model_entry_factory([model_allometry])[0]
-    summods, _, _, _ = create_result_tables(me_start, me_allometry)
+    summods, _ = create_result_tables(me_start, me_allometry)
     assert len(summods) == 2
 
 

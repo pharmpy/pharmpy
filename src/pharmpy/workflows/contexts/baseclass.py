@@ -242,3 +242,8 @@ class Context(ABC):
         from pharmpy.workflows.dispatchers.local_dask import abort_workflow
 
         abort_workflow()
+
+    def has_completed(self):
+        """Check if the tool running in the context has completed"""
+        metadata = self.retrieve_metadata()
+        return "stats" in metadata and "end_time" in metadata["stats"]

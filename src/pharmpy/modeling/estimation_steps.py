@@ -356,10 +356,9 @@ def remove_parameter_uncertainty_step(model: Model):
 
 
 def set_evaluation_step(model: Model, idx: int = -1):
-    """Set estimation step
+    """Set evaluation step
 
-    Sets estimation step for a model. Methods currently supported are:
-        FO, FOCE, ITS, LAPLACE, IMPMAP, IMP, SAEM, BAYES
+    Change the final or the estimation step with a specific index to do evaulation.
 
     Parameters
     ----------

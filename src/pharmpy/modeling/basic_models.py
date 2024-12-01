@@ -2,6 +2,8 @@
 :meta private:
 """
 
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Optional, Union
 
@@ -23,6 +25,7 @@ from pharmpy.model import (
     Parameters,
     RandomVariables,
     Statements,
+    get_and_check_odes,
     output,
 )
 
@@ -204,10 +207,11 @@ def create_basic_pk_model(
         model = model.replace(
             statements=model.statements.before_odes
             + ruv_ass
-            + model.statements.ode_system
+            + get_and_check_odes(model)
             + model.statements.after_odes
         )
         Y_ass = model.statements.find_assignment("Y")
+        assert Y_ass is not None
         ipred = Y_ass.expression.make_args(Y_ass.expression)[0]
         error = Y_ass.expression.make_args(Y_ass.expression)[1]
         new_Y_ass = Assignment.create(Y_ass.symbol, ipred + error * ruv_ass.symbol)

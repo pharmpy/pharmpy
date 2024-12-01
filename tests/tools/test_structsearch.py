@@ -18,7 +18,7 @@ from pharmpy.tools.structsearch.tmdd import (
     create_wagner_model,
 )
 from pharmpy.tools.structsearch.tool import create_workflow, validate_input
-from pharmpy.workflows import Workflow
+from pharmpy.workflows import ModelfitResults, Workflow
 
 ests = pd.Series(
     {
@@ -116,7 +116,11 @@ def test_create_remaining_models_multiple_dvs(load_example_model_for_test):
 
 
 def test_pkpd(load_model_for_test, testdata):
-    search_space = "DIRECTEFFECT(*); EFFECTCOMP(*); INDIRECTEFFECT(*,*)"
+    search_space = (
+        "DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);"
+        "EFFECTCOMP([LINEAR,EMAX,SIGMOID]);"
+        "INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],*)"
+    )
     res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
     ests = res.parameter_estimates
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
@@ -166,22 +170,24 @@ def test_drug_metabolite(load_model_for_test, testdata):
 
 
 def test_create_workflow():
-    assert isinstance(create_workflow('pkpd'), Workflow)
+    assert isinstance(create_workflow('pkpd', None, ModelfitResults()), Workflow)
 
 
 def test_create_workflow_pkpd(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('pkpd', model=model), Workflow)
+    assert isinstance(create_workflow('pkpd', model=model, results=ModelfitResults()), Workflow)
 
 
 def test_create_workflow_tmdd(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('pkpd', model=model), Workflow)
+    assert isinstance(create_workflow('pkpd', model=model, results=ModelfitResults()), Workflow)
 
 
 def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('drug_metabolite', model=model), Workflow)
+    assert isinstance(
+        create_workflow('drug_metabolite', model=model, results=ModelfitResults()), Workflow
+    )
 
 
 @pytest.mark.parametrize(
@@ -262,8 +268,10 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
 )
 def test_validation(tmp_path, load_model_for_test, testdata, arguments, exception, match):
     kwargs = {**arguments}
+    kwargs['results'] = ModelfitResults()
+    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+    kwargs['model'] = model
     if "extra_model" in kwargs.keys():
-        model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
         kwargs["extra_model"] = model
     if "extra_model_results" in kwargs.keys():
         res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")

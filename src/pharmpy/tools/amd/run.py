@@ -1,7 +1,7 @@
 import re
 import warnings
 from pathlib import Path
-from typing import Callable, Literal, Optional, Union
+from typing import Callable, Literal, Optional, Sequence, Union
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
@@ -88,6 +88,7 @@ def run_amd(
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
+    _E: Optional[dict[str, Union[float, str]]] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -124,7 +125,8 @@ def run_amd(
     lloq_limit : float
         Lower limit of quantification. If None LLOQ column from dataset will be used
     allometric_variable: str or Symbol
-        Variable to use for allometry
+        Variable to use for allometry. This option is deprecated.
+        Please use ALLOMETRY in the mfl instead.
     occasion : str
         Name of occasion column
     path : str or Path
@@ -148,6 +150,8 @@ def run_amd(
         Parameter uncertainty method.
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
+    _E: dict
+        EXPERIMENTAL FEATURE. Dictionary of different E-values used in mBIC.
 
     Returns
     -------
@@ -169,8 +173,10 @@ def run_amd(
 
     """
     args = locals()
+    validate_input(**args)
 
     ctx = _setup_run(args)
+    ctx.log_info("Starting tool amd")
 
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
@@ -181,6 +187,17 @@ def run_amd(
             raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
     else:
         ss_mfl = ModelFeatures()
+
+    if ss_mfl.allometry is not None:
+        # Take it out and put back later
+        if allometric_variable is not None:
+            raise ValueError(
+                "Having both allometric_variable and ALLOMETRY in the mfl is not allowed"
+            )
+        mfl_allometry = ss_mfl.allometry
+        ss_mfl = ss_mfl.replace(allometry=None)
+    else:
+        mfl_allometry = None
 
     if modeltype == 'pkpd':
         dv = 2
@@ -234,7 +251,10 @@ def run_amd(
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
     args['input'] = model
-    to_be_skipped = validate_input(**args)
+    later_input_validation(**args)
+    to_be_skipped = check_skip(
+        ctx, model, occasion, allometric_variable, ignore_datainfo_fallback, search_space
+    )
 
     if parameter_uncertainty_method is not None:
         model = add_parameter_uncertainty_step(model, parameter_uncertainty_method)
@@ -267,7 +287,7 @@ def run_amd(
         order = ['residual', 'structural', 'iivsearch']
 
     if modeltype == 'pkpd' and 'allometry' in order:
-        warnings.warn('Skipping allometry since modeltype is "pkpd"')
+        ctx.log_warning('Skipping allometry since modeltype is "pkpd"')
         order.remove('allometry')
 
     if to_be_skipped:
@@ -281,7 +301,10 @@ def run_amd(
         if len(structsearch_features.mfl_statement_list()) == 0:
             if modeltype == 'pkpd':
                 structsearch_features = mfl_parse(
-                    "DIRECTEFFECT(*);EFFECTCOMP(*);INDIRECTEFFECT(*,*)", True
+                    "DIRECTEFFECT([LINEAR, EMAX, SIGMOID]);"
+                    "EFFECTCOMP([LINEAR, EMAX, SIGMOID]);"
+                    "INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)",
+                    True,
                 )
             else:
                 if administration in ['oral', 'ivoral']:
@@ -333,6 +356,8 @@ def run_amd(
             )
         else:
             modelsearch_features = mfl_parse("ELIMINATION(FO);" "PERIPHERALS(0..2)", True)
+    if mfl_allometry is not None:
+        modelsearch_features = modelsearch_features.replace(allometry=mfl_allometry)
 
     covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
     if not covsearch_features.covariate:
@@ -391,7 +416,7 @@ def run_amd(
                 run_subfuncs['structsearch'] = func
             else:
                 func = _subfunc_modelsearch(
-                    search_space=modelsearch_features, strictness=strictness, ctx=ctx
+                    search_space=modelsearch_features, strictness=strictness, E=_E, ctx=ctx
                 )
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
@@ -408,6 +433,7 @@ def run_amd(
                 func = _subfunc_iiv(
                     iiv_strategy='no_add',
                     strictness=strictness,
+                    E=_E,
                     ctx=ctx,
                     dir_name="rerun_iivsearch",
                 )
@@ -416,13 +442,14 @@ def run_amd(
                 func = _subfunc_iiv(
                     iiv_strategy=iiv_strategy,
                     strictness=strictness,
+                    E=_E,
                     ctx=ctx,
                     dir_name="iivsearch",
                 )
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
             func = _subfunc_iov(
-                amd_start_model=model, occasion=occasion, strictness=strictness, ctx=ctx
+                amd_start_model=model, occasion=occasion, strictness=strictness, E=_E, ctx=ctx
             )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
@@ -462,10 +489,11 @@ def run_amd(
                 func = _subfunc_ruvsearch(dv=dv, strictness=strictness, ctx=ctx, dir_name=run_name)
                 run_subfuncs[f'{run_name}'] = func
         elif section == 'allometry':
-            func = _subfunc_allometry(
-                amd_start_model=model, allometric_variable=allometric_variable, ctx=ctx
-            )
-            run_subfuncs['allometry'] = func
+            if mfl_allometry is None:
+                func = _subfunc_allometry(
+                    amd_start_model=model, allometric_variable=allometric_variable, ctx=ctx
+                )
+                run_subfuncs['allometry'] = func
         elif section == 'covariates':
             func = _subfunc_mechanistic_exploratory_covariates(
                 amd_start_model=model,
@@ -500,7 +528,8 @@ def run_amd(
 
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
     next_model_entry = model_entry
-    sum_subtools, sum_models, sum_inds_counts, sum_amd = [], [], [], []
+    sum_subtools = []
+    sum_models = dict()
     sum_subtools.append(_create_sum_subtool('start', model_entry))
     for tool_name, func in run_subfuncs.items():
         next_model, next_res = next_model_entry.model, next_model_entry.modelfit_results
@@ -509,73 +538,42 @@ def run_amd(
         subresults = func(next_model, next_res)
 
         if subresults is None:
-            sum_models.append(None)
-            sum_inds_counts.append(None)
+            continue
         else:
             final_model = subresults.final_model.replace(name=f"final_{tool_name}")
             final_model_entry = ModelEntry.create(
                 model=final_model, modelfit_results=subresults.final_results, parent=next_model
             )
             ctx.store_model_entry(final_model_entry)
-            if final_model_entry.model.name != next_model.name:
-                if tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]:
-                    cov_before = ModelFeatures.create_from_mfl_string(
-                        get_model_features(final_model)
+            if (mfl_allometry is not None and tool_name == 'modelsearch') or (
+                tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]
+            ):
+                cov_before = ModelFeatures.create_from_mfl_string(get_model_features(next_model))
+                cov_after = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
+                cov_differences = cov_after - cov_before
+                if cov_differences:
+                    covsearch_features = covsearch_features.expand(final_model)
+                    covsearch_features += cov_differences
+                    func = _subfunc_mechanistic_exploratory_covariates(
+                        amd_start_model=model,
+                        search_space=covsearch_features,
+                        strictness=strictness,
+                        mechanistic_covariates=mechanistic_covariates,
+                        ctx=ctx,
                     )
-                    cov_after = ModelFeatures.create_from_mfl_string(
-                        get_model_features(final_model)
-                    )
-                    cov_differences = cov_after - cov_before
-                    if cov_differences:
-                        covsearch_features = covsearch_features.expand(final_model)
-                        covsearch_features += cov_differences
-                        func = _subfunc_mechanistic_exploratory_covariates(
-                            amd_start_model=model,
-                            search_space=covsearch_features,
-                            strictness=strictness,
-                            mechanistic_covariates=mechanistic_covariates,
-                            ctx=ctx,
-                        )
-                        run_subfuncs['covsearch'] = func
-                next_model = final_model
-                next_model_entry = final_model_entry
+                    run_subfuncs['covsearch'] = func
+            next_model = final_model
+            next_model_entry = final_model_entry
             sum_subtools.append(_create_sum_subtool(tool_name, next_model_entry))
-            sum_models.append(subresults.summary_models.reset_index())
-            sum_inds_counts.append(subresults.summary_individuals_count.reset_index())
+            sum_models[tool_name] = subresults.summary_models
 
-    for sums in [sum_models, sum_inds_counts]:
-        filtered_results = list(
-            zip(*filter(lambda t: t[1] is not None, zip(list(run_subfuncs.keys()), sums)))
-        )
-
-        if not filtered_results:
-            sum_amd.append(None)
-            continue
-
-        sums = pd.concat(
-            filtered_results[1], keys=list(filtered_results[0]), names=['tool', 'default index']
-        ).reset_index()
-        if 'step' in sums.columns:
-            sums['step'] = sums['step'].fillna(1).astype('int64')
-        else:
-            sums['step'] = 1
-
-        sums.set_index(['tool', 'step', 'model'], inplace=True)
-        sums.drop('default index', axis=1, inplace=True)
-        sum_amd.append(sums)
-
-    summary_models, summary_individuals_count = sum_amd
+    # FIXME: add start model
+    summary_models = _create_model_summary(sum_models)
     summary_tool = _create_tool_summary(sum_subtools)
 
     if summary_models is None:
-        warnings.warn(
+        ctx.log_warning(
             'AMDResults.summary_models is None because none of the tools yielded a summary.'
-        )
-
-    if summary_individuals_count is None:
-        warnings.warn(
-            'AMDResults.summary_individuals_count is None because none of the tools yielded '
-            'a summary.'
         )
 
     final_model = next_model_entry.model
@@ -621,7 +619,6 @@ def run_amd(
         final_model=final_model.name,
         summary_tool=summary_tool,
         summary_models=summary_models,
-        summary_individuals_count=summary_individuals_count,
         summary_errors=summary_errors,
         final_model_parameter_estimates=_table_final_parameter_estimates(
             final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
@@ -643,6 +640,7 @@ def run_amd(
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         generate_report(rst_path, results_path, target_path)
+    ctx.log_info("Finishing tool amd")
     return res
 
 
@@ -688,6 +686,17 @@ def _create_sum_subtool(tool_name, selected_model_entry):
         'n_params': len(model.parameters.nonfixed),
         'ofv': res.ofv,
     }
+
+
+def _create_model_summary(summaries):
+    dfs = []
+    for tool_name, df in summaries.items():
+        df = df.reset_index()
+        df['tool'] = [tool_name] * len(df)
+        df.set_index(['tool', 'step', 'model'], inplace=True)
+        dfs.append(df)
+    model_summary = pd.concat(dfs, axis=0)
+    return model_summary
 
 
 def _create_tool_summary(rows):
@@ -742,17 +751,25 @@ def _subfunc_retires(tool, strictness, seed, ctx):
     return _run_retries
 
 
-def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, ctx) -> SubFunc:
+def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx) -> SubFunc:
     subctx = ctx.create_subcontext('modelsearch')
 
     def _run_modelsearch(model, modelfit_results):
+        if E and 'modelsearch' in E.keys():
+            rank_type = 'mbic'
+            e = E['modelsearch']
+        else:
+            rank_type = 'bic'
+            e = None
+
         res = run_tool(
             'modelsearch',
             search_space=search_space,
             algorithm='reduced_stepwise',
             model=model,
             strictness=strictness,
-            rank_type='bic',
+            rank_type=rank_type,
+            E=e,
             results=modelfit_results,
             path=subctx.path,
         )
@@ -881,10 +898,17 @@ def _subfunc_structsearch_tmdd(
     return _run_structsearch_tmdd
 
 
-def _subfunc_iiv(iiv_strategy, strictness, ctx, dir_name) -> SubFunc:
+def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
     subctx = ctx.create_subcontext(dir_name)
 
     def _run_iiv(model, modelfit_results):
+        if E and 'iivsearch' in E.keys():
+            rank_type = 'mbic'
+            e_p, e_q = E['iivsearch']
+        else:
+            rank_type = 'bic'
+            e_p, e_q = None, None
+
         keep = [
             str(symbol)
             for symbol in get_central_volume_and_clearance(model)
@@ -897,7 +921,9 @@ def _subfunc_iiv(iiv_strategy, strictness, ctx, dir_name) -> SubFunc:
             model=model,
             results=modelfit_results,
             strictness=strictness,
-            rank_type='bic',
+            rank_type=rank_type,
+            E_p=e_p,
+            E_q=e_q,
             keep=keep,
             path=subctx.path,
         )
@@ -967,7 +993,7 @@ def _subfunc_structural_covariates(
 
         # Ignore warning?
         if skipped_parameters:
-            warnings.warn(
+            ctx.log_warning(
                 f'{skipped_parameters} missing in start model and structural covariate effect cannot be added'
                 ' Might be added during a later COVsearch step if possible.'
             )
@@ -975,7 +1001,7 @@ def _subfunc_structural_covariates(
             # Uneccessary to warn (?)
             return None
         elif not structural_searchspace:
-            warnings.warn(
+            ctx.log_warning(
                 'No applicable structural covariates found in search space. Skipping structural_COVsearch'
             )
             return None
@@ -1012,7 +1038,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                     f' must be in {sorted(allowed_covariates)}.'
                 )
     else:
-        warnings.warn(
+        ctx.log_warning(
             'COVsearch will most likely be skipped because no covariates could be found.'
             ' Check search_space definition'
             ' and .datainfo usage of "covariate" type and "continuous" flag.'
@@ -1025,10 +1051,10 @@ def _subfunc_mechanistic_exploratory_covariates(
     def _run_mechanistic_exploratory_covariates(model, modelfit_results):
         index_offset = 0  # For naming runs
 
-        effects = search_space.convert_to_funcs()
+        effects = search_space.convert_to_funcs(model=model)
 
         if not effects:
-            warnings.warn(
+            ctx.log_warning(
                 'Skipping COVsearch because no effect candidates could be generated.'
                 ' Check search_space definition'
                 ' and .datainfo usage of "covariate" type and "continuous" flag.'
@@ -1042,7 +1068,7 @@ def _subfunc_mechanistic_exploratory_covariates(
 
             # FIXME : Move to validation
             if not mechanistic_searchspace:
-                warnings.warn(
+                ctx.log_warning(
                     'No covariate effect for given mechanistic covariates found.'
                     ' Skipping mechanistic COVsearch.'
                 )
@@ -1156,17 +1182,25 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
     return _run_allometry
 
 
-def _subfunc_iov(amd_start_model, occasion, strictness, ctx) -> SubFunc:
+def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
     subctx = ctx.create_subcontext("iovsearch")
 
     def _run_iov(model, modelfit_results):
+        if E and 'iovsearch' in E.keys():
+            rank_type = 'mbic'
+            e = E['iovsearch']
+        else:
+            rank_type = 'bic'
+            e = None
+
         res = run_tool(
             'iovsearch',
             model=model,
             results=modelfit_results,
             column=occasion,
             strictness=strictness,
-            rank_type='bic',
+            rank_type=rank_type,
+            E=e,
             path=subctx.path,
         )
         assert isinstance(res, Results)
@@ -1175,9 +1209,91 @@ def _subfunc_iov(amd_start_model, occasion, strictness, ctx) -> SubFunc:
     return _run_iov
 
 
+def check_skip(
+    context,
+    model: Model,
+    occasion: str,
+    allometric_variable: str,
+    ignore_datainfo_fallback: bool = False,
+    search_space: Optional[str] = None,
+):
+    to_be_skipped = []
+
+    # IOVSEARCH
+    if occasion is None:
+        context.log_warning('IOVsearch will be skipped because occasion is None.')
+        to_be_skipped.append("iovsearch")
+    else:
+        categories = get_occasion_levels(model.dataset, occasion)
+        if len(categories) < 2:
+            context.log_warning(
+                f'Skipping IOVsearch because there are less than two '
+                f'occasion categories in column "{occasion}": {categories}.'
+            )
+            to_be_skipped.append("iovsearch")
+
+    # ALLOMETRY
+    if allometric_variable is None:
+        if not ignore_datainfo_fallback:
+            try:
+                model.datainfo.descriptorix["body weight"]
+            except IndexError:
+                context.log_warning(
+                    'Allometry will be skipped because allometric_variable is None and could'
+                    ' not be inferred through .datainfo via "body weight" descriptor.'
+                )
+                to_be_skipped.append("allometry")
+        else:
+            context.log_warning(
+                'Allometry will be skipped because allometric_variable is None and'
+                ' ignore_datainfo_fallback is True'
+            )
+            to_be_skipped.append("allometry")
+
+    if search_space is not None:
+        ss_mfl = mfl_parse(search_space, True)
+        covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
+        covsearch_features = covsearch_features.expand(model)
+        covariates = []
+        if cov_attr := covsearch_features.covariate:
+            covariates.extend([x for cov in cov_attr for x in cov.covariate])
+        if not covariates:
+            if ignore_datainfo_fallback:
+                context.log_warning(
+                    'COVsearch will be skipped because no covariates were given'
+                    ' and ignore_datainfo_fallback is True.'
+                )
+                to_be_skipped.append("covariates")
+            elif not any(column.type == 'covariate' for column in model.datainfo):
+                context.log_warning(
+                    'COVsearch will be skipped because no covariates were given'
+                    ' or could be extracted.'
+                    ' Check search_space definition'
+                    ' and .datainfo usage of "covariate" type and "continuous" flag.'
+                )
+                to_be_skipped.append("covariates")
+    else:
+        if ignore_datainfo_fallback:
+            context.log_warning(
+                'COVsearch will be skipped because no covariates were given'
+                ' and ignore_datainfo_fallback is True.'
+            )
+            to_be_skipped.append("covariates")
+        elif not any(column.type == 'covariate' for column in model.datainfo):
+            context.log_warning(
+                'COVsearch will be skipped because no covariates were given'
+                ' or could be extracted.'
+                ' Check search_space definition'
+                ' and .datainfo usage of "covariate" type and "continuous" flag.'
+            )
+            to_be_skipped.append("covariates")
+
+    return to_be_skipped
+
+
 @with_runtime_arguments_type_check
 def validate_input(
-    input: Model,
+    input: Union[Model, Path, str, pd.DataFrame],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -1191,7 +1307,7 @@ def validate_input(
     met_init: Optional[float] = None,
     search_space: Optional[str] = None,
     lloq_method: Optional[str] = None,
-    lloq_limit: Optional[str] = None,
+    lloq_limit: Optional[float] = None,
     allometric_variable: Optional[TSymbol] = None,
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
@@ -1203,10 +1319,8 @@ def validate_input(
     seed: Optional[Union[np.random.Generator, int]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
+    _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
 ):
-    model = input
-    to_be_skipped = []
-
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
 
     check_list("administration", administration, ALLOWED_ADMINISTRATION)
@@ -1252,42 +1366,54 @@ def validate_input(
 
     check_list("retries_strategy", retries_strategy, RETRIES_STRATEGIES)
 
+    if _E:
+        if any(value in (0.0, '0%') for value in _E.values()):
+            raise ValueError('E-values in `_E` cannot be 0')
+
+
+def later_input_validation(
+    input: Model,
+    results: Optional[ModelfitResults] = None,
+    modeltype: str = 'basic_pk',
+    administration: str = 'oral',
+    strategy: str = "default",
+    cl_init: Optional[float] = None,
+    vc_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    b_init: Optional[float] = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
+    search_space: Optional[str] = None,
+    lloq_method: Optional[str] = None,
+    lloq_limit: Optional[float] = None,
+    allometric_variable: Optional[TSymbol] = None,
+    occasion: Optional[str] = None,
+    path: Optional[Union[str, Path]] = None,
+    resume: bool = False,
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
+    mechanistic_covariates: Optional[list[Union[str, tuple]]] = None,
+    retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
+    seed: Optional[Union[np.random.Generator, int]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    ignore_datainfo_fallback: bool = False,
+    _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
+):
+    # FIXME: This function should be removed and refactored into validate_inputs
+    # and optionally give warnings/errors during the run
+    # it currently depends on a model being created if a dataset was input to AMD.
+    model = input
+
     # IOVSEARCH
-    if occasion is None:
-        warnings.warn('IOVsearch will be skipped because occasion is None.')
-        to_be_skipped.append("iovsearch")
-    else:
-        if occasion not in model.dataset:
-            raise ValueError(
-                f'Invalid `occasion`: got `{occasion}`,'
-                f' must be one of {sorted(model.datainfo.names)}.'
-            )
-        categories = get_occasion_levels(model.dataset, occasion)
-        if len(categories) < 2:
-            warnings.warn(
-                f'Skipping IOVsearch because there are less than two '
-                f'occasion categories in column "{occasion}": {categories}.'
-            )
-            to_be_skipped.append("iovsearch")
+    if occasion is not None and occasion not in model.dataset:
+        raise ValueError(
+            f'Invalid `occasion`: got `{occasion}`,'
+            f' must be one of {sorted(model.datainfo.names)}.'
+        )
 
     # ALLOMETRY
-    if allometric_variable is None:
-        if not ignore_datainfo_fallback:
-            try:
-                model.datainfo.descriptorix["body weight"]
-            except IndexError:
-                warnings.warn(
-                    'Allometry will be skipped because allometric_variable is None and could'
-                    ' not be inferred through .datainfo via "body weight" descriptor.'
-                )
-                to_be_skipped.append("allometry")
-        else:
-            warnings.warn(
-                'Allometry will be skipped because allometric_variable is None and'
-                ' ignore_datainfo_fallback is True'
-            )
-            to_be_skipped.append("allometry")
-    else:
+    if allometric_variable is not None:
         validate_allometric_variable(model, allometric_variable)
 
     # COVSEARCH
@@ -1336,6 +1462,7 @@ def validate_input(
                         )
 
     if search_space is not None:
+        ss_mfl = mfl_parse(search_space, True)
         covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
         covsearch_features = covsearch_features.expand(model)
         covariates = []
@@ -1350,35 +1477,3 @@ def validate_input(
                         f' search_space: got `{covariate}`,'
                         f' must be in {sorted(allowed_covariates)}.'
                     )
-        else:
-            if ignore_datainfo_fallback:
-                warnings.warn(
-                    'COVsearch will be skipped because no covariates were given'
-                    ' and ignore_datainfo_fallback is True.'
-                )
-                to_be_skipped.append("covariates")
-            elif not any(column.type == 'covariate' for column in model.datainfo):
-                warnings.warn(
-                    'COVsearch will be skipped because no covariates were given'
-                    ' or could be extracted.'
-                    ' Check search_space definition'
-                    ' and .datainfo usage of "covariate" type and "continuous" flag.'
-                )
-                to_be_skipped.append("covariates")
-    else:
-        if ignore_datainfo_fallback:
-            warnings.warn(
-                'COVsearch will be skipped because no covariates were given'
-                ' and ignore_datainfo_fallback is True.'
-            )
-            to_be_skipped.append("covariates")
-        elif not any(column.type == 'covariate' for column in model.datainfo):
-            warnings.warn(
-                'COVsearch will be skipped because no covariates were given'
-                ' or could be extracted.'
-                ' Check search_space definition'
-                ' and .datainfo usage of "covariate" type and "continuous" flag.'
-            )
-            to_be_skipped.append("covariates")
-
-    return to_be_skipped

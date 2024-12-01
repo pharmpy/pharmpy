@@ -140,6 +140,13 @@ jobs:
       - name: Run integration tests
         run: tox -e integration
 
+      - name: Upload failed integration test directories artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+            name: integration-tests-ubuntu
+            path: /tmp/pytest-of-*
+
 
   integration-macos:
     needs: [get-nonmem]
@@ -250,3 +257,10 @@ jobs:
 
       - name: Run integration tests
         run: tox -e integration
+
+      - name: Upload failed integration test directories artifact
+        uses: actions/upload-artifact@v4
+        if: ${{ failure() }}
+        with:
+            name: integration-tests-ubuntu
+            path: ${{ runner.temp }}\pytest-of-*

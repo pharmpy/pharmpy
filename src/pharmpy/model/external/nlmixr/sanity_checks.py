@@ -165,10 +165,10 @@ def same_time(model: pharmpy.model.Model) -> bool:
                     if any([x not in evid_ignore for x in unique_evid]) and any(
                         [x in evid_ignore for x in unique_evid]
                     ):
-                        unique_rate = subset[
-                            "RATE"
-                        ].unique()  # pyright: ignore[reportAttributeAccessIssue]
                         if rate:
+                            unique_rate = subset[
+                                "RATE"
+                            ].unique()  # pyright: ignore[reportAttributeAccessIssue]
                             if any([x != 0 for x in unique_rate]) and any(
                                 [x == 0 for x in unique_rate]
                             ):

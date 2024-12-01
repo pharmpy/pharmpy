@@ -69,7 +69,8 @@ Optional
 | ``rank_type``                                 | Which :ref:`selection criteria<ranking_iivsearch>` to rank models  | 
 |                                               | on, e.g. OFV (default is BIC)                                      |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| ``linearize``                                 | Decide wether or not to linearize model before starting the search.|
+| ``linearize``                                 | Decide whether or not to :ref:`linearize<linearize_iivsearch>`     |
+|                                               | model before starting the search.                                  |
 |                                               | See :ref:`linearization tool<linearize>` for more. Default value   |
 |                                               | is False.                                                          |
 +-----------------------------------------------+--------------------------------------------------------------------+
@@ -201,13 +202,11 @@ for this step.
 
     digraph BST {
             node [fontname="Arial"];
-            base [label="Base model"]
             s1 [label="[CL]"]
             s2 [label="[CL,V]"]
             s3 [label="[CL,MAT]"]
             s4 [label="[CL,V,MAT]"]
 
-            base -> s1
             s1 -> s2
             s1 -> s3
             s2 -> s4
@@ -266,6 +265,72 @@ if the user does not want to use the default. The following rank functions are a
 +------------+-----------------------------------------------------------------------------------+
 
 Information about how BIC is calculated can be found in :py:func:`pharmpy.modeling.calculate_bic`.
+
+.. _linearize_iivsearch:
+
+~~~~~~~~~~~~~~~~~~~~~~
+Linearization approach
+~~~~~~~~~~~~~~~~~~~~~~
+
+IIVsearch can be run with linearization. In this approach, a base model with all possible IIVs will first be created and
+run in order to get the derivatives. Next, IIVsearch calls the linearize tool to linearize and run the model. All
+subsequent candidate models in IIVsearch will be linearized and estimated. Once the best model of these candidates
+have been selected, a delinearized version of the best candidate is created and estimated.
+
+.. graphviz::
+
+    digraph G {
+      draw [
+        label = "Input model";
+        shape = rect;
+      ];
+      derivative [
+        label = "Add IIVs for derivatives";
+        shape = rect;
+      ];
+      linearize [
+          label = "Linearize model";
+          shape = rect;
+      ]
+      cands [
+          label = "Create linearized candidates";
+          shape = rect;
+      ]
+      best_cand [
+          label = "Select best linearized model and delinearize";
+          shape = rect;
+      ]
+      better [
+          label = "Better than input model?";
+          shape = rect;
+      ]
+      select_lin [
+          label = "Select input";
+          shape = rect;
+      ]
+      select_input [
+          label = "Select candidate";
+          shape = rect;
+      ]
+      done [
+          label = "Best model";
+          shape = rect;
+      ]
+
+      draw -> derivative;
+      derivative -> linearize[label = "Fit model"];
+      linearize -> cands[label = "Fit model"];
+      cands -> best_cand[label = "Fit models"];
+      best_cand -> better[label = "Fit model"];
+
+      better -> select_input[label = "Yes"];
+      better -> select_lin [label = "No"];
+
+      select_input -> done;
+      select_lin -> done;
+
+    }
+
 
 ~~~~~~~~~~~~~~~~~~~~~
 The IIVsearch results

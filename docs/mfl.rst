@@ -79,12 +79,14 @@ MFL support the following model features:
 | COVARIATE?    | `parameter`, `covariate`,      | Exploratory covariate effects (will be tested)                     |
 |               | `effect`                       |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| DIRECTEFFECT  | `model`                        | Direct effect PD models.                                           |
+| DIRECTEFFECT  | :code:`LINEAR, EMAX, SIGMOID,  | Direct effect PD models.                                           |
+|               | STEP, LOGLIN`                  |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| EFFECTCOMP    | `model`                        | Effect comprtment PD models.                                       |
+| EFFECTCOMP    | :code:`LINEAR, EMAX, SIGMOID,  | Effect comprtment PD models.                                       |
+|               | STEP, LOGLIN`                  |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| INDIRECTEFFECT| `model`, `option`              | Indirect effect PD models. `option` can be                         |
-|               |                                | either production or degradation.                                  |
+| INDIRECTEFFECT| :code:`LINEAR, EMAX, SIGMOID`  | Indirect effect PD models. `option` can be                         |
+|               | , `option`                     | either :code:`PRODUCTION` or :code`DEGRADATION`.                   |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 
 

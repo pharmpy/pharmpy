@@ -1,22 +1,37 @@
 from dataclasses import replace
+from functools import partial
 
 import pytest
 
-from pharmpy.modeling import add_covariate_effect, get_covariate_effects, remove_covariate_effect
+from pharmpy.modeling import (
+    add_allometry,
+    add_covariate_effect,
+    add_peripheral_compartment,
+    get_covariate_effects,
+    remove_covariate_effect,
+)
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.covsearch.tool import (
     AdaptiveStep,
     AddEffect,
     Candidate,
+    Effect,
     ForwardStep,
     SearchState,
     _greedy_search,
     _start,
     create_workflow,
-    filter_search_space_and_model,
+    extract_nonsignificant_effects,
+    filter_effects,
+    get_best_candidate_so_far,
+    get_effect_funcs_and_base_model,
+    get_exploratory_covariates,
+    is_model_in_search_space,
+    prepare_mfls,
     task_add_covariate_effect,
     validate_input,
 )
+from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.workflows import ModelEntry, Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
@@ -43,6 +58,119 @@ def test_validate_input():
 def test_validate_input_with_model(load_model_for_test, testdata, model_path):
     model = load_model_for_test(testdata.joinpath(*model_path))
     validate_input(LARGE_VALID_MFL_STRING, model=model)
+
+
+@pytest.mark.parametrize(
+    'funcs, search_space, is_in_search_space',
+    [
+        ([], 'COVARIATE?([CL,VC],WT,EXP)', True),
+        ([], 'COVARIATE([CL,VC],WT,EXP)', False),
+        (
+            [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
+            'COVARIATE?([CL,VC],WT,EXP)',
+            False,
+        ),
+        (
+            [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
+            'COVARIATE([CL,VC],WT,EXP)',
+            False,
+        ),
+        (
+            [add_peripheral_compartment, add_allometry],
+            'COVARIATE([QP1,CL,VC,VP1],WT,POW);COVARIATE?([CL,VC],AGE,[EXP,LIN]);COVARIATE?([CL,VC],SEX,CAT)',
+            True,
+        ),
+    ],
+)
+def test_is_model_in_search_space(
+    load_model_for_test, testdata, funcs, search_space, is_in_search_space
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+
+    ss_mfl = ModelFeatures.create_from_mfl_string(search_space)
+    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
+    model_mfl = ModelFeatures.create_from_mfl_statement_list(
+        model_mfl.mfl_statement_list(["covariate"])
+    )
+
+    assert is_model_in_search_space(model, model_mfl, ss_mfl) == is_in_search_space
+
+
+@pytest.mark.parametrize(
+    'search_space, no_of_exploratory_covs',
+    [
+        ('COVARIATE?([CL,VC],WT,EXP)', 2),
+        ('COVARIATE(CL,WT,EXP);COVARIATE?(VC,WT,EXP)', 1),
+    ],
+)
+def test_get_exploratory_covariates(search_space, no_of_exploratory_covs):
+    search_space = ModelFeatures.create_from_mfl_string(search_space)
+    assert len(get_exploratory_covariates(search_space)) == no_of_exploratory_covs
+
+
+def test_filter_effects():
+    search_space = 'COVARIATE?([CL,VC],[WT,AGE],EXP)'
+    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    effect_funcs = get_exploratory_covariates(mfl)
+    assert len(effect_funcs) == 4
+    effect_args_1 = ('CL', 'WT', 'exp', '*')
+    last_effect = Effect(*effect_args_1)
+    filtered_1 = filter_effects(effect_funcs, last_effect, {})
+    assert len(filtered_1) == 3
+    assert effect_args_1 in effect_funcs.keys()
+    assert effect_args_1 not in filtered_1.keys()
+    nonsignificant_effects = {effect_args_1: effect_funcs[effect_args_1]}
+    effect_args_2 = ('CL', 'AGE', 'exp', '*')
+    last_effect = Effect(*effect_args_2)
+    filtered_2 = filter_effects(effect_funcs, last_effect, nonsignificant_effects)
+    assert len(filtered_2) == 2
+
+
+@pytest.mark.parametrize(
+    'p_value, no_of_nonsignificant_effects',
+    [(0, 4), (100000000000000000, 0), (10**-195, 1)],
+)
+def test_extract_nonsignificant_effects(
+    load_model_for_test, testdata, model_entry_factory, p_value, no_of_nonsignificant_effects
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    parent_modelentry = ModelEntry(model, modelfit_results=modelres)
+
+    search_space = 'COVARIATE?([CL,VC],[WT, AGE],EXP)'
+    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    effect_funcs = get_exploratory_covariates(mfl)
+    models = [func(model) for func in effect_funcs.values()]
+    model_entries = model_entry_factory(models, ref_val=modelres.ofv)
+    steps = [ForwardStep(p_value, Effect(*key)) for key in effect_funcs.keys()]
+    candidates = [Candidate(me, (step,)) for me, step in zip(model_entries, steps)]
+    nonsignificant_effects = extract_nonsignificant_effects(
+        parent_modelentry, candidates, effect_funcs, p_value
+    )
+
+    assert len(nonsignificant_effects) == no_of_nonsignificant_effects
+
+
+@pytest.mark.parametrize(
+    'search_space, no_of_covariates',
+    [
+        ('COVARIATE?([CL,VC],WT,EXP)', 1),
+        (
+            'LET(CONTINUOUS,[AGE,WT]);LET(CATEGORICAL,SEX)\n'
+            'COVARIATE?([CL,VC],@CONTINUOUS,exp,*)\n'
+            'COVARIATE?([CL,VC],@CATEGORICAL,cat,*)',
+            2,
+        ),
+    ],
+)
+def test_prepare_mfls(load_model_for_test, testdata, search_space, no_of_covariates):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    ss_mfl, model_mfl = prepare_mfls(model, search_space)
+    assert model_mfl.absorption is None
+    assert len(ss_mfl.covariate) == no_of_covariates
+    assert prepare_mfls(model, ss_mfl)[0] == ss_mfl
 
 
 @pytest.mark.parametrize(
@@ -161,7 +289,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
     orig_cov = get_covariate_effects(model)
     assert len(orig_cov) == 3
 
-    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    eff, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     assert len(eff) == 2
     expected_cov_eff = set((('CL', 'APGR', 'cat', '*'), ('V', 'APGR', 'cat', '*')))
     assert set(eff.keys()) == expected_cov_eff
@@ -173,7 +301,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
     model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
     assert len(get_covariate_effects(model)) == 1
     search_space = 'COVARIATE([CL, V],WGT,pow,*)'
-    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    eff, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     assert len(get_covariate_effects(filtered_model)) == 2
     assert len(eff) == 0
 
@@ -184,7 +312,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
     model = add_covariate_effect(model, 'CL', 'WGT', 'pow', '*')
     assert len(get_covariate_effects(model)) == 1
     search_space = 'COVARIATE?([CL, V], WGT, pow, *)'
-    eff, filtered_model = filter_search_space_and_model(search_space, model)
+    eff, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     assert len(get_covariate_effects(filtered_model)) == 0
     assert len(eff) == 2
 
@@ -268,7 +396,7 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     modelres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
 
-    candidate_effect_funcs, start = filter_search_space_and_model(search_space, model)
+    candidate_effect_funcs, start = get_effect_funcs_and_base_model(search_space, model)
     start = _start(start, modelres, False)
     candidate = Candidate(start, ())
     state = SearchState(start, start, candidate, [candidate])
@@ -289,7 +417,6 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
             best_candidate = c
 
     for c in res.all_candidates_so_far:
-        print(c.modelentry.modelfit_results.ofv, c.steps)
         if len(c.steps) == 1:
             assert (
                 best_candidate.modelentry.modelfit_results.ofv <= c.modelentry.modelfit_results.ofv
@@ -308,3 +435,29 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
             assert (
                 c.modelentry.modelfit_results.ofv > best_candidate.modelentry.modelfit_results.ofv
             )
+
+
+def test_get_best_model_so_far(load_model_for_test, testdata, model_entry_factory):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    params = ['CL', 'V', 'MAT']
+    kwargs = {'covariate': 'WT', 'effect': 'exp', 'operation': '*'}
+    funcs = [partial(add_covariate_effect, parameter=p, **kwargs) for p in params]
+    cov_funcs = [funcs, funcs[1:2], [funcs[2]]]
+
+    p_value = 0.01
+    strictness = 'minimization_successful'
+    parent_model_entry = ModelEntry(model, modelfit_results=modelres)
+    candidates = [Candidate(parent_model_entry, steps=tuple())]
+    for i, funcs in enumerate(cov_funcs, 1):
+        new_cands = [func(model=parent_model_entry.model) for func in funcs]
+        cand_model_entries = model_entry_factory(new_cands, parent_model_entry.modelfit_results.ofv)
+        # Attribute Steps are not relevant to this test
+        candidates.extend([Candidate(me, steps=()) for me in cand_model_entries])
+        best_candidate_so_far = get_best_candidate_so_far(
+            parent_model_entry, cand_model_entries, candidates, strictness, p_value
+        )
+        model_entry_lowest_ofv = min(cand_model_entries, key=lambda me: me.modelfit_results.ofv)
+        assert best_candidate_so_far.modelentry == model_entry_lowest_ofv
+        parent_model_entry = best_candidate_so_far.modelentry

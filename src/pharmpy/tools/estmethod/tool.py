@@ -17,7 +17,7 @@ from pharmpy.workflows.results import ModelfitResults
 
 METHODS = ('FOCE', 'FO', 'IMP', 'IMPMAP', 'ITS', 'SAEM', 'LAPLACE', 'BAYES')
 SOLVERS = ('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI')
-PARAMETER_UNCERTAINTY_METHODS = ('SANDWICH', 'SMAT', 'RMAT')
+PARAMETER_UNCERTAINTY_METHODS = ('SANDWICH', 'SMAT', 'RMAT', 'EFIM')
 
 ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only_eval'])
 

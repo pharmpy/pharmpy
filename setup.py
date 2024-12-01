@@ -14,7 +14,7 @@ def read(*names, **kwargs):
 
 setup(
     name='pharmpy-core',
-    version='1.2.0',
+    version='1.3.0',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modeling',
     long_description=read('README.rst'),
@@ -45,6 +45,7 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Programming Language :: Python :: 3.11',
         'Programming Language :: Python :: 3.12',
+        'Programming Language :: Python :: 3.13',
         'Programming Language :: Python :: Implementation :: CPython',
         'Topic :: Scientific/Engineering',
     ],
@@ -57,7 +58,7 @@ setup(
         'symengine>=0.11.0',
         'pandas>=1.4, !=2.1.0',
         'numexpr>=2.7.0',
-        'altair>=5.0.0',
+        'altair>=5.5.0',
         'jsonschema>=3.1.0',
         'sphinx>=2.2.0',
         'csscompressor>=0.9.5',

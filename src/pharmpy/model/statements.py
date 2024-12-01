@@ -2241,7 +2241,7 @@ class Statements(Sequence, Immutable):
 
         Parameters
         ----------
-        symbol : sypmpy.Symbol or str
+        symbol : sympy.Symbol or str
             Symbol to reassign
         expression : Expr or str
             The new expression to assign to symbol

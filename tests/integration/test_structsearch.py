@@ -18,7 +18,7 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
         pk_res = fit(pk_model)
         res = run_structsearch(
             type='pkpd',
-            search_space="DIRECTEFFECT(*)",
+            search_space="DIRECTEFFECT([EMAX,LINEAR,SIGMOID])",
             results=pk_res,
             model=model,
             b_init=0.1,

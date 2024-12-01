@@ -153,9 +153,9 @@ If no search space is given for the structsearch tool, then a default will be se
 
 .. code-block::
 
-    DIRECTEFFECT(*)
-    EFFECTCOMP(*)
-    INDIRECTEFFECT(*,*)
+    DIRECTEFFECT([LINEAR, EMAX, SIGMOID])
+    EFFECTCOMP([LINEAR, EMAX, SIGMOID])
+    INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)
 
 IIVSearch
 ~~~~~~~~~

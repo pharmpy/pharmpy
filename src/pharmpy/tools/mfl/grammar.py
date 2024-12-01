@@ -46,7 +46,7 @@ metabolite: "METABOLITE"i "(" (_metabolite_option) ")"
 
 _pdtype_option: pdtype_modes | pdtype_wildcard
 pdtype_modes: PDTYPE_MODE | "[" [PDTYPE_MODE ("," PDTYPE_MODE)*] "]"
-PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i
+PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i | "step"i | "loglin"i
 pdtype_wildcard: WILDCARD
 
 _production_option: production_modes | production_wildcard

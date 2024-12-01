@@ -170,8 +170,8 @@ def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Mode
     kwargs
         Arguments to pass to tool
 
-    Return
-    ------
+    Returns
+    -------
     Results
         Results object for tool
 
@@ -524,6 +524,50 @@ def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, C
     return dispatcher, ctx
 
 
+def _open_context(source):
+    if isinstance(source, Path) or isinstance(source, str):
+        path = Path(source)
+        context = LocalDirectoryContext(path)
+    elif isinstance(source, Context):
+        context = source
+    else:
+        raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
+    return context
+
+
+def retrieve_model(
+    source: Union[str, Path, Context],
+    name: str,
+) -> Model:
+    """Retrieve a model from a context/tool run
+
+    Any models created and run by the tool can be
+    retrieved.
+
+    Parameters
+    ----------
+    source : str, Path, Context
+        Source where to find models. Can be a path (as str or Path), or a
+        Context
+    name : str
+        Name of the model
+
+    Return
+    ------
+    Model
+        The model object
+
+    Examples
+    --------
+    >>> from pharmpy.tools import retrieve_model
+    >>> tooldir_path = 'path/to/tool/directory'
+    >>> model = retrieve_model(tooldir_path, 'run1')      # doctest: +SKIP
+
+    """
+    context = _open_context(source)
+    return context.retrieve_model_entry(name).model
+
+
 def retrieve_models(
     source: Union[str, Path, Context],
     names: Optional[list[str]] = None,
@@ -553,14 +597,7 @@ def retrieve_models(
     >>> models = retrieve_models(tooldir_path, names=['run1'])      # doctest: +SKIP
 
     """
-    if isinstance(source, Path) or isinstance(source, str):
-        path = Path(source)
-        context = LocalDirectoryContext(path)
-    elif isinstance(source, Context):
-        context = source
-    else:
-        raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
-
+    context = _open_context(source)
     names_all = context.list_all_names()
     if names is None:
         names = names_all
@@ -944,7 +981,10 @@ def is_strictness_fulfilled(
     >>> is_strictness_fulfilled(model, res, "minimization_successful or rounding_errors")
     True
     """
-    assert results is not None
+    if results is None:
+        return False
+    # FIXME: We should have the assert instead of the is is None
+    # assert results is not None, f"results is None for model {model.name}"
     if np.isnan(results.ofv):
         return False
     elif strictness == "":
@@ -1283,17 +1323,19 @@ def load_example_modelfit_results(name: str):
     return res
 
 
-def calculate_bic_penalty(
+def calculate_mbic_penalty(
     candidate_model: Model,
     search_space: Union[str, list[str], ModelFeatures],
     base_model: Optional[Model] = None,
-    E_p: Optional[float] = 1.0,
-    E_q: Optional[float] = 1.0,
+    E_p: Optional[Union[float, str]] = 1.0,
+    E_q: Optional[Union[float, str]] = 1.0,
     keep: Optional[list[str]] = None,
 ):
+    if E_p == 0 or E_q == 0:
+        raise ValueError('E-values cannot be 0')
     if isinstance(search_space, str) or isinstance(search_space, ModelFeatures):
         if base_model:
-            raise ValueError('Cannot provide both `search_space` as MFL as well as `base_model`')
+            raise ValueError('Cannot provide both `search_space` and `base_model`')
         if E_p is None:
             raise ValueError(
                 'Missing value for `E_p`, must be specified when using MFL in `search_space`'
@@ -1351,10 +1393,22 @@ def calculate_bic_penalty(
     p = p if k_p != 0 else 1
     q = q if k_q != 0 else 1
     # If either are omitted
-    E_p = E_p if E_p is not None else 1
-    E_q = E_q if E_q is not None else 1
+    E_p = _prepare_E_value(E_p, p, type='p')
+    E_q = _prepare_E_value(E_q, q, type='q')
 
     return 2 * k_p * math.log(p / E_p) + 2 * k_q * math.log(q / E_q)
+
+
+def _prepare_E_value(e, p, type='p'):
+    if isinstance(e, str):
+        e = (float(e.strip('%')) / 100) * p
+    elif e is None:
+        e = 1
+    else:
+        e = e
+    if e > p:
+        raise ValueError(f'`E_{type}` cannot be bigger than `{type}`: E_{type}={e}, {type}={p}')
+    return e
 
 
 def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):

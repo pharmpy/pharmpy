@@ -2,8 +2,7 @@ from __future__ import annotations
 
 from typing import Optional, Union
 
-from pharmpy.basic import TExpr, TSymbol
-from pharmpy.internals.expr.parse import parse as parse_expr
+from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
 from .expressions import _create_symbol
@@ -95,13 +94,13 @@ def add_allometry(
                 "No allometric variable could be found. Try setting the allometric_variable argument"
             )
 
-    variable = parse_expr(allometric_variable)
-    reference = parse_expr(reference_value)
+    variable = Expr(allometric_variable)
+    reference = Expr(reference_value)
 
     parsed_parameters = []
 
     if parameters is not None:
-        parsed_parameters = [parse_expr(p) for p in parameters]
+        parsed_parameters = [Expr(p) for p in parameters]
 
     if parameters is None or initials is None:
         cls = find_clearance_parameters(model)
@@ -142,8 +141,7 @@ def add_allometry(
             new_ass = Assignment.create(p, expr)
             ind = sset.find_assignment_index(p)
             sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
-    parameters = Parameters.create(params)
-    model = model.replace(statements=sset, parameters=parameters)
+    model = model.replace(statements=sset, parameters=Parameters.create(params))
     model = model.update_source()
 
     return model

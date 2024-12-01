@@ -2,6 +2,8 @@
 :meta private:
 """
 
+from __future__ import annotations
+
 import importlib
 import re
 import warnings
@@ -181,7 +183,7 @@ def convert_model(
 
 
 def get_model_code(model: Model) -> str:
-    """Get the model code of the underlying model language
+    """Get the model code of the underlying model language as a string
 
     Parameters
     ----------
@@ -197,14 +199,14 @@ def get_model_code(model: Model) -> str:
     --------
     >>> from pharmpy.modeling import get_model_code, load_example_model
     >>> model = load_example_model("pheno")
-    >>> get_model_code(model)  # doctest: +SKIP
+    >>> code = get_model_code(model)
 
     """
     return model.code
 
 
 def print_model_code(model: Model) -> None:
-    """Print the model code of the underlying model language
+    """Print the model code of the underlying model language to the console
 
     Parameters
     ----------

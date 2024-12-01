@@ -2,6 +2,8 @@
 :meta private:
 """
 
+from __future__ import annotations
+
 import re
 import warnings
 from collections import Counter, defaultdict
@@ -24,6 +26,7 @@ from pharmpy.model import (
     NormalDistribution,
     Parameter,
     Parameters,
+    Statements,
 )
 
 from .common import remove_unused_parameters_and_rvs
@@ -664,13 +667,14 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None):
 
     for eta in etas:
         eta_sym = Expr(eta)
+        new = []
         for s in sset:
             if eta_sym in s.free_symbols:
                 expr = sympy.sympify(s.expression).expand()
                 if len(expr.args) == 0:
-                    sset = sset.subs({Expr(expr): 0})
+                    new_s = s.subs({Expr(expr): 0})
                 elif len(expr.args) == 1 and expr.fun == sympy.exp:
-                    sset = sset.subs({eta_sym: 0})
+                    new_s = s.subs({eta_sym: 0})
                 else:
                     expr_subs = expr
                     for i in range(len(expr.args)):
@@ -682,10 +686,11 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None):
                                     expr_subs = expr_subs.subs({(expr.args[i]): 0})
                                 else:
                                     expr_subs = expr_subs.subs({eta_sym: 0})
-                    # NOTE: Statements.reassign is used instead of Statements.subs here
-                    #  since symengine subs (which is called further down) doesn't work
-                    #  for substitution of subexpressions in exp(x+y)
-                    sset = sset.reassign(s.symbol, Expr(expr_subs))
+                    new_s = Assignment.create(s.symbol, Expr(expr_subs))
+            else:
+                new_s = s
+            new.append(new_s)
+        sset = Statements.create(new)
 
     keep = [name for name in model.random_variables.names if name not in etas]
     model = model.replace(random_variables=rvs[keep], statements=sset)

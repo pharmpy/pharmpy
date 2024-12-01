@@ -9,7 +9,7 @@ from pharmpy.modeling import set_initial_estimates
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -20,14 +20,14 @@ from .filter import mfl_filtering
 
 def create_workflow(
     search_space: Union[str, ModelFeatures],
-    algorithm: Literal[tuple(algorithms.ALGORITHMS)],
+    algorithm: Literal[tuple(algorithms.ALGORITHMS)] = 'reduced_stepwise',
     iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
-    E: Optional[float] = None,
+    E: Optional[Union[float, str]] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
@@ -99,6 +99,7 @@ def start(
     strictness,
     E,
 ):
+    context.log_info("Starting tool modelsearch")
     # Create links to input model
     model = model.replace(name="input", description="")
     context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
@@ -185,7 +186,8 @@ def _start(model, modelfit_results):
     return ModelEntry.create(model, modelfit_results=modelfit_results)
 
 
-def _results(res):
+def _results(context, res):
+    context.log_info("Finishing tool modelsearch")
     return res
 
 
@@ -235,7 +237,7 @@ def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries)
 
     if rank_type == 'mbic':
         penalties = [
-            calculate_bic_penalty(me.model, mfl, E_p=E)
+            calculate_mbic_penalty(me.model, mfl, E_p=E)
             for me in [base_model_entry] + res_model_entries
         ]
     else:
@@ -316,8 +318,10 @@ def validate_input(
     if rank_type == 'mbic':
         if E is None:
             raise ValueError('Value `E` must be provided when using mbic')
-        if E <= 0.0:
+        if isinstance(E, float) and E <= 0.0:
             raise ValueError(f'Value `E` must be more than 0: got `{E}`')
+        if isinstance(E, str) and not E.endswith('%'):
+            raise ValueError(f'Value `E` must be denoted with `%`: got `{E}`')
 
 
 @dataclass(frozen=True)

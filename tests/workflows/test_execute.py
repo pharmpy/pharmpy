@@ -189,9 +189,16 @@ def test_execute_workflow_results_with_tool_database(tmp_path):
     assert res.ofv == ofv
 
 
+@pytest.mark.parametrize(
+    'path',
+    [
+        Path('frem') / 'results.json',
+        Path('results') / 'modelsearch_results.json',
+    ],
+)
 @pytest.mark.xdist_group(name="workflow")
-def test_execute_workflow_results_with_report(testdata, tmp_path):
-    mfr = read_results(testdata / 'frem' / 'results.json')
+def test_execute_workflow_results_with_report(testdata, tmp_path, path):
+    mfr = read_results(testdata / path)
 
     wb = WorkflowBuilder(tasks=[Task('result', lambda: mfr)], name='test-workflow')
     wf = Workflow(wb)

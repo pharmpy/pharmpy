@@ -20,7 +20,7 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -38,7 +38,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    E: Optional[float] = None,
+    E: Optional[Union[float, str]] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -181,7 +181,7 @@ def task_brute_force_search(
     if rank_type == "mbic":
         ref = model_with_iov
         penalties = [
-            calculate_bic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
+            calculate_mbic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
             for me in [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
         ]
     else:
@@ -376,7 +376,7 @@ def task_results(
         models = [me.model for me in [base_model_entry] + res_model_entries]
         ref = sorted(models, key=lambda model: len(model.parameters), reverse=True)[0]
         penalties = [
-            calculate_bic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
+            calculate_mbic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
             for me in [base_model_entry] + res_model_entries
         ]
     else:
@@ -443,8 +443,10 @@ def validate_input(
     if rank_type == 'mbic':
         if E is None:
             raise ValueError('Value `E` must be provided when using mbic')
-        if E <= 0.0:
+        if isinstance(E, float) and E <= 0.0:
             raise ValueError(f'Value `E` must be more than 0: got `{E}`')
+        if isinstance(E, str) and not E.endswith('%'):
+            raise ValueError(f'Value `E` must be denoted with `%`: got `{E}`')
 
 
 @dataclass(frozen=True)

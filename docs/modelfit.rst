@@ -46,6 +46,18 @@ function.
 
     results = read_modelfit_results('tests/testdata/nonmem/pheno_real.mod')
 
+
+Minimization successful
+~~~~~~~~~~~~~~~~~~~~~~~
+
+If the minimization was successful the :code:`minimization_successful`-attribute is :code:`True`.
+
+.. pharmpy-execute::
+
+    results.minimization_successful
+
+
+
 Final OFV
 ~~~~~~~~~
 

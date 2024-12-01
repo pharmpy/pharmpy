@@ -1915,6 +1915,7 @@ def update_estimation(control_stream, model):
 
 def sort_table(table):
     move_last = (
+        "RFORMAT",
         "NOAPPEND",
         "NOPRINT",
         "ONEHEADER",

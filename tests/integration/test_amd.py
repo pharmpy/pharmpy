@@ -89,7 +89,6 @@ def test_amd_basic(tmp_path, testdata, strategy, subrundir):
 
         assert len(res.summary_tool) >= 1
         assert len(res.summary_models) >= 1
-        assert len(res.summary_individuals_count) >= 1
 
 
 # def test_structure_mechanistic_exploratory(tmp_path, testdata):
@@ -162,4 +161,3 @@ def test_amd_dollar_design(tmp_path, testdata):
         assert (rundir / 'results.csv').exists()
 
         assert len(res.summary_models) >= 1
-        assert len(res.summary_individuals_count) >= 1

@@ -24,10 +24,10 @@ An example of how to initiate the tool can be seen below
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_structsearch(model = start_model,
-                            results = start_model_results,
-                            number_of_candidate = 5,
-                            scale = "normal")
+    res = run_retries(model = start_model,
+                      results = start_model_results,
+                      number_of_candidates = 5,
+                      scale = "normal")
 
 Arguments
 ~~~~~~~~~

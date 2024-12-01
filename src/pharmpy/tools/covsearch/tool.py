@@ -15,7 +15,6 @@ from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import create_results, update_initial_estimates
-from pharmpy.tools.covsearch.fast_scm import fast_scm_workflow
 from pharmpy.tools.covsearch.samba import samba_workflow
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
@@ -24,7 +23,7 @@ from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
-from pharmpy.tools.mfl.statement.feature.symbols import Wildcard
+from pharmpy.tools.mfl.statement.feature.symbols import Option, Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
@@ -245,7 +244,7 @@ def create_workflow(
     store_task = Task("store_input_model", _store_input_model, model, results, max_eval)
     start_task = Task("create_modelentry", _start, model, results)
     wb.add_task(start_task, predecessors=store_task)
-    init_task = Task("init", _init_search_state, search_space, algorithm)
+    init_task = Task("init", _init_search_state, search_space)
     wb.add_task(init_task, predecessors=start_task)
 
     forward_search_task = Task(
@@ -288,6 +287,7 @@ def create_workflow(
 
 
 def _store_input_model(context, model, results, max_eval):
+    context.log_info("Starting tool covsearch")
     model = model.replace(name="input", description="")
     me = ModelEntry.create(model=model, modelfit_results=results)
     context.store_input_model_entry(me)
@@ -306,29 +306,31 @@ def _start(model, results, max_eval):
 
 
 def _init_search_state(
-    context, search_space: str, algorithm: str, modelentry: ModelEntry
-) -> SearchState:
+    context, search_space: Union[str, ModelFeatures], modelentry: ModelEntry
+) -> tuple[dict[tuple[str], callable], SearchState]:
     model = modelentry.model
-    effect_funcs, filtered_model = filter_search_space_and_model(search_space, model)
+    effect_funcs, base_model = get_effect_funcs_and_base_model(search_space, model)
 
-    if filtered_model != model:
-        filtered_modelentry = ModelEntry.create(model=filtered_model)
-        filtered_fit_wf = create_fit_workflow(modelentries=[filtered_modelentry])
-        filtered_modelentry = context.call_workflow(filtered_fit_wf, 'fit_filtered_model')
+    if base_model != model:
+        base_modelentry = ModelEntry.create(model=base_model)
+        base_fit_wf = create_fit_workflow(modelentries=[base_modelentry])
+        base_modelentry = context.call_workflow(base_fit_wf, 'fit_filtered_model')
     else:
-        filtered_modelentry = modelentry
-    candidate = Candidate(filtered_modelentry, ())
-    return (effect_funcs, SearchState(modelentry, filtered_modelentry, candidate, [candidate]))
+        base_modelentry = modelentry
+    base_candidate = Candidate(base_modelentry, ())
+    search_state_init = SearchState(modelentry, base_modelentry, base_candidate, [base_candidate])
+
+    return effect_funcs, search_state_init
 
 
-def filter_search_space_and_model(search_space, model):
+def get_effect_funcs_and_base_model(search_space, model):
+    ss_mfl, model_mfl = prepare_mfls(model, search_space)
+    exploratory_cov_funcs = get_exploratory_covariates(ss_mfl)
+
+    if is_model_in_search_space(model, model_mfl, ss_mfl):
+        return exploratory_cov_funcs, model
+
     filtered_model = model.replace(name="filtered_input_model")
-    if isinstance(search_space, str):
-        search_space = ModelFeatures.create_from_mfl_string(search_space)
-    ss_mfl = search_space.expand(filtered_model)  # Expand to remove LET/REF
-
-    # Clean up all covariate effect in model
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
     # covariate effects not in search space, should be kept as it is
     covariate_to_keep = model_mfl - ss_mfl
     # covariate effects in both model and search space, should be removed for exploration in future searching steps
@@ -359,16 +361,53 @@ def filter_search_space_and_model(search_space, model):
             description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
         filtered_model = filtered_model.replace(description=";".join(description))
 
-    # Exploratory covariates
-    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
-    exploratory_cov_funcs = all_funcs(Model(), exploratory_cov)
-    exploratory_cov_funcs = {
-        cov_effect[1:-1]: cov_func
-        for cov_effect, cov_func in exploratory_cov_funcs.items()
-        if cov_effect[-1] == "ADD"
-    }
-
     return (exploratory_cov_funcs, filtered_model)
+
+
+def prepare_mfls(model, search_space):
+    if isinstance(search_space, str):
+        search_space = ModelFeatures.create_from_mfl_string(search_space)
+    ss_mfl = search_space.expand(model)  # Expand to remove LET/REF
+    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
+
+    ss_mfl = ModelFeatures.create_from_mfl_statement_list(ss_mfl.mfl_statement_list(["covariate"]))
+    model_mfl = ModelFeatures.create_from_mfl_statement_list(
+        model_mfl.mfl_statement_list(["covariate"])
+    )
+
+    return ss_mfl, model_mfl
+
+
+def get_exploratory_covariates(ss_mfl):
+    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
+    cov_funcs = all_funcs(Model(), exploratory_cov)
+    exploratory_cov_funcs = dict()
+    for cov_effect, cov_func in cov_funcs.items():
+        if cov_effect[-1] == "ADD":
+            effect = cov_effect[1:-1]  # Everything except "ADD", e.g. ('CL', 'WT', 'exp', '*')
+            exploratory_cov_funcs[effect] = cov_func
+    return exploratory_cov_funcs
+
+
+def is_model_in_search_space(model, model_mfl, cov_mfl):
+    def _is_optional(cov):
+        return cov.optional == Option(True)
+
+    cov_struct = [cov for cov in cov_mfl.covariate if not _is_optional(cov)]
+    cov_struct_mfl = ModelFeatures.create_from_mfl_statement_list(cov_struct)
+
+    # Check if all obligatory covariates are in model
+    if not model_mfl.contain_subset(cov_struct_mfl, model=model):
+        return False
+    elif model_mfl.covariate:
+        # Check if all covariates in model are in original search space
+        if not cov_mfl.contain_subset(model_mfl, model=model):
+            return False
+        # FIXME: workaround, check if model is simplest model in search space
+        cov_exploratory = cov_mfl - cov_struct_mfl
+        if cov_exploratory.contain_subset(model_mfl, model=model):
+            return False
+    return True
 
 
 def task_greedy_forward_search(
@@ -578,81 +617,104 @@ def perform_step_procedure(
         new_candidate_modelentries = list(
             map(lambda candidate: candidate.modelentry, new_candidates)
         )
-
-        parent_modelentry = best_candidate_so_far.modelentry
-        ofvs = [
-            (
-                np.nan
-                if modelentry.modelfit_results is None
-                or not is_strictness_fulfilled(
-                    modelentry.model, modelentry.modelfit_results, strictness
-                )
-                else modelentry.modelfit_results.ofv
-            )
-            for modelentry in new_candidate_modelentries
-        ]
         # NOTE: We assume parent_modelentry.modelfit_results is not None
+        parent_modelentry = best_candidate_so_far.modelentry
         assert parent_modelentry.modelfit_results is not None
-        best_model_so_far = lrt_best_of_many(
-            parent_modelentry,
-            new_candidate_modelentries,
-            parent_modelentry.modelfit_results.ofv,
-            ofvs,
-            alpha,
+
+        best_candidate_so_far = get_best_candidate_so_far(
+            parent_modelentry, new_candidate_modelentries, all_candidates_so_far, strictness, alpha
         )
 
-        if best_model_so_far is parent_modelentry:
+        if best_candidate_so_far.modelentry is parent_modelentry:
             break
-
-        best_candidate_so_far = next(
-            filter(
-                lambda candidate: candidate.modelentry is best_model_so_far, all_candidates_so_far
-            )
-        )
 
         # TODO : Find all non-significant models and stash the most recently added effect
         if adaptive_scope_reduction:
             last_step = best_candidate_so_far.steps[-1]
             is_backward = isinstance(last_step, BackwardStep)
             if not is_backward:
-                for new_cand in new_candidates:
-                    if alpha <= lrt_p_value(
-                        parent_modelentry.model,
-                        new_cand.modelentry.model,
-                        parent_modelentry.modelfit_results.ofv,
-                        new_cand.modelentry.modelfit_results.ofv,
-                    ):
-                        last_step_effect = new_cand.steps[-1].effect
-                        key = (
-                            last_step_effect.parameter,
-                            last_step_effect.covariate,
-                            last_step_effect.fp,
-                            last_step_effect.operation,
-                        )
-                        nonsignificant_effects[key] = candidate_effect_funcs[key]
+                nonsignificant_effects_step = extract_nonsignificant_effects(
+                    parent_modelentry, new_candidates, candidate_effect_funcs, alpha
+                )
+                nonsignificant_effects.update(nonsignificant_effects_step)
 
         # NOTE: Filter out incompatible effects
-
-        # Filter effects with same parameter or covariate
         last_step_effect = best_candidate_so_far.steps[-1].effect
-
-        candidate_effect_funcs = {
-            effect_description: effect_func
-            for effect_description, effect_func in candidate_effect_funcs.items()
-            if effect_description[0] != last_step_effect.parameter
-            or effect_description[1] != last_step_effect.covariate
-        }
-
-        # Filter away any stashed effects as well
-        nonsig_param_cov_eff = tuple((eff[0], eff[1]) for eff in nonsignificant_effects.keys())
-
-        candidate_effect_funcs = {
-            effect_description: effect_func
-            for effect_description, effect_func in candidate_effect_funcs.items()
-            if (effect_description[0], effect_description[1]) not in nonsig_param_cov_eff
-        }
+        candidate_effect_funcs = filter_effects(
+            candidate_effect_funcs, last_step_effect, nonsignificant_effects
+        )
 
     return nonsignificant_effects, all_candidates_so_far, best_candidate_so_far
+
+
+def get_best_candidate_so_far(
+    parent_modelentry, new_candidate_modelentries, all_candidates_so_far, strictness, alpha
+):
+    ofvs = [
+        (
+            np.nan
+            if modelentry.modelfit_results is None
+            or not is_strictness_fulfilled(
+                modelentry.model, modelentry.modelfit_results, strictness
+            )
+            else modelentry.modelfit_results.ofv
+        )
+        for modelentry in new_candidate_modelentries
+    ]
+    best_model_so_far = lrt_best_of_many(
+        parent_modelentry,
+        new_candidate_modelentries,
+        parent_modelentry.modelfit_results.ofv,
+        ofvs,
+        alpha,
+    )
+
+    best_candidate_so_far = next(
+        filter(lambda candidate: candidate.modelentry is best_model_so_far, all_candidates_so_far)
+    )
+
+    return best_candidate_so_far
+
+
+def filter_effects(effect_funcs, last_step_effect, nonsignificant_effects):
+    candidate_effect_funcs = {
+        effect_description: effect_func
+        for effect_description, effect_func in effect_funcs.items()
+        if effect_description[0] != last_step_effect.parameter
+        or effect_description[1] != last_step_effect.covariate
+    }
+
+    # Filter away any stashed effects as well
+    nonsig_param_cov_eff = tuple((eff[0], eff[1]) for eff in nonsignificant_effects.keys())
+
+    candidate_effect_funcs = {
+        effect_description: effect_func
+        for effect_description, effect_func in candidate_effect_funcs.items()
+        if (effect_description[0], effect_description[1]) not in nonsig_param_cov_eff
+    }
+
+    return candidate_effect_funcs
+
+
+def extract_nonsignificant_effects(parent_modelentry, new_candidates, effect_funcs, alpha):
+    nonsignificant_effects = {}
+    for new_cand in new_candidates:
+        p_value = lrt_p_value(
+            parent_modelentry.model,
+            new_cand.modelentry.model,
+            parent_modelentry.modelfit_results.ofv,
+            new_cand.modelentry.modelfit_results.ofv,
+        )
+        if alpha <= p_value:
+            last_step_effect = new_cand.steps[-1].effect
+            key = (
+                last_step_effect.parameter,
+                last_step_effect.covariate,
+                last_step_effect.fp,
+                last_step_effect.operation,
+            )
+            nonsignificant_effects[key] = effect_funcs[key]
+    return nonsignificant_effects
 
 
 def wf_effects_addition(
@@ -792,6 +854,7 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     res = replace(
         res,
         final_model=best_modelentry.model,
+        final_results=best_modelentry.modelfit_results,
         steps=steps,
         candidate_summary=candidate_summary_dataframe(steps),
         ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
@@ -800,6 +863,7 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     )
 
     context.store_final_model_entry(best_modelentry)
+    context.log_info("Finishing tool covsearch")
     return res
 
 

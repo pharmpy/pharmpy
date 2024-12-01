@@ -15,7 +15,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.tools.run import calculate_bic_penalty, get_rankval
+from pharmpy.tools.run import calculate_mbic_penalty, get_rankval
 from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
 
@@ -73,6 +73,8 @@ def bu_stepwise_no_of_etas(
     input_model_entry=None,
     list_of_algorithms=None,
     rank_type=None,
+    E_p=None,
+    E_q=None,
     keep=None,
     param_mapping=None,
     clearance_parameter="",
@@ -87,6 +89,8 @@ def bu_stepwise_no_of_etas(
         input_model_entry,
         list_of_algorithms,
         rank_type,
+        E_p,
+        E_q,
         keep,
         param_mapping,
         clearance_parameter,
@@ -103,6 +107,8 @@ def stepwise_BU_algorithm(
     input_model_entry,
     list_of_algorithms,
     rank_type,
+    E_p,
+    E_q,
     keep,
     param_mapping,
     clearance_parameter,
@@ -236,11 +242,16 @@ def stepwise_BU_algorithm(
             )
             if not np.isnan(rankval_me) and not np.isnan(rankval_best):
                 if rank_type == 'mbic':
-                    rankval_me += calculate_bic_penalty(
-                        me.model, search_space, base_model=base_model, keep=keep
+                    rankval_me += calculate_mbic_penalty(
+                        me.model, search_space, base_model=base_model, keep=keep, E_p=E_p, E_q=E_q
                     )
-                    rankval_best += calculate_bic_penalty(
-                        best_model_entry.model, search_space, base_model=base_model, keep=keep
+                    rankval_best += calculate_mbic_penalty(
+                        best_model_entry.model,
+                        search_space,
+                        base_model=base_model,
+                        keep=keep,
+                        E_p=E_p,
+                        E_q=E_q,
                     )
                 if rankval_best > rankval_me:
                     best_model_entry = me

@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     fix_parameters,
     remove_iiv,
     set_direct_effect,
+    set_name,
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
@@ -28,6 +29,8 @@ from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     create_param_mapping,
     create_workflow,
+    get_mbic_penalties,
+    get_ref_model,
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
@@ -82,7 +85,7 @@ def test_prepare_base_model(
 @pytest.mark.parametrize(
     'iiv_strategy, param_mapping, description',
     [
-        ('no_add', {'ETA_1': 'CL', 'ETA_2': 'VC'}, '[CL]+[VC]'),
+        ('no_add', {'ETA_1': 'CL', 'ETA_2': 'VC'}, ''),
         ('add_diagonal', {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}, '[CL]+[VC]+[MAT]'),
         ('fullblock', {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}, '[CL,VC,MAT]'),
     ],
@@ -100,10 +103,12 @@ def test_update_linearized_base_model(
         model_base = model_start
     me_base = ModelEntry.create(model_base, modelfit_results=res_start)
     me_updated = update_linearized_base_model(me_base, model_start, iiv_strategy, param_mapping)
-    assert not me_updated.modelfit_results
     assert me_updated.model.description == description
     if iiv_strategy != 'no_add':
+        assert not me_updated.modelfit_results
         assert len(model_base.parameters.fixed) > 0
+    else:
+        assert me_updated.modelfit_results
     assert len(me_updated.model.parameters.fixed) == 0
 
 
@@ -498,6 +503,48 @@ def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
     assert param_dict == param_dict_ref
 
 
+def test_get_ref_model(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    max_iiv_diag = set_name(model, 'max_iiv_diag')
+    cand = set_name(model, 'cand')
+    cand = remove_iiv(cand, ['VC'])
+    min_iiv = set_name(model, 'min_iiv')
+    min_iiv = remove_iiv(min_iiv, ['VC', 'MAT'])
+    models = [max_iiv_diag, cand, min_iiv]
+    assert get_ref_model(models, 'td_exhaustive_no_of_etas').name == 'max_iiv_diag'
+    assert get_ref_model(models, 'bu_stepwise_no_of_etas').name == 'min_iiv'
+
+    max_iiv_block = set_name(model, 'max_iiv_block')
+    max_iiv_block = create_joint_distribution(max_iiv_block, None)
+    models = [max_iiv_block, max_iiv_diag]
+    assert get_ref_model(models, 'td_exhaustive_block_structure').name == 'max_iiv_block'
+
+    with pytest.raises(ValueError):
+        get_ref_model([models], 'x')
+
+
+@pytest.mark.parametrize(
+    'as_fullblock, penalties_ref',
+    [
+        (
+            False,
+            [2.77, 1.39, 0],
+        ),
+        (True, [9.36, 3.58, 0]),
+    ],
+)
+def test_get_mbic_penalties(load_model_for_test, testdata, as_fullblock, penalties_ref):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    if as_fullblock:
+        model_base = create_joint_distribution(model_base)
+    cand1 = remove_iiv(model_base, 'VC')
+    cand2 = remove_iiv(model_base, ['VC', 'MAT'])
+
+    penalties = get_mbic_penalties(model_base, [model_base, cand1, cand2], ['CL'], E_p=1, E_q=1)
+    assert [round(p, 2) for p in penalties] == penalties_ref
+
+
 def test_create_workflow():
     assert isinstance(create_workflow('top_down_exhaustive'), Workflow)
 
@@ -579,6 +626,23 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             },
             ValueError,
             'Value `E_q` must be more than 0',
+        ),
+        (
+            None,
+            {'rank_type': 'mbic', 'E_p': '10'},
+            ValueError,
+            'Value `E_p` must be denoted with `%`',
+        ),
+        (
+            None,
+            {
+                'rank_type': 'mbic',
+                'algorithm': 'skip',
+                'correlation_algorithm': 'top_down_exhaustive',
+                'E_q': '10',
+            },
+            ValueError,
+            'Value `E_q` must be denoted with `%`',
         ),
     ],
 )

@@ -31,7 +31,7 @@ from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.tool import create_workflow as create_linearize_workflow
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import calculate_bic_penalty, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -64,8 +64,8 @@ def create_workflow(
     keep: Optional[Iterable[str]] = ("CL",),
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
-    E_p: Optional[float] = None,
-    E_q: Optional[float] = None,
+    E_p: Optional[Union[float, str]] = None,
+    E_q: Optional[Union[float, str]] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -147,26 +147,21 @@ def create_step_workflow(
     E_q,
     cutoff,
     strictness,
-    list_of_algorithms,
-    ref_model,
     keep,
-    linearize,
-    param_mapping,
     context,
-    stepno,
 ):
     wb = WorkflowBuilder()
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
     wb.add_task(start_task)
 
-    if (wf_algorithm.name == 'td_exhaustive_no_of_etas' and iiv_strategy != 'no_add') or (
-        wf_algorithm.name == 'bu_stepwise_no_of_etas' and iiv_strategy != 'no_add' and not linearize
-    ):
+    if wf_algorithm.name == 'td_exhaustive_no_of_etas' and iiv_strategy != 'no_add':
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
-        base_model_task = wf_fit.output_tasks[0]
+        base_model_task = [wf_fit.output_tasks[0]]
+    elif wf_algorithm.name == 'bu_stepwise_no_of_etas':
+        base_model_task = []
     else:
-        base_model_task = start_task
+        base_model_task = [start_task]
 
     wb.insert_workflow(wf_algorithm)
 
@@ -177,19 +172,14 @@ def create_step_workflow(
         cutoff,
         strictness,
         input_model_entry,
-        base_model_entry.model.name,
-        list_of_algorithms,
-        ref_model,
+        wf_algorithm.name,
         E_p,
         E_q,
         keep,
-        linearize,
-        param_mapping,
         context,
-        stepno,
     )
 
-    post_process_tasks = [base_model_task] + wb.output_tasks
+    post_process_tasks = base_model_task + wb.output_tasks
     wb.add_task(task_result, predecessors=post_process_tasks)
 
     return Workflow(wb)
@@ -273,6 +263,8 @@ def run_linearization(context, baseme):
 
 
 def update_linearized_base_model(baseme, input_model, iiv_strategy, param_mapping):
+    if iiv_strategy == 'no_add':
+        return baseme
     added_params = baseme.model.parameters - input_model.parameters
     model = unfix_parameters(baseme.model, added_params.names)
     if iiv_strategy in ('fullblock', 'pd_fullblock'):
@@ -305,7 +297,7 @@ def start(
 
     list_of_algorithms = prepare_algorithms(algorithm, correlation_algorithm)
 
-    sum_tools, sum_inds, sum_inds_count, sum_errs = [], [], [], []
+    sum_tools, sum_errs = [], []
     no_of_models = 0
     last_res = None
     final_model_entry = None
@@ -359,6 +351,8 @@ def start(
                 input_model_entry=input_model_entry,
                 list_of_algorithms=list_of_algorithms,
                 rank_type=rank_type,
+                E_p=E_p,
+                E_q=E_q,
                 keep=keep,
                 param_mapping=param_mapping,
                 clearance_parameter=clearance_parameter,
@@ -378,26 +372,24 @@ def start(
             E_q=E_q,
             cutoff=cutoff,
             strictness=strictness,
-            list_of_algorithms=list_of_algorithms,
-            ref_model=base_model,
             keep=keep,
-            linearize=linearize,
-            param_mapping=param_mapping,
             context=context,
-            stepno=i,
         )
         context.log_info(f"Starting step {algorithm_cur}")
         res = context.call_workflow(wf, f'results_{algorithm}')
 
-        if base_model_entry.model.name in sum_models[-1].index.values:
+        if wf_algorithm.name == 'bu_stepwise_no_of_etas':
+            ref_model_name = 'iivsearch_run1'
+        else:
+            ref_model_name = base_model_entry.model.name
+
+        if ref_model_name in sum_models[-1].index.values:
             summary_models = res.summary_models.drop(base_model_entry.model.name, axis=0)
         else:
             summary_models = res.summary_models
 
         sum_tools.append(res.summary_tool)
         sum_models.append(summary_models)
-        sum_inds.append(res.summary_individuals)
-        sum_inds_count.append(res.summary_individuals_count)
         sum_errs.append(res.summary_errors)
 
         final_model = res.final_model
@@ -417,6 +409,8 @@ def start(
         iiv_strategy = 'no_add'
         last_res = res
         no_of_models = len(res.summary_tool) - 1
+        if wf_algorithm.name == 'bu_stepwise_no_of_etas':
+            no_of_models += 1
 
         assert base_model_entry is not None
 
@@ -425,6 +419,37 @@ def start(
     assert last_res is not None
     assert final_model_entry is not None
 
+    if linearize:
+        final_linearized_model = final_model_entry.model
+        dl_wf = create_delinearize_workflow(
+            input_model_entry.model, final_linearized_model, param_mapping, i
+        )
+        context.log_info('Running delinearized model')
+        dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
+        try:
+            sum_tool = summarize_tool(
+                [dlin_model_entry],
+                dlin_model_entry,
+                rank_type=rank_type,
+                cutoff=cutoff,
+                bic_type='iiv',
+                strictness=strictness,
+                penalties=None,
+            )
+        except ValueError:
+            context.abort_workflow('Delinearized model failed strictness criteria')
+        sum_model = summarize_modelfit_results_from_entries([dlin_model_entry])
+        last_res = IIVSearchResults(
+            summary_tool=sum_tool,
+            summary_models=sum_model,
+            final_model=dlin_model_entry.model,
+            final_results=dlin_model_entry.modelfit_results,
+        )
+
+        sum_tools.append(sum_tool)
+        sum_models.append(summarize_modelfit_results_from_entries([dlin_model_entry]))
+        final_model_entry = dlin_model_entry
+
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     final_model, final_res = final_model_entry.model, final_model_entry.modelfit_results
 
@@ -432,11 +457,10 @@ def start(
     final_final_model = last_res.final_model
     if input_res and final_res:
         if rank_type == 'mbic':
-            penalties = _get_penalties(
+            penalties = get_mbic_penalties(
                 base_model,
-                [input_model_entry, final_model_entry],
+                [input_model, final_model],
                 keep=keep,
-                list_of_algorithms=list_of_algorithms,
                 E_p=E_p,
                 E_q=E_q,
             )
@@ -461,8 +485,6 @@ def start(
             )
             final_final_model = input_model
 
-    keys = list(range(1, len(applied_algorithms) + 1))
-
     if final_final_model.name == final_model.name:
         final_results = final_res
     elif final_final_model.name == input_model.name:
@@ -472,13 +494,18 @@ def start(
 
     context.store_final_model_entry(final_final_model)
 
+    keys = list(range(1, len(applied_algorithms) + 1))
+    keys_summary_tool = keys + [len(keys) + 1]  # Include step comparing input to final
+    keys_summary_models = [0] + keys  # Include input model
+    if linearize:
+        keys_summary_tool += [len(keys) + 2]
+        keys_summary_models += [len(keys) + 1]
+
     final_results = IIVSearchResults(
         summary_tool=_concat_summaries(
-            sum_tools, keys + [len(keys) + 1]
+            sum_tools, keys_summary_tool
         ),  # To include step comparing input to final
-        summary_models=_concat_summaries(sum_models, [0] + keys),  # To include input model
-        summary_individuals=_concat_summaries(sum_inds, keys),
-        summary_individuals_count=_concat_summaries(sum_inds_count, keys),
+        summary_models=_concat_summaries(sum_models, keys_summary_models),  # To include input model
         summary_errors=_concat_summaries(sum_errs, keys),
         final_model=final_final_model,
         final_results=final_results,
@@ -491,6 +518,18 @@ def start(
     )
 
     return final_results
+
+
+def get_ref_model(models, algorithm):
+    def _no_of_params(model):
+        return len(model.random_variables.iiv.parameter_names)
+
+    if algorithm.startswith('td'):
+        return max(models, key=_no_of_params)
+    elif algorithm.startswith('bu'):
+        return min(models, key=_no_of_params)
+    else:
+        raise ValueError(f'Unknown ref model type: {algorithm}')
 
 
 def _concat_summaries(summaries, keys):
@@ -539,16 +578,11 @@ def post_process(
     cutoff,
     strictness,
     input_model_entry,
-    base_model_name,
-    list_of_algorithms,
-    ref_model,
+    algorithm,
     E_p,
     E_q,
     keep,
-    linearize,
-    param_mapping,
     context,
-    stepno,
     *model_entries,
 ):
     res_model_entries = []
@@ -564,11 +598,20 @@ def post_process(
         return result
 
     model_entries = flatten_list(model_entries)
+
+    base_model = get_ref_model([me.model for me in model_entries], algorithm)
     for model_entry in model_entries:
-        if model_entry.model.name == base_model_name:
+        if model_entry.model.name == base_model.name:
             base_model_entry = model_entry
         else:
             res_model_entries.append(model_entry)
+
+    if algorithm == 'bu_stepwise_no_of_etas':
+        base_model_entry = ModelEntry.create(
+            base_model_entry.model,
+            modelfit_results=base_model_entry.modelfit_results,
+            parent=input_model_entry.model,
+        )
 
     assert len(res_model_entries) > 0
 
@@ -586,9 +629,12 @@ def post_process(
         )
 
     if rank_type == "mbic":
-        penalties = _get_penalties(
-            ref_model, model_entries, keep, list_of_algorithms, E_p=E_p, E_q=E_q
-        )
+        models = [me.model for me in model_entries]
+        if algorithm == 'bu_stepwise_no_of_etas':
+            ref_model = get_ref_model(models, 'td')
+        else:
+            ref_model = base_model
+        penalties = get_mbic_penalties(ref_model, models, keep, E_p=E_p, E_q=E_q)
     else:
         penalties = None
 
@@ -605,66 +651,45 @@ def post_process(
         context=context,
     )
 
-    if linearize:
-        final_linearized_model = res.final_model
-        flm_etas = final_linearized_model.random_variables.iiv.names
-        final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
-        final_delinearized_model = delinearize_model(
-            final_linearized_model, input_model_entry.model, final_param_map
-        )
-        final_delinearized_model = final_delinearized_model.replace(
-            name=f'delinearized{stepno}',
-            description=algorithms.create_description(final_delinearized_model),
-        )
-
-        lin_model_entry = ModelEntry.create(
-            model=final_delinearized_model,
-        )
-        dl_wf = WorkflowBuilder(name="delinearization_workflow")
-        l_start = Task("START", _start_algorithm, lin_model_entry)
-        dl_wf.add_task(l_start)
-        fit_wf = create_fit_workflow(n=1)
-        dl_wf.insert_workflow(fit_wf)
-        dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
-
-        res_model_entries.append(dlin_model_entry)
-        res = create_results(
-            IIVSearchResults,
-            input_model_entry,
-            base_model_entry,
-            res_model_entries,
-            rank_type,
-            cutoff,
-            bic_type='iiv',
-            strictness=strictness,
-            context=context,
-        )
-
-        res = replace(res, final_model=dlin_model_entry.model)
-        summary_tool = res.summary_tool
-        assert summary_tool is not None
-        summary_tool = modify_summary_tool(res.summary_tool, dlin_model_entry.model.name)
-        res = replace(res, summary_tool=summary_tool)
-        summary_models = summarize_modelfit_results_from_entries(model_entries)
-    else:
-        summary_tool = res.summary_tool
-        assert summary_tool is not None
-        summary_models = summarize_modelfit_results_from_entries(model_entries)
+    summary_tool = res.summary_tool
+    assert summary_tool is not None
+    summary_models = summarize_modelfit_results_from_entries(model_entries)
 
     return replace(res, summary_models=summary_models)
 
 
-def _get_penalties(ref_model, candidate_model_entries, keep, list_of_algorithms, E_p, E_q):
+def create_delinearize_workflow(input_model, final_model, param_mapping, stepno):
+    flm_etas = final_model.random_variables.iiv.names
+    final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
+    final_delinearized_model = delinearize_model(final_model, input_model, final_param_map)
+    final_delinearized_model = final_delinearized_model.replace(
+        name=f'delinearized{stepno}',
+        description=algorithms.create_description(final_delinearized_model),
+    )
+
+    lin_model_entry = ModelEntry.create(
+        model=final_delinearized_model,
+    )
+    dl_wf = WorkflowBuilder(name="delinearization_workflow")
+    l_start = Task("START", _start_algorithm, lin_model_entry)
+    dl_wf.add_task(l_start)
+    fit_wf = create_fit_workflow(n=1)
+    dl_wf.insert_workflow(fit_wf)
+
+    return dl_wf
+
+
+def get_mbic_penalties(ref_model, candidate_models, keep, E_p, E_q):
     search_space = []
-    if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
+    if E_p:
         search_space.append('iiv_diag')
-    if any('block' in algorithm for algorithm in list_of_algorithms):
+    if E_q:
         search_space.append('iiv_block')
     penalties = [
-        calculate_bic_penalty(
-            me.model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
+        calculate_mbic_penalty(
+            model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
         )
-        for me in candidate_model_entries
+        for model in candidate_models
     ]
     return penalties
 
@@ -719,10 +744,14 @@ def validate_input(
             raise ValueError(
                 'Value `E_q` must be provided for `correlation_algorithm` when using mbic'
             )
-        if E_p is not None and E_p <= 0.0:
+        if isinstance(E_p, float) and E_p <= 0.0:
             raise ValueError(f'Value `E_p` must be more than 0: got `{E_p}`')
-        if E_q is not None and E_q <= 0.0:
+        if isinstance(E_q, float) and E_q <= 0.0:
             raise ValueError(f'Value `E_q` must be more than 0: got `{E_q}`')
+        if isinstance(E_p, str) and not E_p.endswith('%'):
+            raise ValueError(f'Value `E_p` must be denoted with `%`: got `{E_p}`')
+        if isinstance(E_q, str) and not E_q.endswith('%'):
+            raise ValueError(f'Value `E_q` must be denoted with `%`: got `{E_q}`')
 
 
 @dataclass(frozen=True)

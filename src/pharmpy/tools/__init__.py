@@ -1,6 +1,7 @@
 from threading import Lock
 
 __all__ = (
+    'create_context',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
     'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -9,8 +10,11 @@ __all__ = (
     'predict_influential_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'print_fit_summary',  # pyright: ignore [reportUnsupportedDunderAll]
+    'print_log',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'read_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
+    'retrieve_model',  # pyright: ignore [reportUnsupportedDunderAll]
+    'retrieve_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'retrieve_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_allometry',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_amd',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -44,6 +48,7 @@ _not_wrapped = {
         'print_fit_summary',
         'read_modelfit_results',
         'read_results',
+        'retrieve_model',
         'retrieve_models',
         'run_tool',
         'summarize_modelfit_results',
@@ -53,6 +58,11 @@ _not_wrapped = {
         'predict_outliers',
         'predict_influential_individuals',
         'predict_influential_outliers',
+    ),
+    '.context': (
+        'create_context',
+        'print_log',
+        'retrieve_modelfit_results',
     ),
 }
 
