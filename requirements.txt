@@ -20,7 +20,7 @@ distributed==2024.11.2
 docutils==0.21.2
 exceptiongroup==1.2.2
 executing==2.1.0
-fastjsonschema==2.21.0
+fastjsonschema==2.21.1
 fsspec==2024.10.0
 idna==3.10
 imagesize==1.4.1
