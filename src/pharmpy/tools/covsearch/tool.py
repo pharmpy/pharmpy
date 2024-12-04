@@ -1,5 +1,5 @@
 from collections import Counter, defaultdict
-from dataclasses import astuple, dataclass, replace
+from dataclasses import astuple, dataclass
 from itertools import count
 from typing import Any, Callable, Iterable, Literal, Optional, Union
 
@@ -14,7 +14,12 @@ from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools import is_strictness_fulfilled
-from pharmpy.tools.common import create_results, update_initial_estimates
+from pharmpy.tools.common import (
+    create_plots,
+    summarize_tool,
+    table_final_eta_shrinkage,
+    update_initial_estimates,
+)
 from pharmpy.tools.covsearch.samba import samba_workflow
 from pharmpy.tools.mfl.feature.covariate import EffectLiteral
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
@@ -25,7 +30,7 @@ from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.symbols import Option, Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
@@ -803,35 +808,75 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
     assert base_modelentry is state.start_modelentry
     best_modelentry = state.best_candidate_so_far.modelentry
     user_input_modelentry = state.user_input_modelentry
-    if user_input_modelentry != base_modelentry:
-        modelentries = [user_input_modelentry] + modelentries
-
-    steps = _make_df_steps(best_modelentry, candidates)
-
-    res = create_results(
-        COVSearchResults,
-        base_modelentry,
+    tables = create_result_tables(
+        candidates,
+        best_modelentry,
+        user_input_modelentry,
         base_modelentry,
         res_modelentries,
-        'lrt',
         (p_forward, p_backward),
-        context=context,
+        strictness,
     )
+    plots = create_plots(best_modelentry.model, best_modelentry.modelfit_results)
 
-    res = replace(
-        res,
+    res = COVSearchResults(
         final_model=best_modelentry.model,
         final_results=best_modelentry.modelfit_results,
-        steps=steps,
-        candidate_summary=candidate_summary_dataframe(steps),
-        ofv_summary=ofv_summary_dataframe(steps, final_included=True, iterations=True),
-        summary_tool=_modify_summary_tool(res.summary_tool, steps),
-        summary_models=_summarize_models(modelentries, steps),
+        summary_models=tables['summary_models'],
+        summary_tool=tables['summary_tool'],
+        summary_errors=tables['summary_errors'],
+        steps=tables['steps'],
+        ofv_summary=tables['ofv_summary'],
+        candidate_summary=tables['candidate_summary'],
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=table_final_eta_shrinkage(
+            best_modelentry.model, best_modelentry.modelfit_results
+        ),
     )
 
     context.store_final_model_entry(best_modelentry)
     context.log_info("Finishing tool covsearch")
     return res
+
+
+def create_result_tables(
+    candidates,
+    best_modelentry,
+    input_modelentry,
+    base_modelentry,
+    res_modelentries,
+    cutoff,
+    strictness,
+):
+    steps = _make_df_steps(best_modelentry, candidates)
+    model_entries = [base_modelentry] + res_modelentries
+    if input_modelentry != base_modelentry:
+        model_entries.insert(0, input_modelentry)
+    sum_models = _summarize_models(model_entries, steps)
+    sum_tool = summarize_tool(
+        res_modelentries,
+        base_modelentry,
+        rank_type='lrt',
+        cutoff=cutoff,
+        strictness=strictness,
+    )
+    sum_tool = _modify_summary_tool(sum_tool, steps)
+    sum_errors = summarize_errors_from_entries(model_entries)
+    ofv_summary = ofv_summary_dataframe(steps, final_included=True, iterations=True)
+    sum_cand = candidate_summary_dataframe(steps)
+    tables = {
+        'summary_tool': sum_tool,
+        'summary_models': sum_models,
+        'summary_errors': sum_errors,
+        'steps': steps,
+        'ofv_summary': ofv_summary,
+        'candidate_summary': sum_cand,
+    }
+    return tables
 
 
 def _create_proxy_model_table(candidates, steps, proxy_models):

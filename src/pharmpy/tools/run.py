@@ -415,13 +415,10 @@ def _create_metadata_tool(
 
     if tool_name != 'modelfit':
         db = database.model_database
-        for key, arg_name, db_name in _store_input_models(
-            db, tool_params, tool_param_types, args, kwargs
-        ):
+        for key, db_name in _store_input_models(db, tool_params, tool_param_types, args, kwargs):
             tool_metadata['tool_options'][key] = {
                 '__class__': 'Model',
-                'arg_name': arg_name,
-                'db_name': db_name,
+                'key': db_name,
             }
 
     return tool_metadata
@@ -451,9 +448,8 @@ def _store_input_models(
     db: ModelDatabase, params, types, args: Sequence, kwargs: Mapping[str, Any]
 ):
     for param_key, model in _input_models(params, types, args, kwargs):
-        input_model_name = f'input_{param_key}'
-        _store_input_model(db, model, input_model_name)
-        yield param_key, model.name, input_model_name
+        key = _store_input_model(db, model)
+        yield param_key, key
 
 
 def _filter_params(kind, params, types):
@@ -485,11 +481,11 @@ def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
         yield param_key, model
 
 
-def _store_input_model(db: ModelDatabase, model: Model, name: str):
-    model_copy = model.replace(name=name)
-    with db.transaction(model_copy) as txn:
+def _store_input_model(db: ModelDatabase, model: Model):
+    with db.transaction(model) as txn:
         txn.store_model()
         txn.store_modelfit_results()
+        return str(txn.key)
 
 
 def _now():
