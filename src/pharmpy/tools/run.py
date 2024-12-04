@@ -949,7 +949,7 @@ class ArrayEvaluator:
 def is_strictness_fulfilled(
     model: Model,
     results: ModelfitResults,
-    strictness: str,
+    strictness: Optional[str],
 ) -> bool:
     """Takes a ModelfitResults object and a statement as input and returns True/False
     if the evaluation of the statement is True/False.
@@ -960,7 +960,7 @@ def is_strictness_fulfilled(
         Model for parameter specific strictness.
     results : ModelfitResults
         ModelfitResults object
-    strictness : str
+    strictness : str or None
         A strictness expression
 
     Return
@@ -983,7 +983,7 @@ def is_strictness_fulfilled(
     # assert results is not None, f"results is None for model {model.name}"
     if np.isnan(results.ofv):
         return False
-    elif strictness == "":
+    elif strictness == "" or strictness is None:
         return True
     else:
         strictness = strictness.lower()
