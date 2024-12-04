@@ -120,7 +120,7 @@ def create_workflow(
     p_backward: float = 0.001,
     max_steps: int = -1,
     algorithm: Literal[
-        'scm-forward', 'scm-forward-then-backward', 'samba', 'samba-foce', 'scm-fastforward'
+        'scm-forward', 'scm-forward-then-backward', 'samba', 'samba-foce', 'scm-lcs'
     ] = 'scm-forward-then-backward',
     results: Optional[ModelfitResults] = None,
     model: Optional[Model] = None,
@@ -128,11 +128,8 @@ def create_workflow(
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
-    statsmodels: bool = False,
-    nsamples: int = 10,
-    weighted_linreg: bool = False,
-    lin_filter: int = 0,
-    samba_max_covariates: int = 3,
+    samba_nsamples: int = 10,
+    samba_max_covariates: Optional[int] = 3,
     samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
     samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
 ):
@@ -167,23 +164,10 @@ def create_workflow(
         Strictness criteria
     naming_index_offset : int
         index offset for naming of runs. Default is 0.
-    statsmodels : bool
-        estimation tool for SAMBA linear covariate model fitting. 'True' calls statsmodel's
-        functionalities, whereas 'False' calls nonmem.
-    nsamples : int
+    samba_nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
-        `nsamples=0` uses ETAs to for linear model selection, whereas `nsample`>=1 generates MCMC samples with an
-        additional SAEM estimation step. When multiple samples are generated, linear mixed effects model will be
-        used to fit the linear models.
         Default is 10, i.e. generating 10 samples per subject
-    weighted_linreg : bool
-        When using nonmem to run linear covariate models, 'True' uses ETC as weight to run WLS.
-    lin_filter : int
-        Option to control the number of covariates passed to nonlinear selection
-         0: pass all LRT positive covariate effects from linear selection step
-         1: pass the ones with the largest drop of OFV within each parameter scope
-         2: the one with the largest drop of OFV among all parameter-covariate pairs
-    samba_max_covariates: int
+    samba_max_covariates: int or None
         Maximum number of covariate inclusion allowed in linear covariate screening for each parameter.
     samba_linreg_method: str
         Method used to fit linear covariate models. Currently, Ordinary Least Squares (ols),
@@ -206,7 +190,7 @@ def create_workflow(
     >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
     >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
     """
-    if algorithm in ["samba", "samba-foce"]:
+    if algorithm in ["samba", "samba-foce", "scm-lcs"]:
         return samba_workflow(
             search_space=search_space,
             max_steps=max_steps,
@@ -215,27 +199,10 @@ def create_workflow(
             results=results,
             max_eval=max_eval,
             algorithm=algorithm,
-            nsamples=nsamples,
+            nsamples=samba_nsamples,
             max_covariates=samba_max_covariates,
             selection_criterion=samba_selection_criterion,
             linreg_method=samba_linreg_method,
-        )
-    if algorithm == "scm-fastforward":
-        return fast_scm_workflow(
-            search_space,
-            max_steps,
-            p_forward,
-            p_backward,
-            results,
-            model,
-            max_eval,
-            strictness,
-            naming_index_offset,
-            statsmodels,
-            algorithm,
-            nsamples,
-            weighted_linreg,
-            lin_filter,
         )
 
     wb = WorkflowBuilder(name=NAME_WF)
