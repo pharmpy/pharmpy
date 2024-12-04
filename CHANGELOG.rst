@@ -1,10 +1,21 @@
-next version
-------------
+1.4.0 (2024-12-04)
+------------------
 
 New features
 ============
 
+* Support Python 3.13
 * Support EFIM in estmethod-tool
+* Add STEP and LOGLIN to MFL DIRECTEFFECT and EFFECTCOMP
+* Add `create_context`, `print_log`, `retrieve_model` and `retrieve_modelfit_results` to `tools`
+
+Changes
+=======
+
+* Allow `set_tmdd` to work for models without dataset
+* Do input validation for amd earlier to fail before starting the tool
+* Make `reduced_stepwise` the default algorithm in `modelsearch`. There was no default previously.
+* Store model database key instead of name in metadata for inputs of type `Model`
 
 Bugfixes
 ========
@@ -17,6 +28,8 @@ Bugfixes
 * Fix mBIC calculation in IIVsearch bottom-up approach
 * Fix bug in COVsearch where incorrect modelfit results are stored as final_results
 * Add removed RUVsearch step in AMD algorithm SIR
+* Fix covsearch removing allometric variable
+
 
 1.3.0 (2024-10-24)
 ------------------
