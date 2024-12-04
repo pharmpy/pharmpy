@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, field, replace
 from functools import partial
 from itertools import chain, count
 from typing import Literal, Optional, Union
@@ -20,7 +20,13 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import depends_on
 from pharmpy.modeling.lrt import best_of_two as lrt_best_of_two
-from pharmpy.tools.common import update_initial_estimates
+from pharmpy.tools.common import (
+    create_plots,
+    summarize_tool,
+    table_final_eta_shrinkage,
+    update_initial_estimates,
+)
+from pharmpy.tools.covsearch.results import COVSearchResults
 from pharmpy.tools.covsearch.util import (
     Candidate,
     DummyEffect,
@@ -33,8 +39,29 @@ from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
+from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
+
+
+@dataclass
+class LCSSearchState(SearchState):
+    lcs_selection: list = field(default_factory=list)
+
+    def __eq__(self, other):
+        if not isinstance(other, SearchState):
+            return NotImplemented
+        # compare only best_candidate_so_far and all_candidates_so_far
+        return (self.best_candidate_so_far, self.all_candidates_so_far) == (
+            other.best_candidate_so_far,
+            other.all_candidates_so_far,
+        )
+
+
+@dataclass(frozen=True)
+class SAMBAStep(ForwardStep):
+    pass
 
 
 @dataclass
@@ -52,7 +79,7 @@ class LCSRecord:
 class SWLCSRecord(LCSRecord):
     lcs_step: int
     parent: Optional[tuple[str, ...]]  # parent model's inclusion
-    final_selection: list[str]
+    selection: list[str]
 
 
 NAME_WF = 'covsearch'
@@ -62,6 +89,7 @@ def samba_workflow(
     search_space: Union[str, ModelFeatures],
     max_steps: int = -1,
     p_forward: float = 0.05,
+    p_backward: float = 0.01,
     model: Optional[Model] = None,
     results: Optional[ModelfitResults] = None,
     max_eval: bool = False,
@@ -70,6 +98,7 @@ def samba_workflow(
     max_covariates: Optional[int] = 3,
     selection_criterion: Literal['bic', 'lrt'] = 'bic',
     linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
+    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -102,8 +131,12 @@ def samba_workflow(
     # Results task
     results_task = Task(
         "results",
-        samba_task_results,
+        _samba_task_results,
         p_forward,
+        p_backward,
+        strictness,
+        selection_criterion,
+        algorithm,
     )
     wb.add_task(results_task, predecessors=search_output)
 
@@ -229,7 +262,7 @@ def samba_init_nonlinear_search_state(
     else:
         filtered_model = set_scmlcs_estimation(filtered_model)
 
-    if filtered_model != input_modelentry.model:
+    if filtered_model != input_modelentry.model or input_modelentry.modelfit_results is None:
         filtered_modelentry = ModelEntry.create(model=filtered_model)
         fit_workflow = create_fit_workflow(modelentries=[filtered_modelentry])
         filtered_modelentry = context.call_workflow(fit_workflow, "fit_filtered_model")
@@ -237,7 +270,7 @@ def samba_init_nonlinear_search_state(
         filtered_modelentry = input_modelentry
 
     candidate = Candidate(modelentry=filtered_modelentry, steps=())
-    return SearchState(input_modelentry, filtered_modelentry, candidate, [candidate])
+    return LCSSearchState(input_modelentry, filtered_modelentry, candidate, [candidate])
 
 
 def set_samba_estimation(model, nsamples, algorithm):
@@ -362,7 +395,10 @@ def linear_covariate_selection(
         selection_results = pd.concat([selection_results, model_table], ignore_index=True)
 
     # TODO: make selection_results a Result class and output with covsearch results
-    selection_results.to_csv(f"step_{step}_lin_covariate_screening.csv")
+    # selection_results.to_csv(f"step_{step}_lin_covariate_screening.csv")
+    # selection_results["covsearch_step"] = step
+    selection_results.insert(0, "covsearch_step", step)
+    search_state.lcs_selection.append(selection_results)
 
     coveffect_keys = _coveffect_list2key(selected_covariates)
     coveffect_funcs = _retrieve_covfunc(effect_funcs, coveffect_keys)
@@ -466,7 +502,7 @@ def _stepwise_linear_covariate_selection(
         dofv=None,
         lrt_pval=None,
         parent=None,
-        final_selection=selected,
+        selection=selected,
         estimates=base_model.params.to_dict(),
     )
     model_records.append(base_record)
@@ -499,7 +535,7 @@ def _stepwise_linear_covariate_selection(
                 dofv=lrt_dofv,
                 lrt_pval=lrt_pval,
                 parent=tuple(selected),
-                final_selection=selected,
+                selection=selected,
                 estimates=model.params.to_dict(),
             )
             model_records.append(model_record)
@@ -581,7 +617,7 @@ def _linear_covariate_selection(
         scores[covariate] = model_bic if selection_criterion == "bic" else lrt_pval
         model_res = LCSRecord(
             parameter=parameter,
-            inclusion=tuple(covariate),
+            inclusion=tuple([covariate]),
             bic=model_bic,
             ofv=model_ofv,
             dofv=lrt_dofv,
@@ -600,6 +636,7 @@ def _linear_covariate_selection(
     ]  # it would return all test positive candidates if max_covariates is None
 
     lcsres_table = pd.DataFrame([record.__dict__ for record in model_records])
+    lcsres_table = lcsres_table.sort_values("lrt_pval" if selection_criterion == "lrt" else "bic")
     lcsres_table["lrt_positive"] = np.where(lcsres_table["lrt_pval"] < lrt_alpha, True, False)
 
     return selected, lcsres_table
@@ -727,7 +764,7 @@ def samba_nonlinear_model_selection(
 
         updated_desc = updated_desc + f";({'-'.join(cov_effect[:3])})"
         updated_model = cov_func(updated_model)
-        updated_steps = updated_steps + (ForwardStep(0.05, DummyEffect(*cov_effect)),)
+        updated_steps = updated_steps + (SAMBAStep(lrt_alpha, DummyEffect(*cov_effect)),)
         update_occurs = True
 
     # if no changes are made, skip further processing
@@ -763,10 +800,11 @@ def samba_nonlinear_model_selection(
         f"    Updated Model    : BIC {updated_model_bic:.2f} | OFV {updated_model_ofv:.2f} | "
         f"dOFV {best_ofv - updated_model_ofv:.2f}"
     )
-    if selection_criterion == "lrt" and lrt_best_modelentry == updated_modelentry:
+    if (selection_criterion == "bic" and updated_model_bic < best_bic) or (
+        selection_criterion == "lrt" and lrt_best_modelentry == updated_modelentry
+    ):
         search_state = replace(search_state, best_candidate_so_far=new_candidate)
-    if selection_criterion == "bic" and updated_model_bic < best_bic:
-        search_state = replace(search_state, best_candidate_so_far=new_candidate)
+
     return search_state
 
 
@@ -871,3 +909,151 @@ def _nonlinear_step_lrt(parent, child):
 def samba_task_results(context, p_forward, state):
     # set p_backward and strictness to None
     return scm_tool.task_results(context, p_forward, p_backward=None, strictness=None, state=state)
+
+
+def _samba_task_results(
+    context,
+    p_forward: float,
+    p_backward: float,
+    strictness: str | None,
+    selection_criterion: str,
+    algorithm: str,
+    state: LCSSearchState,
+):
+    candidates = state.all_candidates_so_far
+    modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
+    base_modelentry, *rest_modelentries = modelentries
+    assert base_modelentry is state.start_modelentry
+    best_modelentry = state.best_candidate_so_far.modelentry
+    user_input_modelentry = state.user_input_modelentry
+    lcs_results = _make_lcs_table(state.lcs_selection)
+    tables = _samba_create_result_tables(
+        candidates,
+        best_modelentry,
+        user_input_modelentry,
+        base_modelentry,
+        rest_modelentries,
+        lrt_cutoff=(p_forward, p_backward),
+        bic_cutoff=10,  # TODO: test this option
+        strictness=strictness,
+        selection_criterion=selection_criterion,
+        algorithm=algorithm,
+    )
+    plots = create_plots(best_modelentry.model, best_modelentry.modelfit_results)
+
+    res = COVSearchResults(
+        final_model=best_modelentry.model,
+        final_results=best_modelentry.modelfit_results,
+        summary_models=tables["summary_models"],
+        summary_tool=tables["summary_tool"],
+        summary_errors=tables["summary_errors"],
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=table_final_eta_shrinkage(
+            best_modelentry.model, best_modelentry.modelfit_results
+        ),
+        linear_covariate_screening_summary=lcs_results,
+        steps=tables["steps"],
+        ofv_summary=tables["ofv_summary"],
+        candidate_summary=tables["candidate_summary"],
+    )
+    context.store_final_model_entry(best_modelentry)
+    context.log_info("Finishing tool covsearch")
+    return res
+
+
+def _samba_create_result_tables(
+    candidates,
+    best_modelentry,
+    input_modelentry,
+    base_modelentry,
+    res_modelentries,
+    lrt_cutoff,
+    bic_cutoff,
+    strictness,
+    selection_criterion,
+    algorithm,
+):
+    model_entries = [base_modelentry] + res_modelentries
+    if input_modelentry != base_modelentry:
+        model_entries.insert(0, input_modelentry)
+        sum_tool_lrt = summarize_tool(
+            model_entries,
+            base_modelentry,
+            rank_type="lrt",
+            cutoff=lrt_cutoff,
+            strictness=strictness,
+        )
+        sum_tool_lrt["lrt_pval"] = stats.chi2.sf(sum_tool_lrt["dofv"], sum_tool_lrt["d_params"])
+        sum_tool_bic = summarize_tool(
+            model_entries,
+            base_modelentry,
+            rank_type="bic",
+            cutoff=bic_cutoff,
+            strictness=strictness,
+            bic_type="mixed",
+        )
+        if selection_criterion == "bic":  # TODO: 1) mark selection; 2) don't change the row orders
+            sum_tool = sum_tool_bic.merge(
+                sum_tool_lrt[["dofv", "ofv", "rank"]], on="model", suffixes=("_bic", "_lrt")
+            )
+        elif selection_criterion == "lrt":
+            sum_tool = sum_tool_lrt.merge(
+                sum_tool_bic[["dbic", "bic", "rank"]], on="model", suffixes=("_lrt", "_bic")
+            )
+        else:
+            sum_tool = sum_tool_lrt
+    sum_models = summarize_modelfit_results_from_entries(model_entries)
+    sum_errors = summarize_errors_from_entries(model_entries)
+
+    steps, ofv_summary, candidate_summary = None, None, None
+    if algorithm == "scm-lcs":
+        steps = scm_tool._make_df_steps(best_modelentry, candidates)
+        sum_tool = _modify_summary_tool(sum_tool, steps)
+        ofv_summary = ofv_summary_dataframe(steps, final_included=True, iterations=True)
+        candidate_summary = candidate_summary_dataframe(steps)
+
+    return {
+        "summary_tool": sum_tool,
+        "summary_models": sum_models,
+        "summary_errors": sum_errors,
+        "steps": steps,
+        "ofv_summary": ofv_summary,
+        "candidate_summary": candidate_summary,
+    }
+
+
+def _make_lcs_table(lcs_results: list[pd.DataFrame]):
+    desired_order = [
+        "covsearch_step",
+        "lcs_step",
+        "parameter",
+        "selection",
+        "parent",
+        "inclusion",
+        "lrt_positive",
+        "bic",
+        "ofv",
+        "dofv",
+        "lrt_pval",
+        "estimates",
+    ]
+    lcs_table = pd.concat(lcs_results, ignore_index=True)
+    reorder = [col for col in desired_order if col in lcs_table.columns]
+    lcs_table = lcs_table[reorder]
+    return lcs_table
+
+
+def _modify_summary_tool(summary_tool, steps):
+    step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
+    steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
+
+    summary_tool_new = steps_df.join(summary_tool)
+    column_to_move = summary_tool_new.pop('description')
+
+    summary_tool_new.insert(0, 'description', column_to_move)
+
+    return summary_tool_new

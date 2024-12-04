@@ -200,6 +200,7 @@ def create_workflow(
             search_space=search_space,
             max_steps=max_steps,
             p_forward=p_forward,
+            p_backward=p_backward,
             model=model,
             results=results,
             max_eval=max_eval,
@@ -208,6 +209,7 @@ def create_workflow(
             max_covariates=samba_max_covariates,
             selection_criterion=samba_selection_criterion,
             linreg_method=samba_linreg_method,
+            strictness=strictness,
         )
 
     wb = WorkflowBuilder(name=NAME_WF)
