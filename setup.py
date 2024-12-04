@@ -14,7 +14,7 @@ def read(*names, **kwargs):
 
 setup(
     name='pharmpy-core',
-    version='1.3.0',
+    version='1.4.0',
     license='GNU Lesser General Public License v3 (LGPLv3)',
     description='Pharmacometric modeling',
     long_description=read('README.rst'),
