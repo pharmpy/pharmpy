@@ -26,6 +26,7 @@ exclude clean_cache.sh
 exclude codecov.yml
 exclude scripts/*
 exclude bumpversion.sh
+exclude .mailmap
 
 global-exclude *.py[cod] __pycache__
 global-exclude *.swp
