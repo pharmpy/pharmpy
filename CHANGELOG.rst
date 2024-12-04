@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Support EFIM in estmethod-tool
+
 Bugfixes
 ========
 
@@ -9,6 +14,9 @@ Bugfixes
 * Attempt fix of crashed with error "zmq.error.ZMQError: Address already in use"
 * Handle amd input check warnings in context log
 * Fix bug causing amd option `lloq_limit` to not work (issue #3404)
+* Fix mBIC calculation in IIVsearch bottom-up approach
+* Fix bug in COVsearch where incorrect modelfit results are stored as final_results
+* Add removed RUVsearch step in AMD algorithm SIR
 
 1.3.0 (2024-10-24)
 ------------------
