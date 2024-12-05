@@ -150,7 +150,12 @@ jobs:
 
   integration-macos:
     needs: [get-nonmem]
-    runs-on: macos-13
+    strategy:
+      matrix:
+        platform: [macos-13, macos-14]
+    
+    runs-on: ${{ matrix.platform }}
+
     steps:
 
       - name: Checkout Pharmpy
