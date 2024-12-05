@@ -97,10 +97,10 @@ def add_allometry(
     variable = Expr(allometric_variable)
     reference = Expr(reference_value)
 
-    parsed_parameters = []
-
     if parameters is not None:
         parsed_parameters = [Expr(p) for p in parameters]
+    else:
+        parsed_parameters = []
 
     if parameters is None or initials is None:
         cls = find_clearance_parameters(model)
@@ -140,6 +140,7 @@ def add_allometry(
             expr = p * (variable / reference) ** param.symbol
             new_ass = Assignment.create(p, expr)
             ind = sset.find_assignment_index(p)
+            assert ind is not None
             sset = sset[0 : ind + 1] + new_ass + sset[ind + 1 :]
     model = model.replace(statements=sset, parameters=Parameters.create(params))
     model = model.update_source()
