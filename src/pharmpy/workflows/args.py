@@ -1,6 +1,7 @@
 from collections.abc import Mapping
 from typing import Any
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.internals.fs.path import normalize_user_given_path
 
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
@@ -23,7 +24,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
     Tuple of dispatching options, common options and other option dictionaries
     """
     all_dispatching_options = ('context', 'path')
-    all_common_options = ('resume', 'esttool')
+    all_common_options = ('resume', 'esttool', 'seed')
     dispatching_options = {}
     common_options = {}
     other_options = {}
@@ -42,4 +43,6 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
             common_options[key] = value
         else:
             other_options[key] = value
+    if 'seed' not in common_options:
+        common_options['seed'] = DEFAULT_SEED
     return dispatching_options, common_options, other_options

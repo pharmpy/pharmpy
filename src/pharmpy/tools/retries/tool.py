@@ -11,7 +11,6 @@ from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_parameters_from_ucp,
     calculate_ucp_scale,
-    create_rng,
     sample_parameters_uniformly,
     set_initial_estimates,
 )
@@ -83,7 +82,6 @@ def create_workflow(
     wb.add_task(start_task)
 
     candidate_tasks = []
-    seed = create_rng(seed)
     for i in range(1, number_of_candidates + 1):
         new_candidate_task = Task(
             f"Create_candidate_{i}",
@@ -93,7 +91,6 @@ def create_workflow(
             fraction,
             use_initial_estimates,
             prefix_name,
-            seed,
         )
         wb.add_task(new_candidate_task, predecessors=start_task)
         candidate_tasks.append(new_candidate_task)
@@ -117,8 +114,9 @@ def _start(context, results, model):
 
 
 def create_random_init_model(
-    context, index, scale, fraction, use_initial_estimates, prefix_name, seed, modelentry
+    context, index, scale, fraction, use_initial_estimates, prefix_name, modelentry
 ):
+    seed = context.create_rng(index)  # FIXME: Should not be called seed
     original_model = modelentry.model
     # Update inits once before running
     if not use_initial_estimates and modelentry.modelfit_results:

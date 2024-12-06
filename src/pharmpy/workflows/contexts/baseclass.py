@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Literal, Optional, Union
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.workflows.contexts.broadcasters.terminal import broadcast_message
@@ -247,3 +248,14 @@ class Context(ABC):
         """Check if the tool running in the context has completed"""
         metadata = self.retrieve_metadata()
         return "stats" in metadata and "end_time" in metadata["stats"]
+
+    def create_rng(self, index: int):
+        """Create a random number generator
+
+        Creating the generator will be using the seed common option, the index and
+        the context path to get a unique sequence.
+        """
+        ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
+        root_seed = self.retrieve_common_options()['seed']
+        rng = np.random.default_rng([index, ctxpath_bytes, root_seed])
+        return rng

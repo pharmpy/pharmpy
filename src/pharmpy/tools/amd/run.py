@@ -87,6 +87,7 @@ def run_amd(
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
+    # seed is a common option but needs to be here since amd is not yet a proper tool
     seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
