@@ -770,7 +770,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         expr,
         parameters: Optional[Mapping[str, float]] = None,
         samples: int = 1,
-        rng: Optional[np.random.Generator] = None,
+        rng: Union[np.random.Generator, int] = DEFAULT_SEED,
     ) -> np.ndarray:
         """Sample from the distribution of expr
 

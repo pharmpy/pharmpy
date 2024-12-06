@@ -1,8 +1,6 @@
 from dataclasses import dataclass, replace
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
-from pharmpy import DEFAULT_SEED
-from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -60,8 +58,6 @@ def create_workflow(
         Which scale to update the initial values on. Either normal scale or UCP scale.
     prefix_name: Optional[str]
         Prefix the candidate model names with given string.
-    seed: int or rng
-        Random number generator or seed to be used.
 
     Returns
     -------
