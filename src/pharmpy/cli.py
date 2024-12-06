@@ -754,18 +754,6 @@ def key_vals(a):
     return d
 
 
-def random_seed(seed):
-    try:
-        import numpy as np
-
-        seed = int(seed)
-        np.random.seed(seed)
-    except ValueError as e:
-        # Cannot reraise the ValueError as it would be caught by argparse
-        error(argparse.ArgumentTypeError(str(e)))
-    return seed
-
-
 # for commands taking multiple model files as input
 args_input = argparse.ArgumentParser(add_help=False)
 group_input = args_input.add_argument_group(title='inputs')
@@ -793,9 +781,9 @@ args_random = argparse.ArgumentParser(add_help=False)
 group_random = args_random.add_argument_group(title='random seed')
 group_random.add_argument(
     '--seed',
-    type=random_seed,
+    type=int,
     metavar='INTEGER',
-    help='Provide a random seed. The seed must be an integer ' 'between 0 and 2^32 - 1',
+    help='Provide a random seed. The seed must be an integer',
 )
 
 # for commands with file output
@@ -1249,7 +1237,7 @@ parser_definition = [
                     'amd': {
                         'help': 'Use Automatic Model Development tool to select PK model',
                         'func': run_amd,
-                        'parents': [args_model_or_data_input],
+                        'parents': [args_model_or_data_input, args_random],
                         'args': [
                             {
                                 'name': '--results',
@@ -1374,12 +1362,6 @@ parser_definition = [
                                 'type': str,
                                 'default': 'all_final',
                                 'help': 'Whether or not to run retries tool',
-                            },
-                            {
-                                'name': '--seed',
-                                'type': int,
-                                'default': None,
-                                'help': 'Seed to be used',
                             },
                             {
                                 'name': '--parameter_uncertainty_method',
