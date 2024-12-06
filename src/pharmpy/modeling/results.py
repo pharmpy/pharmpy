@@ -238,7 +238,7 @@ def calculate_individual_parameter_statistics(
     ----------
     model : Model
         A previously estimated model
-    parameter_estimates : pd.Series
+    parameter_estimates : Mapping
         Parameter estimates
     covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
