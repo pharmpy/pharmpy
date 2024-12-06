@@ -38,7 +38,6 @@ def create_workflow(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     scale: Optional[Literal[tuple(SCALES)]] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
-    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """
     Run retries tool.
