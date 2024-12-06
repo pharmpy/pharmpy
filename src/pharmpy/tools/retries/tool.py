@@ -1,6 +1,7 @@
 from dataclasses import dataclass, replace
 from typing import Literal, Optional, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -38,7 +39,7 @@ def create_workflow(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     scale: Optional[Literal[tuple(SCALES)]] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """
     Run retries tool.

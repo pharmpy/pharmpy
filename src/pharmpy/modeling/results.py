@@ -4,6 +4,7 @@ import math
 from itertools import chain
 from typing import Iterable, Literal, Mapping, Optional, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -220,7 +221,7 @@ def calculate_individual_parameter_statistics(
     ],
     parameter_estimates: Mapping,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Calculate statistics for individual parameters
 
@@ -410,7 +411,7 @@ def calculate_pk_parameters_statistics(
     model: Model,
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Calculate statistics for common pharmacokinetic parameters
 

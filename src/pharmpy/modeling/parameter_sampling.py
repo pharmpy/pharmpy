@@ -4,13 +4,14 @@ import warnings
 from functools import partial
 from typing import Literal, Optional, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import is_posdef, nearest_positive_semidefinite
 from pharmpy.model import Model
 
 
-def create_rng(seed: Optional[Union[np.random.Generator, int]] = None):
+def create_rng(seed: Union[np.random.Generator, int] = DEFAULT_SEED):
     """Create a new random number generator
 
     Pharmpy functions that use random sampling take a random number generator or seed as input.
@@ -129,7 +130,7 @@ def sample_parameters_uniformly(
     fraction: float = 0.1,
     force_posdef_samples: Optional[int] = None,
     n: int = 1,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     scale: Literal['UCP', 'normal'] = 'normal',
 ):
     """Sample parameter vectors using uniform sampling
@@ -207,7 +208,7 @@ def sample_parameters_from_covariance_matrix(
     force_posdef_samples: Optional[int] = None,
     force_posdef_covmatrix: bool = False,
     n: int = 1,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Sample parameter vectors using the covariance matrix
 
@@ -285,7 +286,7 @@ def sample_individual_estimates(
     individual_estimates_covariance: pd.DataFrame,
     parameters: Optional[list[str]] = None,
     samples_per_id: int = 100,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Sample individual estimates given their covariance.
 

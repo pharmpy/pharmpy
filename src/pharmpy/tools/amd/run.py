@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Callable, Literal, Optional, Sequence, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -13,6 +14,7 @@ from pharmpy.modeling import (
     add_predictions,
     add_residuals,
     create_basic_pk_model,
+    create_rng,
     find_clearance_parameters,
     get_central_volume_and_clearance,
     get_pk_parameters,
@@ -85,7 +87,7 @@ def run_amd(
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str]]] = None,
@@ -174,6 +176,7 @@ def run_amd(
     """
     args = locals()
     validate_input(**args)
+    rng = create_rng(seed)
 
     ctx = _setup_run(args)
     ctx.log_info("Starting tool amd")
@@ -1316,7 +1319,7 @@ def validate_input(
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
