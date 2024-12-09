@@ -115,8 +115,9 @@ def add_iiv(
     list_of_options = _format_options([expression, operation, eta_names], len(list_of_parameters))
     expression, operation, eta_names = list_of_options
 
-    if all(eta_name is None for eta_name in eta_names):
-        eta_names = None
+    if eta_names is not None:
+        if all(eta_name is None for eta_name in eta_names):
+            eta_names = None
 
     if not all(len(opt) == len(list_of_parameters) for opt in list_of_options if opt):
         raise ValueError(
@@ -141,6 +142,7 @@ def add_iiv(
         if index is None:
             raise ValueError(f'Could not find parameter: {list_of_parameters[i]}')
         statement = sset[index]
+        assert isinstance(statement, Assignment)
 
         eta_addition = _create_template(expression[i], operation[i])
 
@@ -172,7 +174,7 @@ def add_iov(
     occ: str,
     list_of_parameters: Optional[Union[list[str], str]] = None,
     eta_names: Optional[Union[list[str], str]] = None,
-    distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'disjoint',
+    distribution: Literal['disjoint', 'joint', 'explicit', 'same-as-iiv'] = 'disjoint',
 ):
     """Adds IOVs to :class:`pharmpy.model`.
 
@@ -243,24 +245,25 @@ def add_iov(
             etas = list(map(lambda x: [x], _get_etas(model, None, include_symbols=True)))
         else:
             etas = [_get_etas(model, None, include_symbols=True)]
-
     else:
         if distribution == 'disjoint':
-            list_of_parameters = list(map(lambda x: [x], list_of_parameters))
+            params = list(map(lambda x: [x], list_of_parameters))
         elif distribution == 'joint' or distribution == 'same-as-iiv':
-            list_of_parameters = [list_of_parameters]
+            params = [list_of_parameters]
+        else:
+            params = list_of_parameters
 
         if not all(
             map(
                 lambda x: isinstance(x, list) and all(map(lambda y: isinstance(y, str), x)),
-                list_of_parameters,
+                params,
             )
         ):
             raise ValueError('not all parameters are strings')
 
-        etas = [_get_etas(model, grp, include_symbols=True) for grp in list_of_parameters]
+        etas = [_get_etas(model, grp, include_symbols=True) for grp in params]
 
-        for dist, grp in zip(etas, list_of_parameters):
+        for dist, grp in zip(etas, params):
             assert len(dist) <= len(grp)
 
     categories = get_occasion_levels(model.dataset, occ)
@@ -561,7 +564,7 @@ def _canonicalize_category(c: Union[int, float, str]):
     if isinstance(c, float):
         return int(c)
 
-    if isinstance(c, (np.int32, np.int64)):
+    if isinstance(c, np.integer):
         return int(c)
 
     if isinstance(c, str):
@@ -618,7 +621,7 @@ class EtaAddition:
     @classmethod
     def re_logit(cls):
         template = sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original')) / (
-            1 + sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original'))
+            sympy.Integer(1) + sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original'))
         )
         return cls(template)
 
