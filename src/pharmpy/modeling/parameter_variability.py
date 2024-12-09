@@ -16,8 +16,6 @@ from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.math import corr2cov, nearest_positive_semidefinite
 from pharmpy.model import (
     Assignment,
@@ -383,7 +381,7 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
             )
         )
 
-        iovs.append(Assignment.create(iov, parse_expr(0)))
+        iovs.append(Assignment.create(iov, Expr.integer(0)))
         iovs.append(Assignment.create(iov, expression))
 
         etai = Expr.symbol(etai_name(i))
@@ -536,12 +534,12 @@ def _create_template(expression, operation):
     elif expression == 're_log':
         return EtaAddition.re_logit()
     else:
-        expression = parse_expr(f'original {operation} {expression}')
+        expression = Expr(f'original {operation} {expression}')
         return EtaAddition(expression)
 
 
 def _get_operation_func(operation):
-    """Gets sympy operation based on string"""
+    """Gets operation based on string"""
     if operation == '*':
         return mul
     elif operation == '+':
@@ -590,38 +588,34 @@ class EtaAddition:
         self.template = template
 
     def apply(self, original, eta):
-        self.template = subs(self.template, {'original': original, 'eta_new': eta})
+        self.template = self.template.subs({'original': original, 'eta_new': eta})
 
     @classmethod
     def additive(cls):
-        template = sympy.Symbol('original') + sympy.Symbol('eta_new')
-
+        template = Expr.symbol('original') + Expr.symbol('eta_new')
         return cls(template)
 
     @classmethod
     def proportional(cls):
-        template = sympy.Symbol('original') * (1 + sympy.Symbol('eta_new'))
-
+        template = Expr.symbol('original') * (1 + Expr.symbol('eta_new'))
         return cls(template)
 
     @classmethod
     def exponential(cls, operation):
-        template = operation(sympy.Symbol('original'), sympy.exp(sympy.Symbol('eta_new')))
-
+        template = operation(Expr.symbol('original'), Expr.symbol('eta_new').exp())
         return cls(template)
 
     @classmethod
     def logit(cls):
-        template = sympy.Symbol('original') * (
-            sympy.exp(sympy.Symbol('eta_new')) / (1 + sympy.exp(sympy.Symbol('eta_new')))
+        template = Expr.symbol('original') * (
+            Expr.symbol('eta_new').exp() / (1 + Expr.symbol('eta_new').exp())
         )
-
         return cls(template)
 
     @classmethod
     def re_logit(cls):
-        template = sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original')) / (
-            sympy.Integer(1) + sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original'))
+        template = (Expr.symbol('eta_new') * Expr.symbol('original')).exp() / (
+            1 + (Expr.symbol('eta_new') * Expr.symbol('original')).exp()
         )
         return cls(template)
 
@@ -740,7 +734,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None):
         return model
 
     keep = [name for name in rvs.names if name not in etas]
-    d = {Expr.symbol(name): 0 for name in etas}
+    d = {Expr.symbol(name): Expr.integer(0) for name in etas}
 
     model = model.replace(statements=sset.subs(d), random_variables=rvs[keep])
     model = remove_unused_parameters_and_rvs(model)
