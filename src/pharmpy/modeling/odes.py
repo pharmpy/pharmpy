@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import Expr, TExpr
 from pharmpy.deps import sympy
@@ -388,12 +388,9 @@ def set_zero_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
-        statements = statements.remove_symbol_definitions(
-            {Expr.symbol('CL')}, statements.ode_system
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
+        statements = statements.remove_symbol_definitions({Expr.symbol('CL')}, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     else:
@@ -599,12 +596,9 @@ def set_michaelis_menten_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
-        statements = statements.remove_symbol_definitions(
-            {Expr.symbol('CL')}, statements.ode_system
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
+        statements = statements.remove_symbol_definitions({Expr.symbol('CL')}, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     else:
@@ -724,10 +718,9 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
     rate = (clmm * km / (km + central.amount / vc) + cl) / vc
     cb = CompartmentalSystemBuilder(odes)
     cb.add_flow(central, output, rate)
-    statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-    )
-    statements = statements.remove_symbol_definitions(numer.free_symbols, statements.ode_system)
+    new_odes = CompartmentalSystem(cb)
+    statements = model.statements.before_odes + new_odes + model.statements.after_odes
+    statements = statements.remove_symbol_definitions(numer.free_symbols, new_odes)
     model = model.replace(statements=statements)
     model = remove_unused_parameters_and_rvs(model)
     return model
@@ -877,8 +870,9 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             statements = model.statements
             mdt_assign = statements.find_assignment('MDT')
         cb.remove_compartment(depot)
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        statements = statements.remove_symbol_definitions(rate.free_symbols, statements.ode_system)
+        new_odes = CompartmentalSystem(cb)
+        statements = statements.before_odes + new_odes + statements.after_odes
+        statements = statements.remove_symbol_definitions(rate.free_symbols, new_odes)
         if mdt_assign and not statements.find_assignment('MDT'):
             statements = mdt_assign + statements
         model = model.replace(statements=statements)
@@ -970,7 +964,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         model = model.replace(statements=statements)
         model = _update_numerators(model)
         statements = model.statements.remove_symbol_definitions(
-            removed_symbols, model.statements.ode_system
+            removed_symbols, get_and_check_odes(model)
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -1183,7 +1177,6 @@ def set_zero_order_absorption(model: Model):
     statements = model.statements
     odes = get_and_check_odes(model)
     _disallow_infusion(model, odes)
-    assert isinstance(odes, CompartmentalSystem)
 
     if has_zero_order_absorption(model) and not has_seq_zo_fo_absorption(model):
         pass
@@ -1206,7 +1199,9 @@ def set_zero_order_absorption(model: Model):
             cb.set_bioavailability(to_comp, depot.bioavailability)
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
             symbols = ka.free_symbols
-        new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        odes = statements.ode_system
+        assert odes is not None
+        new_statements = statements.remove_symbol_definitions(symbols, odes)
         mat_idx = statements.find_assignment_index('MAT')
         if mat_idx is not None:
             # FIXME : Causes issue if mat_assign statement is dependent on previously
@@ -1224,7 +1219,8 @@ def set_zero_order_absorption(model: Model):
             )
             model = model.update_source()
         # FIXME : Very temporary until new zo absorption logic is implemented
-        if lag_time != 0 and len(model.statements.ode_system.dosing_compartments[0].doses) > 1:
+        odes = get_and_check_odes(model)
+        if lag_time != 0 and len(odes.dosing_compartments[0].doses) > 1:
             model = remove_lag_time(model)
             model = add_lag_time(model)
     return model
@@ -1364,9 +1360,10 @@ def set_instantaneous_absorption(model: Model):
             ka = cs.get_flow(depot, cs.central_compartment)
             cb.remove_compartment(depot)
             symbols = ka.free_symbols
-            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+            new_odes = CompartmentalSystem(cb)
+            statements = statements.before_odes + new_odes + statements.after_odes
             model = model.replace(
-                statements=statements.remove_symbol_definitions(symbols, statements.ode_system)
+                statements=statements.remove_symbol_definitions(symbols, new_odes)
             )
             model = remove_unused_parameters_and_rvs(model)
         if has_zero_order_absorption(model):
@@ -1379,11 +1376,10 @@ def set_instantaneous_absorption(model: Model):
             else:
                 cb.set_dose(dose_comp, new_dose)
             unneeded_symbols = old_symbols - new_dose.free_symbols
-            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+            new_odes = CompartmentalSystem(cb)
+            statements = statements.before_odes + new_odes + statements.after_odes
             model = model.replace(
-                statements=statements.remove_symbol_definitions(
-                    unneeded_symbols, statements.ode_system
-                )
+                statements=statements.remove_symbol_definitions(unneeded_symbols, new_odes)
             )
             model = remove_unused_parameters_and_rvs(model)
     return model
@@ -1777,7 +1773,7 @@ def _get_absorption_init(model, param_name) -> float:
     return init
 
 
-def set_peripheral_compartments(model: Model, n: int, name: str = None):
+def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None):
     """Sets the number of peripheral compartments for central compartment to a specified number.
 
     If name is set, the peripheral compartment will be added to the compartment
@@ -1789,7 +1785,7 @@ def set_peripheral_compartments(model: Model, n: int, name: str = None):
         Pharmpy model
     n : int
         Number of transit compartments
-    name : str
+    name : Optional[str]
         Name of compartment to add peripheral to.
 
     Return
@@ -1826,7 +1822,7 @@ def set_peripheral_compartments(model: Model, n: int, name: str = None):
     remove_peripheral_compartment
 
     """
-    odes = model.statements.ode_system
+    odes = get_and_check_odes(model)
 
     try:
         n = _as_integer(n)
@@ -1843,7 +1839,7 @@ def set_peripheral_compartments(model: Model, n: int, name: str = None):
     return model
 
 
-def add_peripheral_compartment(model: Model, name: str = None):
+def add_peripheral_compartment(model: Model, name: Optional[str] = None):
     r"""Add a peripheral distribution compartment to model
 
     The rate of flow from the central to the peripheral compartment
@@ -1870,7 +1866,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
     ----------
     model : Model
         Pharmpy model
-    name : str
+    name : Optional[str]
         Name of compartment to add peripheral to.
 
     Return
@@ -2001,7 +1997,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
     return model.update_source()
 
 
-def remove_peripheral_compartment(model: Model, name: str = None):
+def remove_peripheral_compartment(model: Model, name: Optional[str] = None):
     r"""Remove a peripheral distribution compartment from model
 
     If name is set, a peripheral compartment will be removed from the compartment
@@ -2115,15 +2111,12 @@ def remove_peripheral_compartment(model: Model, name: str = None):
         symbols = rate1.free_symbols | rate2.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_compartment(last_peripheral)
+        new_odes = CompartmentalSystem(cb)
         model = model.replace(
-            statements=(
-                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-            )
+            statements=(model.statements.before_odes + new_odes + model.statements.after_odes)
         )
         model = model.replace(
-            statements=model.statements.remove_symbol_definitions(
-                symbols, model.statements.ode_system
-            )
+            statements=model.statements.remove_symbol_definitions(symbols, new_odes)
         )
         model = remove_unused_parameters_and_rvs(model)
     return model
@@ -2516,6 +2509,7 @@ def set_initial_condition(
     time = Expr(time)
     amount = Expr.function(comp.amount.name, time)
     assignment = Assignment.create(amount, expr)
+    statements = None
     for i, s in enumerate(model.statements.before_odes):
         if s.symbol == amount:
             if time == 0 and expr == 0:
@@ -2528,8 +2522,10 @@ def set_initial_condition(
             statements = (
                 model.statements.before_odes + assignment + odes + model.statements.after_odes
             )
-    model = model.replace(statements=statements)
-    return model.update_source()
+    if statements is not None:
+        model = model.replace(statements=statements)
+        model = model.update_source()
+    return model
 
 
 def get_zero_order_inputs(model: Model) -> sympy.Matrix:
@@ -2558,7 +2554,7 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
     return odes.zero_order_inputs
 
 
-def set_zero_order_input(model: Model, compartment: str, expression: Union[TExpr]) -> Model:
+def set_zero_order_input(model: Model, compartment: str, expression: TExpr) -> Model:
     """Set a zero order input for the ode system
 
     If the zero order input is already set it will be updated.

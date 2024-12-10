@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, Self, Union, overload
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
@@ -305,7 +305,7 @@ class CompartmentalSystemBuilder:
         """
         self._g.add_edge(source, destination, rate=Expr(rate))
 
-    def remove_flow(self, source: Compartment, destination: Compartment) -> None:
+    def remove_flow(self, source: Compartment, destination: CompartmentBase) -> None:
         """Remove flow between two compartments
 
         Parameters
@@ -1474,6 +1474,9 @@ class Dose(ABC):
     @abstractmethod
     def to_dict(self) -> dict[str, Any]: ...
 
+    @abstractmethod
+    def replace(self, **kwargs) -> Self: ...
+
 
 class Bolus(Dose, Immutable):
     """A Bolus dose
@@ -2369,7 +2372,7 @@ class Statements(Sequence, Immutable):
         return symbs
 
     def remove_symbol_definitions(
-        self, symbols: Sequence[Expr], statement: Statement
+        self, symbols: Iterable[Expr], statement: Statement
     ) -> Statements:
         """Remove symbols and dependencies not used elsewhere
 
