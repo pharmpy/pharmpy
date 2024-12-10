@@ -133,7 +133,7 @@ def samba_workflow(
     # Results task
     results_task = Task(
         "results",
-        _samba_task_results,
+        samba_task_results,
         p_forward,
         p_backward,
         strictness,
@@ -370,7 +370,9 @@ def linear_covariate_selection(
     param_indexed_covars = _coveffect_key2list(effect_funcs)
     params = list(param_indexed_covars.keys())
     covars = list(set(chain(*param_indexed_covars.values())))
-    data = create_linear_covariate_dataset(modelentry, params, covars, algorithm)
+    data = create_linear_covariate_dataset(
+        modelentry, params, covars, algorithm, linreg_method, nsamples
+    )
     selected_covariates = {}
     selection_results = pd.DataFrame({})
 
@@ -403,9 +405,6 @@ def linear_covariate_selection(
         selected_covariates[param] = selected
         selection_results = pd.concat([selection_results, model_table], ignore_index=True)
 
-    # TODO: make selection_results a Result class and output with covsearch results
-    # selection_results.to_csv(f"step_{step}_lin_covariate_screening.csv")
-    # selection_results["covsearch_step"] = step
     selection_results.insert(0, "covsearch_step", step)
     search_state.lcs_selection.append(selection_results)
 
@@ -426,7 +425,9 @@ def linear_covariate_selection(
     return StateAndEffect(effect_funcs=coveffect_funcs, search_state=search_state)
 
 
-def create_linear_covariate_dataset(modelentry, parameters, covariates, algorithm):
+def create_linear_covariate_dataset(
+    modelentry, parameters, covariates, algorithm, linreg_method, nsamples
+):
     # ensure `parameters` is a list
     parameters = list(parameters) if not isinstance(parameters, list) else parameters
 
@@ -434,6 +435,8 @@ def create_linear_covariate_dataset(modelentry, parameters, covariates, algorith
     etas = [get_parameter_rv(modelentry.model, param)[0] for param in parameters]
     if algorithm.startswith("samba"):
         eta_columns = modelentry.modelfit_results.individual_eta_samples[etas]
+    elif algorithm.startswith("scm") and linreg_method == "lme":
+        eta_columns = _sample_eta_multivariate_normal(modelentry, nsamples)[etas]
     else:
         eta_columns = modelentry.modelfit_results.individual_estimates[etas]
 
@@ -463,6 +466,30 @@ def create_linear_covariate_dataset(modelentry, parameters, covariates, algorith
         dataset = dataset.merge(etc_column, on="ID")
 
     return dataset
+
+
+def _sample_eta_multivariate_normal(modelentry, nsamples):
+    eta_names = modelentry.modelfit_results.individual_estimates.columns
+    subject_id = modelentry.modelfit_results.individual_estimates.index
+    nsubjects = len(subject_id.unique())
+    subject_id = np.repeat(subject_id, nsamples)
+    samples = np.empty((nsubjects * nsamples, len(eta_names)))
+
+    idx = 0
+    for mu, covmat in zip(
+        modelentry.modelfit_results.individual_estimates.values,
+        modelentry.modelfit_results.individual_estimates_covariance,
+    ):
+        eta = np.random.multivariate_normal(mu, covmat, nsamples)
+        samples[idx : idx + nsamples] = eta
+        idx += nsamples
+
+    eta_columns = pd.DataFrame(
+        np.column_stack((subject_id, samples)), columns=["ID"] + eta_names.to_list()
+    )
+    eta_columns = eta_columns.set_index("ID")
+
+    return eta_columns
 
 
 def _stepwise_linear_covariate_selection(
@@ -584,7 +611,6 @@ def _linear_covariate_selection(
     linreg_method="ols",
 ):
     """Linear covariate selection using BIC or LRT"""
-    # TODO: add support for LME
     lin_func = _get_linreg_method(linreg_method, data, parameter)
 
     partial_ofv = partial(_ofv, nsamples=nsamples, linreg_method=linreg_method)
@@ -914,12 +940,8 @@ def _nonlinear_step_lrt(parent, child):
     return lrt_pval
 
 
-def samba_task_results(context, p_forward, state):
-    # set p_backward and strictness to None
-    return scm_tool.task_results(context, p_forward, p_backward=None, strictness=None, state=state)
-
-
-def _samba_task_results(
+# ============ Results =================
+def samba_task_results(
     context,
     p_forward: float,
     p_backward: float,
@@ -934,7 +956,7 @@ def _samba_task_results(
     assert base_modelentry is state.start_modelentry
     best_modelentry = state.best_candidate_so_far.modelentry
     user_input_modelentry = state.user_input_modelentry
-    lcs_results = _make_lcs_table(state.lcs_selection)
+    lcs_results = _make_lcs_table(state.lcs_selection, p_forward)
     tables = _samba_create_result_tables(
         candidates,
         best_modelentry,
@@ -1034,7 +1056,7 @@ def _samba_create_result_tables(
     }
 
 
-def _make_lcs_table(lcs_results: list[pd.DataFrame]):
+def _make_lcs_table(lcs_results: list[pd.DataFrame], lrt_alpha):
     desired_order = [
         "covsearch_step",
         "lcs_step",
@@ -1046,10 +1068,12 @@ def _make_lcs_table(lcs_results: list[pd.DataFrame]):
         "bic",
         "ofv",
         "dofv",
+        "goal_pvalue",
         "lrt_pval",
         "estimates",
     ]
     lcs_table = pd.concat(lcs_results, ignore_index=True)
+    lcs_table["goal_pvalue"] = lrt_alpha
     reorder = [col for col in desired_order if col in lcs_table.columns]
     lcs_table = lcs_table[reorder]
     return lcs_table
