@@ -98,6 +98,7 @@ def samba_workflow(
     max_covariates: Optional[int] = 3,
     selection_criterion: Literal['bic', 'lrt'] = 'bic',
     linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
+    stepwise_lcs: Optional[bool] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """
@@ -124,6 +125,7 @@ def samba_workflow(
         p_forward,
         linreg_method,
         algorithm,
+        stepwise_lcs,
     )
     wb.add_task(samba_search_task, predecessors=init_task)
     search_output = wb.output_tasks
@@ -153,6 +155,7 @@ def samba_forward(
     lrt_alpha,
     linreg_method,
     algorithm,
+    stepwise_lcs,
     state_and_effect,
 ):
     if algorithm == "scm-lcs" and linreg_method in ["ols", "wls"] and nsamples != 1:
@@ -160,9 +163,13 @@ def samba_forward(
             f"SCM-LCS-{linreg_method.upper()}: nsamples should be 1. Overriding nsamples to 1."
         )
         nsamples = 1
-
     if algorithm == "scm-lcs" and linreg_method == "lme" and nsamples <= 1:
         raise ValueError("SCM-LCS-LME: nsamples should be greater than 1.")
+
+    if (algorithm.startswith("samba")) and (stepwise_lcs is None):
+        stepwise_lcs = True
+    if (algorithm.startswith("scm")) and (stepwise_lcs is None):
+        stepwise_lcs = False
 
     search_state = state_and_effect.search_state
     ini_effect_funcs = state_and_effect.effect_funcs
@@ -180,9 +187,10 @@ def samba_forward(
             selection_criterion,
             lrt_alpha,
             linreg_method,
+            stepwise_lcs,
         )
         # nonlinear selection
-        if algorithm.startswith('samba'):
+        if algorithm.startswith('samba') or stepwise_lcs:
             search_state = samba_nonlinear_model_selection(
                 context, step, selection_criterion, lrt_alpha, state_and_effect
             )
@@ -353,6 +361,7 @@ def linear_covariate_selection(
     selection_criterion="bic",
     lrt_alpha=0.05,
     linreg_method="ols",
+    stepwise_lcs=None,
 ):
     search_state = state_and_effect.search_state
     effect_funcs = state_and_effect.effect_funcs
@@ -367,7 +376,7 @@ def linear_covariate_selection(
 
     for param, covs in param_indexed_covars.items():
         eta_name = get_parameter_rv(modelentry.model, param, "iiv")[0]
-        if algorithm.startswith("samba"):
+        if stepwise_lcs:
             selected, model_table = _stepwise_linear_covariate_selection(
                 data,
                 eta_name,
@@ -403,7 +412,7 @@ def linear_covariate_selection(
     coveffect_keys = _coveffect_list2key(selected_covariates)
     coveffect_funcs = _retrieve_covfunc(effect_funcs, coveffect_keys)
 
-    if algorithm.startswith("samba"):
+    if stepwise_lcs:
         context.log_info(
             f"STEP {step} | STEPWISE LINEAR SELECTION\n"
             f"    Selected Covariate Effects: {list(coveffect_funcs.keys())}"
@@ -741,7 +750,7 @@ def samba_nonlinear_model_selection(
     # early exit if no effects
     if not effect_funcs:
         context.log_info(
-            f"STEP {step} | SAMBA NONLINEAR MODEL SELECTION\n"
+            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
             f"    No covariate effects found from linear covariate screening"
         )
         return search_state
@@ -757,7 +766,7 @@ def samba_nonlinear_model_selection(
         # check if covariate effect already exists
         if depends_on(updated_model, cov_effect[0], cov_effect[1]):
             context.log_info(
-                f"STEP {step} | SAMBA NONLINEAR MODEL SELECTION\n"
+                f"STEP {step} | NONLINEAR MODEL SELECTION\n"
                 f"    Covariate effect of {cov_effect[1]} on {cov_effect[0]} already exists"
             )
             continue
@@ -770,8 +779,7 @@ def samba_nonlinear_model_selection(
     # if no changes are made, skip further processing
     if not update_occurs:
         context.log_info(
-            f"STEP {step} | SAMBA NONLINEAR MODEL SELECTION\n"
-            f"    No new covariate effects are added."
+            f"STEP {step} | NONLINEAR MODEL SELECTION\n" f"    No new covariate effects are added."
         )
         return search_state
 
@@ -795,7 +803,7 @@ def samba_nonlinear_model_selection(
 
     # update the best candidate if the new model is better
     context.log_info(
-        f"STEP {step} | SAMBA NONLINEAR MODEL SELECTION\n"
+        f"STEP {step} | NONLINEAR MODEL SELECTION\n"
         f"    Best Model So Far: BIC {best_bic:.2f} | OFV {best_ofv:.2f}\n"
         f"    Updated Model    : BIC {updated_model_bic:.2f} | OFV {updated_model_ofv:.2f} | "
         f"dOFV {best_ofv - updated_model_ofv:.2f}"
@@ -823,7 +831,7 @@ def scmlcs_nonlinear_model_selection(
     # early exit if no effects
     if not effect_funcs:
         context.log_info(
-            f"STEP {step} | SCM-LCS NONLINEAR MODEL SELECTION\n"
+            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
             f"    No covariate effects found from linear covariate screening"
         )
         return search_state
@@ -835,7 +843,7 @@ def scmlcs_nonlinear_model_selection(
 
         if depends_on(updated_model, cov_effect[0], cov_effect[1]):
             context.log_info(
-                f"STEP {step} | SCM-LCS NONLINEAR MODEL SELECTION\n"
+                f"STEP {step} | NONLINEAR MODEL SELECTION\n"
                 f"    Covariate effect of {cov_effect[1]} on {cov_effect[0]} already exists"
             )
             continue
@@ -891,7 +899,7 @@ def scmlcs_nonlinear_model_selection(
         best_candidate_bic = calculate_bic(best_candidate_model, best_candidate_ofv, "mixed")
 
         context.log_info(
-            f"STEP {step} | SCM-LCS NONLINEAR MODEL SELECTION\n"
+            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
             f"    Best Model So Far: BIC {best_bic:.2f} | OFV {best_ofv:.2f}\n"
             f"    Best Candidate {best_candidate_key}: BIC {best_candidate_bic:.2f} | OFV {best_candidate_ofv:.2f}\n"
             f"    dOFV: {best_ofv - best_candidate_ofv:.2f}"

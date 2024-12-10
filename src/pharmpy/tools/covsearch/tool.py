@@ -137,6 +137,7 @@ def create_workflow(
     samba_max_covariates: Optional[int] = 3,
     samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
     samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
+    samba_stepwise_lcs: Optional[bool] = None,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -180,6 +181,9 @@ def create_workflow(
     samba_selection_criterion: str
         Method used for linear and nonlinear model selection in SAMBA methods. Currently, BIC and LRT are
         supported.
+    samba_stepwise_lcs: bool or None
+        Use stepwise linear covariate screening or not. By default, SAMBA methods use stepwise LCS whereas SCM-LCS uses
+        non-stepwise LCS.
 
     Returns
     -------
@@ -209,6 +213,7 @@ def create_workflow(
             max_covariates=samba_max_covariates,
             selection_criterion=samba_selection_criterion,
             linreg_method=samba_linreg_method,
+            stepwise_lcs=samba_stepwise_lcs,
             strictness=strictness,
         )
 
