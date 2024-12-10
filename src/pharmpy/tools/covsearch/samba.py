@@ -1,4 +1,5 @@
-from dataclasses import dataclass, field, replace
+from collections import Counter
+from dataclasses import astuple, dataclass, field, replace
 from functools import partial
 from itertools import chain, count
 from typing import Literal, Optional, Union
@@ -19,7 +20,6 @@ from pharmpy.modeling import (
     remove_estimation_step,
 )
 from pharmpy.modeling.expressions import depends_on
-from pharmpy.modeling.lrt import best_of_two as lrt_best_of_two
 from pharmpy.tools.common import (
     create_plots,
     summarize_tool,
@@ -40,7 +40,7 @@ from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
-from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
+from pharmpy.tools.scm.results import ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -80,6 +80,15 @@ class SWLCSRecord(LCSRecord):
     lcs_step: int
     parent: Optional[tuple[str, ...]]  # parent model's inclusion
     selection: list[str]
+
+
+@dataclass
+class LRTRes:
+    df: int
+    parent_ofv: float
+    child_ofv: float
+    dofv: float
+    lrt_pval: float
 
 
 NAME_WF = 'covsearch'
@@ -137,7 +146,6 @@ def samba_workflow(
         p_forward,
         p_backward,
         strictness,
-        selection_criterion,
         algorithm,
     )
     wb.add_task(results_task, predecessors=search_output)
@@ -594,7 +602,7 @@ def _stepwise_linear_covariate_selection(
     # covert records to DataFrame
     lcsres_table = pd.DataFrame([record.__dict__ for record in model_records])
     lcsres_table = lcsres_table.sort_values(
-        ["lcs_step", "lrt_pval"] if selection_criterion == "lrt" else "bic"
+        ["lcs_step", "lrt_pval"] if selection_criterion == "lrt" else ["lcs_step", "bic"]
     )
 
     return selected, lcsres_table
@@ -819,9 +827,7 @@ def samba_nonlinear_model_selection(
     updated_model_bic = calculate_bic(updated_model, updated_modelfit.ofv, type="mixed")
     updated_model_ofv = updated_modelfit.ofv
 
-    lrt_best_modelentry = lrt_best_of_two(
-        best_candidate.modelentry, updated_modelentry, best_ofv, updated_model_ofv, lrt_alpha
-    )
+    lrt_res = _nonlinear_step_lrt(best_candidate.modelentry, updated_modelentry)
 
     # add the new candidate to the search state
     new_candidate = Candidate(updated_modelentry, steps=updated_steps)
@@ -831,11 +837,11 @@ def samba_nonlinear_model_selection(
     context.log_info(
         f"STEP {step} | NONLINEAR MODEL SELECTION\n"
         f"    Best Model So Far: BIC {best_bic:.2f} | OFV {best_ofv:.2f}\n"
-        f"    Updated Model    : BIC {updated_model_bic:.2f} | OFV {updated_model_ofv:.2f} | "
-        f"dOFV {best_ofv - updated_model_ofv:.2f}"
+        f"    Updated Model    : BIC {updated_model_bic:.2f} | OFV {updated_model_ofv:.2f}\n"
+        f"    LRT              : dOFV {lrt_res.dofv:.2f} | p-value {lrt_res.lrt_pval:.4f}"
     )
     if (selection_criterion == "bic" and updated_model_bic < best_bic) or (
-        selection_criterion == "lrt" and lrt_best_modelentry == updated_modelentry
+        selection_criterion == "lrt" and lrt_res.lrt_pval < lrt_alpha
     ):
         search_state = replace(search_state, best_candidate_so_far=new_candidate)
 
@@ -886,7 +892,7 @@ def scmlcs_nonlinear_model_selection(
     new_modelentries = [
         ModelEntry.create(model=model, parent=best_model) for model in new_models.values()
     ]
-    fit_wf = create_fit_workflow(modelentries=new_modelentries)  # TODO: try fit with dictionary
+    fit_wf = create_fit_workflow(modelentries=new_modelentries)
     wb = WorkflowBuilder(fit_wf)
     task_gather = Task("gather", lambda *models: models)
     wb.add_task(task_gather, predecessors=wb.output_tasks)
@@ -900,7 +906,7 @@ def scmlcs_nonlinear_model_selection(
 
     scores = {
         cov_effect: (
-            _nonlinear_step_lrt(best_candidate.modelentry, me)
+            _nonlinear_step_lrt(best_candidate.modelentry, me).lrt_pval
             if selection_criterion == "lrt"
             else calculate_bic(me.model, me.modelfit_results.ofv, "mixed")
         )
@@ -934,10 +940,20 @@ def scmlcs_nonlinear_model_selection(
 
 
 def _nonlinear_step_lrt(parent, child):
+    # degree of freedom
     df = len(child.model.parameters) - len(parent.model.parameters)
-    lrt_dofv = parent.modelfit_results.ofv - child.modelfit_results.ofv
+
+    # objective function values
+    parent_ofv = parent.modelfit_results.ofv
+    child_ofv = child.modelfit_results.ofv
+    lrt_dofv = parent_ofv - child_ofv
+
+    # likelihood ratio test p-value
     lrt_pval = stats.chi2.sf(lrt_dofv, df)
-    return lrt_pval
+
+    return LRTRes(
+        df=df, parent_ofv=parent_ofv, child_ofv=child_ofv, dofv=lrt_dofv, lrt_pval=lrt_pval
+    )
 
 
 # ============ Results =================
@@ -946,7 +962,6 @@ def samba_task_results(
     p_forward: float,
     p_backward: float,
     strictness: str | None,
-    selection_criterion: str,
     algorithm: str,
     state: LCSSearchState,
 ):
@@ -964,9 +979,8 @@ def samba_task_results(
         base_modelentry,
         rest_modelentries,
         lrt_cutoff=(p_forward, p_backward),
-        bic_cutoff=10,  # TODO: test this option
+        bic_cutoff=10,
         strictness=strictness,
-        selection_criterion=selection_criterion,
         algorithm=algorithm,
     )
     plots = create_plots(best_modelentry.model, best_modelentry.modelfit_results)
@@ -1004,48 +1018,44 @@ def _samba_create_result_tables(
     lrt_cutoff,
     bic_cutoff,
     strictness,
-    selection_criterion,
     algorithm,
 ):
     model_entries = [base_modelentry] + res_modelentries
     if input_modelentry != base_modelentry:
         model_entries.insert(0, input_modelentry)
-        sum_tool_lrt = summarize_tool(
-            model_entries,
-            base_modelentry,
-            rank_type="lrt",
-            cutoff=lrt_cutoff,
-            strictness=strictness,
-        )
-        sum_tool_lrt["lrt_pval"] = stats.chi2.sf(sum_tool_lrt["dofv"], sum_tool_lrt["d_params"])
-        sum_tool_bic = summarize_tool(
-            model_entries,
-            base_modelentry,
-            rank_type="bic",
-            cutoff=bic_cutoff,
-            strictness=strictness,
-            bic_type="mixed",
-        )
-        if selection_criterion == "bic":  # TODO: 1) mark selection; 2) don't change the row orders
-            sum_tool = sum_tool_bic.merge(
-                sum_tool_lrt[["dofv", "ofv", "rank"]], on="model", suffixes=("_bic", "_lrt")
-            )
-        elif selection_criterion == "lrt":
-            sum_tool = sum_tool_lrt.merge(
-                sum_tool_bic[["dbic", "bic", "rank"]], on="model", suffixes=("_lrt", "_bic")
-            )
-        else:
-            sum_tool = sum_tool_lrt
+    sum_tool_lrt = summarize_tool(
+        model_entries,
+        base_modelentry,
+        rank_type="lrt",
+        cutoff=lrt_cutoff,
+        strictness=strictness,
+    )
+    sum_tool_lrt = sum_tool_lrt.drop(["rank"], axis=1)
+    sum_tool_bic = summarize_tool(
+        model_entries,
+        base_modelentry,
+        rank_type="bic",
+        cutoff=bic_cutoff,
+        strictness=strictness,
+        bic_type="mixed",
+    )
+    sum_tool_bic = sum_tool_bic.rename(columns={"rank": "bic_rank"})
+
+    sum_tool = sum_tool_lrt.merge(sum_tool_bic[["dbic", "bic", "bic_rank"]], on="model")
     sum_models = summarize_modelfit_results_from_entries(model_entries)
     sum_errors = summarize_errors_from_entries(model_entries)
 
-    steps, ofv_summary, candidate_summary = None, None, None
-    if algorithm == "scm-lcs":
+    if algorithm.startswith("samba"):
+        steps = _make_samba_steps(best_modelentry, candidates)
+        ofv_summary, candidate_summary = None, None
+    else:
         steps = scm_tool._make_df_steps(best_modelentry, candidates)
-        sum_tool = _modify_summary_tool(sum_tool, steps)
+        steps = steps.reset_index().rename(
+            columns={"pvalue": "lrt_pval", "goal_pvalue": "goal_pval"}
+        )
         ofv_summary = ofv_summary_dataframe(steps, final_included=True, iterations=True)
-        candidate_summary = candidate_summary_dataframe(steps)
-
+        candidate_summary = None
+    sum_tool = _modify_summary_tool(sum_tool, steps)
     return {
         "summary_tool": sum_tool,
         "summary_models": sum_models,
@@ -1068,24 +1078,85 @@ def _make_lcs_table(lcs_results: list[pd.DataFrame], lrt_alpha):
         "bic",
         "ofv",
         "dofv",
-        "goal_pvalue",
         "lrt_pval",
+        "goal_pval",
         "estimates",
     ]
     lcs_table = pd.concat(lcs_results, ignore_index=True)
-    lcs_table["goal_pvalue"] = lrt_alpha
+    lcs_table["goal_pval"] = lrt_alpha
     reorder = [col for col in desired_order if col in lcs_table.columns]
     lcs_table = lcs_table[reorder]
     return lcs_table
 
 
 def _modify_summary_tool(summary_tool, steps):
-    step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
-    steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
+    step_cols_to_keep = ['step', 'lrt_pval', 'goal_pval', 'selected', 'model']
+    summary_tool = (
+        steps[step_cols_to_keep].merge(summary_tool, on='model').set_index(['step', 'model'])
+    )
 
-    summary_tool_new = steps_df.join(summary_tool)
-    column_to_move = summary_tool_new.pop('description')
+    column_to_move = summary_tool.pop('description')
+    summary_tool.insert(0, 'description', column_to_move)
 
-    summary_tool_new.insert(0, 'description', column_to_move)
+    column_to_move = summary_tool.pop('parent_model')
+    summary_tool.insert(len(summary_tool.columns), 'parent_model', column_to_move)
 
-    return summary_tool_new
+    return summary_tool
+
+
+def _make_samba_steps(best_modelentry, candidates):
+    best_model = best_modelentry.model
+
+    # modelentry dictionaries for quick access
+    modelentries_dict = {
+        candidate.modelentry.model.name: candidate.modelentry for candidate in candidates
+    }
+    children_count = Counter(
+        candidate.modelentry.parent.name for candidate in candidates if candidate.modelentry.parent
+    )
+    data = (
+        _make_samba_step_row(modelentries_dict, children_count, best_model, candidate, i)
+        for i, candidate in enumerate(candidates)
+    )
+    return pd.DataFrame(data)
+
+
+def _make_samba_step_row(modelentries_dict, children_count, best_model, candidate, step):
+    modelentry = candidate.modelentry
+    model = modelentry.model
+
+    parent_name = modelentry.parent.name if modelentry.parent else model.name
+    parent_modelentry = modelentries_dict[parent_name]
+
+    if candidate.steps:
+        steps = candidate.steps
+        effects = ["-".join(astuple(step.effect)) for step in steps]
+        alpha = steps[-1].alpha
+        lrt_res = _nonlinear_step_lrt(parent_modelentry, modelentry)
+        reduced_ofv, extended_ofv, dofv, lrt_pval = (
+            lrt_res.parent_ofv,
+            lrt_res.child_ofv,
+            lrt_res.dofv,
+            lrt_res.lrt_pval,
+        )
+        lrt_significant = lrt_pval < alpha
+    else:
+        effects = ""
+        reduced_ofv = np.nan if (mfr := parent_modelentry.modelfit_results) is None else mfr.ofv
+        extended_ofv = np.nan if (mfr := modelentry.modelfit_results) is None else mfr.ofv
+        dofv = reduced_ofv - extended_ofv
+        alpha, lrt_significant, lrt_pval = np.nan, np.nan, np.nan
+
+    selected = children_count[model.name] >= 1 or model.name == best_model.name
+    return {
+        'step': step,
+        'covariate_effects': effects,
+        'reduced_ofv': reduced_ofv,
+        'extended_ofv': extended_ofv,
+        'dofv': dofv,
+        'lrt_pval': lrt_pval,
+        'goal_pval': alpha,
+        'lrt_significant': lrt_significant,
+        'selected': selected,
+        'model': model.name,
+    }
