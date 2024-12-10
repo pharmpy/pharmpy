@@ -370,7 +370,9 @@ def linear_covariate_selection(
     param_indexed_covars = _coveffect_key2list(effect_funcs)
     params = list(param_indexed_covars.keys())
     covars = list(set(chain(*param_indexed_covars.values())))
-    data = create_linear_covariate_dataset(modelentry, params, covars, algorithm)
+    data = create_linear_covariate_dataset(
+        modelentry, params, covars, algorithm, linreg_method, nsamples
+    )
     selected_covariates = {}
     selection_results = pd.DataFrame({})
 
@@ -426,7 +428,9 @@ def linear_covariate_selection(
     return StateAndEffect(effect_funcs=coveffect_funcs, search_state=search_state)
 
 
-def create_linear_covariate_dataset(modelentry, parameters, covariates, algorithm):
+def create_linear_covariate_dataset(
+    modelentry, parameters, covariates, algorithm, linreg_method, nsamples
+):
     # ensure `parameters` is a list
     parameters = list(parameters) if not isinstance(parameters, list) else parameters
 
@@ -434,6 +438,8 @@ def create_linear_covariate_dataset(modelentry, parameters, covariates, algorith
     etas = [get_parameter_rv(modelentry.model, param)[0] for param in parameters]
     if algorithm.startswith("samba"):
         eta_columns = modelentry.modelfit_results.individual_eta_samples[etas]
+    if algorithm.startswith("scm") and linreg_method == "lme":
+        eta_columns = _multivariate_normal_eta_samples(modelentry, nsamples)[etas]
     else:
         eta_columns = modelentry.modelfit_results.individual_estimates[etas]
 
@@ -463,6 +469,30 @@ def create_linear_covariate_dataset(modelentry, parameters, covariates, algorith
         dataset = dataset.merge(etc_column, on="ID")
 
     return dataset
+
+
+def _multivariate_normal_eta_samples(modelentry, nsamples):
+    eta_names = modelentry.modelfit_results.individual_estimates.columns
+    subject_id = modelentry.modelfit_results.individual_estimates.index
+    nsubjects = len(subject_id.unique())
+    subject_id = np.repeat(subject_id, nsamples)
+    samples = np.empty((nsubjects * nsamples, len(eta_names)))
+
+    idx = 0
+    for mu, covmat in zip(
+        modelentry.modelfit_results.individual_estimates.values,
+        modelentry.modelfit_results.individual_estimates_covariance,
+    ):
+        eta = np.random.multivariate_normal(mu, covmat, nsamples)
+        samples[idx : idx + nsamples] = eta
+        idx += nsamples
+
+    eta_columns = pd.DataFrame(
+        np.column_stack((subject_id, samples)), columns=["ID"] + eta_names.to_list()
+    )
+    eta_columns = eta_columns.set_index("ID")
+
+    return eta_columns
 
 
 def _stepwise_linear_covariate_selection(
