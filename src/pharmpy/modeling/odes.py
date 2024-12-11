@@ -57,6 +57,7 @@ def _find_noncov_theta(model, paramsymb, full=False):
     # Set full to True if already providing a full expression
     # Find subexpression with as few thetas and covariates as possible
     # Stop if one theta found with no covs.
+    thetas = ()
     if full:
         start_expr = paramsymb
     else:
@@ -199,10 +200,9 @@ def set_first_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, Expr.symbol('CL') / v)
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        statements = statements.remove_symbol_definitions(
-            {Expr.symbol('KM')}, statements.ode_system
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = statements.before_odes + new_odes + statements.after_odes
+        statements = statements.remove_symbol_definitions({Expr.symbol('KM')}, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     elif has_mixed_mm_fo_elimination(model):
@@ -221,11 +221,10 @@ def set_first_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, Expr.symbol('CL') / v)
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
         statements = statements.remove_symbol_definitions(
-            {Expr.symbol('KM'), Expr.symbol('CLMM')}, statements.ode_system
+            {Expr.symbol('KM'), Expr.symbol('CLMM')}, new_odes
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -334,10 +333,9 @@ def remove_bioavailability(model: Model):
         symbols = bio.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.set_bioavailability(dosing_comp, Expr.integer(1))
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
-        statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
+        statements = statements.remove_symbol_definitions(symbols, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     return model
@@ -881,7 +879,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         assert odes is not None
         # Since update_source() is used after removing the depot and statements are immutable, we need to
         # reset to get the correct rate names
-        cs = model.statements.ode_system
+        cs = get_and_check_odes(model)
 
     if len(transits) == n:
         return model
@@ -1068,6 +1066,7 @@ def add_lag_time(model: Model):
     if len(dosing_comp.doses) > 1:
         cb.set_lag_time(dosing_comp, Expr.symbol("lag_time"))
         doses = _sorted_doses(dosing_comp, model)
+        assert len(doses) > 0
         oral_admid = doses[0].admid
         admid = Expr.symbol("ADMID")
         model = model.replace(
@@ -1265,6 +1264,7 @@ def set_first_order_absorption(model: Model):
     statements = model.statements
     cs = get_and_check_odes(model)
 
+    remove_dose = False
     if has_first_order_absorption(model) and not has_seq_zo_fo_absorption(model):
         pass
     else:
@@ -1289,7 +1289,6 @@ def set_first_order_absorption(model: Model):
                 remove_dose = True
             else:
                 dose_comp = cb.set_dose(dose_comp, _sorted_doses(dose_comp, model)[1:])
-                remove_dose = False
 
         statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
         new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
@@ -1455,7 +1454,8 @@ def set_seq_zo_fo_absorption(model: Model):
             )
         elif not depot and not have_ZO:
             model = set_first_order_absorption(model)
-            depot = model.statements.ode_system.find_depot(model.statements)
+            odes = get_and_check_odes(model)
+            depot = odes.find_depot(model.statements)
             model = _add_zero_order_absorption(
                 model, Bolus(dose_comp.doses[0].amount), depot, 'MDT'
             )
@@ -1528,10 +1528,12 @@ def _dose_zo(model, dose):
 
 def _sorted_doses(comp, model):
     """Return doses to compartment where oral doses are located first"""
-    if len(comp.doses) > 1:
-        return tuple(sorted(comp.doses, key=lambda d: _dose_zo(model, d), reverse=True))
+    doses = comp.doses
+    assert len(doses) > 0
+    if len(doses) > 1:
+        return tuple(sorted(doses, key=lambda d: _dose_zo(model, d), reverse=True))
     else:
-        return comp.doses
+        return doses
 
 
 def has_first_order_absorption(model: Model):
@@ -1699,7 +1701,8 @@ def _add_zero_order_absorption(
     else:
         cb.add_dose(to_comp, tuple(dose_list))
     if lag_time is not None and lag_time != 0:
-        cb.set_lag_time(model.statements.ode_system.dosing_compartments[0], lag_time)
+        odes = get_and_check_odes(model)
+        cb.set_lag_time(odes.dosing_compartments[0], lag_time)
     model = model.replace(
         statements=model.statements.before_odes
         + CompartmentalSystem(cb)
@@ -2454,6 +2457,7 @@ def get_initial_conditions(model: Model, dosing: bool = False) -> Mapping[Expr, 
     if dosing:
         for name in odes.compartment_names:
             comp = odes.find_compartment(name)
+            assert comp is not None
             if comp.doses and isinstance(comp.doses[0], Bolus):
                 if comp.lag_time:
                     time = comp.lag_time
