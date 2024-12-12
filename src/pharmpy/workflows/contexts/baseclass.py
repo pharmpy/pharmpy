@@ -38,6 +38,10 @@ class Context(ABC):
         self._name = name
         self.broadcast_message = broadcast_message
 
+    @abstractmethod
+    def __repr__(self) -> str:
+        pass
+
     @property
     def model_database(self) -> ModelDatabase:
         """ModelDatabase to store results of models run in context"""

@@ -45,6 +45,9 @@ class LocalDirectoryContext(Context):
         self._store_common_options(common_options)
         super().__init__(name, ref, common_options)
 
+    def __repr__(self) -> str:
+        return f"<Local directory context at {self.path}>"
+
     def _init_path(self, path):
         self.path = path_absolute(path)
         if not self.path.is_dir():

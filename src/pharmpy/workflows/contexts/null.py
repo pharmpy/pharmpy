@@ -11,6 +11,9 @@ class NullContext(Context):
     def __init__(self, *args, **kwargs):
         self.broadcast_message = lambda *args, **kwargs: None
 
+    def __repr__(self) -> str:
+        return "<NullContext>"
+
     @property
     def context_path(self) -> str:
         return ""
