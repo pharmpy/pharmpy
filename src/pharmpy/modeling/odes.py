@@ -104,7 +104,7 @@ def _find_noncov_theta(model, paramsymb, full=False):
     raise ValueError(f"Could not find theta connected to {paramsymb}")
 
 
-def add_individual_parameter(model: Model, name: str):
+def add_individual_parameter(model: Model, name: str, init: float = 0.1, lower: float = 0.0):
     """Add an individual or pk parameter to a model
 
     Parameters
@@ -113,6 +113,10 @@ def add_individual_parameter(model: Model, name: str):
         Pharmpy model
     name : str
         Name of individual/pk parameter
+    init : float
+        Initial estimate of the population parameter
+    lower : float
+        Lower bound for the population parameter
 
     Return
     ------
@@ -128,7 +132,7 @@ def add_individual_parameter(model: Model, name: str):
     KA = POP_KA
 
     """
-    model, _ = _add_parameter(model, name)
+    model, _ = _add_parameter(model, name, init=init, lower=lower)
     model = model.update_source()
     return model
 
