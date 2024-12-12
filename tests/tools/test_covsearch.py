@@ -132,7 +132,7 @@ def test_filter_effects():
 
 @pytest.mark.parametrize(
     'p_value, no_of_nonsignificant_effects',
-    [(0, 4), (100000000000000000, 0), (10**-195, 1)],
+    [(0, 4), (100000000000000000, 0), (10**-8, 2)],
 )
 def test_extract_nonsignificant_effects(
     load_model_for_test, testdata, model_entry_factory, p_value, no_of_nonsignificant_effects
