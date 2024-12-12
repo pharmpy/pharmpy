@@ -2,7 +2,9 @@ from __future__ import annotations
 
 from typing import Optional
 
-from pharmpy.model import Model
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.model import Model, SimulationStep
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
@@ -49,3 +51,13 @@ def run_simulations(context, model):
 
 def bundle_results(*args):
     return args
+
+
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
+def validate_input(
+    model,
+):
+    steps = model.execution_steps
+    if len(steps) == 0 or not isinstance(steps[-1], SimulationStep):
+        raise ValueError("The final execution step must be a simulation")
