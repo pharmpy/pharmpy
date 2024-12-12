@@ -366,6 +366,8 @@ def get_exploratory_covariates(ss_mfl):
         if cov_effect[-1] == "ADD":
             effect = cov_effect[1:-1]  # Everything except "ADD", e.g. ('CL', 'WT', 'exp', '*')
             exploratory_cov_funcs[effect] = cov_func
+    # Sort by effect
+    exploratory_cov_funcs = dict(sorted(exploratory_cov_funcs.items()))
     return exploratory_cov_funcs
 
 

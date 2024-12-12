@@ -544,8 +544,8 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
     steps = tables['steps']
     assert len(steps) == len(candidates)
-    assert 'CL' in steps.index[1] and 'WT' in steps.index[1]
-    assert 'CL' in steps.index[2] and 'WT' not in steps.index[2]
+    assert 'CL' in steps.index[1] and 'AGE' in steps.index[1]
+    assert 'CL' in steps.index[2] and 'AGE' not in steps.index[2]
 
     ofv_summary = tables['ofv_summary']
     assert len(ofv_summary) == 3
