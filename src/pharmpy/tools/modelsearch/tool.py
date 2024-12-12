@@ -100,9 +100,10 @@ def start(
     E,
 ):
     context.log_info("Starting tool modelsearch")
-    # Create links to input model
+
     model = model.replace(name="input", description="")
     context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+    context.log_info(f"Input model OFV: {results.ofv:.3f}")
 
     wb = WorkflowBuilder()
 
@@ -126,6 +127,7 @@ def start(
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
     if not mfl_statements.contain_subset(model_mfl, tool="modelsearch"):
+        context.log_info("Creating base model")
         base_task = Task("create_base_model", create_base_model, mfl_statements, mfl_allometry)
         wb.add_task(base_task, predecessors=start_task)
 
@@ -175,8 +177,18 @@ def start(
         else:
             wb.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
+    context.log_info(f"Starting algorithm '{algorithm}'")
     res = context.call_workflow(wb, 'run_candidate_models')
+    context.log_info(
+        f"Finished algorithm '{algorithm}'. Best model: "
+        f"{res.final_model.name}, OFV: {res.final_results.ofv:.3f}"
+    )
 
+    if res.final_model.name == model.name:
+        context.log_warning(
+            f'Worse {rank_type} in final model {res.final_model.name} '
+            f'than {model.name}, selecting input model'
+        )
     context.store_final_model_entry(res.final_model)
 
     return res
