@@ -353,7 +353,7 @@ def set_scmlcs_estimation(model):
             interaction=True,
             auto=True,
             maximum_evaluations=9999,
-            tool_options={"PHITYPE": "1", "FNLETA": "0"},
+            tool_options={"NOABORT": 0, "PHITYPE": "1", "FNLETA": "0"},
         )
     return model
 
