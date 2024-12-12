@@ -294,6 +294,7 @@ def start(
     context.log_info("Starting tool iivsearch")
     input_model, input_model_entry = prepare_input_model(input_model, input_res)
     context.store_input_model_entry(input_model_entry)
+    context.log_info(f"Input model OFV: {input_res.ofv:.3f}")
 
     list_of_algorithms = prepare_algorithms(algorithm, correlation_algorithm)
 
@@ -303,6 +304,8 @@ def start(
     final_model_entry = None
     sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
 
+    if algorithm != 'no_add':
+        context.log_info("Creating base model")
     base_model, base_model_entry = prepare_base_model(input_model_entry, iiv_strategy, linearize)
 
     param_mapping = create_param_mapping(base_model_entry, linearize)
@@ -375,7 +378,7 @@ def start(
             keep=keep,
             context=context,
         )
-        context.log_info(f"Starting step {algorithm_cur}")
+        context.log_info(f"Starting step '{algorithm_cur}'")
         res = context.call_workflow(wf, f'results_{algorithm}')
 
         if wf_algorithm.name == 'bu_stepwise_no_of_etas':
@@ -402,7 +405,7 @@ def start(
             final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
         descr = final_model_entry.model.description
         ofv = final_model_entry.modelfit_results.ofv
-        context.log_info(f"Finished step {algorithm_cur}. Best model: {descr}, OFV: {ofv:.3f}")
+        context.log_info(f"Finished step '{algorithm_cur}'. Best model: {descr}, OFV: {ofv:.3f}")
 
         # FIXME: Add parent model
         base_model_entry = final_model_entry
