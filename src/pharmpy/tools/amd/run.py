@@ -617,7 +617,11 @@ def run_amd(
     else:
         eta_distribution_plot = None
 
-    final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
+    if not simulation_data.empty:
+        final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
+    else:
+        ctx.log_warning("No vpc could be generated. Did the simulation fail?")
+        final_vpc_plot = None
 
     res = AMDResults(
         final_model=final_model.name,
