@@ -174,17 +174,17 @@ def _add_effect(model: Model, expr: str, conc):
         E = Assignment(Expr.symbol('E'), e0 * (1 + (s * conc)))
     elif expr == "emax":
         emax = Expr.symbol("E_MAX")
-        model = add_individual_parameter(model, emax.name)
+        model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
         E = Assignment(Expr.symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
     elif expr == "step":
         emax = Expr.symbol("E_MAX")
-        model = add_individual_parameter(model, emax.name)
+        model = add_individual_parameter(model, emax.name, lower=-1.0)
         E = Assignment(Expr.symbol("E"), Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
     elif expr == "sigmoid":
         emax = Expr.symbol("E_MAX")
-        model = add_individual_parameter(model, emax.name)
+        model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
         n = Expr.symbol("N")  # Hill coefficient
@@ -295,7 +295,7 @@ def add_indirect_effect(
         R = Expr.symbol("SLOPE") * conc_c
     elif expr == 'emax':
         emax = Expr.symbol("E_MAX")
-        model = add_individual_parameter(model, emax.name)
+        model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
         R = emax * conc_c / (ec50 + conc_c)
@@ -306,7 +306,7 @@ def add_indirect_effect(
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_N": 1})
         model = add_individual_parameter(model, ec50.name)
-        model = add_individual_parameter(model, emax.name)
+        model = add_individual_parameter(model, emax.name, lower=-1.0)
         R = emax * conc_c**n / (ec50**n + conc_c**n)
     else:
         raise ValueError(f'Unknown model "{expr}".')
