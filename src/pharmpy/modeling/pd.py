@@ -170,7 +170,7 @@ def _add_effect(model: Model, expr: str, conc):
     # Add effect E
     if expr == "linear":
         s = Expr.symbol("SLOPE")
-        model = add_individual_parameter(model, s.name)
+        model = add_individual_parameter(model, s.name, lower=-float("inf"))
         E = Assignment(Expr.symbol('E'), e0 * (1 + (s * conc)))
     elif expr == "emax":
         emax = Expr.symbol("E_MAX")
@@ -198,7 +198,7 @@ def _add_effect(model: Model, expr: str, conc):
         )
     elif expr == "loglin":
         s = Expr.symbol("SLOPE")
-        model = add_individual_parameter(model, s.name)
+        model = add_individual_parameter(model, s.name, lower=-float("inf"))
         E = Assignment(Expr.symbol("E"), s * (conc + (e0 / s).exp()).log())
     else:
         raise ValueError(f'Unknown model "{expr}".')
@@ -291,7 +291,7 @@ def add_indirect_effect(
 
     if expr == 'linear':
         s = Expr.symbol("SLOPE")
-        model = add_individual_parameter(model, s.name)
+        model = add_individual_parameter(model, s.name, lower=-float("inf"))
         R = Expr.symbol("SLOPE") * conc_c
     elif expr == 'emax':
         emax = Expr.symbol("E_MAX")

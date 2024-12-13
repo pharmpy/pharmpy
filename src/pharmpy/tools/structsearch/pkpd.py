@@ -7,9 +7,7 @@ from pharmpy.modeling import (
     fix_parameters_to,
     set_baseline_effect,
     set_initial_estimates,
-    set_lower_bounds,
     set_name,
-    unconstrain_parameters,
 )
 
 from ..mfl.parse import ModelFeatures
@@ -106,9 +104,6 @@ def create_pkpd_models(
             )
         if met_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_MET': met_init}, strict=False)
-
-        pkpd_model = unconstrain_parameters(pkpd_model, ['POP_SLOPE'], strict=False)
-        pkpd_model = set_lower_bounds(pkpd_model, {'POP_E_MAX': -1.0}, strict=False)
 
         # Set iiv
         for parameter in ["E_MAX", "SLOPE"]:
