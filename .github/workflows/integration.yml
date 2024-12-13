@@ -140,12 +140,16 @@ jobs:
       - name: Run integration tests
         run: tox -e integration
 
+      - name: Tar failed integration tests
+        run: tar -cvf tests.tar /tmp/pytest-of-*
+        if: ${{ failure() }}
+
       - name: Upload failed integration test directories artifact
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
             name: integration-tests-ubuntu
-            path: /tmp/pytest-of-*
+            path: tests.tar
 
 
   integration-macos:
