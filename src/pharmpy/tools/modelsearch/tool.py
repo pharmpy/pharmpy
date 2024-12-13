@@ -19,13 +19,13 @@ from .filter import mfl_filtering
 
 
 def create_workflow(
+    model: Model,
+    results: ModelfitResults,
     search_space: Union[str, ModelFeatures],
     algorithm: Literal[tuple(algorithms.ALGORITHMS)] = 'reduced_stepwise',
     iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     E: Optional[Union[float, str]] = None,
 ):
@@ -33,6 +33,10 @@ def create_workflow(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
+    results : ModelfitResults
+        Results for model
     search_space : str, ModelFeatures
         Search space to test. Either as a string or a ModelFeatures object.
     algorithm : {'exhaustive', 'exhaustive_stepwise', 'reduced_stepwise'}
@@ -44,10 +48,6 @@ def create_workflow(
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
-    results : ModelfitResults
-        Results for model
-    model : Model
-        Pharmpy model
     strictness : str or None
         Strictness criteria
     E : float
@@ -63,8 +63,9 @@ def create_workflow(
     >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import run_modelsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> results = load_example_modelfit_results("pheno")
-    >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', results=results, model=model) # doctest: +SKIP
+    >>> res = load_example_modelfit_results("pheno")
+    >>> search_space = 'ABSORPTION(ZO);PERIPHERALS(1)'
+    >>> run_modelsearch(model=model, results=res, search_space=search_space, algorithm='exhaustive') # doctest: +SKIP
 
     """
     wb = WorkflowBuilder(name='modelsearch')

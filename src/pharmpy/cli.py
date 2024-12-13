@@ -133,13 +133,13 @@ def run_modelsearch(args):
     model, res = args.model
     run_tool(
         'modelsearch',
+        model=model,
+        results=res,
         search_space=args.mfl,
         algorithm=args.algorithm,
         iiv_strategy=args.iiv_strategy,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
-        results=res,
-        model=model,
         strictness=args.strictness,
         E=args.e,
         path=args.path,
@@ -833,7 +833,7 @@ parser_definition = [
                                 'help': 'Search space to test',
                             },
                             {
-                                'name': 'algorithm',
+                                'name': '--algorithm',
                                 'type': str,
                                 'help': 'Algorithm to use',
                                 'default': 'reduced_stepwise',

@@ -772,13 +772,13 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
 
         res = run_tool(
             'modelsearch',
+            model=model,
+            results=modelfit_results,
             search_space=search_space,
             algorithm='reduced_stepwise',
-            model=model,
             strictness=strictness,
             rank_type=rank_type,
             E=e,
-            results=modelfit_results,
             path=subctx.path,
         )
         assert isinstance(res, Results)

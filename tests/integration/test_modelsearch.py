@@ -8,10 +8,10 @@ from pharmpy.tools import run_modelsearch
 def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
-            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
-            'exhaustive',
-            results=start_modelres[1],
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            algorithm='exhaustive',
             rank_type='mbic',
             E=1.0,
         )
@@ -94,10 +94,10 @@ def test_modelsearch_dummy(
 ):
     with chdir(tmp_path):
         res = run_modelsearch(
-            search_space,
-            algorithm,
-            results=start_modelres[1],
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space=search_space,
+            algorithm=algorithm,
             esttool='dummy',
             **kwargs
         )

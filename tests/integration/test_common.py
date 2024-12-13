@@ -5,7 +5,10 @@ from pharmpy.tools import read_results, run_modelsearch
 def test_serialization(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
-            'ABSORPTION(ZO)', 'exhaustive', model=start_modelres[0], results=start_modelres[1]
+            model=start_modelres[0],
+            results=start_modelres[1],
+            search_space='ABSORPTION(ZO)',
+            algorithm='exhaustive',
         )
 
         rundir = tmp_path / 'modelsearch1'
