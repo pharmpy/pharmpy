@@ -12,13 +12,12 @@ from pharmpy.workflows import ModelEntry, Workflow
 from pharmpy.workflows.contexts import NullContext
 
 
-def test_create_workflow():
-    assert isinstance(create_workflow(), Workflow)
-
-
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert isinstance(create_workflow(model=model, allometric_variable='WGT'), Workflow)
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(
+        create_workflow(model=model, results=results, allometric_variable='WGT'), Workflow
+    )
 
 
 def test_add_allometry_on_model(load_model_for_test, testdata):
@@ -70,18 +69,16 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     assert len(summods) == 2
 
 
-def test_validate_input():
-    validate_input()
-
-
 def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    validate_input(model=model, allometric_variable='WGT')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, results=results, allometric_variable='WGT')
 
 
 def test_validate_input_with_model_and_parameters(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    validate_input(model=model, allometric_variable='WGT', parameters=['CL', 'V'])
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, results=results, allometric_variable='WGT', parameters=['CL', 'V'])
 
 
 @pytest.mark.parametrize(
@@ -127,9 +124,13 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+    if not model_path:
+        model_path = ('nonmem/pheno.mod',)
+    path = testdata.joinpath(*model_path)
+    model = load_model_for_test(path)
+    results = read_modelfit_results(path)
 
-    kwargs = {'model': model, **arguments}
+    kwargs = {'model': model, 'results': results, **arguments}
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)

@@ -17,8 +17,8 @@ from pharmpy.workflows.results import ModelfitResults
 
 
 def create_workflow(
-    model: Optional[Model] = None,
-    results: Optional[ModelfitResults] = None,
+    model: Model,
+    results: ModelfitResults,
     allometric_variable: Union[str, Expr] = 'WT',
     reference_value: Union[str, int, float, Expr] = 70,
     parameters: Optional[list[Union[str, Expr]]] = None,

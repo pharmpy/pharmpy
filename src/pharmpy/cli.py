@@ -232,8 +232,8 @@ def run_allometry(args):
     model, res = args.model
     run_tool(
         'allometry',
-        results=res,
         model=model,
+        results=res,
         allometric_variable=args.allometric_variable,
         reference_value=args.reference_value,
         parameters=args.parameters,

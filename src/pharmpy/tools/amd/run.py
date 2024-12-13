@@ -1179,7 +1179,7 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
     def _run_allometry(model, modelfit_results):
         res = run_tool(
             'allometry',
-            model,
+            model=model,
             results=modelfit_results,
             allometric_variable=allometric_variable,
             path=subctx.path,
