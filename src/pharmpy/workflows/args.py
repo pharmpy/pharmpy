@@ -23,7 +23,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
     -------
     Tuple of dispatching options, common options and other option dictionaries
     """
-    all_dispatching_options = ('context', 'path')
+    all_dispatching_options = ('context', 'path', 'broadcaster')
     all_common_options = ('resume', 'esttool', 'seed')
     dispatching_options = {}
     common_options = {}

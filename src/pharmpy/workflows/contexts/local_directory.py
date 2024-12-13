@@ -31,7 +31,13 @@ class LocalDirectoryContext(Context):
         Path to directory. Will be created if it does not exist.
     """
 
-    def __init__(self, name: str, ref: Optional[str] = None, common_options: dict[str, Any] = None):
+    def __init__(
+        self,
+        name: str,
+        ref: Optional[str] = None,
+        common_options: dict[str, Any] = None,
+        broadcaster: Optional[str] = None,
+    ):
         if ref is None:
             ref = Path.cwd()
         path = Path(ref) / name
@@ -43,7 +49,7 @@ class LocalDirectoryContext(Context):
         self._init_model_name_map()
         self._init_log()
         self._store_common_options(common_options)
-        super().__init__(name, ref, common_options)
+        super().__init__(name, ref, common_options, broadcaster=broadcaster)
 
     def __repr__(self) -> str:
         return f"<Local directory context at {self.path}>"

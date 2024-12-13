@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Literal, Optional, Union
 
+import pharmpy.workflows.contexts.broadcasters.null
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
@@ -30,13 +31,22 @@ class Context(ABC):
         A reference (path) to the context
     """
 
-    def __init__(self, name: str, ref: Optional[str] = None, common_options: dict[str, Any] = None):
+    def __init__(
+        self,
+        name: str,
+        ref: Optional[str] = None,
+        common_options: dict[str, Any] = None,
+        broadcaster: Optional[str] = None,
+    ):
         # If the context already exists it will be opened
         # otherwise a new top level context will be created
         # An implementation needs to create the model database here
         # If ref is None an implementation specific default ref will be used
         self._name = name
-        self.broadcast_message = broadcast_message
+        if broadcaster is not None and broadcaster.lower() == 'null':
+            self.broadcast_message = pharmpy.workflows.contexts.broadcasters.null.broadcast_message
+        else:
+            self.broadcast_message = broadcast_message
 
     @abstractmethod
     def __repr__(self) -> str:
