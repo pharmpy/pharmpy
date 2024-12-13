@@ -79,28 +79,32 @@ def create_pkpd_models(
     functions = mfl_statements.convert_to_funcs(model=model, subset_features="pd")
 
     models = []
-    for key, func in functions.items():
+    for index, (key, func) in enumerate(functions.items(), 1):
         pkpd_model = func(model)
         description = '_'.join(key)
         pkpd_model = pkpd_model.replace(description=description)
-        models.append(pkpd_model)
 
-    final_models = []
-    for index, pkpd_model in enumerate(models, 1):
         pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
 
         # Initial values
+        if 'INDIRECTEFFECT' in key and 'DEGRADATION' in key:
+            cur_emax_init = (1.0 / (emax_init + 1.0)) - 1.0
+        else:
+            cur_emax_init = emax_init
+
         if b_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_B': b_init}, strict=False)
         if ests is not None:
             pkpd_model = fix_parameters_to(pkpd_model, ests, strict=False)
         if emax_init is not None:
-            pkpd_model = set_initial_estimates(pkpd_model, {'POP_E_MAX': emax_init}, strict=False)
+            pkpd_model = set_initial_estimates(
+                pkpd_model, {'POP_E_MAX': cur_emax_init}, strict=False
+            )
         if ec50_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_EC_50': ec50_init}, strict=False)
         if emax_init is not None and ec50_init is not None:
             pkpd_model = set_initial_estimates(
-                pkpd_model, {'POP_SLOPE': emax_init / ec50_init}, strict=False
+                pkpd_model, {'POP_SLOPE': cur_emax_init / ec50_init}, strict=False
             )
         if met_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_MET': met_init}, strict=False)
@@ -116,9 +120,9 @@ def create_pkpd_models(
         except ValueError:
             pass
 
-        final_models.append(pkpd_model)
+        models.append(pkpd_model)
 
-    return final_models
+    return models
 
 
 def create_pk_model(model: Model):
