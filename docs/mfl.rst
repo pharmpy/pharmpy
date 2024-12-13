@@ -86,7 +86,7 @@ MFL support the following model features:
 |               | STEP, LOGLIN`                  |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | INDIRECTEFFECT| :code:`LINEAR, EMAX, SIGMOID`  | Indirect effect PD models. `option` can be                         |
-|               | , `option`                     | either :code:`PRODUCTION` or :code`DEGRADATION`.                   |
+|               | , `option`                     | either :code:`PRODUCTION` or :code:`DEGRADATION`.                  |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 
 
