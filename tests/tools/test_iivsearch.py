@@ -640,6 +640,12 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             ValueError,
             'Value `E_q` must be denoted with `%`',
         ),
+        (
+            ('nonmem', 'pheno.mod'),
+            {'keep': ('X',)},
+            ValueError,
+            'Symbol `X` does not exist in input model',
+        ),
     ],
 )
 def test_validate_input_raises(
@@ -668,7 +674,7 @@ def test_validate_input_raises(
 
 @pytest.mark.parametrize(
     ('model_path', 'arguments', 'warning', 'match'),
-    [(["nonmem", "pheno.mod"], dict(keep=["NONEXISTENT"]), UserWarning, 'Parameter')],
+    [(["nonmem", "pheno.mod"], dict(keep=["CL"]), UserWarning, 'Parameter')],
 )
 def test_validate_input_warn(
     load_model_for_test,
@@ -683,6 +689,7 @@ def test_validate_input_warn(
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
     results = read_modelfit_results(path)
+    model = remove_iiv(model, 'CL')
 
     harmless_arguments = dict(
         algorithm='top_down_exhaustive',

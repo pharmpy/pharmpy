@@ -718,10 +718,10 @@ def validate_input(
 ):
     if keep and model:
         for parameter in keep:
-            try:
-                has_random_effect(model, parameter, "iiv")
-            except KeyError:
-                warnings.warn(f"Parameter {parameter} has no iiv and is ignored")
+            if parameter not in map(lambda x: str(x), model.statements.free_symbols):
+                raise ValueError(f'Symbol `{parameter}` does not exist in input model')
+            if not has_random_effect(model, parameter, "iiv"):
+                warnings.warn(f"Parameter `{parameter}` has no iiv and is ignored")
 
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
