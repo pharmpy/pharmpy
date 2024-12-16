@@ -70,9 +70,9 @@ def _sample_from_function(
     model,
     parameter_estimates,
     samplingfn,
+    seed,
     force_posdef_samples=None,
     n=1,
-    seed=None,
 ):
     """Sample parameter vectors using a general function
 
@@ -348,13 +348,13 @@ def sample_individual_estimates(
     ests = individual_estimates
     covs = individual_estimates_covariance
     if parameters is None:
-        parameters = ests.columns
+        parameters = list(ests.columns)
     ests = ests[parameters]
     samples = pd.DataFrame()
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma.loc[parameters, parameters]
         sigma = nearest_positive_semidefinite(sigma)
-        id_samples = rng.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
+        id_samples = rng.multivariate_normal(mu.to_numpy(), sigma.to_numpy(), size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df['ID'] = idx
         id_df['sample'] = list(range(0, samples_per_id))
