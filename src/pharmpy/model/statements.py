@@ -1777,7 +1777,7 @@ class Compartment(CompartmentBase):
         input: TExpr = Expr.integer(0),
         lag_time: TExpr = Expr.integer(0),
         bioavailability: TExpr = Expr.integer(1),
-    ):
+    ) -> Compartment:
         if not isinstance(name, str):
             raise TypeError("Name of a Compartment must be of string type")
         if amount is not None:

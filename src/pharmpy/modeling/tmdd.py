@@ -86,15 +86,20 @@ def set_tmdd(
     vc, cl = get_central_volume_and_clearance(model)
     r_0 = Expr.symbol('R_0')
     model = add_individual_parameter(model, r_0.name)
-    model = add_iiv(model, [r_0], 'exp')
+    model = add_iiv(model, [r_0.name], 'exp')
     kint = Expr.symbol('KINT')
     model = add_individual_parameter(model, kint.name)
 
     y_symbol = _get_y_symbol(model)
 
+    lafreef = Expr.symbol("LAFREEF")
+    target_comp = Compartment.create(name='TARGET')
+    complex_comp = Compartment.create(name='COMPLEX')
+
     if uptype == "FULL":
         model, kon, koff, kdeg = _create_parameters(model, ['KON', 'KOFF', 'KDEG'])
-        target_comp, complex_comp = _create_compartments(cb, ['TARGET', 'COMPLEX'])
+        cb.add_compartment(target_comp)
+        cb.add_compartment(complex_comp)
         ksyn, ksyn_ass = _create_ksyn()
 
         cb.add_flow(target_comp, complex_comp, kon * central.amount / vc)
@@ -110,7 +115,8 @@ def set_tmdd(
         after = model.statements.after_odes
     elif uptype == "IB":
         model, kdeg, kon = _create_parameters(model, ['KDEG', 'KON'])
-        target_comp, complex_comp = _create_compartments(cb, ['TARGET', 'COMPLEX'])
+        cb.add_compartment(target_comp)
+        cb.add_compartment(complex_comp)
         ksyn, ksyn_ass = _create_ksyn()
 
         cb.add_flow(target_comp, complex_comp, kon * central.amount / vc)
@@ -123,7 +129,7 @@ def set_tmdd(
         after = model.statements.after_odes
     elif uptype == "CR":
         model, kon, koff = _create_parameters(model, ['KON', 'KOFF'])
-        complex_comp = _create_compartments(cb, ['COMPLEX'])
+        cb.add_compartment(complex_comp)
 
         cb.add_flow(complex_comp, central, koff + kon * central.amount / vc)
         cb.add_flow(complex_comp, output, kint)
@@ -133,7 +139,7 @@ def set_tmdd(
         after = model.statements.after_odes
     elif uptype == "CRIB":
         model, kon = _create_parameters(model, ['KON'])
-        complex_comp = _create_compartments(cb, ['COMPLEX'])
+        cb.add_compartment(complex_comp)
 
         cb.add_flow(complex_comp, output, kint)
         cb.add_flow(central, complex_comp, kon * r_0)
@@ -143,7 +149,7 @@ def set_tmdd(
         after = model.statements.after_odes
     elif uptype == "QSS":
         model, kdc, kdeg = _create_parameters(model, ['KDC', 'KDEG'])
-        target_comp = _create_compartments(cb, ['TARGET'])
+        cb.add_compartment(target_comp)
 
         kd = Expr.symbol('KD')
 
@@ -177,20 +183,23 @@ def set_tmdd(
 
             # FIXME: Should others also have flows?
             central = cb.find_compartment('CENTRAL')
+            assert isinstance(central, Compartment)
             cb.add_flow(central, output, lafree_symb * elimination_rate)
 
-            lafreef = Expr.symbol("LAFREEF")
             lafree_final = Assignment.create(lafreef, lafree_expr)
             before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
             after = lafree_final + model.statements.after_odes
             ipred = lafreef / vc
             after = after.reassign(y_symbol, ipred)
         elif num_peripheral_comp > 0 and num_peripheral_comp <= 2:
-            peripheral1 = _create_compartments(cb, ['PERIPHERAL1'])
+            peripheral1 = _create_compartment(cb, 'PERIPHERAL1')
             flow_central_peripheral1 = odes.get_flow(central, peripheral1)
             if num_peripheral_comp == 2:
-                peripheral2 = _create_compartments(cb, ['PERIPHERAL2'])
+                peripheral2 = _create_compartment(cb, 'PERIPHERAL2')
                 flow_central_peripheral2 = odes.get_flow(central, peripheral2)
+            else:
+                peripheral2 = None
+                flow_central_peripheral2 = None
 
             elimination_rate = odes.get_flow(central, output)
             cb.remove_flow(central, output)
@@ -212,7 +221,7 @@ def set_tmdd(
                     lafree_symb * flow_central_peripheral1
                     - flow_central_peripheral1 * central.amount,
                 )
-            elif num_peripheral_comp == 2:
+            elif flow_central_peripheral2 is not None and peripheral2 is not None:
                 cb.set_input(
                     central,
                     -target_comp.amount * kint * lafree_symb / (kd + lafree_symb)
@@ -238,9 +247,9 @@ def set_tmdd(
                 )
 
             central = cb.find_compartment('CENTRAL')
+            assert isinstance(central, Compartment)
             cb.add_flow(central, output, lafree_symb * elimination_rate / central.amount)
 
-            lafreef = Expr.symbol("LAFREEF")
             lafree_final = Assignment.create(lafreef, lafree_expr)
             before = model.statements.before_odes + (ksyn_ass, kd_ass, lafree_ass)
             after = lafree_final + model.statements.after_odes
@@ -277,7 +286,7 @@ def set_tmdd(
                 + kel * central.amount,
             )
         elif num_peripheral_comp == 1:
-            peripheral = _create_compartments(cb, ['PERIPHERAL1'])
+            peripheral = _create_compartment(cb, 'PERIPHERAL1')
             kcp = odes.get_flow(central, peripheral)
             cb.add_flow(central, output, kel)
             cb.set_input(
@@ -291,9 +300,9 @@ def set_tmdd(
             )
             cb.set_input(peripheral, kcp * lafree_symb - kcp * central.amount)
         elif num_peripheral_comp == 2:
-            peripheral1 = _create_compartments(cb, ['PERIPHERAL1'])
+            peripheral1 = _create_compartment(cb, 'PERIPHERAL1')
             kcp1 = odes.get_flow(central, peripheral1)
-            peripheral2 = _create_compartments(cb, ['PERIPHERAL2'])
+            peripheral2 = _create_compartment(cb, 'PERIPHERAL2')
             kcp2 = odes.get_flow(central, peripheral2)
 
             cb.add_flow(central, output, kel)
@@ -309,7 +318,6 @@ def set_tmdd(
             cb.set_input(peripheral1, kcp1 * lafree_symb - kcp1 * central.amount)
             cb.set_input(peripheral2, kcp2 * lafree_symb - kcp2 * central.amount)
 
-        lafreef = Expr.symbol("LAFREEF")
         lafree_final = Assignment.create(lafreef, lafree_expr)
         before = model.statements.before_odes + lafree_ass + kd_ass + rinit_ass
         after = lafree_final + model.statements.after_odes
@@ -317,7 +325,7 @@ def set_tmdd(
         after = after.reassign(y_symbol, ipred)
     elif uptype == 'MMAPP':
         model, km, kdeg = _create_parameters(model, ['KM', 'KDEG'])
-        target_comp = _create_compartments(cb, ['TARGET'])
+        cb.add_compartment(target_comp)
         ksyn, ksyn_ass = _create_ksyn()
 
         target_elim = kdeg + (kint - kdeg) * central.amount / vc / (km + central.amount / vc)
@@ -348,7 +356,7 @@ def set_tmdd(
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
-                    statements=model.statements.before_odes + model.statements.ode_system + after
+                    statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
             if 'target' in dv_types.keys():
                 y_target = Expr.symbol("Y_TARGET")
@@ -379,7 +387,7 @@ def set_tmdd(
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
-                    statements=model.statements.before_odes + model.statements.ode_system + after
+                    statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
             if 'target' in dv_types.keys():
                 y_target = Expr.symbol("Y_TARGET")
@@ -425,7 +433,7 @@ def set_tmdd(
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
-                    statements=model.statements.before_odes + model.statements.ode_system + after
+                    statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
             if 'complex' in dv_types.keys():
                 y_complex = Expr.symbol("Y_COMPLEX")
@@ -440,7 +448,7 @@ def set_tmdd(
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
-                    statements=model.statements.before_odes + model.statements.ode_system + after
+                    statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
             if 'complex' in dv_types.keys():
                 y_complex = Expr.symbol("Y_COMPLEX")
@@ -483,16 +491,10 @@ def _create_parameters(model, names):
     return model, *symbs
 
 
-def _create_compartments(cb, names):
-    comps = []
-    for name in names:
-        comp = Compartment.create(name=name)
-        comps.append(comp)
-        cb.add_compartment(comp)
-    if len(comps) == 1:
-        return comps[0]
-    else:
-        return comps
+def _create_compartment(cb, name: str):
+    comp = Compartment.create(name=name)
+    cb.add_compartment(comp)
+    return comp
 
 
 def _create_ksyn():
