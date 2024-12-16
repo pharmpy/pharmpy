@@ -321,6 +321,14 @@ def validate_input(
             f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
         )
 
+    allometry = ModelFeatures.create_from_mfl_statement_list(statements).allometry
+    if allometry:
+        covariate = allometry.covariate
+        if covariate not in list(model.dataset.columns):
+            raise ValueError(
+                f'Invalid `search_space`: allometric variable \'{covariate}\' not in dataset'
+            )
+
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(

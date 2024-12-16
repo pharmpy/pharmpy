@@ -461,6 +461,12 @@ def test_validate_input_with_model(load_model_for_test, testdata):
         ),
         (
             None,
+            dict(search_space='ABSORPTION(FO);ALLOMETRY(X,70)'),
+            ValueError,
+            'Invalid `search_space`',
+        ),
+        (
+            None,
             dict(algorithm=1),
             ValueError,
             'Invalid `algorithm`',
