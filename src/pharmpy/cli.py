@@ -174,13 +174,13 @@ def run_iovsearch(args):
     model, res = args.model
     run_tool(
         'iovsearch',
+        model=model,
+        results=res,
         column=args.column,
         list_of_parameters=args.list_of_parameters,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         distribution=args.distribution,
-        results=res,
-        model=model,
         strictness=args.strictness,
         E=args.e,
         path=args.path,

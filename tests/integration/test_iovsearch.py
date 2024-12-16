@@ -9,7 +9,7 @@ from pharmpy.tools import fit, run_iovsearch
 def test_default_mox2(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iovsearch(
-            'VISI', rank_type='bic', results=start_modelres[1], model=start_modelres[0]
+            model=start_modelres[0], results=start_modelres[1], column='VISI', rank_type='bic'
         )
         rundir = tmp_path / 'iovsearch1'
         assert model_count(rundir) == 10
@@ -20,14 +20,14 @@ def test_default_mox2(tmp_path, model_count, start_modelres):
 def test_ignore_fixed_iiv(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         start_model = fix_parameters(start_modelres[0], 'IIV_CL')
-        res = run_iovsearch('VISI', results=start_modelres[1], model=start_model)
+        res = run_iovsearch(model=start_model, results=start_modelres[1], column='VISI')
         assert len(res.summary_models) == 5
 
 
 def test_rank_type_ofv_mox2(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_iovsearch(
-            'VISI', results=start_modelres[1], model=start_modelres[0], rank_type='ofv'
+            model=start_modelres[0], results=start_modelres[1], column='VISI', rank_type='ofv'
         )
         rundir = tmp_path / 'iovsearch1'
         assert model_count(rundir) == 10
@@ -41,7 +41,7 @@ def test_default_mox1(tmp_path, model_count, testdata):
     with chdir(tmp_path):
         start_model = Model.parse_model('mox1.mod')
         start_res = fit(start_model)
-        res = run_iovsearch('VISI', results=start_res, model=start_model)
+        res = run_iovsearch(model=start_model, results=start_res, column='VISI')
         rundir = tmp_path / 'iovsearch1'
         assert model_count(rundir) == 9
 
@@ -54,7 +54,7 @@ def test_default_mox1_dummy(tmp_path, model_count, testdata):
     with chdir(tmp_path):
         start_model = Model.parse_model('mox1.mod')
         start_res = fit(start_model)
-        res = run_iovsearch('VISI', results=start_res, model=start_model, esttool='dummy')
+        res = run_iovsearch(model=start_model, results=start_res, column='VISI', esttool='dummy')
         rundir = tmp_path / 'iovsearch1'
         assert model_count(rundir) == 10
 
