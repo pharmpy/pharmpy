@@ -53,8 +53,8 @@ SKIP = frozenset(('IIV_on_RUV', 'power', 'combined', 'time_varying'))
 
 
 def create_workflow(
-    model: Optional[Model] = None,
-    results: Optional[ModelfitResults] = None,
+    model: Model,
+    results: ModelfitResults,
     groups: int = 4,
     p_value: float = 0.001,
     skip: Optional[list[Literal[tuple(SKIP)]]] = None,

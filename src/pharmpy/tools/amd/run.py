@@ -951,7 +951,7 @@ def _subfunc_ruvsearch(dv, strictness, ctx, dir_name) -> SubFunc:
             skip, max_iter = [], 3
         res = run_tool(
             'ruvsearch',
-            model,
+            model=model,
             results=modelfit_results,
             skip=skip,
             max_iter=max_iter,

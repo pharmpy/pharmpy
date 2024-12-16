@@ -214,8 +214,8 @@ def run_ruvsearch(args):
     model, res = args.model
     run_tool(
         'ruvsearch',
-        results=res,
         model=model,
+        results=res,
         groups=args.groups,
         p_value=args.p_value,
         skip=args.skip,
