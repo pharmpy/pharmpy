@@ -263,7 +263,7 @@ def calculate_cov_from_corrse(corr: pd.DataFrame, se: pd.Series):
     calculate_corr_from_prec : Correlation matrix from precision matrix
     """
 
-    sd_matrix = np.diag(se.values)
+    sd_matrix = np.diag(se.to_numpy())
     cov = sd_matrix @ corr.values @ sd_matrix
     cov_df = pd.DataFrame(cov, index=corr.index, columns=corr.columns)
     return cov_df
@@ -370,7 +370,7 @@ def calculate_prec_from_corrse(corr: pd.DataFrame, se: pd.Series):
     calculate_corr_from_prec : Correlation matrix from precision matrix
     """
 
-    sd_matrix = np.diag(se.values)
+    sd_matrix = np.diag(se.to_numpy())
     cov = sd_matrix @ corr.values @ sd_matrix
     Pm = pd.DataFrame(np.linalg.inv(cov), index=corr.index, columns=corr.columns)
     return Pm
