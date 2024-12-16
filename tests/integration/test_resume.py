@@ -55,13 +55,13 @@ def test_run_tool_iivsearch_resume_flag(tmp_path, testdata, model_count):
             try:
                 res = run_tool(
                     'iivsearch',
-                    'top_down_exhaustive',
+                    model=model_start,
+                    results=start_res,
+                    algorithm='top_down_exhaustive',
                     correlation_algorithm='skip',
                     rank_type='mbic',
                     E_p=1.0,
                     keep=[],
-                    model=model_start,
-                    results=start_res,
                     path=path,
                     resume=resume,
                 )
@@ -117,10 +117,10 @@ def test_run_tool_modelsearch_resume_flag(
             try:
                 res = run_tool(
                     'modelsearch',
-                    search_space,
-                    'exhaustive_stepwise',
                     model=model_start,
                     results=start_res,
+                    search_space=search_space,
+                    algorithm='exhaustive_stepwise',
                     path=path,
                     resume=resume,
                 )
