@@ -880,7 +880,7 @@ def _parse_table_file(model, path: Optional[Union[str, Path]], subproblem: Optio
             sim['index'] = np.arange(len(model.dataset))
             df = pd.concat([df, sim], ignore_index=True)
 
-    if df.empty:
+    if not df.empty:
         df = df.set_index(['SIM', 'index'])
     return df
 
