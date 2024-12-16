@@ -127,7 +127,7 @@ def start(
     # Add base model task
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
-    if not mfl_statements.contain_subset(model_mfl, tool="modelsearch"):
+    if not mfl_statements.contain_subset(model_mfl, tool="modelsearch") or mfl_allometry:
         context.log_info("Creating base model")
         base_task = Task("create_base_model", create_base_model, mfl_statements, mfl_allometry)
         wb.add_task(base_task, predecessors=start_task)
@@ -238,7 +238,7 @@ def create_base_model(ss, allometry, model_or_model_entry):
     base = base.replace(name="base", description=added_features[1:])
     base = _add_allometry(base, allometry)
 
-    return ModelEntry.create(base, modelfit_results=None, parent=None)
+    return ModelEntry.create(base, modelfit_results=None, parent=model)
 
 
 def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries):
