@@ -169,24 +169,23 @@ def test_drug_metabolite(load_model_for_test, testdata):
     assert len(candidate_tasks) == 2
 
 
-def test_create_workflow():
-    assert isinstance(create_workflow('pkpd', None, ModelfitResults()), Workflow)
-
-
 def test_create_workflow_pkpd(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('pkpd', model=model, results=ModelfitResults()), Workflow)
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+    assert isinstance(create_workflow(model=model, results=results, type='pkpd'), Workflow)
 
 
 def test_create_workflow_tmdd(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    assert isinstance(create_workflow('pkpd', model=model, results=ModelfitResults()), Workflow)
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+    assert isinstance(create_workflow(model=model, results=results, type='tmdd'), Workflow)
 
 
 def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
     assert isinstance(
-        create_workflow('drug_metabolite', model=model, results=ModelfitResults()), Workflow
+        create_workflow(model=model, results=results, type='drug_metabolite'), Workflow
     )
 
 

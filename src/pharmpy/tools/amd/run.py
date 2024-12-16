@@ -814,12 +814,12 @@ def _subfunc_structsearch_tmdd(
     def _run_structsearch_tmdd(model, modelfit_results):
         res = run_tool(
             'modelsearch',
+            model=model,
+            results=modelfit_results,
             search_space=search_space,
             algorithm='reduced_stepwise',
-            model=model,
             strictness=strictness,
             rank_type='bic',
-            results=modelfit_results,
             path=subctx1.path,
         )
 
@@ -891,9 +891,9 @@ def _subfunc_structsearch_tmdd(
 
         res = run_tool(
             'structsearch',
-            type=type,
             model=final_model,
             results=final_res,
+            type=type,
             extra_model=extra_model,
             extra_model_results=extra_model_results,
             strictness=strictness,

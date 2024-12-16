@@ -20,9 +20,9 @@ The code to initiate structsearch for a TMDD model in Python/R is stated below:
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
 
-    res = run_structsearch(type='tmdd',
-                            model=start_model,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='tmdd')
 
 
 Arguments
@@ -35,11 +35,11 @@ Mandatory
 +-------------------------------------------------+---------------------------------------------------------------------+
 | Argument                                        | Description                                                         |
 +=================================================+=====================================================================+
-| ``type``                                        | Type of model. In this case "tmdd".                                 |
-+-------------------------------------------------+---------------------------------------------------------------------+
 | ``model``                                       | PK start model.                                                     |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``results``                                     | ModelfitResults of the start model.                                 |
++-------------------------------------------------+---------------------------------------------------------------------+
+| ``type``                                        | Type of model. In this case "tmdd".                                 |
 +-------------------------------------------------+---------------------------------------------------------------------+
 
 Optional
@@ -465,9 +465,9 @@ Below is an example for a TMDD run.
 
 .. pharmpy-code::
 
-    res = run_structsearch(type='tmdd',
-                            model=start_model,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='tmdd')
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model (in this case comparing BIC), and final ranking:
@@ -493,9 +493,9 @@ Run TMDD for multiple DVs:
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
 
-    res = run_structsearch(type='tmdd',
-                            model=start_model,
-                            results=start_model_results,
-                            dv_types={'drug': 1, 'target': 2, 'complex': 3})
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='tmdd',
+                           dv_types={'drug': 1, 'target': 2, 'complex': 3})
 
 Note: "drug" can be omitted in ``dv_types``. In this case it will be set to 1.

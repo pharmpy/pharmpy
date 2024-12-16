@@ -17,10 +17,10 @@ The code to initiate structsearch for a drug metabolite model in Python/R is sta
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_structsearch(type='drug_metabolite',
-                            search_space="METABOLITE([BASIC,PSC]);PERIPHERALS(0..1,MET)",
-                            model=start_model,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='drug_metabolite',
+                           search_space="METABOLITE([BASIC,PSC]);PERIPHERALS(0..1,MET)")
 
 .. note::                          
     The tool expect the model to have a dataset with two DVIDs. DVID=1 connected to the parent
@@ -29,14 +29,14 @@ The code to initiate structsearch for a drug metabolite model in Python/R is sta
 +-------------------------------------------------+-----------------------------------------------------------------------+
 | Argument                                        | Description                                                           |
 +=================================================+=======================================================================+
+| ``model``                                       | Start model                                                           |
++-------------------------------------------------+-----------------------------------------------------------------------+
+| ``results``                                     | :code:`ModelfitResults` object of the start model                     |
++-------------------------------------------------+-----------------------------------------------------------------------+
 | ``type``                                        | Need to be set to 'drug_metabolite' (see :ref:`type<the model types>` |
 |                                                 | for more)                                                             |
 +-------------------------------------------------+-----------------------------------------------------------------------+
 | ``search_space``                                | :ref:`Search space<the search space>` of models to test               |
-+-------------------------------------------------+-----------------------------------------------------------------------+
-| ``model``                                       | Start model                                                           |
-+-------------------------------------------------+-----------------------------------------------------------------------+
-| ``results``                                     | :code:`ModelfitResults` object of the start model                     |
 +-------------------------------------------------+-----------------------------------------------------------------------+
 | ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.           |
 |                                                 | Default is :code:`"minimization_successful or                         |
@@ -166,10 +166,10 @@ Below is an example for a drug metabolite run.
 
 .. pharmpy-code::
 
-    res = run_structsearch(type='drug_metabolite',
-                            search_space="METABOLITE([BASIC,PSC]);PERIPHERALS(0..1,MET)",
-                            model=start_model,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='drug_metabolite',
+                           search_space="METABOLITE([BASIC,PSC]);PERIPHERALS(0..1,MET)")
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model (in this case comparing BIC), and final ranking:
