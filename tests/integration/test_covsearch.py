@@ -44,10 +44,10 @@ def test_covsearch_dummy(
 ):
     with chdir(tmp_path):
         res = run_covsearch(
-            search_space,
-            algorithm=algorithm,
-            results=start_modelres[1],
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space=search_space,
+            algorithm=algorithm,
             esttool='dummy',
         )
         no_of_models = (no_of_effects * (no_of_effects + 1)) / 2
@@ -77,13 +77,16 @@ def test_covsearch_dummy(
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_default_str(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
-        run_tool(
-            'covsearch',
+        search_space = (
             'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
             'COVARIATE?([CL, MAT, VC], @CONTINUOUS, exp, *)\n'
-            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, cat, *)',
-            results=start_modelres[1],
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, cat, *)'
+        )
+        run_tool(
+            'covsearch',
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space=search_space,
         )
 
         rundir = tmp_path / 'covsearch1'
@@ -99,10 +102,10 @@ def test_covsearch_dummy_adaptive_scope_reduction(tmp_path, start_modelres):
         )
         p_value = 0.0001
         res = run_covsearch(
-            search_space,
-            algorithm='scm-forward',
-            results=start_modelres[1],
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space=search_space,
+            algorithm='scm-forward',
             esttool='dummy',
             adaptive_scope_reduction=True,
             p_forward=p_value,
@@ -124,13 +127,16 @@ def test_covsearch_dummy_adaptive_scope_reduction(tmp_path, start_modelres):
 
 def test_adaptive_scope_reduction(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
-        run_tool(
-            'covsearch',
+        search_space = (
             'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
             'COVARIATE?([CL, MAT, VC], @CONTINUOUS, exp, *)\n'
-            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, cat, *)',
-            results=start_modelres[1],
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, cat, *)'
+        )
+        run_tool(
+            'covsearch',
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space=search_space,
             adaptive_scope_reduction=True,
         )
 

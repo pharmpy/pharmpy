@@ -1013,13 +1013,13 @@ def _subfunc_structural_covariates(
                 'No applicable structural covariates found in search space. Skipping structural_COVsearch'
             )
             return None
-
+        struct_searchspace = mfl.create_from_mfl_statement_list(structural_searchspace)
         res = run_tool(
             'covsearch',
-            mfl.create_from_mfl_statement_list(structural_searchspace),
             model=model,
-            strictness=strictness,
             results=modelfit_results,
+            search_space=struct_searchspace,
+            strictness=strictness,
             path=subctx.path,
         )
         assert isinstance(res, Results)
@@ -1083,10 +1083,10 @@ def _subfunc_mechanistic_exploratory_covariates(
             else:
                 res = run_tool(
                     'covsearch',
-                    mechanistic_searchspace,
                     model=model,
-                    strictness=strictness,
                     results=modelfit_results,
+                    search_space=mechanistic_searchspace,
+                    strictness=strictness,
                     path=subcontext1.path,
                 )
                 covsearch_model_number = [
@@ -1116,10 +1116,10 @@ def _subfunc_mechanistic_exploratory_covariates(
 
         res = run_tool(
             'covsearch',
-            filtered_searchspace,
             model=model,
-            strictness=strictness,
             results=modelfit_results,
+            search_space=filtered_searchspace,
+            strictness=strictness,
             path=subcontext2.path,
             naming_index_offset=index_offset,
         )
