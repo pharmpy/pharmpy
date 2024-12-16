@@ -60,10 +60,10 @@ def test_iivsearch_dummy(
             start_res = start_modelres[1]
 
         res = run_iivsearch(
+            model=start_model,
+            results=start_res,
             algorithm=algorithm,
             correlation_algorithm=correlation_algorithm,
-            results=start_res,
-            model=start_model,
             esttool='dummy',
             **kwargs
         )
@@ -113,9 +113,9 @@ def test_no_of_etas_linearization(
 ):
     with chdir(tmp_path):
         res = run_iivsearch(
-            algorithm,
-            results=start_modelres[1],
             model=start_modelres[0],
+            results=start_modelres[1],
+            algorithm=algorithm,
             linearize=True,
             correlation_algorithm=correlation_algorithm,
             iiv_strategy=strategy,

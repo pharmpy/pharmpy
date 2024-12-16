@@ -54,13 +54,13 @@ IIV_CORRELATION_ALGORITHMS = frozenset(
 
 
 def create_workflow(
+    model: Model,
+    results: ModelfitResults,
     algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
     iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     linearize: bool = False,
     cutoff: Optional[Union[float, int]] = None,
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
     keep: Optional[Iterable[str]] = ("CL",),
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
@@ -71,6 +71,10 @@ def create_workflow(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
+    results : ModelfitResults
+        Results for model
     algorithm : {'top_down_exhaustive','bottom_up_stepwise', 'skip'}
         Which algorithm to run when determining number of IIVs.
     iiv_strategy : {'no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock'}
@@ -82,10 +86,6 @@ def create_workflow(
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
-    results : ModelfitResults
-        Results for model
-    model : Model
-        Pharmpy model
     keep : Iterable[str]
         List of IIVs to keep. Default is "CL"
     strictness : str or None
@@ -111,7 +111,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_iivsearch('td_brute_force', results=results, model=model)   # doctest: +SKIP
+    >>> run_iivsearch(model=model, results=results, algorithm='td_brute_force')   # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name='iivsearch')

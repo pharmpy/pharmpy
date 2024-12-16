@@ -22,22 +22,21 @@ To initiate IIVsearch in Python/R:
 
     start_model = read_model('path/to/model')
     start_model_results = read_model_results('path/to/model')
-    res = run_iivsearch(algorithm='top_down_exhaustive',
-                        model=start_model,
+    res = run_iivsearch(model=start_model,
                         results=start_model_results,
-                        iiv_strategy='no_add',
-                        rank_type='bic',
-                        cutoff=None)
+                        algorithm='top_down_exhaustive',
+                        iiv_strategy='fullblock',
+                        rank_type='bic')
 
-This will take an input model ``model`` and run the brute force ``algorithm``. IIVs on structural parameters
-(such as mean absorption time) will not be added to the input model since ``iiv_strategy`` is set to be 'no_add'.
-The candidate models will be ranked using ``bic`` with default ``cutoff``, which for BIC is none.
+This will take an input ``model`` and run the top down exhaustive ``algorithm`` for the number of etas.
+No IIVs on structural parameters (such as mean absorption time) will be added since the ``iiv_strategy``
+is ``'no_add'``. The candidate models will be ranked using ``bic``.
 
 To run IIVsearch from the command line, the example code is redefined accordingly:
 
 .. code::
 
-    pharmpy run iivsearch path/to/model 'top_down_exhaustive' --iiv_strategy 'no_add' --rank_type 'bic'
+    pharmpy run iivsearch path/to/model --algorithm 'top_down_exhaustive' --iiv_strategy 'fullblock' --rank_type 'bic'
 
 ~~~~~~~~~
 Arguments
@@ -49,12 +48,12 @@ Mandatory
 +-----------------------------------------------+--------------------------------------------------------------------+
 | Argument                                      | Description                                                        |
 +===============================================+====================================================================+
-| ``algorithm``                                 | :ref:`Algorithm<algorithms_iivsearch>` to use                      | 
-|                                               | (e.g. ``'top_down_exhaustive'``)                                   |
-+-----------------------------------------------+--------------------------------------------------------------------+
 | ``model``                                     | Input model                                                        |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``results``                                   | ModelfitResults of input model                                     |
++-----------------------------------------------+--------------------------------------------------------------------+
+| ``algorithm``                                 | :ref:`Algorithm<algorithms_iivsearch>` to use                      |
+|                                               | (e.g. ``'top_down_exhaustive'``)                                   |
 +-----------------------------------------------+--------------------------------------------------------------------+
 
 Optional
@@ -343,12 +342,11 @@ Consider a iivsearch run:
 
 .. pharmpy-code::
 
-    res = run_iivsearch(algorithm='td_brute_force',
-                        model=start_model,
+    res = run_iivsearch(model=start_model,
                         results=start_model_results,
+                        algorithm='td_brute_force',
                         iiv_strategy='no_add',
-                        rank_type='bic',
-                        cutoff=None)
+                        rank_type='bic')
 
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the

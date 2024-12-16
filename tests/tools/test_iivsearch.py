@@ -545,22 +545,18 @@ def test_get_mbic_penalties(load_model_for_test, testdata, as_fullblock, penalti
     assert [round(p, 2) for p in penalties] == penalties_ref
 
 
-def test_create_workflow():
-    assert isinstance(create_workflow('top_down_exhaustive'), Workflow)
-
-
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert isinstance(create_workflow('top_down_exhaustive', model=model), Workflow)
-
-
-def test_validate_input():
-    validate_input('top_down_exhaustive')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(
+        create_workflow(model=model, results=results, algorithm='top_down_exhaustive'), Workflow
+    )
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    validate_input('top_down_exhaustive', model=model)
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, results=results, algorithm='top_down_exhaustive')
 
 
 @pytest.mark.parametrize(
@@ -654,13 +650,17 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+    if not model_path:
+        model_path = ('nonmem/pheno.mod',)
+    path = testdata.joinpath(*model_path)
+    model = load_model_for_test(path)
+    results = read_modelfit_results(path)
 
     harmless_arguments = dict(
         algorithm='top_down_exhaustive',
     )
 
-    kwargs = {**harmless_arguments, 'model': model, **arguments}
+    kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
@@ -678,13 +678,17 @@ def test_validate_input_warn(
     warning,
     match,
 ):
-    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+    if not model_path:
+        model_path = ('nonmem/pheno.mod',)
+    path = testdata.joinpath(*model_path)
+    model = load_model_for_test(path)
+    results = read_modelfit_results(path)
 
     harmless_arguments = dict(
         algorithm='top_down_exhaustive',
     )
 
-    kwargs = {**harmless_arguments, 'model': model, **arguments}
+    kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
 
     with pytest.warns(warning, match=match):
         validate_input(**kwargs)

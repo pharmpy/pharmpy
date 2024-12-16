@@ -152,13 +152,13 @@ def run_iivsearch(args):
     model, res = args.model
     run_tool(
         'iivsearch',
+        model=model,
+        results=res,
         algorithm=args.algorithm,
         iiv_strategy=args.iiv_strategy,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         linearize=args.linearize,
-        results=res,
-        model=model,
         keep=args.keep,
         strictness=args.strictness,
         correlation_algorithm=args.correlation_algorithm,

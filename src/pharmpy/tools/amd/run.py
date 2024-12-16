@@ -924,10 +924,10 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
         ]
         res = run_tool(
             'iivsearch',
-            'top_down_exhaustive',
-            iiv_strategy=iiv_strategy,
             model=model,
             results=modelfit_results,
+            algorithm='top_down_exhaustive',
+            iiv_strategy=iiv_strategy,
             strictness=strictness,
             rank_type=rank_type,
             E_p=e_p,
