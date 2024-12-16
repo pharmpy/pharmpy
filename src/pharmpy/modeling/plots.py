@@ -4,7 +4,7 @@ import re
 import warnings
 from functools import partial
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Mapping, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.basic import Expr
@@ -125,7 +125,7 @@ def plot_individual_predictions(
 
 def plot_transformed_eta_distributions(
     model: Model,
-    parameter_estimates: Union[pd.Series, dict[str, float]],
+    parameter_estimates: Union[pd.Series, Mapping[str, float]],
     individual_estimates: pd.DataFrame,
 ):
     """Plot transformed eta distributions for all transformed etas
@@ -134,7 +134,7 @@ def plot_transformed_eta_distributions(
     ----------
     model : Model
         Previously run Pharmpy model.
-    parameter_estimates : Union[pd.Series, dict[str, float]]
+    parameter_estimates : Union[pd.Series, Mapping[str, float]]
         Parameter estimates of model fit
     individual_estimates : pd.DataFrame
         Individual estimates for etas
@@ -144,7 +144,7 @@ def plot_transformed_eta_distributions(
     alt.Chart
         Plot
     """
-    parameter_estimates = dict(parameter_estimates)
+    pe = {Expr.symbol(str(key)): Expr.float(value) for key, value in parameter_estimates.items()}
     eta_symbols = {Expr.symbol(name) for name in model.random_variables.etas.names}
 
     transformations = []
@@ -163,12 +163,10 @@ def plot_transformed_eta_distributions(
     df = pd.DataFrame()
 
     for eta, expr in transformations:
-        var = model.random_variables.etas.get_covariance(eta.name, eta.name).subs(
-            parameter_estimates
-        )
+        var = model.random_variables.etas.get_covariance(eta.name, eta.name).subs(pe)
         subdf = pd.DataFrame({'x': x, 'original': norm.pdf(x, scale=float(var) ** 0.5)})
         rv = sympy_stats.Normal('eta', 0, sympy.sqrt(var))
-        expr = sympy.sympify(expr).subs(parameter_estimates).subs({eta: rv})
+        expr = sympy.sympify(expr).subs(pe).subs({eta: rv})
         curdens = sympy_stats.density(expr)
         densfn = sympy.lambdify(curdens.variables[0], curdens.expr)
         with warnings.catch_warnings():
