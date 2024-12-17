@@ -978,7 +978,7 @@ def samba_task_results(
         base_modelentry,
         rest_modelentries,
         lrt_cutoff=(p_forward, p_backward),
-        bic_cutoff=10,
+        bic_cutoff=None,
         strictness=strictness,
         algorithm=algorithm,
     )
