@@ -344,17 +344,16 @@ def set_samba_estimation(model, nsamples, algorithm):
 
 
 def set_scmlcs_estimation(model):
-    if model.execution_steps[0].method != "FOCE":
-        model = remove_estimation_step(model, idx=0)
-        model = add_estimation_step(
-            model,
-            method="FOCE",
-            idx=0,
-            interaction=True,
-            auto=True,
-            maximum_evaluations=9999,
-            tool_options={"NOABORT": 0, "PHITYPE": "1", "FNLETA": "0"},
-        )
+    model = remove_estimation_step(model, idx=0)
+    model = add_estimation_step(
+        model,
+        method="FOCE",
+        idx=0,
+        interaction=True,
+        auto=True,
+        maximum_evaluations=9999,
+        tool_options={"NOABORT": 0, "PHITYPE": "1", "FNLETA": "0"},
+    )
     return model
 
 
