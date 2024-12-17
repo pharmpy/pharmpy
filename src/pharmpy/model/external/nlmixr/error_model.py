@@ -4,6 +4,7 @@ import pharmpy.model
 from pharmpy.basic.expr import Expr
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
+from pharmpy.model import Assignment, Model
 from pharmpy.modeling import get_thetas
 
 
@@ -51,8 +52,9 @@ class res_error_term:
         assert len(terms) <= 3
 
         errors = []
+        sigma = None
+        sigma_alias = None
         for term in terms:
-            error_term = False
             full_term = full_expression(term, self.model)
             for factor in sympy.Mul.make_args(term):
                 factor = Expr(factor)
@@ -66,11 +68,8 @@ class res_error_term:
                                 term = term.subs(factor, 1)
                         if factor != symbol:
                             sigma_alias = factor
-                        else:
-                            sigma_alias = None
-                        error_term = True
 
-            if error_term:
+            if sigma is not None:
                 errors.append(
                     {
                         "term": term,
@@ -150,7 +149,9 @@ class res_error_term:
 
 
 class error:
-    def __init__(self, model=None, expr=0, sigma=None, add=False, sigma_alias=None, prop=False):
+    def __init__(
+        self, model=None, expr=Expr.integer(0), sigma=None, add=False, sigma_alias=None, prop=False
+    ):
         self.model = model
         self.expr = expr
         self.sigma = sigma
@@ -193,6 +194,7 @@ def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
     for a in alias:
         if a not in model.random_variables.free_symbols:
             a_assign = model.statements.find_assignment(a)
+            assert isinstance(a_assign, Assignment)
             if a_assign.expression.is_number():
                 return True
     return False
@@ -225,7 +227,7 @@ def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy
     return expression
 
 
-def find_aliases(symbol: str, model: pharmpy.model, aliases: set = None) -> list:
+def find_aliases(symbol: str, model: Model, aliases: set = None) -> list:
     """
     Returns a list of all variable names that are the same as the inputed symbol
 

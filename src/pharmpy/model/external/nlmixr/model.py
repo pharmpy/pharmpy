@@ -4,6 +4,7 @@ from typing import Optional
 
 import pharmpy.model
 from pharmpy.internals.code_generator import CodeGenerator
+from pharmpy.model import Assignment, Compartment, get_and_check_dataset, get_and_check_odes
 from pharmpy.model.model import ModelInternals
 from pharmpy.modeling import drop_columns, get_evid, translate_nmtran_time
 
@@ -51,15 +52,17 @@ def convert_model(
     )
 
     # Update dataset
-    if model.dataset is not None:
+    if nlmixr_model.dataset is not None:
         nlmixr_model = translate_nmtran_time(nlmixr_model)
         # FIXME: Dropping columns runs update source which becomes redundant.
         # drop_dropped_columns(nlmixr_model)
-        if all(x in nlmixr_model.dataset.columns for x in ["RATE", "DUR"]):
+        df = get_and_check_dataset(nlmixr_model)
+        if all(x in df.columns for x in ("RATE", "DUR")):
             nlmixr_model = drop_columns(nlmixr_model, ["DUR"])
+            df = get_and_check_dataset(nlmixr_model)
         nlmixr_model = nlmixr_model.replace(
             datainfo=nlmixr_model.datainfo.replace(path=None),
-            dataset=nlmixr_model.dataset.reset_index(drop=True),
+            dataset=df.reset_index(drop=True),
         )
 
         # Add evid
@@ -149,6 +152,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     # Find what kind of error model we are looking at
     dv = list(model.dependent_variables.keys())[0]
     dv_statement = model.statements.find_assignment(dv)
+    assert isinstance(dv_statement, Assignment)
 
     only_piecewise = False
     if dv_statement.expression.is_piecewise():
@@ -188,8 +192,10 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     else:
         statements = model.statements.after_odes
         comp_name_dict = {}
-        for name in model.statements.ode_system.compartment_names:
-            comp = model.statements.ode_system.find_compartment(name)
+        odes = get_and_check_odes(model)
+        for name in odes.compartment_names:
+            comp = odes.find_compartment(name)
+            assert isinstance(comp, Compartment)
             comp_name_dict[comp.amount] = comp.amount.name
         statements = statements.subs(comp_name_dict)
     add_statements(
@@ -253,10 +259,12 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
 
 
 def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:
-    temp_model = model
-    if "EVID" not in temp_model.dataset.columns:
-        temp_model.dataset["EVID"] = get_evid(temp_model)
-    return temp_model
+    df = get_and_check_dataset(model)
+    if "EVID" not in df.columns:
+        df = df.copy()
+        df["EVID"] = get_evid(model)
+        model = model.replace(dataset=df)
+    return model
 
 
 @dataclass(frozen=True)
@@ -287,13 +295,17 @@ class Model(pharmpy.model.Model):
         # to run
         code = str(cg).replace("AMT", "amt").replace("TIME", "time")
         path = None
-        internals = self.internals.replace(src=code, path=path)
+        internals = self.internals
+        assert internals is not None
+        internals = internals.replace(src=code, path=path)
         model = self.replace(internals=internals)
         return model
 
     @property
     def code(self):
         model = self.update_source()
-        code = model.internals.src
+        internals = model.internals
+        assert isinstance(internals, NLMIXRModelInternals)
+        code = internals.src
         assert code is not None
         return code
