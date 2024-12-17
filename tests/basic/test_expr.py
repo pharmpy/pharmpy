@@ -30,6 +30,13 @@ def test_piecewise():
     assert expr.args[0][0] == Expr.integer(1)
     assert expr.args[1][0] == Expr.integer(2)
 
+    assert expr.piecewise_args[0][0] == Expr.integer(1)
+    assert expr.piecewise_args[1][0] == Expr.integer(2)
+
+    expr = Expr.symbol("x")
+    with pytest.raises(ValueError):
+        expr.piecewise_args
+
 
 def test_piecewise_fold():
     expr1 = Expr.piecewise(("1", "x > 0"), ("2", "x < 0"))

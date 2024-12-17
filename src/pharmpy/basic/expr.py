@@ -55,6 +55,15 @@ class Expr:
             args = tuple(Expr(a) for a in self._expr.args)
         return args
 
+    @property
+    def piecewise_args(self) -> tuple[tuple[Expr, BooleanExpr], ...]:
+        if isinstance(self._expr, symengine.Piecewise):
+            x = self._expr.args
+            args = tuple((Expr(x[i]), BooleanExpr(x[i + 1])) for i in range(0, len(x), 2))
+        else:
+            raise ValueError("Expression is not a piecewise")
+        return args
+
     def make_args(self, expr):
         return sympy.sympify(self._expr).make_args(sympy.sympify(expr))
 
