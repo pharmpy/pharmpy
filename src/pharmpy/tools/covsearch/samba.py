@@ -69,6 +69,7 @@ class LCSRecord:
     parameter: str
     inclusion: Optional[tuple[str, ...]]  # covariates included in the model
     bic: float
+    dbic: float
     ofv: float
     dofv: Optional[float]
     lrt_pval: Optional[float]
@@ -420,7 +421,7 @@ def linear_covariate_selection(
 
     if stepwise_lcs:
         context.log_info(
-            f"STEP {step} | STEPWISE LINEAR SELECTION\n"
+            f"STEP {step} | STEPWISE LINEAR COVARIATE SELECTION\n"
             f"    Selected Covariate Effects: {list(coveffect_funcs.keys())}"
         )
     else:
@@ -541,6 +542,7 @@ def _stepwise_linear_covariate_selection(
         parameter=parameter,
         inclusion=None,
         bic=base_bic,
+        dbic=0.0,
         ofv=base_ofv,
         dofv=None,
         lrt_pval=None,
@@ -574,6 +576,7 @@ def _stepwise_linear_covariate_selection(
                 parameter=parameter,
                 inclusion=tuple(selected + [covariate]),
                 bic=model_bic,
+                dbic=base_bic - model_bic,
                 ofv=model_ofv,
                 dofv=lrt_dofv,
                 lrt_pval=lrt_pval,
@@ -641,6 +644,7 @@ def _linear_covariate_selection(
         parameter=parameter,
         inclusion=None,
         bic=base_bic,
+        dbic=0.0,
         ofv=base_ofv,
         dofv=None,
         lrt_pval=None,
@@ -661,6 +665,7 @@ def _linear_covariate_selection(
             parameter=parameter,
             inclusion=tuple([covariate]),
             bic=model_bic,
+            dbic=base_bic - model_bic,
             ofv=model_ofv,
             dofv=lrt_dofv,
             lrt_pval=lrt_pval,
@@ -679,7 +684,7 @@ def _linear_covariate_selection(
 
     lcsres_table = pd.DataFrame([record.__dict__ for record in model_records])
     lcsres_table = lcsres_table.sort_values("lrt_pval" if selection_criterion == "lrt" else "bic")
-    lcsres_table["lrt_positive"] = np.where(lcsres_table["lrt_pval"] < lrt_alpha, True, False)
+    # lcsres_table["lrt_positive"] = np.where(lcsres_table["lrt_pval"] < lrt_alpha, True, False)
 
     return selected, lcsres_table
 
@@ -1073,8 +1078,8 @@ def _make_lcs_table(lcs_results: list[pd.DataFrame], lrt_alpha):
         "selection",
         "parent",
         "inclusion",
-        "lrt_positive",
         "bic",
+        "dbic",
         "ofv",
         "dofv",
         "lrt_pval",
@@ -1131,6 +1136,7 @@ def _make_samba_step_row(modelentries_dict, children_count, best_model, candidat
         steps = candidate.steps
         effects = ["-".join(astuple(step.effect)) for step in steps]
         alpha = steps[-1].alpha
+        # LRT
         lrt_res = _nonlinear_step_lrt(parent_modelentry, modelentry)
         reduced_ofv, extended_ofv, dofv, lrt_pval = (
             lrt_res.parent_ofv,
@@ -1139,11 +1145,31 @@ def _make_samba_step_row(modelentries_dict, children_count, best_model, candidat
             lrt_res.lrt_pval,
         )
         lrt_significant = lrt_pval < alpha
+        # BIC
+        reduced_bic = (
+            np.nan
+            if np.isnan(reduced_ofv)
+            else calculate_bic(parent_modelentry.model, reduced_ofv, "mixed")
+        )
+        extended_bic = (
+            np.nan if np.isnan(extended_ofv) else calculate_bic(model, extended_ofv, "mixed")
+        )
+        dbic = reduced_bic - extended_bic
     else:
         effects = ""
         reduced_ofv = np.nan if (mfr := parent_modelentry.modelfit_results) is None else mfr.ofv
         extended_ofv = np.nan if (mfr := modelentry.modelfit_results) is None else mfr.ofv
         dofv = reduced_ofv - extended_ofv
+        # BIC
+        reduced_bic = (
+            np.nan
+            if np.isnan(reduced_ofv)
+            else calculate_bic(parent_modelentry.model, reduced_ofv, "mixed")
+        )
+        extended_bic = (
+            np.nan if np.isnan(extended_ofv) else calculate_bic(model, extended_ofv, "mixed")
+        )
+        dbic = reduced_bic - extended_bic
         alpha, lrt_significant, lrt_pval = np.nan, np.nan, np.nan
 
     selected = children_count[model.name] >= 1 or model.name == best_model.name
@@ -1156,6 +1182,9 @@ def _make_samba_step_row(modelentries_dict, children_count, best_model, candidat
         'lrt_pval': lrt_pval,
         'goal_pval': alpha,
         'lrt_significant': lrt_significant,
+        'reduced_bic': reduced_bic,
+        'extended_bic': extended_bic,
+        'dbic': dbic,
         'selected': selected,
         'model': model.name,
     }
