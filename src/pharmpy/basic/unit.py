@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from typing import Union
 
 from pharmpy.deps import sympy, sympy_printing
@@ -86,3 +87,35 @@ class UnitPrinter(sympy_printing.str.StrPrinter):
             return "ml"
         else:
             return str(expr.args[1])
+
+
+class Quantity:
+    def __init__(self, value: float, unit: Unit):
+        self._value = value
+        self._unit = unit
+
+    @classmethod
+    def parse(cls, s: str):
+        m = re.match(r'(-?\d+(\.\d+)?)', s)
+        if m:
+            number_string = m.group(0)
+            rest = s[len(number_string) :].strip()
+            return cls(float(number_string), Unit(rest))
+        else:
+            raise ValueError(f"Unknown quantity {s}")
+
+    def __eq__(self, other):
+        if not isinstance(other, Quantity):
+            return NotImplemented
+        return self._value == other._value and self._unit == other._unit
+
+    def __repr__(self):
+        return f"{self._value} {self._unit}"
+
+    @property
+    def value(self):
+        return self._value
+
+    @property
+    def unit(self):
+        return self._unit
