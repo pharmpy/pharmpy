@@ -821,7 +821,7 @@ def samba_nonlinear_model_selection(
         )
         return search_state
 
-    updated_model = updated_model.replace(name=f"sabma_step{step}", description=updated_desc)
+    updated_model = updated_model.replace(name=f"step{step}", description=updated_desc)
 
     # fit the updated model
     updated_modelentry = ModelEntry.create(model=updated_model, parent=best_model)
