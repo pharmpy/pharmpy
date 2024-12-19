@@ -96,12 +96,12 @@ NAME_WF = 'covsearch'
 
 
 def samba_workflow(
+    model: Model,
+    results: ModelfitResults,
     search_space: Union[str, ModelFeatures],
     max_steps: int = -1,
     p_forward: float = 0.05,
     p_backward: float = 0.01,
-    model: Optional[Model] = None,
-    results: Optional[ModelfitResults] = None,
     max_eval: bool = False,
     algorithm: Literal['samba', 'samba-foce', 'scm-lcs'] = 'samba',
     nsamples: int = 10,

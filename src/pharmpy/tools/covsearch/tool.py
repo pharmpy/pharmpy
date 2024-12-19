@@ -201,12 +201,12 @@ def create_workflow(
     """
     if algorithm in ["samba", "samba-foce", "scm-lcs"]:
         return samba_workflow(
+            model=model,
+            results=results,
             search_space=search_space,
             max_steps=max_steps,
             p_forward=p_forward,
             p_backward=p_backward,
-            model=model,
-            results=results,
             max_eval=max_eval,
             algorithm=algorithm,
             nsamples=samba_nsamples,
