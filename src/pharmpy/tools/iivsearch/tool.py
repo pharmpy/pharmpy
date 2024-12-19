@@ -54,13 +54,13 @@ IIV_CORRELATION_ALGORITHMS = frozenset(
 
 
 def create_workflow(
+    model: Model,
+    results: ModelfitResults,
     algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
     iiv_strategy: Literal[tuple(IIV_STRATEGIES)] = 'no_add',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     linearize: bool = False,
     cutoff: Optional[Union[float, int]] = None,
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
     keep: Optional[Iterable[str]] = ("CL",),
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
@@ -71,6 +71,10 @@ def create_workflow(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
+    results : ModelfitResults
+        Results for model
     algorithm : {'top_down_exhaustive','bottom_up_stepwise', 'skip'}
         Which algorithm to run when determining number of IIVs.
     iiv_strategy : {'no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock'}
@@ -82,10 +86,6 @@ def create_workflow(
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
-    results : ModelfitResults
-        Results for model
-    model : Model
-        Pharmpy model
     keep : Iterable[str]
         List of IIVs to keep. Default is "CL"
     strictness : str or None
@@ -111,7 +111,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_iivsearch('td_brute_force', results=results, model=model)   # doctest: +SKIP
+    >>> run_iivsearch(model=model, results=results, algorithm='td_brute_force')   # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name='iivsearch')
@@ -294,6 +294,7 @@ def start(
     context.log_info("Starting tool iivsearch")
     input_model, input_model_entry = prepare_input_model(input_model, input_res)
     context.store_input_model_entry(input_model_entry)
+    context.log_info(f"Input model OFV: {input_res.ofv:.3f}")
 
     list_of_algorithms = prepare_algorithms(algorithm, correlation_algorithm)
 
@@ -303,6 +304,8 @@ def start(
     final_model_entry = None
     sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
 
+    if algorithm != 'no_add':
+        context.log_info("Creating base model")
     base_model, base_model_entry = prepare_base_model(input_model_entry, iiv_strategy, linearize)
 
     param_mapping = create_param_mapping(base_model_entry, linearize)
@@ -375,7 +378,7 @@ def start(
             keep=keep,
             context=context,
         )
-        context.log_info(f"Starting step {algorithm_cur}")
+        context.log_info(f"Starting step '{algorithm_cur}'")
         res = context.call_workflow(wf, f'results_{algorithm}')
 
         if wf_algorithm.name == 'bu_stepwise_no_of_etas':
@@ -402,7 +405,7 @@ def start(
             final_model_entry = ModelEntry.create(model=final_model, modelfit_results=final_res)
         descr = final_model_entry.model.description
         ofv = final_model_entry.modelfit_results.ofv
-        context.log_info(f"Finished step {algorithm_cur}. Best model: {descr}, OFV: {ofv:.3f}")
+        context.log_info(f"Finished step '{algorithm_cur}'. Best model: {descr}, OFV: {ofv:.3f}")
 
         # FIXME: Add parent model
         base_model_entry = final_model_entry
@@ -715,10 +718,10 @@ def validate_input(
 ):
     if keep and model:
         for parameter in keep:
-            try:
-                has_random_effect(model, parameter, "iiv")
-            except KeyError:
-                warnings.warn(f"Parameter {parameter} has no iiv and is ignored")
+            if parameter not in map(lambda x: str(x), model.statements.free_symbols):
+                raise ValueError(f'Symbol `{parameter}` does not exist in input model')
+            if not has_random_effect(model, parameter, "iiv"):
+                warnings.warn(f"Parameter `{parameter}` has no iiv and is ignored")
 
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:

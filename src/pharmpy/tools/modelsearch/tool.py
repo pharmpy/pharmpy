@@ -19,13 +19,13 @@ from .filter import mfl_filtering
 
 
 def create_workflow(
+    model: Model,
+    results: ModelfitResults,
     search_space: Union[str, ModelFeatures],
     algorithm: Literal[tuple(algorithms.ALGORITHMS)] = 'reduced_stepwise',
     iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     E: Optional[Union[float, str]] = None,
 ):
@@ -33,6 +33,10 @@ def create_workflow(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
+    results : ModelfitResults
+        Results for model
     search_space : str, ModelFeatures
         Search space to test. Either as a string or a ModelFeatures object.
     algorithm : {'exhaustive', 'exhaustive_stepwise', 'reduced_stepwise'}
@@ -44,10 +48,6 @@ def create_workflow(
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
-    results : ModelfitResults
-        Results for model
-    model : Model
-        Pharmpy model
     strictness : str or None
         Strictness criteria
     E : float
@@ -63,8 +63,9 @@ def create_workflow(
     >>> from pharmpy.modeling import load_example_model
     >>> from pharmpy.tools import run_modelsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
-    >>> results = load_example_modelfit_results("pheno")
-    >>> run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)', 'exhaustive', results=results, model=model) # doctest: +SKIP
+    >>> res = load_example_modelfit_results("pheno")
+    >>> search_space = 'ABSORPTION(ZO);PERIPHERALS(1)'
+    >>> run_modelsearch(model=model, results=res, search_space=search_space, algorithm='exhaustive') # doctest: +SKIP
 
     """
     wb = WorkflowBuilder(name='modelsearch')
@@ -100,9 +101,10 @@ def start(
     E,
 ):
     context.log_info("Starting tool modelsearch")
-    # Create links to input model
+
     model = model.replace(name="input", description="")
     context.store_input_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+    context.log_info(f"Input model OFV: {results.ofv:.3f}")
 
     wb = WorkflowBuilder()
 
@@ -125,7 +127,8 @@ def start(
     # Add base model task
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
-    if not mfl_statements.contain_subset(model_mfl, tool="modelsearch"):
+    if not mfl_statements.contain_subset(model_mfl, tool="modelsearch") or mfl_allometry:
+        context.log_info("Creating base model")
         base_task = Task("create_base_model", create_base_model, mfl_statements, mfl_allometry)
         wb.add_task(base_task, predecessors=start_task)
 
@@ -175,8 +178,18 @@ def start(
         else:
             wb.add_task(task_result, predecessors=[start_task] + candidate_model_tasks)
 
+    context.log_info(f"Starting algorithm '{algorithm}'")
     res = context.call_workflow(wb, 'run_candidate_models')
+    context.log_info(
+        f"Finished algorithm '{algorithm}'. Best model: "
+        f"{res.final_model.name}, OFV: {res.final_results.ofv:.3f}"
+    )
 
+    if res.final_model.name == model.name:
+        context.log_warning(
+            f'Worse {rank_type} in final model {res.final_model.name} '
+            f'than {model.name}, selecting input model'
+        )
     context.store_final_model_entry(res.final_model)
 
     return res
@@ -225,7 +238,7 @@ def create_base_model(ss, allometry, model_or_model_entry):
     base = base.replace(name="base", description=added_features[1:])
     base = _add_allometry(base, allometry)
 
-    return ModelEntry.create(base, modelfit_results=None, parent=None)
+    return ModelEntry.create(base, modelfit_results=None, parent=model)
 
 
 def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries):
@@ -307,6 +320,14 @@ def validate_input(
         raise ValueError(
             f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
         )
+
+    allometry = ModelFeatures.create_from_mfl_statement_list(statements).allometry
+    if allometry:
+        covariate = allometry.covariate
+        if covariate not in list(model.dataset.columns):
+            raise ValueError(
+                f'Invalid `search_space`: allometric variable \'{covariate}\' not in dataset'
+            )
 
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:

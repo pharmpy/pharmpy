@@ -39,3 +39,5 @@ class PharmpyConfiguration(config.Configuration):
 
 
 conf = PharmpyConfiguration()
+
+DEFAULT_SEED = 1234

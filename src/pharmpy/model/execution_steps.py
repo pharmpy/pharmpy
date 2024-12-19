@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional, Union, overload
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.immutable import Immutable, frozenmapping
@@ -471,7 +472,7 @@ class SimulationStep(ExecutionStep):
     def __init__(
         self,
         n: int = 1,
-        seed: int = 64206,
+        seed: int = DEFAULT_SEED,
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
@@ -490,7 +491,7 @@ class SimulationStep(ExecutionStep):
     def create(
         cls,
         n: int = 1,
-        seed: int = 64206,
+        seed: int = DEFAULT_SEED,
         solver: Optional[str] = None,
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,

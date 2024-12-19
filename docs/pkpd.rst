@@ -18,14 +18,14 @@ The code to initiate structsearch for a PKPD model in Python/R is stated below:
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
 
-    res = run_structsearch(type='pkpd',
-                            search_space="DIRECTEFFECT(*)",
-                            model=start_model,
-                            b_init = 0.1,
-                            emax_init = 0.1,
-                            ec50_init = 0.7,
-                            met_init = 0.3,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='pkpd',
+                           search_space="DIRECTEFFECT(*)",
+                           b_init = 0.1,
+                           emax_init = 0.1,
+                           ec50_init = 0.7,
+                           met_init = 0.3)
 
 
 This will take an input model ``model`` with a ``search_space`` that includes all direct effect PKPD models.
@@ -44,11 +44,11 @@ Mandatory
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | Argument                                        | Description                                                                             |
 +=================================================+=========================================================================================+
-| ``type``                                        | Type of model. In this case "pkpd".                                                     |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``model``                                       | PK start model                                                                          |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``results``                                     | ModelfitResults of the start model                                                      |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``type``                                        | Type of model. In this case "pkpd".                                                     |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 
 Optional
@@ -176,10 +176,10 @@ Below is an example for a PKPD run.
 
 .. pharmpy-code::
 
-    res = run_structsearch(type='pkpd',
-                            search_space="DIRECTEFFECT(emax);EFFECTCOMP([linear,emax])",
-                            model=start_model,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results
+                           type='pkpd',
+                           search_space="DIRECTEFFECT(emax);EFFECTCOMP([linear,emax])")
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model (in this case comparing BIC), and final ranking:
@@ -205,9 +205,9 @@ Minimum required arguments to run structsearch for PKPD models:
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
 
-    res = run_structsearch(type='pkpd',
-                            model=start_model,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='pkpd')
 
 Specifying initial parameters:
 
@@ -219,10 +219,12 @@ Specifying initial parameters:
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
 
-    res = run_structsearch(type='pkpd',
-                            model=start_model,
-                            results=start_model_results,
-                            b_init = 0.09, e_max_init = 3, ec50_init = 1.5)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='pkpd',
+                           b_init=0.09,
+                           e_max_init=3,
+                           ec50_init=1.5)
 
 
 Run structsearch with initial estimates for all direct effect models and all indirect effect models with production:
@@ -235,8 +237,10 @@ Run structsearch with initial estimates for all direct effect models and all ind
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
 
-    res = run_structsearch(type='pkpd',
-                            model=start_model,
-                            results=start_model_results,
-                            b_init = 0.09, e_max_init = 3, ec50_init = 1.5,
-                            search_space = "DIRECTEFFECT(*);INDIRECTEFFECT(*,PRODUCTION)")
+    res = run_structsearch(model=start_model,
+                           results=start_model_results,
+                           type='pkpd',
+                           search_space="DIRECTEFFECT(*);INDIRECTEFFECT(*,PRODUCTION)",
+                           b_init=0.09,
+                           e_max_init=3,
+                           ec50_init=1.5)

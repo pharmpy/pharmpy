@@ -65,7 +65,9 @@ def get_observation_expression(model: Model):
         raise ValueError('Could not locate dependent variable expression')
 
     for j in range(i, -1, -1):
-        y = y.subs({stats[j].symbol: stats[j].expression})
+        expr = stats[j]
+        assert isinstance(expr, Assignment)
+        y = y.subs({expr.symbol: expr.expression})
 
     return y
 
@@ -356,7 +358,9 @@ def mu_reference_model(model: Model):
             )
             # Add mu referencing to last definition of parameter instead
             last_ind = model.statements.find_assignment_index(assignment.symbol)
-            last_def = model.statements.find_assignment(assignment.symbol).expression
+            last_assignment = model.statements.find_assignment(assignment.symbol)
+            assert last_assignment is not None
+            last_def = last_assignment.expression
             new_def = subs(dep, {eta: mu + eta})
             mu_expr = sympy.solve(subs(old_def, {remove_iiv_def: last_def}) - new_def, mu)[0]
             insertion_ind = offset + last_ind

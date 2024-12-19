@@ -1,7 +1,6 @@
 from dataclasses import dataclass, replace
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
-from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -10,7 +9,6 @@ from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_parameters_from_ucp,
     calculate_ucp_scale,
-    create_rng,
     sample_parameters_uniformly,
     set_initial_estimates,
 )
@@ -38,7 +36,6 @@ def create_workflow(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     scale: Optional[Literal[tuple(SCALES)]] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
-    seed: Optional[Union[np.random.Generator, int]] = None,
 ):
     """
     Run retries tool.
@@ -61,8 +58,6 @@ def create_workflow(
         Which scale to update the initial values on. Either normal scale or UCP scale.
     prefix_name: Optional[str]
         Prefix the candidate model names with given string.
-    seed: int or rng
-        Random number generator or seed to be used.
 
     Returns
     -------
@@ -82,7 +77,6 @@ def create_workflow(
     wb.add_task(start_task)
 
     candidate_tasks = []
-    seed = create_rng(seed)
     for i in range(1, number_of_candidates + 1):
         new_candidate_task = Task(
             f"Create_candidate_{i}",
@@ -92,7 +86,6 @@ def create_workflow(
             fraction,
             use_initial_estimates,
             prefix_name,
-            seed,
         )
         wb.add_task(new_candidate_task, predecessors=start_task)
         candidate_tasks.append(new_candidate_task)
@@ -116,8 +109,9 @@ def _start(context, results, model):
 
 
 def create_random_init_model(
-    context, index, scale, fraction, use_initial_estimates, prefix_name, seed, modelentry
+    context, index, scale, fraction, use_initial_estimates, prefix_name, modelentry
 ):
+    seed = context.create_rng(index)  # FIXME: Should not be called seed
     original_model = modelentry.model
     # Update inits once before running
     if not use_initial_estimates and modelentry.modelfit_results:

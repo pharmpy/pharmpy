@@ -3,6 +3,7 @@ import warnings
 from pathlib import Path
 from typing import Callable, Literal, Optional, Sequence, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -13,6 +14,7 @@ from pharmpy.modeling import (
     add_predictions,
     add_residuals,
     create_basic_pk_model,
+    create_rng,
     find_clearance_parameters,
     get_central_volume_and_clearance,
     get_pk_parameters,
@@ -85,7 +87,8 @@ def run_amd(
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    # seed is a common option but needs to be here since amd is not yet a proper tool
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str]]] = None,
@@ -174,6 +177,7 @@ def run_amd(
     """
     args = locals()
     validate_input(**args)
+    rng = create_rng(seed)
 
     ctx = _setup_run(args)
     ctx.log_info("Starting tool amd")
@@ -613,7 +617,11 @@ def run_amd(
     else:
         eta_distribution_plot = None
 
-    final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
+    if not simulation_data.empty:
+        final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
+    else:
+        ctx.log_warning("No vpc could be generated. Did the simulation fail?")
+        final_vpc_plot = None
 
     res = AMDResults(
         final_model=final_model.name,
@@ -764,13 +772,13 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
 
         res = run_tool(
             'modelsearch',
+            model=model,
+            results=modelfit_results,
             search_space=search_space,
             algorithm='reduced_stepwise',
-            model=model,
             strictness=strictness,
             rank_type=rank_type,
             E=e,
-            results=modelfit_results,
             path=subctx.path,
         )
         assert isinstance(res, Results)
@@ -806,12 +814,12 @@ def _subfunc_structsearch_tmdd(
     def _run_structsearch_tmdd(model, modelfit_results):
         res = run_tool(
             'modelsearch',
+            model=model,
+            results=modelfit_results,
             search_space=search_space,
             algorithm='reduced_stepwise',
-            model=model,
             strictness=strictness,
             rank_type='bic',
-            results=modelfit_results,
             path=subctx1.path,
         )
 
@@ -883,9 +891,9 @@ def _subfunc_structsearch_tmdd(
 
         res = run_tool(
             'structsearch',
-            type=type,
             model=final_model,
             results=final_res,
+            type=type,
             extra_model=extra_model,
             extra_model_results=extra_model_results,
             strictness=strictness,
@@ -916,10 +924,10 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
         ]
         res = run_tool(
             'iivsearch',
-            'top_down_exhaustive',
-            iiv_strategy=iiv_strategy,
             model=model,
             results=modelfit_results,
+            algorithm='top_down_exhaustive',
+            iiv_strategy=iiv_strategy,
             strictness=strictness,
             rank_type=rank_type,
             E_p=e_p,
@@ -943,7 +951,7 @@ def _subfunc_ruvsearch(dv, strictness, ctx, dir_name) -> SubFunc:
             skip, max_iter = [], 3
         res = run_tool(
             'ruvsearch',
-            model,
+            model=model,
             results=modelfit_results,
             skip=skip,
             max_iter=max_iter,
@@ -1005,13 +1013,13 @@ def _subfunc_structural_covariates(
                 'No applicable structural covariates found in search space. Skipping structural_COVsearch'
             )
             return None
-
+        struct_searchspace = mfl.create_from_mfl_statement_list(structural_searchspace)
         res = run_tool(
             'covsearch',
-            mfl.create_from_mfl_statement_list(structural_searchspace),
             model=model,
-            strictness=strictness,
             results=modelfit_results,
+            search_space=struct_searchspace,
+            strictness=strictness,
             path=subctx.path,
         )
         assert isinstance(res, Results)
@@ -1075,10 +1083,10 @@ def _subfunc_mechanistic_exploratory_covariates(
             else:
                 res = run_tool(
                     'covsearch',
-                    mechanistic_searchspace,
                     model=model,
-                    strictness=strictness,
                     results=modelfit_results,
+                    search_space=mechanistic_searchspace,
+                    strictness=strictness,
                     path=subcontext1.path,
                 )
                 covsearch_model_number = [
@@ -1108,10 +1116,10 @@ def _subfunc_mechanistic_exploratory_covariates(
 
         res = run_tool(
             'covsearch',
-            filtered_searchspace,
             model=model,
-            strictness=strictness,
             results=modelfit_results,
+            search_space=filtered_searchspace,
+            strictness=strictness,
             path=subcontext2.path,
             naming_index_offset=index_offset,
         )
@@ -1171,7 +1179,7 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
     def _run_allometry(model, modelfit_results):
         res = run_tool(
             'allometry',
-            model,
+            model=model,
             results=modelfit_results,
             allometric_variable=allometric_variable,
             path=subctx.path,
@@ -1316,7 +1324,7 @@ def validate_input(
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,

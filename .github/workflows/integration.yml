@@ -135,22 +135,31 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.12
+          python-version: 3.13
 
       - name: Run integration tests
         run: tox -e integration
+
+      - name: Tar failed integration tests
+        run: tar -cvf tests.tar /tmp/pytest-of-*
+        if: ${{ failure() }}
 
       - name: Upload failed integration test directories artifact
         uses: actions/upload-artifact@v4
         if: ${{ failure() }}
         with:
             name: integration-tests-ubuntu
-            path: /tmp/pytest-of-*
+            path: tests.tar
 
 
   integration-macos:
     needs: [get-nonmem]
-    runs-on: macos-13
+    strategy:
+      matrix:
+        platform: [macos-13, macos-14]
+    
+    runs-on: ${{ matrix.platform }}
+
     steps:
 
       - name: Checkout Pharmpy
@@ -195,7 +204,7 @@ jobs:
 
       - uses: ./.github/actions/setup-tox
         with:
-          python-version: 3.12
+          python-version: 3.13
 
       - name: Run integration tests
         run: tox -e integration

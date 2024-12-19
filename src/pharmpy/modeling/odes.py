@@ -4,10 +4,10 @@
 
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Literal, Union
+from collections.abc import Iterable, Mapping
+from typing import Literal, Optional, Union
 
-from pharmpy.basic import Expr, TExpr
+from pharmpy.basic import Expr, Matrix, TExpr
 from pharmpy.deps import sympy
 from pharmpy.internals.unicode import bracket
 from pharmpy.model import (
@@ -57,6 +57,7 @@ def _find_noncov_theta(model, paramsymb, full=False):
     # Set full to True if already providing a full expression
     # Find subexpression with as few thetas and covariates as possible
     # Stop if one theta found with no covs.
+    thetas = ()
     if full:
         start_expr = paramsymb
     else:
@@ -103,7 +104,7 @@ def _find_noncov_theta(model, paramsymb, full=False):
     raise ValueError(f"Could not find theta connected to {paramsymb}")
 
 
-def add_individual_parameter(model: Model, name: str):
+def add_individual_parameter(model: Model, name: str, init: float = 0.1, lower: float = 0.0):
     """Add an individual or pk parameter to a model
 
     Parameters
@@ -112,6 +113,10 @@ def add_individual_parameter(model: Model, name: str):
         Pharmpy model
     name : str
         Name of individual/pk parameter
+    init : float
+        Initial estimate of the population parameter
+    lower : float
+        Lower bound for the population parameter
 
     Return
     ------
@@ -127,7 +132,7 @@ def add_individual_parameter(model: Model, name: str):
     KA = POP_KA
 
     """
-    model, _ = _add_parameter(model, name)
+    model, _ = _add_parameter(model, name, init=init, lower=lower)
     model = model.update_source()
     return model
 
@@ -199,10 +204,9 @@ def set_first_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, Expr.symbol('CL') / v)
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        statements = statements.remove_symbol_definitions(
-            {Expr.symbol('KM')}, statements.ode_system
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = statements.before_odes + new_odes + statements.after_odes
+        statements = statements.remove_symbol_definitions({Expr.symbol('KM')}, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     elif has_mixed_mm_fo_elimination(model):
@@ -221,11 +225,10 @@ def set_first_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, Expr.symbol('CL') / v)
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
         statements = statements.remove_symbol_definitions(
-            {Expr.symbol('KM'), Expr.symbol('CLMM')}, statements.ode_system
+            {Expr.symbol('KM'), Expr.symbol('CLMM')}, new_odes
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -334,10 +337,9 @@ def remove_bioavailability(model: Model):
         symbols = bio.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.set_bioavailability(dosing_comp, Expr.integer(1))
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
-        statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
+        statements = statements.remove_symbol_definitions(symbols, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     return model
@@ -388,12 +390,9 @@ def set_zero_order_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
-        statements = statements.remove_symbol_definitions(
-            {Expr.symbol('CL')}, statements.ode_system
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
+        statements = statements.remove_symbol_definitions({Expr.symbol('CL')}, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     else:
@@ -599,12 +598,9 @@ def set_michaelis_menten_elimination(model: Model):
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_flow(central, output)
         cb.add_flow(central, output, rate)
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
-        statements = statements.remove_symbol_definitions(
-            {Expr.symbol('CL')}, statements.ode_system
-        )
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
+        statements = statements.remove_symbol_definitions({Expr.symbol('CL')}, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     else:
@@ -724,10 +720,9 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
     rate = (clmm * km / (km + central.amount / vc) + cl) / vc
     cb = CompartmentalSystemBuilder(odes)
     cb.add_flow(central, output, rate)
-    statements = (
-        model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-    )
-    statements = statements.remove_symbol_definitions(numer.free_symbols, statements.ode_system)
+    new_odes = CompartmentalSystem(cb)
+    statements = model.statements.before_odes + new_odes + model.statements.after_odes
+    statements = statements.remove_symbol_definitions(numer.free_symbols, new_odes)
     model = model.replace(statements=statements)
     model = remove_unused_parameters_and_rvs(model)
     return model
@@ -877,8 +872,9 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
             statements = model.statements
             mdt_assign = statements.find_assignment('MDT')
         cb.remove_compartment(depot)
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        statements = statements.remove_symbol_definitions(rate.free_symbols, statements.ode_system)
+        new_odes = CompartmentalSystem(cb)
+        statements = statements.before_odes + new_odes + statements.after_odes
+        statements = statements.remove_symbol_definitions(rate.free_symbols, new_odes)
         if mdt_assign and not statements.find_assignment('MDT'):
             statements = mdt_assign + statements
         model = model.replace(statements=statements)
@@ -887,7 +883,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         assert odes is not None
         # Since update_source() is used after removing the depot and statements are immutable, we need to
         # reset to get the correct rate names
-        cs = model.statements.ode_system
+        cs = get_and_check_odes(model)
 
     if len(transits) == n:
         return model
@@ -944,18 +940,17 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         cb = CompartmentalSystemBuilder(cs)
 
         while nremove > 0:
-            try:
-                from_comp, from_flow = cs.get_compartment_inflows(trans)[0]
-            except IndexError:
-                # Final remaining transit
-                final_transit = True
+            inflows = cs.get_compartment_inflows(trans)
+            if len(inflows) == 0:
+                from_comp = None
+                from_flow = None
             else:
+                from_comp, from_flow = inflows[0]
                 cb.add_flow(from_comp, destination, from_flow)
-                final_transit = False
             cb.remove_compartment(trans)
             remaining.remove(trans)
             removed_symbols |= flow.free_symbols
-            if not final_transit:
+            if from_comp is not None and from_flow is not None:
                 trans = from_comp
                 flow = from_flow
             nremove -= 1
@@ -970,7 +965,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         model = model.replace(statements=statements)
         model = _update_numerators(model)
         statements = model.statements.remove_symbol_definitions(
-            removed_symbols, model.statements.ode_system
+            removed_symbols, get_and_check_odes(model)
         )
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
@@ -1002,6 +997,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
 def _find_last_transit(odes: CompartmentalSystem, transits: set[Compartment]):
     for trans in transits:
         destination, flow = odes.get_compartment_outflows(trans)[0]
+        assert isinstance(destination, Compartment)
         if destination not in transits:
             return trans, destination, flow
 
@@ -1074,6 +1070,7 @@ def add_lag_time(model: Model):
     if len(dosing_comp.doses) > 1:
         cb.set_lag_time(dosing_comp, Expr.symbol("lag_time"))
         doses = _sorted_doses(dosing_comp, model)
+        assert len(doses) > 0
         oral_admid = doses[0].admid
         admid = Expr.symbol("ADMID")
         model = model.replace(
@@ -1094,10 +1091,9 @@ def add_lag_time(model: Model):
             )
         )
     if old_lag_time:
+        odes = get_and_check_odes(model)
         model = model.replace(
-            statements=model.statements.remove_symbol_definitions(
-                old_lag_time.free_symbols, model.statements.ode_system
-            )
+            statements=model.statements.remove_symbol_definitions(old_lag_time.free_symbols, odes)
         )
         model = remove_unused_parameters_and_rvs(model)
     else:
@@ -1138,10 +1134,9 @@ def remove_lag_time(model: Model):
         symbols = lag_time.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.set_lag_time(dosing_comp, Expr.integer(0))
-        statements = (
-            model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-        )
-        statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        new_odes = CompartmentalSystem(cb)
+        statements = model.statements.before_odes + new_odes + model.statements.after_odes
+        statements = statements.remove_symbol_definitions(symbols, new_odes)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
     return model
@@ -1183,7 +1178,6 @@ def set_zero_order_absorption(model: Model):
     statements = model.statements
     odes = get_and_check_odes(model)
     _disallow_infusion(model, odes)
-    assert isinstance(odes, CompartmentalSystem)
 
     if has_zero_order_absorption(model) and not has_seq_zo_fo_absorption(model):
         pass
@@ -1197,6 +1191,7 @@ def set_zero_order_absorption(model: Model):
         lag_time = dose_comp.lag_time
         if depot:
             to_comp, _ = odes.get_compartment_outflows(depot)[0]
+            assert isinstance(to_comp, Compartment)
             ka = odes.get_flow(depot, odes.central_compartment)
             assert ka is not None
             cb = CompartmentalSystemBuilder(odes)
@@ -1206,7 +1201,9 @@ def set_zero_order_absorption(model: Model):
             cb.set_bioavailability(to_comp, depot.bioavailability)
             statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
             symbols = ka.free_symbols
-        new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        odes = statements.ode_system
+        assert odes is not None
+        new_statements = statements.remove_symbol_definitions(symbols, odes)
         mat_idx = statements.find_assignment_index('MAT')
         if mat_idx is not None:
             # FIXME : Causes issue if mat_assign statement is dependent on previously
@@ -1224,7 +1221,8 @@ def set_zero_order_absorption(model: Model):
             )
             model = model.update_source()
         # FIXME : Very temporary until new zo absorption logic is implemented
-        if lag_time != 0 and len(model.statements.ode_system.dosing_compartments[0].doses) > 1:
+        odes = get_and_check_odes(model)
+        if lag_time != 0 and len(odes.dosing_compartments[0].doses) > 1:
             model = remove_lag_time(model)
             model = add_lag_time(model)
     return model
@@ -1269,6 +1267,8 @@ def set_first_order_absorption(model: Model):
     statements = model.statements
     cs = get_and_check_odes(model)
 
+    remove_dose = False
+    dose_admid = None
     if has_first_order_absorption(model) and not has_seq_zo_fo_absorption(model):
         pass
     else:
@@ -1293,10 +1293,10 @@ def set_first_order_absorption(model: Model):
                 remove_dose = True
             else:
                 dose_comp = cb.set_dose(dose_comp, _sorted_doses(dose_comp, model)[1:])
-                remove_dose = False
 
-        statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
-        new_statements = statements.remove_symbol_definitions(symbols, statements.ode_system)
+        new_odes = CompartmentalSystem(cb)
+        statements = statements.before_odes + new_odes + statements.after_odes
+        new_statements = statements.remove_symbol_definitions(symbols, new_odes)
         mat_idx = statements.find_assignment_index('MAT')
         if mat_idx is not None:
             mat_assign = statements[mat_idx]
@@ -1305,7 +1305,7 @@ def set_first_order_absorption(model: Model):
         model = model.replace(statements=new_statements)
 
         model = remove_unused_parameters_and_rvs(model)
-        if not depot:
+        if dose_admid is not None:
             # The new dose is created here
             model, _ = _add_first_order_absorption(
                 model,
@@ -1359,14 +1359,16 @@ def set_instantaneous_absorption(model: Model):
         depot = cs.find_depot(statements)
         if depot:
             to_comp, _ = cs.get_compartment_outflows(depot)[0]
+            assert isinstance(to_comp, Compartment)
             cb = CompartmentalSystemBuilder(cs)
             cb.set_dose(to_comp, depot.doses[0])
             ka = cs.get_flow(depot, cs.central_compartment)
             cb.remove_compartment(depot)
             symbols = ka.free_symbols
-            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+            new_odes = CompartmentalSystem(cb)
+            statements = statements.before_odes + new_odes + statements.after_odes
             model = model.replace(
-                statements=statements.remove_symbol_definitions(symbols, statements.ode_system)
+                statements=statements.remove_symbol_definitions(symbols, new_odes)
             )
             model = remove_unused_parameters_and_rvs(model)
         if has_zero_order_absorption(model):
@@ -1379,11 +1381,10 @@ def set_instantaneous_absorption(model: Model):
             else:
                 cb.set_dose(dose_comp, new_dose)
             unneeded_symbols = old_symbols - new_dose.free_symbols
-            statements = statements.before_odes + CompartmentalSystem(cb) + statements.after_odes
+            new_odes = CompartmentalSystem(cb)
+            statements = statements.before_odes + new_odes + statements.after_odes
             model = model.replace(
-                statements=statements.remove_symbol_definitions(
-                    unneeded_symbols, statements.ode_system
-                )
+                statements=statements.remove_symbol_definitions(unneeded_symbols, new_odes)
             )
             model = remove_unused_parameters_and_rvs(model)
     return model
@@ -1459,7 +1460,8 @@ def set_seq_zo_fo_absorption(model: Model):
             )
         elif not depot and not have_ZO:
             model = set_first_order_absorption(model)
-            depot = model.statements.ode_system.find_depot(model.statements)
+            odes = get_and_check_odes(model)
+            depot = odes.find_depot(model.statements)
             model = _add_zero_order_absorption(
                 model, Bolus(dose_comp.doses[0].amount), depot, 'MDT'
             )
@@ -1532,10 +1534,12 @@ def _dose_zo(model, dose):
 
 def _sorted_doses(comp, model):
     """Return doses to compartment where oral doses are located first"""
-    if len(comp.doses) > 1:
-        return tuple(sorted(comp.doses, key=lambda d: _dose_zo(model, d), reverse=True))
+    doses = comp.doses
+    assert len(doses) > 0
+    if len(doses) > 1:
+        return tuple(sorted(doses, key=lambda d: _dose_zo(model, d), reverse=True))
     else:
-        return comp.doses
+        return doses
 
 
 def has_first_order_absorption(model: Model):
@@ -1703,7 +1707,8 @@ def _add_zero_order_absorption(
     else:
         cb.add_dose(to_comp, tuple(dose_list))
     if lag_time is not None and lag_time != 0:
-        cb.set_lag_time(model.statements.ode_system.dosing_compartments[0], lag_time)
+        odes = get_and_check_odes(model)
+        cb.set_lag_time(odes.dosing_compartments[0], lag_time)
     model = model.replace(
         statements=model.statements.before_odes
         + CompartmentalSystem(cb)
@@ -1746,6 +1751,10 @@ def _add_first_order_absorption(
     return model, depot
 
 
+def _get_min_value(x) -> float:
+    return float(x.min())
+
+
 def _get_absorption_init(model, param_name) -> float:
     try:
         if param_name == 'MDT':
@@ -1762,12 +1771,12 @@ def _get_absorption_init(model, param_name) -> float:
     else:
         obs = get_observations(model)
         time = obs.index.get_level_values(level=time_label)
-        time_min = time[time > 0].min()
+        time_min = _get_min_value(time[time > 0])
 
     if param_name == 'MDT':
-        init = float(time_min) / 2
+        init = time_min / 2
     elif param_name == 'MAT':
-        init = float(time_min) * 2
+        init = time_min * 2
     else:
         raise NotImplementedError('param_name must be MDT or MAT')
 
@@ -1777,7 +1786,7 @@ def _get_absorption_init(model, param_name) -> float:
     return init
 
 
-def set_peripheral_compartments(model: Model, n: int, name: str = None):
+def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None):
     """Sets the number of peripheral compartments for central compartment to a specified number.
 
     If name is set, the peripheral compartment will be added to the compartment
@@ -1789,7 +1798,7 @@ def set_peripheral_compartments(model: Model, n: int, name: str = None):
         Pharmpy model
     n : int
         Number of transit compartments
-    name : str
+    name : Optional[str]
         Name of compartment to add peripheral to.
 
     Return
@@ -1826,7 +1835,7 @@ def set_peripheral_compartments(model: Model, n: int, name: str = None):
     remove_peripheral_compartment
 
     """
-    odes = model.statements.ode_system
+    odes = get_and_check_odes(model)
 
     try:
         n = _as_integer(n)
@@ -1843,7 +1852,7 @@ def set_peripheral_compartments(model: Model, n: int, name: str = None):
     return model
 
 
-def add_peripheral_compartment(model: Model, name: str = None):
+def add_peripheral_compartment(model: Model, name: Optional[str] = None):
     r"""Add a peripheral distribution compartment to model
 
     The rate of flow from the central to the peripheral compartment
@@ -1870,7 +1879,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
     ----------
     model : Model
         Pharmpy model
-    name : str
+    name : Optional[str]
         Name of compartment to add peripheral to.
 
     Return
@@ -1940,6 +1949,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
             # Heuristic to handle the Mixed MM-FO case
             if cl.is_add():
                 cl1 = cl.args[0]
+                assert isinstance(cl1, Expr)
                 if cl1.is_mul():
                     cl = cl1.args[0]
             pop_cl = _find_noncov_theta(model, cl)
@@ -2001,7 +2011,7 @@ def add_peripheral_compartment(model: Model, name: str = None):
     return model.update_source()
 
 
-def remove_peripheral_compartment(model: Model, name: str = None):
+def remove_peripheral_compartment(model: Model, name: Optional[str] = None):
     r"""Remove a peripheral distribution compartment from model
 
     If name is set, a peripheral compartment will be removed from the compartment
@@ -2115,15 +2125,12 @@ def remove_peripheral_compartment(model: Model, name: str = None):
         symbols = rate1.free_symbols | rate2.free_symbols
         cb = CompartmentalSystemBuilder(odes)
         cb.remove_compartment(last_peripheral)
+        new_odes = CompartmentalSystem(cb)
         model = model.replace(
-            statements=(
-                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-            )
+            statements=(model.statements.before_odes + new_odes + model.statements.after_odes)
         )
         model = model.replace(
-            statements=model.statements.remove_symbol_definitions(
-                symbols, model.statements.ode_system
-            )
+            statements=model.statements.remove_symbol_definitions(symbols, new_odes)
         )
         model = remove_unused_parameters_and_rvs(model)
     return model
@@ -2454,13 +2461,14 @@ def get_initial_conditions(model: Model, dosing: bool = False) -> Mapping[Expr, 
     for amt in odes.amounts:
         d[Expr.function(amt.name, 0)] = Expr.integer(0)
     for s in model.statements:
-        if isinstance(s, Assignment):
-            if s.symbol.is_function() and not (s.symbol.args[0].free_symbols):
+        if isinstance(s, Assignment) and s.symbol.is_function():
+            if not (s.symbol.args[0].free_symbols):  # pyright: ignore[reportAttributeAccessIssue]
                 d[s.symbol] = s.expression
 
     if dosing:
         for name in odes.compartment_names:
             comp = odes.find_compartment(name)
+            assert comp is not None
             if comp.doses and isinstance(comp.doses[0], Bolus):
                 if comp.lag_time:
                     time = comp.lag_time
@@ -2516,6 +2524,7 @@ def set_initial_condition(
     time = Expr(time)
     amount = Expr.function(comp.amount.name, time)
     assignment = Assignment.create(amount, expr)
+    statements = None
     for i, s in enumerate(model.statements.before_odes):
         if s.symbol == amount:
             if time == 0 and expr == 0:
@@ -2528,11 +2537,13 @@ def set_initial_condition(
             statements = (
                 model.statements.before_odes + assignment + odes + model.statements.after_odes
             )
-    model = model.replace(statements=statements)
-    return model.update_source()
+    if statements is not None:
+        model = model.replace(statements=statements)
+        model = model.update_source()
+    return model
 
 
-def get_zero_order_inputs(model: Model) -> sympy.Matrix:
+def get_zero_order_inputs(model: Model) -> Matrix:
     """Get zero order inputs for all compartments
 
     Parameters
@@ -2542,7 +2553,7 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
 
     Return
     ------
-    sympy.Matrix
+    Matrix
         Vector of inputs
 
     Examples
@@ -2554,11 +2565,11 @@ def get_zero_order_inputs(model: Model) -> sympy.Matrix:
     """
     odes = model.statements.ode_system
     if odes is None:
-        return sympy.Matrix()
+        return Matrix()
     return odes.zero_order_inputs
 
 
-def set_zero_order_input(model: Model, compartment: str, expression: Union[TExpr]) -> Model:
+def set_zero_order_input(model: Model, compartment: str, expression: TExpr) -> Model:
     """Set a zero order input for the ode system
 
     If the zero order input is already set it will be updated.
@@ -2702,10 +2713,13 @@ def solve_ode_system(model: Model):
     # FIXME: Should set assumptions on symbols before solving
     # FIXME: Need a way to handle systems with no explicit solutions
     sol = sympy.dsolve(sympy.sympify(odes.eqs), ics=sympy.sympify(ics))
+    assert isinstance(sol, Iterable)
+
     new = []
     for s in model.statements:
         if isinstance(s, CompartmentalSystem):
             for eq in sol:
+                assert isinstance(eq, sympy.Eq)
                 ass = Assignment.create(eq.lhs, eq.rhs)
                 new.append(ass)
         else:

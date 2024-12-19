@@ -16,8 +16,6 @@ from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.parse import parse as parse_expr
-from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.math import corr2cov, nearest_positive_semidefinite
 from pharmpy.model import (
     Assignment,
@@ -115,8 +113,9 @@ def add_iiv(
     list_of_options = _format_options([expression, operation, eta_names], len(list_of_parameters))
     expression, operation, eta_names = list_of_options
 
-    if all(eta_name is None for eta_name in eta_names):
-        eta_names = None
+    if eta_names is not None:
+        if all(eta_name is None for eta_name in eta_names):
+            eta_names = None
 
     if not all(len(opt) == len(list_of_parameters) for opt in list_of_options if opt):
         raise ValueError(
@@ -141,6 +140,7 @@ def add_iiv(
         if index is None:
             raise ValueError(f'Could not find parameter: {list_of_parameters[i]}')
         statement = sset[index]
+        assert isinstance(statement, Assignment)
 
         eta_addition = _create_template(expression[i], operation[i])
 
@@ -172,7 +172,7 @@ def add_iov(
     occ: str,
     list_of_parameters: Optional[Union[list[str], str]] = None,
     eta_names: Optional[Union[list[str], str]] = None,
-    distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'disjoint',
+    distribution: Literal['disjoint', 'joint', 'explicit', 'same-as-iiv'] = 'disjoint',
 ):
     """Adds IOVs to :class:`pharmpy.model`.
 
@@ -243,24 +243,25 @@ def add_iov(
             etas = list(map(lambda x: [x], _get_etas(model, None, include_symbols=True)))
         else:
             etas = [_get_etas(model, None, include_symbols=True)]
-
     else:
         if distribution == 'disjoint':
-            list_of_parameters = list(map(lambda x: [x], list_of_parameters))
+            params = list(map(lambda x: [x], list_of_parameters))
         elif distribution == 'joint' or distribution == 'same-as-iiv':
-            list_of_parameters = [list_of_parameters]
+            params = [list_of_parameters]
+        else:
+            params = list_of_parameters
 
         if not all(
             map(
                 lambda x: isinstance(x, list) and all(map(lambda y: isinstance(y, str), x)),
-                list_of_parameters,
+                params,
             )
         ):
             raise ValueError('not all parameters are strings')
 
-        etas = [_get_etas(model, grp, include_symbols=True) for grp in list_of_parameters]
+        etas = [_get_etas(model, grp, include_symbols=True) for grp in params]
 
-        for dist, grp in zip(etas, list_of_parameters):
+        for dist, grp in zip(etas, params):
             assert len(dist) <= len(grp)
 
     categories = get_occasion_levels(model.dataset, occ)
@@ -380,7 +381,7 @@ def _add_iov_declare_etas(sset, occ, etas, indices, categories, eta_name, iov_na
             )
         )
 
-        iovs.append(Assignment.create(iov, parse_expr(0)))
+        iovs.append(Assignment.create(iov, Expr.integer(0)))
         iovs.append(Assignment.create(iov, expression))
 
         etai = Expr.symbol(etai_name(i))
@@ -533,12 +534,12 @@ def _create_template(expression, operation):
     elif expression == 're_log':
         return EtaAddition.re_logit()
     else:
-        expression = parse_expr(f'original {operation} {expression}')
+        expression = Expr(f'original {operation} {expression}')
         return EtaAddition(expression)
 
 
 def _get_operation_func(operation):
-    """Gets sympy operation based on string"""
+    """Gets operation based on string"""
     if operation == '*':
         return mul
     elif operation == '+':
@@ -561,7 +562,7 @@ def _canonicalize_category(c: Union[int, float, str]):
     if isinstance(c, float):
         return int(c)
 
-    if isinstance(c, (np.int32, np.int64)):
+    if isinstance(c, np.integer):
         return int(c)
 
     if isinstance(c, str):
@@ -587,38 +588,34 @@ class EtaAddition:
         self.template = template
 
     def apply(self, original, eta):
-        self.template = subs(self.template, {'original': original, 'eta_new': eta})
+        self.template = self.template.subs({'original': original, 'eta_new': eta})
 
     @classmethod
     def additive(cls):
-        template = sympy.Symbol('original') + sympy.Symbol('eta_new')
-
+        template = Expr.symbol('original') + Expr.symbol('eta_new')
         return cls(template)
 
     @classmethod
     def proportional(cls):
-        template = sympy.Symbol('original') * (1 + sympy.Symbol('eta_new'))
-
+        template = Expr.symbol('original') * (1 + Expr.symbol('eta_new'))
         return cls(template)
 
     @classmethod
     def exponential(cls, operation):
-        template = operation(sympy.Symbol('original'), sympy.exp(sympy.Symbol('eta_new')))
-
+        template = operation(Expr.symbol('original'), Expr.symbol('eta_new').exp())
         return cls(template)
 
     @classmethod
     def logit(cls):
-        template = sympy.Symbol('original') * (
-            sympy.exp(sympy.Symbol('eta_new')) / (1 + sympy.exp(sympy.Symbol('eta_new')))
+        template = Expr.symbol('original') * (
+            Expr.symbol('eta_new').exp() / (1 + Expr.symbol('eta_new').exp())
         )
-
         return cls(template)
 
     @classmethod
     def re_logit(cls):
-        template = sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original')) / (
-            1 + sympy.exp(sympy.Symbol('eta_new') * sympy.Symbol('original'))
+        template = (Expr.symbol('eta_new') * Expr.symbol('original')).exp() / (
+            1 + (Expr.symbol('eta_new') * Expr.symbol('original')).exp()
         )
         return cls(template)
 
@@ -737,7 +734,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None):
         return model
 
     keep = [name for name in rvs.names if name not in etas]
-    d = {Expr.symbol(name): 0 for name in etas}
+    d = {Expr.symbol(name): Expr.integer(0) for name in etas}
 
     model = model.replace(statements=sset.subs(d), random_variables=rvs[keep])
     model = remove_unused_parameters_and_rvs(model)

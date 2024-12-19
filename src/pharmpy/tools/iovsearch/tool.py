@@ -30,13 +30,13 @@ T = TypeVar('T')
 
 
 def create_workflow(
+    model: Model,
+    results: ModelfitResults,
     column: str = 'OCC',
     list_of_parameters: Optional[list[Union[str, list[str]]]] = None,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     E: Optional[Union[float, str]] = None,
 ):
@@ -44,6 +44,10 @@ def create_workflow(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
+    results : ModelfitResults
+        Results for model
     column : str
         Name of column in dataset to use as occasion column (default is 'OCC')
     list_of_parameters : None or list
@@ -55,10 +59,6 @@ def create_workflow(
         is None (all models will be ranked)
     distribution : {'disjoint', 'joint', 'explicit', 'same-as-iiv'}
         Which distribution added IOVs should have (default is same-as-iiv)
-    results : ModelfitResults
-        Results for model
-    model : Model
-        Pharmpy model
     strictness : str or None
         Strictness criteria
     E : float
@@ -75,7 +75,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iovsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_iovsearch('OCC', results=results, model=model)      # doctest: +SKIP
+    >>> run_iovsearch(model=model, results=results, column='OCC')      # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name=NAME_WF)

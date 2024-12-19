@@ -4,6 +4,8 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Literal, Optional, Union
 
+import pharmpy.workflows.contexts.broadcasters.null
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.workflows.contexts.broadcasters.terminal import broadcast_message
@@ -29,13 +31,26 @@ class Context(ABC):
         A reference (path) to the context
     """
 
-    def __init__(self, name: str, ref: Optional[str] = None, common_options: dict[str, Any] = None):
+    def __init__(
+        self,
+        name: str,
+        ref: Optional[str] = None,
+        common_options: dict[str, Any] = None,
+        broadcaster: Optional[str] = None,
+    ):
         # If the context already exists it will be opened
         # otherwise a new top level context will be created
         # An implementation needs to create the model database here
         # If ref is None an implementation specific default ref will be used
         self._name = name
-        self.broadcast_message = broadcast_message
+        if broadcaster is not None and broadcaster.lower() == 'null':
+            self.broadcast_message = pharmpy.workflows.contexts.broadcasters.null.broadcast_message
+        else:
+            self.broadcast_message = broadcast_message
+
+    @abstractmethod
+    def __repr__(self) -> str:
+        pass
 
     @property
     def model_database(self) -> ModelDatabase:
@@ -247,3 +262,14 @@ class Context(ABC):
         """Check if the tool running in the context has completed"""
         metadata = self.retrieve_metadata()
         return "stats" in metadata and "end_time" in metadata["stats"]
+
+    def create_rng(self, index: int):
+        """Create a random number generator
+
+        Creating the generator will be using the seed common option, the index and
+        the context path to get a unique sequence.
+        """
+        ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
+        root_seed = self.retrieve_common_options()['seed']
+        rng = np.random.default_rng([index, ctxpath_bytes, root_seed])
+        return rng

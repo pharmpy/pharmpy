@@ -120,6 +120,8 @@ class SearchState:
 
 
 def create_workflow(
+    model: Model,
+    results: ModelfitResults,
     search_space: Union[str, ModelFeatures],
     p_forward: float = 0.01,
     p_backward: float = 0.001,
@@ -127,8 +129,6 @@ def create_workflow(
     algorithm: Literal[
         'scm-forward', 'scm-forward-then-backward', 'samba', 'samba-foce', 'scm-lcs'
     ] = 'scm-forward-then-backward',
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
     max_eval: bool = False,
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
@@ -143,6 +143,10 @@ def create_workflow(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy model
+    results : ModelfitResults
+        Results of model
     search_space : str
         MFL of covariate effects to try
     p_forward : float
@@ -154,10 +158,6 @@ def create_workflow(
     algorithm : {'scm-forward', 'scm-forward-then-backward', 'samba'}
         The search algorithm to use. Currently, 'scm-forward' and
         'scm-forward-then-backward' are supported.
-    results : ModelfitResults
-        Results of model
-    model : Model
-        Pharmpy model
     max_eval : bool
         Limit the number of function evaluations to 3.1 times that of the
         base model. Default is False.
@@ -197,7 +197,7 @@ def create_workflow(
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
     >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
-    >>> res = run_covsearch(search_space, model=model, results=results)      # doctest: +SKIP
+    >>> res = run_covsearch(model=model, results=results, search_space=search_space)      # doctest: +SKIP
     """
     if algorithm in ["samba", "samba-foce", "scm-lcs"]:
         return samba_workflow(
@@ -365,6 +365,8 @@ def get_exploratory_covariates(ss_mfl):
         if cov_effect[-1] == "ADD":
             effect = cov_effect[1:-1]  # Everything except "ADD", e.g. ('CL', 'WT', 'exp', '*')
             exploratory_cov_funcs[effect] = cov_func
+    # Sort by effect
+    exploratory_cov_funcs = dict(sorted(exploratory_cov_funcs.items()))
     return exploratory_cov_funcs
 
 

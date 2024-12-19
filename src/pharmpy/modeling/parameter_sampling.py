@@ -4,13 +4,14 @@ import warnings
 from functools import partial
 from typing import Literal, Optional, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import is_posdef, nearest_positive_semidefinite
 from pharmpy.model import Model
 
 
-def create_rng(seed: Optional[Union[np.random.Generator, int]] = None):
+def create_rng(seed: Union[np.random.Generator, int] = DEFAULT_SEED):
     """Create a new random number generator
 
     Pharmpy functions that use random sampling take a random number generator or seed as input.
@@ -69,9 +70,9 @@ def _sample_from_function(
     model,
     parameter_estimates,
     samplingfn,
+    seed,
     force_posdef_samples=None,
     n=1,
-    seed=None,
 ):
     """Sample parameter vectors using a general function
 
@@ -129,7 +130,7 @@ def sample_parameters_uniformly(
     fraction: float = 0.1,
     force_posdef_samples: Optional[int] = None,
     n: int = 1,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     scale: Literal['UCP', 'normal'] = 'normal',
 ):
     """Sample parameter vectors using uniform sampling
@@ -207,7 +208,7 @@ def sample_parameters_from_covariance_matrix(
     force_posdef_samples: Optional[int] = None,
     force_posdef_covmatrix: bool = False,
     n: int = 1,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Sample parameter vectors using the covariance matrix
 
@@ -285,7 +286,7 @@ def sample_individual_estimates(
     individual_estimates_covariance: pd.DataFrame,
     parameters: Optional[list[str]] = None,
     samples_per_id: int = 100,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Sample individual estimates given their covariance.
 
@@ -347,13 +348,13 @@ def sample_individual_estimates(
     ests = individual_estimates
     covs = individual_estimates_covariance
     if parameters is None:
-        parameters = ests.columns
+        parameters = list(ests.columns)
     ests = ests[parameters]
     samples = pd.DataFrame()
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma.loc[parameters, parameters]
         sigma = nearest_positive_semidefinite(sigma)
-        id_samples = rng.multivariate_normal(mu.values, sigma.values, size=samples_per_id)
+        id_samples = rng.multivariate_normal(mu.to_numpy(), sigma.to_numpy(), size=samples_per_id)
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df['ID'] = idx
         id_df['sample'] = list(range(0, samples_per_id))

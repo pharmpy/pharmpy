@@ -103,8 +103,7 @@ def create_dummy_modelfit_results(model, ref=None):
     rng = create_rng(seed)
 
     if ref:
-        low = ref / 2 if ref > 0 else ref * 2
-        ofv = rng.uniform(low, ref)
+        ofv = rng.uniform(ref - 50, ref)
     else:
         ofv = rng.uniform(-20, 20)
 

@@ -128,7 +128,9 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) 
         )
         model = model.update_source()
         cs = get_and_check_odes(model)
-        bio = cs.find_compartment(depot.name).bioavailability
+        biocomp = cs.find_compartment(depot.name)
+        assert isinstance(biocomp, Compartment)
+        bio = biocomp.bioavailability
         conc = Assignment(Expr.symbol('CONC_M'), amount / vm / bio)
     else:
         cs = CompartmentalSystem(cb)
@@ -137,6 +139,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) 
     y = Assignment(y_m, conc.symbol)
     original_y = next(iter(model.dependent_variables))
     ind = model.statements.after_odes.find_assignment_index(original_y)
+    assert ind is not None
     old_after = model.statements.after_odes
     new_after = old_after[: ind + 1] + y + old_after[ind + 1 :]
     error = conc + new_after

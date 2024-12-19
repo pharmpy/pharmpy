@@ -8,10 +8,10 @@ from pharmpy.tools import run_modelsearch
 def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
     with chdir(tmp_path):
         res = run_modelsearch(
-            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
-            'exhaustive',
-            results=start_modelres[1],
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            algorithm='exhaustive',
             rank_type='mbic',
             E=1.0,
         )
@@ -29,12 +29,13 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
 
 
 @pytest.mark.parametrize(
-    'search_space, algorithm, kwargs, no_of_models, max_added_params, best_model',
+    'search_space, algorithm, kwargs, has_base_model, no_of_cands, max_added_params, best_model',
     [
         (
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive',
             dict(),
+            False,
             3,
             2,
             'modelsearch_run2',
@@ -43,6 +44,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive_stepwise',
             dict(),
+            False,
             4,
             2,
             'modelsearch_run4',
@@ -51,6 +53,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             'ABSORPTION([FO,ZO,SEQ-ZO-FO]);PERIPHERALS([0,1])',
             'exhaustive_stepwise',
             dict(),
+            False,
             7,
             4,
             'modelsearch_run5',
@@ -59,6 +62,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
             'exhaustive_stepwise',
             {'iiv_strategy': 'no_add'},
+            False,
             4,
             1,
             'modelsearch_run4',
@@ -67,6 +71,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
             'exhaustive_stepwise',
             {'iiv_strategy': 'add_diagonal'},
+            False,
             4,
             2,
             'modelsearch_run4',
@@ -75,9 +80,19 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
             'exhaustive_stepwise',
             {'iiv_strategy': 'fullblock'},
+            False,
             4,
             8,
             'modelsearch_run4',
+        ),
+        (
+            'ABSORPTION(FO);PERIPHERALS(0..2);ALLOMETRY(WT,70)',
+            'exhaustive_stepwise',
+            dict(),
+            True,
+            3,
+            4,
+            'modelsearch_run2',
         ),
     ],
 )
@@ -88,23 +103,29 @@ def test_modelsearch_dummy(
     search_space,
     algorithm,
     kwargs,
-    no_of_models,
+    has_base_model,
+    no_of_cands,
     max_added_params,
     best_model,
 ):
     with chdir(tmp_path):
         res = run_modelsearch(
-            search_space,
-            algorithm,
-            results=start_modelres[1],
             model=start_modelres[0],
+            results=start_modelres[1],
+            search_space=search_space,
+            algorithm=algorithm,
             esttool='dummy',
             **kwargs
         )
 
-        assert len(res.summary_tool) == no_of_models + 1
-        assert len(res.summary_models) == no_of_models + 1
-        assert len(res.models) == no_of_models + 1
+        if has_base_model:
+            no_of_ranked_models = no_of_cands
+        else:
+            no_of_ranked_models = no_of_cands + 1
+
+        assert len(res.summary_tool) == no_of_ranked_models
+        assert len(res.summary_models) == no_of_cands + 1
+        assert len(res.models) == no_of_ranked_models
         assert res.summary_tool['d_params'].max() == max_added_params
 
         # FIXME: move to unit test
@@ -118,7 +139,7 @@ def test_modelsearch_dummy(
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
-        assert model_count(rundir) == no_of_models + 2
+        assert model_count(rundir) == no_of_cands + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()

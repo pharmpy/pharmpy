@@ -279,8 +279,8 @@ def test_simulation_step():
     ss = ss.replace(n=19)
     assert ss.n == 19
 
-    ss = SimulationStep(seed=1234)
-    assert ss.seed == 1234
+    ss = SimulationStep(seed=64206)
+    assert ss.seed == 64206
 
     ss1 = SimulationStep()
     ss2 = SimulationStep(n=2)
@@ -292,7 +292,7 @@ def test_simulation_step():
     assert d == {
         'class': 'SimulationStep',
         'n': 2,
-        'seed': 64206,
+        'seed': 1234,
         'solver': None,
         'solver_atol': None,
         'solver_rtol': None,
@@ -304,5 +304,5 @@ def test_simulation_step():
 
     assert (
         repr(ss2)
-        == 'SimulationStep(n=2, seed=64206, solver=None, solver_rtol=None, solver_atol=None, tool_options={})'
+        == 'SimulationStep(n=2, seed=1234, solver=None, solver_rtol=None, solver_atol=None, tool_options={})'
     )

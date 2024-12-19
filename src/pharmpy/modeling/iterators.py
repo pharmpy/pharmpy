@@ -223,9 +223,13 @@ class Resample(DatasetIterator):
 
         random_groups = []
         for strata in self._sample_size_dict:
-            random_groups += np.random.choice(
-                self._stratas[strata], size=self._sample_size_dict[strata], replace=self._replace
-            ).tolist()
+            random_groups += list(
+                np.random.choice(
+                    self._stratas[strata],
+                    size=self._sample_size_dict[strata],
+                    replace=self._replace,
+                )
+            )
 
         new_df = pd.DataFrame()
         # Build the dataset given the random_groups list

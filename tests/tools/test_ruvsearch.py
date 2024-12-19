@@ -83,18 +83,11 @@ def test_resmod_results_dvid(testdata):
     assert df['dOFV'].loc[1, 'sum', 'tdist'] == -35.98
 
 
-def test_create_workflow():
-    assert isinstance(create_workflow(), Workflow)
-
-
 def test_create_workflow_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
     remove_parameter_uncertainty_step(model)
-    assert isinstance(create_workflow(model=model), Workflow)
-
-
-def test_validate_input():
-    validate_input()
+    assert isinstance(create_workflow(model=model, results=results), Workflow)
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):
@@ -377,21 +370,17 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
-    res = read_modelfit_results(testdata.joinpath(*model_path)) if model_path else None
+    if not model_path:
+        model_path = ('nonmem/ruvsearch/mox3.mod',)
+    path = testdata.joinpath(*model_path)
+    model = load_model_for_test(path)
+    res = read_modelfit_results(path)
     kwargs = {'model': model, 'results': res, **arguments}
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
 
-    validate_input(None, skip=['IIV_on_RUV', 'power'])
-
-
-def test_validate_input_raises_modelfit_results(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-
-    with pytest.raises(ValueError, match="modelfit results must be provided"):
-        validate_input(model=model, results=None)
+    validate_input(model, res, skip=['IIV_on_RUV', 'power'])
 
 
 def test_validate_input_raises_cwres(load_model_for_test, testdata):

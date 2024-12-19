@@ -150,28 +150,23 @@ def test_iovsearch_github_issues_976(load_model_for_test, testdata):
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set()
 
 
-def test_create_workflow():
-    assert isinstance(create_workflow(), Workflow)
-
-
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    assert isinstance(create_workflow(model=model, column='APGR'), Workflow)
-
-
-def test_validate_input():
-    validate_input()
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(create_workflow(model=model, results=results, column='APGR'), Workflow)
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    validate_input(model=model, column='APGR')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, results=results, column='APGR')
 
 
 def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    validate_input(model=model, column='APGR', list_of_parameters=['CL', 'V'])
-    validate_input(model=model, column='APGR', list_of_parameters=[['V'], ['CL']])
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    validate_input(model=model, results=results, column='APGR', list_of_parameters=['CL', 'V'])
+    validate_input(model=model, results=results, column='APGR', list_of_parameters=[['V'], ['CL']])
 
 
 @pytest.mark.parametrize(
@@ -221,9 +216,15 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+    if not model_path:
+        model_path = ('nonmem/pheno.mod',)
+    path = testdata.joinpath(*model_path)
+    model = load_model_for_test(path)
+    results = read_modelfit_results(path)
 
-    kwargs = {'model': model, **arguments}
+    kwargs = {'model': model, 'results': results, **arguments}
+    if 'column' not in arguments.keys():
+        kwargs['column'] = 'APGR'
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)

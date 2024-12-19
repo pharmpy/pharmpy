@@ -6,6 +6,7 @@ from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
 from typing import Any, Collection, Container, Optional, Sequence, Union, overload
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy, sympy_stats
@@ -19,7 +20,7 @@ from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
 
 
-def _create_rng(seed: Optional[Union[int, np.random.Generator]] = None) -> np.random.Generator:
+def _create_rng(seed: Union[int, np.random.Generator] = DEFAULT_SEED) -> np.random.Generator:
     """Create a new random number generator"""
     if isinstance(seed, np.random.Generator):
         return seed
@@ -769,7 +770,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         expr,
         parameters: Optional[Mapping[str, float]] = None,
         samples: int = 1,
-        rng: Optional[np.random.Generator] = None,
+        rng: Union[np.random.Generator, int] = DEFAULT_SEED,
     ) -> np.ndarray:
         """Sample from the distribution of expr
 

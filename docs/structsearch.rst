@@ -31,13 +31,13 @@ The code to initiate structsearch for a PKPD model in Python/R is stated below:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_structsearch(type='pkpd',
-                            search_space="DIRECTEFFECT(*)",
-                            model=start_model,
-                            results=start_model_results)
+    res = run_structsearch(model=start_model,
+                           results=start_model_results
+                           type='pkpd',
+                           search_space="DIRECTEFFECT(*)")
 
 
-This will take an input model ``model`` with a ``search_space`` that includes all direct effect PKPD models.
+This will take an input ``model`` with a ``search_space`` that includes all direct effect PKPD models.
 
 
 Arguments
@@ -48,6 +48,10 @@ Which arguments are mandatory or optional depends on the type of model. More inf
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | Argument                                        | Description                                                                             |
 +=================================================+=========================================================================================+
+| ``model``                                       | PK start model.                                                                         |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``results``                                     | ModelfitResults of the start model.                                                     |
++-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``type``                                        | Type of model. Can be either pkpd, drug_metabolite or tmdd (:ref:`the model types`).    |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``search_space``                                | :ref:`Search space<structsearch search space>` of models to test.                       |
@@ -62,10 +66,6 @@ Which arguments are mandatory or optional depends on the type of model. More inf
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``met_init``                                    | Initial estimate for mean equilibration time  (only for PKPD models).                   |
 |                                                 | Default is 0.1.                                                                         |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| ``model``                                       | PK start model.                                                                         |
-+-------------------------------------------------+-----------------------------------------------------------------------------------------+
-| ``results``                                     | ModelfitResults of the start model.                                                     |
 +-------------------------------------------------+-----------------------------------------------------------------------------------------+
 | ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection. Optional.                   |
 |                                                 | Default is "minimization_successful or                                                  |

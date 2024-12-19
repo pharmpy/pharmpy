@@ -3,6 +3,7 @@ from __future__ import annotations
 from itertools import product
 from typing import Any, Iterable, Literal, Mapping, Optional, Sequence, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
 from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
@@ -128,7 +129,7 @@ def add_estimation_step(model: Model, method: MethodType, idx: Optional[int] = N
     return model.update_source()
 
 
-def set_simulation(model: Model, n: int = 1, seed: int = 64206):
+def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED):
     """Change model into simulation model
 
     Parameters

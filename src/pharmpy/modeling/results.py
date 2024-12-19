@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import math
 from itertools import chain
-from typing import Iterable, Literal, Optional, Union
+from typing import Iterable, Literal, Mapping, Optional, Union
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -86,7 +87,7 @@ def calculate_eta_shrinkage(
     pe = parameter_estimates.combine_first(param_inits)
 
     param_names = [str(param) for param in model.random_variables.etas.covariance_matrix.diagonal()]
-    diag_ests = pe[param_names]
+    diag_ests = pe.loc[param_names]
     diag_ests.index = individual_estimates.columns
     if not sd:
         shrinkage = 1 - (individual_estimates.var() / diag_ests)
@@ -202,7 +203,7 @@ def calculate_individual_shrinkage(
     diag = model.random_variables.etas.covariance_matrix.diagonal()
     param_names = [s.name for s in diag]
 
-    diag_ests = pe[param_names]
+    diag_ests = pe.loc[param_names]
 
     def fn(row, ests):
         names = row[0].index
@@ -218,9 +219,9 @@ def calculate_individual_parameter_statistics(
     expr_or_exprs: Union[
         Iterable[BooleanExpr], Iterable[Expr], Iterable[str], BooleanExpr, Expr, str
     ],
-    parameter_estimates: pd.Series,
+    parameter_estimates: Mapping,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Calculate statistics for individual parameters
 
@@ -238,7 +239,7 @@ def calculate_individual_parameter_statistics(
     ----------
     model : Model
         A previously estimated model
-    parameter_estimates : pd.Series
+    parameter_estimates : Mapping
         Parameter estimates
     covariance_matrix : pd.DataFrame
         Parameter uncertainty covariance matrix
@@ -273,17 +274,17 @@ def calculate_individual_parameter_statistics(
     """
     rng = create_rng(seed)
     if isinstance(expr_or_exprs, str):
-        expr_or_exprs = [_split_equation(expr_or_exprs)]
+        our_exprs = [_split_equation(expr_or_exprs)]
     else:
-        try:
-            expr_or_exprs = [_split_equation(e) for e in expr_or_exprs]
-        except TypeError:
-            expr_or_exprs = [_split_equation(expr_or_exprs)]
+        if isinstance(expr_or_exprs, (str, Expr, BooleanExpr)):
+            our_exprs = [_split_equation(expr_or_exprs)]
+        else:
+            our_exprs = [_split_equation(e) for e in expr_or_exprs]
 
     full_exprs = list(
         map(
             lambda e: (e[0], sympy.sympify(model.statements.before_odes.full_expression(e[1]))),
-            expr_or_exprs,
+            our_exprs,
         )
     )
 
@@ -367,7 +368,9 @@ def calculate_individual_parameter_statistics(
             batch = sample_rvs(local_sampling_rvs, batchsize, rng)
             batches.append(batch)
 
-    table = pd.DataFrame(columns=['parameter', 'covariates', 'mean', 'variance', 'stderr'])
+    table = pd.DataFrame(
+        columns=pd.Index(('parameter', 'covariates', 'mean', 'variance', 'stderr'))
+    )
     i = 0
 
     for name, full_expr in full_exprs:
@@ -408,7 +411,7 @@ def calculate_pk_parameters_statistics(
     model: Model,
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[Union[np.random.Generator, int]] = None,
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Calculate statistics for common pharmacokinetic parameters
 

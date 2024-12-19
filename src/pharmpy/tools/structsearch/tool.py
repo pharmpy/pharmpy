@@ -25,9 +25,9 @@ TYPES = frozenset(('pkpd', 'drug_metabolite', 'tmdd'))
 
 
 def create_workflow(
-    type: Literal[tuple(TYPES)],
     model: Model,
     results: ModelfitResults,
+    type: Literal[tuple(TYPES)],
     search_space: Optional[Union[str, ModelFeatures]] = None,
     b_init: Optional[Union[int, float]] = None,
     emax_init: Optional[Union[int, float]] = None,
@@ -42,6 +42,10 @@ def create_workflow(
 
     Parameters
     ----------
+    model : Model
+        Pharmpy start model
+    results : ModelfitResults
+        Results for the start model
     type : str
         Type of model. Currently only 'drug_metabolite' and 'pkpd'
     search_space : str
@@ -54,10 +58,6 @@ def create_workflow(
         Initial estimate for EC_50 (for pkpd models only).
     met_init: float
         Initial estimate for MET (for pkpd models only).
-    results : ModelfitResults
-        Results for the start model
-    model : Model
-        Pharmpy start model
     extra_model : Model
         Optional extra Pharmpy model to use in TMDD structsearch
     extra_model_results : ModelfitResults
@@ -78,7 +78,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_structsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_structsearch(model_type='pkpd', results=results, model=model)   # doctest: +SKIP
+    >>> run_structsearch(model=model, results=results, model_type='pkpd')   # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name="structsearch")

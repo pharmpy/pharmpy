@@ -27,14 +27,11 @@ To initiate IOVsearch in Python/R:
                         column='OCC',
                         list_of_parameters=None,
                         distribution='same-as-iiv',
-                        rank_type='bic',
-                        cutoff=None)
+                        rank_type='bic')
 
-This will take an input model ``model`` and use the ``column`` ``'OCC'`` as the occasion column. IOV will be tested on
+This will take an input ``model`` and use the ``column`` ``'OCC'`` as the occasion column. IOV will be tested on
 parameters in ``list_of_parameters``, which when none will be all parameters with IIV. The IOVs will have the same
-``distribution`` as the IIVs. The candidate models will be ranked using ``bic`` with default ``cutoff``, which for BIC
-is none.
-
+``distribution`` as the IIVs. The candidate models will be ranked using ``bic``.
 You can limit the search to only certain parameters by giving a list:
 
 .. pharmpy-code::

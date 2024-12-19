@@ -22,10 +22,10 @@ To initiate COVsearch in Python/R:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_covsearch(algorithm='scm-forward-then-backward',
-                        model=start_model,
+    res = run_covsearch(model=start_model,
                         results=start_model_results,
                         search_space='COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)',
+                        algorithm='scm-forward-then-backward',
                         p_forward=0.05,
                         p_backward=0.01,
                         max_steps=5)
@@ -45,7 +45,7 @@ To run COVsearch from the command line, the example code is redefined accordingl
 
 .. code::
 
-    pharmpy run covsearch path/to/model --algorithm scm-forward-then-backward --search_space 'COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)' --p_forward 0.05 --p_backward 0.01 --max_steps 5
+    pharmpy run covsearch path/to/model --search_space 'COVARIATE?(@IIV, @CONTINUOUS, *); COVARIATE?(@IIV, @CATEGORICAL, CAT)' --algorithm scm-forward-then-backward --p_forward 0.05 --p_backward 0.01 --max_steps 5
 
 ~~~~~~~~~
 Arguments
@@ -57,13 +57,13 @@ Mandatory
 +---------------------------------------------+-----------------------------------------------------------------------+
 | Argument                                    | Description                                                           |
 +=============================================+=======================================================================+
-| ``search_space``                            | The candidate parameter-covariate                                     |
-|                                             | :ref:`search_space<search_space_covsearch>` to search through         |
-|                                             | (required)                                                            |
+| ``model``                                   | Start model                                                           |
 +---------------------------------------------+-----------------------------------------------------------------------+
 | ``results``                                 | ModelfitResults of start model                                        |
 +---------------------------------------------+-----------------------------------------------------------------------+
-| ``model``                                   | Start model                                                           |
+| ``search_space``                            | The candidate parameter-covariate                                     |
+|                                             | :ref:`search_space<search_space_covsearch>` to search through         |
+|                                             | (required)                                                            |
 +---------------------------------------------+-----------------------------------------------------------------------+
 
 Optional

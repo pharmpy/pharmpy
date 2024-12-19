@@ -45,30 +45,27 @@ from pharmpy.workflows import LocalDirectoryContext, ModelEntry, local_dask
 
 
 @pytest.mark.parametrize(
-    ('args', 'kwargs'),
+    'kwargs',
     (
-        (
-            ('ABSORPTION(ZO)', 'exhaustive'),
-            {'iiv_strategy': 'no_add'},
-        ),
-        (
-            ('ABSORPTION(ZO)',),
-            {'algorithm': 'exhaustive'},
-        ),
+        {'algorithm': 'exhaustive', 'iiv_strategy': 'no_add'},
+        {'algorithm': 'exhaustive'},
     ),
 )
-def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
+def test_create_metadata_tool(tmp_path, testdata, load_model_for_test, kwargs):
     with chdir(tmp_path):
         tool_name = 'modelsearch'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+        results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+        search_space = 'ABSORPTION(ZO)'
 
         metadata = _create_metadata_tool(
             database=database,
             tool_name=tool_name,
             tool_func=tool.create_workflow,
-            args=args,
-            kwargs={'model': pheno, **kwargs},
+            args=(model, results, search_space),
+            kwargs=kwargs,
         )
 
         rundir = tmp_path / 'modelsearch'
@@ -83,8 +80,10 @@ def test_create_metadata_tool(tmp_path, pheno, args, kwargs):
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
 
 
-def test_create_metadata_tool_not_raises(tmp_path, pheno):
+def test_create_metadata_tool_not_raises(tmp_path, testdata, load_model_for_test):
     with chdir(tmp_path):
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+        results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
         tool_name = 'modelsearch'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
@@ -92,8 +91,12 @@ def test_create_metadata_tool_not_raises(tmp_path, pheno):
             database=database,
             tool_name=tool_name,
             tool_func=tool.create_workflow,
-            args=('ABSORPTION(ZO)',),
-            kwargs={'model': pheno},
+            args=(
+                model,
+                results,
+                'ABSORPTION(ZO)',
+            ),
+            kwargs={},
         )
 
 

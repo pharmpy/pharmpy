@@ -22,16 +22,15 @@ To initiate modelsearch in Python/R:
 
     start_model = read_model('path/to/model')
     start_model_results = read_modelfit_results('path/to/model')
-    res = run_modelsearch(search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME(ON)',
-                          algorithm='reduced_stepwise',
-                          model=start_model,
+    res = run_modelsearch(model=start_model,
                           results=start_model_results,
+                          search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME([OFF,ON])',
+                          algorithm='reduced_stepwise',
                           iiv_strategy='absorption_delay',
-                          rank_type='bic',
-                          cutoff=None)
+                          rank_type='bic')
 
-This will take an input model ``model`` with ``search_space`` as the search space, meaning adding one peripheral
-compartment and lagtime will be tried. The tool will use the 'reduced_stepwise' search ``algorithm``. IIVs on
+This will take an input ``model`` and its ``results`` and evaluate candidates given in the ``search_space``
+(see :ref:`Search space<the_search_space>` for more details). The tool will use the 'reduced_stepwise' search ``algorithm``. IIVs on
 structural parameters (such as mean absorption time) will not be added to candidates since ``iiv_strategy`` is
 set to be 'absorption_delay'. The candidate models will have BIC as the ``rank_type`` with default ``cutoff``,
 which for BIC is None/NULL.
@@ -40,7 +39,7 @@ To run modelsearch from the command line, the example code is redefined accordin
 
 .. code::
 
-    pharmpy run modelsearch path/to/model 'PERIPHERALS(1);LAGTIME(ON)' 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
+    pharmpy run modelsearch path/to/model 'ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME([OFF,ON])' --algorithm 'reduced_stepwise' --iiv_strategy 'absorption_delay' --rank_type 'bic'
 
 Arguments
 ~~~~~~~~~
@@ -52,7 +51,7 @@ Mandatory
 +-------------------------------------------------+------------------------------------------------------------------+
 | Argument                                        | Description                                                      |
 +=================================================+==================================================================+
-| ``search_space``                                | :ref:`Search space<the search space>` to test                    |
+| ``search_space``                                | :ref:`Search space<the_search_space>` to test                    |
 +-------------------------------------------------+------------------------------------------------------------------+
 | ``algorithm``                                   | :ref:`Algorithm<algorithms_modelsearch>`                         |
 |                                                 | to use (default is ``'reduced_stepwise'``)                       |
@@ -83,7 +82,7 @@ Optional
 |                                                 | (rounding_errors and sigdigs>= 0.1)"                             |
 +-------------------------------------------------+------------------------------------------------------------------+
 
-.. _the search space:
+.. _the_search_space:
 
 ~~~~~~~~~~~~~~~~
 The search space
@@ -404,13 +403,12 @@ compartment and lagtime:
 
 .. pharmpy-code::
 
-    res = run_modelsearch(search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME(ON)',
-                          algorithm='reduced_stepwise',
-                          model=start_model,
+    res = run_modelsearch(model=start_model,
                           results=start_model_results,
+                          search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME(ON)',
+                          algorithm='reduced_stepwise',
                           iiv_strategy='absorption_delay',
-                          rank_type='bic',
-                          cutoff=None)
+                          rank_type='bic')
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
 start model (in this case comparing BIC), and final ranking:

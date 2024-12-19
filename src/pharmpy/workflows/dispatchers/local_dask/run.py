@@ -79,7 +79,7 @@ def run(workflow: Workflow[T], context) -> T:
                     with LocalCluster(
                         processes=False, dashboard_address=':31058'
                     ) as cluster, Client(cluster) as client:
-                        context.log_info(f"Dispatching workflow: {client}")
+                        context.log_info(f"Dispatching workflow in {context}: {client}")
                         dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
                         try:
                             res = client.get(dsk_optimized, 'results')

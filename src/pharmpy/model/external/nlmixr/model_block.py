@@ -7,7 +7,7 @@ import pharmpy.model
 from pharmpy.basic import BooleanExpr
 from pharmpy.deps import sympy, sympy_printing
 from pharmpy.internals.code_generator import CodeGenerator
-from pharmpy.model import Assignment, Infusion, Statements
+from pharmpy.model import Assignment, Infusion, Statements, get_and_check_odes
 from pharmpy.modeling import get_bioavailability, get_lag_times
 
 from .error_model import res_error_term
@@ -108,7 +108,7 @@ def add_statements(
                 expr = s.expression
                 if expr.is_piecewise():
                     first = True
-                    for value, cond in expr.args:
+                    for value, cond in expr.piecewise_args:
                         if sympy.sympify(cond) is not sympy.S.true:
                             cond = convert_eq(cond)
                             if first:
@@ -119,9 +119,9 @@ def add_statements(
                         else:
                             cg.add('} else {')
                             if "NEWIND" in [t.name for t in expr.free_symbols] and value == 0:
-                                largest_value = expr.args[0].expr
-                                largest_cond = expr.args[0].cond
-                                for value, cond in expr.args[1:]:
+                                largest_value = expr.piecewise_args[0][0]
+                                largest_cond = expr.piecewise_args[0][1]
+                                for value, cond in expr.piecewise_args[1:]:
                                     if cond is not sympy.S.true:
                                         if cond.rhs > largest_cond.rhs:
                                             largest_value = value
@@ -173,7 +173,7 @@ def add_statements(
         cg.add(f'{dv} ~ add(add_error) + prop(prop_error)')
 
 
-def extract_add_prop(s, res_alias: set[sympy.symbols], model: pharmpy.model.Model):
+def extract_add_prop(s, res_alias: set[sympy.Symbol], model: pharmpy.model.Model):
     """
         Extract additive and proportional error terms from a sympy expression
 
@@ -216,6 +216,7 @@ def extract_add_prop(s, res_alias: set[sympy.symbols], model: pharmpy.model.Mode
 
     if isinstance(s, sympy.Pow):
         s_arg = sympy.Add.make_args(s.args[0])
+        all_pow = False
         if len(s_arg) <= 2:
             all_pow = True
             for t in s_arg:
@@ -242,13 +243,13 @@ def extract_add_prop(s, res_alias: set[sympy.symbols], model: pharmpy.model.Mode
                     if w:
                         prop = sympy.sqrt(term)
                     else:
-                        prop += term
+                        prop += term  # pyright: ignore [reportOperatorIssue]
                     prop_found = True
         if prop_found is False:
             if w:
                 add = sympy.sqrt(term)
             else:
-                add += term
+                add += term  # pyright: ignore [reportOperatorIssue]
     return add, prop
 
 
@@ -336,10 +337,11 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     cg : CodeGenerator
         Codegenerator object holding the code to be added to.
     """
-    amounts = [am.name for am in list(model.statements.ode_system.amounts)]
+    odes = get_and_check_odes(model)
+    amounts = [am.name for am in list(odes.amounts)]
     printer = ExpressionPrinter(amounts)
 
-    for eq in model.statements.ode_system.eqs:
+    for eq in odes.eqs:
         # Should remove piecewise from these equations in nlmixr
         if eq.atoms(sympy.Piecewise):
             lhs = remove_piecewise(printer.doprint(sympy.sympify(eq.lhs)))
@@ -351,7 +353,7 @@ def add_ode(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
                 f'{printer.doprint(sympy.sympify(eq.lhs))} = {printer.doprint(sympy.sympify(eq.rhs))}'
             )
 
-    for comp in model.statements.ode_system.dosing_compartments:
+    for comp in odes.dosing_compartments:
         # FIXME : Handle multiple doses with different dur/rate
         dose = comp.doses[0]
         if isinstance(dose, Infusion):

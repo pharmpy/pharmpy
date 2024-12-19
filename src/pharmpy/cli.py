@@ -133,13 +133,13 @@ def run_modelsearch(args):
     model, res = args.model
     run_tool(
         'modelsearch',
+        model=model,
+        results=res,
         search_space=args.mfl,
         algorithm=args.algorithm,
         iiv_strategy=args.iiv_strategy,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
-        results=res,
-        model=model,
         strictness=args.strictness,
         E=args.e,
         path=args.path,
@@ -152,13 +152,13 @@ def run_iivsearch(args):
     model, res = args.model
     run_tool(
         'iivsearch',
+        model=model,
+        results=res,
         algorithm=args.algorithm,
         iiv_strategy=args.iiv_strategy,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         linearize=args.linearize,
-        results=res,
-        model=model,
         keep=args.keep,
         strictness=args.strictness,
         correlation_algorithm=args.correlation_algorithm,
@@ -174,13 +174,13 @@ def run_iovsearch(args):
     model, res = args.model
     run_tool(
         'iovsearch',
+        model=model,
+        results=res,
         column=args.column,
         list_of_parameters=args.list_of_parameters,
         rank_type=args.rank_type,
         cutoff=args.cutoff,
         distribution=args.distribution,
-        results=res,
-        model=model,
         strictness=args.strictness,
         E=args.e,
         path=args.path,
@@ -214,8 +214,8 @@ def run_ruvsearch(args):
     model, res = args.model
     run_tool(
         'ruvsearch',
-        results=res,
         model=model,
+        results=res,
         groups=args.groups,
         p_value=args.p_value,
         skip=args.skip,
@@ -232,8 +232,8 @@ def run_allometry(args):
     model, res = args.model
     run_tool(
         'allometry',
-        results=res,
         model=model,
+        results=res,
         allometric_variable=args.allometric_variable,
         reference_value=args.reference_value,
         parameters=args.parameters,
@@ -754,18 +754,6 @@ def key_vals(a):
     return d
 
 
-def random_seed(seed):
-    try:
-        import numpy as np
-
-        seed = int(seed)
-        np.random.seed(seed)
-    except ValueError as e:
-        # Cannot reraise the ValueError as it would be caught by argparse
-        error(argparse.ArgumentTypeError(str(e)))
-    return seed
-
-
 # for commands taking multiple model files as input
 args_input = argparse.ArgumentParser(add_help=False)
 group_input = args_input.add_argument_group(title='inputs')
@@ -793,9 +781,9 @@ args_random = argparse.ArgumentParser(add_help=False)
 group_random = args_random.add_argument_group(title='random seed')
 group_random.add_argument(
     '--seed',
-    type=random_seed,
+    type=int,
     metavar='INTEGER',
-    help='Provide a random seed. The seed must be an integer ' 'between 0 and 2^32 - 1',
+    help='Provide a random seed. The seed must be an integer',
 )
 
 # for commands with file output
@@ -845,7 +833,7 @@ parser_definition = [
                                 'help': 'Search space to test',
                             },
                             {
-                                'name': 'algorithm',
+                                'name': '--algorithm',
                                 'type': str,
                                 'help': 'Algorithm to use',
                                 'default': 'reduced_stepwise',
@@ -1249,7 +1237,7 @@ parser_definition = [
                     'amd': {
                         'help': 'Use Automatic Model Development tool to select PK model',
                         'func': run_amd,
-                        'parents': [args_model_or_data_input],
+                        'parents': [args_model_or_data_input, args_random],
                         'args': [
                             {
                                 'name': '--results',
@@ -1374,12 +1362,6 @@ parser_definition = [
                                 'type': str,
                                 'default': 'all_final',
                                 'help': 'Whether or not to run retries tool',
-                            },
-                            {
-                                'name': '--seed',
-                                'type': int,
-                                'default': None,
-                                'help': 'Seed to be used',
                             },
                             {
                                 'name': '--parameter_uncertainty_method',

@@ -41,25 +41,23 @@ MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
 LARGE_VALID_MFL_STRING = 'COVARIATE?(@IIV, @CONTINUOUS, *);COVARIATE?(@IIV, @CATEGORICAL, CAT)'
 
 
-def test_create_workflow():
-    assert isinstance(create_workflow(MINIMAL_VALID_MFL_STRING), Workflow)
-
-
 def test_create_workflow_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    assert isinstance(create_workflow(MINIMAL_VALID_MFL_STRING, model=model), Workflow)
-
-
-def test_validate_input():
-    validate_input(MINIMAL_VALID_MFL_STRING)
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    assert isinstance(
+        create_workflow(model=model, results=results, search_space=MINIMAL_VALID_MFL_STRING),
+        Workflow,
+    )
 
 
 @pytest.mark.parametrize(
     ('model_path',), ((('nonmem', 'pheno.mod'),), (('nonmem', 'ruvsearch', 'mox3.mod'),))
 )
 def test_validate_input_with_model(load_model_for_test, testdata, model_path):
-    model = load_model_for_test(testdata.joinpath(*model_path))
-    validate_input(LARGE_VALID_MFL_STRING, model=model)
+    path = testdata.joinpath(*model_path)
+    model = load_model_for_test(path)
+    results = read_modelfit_results(path)
+    validate_input(model=model, results=results, search_space=LARGE_VALID_MFL_STRING)
 
 
 @pytest.mark.parametrize(
@@ -132,7 +130,7 @@ def test_filter_effects():
 
 @pytest.mark.parametrize(
     'p_value, no_of_nonsignificant_effects',
-    [(0, 4), (100000000000000000, 0), (10**-195, 1)],
+    [(0, 4), (100000000000000000, 0), (10**-8, 2)],
 )
 def test_extract_nonsignificant_effects(
     load_model_for_test, testdata, model_entry_factory, p_value, no_of_nonsignificant_effects
@@ -273,13 +271,17 @@ def test_validate_input_raises(
     exception,
     match,
 ):
-    model = load_model_for_test(testdata.joinpath(*model_path)) if model_path else None
+    if not model_path:
+        model_path = ('nonmem/pheno.mod',)
+    path = testdata.joinpath(*model_path)
+    model = load_model_for_test(path)
+    results = read_modelfit_results(path)
 
     harmless_arguments = dict(
         search_space=MINIMAL_VALID_MFL_STRING,
     )
 
-    kwargs = {**harmless_arguments, 'model': model, **arguments}
+    kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
@@ -544,8 +546,8 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
     steps = tables['steps']
     assert len(steps) == len(candidates)
-    assert 'CL' in steps.index[1] and 'WT' in steps.index[1]
-    assert 'CL' in steps.index[2] and 'WT' not in steps.index[2]
+    assert 'CL' in steps.index[1] and 'AGE' in steps.index[1]
+    assert 'CL' in steps.index[2] and 'AGE' not in steps.index[2]
 
     ofv_summary = tables['ofv_summary']
     assert len(ofv_summary) == 3

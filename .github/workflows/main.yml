@@ -24,7 +24,7 @@ jobs:
             python-version: '3.13'
         include:
           - tox-env: 'unit'
-          - python-version: '3.12'
+          - python-version: '3.13'
             platform: 'ubuntu-24.04'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
 
@@ -84,7 +84,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-24.04]
-        python-version: ['3.12']
+        python-version: ['3.13']
 
     runs-on: ${{ matrix.platform }}
 
@@ -101,7 +101,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-24.04]
-        python-version: ['3.12']
+        python-version: ['3.13']
 
     runs-on: ${{ matrix.platform }}
 
@@ -118,7 +118,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-24.04]
-        python-version: ['3.12']
+        python-version: ['3.13']
 
     runs-on: ${{ matrix.platform }}
 
@@ -137,7 +137,7 @@ jobs:
     strategy:
       matrix:
         platform: [ubuntu-24.04]
-        python-version: ['3.12']
+        python-version: ['3.13']
 
     runs-on: ${{ matrix.platform }}
 
