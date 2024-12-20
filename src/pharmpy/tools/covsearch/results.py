@@ -12,3 +12,4 @@ class COVSearchResults(ToolResults):
     steps: Optional[pd.DataFrame] = None
     ofv_summary: Optional[pd.DataFrame] = None
     candidate_summary: Optional[pd.DataFrame] = None
+    linear_covariate_screening_summary: Optional[pd.DataFrame] = None
