@@ -1043,9 +1043,9 @@ def _samba_create_result_tables(
         strictness=strictness,
         bic_type="mixed",
     )
-    sum_tool_bic = sum_tool_bic.rename(columns={"rank": "bic_rank"})
+    sum_tool_bic = sum_tool_bic.drop(["rank"], axis=1)
 
-    sum_tool = sum_tool_lrt.merge(sum_tool_bic[["dbic", "bic", "bic_rank"]], on="model")
+    sum_tool = sum_tool_lrt.merge(sum_tool_bic[["dbic", "bic"]], on="model")
     sum_models = summarize_modelfit_results_from_entries(model_entries)
     sum_errors = summarize_errors_from_entries(model_entries)
 
