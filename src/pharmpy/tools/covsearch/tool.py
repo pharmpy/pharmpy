@@ -127,17 +127,17 @@ def create_workflow(
     p_backward: float = 0.001,
     max_steps: int = -1,
     algorithm: Literal[
-        'scm-forward', 'scm-forward-then-backward', 'samba', 'samba-foce', 'scm-lcs'
+        'scm-forward', 'scm-forward-then-backward', 'samba', 'samba-foce'
     ] = 'scm-forward-then-backward',
     max_eval: bool = False,
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
     samba_nsamples: int = 10,
-    samba_max_covariates: Optional[int] = 3,
-    samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
-    samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
-    samba_stepwise_lcs: Optional[bool] = None,
+    _samba_max_covariates: Optional[int] = 3,
+    _samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
+    _samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
+    _samba_stepwise_lcs: Optional[bool] = None,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -173,15 +173,15 @@ def create_workflow(
     samba_nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         Default is 10, i.e. generating 10 samples per subject
-    samba_max_covariates: int or None
+    _samba_max_covariates: int or None
         Maximum number of covariate inclusion allowed in linear covariate screening for each parameter.
-    samba_linreg_method: str
+    _samba_linreg_method: str
         Method used to fit linear covariate models. Currently, Ordinary Least Squares (ols),
         Weighted Least Squares (wls), and Linear Mixed-Effects (lme) are supported.
-    samba_selection_criterion: str
+    _samba_selection_criterion: str
         Method used for linear and nonlinear model selection in SAMBA methods. Currently, BIC and LRT are
         supported.
-    samba_stepwise_lcs: bool or None
+    _samba_stepwise_lcs: bool or None
         Use stepwise linear covariate screening or not. By default, SAMBA methods use stepwise LCS whereas SCM-LCS uses
         non-stepwise LCS.
 
@@ -199,7 +199,7 @@ def create_workflow(
     >>> search_space = 'COVARIATE([CL, V], [AGE, WT], EXP)'
     >>> res = run_covsearch(model=model, results=results, search_space=search_space)      # doctest: +SKIP
     """
-    if algorithm in ["samba", "samba-foce", "scm-lcs"]:
+    if algorithm in ["samba", "samba-foce"]:
         return samba_workflow(
             model=model,
             results=results,
@@ -210,10 +210,10 @@ def create_workflow(
             max_eval=max_eval,
             algorithm=algorithm,
             nsamples=samba_nsamples,
-            max_covariates=samba_max_covariates,
-            selection_criterion=samba_selection_criterion,
-            linreg_method=samba_linreg_method,
-            stepwise_lcs=samba_stepwise_lcs,
+            max_covariates=_samba_max_covariates,
+            selection_criterion=_samba_selection_criterion,
+            linreg_method=_samba_linreg_method,
+            stepwise_lcs=_samba_stepwise_lcs,
             strictness=strictness,
         )
 
