@@ -230,9 +230,9 @@ def samba_init_search_state(context, search_space, nsamples, algorithm, input_mo
 
 
 def samba_effect_funcs_and_start_model(search_space, model):
-    model_mfl, ss_mfl = prepare_mfls(model, search_space)
-    exploratory_cov_funcs = get_covariate_funcs(ss_mfl, exploratory_covariate=True)
-    structural_cov_funcs = get_covariate_funcs(ss_mfl, exploratory_covariate=False)
+    model_mfl, ss_mfl = _prepare_mfls(model, search_space)
+    exploratory_cov_funcs = _get_covariate_funcs(ss_mfl, exploratory_covariate=True)
+    structural_cov_funcs = _get_covariate_funcs(ss_mfl, exploratory_covariate=False)
 
     filtered_model = model.replace(name="start_model", description="start")
     description = []
@@ -243,7 +243,7 @@ def samba_effect_funcs_and_start_model(search_space, model):
     )
     if covariate_to_remove:
         for cov_effect in covariate_to_remove:
-            if not is_structural_covaraite(cov_effect, structural_cov_funcs.keys()):
+            if not _is_structural_covaraite(cov_effect, structural_cov_funcs.keys()):
                 filtered_model = remove_covariate_effect(
                     filtered_model, cov_effect[0], cov_effect[1]
                 )
@@ -265,7 +265,7 @@ def samba_effect_funcs_and_start_model(search_space, model):
     return (exploratory_cov_funcs, filtered_model)
 
 
-def prepare_mfls(model, search_space):
+def _prepare_mfls(model, search_space):
     if isinstance(search_space, str):
         search_space = ModelFeatures.create_from_mfl_string(search_space)
     ss_mfl = search_space.expand(model)
@@ -278,7 +278,7 @@ def prepare_mfls(model, search_space):
     return model_mfl, ss_mfl
 
 
-def get_covariate_funcs(ss_mfl, exploratory_covariate=False):
+def _get_covariate_funcs(ss_mfl, exploratory_covariate=False):
     if exploratory_covariate:
         covariates = tuple(cov for cov in ss_mfl.covariate if cov.optional.option)
     else:
@@ -295,7 +295,7 @@ def get_covariate_funcs(ss_mfl, exploratory_covariate=False):
     return covariate_funcs
 
 
-def is_structural_covaraite(cov_effect, structural_covs):
+def _is_structural_covaraite(cov_effect, structural_covs):
     return any(
         (
             strcov_effect[0] == cov_effect[0]
@@ -820,41 +820,29 @@ def samba_nonlinear_model_selection(
     )
     best_ofv = best_candidate.modelentry.modelfit_results.ofv
 
-    # early exit if no effects
-    if not effect_funcs:
-        context.log_info(
-            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
-            f"    No covariate effects found from linear covariate screening"
-        )
-        return search_state
-
     # prepare the new nonlinear model
     updated_model = update_initial_estimates(best_model, best_candidate.modelentry.modelfit_results)
     updated_desc = best_model.description
     updated_steps = best_candidate.steps
-    update_occurs = False  # Track whether any update occurs to the model
+    # update_occurs = False  # Track whether any update occurs to the model
+    # prune effect funcs to avoid redundant or invalid updates
+    pruned_effects = _prune_effect_funcs(effect_funcs, updated_model, step, context)
+    if not pruned_effects:
+        return search_state
 
     # add covariate effects to nonlinear model
-    for cov_effect, cov_func in effect_funcs.items():
-        # check if covariate effect already exists
-        if depends_on(updated_model, cov_effect[0], cov_effect[1]):
-            context.log_info(
-                f"STEP {step} | NONLINEAR MODEL SELECTION\n"
-                f"    Covariate effect of {cov_effect[1]} on {cov_effect[0]} already exists"
-            )
-            continue
-
+    for cov_effect, cov_func in pruned_effects.items():
         updated_desc = updated_desc + f";({'-'.join(cov_effect[:3])})"
         updated_model = cov_func(updated_model)
         updated_steps = updated_steps + (SAMBAStep(lrt_alpha, DummyEffect(*cov_effect)),)
-        update_occurs = True
+        # update_occurs = True
 
-    # if no changes are made, skip further processing
-    if not update_occurs:
-        context.log_info(
-            f"STEP {step} | NONLINEAR MODEL SELECTION\n" f"    No new covariate effects are added."
-        )
-        return search_state
+    # # if no changes are made, skip further processing
+    # if not update_occurs:
+    #     context.log_info(
+    #         f"STEP {step} | NONLINEAR MODEL SELECTION\n" f"    No new covariate effects are added."
+    #     )
+    #     return search_state
 
     updated_model = updated_model.replace(name=f"step{step}", description=updated_desc)
 
@@ -899,25 +887,14 @@ def scmlcs_nonlinear_model_selection(
     best_ofv = best_candidate.modelentry.modelfit_results.ofv
     best_bic = calculate_bic(best_model, best_ofv, type="mixed")
 
-    # early exit if no effects
-    if not effect_funcs:
-        context.log_info(
-            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
-            f"    No covariate effects found from linear covariate screening"
-        )
+    # prepare new nonlinear models and effect functions
+    updated_model = update_initial_estimates(best_model, best_candidate.modelentry.modelfit_results)
+    pruned_effects = _prune_effect_funcs(effect_funcs, updated_model, step, context)
+    if not pruned_effects:
         return search_state
 
-    # prepare new nonlinear models
-    updated_model = update_initial_estimates(best_model, best_candidate.modelentry.modelfit_results)
     scores, new_models, candidate_steps = {}, {}, {}
-    for cov_effect, cov_func in effect_funcs.items():
-
-        if depends_on(updated_model, cov_effect[0], cov_effect[1]):
-            context.log_info(
-                f"STEP {step} | NONLINEAR MODEL SELECTION\n"
-                f"    Covariate effect of {cov_effect[1]} on {cov_effect[0]} already exists"
-            )
-            continue
+    for cov_effect, cov_func in pruned_effects.items():
 
         name = f"step{step}_" + "_".join(cov_effect[:3])
         desc = best_model.description + f";({'-'.join(cov_effect[:3])})"
@@ -993,6 +970,28 @@ def _nonlinear_step_lrt(parent, child):
     return LRTRes(
         df=df, parent_ofv=parent_ofv, child_ofv=child_ofv, dofv=lrt_dofv, lrt_pval=lrt_pval
     )
+
+
+def _prune_effect_funcs(effect_funcs, updated_model, step, context):
+    if not effect_funcs:
+        context.log_info(
+            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
+            f"    No covariate effects found from linear covariate screening"
+        )
+        return {}
+
+    pruned_effects = {
+        cov_effect: cov_func
+        for cov_effect, cov_func in effect_funcs.items()
+        if not depends_on(updated_model, cov_effect[0], cov_effect[1])
+    }
+    if not pruned_effects:
+        context.log_info(
+            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
+            f"     No valid covariate effects to update."
+        )
+
+    return pruned_effects
 
 
 # ============ Results =================
