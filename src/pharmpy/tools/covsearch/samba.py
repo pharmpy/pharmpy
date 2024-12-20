@@ -222,53 +222,88 @@ def samba_forward(
 # limited by unable to set $SIZES ISAMPLEMAX=250 automatically with pharmpy
 def samba_init_search_state(context, search_space, nsamples, algorithm, input_modelentry):
     model = input_modelentry.model
-    effect_funcs, filtered_model = samba_filter_search_space_and_model(search_space, model)
+    effect_funcs, filtered_model = samba_effect_funcs_and_start_model(search_space, model)
     search_state = samba_init_nonlinear_search_state(
         context, input_modelentry, filtered_model, nsamples, algorithm
     )
     return StateAndEffect(search_state=search_state, effect_funcs=effect_funcs)
 
 
-def samba_filter_search_space_and_model(search_space, model):
-    filtered_model = model.replace(name="filtered_input_model")
-    if isinstance(search_space, str):
-        search_space = ModelFeatures.create_from_mfl_string(search_space)
-    ss_mfl = search_space.expand(filtered_model)
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(filtered_model))
+def samba_effect_funcs_and_start_model(search_space, model):
+    model_mfl, ss_mfl = prepare_mfls(model, search_space)
+    exploratory_cov_funcs = get_covariate_funcs(ss_mfl, exploratory_covariate=True)
+    structural_cov_funcs = get_covariate_funcs(ss_mfl, exploratory_covariate=False)
+
+    filtered_model = model.replace(name="start_model", description="start")
+    description = []
 
     covariate_to_keep = model_mfl - ss_mfl
-    covariate_to_remove = model_mfl - covariate_to_keep
-    covariate_to_remove = covariate_to_remove.mfl_statement_list(["covariate"])
-    description = ["REMOVE"]
-    if len(covariate_to_remove) != 0:
-        for cov_effect in parse_spec(spec(filtered_model, covariate_to_remove)):
-            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+    covariate_to_remove = parse_spec(
+        spec(filtered_model, (model_mfl - covariate_to_keep).covariate)
+    )
+    if covariate_to_remove:
+        for cov_effect in covariate_to_remove:
+            if not is_structural_covaraite(cov_effect, structural_cov_funcs.keys()):
+                filtered_model = remove_covariate_effect(
+                    filtered_model, cov_effect[0], cov_effect[1]
+                )
+                description.append(f'rm({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
 
     covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
     for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
         if cov_effect[2].lower == "custom":
             filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+            description.append(f'rm({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
 
-    structural_cov = tuple(c for c in ss_mfl.covariate if not c.optional.option)
-    structural_cov_funcs = all_funcs(Model(), structural_cov)
-    if len(structural_cov_funcs) != 0:
-        description.append("ADD_STRUCT")
+    if structural_cov_funcs:
         for cov_effect, cov_func in structural_cov_funcs.items():
             filtered_model = cov_func(filtered_model)
-            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
-    description.append("ADD_EXPLOR")
-    filtered_model = filtered_model.replace(description="input;" + ";".join(description))
+            description.append(f'str({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+    if description:
+        filtered_model = filtered_model.replace(description="start;" + ";".join(description))
 
-    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
-    exploratory_cov_funcs = all_funcs(Model(), exploratory_cov)
-    exploratory_cov_funcs = {
+    return (exploratory_cov_funcs, filtered_model)
+
+
+def prepare_mfls(model, search_space):
+    if isinstance(search_space, str):
+        search_space = ModelFeatures.create_from_mfl_string(search_space)
+    ss_mfl = search_space.expand(model)
+    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
+
+    ss_mfl = ModelFeatures.create_from_mfl_statement_list(ss_mfl.mfl_statement_list(['covariate']))
+    model_mfl = ModelFeatures.create_from_mfl_statement_list(
+        model_mfl.mfl_statement_list(['covariate'])
+    )
+    return model_mfl, ss_mfl
+
+
+def get_covariate_funcs(ss_mfl, exploratory_covariate=False):
+    if exploratory_covariate:
+        covariates = tuple(cov for cov in ss_mfl.covariate if cov.optional.option)
+    else:
+        covariates = tuple(cov for cov in ss_mfl.covariate if not cov.optional.option)
+
+    covariate_funcs = all_funcs(Model(), covariates)
+    covariate_funcs = {
         cov_effect[1:-1]: cov_func
-        for cov_effect, cov_func in exploratory_cov_funcs.items()
+        for cov_effect, cov_func in covariate_funcs.items()
         if cov_effect[-1] == "ADD"
     }
-    return (exploratory_cov_funcs, filtered_model)
+
+    covariate_funcs = dict(sorted(covariate_funcs.items()))
+    return covariate_funcs
+
+
+def is_structural_covaraite(cov_effect, structural_covs):
+    return any(
+        (
+            strcov_effect[0] == cov_effect[0]
+            and strcov_effect[1] == cov_effect[1]
+            and strcov_effect[2] == cov_effect[2]
+            for strcov_effect in structural_covs
+        )
+    )
 
 
 def samba_init_nonlinear_search_state(
