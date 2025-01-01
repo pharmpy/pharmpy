@@ -560,7 +560,7 @@ def _stepwise_linear_covariate_selection(
     model_records = []  # list to store evaluation details
 
     # prepare the data
-    data_with_const = sm.add_constant(data)
+    data_with_const = sm.add_constant(data, has_constant="add")
     y = data_with_const[parameter]
 
     # fit the base model (no covariates)
@@ -663,7 +663,7 @@ def _linear_covariate_selection(
     partial_lrt = partial(_lrt, nsamples=nsamples, linreg_method=linreg_method)
 
     # prepare the data and initialize info holders
-    data_with_const = sm.add_constant(data)
+    data_with_const = sm.add_constant(data, has_constant="add")
     y = data[parameter]
     model_records = []
     scores = {}
