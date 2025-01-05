@@ -358,12 +358,13 @@ def set_samba_estimation(model, nsamples, algorithm):
             keep_every_nth_iter=50,
             tool_options={"PHITYPE": "1", "FNLETA": "0"},
         )
-
+    # sampling from the conditional distribution of random effects
     model = add_estimation_step(
         model,
         method="SAEM",
         idx=2,
-        niter=0,
+        # if proceeded with FOCE, extra niter is needed to re-estimate individual random effects
+        niter= 10 if algorithm == "samba-foce" else 0,
         isample=nsamples,
         tool_options={"EONLY": "1", "NBURN": "0", "MASSRESET": "0", "ETASAMPLES": "1"},
     )
