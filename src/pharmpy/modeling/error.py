@@ -82,7 +82,7 @@ def remove_error_model(model: Model):
 
 def set_additive_error_model(
     model: Model,
-    dv: Union[TSymbol, int, None] = None,
+    dv: Union[Expr, str, int, None] = None,
     data_trans: Optional[TExpr] = None,
     series_terms: int = 2,
 ):
@@ -186,7 +186,7 @@ def _get_prop_init(model):
 
 def set_proportional_error_model(
     model: Model,
-    dv: Union[TSymbol, int, None] = None,
+    dv: Union[Expr, str, int, None] = None,
     data_trans: Optional[TExpr] = None,
     zero_protection: bool = True,
 ):
@@ -327,7 +327,7 @@ def _get_f_above_lloq(model, f):
 
 def set_combined_error_model(
     model: Model,
-    dv: Union[TSymbol, int, None] = None,
+    dv: Union[Expr, str, int, None] = None,
     data_trans: Optional[TExpr] = None,
 ):
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
@@ -385,7 +385,7 @@ def set_combined_error_model(
         return model
     stats, y, f = _preparations(model, dv)
 
-    expr = stats.find_assignment(y.name).expression
+    expr = stats.get_assignment(y.name).expression
 
     ruv_prop = create_symbol(model, 'epsilon_p')
     ruv_add = create_symbol(model, 'epsilon_a')
@@ -462,7 +462,7 @@ def set_combined_error_model(
     return model.update_source()
 
 
-def has_additive_error_model(model: Model, dv: Union[TSymbol, int, None] = None):
+def has_additive_error_model(model: Model, dv: Union[Expr, str, int, None] = None):
     """Check if a model has an additive error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -503,7 +503,7 @@ def has_additive_error_model(model: Model, dv: Union[TSymbol, int, None] = None)
     return eps not in (expr - eps).simplify().free_symbols
 
 
-def has_proportional_error_model(model: Model, dv: Union[TSymbol, int, None] = None):
+def has_proportional_error_model(model: Model, dv: Union[Expr, str, int, None] = None):
     """Check if a model has a proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -542,7 +542,7 @@ def has_proportional_error_model(model: Model, dv: Union[TSymbol, int, None] = N
         return False
     eps = rvs_in_y.pop()
 
-    y_symbs = model.statements.error.find_assignment(y).expression.free_symbols - {eps}
+    y_symbs = model.statements.error.get_assignment(y).expression.free_symbols - {eps}
     ipredadj_symb, f_symb = _check_and_get_zero_protect(model.statements.error, y_symbs)
     if ipredadj_symb:
         ipredadj_expr = model.statements.error.full_expression(ipredadj_symb)
@@ -559,17 +559,17 @@ def _check_and_get_zero_protect(error_sset, y_symbs):
     f_cand, ipredadj_cand = None, None
     for symb in y_symbs:
         s = error_sset.find_assignment(symb)
-        if s and s.expression.is_piecewise():
+        if s is not None and s.expression.is_piecewise():
             ipredadj_cand = s
         else:
             f_cand = s
-    if ipredadj_cand:
+    if ipredadj_cand is not None and f_cand is not None:
         if ipredadj_cand.expression.free_symbols == {f_cand.symbol}:
             return ipredadj_cand.symbol, f_cand.symbol
     return None, None
 
 
-def has_combined_error_model(model: Model, dv: Union[TSymbol, int, None] = None):
+def has_combined_error_model(model: Model, dv: Union[Expr, str, int, None] = None):
     """Check if a model has a combined additive and proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -654,7 +654,7 @@ def use_thetas_for_error_stdev(model: Model):
             has_additive_error_model(model) or has_proportional_error_model(model)
         ):
             w = get_weighted_error_model_weight(model)
-            w_ass = model.statements.find_assignment(w)
+            w_ass = model.statements.get_assignment(w)
             model = model.replace(
                 statements=model.statements.reassign(w_ass.symbol, w_ass.expression * sdsymb)
             )
@@ -688,7 +688,7 @@ def set_weighted_error_model(model: Model):
     """
     stats, y, f = _preparations(model)
     epsilons = model.random_variables.epsilons
-    expr = stats.find_assignment(y.name).expression
+    expr = stats.get_assignment(y.name).expression
     ssum = 0
     q = sympy.Q.real(y)  # Dummy predicate
     for term in expr.args:
@@ -752,7 +752,7 @@ def get_weighted_error_model_weight(model: Model):
     # Defines weighted error model as e.g.: Y = F + EPS(1)*W
     stats, y, f = _preparations(model)
     # FIXME: Handle multiple DVs? Handle piecewise?
-    y_expr = stats.error.find_assignment(y).expression
+    y_expr = stats.error.get_assignment(y).expression
     rvs = model.random_variables.epsilons
     rvs_in_y = {Expr.symbol(name) for name in rvs.names if Expr.symbol(name) in y_expr.free_symbols}
 
@@ -847,7 +847,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
 
 
 def set_time_varying_error_model(
-    model: Model, cutoff: float, idv: str = 'TIME', dv: Union[TSymbol, int, None] = None
+    model: Model, cutoff: float, idv: str = 'TIME', dv: Union[Expr, str, int, None] = None
 ):
     """Set a time varying error model per time cutoff
 
@@ -879,14 +879,14 @@ def set_time_varying_error_model(
 
     """
     dv = get_dv_symbol(model, dv)
-    y = model.statements.find_assignment(dv)
-    idv = parse_expr(idv)
+    y = model.statements.get_assignment(dv)
+    idv_symbol = Expr(idv)
     theta = create_symbol(model, 'time_varying')
     eps = model.random_variables.epsilons
     expr = Expr.piecewise(
         (
             y.expression.subs({Expr.symbol(e): Expr.symbol(e) * theta for e in eps.names}),
-            idv < cutoff,
+            idv_symbol < Expr.float(cutoff),
         ),
         (y.expression, True),
     )
@@ -1074,8 +1074,8 @@ def set_power_on_ruv(
 
         if has_blq_transformation(model):
             # FIXME: Make more general
-            y_above_lloq, _ = sset.find_assignment('Y').expression.args[0]
-            sd = model.statements.find_assignment('SD')
+            y_above_lloq, _ = sset.get_assignment('Y').expression.args[0]
+            sd = model.statements.get_assignment('SD')
             sd_new = get_sd_expr(y_above_lloq, model.random_variables, Parameters.create(pset))
             sset = sset.reassign(sd.symbol, sd_new)
     model = model.replace(parameters=Parameters.create(pset), statements=sset)
@@ -1162,7 +1162,7 @@ def set_iiv_on_ruv(
         eta_dict = dict(zip(eps, etas))
 
     dv_symb = get_dv_symbol(model, dv)
-    y = model.statements.find_assignment(dv_symb)
+    y = model.statements.get_assignment(dv_symb)
 
     for e in eps:
         subs_dict = {

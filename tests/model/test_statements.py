@@ -78,6 +78,16 @@ def test_find_assignment(load_model_for_test, testdata):
     assert str(statements.find_assignment('CL').expression) == 'TVCL + V'
 
 
+def test_get_assignment(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    statements = model.statements
+
+    assert str(statements.get_assignment('CL').expression) == 'TVCL*exp(ETA_1)'
+    assert str(statements.get_assignment('S1').expression) == 'V'
+    with pytest.raises(ValueError):
+        statements.get_assignment("X")
+
+
 def test_eq_assignment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements

@@ -2215,6 +2215,12 @@ class Statements(Sequence, Immutable):
         """
         return self._lookup_last_assignment(symbol)[1]
 
+    def get_assignment(self, symbol: TSymbol) -> Assignment:
+        assignment = self.find_assignment(symbol)
+        if assignment is None:
+            raise ValueError(f"Assignment of {symbol} not found")
+        return assignment
+
     def find_assignment_index(self, symbol: TSymbol) -> Optional[int]:
         """Returns index of last assignment of symbol
 
