@@ -131,9 +131,9 @@ def create_workflow(
     ] = 'scm-forward-then-backward',
     max_eval: bool = False,
     adaptive_scope_reduction: bool = False,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
-    samba_nsamples: int = 10,
+    nsamples: int = 10,
     _samba_max_covariates: Optional[int] = 3,
     _samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
     _samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
@@ -166,11 +166,11 @@ def create_workflow(
         after all significant effects have been tested. Once all these have been
         tested, try adding the stashed effects once more with a regular forward approach.
         Default is False
-    strictness : str or None
+    strictness : str
         Strictness criteria
     naming_index_offset : int
         index offset for naming of runs. Default is 0.
-    samba_nsamples : int
+    nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         Default is 10, i.e. generating 10 samples per subject
     _samba_max_covariates: int or None
@@ -209,7 +209,7 @@ def create_workflow(
             p_backward=p_backward,
             max_eval=max_eval,
             algorithm=algorithm,
-            nsamples=samba_nsamples,
+            nsamples=nsamples,
             max_covariates=_samba_max_covariates,
             selection_criterion=_samba_selection_criterion,
             linreg_method=_samba_linreg_method,
@@ -396,7 +396,7 @@ def task_greedy_forward_search(
     p_forward: float,
     max_steps: int,
     naming_index_offset: int,
-    strictness: Optional[str],
+    strictness: str,
     adaptive_scope_reduction: bool,
     state_and_effect: tuple[SearchState, dict],
 ) -> SearchState:
@@ -438,7 +438,7 @@ def task_greedy_backward_search(
     p_backward: float,
     max_steps: int,
     naming_index_offset,
-    strictness: Optional[str],
+    strictness: str,
     state: SearchState,
 ) -> SearchState:
     def handle_effects(
@@ -500,7 +500,7 @@ def _greedy_search(
     candidate_effect_funcs: dict,
     alpha: float,
     max_steps: int,
-    strictness: Optional[str],
+    strictness: str,
     adaptive_scope_reduction: bool = False,
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
@@ -1123,7 +1123,7 @@ def validate_input(
                     f' search_space: got `{effect.operation}`,'
                     f' must be in {sorted(allowed_ops)}.'
                 )
-    if strictness is not None and "rse" in strictness.lower():
+    if "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
