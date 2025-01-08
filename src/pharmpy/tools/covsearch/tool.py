@@ -133,7 +133,7 @@ def create_workflow(
     adaptive_scope_reduction: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     naming_index_offset: Optional[int] = 0,
-    samba_nsamples: int = 10,
+    nsamples: int = 10,
     samba_max_covariates: Optional[int] = 3,
     samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
     samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
@@ -170,7 +170,7 @@ def create_workflow(
         Strictness criteria
     naming_index_offset : int
         index offset for naming of runs. Default is 0.
-    samba_nsamples : int
+    nsamples : int
         Number of samples from individual parameter conditional distribution for linear covariate model selection.
         Default is 10, i.e. generating 10 samples per subject
     samba_max_covariates: int or None
@@ -209,7 +209,7 @@ def create_workflow(
             p_backward=p_backward,
             max_eval=max_eval,
             algorithm=algorithm,
-            nsamples=samba_nsamples,
+            nsamples=nsamples,
             max_covariates=samba_max_covariates,
             selection_criterion=samba_selection_criterion,
             linreg_method=samba_linreg_method,
