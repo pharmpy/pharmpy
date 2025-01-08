@@ -364,7 +364,7 @@ def set_samba_estimation(model, nsamples, algorithm):
         method="SAEM",
         idx=2,
         # if proceeded with FOCE, extra niter is needed to re-estimate individual random effects
-        niter= 10 if algorithm == "samba-foce" else 0,
+        niter=10 if algorithm == "samba-foce" else 0,
         isample=nsamples,
         tool_options={"EONLY": "1", "NBURN": "0", "MASSRESET": "0", "ETASAMPLES": "1"},
     )
