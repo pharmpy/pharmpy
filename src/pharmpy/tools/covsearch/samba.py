@@ -358,12 +358,13 @@ def set_samba_estimation(model, nsamples, algorithm):
             keep_every_nth_iter=50,
             tool_options={"PHITYPE": "1", "FNLETA": "0"},
         )
-
+    # sampling from the conditional distribution of random effects
     model = add_estimation_step(
         model,
         method="SAEM",
         idx=2,
-        niter=0,
+        # if proceeded with FOCE, extra niter is needed to re-estimate individual random effects
+        niter= 10 if algorithm == "samba-foce" else 0,
         isample=nsamples,
         tool_options={"EONLY": "1", "NBURN": "0", "MASSRESET": "0", "ETASAMPLES": "1"},
     )
@@ -560,7 +561,7 @@ def _stepwise_linear_covariate_selection(
     model_records = []  # list to store evaluation details
 
     # prepare the data
-    data_with_const = sm.add_constant(data)
+    data_with_const = sm.add_constant(data, has_constant="add")
     y = data_with_const[parameter]
 
     # fit the base model (no covariates)
@@ -663,7 +664,7 @@ def _linear_covariate_selection(
     partial_lrt = partial(_lrt, nsamples=nsamples, linreg_method=linreg_method)
 
     # prepare the data and initialize info holders
-    data_with_const = sm.add_constant(data)
+    data_with_const = sm.add_constant(data, has_constant="add")
     y = data[parameter]
     model_records = []
     scores = {}
