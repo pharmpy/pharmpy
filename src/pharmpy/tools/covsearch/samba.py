@@ -109,7 +109,7 @@ def samba_workflow(
     selection_criterion: Literal['bic', 'lrt'] = 'bic',
     linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
     stepwise_lcs: Optional[bool] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """
     Workflow builder for SAMBA covariate search algorithm.
@@ -1000,7 +1000,7 @@ def samba_task_results(
     context,
     p_forward: float,
     p_backward: float,
-    strictness: str | None,
+    strictness: str,
     algorithm: str,
     state: LCSSearchState,
 ):
