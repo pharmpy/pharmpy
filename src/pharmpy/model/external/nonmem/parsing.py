@@ -239,7 +239,10 @@ def parse_statements(
         des_assign = des_assign_statements(control_stream, des)
         if des_assign is not None:
             for s in des_assign:
-                statements += Assignment.create(s.lhs, s.rhs)
+                assignment = Assignment.create(
+                    s.lhs, s.rhs.subs({Expr.symbol('T'): Expr.symbol('t')})
+                )
+                statements += assignment
         comp = _compartmental_model(di, dataset, control_stream, sub.advan, sub.trans, des)
         trans_amounts = {}
         if comp is None:
