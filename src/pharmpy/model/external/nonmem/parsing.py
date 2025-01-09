@@ -281,7 +281,7 @@ def convert_dvs(statements, control_stream, dvid_name):
         expr = s.expression
         if expr.is_piecewise() and Expr.symbol(f"{dvid_name}") in expr.free_symbols:
             cond = expr.args[0][1]
-            if cond.lhs == Expr.symbol(f"{dvid_name}") and cond.rhs == 1:
+            if cond.lhs == Expr.symbol(f"{dvid_name}") and cond.rhs == 1 and len(expr.args) > 1:
                 ass1 = s.replace(symbol=Expr.symbol('Y_1'), expression=expr.args[0][0])
                 ass2 = s.replace(symbol=Expr.symbol('Y_2'), expression=expr.args[1][0])
                 if expr.args[0][0] not in statements.free_symbols:
