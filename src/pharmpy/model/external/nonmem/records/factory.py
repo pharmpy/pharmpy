@@ -79,6 +79,14 @@ def get_canonical_record_name(raw_name):
             return 'COVARIANCE'
         elif bare == 'ESTM':
             return 'ESTIMATION'
+        elif bare == 'THETAS':
+            return 'THETA'
+        elif bare == 'OMEGAS':
+            return 'OMEGA'
+        elif bare == 'SIGMAS':
+            return 'SIGMA'
+        elif bare == 'TABLES':
+            return 'TABLE'
     elif bare == 'PK':
         return bare
     return None

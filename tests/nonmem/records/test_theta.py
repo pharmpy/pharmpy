@@ -14,7 +14,7 @@ INF = float("inf")
         ('$THETA 0 FIX', [(None, 0, -INF, INF, True)]),
         ('$THETA (0,1,INF)', [(None, 1, 0, INF, False)]),
         ('$THETA    12.3 \n\n', [(None, 12.3, -INF, INF, False)]),
-        ('$THETA  (0,0.00469) ; CL', [('CL', 0.00469, 0, INF, False)]),
+        ('$THETAS  (0,0.00469) ; CL', [('CL', 0.00469, 0, INF, False)]),
         (
             '$THETA  (0,3) 2 FIXED (0,.6,1) 10 (-INF,-2.7,0)  (37 FIXED)\n 19 (0,1,2)x3',
             [

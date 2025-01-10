@@ -9,7 +9,7 @@ from pharmpy.model import ModelSyntaxError, Parameter, Parameters
     [
         ('$OMEGA 1', [([None], [1.0], False, False)]),
         ('$OMEGA   0.123 \n\n', [([None], [0.123], False, False)]),
-        ('$OMEGA   (0 FIX) ; CL', [(['CL'], [0.0], True, False)]),
+        ('$OMEGAS   (0 FIX) ; CL', [(['CL'], [0.0], True, False)]),
         (
             '$OMEGA DIAG(2) 1 2 FIX',
             [
