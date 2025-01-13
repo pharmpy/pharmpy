@@ -47,7 +47,7 @@ mdurl==0.1.2
 mistune==3.1.0
 mpmath==1.3.0
 msgpack==1.1.0
-narwhals==1.21.0
+narwhals==1.21.1
 nbclient==0.10.2
 nbconvert==7.16.5
 nbformat==5.10.4
