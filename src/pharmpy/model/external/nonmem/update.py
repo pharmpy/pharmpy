@@ -2203,6 +2203,9 @@ def update_sizes(control_stream, model: Model):
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     sizes = sizes.set_LTH(len(thetas))
 
+    isamplemax = get_needed_ISAMPLEMAX(model)
+    sizes = sizes.set_ISAMPLEMAX(isamplemax)
+
     if len(str(sizes)) > 7:
         if len(all_sizes) == 0:
             sizesrec = create_record(str(sizes))
@@ -2210,6 +2213,15 @@ def update_sizes(control_stream, model: Model):
         else:
             control_stream = control_stream.replace_records([all_sizes[0]], [sizes])
     return control_stream
+
+
+def get_needed_ISAMPLEMAX(model: Model) -> int:
+    # Gets the number needed for ISAMPLEMAX
+    curmax = 0
+    for step in model.execution_steps:
+        if isinstance(step, EstimationStep) and step.method == 'SAEM' and step.isample is not None:
+            curmax = max(curmax, step.isample)
+    return curmax
 
 
 def update_input(control_stream, model: Model):
