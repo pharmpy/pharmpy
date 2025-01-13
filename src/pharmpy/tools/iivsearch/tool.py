@@ -62,7 +62,7 @@ def create_workflow(
     linearize: bool = False,
     cutoff: Optional[Union[float, int]] = None,
     keep: Optional[Iterable[str]] = ("CL",),
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
     E_p: Optional[Union[float, str]] = None,
     E_q: Optional[Union[float, str]] = None,

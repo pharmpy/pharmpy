@@ -83,7 +83,7 @@ def run_amd(
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
@@ -136,7 +136,7 @@ def run_amd(
         Path to run AMD in
     resume : bool
         Whether to allow resuming previous run
-    strictness : str or None
+    strictness : str
         Strictness criteria
     dv_types : dict or None
         Dictionary of DV types for TMDD models with multiple DVs.

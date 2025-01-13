@@ -26,7 +26,7 @@ def create_workflow(
     iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     cutoff: Optional[Union[float, int]] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     E: Optional[Union[float, str]] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.

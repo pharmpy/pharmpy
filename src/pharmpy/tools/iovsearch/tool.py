@@ -59,7 +59,7 @@ def create_workflow(
         is None (all models will be ranked)
     distribution : {'disjoint', 'joint', 'explicit', 'same-as-iiv'}
         Which distribution added IOVs should have (default is same-as-iiv)
-    strictness : str or None
+    strictness : str
         Strictness criteria
     E : float
         Expected number of predictors (used for mBIC). Must be set when using mBIC

@@ -60,7 +60,7 @@ def create_workflow(
     skip: Optional[list[Literal[tuple(SKIP)]]] = None,
     max_iter: int = 3,
     dv: Optional[int] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -80,7 +80,7 @@ def create_workflow(
         Number of iterations to run (1, 2, or 3). For models with BLQ only one iteration is supported.
     dv : int
         Which DV to assess the error model for.
-    strictness : str or None
+    strictness : str
         Strictness criteria
 
     Returns

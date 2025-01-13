@@ -33,7 +33,7 @@ def create_workflow(
     number_of_candidates: int = 5,
     fraction: float = 0.1,
     use_initial_estimates: bool = False,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     scale: Optional[Literal[tuple(SCALES)]] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
 ):

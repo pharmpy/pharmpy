@@ -781,7 +781,7 @@ def rank_models(
     models: list[Model],
     models_res: list[ModelfitResults],
     parent_dict: Optional[Union[dict[str, str], dict[Model, Model]]] = None,
-    strictness: Optional[str] = "minimization_successful",
+    strictness: str = "minimization_successful",
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
     penalties: Optional[list[float]] = None,
@@ -803,7 +803,7 @@ def rank_models(
         List of modelfit results
     parent_dict : dict
         Dict where key is child and value is parent. Only relevant for LRT, if None base will be set as parent
-    strictness : str or None
+    strictness : str
         Strictness criteria that are allowed for ranking. Default is "minimization_successful".
     rank_type : str
         Name of ranking type. Available options are 'ofv', 'aic', 'bic', 'lrt' (OFV with LRT)

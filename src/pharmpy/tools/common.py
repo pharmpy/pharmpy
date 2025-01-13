@@ -73,7 +73,7 @@ def create_results(
     rank_type: str,
     cutoff: Optional[float],
     bic_type: str = 'mixed',
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     penalties=None,
     context=None,
     **rest,
