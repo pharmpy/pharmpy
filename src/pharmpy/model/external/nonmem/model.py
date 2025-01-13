@@ -152,10 +152,9 @@ class Model(BaseModel):
             model, model.internals.old_random_variables, model._random_variables
         )
 
-        if model.internals.old_parameters != model.parameters:
-            control_stream = update_thetas(
-                model, control_stream, model.internals.old_parameters, model._parameters
-            )
+        control_stream = update_thetas(
+            model, control_stream, model.internals.old_parameters, model._parameters
+        )
 
         model = model.replace(
             internals=model.internals.replace(

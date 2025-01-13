@@ -129,12 +129,13 @@ def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters
                 new_theta_records.append(record)
                 record_index += 1
             else:
-                cur_to_change.append(param)
                 i += 1
         if record_index < len(theta_records) and len(theta_records[record_index]) == i:
             if len(cur_to_remove) != len(theta_records[record_index]):
                 # Don't remove all
-                new = theta_records[record_index].remove(cur_to_remove).update(cur_to_change)
+                new = theta_records[record_index].remove(cur_to_remove)
+                if cur_to_change:
+                    new = new.update(cur_to_change)
                 new_theta_records.append(new)
             i = 0
             cur_to_remove = []
