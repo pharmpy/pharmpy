@@ -2195,11 +2195,10 @@ def update_sizes(control_stream, model: Model):
     all_sizes = control_stream.get_records('SIZES')
     sizes = all_sizes[0] if all_sizes else create_record('$SIZES ')
     assert isinstance(sizes, SizesRecord)
-    odes = model.statements.ode_system
 
-    if odes is not None and isinstance(odes, CompartmentalSystem):
-        n_compartments = len(odes)
-        sizes = sizes.set_PC(n_compartments)
+    n_compartments = get_needed_PC(model)
+    sizes = sizes.set_PC(n_compartments)
+
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     sizes = sizes.set_LTH(len(thetas))
 
@@ -2213,6 +2212,15 @@ def update_sizes(control_stream, model: Model):
         else:
             control_stream = control_stream.replace_records([all_sizes[0]], [sizes])
     return control_stream
+
+
+def get_needed_PC(model: Model) -> int:
+    odes = model.statements.ode_system
+    if odes is not None and isinstance(odes, CompartmentalSystem):
+        n_compartments = len(odes)
+    else:
+        n_compartments = 0
+    return n_compartments
 
 
 def get_needed_ISAMPLEMAX(model: Model) -> int:
