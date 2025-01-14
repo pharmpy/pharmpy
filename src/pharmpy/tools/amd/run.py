@@ -63,6 +63,14 @@ ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
 
 
+def spawn_seed(rng) -> int:
+    # Creates a 128bit seed for a subtool
+    # FIXME: If this works well this function can be moved to modeling
+    a = rng.integers(2**64 - 1, size=2, dtype=np.uint64)
+    x = int(a[0]) * 2**64 + int(a[1])
+    return x
+
+
 def run_amd(
     input: Union[Model, Path, str, pd.DataFrame],
     results: Optional[ModelfitResults] = None,
@@ -88,7 +96,7 @@ def run_amd(
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     # seed is a common option but needs to be here since amd is not yet a proper tool
-    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
+    seed: int = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str]]] = None,
@@ -147,8 +155,8 @@ def run_amd(
     retries_strategy: str
         Whether or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.
         Default is 'final'.
-    seed : int or rng
-        Random number generator or seed to be used.
+    seed : int
+        Random seed to be used.
     parameter_uncertainty_method: {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method.
     ignore_datainfo_fallback : bool
@@ -510,11 +518,13 @@ def run_amd(
         else:
             raise ValueError(f"Unrecognized section {section} in order.")
         if retries_strategy == 'all_final':
-            func = _subfunc_retires(tool=section, strictness=strictness, seed=seed, ctx=ctx)
+            func = _subfunc_retires(
+                tool=section, strictness=strictness, seed=spawn_seed(rng), ctx=ctx
+            )
             run_subfuncs[f'{section}_retries'] = func
 
     if retries_strategy == 'final':
-        func = _subfunc_retires(tool="", strictness=strictness, seed=seed, ctx=ctx)
+        func = _subfunc_retires(tool="", strictness=strictness, seed=spawn_seed(rng), ctx=ctx)
         run_subfuncs['retries'] = func
 
     # Filter data to only contain dvid=1
@@ -587,7 +597,8 @@ def run_amd(
     ctx.store_final_model_entry(final_model)
 
     # run simulation for VPC plot
-    sim_model = set_simulation(final_model, n=300)
+    # NOTE: The seed is set to be in range for NONMEM
+    sim_model = set_simulation(final_model, n=300, seed=int(rng.integers(2**31 - 1)))
     sim_res = _run_simulation(sim_model, ctx)
     simulation_data = sim_res.table
 
