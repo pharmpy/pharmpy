@@ -1,3 +1,40 @@
+1.5.0 (2025-01-15)
+------------------
+
+New features
+============
+
+* Add validation of input models in the simulation tool
+* Add more log messages to modelsearch and iivsearch
+* Add init and lower bound as arguments to modeling.add_individual_parameter
+* Add method Statements.get_assign
+* Allow THETA, OMEGA, SIGMA and TABLE to be encoded THETAS, OMEGAS, SIGMAS and TABLES in NONMEM models
+* Automatically update the ISAMPLEMAX in $SIZES when needed
+
+Changes
+=======
+
+* Use a default seed if seed was not given to a tool
+* Improved the initial estimate of EMAX for indirect effect degradation models in structsearch
+* model and results are now mandatory arguments to modelsearch, covsearch, ruvsearch, structsearch, iovsearch, iivsearch and allometry
+* AMD can no longer take a DataFrame as input (only a dataset file). This didn't work previously. 
+
+Bugfixes
+========
+
+* AMD should now be fully deterministic given the same seed
+* Make order of candidate models in covsearch deterinistic (#3488)
+* Fix crashes of the vpc in amd if simulation table couldn't be found
+* Change lower bound for EMAX parameters to -1
+* Let the SLOPE (PD) parameter have no lower bound
+* Add allometric scaling to base model in amd when using ALLOMETRY in the search space
+* Give proper error when allometric variable couldn't be found in the dataset for modelsearch
+* Give proper error if parameter in the keep-option for iivsearch doesn't exist
+* Fix bad parsing of some NONMEM models with multiple DVs
+* Fix crashes in transformation functions for NONMEM models using T in $DES non-derivative assignments
+* Fix issues with roundtrips of NONMEM parameter records having decimal values starting with . (dot)
+
+
 1.4.0 (2024-12-04)
 ------------------
 
