@@ -13,7 +13,7 @@ The font in the logo is PT Sans, which is under the `Open Font license <https://
 Copyright
 =========
 
-Pharmpy is Copyright (C) 2018-2024  The Pharmpy developers
+Pharmpy is Copyright (C) 2018-2025  The Pharmpy developers
 
 
 GNU Lesser General Public License
