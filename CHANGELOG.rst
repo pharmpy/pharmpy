@@ -1,3 +1,11 @@
+Next version
+------------
+
+Bugfixes
+========
+
+* Handle compartment definitions in $MODEL having spaces next to commas, e.g. :code`(DEPOT, DEFOBS)`
+
 1.5.0 (2025-01-15)
 ------------------
 

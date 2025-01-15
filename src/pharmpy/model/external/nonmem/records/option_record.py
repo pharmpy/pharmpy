@@ -89,7 +89,7 @@ class OptionRecord(Record):
                     next_value = True
             if value is not None:
                 if value[0] == '(' and value[-1] == ')':
-                    yield re.split(r'\s+|,', value[1:-1])
+                    yield re.split(r'\s*,\s*|\s+', value[1:-1])
                 else:
                     yield [value]
 
