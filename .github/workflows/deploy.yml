@@ -66,6 +66,7 @@ jobs:
         run: |
           cd pharmpy
           mkdir upload
+          mv dist/*.tar.gz `ls dist/*.tar.gz -1 | sed s/-/_/`
           cp dist/*.whl dist/*.tar.gz upload
 
       - name: Wait for main checks workflow to succeed
