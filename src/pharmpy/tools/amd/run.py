@@ -72,7 +72,7 @@ def spawn_seed(rng) -> int:
 
 
 def run_amd(
-    input: Union[Model, Path, str, pd.DataFrame],
+    input: Union[Model, Path, str],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
