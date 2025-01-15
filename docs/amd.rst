@@ -591,6 +591,12 @@ Some plots and tables on the final model can be found both in the amd report and
    res.final_model_cwres_vs_idv_plot
 
 
+.. pharmpy-execute::
+   :hide-code:
+
+   res.final_model_vpc_plot
+
+
 ~~~~~~~~
 Examples
 ~~~~~~~~

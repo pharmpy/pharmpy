@@ -31,7 +31,6 @@ activate () {
 }
 activate
 pip install .
-pip install https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-linux_x86_64.whl
 
 cp_results () {
   # This converts MacOS-style temp paths to Linux-style ones
@@ -59,7 +58,7 @@ cp $TESTDATA/models/moxo_simulated_amd.csv $TESTPATH
 cp $TESTDATA/models/moxo_simulated_amd.datainfo $TESTPATH
 
 if [ "$TOOL" == 'modelsearch' ] || [ "$TOOL" == 'all' ]; then
-    pharmpy run modelsearch $TESTPATH/mox2.mod 'ABSORPTION([FO,ZO]);PERIPHERALS([0,1]);LAGTIME(ON)' 'reduced_stepwise' --path $TESTPATH/modelsearch/
+    pharmpy run modelsearch $TESTPATH/mox2.mod 'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])' 'reduced_stepwise' --path $TESTPATH/modelsearch/
   cp_results $TESTPATH/modelsearch/results.json $DEST/modelsearch_results.json
   cp $TESTPATH/modelsearch/metadata.json $DEST/metadata.json
 fi
@@ -90,7 +89,11 @@ if [ "$TOOL" == 'ruvsearch' ] || [ "$TOOL" == 'all' ]; then
 fi
 
 if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
-    pharmpy run amd $TESTPATH/moxo_simulated_amd.csv --modeltype 'basic_pk' --administration 'oral' --search_space 'ABSORPTION(FO);TRANSITS([0,3,5]);LAGTIME([ON, OFF]);PERIPHERALS(0..1);LET(CATEGORICAL, [SEX]);LET(CONTINUOUS, [AGE])' --occasion 'VISI' --allometric_variable 'WT' --path $TESTPATH/amd/
+    cp $TESTDATA/moxo_sim_data.csv $TESTPATH
+    pharmpy run amd $TESTPATH/moxo_sim_data.csv --modeltype 'basic_pk' --administration 'oral' \
+            --cl_init 30 --vc_init 100 --mat_init 0.3 --strategy 'default' --occasion 'VISI' --allometric_variable 'WT' \
+            --search_space 'LET(CATEGORICAL,[SEX,NYHA,COMP,ACE,DIG,DIU]);LET(CONTINUOUS,[AGE,RF]);COVARIATE?(@IIV,@CONTINUOUS,[LIN,EXP]);COVARIATE?(@IIV,@CATEGORICAL, CAT)'  \
+            --path $TESTPATH/amd/
   cp_results $TESTPATH/amd/results.json $DEST/amd_results.json
 fi
 
