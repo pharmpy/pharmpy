@@ -62,6 +62,7 @@ from textwrap import dedent
 
 import pharmpy
 from pharmpy.internals.fs.path import path_absolute
+from pharmpy.tools.amd.run import DEFAULT_SEED
 
 from .deps import pandas as pd
 
@@ -265,11 +266,11 @@ def run_estmethod(args):
 def run_amd(args):
     from pharmpy.tools import run_amd
 
-    input = args.model_or_dataset
+    input = args.model_or_path
     dv_types = key_vals(args.dv_types)
     for key, value in dv_types.items():
         dv_types[key] = int(value)
-
+    print(type(input))
     run_amd(
         input,
         results=args.results,
@@ -294,7 +295,9 @@ def run_amd(args):
         dv_types=dv_types,
         mechanistic_covariates=args.mechanistic_covariates,
         retries_strategy=args.retries_strategy,
-        seed=args.seed,
+        seed=(
+            args.seed if args.seed is not None else DEFAULT_SEED
+        ),  # seed is a common option but not in AMD
         parameter_uncertainty_method=args.parameter_uncertainty_method,
         ignore_datainfo_fallback=bool(args.ignore_datainfo_fallback),
     )
@@ -734,6 +737,16 @@ def input_model_or_dataset(path):
     return obj
 
 
+def input_model_or_path(path):
+    path = check_input_path(path)
+    try:
+        from pharmpy.model import Model
+
+        return Model.parse_model(path)
+    except TypeError:
+        return str(path)
+
+
 def comma_list(s):
     if s == '':
         return []
@@ -775,6 +788,16 @@ group_model_or_data_input.add_argument(
     type=input_model_or_dataset,
     help='input model or dataset file',
 )
+
+args_model_or_path_input = argparse.ArgumentParser(add_help=False)
+group_model_or_path_input = args_model_or_path_input.add_argument_group(title='data_path')
+group_model_or_path_input.add_argument(
+    'model_or_path',
+    metavar='FILE',
+    type=input_model_or_path,
+    help='input model or dataset path',
+)
+
 
 # for commands involving randomization
 args_random = argparse.ArgumentParser(add_help=False)
@@ -1237,7 +1260,7 @@ parser_definition = [
                     'amd': {
                         'help': 'Use Automatic Model Development tool to select PK model',
                         'func': run_amd,
-                        'parents': [args_model_or_data_input, args_random],
+                        'parents': [args_model_or_path_input, args_random],
                         'args': [
                             {
                                 'name': '--results',
