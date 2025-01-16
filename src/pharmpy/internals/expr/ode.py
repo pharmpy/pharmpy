@@ -12,8 +12,13 @@ def canonical_ode_rhs(expr: sympy.Expr):
 
 def _expand_rates(expr: sympy.Expr, free_images: set[sympy.Expr]):
     if isinstance(expr, sympy.Add):
+
+        def func(x):
+            return _expand_rates(x, free_images)
+
         return sympy.expand(
-            sympy.Add(*map(lambda x: _expand_rates(x, free_images), expr.args)), deep=False
+            sympy.Add(*map(func, expr.args)),
+            deep=False,
         )
     if (
         isinstance(expr, sympy.Mul)
