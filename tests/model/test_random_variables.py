@@ -6,6 +6,7 @@ import sympy
 
 from pharmpy.basic import Expr, Matrix
 from pharmpy.model import (
+    FiniteDistribution,
     JointNormalDistribution,
     NormalDistribution,
     RandomVariables,
@@ -907,3 +908,102 @@ def test_replace_with_sympy_rvs():
 
     assert expr_symbs._sympy_() != expr_sympy
     assert not all(isinstance(arg, sympy.Symbol) for arg in expr_sympy.args)  # pragma: no cover
+
+
+def test_finite_construction_and_attributes():
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: 'THETA1', 2: '1 - THETA1'})
+    assert dist.names == ('MIX',)
+    assert dist.level == 'IIV'
+    probs = {1: symbol("THETA1"), 2: 1 - symbol("THETA1")}
+    assert dist.probabilities == probs
+    assert dict(dist.probabilities) == probs
+    newdist = dist.replace(name="M")
+    assert newdist.names == ('M',)
+    assert newdist.level == 'IIV'
+    assert dict(newdist.probabilities) == probs
+
+
+def test_finite_mean_and_variance():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    mean = 2 - theta
+    assert dist.mean.simplify() == mean
+    variance = theta * (1 - theta)
+    assert dist.variance.simplify() == variance
+    assert dist.get_variance("MIX").simplify() == variance
+    with pytest.raises(KeyError):
+        dist.get_variance("ULP")
+    assert dist.get_covariance("MIX", "MIX").simplify() == variance
+    with pytest.raises(KeyError):
+        dist.get_covariance("MIX", "ULP")
+
+
+def test_finite_free_symbols():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    assert dist.free_symbols == {theta, symbol("MIX")}
+
+
+def test_finite_subs():
+    theta = symbol("THETA1")
+    newsymb = symbol("NEW")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    correct = FiniteDistribution.create("MIX", 'iiv', {1: newsymb, 2: 1 - newsymb})
+    assert dist.subs({theta: newsymb}) == correct
+
+
+def test_finite_evalf():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    d = {theta: 0.3}
+    num = dist.evalf(d)
+    samples = num.sample(size=10, rng=np.random.default_rng(9532))
+    assert list(samples) == [2, 1, 2, 2, 2, 2, 2, 1, 1, 2]
+
+
+def test_finite_eq():
+    theta = symbol("THETA1")
+    d1 = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    d2 = FiniteDistribution.create("MIX", 'iiv', {1: theta, 3: 1 - theta})
+    assert d1 == d1
+    assert d2 == d2
+    assert d1 != d2
+    assert hash(d1) == hash(d1)
+    assert hash(d1) != hash(d2)
+    assert d1 != 23
+
+
+def test_finite_dict():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    d = dist.to_dict()
+    assert d == {
+        'class': 'FiniteDistribution',
+        'name': 'MIX',
+        'level': 'IIV',
+        'probabilities': {
+            1: "Symbol('THETA1')",
+            2: "Add(Integer(1), Mul(Integer(-1), Symbol('THETA1')))",
+        },
+    }
+    new = FiniteDistribution.from_dict(d)
+    assert new == dist
+
+
+def test_finite_repr():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    assert repr(dist) == "MIX ~ Finite({P(1) = THETA₁, P(2) = 1 - THETA₁})"
+
+
+def test_finite_latex():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    assert (
+        dist._repr_latex_()
+        == r"$MIX\sim  Finite \left(P(1) = \theta_{1}, P(2) = 1 - \theta_{1}\right)$"
+    )
+    assert (
+        dist.latex_string(aligned=True)
+        == r"MIX & \sim  Finite \left(P(1) = \theta_{1}, P(2) = 1 - \theta_{1}\right)"
+    )

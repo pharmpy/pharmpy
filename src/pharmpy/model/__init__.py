@@ -1,6 +1,11 @@
 from .data import DatasetError, DatasetWarning
 from .datainfo import ColumnInfo, DataInfo
-from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
+from .distributions.symbolic import (
+    Distribution,
+    FiniteDistribution,
+    JointNormalDistribution,
+    NormalDistribution,
+)
 from .execution_steps import EstimationStep, ExecutionSteps, SimulationStep
 from .model import (
     Model,
@@ -38,6 +43,7 @@ __all__ = (
     'Distribution',
     'EstimationStep',
     'ExecutionSteps',
+    'FiniteDistribution',
     'get_and_check_dataset',
     'get_and_check_odes',
     'Infusion',

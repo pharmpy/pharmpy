@@ -3,12 +3,13 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Mapping, Sequence, Sized
 from math import sqrt
-from typing import Any, Union
+from typing import Any, Self, Union
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, frozenmapping
 
+from .numeric import FiniteDistribution as NumericFiniteDistribution
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
 from .numeric import NormalDistribution as NumericNormalDistribution
 from .numeric import NumericDistribution
@@ -53,9 +54,36 @@ class Distribution(Sized, Hashable, Immutable):
     def evalf(self, parameters: dict[Expr, float]) -> NumericDistribution:
         pass
 
-    @abstractmethod
     def __getitem__(self, index) -> Distribution:
-        pass
+        # NOTE: This needs to be overridden for joint distributions
+        if isinstance(index, int):
+            if index != 0:
+                raise IndexError(index)
+
+        elif isinstance(index, str):
+            if index != self._name:
+                raise KeyError(index)
+
+        else:
+            if isinstance(index, slice):
+                index = list(
+                    range(index.start, index.stop, index.step if index.step is not None else 1)
+                )
+                if index != [0]:
+                    raise IndexError(index)
+
+            if isinstance(index, Collection):
+                if len(index) != 1 or (self._name not in index and 0 not in index):
+                    raise KeyError(index)
+
+            else:
+                raise KeyError(index)
+
+        return self
+
+    def __len__(self):
+        # NOTE: This needs to be overridden for joint distributions
+        return 1
 
     @property
     @abstractmethod
@@ -196,32 +224,6 @@ class NormalDistribution(Distribution):
             # NOTE: This handles missing parameter substitutions
             raise ValueError(e)
 
-    def __getitem__(self, index):
-        if isinstance(index, int):
-            if index != 0:
-                raise IndexError(index)
-
-        elif isinstance(index, str):
-            if index != self._name:
-                raise KeyError(index)
-
-        else:
-            if isinstance(index, slice):
-                index = list(
-                    range(index.start, index.stop, index.step if index.step is not None else 1)
-                )
-                if index != [0]:
-                    raise IndexError(index)
-
-            if isinstance(index, Collection):
-                if len(index) != 1 or (self._name not in index and 0 not in index):
-                    raise KeyError(index)
-
-            else:
-                raise KeyError(index)
-
-        return self
-
     def get_variance(self, name: str) -> Expr:
         if name != self._name:
             raise KeyError(name)
@@ -242,9 +244,6 @@ class NormalDistribution(Distribution):
             and self._mean == other._mean
             and self._variance == other._variance
         )
-
-    def __len__(self):
-        return 1
 
     def __hash__(self):
         return hash((self._name, self._level, self._mean, self._variance))
@@ -589,6 +588,181 @@ class JointNormalDistribution(Distribution):
 
     def __setstate__(self, state):
         self.__dict__.update(state)
+
+
+class FiniteDistribution(Distribution):
+    """A finite discrete distribution
+
+    Parameters
+    ----------
+    name : str
+        Name of the random variable
+    level : str
+        Name of the variability level
+    probabilities : frozenmapping[int, Expr]
+        Probabilities for each value
+
+    Example
+    -------
+    >>> from pharmpy.model import FiniteDistribution, Parameter
+    >>> mixprob = Parameter.create('MIXPROB', 0.1)
+    >>> dist = FiniteDistribution.create("MIX", "IIV", {1: mixprob.symbol, 2: 1 - mixprob.symbol)
+    >>> dist
+    MIX ~ Finite({P(1)=MIXPROB, P(2)=1 - MIXPROB)
+    """
+
+    def __init__(self, name: str, level: str, probabilities: frozenmapping[int, Expr]):
+        self._name = name
+        self._level = level
+        self._probabilities = probabilities
+
+    @classmethod
+    def create(cls, name: str, level: str, probabilities: Mapping[int, Union[Expr, str]]):
+        level = level.upper()
+        probs = {n: Expr(expr) for n, expr in probabilities.items()}
+        return cls(name, level, frozenmapping(probs))
+
+    def replace(self, **kwargs) -> Self:
+        """Replace properties and create a new FiniteDistribution"""
+        name = kwargs.get('name', self._name)
+        level = kwargs.get('level', self._level)
+        probabilities = kwargs.get('mean', self._probabilities)
+        new = FiniteDistribution.create(name, level, probabilities)
+        return new
+
+    @property
+    def names(self) -> tuple[str, ...]:
+        return (self._name,)
+
+    @property
+    def level(self) -> str:
+        return self._level
+
+    @property
+    def probabilities(self) -> frozenmapping[int, Expr]:
+        return self._probabilities
+
+    @property
+    def mean(self) -> Expr:
+        s = Expr.integer(0)
+        for n, expr in self._probabilities.items():
+            s += Expr.integer(n) * expr
+        return s
+
+    @property
+    def variance(self) -> Expr:
+        mean = self.mean
+        s = Expr.integer(0)
+        for n, expr in self._probabilities.items():
+            x = Expr.integer(n)
+            s += (x - mean) ** Expr.integer(2) * expr
+        return s
+
+    @property
+    def free_symbols(self) -> set[Expr]:
+        """Free symbols including random variable itself"""
+        symbs = {Expr.symbol(self._name)}
+        for _, expr in self._probabilities.items():
+            symbs |= expr.free_symbols
+        return symbs
+
+    def subs(self, d: Mapping[TExpr, TExpr]) -> Self:
+        """Substitute expressions
+
+        Parameters
+        ----------
+        d : dict
+            Dictionary of from: to pairs for substitution
+
+        Examples
+        --------
+        >>> import sympy
+        >>> from pharmpy.model import FiniteDistribution, Parameter
+        >>> mixprob = Parameter.create('MIXPROB', 0.1)
+        >>> dist = FiniteDistribution.create("MIX", "IIV", {1: mixprob.symbol, 2: 1 - mixprob.symbol)
+        >>> dist
+        MIX ~ Finite({P(1)=MIXPROB, P(2)=1 - MIXPROB)
+        >>> dist = dist.subs({mixprob.symbol: Expr.symbol("NEWSYMBOL")})
+        >>> dist
+        MIX ~ Finite({P(1)=NEWSYMBOL, P(2)=1 - NEWSYMBOL)
+
+        """
+        newprobs = {}
+        for n, expr in self._probabilities.items():
+            newprobs[n] = expr.subs(d)
+        name = _subs_name(self._name, d)
+        return FiniteDistribution(name, self._level, frozenmapping(newprobs))
+
+    def evalf(self, parameters: dict[TSymbol, float]) -> NumericDistribution:
+        numprobs = {}
+        for n, expr in self._probabilities.items():
+            numprobs[n] = float(expr.subs(parameters))
+        return NumericFiniteDistribution(numprobs)
+
+    def get_variance(self, name: str) -> Expr:
+        if name != self._name:
+            raise KeyError(name)
+        return self.variance
+
+    def get_covariance(self, name1: str, name2: str) -> Expr:
+        if name1 == name2 == self._name:
+            return self.variance
+        else:
+            raise KeyError((name1, name2))
+
+    def __eq__(self, other: Any):
+        if not isinstance(other, FiniteDistribution):
+            return NotImplemented
+        return (
+            self._name == other._name
+            and self._level == other._level
+            and self._probabilities == other._probabilities
+        )
+
+    def __hash__(self):
+        return hash((self._name, self._level, self._probabilities))
+
+    def to_dict(self) -> dict[str, Any]:
+        probs = {n: expr.serialize() for n, expr in self._probabilities.items()}
+        return {
+            'class': self.__class__.__name__,
+            'name': self._name,
+            'level': self._level,
+            'probabilities': probs,
+        }
+
+    @classmethod
+    def from_dict(cls, d: Mapping[str, Any]):
+        probs = {n: Expr.deserialize(expr) for n, expr in d['probabilities'].items()}
+        return cls(
+            name=d['name'],
+            level=d['level'],
+            probabilities=frozenmapping(probs),
+        )
+
+    def __repr__(self):
+        probs = []
+        for n, expr in self._probabilities.items():
+            probs.append(f'P({n}) = {expr.unicode()}')
+        return f'{Expr.symbol(self._name).unicode()}' f' ~ Finite({{' f'{", ".join(probs)}' f'}})'
+
+    def latex_string(self, aligned: bool = False) -> str:
+        if aligned:
+            align_str = ' & '
+        else:
+            align_str = ''
+        rv = Expr.symbol(self._name).latex()
+        probs = []
+        for n, expr in self._probabilities.items():
+            probs.append(f'P({n}) = {expr.latex()}')
+        latex = (
+            rv
+            + align_str
+            + f'\\sim  {Expr.symbol("Finite").latex()} \\left({", ".join(probs)}\\right)'
+        )
+        if not aligned:
+            latex = '$' + latex + '$'
+        return latex
 
 
 def _subs_name(name: str, d: Mapping[TExpr, TExpr]) -> str:
