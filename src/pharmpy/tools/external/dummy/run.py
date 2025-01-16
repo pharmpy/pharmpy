@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Parameters
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import create_rng, get_observations, write_csv, write_model
 from pharmpy.workflows import ModelEntry
@@ -107,8 +108,14 @@ def create_dummy_modelfit_results(model, ref=None):
     else:
         ofv = rng.uniform(-20, 20)
 
-    params = pd.Series(model.parameters.inits)
-    params = params.apply(lambda x: x + rng.random() * 0.1)
+    def _get_param_init(param):
+        init = param.init + rng.random() * 0.1
+        if init > param.upper or init < param.lower:
+            init = (param.upper - param.lower) / 2
+        return param.replace(init=init)
+
+    params = list(map(lambda x: _get_param_init(x), list(model.parameters)))
+    params = pd.Series(Parameters.create(params).inits)
 
     rse = pd.Series(model.parameters.inits)
     rse.iloc[:] = rng.uniform(-1, 1)

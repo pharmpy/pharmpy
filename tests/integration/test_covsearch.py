@@ -29,7 +29,7 @@ from pharmpy.tools import run_covsearch, run_tool
             'COVARIATE?([CL,VC],[AGE,WT],exp,*)',
             'scm-forward-then-backward',
             4,
-            'covsearch_run15',
+            'covsearch_run18',
         ),
     ],
 )
