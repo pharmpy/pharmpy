@@ -3,7 +3,7 @@ from __future__ import annotations
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Mapping, Sequence, Sized
 from math import sqrt
-from typing import Any, Self, Union
+from typing import Any, Union
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
@@ -16,6 +16,9 @@ from .numeric import NumericDistribution
 
 
 class Distribution(Sized, Hashable, Immutable):
+    def __init__(self, name):
+        self._name = name
+
     @abstractmethod
     def replace(self, **kwargs) -> Distribution:
         pass
@@ -81,7 +84,7 @@ class Distribution(Sized, Hashable, Immutable):
 
         return self
 
-    def __len__(self):
+    def __len__(self) -> int:
         # NOTE: This needs to be overridden for joint distributions
         return 1
 
@@ -490,7 +493,7 @@ class JointNormalDistribution(Distribution):
             and self._variance == other._variance
         )
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._names)
 
     def __hash__(self):
@@ -622,7 +625,7 @@ class FiniteDistribution(Distribution):
         probs = {n: Expr(expr) for n, expr in probabilities.items()}
         return cls(name, level, frozenmapping(probs))
 
-    def replace(self, **kwargs) -> Self:
+    def replace(self, **kwargs) -> FiniteDistribution:
         """Replace properties and create a new FiniteDistribution"""
         name = kwargs.get('name', self._name)
         level = kwargs.get('level', self._level)
@@ -666,7 +669,7 @@ class FiniteDistribution(Distribution):
             symbs |= expr.free_symbols
         return symbs
 
-    def subs(self, d: Mapping[TExpr, TExpr]) -> Self:
+    def subs(self, d: Mapping[TExpr, TExpr]) -> FiniteDistribution:
         """Substitute expressions
 
         Parameters
