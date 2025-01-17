@@ -606,9 +606,9 @@ class FiniteDistribution(Distribution):
     -------
     >>> from pharmpy.model import FiniteDistribution, Parameter
     >>> mixprob = Parameter.create('MIXPROB', 0.1)
-    >>> dist = FiniteDistribution.create("MIX", "IIV", {1: mixprob.symbol, 2: 1 - mixprob.symbol)
+    >>> dist = FiniteDistribution.create("MIX", "IIV", {1: mixprob.symbol, 2: 1 - mixprob.symbol})
     >>> dist
-    MIX ~ Finite({P(1)=MIXPROB, P(2)=1 - MIXPROB)
+    MIX ~ Finite({P(1) = MIXPROB, P(2) = 1 - MIXPROB})
     """
 
     def __init__(self, name: str, level: str, probabilities: frozenmapping[int, Expr]):
@@ -677,14 +677,15 @@ class FiniteDistribution(Distribution):
         Examples
         --------
         >>> import sympy
+        >>> from pharmpy.basic import Expr
         >>> from pharmpy.model import FiniteDistribution, Parameter
         >>> mixprob = Parameter.create('MIXPROB', 0.1)
-        >>> dist = FiniteDistribution.create("MIX", "IIV", {1: mixprob.symbol, 2: 1 - mixprob.symbol)
+        >>> dist = FiniteDistribution.create("MIX", "IIV", {1: mixprob.symbol, 2: 1 - mixprob.symbol})
         >>> dist
-        MIX ~ Finite({P(1)=MIXPROB, P(2)=1 - MIXPROB)
+        MIX ~ Finite({P(1) = MIXPROB, P(2) = 1 - MIXPROB})
         >>> dist = dist.subs({mixprob.symbol: Expr.symbol("NEWSYMBOL")})
         >>> dist
-        MIX ~ Finite({P(1)=NEWSYMBOL, P(2)=1 - NEWSYMBOL)
+        MIX ~ Finite({P(1) = NEWSYMBOL, P(2) = 1 - NEWSYMBOL})
 
         """
         newprobs = {}
