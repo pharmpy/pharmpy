@@ -2208,7 +2208,8 @@ def update_sizes(control_stream, model: Model):
     if len(str(sizes)) > 7:
         if len(all_sizes) == 0:
             sizesrec = create_record(str(sizes))
-            control_stream = control_stream.insert_record(sizesrec)
+            # $SIZES should always be first record, so insert at index 0
+            control_stream = control_stream.insert_record(sizesrec, at_index=0)
         else:
             control_stream = control_stream.replace_records([all_sizes[0]], [sizes])
     return control_stream
