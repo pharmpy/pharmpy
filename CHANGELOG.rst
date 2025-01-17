@@ -5,6 +5,7 @@ Bugfixes
 ========
 
 * Handle compartment definitions in $MODEL having spaces next to commas, e.g. :code`(DEPOT, DEFOBS)`
+* Fix bug in tools where if a model had less parameters than its parent it would not update initial estimate
 
 1.5.0 (2025-01-15)
 ------------------

@@ -35,14 +35,13 @@ def update_initial_estimates(
         ):
             return model
 
-    try:
-        model = set_initial_estimates(
-            model,
-            modelfit_results.parameter_estimates,
-            move_est_close_to_bounds=move_est_close_to_bounds,
-        )
-    except (ValueError, np.linalg.LinAlgError):
-        pass
+    model = set_initial_estimates(
+        model,
+        modelfit_results.parameter_estimates,
+        move_est_close_to_bounds=move_est_close_to_bounds,
+        strict=False,
+    )
+
     return model
 
 
