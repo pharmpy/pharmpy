@@ -1007,3 +1007,9 @@ def test_finite_latex():
         dist.latex_string(aligned=True)
         == r"MIX & \sim  Finite \left(P(1) = \theta_{1}, P(2) = 1 - \theta_{1}\right)"
     )
+
+
+def test_finite_index():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    assert dist[0] == dist

@@ -16,9 +16,6 @@ from .numeric import NumericDistribution
 
 
 class Distribution(Sized, Hashable, Immutable):
-    def __init__(self, name):
-        self._name = name
-
     @abstractmethod
     def replace(self, **kwargs) -> Distribution:
         pass
@@ -57,36 +54,13 @@ class Distribution(Sized, Hashable, Immutable):
     def evalf(self, parameters: dict[Expr, float]) -> NumericDistribution:
         pass
 
-    def __getitem__(self, index) -> Distribution:
-        # NOTE: This needs to be overridden for joint distributions
-        if isinstance(index, int):
-            if index != 0:
-                raise IndexError(index)
-
-        elif isinstance(index, str):
-            if index != self._name:
-                raise KeyError(index)
-
-        else:
-            if isinstance(index, slice):
-                index = list(
-                    range(index.start, index.stop, index.step if index.step is not None else 1)
-                )
-                if index != [0]:
-                    raise IndexError(index)
-
-            if isinstance(index, Collection):
-                if len(index) != 1 or (self._name not in index and 0 not in index):
-                    raise KeyError(index)
-
-            else:
-                raise KeyError(index)
-
-        return self
-
     def __len__(self) -> int:
         # NOTE: This needs to be overridden for joint distributions
         return 1
+
+    @abstractmethod
+    def __getitem__(self, item) -> Distribution:
+        pass
 
     @property
     @abstractmethod
@@ -237,6 +211,9 @@ class NormalDistribution(Distribution):
             return self._variance
         else:
             raise KeyError((name1, name2))
+
+    def __getitem__(self, index) -> Distribution:
+        return _getitem_single(self, index)
 
     def __eq__(self, other: Any):
         if not isinstance(other, NormalDistribution):
@@ -723,6 +700,9 @@ class FiniteDistribution(Distribution):
             and self._probabilities == other._probabilities
         )
 
+    def __getitem__(self, index) -> Distribution:
+        return _getitem_single(self, index)
+
     def __hash__(self):
         return hash((self._name, self._level, self._probabilities))
 
@@ -777,3 +757,32 @@ def _subs_name(name: str, d: Mapping[TExpr, TExpr]) -> str:
     else:
         new_name = name
     return new_name if isinstance(new_name, str) else str(new_name)
+
+
+def _getitem_single(
+    dist: Union[NormalDistribution, FiniteDistribution], index
+) -> Union[NormalDistribution, FiniteDistribution]:
+    if isinstance(index, int):
+        if index != 0:
+            raise IndexError(index)
+
+    elif isinstance(index, str):
+        if index != dist._name:
+            raise KeyError(index)
+
+    else:
+        if isinstance(index, slice):
+            index = list(
+                range(index.start, index.stop, index.step if index.step is not None else 1)
+            )
+            if index != [0]:
+                raise IndexError(index)
+
+        if isinstance(index, Collection):
+            if len(index) != 1 or (dist._name not in index and 0 not in index):
+                raise KeyError(index)
+
+        else:
+            raise KeyError(index)
+
+    return dist
