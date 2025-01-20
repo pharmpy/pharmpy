@@ -57,3 +57,9 @@ def test_matmul():
         m1 @ 1
     with pytest.raises(TypeError):
         1 @ m1
+
+
+def test_eigenvals():
+    m1 = Matrix(((1, 0), (0, 1)))
+    evs = m1.eigenvals()
+    assert evs == {1: 2}
