@@ -2387,7 +2387,7 @@ def has_linear_odes(model: Model) -> bool:
     return odes.t not in symbs
 
 
-def has_linear_odes_with_real_eigenvalues(model: Model):
+def has_linear_odes_with_real_eigenvalues(model: Model) -> bool:
     """Check if model has a linear ode system with real eigenvalues
 
     Parameters
@@ -2423,7 +2423,7 @@ def has_linear_odes_with_real_eigenvalues(model: Model):
     for eig in eigs:
         real = is_real(model, eig)
         if real is None or not real:
-            return real
+            return bool(real)
     return True
 
 
