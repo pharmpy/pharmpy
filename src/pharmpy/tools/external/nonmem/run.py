@@ -154,9 +154,9 @@ def execute_model(model_entry, context):
 
 def nmfe_path():
     if os.name == 'nt':
-        nmfe_candidates = ['nmfe75.bat', 'nmfe74.bat', 'nmfe73.bat']
+        nmfe_candidates = ('nmfe76.bat', 'nmfe75.bat', 'nmfe74.bat', 'nmfe73.bat')
     else:
-        nmfe_candidates = ['nmfe75', 'nmfe74', 'nmfe73']
+        nmfe_candidates = ('nmfe76', 'nmfe75', 'nmfe74', 'nmfe73')
     default_path = conf.default_nonmem_path
     if default_path != Path(''):
         path = default_path / 'run'
