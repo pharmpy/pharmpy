@@ -2418,12 +2418,46 @@ def has_linear_odes_with_real_eigenvalues(model: Model) -> bool:
         return False
     if not has_linear_odes(model):
         return False
+    if _check_all_cycles(model):
+        return True
     M = odes.compartmental_matrix
     eigs = M.eigenvals().keys()
     for eig in eigs:
         real = is_real(model, eig)
         if real is None or not real:
             return bool(real)
+    return True
+
+
+def _check_all_cycles(model):
+    # This checks a sufficient but not necessary condition on compartmental systems
+    # to have all eigenvalues real that is faster to compute than the
+    # direct calculation of eigenvalues.
+    # If for all cycles (assuming simple cycles) in the compartmental system
+    # the product of all rates in one direction is equal to the product of all rates
+    # in the opposite direction the compartmental system has only real valued eigenvalues
+    # Source: Keith Godfrey, "Compartmental Models and Their Applications", 1983, p30-31
+
+    import networkx as nx
+    import sympy
+
+    # FIXME: Implement methods instead of using networkx and sympy directly
+    odes = model.statements.ode_system
+    g = model.statements.ode_system._g
+    for cycle in nx.simple_cycles(g):
+        prod1 = prod2 = Expr.integer(1)  # Products for the two directions
+        for i, comp in enumerate(cycle):
+            if i != len(cycle) - 1:  # Not final element
+                flow1 = odes.get_flow(cycle[i], cycle[i + 1])
+                flow2 = odes.get_flow(cycle[i + 1], cycle[i])
+            else:  # Final element so we go back to first compartment in cycle
+                flow1 = odes.get_flow(cycle[i], cycle[0])
+                flow2 = odes.get_flow(cycle[0], cycle[i])
+            prod1 *= flow1
+            prod2 *= flow2
+        eq = sympy.sympify(prod1).equals(sympy.sympify(prod2))
+        if not eq:
+            return False
     return True
 
 
