@@ -164,12 +164,17 @@ def test_set_initial_estimates_move_est(load_model_for_test, pheno_path):
     param_est = res.parameter_estimates.copy()
     param_est['IIV_CL_IIV_V'] = 0.0285  # Correlation > 0.99
     param_est['IIV_S1'] = 0.0005
+    model1 = set_initial_estimates(model, param_est, move_est_close_to_bounds=True)
 
-    model = set_initial_estimates(model, param_est, move_est_close_to_bounds=True)
+    assert model1.parameters['IVCL'].init == param_est['IVCL']
+    assert model1.parameters['IIV_S1'].init == 0.01
+    assert round(model1.parameters['IIV_CL_IIV_V'].init, 6) == 0.025757
 
-    assert model.parameters['IVCL'].init == param_est['IVCL']
-    assert model.parameters['IIV_S1'].init == 0.01
-    assert round(model.parameters['IIV_CL_IIV_V'].init, 6) == 0.025757
+    param_est['IIV_CL_IIV_V'] = -0.3  # Correlation < -0.99
+
+    model2 = set_initial_estimates(model, param_est, move_est_close_to_bounds=True)
+    assert model2.parameters['IVCL'].init == param_est['IVCL']
+    assert round(model2.parameters['IIV_CL_IIV_V'].init, 6) == -0.025757
 
 
 def test_set_initial_estimates_zero_fix(load_model_for_test, pheno_path):

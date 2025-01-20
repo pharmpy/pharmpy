@@ -4,7 +4,14 @@ from collections.abc import Mapping
 from typing import Iterable, Optional, Union
 
 from pharmpy.basic import Expr
-from pharmpy.model import Assignment, Model, Parameter, Parameters, RandomVariables
+from pharmpy.model import (
+    Assignment,
+    JointNormalDistribution,
+    Model,
+    Parameter,
+    Parameters,
+    RandomVariables,
+)
 
 
 def get_thetas(model: Model):
@@ -179,34 +186,42 @@ def _move_est_close_to_bounds(model: Model, est_new):
     sdcorr = rvs.parameters_sdcorr(parameter_estimates)
     newdict = est_new.copy()
     for dist in rvs:
-        rvs = dist.names
-        if len(rvs) > 1:
+        if isinstance(dist, JointNormalDistribution):
             sigma_sym = dist.variance
             for i in range(sigma_sym.rows):
                 for j in range(sigma_sym.cols):
                     param_name = sigma_sym[i, j].name
+                    if param_name not in est_new.keys():
+                        continue
                     if i != j:
-                        if sdcorr[param_name] > 0.99:
+                        if -0.99 < sdcorr[param_name] < 0.99:
+                            init = est_new[param_name]
+                        else:
                             name_i, name_j = sigma_sym[i, i].name, sigma_sym[j, j].name
                             # From correlation to covariance
-                            corr_new = 0.9
+                            corr_new = 0.9 if sdcorr[param_name] > 0.99 else -0.9
                             sd_i, sd_j = sdcorr[name_i], sdcorr[name_j]
-                            newdict[param_name] = corr_new * sd_i * sd_j
+                            init = corr_new * sd_i * sd_j
                     else:
-                        if param_name in est_new.keys():
-                            if not _is_zero_fix(pset[param_name]) and est_new[param_name] < 0.001:
-                                newdict[param_name] = 0.01
+                        init = _get_diag_init(pset[param_name], est_new[param_name])
+                    newdict[param_name] = init
         else:
             param_name = dist.variance.name
-            if not pset[param_name].fix:
-                if param_name in est_new.keys():
-                    if not _is_zero_fix(pset[param_name]) and est_new[param_name] < 0.001:
-                        newdict[param_name] = 0.01
+            if param_name not in est_new.keys():
+                continue
+            newdict[param_name] = _get_diag_init(pset[param_name], est_new[param_name])
     return newdict
 
 
 def _is_zero_fix(param):
     return param.init == 0 and param.fix
+
+
+def _get_diag_init(param, init):
+    if not param.fix and not _is_zero_fix(param) and init < 0.001:
+        return 0.01
+    else:
+        return init
 
 
 def set_upper_bounds(model: Model, bounds: Mapping[str, float], strict: bool = True):
