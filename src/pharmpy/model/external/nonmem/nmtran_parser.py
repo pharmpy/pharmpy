@@ -93,6 +93,9 @@ class NMTranControlStream:
 
     def get_records(self, name, problem_no=0):
         """Return a list of all records of a certain type in the current $PROBLEM"""
+        # $SIZES is not problem-specific
+        if name == 'SIZES':
+            return [rec for rec in self.records if rec.name == 'SIZES']
         current_problem = -1
         found = []
         for record in self.records:
@@ -118,7 +121,7 @@ class NMTranControlStream:
         name = record.name
         assert isinstance(name, str)
 
-        if at_index:
+        if at_index is not None:
             newrecs = self.records[0:at_index] + (record,) + self.records[at_index:]
             return NMTranControlStream(records=newrecs)
 
