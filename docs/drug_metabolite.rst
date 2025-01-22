@@ -36,7 +36,7 @@ The code to initiate structsearch for a drug metabolite model in Python/R is sta
 | ``type``                                        | Need to be set to 'drug_metabolite' (see :ref:`type<the model types>` |
 |                                                 | for more)                                                             |
 +-------------------------------------------------+-----------------------------------------------------------------------+
-| ``search_space``                                | :ref:`Search space<the search space>` of models to test               |
+| ``search_space``                                | :ref:`Search space<drug metabolite search space>` of models to test   |
 +-------------------------------------------------+-----------------------------------------------------------------------+
 | ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.           |
 |                                                 | Default is :code:`"minimization_successful or                         |

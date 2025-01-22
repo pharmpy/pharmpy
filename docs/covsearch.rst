@@ -188,7 +188,7 @@ dependent on the effects that are already present in the input model. All covari
 initially part of the model but are *not* part of the search space will be removed before starting 
 the search. Covariate effects that are part of both the search space *and* the model will be left in 
 the model but are removed from the search space. In this initial stage, any structural covariates 
-defined within the search space (see :ref:`search_space<effects_covsearch>`) will be added as well. If any
+defined within the search space (see :ref:`search_space<search_space_covsearch>`) will be added as well. If any
 filtration is done, a new "filtered_input_model" is created, otherwise the input model will be used.
 
 .. note::
