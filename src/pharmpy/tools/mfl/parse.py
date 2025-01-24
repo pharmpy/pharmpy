@@ -645,13 +645,9 @@ class ModelFeatures:
         lnt = {}
         if tool is None or tool in ["modelsearch"]:
             lnt = _lnt_helper(self.absorption, other.absorption, other, "absorption", lnt)
-
             lnt = _lnt_helper(self.elimination, other.elimination, other, "elimination", lnt)
-
             lnt = self._lnt_transits(other, lnt)
-
             lnt = self._lnt_peripherals(other, lnt, "pk")
-
             lnt = _lnt_helper(self.lagtime, other.lagtime, other, "lagtime", lnt)
 
         # TODO : Use in covsearch instead of taking diff
@@ -663,13 +659,9 @@ class ModelFeatures:
                     warnings.warn("Need argument 'model' in order to compare covariates")
 
             lnt = self._lnt_peripherals(other, lnt, "metabolite")
-
             lnt = _lnt_helper(self.direct_effect, other.direct_effect, other, "direct_effect", lnt)
-
             lnt = _lnt_helper(self.effect_comp, other.effect_comp, other, "effect_comp", lnt)
-
             lnt = self._lnt_indirect_effect(other, lnt)
-
             lnt = _lnt_helper(self.metabolite, other.metabolite, other, "metabolite", lnt)
 
         return lnt
