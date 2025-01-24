@@ -4,6 +4,7 @@ import pytest
 
 from pharmpy.modeling import create_basic_pk_model, set_direct_effect
 from pharmpy.tools.mfl.helpers import all_funcs
+from pharmpy.tools.mfl.least_number_of_transformations import least_number_of_transformations
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features, parse
 from pharmpy.tools.mfl.statement.feature.absorption import Absorption
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate, Ref
@@ -1378,7 +1379,7 @@ def test_least_number_of_transformations(load_model_for_test, pheno_path):
     ss = "ABSORPTION([FO,ZO]);ELIMINATION(ZO);PERIPHERALS(1);TRANSITS(1)"
     ss_mfl = parse(ss, mfl_class=True)
 
-    lnt = model_mfl.least_number_of_transformations(ss_mfl, model)
+    lnt = least_number_of_transformations(model_mfl, ss_mfl, model)
     assert ('ABSORPTION', 'FO') in lnt
     assert ('ELIMINATION', 'ZO') in lnt
     assert ('PERIPHERALS', 1) in lnt

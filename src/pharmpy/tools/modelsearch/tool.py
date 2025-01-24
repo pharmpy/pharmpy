@@ -7,6 +7,7 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import set_initial_estimates
 from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results
+from pharmpy.tools.mfl.least_number_of_transformations import least_number_of_transformations
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
@@ -231,7 +232,7 @@ def create_base_model(ss, allometry, model_or_model_entry):
     model_mfl = get_model_features(model, supress_warnings=True)
     model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
     added_features = ""
-    lnt = model_mfl.least_number_of_transformations(ss, tool="modelsearch")
+    lnt = least_number_of_transformations(model_mfl, ss, tool="modelsearch")
     for name, func in lnt.items():
         base = func(base)
         added_features += f';{name[0]}({name[1]})'
