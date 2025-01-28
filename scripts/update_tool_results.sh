@@ -91,7 +91,7 @@ fi
 if [ "$TOOL" == 'amd' ] || [ "$TOOL" == 'all' ]; then
     cp $TESTDATA/moxo_sim_data.csv $TESTPATH
     pharmpy run amd $TESTPATH/moxo_sim_data.csv --modeltype 'basic_pk' --administration 'oral' \
-            --cl_init 30 --vc_init 100 --mat_init 0.3 --strategy 'default' --occasion 'VISI' --allometric_variable 'WT' \
+            --cl_init 30 --vc_init 100 --mat_init 0.3 --parameter_uncertainty_method SANDWICH  --strategy 'default' --occasion 'VISI' --allometric_variable 'WT' \
             --search_space 'LET(CATEGORICAL,[SEX,NYHA,COMP,ACE,DIG,DIU]);LET(CONTINUOUS,[AGE,RF]);COVARIATE?(@IIV,@CONTINUOUS,[LIN,EXP]);COVARIATE?(@IIV,@CATEGORICAL, CAT)'  \
             --path $TESTPATH/amd/
   cp_results $TESTPATH/amd/results.json $DEST/amd_results.json
