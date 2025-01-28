@@ -2216,6 +2216,33 @@ class Statements(Sequence, Immutable):
         return self._lookup_last_assignment(symbol)[1]
 
     def get_assignment(self, symbol: TSymbol) -> Assignment:
+        """Returns last assignment of symbol
+
+        This method assumes that the assignment exists
+
+        Parameters
+        ----------
+        symbol : Symbol or str
+            Symbol to get
+
+        Returns
+        -------
+        Assignment
+            The Assignment
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.get_assignment("CL")
+                   ETA_CL
+        CL = TVCL⋅ℯ
+
+        See Also
+        --------
+        find_assignment : Find assignment (allowing for the assigment to not exist)
+        """
+
         assignment = self.find_assignment(symbol)
         if assignment is None:
             raise ValueError(f"Assignment of {symbol} not found")
