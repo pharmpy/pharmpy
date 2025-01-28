@@ -5,6 +5,8 @@ from typing import Union
 
 from pharmpy.deps import symengine, sympy
 from pharmpy.deps.sympy_printing import pretty
+from pharmpy.internals.expr.assumptions import assume_all
+from pharmpy.internals.expr.leaves import free_images_and_symbols
 
 
 class ExprPrinter(pretty.PrettyPrinter):
@@ -218,6 +220,12 @@ class Expr:
 
     def is_nonnegative(self) -> bool | None:
         return sympy.ask(sympy.Q.nonnegative(self._expr))
+
+    def is_real(self) -> bool | None:
+        sympy_expr = self._sympy_()
+        return sympy.ask(
+            sympy.Q.real(sympy_expr), assume_all(sympy.Q.real, free_images_and_symbols(sympy_expr))
+        )
 
     def piecewise_fold(self) -> Expr:
         if isinstance(self._expr, symengine.Piecewise):

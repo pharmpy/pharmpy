@@ -8,8 +8,6 @@ from typing import Iterable, Literal, Optional, Sequence, TypeVar, Union
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.assumptions import assume_all
-from pharmpy.internals.expr.leaves import free_images_and_symbols
 from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.graph.directed.connected_components import strongly_connected_component_of
 from pharmpy.internals.graph.directed.inverse import inverse as graph_inverse
@@ -1918,10 +1916,7 @@ def is_real(model: Model, expr: TExpr) -> Optional[bool]:
     True
 
     """
-    sympy_expr = sympy.sympify(expr)
-    return sympy.ask(
-        sympy.Q.real(sympy_expr), assume_all(sympy.Q.real, free_images_and_symbols(sympy_expr))
-    )
+    return Expr(expr).is_real()
 
 
 def is_linearized(model: Model):
