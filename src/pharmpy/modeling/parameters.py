@@ -210,6 +210,26 @@ def _move_est_close_to_bounds(model: Model, est_new):
             if param_name not in est_new.keys():
                 continue
             newdict[param_name] = _get_diag_init(pset[param_name], est_new[param_name])
+    for param, init in est_new.items():
+        if param in rvs.parameter_names:
+            continue
+        if param not in pset.names:  # Has been checked via strict option
+            continue
+
+        upper_limit = 0.95 * pset[param].upper
+        lower_limit = 0.95 * pset[param].lower
+
+        if init == 0:
+            init = 0.01
+
+        init = max(init, lower_limit)
+        init = min(init, upper_limit)
+
+        if init < lower_limit or init > upper_limit:
+            init = (upper_limit - lower_limit) / 2
+
+        newdict[param] = init
+
     return newdict
 
 
