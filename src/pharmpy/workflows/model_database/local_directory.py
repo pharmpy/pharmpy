@@ -96,7 +96,7 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
         path.mkdir(parents=True, exist_ok=True)
         self.path = path_absolute(path)
         self.file_extension = file_extension
-        self.ignored_names = frozenset(('stdout', 'stderr', 'nonmem.json', 'nlmixr.json'))
+        self.ignored_names = frozenset(('stdout', 'stderr', 'nlmixr.json'))
 
     def store_model(self, model):
         pass

@@ -1,4 +1,3 @@
-import json
 import os
 import os.path
 import shutil
@@ -93,17 +92,6 @@ def execute_model(model_entry, context):
         'path': str(model_path),
     }
 
-    plugin = {
-        'commands': [
-            {
-                'args': args,
-                'returncode': result.returncode,
-                'stdout': 'stdout',
-                'stderr': 'stderr',
-            }
-        ]
-    }
-
     if model.internals.control_stream.get_records('ESTIMATION'):
         modelfit_results = parse_modelfit_results(model, model_path / basename)
     else:
@@ -139,11 +127,15 @@ def execute_model(model_entry, context):
         txn.store_local_file(stdout)
         txn.store_local_file(stderr)
 
-        plugin_path = model_path / 'nonmem.json'
-        with open(plugin_path, 'w') as f:
-            json.dump(plugin, f, indent=2)
-
-        txn.store_local_file(plugin_path)
+        commands = [
+            {
+                'args': args,
+                'returncode': result.returncode,
+                'stdout': 'stdout',
+                'stderr': 'stderr',
+            }
+        ]
+        metadata['commands'] = commands
 
         txn.store_metadata(metadata)
 
