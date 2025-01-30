@@ -166,6 +166,7 @@ def run_iivsearch(args):
         E_p=args.e_p,
         E_q=args.e_q,
         path=args.path,
+        broadcaster=args.broadcaster,
     )
 
 
@@ -808,6 +809,16 @@ group_random.add_argument(
     help='Provide a random seed. The seed must be an integer',
 )
 
+# common tool options
+args_tools = argparse.ArgumentParser(add_help=False)
+group_tools = args_tools.add_argument_group(title='common tool options')
+group_tools.add_argument(
+    '--broadcaster',
+    type=str,
+    metavar='NAME',
+    help='Name of the broadcaster to use for log messages',
+)
+
 # for commands with file output
 args_output = argparse.ArgumentParser(add_help=False)
 group_output = args_output.add_argument_group(title='outputs')
@@ -903,7 +914,7 @@ parser_definition = [
                     'iivsearch': {
                         'help': 'Search for best model IIV model',
                         'func': run_iivsearch,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': '--algorithm',

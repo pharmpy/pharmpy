@@ -3,6 +3,7 @@ from typing import Any
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.internals.fs.path import normalize_user_given_path
+from pharmpy.workflows.contexts.broadcasters import canonicalize_broadcaster_name
 
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
 
@@ -25,7 +26,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
     """
     all_dispatching_options = ('context', 'path', 'broadcaster')
     all_common_options = ('resume', 'esttool', 'seed')
-    dispatching_options = {}
+    dispatching_options = {'broadcaster': None}
     common_options = {}
     other_options = {}
     for key, value in d.items():
@@ -45,4 +46,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
             other_options[key] = value
     if 'seed' not in common_options:
         common_options['seed'] = DEFAULT_SEED
+    dispatching_options['broadcaster'] = canonicalize_broadcaster_name(
+        dispatching_options['broadcaster']
+    )
     return dispatching_options, common_options, other_options

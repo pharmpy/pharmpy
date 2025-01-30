@@ -675,6 +675,7 @@ def _setup_run(kwargs):
         args=tuple(),
         tool_options=tool_options,
         common_options=common_options,
+        dispatching_options=dispatching_options,
     )
 
     # Workaround to remove common options from metadata to mimic real tools.

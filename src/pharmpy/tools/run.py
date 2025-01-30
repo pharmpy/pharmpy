@@ -210,6 +210,7 @@ def run_tool_with_name(
         args=args,
         tool_options=tool_options,
         common_options=common_options,
+        dispatching_options=dispatching_options,
     )
 
     ctx.store_metadata(tool_metadata)
@@ -258,10 +259,12 @@ def create_metadata(
     args: Sequence,
     tool_options: Mapping[str, Any],
     common_options: Mapping[str, Any],
+    dispatching_options: Mapping[str, Any],
 ):
     tool_metadata = _create_metadata_tool(database, tool_name, tool_func, args, tool_options)
     setup_metadata = _create_metadata_common(database, dispatcher, tool_name, common_options)
     tool_metadata['common_options'] = setup_metadata
+    tool_metadata['dispatching_options'] = dispatching_options
 
     return tool_metadata
 
@@ -504,21 +507,16 @@ def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, C
     if ctx is None:
         from pharmpy.workflows import default_context
 
-        broadcaster = dispatching_options.get('broadcaster', None)
         common_path = dispatching_options.get('path', None)
         if common_path is not None:
             path = Path(dispatching_options['path'])
-            ctx = default_context(
-                path.name, path.parent, common_options=common_options, broadcaster=broadcaster
-            )
+            ctx = default_context(path.name, path.parent, common_options=common_options)
         else:
             n = 1
             while True:
                 name = f"{toolname}{n}"
                 if not default_context.exists(name):
-                    ctx = default_context(
-                        name, common_options=common_options, broadcaster=broadcaster
-                    )
+                    ctx = default_context(name, common_options=common_options)
                     break
                 n += 1
 

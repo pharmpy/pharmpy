@@ -4,11 +4,10 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Literal, Optional, Union
 
-import pharmpy.workflows.contexts.broadcasters.null
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.workflows.contexts.broadcasters.terminal import broadcast_message
+from pharmpy.workflows.contexts.broadcasters import select_broadcaster
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
@@ -36,17 +35,12 @@ class Context(ABC):
         name: str,
         ref: Optional[str] = None,
         common_options: dict[str, Any] = None,
-        broadcaster: Optional[str] = None,
     ):
         # If the context already exists it will be opened
         # otherwise a new top level context will be created
         # An implementation needs to create the model database here
         # If ref is None an implementation specific default ref will be used
         self._name = name
-        if broadcaster is not None and broadcaster.lower() == 'null':
-            self.broadcast_message = pharmpy.workflows.contexts.broadcasters.null.broadcast_message
-        else:
-            self.broadcast_message = broadcast_message
 
     @abstractmethod
     def __repr__(self) -> str:
@@ -158,6 +152,16 @@ class Context(ABC):
             ctxpath = self.get_model_context_path(model)
         date = datetime.now()
         self.store_message(severity, ctxpath, date, message)
+        if not hasattr(self, 'broadcast_message'):
+            metadata = self.retrieve_metadata()
+            if (
+                'dispatching_options' in metadata
+                and 'broadcaster' in metadata['dispatching_options']
+            ):
+                name = metadata['dispatching_options']['broadcaster']
+            else:
+                name = 'terminal'  # FIXME: Don't want default one more time here
+            self.broadcast_message = select_broadcaster(name)
         self.broadcast_message(severity, ctxpath, date, message)
 
     def log_info(self, message: str, model: Optional[Model] = None):
