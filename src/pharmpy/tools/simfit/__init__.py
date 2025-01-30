@@ -1,5 +1,4 @@
-"""simfit
-"""
+"""simfit"""
 
 from .results import SimfitResults
 

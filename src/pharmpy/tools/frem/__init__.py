@@ -1,5 +1,4 @@
-"""FREM
-"""
+"""FREM"""
 
 from .results import FREMResults
 

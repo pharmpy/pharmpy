@@ -1,5 +1,4 @@
-"""DataInfo is a companion to the dataset. It contains metadata of the dataset
-"""
+"""DataInfo is a companion to the dataset. It contains metadata of the dataset"""
 
 from __future__ import annotations
 
@@ -166,7 +165,7 @@ class ColumnInfo(Immutable):
 
     @staticmethod
     def _canonicalize_categories(
-        categories: Union[Mapping[str, str], Sequence[str], None]
+        categories: Union[Mapping[str, str], Sequence[str], None],
     ) -> Union[frozenmapping[str, str], tuple[str, ...], None]:
         if isinstance(categories, dict):
             return frozenmapping(categories)

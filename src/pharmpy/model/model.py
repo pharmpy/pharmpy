@@ -232,7 +232,7 @@ class Model(Immutable):
 
     @staticmethod
     def _canonicalize_dependent_variables(
-        dvs: Optional[Mapping[TSymbol, int]]
+        dvs: Optional[Mapping[TSymbol, int]],
     ) -> frozenmapping[Expr, int]:
         if dvs is None:
             dvs = {Expr.symbol('y'): 1}

@@ -1,5 +1,4 @@
-"""CDD
-"""
+"""CDD"""
 
 from .results import CDDResults
 

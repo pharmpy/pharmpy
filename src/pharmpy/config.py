@@ -1,5 +1,4 @@
-"""Pharmpy configuration
-"""
+"""Pharmpy configuration"""
 
 import configparser
 import os

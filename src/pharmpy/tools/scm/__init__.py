@@ -1,5 +1,4 @@
-"""SCM
-"""
+"""SCM"""
 
 from .psn_wrapper import have_scm, run_scm
 from .results import SCMResults
