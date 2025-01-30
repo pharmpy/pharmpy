@@ -181,7 +181,14 @@ def _get_nonfixed_rvs(model):
 def _move_est_close_to_bounds(model: Model, est_new):
     rvs, pset = _get_nonfixed_rvs(model), model.parameters
 
-    parameter_estimates = model.parameters.inits
+    newdict = _move_omega_ests(rvs, pset, est_new)
+    newdict = _move_theta_est(rvs, pset, est_new, newdict)
+
+    return newdict
+
+
+def _move_omega_ests(rvs, pset, est_new):
+    parameter_estimates = pset.inits
     parameter_estimates.update(est_new)  # Need all numerical values for sdcorr
     sdcorr = rvs.parameters_sdcorr(parameter_estimates)
     newdict = est_new.copy()
@@ -210,6 +217,10 @@ def _move_est_close_to_bounds(model: Model, est_new):
             if param_name not in est_new.keys():
                 continue
             newdict[param_name] = _get_diag_init(pset[param_name], est_new[param_name])
+    return newdict
+
+
+def _move_theta_est(rvs, pset, est_new, newdict):
     for param, init in est_new.items():
         if param in rvs.parameter_names:
             continue
@@ -229,7 +240,6 @@ def _move_est_close_to_bounds(model: Model, est_new):
             init = (upper_limit - lower_limit) / 2
 
         newdict[param] = init
-
     return newdict
 
 
