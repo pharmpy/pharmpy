@@ -270,7 +270,6 @@ def run_amd(args):
     dv_types = key_vals(args.dv_types)
     for key, value in dv_types.items():
         dv_types[key] = int(value)
-    print(type(input))
     run_amd(
         input,
         results=args.results,
