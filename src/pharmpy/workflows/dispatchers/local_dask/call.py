@@ -47,4 +47,18 @@ def abort_workflow():
     from dask.distributed import get_client
 
     client = get_client()
+    _turn_of_dask_logging()
     client.close()
+
+
+def _turn_of_dask_logging():
+    # This avoids "WARNING Async instruction for" messages
+    # from distributed when aborting the workflow
+    import logging
+
+    dask_logger = logging.getLogger("distributed.worker.state_machine")
+
+    def log_filter(record):
+        return False
+
+    dask_logger.addFilter(log_filter)
