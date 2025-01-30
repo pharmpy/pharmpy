@@ -34,7 +34,6 @@ class Context(ABC):
         self,
         name: str,
         ref: Optional[str] = None,
-        common_options: dict[str, Any] = None,
     ):
         # If the context already exists it will be opened
         # otherwise a new top level context will be created

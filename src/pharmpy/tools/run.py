@@ -510,13 +510,13 @@ def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, C
         common_path = dispatching_options.get('path', None)
         if common_path is not None:
             path = Path(dispatching_options['path'])
-            ctx = default_context(path.name, path.parent, common_options=common_options)
+            ctx = default_context(path.name, path.parent)
         else:
             n = 1
             while True:
                 name = f"{toolname}{n}"
                 if not default_context.exists(name):
-                    ctx = default_context(name, common_options=common_options)
+                    ctx = default_context(name)
                     break
                 n += 1
 
