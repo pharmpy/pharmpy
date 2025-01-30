@@ -26,8 +26,9 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
     """
     all_dispatching_options = ('context', 'path', 'broadcaster')
     all_common_options = ('resume', 'esttool', 'seed')
+    # The defaults below will be overwritten by the user given options
     dispatching_options = {'broadcaster': None}
-    common_options = {}
+    common_options = {'seed': DEFAULT_SEED}
     other_options = {}
     for key, value in d.items():
         if key in all_dispatching_options:
@@ -44,8 +45,6 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
             common_options[key] = value
         else:
             other_options[key] = value
-    if 'seed' not in common_options:
-        common_options['seed'] = DEFAULT_SEED
     dispatching_options['broadcaster'] = canonicalize_broadcaster_name(
         dispatching_options['broadcaster']
     )
