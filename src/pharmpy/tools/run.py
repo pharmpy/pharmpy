@@ -204,7 +204,6 @@ def run_tool_with_name(
 
     tool_metadata = create_metadata(
         database=ctx,
-        dispatcher=dispatcher,
         tool_name=name,
         tool_func=create_workflow,
         args=args,
@@ -253,7 +252,6 @@ def run_tool_with_name(
 
 def create_metadata(
     database: Context,
-    dispatcher,
     tool_name: str,
     tool_func,
     args: Sequence,
@@ -262,7 +260,7 @@ def create_metadata(
     dispatching_options: Mapping[str, Any],
 ):
     tool_metadata = _create_metadata_tool(database, tool_name, tool_func, args, tool_options)
-    setup_metadata = _create_metadata_common(database, dispatcher, tool_name, common_options)
+    setup_metadata = _create_metadata_common(database, tool_name, common_options)
     tool_metadata['common_options'] = setup_metadata
     tool_metadata['dispatching_options'] = dispatching_options
 
@@ -428,10 +426,9 @@ def _create_metadata_tool(
 
 
 def _create_metadata_common(
-    database: Context, dispatcher, toolname: Optional[str], common_options: Mapping[str, Any]
+    database: Context, toolname: Optional[str], common_options: Mapping[str, Any]
 ):
     setup_metadata = {}
-    setup_metadata['dispatcher'] = dispatcher.__name__
     # FIXME: Naming of workflows/tools should be consistent (db and input name of tool)
     setup_metadata['context'] = {
         'class': type(database).__name__,
@@ -496,12 +493,10 @@ def _now():
 
 
 def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, Context]:
-    try:
-        dispatcher = dispatching_options['dispatcher']
-    except KeyError:
-        from pharmpy.workflows import default_dispatcher
+    # FIXME: Currently only one dispatcher
+    from pharmpy.workflows import default_dispatcher
 
-        dispatcher = default_dispatcher
+    dispatcher = default_dispatcher
 
     ctx = dispatching_options.get('context', None)
     if ctx is None:

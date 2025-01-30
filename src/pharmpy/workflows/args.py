@@ -24,10 +24,10 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
     -------
     Tuple of dispatching options, common options and other option dictionaries
     """
-    all_dispatching_options = ('context', 'path', 'broadcaster')
+    all_dispatching_options = ('context', 'path', 'broadcaster', 'dispatcher')
     all_common_options = ('resume', 'esttool', 'seed')
     # The defaults below will be overwritten by the user given options
-    dispatching_options = {'broadcaster': None}
+    dispatching_options = {'broadcaster': None, 'dispatcher': 'local_dask'}
     common_options = {'seed': DEFAULT_SEED}
     other_options = {}
     for key, value in d.items():

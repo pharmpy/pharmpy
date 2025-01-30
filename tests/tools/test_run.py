@@ -41,7 +41,7 @@ from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
     summarize_errors_from_entries,
     summarize_modelfit_results_from_entries,
 )
-from pharmpy.workflows import LocalDirectoryContext, ModelEntry, local_dask
+from pharmpy.workflows import LocalDirectoryContext, ModelEntry
 
 
 @pytest.mark.parametrize(
@@ -104,17 +104,14 @@ def test_create_metadata_common(tmp_path):
     with chdir(tmp_path):
         name = 'modelsearch'
 
-        dispatcher = local_dask
         database = LocalDirectoryContext(name, Path.cwd())
 
         metadata = _create_metadata_common(
             database=database,
-            dispatcher=dispatcher,
             toolname=name,
             common_options={},
         )
 
-        assert metadata['dispatcher'] == 'pharmpy.workflows.dispatchers.local_dask'
         assert metadata['context']['class'] == 'LocalDirectoryContext'
         path = Path(metadata['context']['path'])
         assert path.stem == 'modelsearch'
@@ -122,12 +119,10 @@ def test_create_metadata_common(tmp_path):
 
         path = 'tool_database_path'
 
-        dispatcher = local_dask
         database = LocalDirectoryContext(path)
 
         metadata = _create_metadata_common(
             database=database,
-            dispatcher=dispatcher,
             toolname=name,
             common_options={'path': path},
         )

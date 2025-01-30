@@ -669,7 +669,6 @@ def _setup_run(kwargs):
     dispatcher, ctx = get_run_setup(dispatching_options, common_options, 'amd')
     tool_metadata = create_metadata(
         database=ctx,
-        dispatcher=dispatcher,
         tool_name='amd',
         tool_func=run_amd,
         args=tuple(),
