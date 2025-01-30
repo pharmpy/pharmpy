@@ -99,7 +99,7 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
         return super()._print_Add(sympy.Add(*terms, evaluate=False), order='none')
 
     def _print_Float(self, expr):
-        printed = super()._print_Float(expr)
+        printed = str(super()._print_Float(expr))
         return printed.upper()
 
     def _print_Integer(self, expr):
