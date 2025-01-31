@@ -239,6 +239,7 @@ class Context(ABC):
         self._store_model(INPUT_MODEL_NAME, me)
 
     def retrieve_input_model_entry(self) -> ModelEntry:
+        """Retrieve the ModelEntry of the model marked as input"""
         me = self._retrieve_me(INPUT_MODEL_NAME)
         return me
 
@@ -246,16 +247,19 @@ class Context(ABC):
         self._store_model(FINAL_MODEL_NAME, me)
 
     def retrieve_final_model_entry(self) -> ModelEntry:
-        model = self._retrieve_me(FINAL_MODEL_NAME)
-        return model
+        """Retrieve the ModelEntry of the model marked as final"""
+        me = self._retrieve_me(FINAL_MODEL_NAME)
+        return me
 
     def call_workflow(self, workflow, unique_name: str):
+        """Ask the dispatcher to call a subworkflow"""
         from pharmpy.workflows.dispatchers.local_dask import call_workflow
 
         res = call_workflow(workflow, unique_name, self)
         return res
 
     def abort_workflow(self, message):
+        """Ask the dispatcher to abort the currently running workflow directly"""
         self.log_message("critical", message)
         from pharmpy.workflows.dispatchers.local_dask import abort_workflow
 
