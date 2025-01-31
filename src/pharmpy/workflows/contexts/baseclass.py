@@ -145,11 +145,11 @@ class Context(ABC):
         model: Optional[Model] = None,
     ):
         """Add a message to the log"""
+        date = datetime.now()
         if model is None:
             ctxpath = self.context_path
         else:
             ctxpath = self.get_model_context_path(model)
-        date = datetime.now()
         self.store_message(severity, ctxpath, date, message)
         if not hasattr(self, 'broadcast_message'):
             metadata = self.retrieve_metadata()
