@@ -24,13 +24,13 @@ class Broadcaster(ABC):
         if name == 'null':
             from pharmpy.workflows.broadcasters.null import NullBroadcaster
 
-            broadcaster = NullBroadcaster
+            broadcaster = NullBroadcaster()
         else:  # 'terminal'
             from pharmpy.workflows.broadcasters.terminal import TerminalBroadcaster
 
-            broadcaster = TerminalBroadcaster
+            broadcaster = TerminalBroadcaster()
         return broadcaster
 
     @abstractmethod
-    def broadcast_message(severity, ctxpath, date, message) -> None:
+    def broadcast_message(self, severity, ctxpath, date, message) -> None:
         pass

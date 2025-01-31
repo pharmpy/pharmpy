@@ -1,3 +1,4 @@
+from ..broadcasters.null import NullBroadcaster
 from .baseclass import Context
 
 
@@ -9,7 +10,7 @@ class NullContext(Context):
     """
 
     def __init__(self, *args, **kwargs):
-        self.broadcast_message = lambda *args, **kwargs: None
+        self.broadcaster = NullBroadcaster()
 
     def __repr__(self) -> str:
         return "<NullContext>"

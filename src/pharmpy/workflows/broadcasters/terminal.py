@@ -4,7 +4,7 @@ from .baseclass import Broadcaster
 
 
 class TerminalBroadcaster(Broadcaster):
-    def broadcast_message(severity, ctxpath, date, message):
+    def broadcast_message(self, severity, ctxpath, date, message):
         grid = rich.table.Table.grid(expand=True)
         grid.add_column(ratio=3, overflow="fold")
         grid.add_column(ratio=2)
