@@ -17,7 +17,7 @@ def canonicalize_broadcaster_name(name: Optional[str]) -> str:
 
 def select_broadcaster(name: str) -> Callable:
     if name == 'null':
-        from pharmpy.workflows.contexts.broadcasters.null import broadcast_message
+        from pharmpy.workflows.broadcasters.null import broadcast_message
     else:  # 'terminal'
-        from pharmpy.workflows.contexts.broadcasters.terminal import broadcast_message
+        from pharmpy.workflows.broadcasters.terminal import broadcast_message
     return broadcast_message

@@ -3,8 +3,8 @@ from typing import Union
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.workflows import ModelfitResults
+from pharmpy.workflows.broadcasters.terminal import broadcast_message
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
-from pharmpy.workflows.contexts.broadcasters.terminal import broadcast_message
 
 
 def _open_context(source):

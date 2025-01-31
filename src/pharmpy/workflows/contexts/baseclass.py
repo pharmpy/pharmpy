@@ -7,7 +7,7 @@ from typing import Any, Literal, Optional, Union
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.workflows.contexts.broadcasters import select_broadcaster
+from pharmpy.workflows.broadcasters import select_broadcaster
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry

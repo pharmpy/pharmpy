@@ -3,7 +3,7 @@ from typing import Any
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.internals.fs.path import normalize_user_given_path
-from pharmpy.workflows.contexts.broadcasters import canonicalize_broadcaster_name
+from pharmpy.workflows.broadcasters import canonicalize_broadcaster_name
 
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
 
