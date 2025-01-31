@@ -98,7 +98,9 @@ def run(workflow: Workflow[T], context) -> T:
 
                         signal.signal(signal.SIGINT, sigint_handler)
                         signal.signal(signal.SIGTERM, sigterm_handler)
-                        signal.signal(signal.SIGHUP, sighup_handler)
+                        if os.name != 'nt':
+                            # Windows doesn't recognize the SIGHUP signal
+                            signal.signal(signal.SIGHUP, sighup_handler)
 
                         try:
                             res = client.get(dsk_optimized, 'results')
