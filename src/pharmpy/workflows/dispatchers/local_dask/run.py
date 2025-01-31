@@ -84,9 +84,21 @@ def run(workflow: Workflow[T], context) -> T:
                         dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
 
                         def sigint_handler(sig, frame):
-                            context.abort_workflow("Workflow was interrupted by user")
+                            context.abort_workflow("Workflow was interrupted by user (SIGINT)")
+
+                        def sigterm_handler(sig, frame):
+                            context.abort_workflow("Workflow was terminated (SIGTERM)")
+
+                        def sighup_handler(sig, frame):
+                            # If the calling shell dies but we are still alive
+                            # we want to block SIGPIPE in case we are writing
+                            # to the now broken stdout. This way we could
+                            # still be able to run the workflow to completion
+                            signal.signal(signal.SIGPIPE, signal.SIG_IGN)
 
                         signal.signal(signal.SIGINT, sigint_handler)
+                        signal.signal(signal.SIGTERM, sigterm_handler)
+                        signal.signal(signal.SIGHUP, sighup_handler)
 
                         try:
                             res = client.get(dsk_optimized, 'results')
