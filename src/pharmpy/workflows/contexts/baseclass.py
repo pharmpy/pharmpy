@@ -7,7 +7,7 @@ from typing import Any, Literal, Optional, Union
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.workflows.broadcasters import select_broadcaster
+from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
@@ -151,7 +151,7 @@ class Context(ABC):
         else:
             ctxpath = self.get_model_context_path(model)
         self.store_message(severity, ctxpath, date, message)
-        if not hasattr(self, 'broadcast_message'):
+        if not hasattr(self, 'broadcaster'):
             metadata = self.retrieve_metadata()
             if (
                 'dispatching_options' in metadata
@@ -160,8 +160,8 @@ class Context(ABC):
                 name = metadata['dispatching_options']['broadcaster']
             else:
                 name = 'terminal'  # FIXME: Don't want default one more time here
-            self.broadcast_message = select_broadcaster(name)
-        self.broadcast_message(severity, ctxpath, date, message)
+            self.broadcaster = Broadcaster.select_broadcaster(name)
+        self.broadcaster.broadcast_message(severity, ctxpath, date, message)
 
     def log_info(self, message: str, model: Optional[Model] = None):
         """Add an info message to the log

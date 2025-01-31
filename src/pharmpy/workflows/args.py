@@ -3,7 +3,7 @@ from typing import Any
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.internals.fs.path import normalize_user_given_path
-from pharmpy.workflows.broadcasters import canonicalize_broadcaster_name
+from pharmpy.workflows.broadcasters import Broadcaster
 
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
 
@@ -45,7 +45,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
             common_options[key] = value
         else:
             other_options[key] = value
-    dispatching_options['broadcaster'] = canonicalize_broadcaster_name(
+    dispatching_options['broadcaster'] = Broadcaster.canonicalize_broadcaster_name(
         dispatching_options['broadcaster']
     )
     return dispatching_options, common_options, other_options

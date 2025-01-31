@@ -28,7 +28,7 @@ class NullContext(Context):
         pass
 
     def retrieve_metadata(self):
-        pass
+        return {}
 
     def retrieve_results(self):
         pass
