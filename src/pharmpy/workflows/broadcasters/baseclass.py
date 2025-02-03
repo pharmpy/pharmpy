@@ -20,9 +20,10 @@ class Broadcaster(ABC):
         return canon_name
 
     @staticmethod
-    def select_broadcaster(name: str) -> Broadcaster:
+    def select_broadcaster(name: Optional[str]) -> Broadcaster:
         """Create a new broadcaster given a broadcaster name"""
-        if name == 'null':
+        canon_name = Broadcaster.canonicalize_broadcaster_name(name)
+        if canon_name == 'null':
             from pharmpy.workflows.broadcasters.null import NullBroadcaster
 
             broadcaster = NullBroadcaster()
