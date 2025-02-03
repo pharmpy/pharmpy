@@ -89,14 +89,10 @@ class LocalDirectoryContext(Context):
 
     def _read_lock(self, path: Path):
         # NOTE: Obtain shared (blocking) lock on one file
-        path = path.with_suffix('.lock')
-        path.touch(exist_ok=True)
         return path_lock(str(path), shared=True)
 
     def _write_lock(self, path: Path):
         # NOTE: Obtain exclusive (blocking) lock on one file
-        path = path.with_suffix('.lock')
-        path.touch(exist_ok=True)
         return path_lock(str(path), shared=False)
 
     @staticmethod
