@@ -253,17 +253,17 @@ class Context(ABC):
 
     def call_workflow(self, workflow, unique_name: str):
         """Ask the dispatcher to call a subworkflow"""
-        from pharmpy.workflows.dispatchers.local_dask import call_workflow
+        from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
 
-        res = call_workflow(workflow, unique_name, self)
+        res = LocalDaskDispatcher().call_workflow(workflow, unique_name, self)
         return res
 
     def abort_workflow(self, message):
         """Ask the dispatcher to abort the currently running workflow directly"""
         self.log_message("critical", message)
-        from pharmpy.workflows.dispatchers.local_dask import abort_workflow
+        from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
 
-        abort_workflow()
+        LocalDaskDispatcher().abort_workflow()
 
     def has_completed(self):
         """Check if the tool running in the context has completed"""

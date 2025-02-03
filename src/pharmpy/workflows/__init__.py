@@ -7,10 +7,6 @@
      - Default value
      - Type
      - Description
-   * - ``default_dispatcher``
-     - ``pharmpy.workflows.local_dask``
-     - str
-     - Name of default dispatcher module
    * - ``default_model_database``
      - ``pharmpy.workflows.LocalDirectoryDatabase``
      - str
@@ -28,7 +24,6 @@ import pharmpy.config as config
 
 from .args import split_common_options
 from .contexts import Context, LocalDirectoryContext
-from .dispatchers import local_dask
 from .execute import execute_workflow
 from .log import Log
 from .model_database import (
@@ -45,9 +40,6 @@ from .workflow import Workflow, WorkflowBuilder
 
 class WorkflowConfiguration(config.Configuration):
     module = 'pharmpy.workflows'
-    default_dispatcher = config.ConfigItem(
-        'pharmpy.workflows.local_dask', 'Name of default dispatcher module'
-    )
     default_model_database = config.ConfigItem(
         'pharmpy.workflows.LocalDirectoryDatabase', 'Name of default model database class'
     )
@@ -69,18 +61,15 @@ def _importclass(name):
         return module.a[-1]
 
 
-default_dispatcher = _importclass(conf.default_dispatcher)
 default_model_database = _importclass(conf.default_model_database)
 default_context = _importclass(conf.default_context)
 
 
 __all__ = [
-    'default_dispatcher',
     'default_model_database',
     'default_context',
     'execute_workflow',
     'split_common_options',
-    'local_dask',
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',
     'LocalDirectoryContext',

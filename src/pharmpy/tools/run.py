@@ -38,6 +38,7 @@ from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
+from pharmpy.workflows.dispatchers import Dispatcher
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, mfr
@@ -494,9 +495,7 @@ def _now():
 
 def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, Context]:
     # FIXME: Currently only one dispatcher
-    from pharmpy.workflows import default_dispatcher
-
-    dispatcher = default_dispatcher
+    dispatcher = Dispatcher.select_dispatcher(None)
 
     ctx = dispatching_options.get('context', None)
     if ctx is None:

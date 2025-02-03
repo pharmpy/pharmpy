@@ -6,6 +6,7 @@ from typing import TypeVar
 
 from pharmpy.model import Model
 
+from .dispatchers import Dispatcher
 from .results import ModelfitResults, Results
 from .workflow import Workflow, WorkflowBuilder, insert_context
 
@@ -21,7 +22,7 @@ def execute_workflow(
     ----------
     workflow : Workflow
         Workflow to execute
-    dispatcher : ExecutionDispatcher
+    dispatcher : Dispatcher
         Dispatcher to use
     context : Context
         Context to use. None for the default context.
@@ -37,9 +38,7 @@ def execute_workflow(
     """
     # FIXME: Return type is not always Results
     if dispatcher is None:
-        from pharmpy.workflows import default_dispatcher
-
-        dispatcher = default_dispatcher
+        dispatcher = Dispatcher.select_dispatcher(dispatcher)
     if context is None:
         from pharmpy.workflows import default_context
 
