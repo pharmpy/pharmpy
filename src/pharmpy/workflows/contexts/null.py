@@ -10,7 +10,7 @@ class NullContext(Context):
     """
 
     def __init__(self, *args, **kwargs):
-        self.broadcaster = NullBroadcaster()
+        self._broadcaster = NullBroadcaster()
 
     def __repr__(self) -> str:
         return "<NullContext>"

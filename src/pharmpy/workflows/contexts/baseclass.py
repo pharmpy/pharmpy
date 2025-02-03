@@ -8,6 +8,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.workflows.broadcasters import Broadcaster
+from pharmpy.workflows.dispatchers import Dispatcher
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
@@ -49,6 +50,38 @@ class Context(ABC):
     def model_database(self) -> ModelDatabase:
         """ModelDatabase to store results of models run in context"""
         return self._model_database
+
+    @property
+    def broadcaster(self) -> Broadcaster:
+        if not hasattr(self, '_broadcaster'):
+            metadata = self.retrieve_metadata()
+            if (
+                'dispatching_options' in metadata
+                and 'broadcaster' in metadata['dispatching_options']
+            ):
+                name = metadata['dispatching_options']['broadcaster']
+            else:
+                from pharmpy import conf
+
+                name = conf.broadcaster
+            self._broadcaster = Broadcaster.select_broadcaster(name)
+        return self._broadcaster
+
+    @property
+    def dispatcher(self) -> Dispatcher:
+        if not hasattr(self, '_dispatcher'):
+            metadata = self.retrieve_metadata()
+            if (
+                'dispatching_options' in metadata
+                and 'dispatcher' in metadata['dispatching_options']
+            ):
+                name = metadata['dispatching_options']['dispatcher']
+            else:
+                from pharmpy import conf
+
+                name = conf.dispatcher
+            self._dispatcher = Dispatcher.select_dispatcher(name)
+        return self._dispatcher
 
     @property
     @abstractmethod
@@ -151,18 +184,6 @@ class Context(ABC):
         else:
             ctxpath = self.get_model_context_path(model)
         self.store_message(severity, ctxpath, date, message)
-        if not hasattr(self, 'broadcaster'):
-            metadata = self.retrieve_metadata()
-            if (
-                'dispatching_options' in metadata
-                and 'broadcaster' in metadata['dispatching_options']
-            ):
-                name = metadata['dispatching_options']['broadcaster']
-            else:
-                from pharmpy import conf
-
-                name = conf.broadcaster
-            self.broadcaster = Broadcaster.select_broadcaster(name)
         self.broadcaster.broadcast_message(severity, ctxpath, date, message)
 
     def log_info(self, message: str, model: Optional[Model] = None):
@@ -255,17 +276,13 @@ class Context(ABC):
 
     def call_workflow(self, workflow, unique_name: str):
         """Ask the dispatcher to call a subworkflow"""
-        from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
-
-        res = LocalDaskDispatcher().call_workflow(workflow, unique_name, self)
+        res = self.dispatcher.call_workflow(workflow, unique_name, self)
         return res
 
     def abort_workflow(self, message):
         """Ask the dispatcher to abort the currently running workflow directly"""
         self.log_message("critical", message)
-        from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
-
-        LocalDaskDispatcher().abort_workflow()
+        self.dispatcher.abort_workflow()
 
     def has_completed(self):
         """Check if the tool running in the context has completed"""

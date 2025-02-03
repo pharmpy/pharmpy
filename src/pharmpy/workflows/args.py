@@ -4,6 +4,7 @@ from typing import Any
 from pharmpy import DEFAULT_SEED
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.workflows.broadcasters import Broadcaster
+from pharmpy.workflows.dispatchers import Dispatcher
 
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
 
@@ -27,7 +28,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
     all_dispatching_options = ('context', 'path', 'broadcaster', 'dispatcher')
     all_common_options = ('resume', 'esttool', 'seed')
     # The defaults below will be overwritten by the user given options
-    dispatching_options = {'broadcaster': None, 'dispatcher': 'local_dask'}
+    dispatching_options = {'broadcaster': None, 'dispatcher': None}
     common_options = {'seed': DEFAULT_SEED}
     other_options = {}
     for key, value in d.items():
@@ -47,5 +48,8 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
             other_options[key] = value
     dispatching_options['broadcaster'] = Broadcaster.canonicalize_broadcaster_name(
         dispatching_options['broadcaster']
+    )
+    dispatching_options['dispatcher'] = Dispatcher.canonicalize_dispatcher_name(
+        dispatching_options['dispatcher']
     )
     return dispatching_options, common_options, other_options
