@@ -24,6 +24,10 @@ Configuration
      - ``local_dask``
      - str
      - Name of the default dispatcher to use when running tools
+   * - ``broadcaster``
+     - ``terminal``
+     - str
+     - Name of the default broadcaster for messages from tools
 
 
 Definitions
@@ -43,6 +47,10 @@ class PharmpyConfiguration(config.Configuration):
     dispatcher = config.ConfigItem(
         'local_dask',
         'Name of default dispatcher to use when running tools',
+    )
+    broadcaster = config.ConfigItem(
+        'terminal',
+        'Name of default broadcaster',
     )
 
 

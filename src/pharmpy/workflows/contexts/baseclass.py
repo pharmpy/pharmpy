@@ -159,7 +159,9 @@ class Context(ABC):
             ):
                 name = metadata['dispatching_options']['broadcaster']
             else:
-                name = 'terminal'  # FIXME: Don't want default one more time here
+                from pharmpy import conf
+
+                name = conf.broadcaster
             self.broadcaster = Broadcaster.select_broadcaster(name)
         self.broadcaster.broadcast_message(severity, ctxpath, date, message)
 
