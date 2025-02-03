@@ -115,7 +115,7 @@ def embed_css_and_js(html, target):
 
             soup = BeautifulSoup(sh, features='lxml')
 
-    scripts = soup.findAll("script", attrs={"src": True})
+    scripts = soup.find_all("script", attrs={"src": True})
 
     for script in scripts:
         source = script.attrs['src']
@@ -144,7 +144,7 @@ def embed_css_and_js(html, target):
         tag.append(content)
         script.replace_with(tag)
 
-    stylesheets = soup.findAll("link", attrs={"rel": "stylesheet"})
+    stylesheets = soup.find_all("link", attrs={"rel": "stylesheet"})
 
     for stylesheet in stylesheets:
         stylesheet_src = stylesheet.attrs['href']

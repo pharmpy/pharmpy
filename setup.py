@@ -62,7 +62,7 @@ setup(
         'jsonschema>=3.1.0',
         'sphinx>=2.2.0',
         'csscompressor>=0.9.5',
-        'beautifulsoup4>=4.8.0',
+        'beautifulsoup4>=4.13.0',
         'lxml>=4.4.0',
         'numpy>=1.17',
         'scipy>=1.4.0',
