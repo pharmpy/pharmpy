@@ -23,7 +23,7 @@ def create_qss_models(model, ests, dv_types, index=1):
         POP_KDEG=(0.5623, 17.28), POP_R_0=(0.001 * cmax, 0.01 * cmax, 0.1 * cmax, 1 * cmax)
     )
     qss_candidate_models = [
-        set_initial_estimates(set_name(qss_base_model, f"QSS{i}"), inits)
+        set_initial_estimates(set_name(qss_base_model, f"structsearch_run{i}"), inits)
         for i, inits in enumerate(all_inits, start=index)
     ]
     if "POP_KM" in ests.keys():
@@ -69,7 +69,7 @@ def create_qss_models(model, ests, dv_types, index=1):
     return qss_candidate_models
 
 
-def create_remaining_models(model, ests, num_peripherals_qss, dv_types):
+def create_remaining_models(model, ests, num_peripherals_qss, dv_types, index_offset=0):
     # if best qss model has fewer compartments than model, remove one compartment
     num_peripherals_model = len(model.statements.ode_system.find_peripheral_compartments())
     if num_peripherals_qss < num_peripherals_model:
@@ -119,6 +119,9 @@ def create_remaining_models(model, ests, num_peripherals_qss, dv_types):
                     + create_wagner_model(model, ests, dv_types)
                     + create_mmapp_model(model, ests, dv_types)
                 )
+    models = [
+        set_name(model, f'structsearch_run{i}') for i, model in enumerate(models, index_offset)
+    ]
     return models
 
 
@@ -129,12 +132,10 @@ def create_cr_models(model, ests, dv_types):
         cr_base_model,
         {"POP_KINT": ests['POP_KINT'], "POP_R_0": ests['POP_R_0'], "IIV_R_0": ests['IIV_R_0']},
     )
-    cr1 = set_name(cr_base_model, "structsearch_run5")
-    cr1 = cr1.replace(description="CR1")
+    cr1 = cr_base_model.replace(description="CR1")
     cr1 = set_initial_estimates(cr1, ests, strict=False)
     cr1 = set_initial_estimates(cr1, {"POP_KOFF": 0.5623, "POP_KON": 0.5623 / ests['POP_KDC']})
-    cr2 = set_name(cr_base_model, "structsearch_run6")
-    cr2 = cr2.replace(description="CR2")
+    cr2 = cr_base_model.replace(description="CR2")
     cr2 = set_initial_estimates(cr2, ests, strict=False)
     cr2 = set_initial_estimates(cr2, {"POP_KOFF": 17.78, "POP_KON": 17.78 / ests['POP_KDC']})
     return [cr1, cr2]
@@ -152,12 +153,10 @@ def create_ib_models(model, ests, dv_types):
             "IIV_R_0": ests['IIV_R_0'],
         },
     )
-    ib1 = set_name(ib_base_model, "structsearch_run7")
-    ib1 = ib1.replace(description="IB1")
+    ib1 = ib_base_model.replace(description="IB1")
     ib1 = set_initial_estimates(ib1, ests, strict=False)
     ib1 = set_initial_estimates(ib1, {"POP_KON": 0.5623 / ests['POP_KDC']})
-    ib2 = set_name(ib_base_model, "structsearch_run8")
-    ib2 = ib2.replace(description="IB2")
+    ib2 = ib_base_model.replace(description="IB2")
     ib2 = set_initial_estimates(ib2, ests, strict=False)
     ib2 = set_initial_estimates(ib2, {"POP_KON": 17.78 / ests['POP_KDC']})
     return [ib1, ib2]
@@ -175,12 +174,10 @@ def create_crib_models(model, ests, dv_types):
         },
         strict=False,
     )
-    crib1 = set_name(crib_base_model, "structsearch_run9")
-    crib1 = crib1.replace(description="CR+IB1")
+    crib1 = crib_base_model.replace(description="CR+IB1")
     crib1 = set_initial_estimates(crib1, ests, strict=False)
     crib1 = set_initial_estimates(crib1, {"POP_KON": 0.5623 / ests['POP_KDC']})
-    crib2 = set_name(crib_base_model, "structsearch_run10")
-    crib2 = crib2.replace(description="CR+IB2")
+    crib2 = crib_base_model.replace(description="CR+IB2")
     crib2 = set_initial_estimates(crib2, ests, strict=False)
     crib2 = set_initial_estimates(crib2, {"POP_KON": 17.78 / ests['POP_KDC']})
     return [crib1, crib2]
@@ -208,14 +205,12 @@ def create_full_models(model, ests, dv_types):
         )
         for model in candidates
     ]
-    candidates = [set_name(model, f"structsearch_run{i}") for i, model in enumerate(candidates, 1)]
     candidates = [m.replace(description=f"FULL{i}") for i, m in enumerate(candidates, 1)]
     return candidates
 
 
 def create_wagner_model(model, ests, dv_types):
     wagner = set_tmdd(model, type="WAGNER", dv_types=dv_types)
-    wagner = set_name(wagner, "structsearch_run11")
     wagner = wagner.replace(description="WAGNER")
     wagner = set_initial_estimates(
         wagner,
@@ -231,7 +226,6 @@ def create_wagner_model(model, ests, dv_types):
 
 def create_mmapp_model(model, ests, dv_types):
     mmapp = set_tmdd(model, type="MMAPP", dv_types=dv_types)
-    mmapp = set_name(mmapp, "structsearch_run12")
     mmapp = mmapp.replace(description="MMAPP")
     mmapp = set_initial_estimates(
         mmapp,

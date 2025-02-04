@@ -129,7 +129,10 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     if extra_model is not None:
         extra_model = update_initial_estimates(extra_model, extra_model_results)
         extra_qss_candidate_models = create_qss_models(
-            extra_model, extra_model_results.parameter_estimates, dv_types, index=9
+            extra_model,
+            extra_model_results.parameter_estimates,
+            dv_types,
+            index=len(qss_candidate_models),
         )
         extra_qss_candidate_entries = [
             ModelEntry.create(model, modelfit_results=None, parent=extra_model)
@@ -158,6 +161,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         best_qss_entry.modelfit_results.parameter_estimates,
         len(best_qss_entry.model.statements.ode_system.find_peripheral_compartments()),
         dv_types,
+        len(qss_candidate_entries),
     )
     remaining_model_entries = [
         ModelEntry.create(model, modelfit_results=None, parent=best_qss_entry.model)
