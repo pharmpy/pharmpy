@@ -885,6 +885,35 @@ class DataInfo(Sequence, Immutable):
             newcols.append(newcol)
         return DataInfo.create(columns=newcols, path=self._path, separator=self._separator)
 
+    def find_single_column_name(self, type: str, default: Optional[str] = None) -> str:
+        """Find name of single column given type
+
+        Finds single column name with a given type, else provided default. Raises
+        if more than one column is found or if no column is found and no default is
+        given.
+
+        Parameters
+        ----------
+        type : str
+            Column type
+        default : Optional[str]
+            Default if column type is not found
+
+        Return
+        ------
+        str
+            Name of column
+        """
+        try:
+            col = self.typeix[type]
+        except IndexError:
+            if default:
+                return default
+            raise ValueError(f'Colum of type {type} not found and no default given')
+        if len(col) > 1:
+            raise ValueError(f'More than one column found: {col.names}')
+        return col[0].name
+
     def get_dtype_dict(self) -> dict[str, str]:
         """Create a dictionary from column names to pandas dtypes
 

@@ -381,3 +381,18 @@ def test_get_all_categories():
     assert col2.get_all_categories() == [1, 2]
     col3 = ColumnInfo.create("SCORE", categories=None)
     assert col3.get_all_categories() == []
+
+
+def test_find_single_column_name():
+    col1 = ColumnInfo.create("ID", type='id')
+    col2 = ColumnInfo.create("WGT", type='covariate')
+    col3 = ColumnInfo.create("DVID")
+    di1 = DataInfo.create([col1, col2, col3])
+    assert di1.find_single_column_name('id') == 'ID'
+    with pytest.raises(ValueError):
+        di1.find_single_column_name('dvid')
+    assert di1.find_single_column_name('dvid', 'DVID') == 'DVID'
+    col4 = ColumnInfo.create("AGE", type='covariate')
+    di2 = di1 + [col4]
+    with pytest.raises(ValueError):
+        di2.find_single_column_name('covariate')
