@@ -1,6 +1,14 @@
 Next version
 ------------
 
+New features
+============
+
+* Add support for running NONMEM 7.6
+* Better support for stopping a tool (via CTRL-C or SIGTERM from Slurm timeout) 
+* New option to set :code:`broadcaster` of messages from a tool run. Can currently be set to `terminal`
+  which is the default and `null` to turn off broadcasting. 
+
 Changes
 =======
 
@@ -10,8 +18,10 @@ Changes
 Bugfixes
 ========
 
-* Handle compartment definitions in $MODEL having spaces next to commas, e.g. :code`(DEPOT, DEFOBS)`
+* Handle compartment definitions in $MODEL having spaces next to commas, e.g. :code:`(DEPOT, DEFOBS)`
 * Fix bug in tools where if a model had less parameters than its parent it would not update initial estimate
+* Make sure that a created $SIZES always comes before the first $PROBLEM in NONMEM models
+* Make modeling.has_linear_odes_with_real_eigenvalues faster in many common cases
 
 1.5.0 (2025-01-15)
 ------------------
