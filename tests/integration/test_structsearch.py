@@ -63,3 +63,25 @@ def test_drug_metabolite(tmp_path, load_model_for_test, testdata):
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
+
+
+@pytest.mark.parametrize(
+    'kwargs, no_of_non_qss_cands',
+    [({}, 12), ({'dv_types': {'drug': 1, 'target': 2}}, 7)],
+)
+def test_tmdd(tmp_path, load_model_for_test, testdata, kwargs, no_of_non_qss_cands):
+    with chdir(tmp_path):
+        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = convert_model(model, 'nonmem')
+        pk_res = fit(model)
+        res = run_structsearch(
+            type='tmdd',
+            results=pk_res,
+            model=model,
+            esttool='dummy',
+            **kwargs,
+        )
+
+        assert len(res.summary_tool) == no_of_non_qss_cands + 1
+        no_of_qss_cands = 8
+        assert len(res.summary_models) == no_of_qss_cands + no_of_non_qss_cands + 1
