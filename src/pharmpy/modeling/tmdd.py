@@ -469,14 +469,7 @@ def set_tmdd(
             model = set_proportional_error_model(model, dv=dv_types['target_tot'])
 
         if model.dataset is not None:
-            try:
-                dvid = model.datainfo.typeix['dvid']
-            except IndexError:
-                # FIXME: Should be enough to look in datainfo
-                if 'DVID' in model.dataset.columns:
-                    dvid = 'DVID'
-                else:
-                    raise ValueError("DVID column in dataset is needed when using dv_types.")
+            dvid = model.datainfo.find_single_column_name('dvid', default='DVID')
             dvs = [dv for dv in model.dependent_variables.values()]
             model = model.replace(dataset=model.dataset.query(f'{dvid} in @dvs'))
     return model.update_source()

@@ -167,9 +167,16 @@ def test_wagner_1c(pheno_path, load_model_for_test):
 def test_full_multiple_dvs(pheno_path, load_model_for_test, model_name, dv_types, expected):
     model = load_model_for_test(pheno_path)
     model = _add_random_dvids(model)
-    model = set_tmdd(model, model_name, dv_types)
-    assert model.dependent_variables == expected
-    assert len(model.random_variables.epsilons) > 1
+    model_no_di = set_tmdd(model, model_name, dv_types)
+    assert model_no_di.dependent_variables == expected
+    assert len(model_no_di.random_variables.epsilons) > 1
+
+    dvid_col = model.datainfo['DVID'].replace(type='dvid')
+    di = model.datainfo.set_column(dvid_col)
+    model_di = model.replace(datainfo=di)
+    model_di = set_tmdd(model_di, model_name, dv_types)
+    assert model_di.dependent_variables == expected
+    assert len(model_di.random_variables.epsilons) > 1
 
 
 def test_multiple_dvs(load_model_for_test, pheno_path, testdata):
