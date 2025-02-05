@@ -86,6 +86,9 @@ def generate_report(rst_path, results_path, target_path):
                         "ignore",
                         "Parsing dates involving a day of month without",
                     )
+                    warnings.filterwarnings(
+                        "ignore", category=ResourceWarning, message="unclosed file"
+                    )
 
                     with SpoofExecutable():
                         app = Sphinx(
