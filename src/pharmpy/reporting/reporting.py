@@ -19,17 +19,23 @@ from pharmpy.internals.fs.tmp import TemporaryDirectory
 # Does nothing on platforms other than Windows
 class SpoofExecutable:
     def __enter__(self):
-        if os.name == 'nt':
+        if os.name == 'nt' and self._check_rstudio():
             import sys
 
             self.executable = sys.executable
             sys.executable = 'pythonw.exe'
 
     def __exit__(self, exc_type, exc_value, traceback):
-        if os.name == 'nt':
+        if os.name == 'nt' and self._check_rstudio():
             import sys
 
             sys.executable = self.executable
+
+    def _check_rstudio(self):
+        # rstudio is setting the environment variable RSTUDIO in the running process
+        # This gets inherited by child processes
+        rstudio = os.environ.get("RSTUDIO", None)
+        return rstudio == "1"
 
 
 def generate_report(rst_path, results_path, target_path):
@@ -85,9 +91,6 @@ def generate_report(rst_path, results_path, target_path):
                     warnings.filterwarnings(
                         "ignore",
                         "Parsing dates involving a day of month without",
-                    )
-                    warnings.filterwarnings(
-                        "ignore", category=ResourceWarning, message="unclosed file"
                     )
 
                     with SpoofExecutable():
