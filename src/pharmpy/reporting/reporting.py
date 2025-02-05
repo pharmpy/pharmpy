@@ -14,6 +14,24 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 
+# This spoofer is needed to trick jupyter_client to turn off stdout and stderr
+# These can cause problems when running from rstudio on Windows
+# Does nothing on platforms other than Windows
+class SpoofExecutable:
+    def __enter__(self):
+        if os.name == 'nt':
+            import sys
+
+            self.executable = sys.executable
+            sys.executable = 'pythonw.exe'
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if os.name == 'nt':
+            import sys
+
+            sys.executable = self.executable
+
+
 def generate_report(rst_path, results_path, target_path):
     """Generate report from rst and results json"""
     results_path = Path(results_path)
@@ -69,16 +87,17 @@ def generate_report(rst_path, results_path, target_path):
                         "Parsing dates involving a day of month without",
                     )
 
-                    app = Sphinx(
-                        str(source_path),
-                        str(conf_path),
-                        str(tmp_path),
-                        str(tmp_path),
-                        "singlehtml",
-                        status=devnull,
-                        warning=devnull,
-                    )
-                    app.build()
+                    with SpoofExecutable():
+                        app = Sphinx(
+                            str(source_path),
+                            str(conf_path),
+                            str(tmp_path),
+                            str(tmp_path),
+                            "singlehtml",
+                            status=devnull,
+                            warning=devnull,
+                        )
+                        app.build()
 
         # Write missing altair css
         with open(tmp_path / '_static' / 'altair-plot.css', 'w') as dh:
