@@ -778,11 +778,7 @@ class CompartmentalSystem(Statement):
             return True
         if not isinstance(other, CompartmentalSystem):
             return NotImplemented
-        return (
-            self._t == other._t
-            and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
-            and self.dosing_compartments == other.dosing_compartments
-        )
+        return self._t == other._t and nx.to_dict_of_dicts(self._g) == nx.to_dict_of_dicts(other._g)
 
     def __hash__(self):
         return hash((self._t, self._g))
