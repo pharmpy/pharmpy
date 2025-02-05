@@ -19,9 +19,6 @@ jobs:
       matrix:
         platform: [ubuntu-24.04, macos-13, macos-14, windows-2022]
         python-version: ['3.11', '3.12', '3.13']
-        exclude:
-          - platform: windows-2022
-            python-version: '3.13'
         include:
           - tox-env: 'unit'
           - python-version: '3.13'
@@ -61,9 +58,6 @@ jobs:
       matrix:
         platform: [ubuntu-24.04, macos-13, macos-14, windows-2022]
         python-version: ['3.11', '3.12', '3.13']
-        exclude:
-          - platform: windows-2022
-            python-version: '3.13'
 
     runs-on: ${{ matrix.platform }}
 
