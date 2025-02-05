@@ -263,8 +263,6 @@ def _find_eta_assignments(model):
     leafs = []
 
     for i, s in reversed(list(enumerate(statements))):
-        if model.name == 'covsearch_run1':
-            print(i, s, s.free_symbols, statements[:i].full_expression(s.expression).free_symbols)
         if (
             s.symbol not in found
             and not etas.isdisjoint(s.free_symbols)
