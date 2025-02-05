@@ -14,6 +14,7 @@ from tempfile import mkdtemp
 #
 # The whole thing can be replaced by `from tempfile import TemporaryDirectory`
 # once Python fixes their implementation
+# A delay was also added to give Windows time to do the cleanup of the file handle to current directory
 class TemporaryDirectory:
     """Create and return a temporary directory.  This has the same
     behavior as mkdtemp but can be used as a context manager.  For
@@ -104,4 +105,8 @@ class TemporaryDirectory:
 
     def cleanup(self):
         if self._finalizer.detach() or _os.path.exists(self.name):
+            if _os.name == 'nt':
+                import time
+
+                time.sleep(0.1)
             self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
