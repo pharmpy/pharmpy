@@ -263,6 +263,8 @@ def _find_eta_assignments(model):
     leafs = []
 
     for i, s in reversed(list(enumerate(statements))):
+        if model.name == 'covsearch_run1':
+            print(i, s, s.free_symbols, statements[:i].full_expression(s.expression).free_symbols)
         if (
             s.symbol not in found
             and not etas.isdisjoint(s.free_symbols)
@@ -392,6 +394,8 @@ def has_mu_reference(model: Model) -> bool:
 
     """
     ind_index_assignments = list(_find_eta_assignments(model))
+    if not ind_index_assignments:
+        return False
     ind_parameters = [a[1].symbol for a in ind_index_assignments]
     mu_regex = re.compile(r'^mu_\d*$', re.IGNORECASE)
     for ind_param in ind_parameters:
