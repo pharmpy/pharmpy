@@ -104,11 +104,13 @@ declaring covariate effects via the syntax `COVARIATE(@SYMBOL, ...)`.
 +=================+=============+================================================+
 | `@IIV`          | Parameter   | All parameters with a corresponding IIV ETA    |
 +-----------------+-------------+------------------------------------------------+
+| `@PK`           | Parameter   | All PK parameters                              |
++-----------------+-------------+------------------------------------------------+
+| `@PD`           | Parameter   | All PD parameters                              |
++-----------------+-------------+------------------------------------------------+
 | `@PK_IIV`       | Parameter   | All PK parameters with a corresponding IIV ETA |
 +-----------------+-------------+------------------------------------------------+
 | `@PD_IIV`       | Parameter   | All PD parameters with a corresponding IIV ETA |
-+-----------------+-------------+------------------------------------------------+
-| `@PD`           | Parameter   | All PD parameters                              |
 +-----------------+-------------+------------------------------------------------+
 | `@ABSORPTION`   | Parameter   | All PK absorption parameters                   |
 +-----------------+-------------+------------------------------------------------+
