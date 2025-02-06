@@ -47,6 +47,7 @@ from pharmpy.tools.reporting import get_rst_path
 from pharmpy.tools.run import (
     create_metadata,
     get_run_setup,
+    is_strictness_fulfilled,
     split_common_options,
     summarize_errors_from_entries,
 )
@@ -61,6 +62,7 @@ ALLOWED_STRATEGY = ["default", "reevaluation", "SIR", "SRI", "RSI"]
 ALLOWED_ADMINISTRATION = ["iv", "oral", "ivoral"]
 ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
+DEFAULT_STRICTNESS = "minimization_successful or (rounding_errors and sigdigs>=0.1)"
 
 
 def spawn_seed(rng) -> int:
@@ -91,7 +93,7 @@ def run_amd(
     occasion: Optional[str] = None,
     path: Optional[Union[str, Path]] = None,
     resume: bool = False,
-    strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    strictness: str = DEFAULT_STRICTNESS,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
@@ -537,6 +539,8 @@ def run_amd(
     if results is None:
         subctx = ctx.create_subcontext('modelfit')
         results = run_tool('modelfit', model, path=subctx.path, resume=resume)
+        if not is_strictness_fulfilled(model, results, DEFAULT_STRICTNESS):
+            ctx.log_warning('Base model failed strictness')
         model = model.replace(name='base')
         ctx.store_model_entry(ModelEntry.create(model=model, modelfit_results=results))
 
