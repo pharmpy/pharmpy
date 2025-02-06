@@ -560,6 +560,7 @@ Add a column for time after dose (TAD)
 
 .. pharmpy-execute::
 
+    model = load_example_model("pheno")
     model = add_time_after_dose(model)
     model.dataset['TAD']
 
