@@ -281,6 +281,9 @@ class Model(Immutable):
     def _check_symbol_names(datainfo: DataInfo, statements: Statements) -> None:
         # Currently that column names do not overlap with lhs in statements
         colnames = {Expr.symbol(colname) for colname in datainfo.names}
+        for name in colnames:
+            if not str(name).isidentifier():
+                raise ValueError(f"A column name is not a valid variable identifier: {name}")
         col_lhs = colnames.intersection(statements.lhs_symbols)
         if col_lhs:
             raise ValueError(

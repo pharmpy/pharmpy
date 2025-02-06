@@ -556,9 +556,6 @@ def test_set_dataset(load_example_model_for_test, testdata):
     model = set_dataset(model, path_or_df=mox_path, datatype='nonmem')
     assert 'id' in model.datainfo.types
 
-    with pytest.warns():
-        set_dataset(model, path_or_df=pheno_path, datatype=None)
-
     model = load_example_model_for_test("pheno")
     assert model.datainfo.path.name == 'pheno.dta'
     dataset = pd.read_csv(pheno_path, sep='\\s+')

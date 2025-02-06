@@ -357,6 +357,10 @@ def test_statements(load_example_model_for_test):
     with pytest.raises(ValueError):
         pheno.replace(dataset=df)
 
+    df = pheno.dataset.rename(columns={'FA1': '12'})
+    with pytest.raises(ValueError):
+        pheno.replace(dataset=df)
+
 
 def test_get_and_check_odes(load_example_model_for_test, load_model_for_test, testdata):
     pheno = load_example_model_for_test('pheno')
