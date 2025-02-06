@@ -120,7 +120,7 @@ def create_remaining_models(model, ests, num_peripherals_qss, dv_types, index_of
                     + create_mmapp_model(model, ests, dv_types)
                 )
     models = [
-        set_name(model, f'structsearch_run{i}') for i, model in enumerate(models, index_offset)
+        set_name(model, f'structsearch_run{i}') for i, model in enumerate(models, index_offset + 1)
     ]
     return models
 
