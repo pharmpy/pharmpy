@@ -2055,6 +2055,26 @@ class Statements(Sequence, Immutable):
             symbols |= assignment.free_symbols
         return symbols
 
+    @property
+    def lhs_symbols(self) -> set[Expr]:
+        """Get set of all symbols defined in this Statements
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.lhs_symbols   # doctest: +SKIP
+        {F, A_CENTRAL(t), TVV, CL, Y, VC, V, TVCL, S1}
+        """
+        symbs = set()
+        for s in self:
+            if isinstance(s, Assignment):
+                symbs.add(s.symbol)
+            else:
+                assert isinstance(s, CompartmentalSystem)
+                symbs |= set(s.amounts)
+        return symbs
+
     def _get_ode_system_index(self):
         return next(
             map(

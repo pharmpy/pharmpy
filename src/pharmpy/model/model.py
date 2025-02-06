@@ -195,6 +195,7 @@ class Model(Immutable):
             return Statements()
         if not isinstance(statements, Statements):
             raise TypeError("model.statements must be of Statements type")
+
         colnames = {Expr.symbol(colname) for colname in datainfo.names}
         symbs_all = rvs.free_symbols.union(params.symbols).union(colnames)
         if statements.ode_system is not None:
