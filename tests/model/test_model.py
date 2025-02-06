@@ -353,6 +353,10 @@ def test_statements(load_example_model_for_test):
     with pytest.raises(ValueError, match='Symbol B defined after being used'):
         Model.create('model', statements=Statements() + assign1 + assign2)
 
+    df = pheno.dataset.rename(columns={'FA1': 'CL'})
+    with pytest.raises(ValueError):
+        pheno.replace(dataset=df)
+
 
 def test_get_and_check_odes(load_example_model_for_test, load_model_for_test, testdata):
     pheno = load_example_model_for_test('pheno')

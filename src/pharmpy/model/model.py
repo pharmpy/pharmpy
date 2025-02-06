@@ -137,6 +137,7 @@ class Model(Immutable):
         statements = Model._canonicalize_statements(
             statements, parameters, random_variables, datainfo
         )
+        Model._check_symbol_names(datainfo, statements)
         return cls(
             name=name,
             dependent_variables=dvs,
@@ -276,6 +277,17 @@ class Model(Immutable):
                 raise TypeError("model.execution_steps must be of ExecutionSteps type")
             return steps
 
+    @staticmethod
+    def _check_symbol_names(datainfo: DataInfo, statements: Statements) -> None:
+        # Currently that column names do not overlap with lhs in statements
+        colnames = {Expr.symbol(colname) for colname in datainfo.names}
+        col_lhs = colnames.intersection(statements.lhs_symbols)
+        if col_lhs:
+            raise ValueError(
+                f"The following symbols are defined both in the dataset "
+                f"and in the model statements: {col_lhs}"
+            )
+
     def replace(self, **kwargs) -> Self:
         name = kwargs.get('name', self.name)
         Model._canonicalize_name(name)
@@ -372,6 +384,9 @@ class Model(Immutable):
 
         if len(kwargs) != 0:
             raise ValueError(f'Invalid keywords given : {[key for key in kwargs.keys()]}')
+
+        if new_dataset or 'datainfo' in kwargs or 'statements' in kwargs:
+            Model._check_symbol_names(datainfo, statements)
 
         return self.__class__(
             name=name,

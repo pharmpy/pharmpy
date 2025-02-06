@@ -68,7 +68,17 @@ def test_ode_free_symbols(load_model_for_test, testdata):
 
 def test_lhs_symbols(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    assert model.statements.lhs_symbols == {S('F'), Expr.function("A_CENTRAL", "t"), S("TVV"), S("CL"), S("Y"), S("VC"), S("V"), S("TVCL"), S("S1")}
+    assert model.statements.lhs_symbols == {
+        S('F'),
+        Expr.function("A_CENTRAL", "t"),
+        S("TVV"),
+        S("CL"),
+        S("Y"),
+        S("VC"),
+        S("V"),
+        S("TVCL"),
+        S("S1"),
+    }
 
 
 def test_find_assignment(load_model_for_test, testdata):

@@ -51,6 +51,8 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
         shutil.copy(datadir / 'pheno_real.mod', 'pheno_real.mod')
         shutil.copy(datadir / 'pheno.dta', 'pheno.dta')
         model = load_model_for_test("pheno_real.mod")
+        # Remove TAD from statements because we will be adding TAD to data
+        model = model.replace(statements=model.statements[2:])
 
         db = LocalModelDirectoryDatabase("database")
         db.store_model(model)
@@ -77,6 +79,7 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
         assert not (Path("database") / ".datasets" / "data2.csv").is_file()
 
         run2 = model.replace(name="run2")
+        print(run2.statements)
         run2 = add_time_after_dose(run2)
         db.store_model(run2)
 
