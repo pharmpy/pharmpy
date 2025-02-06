@@ -2029,6 +2029,7 @@ def create_default_datainfo(path_or_df):
 
     column_info = []
     for colname in colnames:
+        colname = colname.replace('.', '_')  # pandas uses . to name mangle
         if colname == 'ID' or colname == 'L1':
             info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
         elif colname == 'DV':
