@@ -64,8 +64,8 @@ class Parameter(Immutable):
         if not isinstance(name, str):
             raise ValueError("Name of parameter must be of type string")
         init = float(init)
-        if np.isnan(init):
-            raise ValueError('Initial estimate cannot be NaN')
+        if np.isnan(init) or np.isinf(init):
+            raise ValueError('Initial estimate cannot be NaN or +/- infinity')
         if lower is None:
             lower = -float('inf')
         else:
