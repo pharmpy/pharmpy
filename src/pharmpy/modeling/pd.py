@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Literal
+from typing import Literal, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.model import (
@@ -102,10 +102,11 @@ def add_effect_compartment(model: Model, expr: PDTypes):
     return model
 
 
-def set_direct_effect(model: Model, expr: PDTypes):
+def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = None):
     r"""Add an effect to a model.
 
-    Implemented PD models are:
+    Effects are by default using concentratrion, but any user specified
+    variable in the model can be used. Implemented PD models are:
 
 
     * Linear:
@@ -137,6 +138,8 @@ def set_direct_effect(model: Model, expr: PDTypes):
         Pharmpy model
     expr : {'linear', 'emax', 'sigmoid', 'step', 'loglin'}
         Name of PD effect function.
+    variable : str
+        Name of variable to use (if None concentration will be used)
 
     Return
     ------
@@ -149,16 +152,26 @@ def set_direct_effect(model: Model, expr: PDTypes):
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
-          ⎛SLOPE⋅A_CENTRAL(t)    ⎞
-        B⋅⎜────────────────── + 1⎟
-    E =   ⎝        VC            ⎠
+    E = B⋅(SLOPE⋅CONC + 1)
 
     """
-    vc, cl = get_central_volume_and_clearance(model)
-    odes = get_and_check_odes(model)
-    conc = odes.central_compartment.amount / vc
-
-    model = _add_effect(model, expr, conc)
+    if variable is None:
+        vc, cl = get_central_volume_and_clearance(model)
+        odes = get_and_check_odes(model)
+        conc_expr = odes.central_compartment.amount / vc
+        variable_symb = conc_expr
+        for s in model.statements.after_odes:
+            if s.expression == conc_expr:
+                variable_symb = s.symbol
+                break
+    else:
+        variable_symb = Expr.symbol(variable)
+        if (
+            variable not in model.datainfo.names
+            and variable_symb not in model.statements.free_symbols
+        ):
+            raise ValueError(f'Variable {variable} could not be found')
+    model = _add_effect(model, expr, variable_symb)
 
     return model
 

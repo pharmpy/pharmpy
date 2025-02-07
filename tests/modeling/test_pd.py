@@ -22,13 +22,36 @@ def S(x):
 
 
 @pytest.mark.parametrize(
-    'pd_model',
-    [('linear'), ('emax'), ('sigmoid'), ('step'), ('loglin')],
+    'pd_model, variable, variable_name',
+    [
+        ('linear', None, 'CONC'),
+        ('emax', None, 'CONC'),
+        ('sigmoid', None, 'CONC'),
+        ('step', None, 'CONC'),
+        ('loglin', None, 'CONC'),
+        ('linear', 'CONC', 'CONC'),
+        ('linear', 'TIME', 'TIME'),
+    ],
 )
-def test_set_direct_effect(load_model_for_test, pd_model, testdata):
+def test_set_direct_effect(load_model_for_test, testdata, pd_model, variable, variable_name):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    conc = model.statements.ode_system.central_compartment.amount / S("VC")
-    _test_effect_models(set_direct_effect(model, pd_model), pd_model, conc)
+    model = set_direct_effect(model, pd_model, variable)
+    _test_effect_models(model, pd_model, Expr.symbol(variable_name))
+
+
+def test_set_direct_effect_on_conc_variable(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    new_conc_expr = model.statements.find_assignment('CONC').expression + 1
+    new_sset = model.statements.reassign('CONC', new_conc_expr)
+    model = model.replace(statements=new_sset)
+    model = set_direct_effect(model, 'linear')
+    _test_effect_models(model, 'linear', Expr.function('A_CENTRAL', 't') / Expr.symbol('VC'))
+
+
+def test_set_direct_effect_raises(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    with pytest.raises(ValueError):
+        set_direct_effect(model, 'linear', 'X')
 
 
 @pytest.mark.parametrize(
@@ -55,7 +78,7 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     _test_effect_models(add_effect_compartment(model, pd_model), pd_model, conc_e)
 
 
-def _test_effect_models(model, expr, conc):
+def _test_effect_models(model, expr, variable):
     e = S("E")
     e0 = S("B")
     emax = S("E_MAX")
@@ -64,7 +87,9 @@ def _test_effect_models(model, expr, conc):
     if expr == 'linear':
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-2] == Assignment.create(e, e0 * (1 + S("SLOPE") * conc))
+        assert model.statements.after_odes[-2] == Assignment.create(
+            e, e0 * (1 + S("SLOPE") * variable)
+        )
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), e + e * S("epsilon_p")
         )
@@ -73,7 +98,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[2] == Assignment.create(e0, S("POP_B"))
         assert model.statements[1] == Assignment.create(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment.create(
-            e, e0 * (1 + (emax * conc) / (ec50 + conc))
+            e, e0 * (1 + (emax * variable) / (ec50 + variable))
         )
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), e + e * S("epsilon_p")
@@ -87,8 +112,9 @@ def _test_effect_models(model, expr, conc):
             e,
             Expr.piecewise(
                 (
-                    e0 * (1 + ((emax * conc ** S("N")) / (ec50 ** S("N") + conc ** S("N")))),
-                    conc > 0,
+                    e0
+                    * (1 + ((emax * variable ** S("N")) / (ec50 ** S("N") + variable ** S("N")))),
+                    variable > 0,
                 ),
                 (e0, True),
             ),
@@ -101,7 +127,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-2] == Assignment.create(
-            e, Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True))
+            e, Expr.piecewise((e0, variable <= 0), (e0 * (1 + emax), True))
         )
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), e + e * S("epsilon_p")
@@ -110,7 +136,7 @@ def _test_effect_models(model, expr, conc):
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
         assert model.statements.after_odes[-2] == Assignment.create(
-            e, S("SLOPE") * (conc + (e0 / S("SLOPE")).exp()).log()
+            e, S("SLOPE") * (variable + (e0 / S("SLOPE")).exp()).log()
         )
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), e + e * S("epsilon_p")

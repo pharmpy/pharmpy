@@ -7,7 +7,8 @@ New features
 * Add support for running NONMEM 7.6
 * Better support for stopping a tool (via CTRL-C or SIGTERM from Slurm timeout) 
 * New option to set :code:`broadcaster` of messages from a tool run. Can currently be set to `terminal`
-  which is the default and `null` to turn off broadcasting. 
+  which is the default and `null` to turn off broadcasting.
+* Option to specify variable for modeling.set_direct_effect
 
 Changes
 =======
