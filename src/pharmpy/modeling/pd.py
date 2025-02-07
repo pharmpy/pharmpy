@@ -152,7 +152,9 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
-    E = B⋅(SLOPE⋅CONC + 1)
+          ⎛SLOPE⋅A_CENTRAL(t)    ⎞
+        B⋅⎜────────────────── + 1⎟
+    E =   ⎝        VC            ⎠
 
     """
     if variable is None:
