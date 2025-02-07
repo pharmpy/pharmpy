@@ -106,6 +106,11 @@ def _parse_modelfit_results(
     else:
         eststeps = list(range(1, len(execution_steps) + 1))
     last_est_ind = _get_last_est(execution_steps)
+
+    minimization_successful = override_minimization_successful(
+        minimization_successful, pe_iterations
+    )
+
     minsucc_iters = pd.Series(
         minimization_successful, index=eststeps, name='minimization_successful'
     )
@@ -891,3 +896,23 @@ def parse_simulation_results(
     table = _parse_table_file(model, path=path, subproblem=subproblem)
     res = SimulationResults(table=table)
     return res
+
+
+def override_minimization_successful(minimization_successful, pe_iterations):
+    # NONMEM could return infinity as parameter estimate even if minimization
+    # was successful. We set minimization successful to False in these cases.
+    # This reduces the need for special cases further downstream.
+
+    new_minsucc = []
+    for i, minsucc in enumerate(minimization_successful):
+        try:
+            ests_for_iteration = pe_iterations.loc[i + 1].iloc[-1]
+        except KeyError:
+            new_minsucc.append(minsucc)
+            continue
+        have_inf = np.isinf(ests_for_iteration).any()
+        if have_inf:
+            new_minsucc.append(False)
+        else:
+            new_minsucc.append(minsucc)
+    return new_minsucc
