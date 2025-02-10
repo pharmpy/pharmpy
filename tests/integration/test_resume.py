@@ -10,13 +10,13 @@ from pharmpy.workflows import LocalDirectoryContext
 
 def test_run_tool_ruvsearch_resume_flag(tmp_path, testdata):
     with chdir(tmp_path):
-        for path in (testdata / 'nonmem').glob('pheno_real.*'):
+        for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
             shutil.copy2(path, tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
-        model = Model.parse_model('pheno_real.mod')
-        results = read_modelfit_results('pheno_real.mod')
-        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'moxo_simulated_resmod.csv', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'ruvsearch' / 'mytab', tmp_path)
+
+        model = Model.parse_model('mox3.mod')
+        results = read_modelfit_results('mox3.mod')
         path = 'x'
         for i, resume in enumerate([False, False, True]):
             try:
@@ -142,43 +142,3 @@ def test_run_tool_modelsearch_resume_flag(
                 assert (rundir / 'results.json').exists()
                 assert (rundir / 'results.csv').exists()
                 assert (rundir / 'metadata.json').exists()
-
-
-def test_resume_tool_ruvsearch(tmp_path, testdata):
-    with chdir(tmp_path):
-        for path in (testdata / 'nonmem').glob('pheno_real.*'):
-            shutil.copy2(path, tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
-        shutil.copy2(testdata / 'nonmem' / 'sdtab1', tmp_path)
-
-        model = Model.parse_model('pheno_real.mod')
-        results = read_modelfit_results('pheno_real.mod')
-        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
-        path = 'x'
-        run_tool_res = run_tool(
-            'ruvsearch',
-            model=model,
-            results=results,
-            groups=4,
-            p_value=0.05,
-            skip=[],
-            path=path,
-        )
-        assert run_tool_res
-
-        # resume_tool_res = resume_tool(path)
-        # assert resume_tool_res
-
-        # assert type(resume_tool_res) == type(run_tool_res)  # noqa: E721
-
-        # assert_frame_equal(resume_tool_res.cwres_models, run_tool_res.cwres_models)
-        # assert_frame_equal(resume_tool_res.summary_individuals, run_tool_res.summary_individuals)
-        # assert_frame_equal(
-        #    resume_tool_res.summary_individuals_count, run_tool_res.summary_individuals_count
-        # )
-        # assert resume_tool_res.final_model.name == run_tool_res.final_model.name
-        # assert_frame_equal(resume_tool_res.summary_models, run_tool_res.summary_models)
-        # assert_frame_equal(resume_tool_res.summary_tool, run_tool_res.summary_tool)
-        # assert_frame_equal(resume_tool_res.summary_errors, run_tool_res.summary_errors)
-        # assert type(resume_tool_res.tool_database) == type(run_tool_res.tool_database)  # noqa: E721
-        # assert resume_tool_res.tool_database.to_dict() == run_tool_res.tool_database.to_dict()
