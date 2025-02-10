@@ -651,6 +651,9 @@ def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictne
                 if dv not in set(model.dataset[dvid_name]):
                     raise ValueError(f"No {dvid_name} = {dv} in dataset.")
 
+        if Expr.symbol('TAD') in model.statements.lhs_symbols:
+            raise ValueError("Invalid `model`: TAD must be a column")
+
     if strictness is not None and "rse" in strictness.lower():
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(

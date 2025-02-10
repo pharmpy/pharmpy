@@ -360,6 +360,12 @@ def test_create_best_model_no_best(load_model_for_test, testdata, model_entry_fa
             ValueError,
             '`parameter_uncertainty_method` not set',
         ),
+        (
+            ('nonmem/pheno_real.mod',),
+            dict(),
+            ValueError,
+            'Invalid `model`: TAD must be a column',
+        ),
     ],
 )
 def test_validate_input_raises(
@@ -379,8 +385,6 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
-
-    validate_input(model, res, skip=['IIV_on_RUV', 'power'])
 
 
 def test_validate_input_raises_cwres(load_model_for_test, testdata):
