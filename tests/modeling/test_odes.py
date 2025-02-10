@@ -1693,6 +1693,14 @@ def test_transits_mat_to_mdt():
     mdt_assign = model.statements.find_assignment('MDT')
     assert model.statements.count(mdt_assign) == 1
 
+    model = create_basic_pk_model(administration='oral')
+    model = set_transit_compartments(model, 1, keep_depot=True)
+    assert model.statements.find_assignment('MAT')
+    assert model.statements.find_assignment('MDT')
+    model = set_transit_compartments(model, 1, keep_depot=False)
+    assert not model.statements.find_assignment('MAT')
+    assert model.statements.find_assignment('MDT')
+
 
 def test_bioavailability(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')

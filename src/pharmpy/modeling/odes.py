@@ -868,7 +868,8 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
         else:
             cb.set_dose(central, depot.doses[0])
         if statements.find_assignment('MAT'):
-            model = _rename_parameter(model, 'MAT', 'MDT')
+            if not statements.find_assignment('MDT'):
+                model = _rename_parameter(model, 'MAT', 'MDT')
             statements = model.statements
             mdt_assign = statements.find_assignment('MDT')
         cb.remove_compartment(depot)
