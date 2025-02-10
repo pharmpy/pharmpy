@@ -26,6 +26,10 @@ Bugfixes
 * Make modeling.has_linear_odes_with_real_eigenvalues faster in many common cases
 * Fix issue in modeling.set_tmdd where dvid was not extracted correctly from datainfo (#3618)
 * Fix issue in modeling.has_mu_reference that caused COVsearch to crash in models with IOV (#3429)
+* Raise in RUVSearch if input model has TAD statement
+* Add delay when cleaning up temporary directory in Windows (fix sporadic permission errors)
+* Fix issue where tools crashed when creating reports in Rstudio on Windows
+
 
 1.5.0 (2025-01-15)
 ------------------
