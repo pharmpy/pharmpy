@@ -40,7 +40,7 @@ To initiate AMD in Python/R:
 
     from pharmpy.tools import run_amd
 
-    search_space = 'LET(CATEGORICAL,[SEX]);LET(CONTINUOUS,[AGE]);COVARIATE?(@IIV,@CONTINUOUS,EXP);COVARIATE?(@IIV,@CATEGORICAL, CAT)'
+    search_space = 'COVARIATE?(@IIV,SEX,EXP);COVARIATE?(@IIV,AGE,CAT)'
     res = run_amd(input='path/to/dataset',
                   modeltype='basic_pk',
                   administration='oral',
