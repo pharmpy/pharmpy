@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
@@ -9,7 +9,12 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling.tmdd import DV_TYPES
-from pharmpy.tools.common import ToolResults, create_results, update_initial_estimates
+from pharmpy.tools.common import (
+    ToolResults,
+    create_results,
+    summarize_tool,
+    update_initial_estimates,
+)
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
@@ -174,9 +179,8 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     run_model_entries = context.call_workflow(Workflow(wb2), 'results_remaining')
 
-    summary_input = summarize_modelfit_results_from_entries([model_entry])
-    summary_candidates = summarize_modelfit_results_from_entries(
-        qss_run_entries + run_model_entries
+    tables = create_result_tables(
+        model_entry, (list(qss_run_entries), list(run_model_entries)), strictness
     )
 
     res = create_results(
@@ -186,16 +190,45 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
         list(run_model_entries),
         rank_type='bic',
         cutoff=None,
-        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=['step']),
         strictness=strictness,
         context=context,
     )
+    res = replace(res, summary_models=tables['summary_models'], summary_tool=tables['summary_tool'])
 
     final_model = res.final_model.replace(name="final")
     context.store_final_model_entry(final_model)
 
     context.log_info("Finishing tool structsearch")
     return res
+
+
+def create_result_tables(input_model_entry, candidate_steps, strictness):
+    sum_models, sum_tool = [summarize_modelfit_results_from_entries([input_model_entry])], []
+    ref_model_entry = input_model_entry
+    for candidates in candidate_steps:
+        sum_models.append(summarize_modelfit_results_from_entries(candidates))
+        tool_df = summarize_tool(
+            candidates,
+            ref_model_entry,
+            'bic',
+            cutoff=None,
+            bic_type='mixed',
+            strictness=strictness,
+        )
+        sum_tool.append(tool_df)
+        best_model_name = tool_df['rank'].idxmin()
+        ref_model_entry = next(
+            filter(lambda model_entry: model_entry.model.name == best_model_name, candidates),
+            input_model_entry,
+        )
+
+    summary_models = pd.concat(sum_models, keys=range(0, len(candidate_steps) + 1), names=['step'])
+    summary_tool = pd.concat(sum_tool, keys=range(1, len(candidate_steps) + 1), names=['step'])
+    tables = {
+        'summary_models': summary_models,
+        'summary_tool': summary_tool,
+    }
+    return tables
 
 
 def run_pkpd(
