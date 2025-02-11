@@ -26,6 +26,7 @@ def _parse_modelfit_results(
     control_stream: NMTranControlStream,
     name_map,
     model: Model,
+    strict: bool = False,
     subproblem: Optional[int] = None,
 ):
     # Path to model file or results file
@@ -39,18 +40,20 @@ def _parse_modelfit_results(
     etas = model.random_variables.etas
 
     log = Log()
+    ext_path = path.with_suffix('.ext')
+    if not ext_path.is_file():
+        msg = f"Couldn't find NONMEM .ext-file at {ext_path}"
+        log = log.log_error(msg)
+        if strict:
+            raise FileNotFoundError(msg)
+        return create_failed_results(model, log)
+
     try:
         try:
-            ext_path = path.with_suffix('.ext')
             ext_tables = NONMEMTableFile(ext_path)
         except ValueError:
             log = log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
-            return ModelfitResults(
-                minimization_successful=False,
-                ofv=float("NaN"),
-                parameter_estimates=_create_failed_parameter_estimates(model.parameters),
-                log=log,
-            )
+            return create_failed_results(model, log)
 
         for table in ext_tables:
             try:
@@ -61,6 +64,7 @@ def _parse_modelfit_results(
                     f"table no. {table.number}"
                 )
     except (FileNotFoundError, OSError):
+        # FIXME: Can this still happen?
         return None
 
     (
@@ -852,7 +856,7 @@ def simfit_results(model, model_path):
 
 
 def parse_modelfit_results(
-    model, path: Optional[Union[str, Path]], subproblem: Optional[int] = None
+    model, path: Optional[Union[str, Path]], strict=False, subproblem: Optional[int] = None
 ):
     name_map = create_name_map(model)
     name_map = {value: key for key, value in name_map.items()}
@@ -861,6 +865,7 @@ def parse_modelfit_results(
         model.internals.control_stream,
         name_map,
         model,
+        strict=strict,
         subproblem=subproblem,
     )
     return res
@@ -916,3 +921,12 @@ def override_minimization_successful(minimization_successful, pe_iterations):
         else:
             new_minsucc.append(minsucc)
     return new_minsucc
+
+
+def create_failed_results(model, log):
+    return ModelfitResults(
+        minimization_successful=False,
+        ofv=float("NaN"),
+        parameter_estimates=_create_failed_parameter_estimates(model.parameters),
+        log=log,
+    )

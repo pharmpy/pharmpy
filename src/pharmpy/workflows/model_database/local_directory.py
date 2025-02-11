@@ -49,7 +49,10 @@ def get_modelfit_results(model, path, esttool=None):
         return res
 
     if isinstance(model, nonmem_model.Model):
-        res = nonmem.parse_modelfit_results(model, path)
+        try:
+            res = nonmem.parse_modelfit_results(model, path, strict=True)
+        except FileNotFoundError:
+            res = None
     else:
         import pharmpy.model.external.nlmixr as nlmixr_model
         import pharmpy.tools.external.nlmixr as nlmixr

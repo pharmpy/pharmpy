@@ -557,6 +557,9 @@ def run_amd(
 
         if subresults is None:
             continue
+        elif subresults == "CRITICAL":
+            # Substitute for abort_workflow
+            return None
         else:
             final_model = subresults.final_model.replace(name=f"final_{tool_name}")
             final_model_entry = ModelEntry.create(
@@ -797,6 +800,9 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
             path=subctx.path,
         )
         assert isinstance(res, Results)
+        if res.final_model is None:
+            subctx.log_message("critical", "No model passed strictness criteria in modelsearch")
+            res = "CRITICAL"
 
         return res
 

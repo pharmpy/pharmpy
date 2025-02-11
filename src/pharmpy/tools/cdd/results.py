@@ -90,7 +90,6 @@ def calculate_results(
     **_,
 ):
     """Calculate CDD results"""
-
     if base_model_results is None:
         raise ValueError('cdd base model has no results')
 
@@ -98,7 +97,7 @@ def calculate_results(
         data=[
             pd.Series(res.parameter_estimates, name=m.name)
             for m, res in zip(cdd_models, cdd_model_results)
-            if res is not None
+            if res.minimization_successful
         ]
     )
 

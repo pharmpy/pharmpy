@@ -102,14 +102,12 @@ def create_results(
         else:
             models = None
 
-    if best_model is None:
-        best_model = base_model
-
     final_results = None
-    for me in cand_model_entries + [base_model_entry]:
-        if me.model.name == best_model.name:
-            final_results = me.modelfit_results
-            break
+    if best_model is not None:
+        for me in cand_model_entries + [base_model_entry]:
+            if me.model.name == best_model.name:
+                final_results = me.modelfit_results
+                break
 
     plots = create_plots(best_model, final_results)
 
@@ -161,9 +159,6 @@ def summarize_tool(
         bic_type=bic_type,
         penalties=penalties,
     )
-    if rank_type != "lrt" and df_rank.dropna(subset=rank_type).shape[0] == 0:
-        raise ValueError("All models fail the strictness criteria!")
-
     rows = {}
 
     for model_entry in [start_model_entry] + model_entries:
@@ -191,6 +186,15 @@ def summarize_tool(
 
 
 def create_plots(model: Model, results: ModelfitResults):
+    if model is None:
+        return {
+            'dv_vs_pred': None,
+            'dv_vs_ipred': None,
+            'cwres_vs_idv': None,
+            'abs_cwres_vs_ipred': None,
+            'eta_distribution': None,
+        }
+
     if 'dvid' in model.datainfo.types:
         dvid_name = model.datainfo.typeix['dvid'].names[0]
     else:
@@ -251,6 +255,8 @@ def table_final_parameter_estimates(parameter_estimates, ses):
 
 
 def table_final_eta_shrinkage(model, results):
+    if results is None:
+        return None
     if results.parameter_estimates is not None and results.individual_estimates is not None:
         eta_shrinkage = calculate_eta_shrinkage(
             model, results.parameter_estimates, results.individual_estimates
