@@ -80,7 +80,7 @@ def test_set_proportional_error_model_nolog(load_model_for_test, testdata):
     correct = """$ERROR
 Y_1 = F + EPS(1)*F
 IF (F.EQ.0) THEN
-    IPREDADJ = 2.22500000000000E-16
+    IPREDADJ = 0.0670000000000000
 ELSE
     IPREDADJ = F
 END IF
@@ -110,7 +110,7 @@ S1=V
 
 $ERROR
 IF (F.EQ.0) THEN
-    IPREDADJ = 2.22500000000000E-16
+    IPREDADJ = 0.0670000000000000
 ELSE
     IPREDADJ = F
 END IF

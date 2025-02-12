@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add :code:`dv` option to :code:`get_observations`
+
 1.6.0 (2025-02-10)
 ------------------
 

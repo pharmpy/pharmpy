@@ -23,6 +23,7 @@ from pharmpy.model import (
 )
 from pharmpy.model.model import update_datainfo
 
+from .expressions import get_dv_symbol
 from .iterators import resample_data
 
 
@@ -219,7 +220,9 @@ def get_number_of_observations_per_individual(model: Model):
     return ser
 
 
-def get_observations(model: Model, keep_index: bool = False) -> pd.Series:
+def get_observations(
+    model: Model, keep_index: bool = False, dv: Union[Expr, str, int, None] = None
+) -> pd.Series:
     """Get observations from dataset
 
     Parameters
@@ -229,6 +232,8 @@ def get_observations(model: Model, keep_index: bool = False) -> pd.Series:
     keep_index : bool
         Set to True if the original index should be kept.
         Otherwise a new index using ID and idv will be created.
+    dv : Union[Expr, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
 
     Returns
     -------
@@ -275,6 +280,12 @@ def get_observations(model: Model, keep_index: bool = False) -> pd.Series:
     dvcol = model.datainfo.dv_column.name
 
     df = get_and_check_dataset(model)
+
+    if len(model.dependent_variables) > 1:
+        dv = get_dv_symbol(model, dv)
+        dvid = model.dependent_variables[dv]
+        dvidlab = model.datainfo.find_single_column_name("dvid")
+        df = df.loc[df[dvidlab] == dvid]
 
     if label:
         df = df.query(f'{label} == 0')

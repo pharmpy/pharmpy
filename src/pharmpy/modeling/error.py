@@ -284,7 +284,12 @@ def set_proportional_error_model(
         stats_new = stats.reassign(y, expr)
 
     if zero_protection:
-        guard_expr = Expr.piecewise((2.225e-16, sympy.Eq(f, 0)), (f, True))
+        if model.dataset is not None:
+            minobs = get_observations(model, dv=dv).min()
+            adjval = 0.01 * minobs
+        else:
+            adjval = 2.225e-16
+        guard_expr = Expr.piecewise((adjval, sympy.Eq(f, 0)), (f, True))
         guard_assignment = Assignment(ipred, guard_expr)
         ind = 0
         # Find first occurrence of IPREDADJ

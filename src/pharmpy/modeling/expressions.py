@@ -1987,7 +1987,7 @@ def get_dv_symbol(model: Model, dv: Union[Expr, str, int, None] = None) -> Expr:
 
     Return
     ------
-    sympy.Symbol
+    Expr
         DV symbol
 
     Example
