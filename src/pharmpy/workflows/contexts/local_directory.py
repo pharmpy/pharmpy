@@ -122,8 +122,7 @@ class LocalDirectoryContext(Context):
 
     @property
     def _metadata_path(self) -> Path:
-        # Currently one metadata for nested context
-        return self._top_path / 'metadata.json'
+        return self.path / 'metadata.json'
 
     @property
     def _models_path(self) -> Path:
@@ -242,11 +241,13 @@ class LocalDirectoryContext(Context):
         return df
 
     def retrieve_common_options(self) -> dict[str, Any]:
-        meta = self.retrieve_metadata()
+        ctx_top = self.get_top_level_context()
+        meta = ctx_top.retrieve_metadata()
         return meta['common_options']
 
     def retrieve_dispatching_options(self) -> dict[str, Any]:
-        meta = self.retrieve_metadata()
+        ctx_top = self.get_top_level_context()
+        meta = ctx_top.retrieve_metadata()
         return meta['dispatching_options']
 
     def get_parent_context(self) -> LocalDirectoryContext:
