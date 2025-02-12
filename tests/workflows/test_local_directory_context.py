@@ -57,6 +57,16 @@ def test_common_options(tmp_path):
     assert subctx.retrieve_common_options() == opts
 
 
+def test_dispatching_options(tmp_path):
+    opts = {'ref': 23}
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
+    metadata = {'dispatching_options': opts}
+    ctx.store_metadata(metadata)
+    assert ctx.retrieve_dispatching_options() == opts
+    subctx = ctx.create_subcontext("mysubcontext")
+    assert subctx.retrieve_dispatching_options() == opts
+
+
 def test_log(tmp_path):
     ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     ctx.log_message('error', "This didn't work")

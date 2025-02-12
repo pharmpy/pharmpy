@@ -245,6 +245,10 @@ class LocalDirectoryContext(Context):
         meta = self.retrieve_metadata()
         return meta['common_options']
 
+    def retrieve_dispatching_options(self) -> dict[str, Any]:
+        meta = self.retrieve_metadata()
+        return meta['dispatching_options']
+
     def get_parent_context(self) -> LocalDirectoryContext:
         if self.path == self._top_path:
             raise ValueError("Already at the top level context")

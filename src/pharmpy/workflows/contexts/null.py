@@ -67,6 +67,9 @@ class NullContext(Context):
     def retrieve_common_options(self):
         pass
 
+    def retrieve_dispatching_options(self):
+        pass
+
     def get_parent_context(self):
         pass
 

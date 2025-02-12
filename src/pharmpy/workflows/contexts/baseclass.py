@@ -224,6 +224,10 @@ class Context(ABC):
         pass
 
     @abstractmethod
+    def retrieve_dispatching_options(self) -> dict[str, Any]:
+        pass
+
+    @abstractmethod
     def get_parent_context(self) -> Context:
         """Get the parent context of this context"""
         pass
