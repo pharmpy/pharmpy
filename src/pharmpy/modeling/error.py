@@ -228,7 +228,7 @@ def set_proportional_error_model(
         A_CENTRAL(t)
         ────────────
     F =      S₁
-               ⎧2.225e-16  for F = 0
+               ⎧0.067  for F = 0
                ⎨
     IPREDADJ = ⎩    F      otherwise
     Y = F + IPREDADJ⋅εₚ
@@ -243,7 +243,7 @@ def set_proportional_error_model(
         A_CENTRAL(t)
         ────────────
     F =      S₁
-               ⎧2.225e-16  for F = 0
+               ⎧0.067  for F = 0
                ⎨
     IPREDADJ = ⎩    F      otherwise
     Y = εₚ + log(IPREDADJ)
