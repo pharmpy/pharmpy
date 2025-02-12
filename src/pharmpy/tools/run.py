@@ -199,6 +199,12 @@ def run_tool_with_name(
 ) -> Union[Model, list[Model], tuple[Model], Results]:
     dispatching_options, common_options, tool_options = split_common_options(kwargs)
 
+    if validate_input := getattr(tool, 'validate_input', None):
+        try:
+            validate_input(*args, **tool_options)
+        except Exception as err:
+            raise InputValidationError(str(err))
+
     create_workflow = tool.create_workflow
 
     dispatcher, ctx = get_run_setup(dispatching_options, common_options, name)
@@ -214,12 +220,6 @@ def run_tool_with_name(
     )
 
     ctx.store_metadata(tool_metadata)
-
-    if validate_input := getattr(tool, 'validate_input', None):
-        try:
-            validate_input(*args, **tool_options)
-        except Exception as err:
-            raise InputValidationError(str(err))
 
     if (
         "model" in tool_options
