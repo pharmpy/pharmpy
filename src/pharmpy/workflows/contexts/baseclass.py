@@ -233,6 +233,11 @@ class Context(ABC):
         pass
 
     @abstractmethod
+    def get_top_level_context(self) -> Context:
+        """Get the top level context of this context"""
+        pass
+
+    @abstractmethod
     def get_subcontext(self, name: str) -> Context:
         """Get one of the subcontexts of this context"""
         pass

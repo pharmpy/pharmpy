@@ -38,6 +38,10 @@ def test_init(tmp_path):
     subsubctx = subctx.create_subcontext("nextlevel")
     assert subsubctx.context_path == 'mycontext/mysubcontext/nextlevel'
 
+    assert ctx.get_top_level_context().context_path == ctx.context_path
+    assert subctx.get_top_level_context().context_path == ctx.context_path
+    assert subsubctx.get_top_level_context().context_path == ctx.context_path
+
 
 def test_metadata(tmp_path):
     ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)

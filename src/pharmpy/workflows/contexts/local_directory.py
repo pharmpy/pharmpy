@@ -256,6 +256,10 @@ class LocalDirectoryContext(Context):
         parent = LocalDirectoryContext(name=parent_path.name, ref=parent_path.parent)
         return parent
 
+    def get_top_level_context(self) -> LocalDirectoryContext:
+        ctx_top = LocalDirectoryContext(name=self._top_path.name, ref=self._top_path.parent)
+        return ctx_top
+
     def get_subcontext(self, name: str) -> LocalDirectoryContext:
         path = self.path / 'subcontexts' / name
         if path.is_dir():

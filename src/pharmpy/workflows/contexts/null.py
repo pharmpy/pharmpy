@@ -73,6 +73,9 @@ class NullContext(Context):
     def get_parent_context(self):
         pass
 
+    def get_top_level_context(self):
+        pass
+
     def get_subcontext(self, name):
         pass
 
