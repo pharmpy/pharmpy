@@ -1,7 +1,5 @@
-# import os
 import shutil
 from functools import partial
-from pathlib import Path
 
 import pytest
 
@@ -27,8 +25,7 @@ from pharmpy.modeling import (
     split_joint_distribution,
 )
 from pharmpy.tools.mfl.parse import parse
-from pharmpy.tools.run import (  # retrieve_final_model,; retrieve_models,
-    _create_metadata_common,
+from pharmpy.tools.run import (
     _create_metadata_tool,
     calculate_mbic_penalty,
     get_penalty_parameters_mfl,
@@ -98,38 +95,6 @@ def test_create_metadata_tool_not_raises(tmp_path, testdata, load_model_for_test
             ),
             kwargs={},
         )
-
-
-def test_create_metadata_common(tmp_path):
-    with chdir(tmp_path):
-        name = 'modelsearch'
-
-        database = LocalDirectoryContext(name, Path.cwd())
-
-        metadata = _create_metadata_common(
-            database=database,
-            toolname=name,
-            common_options={},
-        )
-
-        assert metadata['context']['class'] == 'LocalDirectoryContext'
-        path = Path(metadata['context']['path'])
-        assert path.stem == 'modelsearch'
-        assert 'path' not in metadata.keys()
-
-        path = 'tool_database_path'
-
-        database = LocalDirectoryContext(path)
-
-        metadata = _create_metadata_common(
-            database=database,
-            toolname=name,
-            common_options={'path': path},
-        )
-
-        path = Path(metadata['context']['path'])
-        assert path.stem == 'tool_database_path'
-        assert metadata['path'] == 'tool_database_path'
 
 
 def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):

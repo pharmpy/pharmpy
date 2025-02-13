@@ -485,12 +485,6 @@ def _create_metadata_common(
     database: Context, toolname: Optional[str], common_options: Mapping[str, Any]
 ):
     setup_metadata = {}
-    # FIXME: Naming of workflows/tools should be consistent (db and input name of tool)
-    setup_metadata['context'] = {
-        'class': type(database).__name__,
-        'toolname': toolname,
-        'path': str(database.path),
-    }
     for key, value in common_options.items():
         if key not in setup_metadata.keys():
             if isinstance(value, Path):
@@ -545,6 +539,12 @@ def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, C
                     ctx = default_context(name)
                     break
                 n += 1
+
+    dispatching_options['context'] = {
+        '__class__': type(ctx).__name__,
+        'name': str(ctx.name),
+        'ref': str(ctx.ref),
+    }
 
     return dispatcher, ctx
 

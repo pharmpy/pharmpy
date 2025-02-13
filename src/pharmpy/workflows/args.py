@@ -6,6 +6,8 @@ from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
 
+from .contexts.baseclass import Context
+
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
 
 
@@ -33,7 +35,14 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], Mappi
     other_options = {}
     for key, value in d.items():
         if key in all_dispatching_options:
-            dispatching_options[key] = value
+            if key == 'context':
+                if isinstance(value, Context):
+                    ctxval = str(value.path)
+                else:
+                    ctxval = str(value)
+                dispatching_options[key] = ctxval
+            else:
+                dispatching_options[key] = value
         elif key in all_common_options:
             if key == 'path':
                 if value is not None:
