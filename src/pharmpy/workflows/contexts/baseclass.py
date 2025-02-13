@@ -41,10 +41,19 @@ class Context(ABC):
         # An implementation needs to create the model database here
         # If ref is None an implementation specific default ref will be used
         self._name = name
+        self._ref = ref
 
     @abstractmethod
     def __repr__(self) -> str:
         pass
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def ref(self) -> str:
+        return self._ref
 
     @property
     def model_database(self) -> ModelDatabase:

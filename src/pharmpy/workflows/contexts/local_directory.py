@@ -37,7 +37,7 @@ class LocalDirectoryContext(Context):
         ref: Optional[str] = None,
     ):
         if ref is None:
-            ref = Path.cwd()
+            ref = str(Path.cwd())
         path = Path(ref) / name
 
         self._init_path(path)
