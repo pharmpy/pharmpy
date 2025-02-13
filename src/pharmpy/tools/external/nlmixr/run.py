@@ -153,6 +153,9 @@ def get_rpath():
     from pharmpy.tools.external.nlmixr import conf
 
     r_candidate = "Rscript"
+    # Windows
+    if os.name == 'nt':
+        r_candidate = "Rscript.exe"
 
     default_path = conf.rpath
     if default_path != Path(''):
