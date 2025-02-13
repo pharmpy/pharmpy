@@ -156,7 +156,7 @@ def get_rpath():
     # Windows
     if os.name == 'nt':
         r_candidate = "Rscript.exe"
-    
+
     default_path = conf.rpath
     if default_path != Path(''):
         path = default_path / 'bin' / r_candidate
