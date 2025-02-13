@@ -48,7 +48,6 @@ _not_wrapped = {
         'print_fit_summary',
         'read_modelfit_results',
         'read_results',
-        'retrieve_model',
         'retrieve_models',
         'run_tool',
         'summarize_modelfit_results',
@@ -62,6 +61,7 @@ _not_wrapped = {
     '.context': (
         'create_context',
         'print_log',
+        'retrieve_model',
         'retrieve_modelfit_results',
     ),
 }

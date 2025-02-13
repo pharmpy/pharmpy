@@ -2,6 +2,7 @@ from pathlib import Path
 from typing import Union
 
 from pharmpy.internals.fs.path import normalize_user_given_path
+from pharmpy.model import Model
 from pharmpy.workflows import ModelfitResults
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
@@ -54,6 +55,39 @@ def print_log(context: Context):
     df = context.retrieve_log()
     for _, row in df.iterrows():
         broadcaster.broadcast_message(row['severity'], row['path'], row['time'], row['message'])
+
+
+def retrieve_model(
+    source: Union[str, Path, Context],
+    name: str,
+) -> Model:
+    """Retrieve a model from a context/tool run
+
+    Any models created and run by the tool can be
+    retrieved.
+
+    Parameters
+    ----------
+    source : str, Path, Context
+        Source where to find models. Can be a path (as str or Path), or a
+        Context
+    name : str
+        Name of the model
+
+    Return
+    ------
+    Model
+        The model object
+
+    Examples
+    --------
+    >>> from pharmpy.tools import retrieve_model
+    >>> tooldir_path = 'path/to/tool/directory'
+    >>> model = retrieve_model(tooldir_path, 'run1')      # doctest: +SKIP
+
+    """
+    context = _open_context(source)
+    return context.retrieve_model_entry(name).model
 
 
 def retrieve_modelfit_results(
