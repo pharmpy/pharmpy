@@ -17,7 +17,10 @@ class SizesRecord(OptionRecord):
         return int(lth)
 
     def set_LTH(self, value: int) -> Self:
-        if value < 101:
+        curval = self.LTH
+        if curval < 0 and abs(curval) >= value:
+            return self
+        elif value < 101:
             newrec = self.remove_option('LTH')
         else:
             newrec = self.set_option('LTH', str(value))
