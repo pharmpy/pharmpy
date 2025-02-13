@@ -390,7 +390,6 @@ def _create_metadata_tool(
     kwargs: Mapping[str, Any],
 ):
     tool_params = inspect.signature(tool_func).parameters
-    tool_param_types = get_type_hints(tool_func)
     # FIXME: Add config file dump, estimation tool etc.
     tool_metadata = {
         'pharmpy_version': pharmpy.__version__,
@@ -417,13 +416,69 @@ def _create_metadata_tool(
 
     if tool_name != 'modelfit':
         db = database.model_database
-        for key, db_name in _store_input_models(db, tool_params, tool_param_types, args, kwargs):
-            tool_metadata['tool_options'][key] = {
-                '__class__': 'Model',
-                'key': db_name,
-            }
+        _store_input_models(db, tool_metadata, tool_params, kwargs)
 
     return tool_metadata
+
+
+def _store_input_models(db, metadata, tool_params, kwargs):
+    # Loop through all kwargs to find Model and ModelfitResults objects
+    # If found will attempt to pair them together assuming that ones put closest
+    # together given the function signature order belong together
+    previous = None
+    previous_arg = None
+    for arg in tool_params.keys():
+        current = kwargs.get(arg, None)
+        if isinstance(current, (Model, ModelfitResults)):
+            if previous is None:
+                previous = current
+                previous_arg = arg
+            else:
+                previous_is_model = isinstance(previous, Model)
+                current_is_model = isinstance(current, Model)
+                if previous_is_model and not current_is_model:
+                    _store_model_and_results(db, metadata, previous_arg, previous, arg, current)
+                    previous = None
+                elif not previous_is_model and current_is_model:
+                    _store_model_and_results(db, metadata, arg, current, previous_arg, previous)
+                    previous = None
+                elif previous_is_model:
+                    _store_model(db, metadata, previous_arg, previous)
+                    previous = current
+                    previous_arg = arg
+                else:
+                    previous = current
+                    previous_arg = arg
+    if previous is not None and isinstance(previous, Model):
+        _store_model(db, metadata, previous_arg, previous)
+
+
+def _store_model_and_results(
+    db: ModelDatabase, metadata, model_arg: str, model: Model, results_arg, results: ModelfitResults
+):
+    me = ModelEntry.create(model=model, modelfit_results=results)
+    with db.transaction(me) as txn:
+        txn.store_model()
+        txn.store_modelfit_results()
+        dbkey = str(txn.key)
+        metadata['tool_options'][model_arg] = {
+            '__class__': 'Model',
+            'key': dbkey,
+        }
+        metadata['tool_options'][results_arg] = {
+            '__class__': 'ModelfitResults',
+            'key': dbkey,
+        }
+
+
+def _store_model(db: ModelDatabase, metadata, arg: str, model: Model):
+    with db.transaction(model) as txn:
+        txn.store_model()
+        dbkey = str(txn.key)
+        metadata['tool_options'][arg] = {
+            '__class__': 'Model',
+            'key': dbkey,
+        }
 
 
 def _create_metadata_common(
@@ -445,14 +500,6 @@ def _create_metadata_common(
     return setup_metadata
 
 
-def _store_input_models(
-    db: ModelDatabase, params, types, args: Sequence, kwargs: Mapping[str, Any]
-):
-    for param_key, model in _input_models(params, types, args, kwargs):
-        key = _store_input_model(db, model)
-        yield param_key, key
-
-
 def _filter_params(kind, params, types):
     for i, param_key in enumerate(params):
         param = params[param_key]
@@ -472,21 +519,6 @@ def _input_model_param_keys(params, types):
 def _results_param_keys(params, types):
     for _, param_key in _filter_params(ModelfitResults, params, types):
         yield param_key
-
-
-def _input_models(params, types, args: Sequence, kwargs: Mapping[str, Any]):
-    for i, param_key in _filter_params(Model, params, types):
-        model = args[i] if i < len(args) else kwargs.get(param_key)
-        if model is None:
-            continue
-        yield param_key, model
-
-
-def _store_input_model(db: ModelDatabase, model: Model):
-    with db.transaction(model) as txn:
-        txn.store_model()
-        txn.store_modelfit_results()
-        return str(txn.key)
 
 
 def _now():
