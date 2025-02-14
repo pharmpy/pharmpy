@@ -43,6 +43,7 @@ from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, mfr
 
+from .context import create_context
 from .external import parse_modelfit_results
 
 
@@ -539,6 +540,12 @@ def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, C
                     ctx = default_context(name)
                     break
                 n += 1
+    elif not isinstance(ctx, Context):
+        # Assume a full path
+        path = Path(ctx)
+        name = path.name
+        ref = str(path.parent)
+        ctx = create_context(name, ref)
 
     dispatching_options['context'] = {
         '__class__': type(ctx).__name__,
