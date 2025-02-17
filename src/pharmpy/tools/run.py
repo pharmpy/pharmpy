@@ -206,9 +206,9 @@ def run_tool_with_name(
         except Exception as err:
             raise InputValidationError(str(err))
 
-    create_workflow = tool.create_workflow
-
     dispatcher, ctx = get_run_setup(dispatching_options, common_options, name)
+
+    create_workflow = tool.create_workflow
 
     tool_metadata = create_metadata(
         database=ctx,
