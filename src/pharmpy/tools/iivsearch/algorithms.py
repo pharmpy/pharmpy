@@ -26,20 +26,7 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mappin
     base_model = base_model.replace(
         description=create_description(base_model, param_dict=param_mapping)
     )
-
-    iivs = base_model.random_variables.iiv
-    iiv_names = iivs.names
-    if keep:
-        if param_mapping is None:
-            iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(base_model, keep))
-        else:
-            iiv_names = [
-                name for name in iiv_names if name not in keep and param_mapping[name] not in keep
-            ]
-
-    # Remove fixed etas
-    fixed_etas = _get_fixed_etas(base_model)
-    iiv_names = _remove_sublist(iiv_names, fixed_etas)
+    iiv_names = get_iiv_names(base_model, keep, param_mapping)
 
     for i, to_remove in enumerate(non_empty_subsets(iiv_names), 1):
         model_name = f'iivsearch_run{i + index_offset}'
@@ -64,6 +51,21 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mappin
     wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
     wb.insert_workflow(wf_fit)
     return Workflow(wb)
+
+
+def get_iiv_names(model, keep, param_mapping):
+    iivs = model.random_variables.iiv.free_symbols
+    iivs = model.statements.before_odes.free_symbols.intersection(iivs)
+    iiv_names = [iiv.name for iiv in iivs]
+    if keep and param_mapping:
+        keep = tuple(k for k, v in param_mapping.items() if v in keep)
+
+    if keep:
+        iiv_names = _remove_sublist(iiv_names, _get_eta_from_parameter(model, keep))
+
+    # Remove fixed etas
+    fixed_etas = _get_fixed_etas(model)
+    return _remove_sublist(iiv_names, fixed_etas)
 
 
 def bu_stepwise_no_of_etas(
