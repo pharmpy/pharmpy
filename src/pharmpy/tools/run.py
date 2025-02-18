@@ -36,7 +36,13 @@ from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
-from pharmpy.workflows import Results, Workflow, execute_workflow, split_common_options
+from pharmpy.workflows import (
+    Results,
+    Workflow,
+    execute_subtool,
+    execute_workflow,
+    split_common_options,
+)
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
 from pharmpy.workflows.dispatchers import Dispatcher
 from pharmpy.workflows.model_database import ModelDatabase
@@ -258,13 +264,14 @@ def create_metadata(
     tool_func,
     args: Sequence,
     tool_options: Mapping[str, Any],
-    common_options: Mapping[str, Any],
-    dispatching_options: Mapping[str, Any],
+    common_options: Optional[Mapping[str, Any]] = None,
+    dispatching_options: Optional[Mapping[str, Any]] = None,
 ):
     tool_metadata = _create_metadata_tool(database, tool_name, tool_func, args, tool_options)
-    setup_metadata = _create_metadata_common(database, tool_name, common_options)
-    tool_metadata['common_options'] = setup_metadata
-    tool_metadata['dispatching_options'] = dispatching_options
+    if common_options and dispatching_options:
+        setup_metadata = _create_metadata_common(database, tool_name, common_options)
+        tool_metadata['common_options'] = setup_metadata
+        tool_metadata['dispatching_options'] = dispatching_options
 
     return tool_metadata
 
@@ -273,6 +280,29 @@ def _update_metadata(tool_metadata, res):
     # FIXME: Make metadata immutable
     tool_metadata['stats']['end_time'] = _now()
     return tool_metadata
+
+
+def run_subtool(name, ctx: Context, **kwargs):
+    tool = import_tool(name)
+    subctx = ctx.create_subcontext(name)
+
+    create_workflow = tool.create_workflow
+    tool_metadata = create_metadata(
+        database=ctx,
+        tool_name=name,
+        tool_func=create_workflow,
+        args=tuple(),
+        tool_options=kwargs,
+    )
+    subctx.store_metadata(tool_metadata)
+    wf: Workflow = create_workflow(**kwargs)
+    assert wf.name == name
+
+    res = execute_subtool(wf, context=subctx)
+    tool_metadata = _update_metadata(tool_metadata, res)
+    subctx.store_metadata(tool_metadata)
+
+    return res
 
 
 def resume_tool(path: str):
