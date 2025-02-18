@@ -24,7 +24,7 @@ import pharmpy.config as config
 
 from .args import split_common_options
 from .contexts import Context, LocalDirectoryContext
-from .execute import execute_workflow
+from .execute import execute_subtool, execute_workflow
 from .log import Log
 from .model_database import (
     LocalDirectoryDatabase,
@@ -68,6 +68,7 @@ default_context = _importclass(conf.default_context)
 __all__ = [
     'default_model_database',
     'default_context',
+    'execute_subtool',
     'execute_workflow',
     'split_common_options',
     'LocalDirectoryDatabase',

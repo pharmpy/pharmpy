@@ -8,7 +8,14 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import set_instantaneous_absorption
 from pharmpy.tools import read_results
-from pharmpy.workflows import Results, Task, Workflow, WorkflowBuilder, execute_workflow
+from pharmpy.workflows import (
+    Results,
+    Task,
+    Workflow,
+    WorkflowBuilder,
+    execute_subtool,
+    execute_workflow,
+)
 from pharmpy.workflows.contexts import NullContext
 from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
 from pharmpy.workflows.results import ModelfitResults
@@ -220,3 +227,28 @@ def test_local_dispatcher():
     ctx = NullContext()
     res = LocalDaskDispatcher().run(wf, ctx)
     assert res == 'input'
+
+
+@pytest.mark.xdist_group(name="workflow")
+def test_execute_with_subtool(tmp_path):
+    a = lambda: 1  # noqa E731
+    t1 = Task('t1', a)
+    wb = WorkflowBuilder(tasks=[t1], name='test-tool')
+
+    def _run_subtool(context, x):
+        g = lambda: x + 1  # noqa E731
+        t = Task('t', g)
+        wb = WorkflowBuilder(tasks=[t], name='test-subtool')
+        wf = Workflow(wb)
+        return execute_subtool(wf, context)
+
+    t2 = Task('t2', _run_subtool)
+    wb.add_task(t2, predecessors=[t1])
+    wf = Workflow(wb)
+
+    with chdir(tmp_path):
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            ctx = NullContext(dispatcher=LocalDaskDispatcher())
+            res = execute_workflow(wf, context=ctx)
+            assert res == 2

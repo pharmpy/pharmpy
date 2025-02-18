@@ -51,19 +51,33 @@ def execute_workflow(
     workflow = Workflow(wb)
 
     res: T = dispatcher.run(workflow, context)
-
     if isinstance(res, Results) and not isinstance(res, ModelfitResults):
-        context.store_results(res)
-        from pharmpy.tools.reporting import report_available
-
-        if report_available(res):
-            from pharmpy.tools.reporting import create_report
-
-            if os.name == 'nt':
-                # Workaround for issue with dask versions >= 2023.7.0 on Windows
-                import asyncio
-
-                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-            create_report(res, context.path)
+        handle_results(res, context)
 
     return res
+
+
+def execute_subtool(workflow: Workflow[T], context):
+    assert context is not None
+
+    res_name = context.context_path.replace('/', '_')
+    res = context.dispatcher.call_workflow(workflow, unique_name=f'{res_name}_results', ctx=context)
+    if isinstance(res, Results) and not isinstance(res, ModelfitResults):
+        handle_results(res, context)
+
+    return res
+
+
+def handle_results(res, context):
+    context.store_results(res)
+    from pharmpy.tools.reporting import report_available
+
+    if report_available(res):
+        from pharmpy.tools.reporting import create_report
+
+        if os.name == 'nt':
+            # Workaround for issue with dask versions >= 2023.7.0 on Windows
+            import asyncio
+
+            asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
+        create_report(res, context.path)
