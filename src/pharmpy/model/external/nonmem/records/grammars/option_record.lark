@@ -1,15 +1,18 @@
 root: option*
 
 // We handle 'KEY VALUE' outside of Lark
-option: KEY ("=" VALUE)?
+option: key (value_parenthesized | "=" value_equals)?
 
-KEY: VALUE // Hack to circumvent LALR(1) limitations
-VALUE: VALUE_PARENTHESIZED | VALUE_ANY
+key: SYMBOL | PARENTHESIZED
+value_parenthesized: PARENTHESIZED -> value
+value_equals: VALUE_ANY -> value
+            | PARENTHESIZED -> value
 
-VALUE_PARENTHESIZED: /\([^)]*\)/
+PARENTHESIZED: /\([^)]*\)/
 VALUE_ANY: /[^\s=;]+/
 
 %import .definitions (WS, COMMENT, NEWLINE)
+SYMBOL: /[-A-Za-z0-9_]+/
 %ignore WS
 %ignore COMMENT
 %ignore NEWLINE

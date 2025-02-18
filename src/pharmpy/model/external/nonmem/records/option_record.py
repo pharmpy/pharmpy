@@ -9,23 +9,34 @@ from __future__ import annotations
 import re
 from abc import ABC
 from collections import namedtuple
-from typing import Iterable, Optional, Union, cast
+from typing import Iterable, Optional, Union
 
-from pharmpy.internals.parse import AttrToken, AttrTree, NoSuchRuleException
-from pharmpy.internals.parse.generic import eval_token
+from pharmpy.internals.parse import AttrToken, AttrTree
 
 from .record import Record
 
 
 def _get_key(node: AttrTree) -> str:
-    return cast(str, eval_token(node.leaf('KEY')))
+    return str(node.children[0])
 
 
 def _get_value(node: AttrTree) -> Optional[str]:
-    try:
-        return cast(str, eval_token(node.leaf('VALUE')))
-    except NoSuchRuleException:
+    if len(node.children) > 1:
+        return str(node.children[-1])
+    else:
         return None
+
+
+def _set_value(node: AttrTree, value: str) -> AttrTree:
+    children = node.children
+    if value.startswith('('):
+        token = AttrToken('PARENTHESIZED', value)
+    else:
+        token = AttrToken('VALUE_ANY', value)
+    eq_token = AttrToken('EQUALS', '=')
+    new_children = (children[0], eq_token, token)
+    new_node = AttrTree('option', new_children)
+    return new_node
 
 
 Option = namedtuple('Option', ['key', 'value'])
@@ -110,7 +121,8 @@ class OptionRecord(Record):
                 continue
 
             if _get_key(node) == key:
-                new_children.append(node.replace_first(AttrToken('VALUE', new_value)))
+                new_node = _set_value(node, new_value)
+                new_children.append(new_node)
                 new_children.extend(it)
                 newroot = AttrTree(self.root.rule, tuple(new_children))
                 return self.__class__(self.name, self.raw_name, newroot)
@@ -141,10 +153,19 @@ class OptionRecord(Record):
         return self.__class__(self.name, self.raw_name, newroot)
 
     def _create_option(self, key: str, value: Optional[str] = None):
-        if value is None:
-            node = AttrTree.create('option', [{'KEY': key}])
+        if key.startswith('('):
+            key_token = AttrToken('PARENTHESIZED', key)
         else:
-            node = AttrTree.create('option', [{'KEY': key}, {'EQUAL': '='}, {'VALUE': value}])
+            key_token = AttrToken('SYMBOL', key)
+        if value is None:
+            node = AttrTree('option', (key_token,))
+        else:
+            if value.startswith('('):
+                value_token = AttrToken('PARENTHESIZED', value)
+            else:
+                value_token = AttrToken('VALUE_ANY', value)
+            eq_token = AttrToken('EQUAL', '=')
+            node = AttrTree('option', (key_token, eq_token, value_token))
         return node
 
     def prepend_option(self, key: str, value: Optional[str] = None):
@@ -194,12 +215,14 @@ class OptionRecord(Record):
 
         def _fn(node: Union[AttrTree, AttrToken]):
             if isinstance(node, AttrTree) and node.rule == 'option':
-                if node.find('KEY') is not None:
-                    if eval_token(node.leaf('KEY')) == old:
-                        return node.replace_first(AttrToken('KEY', new))
-                elif node.find('VALUE') is not None:
-                    if eval_token(node.leaf('VALUE')) == old:
-                        return node.replace_first(AttrToken('VALUE', new))
+                key = _get_key(node)
+                if key == old:
+                    new_key = AttrToken('SYMBOL', new)
+                    new_node = AttrTree('option', (new_key,))
+                    return new_node
+                # elif node.find('VALUE') is not None:
+                #    if eval_token(node.leaf('VALUE')) == old:
+                #       return node.replace_first(AttrToken('VALUE', new))
 
             return node
 
@@ -247,12 +270,14 @@ class OptionRecord(Record):
                 curkey = _get_key(node)
                 if key[: len(curkey)] == curkey:
                     if i == n:
-                        s = node.leaf('VALUE').value
+                        s = _get_value(node)
+                        assert s is not None
                         if s.startswith('('):
                             s = f'{s[:-1]} {suboption})'
                         else:
                             s = f'({s} {suboption})'
-                        new_children.append(node.replace_first(AttrToken('VALUE', s)))
+                        new_node = _set_value(node, s)
+                        new_children.append(new_node)
                         new_children.extend(it)
                         newroot = AttrTree(self.root.rule, tuple(new_children))
                         return self.__class__(self.name, self.raw_name, newroot)
@@ -268,15 +293,16 @@ class OptionRecord(Record):
             if isinstance(node, AttrTree) and node.rule == 'option':
                 curkey = _get_key(node)
                 if key[: len(curkey)] == curkey:
-                    s = node.leaf('VALUE').value
-                    if s.startswith('('):
+                    s = _get_value(node)
+                    if s is not None and s.startswith('('):
                         subopts = [
                             subopt
                             for subopt in s[1:-1].split()
                             if suboption[: len(subopt)] != subopt
                         ]
                         s = '(' + ' '.join(subopts) + ')'
-                        new_children.append(node.replace_first(AttrToken('VALUE', s)))
+                        value_token = _set_value(node, s)
+                        new_children.append(value_token)
                         continue
 
             new_children.append(node)
@@ -416,14 +442,9 @@ class Opts:
             m = re.match(r'ETAS\(?', key)
             if m:
                 assert isinstance(netas, int)
-                # join all keys that belong with the ETAS
-                etas = key
-                while ')' not in key:
-                    i += 1
-                    node = opt_nodes[i]
-                    key = _get_key(node)
-                    etas += key
-                etas = etas[5:-1].replace(" ", "").replace("\t", "")
+                etas = _get_value(node)
+                assert etas is not None
+                etas = etas[1:-1].replace(" ", "").replace("\t", "")
                 if ',' in etas:
                     a = etas.split(',')
                     for n in a:

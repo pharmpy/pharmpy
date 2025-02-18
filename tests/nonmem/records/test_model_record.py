@@ -64,6 +64,18 @@ def test_add_compartment(parser, buf, add, kwargs, expected):
             '$MODEL  COMP=(DEPOT, DEFDOSE) COMPARTMENT=(CENTRAL ,   DEFOBS)',
             [('DEPOT', ['DEFDOSE']), ('CENTRAL', ['DEFOBSERVATION'])],
         ),
+        (
+            '$MODEL COMP=CENTRAL',
+            [('CENTRAL', [])],
+        ),
+        (
+            '$MODEL COMP(DEPOT) COMP(CENTRAL)',
+            [('DEPOT', []), ('CENTRAL', [])],
+        ),
+        (
+            '$MODEL  COMP (DEPOT, DEFDOSE) COMPARTMENT(CENTRAL,DEFOBS)',
+            [('DEPOT', ['DEFDOSE']), ('CENTRAL', ['DEFOBSERVATION'])],
+        ),
     ],
 )
 def test_compartments(parser, buf, results):
