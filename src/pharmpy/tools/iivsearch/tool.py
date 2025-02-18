@@ -29,7 +29,6 @@ from pharmpy.tools.common import (
 )
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas
 from pharmpy.tools.linearize.delinearize import delinearize_model
-from pharmpy.tools.linearize.tool import create_workflow as create_linearize_workflow
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -250,12 +249,14 @@ def create_param_mapping(me, linearize):
 
 
 def run_linearization(context, baseme):
-    linearize_context = context.create_subcontext('linearization')
-    linear_workflow = create_linearize_workflow(
+    from pharmpy.tools.run import run_subtool
+
+    linear_results = run_subtool(
+        'linearize',
+        context,
         model=baseme.model,
         description=algorithms.create_description(baseme.model),
     )
-    linear_results = linearize_context.call_workflow(linear_workflow, "running_linearization")
     linbaseme = ModelEntry.create(
         model=linear_results.final_model, modelfit_results=linear_results.final_model_results
     )
