@@ -4,8 +4,6 @@ import os
 from pathlib import Path
 from typing import TypeVar
 
-from pharmpy.model import Model
-
 from .dispatchers import Dispatcher
 from .results import ModelfitResults, Results
 from .workflow import Workflow, WorkflowBuilder, insert_context
@@ -48,24 +46,7 @@ def execute_workflow(
             path = Path(path)
         context = default_context(workflow.name, ref=path)
 
-    # For all input models set new database and read in results
-    original_input_models = []
-    input_models = []
     wb = WorkflowBuilder(workflow)
-    for task in workflow.tasks:
-        new_inp = []
-
-        for inp in task.task_input:
-            if isinstance(inp, Model):
-                original_input_models.append(inp)
-                new_inp.append(inp)
-                input_models.append(inp)
-            else:
-                new_inp.append(inp)
-
-        new_task = task.replace(task_input=tuple(new_inp))
-        wb.replace_task(task, new_task)
-
     insert_context(wb, context)
     workflow = Workflow(wb)
 
