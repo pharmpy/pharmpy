@@ -672,7 +672,7 @@ def run_amd(
 
 # FIXME: this function is a workaround until AMD is a real tool.
 def _setup_run(kwargs):
-    dispatching_options, common_options, tool_options = split_common_options(kwargs)
+    dispatching_options, common_options, seed, tool_options = split_common_options(kwargs)
     dispatcher, ctx = get_run_setup(dispatching_options, common_options, 'amd')
     tool_metadata = create_metadata(
         database=ctx,
@@ -680,6 +680,7 @@ def _setup_run(kwargs):
         tool_func=run_amd,
         args=tuple(),
         tool_options=tool_options,
+        seed=seed,
         common_options=common_options,
         dispatching_options=dispatching_options,
     )

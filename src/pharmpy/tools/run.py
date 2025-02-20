@@ -201,10 +201,22 @@ def import_tool(name: str):
     return importlib.import_module(f'pharmpy.tools.{name}')
 
 
+def _canonicalize_seed(seed):
+    if seed is None:
+        seed = pharmpy.DEFAULT_SEED
+    try:
+        seed = int(seed)
+    except ValueError:
+        InputValidationError("Seed must be an integer")
+    return seed
+
+
 def run_tool_with_name(
     name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, list[Model], tuple[Model], Results]:
-    dispatching_options, common_options, tool_options = split_common_options(kwargs)
+    dispatching_options, common_options, seed, tool_options = split_common_options(kwargs)
+
+    seed = _canonicalize_seed(seed)
 
     if validate_input := getattr(tool, 'validate_input', None):
         try:
@@ -222,6 +234,7 @@ def run_tool_with_name(
         tool_func=create_workflow,
         args=args,
         tool_options=tool_options,
+        seed=seed,
         common_options=common_options,
         dispatching_options=dispatching_options,
     )
@@ -264,6 +277,7 @@ def create_metadata(
     tool_func,
     args: Sequence,
     tool_options: Mapping[str, Any],
+    seed: int,
     common_options: Optional[Mapping[str, Any]] = None,
     dispatching_options: Optional[Mapping[str, Any]] = None,
 ):
@@ -272,6 +286,7 @@ def create_metadata(
         setup_metadata = _create_metadata_common(database, tool_name, common_options)
         tool_metadata['common_options'] = setup_metadata
         tool_metadata['dispatching_options'] = dispatching_options
+    tool_metadata['seed'] = seed
 
     return tool_metadata
 
@@ -286,6 +301,9 @@ def run_subtool(name, ctx: Context, **kwargs):
     tool = import_tool(name)
     subctx = ctx.create_subcontext(name)
 
+    seed = kwargs.get('seed', None)
+    seed = _canonicalize_seed(seed)
+
     create_workflow = tool.create_workflow
     tool_metadata = create_metadata(
         database=ctx,
@@ -293,6 +311,7 @@ def run_subtool(name, ctx: Context, **kwargs):
         tool_func=create_workflow,
         args=tuple(),
         tool_options=kwargs,
+        seed=seed,
     )
     subctx.store_metadata(tool_metadata)
     wf: Workflow = create_workflow(**kwargs)
