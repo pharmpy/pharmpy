@@ -93,6 +93,12 @@ class Context(ABC):
         return self._dispatcher
 
     @property
+    def seed(self) -> int:
+        if not hasattr(self, "seed"):
+            self.seed = self.retrieve_metadata()['seed']
+        return self.seed
+
+    @property
     @abstractmethod
     def context_path(self) -> str:
         pass
@@ -314,8 +320,7 @@ class Context(ABC):
         the context path to get a unique sequence.
         """
         ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
-        root_seed = self.retrieve_common_options()['seed']
-        rng = np.random.default_rng([index, ctxpath_bytes, root_seed])
+        rng = np.random.default_rng([index, ctxpath_bytes, self.seed])
         return rng
 
     def spawn_seed(self, rng, n=128) -> int:
