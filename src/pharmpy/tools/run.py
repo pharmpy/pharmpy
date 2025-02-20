@@ -297,9 +297,12 @@ def _update_metadata(tool_metadata, res):
     return tool_metadata
 
 
-def run_subtool(name, ctx: Context, **kwargs):
-    tool = import_tool(name)
-    subctx = ctx.create_subcontext(name)
+def run_subtool(tool, ctx: Context, subctx_name=None, **kwargs):
+    tool_name = tool
+    if not subctx_name:
+        subctx_name = tool_name
+    tool = import_tool(tool_name)
+    subctx = ctx.create_subcontext(subctx_name)
 
     seed = kwargs.get('seed', None)
     seed = _canonicalize_seed(seed)
@@ -307,7 +310,7 @@ def run_subtool(name, ctx: Context, **kwargs):
     create_workflow = tool.create_workflow
     tool_metadata = create_metadata(
         database=ctx,
-        tool_name=name,
+        tool_name=tool_name,
         tool_func=create_workflow,
         args=tuple(),
         tool_options=kwargs,
@@ -315,7 +318,7 @@ def run_subtool(name, ctx: Context, **kwargs):
     )
     subctx.store_metadata(tool_metadata)
     wf: Workflow = create_workflow(**kwargs)
-    assert wf.name == name
+    assert wf.name == tool_name
 
     res = execute_subtool(wf, context=subctx)
     tool_metadata = _update_metadata(tool_metadata, res)
