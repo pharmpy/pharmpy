@@ -261,7 +261,9 @@ def test_create_best_model(
     model_cwres = func(me_base, current_iteration=1, **kwargs).model
     me_cwres = model_entry_factory([model_cwres], ref_val=me_base.modelfit_results.ofv - 3.84)[0]
     res = calculate_results([me_base, me_cwres])
-    me_best, best_model_name = _create_best_model(me_start, res, current_iteration=1, dv=None)
+    me_best, best_model_name = _create_best_model(
+        me_start, res, current_iteration=1, dv=None, groups=6
+    )
 
     assert me_best.model.name == 'best_ruvsearch_1'
 
@@ -286,7 +288,7 @@ def test_create_best_model_no_best(load_model_for_test, testdata, model_entry_fa
     res = calculate_results([me_base] + cwres_model_entries)
 
     me_best, best_model_name = _create_best_model(
-        me_start, res, current_iteration=1, dv=None, cutoff=99999999999
+        me_start, res, current_iteration=1, dv=None, groups=4, cutoff=99999999999
     )
     assert me_best is None and best_model_name is None
 

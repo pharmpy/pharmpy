@@ -1,3 +1,4 @@
+import re
 from functools import partial
 from typing import Literal, Optional
 
@@ -162,6 +163,7 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
         current_iteration=current_iteration,
         strictness=strictness,
         dv=dv,
+        groups=groups,
     )
     task_post_process = Task('post_process', post_pro)
     wb.add_task(task_post_process, predecessors=[start_task] + fit_wf.output_tasks)
@@ -332,11 +334,11 @@ def _results(context, res):
 
 
 def post_process(
-    context, start_model_entry, *model_entries, cutoff, current_iteration, strictness, dv
+    context, start_model_entry, *model_entries, cutoff, current_iteration, strictness, dv, groups
 ):
     res = calculate_results(model_entries)
     best_model_unfitted, selected_model_name = _create_best_model(
-        start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv
+        start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv, groups=groups
     )
     if best_model_unfitted is not None:
         fit_wf = create_fit_workflow(modelentries=[best_model_unfitted])
@@ -532,7 +534,7 @@ def _time_after_dose(model):
     return model
 
 
-def _create_best_model(model_entry, res, current_iteration, dv, groups=4, cutoff=3.84):
+def _create_best_model(model_entry, res, current_iteration, dv, groups, cutoff=3.84):
     if any(res.cwres_models['dofv'] > cutoff):
         model = update_initial_estimates(model_entry.model, model_entry.modelfit_results)
         idx = res.cwres_models['dofv'].idxmax()
@@ -567,7 +569,8 @@ def _create_best_model(model_entry, res, current_iteration, dv, groups=4, cutoff
             )
         elif name.startswith('time_varying'):
             model = _time_after_dose(model)
-            i = int(name[-1])
+            # Name is like time_varying10
+            i = int(re.search(r"(\d+)$", name).group(1))
             quantile = i / groups
             df = _create_dataset(model_entry, dv=dv)
             tad = df['TAD']

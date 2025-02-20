@@ -7,6 +7,11 @@ New features
 * Add :code:`dv` option to :code:`get_observations`
 * Add context method :code:`spawn_seed`
 
+Bugfixes
+========
+
+* Fix bug causing groups>!=4 or groups>=10 in ruvsearch to crash or give wrong results
+
 1.6.0 (2025-02-10)
 ------------------
 
