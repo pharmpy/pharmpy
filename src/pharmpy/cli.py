@@ -113,6 +113,16 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     return lines
 
 
+def run_tool_wrapper(name, **kwargs):
+    from pharmpy.tools import run_tool
+    from pharmpy.tools.run import InputValidationError
+
+    try:
+        run_tool(name, **kwargs)
+    except InputValidationError as err:
+        error(err)
+
+
 def run_bootstrap(args):
     from pharmpy.tools import run_bootstrap
 
@@ -128,10 +138,8 @@ def run_execute(args):
 
 
 def run_modelsearch(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'modelsearch',
         model=model,
         results=res,
@@ -147,10 +155,8 @@ def run_modelsearch(args):
 
 
 def run_iivsearch(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'iivsearch',
         model=model,
         results=res,
@@ -170,10 +176,8 @@ def run_iivsearch(args):
 
 
 def run_iovsearch(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'iovsearch',
         model=model,
         results=res,
@@ -189,10 +193,8 @@ def run_iovsearch(args):
 
 
 def run_covsearch(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'covsearch',
         search_space=args.search_space,
         p_forward=args.p_forward,
@@ -210,10 +212,8 @@ def run_covsearch(args):
 
 
 def run_ruvsearch(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'ruvsearch',
         model=model,
         results=res,
@@ -228,10 +228,8 @@ def run_ruvsearch(args):
 
 
 def run_allometry(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'allometry',
         model=model,
         results=res,
@@ -247,10 +245,8 @@ def run_allometry(args):
 
 
 def run_estmethod(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'estmethod',
         args.algorithm,
         methods=args.methods,
@@ -298,10 +294,8 @@ def run_amd(args):
 
 
 def run_linearize(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'linearize',
         results=res,
         model=model,
@@ -310,10 +304,8 @@ def run_linearize(args):
 
 
 def run_retries(args):
-    from pharmpy.tools import run_tool
-
     model, res = args.model
-    run_tool(
+    run_tool_wrapper(
         'retries',
         results=res,
         model=model,
