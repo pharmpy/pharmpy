@@ -62,7 +62,6 @@ from textwrap import dedent
 
 import pharmpy
 from pharmpy.internals.fs.path import path_absolute
-from pharmpy.tools.amd.run import DEFAULT_SEED
 
 from .deps import pandas as pd
 
@@ -289,15 +288,10 @@ def run_amd(args):
         lloq_limit=args.lloq_limit,
         allometric_variable=args.allometric_variable,
         occasion=args.occasion,
-        path=args.path,
-        resume=args.resume,
         strictness=args.strictness,
         dv_types=dv_types,
         mechanistic_covariates=args.mechanistic_covariates,
         retries_strategy=args.retries_strategy,
-        seed=(
-            args.seed if args.seed is not None else DEFAULT_SEED
-        ),  # seed is a common option but not in AMD
         parameter_uncertainty_method=args.parameter_uncertainty_method,
         ignore_datainfo_fallback=bool(args.ignore_datainfo_fallback),
     )

@@ -1,9 +1,7 @@
 import re
-import warnings
 from pathlib import Path
 from typing import Callable, Literal, Optional, Sequence, Union
 
-from pharmpy import DEFAULT_SEED
 from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -33,8 +31,7 @@ from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.modeling.tmdd import DV_TYPES
-from pharmpy.reporting import generate_report
-from pharmpy.tools import retrieve_models, write_results
+from pharmpy.tools import retrieve_models
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.common import table_final_eta_shrinkage
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
@@ -43,19 +40,12 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.statement import Statement
-from pharmpy.tools.reporting import get_rst_path
-from pharmpy.tools.run import (
-    create_metadata,
-    get_run_setup,
-    is_strictness_fulfilled,
-    split_common_options,
-    summarize_errors_from_entries,
-)
-from pharmpy.workflows import ModelEntry, Results
+from pharmpy.tools.run import is_strictness_fulfilled, run_subtool, summarize_errors_from_entries
+from pharmpy.workflows import Context, ModelEntry, Results, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
-from ..run import run_tool
+from ...internals.fs.path import path_absolute
 from .results import AMDResults
 
 ALLOWED_STRATEGY = ["default", "reevaluation", "SIR", "SRI", "RSI"]
@@ -73,7 +63,7 @@ def spawn_seed(rng) -> int:
     return x
 
 
-def run_amd(
+def create_workflow(
     input: Union[Model, Path, str],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
@@ -91,14 +81,10 @@ def run_amd(
     lloq_limit: Optional[float] = None,
     allometric_variable: Optional[TSymbol] = None,
     occasion: Optional[str] = None,
-    path: Optional[Union[str, Path]] = None,
-    resume: bool = False,
     strictness: str = DEFAULT_STRICTNESS,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    # seed is a common option but needs to be here since amd is not yet a proper tool
-    seed: int = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str]]] = None,
@@ -142,10 +128,6 @@ def run_amd(
         Please use ALLOMETRY in the mfl instead.
     occasion : str
         Name of occasion column
-    path : str or Path
-        Path to run AMD in
-    resume : bool
-        Whether to allow resuming previous run
     strictness : str
         Strictness criteria
     dv_types : dict or None
@@ -157,8 +139,6 @@ def run_amd(
     retries_strategy: str
         Whether or not to run retries tool. Valid options are 'skip', 'all_final' or 'final'.
         Default is 'final'.
-    seed : int
-        Random seed to be used.
     parameter_uncertainty_method: {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method.
     ignore_datainfo_fallback : bool
@@ -185,12 +165,56 @@ def run_amd(
     run_tool
 
     """
-    args = locals()
-    validate_input(**args)
-    rng = create_rng(seed)
+    kwargs = locals()
+    # Needs to be done client side
+    if isinstance(input, str):
+        kwargs['input'] = path_absolute(Path(input))
 
-    ctx = _setup_run(args)
-    ctx.log_info("Starting tool amd")
+    wb = WorkflowBuilder(name='amd')
+    start_task = Task(
+        'run_amd_task',
+        run_amd_task,
+        *tuple(kwargs.values()),
+    )
+    wb.add_task(start_task)
+    task_results = Task('results', _results)
+    wb.add_task(task_results, predecessors=[start_task])
+    return Workflow(wb)
+
+
+# FIXME: refactor into separate tasks
+def run_amd_task(
+    context: Context,
+    input: Union[Model, Path, str],
+    results: Optional[ModelfitResults] = None,
+    modeltype: str = 'basic_pk',
+    administration: str = 'oral',
+    strategy: str = "default",
+    cl_init: Optional[float] = None,
+    vc_init: Optional[float] = None,
+    mat_init: Optional[float] = None,
+    b_init: Optional[float] = None,
+    emax_init: Optional[float] = None,
+    ec50_init: Optional[float] = None,
+    met_init: Optional[float] = None,
+    search_space: Optional[str] = None,
+    lloq_method: Optional[str] = None,
+    lloq_limit: Optional[float] = None,
+    allometric_variable: Optional[TSymbol] = None,
+    occasion: Optional[str] = None,
+    strictness: str = DEFAULT_STRICTNESS,
+    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
+    mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
+    retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    ignore_datainfo_fallback: bool = False,
+    _E: Optional[dict[str, Union[float, str]]] = None,
+):
+    kwargs = locals()
+
+    context.log_info("Starting tool amd")
+    seed = context.retrieve_common_options()['seed']
+    rng = create_rng(seed)
 
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
@@ -244,7 +268,7 @@ def run_amd(
     elif isinstance(input, nonmem.model.Model):
         model = input
         model = model.replace(name='start')
-        ctx.store_input_model_entry(model)
+        context.store_input_model_entry(model)
     else:
         # Redundant with validation
         raise TypeError(
@@ -264,10 +288,11 @@ def run_amd(
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
-    args['input'] = model
-    later_input_validation(**args)
+    kwargs['input'] = model
+    del kwargs['context']
+    later_input_validation(**kwargs)
     to_be_skipped = check_skip(
-        ctx, model, occasion, allometric_variable, ignore_datainfo_fallback, search_space
+        context, model, occasion, allometric_variable, ignore_datainfo_fallback, search_space
     )
 
     if parameter_uncertainty_method is not None:
@@ -301,7 +326,7 @@ def run_amd(
         order = ['residual', 'structural', 'iivsearch']
 
     if modeltype == 'pkpd' and 'allometry' in order:
-        ctx.log_warning('Skipping allometry since modeltype is "pkpd"')
+        context.log_warning('Skipping allometry since modeltype is "pkpd"')
         order.remove('allometry')
 
     if to_be_skipped:
@@ -404,7 +429,7 @@ def run_amd(
                     amd_start_model=model,
                     search_space=covsearch_features,
                     strictness=strictness,
-                    ctx=ctx,
+                    ctx=context,
                 )
             if modeltype == 'pkpd':
                 func = _subfunc_structsearch(
@@ -415,7 +440,7 @@ def run_amd(
                     ec50_init=ec50_init,
                     met_init=met_init,
                     strictness=strictness,
-                    ctx=ctx,
+                    ctx=context,
                 )
                 run_subfuncs['structsearch'] = func
             elif modeltype == 'tmdd':
@@ -425,12 +450,12 @@ def run_amd(
                     strictness=strictness,
                     dv_types=dv_types,
                     orig_dataset=orig_dataset,
-                    ctx=ctx,
+                    ctx=context,
                 )
                 run_subfuncs['structsearch'] = func
             else:
                 func = _subfunc_modelsearch(
-                    search_space=modelsearch_features, strictness=strictness, E=_E, ctx=ctx
+                    search_space=modelsearch_features, strictness=strictness, E=_E, ctx=context
                 )
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
@@ -438,7 +463,7 @@ def run_amd(
                 func = _subfunc_structsearch(
                     type=modeltype,
                     search_space=structsearch_features,
-                    ctx=ctx,
+                    ctx=context,
                 )
                 run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':
@@ -448,7 +473,7 @@ def run_amd(
                     iiv_strategy='no_add',
                     strictness=strictness,
                     E=_E,
-                    ctx=ctx,
+                    ctx=context,
                     dir_name="rerun_iivsearch",
                 )
             else:
@@ -457,13 +482,13 @@ def run_amd(
                     iiv_strategy=iiv_strategy,
                     strictness=strictness,
                     E=_E,
-                    ctx=ctx,
+                    ctx=context,
                     dir_name="iivsearch",
                 )
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
             func = _subfunc_iov(
-                amd_start_model=model, occasion=occasion, strictness=strictness, E=_E, ctx=ctx
+                amd_start_model=model, occasion=occasion, strictness=strictness, E=_E, ctx=context
             )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
@@ -478,7 +503,7 @@ def run_amd(
                 func = _subfunc_ruvsearch(
                     dv=1,
                     strictness=strictness,
-                    ctx=ctx,
+                    ctx=context,
                     dir_name=f'{run_name}_drug',
                 )
                 run_subfuncs[f'{run_name}_drug'] = func
@@ -486,7 +511,7 @@ def run_amd(
                 func = _subfunc_ruvsearch(
                     dv=2,
                     strictness=strictness,
-                    ctx=ctx,
+                    ctx=context,
                     dir_name=f'{run_name}_metabolite',
                 )
                 run_subfuncs[f'{run_name}_metabolite'] = func
@@ -495,17 +520,19 @@ def run_amd(
                     func = _subfunc_ruvsearch(
                         dv=value,
                         strictness=strictness,
-                        ctx=ctx,
+                        ctx=context,
                         dir_name=f'{run_name}_tmdd_{key}',
                     )
                     run_subfuncs[f'ruvsearch_{key}'] = func
             else:
-                func = _subfunc_ruvsearch(dv=dv, strictness=strictness, ctx=ctx, dir_name=run_name)
+                func = _subfunc_ruvsearch(
+                    dv=dv, strictness=strictness, ctx=context, dir_name=run_name
+                )
                 run_subfuncs[f'{run_name}'] = func
         elif section == 'allometry':
             if mfl_allometry is None:
                 func = _subfunc_allometry(
-                    amd_start_model=model, allometric_variable=allometric_variable, ctx=ctx
+                    amd_start_model=model, allometric_variable=allometric_variable, ctx=context
                 )
                 run_subfuncs['allometry'] = func
         elif section == 'covariates':
@@ -514,19 +541,19 @@ def run_amd(
                 search_space=covsearch_features,
                 mechanistic_covariates=mechanistic_covariates,
                 strictness=strictness,
-                ctx=ctx,
+                ctx=context,
             )
             run_subfuncs['covsearch'] = func
         else:
             raise ValueError(f"Unrecognized section {section} in order.")
         if retries_strategy == 'all_final':
-            func = _subfunc_retires(
-                tool=section, strictness=strictness, seed=spawn_seed(rng), ctx=ctx
+            func = _subfunc_retries(
+                tool=section, strictness=strictness, seed=spawn_seed(rng), ctx=context
             )
             run_subfuncs[f'{section}_retries'] = func
 
     if retries_strategy == 'final':
-        func = _subfunc_retires(tool="", strictness=strictness, seed=spawn_seed(rng), ctx=ctx)
+        func = _subfunc_retries(tool="", strictness=strictness, seed=spawn_seed(rng), ctx=context)
         run_subfuncs['retries'] = func
 
     # Filter data to only contain dvid=1
@@ -537,12 +564,11 @@ def run_amd(
         model = model.replace(dataset=model.dataset.reset_index())
 
     if results is None:
-        subctx = ctx.create_subcontext('modelfit')
-        results = run_tool('modelfit', model, path=subctx.path, resume=resume)
+        results = run_subtool('modelfit', context, model_or_models=model)
         if not is_strictness_fulfilled(model, results, DEFAULT_STRICTNESS):
-            ctx.log_warning('Base model failed strictness')
+            context.log_warning('Base model failed strictness')
         model = model.replace(name='base')
-        ctx.store_model_entry(ModelEntry.create(model=model, modelfit_results=results))
+        context.store_model_entry(ModelEntry.create(model=model, modelfit_results=results))
 
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
     next_model_entry = model_entry
@@ -565,7 +591,7 @@ def run_amd(
             final_model_entry = ModelEntry.create(
                 model=final_model, modelfit_results=subresults.final_results, parent=next_model
             )
-            ctx.store_model_entry(final_model_entry)
+            context.store_model_entry(final_model_entry)
             if (mfl_allometry is not None and tool_name == 'modelsearch') or (
                 tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]
             ):
@@ -580,7 +606,7 @@ def run_amd(
                         search_space=covsearch_features,
                         strictness=strictness,
                         mechanistic_covariates=mechanistic_covariates,
-                        ctx=ctx,
+                        ctx=context,
                     )
                     run_subfuncs['covsearch'] = func
             next_model = final_model
@@ -593,7 +619,7 @@ def run_amd(
     summary_tool = _create_tool_summary(sum_subtools)
 
     if summary_models is None:
-        ctx.log_warning(
+        context.log_warning(
             'AMDResults.summary_models is None because none of the tools yielded a summary.'
         )
 
@@ -601,12 +627,12 @@ def run_amd(
     final_results = next_model_entry.modelfit_results
     summary_errors = summarize_errors_from_entries([next_model_entry])
 
-    ctx.store_final_model_entry(final_model)
+    context.store_final_model_entry(final_model)
 
     # run simulation for VPC plot
     # NOTE: The seed is set to be in range for NONMEM
     sim_model = set_simulation(final_model, n=300, seed=int(rng.integers(2**31 - 1)))
-    sim_res = _run_simulation(sim_model, ctx)
+    sim_res = _run_simulation(sim_model, context)
     simulation_data = sim_res.table
 
     if final_results.predictions is not None:
@@ -638,7 +664,7 @@ def run_amd(
     if not simulation_data.empty:
         final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
     else:
-        ctx.log_warning("No vpc could be generated. Did the simulation fail?")
+        context.log_warning("No vpc could be generated. Did the simulation fail?")
         final_vpc_plot = None
 
     res = AMDResults(
@@ -657,44 +683,7 @@ def run_amd(
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_model, final_results),
         final_model_vpc_plot=final_vpc_plot,
     )
-    # Since we are outside of the regular tools machinery the following is needed
-    results_path = ctx.path / 'results.json'
-    write_results(results=res, path=results_path)
-    write_results(results=res, path=ctx.path / 'results.csv', csv=True)
-    rst_path = get_rst_path(res)
-    target_path = ctx.path / 'results.html'
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        generate_report(rst_path, results_path, target_path)
-    ctx.log_info("Finishing tool amd")
     return res
-
-
-# FIXME: this function is a workaround until AMD is a real tool.
-def _setup_run(kwargs):
-    dispatching_options, common_options, seed, tool_options = split_common_options(kwargs)
-    dispatcher, ctx = get_run_setup(dispatching_options, common_options, 'amd')
-    tool_metadata = create_metadata(
-        database=ctx,
-        tool_name='amd',
-        tool_func=run_amd,
-        args=tuple(),
-        tool_options=tool_options,
-        seed=seed,
-        common_options=common_options,
-        dispatching_options=dispatching_options,
-    )
-
-    # Workaround to remove common options from metadata to mimic real tools.
-    # These are included since create_metadata uses the function signature.
-    tool_options_new = tool_metadata['tool_options'].copy()
-    for key, value in tool_metadata['tool_options'].items():
-        if key in dispatching_options.keys() or key in common_options.keys():
-            tool_options_new.pop(key)
-    tool_metadata['tool_options'] = tool_options_new
-
-    ctx.store_metadata(tool_metadata)
-    return ctx
 
 
 def _table_final_parameter_estimates(parameter_estimates, ses):
@@ -753,24 +742,21 @@ def noop_subfunc(_: Model):
 
 
 def _run_simulation(model, ctx):
-    subctx = ctx.create_subcontext('simulation')
-    res = run_tool('simulation', model=model, path=subctx.path)
+    res = run_subtool('simulation', ctx, model=model)
     return res
 
 
-def _subfunc_retires(tool, strictness, seed, ctx):
-    subctx = ctx.create_subcontext(f'{tool}_retries')
-
+def _subfunc_retries(tool, strictness, seed, ctx):
     def _run_retries(model, modelfit_results):
-        res = run_tool(
+        res = run_subtool(
             'retries',
+            ctx,
+            subctx_name=f'{tool}_retries',
             model=model,
             results=modelfit_results,
             strictness=strictness,
             scale='UCP',
             prefix_name=tool,
-            seed=seed,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         return res
@@ -779,8 +765,6 @@ def _subfunc_retires(tool, strictness, seed, ctx):
 
 
 def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx) -> SubFunc:
-    subctx = ctx.create_subcontext('modelsearch')
-
     def _run_modelsearch(model, modelfit_results):
         if E and 'modelsearch' in E.keys():
             rank_type = 'mbic'
@@ -789,8 +773,9 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
             rank_type = 'bic'
             e = None
 
-        res = run_tool(
+        res = run_subtool(
             'modelsearch',
+            ctx,
             model=model,
             results=modelfit_results,
             search_space=search_space,
@@ -798,11 +783,10 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
             strictness=strictness,
             rank_type=rank_type,
             E=e,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         if res.final_model is None:
-            subctx.log_message("critical", "No model passed strictness criteria in modelsearch")
+            ctx.log_message("critical", "No model passed strictness criteria in modelsearch")
             res = "CRITICAL"
 
         return res
@@ -811,15 +795,13 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
 
 
 def _subfunc_structsearch(ctx, **kwargs) -> SubFunc:
-    subctx = ctx.create_subcontext("structsearch")
-
     def _run_structsearch(model, modelfit_results):
-        res = run_tool(
+        res = run_subtool(
             'structsearch',
+            ctx,
             model=model,
             results=modelfit_results,
             **kwargs,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         return res
@@ -830,22 +812,20 @@ def _subfunc_structsearch(ctx, **kwargs) -> SubFunc:
 def _subfunc_structsearch_tmdd(
     search_space, type, strictness, dv_types, orig_dataset, ctx
 ) -> SubFunc:
-    subctx1 = ctx.create_subcontext("modelsearch")
-    subctx2 = ctx.create_subcontext("structsearch")
-
     def _run_structsearch_tmdd(model, modelfit_results):
-        res = run_tool(
+        res = run_subtool(
             'modelsearch',
+            ctx,
             model=model,
             results=modelfit_results,
             search_space=search_space,
             algorithm='reduced_stepwise',
             strictness=strictness,
             rank_type='bic',
-            path=subctx1.path,
         )
 
         final_model = res.final_model
+        subctx1 = ctx.get_subcontext('modelsearch1')
         all_models = [
             subctx1.retrieve_model_entry(model_name).model
             for model_name in subctx1.list_all_names()
@@ -911,8 +891,9 @@ def _subfunc_structsearch_tmdd(
         if dv_types is not None:
             final_model = final_model.replace(dataset=orig_dataset)
 
-        res = run_tool(
+        res = run_subtool(
             'structsearch',
+            ctx,
             model=final_model,
             results=final_res,
             type=type,
@@ -920,7 +901,6 @@ def _subfunc_structsearch_tmdd(
             extra_model_results=extra_model_results,
             strictness=strictness,
             dv_types=dv_types,
-            path=subctx2.path,
         )
         assert isinstance(res, Results)
         return res
@@ -929,8 +909,6 @@ def _subfunc_structsearch_tmdd(
 
 
 def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
-    subctx = ctx.create_subcontext(dir_name)
-
     def _run_iiv(model, modelfit_results):
         if E and 'iivsearch' in E.keys():
             rank_type = 'mbic'
@@ -944,8 +922,10 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
             for symbol in get_central_volume_and_clearance(model)
             if symbol in find_clearance_parameters(model)
         ]
-        res = run_tool(
+        res = run_subtool(
             'iivsearch',
+            ctx,
+            subctx_name=dir_name,
             model=model,
             results=modelfit_results,
             algorithm='top_down_exhaustive',
@@ -955,7 +935,6 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
             E_p=e_p,
             E_q=e_q,
             keep=keep,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         return res
@@ -964,22 +943,21 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
 
 
 def _subfunc_ruvsearch(dv, strictness, ctx, dir_name) -> SubFunc:
-    subctx = ctx.create_subcontext(dir_name)
-
     def _run_ruvsearch(model, modelfit_results):
         if has_blq_transformation(model):
             skip, max_iter = ['IIV_on_RUV', 'time_varying'], 1
         else:
             skip, max_iter = [], 3
-        res = run_tool(
+        res = run_subtool(
             'ruvsearch',
+            ctx,
+            subctx_name=dir_name,
             model=model,
             results=modelfit_results,
             skip=skip,
             max_iter=max_iter,
             dv=dv,
             strictness=strictness,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         return res
@@ -993,10 +971,8 @@ def _subfunc_structural_covariates(
     strictness,
     ctx,
 ) -> SubFunc:
-    subctx = ctx.create_subcontext("covsearch_structural")
-
     def _run_structural_covariates(model, modelfit_results):
-        allowed_parameters = allowed_parameters = set(get_pk_parameters(model)).union(
+        allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )
         # Extract all forced
@@ -1036,13 +1012,14 @@ def _subfunc_structural_covariates(
             )
             return None
         struct_searchspace = mfl.create_from_mfl_statement_list(structural_searchspace)
-        res = run_tool(
+        res = run_subtool(
             'covsearch',
+            ctx,
+            subctx_name='covsearch_structural',
             model=model,
             results=modelfit_results,
             search_space=struct_searchspace,
             strictness=strictness,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         return res
@@ -1074,10 +1051,6 @@ def _subfunc_mechanistic_exploratory_covariates(
             ' and .datainfo usage of "covariate" type and "continuous" flag.'
         )
 
-    # FIXME: Will always create these
-    subcontext1 = ctx.create_subcontext("covsearch_mechanistic")
-    subcontext2 = ctx.create_subcontext("covsearch_exploratory")
-
     def _run_mechanistic_exploratory_covariates(model, modelfit_results):
         index_offset = 0  # For naming runs
 
@@ -1103,14 +1076,16 @@ def _subfunc_mechanistic_exploratory_covariates(
                     ' Skipping mechanistic COVsearch.'
                 )
             else:
-                res = run_tool(
+                res = run_subtool(
                     'covsearch',
+                    ctx,
+                    subctx_name='covsearch_mechanistic',
                     model=model,
                     results=modelfit_results,
                     search_space=mechanistic_searchspace,
                     strictness=strictness,
-                    path=subcontext1.path,
                 )
+                subcontext1 = ctx.get_subcontext('covsearch_mechanistic')
                 covsearch_model_number = [
                     re.search(r"(\d*)$").group(1)
                     for model_name in subcontext1.list_all_names()
@@ -1136,13 +1111,14 @@ def _subfunc_mechanistic_exploratory_covariates(
         else:
             filtered_searchspace = search_space
 
-        res = run_tool(
+        res = run_subtool(
             'covsearch',
+            ctx,
+            subctx_name='covsearch_exploratory',
             model=model,
             results=modelfit_results,
             search_space=filtered_searchspace,
             strictness=strictness,
-            path=subcontext2.path,
             naming_index_offset=index_offset,
         )
         assert isinstance(res, Results)
@@ -1196,15 +1172,13 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
     if allometric_variable is None:  # Somewhat redundant with validation function
         allometric_variable = amd_start_model.datainfo.descriptorix["body weight"][0].name
 
-    subctx = ctx.create_subcontext("allometry")
-
     def _run_allometry(model, modelfit_results):
-        res = run_tool(
+        res = run_subtool(
             'allometry',
+            ctx,
             model=model,
             results=modelfit_results,
             allometric_variable=allometric_variable,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         return res
@@ -1213,8 +1187,6 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
 
 
 def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
-    subctx = ctx.create_subcontext("iovsearch")
-
     def _run_iov(model, modelfit_results):
         if E and 'iovsearch' in E.keys():
             rank_type = 'mbic'
@@ -1223,15 +1195,15 @@ def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
             rank_type = 'bic'
             e = None
 
-        res = run_tool(
+        res = run_subtool(
             'iovsearch',
+            ctx,
             model=model,
             results=modelfit_results,
             column=occasion,
             strictness=strictness,
             rank_type=rank_type,
             E=e,
-            path=subctx.path,
         )
         assert isinstance(res, Results)
         return res
@@ -1321,6 +1293,11 @@ def check_skip(
     return to_be_skipped
 
 
+def _results(context, res):
+    context.log_info("Finishing tool amd")
+    return res
+
+
 @with_runtime_arguments_type_check
 def validate_input(
     input: Union[Model, Path, str, pd.DataFrame],
@@ -1340,13 +1317,10 @@ def validate_input(
     lloq_limit: Optional[float] = None,
     allometric_variable: Optional[TSymbol] = None,
     occasion: Optional[str] = None,
-    path: Optional[Union[str, Path]] = None,
-    resume: bool = False,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
     mechanistic_covariates: Optional[list[Union[str, tuple]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,

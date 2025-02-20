@@ -31,8 +31,6 @@ def _model_count(rundir: Path):
                 'iovsearch',
                 'allometry',
                 'covsearch_exploratory',
-                'covsearch_mechanistic',  # FIXME: Theses two are currently created as empty
-                'covsearch_structural',
                 'simulation',
             ],
         ),
@@ -46,8 +44,6 @@ def _model_count(rundir: Path):
                 'iovsearch',
                 'allometry',
                 'covsearch_exploratory',
-                'covsearch_mechanistic',  # FIXME: Theses two are currently created as empty
-                'covsearch_structural',
                 'rerun_iivsearch',
                 'rerun_ruvsearch',
                 'simulation',

@@ -39,7 +39,6 @@ __all__ = (
 _allowed = set(__all__)
 
 _not_wrapped = {
-    '.amd.run': ('run_amd',),
     '.reporting': ('create_report',),
     '.run': (
         'fit',
