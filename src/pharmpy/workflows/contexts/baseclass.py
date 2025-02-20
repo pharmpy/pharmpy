@@ -317,3 +317,31 @@ class Context(ABC):
         root_seed = self.retrieve_common_options()['seed']
         rng = np.random.default_rng([index, ctxpath_bytes, root_seed])
         return rng
+
+    def spawn_seed(self, rng, n=128) -> int:
+        """Spawn a new seed using a random number generator
+
+        Parameters
+        ----------
+        rng : Random number generator
+            Random number generator
+        n : int
+            Size of seed to generate in number of bits
+
+        Returns
+        -------
+        int
+            New random seed
+        """
+        n_full_words = n // 64
+        a = rng.integers(2**64 - 1, size=n_full_words, dtype=np.uint64)
+        x = 0
+        m = 1
+        for val in a:
+            x += int(val) * m
+            m *= 2**64
+        remaining_bits = n % 64
+        if remaining_bits > 0:
+            b = rng.integers(2**remaining_bits - 1, size=1, dtype=np.uint64)
+            x += int(b[0]) * m
+        return x

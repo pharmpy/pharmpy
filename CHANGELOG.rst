@@ -5,6 +5,7 @@ New features
 ============
 
 * Add :code:`dv` option to :code:`get_observations`
+* Add context method :code:`spawn_seed`
 
 1.6.0 (2025-02-10)
 ------------------

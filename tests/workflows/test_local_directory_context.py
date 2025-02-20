@@ -1,5 +1,6 @@
 import pytest
 
+from pharmpy.modeling import create_rng
 from pharmpy.tools import load_example_modelfit_results
 from pharmpy.workflows import LocalDirectoryContext
 from pharmpy.workflows.hashing import ModelHash
@@ -152,3 +153,14 @@ def test_key(tmp_path, load_example_model_for_test):
     assert name == "pheno"
     annotation = ctx.retrieve_annotation("pheno")
     assert annotation.startswith("PHENOBARB")
+
+
+def test_spawn_seed(tmp_path):
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
+    rng = create_rng(1234)
+    seed = ctx.spawn_seed(rng)
+    assert seed == 129373904605721494098426312902902725561
+    seed = ctx.spawn_seed(rng, n=32)
+    assert seed == 735984819
+    seed = ctx.spawn_seed(rng, n=17)
+    assert seed == 121010
