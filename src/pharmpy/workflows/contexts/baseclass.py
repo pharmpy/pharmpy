@@ -94,9 +94,9 @@ class Context(ABC):
 
     @property
     def seed(self) -> int:
-        if not hasattr(self, "seed"):
-            self.seed = self.retrieve_metadata()['seed']
-        return self.seed
+        if not hasattr(self, '_seed'):
+            self._seed = self.retrieve_metadata()['seed']
+        return self._seed
 
     @property
     @abstractmethod

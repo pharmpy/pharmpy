@@ -155,6 +155,15 @@ def test_key(tmp_path, load_example_model_for_test):
     assert annotation.startswith("PHENOBARB")
 
 
+def test_create_rng(tmp_path):
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
+    ctx.store_metadata({'seed': 1234})
+    rng = ctx.create_rng(0)
+    assert list(rng.integers(0, 100, size=3)) == [85, 96, 32]
+    seed = ctx.spawn_seed(rng)
+    assert seed == 66159679555173072263051878775941756502
+
+
 def test_spawn_seed(tmp_path):
     ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
     rng = create_rng(1234)
