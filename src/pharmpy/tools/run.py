@@ -306,6 +306,8 @@ def run_subtool(tool, ctx: Context, subctx_name=None, **kwargs):
 
     seed = kwargs.get('seed', None)
     seed = _canonicalize_seed(seed)
+    if 'seed' in kwargs.keys():
+        del kwargs['seed']
 
     create_workflow = tool.create_workflow
     tool_metadata = create_metadata(

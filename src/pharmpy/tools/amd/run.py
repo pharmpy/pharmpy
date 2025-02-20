@@ -12,7 +12,6 @@ from pharmpy.modeling import (
     add_predictions,
     add_residuals,
     create_basic_pk_model,
-    create_rng,
     find_clearance_parameters,
     get_central_volume_and_clearance,
     get_pk_parameters,
@@ -53,14 +52,6 @@ ALLOWED_ADMINISTRATION = ["iv", "oral", "ivoral"]
 ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
 DEFAULT_STRICTNESS = "minimization_successful or (rounding_errors and sigdigs>=0.1)"
-
-
-def spawn_seed(rng) -> int:
-    # Creates a 128bit seed for a subtool
-    # FIXME: If this works well this function can be moved to modeling
-    a = rng.integers(2**64 - 1, size=2, dtype=np.uint64)
-    x = int(a[0]) * 2**64 + int(a[1])
-    return x
 
 
 def create_workflow(
@@ -213,8 +204,7 @@ def run_amd_task(
     kwargs = locals()
 
     context.log_info("Starting tool amd")
-    seed = context.retrieve_common_options()['seed']
-    rng = create_rng(seed)
+    rng = context.create_rng(0)
 
     from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
@@ -548,12 +538,14 @@ def run_amd_task(
             raise ValueError(f"Unrecognized section {section} in order.")
         if retries_strategy == 'all_final':
             func = _subfunc_retries(
-                tool=section, strictness=strictness, seed=spawn_seed(rng), ctx=context
+                tool=section, strictness=strictness, seed=context.spawn_seed(rng), ctx=context
             )
             run_subfuncs[f'{section}_retries'] = func
 
     if retries_strategy == 'final':
-        func = _subfunc_retries(tool="", strictness=strictness, seed=spawn_seed(rng), ctx=context)
+        func = _subfunc_retries(
+            tool="", strictness=strictness, seed=context.spawn_seed(rng), ctx=context
+        )
         run_subfuncs['retries'] = func
 
     # Filter data to only contain dvid=1
@@ -631,7 +623,7 @@ def run_amd_task(
 
     # run simulation for VPC plot
     # NOTE: The seed is set to be in range for NONMEM
-    sim_model = set_simulation(final_model, n=300, seed=int(rng.integers(2**31 - 1)))
+    sim_model = set_simulation(final_model, n=300, seed=context.spawn_seed(rng, n=32))
     sim_res = _run_simulation(sim_model, context)
     simulation_data = sim_res.table
 
@@ -757,6 +749,7 @@ def _subfunc_retries(tool, strictness, seed, ctx):
             strictness=strictness,
             scale='UCP',
             prefix_name=tool,
+            seed=seed,
         )
         assert isinstance(res, Results)
         return res
