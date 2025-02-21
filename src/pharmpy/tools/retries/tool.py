@@ -111,7 +111,7 @@ def _start(context, results, model):
 def create_random_init_model(
     context, index, scale, fraction, use_initial_estimates, prefix_name, modelentry
 ):
-    seed = context.create_rng(index)  # FIXME: Should not be called seed
+    rng = context.create_rng(index)
     original_model = modelentry.model
     # Update inits once before running
     if not use_initial_estimates and modelentry.modelfit_results:
@@ -133,7 +133,7 @@ def create_random_init_model(
         maximum_tests = 20  # TODO : Convert to argument
 
         for try_number in range(1, maximum_tests + 1):
-            new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, seed)
+            new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, rng)
             try:
                 new_candidate_model = set_initial_estimates(new_candidate_model, new_parameters)
                 break
@@ -144,7 +144,7 @@ def create_random_init_model(
                         f" to be positive semi-definite."
                     )
     elif scale == "UCP":
-        new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, seed)
+        new_parameters = create_new_parameter_inits(new_candidate_model, fraction, scale, rng)
         new_candidate_model = set_initial_estimates(new_candidate_model, new_parameters)
     else:
         # Should be caught in validate_input()
@@ -163,14 +163,14 @@ def create_random_init_model(
     )
 
 
-def create_new_parameter_inits(model, fraction, scale, seed):
+def create_new_parameter_inits(model, fraction, scale, rng):
     if scale == "normal":
         new_parameters = sample_parameters_uniformly(
             model,
             pd.Series(model.parameters.inits),
             fraction=fraction,
             scale=scale,
-            seed=seed,
+            seed=rng,
         )
         new_parameters = {p: new_parameters[p][0] for p in new_parameters}
     elif scale == "UCP":
@@ -180,7 +180,7 @@ def create_new_parameter_inits(model, fraction, scale, seed):
             pd.Series(model.parameters.inits),
             fraction=fraction,
             scale=scale,
-            seed=seed,
+            seed=rng,
         )
         new_parameters = {p: new_parameters[p][0] for p in new_parameters}
         new_parameters = calculate_parameters_from_ucp(model, ucp_scale, new_parameters)
