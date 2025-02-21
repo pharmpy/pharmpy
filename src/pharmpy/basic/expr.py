@@ -262,7 +262,10 @@ class Expr:
 
     @classmethod
     def function(cls, f: str, x) -> Expr:
-        func = symengine.Function(f)(x)
+        if isinstance(x, tuple):
+            func = symengine.Function(f)(*x)
+        else:
+            func = symengine.Function(f)(x)
         return cls(func)
 
     @classmethod

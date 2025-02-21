@@ -22,6 +22,8 @@ def test_symbol():
         expr.name
     expr = Expr.function("f", "t")
     assert expr.name == "f"
+    expr = Expr.function('f', ('x', 'y'))
+    assert expr.name == "f"
 
 
 def test_piecewise():
