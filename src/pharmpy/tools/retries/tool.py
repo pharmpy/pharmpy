@@ -99,6 +99,9 @@ def create_workflow(
 
 
 def _start(context, results, model):
+    context.log_info("Starting tool retries")
+    context.log_info(f"Input model OFV: {results.ofv:.3f}")
+
     input_model = model.replace(name="input", description="")
     input_model_entry = ModelEntry.create(model=input_model, modelfit_results=results)
 
@@ -228,6 +231,8 @@ def task_results(context, strictness, retries):
     final_model = res.final_model.replace(name="final")
     # Create links to final model
     context.store_final_model_entry(final_model)
+    context.log_info(f"Final model OFV: {res.final_results.ofv:.3f}")
+    context.log_info("Finishing tool retries")
 
     return res
 
