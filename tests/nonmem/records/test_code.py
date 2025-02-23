@@ -1,6 +1,7 @@
 import pytest
 import sympy
 
+from pharmpy.basic import Expr
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment
 from pharmpy.model.external.nonmem.records.code_record import CodeRecord
@@ -254,14 +255,20 @@ def S(x):
         ('$PK\nX(  Z \x00)=0', S('X(Z)'), 0),
         ('$PK\n X \t \t \x00\x00\t \x00(\x00Z)=0', S('X(Z)'), 0),
         ('$PK\n X \t \t \x00& \t\t\x00\n \t \x00( -1 , 2 )=0', S('X(-1,2)'), 0),
+        (
+            '$PRED IF (NEWIND.NE.2) BCLC=CLC',
+            S('BCLC'),
+            Expr.first("CLC", "ID"),
+        ),
     ],
 )
 def test_single_assignments(parser, buf, sym, expression):
     buf = _ensure_trailing_newline(buf)
     rec = parser.parse(buf).records[0]
     assert len(rec.statements) == 1
-    assert rec.statements[0].symbol == sym
-    assert rec.statements[0].expression == expression
+    statement = rec.statements[0]
+    assert statement.symbol == sym
+    assert statement.expression == expression
 
 
 @pytest.mark.usefixtures('parser')

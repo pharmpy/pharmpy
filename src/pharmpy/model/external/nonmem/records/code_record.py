@@ -686,7 +686,13 @@ def _parse_tree(tree: AttrTree):
                     if else_val is not None:
                         pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
                     else:
-                        pw = sympy.Piecewise((expr, logic_expr))
+                        if (
+                            logic_expr == sympy.Ne(sympy.Symbol("NEWIND"), sympy.Integer(2))
+                            and expr.is_Symbol
+                        ):
+                            pw = Expr.first(expr, "ID")
+                        else:
+                            pw = sympy.Piecewise((expr, logic_expr))
                     ass = Assignment.create(symbol, pw)
                     s.append(ass)
                     new_index.append((child_index, child_index + 1, len(s) - 1, len(s)))
