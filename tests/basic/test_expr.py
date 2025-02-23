@@ -132,3 +132,8 @@ def test_boolean_expr_unicode(expr, ref):
 def test_printer(expr, ref):
     printer = ExprPrinter()
     assert str(printer._print(expr)) == ref
+
+
+def test_first():
+    expr = Expr.first("WGT", "ID")
+    assert expr == Expr.function("first", ("WGT", "ID"))

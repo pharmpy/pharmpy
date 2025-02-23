@@ -273,6 +273,11 @@ class Expr:
         pw = symengine.Piecewise(*args)
         return cls(pw)
 
+    @classmethod
+    def first(cls, col, group):
+        """Function giving the first value of col for all records in group"""
+        return cls.function("first", (col, group))
+
     def __gt__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Gt(self._expr, other))
 
