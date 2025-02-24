@@ -6,6 +6,7 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_amd
+from pharmpy.tools.context import create_context
 from pharmpy.workflows import LocalDirectoryContext
 
 
@@ -85,6 +86,47 @@ def test_amd_basic(tmp_path, testdata, strategy, subrundir):
 
         assert len(res.summary_tool) >= 1
         assert len(res.summary_models) >= 1
+
+
+@pytest.mark.parametrize(
+    'model_kwargs, run_kwargs, search_space, subtools',
+    [
+        (
+            {'modeltype': 'basic_pk', 'administration': 'iv', 'cl_init': 1, 'vc_init': 10},
+            {'strategy': 'default', 'retries_strategy': 'skip'},
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            {
+                'modelfit',
+                'modelsearch',
+                'iivsearch',
+                'ruvsearch',
+                'allometry',
+                'covsearch_exploratory',
+                'simulation',
+            },
+        ),
+    ],
+)
+def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, subtools):
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
+        input = 'moxo_simulated_amd.csv'
+        res = run_amd(input, **model_kwargs, **run_kwargs, esttool='dummy')
+
+        assert (
+            len(res.summary_tool) == len(subtools) - 1
+        )  # Simulation is not part of the result table
+        assert len(res.summary_models) > len(subtools)
+
+        rundir = tmp_path / 'amd1'
+        assert rundir.is_dir()
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+
+        ctx = create_context("amd1")
+        subnames = ctx.list_all_subcontexts()
+        assert set(subnames) == subtools
 
 
 # def test_structure_mechanistic_exploratory(tmp_path, testdata):
