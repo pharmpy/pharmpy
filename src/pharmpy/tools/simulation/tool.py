@@ -40,6 +40,7 @@ def create_workflow(
 
 
 def run_simulations(context, model):
+    context.log_info("Starting tool simulation")
     modelentry = ModelEntry.create(model=model, simulation_results=None)
     wf = create_fit_workflow(modelentry)
     wb = WorkflowBuilder(wf)
@@ -49,7 +50,8 @@ def run_simulations(context, model):
     return modelentry_simulation.simulation_results
 
 
-def bundle_results(*args):
+def bundle_results(context, *args):
+    context.log_info("Finishing tool simulation")
     return args
 
 
