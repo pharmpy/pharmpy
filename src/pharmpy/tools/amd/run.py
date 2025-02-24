@@ -556,6 +556,7 @@ def run_amd_task(
         model = model.replace(dataset=model.dataset.reset_index())
 
     if results is None:
+        context.log_info('Running base model')
         results = run_subtool('modelfit', context, model_or_models=model)
         if not is_strictness_fulfilled(model, results, DEFAULT_STRICTNESS):
             context.log_warning('Base model failed strictness')
