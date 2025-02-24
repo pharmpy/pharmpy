@@ -278,6 +278,16 @@ class Expr:
         """Function giving the first value of col for all records in group"""
         return cls.function("first", (col, group))
 
+    @classmethod
+    def newind(cls):
+        """The newind function
+
+        0 - For the first record of the dataset
+        1 - For the first record of each individual (except if it is the first in the dataset)
+        2 - For any other record
+        """
+        return cls.function("newind", ())
+
     def __gt__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Gt(self._expr, other))
 

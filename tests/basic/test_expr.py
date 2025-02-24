@@ -137,3 +137,8 @@ def test_printer(expr, ref):
 def test_first():
     expr = Expr.first("WGT", "ID")
     assert expr == Expr.function("first", ("WGT", "ID"))
+
+
+def test_newind():
+    expr = Expr.newind()
+    assert expr == Expr.function("newind", ())
