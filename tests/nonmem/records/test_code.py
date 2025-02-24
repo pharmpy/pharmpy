@@ -345,7 +345,7 @@ def test_single_assignments(parser, buf, sym, expression):
                 (
                     S('TNXD'),
                     sympy.Piecewise(
-                        (S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2), sympy.Ge(S('EVID'), 3))),
+                        (S('TIME'), sympy.Or(sympy.Ne(Expr.newind(), 2), sympy.Ge(S('EVID'), 3))),
                     ),
                 )
             ],
@@ -356,7 +356,7 @@ def test_single_assignments(parser, buf, sym, expression):
                 (
                     S('TNXD'),
                     sympy.Piecewise(
-                        (S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2), sympy.Ge(S('EVID'), 3.0))),
+                        (S('TIME'), sympy.Or(sympy.Ne(Expr.newind(), 2), sympy.Ge(S('EVID'), 3.0))),
                     ),
                 )
             ],
@@ -367,7 +367,7 @@ def test_single_assignments(parser, buf, sym, expression):
                 (
                     S('TNXD'),
                     sympy.Piecewise(
-                        (S('TIME'), sympy.Or(sympy.Ne(S('NEWIND'), 2.0), sympy.Ge(S('EVID'), 3))),
+                        (S('TIME'), sympy.Or(sympy.Ne(Expr.newind(), 2.0), sympy.Ge(S('EVID'), 3))),
                     ),
                 )
             ],

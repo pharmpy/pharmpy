@@ -762,7 +762,9 @@ def _parse_tree(tree: AttrTree):
                 curind = (child_index, child_index + 1, len(s) - len(symbols), len(s))
                 new_index.append(curind)
 
-    return new_index, Statements(s)
+    statements = Statements(s).subs({Expr.symbol('NEWIND'): Expr.newind()})
+
+    return new_index, statements
 
 
 def _reorder_block_statements(s):
