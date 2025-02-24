@@ -7,7 +7,6 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_amd
 from pharmpy.tools.context import create_context
-from pharmpy.workflows import LocalDirectoryContext
 
 
 def _model_count(rundir: Path):
@@ -17,75 +16,6 @@ def _model_count(rundir: Path):
             ((rundir / 'subcontexts' / 'models').iterdir()),
         )
     )
-
-
-@pytest.mark.parametrize(
-    'strategy, subrundir',
-    [
-        (
-            'default',
-            [
-                'modelfit',
-                'modelsearch',
-                'iivsearch',
-                'ruvsearch',
-                'iovsearch',
-                'allometry',
-                'covsearch_exploratory',
-                'simulation',
-            ],
-        ),
-        (
-            'reevaluation',
-            [
-                'modelfit',
-                'modelsearch',
-                'iivsearch',
-                'ruvsearch',
-                'iovsearch',
-                'allometry',
-                'covsearch_exploratory',
-                'rerun_iivsearch',
-                'rerun_ruvsearch',
-                'simulation',
-            ],
-        ),
-    ],
-)
-@pytest.mark.filterwarnings(
-    'ignore:.*Adjusting initial estimates to create positive semidefinite omega/sigma matrices.',
-    'ignore::UserWarning',
-)
-def test_amd_basic(tmp_path, testdata, strategy, subrundir):
-    with chdir(tmp_path):
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
-        shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
-        input = 'moxo_simulated_amd.csv'
-        res = run_amd(
-            input,
-            modeltype='basic_pk',
-            administration='oral',
-            search_space='ABSORPTION(FO);PERIPHERALS(1)',
-            strategy=strategy,
-            occasion='VISI',
-            strictness='minimization_successful or rounding_errors',
-            retries_strategy='skip',
-            cl_init=0.01,
-            vc_init=1.0,
-            mat_init=0.1,
-        )
-
-        rundir = tmp_path / 'amd1'
-        assert rundir.is_dir()
-        assert (rundir / 'results.json').exists()
-        assert (rundir / 'results.csv').exists()
-
-        ctx = LocalDirectoryContext("amd1")
-        subnames = ctx.list_all_subcontexts()
-        assert set(subnames) == set(subrundir)
-
-        assert len(res.summary_tool) >= 1
-        assert len(res.summary_models) >= 1
 
 
 @pytest.mark.parametrize(
@@ -102,6 +32,23 @@ def test_amd_basic(tmp_path, testdata, strategy, subrundir):
                 'ruvsearch',
                 'allometry',
                 'covsearch_exploratory',
+                'simulation',
+            },
+        ),
+        (
+            {'modeltype': 'basic_pk', 'administration': 'iv', 'cl_init': 1, 'vc_init': 10},
+            {'strategy': 'reevaluation', 'retries_strategy': 'skip'},
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            {
+                'modelfit',
+                'modelsearch',
+                'iivsearch',
+                'ruvsearch',
+                'iovsearch',
+                'allometry',
+                'covsearch_exploratory',
+                'rerun_iivsearch',
+                'rerun_ruvsearch',
                 'simulation',
             },
         ),
