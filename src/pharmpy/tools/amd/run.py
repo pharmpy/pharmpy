@@ -744,7 +744,7 @@ def _subfunc_retries(tool, strictness, seed, ctx):
         res = run_subtool(
             'retries',
             ctx,
-            subctx_name=f'{tool}_retries',
+            name=f'{tool}_retries',
             model=model,
             results=modelfit_results,
             strictness=strictness,
@@ -919,7 +919,7 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
         res = run_subtool(
             'iivsearch',
             ctx,
-            subctx_name=dir_name,
+            name=dir_name,
             model=model,
             results=modelfit_results,
             algorithm='top_down_exhaustive',
@@ -945,7 +945,7 @@ def _subfunc_ruvsearch(dv, strictness, ctx, dir_name) -> SubFunc:
         res = run_subtool(
             'ruvsearch',
             ctx,
-            subctx_name=dir_name,
+            name=dir_name,
             model=model,
             results=modelfit_results,
             skip=skip,
@@ -1009,7 +1009,7 @@ def _subfunc_structural_covariates(
         res = run_subtool(
             'covsearch',
             ctx,
-            subctx_name='covsearch_structural',
+            name='covsearch_structural',
             model=model,
             results=modelfit_results,
             search_space=struct_searchspace,
@@ -1073,7 +1073,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                 res = run_subtool(
                     'covsearch',
                     ctx,
-                    subctx_name='covsearch_mechanistic',
+                    name='covsearch_mechanistic',
                     model=model,
                     results=modelfit_results,
                     search_space=mechanistic_searchspace,
@@ -1108,7 +1108,7 @@ def _subfunc_mechanistic_exploratory_covariates(
         res = run_subtool(
             'covsearch',
             ctx,
-            subctx_name='covsearch_exploratory',
+            name='covsearch_exploratory',
             model=model,
             results=modelfit_results,
             search_space=filtered_searchspace,

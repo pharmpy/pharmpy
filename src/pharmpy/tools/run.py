@@ -162,7 +162,7 @@ def read_results(path: Union[str, Path]) -> Results:
     return res
 
 
-def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Model], Results]:
+def run_tool(tool_name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Model], Results]:
     """Run tool workflow
 
     .. note::
@@ -171,7 +171,7 @@ def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Mode
 
     Parameters
     ----------
-    name : str
+    tool_name : str
         Name of tool to run
     args
         Arguments to pass to tool
@@ -193,8 +193,8 @@ def run_tool(name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Mode
     """
     # NOTE: The implementation of run_tool is split into those two functions to
     # allow for individual testing and mocking.
-    tool = import_tool(name)
-    return run_tool_with_name(name, tool, args, kwargs)
+    tool = import_tool(tool_name)
+    return run_tool_with_name(tool_name, tool, args, kwargs)
 
 
 def import_tool(name: str):
@@ -212,7 +212,7 @@ def _canonicalize_seed(seed):
 
 
 def run_tool_with_name(
-    name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
+    tool_name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, list[Model], tuple[Model], Results]:
     dispatching_options, common_options, seed, tool_options = split_common_options(kwargs)
 
@@ -224,13 +224,13 @@ def run_tool_with_name(
         except Exception as err:
             raise InputValidationError(str(err))
 
-    dispatcher, ctx = get_run_setup(dispatching_options, common_options, name)
+    dispatcher, ctx = get_run_setup(dispatching_options, common_options, tool_name)
 
     create_workflow = tool.create_workflow
 
     tool_metadata = create_metadata(
         database=ctx,
-        tool_name=name,
+        tool_name=tool_name,
         tool_func=create_workflow,
         args=args,
         tool_options=tool_options,
@@ -260,10 +260,15 @@ def run_tool_with_name(
                     )
 
     wf: Workflow = create_workflow(*args, **tool_options)
-    assert wf.name == name
+    assert wf.name == tool_name
 
     res = execute_workflow(wf, dispatcher=dispatcher, context=ctx)
-    assert name == 'modelfit' or isinstance(res, Results) or name == 'simulation' or res is None
+    assert (
+        tool_name == 'modelfit'
+        or isinstance(res, Results)
+        or tool_name == 'simulation'
+        or res is None
+    )
 
     tool_metadata = _update_metadata(tool_metadata, res)
     ctx.store_metadata(tool_metadata)
@@ -297,12 +302,11 @@ def _update_metadata(tool_metadata, res):
     return tool_metadata
 
 
-def run_subtool(tool, ctx: Context, subctx_name=None, **kwargs):
-    tool_name = tool
-    if not subctx_name:
-        subctx_name = tool_name
+def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
+    if not name:
+        name = tool_name
     tool = import_tool(tool_name)
-    subctx = ctx.create_subcontext(subctx_name)
+    subctx = ctx.create_subcontext(name)
 
     seed = kwargs.get('seed', None)
     seed = _canonicalize_seed(seed)
@@ -537,7 +541,7 @@ def _store_model(db: ModelDatabase, metadata, arg: str, model: Model):
 
 
 def _create_metadata_common(
-    database: Context, toolname: Optional[str], common_options: Mapping[str, Any]
+    database: Context, tool_name: Optional[str], common_options: Mapping[str, Any]
 ):
     setup_metadata = {}
     for key, value in common_options.items():
@@ -574,7 +578,7 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
-def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, Context]:
+def get_run_setup(dispatching_options, common_options, tool_name) -> tuple[Any, Context]:
     # FIXME: Currently only one dispatcher
     dispatcher = Dispatcher.select_dispatcher(None)
 
@@ -589,7 +593,7 @@ def get_run_setup(dispatching_options, common_options, toolname) -> tuple[Any, C
         else:
             n = 1
             while True:
-                name = f"{toolname}{n}"
+                name = f"{tool_name}{n}"
                 if not default_context.exists(name):
                     ctx = default_context(name)
                     break
