@@ -6,10 +6,10 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Parameters
+from pharmpy.model import Parameters, SimulationStep
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import create_rng, get_observations, write_csv, write_model
-from pharmpy.workflows import ModelEntry
+from pharmpy.workflows import ModelEntry, SimulationResults
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
 
@@ -69,8 +69,15 @@ def execute_model(model_entry, context):
     # Create dummy ModelfitResults object
     modelfit_results = create_dummy_modelfit_results(model_entry.model, ref=ofv_parent)
 
+    if any(isinstance(step, SimulationStep) for step in model.execution_steps):
+        simulation_results = create_dummy_simulation_results(model_entry.model)
+    else:
+        simulation_results = None
+
     log = modelfit_results.log if modelfit_results else None
-    model_entry = model_entry.attach_results(modelfit_results=modelfit_results, log=log)
+    model_entry = model_entry.attach_results(
+        modelfit_results=modelfit_results, simulation_results=simulation_results, log=log
+    )
 
     modelfit_results.to_json(path=model_path / f'{model.name}_results.json')
 
@@ -191,3 +198,26 @@ def _rand_array(x, y, rng, generator='random'):
             for yi in range(y):
                 a[xi, yi] = rand_n()
         return a
+
+
+def create_dummy_simulation_results(model):
+    sim_steps = [step for step in model.execution_steps if isinstance(step, SimulationStep)]
+    if len(sim_steps) > 1:
+        raise ValueError('More than one SimulationStep not supported for dummy estimator')
+    no_of_sim_steps = sim_steps[0].n
+
+    h = hashlib.sha1(model.name.encode('utf-8')).hexdigest()
+    seed = int(h, 16)
+    rng = create_rng(seed)
+
+    dv = model.dataset['DV'].copy()
+
+    dv_sim_all = []
+    for _ in range(0, no_of_sim_steps):
+        dv_sim = pd.DataFrame(dv.apply(lambda x: x if x == 0 else x + (x * rng.uniform(-0.1, 0.1))))
+        dv_sim.index.name = 'index'
+        dv_sim_all.append(dv_sim)
+    keys = list(range(1, no_of_sim_steps + 1))
+    table = pd.concat(dv_sim_all, keys=keys, names=['SIM'])
+    sim_results = SimulationResults(table=table)
+    return sim_results
