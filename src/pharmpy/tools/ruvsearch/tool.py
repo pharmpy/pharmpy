@@ -610,8 +610,8 @@ def _create_best_model(model_entry, res, current_iteration, dv, groups, cutoff=3
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictness):
-    if groups <= 0:
-        raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 1.')
+    if groups < 2:
+        raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 2.')
 
     if not 0 < p_value <= 1:
         raise ValueError(f'Invalid `p_value`: got `{p_value}`, must be a float in range (0, 1].')
