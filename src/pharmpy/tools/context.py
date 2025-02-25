@@ -119,3 +119,39 @@ def retrieve_modelfit_results(
     """
     context = _open_context(source)
     return context.retrieve_model_entry(name).modelfit_results
+
+
+def list_models(context: Context, recursive: bool = False) -> list[str]:
+    """List names of all models in a context
+
+    Will by default list only models in the top level, but can list
+    all recursively using the recursive option. This will add the context
+    path to each model name as a qualifier.
+
+    Parameters
+    ----------
+    context : Context
+        The context
+    recursive : bool
+        Only top level or all levels recursively down.
+
+    Return
+    ------
+    list[str]
+        A list of the model names
+    """
+    if not recursive:
+        names = context.list_all_names()
+    else:
+        names = _get_model_names_recursive(context)
+    return names
+
+
+def _get_model_names_recursive(context):
+    ctx_path = context.context_path
+    names = [ctx_path + "/@" + name for name in context.list_all_names()]
+    for subctx_name in context.list_all_subcontexts():
+        subctx = context.get_subcontext(subctx_name)
+        subctx_names = _get_model_names_recursive(subctx)
+        names += subctx_names
+    return names

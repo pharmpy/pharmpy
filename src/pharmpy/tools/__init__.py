@@ -6,6 +6,7 @@ __all__ = (
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
     'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
     'load_example_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
+    'list_models',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_influential_individuals',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_influential_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
     'predict_outliers',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -62,6 +63,7 @@ _not_wrapped = {
         'print_log',
         'retrieve_model',
         'retrieve_modelfit_results',
+        'list_models',
     ),
 }
 
