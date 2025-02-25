@@ -582,7 +582,7 @@ def get_run_setup(dispatching_options, common_options, tool_name) -> tuple[Any, 
     # FIXME: Currently only one dispatcher
     dispatcher = Dispatcher.select_dispatcher(None)
 
-    ctx = dispatching_options.get('context', None)
+    ctx = dispatching_options['context']
     if ctx is None:
         from pharmpy.workflows import default_context
 
