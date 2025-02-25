@@ -22,7 +22,13 @@ def _model_count(rundir: Path):
     'model_kwargs, run_kwargs, search_space, subtools',
     [
         (
-            {'modeltype': 'basic_pk', 'administration': 'iv', 'cl_init': 1, 'vc_init': 10},
+            {
+                'modeltype': 'basic_pk',
+                'administration': 'iv',
+                'cl_init': 1,
+                'vc_init': 10,
+                'occasion': 'VISI',
+            },
             {'strategy': 'default', 'retries_strategy': 'skip'},
             'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
             {
@@ -30,13 +36,20 @@ def _model_count(rundir: Path):
                 'modelsearch',
                 'iivsearch',
                 'ruvsearch',
+                'iovsearch',
                 'allometry',
                 'covsearch_exploratory',
                 'simulation',
             },
         ),
         (
-            {'modeltype': 'basic_pk', 'administration': 'iv', 'cl_init': 1, 'vc_init': 10},
+            {
+                'modeltype': 'basic_pk',
+                'administration': 'iv',
+                'cl_init': 1,
+                'vc_init': 10,
+                'occasion': 'VISI',
+            },
             {'strategy': 'reevaluation', 'retries_strategy': 'skip'},
             'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
             {
