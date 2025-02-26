@@ -266,7 +266,7 @@ class LocalDirectoryContext(Context):
         if path.is_dir():
             return LocalDirectoryContext(name=name, ref=path.parent)
         else:
-            raise ValueError(f"No subcontext with the name {name}")
+            raise ValueError(f'No subcontext with the name "{name}"')
 
     def create_subcontext(self, name: str) -> LocalDirectoryContext:
         path = self.path / 'subcontexts'

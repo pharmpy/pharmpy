@@ -72,7 +72,8 @@ def retrieve_model(
         Source where to find models. Can be a path (as str or Path), or a
         Context
     name : str
-        Name of the model
+        Name of the model or a qualified name with a subcontext path, e.g.
+        :code:`"iivsearch/@final"`.
 
     Return
     ------
@@ -87,7 +88,44 @@ def retrieve_model(
 
     """
     context = _open_context(source)
-    return context.retrieve_model_entry(name).model
+    subctx, model_name = _split_subcontext_and_model(context, name)
+    return subctx.retrieve_model_entry(model_name).model
+
+
+def _split_subcontext_and_model(context: Context, ctx_path: str) -> tuple[Context, str]:
+    """Given a context and a context path get the lowest subcontext
+    in the path and the model name. If no model is in the path
+    return None instead.
+    """
+    a = ctx_path.split('/')
+    if a[-1].startswith('@'):
+        model_name = a[-1][1:]
+        a = a[:-1]
+    elif len(a) == 1:
+        # In this case what we have is the model_name
+        # and the context is the same
+        model_name = a[0]
+        a = []
+    else:
+        model_name = None
+    for subname in a:
+        try:
+            context = context.get_subcontext(subname)
+        except ValueError as e:
+            all_subs = context.list_all_subcontexts()
+            raise ValueError(f"{e}. Did you mean {_present_string_array(all_subs)}?")
+
+    return context, model_name
+
+
+def _present_string_array(a):
+    """Create a user presentable string from array of strings"""
+    a = [f'"{e}"' for e in a]
+    if len(a) == 1:
+        return f'{a[0]}'
+    else:
+        a = a[:-2] + [f'{a[-2]} or a[-1]']
+        return 'one of: ' + ', '.join(a)
 
 
 def retrieve_modelfit_results(
@@ -102,7 +140,8 @@ def retrieve_modelfit_results(
         Source where to find models. Can be a path (as str or Path), or a
         Context
     name : str
-        Name of the model
+        Name of the model or a qualified name with a subcontext path, e.g.
+        :code:`"iivsearch/@final"`.
 
     Return
     ------
@@ -118,7 +157,8 @@ def retrieve_modelfit_results(
 
     """
     context = _open_context(source)
-    return context.retrieve_model_entry(name).modelfit_results
+    subctx, model_name = _split_subcontext_and_model(context, name)
+    return subctx.retrieve_model_entry(model_name).modelfit_results
 
 
 def list_models(context: Context, recursive: bool = False) -> list[str]:
