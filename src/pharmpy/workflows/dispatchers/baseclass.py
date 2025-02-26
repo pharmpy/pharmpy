@@ -7,7 +7,7 @@ from ..workflow import Workflow
 
 T = TypeVar('T')
 
-DISPATCHERS = ('local_dask',)
+DISPATCHERS = ('local_dask', 'local_serial')
 
 
 class Dispatcher(ABC):
@@ -26,11 +26,16 @@ class Dispatcher(ABC):
     @staticmethod
     def select_dispatcher(name: Optional[str]) -> Dispatcher:
         """Create a new dispatcher given a dispatcher name"""
-        Dispatcher.canonicalize_dispatcher_name(name)
-        # Currently only one type supported
-        from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
+        dispatcher_name = Dispatcher.canonicalize_dispatcher_name(name)
 
-        dispatcher = LocalDaskDispatcher()
+        if dispatcher_name == 'local_dask':
+            from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
+
+            dispatcher = LocalDaskDispatcher()
+        else:
+            from pharmpy.workflows.dispatchers.local_serial import LocalSerialDispatcher
+
+            dispatcher = LocalSerialDispatcher()
         return dispatcher
 
     @abstractmethod

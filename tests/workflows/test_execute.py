@@ -18,6 +18,7 @@ from pharmpy.workflows import (
 )
 from pharmpy.workflows.contexts import NullContext
 from pharmpy.workflows.dispatchers.local_dask import LocalDaskDispatcher
+from pharmpy.workflows.dispatchers.local_serial import LocalSerialDispatcher
 from pharmpy.workflows.results import ModelfitResults
 
 # All workflow tests are run by the same xdist test worker
@@ -227,6 +228,40 @@ def test_local_dispatcher():
     ctx = NullContext()
     res = LocalDaskDispatcher().run(wf, ctx)
     assert res == 'input'
+
+
+@pytest.mark.xdist_group(name="workflow")
+def test_serial_dispatcher(tmp_path):
+    start = lambda: 1  # noqa E731
+    a = lambda x: x  # noqa E731
+    b = lambda y: y + 1  # noqa E731
+    f = lambda x, y: x + y  # noqa E731
+    t0 = Task('t0', start)
+    t1 = Task('t1', a)
+    t2 = Task('t2', b)
+    t3 = Task('t3', f)
+    wb = WorkflowBuilder(tasks=[t0], name='test-workflow')
+    wb.add_task(t1, predecessors=[t0])
+    wb.add_task(t2, predecessors=[t0])
+    wb.add_task(t3, predecessors=[t1, t2])
+    wf = Workflow(wb)
+
+    ctx = NullContext()
+    res = LocalSerialDispatcher().run(wf, ctx)
+
+    assert res == 3
+
+    c = lambda z: z + 2  # noqa E731
+    g = lambda x, y: x + y  # noqa E731
+    t4 = Task('t4', c)
+    t5 = Task('t5', g)
+    wb.add_task(t4, predecessors=[t0])
+    wb.add_task(t5, predecessors=[t3, t4])
+    wf = Workflow(wb)
+
+    res = LocalSerialDispatcher().run(wf, ctx)
+
+    assert res == 6
 
 
 @pytest.mark.xdist_group(name="workflow")

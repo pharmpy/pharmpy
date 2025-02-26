@@ -7,6 +7,8 @@ import pharmpy.workflows.dispatchers
 from pharmpy.config import ConfigurationContext
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.workflows import Task, Workflow, WorkflowBuilder, execute_workflow
+from pharmpy.workflows.contexts import NullContext
+from pharmpy.workflows.dispatchers.local_serial import LocalSerialDispatcher
 
 
 def ignore_scratch_warning():
@@ -68,5 +70,19 @@ def test_call_workflow_distributed(tmp_path):
             with warnings.catch_warnings():
                 ignore_scratch_warning()
                 res = execute_workflow(wf)
+
+    assert res == a + b
+
+
+@pytest.mark.xdist_group(name="workflow")
+def test_call_workflow_local_serial(tmp_path):
+    a, b = 1, 2
+    wf = add(a, b)
+
+    with chdir(tmp_path):
+        with warnings.catch_warnings():
+            ignore_scratch_warning()
+            ctx = NullContext(dispatcher=LocalSerialDispatcher())
+            res = execute_workflow(wf, context=ctx)
 
     assert res == a + b
