@@ -231,7 +231,25 @@ def test_local_dispatcher():
 
 
 @pytest.mark.xdist_group(name="workflow")
-def test_serial_dispatcher(tmp_path):
+def test_serial_dispatcher_n_in_to_1_out(tmp_path):
+    a = lambda: 1  # noqa E731
+    b = lambda: 2  # noqa E731
+    f = lambda x, y: x + y  # noqa E731
+    t1 = Task('t1', a)
+    t2 = Task('t2', b)
+    t3 = Task('t3', f)
+    wb = WorkflowBuilder(tasks=[t1, t2], name='test-workflow')
+    wb.add_task(t3, predecessors=[t1, t2])
+    wf = Workflow(wb)
+
+    ctx = NullContext()
+    res = LocalSerialDispatcher().run(wf, ctx)
+
+    assert res == f(a(), b())
+
+
+@pytest.mark.xdist_group(name="workflow")
+def test_serial_dispatcher_1_in_to_1_out(tmp_path):
     start = lambda: 1  # noqa E731
     a = lambda x: x  # noqa E731
     b = lambda y: y + 1  # noqa E731
