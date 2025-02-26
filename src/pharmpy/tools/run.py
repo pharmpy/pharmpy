@@ -99,7 +99,14 @@ def fit(
         else (False, model_or_models)
     )
 
-    modelfit_results = run_tool('modelfit', models, esttool=esttool, path=path, context=context)
+    if not context:
+        dispatcher = 'local_serial'
+    else:
+        dispatcher = None
+
+    modelfit_results = run_tool(
+        'modelfit', models, esttool=esttool, path=path, context=context, dispatcher=dispatcher
+    )
 
     return modelfit_results if single else list(modelfit_results)
 
@@ -579,8 +586,8 @@ def _now():
 
 
 def get_run_setup(dispatching_options, common_options, tool_name) -> tuple[Any, Context]:
-    # FIXME: Currently only one dispatcher
-    dispatcher = Dispatcher.select_dispatcher(None)
+    dispatcher = dispatching_options.get('dispatcher', None)
+    dispatcher = Dispatcher.select_dispatcher(dispatcher)
 
     ctx = dispatching_options['context']
     if ctx is None:
