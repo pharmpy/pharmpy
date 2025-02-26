@@ -19,10 +19,8 @@ def _open_context(source):
     return context
 
 
-def create_context(name: str, path: Union[str, Path, None] = None):
-    """Create a new context
-
-    Currently a local filesystem context (i.e. a directory)
+def init_context(name: str, path: Union[str, Path, None] = None):
+    """Initialize an already created context or create a new context
 
     Parameters
     ----------
@@ -33,8 +31,8 @@ def create_context(name: str, path: Union[str, Path, None] = None):
 
     Examples
     --------
-    >>> from pharmpy.tools import create_context
-    >>> ctx = create_context("myproject")  # doctest: +SKIP
+    >>> from pharmpy.tools import init_context
+    >>> ctx = init_context("myproject")  # doctest: +SKIP
 
     """
     ref = str(normalize_user_given_path(path)) if path is not None else None

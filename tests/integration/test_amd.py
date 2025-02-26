@@ -6,7 +6,7 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_amd
-from pharmpy.tools.context import create_context
+from pharmpy.tools.context import init_context
 
 
 def _model_count(rundir: Path):
@@ -84,7 +84,7 @@ def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, s
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
 
-        ctx = create_context("amd1")
+        ctx = init_context("amd1")
         subnames = ctx.list_all_subcontexts()
         assert set(subnames) == subtools
 

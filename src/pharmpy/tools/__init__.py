@@ -1,9 +1,9 @@
 from threading import Lock
 
 __all__ = (
-    'create_context',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
+    'init_context',  # pyright: ignore [reportUnsupportedDunderAll]
     'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
     'load_example_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'list_models',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -59,7 +59,7 @@ _not_wrapped = {
         'predict_influential_outliers',
     ),
     '.context': (
-        'create_context',
+        'init_context',
         'print_log',
         'retrieve_model',
         'retrieve_modelfit_results',
