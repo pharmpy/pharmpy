@@ -78,6 +78,17 @@ class WorkflowBase:
         """
         return list(self._g.successors(task))
 
+    def traverse(self, algorithm, source=None):
+        supported_algorithms = ['dfs', 'bfs']
+        if algorithm == 'dfs':
+            return nx.dfs_tree(self._g, source)
+        elif algorithm == 'bfs':
+            if not source:
+                raise ValueError('Source node needed for bfs traversal')
+            return nx.bfs_tree(self._g, source)
+        else:
+            raise ValueError(f'Unknown algorithm `{algorithm}`: must be in {supported_algorithms}')
+
     def __len__(self):
         return len(self._g.nodes)
 
@@ -213,10 +224,7 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
         dict
             Dask workflow dictionary
         """
-        ids = {}
-        for task in self._g.nodes():
-            assert isinstance(task, Task)
-            ids[task] = f'{task.name}-{uuid.uuid4()}'
+        ids = self.get_id_mapping()
 
         if len(self.output_tasks) == 1:
             ids[self.output_tasks[0]] = 'results'
@@ -224,13 +232,21 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
             raise ValueError("Workflow can only have one output task")
 
         as_dict = {}
-        for task in nx.dfs_tree(self._g):
+        for task in self.traverse(algorithm='dfs'):
             key = ids[task]
             input_list = list(task.task_input)
-            input_list.extend(ids[t] for t in self._g.predecessors(task))
+            input_list.extend(ids[t] for t in self.get_predecessors(task))
             value = (task.function, *input_list)
             as_dict[key] = value
         return as_dict
+
+    def get_id_mapping(self) -> dict[Task, str]:
+        """Create a dictionary of task and a unique name"""
+        ids = {}
+        for task in self._g.nodes():
+            assert isinstance(task, Task)
+            ids[task] = f'{task.name}-{uuid.uuid4()}'
+        return ids
 
     @property
     def name(self):

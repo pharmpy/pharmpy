@@ -153,3 +153,27 @@ def test_add(tasks):
     assert len(wf.tasks) == 4
     assert len(wf.input_tasks) == 2
     assert len(wf.output_tasks) == 2
+
+
+def test_traverse():
+    t1, t2, t3, t4, t5, t6 = map(lambda i: Task(f't{i}', lambda: 0), range(1, 7))
+    wb = WorkflowBuilder(tasks=[t1])
+    wb.add_task(task=t2, predecessors=[t1])
+    wb.add_task(task=t3, predecessors=[t1])
+    wb.add_task(task=t4, predecessors=[t2])
+    wb.add_task(task=t5, predecessors=[t3])
+    wb.add_task(task=t6, predecessors=[t4, t5])
+
+    wf = Workflow(wb)
+
+    dfs_tree = wf.traverse('dfs', source=t1)
+    assert list(dfs_tree) == [t1, t2, t4, t6, t3, t5]
+
+    bfs_tree = wf.traverse('bfs', source=t1)
+    assert list(bfs_tree) == [t1, t2, t3, t4, t5, t6]
+
+    with pytest.raises(ValueError):
+        wf.traverse('x')
+
+    with pytest.raises(ValueError):
+        wf.traverse('bfs', source=None)
