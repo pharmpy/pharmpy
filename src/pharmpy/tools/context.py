@@ -148,9 +148,9 @@ def retrieve_modelfit_results(
 
     Examples
     --------
-    >>> from pharmpy.tools import create_context, retrieve_modelfit_results
+    >>> from pharmpy.tools import init_context, retrieve_modelfit_results
     >>> tooldir_path = 'path/to/tool/directory'
-    >>> context = create_context("iivsearch1")   # doctest: +SKIP
+    >>> context = init_context("iivsearch1")   # doctest: +SKIP
     >>> results = retrieve_modelfit_results(context, 'input')      # doctest: +SKIP
 
     """
