@@ -61,4 +61,4 @@ class LocalSerialDispatcher(Dispatcher):
         return res
 
     def abort_workflow(self) -> None:
-        sys.exit()
+        sys.exit(1)
