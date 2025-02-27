@@ -20,24 +20,11 @@ class LocalSerialDispatcher(Dispatcher):
 
     @staticmethod
     def _run(workflow):
-        if len(workflow.input_tasks) == 1:
-            start_task = workflow.input_tasks[0]
-            queue = list(workflow.traverse('bfs', start_task))
-        else:
-            # FIXME: Assumes workflows in two layers (e.g. several modelfit)
-            queue = workflow.input_tasks + [workflow.output_tasks[0]]
-
-        res_cache, visited = dict(), list()
-
+        res_cache = dict()
         unvisited_children = {task: len(workflow.get_successors(task)) for task in workflow.tasks}
-        while queue:
-            task = queue.pop(0)
+        for task in workflow.sort('topological'):
             parent_tasks = workflow.get_predecessors(task)
             parent_res = [res_cache[parent] for parent in parent_tasks if parent in res_cache]
-            if len(parent_res) != len(parent_tasks):
-                queue.append(task)
-                continue
-            visited.append(task)
             for parent in parent_tasks:
                 unvisited_children[parent] -= 1
                 if unvisited_children[parent] == 0:

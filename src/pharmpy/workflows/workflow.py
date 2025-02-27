@@ -89,6 +89,13 @@ class WorkflowBase:
         else:
             raise ValueError(f'Unknown algorithm `{algorithm}`: must be in {supported_algorithms}')
 
+    def sort(self, algorithm='topological'):
+        supported_algorithms = ['topological']
+        if algorithm == 'topological':
+            return nx.topological_sort(self._g)
+        else:
+            raise ValueError(f'Unknown algorithm `{algorithm}`: must be in {supported_algorithms}')
+
     def __len__(self):
         return len(self._g.nodes)
 

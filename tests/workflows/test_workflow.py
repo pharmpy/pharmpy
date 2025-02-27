@@ -177,3 +177,21 @@ def test_traverse():
 
     with pytest.raises(ValueError):
         wf.traverse('bfs', source=None)
+
+
+def test_sort():
+    t1, t2, t3, t4, t5, t6 = map(lambda i: Task(f't{i}', lambda: 0), range(1, 7))
+    wb = WorkflowBuilder(tasks=[t1])
+    wb.add_task(task=t2, predecessors=[t1])
+    wb.add_task(task=t3, predecessors=[t1])
+    wb.add_task(task=t4, predecessors=[t2])
+    wb.add_task(task=t5, predecessors=[t3])
+    wb.add_task(task=t6, predecessors=[t4, t5])
+
+    wf = Workflow(wb)
+
+    nodes_sorted = wf.sort('topological')
+    assert list(nodes_sorted) == [t1, t2, t3, t4, t5, t6]
+
+    with pytest.raises(ValueError):
+        wf.traverse('x')
