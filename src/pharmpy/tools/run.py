@@ -108,7 +108,11 @@ def fit(
         'modelfit', models, esttool=esttool, path=path, context=context, dispatcher=dispatcher
     )
 
-    return modelfit_results if single else list(modelfit_results)
+    return (
+        modelfit_results
+        if single or isinstance(modelfit_results, ModelfitResults)
+        else list(modelfit_results)
+    )
 
 
 def create_results(path: Union[str, Path], **kwargs) -> Results:
