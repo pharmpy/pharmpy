@@ -115,6 +115,7 @@ def _sample_from_function(
             selected = df.transform(
                 lambda row: pd.Series(rvs.nearest_valid_parameters(row)), axis=1
             )
+        assert isinstance(selected, pd.DataFrame)
         kept_samples = pd.concat((kept_samples, selected))
         remaining = n - len(kept_samples)
         i += 1
@@ -350,6 +351,7 @@ def sample_individual_estimates(
     if parameters is None:
         parameters = list(ests.columns)
     ests = ests[parameters]
+    assert isinstance(ests, pd.DataFrame)
     samples = pd.DataFrame()
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma.loc[parameters, parameters]

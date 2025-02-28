@@ -154,18 +154,20 @@ class NONMEMTable:
     superproblem2: Optional[int] = None
     iteration2: Optional[int] = None
 
-    def __init__(self, content=None, df=None):
+    def __init__(self, content=None, df: Optional[pd.DataFrame] = None):
         if content is not None:
-            self._df = pd.read_table(
+            read_df = pd.read_table(
                 StringIO(content), sep=r'\s+', engine='c', float_precision="round_trip"
             )
+            assert isinstance(read_df, pd.DataFrame)
+            self._df = read_df
         elif df is not None:
             self._df = df
         else:
             raise ValueError('NONMEMTable: content and df cannot be both None')
 
     @property
-    def data_frame(self):
+    def data_frame(self) -> pd.DataFrame:
         return self._df
 
     @property

@@ -879,7 +879,7 @@ def get_evid(model: Model):
     return mdv.rename('EVID')
 
 
-def get_admid(model: Model):
+def get_admid(model: Model) -> pd.Series:
     """Get the admid from model dataset
 
     If an administration column is present this will be extracted otherwise

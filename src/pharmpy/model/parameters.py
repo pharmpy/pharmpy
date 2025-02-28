@@ -443,20 +443,19 @@ class Parameters(CollectionsSequence, Immutable):
         params = tuple(Parameter.from_dict(p) for p in d['parameters'])
         return cls(parameters=params)
 
+    def _pretty_dataframe(self) -> pd.DataFrame:
+        df = self.to_dataframe()
+        df.replace(float("inf"), "∞", inplace=True)
+        df.replace(-float("inf"), "-∞", inplace=True)
+        return df
+
     def __repr__(self):
         if len(self) == 0:
             return "Parameters()"
-        return (
-            self.to_dataframe().replace(float("inf"), "∞").replace(-float("inf"), "-∞").to_string()
-        )
+        return self._pretty_dataframe().to_string()
 
     def _repr_html_(self) -> str:
         if len(self) == 0:
             return "Parameters()"
         else:
-            return (
-                self.to_dataframe()
-                .replace(float("inf"), "∞")
-                .replace(-float("inf"), "-∞")
-                .to_html()
-            )
+            return self._pretty_dataframe().to_html()

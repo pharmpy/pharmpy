@@ -278,6 +278,7 @@ def read_nonmem_dataset(
         dtype=object,
         index_col=False,
     )
+    assert isinstance(df, pd.DataFrame)
 
     diff_cols = len(df.columns) - len(colnames)
     if diff_cols > 0:
