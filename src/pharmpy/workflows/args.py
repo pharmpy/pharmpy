@@ -1,7 +1,6 @@
 from collections.abc import Mapping
 from typing import Any
 
-from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
 
@@ -24,7 +23,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, 
     -------
     Tuple of dispatching options, common options and other option dictionaries
     """
-    all_dispatching_options = ('context', 'name', 'path', 'broadcaster', 'dispatcher')
+    all_dispatching_options = ('context', 'name', 'broadcaster', 'dispatcher')
     all_common_options = ('resume', 'esttool')
     # The defaults below will be overwritten by the user given options
     dispatching_options = {'context': None, 'name': None, 'broadcaster': None, 'dispatcher': None}
@@ -35,10 +34,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, 
         if key in all_dispatching_options:
             dispatching_options[key] = value
         elif key in all_common_options:
-            if key == 'path':
-                if value is not None:
-                    value = normalize_user_given_path(value)
-            elif key == 'esttool':
+            if key == 'esttool':
                 if value not in ALLOWED_ESTTOOLS:
                     raise ValueError(
                         f"Invalid estimation tool {value}, must be one of {ALLOWED_ESTTOOLS}"

@@ -49,7 +49,6 @@ from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, mfr
 
-from .context import init_context
 from .external import parse_modelfit_results
 
 
@@ -235,7 +234,21 @@ def run_tool_with_name(
         except Exception as err:
             raise InputValidationError(str(err))
 
-    dispatcher, ctx = get_run_setup(dispatching_options, common_options, tool_name)
+    dispatcher = Dispatcher.select_dispatcher(dispatching_options['dispatcher'])
+    ctx = get_context(dispatching_options, tool_name)
+
+    if ctx.has_completed():
+        results = ctx.retrieve_results()
+        return results
+    else:
+        pass
+    # raise NotImplementedError("This is under development")
+
+    dispatching_options['context'] = {
+        '__class__': type(ctx).__name__,
+        'name': str(ctx.name),
+        'ref': str(ctx.ref),
+    }
 
     create_workflow = tool.create_workflow
 
@@ -589,6 +602,13 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
+def _get_name(options, default_context, tool_name) -> str:
+    name = options['name']
+    if name is None:
+        name = _create_new_context_name(default_context, tool_name)
+    return name
+
+
 def _create_new_context_name(context: type[Context], tool_name: str) -> str:
     n = 1
     while True:
@@ -599,37 +619,21 @@ def _create_new_context_name(context: type[Context], tool_name: str) -> str:
     return name
 
 
-def get_run_setup(dispatching_options, common_options, tool_name) -> tuple[Any, Context]:
-    dispatcher = dispatching_options.get('dispatcher', None)
-    dispatcher = Dispatcher.select_dispatcher(dispatcher)
-
+def get_context(dispatching_options, tool_name) -> Context:
     ctx = dispatching_options['context']
     if ctx is None:
         from pharmpy.workflows import default_context
 
-        common_path = dispatching_options.get('path', None)
-        if common_path is not None:
-            path = Path(dispatching_options['path'])
-            ctx = default_context(path.name, path.parent)
-        else:
-            name = dispatching_options['name']
-            if name is None:
-                name = _create_new_context_name(default_context, tool_name)
-            ctx = default_context(name)
-    elif not isinstance(ctx, Context):
-        # Assume a full path
-        path = Path(ctx)
-        name = path.name
-        ref = str(path.parent)
-        ctx = init_context(name, ref)
+        name = _get_name(dispatching_options, default_context, tool_name)
+        ctx = default_context(name)
+    elif isinstance(ctx, Context):
+        name = _get_name(dispatching_options, default_context, tool_name)
+        try:
+            ctx = ctx.get_subcontext(name)
+        except ValueError:
+            ctx = ctx.create_subcontext(name)
 
-    dispatching_options['context'] = {
-        '__class__': type(ctx).__name__,
-        'name': str(ctx.name),
-        'ref': str(ctx.ref),
-    }
-
-    return dispatcher, ctx
+    return ctx
 
 
 def _open_context(source):

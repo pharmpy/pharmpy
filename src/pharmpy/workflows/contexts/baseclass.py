@@ -132,6 +132,7 @@ class Context(ABC):
         Results
             Tool results object
         """
+        pass
 
     @abstractmethod
     def store_metadata(self, metadata: dict):
