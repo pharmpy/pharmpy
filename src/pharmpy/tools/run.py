@@ -589,6 +589,16 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
+def _create_new_context_name(context: type[Context], tool_name: str) -> str:
+    n = 1
+    while True:
+        name = f"{tool_name}{n}"
+        if not context.exists(name):
+            break
+        n += 1
+    return name
+
+
 def get_run_setup(dispatching_options, common_options, tool_name) -> tuple[Any, Context]:
     dispatcher = dispatching_options.get('dispatcher', None)
     dispatcher = Dispatcher.select_dispatcher(dispatcher)
@@ -602,13 +612,10 @@ def get_run_setup(dispatching_options, common_options, tool_name) -> tuple[Any, 
             path = Path(dispatching_options['path'])
             ctx = default_context(path.name, path.parent)
         else:
-            n = 1
-            while True:
-                name = f"{tool_name}{n}"
-                if not default_context.exists(name):
-                    ctx = default_context(name)
-                    break
-                n += 1
+            name = dispatching_options['name']
+            if name is None:
+                name = _create_new_context_name(default_context, tool_name)
+            ctx = default_context(name)
     elif not isinstance(ctx, Context):
         # Assume a full path
         path = Path(ctx)
