@@ -288,6 +288,11 @@ class Expr:
         """
         return cls.function("newind", ())
 
+    @classmethod
+    def forward(cls, value, condition):
+        """Function to carry forward value at a certain condition"""
+        return cls.function("forward", (value, condition))
+
     def __gt__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Gt(self._expr, other))
 

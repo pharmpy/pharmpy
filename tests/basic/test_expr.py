@@ -142,3 +142,8 @@ def test_first():
 def test_newind():
     expr = Expr.newind()
     assert expr == Expr.function("newind", ())
+
+
+def test_forward():
+    expr = Expr.forward(Expr.symbol('TIME'), Expr.symbol('AMT') > 0)
+    assert expr == Expr.function("forward", ('TIME', 'AMT > 0'))
