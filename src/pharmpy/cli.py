@@ -116,10 +116,11 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 def run_tool_wrapper(toolname, **kwargs):
     from pharmpy.tools import run_tool
     from pharmpy.tools.run import InputValidationError
+    from pharmpy.workflows import DispatchingError
 
     try:
         run_tool(toolname, **kwargs)
-    except InputValidationError as err:
+    except (InputValidationError, DispatchingError) as err:
         error(err)
 
 
@@ -164,29 +165,25 @@ def run_iivsearch(args):
         name = None
         context = None
     model, res = args.model
-    from pharmpy.workflows import DispatchingError
 
-    try:
-        run_tool_wrapper(
-            'iivsearch',
-            model=model,
-            results=res,
-            algorithm=args.algorithm,
-            iiv_strategy=args.iiv_strategy,
-            rank_type=args.rank_type,
-            cutoff=args.cutoff,
-            linearize=args.linearize,
-            keep=args.keep,
-            strictness=args.strictness,
-            correlation_algorithm=args.correlation_algorithm,
-            E_p=args.e_p,
-            E_q=args.e_q,
-            broadcaster=args.broadcaster,
-            context=context,
-            name=name,
-        )
-    except DispatchingError as err:
-        error(err)
+    run_tool_wrapper(
+        'iivsearch',
+        model=model,
+        results=res,
+        algorithm=args.algorithm,
+        iiv_strategy=args.iiv_strategy,
+        rank_type=args.rank_type,
+        cutoff=args.cutoff,
+        linearize=args.linearize,
+        keep=args.keep,
+        strictness=args.strictness,
+        correlation_algorithm=args.correlation_algorithm,
+        E_p=args.e_p,
+        E_q=args.e_q,
+        broadcaster=args.broadcaster,
+        context=context,
+        name=name,
+    )
 
 
 def run_iovsearch(args):
