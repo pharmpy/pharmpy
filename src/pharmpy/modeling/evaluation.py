@@ -229,7 +229,7 @@ def evaluate_individual_prediction(
     _etas = (
         pd.DataFrame(
             0,
-            index=df[idcol].unique(),  # pyright: ignore [reportOptionalMemberAccess]
+            index=df[idcol].unique(),
             columns=pd.Index(model.random_variables.etas.names),
         )
         if etas is None
@@ -321,7 +321,7 @@ def evaluate_eta_gradient(
     else:
         _etas = pd.DataFrame(
             0,
-            index=df[idcol].unique(),  # pyright: ignore [reportOptionalMemberAccess]
+            index=df[idcol].unique(),
             columns=pd.Index(model.random_variables.etas.names),
         )
 
@@ -415,7 +415,7 @@ def evaluate_epsilon_gradient(
     else:
         _etas = pd.DataFrame(
             0,
-            index=df[idcol].unique(),  # pyright: ignore [reportOptionalMemberAccess]
+            index=df[idcol].unique(),
             columns=pd.Index(model.random_variables.etas.names),
         )
 
@@ -491,9 +491,7 @@ def evaluate_weighted_residuals(
     # FIXME: Could have option to gradients to set all etas 0
     etas = pd.DataFrame(
         0,
-        index=df[
-            model.datainfo.id_column.name
-        ].unique(),  # pyright: ignore [reportOptionalMemberAccess]
+        index=df[model.datainfo.id_column.name].unique(),
         columns=pd.Index(model.random_variables.etas.names),
     )
     G = evaluate_eta_gradient(model, etas=etas, parameters=useparams, dataset=dataset)
@@ -504,15 +502,11 @@ def evaluate_weighted_residuals(
     H.set_index(index, inplace=True)
     F.index = pd.Index(index)
     WRES = np.empty(0)
-    for i in df[
-        model.datainfo.id_column.name
-    ].unique():  # pyright: ignore [reportOptionalMemberAccess]
+    for i in df[model.datainfo.id_column.name].unique():
         Gi = np.float64(G.loc[[i]])
         Hi = np.float64(H.loc[[i]])
         Fi = F.loc[i:i]
-        DVi_df = (df['DV'][df[model.datainfo.id_column.name] == i]).astype(  # pyright: ignore
-            np.float64
-        )
+        DVi_df = (df['DV'][df[model.datainfo.id_column.name] == i]).astype(np.float64)
         DVi = DVi_df.values  # pyright: ignore [reportAttributeAccessIssue]
         Ci = Gi @ omega @ Gi.T + np.diag(np.diag(Hi @ sigma @ Hi.T))
         WRESi = linalg.sqrtm(linalg.inv(Ci)) @ (DVi - Fi)

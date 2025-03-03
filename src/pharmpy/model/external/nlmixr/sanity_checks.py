@@ -163,14 +163,14 @@ def same_time(model: pharmpy.model.Model) -> bool:
                     assert subset is not None
                     unique_evid = subset[
                         "EVID"
-                    ].unique()  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+                    ].unique()  # pyright: ignore [reportAttributeAccessIssue]
                     if any([x not in evid_ignore for x in unique_evid]) and any(
                         [x in evid_ignore for x in unique_evid]
                     ):
                         if rate:
                             unique_rate = subset[
                                 "RATE"
-                            ].unique()  # pyright: ignore[reportAttributeAccessIssue, reportOptionalMemberAccess]
+                            ].unique()  # pyright: ignore[reportAttributeAccessIssue]
                             if any([x != 0 for x in unique_rate]) and any(
                                 [x == 0 for x in unique_rate]
                             ):
@@ -222,7 +222,7 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                     assert subset is not None
                     unique_evid = subset[
                         "EVID"
-                    ].unique()  # pyright: ignore [reportAttributeAccessIssue, reportOptionalMemberAccess]
+                    ].unique()  # pyright: ignore [reportAttributeAccessIssue]
                     if any([x not in evid_ignore for x in unique_evid]) and any(
                         [x in evid_ignore for x in unique_evid]
                     ):
@@ -231,26 +231,14 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                                 (dataset["ID"] == ID)
                                 & (dataset["TIME"] == TIME)
                                 & (dataset["RATE"] == 0)
-                                & (
-                                    ~dataset[
-                                        "EVID"
-                                    ].isin(  # pyright: ignore [reportOptionalMemberAccess]
-                                        evid_ignore
-                                    )
-                                ),
+                                & (~dataset["EVID"].isin(evid_ignore)),
                                 "TIME",
                             ] += 0.000001
                         else:
                             dataset.loc[
                                 (dataset["ID"] == ID)
                                 & (dataset["TIME"] == TIME)
-                                & (
-                                    ~dataset[
-                                        "EVID"
-                                    ].isin(  # pyright: ignore [reportOptionalMemberAccess]
-                                        evid_ignore
-                                    )
-                                ),
+                                & (~dataset["EVID"].isin(evid_ignore)),
                                 "TIME",
                             ] += 0.000001
 
