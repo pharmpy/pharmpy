@@ -468,6 +468,20 @@ class ModelfitResults(Results):
     warnings: Optional[list[str]] = None
     individual_eta_samples: Optional[pd.DataFrame] = None
 
+    def __eq__(self, other):
+        sd = self.__dict__
+        od = other.__dict__
+        for key, value in sd.items():
+            if key == 'log':
+                continue
+            if isinstance(sd[key], (pd.Series, pd.DataFrame)):
+                if not sd[key].equals(od[key]):
+                    return False
+            else:
+                if sd[key] != od[key]:
+                    return False
+        return True
+
     def __repr__(self):
         return '<Pharmpy modelfit results object>'
 
