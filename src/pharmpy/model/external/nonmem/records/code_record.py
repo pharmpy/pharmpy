@@ -691,6 +691,10 @@ def _parse_tree(tree: AttrTree):
                             and expr.is_Symbol
                         ):
                             pw = Expr.first(expr, "ID")
+                        elif logic_expr == sympy.Gt(sympy.Symbol('AMT'), sympy.Integer(0)) and (
+                            str(expr) == "AMT" or str(expr) == "TIME"
+                        ):
+                            pw = Expr.forward(expr, logic_expr)
                         else:
                             pw = sympy.Piecewise((expr, logic_expr))
                     ass = Assignment.create(symbol, pw)

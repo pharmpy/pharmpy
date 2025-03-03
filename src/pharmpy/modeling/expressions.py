@@ -644,7 +644,11 @@ def cleanup_model(model: Model):
     current = {}
     newstats = []
     for s in model.statements:
-        if isinstance(s, Assignment) and s.expression.is_symbol():
+        if (
+            isinstance(s, Assignment)
+            and s.expression.is_symbol()
+            and not s.expression.is_function()
+        ):
             current[s.symbol] = s.expression
         else:
             n = s.subs(current)
