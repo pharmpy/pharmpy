@@ -164,24 +164,29 @@ def run_iivsearch(args):
         name = None
         context = None
     model, res = args.model
-    run_tool_wrapper(
-        'iivsearch',
-        model=model,
-        results=res,
-        algorithm=args.algorithm,
-        iiv_strategy=args.iiv_strategy,
-        rank_type=args.rank_type,
-        cutoff=args.cutoff,
-        linearize=args.linearize,
-        keep=args.keep,
-        strictness=args.strictness,
-        correlation_algorithm=args.correlation_algorithm,
-        E_p=args.e_p,
-        E_q=args.e_q,
-        broadcaster=args.broadcaster,
-        context=context,
-        name=name,
-    )
+    from pharmpy.workflows import DispatchingError
+
+    try:
+        run_tool_wrapper(
+            'iivsearch',
+            model=model,
+            results=res,
+            algorithm=args.algorithm,
+            iiv_strategy=args.iiv_strategy,
+            rank_type=args.rank_type,
+            cutoff=args.cutoff,
+            linearize=args.linearize,
+            keep=args.keep,
+            strictness=args.strictness,
+            correlation_algorithm=args.correlation_algorithm,
+            E_p=args.e_p,
+            E_q=args.e_q,
+            broadcaster=args.broadcaster,
+            context=context,
+            name=name,
+        )
+    except DispatchingError as err:
+        error(err)
 
 
 def run_iovsearch(args):

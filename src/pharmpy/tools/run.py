@@ -37,6 +37,7 @@ from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.feature.transits import Transits
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import (
+    DispatchingError,
     Results,
     Workflow,
     execute_subtool,
@@ -239,6 +240,20 @@ def run_tool_with_name(
     ctx = get_context(dispatching_options, tool_name)
 
     if ctx.has_completed():
+        tool_params = inspect.signature(tool.create_workflow).parameters
+        tool_param_types = get_type_hints(tool.create_workflow)
+
+        prev_tool_options = _parse_tool_options_from_json_metadata(
+            ctx.retrieve_metadata(), tool_params, tool_param_types, ctx
+        )
+
+        if tool_options != prev_tool_options:
+            raise DispatchingError(
+                "The arguments to the tool are different from the first time "
+                "it was run. "
+                "Delete the directory or run again using a new name."
+            )
+
         results = ctx.retrieve_results()
         broadcast_log(ctx)
         return results
@@ -379,9 +394,9 @@ def resume_tool(path: str):
 
     """
 
-    dispatcher, tool_database = _get_run_setup_from_metadata(path)
+    dispatcher, ctx = _get_run_setup_from_metadata(path)
 
-    tool_metadata = tool_database.retrieve_metadata()
+    tool_metadata = ctx.retrieve_metadata()
     tool_name = tool_metadata['tool_name']
 
     tool = importlib.import_module(f'pharmpy.tools.{tool_name}')
@@ -392,7 +407,7 @@ def resume_tool(path: str):
     tool_param_types = get_type_hints(create_workflow)
 
     tool_options = _parse_tool_options_from_json_metadata(
-        tool_metadata, tool_params, tool_param_types, tool_database
+        tool_metadata, tool_params, tool_param_types, ctx
     )
 
     args, kwargs = _parse_args_kwargs_from_tool_options(tool_params, tool_options)
@@ -403,11 +418,11 @@ def resume_tool(path: str):
     wf: Workflow = create_workflow(*args, **kwargs)
     assert wf.name == tool_name
 
-    res = execute_workflow(wf, dispatcher=dispatcher, database=tool_database)
+    res = execute_workflow(wf, dispatcher=dispatcher, database=ctx)
     assert tool_name == 'modelfit' or isinstance(res, Results)
 
     tool_metadata = _update_metadata(tool_metadata, res)
-    tool_database.store_metadata(tool_metadata)
+    ctx.store_metadata(tool_metadata)
 
     return res
 
@@ -416,9 +431,10 @@ def _parse_tool_options_from_json_metadata(
     tool_metadata,
     tool_params,
     tool_param_types,
-    tool_database,
+    ctx,
 ):
     tool_options = tool_metadata['tool_options']
+    db: ModelDatabase = ctx.model_database
     # NOTE: Load models to memory
     for model_key in _input_model_param_keys(tool_params, tool_param_types):
         model_metadata = tool_options.get(model_key)
@@ -428,16 +444,13 @@ def _parse_tool_options_from_json_metadata(
             )
 
         assert model_metadata['__class__'] == 'Model'
-        model_name = model_metadata['arg_name']
-        db_name = model_metadata['db_name']
+        model_hash = model_metadata['key']
 
-        db: ModelDatabase = tool_database.model_database
         try:
-            model = db.retrieve_model(db_name)
-            model = model.replace(name=model_name)
+            model = db.retrieve_model(model_hash)
         except KeyError:
             raise ValueError(
-                f'Cannot resume run because model argument "{model_key}" ({model_name}) cannot be restored.'
+                f'Cannot resume run because model argument "{model_key}" ({model_hash}) cannot be restored.'
             )
         tool_options = tool_options.copy()
         tool_options[model_key] = model
@@ -447,7 +460,7 @@ def _parse_tool_options_from_json_metadata(
         results_json = tool_options.get(results_key)
         if results_json is not None:
             tool_options = tool_options.copy()
-            tool_options[results_key] = pharmpy.workflows.results.read_results(results_json)
+            tool_options[results_key] = db.retrieve_modelfit_results(results_json["key"])
 
     return tool_options
 

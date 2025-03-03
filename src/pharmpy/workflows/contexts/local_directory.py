@@ -44,8 +44,8 @@ class LocalDirectoryContext(Context):
         if isnew:
             self._init_subcontexts()
         self._init_top_path()
+        self._init_model_database()
         if isnew:
-            self._init_model_database()
             self._init_annotations()
             self._init_model_name_map()
             self._init_log()
