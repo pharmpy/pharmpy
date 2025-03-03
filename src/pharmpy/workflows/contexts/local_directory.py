@@ -40,12 +40,15 @@ class LocalDirectoryContext(Context):
             ref = str(Path.cwd())
         path = Path(ref) / name
 
-        self._init_path(path)
+        isnew = self._init_path(path)
+        if isnew:
+            self._init_subcontexts()
         self._init_top_path()
-        self._init_model_database()
-        self._init_annotations()
-        self._init_model_name_map()
-        self._init_log()
+        if isnew:
+            self._init_model_database()
+            self._init_annotations()
+            self._init_model_name_map()
+            self._init_log()
         super().__init__(name, ref)
 
     def __repr__(self) -> str:
@@ -55,7 +58,11 @@ class LocalDirectoryContext(Context):
         self.path = path_absolute(path)
         if not self.path.is_dir():
             self.path.mkdir(parents=True)
+            return True
+        else:
+            return False
 
+    def _init_subcontexts(self):
         if not (self.path / 'subcontexts').is_dir():
             (self.path / 'subcontexts').mkdir()
 
@@ -262,14 +269,22 @@ class LocalDirectoryContext(Context):
         return ctx_top
 
     def get_subcontext(self, name: str) -> LocalDirectoryContext:
-        path = self.path / 'subcontexts' / name
+        subcontexts_path = self.path / 'subcontexts'
+        if subcontexts_path.is_dir():
+            path = subcontexts_path / name
+        else:
+            path = self.path / name
         if path.is_dir():
             return LocalDirectoryContext(name=name, ref=path.parent)
         else:
             raise ValueError(f'No subcontext with the name "{name}"')
 
     def create_subcontext(self, name: str) -> LocalDirectoryContext:
-        path = self.path / 'subcontexts'
+        subcontexts_path = self.path / 'subcontexts'
+        if subcontexts_path.is_dir():
+            path = subcontexts_path
+        else:
+            path = self.path
         ctx = LocalDirectoryContext(name=name, ref=path)
         return ctx
 

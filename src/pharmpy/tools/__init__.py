@@ -1,6 +1,7 @@
 from threading import Lock
 
 __all__ = (
+    'broadcast_log',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
     'init_context',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -61,6 +62,7 @@ _not_wrapped = {
     '.context': (
         'init_context',
         'print_log',
+        'broadcast_log',
         'retrieve_model',
         'retrieve_modelfit_results',
         'list_models',

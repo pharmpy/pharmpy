@@ -49,6 +49,7 @@ from pharmpy.workflows.model_database import ModelDatabase
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, mfr
 
+from .context import broadcast_log
 from .external import parse_modelfit_results
 
 
@@ -239,6 +240,7 @@ def run_tool_with_name(
 
     if ctx.has_completed():
         results = ctx.retrieve_results()
+        broadcast_log(ctx)
         return results
     else:
         pass
@@ -627,12 +629,13 @@ def get_context(dispatching_options, tool_name) -> Context:
         name = _get_name(dispatching_options, default_context, tool_name)
         ctx = default_context(name)
     elif isinstance(ctx, Context):
+        from pharmpy.workflows import default_context
+
         name = _get_name(dispatching_options, default_context, tool_name)
         try:
             ctx = ctx.get_subcontext(name)
         except ValueError:
             ctx = ctx.create_subcontext(name)
-
     return ctx
 
 

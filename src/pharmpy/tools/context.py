@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Optional, Union
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model
@@ -40,7 +40,7 @@ def init_context(name: str, path: Union[str, Path, None] = None):
     return ctx
 
 
-def print_log(context: Context):
+def print_log(context: Context) -> None:
     """Print the log of a context
 
     Parameters
@@ -49,10 +49,30 @@ def print_log(context: Context):
         Print the log of this context
 
     """
-    broadcaster = Broadcaster.select_broadcaster("terminal")
+    broadcast_log(context, "terminal")
+
+
+def broadcast_log(context: Context, broadcaster: Optional[str] = None) -> None:
+    """Broadcast the log of a context
+
+    Default is to use the same broadcaster, but optionally another broadcaster could
+    be used.
+
+    Parameters
+    ----------
+    context : Context
+        Broadcast the log of this context
+    broadcaster : str
+        Name of the broadcaster to use. Default is to use the same as was original used.
+
+    """
+    if broadcaster is not None:
+        bcst = context.broadcaster
+    else:
+        bcst = Broadcaster.select_broadcaster(broadcaster)
     df = context.retrieve_log()
     for _, row in df.iterrows():
-        broadcaster.broadcast_message(row['severity'], row['path'], row['time'], row['message'])
+        bcst.broadcast_message(row['severity'], row['path'], row['time'], row['message'])
 
 
 def retrieve_model(

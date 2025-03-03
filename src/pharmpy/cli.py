@@ -113,12 +113,12 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     return lines
 
 
-def run_tool_wrapper(name, **kwargs):
+def run_tool_wrapper(toolname, **kwargs):
     from pharmpy.tools import run_tool
     from pharmpy.tools.run import InputValidationError
 
     try:
-        run_tool(name, **kwargs)
+        run_tool(toolname, **kwargs)
     except InputValidationError as err:
         error(err)
 
@@ -155,6 +155,14 @@ def run_modelsearch(args):
 
 
 def run_iivsearch(args):
+    if args.path is not None:
+        name = args.path.name
+        from pharmpy.tools.context import init_context
+
+        context = init_context(args.path.parent)
+    else:
+        name = None
+        context = None
     model, res = args.model
     run_tool_wrapper(
         'iivsearch',
@@ -170,8 +178,9 @@ def run_iivsearch(args):
         correlation_algorithm=args.correlation_algorithm,
         E_p=args.e_p,
         E_q=args.e_q,
-        path=args.path,
         broadcaster=args.broadcaster,
+        context=context,
+        name=name,
     )
 
 
