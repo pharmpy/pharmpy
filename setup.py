@@ -76,7 +76,7 @@ setup(
         'statsmodels>=0.14.1',
     ],
     extras_require={
-        'nlmixr': ["pyreadr"],
+        'nlmixr': ["pyreadr>=0.5.3"],
     },
     entry_points={
         'console_scripts': [
