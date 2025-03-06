@@ -255,7 +255,8 @@ class LocalDirectoryContext(Context):
     def retrieve_dispatching_options(self) -> dict[str, Any]:
         ctx_top = self.get_top_level_context()
         meta = ctx_top.retrieve_metadata()
-        return meta['dispatching_options']
+        options = meta.get('dispatching_options', {})
+        return options
 
     def get_parent_context(self) -> LocalDirectoryContext:
         if self.path == self._top_path:

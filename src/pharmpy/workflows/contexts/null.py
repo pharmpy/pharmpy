@@ -68,7 +68,7 @@ class NullContext(Context):
         pass
 
     def retrieve_dispatching_options(self):
-        pass
+        return {}
 
     def get_parent_context(self):
         pass
