@@ -181,6 +181,7 @@ def run_iivsearch(args):
         E_p=args.e_p,
         E_q=args.e_q,
         broadcaster=args.broadcaster,
+        dispatcher=args.dispatcher,
         context=context,
         name=name,
     )
@@ -815,6 +816,13 @@ group_tools.add_argument(
     metavar='NAME',
     help='Name of the broadcaster to use for log messages',
 )
+group_tools.add_argument(
+    '--dispatcher',
+    type=str,
+    metavar='NAME',
+    help='Name of the dispatcher to use',
+)
+
 
 # for commands with file output
 args_output = argparse.ArgumentParser(add_help=False)
