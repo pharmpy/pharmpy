@@ -63,12 +63,9 @@ class Context(ABC):
     @property
     def broadcaster(self) -> Broadcaster:
         if not hasattr(self, '_broadcaster'):
-            metadata = self.retrieve_metadata()
-            if (
-                'dispatching_options' in metadata
-                and 'broadcaster' in metadata['dispatching_options']
-            ):
-                name = metadata['dispatching_options']['broadcaster']
+            options = self.retrieve_dispatching_options()
+            if 'broadcaster' in options:
+                name = options['broadcaster']
             else:
                 from pharmpy import conf
 
@@ -79,12 +76,9 @@ class Context(ABC):
     @property
     def dispatcher(self) -> Dispatcher:
         if not hasattr(self, '_dispatcher'):
-            metadata = self.retrieve_metadata()
-            if (
-                'dispatching_options' in metadata
-                and 'dispatcher' in metadata['dispatching_options']
-            ):
-                name = metadata['dispatching_options']['dispatcher']
+            options = self.retrieve_dispatching_options()
+            if 'dispatcher' in options:
+                name = options['dispatcher']
             else:
                 from pharmpy import conf
 
