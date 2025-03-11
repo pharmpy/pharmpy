@@ -368,7 +368,7 @@ def _create_base_model(input_model_entry, current_iteration, dv):
     input_model = input_model_entry.model
     theta = Parameter('theta', 0.1)
     omega = Parameter('omega', 0.01, lower=0)
-    sigma = Parameter('sigma', 1, lower=0)
+    sigma = Parameter('sigma', 1.0, lower=0)
     params = Parameters((theta, omega, sigma))
 
     eta_name = 'eta_base'
