@@ -36,7 +36,7 @@ from pharmpy.tools import run_covsearch, run_tool
 def test_covsearch_dummy(
     tmp_path,
     model_count,
-    start_modelres,
+    start_modelres_dummy,
     search_space,
     algorithm,
     no_of_effects,
@@ -44,8 +44,8 @@ def test_covsearch_dummy(
 ):
     with chdir(tmp_path):
         res = run_covsearch(
-            model=start_modelres[0],
-            results=start_modelres[1],
+            model=start_modelres_dummy[0],
+            results=start_modelres_dummy[1],
             search_space=search_space,
             algorithm=algorithm,
             esttool='dummy',

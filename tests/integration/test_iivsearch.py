@@ -39,7 +39,7 @@ from pharmpy.workflows import LocalDirectoryContext
 def test_iivsearch_dummy(
     tmp_path,
     model_count,
-    start_modelres,
+    start_modelres_dummy,
     algorithm,
     correlation_algorithm,
     kwargs,
@@ -51,13 +51,13 @@ def test_iivsearch_dummy(
         no_of_models_total = no_of_candidate_models + 1  # Include input
         has_iiv_strategy = 'iiv_strategy' in kwargs and kwargs['iiv_strategy'] != 'no_add'
         if has_iiv_strategy:
-            start_model = add_lag_time(start_modelres[0])
+            start_model = add_lag_time(start_modelres_dummy[0])
             start_res = fit(start_model, esttool='dummy')
             if algorithm != 'bottom_up_stepwise':
                 no_of_models_total += 1  # Include base
         else:
-            start_model = start_modelres[0]
-            start_res = start_modelres[1]
+            start_model = start_modelres_dummy[0]
+            start_res = start_modelres_dummy[1]
 
         res = run_iivsearch(
             model=start_model,

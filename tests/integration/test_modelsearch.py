@@ -99,7 +99,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
 def test_modelsearch_dummy(
     tmp_path,
     model_count,
-    start_modelres,
+    start_modelres_dummy,
     search_space,
     algorithm,
     kwargs,
@@ -110,8 +110,8 @@ def test_modelsearch_dummy(
 ):
     with chdir(tmp_path):
         res = run_modelsearch(
-            model=start_modelres[0],
-            results=start_modelres[1],
+            model=start_modelres_dummy[0],
+            results=start_modelres_dummy[1],
             search_space=search_space,
             algorithm=algorithm,
             esttool='dummy',

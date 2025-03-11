@@ -11,6 +11,17 @@ from pharmpy.tools import fit
 
 @pytest.fixture(scope='session')
 def start_modelres(testdata):
+    model_start, modelfit_results = _run_est(testdata, 'nonmem')
+    return model_start, modelfit_results
+
+
+@pytest.fixture(scope='session')
+def start_modelres_dummy(testdata):
+    model_start, modelfit_results = _run_est(testdata, 'dummy')
+    return model_start, modelfit_results
+
+
+def _run_est(testdata, esttool):
     tempdir = Path(tempfile.mkdtemp())
     with chdir(tempdir):
         shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tempdir)
@@ -19,7 +30,7 @@ def start_modelres(testdata):
         model_start = model_start.replace(
             datainfo=model_start.datainfo.replace(path=tempdir / 'mox_simulated_normal.csv')
         )
-        modelfit_results = fit(model_start)
+        modelfit_results = fit(model_start, esttool=esttool)
     return model_start, modelfit_results
 
 

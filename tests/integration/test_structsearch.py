@@ -73,7 +73,7 @@ def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands
     with chdir(tmp_path):
         model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
-        pk_res = fit(model)
+        pk_res = fit(model, esttool='dummy')
         res = run_structsearch(
             type='tmdd',
             results=pk_res,
