@@ -10,6 +10,7 @@ from typing import Optional, Union
 
 import pharmpy.config as config
 import pharmpy.model
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.nlmixr import convert_model
@@ -74,7 +75,10 @@ def execute_model(model_entry, context, evaluate=False, path=None):
     cg.add('ofv <- fit$objDf$OBJF')
     cg.add('thetas <- as.data.frame(fit$theta)')
     cg.add('omega <- fit$omega')
+    cg.add('omega_sdcorr <- fit$omegaR')  # FIXME : Add sigma sdcorr
+    cg.add('individual_estimates <- fit$etaObf')
     cg.add('sigma <- as.data.frame(fit$theta)')
+    cg.add('parameters <- fit$parFixedDf')
     cg.add('log_likelihood <- fit$objDf$`Log-likelihood`')
     cg.add('runtime_total <- sum(fit$time)')
     cg.add('pred <- as.data.frame(fit[c("PRED", "IPRED")])')
@@ -83,7 +87,12 @@ def execute_model(model_entry, context, evaluate=False, path=None):
         p = f"{path / model.name}.RDATA".replace("\\", "\\\\")
     else:
         p = f"{path / model.name}.RDATA"
-    cg.add(f'save(file="{p}",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)')
+    cg.add(
+        (
+            f'save(file="{p}",ofv, thetas, omega, omega_sdcorr, individual_estimates,'
+            f' sigma, parameters, log_likelihood, runtime_total, pred)'
+        )
+    )
     code += f'\n{str(cg)}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
@@ -630,12 +639,14 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
 
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = {}
+    omegas_sdcorr = {}
     omega = model.random_variables.etas.covariance_matrix
     for i in range(0, omega.rows):
         for j in range(0, omega.cols):
             symb = omega[i, j]
             if symb != 0:
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]
+                omegas_sdcorr[symb.name] = rdata['omega_sdcorr'].values[i, j]
     sigma = model.random_variables.epsilons.covariance_matrix
     for i in range(len(sigma)):
         if sigma[i] != 0:
@@ -657,6 +668,27 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
     predictions = rdata['pred']
     predictions = predictions.set_index(model.dataset[model.dataset["DV"] != 0].index)
 
+    if not omegas_sdcorr:
+        sdcorr_ests = pd.Series(np.nan, index=pe.index)
+        sdcorr_ests = sdcorr_ests.rename("estimates")
+    else:
+        sdcorr_ests = pe.copy()
+        sdcorr_ests = sdcorr_ests.rename("estimates")
+        sdcorr_ests.update(pd.Series(omegas_sdcorr))
+
+    # FIXME : parse standard errors for omegas and sigmas
+    se = pd.Series(np.nan, index=pe.index)
+    parameters = rdata["parameters"]
+    se_parameters = pd.Series(parameters["SE"])
+    se.update(se_parameters)
+
+    # FIXME : parse sdcorr
+    sdcorr = pd.Series(np.nan, index=pe.index)
+
+    individual_estimates = rdata['individual_estimates']
+    individual_estimates = individual_estimates.set_index('ID')
+    individual_estimates = individual_estimates.drop("OBJI", axis=1)
+
     res = ModelfitResults(
         ofv=ofv,
         minimization_successful=True,  # FIXME: Parse minimization status
@@ -664,5 +696,9 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
         predictions=predictions,
         log=Log(),
         warnings=[],  # FIXME : Parse warnings
+        parameter_estimates_sdcorr=sdcorr_ests,
+        standard_errors=se,
+        standard_errors_sdcorr=sdcorr,
+        individual_estimates=individual_estimates,
     )
     return res
