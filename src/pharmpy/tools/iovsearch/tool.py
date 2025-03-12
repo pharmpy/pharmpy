@@ -472,7 +472,7 @@ def _get_iiv_etas_with_corresponding_iov(model: Model):
     iovs = set(_get_iov_piecewise_assignment_symbols(model))
     iiv = _get_nonfixed_iivs(model)
 
-    for statement in model.statements:
+    for statement in model.statements.before_odes:
         if isinstance(statement, Assignment) and statement.expression.is_add():
             for symbol in statement.expression.free_symbols:
                 if symbol in iovs:
