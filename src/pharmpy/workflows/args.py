@@ -26,7 +26,13 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, 
     all_dispatching_options = ('context', 'name', 'broadcaster', 'dispatcher')
     all_common_options = ('resume', 'esttool')
     # The defaults below will be overwritten by the user given options
-    dispatching_options = {'context': None, 'name': None, 'broadcaster': None, 'dispatcher': None}
+    dispatching_options = {
+        'context': None,
+        'name': None,
+        'ref': None,
+        'broadcaster': None,
+        'dispatcher': None,
+    }
     common_options = {'esttool': 'nonmem'}
     seed = None
     other_options = {}

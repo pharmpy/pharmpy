@@ -156,14 +156,13 @@ def run_modelsearch(args):
 
 
 def run_iivsearch(args):
+    context = None
     if args.path is not None:
         name = args.path.name
-        from pharmpy.tools.context import init_context
-
-        context = init_context(args.path.parent)
+        ref = args.path.parent
     else:
         name = None
-        context = None
+        ref = None
     model, res = args.model
 
     run_tool_wrapper(
@@ -184,6 +183,7 @@ def run_iivsearch(args):
         dispatcher=args.dispatcher,
         context=context,
         name=name,
+        ref=ref,
     )
 
 

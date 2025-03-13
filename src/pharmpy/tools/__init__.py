@@ -4,7 +4,7 @@ __all__ = (
     'broadcast_log',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
-    'init_context',  # pyright: ignore [reportUnsupportedDunderAll]
+    'open_context',  # pyright: ignore [reportUnsupportedDunderAll]
     'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
     'load_example_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'list_models',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -60,7 +60,7 @@ _not_wrapped = {
         'predict_influential_outliers',
     ),
     '.context': (
-        'init_context',
+        'open_context',
         'print_log',
         'broadcast_log',
         'retrieve_model',

@@ -8,34 +8,23 @@ from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
 
 
-def _open_context(source):
-    if isinstance(source, Path) or isinstance(source, str):
-        path = Path(source)
-        context = LocalDirectoryContext(path)
-    elif isinstance(source, Context):
-        context = source
-    else:
-        raise NotImplementedError(f'Not implemented for type \'{type(source)}\'')
-    return context
-
-
-def init_context(name: str, path: Union[str, Path, None] = None):
-    """Initialize an already created context or create a new context
+def open_context(name: str, ref: Union[str, Path, None] = None):
+    """Open a context from a tool run
 
     Parameters
     ----------
     name : str
         Name of the context
-    path : str or Path
-        Path to where to put the context
+    ref : str or Path
+        Parent path of the context
 
     Examples
     --------
-    >>> from pharmpy.tools import init_context
-    >>> ctx = init_context("myproject")  # doctest: +SKIP
+    >>> from pharmpy.tools import open_context
+    >>> ctx = open_context("myrun")  # doctest: +SKIP
 
     """
-    ref = str(normalize_user_given_path(path)) if path is not None else None
+    ref = str(normalize_user_given_path(ref)) if ref is not None else None
     ctx = LocalDirectoryContext(name=name, ref=ref)
     return ctx
 
@@ -75,20 +64,16 @@ def broadcast_log(context: Context, broadcaster: Optional[str] = None) -> None:
         bcst.broadcast_message(row['severity'], row['path'], row['time'], row['message'])
 
 
-def retrieve_model(
-    source: Union[str, Path, Context],
-    name: str,
-) -> Model:
-    """Retrieve a model from a context/tool run
+def retrieve_model(context: Context, name: str) -> Model:
+    """Retrieve a model from a context
 
     Any models created and run by the tool can be
     retrieved.
 
     Parameters
     ----------
-    source : str, Path, Context
-        Source where to find models. Can be a path (as str or Path), or a
-        Context
+    context: Context
+        A previously opened context
     name : str
         Name of the model or a qualified name with a subcontext path, e.g.
         :code:`"iivsearch/@final"`.
@@ -100,12 +85,11 @@ def retrieve_model(
 
     Examples
     --------
-    >>> from pharmpy.tools import retrieve_model
-    >>> tooldir_path = 'path/to/tool/directory'
-    >>> model = retrieve_model(tooldir_path, 'run1')      # doctest: +SKIP
+    >>> from pharmpy.tools import open_contet, retrieve_model
+    >>> context = open_context(ref='path/to/', name='modelsearch1')
+    >>> model = retrieve_model(context, 'run1')      # doctest: +SKIP
 
     """
-    context = _open_context(source)
     subctx, model_name = _split_subcontext_and_model(context, name)
     return subctx.retrieve_model_entry(model_name).model
 
@@ -146,17 +130,13 @@ def _present_string_array(a):
         return 'one of: ' + ', '.join(a)
 
 
-def retrieve_modelfit_results(
-    source: Union[str, Path, Context],
-    name: str,
-) -> ModelfitResults:
+def retrieve_modelfit_results(context: Context, name: str) -> ModelfitResults:
     """Retrieve the modelfit results of a model
 
     Parameters
     ----------
-    source : str, Path, Context
-        Source where to find models. Can be a path (as str or Path), or a
-        Context
+    context : Context
+        A previously opened context
     name : str
         Name of the model or a qualified name with a subcontext path, e.g.
         :code:`"iivsearch/@final"`.
@@ -168,13 +148,11 @@ def retrieve_modelfit_results(
 
     Examples
     --------
-    >>> from pharmpy.tools import init_context, retrieve_modelfit_results
-    >>> tooldir_path = 'path/to/tool/directory'
-    >>> context = init_context("iivsearch1")   # doctest: +SKIP
+    >>> from pharmpy.tools import open_context, retrieve_modelfit_results
+    >>> context = open_context("iivsearch1")   # doctest: +SKIP
     >>> results = retrieve_modelfit_results(context, 'input')      # doctest: +SKIP
 
     """
-    context = _open_context(source)
     subctx, model_name = _split_subcontext_and_model(context, name)
     return subctx.retrieve_model_entry(model_name).modelfit_results
 

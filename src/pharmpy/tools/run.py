@@ -640,15 +640,8 @@ def get_context(dispatching_options, tool_name) -> Context:
         from pharmpy.workflows import default_context
 
         name = _get_name(dispatching_options, default_context, tool_name)
-        ctx = default_context(name)
-    elif isinstance(ctx, Context):
-        from pharmpy.workflows import default_context
-
-        name = _get_name(dispatching_options, default_context, tool_name)
-        try:
-            ctx = ctx.get_subcontext(name)
-        except ValueError:
-            ctx = ctx.create_subcontext(name)
+        ref = dispatching_options['ref']
+        ctx = default_context(name, ref)
     return ctx
 
 
