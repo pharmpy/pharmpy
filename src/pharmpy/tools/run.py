@@ -61,7 +61,6 @@ class InputValidationError(Exception):
 def fit(
     model_or_models: Union[Model, list[Model]],
     esttool: Optional[str] = None,
-    path: Optional[Union[Path, str]] = None,
     name: Optional[str] = None,
     context: Optional[Context] = None,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
