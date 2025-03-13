@@ -85,7 +85,7 @@ def retrieve_model(context: Context, name: str) -> Model:
 
     Examples
     --------
-    >>> from pharmpy.tools import open_contet, retrieve_model
+    >>> from pharmpy.tools import open_context, retrieve_model
     >>> context = open_context(ref='path/to/', name='modelsearch1')
     >>> model = retrieve_model(context, 'run1')      # doctest: +SKIP
 
