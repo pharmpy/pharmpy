@@ -62,6 +62,7 @@ def fit(
     model_or_models: Union[Model, list[Model]],
     esttool: Optional[str] = None,
     path: Optional[Union[Path, str]] = None,
+    name: Optional[str] = None,
     context: Optional[Context] = None,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
@@ -72,8 +73,8 @@ def fit(
         List of models or one single model
     esttool : str
         Estimation tool to use. None to use default
-    path :  Path | str
-        Path to fit directory
+    name : str
+        Name of run
     context : Context
         Run in this context
 
@@ -106,7 +107,7 @@ def fit(
         dispatcher = None
 
     modelfit_results = run_tool(
-        'modelfit', models, esttool=esttool, path=path, context=context, dispatcher=dispatcher
+        'modelfit', models, esttool=esttool, name=name, context=context, dispatcher=dispatcher
     )
 
     return (
