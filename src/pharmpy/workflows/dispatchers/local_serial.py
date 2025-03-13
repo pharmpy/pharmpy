@@ -13,7 +13,7 @@ T = TypeVar('T')
 class LocalSerialDispatcher(Dispatcher):
     def run(self, workflow: Workflow[T], context) -> T:
         with TemporaryDirectory() as tempdirname, chdir(tempdirname):
-            context.log_info(f"Dispatching workflow in {context}")
+            context.log_info(f"Dispatching workflow with local_serial dispatcher in {context}")
             res = self._run(workflow)
             context.log_info("End dispatch")
         return res  # pyright: ignore [reportGeneralTypeIssues]

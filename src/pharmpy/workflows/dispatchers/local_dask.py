@@ -80,7 +80,10 @@ class LocalDaskDispatcher(Dispatcher):
                         with LocalCluster(
                             processes=False, dashboard_address=':31058'
                         ) as cluster, Client(cluster) as client:
-                            context.log_info(f"Dispatching workflow in {context}: {client}")
+                            context.log_info(
+                                "Dispatching workflow with local_dask dispatcher "
+                                f"in {context}: {client}"
+                            )
                             dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
 
                             def sigint_handler(sig, frame):
