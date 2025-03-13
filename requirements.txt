@@ -2,7 +2,7 @@ alabaster==1.0.0
 altair==5.5.0
 appdirs==1.4.4
 asttokens==3.0.0
-attrs==25.1.0
+attrs==25.2.0
 Babel==2.17.0
 beautifulsoup4==4.13.3
 bleach==6.2.0
