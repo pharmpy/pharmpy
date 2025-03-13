@@ -25,7 +25,7 @@ from pharmpy.tools.iivsearch.algorithms import (
     create_description,
     create_eta_blocks,
     create_no_of_etas_candidate_entry,
-    get_iiv_names,
+    get_eta_names,
     td_exhaustive_block_structure,
     td_exhaustive_no_of_etas,
 )
@@ -559,11 +559,11 @@ def test_get_mbic_penalties(load_model_for_test, testdata, as_fullblock, penalti
         (tuple(), ['X'], {'ETA_1': 'X', 'ETA_2': 'VC'}, {'ETA_2'}),
     ],
 )
-def test_get_iiv_names(load_model_for_test, testdata, funcs, keep, param_mapping, iiv_names):
+def test_get_eta_names(load_model_for_test, testdata, funcs, keep, param_mapping, iiv_names):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     for func in funcs:
         model = func(model=model)
-    assert set(get_iiv_names(model, keep, param_mapping)) == iiv_names
+    assert set(get_eta_names(model, keep, param_mapping)) == iiv_names
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
