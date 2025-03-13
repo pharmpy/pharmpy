@@ -23,7 +23,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, 
     -------
     Tuple of dispatching options, common options and other option dictionaries
     """
-    all_dispatching_options = ('context', 'name', 'broadcaster', 'dispatcher')
+    all_dispatching_options = ('context', 'name', 'ref', 'broadcaster', 'dispatcher')
     all_common_options = 'esttool'
     # The defaults below will be overwritten by the user given options
     dispatching_options = {
