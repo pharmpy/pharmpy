@@ -56,7 +56,8 @@ def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mappin
 def get_eta_names(model, keep, param_mapping):
     iiv_symbs = model.random_variables.iiv.free_symbols
     etas = model.statements.before_odes.free_symbols.intersection(iiv_symbs)
-    eta_names = [eta.name for eta in etas]
+    # Extract to have correct order, necessary for create_joint_distribution
+    eta_names = model.random_variables[etas].names
     if keep and param_mapping:
         keep = tuple(k for k, v in param_mapping.items() if v in keep)
 
@@ -65,7 +66,8 @@ def get_eta_names(model, keep, param_mapping):
 
     # Remove fixed etas
     fixed_etas = _get_fixed_etas(model)
-    return _remove_sublist(eta_names, fixed_etas)
+    etas = _remove_sublist(eta_names, fixed_etas)
+    return etas
 
 
 def bu_stepwise_no_of_etas(
