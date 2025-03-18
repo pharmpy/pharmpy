@@ -177,6 +177,11 @@ class Context(ABC):
         """Retrieve an annotation for a model"""
         pass
 
+    def get_ncores_for_execution(self):
+        """Get number of cores for execution (using available cores among allocation)"""
+        ncores = self.retrieve_dispatching_options()['ncores']
+        return self.dispatcher.get_available_cores(ncores)
+
     @abstractmethod
     def store_message(self, severity, ctxpath: str, date, message: str):
         pass

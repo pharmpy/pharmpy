@@ -54,3 +54,6 @@ class LocalSerialDispatcher(Dispatcher):
     def get_hosts(self) -> dict[str, int]:
         hosts = {'localhost': os.cpu_count()}
         return hosts
+
+    def get_available_cores(self, allocation: int):
+        return allocation

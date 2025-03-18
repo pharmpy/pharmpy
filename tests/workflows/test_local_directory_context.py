@@ -173,3 +173,19 @@ def test_spawn_seed(tmp_path):
     assert seed == 735984819
     seed = ctx.spawn_seed(rng, n=17)
     assert seed == 121010
+
+
+@pytest.mark.parametrize(
+    'dispatcher, ncores, execution_cores',
+    [
+        ('local_dask', 10, 1),
+        ('local_serial', 10, 10),
+    ],
+)
+def test_get_ncores_for_execution(tmp_path, dispatcher, ncores, execution_cores):
+    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
+    opts = {'dispatcher': dispatcher, 'ncores': ncores}
+    metadata = {'dispatching_options': opts}
+    ctx.store_metadata(metadata)
+    assert ctx.get_ncores_for_execution() == execution_cores
+    assert ctx.dispatcher.get_available_cores(ncores) == execution_cores

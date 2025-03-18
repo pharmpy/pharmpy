@@ -53,3 +53,6 @@ class Dispatcher(ABC):
     @abstractmethod
     def get_hosts(self) -> dict[str, int]:
         pass
+
+    def get_available_cores(self, allocation: int):
+        pass
