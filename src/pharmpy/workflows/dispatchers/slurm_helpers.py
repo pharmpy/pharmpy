@@ -7,6 +7,14 @@ def is_running_on_slurm() -> bool:
     return jobid is not None
 
 
+def get_slurm_nodedict() -> dict[str, int]:
+    # Dict of node: ncores
+    nodelist = get_slurm_nodelist()
+    corelist = get_slurm_corelist()
+    nodemap = {host: ncores for host, ncores in zip(nodelist, corelist)}
+    return nodemap
+
+
 def get_slurm_nodelist() -> list[str]:
     # Get the SLURM_JOB_NODELIST environment variable and expand into
     # list of hostnames

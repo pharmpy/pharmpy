@@ -14,6 +14,8 @@ from pharmpy.modeling import get_config_path, write_csv, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results, parse_simulation_results
 from pharmpy.workflows import ModelEntry
 
+from .parafile import create_parafile
+
 PARENT_DIR = f'..{os.path.sep}'
 
 
@@ -60,7 +62,8 @@ def execute_model(model_entry, context):
     model = write_csv(model, path=dataset_path, force=True)
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
-    args = nmfe("model.ctl", "model.lst")
+    parafile_option = create_parafile_and_option(context, model_path / 'parafile.pnm')
+    args = nmfe("model.ctl", "model.lst", parafile_option)
 
     stdout = model_path / 'stdout'
     stderr = model_path / 'stderr'
@@ -190,3 +193,12 @@ def nmfe(*args):
         *args,
         *conf_args,
     ]
+
+
+def create_parafile_and_option(context, path: Path) -> str:
+    if False:
+        nodedict = context.dispatcher.get_hosts()
+        create_parafile(path, nodedict)
+        return f"-parafile={path}"
+    else:
+        return ""
