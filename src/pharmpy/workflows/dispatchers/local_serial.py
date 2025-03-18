@@ -1,3 +1,4 @@
+import os
 import sys
 from typing import TypeVar
 
@@ -49,3 +50,7 @@ class LocalSerialDispatcher(Dispatcher):
 
     def abort_workflow(self) -> None:
         sys.exit(1)
+
+    def get_hosts(self) -> dict[str, int]:
+        hosts = {'localhost': os.cpu_count()}
+        return hosts

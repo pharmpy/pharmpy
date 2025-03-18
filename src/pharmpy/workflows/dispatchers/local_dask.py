@@ -154,6 +154,10 @@ class LocalDaskDispatcher(Dispatcher):
         _turn_off_dask_logging()
         client.close()
 
+    def get_hosts(self) -> dict[str, int]:
+        hosts = {'localhost': os.cpu_count()}
+        return hosts
+
 
 def _turn_off_dask_logging():
     # This avoids "WARNING Async instruction for" messages

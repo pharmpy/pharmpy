@@ -49,3 +49,7 @@ class Dispatcher(ABC):
     @abstractmethod
     def abort_workflow(self) -> None:
         pass
+
+    @abstractmethod
+    def get_hosts(self) -> dict[str, int]:
+        pass
