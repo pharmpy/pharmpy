@@ -196,9 +196,13 @@ def nmfe(*args):
 
 
 def create_parafile_and_option(context, path: Path) -> str:
-    if False:
+    ncores = context.get_ncores_for_execution()
+    if ncores > 1:
         nodedict = context.dispatcher.get_hosts()
-        create_parafile(path, nodedict)
+        hostname = context.dispatcher.get_hostname()
+        if hostname == "localhost":
+            nodedict = {"localhost": ncores}
+        create_parafile(path, nodedict, hostname)
         return f"-parafile={path}"
     else:
         return ""

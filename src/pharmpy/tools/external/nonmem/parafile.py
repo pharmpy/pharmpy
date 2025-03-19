@@ -11,25 +11,29 @@ $DIRECTORIES
 """
 
 
-def create_parafile(path: Path, nodedict: dict[str, int]):
+def create_parafile(path: Path, nodedict: dict[str, int], hostname: str):
     nodes = list(nodedict.keys())
     ncores = list(nodedict.values())
     s = template.format(
-        nodes=len(nodes),
+        nodes=sum(ncores),
         directories=_create_directories(nodes),
-        commands=_create_commands(nodes, ncores),
+        commands=_create_commands(nodes, ncores, hostname),
     )
     with open(path, "w") as f:
         f.write(s)
 
 
-def _create_commands(nodes: list[str], ncores: list[int]) -> str:
+def _create_commands(nodes: list[str], ncores: list[int], hostname: str) -> str:
     s = '1:mpirun -wdir "$PWD" -n 1 ./nonmem $*\n'
     for i, (node, n) in enumerate(zip(nodes, ncores)):
         if i == 0:
             dirname = '"$PWD"'
         else:
             dirname = f'"$PWD/worker{i}"'
+
+        if node == hostname:
+            n -= 1
+
         command = f'{i + 2}: -wdir {dirname} -n {n} -host {node} ./nonmem -worker\n'
         s += command
     return s
