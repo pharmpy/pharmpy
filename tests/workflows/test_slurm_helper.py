@@ -5,6 +5,7 @@ import pytest
 from pharmpy.workflows.dispatchers.slurm_helpers import (
     get_slurm_corelist,
     get_slurm_nodelist,
+    get_slurm_nodename,
     is_running_on_slurm,
 )
 
@@ -14,6 +15,13 @@ def test_is_running_on_slurm():
     assert not is_running_on_slurm()
     os.environ['SLURM_JOB_ID'] = "323232"
     assert is_running_on_slurm()
+
+
+def test_get_slurm_nodename():
+    os.environ.pop('SLURM_NODENAME', None)
+    assert not get_slurm_nodename()
+    os.environ['SLURM_NODENAME'] = 'nodename'
+    assert get_slurm_nodename() == 'nodename'
 
 
 @pytest.mark.parametrize(

@@ -56,3 +56,7 @@ class Dispatcher(ABC):
 
     def get_available_cores(self, allocation: int):
         pass
+
+    @abstractmethod
+    def get_hostname(self) -> str:
+        pass

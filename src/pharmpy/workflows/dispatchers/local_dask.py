@@ -9,6 +9,7 @@ from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 from ..workflow import Workflow, WorkflowBuilder, insert_context
 from .baseclass import Dispatcher
+from .slurm_helpers import get_slurm_nodename, is_running_on_slurm
 
 T = TypeVar('T')
 
@@ -157,6 +158,12 @@ class LocalDaskDispatcher(Dispatcher):
     def get_hosts(self) -> dict[str, int]:
         hosts = {'localhost': os.cpu_count()}
         return hosts
+
+    def get_hostname(self) -> str:
+        if is_running_on_slurm():
+            return get_slurm_nodename()
+        else:
+            return 'localhost'
 
     def get_available_cores(self, allocation: int):
         return 1

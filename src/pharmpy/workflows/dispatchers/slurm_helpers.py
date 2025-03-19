@@ -7,6 +7,11 @@ def is_running_on_slurm() -> bool:
     return jobid is not None
 
 
+def get_slurm_nodename():
+    nodename = os.getenv("SLURM_NODENAME")
+    return nodename
+
+
 def get_slurm_nodedict() -> dict[str, int]:
     # Dict of node: ncores
     nodelist = get_slurm_nodelist()
