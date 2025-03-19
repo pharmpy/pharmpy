@@ -77,6 +77,8 @@ def fit(
         Name of run
     context : Context
         Run in this context
+    ncores : int
+        Number of cores to use for estimation
 
     Return
     ------
