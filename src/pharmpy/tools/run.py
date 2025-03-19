@@ -63,6 +63,7 @@ def fit(
     esttool: Optional[str] = None,
     name: Optional[str] = None,
     context: Optional[Context] = None,
+    ncores: int = 1,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
 
@@ -106,7 +107,13 @@ def fit(
         dispatcher = None
 
     modelfit_results = run_tool(
-        'modelfit', models, esttool=esttool, name=name, context=context, dispatcher=dispatcher
+        'modelfit',
+        models,
+        esttool=esttool,
+        name=name,
+        context=context,
+        dispatcher=dispatcher,
+        ncores=ncores,
     )
 
     return (
