@@ -87,4 +87,4 @@ def validate_input(model, results, resamples):
     if is_simulation_model(model):
         raise ValueError('Input model is a simulation model. Bootstrap needs an estimation model')
     if resamples < 1:
-        raise ValueError('The number of samples must be one or more')
+        raise ValueError('The number of samples must at least one')
