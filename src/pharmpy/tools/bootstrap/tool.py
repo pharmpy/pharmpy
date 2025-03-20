@@ -38,7 +38,7 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
 
     wb = WorkflowBuilder(name='bootstrap')
 
-    start_task = Task('start', start, model)
+    start_task = Task('start', start, model, results)
 
     for i in range(resamples):
         task_resample = Task('resample', resample_model, f'bs_{i + 1}')
@@ -53,8 +53,10 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
     return Workflow(wb)
 
 
-def start(context, model):
+def start(context, model, results):
     context.log_info("Starting tool bootstrap")
+    me = ModelEntry.create(model, modelfit_results=results)
+    context.store_input_model_entry(me)
     return model
 
 
