@@ -126,6 +126,9 @@ def run_tool_wrapper(toolname, args, **kwargs):
         name = None
         ref = None
 
+    if hasattr(args, 'seed'):
+        kwargs['seed'] = args.seed
+
     try:
         run_tool(
             toolname,
@@ -866,7 +869,7 @@ parser_definition = [
                     'bootstrap': {
                         'help': 'Bootstrap',
                         'func': run_bootstrap,
-                        'parents': [args_model_input, args_tools],
+                        'parents': [args_model_input, args_random, args_tools],
                         'args': [
                             {
                                 'name': '--samples',
