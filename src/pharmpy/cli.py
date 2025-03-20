@@ -181,6 +181,7 @@ def run_iivsearch(args):
         E_q=args.e_q,
         broadcaster=args.broadcaster,
         dispatcher=args.dispatcher,
+        ncores=args.ncores,
         context=context,
         name=name,
         ref=ref,
@@ -821,6 +822,12 @@ group_tools.add_argument(
     type=str,
     metavar='NAME',
     help='Name of the dispatcher to use',
+)
+group_tools.add_argument(
+    '--ncores',
+    type=int,
+    metavar='NUMBER',
+    help='Number of cores to use',
 )
 
 
