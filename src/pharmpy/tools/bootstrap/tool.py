@@ -1,7 +1,9 @@
 from typing import Optional
 
+from pharmpy.internals.fn.signature import with_same_arguments_as
+from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import resample_data
+from pharmpy.modeling import is_simulation_model, resample_data
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -77,3 +79,12 @@ def post_process_results(context, original_model_res, *model_entries):
     )
     context.log_info("Finishing tool bootstrap")
     return res
+
+
+@with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
+def validate_input(model, results, resamples):
+    if is_simulation_model(model):
+        raise ValueError('Input model is a simulation model. Bootstrap needs an estimation model')
+    if resamples < 1:
+        raise ValueError('The number of samples must be one or more')
