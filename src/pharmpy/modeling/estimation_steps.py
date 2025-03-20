@@ -768,9 +768,9 @@ def is_simulation_model(model: Model) -> bool:
 
     Examples
     --------
-    >>> from pharmpy.modeling import *
+    >>> from pharmpy.modeling import is_simulation_model, load_example_model
     >>> model = load_example_model("pheno")
-    >>> is_simulation(model)
+    >>> is_simulation_model(model)
     False
 
     """
