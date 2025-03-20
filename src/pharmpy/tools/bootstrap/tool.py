@@ -51,7 +51,7 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
 
 def resample_model(input_model, name):
     resample = resample_data(
-        input_model, input_model.datainfo.id_column.name, resamples=1, name=name
+        input_model, input_model.datainfo.id_column.name, resamples=1, replace=True, name=name
     )
     model, _ = next(resample)
     model_entry = ModelEntry.create(model=model, parent=input_model)
