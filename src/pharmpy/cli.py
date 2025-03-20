@@ -113,13 +113,30 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     return lines
 
 
-def run_tool_wrapper(toolname, **kwargs):
+def run_tool_wrapper(toolname, args, **kwargs):
     from pharmpy.tools import run_tool
     from pharmpy.tools.run import InputValidationError
     from pharmpy.workflows import DispatchingError
 
+    context = None
+    if args.path is not None:
+        name = args.path.name
+        ref = args.path.parent
+    else:
+        name = None
+        ref = None
+
     try:
-        run_tool(toolname, **kwargs)
+        run_tool(
+            toolname,
+            **kwargs,
+            broadcaster=args.broadcaster,
+            dispatcher=args.dispatcher,
+            ncores=args.ncores,
+            context=context,
+            name=name,
+            ref=ref,
+        )
     except (InputValidationError, DispatchingError) as err:
         error(err)
 
@@ -156,17 +173,11 @@ def run_modelsearch(args):
 
 
 def run_iivsearch(args):
-    context = None
-    if args.path is not None:
-        name = args.path.name
-        ref = args.path.parent
-    else:
-        name = None
-        ref = None
     model, res = args.model
 
     run_tool_wrapper(
         'iivsearch',
+        args,
         model=model,
         results=res,
         algorithm=args.algorithm,
@@ -179,12 +190,6 @@ def run_iivsearch(args):
         correlation_algorithm=args.correlation_algorithm,
         E_p=args.e_p,
         E_q=args.e_q,
-        broadcaster=args.broadcaster,
-        dispatcher=args.dispatcher,
-        ncores=args.ncores,
-        context=context,
-        name=name,
-        ref=ref,
     )
 
 
@@ -192,6 +197,7 @@ def run_iovsearch(args):
     model, res = args.model
     run_tool_wrapper(
         'iovsearch',
+        args,
         model=model,
         results=res,
         column=args.column,
@@ -209,6 +215,7 @@ def run_covsearch(args):
     model, res = args.model
     run_tool_wrapper(
         'covsearch',
+        args,
         search_space=args.search_space,
         p_forward=args.p_forward,
         p_backward=args.p_backward,
@@ -228,6 +235,7 @@ def run_ruvsearch(args):
     model, res = args.model
     run_tool_wrapper(
         'ruvsearch',
+        args,
         model=model,
         results=res,
         groups=args.groups,
@@ -244,6 +252,7 @@ def run_allometry(args):
     model, res = args.model
     run_tool_wrapper(
         'allometry',
+        args,
         model=model,
         results=res,
         allometric_variable=args.allometric_variable,
@@ -261,6 +270,7 @@ def run_estmethod(args):
     model, res = args.model
     run_tool_wrapper(
         'estmethod',
+        args,
         args.algorithm,
         methods=args.methods,
         solvers=args.solvers,
@@ -310,6 +320,7 @@ def run_linearize(args):
     model, res = args.model
     run_tool_wrapper(
         'linearize',
+        args,
         results=res,
         model=model,
         path=args.path,
@@ -320,6 +331,7 @@ def run_retries(args):
     model, res = args.model
     run_tool_wrapper(
         'retries',
+        args,
         results=res,
         model=model,
         number_of_candidates=args.number_of_candidates,
