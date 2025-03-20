@@ -6,6 +6,7 @@ New features
 
 * Add :code:`dv` option to :code:`get_observations`
 * Add context method :code:`spawn_seed`
+* Add :code:`modeling.is_simulation_model`
 
 Bugfixes
 ========

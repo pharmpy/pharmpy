@@ -8,6 +8,7 @@ from pharmpy.modeling import (
     add_predictions,
     add_residuals,
     append_estimation_step_options,
+    is_simulation_model,
     remove_derivative,
     remove_estimation_step,
     remove_parameter_uncertainty_step,
@@ -523,3 +524,10 @@ $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
  NOAPPEND NOPRINT ONEHEADER FILE=sdtab1 RFORMAT="(1PE16.9,300(1PE24.16))"\n"""
     )
+
+
+def test_is_simulation_model(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert not is_simulation_model(model)
+    m2 = set_simulation(model)
+    assert is_simulation_model(m2)

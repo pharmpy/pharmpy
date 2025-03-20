@@ -751,3 +751,30 @@ def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None):
     model = model.replace(execution_steps=newsteps)
     model = model.update_source()
     return model
+
+
+def is_simulation_model(model: Model) -> bool:
+    """Check if a model is a pure simulation model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    bool
+        True if it is a simulation model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> is_simulation(model)
+    False
+
+    """
+    for step in model.execution_steps:
+        if not isinstance(step, SimulationStep):
+            return False
+    return True
