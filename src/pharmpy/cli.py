@@ -142,10 +142,8 @@ def run_tool_wrapper(toolname, args, **kwargs):
 
 
 def run_bootstrap(args):
-    from pharmpy.tools import run_bootstrap
-
     model, res = args.model
-    run_bootstrap(model, res, resamples=args.samples)
+    run_tool_wrapper('bootstrap', args, model=model, results=res, resamples=args.samples)
 
 
 def run_execute(args):
@@ -861,19 +859,24 @@ parser_definition = [
                     'execute': {
                         'help': 'Execute one or more models',
                         'func': run_execute,
-                        'parents': [args_input],
+                        'parents': [args_input, args_tools],
                     }
                 },
                 {
                     'bootstrap': {
                         'help': 'Bootstrap',
                         'func': run_bootstrap,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': '--samples',
                                 'type': int,
                                 'help': 'Number of bootstrap datasets',
+                            },
+                            {
+                                'name': '--path',
+                                'type': Path,
+                                'help': 'Path to output directory',
                             },
                         ],
                     }
@@ -882,7 +885,7 @@ parser_definition = [
                     'modelsearch': {
                         'help': 'Search for structural best model',
                         'func': run_modelsearch,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': 'mfl',
@@ -1013,7 +1016,7 @@ parser_definition = [
                     'iovsearch': {
                         'help': 'Search for best model IOV model',
                         'func': run_iovsearch,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': '--column',
@@ -1073,7 +1076,7 @@ parser_definition = [
                     'covsearch': {
                         'help': 'Identify covariates that explain some of the IIV',
                         'func': run_covsearch,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': '--search_space',
@@ -1142,7 +1145,7 @@ parser_definition = [
                     'ruvsearch': {
                         'help': 'Search for best residual error model',
                         'func': run_ruvsearch,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': '--groups',
@@ -1192,7 +1195,7 @@ parser_definition = [
                     'allometry': {
                         'help': 'Add allometric scaling',
                         'func': run_allometry,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': '--allometric_variable',
@@ -1247,7 +1250,7 @@ parser_definition = [
                     'estmethod': {
                         'help': 'Assess estimation methods, solvers, and parameter uncertainty methods',
                         'func': run_estmethod,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': 'algorithm',
@@ -1294,7 +1297,7 @@ parser_definition = [
                     'amd': {
                         'help': 'Use Automatic Model Development tool to select PK model',
                         'func': run_amd,
-                        'parents': [args_model_or_path_input, args_random],
+                        'parents': [args_model_or_path_input, args_random, args_tools],
                         'args': [
                             {
                                 'name': '--results',
@@ -1451,7 +1454,7 @@ parser_definition = [
                     'linearize': {
                         'help': 'Linearize a model',
                         'func': run_linearize,
-                        'parents': [args_model_input],
+                        'parents': [args_model_input, args_tools],
                         'args': [
                             {
                                 'name': '--path',
@@ -1685,7 +1688,7 @@ parser_definition = [
                                 'metavar': 'PsN directory',
                                 'type': Path,
                                 'help': 'Path to PsN bootstrap run directory',
-                            }
+                            },
                         ],
                     }
                 },
