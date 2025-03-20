@@ -203,6 +203,6 @@ def create_parafile_and_option(context, path: Path) -> str:
         if hostname == "localhost":
             nodedict = {"localhost": ncores}
         create_parafile(path, nodedict, hostname)
-        return f"-parafile={path}"
+        return f"-parafile={path.name}"
     else:
         return ""
