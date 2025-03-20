@@ -283,13 +283,13 @@ def run_estmethod(args):
 
 
 def run_amd(args):
-    from pharmpy.tools import run_amd
-
     input = args.model_or_path
     dv_types = key_vals(args.dv_types)
     for key, value in dv_types.items():
         dv_types[key] = int(value)
-    run_amd(
+    run_tool_wrapper(
+        'amd',
+        args,
         input,
         results=args.results,
         modeltype=args.modeltype,
