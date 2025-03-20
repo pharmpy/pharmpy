@@ -36,9 +36,11 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
 
     wb = WorkflowBuilder(name='bootstrap')
 
+    start_task = Task('start', start, model)
+
     for i in range(resamples):
-        task_resample = Task('resample', resample_model, model, f'bs_{i + 1}')
-        wb.add_task(task_resample)
+        task_resample = Task('resample', resample_model, f'bs_{i + 1}')
+        wb.add_task(task_resample, predecessors=start_task)
 
     wf_fit = create_fit_workflow(n=resamples)
     wb.insert_workflow(wf_fit)
@@ -49,7 +51,11 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
     return Workflow(wb)
 
 
-def resample_model(input_model, name):
+def start(model):
+    return model
+
+
+def resample_model(name, input_model):
     resample = resample_data(
         input_model, input_model.datainfo.id_column.name, resamples=1, replace=True, name=name
     )
