@@ -13,7 +13,7 @@ def partitions(elements: Iterable[T]) -> Iterator[tuple[tuple[T, ...], ...]]:
     """
     _elements = tuple(elements)
     n = len(_elements)
-    return iter(  # pyright: ignore [reportCallIssue]
+    return iter(
         sorted(  # pyright: ignore [reportCallIssue]
             map(
                 tuple,
