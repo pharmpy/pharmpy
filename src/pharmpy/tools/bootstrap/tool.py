@@ -51,7 +51,8 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
     return Workflow(wb)
 
 
-def start(model):
+def start(context, model):
+    context.log_info("Starting tool bootstrap")
     return model
 
 
@@ -64,7 +65,7 @@ def resample_model(name, input_model):
     return model_entry
 
 
-def post_process_results(original_model_res, *model_entries):
+def post_process_results(context, original_model_res, *model_entries):
     models = [model_entry.model for model_entry in model_entries]
     modelfit_results = [model_entry.modelfit_results for model_entry in model_entries]
     res = calculate_results(
@@ -74,4 +75,5 @@ def post_process_results(original_model_res, *model_entries):
         included_individuals=None,
         dofv_results=None,
     )
+    context.log_info("Finishing tool bootstrap")
     return res
