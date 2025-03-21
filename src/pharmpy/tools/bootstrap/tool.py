@@ -53,11 +53,11 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
     return Workflow(wb)
 
 
-def start(context, model, results):
+def start(context, input_model, results):
     context.log_info("Starting tool bootstrap")
-    me = ModelEntry.create(model, modelfit_results=results)
-    context.store_input_model_entry(me)
-    return model
+    input_me = ModelEntry.create(input_model, modelfit_results=results)
+    context.store_input_model_entry(input_me)
+    return input_model
 
 
 def resample_model(name, input_model):
