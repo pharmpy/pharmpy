@@ -188,3 +188,9 @@ def facetted_histogram(df):
     chart = alt.layer(background, highlight, data=df).repeat(column=list(df.columns))
 
     return chart
+
+
+def display_table(df):
+    from itables import show
+
+    show(df, buttons=["copyHtml5", "csvHtml5"], style='width: fit-content; float: left;')

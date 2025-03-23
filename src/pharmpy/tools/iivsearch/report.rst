@@ -24,6 +24,7 @@ Final model
             )
 
 Parameter estimates
+-------------------
 
 .. jupyter-execute::
    :hide-code:
@@ -38,19 +39,26 @@ Parameter estimates
            'estimates': '{:,.4f}'.format,
        })
 
-   results
+   from pharmpy.visualization import display_table
+
+   display_table(results)
 
 
 
 Eta shrinkage
+-------------
 
 .. jupyter-execute::
    :hide-code:
 
-   res.final_model_eta_shrinkage.to_frame(name='eta shrinkage').style.format({
+   shrinkage = res.final_model_eta_shrinkage.to_frame(name='eta shrinkage').style.format({
        'eta shrinkage': '{:,.4f}'.format,
    })
 
+   display_table(shrinkage)
+
+CWRES vs TIME
+-------------
 
 .. jupyter-execute::
     :hide-code:
@@ -58,19 +66,43 @@ Eta shrinkage
     res.final_model_cwres_vs_idv_plot
 
 
+DV vs PRED
+----------
+
 .. jupyter-execute::
    :hide-code:
 
    res.final_model_dv_vs_pred_plot
 
-  
+DV VS IPRED
+-----------
+
 .. jupyter-execute::
    :hide-code:
 
    res.final_model_dv_vs_ipred_plot
 
 
+ETA distribution
+----------------
+
 .. jupyter-execute::
    :hide-code:
 
    res.final_model_eta_distribution_plot
+
+Tool summary
+~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-code:
+
+   display_table(res.summary_tool)
+
+Model summary
+~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-code:
+
+   display_table(res.summary_models)

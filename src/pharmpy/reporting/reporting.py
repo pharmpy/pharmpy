@@ -175,6 +175,8 @@ def embed_css_and_js(html, target):
         stylesheet_src = stylesheet.attrs['href']
         # Remove versioning of css files that was added by Sphinx 8.1
         stylesheet_src = re.sub(r'\?v=.*', '', stylesheet_src)
+        if stylesheet_src.startswith("https"):
+            continue
         tag = soup.new_tag("style")
         tag['type'] = 'text/css'
         path = html.parent / stylesheet_src
