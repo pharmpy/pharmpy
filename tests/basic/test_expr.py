@@ -24,6 +24,7 @@ def test_symbol():
     assert expr.name == "f"
     expr = Expr.function('f', ('x', 'y'))
     assert expr.name == "f"
+    expr = Expr.log(Expr.symbol("x")).name == 'log'
 
 
 def test_piecewise():

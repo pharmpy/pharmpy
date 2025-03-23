@@ -43,7 +43,10 @@ class Expr:
         if isinstance(self._expr, symengine.Symbol):
             return self._expr.name
         elif isinstance(self._expr, symengine.Function):
-            return self._expr.get_name()
+            try:
+                return self._expr.get_name()
+            except AttributeError:
+                return str(self._expr).partition("(")[0]
         else:
             raise ValueError("Expression has no name")
 
