@@ -115,8 +115,8 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
 
 def run_tool_wrapper(toolname, args, **kwargs):
     from pharmpy.tools import run_tool
-    from pharmpy.tools.run import InputValidationError
     from pharmpy.workflows import DispatchingError
+    from pharmpy.workflows.args import InputValidationError
 
     context = None
     if args.path is not None:

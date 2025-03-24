@@ -1,10 +1,15 @@
 from collections.abc import Mapping
 from typing import Any
 
+import pharmpy
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
 
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
+
+
+class InputValidationError(Exception):
+    pass
 
 
 def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, Mapping[str, Any]]:
@@ -64,3 +69,13 @@ def canonicalize_dispatching_options(d):
     # NOTE: Inplace!
     d['broadcaster'] = Broadcaster.canonicalize_broadcaster_name(d['broadcaster'])
     d['dispatcher'] = Dispatcher.canonicalize_dispatcher_name(d['dispatcher'])
+
+
+def canonicalize_seed(seed):
+    if seed is None:
+        seed = pharmpy.DEFAULT_SEED
+    try:
+        seed = int(seed)
+    except ValueError:
+        InputValidationError("Seed must be an integer")
+    return seed

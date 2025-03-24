@@ -44,6 +44,7 @@ from pharmpy.workflows import (
     execute_workflow,
     split_common_options,
 )
+from pharmpy.workflows.args import InputValidationError, canonicalize_seed
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
 from pharmpy.workflows.dispatchers import Dispatcher
 from pharmpy.workflows.model_database import ModelDatabase
@@ -52,10 +53,6 @@ from pharmpy.workflows.results import ModelfitResults, mfr
 
 from .context import broadcast_log
 from .external import parse_modelfit_results
-
-
-class InputValidationError(Exception):
-    pass
 
 
 def fit(
@@ -222,22 +219,12 @@ def import_tool(name: str):
     return importlib.import_module(f'pharmpy.tools.{name}')
 
 
-def _canonicalize_seed(seed):
-    if seed is None:
-        seed = pharmpy.DEFAULT_SEED
-    try:
-        seed = int(seed)
-    except ValueError:
-        InputValidationError("Seed must be an integer")
-    return seed
-
-
 def run_tool_with_name(
     tool_name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
 ) -> Union[Model, list[Model], tuple[Model], Results]:
     dispatching_options, common_options, seed, tool_options = split_common_options(kwargs)
 
-    seed = _canonicalize_seed(seed)
+    seed = canonicalize_seed(seed)
 
     if validate_input := getattr(tool, 'validate_input', None):
         try:
@@ -359,7 +346,7 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
     subctx = ctx.create_subcontext(name)
 
     seed = kwargs.get('seed', None)
-    seed = _canonicalize_seed(seed)
+    seed = canonicalize_seed(seed)
     if 'seed' in kwargs.keys():
         del kwargs['seed']
 
