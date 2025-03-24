@@ -74,7 +74,7 @@ DV vs PRED
 
    res.final_model_dv_vs_pred_plot
 
-DV VS IPRED
+DV vs IPRED
 -----------
 
 .. jupyter-execute::
