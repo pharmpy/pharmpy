@@ -107,6 +107,8 @@ def test_init_boolean_expr():
 def test_boolean_expr_args(expr_lhs, expr_rhs):
     expr = BooleanExpr.eq(expr_lhs, expr_rhs)
     assert expr.args == (expr_lhs, expr_rhs)
+    expr = BooleanExpr.ne(expr_lhs, expr_rhs)
+    assert expr.args == (expr_lhs, expr_rhs)
 
 
 @pytest.mark.parametrize(

@@ -352,6 +352,10 @@ class BooleanExpr:
         return cls(sympy.Eq(lhs, rhs))
 
     @classmethod
+    def ne(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
+        return cls(sympy.Ne(lhs, rhs))
+
+    @classmethod
     def gt(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
         return cls(sympy.Gt(lhs, rhs))
 
