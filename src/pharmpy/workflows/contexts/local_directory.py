@@ -255,7 +255,16 @@ class LocalDirectoryContext(Context):
     def retrieve_dispatching_options(self) -> dict[str, Any]:
         ctx_top = self.get_top_level_context()
         meta = ctx_top.retrieve_metadata()
-        options = meta.get('dispatching_options', {})
+        if 'dispatching_options' in meta:
+            options = meta['dispatching_options']
+        else:
+            from pharmpy.workflows.args import (
+                canonicalize_dispatching_options,
+                get_default_dispatching_options,
+            )
+
+            options = get_default_dispatching_options()
+            canonicalize_dispatching_options(options)
         return options
 
     def get_parent_context(self) -> LocalDirectoryContext:

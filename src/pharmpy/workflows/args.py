@@ -26,14 +26,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, 
     all_dispatching_options = ('context', 'name', 'ref', 'broadcaster', 'dispatcher', 'ncores')
     all_common_options = 'esttool'
     # The defaults below will be overwritten by the user given options
-    dispatching_options = {
-        'context': None,
-        'name': None,
-        'ref': None,
-        'broadcaster': None,
-        'dispatcher': None,
-        'ncores': None,
-    }
+    dispatching_options = get_default_dispatching_options()
     common_options = {'esttool': 'nonmem'}
     seed = None
     other_options = {}
@@ -51,10 +44,23 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, 
             seed = value
         else:
             other_options[key] = value
-    dispatching_options['broadcaster'] = Broadcaster.canonicalize_broadcaster_name(
-        dispatching_options['broadcaster']
-    )
-    dispatching_options['dispatcher'] = Dispatcher.canonicalize_dispatcher_name(
-        dispatching_options['dispatcher']
-    )
+    canonicalize_dispatching_options(dispatching_options)
     return dispatching_options, common_options, seed, other_options
+
+
+def get_default_dispatching_options():
+    dispatching_options = {
+        'context': None,
+        'name': None,
+        'ref': None,
+        'broadcaster': None,
+        'dispatcher': None,
+        'ncores': None,
+    }
+    return dispatching_options
+
+
+def canonicalize_dispatching_options(d):
+    # NOTE: Inplace!
+    d['broadcaster'] = Broadcaster.canonicalize_broadcaster_name(d['broadcaster'])
+    d['dispatcher'] = Dispatcher.canonicalize_dispatcher_name(d['dispatcher'])
