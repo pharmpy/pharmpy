@@ -43,9 +43,8 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
     for i in range(resamples):
         task_resample = Task('resample', resample_model, f'bs_{i + 1}')
         wb.add_task(task_resample, predecessors=start_task)
-
-    wf_fit = create_fit_workflow(n=resamples)
-    wb.insert_workflow(wf_fit)
+        task_execute = Task('run_model', run_model)
+        wb.add_task(task_execute, predecessors=task_resample)
 
     task_result = Task('results', post_process_results, results)
     wb.add_task(task_result, predecessors=wb.output_tasks)
@@ -64,19 +63,29 @@ def resample_model(name, input_model):
     resample = resample_data(
         input_model, input_model.datainfo.id_column.name, resamples=1, replace=True, name=name
     )
-    model, _ = next(resample)
+    model, groups = next(resample)
     model_entry = ModelEntry.create(model=model, parent=input_model)
-    return model_entry
+    return (model_entry, groups)
 
 
-def post_process_results(context, original_model_res, *model_entries):
+def run_model(context, pair):
+    me = pair[0]
+    groups = pair[1]
+    wf_fit = create_fit_workflow(me)
+    res_me = context.call_workflow(wf_fit, f"fit-{me.model.name}")
+    return (res_me, groups)
+
+
+def post_process_results(context, original_model_res, *pairs):
+    model_entries = [pair[0] for pair in pairs]
+    groups = [pair[1] for pair in pairs]
     models = [model_entry.model for model_entry in model_entries]
     modelfit_results = [model_entry.modelfit_results for model_entry in model_entries]
     res = calculate_results(
         models,
         results=modelfit_results,
         original_results=original_model_res,
-        included_individuals=None,
+        included_individuals=groups,
         dofv_results=None,
     )
     context.log_info("Finishing tool bootstrap")
