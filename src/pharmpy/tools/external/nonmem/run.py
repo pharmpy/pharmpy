@@ -211,7 +211,6 @@ def create_parafile_and_option(context, path: Path, tmp_path: Optional[Path]) ->
         nodedict = context.dispatcher.get_hosts()
         if context.dispatcher.get_hostname() == 'localhost':
             nodedict['localhost'] = ncores
-        context.log_info(f'{nodedict}')
         create_parafile(path, nodedict, tmp_path)
         return f"-parafile={path.name}"
     else:
