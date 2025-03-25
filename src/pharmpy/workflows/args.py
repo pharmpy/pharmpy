@@ -1,7 +1,7 @@
+import os
 from collections.abc import Mapping
 from typing import Any
 
-import pharmpy
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
 
@@ -73,7 +73,7 @@ def canonicalize_dispatching_options(d):
 
 def canonicalize_seed(seed):
     if seed is None:
-        seed = pharmpy.DEFAULT_SEED
+        seed = int(os.urandom(16).hex(), 16)
     try:
         seed = int(seed)
     except ValueError:
