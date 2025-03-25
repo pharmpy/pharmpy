@@ -223,7 +223,7 @@ class Resample(DatasetIterator):
 
         random_groups = []
         for strata in self._sample_size_dict:
-            random_groups += np.random.choice(
+            random_groups += np.random.choice(  # pyright: ignore [reportOperatorIssue]
                 self._stratas[strata],
                 size=self._sample_size_dict[strata],
                 replace=self._replace,
