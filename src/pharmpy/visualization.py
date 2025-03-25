@@ -118,6 +118,7 @@ def line_plot(df, x, title='', xlabel='', ylabel='', legend_title=''):
             alt.Y('value:Q', title=ylabel),
             color=alt.Color(
                 'variable:N',
+                sort=None,
                 legend=alt.Legend(
                     title=legend_title,
                     orient='top-left',
