@@ -146,7 +146,9 @@ def run_tool_wrapper(toolname, args, **kwargs):
 
 def run_bootstrap(args):
     model, res = args.model
-    run_tool_wrapper('bootstrap', args, model=model, results=res, resamples=args.samples)
+    run_tool_wrapper(
+        'bootstrap', args, model=model, results=res, resamples=args.samples, dofv=args.dofv
+    )
 
 
 def run_execute(args):
@@ -875,6 +877,13 @@ parser_definition = [
                                 'name': '--samples',
                                 'type': int,
                                 'help': 'Number of bootstrap datasets',
+                            },
+                            {
+                                'name': '--dofv',
+                                'action': 'store_true',
+                                'help': 'Also run evaluation of the bootstrap models on the '
+                                'original dataset',
+                                'default': False,
                             },
                             {
                                 'name': '--path',

@@ -3,14 +3,23 @@ from typing import Optional
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import is_simulation_model, resample_data
+from pharmpy.modeling import (
+    is_simulation_model,
+    resample_data,
+    set_dataset,
+    set_evaluation_step,
+    set_initial_estimates,
+    set_name,
+)
 from pharmpy.tools.bootstrap.results import calculate_results
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 
-def create_workflow(model: Model, results: Optional[ModelfitResults] = None, resamples: int = 1):
+def create_workflow(
+    model: Model, results: Optional[ModelfitResults] = None, resamples: int = 1, dofv: bool = False
+):
     """Run bootstrap tool
 
     Parameters
@@ -21,6 +30,8 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
         Results for model
     resamples : int
         Number of bootstrap resamples
+    dofv : bool
+        Will evaluate bootstrap models with original dataset if set
 
     Returns
     -------
@@ -45,6 +56,9 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
         wb.add_task(task_resample, predecessors=start_task)
         task_execute = Task('run_model', run_model)
         wb.add_task(task_execute, predecessors=task_resample)
+        if dofv:
+            task_dofv = Task('run_dofv', run_dofv, model)
+            wb.add_task(task_dofv, predecessors=task_execute)
 
     task_result = Task('results', post_process_results, model, results)
     wb.add_task(task_result, predecessors=wb.output_tasks)
@@ -73,12 +87,28 @@ def run_model(context, pair):
     groups = pair[1]
     wf_fit = create_fit_workflow(me)
     res_me = context.call_workflow(wf_fit, f"fit-{me.model.name}")
-    return (res_me, groups)
+    return (res_me, groups, None)
 
 
-def post_process_results(context, original_model, original_model_res, *pairs):
-    model_entries = [pair[0] for pair in pairs]
-    groups = [pair[1] for pair in pairs]
+def run_dofv(context, input_model, tpl):
+    me = tpl[0]
+    groups = tpl[1]
+    model = me.model
+    dofv_model = set_initial_estimates(model, me.modelfit_results.parameter_estimates)
+    dofv_model = set_evaluation_step(dofv_model)
+    dofv_model = set_name(dofv_model, f"dofv_{model.name[3:]}")
+    dofv_model = set_dataset(dofv_model, input_model.dataset)
+    dofv_me = ModelEntry.create(model=dofv_model)
+    wf = create_fit_workflow(dofv_me)
+    res_me = context.call_workflow(wf, dofv_model.name)
+    return (me, groups, res_me)
+
+
+def post_process_results(context, original_model, original_model_res, *tpls):
+    model_entries = [tpl[0] for tpl in tpls]
+    groups = [tpl[1] for tpl in tpls]
+    dofv_mes = [tpl[2] for tpl in tpls]
+    dofv_results = None if dofv_mes[0] is None else [me.modelfit_results for me in dofv_mes]
     models = [model_entry.model for model_entry in model_entries]
     modelfit_results = [model_entry.modelfit_results for model_entry in model_entries]
     res = calculate_results(
@@ -86,7 +116,7 @@ def post_process_results(context, original_model, original_model_res, *pairs):
         results=modelfit_results,
         original_results=original_model_res,
         included_individuals=groups,
-        dofv_results=None,
+        dofv_results=dofv_results,
     )
     context.log_info("Finishing tool bootstrap")
     return res
