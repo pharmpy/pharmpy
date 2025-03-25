@@ -1273,8 +1273,8 @@ def _get_model_result_summary(me, include_all_execution_steps=False):
         index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
         summary_df = pd.DataFrame(summary_dicts, index=index)
 
-    no_of_errors = len(res.log.errors)
-    no_of_warnings = len(res.log.warnings)
+    no_of_errors = len(res.log.errors) if res.log is not None else 0
+    no_of_warnings = len(res.log.warnings) if res.log is not None else 0
 
     minimization_idx = summary_df.columns.get_loc('minimization_successful')
     summary_df.insert(loc=minimization_idx + 1, column='errors_found', value=no_of_errors)
