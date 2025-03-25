@@ -52,7 +52,7 @@ def create_workflow(
     start_task = Task('start', start, model, results)
 
     for i in range(resamples):
-        task_resample = Task('resample', resample_model, f'bs_{i + 1}')
+        task_resample = Task('resample', resample_model, f'bs_{i + 1}', results)
         wb.add_task(task_resample, predecessors=start_task)
         task_execute = Task('run_model', run_model)
         wb.add_task(task_execute, predecessors=task_resample)
@@ -73,11 +73,13 @@ def start(context, input_model, results):
     return input_model
 
 
-def resample_model(name, input_model):
+def resample_model(name, input_results, input_model):
     resample = resample_data(
         input_model, input_model.datainfo.id_column.name, resamples=1, replace=True, name=name
     )
     model, groups = next(resample)
+    if input_results is not None:
+        model = set_initial_estimates(model, input_results.parameter_estimates)
     model_entry = ModelEntry.create(model=model, parent=input_model)
     return (model_entry, groups)
 
