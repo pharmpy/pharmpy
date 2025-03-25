@@ -9,7 +9,7 @@ def test_bootstrap():
     res2 = ModelfitResults(ofv=120, parameter_estimates=pd.Series({'TVCL': 1.5, 'TVV': 3.0}))
 
     class MyModel:
-        pass
+        name = "noname"
 
     res1_mod = MyModel()
     res2_mod = MyModel()
