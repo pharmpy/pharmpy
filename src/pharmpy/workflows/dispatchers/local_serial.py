@@ -7,7 +7,7 @@ from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 from ..workflow import Workflow, WorkflowBuilder, insert_context
 from .baseclass import Dispatcher
-from .slurm_helpers import get_slurm_nodename, is_running_on_slurm
+from .slurm_helpers import get_slurm_nodedict, get_slurm_nodename, is_running_on_slurm
 
 T = TypeVar('T')
 
@@ -53,8 +53,10 @@ class LocalSerialDispatcher(Dispatcher):
         sys.exit(1)
 
     def get_hosts(self) -> dict[str, int]:
-        hosts = {'localhost': os.cpu_count()}
-        return hosts
+        if is_running_on_slurm():
+            return get_slurm_nodedict()
+        else:
+            return {'localhost': os.cpu_count()}
 
     def get_hostname(self) -> str:
         if is_running_on_slurm():

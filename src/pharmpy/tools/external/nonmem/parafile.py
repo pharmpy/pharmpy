@@ -11,36 +11,34 @@ $DIRECTORIES
 """
 
 
-def create_parafile(path: Path, nodedict: dict[str, int], hostname: str):
-    nodes = list(nodedict.keys())
+def create_parafile(path: Path, nodedict: dict[str, int], tmp_path: Path):
     ncores = list(nodedict.values())
     s = template.format(
         nodes=sum(ncores),
-        directories=_create_directories(nodes),
-        commands=_create_commands(nodes, ncores, hostname),
+        directories=_create_directories(ncores, tmp_path),
+        commands=_create_commands(ncores, tmp_path),
     )
     with open(path, "w") as f:
         f.write(s)
 
 
-def _create_commands(nodes: list[str], ncores: list[int], hostname: str) -> str:
+def _create_commands(ncores: list[int], tmp_path: Path) -> str:
     s = '1:mpirun -wdir "$PWD" -n 1 ./nonmem $*\n'
-    for i, (node, n) in enumerate(zip(nodes, ncores)):
+    for i, n in enumerate(ncores):
         if i == 0:
             dirname = '"$PWD"'
-        else:
-            dirname = f'"$PWD/worker{i}"'
-
-        if node == hostname:
             n -= 1
+        else:
+            ref = tmp_path if tmp_path else '"$PWD"'
+            dirname = f'"{ref}/worker{i}"'
 
-        command = f'{i + 2}: -wdir {dirname} -n {n} -host {node} ./nonmem -worker\n'
+        command = f'{i + 2}: -wdir {dirname} -n {n} ./nonmem -worker\n'
         s += command
     return s
 
 
-def _create_directories(nodes: list[str]) -> str:
+def _create_directories(ncores: list[int], tmp_path: Path) -> str:
     s = "1:NONE\n2:NONE\n"
-    for i in range(3, len(nodes) + 2):
-        s += f"{i}:worker{i - 2}\n"
+    for i in range(3, len(ncores) + 2):
+        s += f"{i}:{tmp_path}/worker{i - 2}\n"
     return s

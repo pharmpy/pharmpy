@@ -8,7 +8,7 @@ def is_running_on_slurm() -> bool:
 
 
 def get_slurm_nodename():
-    nodename = os.getenv("SLURM_NODENAME")
+    nodename = os.getenv("SLURMD_NODENAME")
     return nodename
 
 
@@ -31,9 +31,8 @@ def get_slurm_nodelist() -> list[str]:
 def get_slurm_corelist() -> list[int]:
     # Get the SLURM_TASKS_PER_NODE environment variable and expand into
     # list of cpus per job with the help of SLURM_CPUS_PER_TASK
-    tasks_per_node = os.getenv("SLURM_TASKS_PER_NODE", default="1")
-    cpus_per_job = os.getenv("SLURM_CPUS_PER_TASK", default="1")
-    cpus_per_node = _expand_cpus_per_node(tasks_per_node, cpus_per_job)
+    cpus_per_node = os.getenv("SLURM_JOB_CPUS_PER_NODE", default="1")
+    cpus_per_node = _expand_tasks_per_node(cpus_per_node)
     return cpus_per_node
 
 

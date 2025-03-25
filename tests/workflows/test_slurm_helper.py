@@ -18,9 +18,9 @@ def test_is_running_on_slurm():
 
 
 def test_get_slurm_nodename():
-    os.environ.pop('SLURM_NODENAME', None)
+    os.environ.pop('SLURMD_NODENAME', None)
     assert not get_slurm_nodename()
-    os.environ['SLURM_NODENAME'] = 'nodename'
+    os.environ['SLURMD_NODENAME'] = 'nodename'
     assert get_slurm_nodename() == 'nodename'
 
 
@@ -52,20 +52,12 @@ def test_get_slurm_nodelist(value, expected):
 
 
 @pytest.mark.parametrize(
-    "tasks_per_node,cpus_per_task,expected",
+    "cpus_per_node,expected",
     [
-        ("1", "1", [1]),
-        ("2", None, [2]),
-        ("2(x3)", "1", [2, 2, 2]),
+        ("1", [1]),
+        ("2(x3)", [2, 2, 2]),
     ],
 )
-def test_get_slurm_corelist(tasks_per_node, cpus_per_task, expected):
-    if tasks_per_node is None:
-        os.environ.pop('SLURM_TASKS_PER_NODE', None)
-    else:
-        os.environ['SLURM_TASKS_PER_NODE'] = tasks_per_node
-    if cpus_per_task is None:
-        os.environ.pop('SLURM_CPUS_PER_TASK', None)
-    else:
-        os.environ['SLURM_CPUS_PER_TASK'] = cpus_per_task
+def test_get_slurm_corelist(cpus_per_node, expected):
+    os.environ['SLURM_JOB_CPUS_PER_NODE'] = cpus_per_node
     assert get_slurm_corelist() == expected
