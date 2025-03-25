@@ -191,7 +191,9 @@ def facetted_histogram(df):
     return chart
 
 
-def display_table(df):
+def display_table(df, remove_nan_columns=True):
+    if remove_nan_columns:
+        df = df.dropna(axis=1, how='all')
     from itables import show
 
     show(df, buttons=["copyHtml5", "csvHtml5"], style='width: fit-content; float: left;')
