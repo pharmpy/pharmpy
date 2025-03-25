@@ -10,6 +10,7 @@ def test_bootstrap():
 
     class MyModel:
         name = "noname"
+        description = "nodescr"
 
     res1_mod = MyModel()
     res2_mod = MyModel()
