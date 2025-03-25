@@ -46,7 +46,7 @@ def create_workflow(model: Model, results: Optional[ModelfitResults] = None, res
         task_execute = Task('run_model', run_model)
         wb.add_task(task_execute, predecessors=task_resample)
 
-    task_result = Task('results', post_process_results, results)
+    task_result = Task('results', post_process_results, model, results)
     wb.add_task(task_result, predecessors=wb.output_tasks)
 
     return Workflow(wb)
@@ -76,7 +76,7 @@ def run_model(context, pair):
     return (res_me, groups)
 
 
-def post_process_results(context, original_model_res, *pairs):
+def post_process_results(context, original_model, original_model_res, *pairs):
     model_entries = [pair[0] for pair in pairs]
     groups = [pair[1] for pair in pairs]
     models = [model_entry.model for model_entry in model_entries]

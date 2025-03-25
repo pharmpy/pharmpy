@@ -10,6 +10,8 @@ from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
+from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, Results
 
 
@@ -25,6 +27,7 @@ class BootstrapResults(Results):
     included_individuals: Optional[Any] = None
     ofvs: Optional[Any] = None
     parameter_estimates: Optional[Any] = None
+    summary_models: Optional[Any] = None
     ofv_plot: Optional[Any] = None
     parameter_estimates_correlation_plot: Optional[Any] = None
     dofv_quantiles_plot: Optional[Any] = None
@@ -158,6 +161,10 @@ def calculate_results(
             {'mean': ofvs.mean(), 'median': ofvs.median(), 'stderr': ofvs.std()}
         )
 
+    mes = [
+        ModelEntry.create(model=m, modelfit_results=r) for m, r in zip(bootstrap_models, results)
+    ]
+
     res = BootstrapResults(
         covariance_matrix=covariance_matrix,
         parameter_statistics=statistics,
@@ -167,6 +174,7 @@ def calculate_results(
         included_individuals=included_individuals,
         ofvs=ofvs,
         parameter_estimates=parameter_estimates,
+        summary_models=summarize_modelfit_results_from_entries(mes),
     )
 
     return replace(

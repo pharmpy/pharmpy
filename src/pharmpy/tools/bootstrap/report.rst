@@ -11,7 +11,7 @@ Bootstrap Results
 Distribution of parameter estimates
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. altair-plot::
+.. jupyter-execute::
     :hide-code:
 
     from pharmpy.workflows.results import read_results
@@ -22,7 +22,7 @@ Distribution of parameter estimates
 OFV distribution
 ~~~~~~~~~~~~~~~~
 
-.. altair-plot::
+.. jupyter-execute::
     :hide-code:
 
     res.ofv_plot
@@ -30,7 +30,16 @@ OFV distribution
 Estimated degrees of freedom
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-.. altair-plot::
+.. jupyter-execute::
    :hide-code:
 
    res.dofv_quantiles_plot
+
+Model summary
+~~~~~~~~~~~~~
+
+.. jupyter-execute::
+   :hide-code:
+
+   from pharmpy.visualization import display_table
+   display_table(res.summary_models)
