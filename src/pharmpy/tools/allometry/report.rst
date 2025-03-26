@@ -27,10 +27,9 @@ Final model
 .. jupyter-execute::
    :hide-code:
 
-   final_model_parameter_estimates.style.format({
-       'estimates': '{:,.4f}'.format,
-       'RSE': '{:,.1%}'.format,
-   })
+   from pharmpy.visualization import display_table
+
+   display_table(final_model_parameter_estimates, format={'estimates': '{:,.4f}', 'RSE': '{:,.1%}'})
 
 
 .. jupyter-execute::

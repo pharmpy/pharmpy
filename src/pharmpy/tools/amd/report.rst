@@ -19,33 +19,28 @@ Final model
     res = read_results('results.json')
 
 Parameter estimates
+-------------------
 
 .. jupyter-execute::
    :hide-code:
 
-   if res.final_model_parameter_estimates['RSE'].any():
-       results = res.final_model_parameter_estimates.style.format({
-           'estimates': '{:,.4f}'.format,
-           'RSE': '{:,.1%}'.format,
-       })
-   else:
-       results = res.final_model_parameter_estimates['estimates'].to_frame(name='estimates').style.format({
-           'estimates': '{:,.4f}'.format,
-       })
+   from pharmpy.visualization import display_table
 
-   results
+   display_table(res.final_model_parameter_estimates, format={'estimates': '{:,.4f}', 'RSE': '{:,.1%}'})
 
 
 
 Eta shrinkage
+-------------
 
 .. jupyter-execute::
    :hide-code:
 
-   res.final_model_eta_shrinkage.to_frame(name='eta shrinkage').style.format({
-       'eta shrinkage': '{:,.4f}'.format,
-   })
+   display_table(res.final_model_eta_shrinkage.to_frame(name='eta shrinkage') , format={'eta shrinkage': '{:,.4f}'})
 
+
+CWRES vs TIME
+-------------
 
 .. jupyter-execute::
     :hide-code:
