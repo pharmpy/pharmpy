@@ -106,6 +106,12 @@ class LocalDirectoryContext(Context):
         path.touch(exist_ok=True)
         return path_lock(str(path), shared=False)
 
+    def _delete_lock(self, path: Path):
+        # Delete a lock
+        path = path.with_suffix('.lock')
+        if path.is_file():
+            path.unlink()
+
     @staticmethod
     def exists(name: str, ref: Optional[str] = None):
         if ref is None:
@@ -297,6 +303,10 @@ class LocalDirectoryContext(Context):
             path = self.path
         ctx = LocalDirectoryContext(name=name, ref=path)
         return ctx
+
+    def finalize(self):
+        self._delete_lock(self._annotations_path)
+        self._delete_lock(self._log_path)
 
 
 class MetadataJSONEncoder(json.JSONEncoder):

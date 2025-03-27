@@ -253,6 +253,13 @@ class Context(ABC):
         """Create a new subcontext of this context"""
         pass
 
+    @abstractmethod
+    def finalize(self):
+        """Called after a tool has finished its run in a context
+        can be implemented to do cleanup of the context
+        """
+        pass
+
     def _store_model(self, name: str, model: Union[Model, ModelEntry]):
         db = self.model_database
         with db.transaction(model) as txn:

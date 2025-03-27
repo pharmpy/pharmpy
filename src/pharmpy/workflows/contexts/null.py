@@ -81,3 +81,6 @@ class NullContext(Context):
 
     def create_subcontext(self, name):
         pass
+
+    def finalize(self):
+        pass

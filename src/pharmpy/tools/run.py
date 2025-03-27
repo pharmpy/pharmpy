@@ -310,6 +310,8 @@ def run_tool_with_name(
     tool_metadata = _update_metadata(tool_metadata, res)
     ctx.store_metadata(tool_metadata)
 
+    ctx.finalize()
+
     return res
 
 
@@ -366,6 +368,8 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
     res = execute_subtool(wf, context=subctx)
     tool_metadata = _update_metadata(tool_metadata, res)
     subctx.store_metadata(tool_metadata)
+
+    subctx.finalize()
 
     return res
 
