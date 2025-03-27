@@ -576,11 +576,9 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                     if _is_positive(term):
                         for second_comp in concentrations.intersection(free_images(term)):
                             for eq_2 in eqs:
-                                if eq_2.lhs.args[0].name == second_comp.name:  # pyright: ignore
+                                if eq_2.lhs.args[0].name == second_comp.name:
                                     # If this is False, then input to compartment is of second order
-                                    if -term in sympy.Add.make_args(
-                                        eq_2.rhs.expand()  # pyright: ignore
-                                    ):
+                                    if -term in sympy.Add.make_args(eq_2.rhs.expand()):
                                         from_comp = compartments[names[Expr(second_comp)]]
                                         to_comp = compartments[names[Expr(eq.lhs.args[0])]]
                 else:
@@ -588,7 +586,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                     # compartments or not
                     if _is_positive(term):
                         for eq_2 in eqs:
-                            if -term in sympy.Add.make_args(eq_2.rhs.expand()):  # pyright: ignore
+                            if -term in sympy.Add.make_args(eq_2.rhs.expand()):
                                 from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
                                 to_comp = compartments[names[Expr(eq.lhs.args[0])]]
 
@@ -604,11 +602,11 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                     for i, neweq in enumerate(neweqs):
                         xrhs = neweq.rhs
                         assert isinstance(xrhs, sympy.Expr)
-                        if neweq.lhs.args[0].name == eq.lhs.args[0].name:  # pyright: ignore
+                        if neweq.lhs.args[0].name == eq.lhs.args[0].name:
                             neweqs[i] = sympy.Eq(
                                 neweq.lhs, sympy.expand(xrhs - term)  # pyright: ignore
                             )
-                        elif neweq.lhs.args[0].name == comp_func.name:  # pyright: ignore
+                        elif neweq.lhs.args[0].name == comp_func.name:
                             neweqs[i] = sympy.Eq(
                                 neweq.lhs, sympy.expand(xrhs + term)  # pyright: ignore
                             )
@@ -625,7 +623,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
             comp_func = eq.lhs.args[0]
             from_comp = compartments[names[Expr(comp_func)]]
             if o != 0:
-                cb.add_flow(from_comp, output, -o / comp_func)  # pyright: ignore
+                cb.add_flow(from_comp, output, -o / comp_func)
             if i != 0:
                 cb.set_input(from_comp, i)
     cs = CompartmentalSystem(cb)
