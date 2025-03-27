@@ -307,7 +307,7 @@ def run_tool_with_name(
         or res is None
     )
 
-    tool_metadata = _update_metadata(tool_metadata, res)
+    tool_metadata = _update_metadata(tool_metadata)
     ctx.store_metadata(tool_metadata)
 
     ctx.finalize()
@@ -335,7 +335,7 @@ def create_metadata(
     return tool_metadata
 
 
-def _update_metadata(tool_metadata, res):
+def _update_metadata(tool_metadata):
     # FIXME: Make metadata immutable
     tool_metadata['stats']['end_time'] = _now()
     return tool_metadata
@@ -366,7 +366,7 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
     assert wf.name == tool_name
 
     res = execute_subtool(wf, context=subctx)
-    tool_metadata = _update_metadata(tool_metadata, res)
+    tool_metadata = _update_metadata(tool_metadata)
     subctx.store_metadata(tool_metadata)
 
     subctx.finalize()
@@ -421,7 +421,7 @@ def resume_tool(path: str):
     res = execute_workflow(wf, dispatcher=dispatcher, database=ctx)
     assert tool_name == 'modelfit' or isinstance(res, Results)
 
-    tool_metadata = _update_metadata(tool_metadata, res)
+    tool_metadata = _update_metadata(tool_metadata)
     ctx.store_metadata(tool_metadata)
 
     return res
