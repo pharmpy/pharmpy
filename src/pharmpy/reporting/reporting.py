@@ -46,6 +46,8 @@ def generate_report(rst_path, results_path, target_path):
         source_path = tmp_path / 'source'
         source_path.mkdir()
         shutil.copy(rst_path, source_path / 'results.rst')
+        # FIXME: Crude templating for now. Could move to separate directory
+        shutil.copy(rst_path.parent.parent / 'amd' / 'common.rst', source_path / 'common.txt')
         if results_path.is_dir():
             results_path /= 'results.json'
         shutil.copy(results_path, source_path)
