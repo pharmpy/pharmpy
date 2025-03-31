@@ -31,7 +31,7 @@ packaging==24.2
 pathspec==0.12.1
 pkginfo==1.12.1.2
 platformdirs==4.3.7
-pycodestyle==2.12.1
+pycodestyle==2.13.0
 pycparser==2.22
 pyflakes==3.2.0
 Pygments==2.19.1
