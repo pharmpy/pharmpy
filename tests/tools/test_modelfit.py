@@ -1,5 +1,7 @@
 import numpy as np
+import pytest
 
+from pharmpy.tools.modelfit.evaluation import evaluate_model
 from pharmpy.tools.modelfit.ucp import (
     build_initial_values_matrix,
     build_parameter_coordinates,
@@ -103,3 +105,11 @@ def test_calculate_matrix_gradient_scale():
     scale = scale_matrix(omega_ucp)
     grad = calculate_matrix_gradient_scale(omega_ucp, scale, build_parameter_coordinates(omega_ucp))
     assert np.allclose(grad, np.array([0.2]))
+
+
+def test_evaluate_model(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    res = evaluate_model(model)
+    print(res)
+    assert res.loc[0, 'Y'] == pytest.approx(17.695056, abs=1e-5)
+    assert res.loc[743, 'Y'] == pytest.approx(34.411508, abs=1e-5)
