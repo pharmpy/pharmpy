@@ -2,7 +2,7 @@
 black==25.1.0
 check-manifest==0.50
 docutils==0.21.2
-flake8==7.1.2
+flake8==7.2.0
 flake8-black==0.3.6
 isort==6.0.1
 pyright==1.1.398
@@ -31,9 +31,9 @@ packaging==24.2
 pathspec==0.12.1
 pkginfo==1.12.1.2
 platformdirs==4.3.7
-pycodestyle==2.12.1
+pycodestyle==2.13.0
 pycparser==2.22
-pyflakes==3.2.0
+pyflakes==3.3.1
 Pygments==2.19.1
 pyproject_hooks==1.2.0
 requests==2.32.3
