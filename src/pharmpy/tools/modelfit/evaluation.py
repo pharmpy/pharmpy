@@ -6,7 +6,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 
 
-def get_variables_before_odes(model):
+def get_variables_before_odes(model) -> dict[Expr, Expr]:
     # Get a dict of symbol to full expression
     # for all variables needed to solve the ODE system
     statements = model.statements.before_odes
@@ -23,7 +23,8 @@ def get_variables_before_odes(model):
     return d
 
 
-def get_functions_to_solve_for(model):
+def get_functions_to_solve_for(model) -> set[Expr]:
+    # Get the set of functions that we need to solve for in the ode system
     all_funcs = set(model.statements.ode_system.amounts)
     all_deps = set()
     for s in model.statements.after_odes:
