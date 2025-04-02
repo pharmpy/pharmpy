@@ -78,8 +78,10 @@ class LocalDaskDispatcher(Dispatcher):
                         warnings.filterwarnings(
                             "ignore", "Couldn't detect a suitable IP address for reaching"
                         )
+                        # When processes=False the number of workers is 1. Use threads per worker option to parallelize
+                        ncores = context.retrieve_dispatching_options()['ncores']
                         with LocalCluster(
-                            processes=False, dashboard_address=':31058'
+                            processes=False, dashboard_address=':31058', threads_per_worker=ncores
                         ) as cluster, Client(cluster) as client:
                             context.log_info(
                                 "Dispatching workflow with local_dask dispatcher "

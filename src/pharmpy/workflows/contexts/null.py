@@ -68,7 +68,8 @@ class NullContext(Context):
         pass
 
     def retrieve_dispatching_options(self):
-        return {}
+        # Add new options as needed for testing
+        return {'ncores': 1}
 
     def get_parent_context(self):
         pass
