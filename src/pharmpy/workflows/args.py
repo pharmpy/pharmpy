@@ -69,6 +69,7 @@ def canonicalize_dispatching_options(d):
     # NOTE: Inplace!
     d['broadcaster'] = Broadcaster.canonicalize_broadcaster_name(d['broadcaster'])
     d['dispatcher'] = Dispatcher.canonicalize_dispatcher_name(d['dispatcher'])
+    d['ncores'] = Dispatcher.select_dispatcher(d['dispatcher']).canonicalize_ncores(d['ncores'])
 
 
 def canonicalize_seed(seed):

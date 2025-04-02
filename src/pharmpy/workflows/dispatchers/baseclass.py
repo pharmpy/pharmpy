@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from typing import Optional, TypeVar
 
 from ..workflow import Workflow
+from .slurm_helpers import is_running_on_slurm
 
 T = TypeVar('T')
 
@@ -22,6 +23,17 @@ class Dispatcher(ABC):
         if canon_name not in DISPATCHERS:
             raise ValueError(f"Unknown dispatcher {name}")
         return canon_name
+
+    def canonicalize_ncores(self, ncores: Optional[int]) -> int:
+        if ncores and ncores > 1:
+            if is_running_on_slurm():
+                raise ValueError(
+                    f'Invalid `ncores`: must be 1 or None when running on slurm, got {ncores}'
+                )
+        if not ncores:
+            hosts = self.get_hosts()
+            ncores = sum(hosts.values())
+        return ncores
 
     @staticmethod
     def select_dispatcher(name: Optional[str]) -> Dispatcher:
