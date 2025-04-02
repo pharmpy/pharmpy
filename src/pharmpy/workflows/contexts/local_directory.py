@@ -259,6 +259,8 @@ class LocalDirectoryContext(Context):
         return meta['common_options']
 
     def retrieve_dispatching_options(self) -> dict[str, Any]:
+        if hasattr(self, '_dispatching_options'):
+            return self._dispatching_options
         ctx_top = self.get_top_level_context()
         meta = ctx_top.retrieve_metadata()
         if 'dispatching_options' in meta:
@@ -271,6 +273,7 @@ class LocalDirectoryContext(Context):
 
             options = get_default_dispatching_options()
             canonicalize_dispatching_options(options)
+        self._dispatching_options = options
         return options
 
     def get_parent_context(self) -> LocalDirectoryContext:
