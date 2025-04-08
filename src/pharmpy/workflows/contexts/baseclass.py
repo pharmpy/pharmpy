@@ -315,6 +315,11 @@ class Context(ABC):
         self.log_message("critical", message)
         self.dispatcher.abort_workflow()
 
+    def has_started(self):
+        """Check if the tool running in the context has started"""
+        metadata = self.retrieve_metadata()
+        return "stats" in metadata and "start_time" in metadata["stats"]
+
     def has_completed(self):
         """Check if the tool running in the context has completed"""
         metadata = self.retrieve_metadata()
