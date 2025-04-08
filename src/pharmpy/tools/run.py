@@ -235,27 +235,29 @@ def run_tool_with_name(
     dispatcher = Dispatcher.select_dispatcher(dispatching_options['dispatcher'])
     ctx = get_context(dispatching_options, tool_name)
 
-    if ctx.has_completed():
-        tool_params = inspect.signature(tool.create_workflow).parameters
-        tool_param_types = get_type_hints(tool.create_workflow)
+    if ctx.has_started():
+        if ctx.has_completed():
+            tool_params = inspect.signature(tool.create_workflow).parameters
+            tool_param_types = get_type_hints(tool.create_workflow)
 
-        prev_tool_options = _parse_tool_options_from_json_metadata(
-            ctx.retrieve_metadata(), tool_params, tool_param_types, ctx
-        )
-
-        if tool_options != prev_tool_options:
-            raise DispatchingError(
-                "The arguments to the tool are different from the first time "
-                "it was run. "
-                "Delete the directory or run again using a new name."
+            prev_tool_options = _parse_tool_options_from_json_metadata(
+                ctx.retrieve_metadata(), tool_params, tool_param_types, ctx
             )
 
-        results = ctx.retrieve_results()
-        broadcast_log(ctx)
-        return results
+            if tool_options != prev_tool_options:
+                raise DispatchingError(
+                    "The arguments to the tool are different from the first time "
+                    "it was run. "
+                    "Delete the directory or run again using a new name."
+                )
+
+            results = ctx.retrieve_results()
+            broadcast_log(ctx)
+            return results
+        else:
+            ctx.log_info("Resuming interrupted run")
     else:
         pass
-    # raise NotImplementedError("This is under development")
 
     dispatching_options['context'] = {
         '__class__': type(ctx).__name__,
@@ -346,6 +348,11 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
         name = tool_name
     tool = import_tool(tool_name)
     subctx = ctx.create_subcontext(name)
+
+    if subctx.has_completed():
+        res = subctx.retrieve_results()
+        subctx.log_info("Retrieving results from previously finished subtool")
+        return res
 
     seed = kwargs.get('seed', None)
     seed = canonicalize_seed(seed)
