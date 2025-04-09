@@ -51,7 +51,7 @@ Implemented strictness criteria are:
 |                                  |             | gradient is nan                                  |
 +----------------------------------+-------------+--------------------------------------------------+
 | ``final_zero_gradient_sigma``    | Boolean     | True if at least one sigma parameter has         |
-|                                  |             | a final zero gradient or if gradient             |
+|                                  |             | a final zero gradient or if final                |
 |                                  |             | gradient is nan                                  |
 +----------------------------------+-------------+--------------------------------------------------+
 | ``estimate_near_boundary``       | Boolean     | True if at least one parameter                   |
