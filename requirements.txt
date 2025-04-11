@@ -37,7 +37,7 @@ jupyter-client==8.6.3
 jupyter-core==5.7.2
 jupyter-sphinx==0.5.3
 jupyterlab-pygments==0.3.0
-jupyterlab-widgets==3.0.13
+jupyterlab-widgets==3.0.14
 lark==1.2.2
 locket==1.0.0
 lxml==5.3.2
@@ -103,7 +103,7 @@ tornado==6.4.2
 traitlets==5.14.3
 typing-extensions==4.13.2
 tzdata==2025.2
-urllib3==2.3.0
+urllib3==2.4.0
 wcwidth==0.2.13
 webencodings==0.5.1
 widgetsnbextension==4.0.13
