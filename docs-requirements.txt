@@ -3,6 +3,6 @@ sphinx-tabs==3.4.7
 pydata-sphinx-theme==0.16.1
 sphinxcontrib-autoprogram==0.1.9
 sphinx-automodapi==0.18.0
-markdown==3.7
+markdown==3.8
 #indirect
 accessible-pygments==0.0.5
