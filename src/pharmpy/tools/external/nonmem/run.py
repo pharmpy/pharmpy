@@ -73,7 +73,10 @@ def execute_model(model_entry, context):
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
     parafile_option = create_parafile_and_option(context, model_path / 'parafile.pnm', tmp_path)
-    args = nmfe("model.ctl", "model.lst", parafile_option)
+    try:
+        args = nmfe("model.ctl", "model.lst", parafile_option)
+    except FileNotFoundError as e:
+        context.abort_workflow(str(e))
 
     stdout = model_path / 'stdout'
     stderr = model_path / 'stderr'
