@@ -181,7 +181,7 @@ class NONMEMTable:
         header = header_fmt % tuple(df.columns)
 
         with StringIO() as s:
-            np.savetxt(s, df.values, fmt=fmt)  # pyright: ignore [reportArgumentType]
+            np.savetxt(s, df.values, fmt=fmt)
             body = s.getvalue()
 
         return header + body
