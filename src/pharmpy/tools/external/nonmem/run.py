@@ -167,14 +167,15 @@ def nmfe_path():
         nmfe_candidates = ('nmfe76', 'nmfe75', 'nmfe74', 'nmfe73')
     default_path = conf.default_nonmem_path
     if default_path != Path(''):
-        path = default_path / 'run'
-        for nmfe in nmfe_candidates:
-            candidate_path = path / nmfe
-            if candidate_path.is_file():
-                path = candidate_path
-                break
-        else:
-            raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({default_path})')
+        path = default_path
+        if path.is_dir():
+            if path.name != 'run':
+                path = path / 'run'
+            for nmfe in nmfe_candidates:
+                candidate_path = path / nmfe
+                if candidate_path.is_file():
+                    path = candidate_path
+                    break
     else:
         # Not in configuration file
         for nmfe in nmfe_candidates:
@@ -193,6 +194,10 @@ def nmfe_path():
                     raise FileNotFoundError(
                         f'Cannot find pharmpy.conf: {config.user_config_path()}'
                     )
+
+    if not path.is_file():
+        raise FileNotFoundError(f'Cannot find nmfe script for NONMEM ({default_path})')
+
     return str(path)
 
 
