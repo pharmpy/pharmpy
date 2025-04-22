@@ -27,7 +27,7 @@ more-itertools==10.6.0
 mypy-extensions==1.0.0
 nh3==0.2.21
 nodeenv==1.9.1
-packaging==24.2
+packaging==25.0
 pathspec==0.12.1
 pkginfo==1.12.1.2
 platformdirs==4.3.7
