@@ -92,7 +92,7 @@ sphinxcontrib-jsmath==1.0.1
 sphinxcontrib-qthelp==2.0.0
 sphinxcontrib-serializinghtml==2.0.0
 stack-data==0.6.3
-symengine==0.14.0
+symengine==0.14.1
 statsmodels==0.14.4
 sympy==1.13.3
 tblib==3.1.0
