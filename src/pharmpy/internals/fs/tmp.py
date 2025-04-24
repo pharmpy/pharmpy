@@ -111,6 +111,7 @@ class TemporaryDirectory:
                 while time.time() - start < 10:
                     try:
                         self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+                        break
                     except PermissionError:
                         time.sleep(0.1)
             else:
