@@ -1,6 +1,7 @@
 import os as _os
 import shutil as _shutil
 import sys
+import time
 import warnings as _warnings
 import weakref as _weakref
 from tempfile import mkdtemp
@@ -106,7 +107,11 @@ class TemporaryDirectory:
     def cleanup(self):
         if self._finalizer.detach() or _os.path.exists(self.name):
             if _os.name == 'nt':
-                import time
-
-                time.sleep(0.1)
-            self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+                start = time.time()
+                while time.time() - start < 10:
+                    try:
+                        self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
+                    except PermissionError:
+                        time.sleep(0.1)
+            else:
+                self._rmtree(self.name, ignore_errors=self._ignore_cleanup_errors)
