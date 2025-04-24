@@ -32,7 +32,7 @@ itables==2.3.0
 jedi==0.19.2
 Jinja2==3.1.6
 jsonschema==4.23.0
-jsonschema-specifications==2024.10.1
+jsonschema-specifications==2025.4.1
 jupyter-client==8.6.3
 jupyter-core==5.7.2
 jupyter-sphinx==0.5.3
