@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy.basic import Unit
+from pharmpy.basic import Expr, Unit
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import ColumnInfo, DataInfo
 
@@ -23,6 +23,11 @@ def test_columninfo_type():
     col2 = ColumnInfo.create("DUMMY", type='dv')
     assert col2.type == 'dv'
     assert col2.continuous
+
+
+def test_columninfo_symbol():
+    col = ColumnInfo.create("DUMMY", type="id")
+    assert col.symbol == Expr.symbol("DUMMY")
 
 
 def test_columninfo_descriptor():

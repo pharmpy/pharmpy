@@ -8,7 +8,7 @@ from pathlib import Path
 from typing import Any, Optional, Union, cast, overload
 
 from pharmpy import conf
-from pharmpy.basic import TUnit, Unit
+from pharmpy.basic import Expr, TUnit, Unit
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import Immutable, frozenmapping
@@ -302,6 +302,11 @@ class ColumnInfo(Immutable):
     def name(self) -> str:
         """Column name"""
         return self._name
+
+    @property
+    def symbol(self) -> Expr:
+        """Symbol having the column name"""
+        return Expr.symbol(self._name)
 
     @property
     def type(self) -> str:
