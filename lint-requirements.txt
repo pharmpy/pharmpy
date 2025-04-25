@@ -1,6 +1,7 @@
 # Direct dependencies
 black==25.1.0
 check-manifest==0.50
+darglint2==1.8.2
 docutils==0.21.2
 flake8==7.2.0
 flake8-black==0.3.6
