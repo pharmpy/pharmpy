@@ -1471,7 +1471,7 @@ def set_seq_zo_fo_absorption(model: Model):
     return model
 
 
-def has_weibull_absorption(model: Model):
+def has_weibull_absorption(model: Model) -> bool:
     """Check if ode system describes a weibull type absorption
 
     Parameters
@@ -1498,12 +1498,12 @@ def has_weibull_absorption(model: Model):
     beta = sympy.Wild("beta")
     alpha = sympy.Wild("alpha")
     tad = sympy.Wild("tad")
-    ka_pattern = (beta / alpha) * (tad / alpha) ** (beta - 1)
-    matches = sympy.sympify(rate).match(ka_pattern) is not None
+    ka = (beta / alpha) * (tad / alpha) ** (beta - 1)  # pyright: ignore [reportOperatorIssue]
+    matches = sympy.sympify(rate).match(ka) is not None
     return matches
 
 
-def set_weibull_absorption(model):
+def set_weibull_absorption(model: Model) -> Model:
     """Set or change to Weibull type absorption
 
     Initial estimate for absorption rate is set to??
@@ -1584,7 +1584,9 @@ def set_weibull_absorption(model):
 
     cb = CompartmentalSystemBuilder(odes)
     central = odes.central_compartment
+    assert isinstance(central, Compartment)
     depot = odes.find_depot(model.statements)
+    assert isinstance(depot, Compartment)
     oldrate = odes.get_flow(depot, central)
     cb.add_flow(depot, central, ka)
     odes = CompartmentalSystem(cb)
