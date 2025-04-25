@@ -4,6 +4,7 @@ next version
 New features
 ============
 
+* Add :code:`modeling.set_weibull_absorption` and :code:`modeling.has_weibull_absorption`
 * Add :code:`dv` option to :code:`get_observations`
 * Add context method :code:`spawn_seed`
 * Add :code:`modeling.is_simulation_model`

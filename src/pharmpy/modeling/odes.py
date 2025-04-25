@@ -4,6 +4,7 @@
 
 from __future__ import annotations
 
+import math
 from collections.abc import Iterable, Mapping
 from typing import Literal, Optional, Union
 
@@ -29,7 +30,7 @@ from pharmpy.model import (
 from pharmpy.modeling.help_functions import _as_integer
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols
-from .data import get_observations
+from .data import add_time_after_dose, get_observations
 from .expressions import create_symbol, is_real
 from .parameters import (
     add_population_parameter,
@@ -1467,6 +1468,132 @@ def set_seq_zo_fo_absorption(model: Model):
                 model, Bolus(dose_comp.doses[0].amount), depot, 'MDT'
             )
         model = model.update_source()
+    return model
+
+
+def has_weibull_absorption(model: Model):
+    """Check if ode system describes a weibull type absorption
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Return
+    -------
+        Bool : True if model has weibull type absorption
+
+    """
+
+    odes = model.statements.ode_system
+    if odes is None:
+        return False
+    central = odes.central_compartment
+    depot = odes.find_depot(model.statements)
+    if depot is None:
+        return False
+
+    rate = odes.get_flow(depot, central)
+
+    beta = sympy.Wild("beta")
+    alpha = sympy.Wild("alpha")
+    tad = sympy.Wild("tad")
+    ka_pattern = (beta / alpha) * (tad / alpha) ** (beta - 1)
+    matches = sympy.sympify(rate).match(ka_pattern) is not None
+    return matches
+
+
+def set_weibull_absorption(model):
+    """Set or change to Weibull type absorption
+
+    Initial estimate for absorption rate is set to??
+
+    If multiple doses is set to the affected compartment, currently only iv+oral
+    doses (one of each) is supported
+
+    Weibull absorption cannot be used together with lag time and transit compartments.
+
+    Assumes that absorption of one does is done when next dose is given.
+
+    Parameters
+    ----------
+    model : Model
+        Model to set or change to use Weibull absorption rate
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_weibull_absorption(model)
+    >>> model.statements.ode_system
+    Bolus(AMT, admid=1) → DEPOT
+    ┌─────┐     ┌───────┐
+    │DEPOT│──KA→│CENTRAL│──CL/V→
+    └─────┘     └───────┘
+
+    See also
+    --------
+    set_zero_order_absorption
+    set_first_order_absorption
+
+    """
+    if has_weibull_absorption(model):
+        return model
+
+    # FIXME: Using names of parameters here. Could find parameters structurally instead.
+    if 'POP_MAT' in model.parameters.names:
+        init_mat = model.parameters['POP_MAT'].init
+    else:
+        init_mat = None
+    if 'POP_MDT' in model.parameters.names:
+        init_mdt = model.parameters['POP_MDT'].init
+    else:
+        init_mdt = None
+
+    if init_mat is not None and init_mdt is None:
+        init_beta = 1.0
+        init_alpha = init_mat
+    elif init_mdt is not None and init_mat is None:
+        init_beta = 1.0
+        init_alpha = init_mdt
+    else:
+        if init_mat is None:
+            init_mat = _get_absorption_init(model, "MAT")
+        init_beta = 1.5
+        init_alpha = init_mat / math.gamma(1.0 + 1.0 / init_beta)
+
+    model = remove_lag_time(model)
+    model = set_transit_compartments(model, 0, keep_depot=True)
+    model = set_first_order_absorption(model)
+    model = add_time_after_dose(model)
+    tad = model.datainfo.descriptorix['time after dose'][0].symbol
+
+    alpha = Expr.symbol("ALPHA")
+    beta = Expr.symbol("BETA")
+    model = add_individual_parameter(model, alpha.name, init=init_alpha, lower=0.0)
+    model = add_individual_parameter(model, beta.name, init=init_beta, lower=0.0)
+
+    ka = (beta / alpha) * (tad / alpha) ** (beta - 1)
+
+    odes = get_and_check_odes(model)
+
+    cb = CompartmentalSystemBuilder(odes)
+    central = odes.central_compartment
+    depot = odes.find_depot(model.statements)
+    oldrate = odes.get_flow(depot, central)
+    cb.add_flow(depot, central, ka)
+    odes = CompartmentalSystem(cb)
+
+    statements = model.statements.before_odes + odes + model.statements.after_odes
+    statements = statements.remove_symbol_definitions(oldrate.free_symbols, odes)
+    model = model.replace(statements=statements)
+
+    model = remove_unused_parameters_and_rvs(model)
     return model
 
 

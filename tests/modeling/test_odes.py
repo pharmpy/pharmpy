@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     has_michaelis_menten_elimination,
     has_mixed_mm_fo_elimination,
     has_odes,
+    has_weibull_absorption,
     has_zero_order_absorption,
     has_zero_order_elimination,
     remove_bioavailability,
@@ -39,6 +40,7 @@ from pharmpy.modeling import (
     set_seq_zo_fo_absorption,
     set_tmdd,
     set_transit_compartments,
+    set_weibull_absorption,
     set_zero_order_absorption,
     set_zero_order_elimination,
     set_zero_order_input,
@@ -2780,3 +2782,17 @@ def test_issue_2161(testdata, load_model_for_test, load_example_model_for_test):
     model = set_transit_compartments(model, 7, keep_depot=True)
     model = add_peripheral_compartment(model)
     assert 'K80' in model.code
+
+
+def test_set_weibull_absorption(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    model = set_weibull_absorption(model)
+    assert Expr.symbol('POP_BETA') in model.statements.before_odes.free_symbols
+    assert Expr.symbol('POP_ALPHA') in model.statements.before_odes.free_symbols
+
+
+def test_has_weibull_absorption(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    assert not has_weibull_absorption(model)
+    model = set_weibull_absorption(model)
+    assert has_weibull_absorption(model)
