@@ -79,7 +79,7 @@ class Model(Immutable):
         observation_transformation: Optional[frozenmapping[Expr, Expr]] = None,
         execution_steps: ExecutionSteps = ExecutionSteps(),
         initial_individual_estimates: Optional[pd.DataFrame] = None,
-        value_type: str = 'PREDICTION',
+        value_type: Union[str, Expr] = 'PREDICTION',
         description: str = '',
         internals: Optional[ModelInternals] = None,
     ):
@@ -155,7 +155,7 @@ class Model(Immutable):
         )
 
     @staticmethod
-    def _canonicalize_value_type(value: str) -> str:
+    def _canonicalize_value_type(value: Any) -> Union[str, Expr]:
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
             if value.upper() not in allowed_strings:
@@ -552,7 +552,7 @@ class Model(Immutable):
         return self._dependent_variables
 
     @property
-    def value_type(self) -> str:
+    def value_type(self) -> Union[str, Expr]:
         """The type of the model value (dependent variables)
 
         By default this is set to 'PREDICTION' to mean that the model outputs a prediction.

@@ -251,7 +251,7 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
 
     y_idx = sset.find_assignment_index(y.symbol)
     sset_new = sset[:y_idx] + assignments + sset[y_idx + 1 :]
-    model = model.replace(statements=sset_new)
+    model = model.replace(statements=sset_new, value_type=symb_fflag)
 
     return model.update_source()
 
