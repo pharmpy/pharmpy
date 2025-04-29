@@ -13,7 +13,8 @@ New features
 Bugfixes
 ========
 
-* Fix bug causing groups>!=4 or groups>=10 in ruvsearch to crash or give wrong results
+* Fix bug causing groups!=4 in ruvsearch to crash or give wrong results
+
 
 1.6.0 (2025-02-10)
 ------------------
