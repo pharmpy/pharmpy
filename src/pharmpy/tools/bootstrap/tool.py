@@ -99,7 +99,7 @@ def run_dofv(context, input_model, tpl):
     dofv_model = set_initial_estimates(model, me.modelfit_results.parameter_estimates)
     dofv_model = set_evaluation_step(dofv_model)
     dofv_model = set_name(dofv_model, f"dofv_{model.name[3:]}")
-    dofv_model = set_dataset(dofv_model, input_model.dataset)
+    dofv_model = set_dataset(dofv_model, input_model.dataset, datatype='nonmem')
     dofv_me = ModelEntry.create(model=dofv_model)
     wf = create_fit_workflow(dofv_me)
     res_me = context.call_workflow(wf, dofv_model.name)
