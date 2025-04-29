@@ -245,6 +245,8 @@ def _translate_sympy_block(symbol, expression, rvs, trans):
             statement_str += f'ELSE IF ({condition_translated}) THEN\n'
 
         statement_str += f'    {symbol} = {expression_to_nmtran(value, rvs, trans)}\n'
+        if symbol.name == 'F_FLAG':
+            statement_str += f'    MDVRES = {value}\n'
 
     statement_str += 'END IF'
     return statement_str
