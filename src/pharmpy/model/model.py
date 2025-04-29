@@ -114,7 +114,7 @@ class Model(Immutable):
         observation_transformation: Optional[Mapping[TSymbol, TExpr]] = None,
         execution_steps: Optional[ExecutionSteps] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
-        value_type: str = 'PREDICTION',
+        value_type: Union[str, Expr] = 'PREDICTION',
         description: str = '',
         internals: Optional[ModelInternals] = None,
     ):
@@ -187,7 +187,7 @@ class Model(Immutable):
 
     @staticmethod
     def _canonicalize_statements(
-        statements: Optional[Statements],
+        statements: Any,
         params: Parameters,
         rvs: RandomVariables,
         datainfo: DataInfo,
