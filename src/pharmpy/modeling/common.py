@@ -5,6 +5,7 @@
 from __future__ import annotations
 
 import importlib
+import itertools
 import re
 import warnings
 from pathlib import Path
@@ -25,6 +26,7 @@ from pharmpy.model import (
     RandomVariables,
     get_and_check_dataset,
 )
+from pharmpy.model.statements import Output
 
 
 def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None) -> Model:
@@ -732,3 +734,129 @@ def filter_dataset(model: Model, expr: str) -> Model:
     except pandas.errors.UndefinedVariableError as e:
         raise ValueError(f'The expression `{expr}` is invalid: {e}')
     return new_model
+
+
+def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
+    """Return nested model from a pair of models
+
+    Function to get a nested model from a pair of models, None
+    if neither model is nested. A model is not considered nested if:
+
+    1. They are the same model
+    2. They have the same number of parameters
+    3. The parameters of the reduced model is not a subset of
+       the extended model
+    4. The dosing or DV is changed
+
+    Assumptions made:
+
+    1. Parametrization is the same
+    2. Parameter names are the same
+
+    Parameters
+    ----------
+    model_1 : Model
+        Pharmpy model object
+    model_2 : str
+        Pharmpy model object
+
+    Returns
+    -------
+    Model | None
+        Pharmpy model object or None
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model_1 = load_example_model("pheno")
+    >>> model_2 = add_peripheral_compartment(model_1)
+    >>> model_2 = set_name(model_2, 'pheno_2')
+    >>> nested = get_nested_model(model_1, model_2)
+    >>> nested.name
+    'pheno_2'
+    """
+    if model_1 == model_2:
+        return None
+    if model_1.dependent_variables != model_2.dependent_variables:
+        return None
+    dosing_1 = [comp.doses for comp in model_1.statements.ode_system.dosing_compartments]
+    dosing_2 = [comp.doses for comp in model_2.statements.ode_system.dosing_compartments]
+    if dosing_1 != dosing_2:
+        return None
+
+    models = sorted([model_1, model_2], key=lambda x: len(x.parameters))
+    reduced, extended = models[0], models[1]
+    params_reduced, params_extended = reduced.parameters, extended.parameters
+
+    if len(params_reduced) == len(params_extended):
+        return None
+    if not set(params_reduced.symbols).issubset(params_extended.symbols):
+        return None
+
+    params_added = set(params_extended.symbols).difference(params_reduced.symbols)
+    params_added = params_added.union(extended.random_variables.free_symbols).difference(
+        reduced.random_variables.free_symbols
+    )
+
+    ode_extended = extended.statements.ode_system
+    ode_reduced = reduced.statements.ode_system
+
+    for name in ode_extended.compartment_names:
+        comp_extended = ode_extended.find_compartment(name)
+        if isinstance(comp_extended, Output):
+            continue
+        comp_reduced = ode_reduced.find_compartment(name)
+        outflows = ode_extended.get_compartment_outflows(comp_extended)
+
+        for comp_out_extended, rate_extended in outflows:
+            if isinstance(comp_out_extended, Output):
+                comp_out_reduced = Output()
+            else:
+                comp_out_reduced = ode_reduced.find_compartment(comp_out_extended.name)
+
+            rate_extended = extended.statements.before_odes.full_expression(rate_extended)
+            rate_reduced = ode_reduced.get_flow(comp_reduced, comp_out_reduced)
+            rate_reduced = reduced.statements.before_odes.full_expression(rate_reduced)
+
+            if not _is_collapsable(extended, rate_extended, rate_reduced, params_added):
+                return None
+
+    y_symb = list(extended.dependent_variables.keys())[0]
+    y_extended = extended.statements.after_odes.full_expression(y_symb)
+    y_reduced = reduced.statements.after_odes.full_expression(y_symb)
+
+    if not _is_collapsable(extended, y_extended, y_reduced, params_added):
+        return None
+
+    return reduced
+
+
+def _is_collapsable(extended, expr_extended, expr_reduced, params_added):
+    if expr_extended == expr_reduced:
+        return True
+    symbs = params_added.intersection(expr_extended.free_symbols)
+    subs_dict = dict()
+    for symb in symbs:
+        if symb in extended.parameters.symbols:
+            param = extended.parameters[symb]
+            sub_values = []
+            if param.lower <= 0 or param.upper >= 0:
+                sub_values.append(0)
+            if param.lower <= 1 or param.upper >= 1:
+                sub_values.append(1)
+            if not sub_values:
+                return False
+        elif symb in extended.random_variables.symbols:
+            # FIXME: check if normal distribution
+            sub_values = [0, 1]
+
+        subs_dict.update({symb: sub_values})
+
+    permutations = itertools.product(*subs_dict.values())
+    permutation_dicts = [dict(zip(subs_dict.keys(), permutation)) for permutation in permutations]
+
+    for sub_dict in permutation_dicts:
+        expr_simplified = expr_extended.subs(sub_dict)
+        if expr_simplified == expr_reduced:
+            return True
+    return False

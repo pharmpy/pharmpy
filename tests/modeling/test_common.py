@@ -1,4 +1,5 @@
 import os.path
+from functools import partial
 from pathlib import Path
 
 import pytest
@@ -9,6 +10,8 @@ from pharmpy.model import Model as BaseModel
 from pharmpy.model.external.nlmixr.model import Model as nlmixrModel
 from pharmpy.model.external.nonmem import Model as NMModel
 from pharmpy.modeling import (
+    add_covariate_effect,
+    add_peripheral_compartment,
     convert_model,
     create_basic_pk_model,
     create_joint_distribution,
@@ -17,14 +20,20 @@ from pharmpy.modeling import (
     get_config_path,
     get_model_code,
     get_model_covariates,
+    get_nested_model,
     load_example_model,
     read_model,
     read_model_from_string,
+    remove_iiv,
     remove_unused_parameters_and_rvs,
+    set_additive_error_model,
     set_dataset,
     set_description,
     set_direct_effect,
+    set_iiv_on_ruv,
+    set_instantaneous_absorption,
     set_name,
+    split_joint_distribution,
     write_model,
 )
 from pharmpy.tools import read_modelfit_results
@@ -187,3 +196,58 @@ def test_dvid_column(testdata):
     pkpd_model = set_direct_effect(model2, 'linear')
     assert "IF (FLAG.EQ.1) Y = Y" in pkpd_model.code
     assert "IF (FLAG.EQ.2) Y = Y_2" in pkpd_model.code
+
+
+@pytest.mark.parametrize(
+    'funcs, model',
+    [
+        ([], None),
+        ([add_peripheral_compartment, partial(remove_iiv, to_remove='ETA_VC')], None),
+        (
+            [
+                partial(
+                    add_covariate_effect,
+                    parameter='CL',
+                    covariate='WGT',
+                    effect='exp',
+                    operation='+',
+                )
+            ],
+            None,
+        ),
+        ([set_instantaneous_absorption, partial(add_peripheral_compartment)], None),
+        (
+            [
+                partial(add_peripheral_compartment),
+                partial(split_joint_distribution, rvs=['ETA_CL', 'ETA_VC']),
+            ],
+            None,
+        ),
+        ([set_additive_error_model], None),
+        ([add_peripheral_compartment], 'model_1'),
+        ([partial(remove_iiv, to_remove=['ETA_MAT'])], 'model_2'),
+        ([partial(remove_iiv, to_remove='ETA_VC')], 'model_2'),
+        ([partial(create_joint_distribution)], 'model_1'),
+        ([partial(set_iiv_on_ruv)], 'model_1'),
+        ([partial(add_covariate_effect, parameter='CL', covariate='WGT', effect='exp')], 'model_1'),
+        (
+            [
+                partial(add_covariate_effect, parameter='CL', covariate='WGT', effect='exp'),
+                partial(add_covariate_effect, parameter='CL', covariate='TIME', effect='exp'),
+            ],
+            'model_1',
+        ),
+        # ([set_combined_error_model], 'model_1'), Uncomment when equivalence can be assessed
+    ],
+)
+def test_get_nested_model(testdata, funcs, model):
+    model_base = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno_pd.csv')
+    model_1 = set_name(model_base, 'model_1')
+    model_2 = set_name(model_base, 'model_2')
+    for func in funcs:
+        model_2 = func(model=model_2)
+    nested_model = get_nested_model(model_1, model_2)
+    if nested_model:
+        assert nested_model.name == model
+    else:
+        assert nested_model == model
