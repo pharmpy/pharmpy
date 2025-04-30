@@ -154,11 +154,13 @@ class Model(Immutable):
             datainfo=datainfo,
         )
 
+    ALLOWED_VALUE_TYPE_STRINGS = ('PREDICTION', 'LIKELIHOOD', '-2LL')
+
     @staticmethod
     def _canonicalize_value_type(value: Any) -> Union[str, Expr]:
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
-            if value.upper() not in allowed_strings:
+            if value.upper() not in Model.ALLOWED_VALUE_TYPE_STRINGS:
                 raise ValueError(
                     f"Cannot set value_type to {value}. Must be one of {allowed_strings} "
                     f"or a symbol"
@@ -496,13 +498,16 @@ class Model(Immutable):
             key.serialize(): val.serialize()
             for key, val in self._observation_transformation.items()
         }
+        value_type = (
+            self._value_type if isinstance(self._value_type, str) else self._value_type.serialize()
+        )
         return {
             'parameters': self._parameters.to_dict(),
             'random_variables': self._random_variables.to_dict(),
             'statements': self._statements.to_dict(),
             'execution_steps': self._execution_steps.to_dict(),
             'datainfo': self._datainfo.to_dict(),
-            'value_type': self._value_type,
+            'value_type': value_type,
             'dependent_variables': depvars,
             'observation_transformation': obstrans,
             'initial_individual_estimates': ie,
@@ -520,13 +525,18 @@ class Model(Immutable):
             Expr.deserialize(key): Expr.deserialize(val)
             for key, val in d['observation_transformation'].items()
         }
+        value_type = (
+            d['value_type']
+            if d['value_type'] in Model.ALLOWED_VALUE_TYPE_STRINGS
+            else Expr.deserialize(d['value_type'])
+        )
         return cls(
             parameters=Parameters.from_dict(d['parameters']),
             random_variables=RandomVariables.from_dict(d['random_variables']),
             statements=Statements.from_dict(d['statements']),
             execution_steps=ExecutionSteps.from_dict(d['execution_steps']),
             datainfo=DataInfo.from_dict(d['datainfo']),
-            value_type=d['value_type'],
+            value_type=value_type,
             dependent_variables=frozenmapping(depvars),
             observation_transformation=frozenmapping(obstrans),
             initial_individual_estimates=ie,
