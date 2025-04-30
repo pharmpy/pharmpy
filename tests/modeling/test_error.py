@@ -135,6 +135,9 @@ def test_set_combined_error_model(testdata, load_model_for_test):
     before = model.code
     model = set_combined_error_model(model)  # One more time and nothing should change
     assert before == model.code
+    model = set_proportional_error_model(model, zero_protection=True)
+    model = set_combined_error_model(model)
+    assert model.code.split('\n')[16] == 'Y = F + EPS(1)*IPREDADJ + EPS(2)'
 
 
 def test_set_combined_error_model_log(testdata, load_model_for_test):

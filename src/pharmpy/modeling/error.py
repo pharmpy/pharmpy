@@ -447,7 +447,20 @@ def set_combined_error_model(
                 raise ValueError('Currently not supported to change from IIV on RUV model with BLQ')
             error_expr = f_dummy + f_dummy * ruv_prop * eta_ruv.exp() + ruv_add * eta_ruv.exp()
         else:
-            error_expr = f_dummy + f_dummy * ruv_prop + ruv_add
+            ipred = get_ipred(model, dv=dv)
+            ipredadj = None
+            for s in model.statements.after_odes:
+                if s.expression.is_piecewise():
+                    args = s.expression.args
+                    for expr, cond in args:
+                        if expr == ipred:
+                            ipredadj = s.symbol
+                            break
+
+            if ipredadj:
+                error_expr = f_dummy + ipredadj * ruv_prop + ruv_add
+            else:
+                error_expr = f_dummy + f_dummy * ruv_prop + ruv_add
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
