@@ -80,12 +80,15 @@ class LocalDaskDispatcher(Dispatcher):
                         )
                         # When processes=False the number of workers is 1. Use threads per worker option to parallelize
                         ncores = context.retrieve_dispatching_options()['ncores']
+                        dashboard_address = '31058'
                         with LocalCluster(
-                            processes=False, dashboard_address=':31058', threads_per_worker=ncores
+                            processes=False,
+                            dashboard_address=f':{dashboard_address}',
+                            threads_per_worker=ncores,
                         ) as cluster, Client(cluster) as client:
                             context.log_info(
                                 "Dispatching workflow with local_dask dispatcher "
-                                f"in {context}: {client}"
+                                f"in {context}: {client} at dashboard address {dashboard_address}"
                             )
                             dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
 
