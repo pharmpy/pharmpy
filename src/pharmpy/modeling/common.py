@@ -757,7 +757,7 @@ def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
     ----------
     model_1 : Model
         Pharmpy model object
-    model_2 : str
+    model_2 : Model
         Pharmpy model object
 
     Returns
@@ -773,7 +773,7 @@ def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
     >>> model_2 = set_name(model_2, 'pheno_2')
     >>> nested = get_nested_model(model_1, model_2)
     >>> nested.name
-    'pheno_2'
+    'pheno'
     """
     if model_1 == model_2:
         return None
