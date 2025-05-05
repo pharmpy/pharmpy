@@ -16,6 +16,7 @@ from pharmpy.basic import Expr, TSymbol
 from pharmpy.deps import pandas
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
+    Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     JointNormalDistribution,
@@ -779,10 +780,6 @@ def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
         return None
     if model_1.dependent_variables != model_2.dependent_variables:
         return None
-    dosing_1 = [comp.doses for comp in model_1.statements.ode_system.dosing_compartments]
-    dosing_2 = [comp.doses for comp in model_2.statements.ode_system.dosing_compartments]
-    if dosing_1 != dosing_2:
-        return None
 
     models = sorted([model_1, model_2], key=lambda x: len(x.parameters))
     reduced, extended = models[0], models[1]
@@ -801,8 +798,17 @@ def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
     ode_extended = extended.statements.ode_system
     ode_reduced = reduced.statements.ode_system
 
+    if ode_extended is None or ode_reduced is None:
+        return None
+
+    dosing_extended = [comp.doses for comp in ode_extended.dosing_compartments]
+    dosing_reduced = [comp.doses for comp in ode_reduced.dosing_compartments]
+    if dosing_extended != dosing_reduced:
+        return None
+
     for name in ode_extended.compartment_names:
         comp_extended = ode_extended.find_compartment(name)
+        assert comp_extended is not None
         if isinstance(comp_extended, Output):
             continue
         comp_reduced = ode_reduced.find_compartment(name)
@@ -812,6 +818,7 @@ def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
             if isinstance(comp_out_extended, Output):
                 comp_out_reduced = Output()
             else:
+                assert isinstance(comp_out_extended, Compartment)
                 comp_out_reduced = ode_reduced.find_compartment(comp_out_extended.name)
 
             rate_extended = extended.statements.before_odes.full_expression(rate_extended)
@@ -837,9 +844,9 @@ def _is_collapsable(extended, expr_extended, expr_reduced, params_added):
     symbs = params_added.intersection(expr_extended.free_symbols)
     subs_dict = dict()
     for symb in symbs:
+        sub_values = []
         if symb in extended.parameters.symbols:
             param = extended.parameters[symb]
-            sub_values = []
             if param.lower <= 0 or param.upper >= 0:
                 sub_values.append(0)
             if param.lower <= 1 or param.upper >= 1:
@@ -848,7 +855,7 @@ def _is_collapsable(extended, expr_extended, expr_reduced, params_added):
                 return False
         elif symb in extended.random_variables.symbols:
             # FIXME: check if normal distribution
-            sub_values = [0, 1]
+            sub_values.extend([0, 1])
 
         subs_dict.update({symb: sub_values})
 
