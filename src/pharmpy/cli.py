@@ -171,7 +171,6 @@ def run_modelsearch(args):
         cutoff=args.cutoff,
         strictness=args.strictness,
         E=args.e,
-        path=args.path,
     )
 
 
@@ -210,7 +209,6 @@ def run_iovsearch(args):
         distribution=args.distribution,
         strictness=args.strictness,
         E=args.e,
-        path=args.path,
     )
 
 
@@ -230,7 +228,6 @@ def run_covsearch(args):
         adaptive_scope_reduction=args.adaptive_scope_reduction,
         strictness=args.strictness,
         naming_index_offset=args.naming_index_offset,
-        path=args.path,
     )
 
 
@@ -247,7 +244,6 @@ def run_ruvsearch(args):
         max_iter=args.max_iter,
         dv=args.dv,
         strictness=args.strictness,
-        path=args.path,
     )
 
 
@@ -265,7 +261,6 @@ def run_allometry(args):
         lower_bounds=args.lower_bounds,
         upper_bounds=args.upper_bounds,
         fixed=not args.non_fixed,
-        path=args.path,
     )
 
 
@@ -281,7 +276,6 @@ def run_estmethod(args):
         compare_ofv=args.compare_ofv,
         results=res,
         model=model,
-        path=args.path,
     )
 
 
@@ -326,7 +320,6 @@ def run_linearize(args):
         args,
         results=res,
         model=model,
-        path=args.path,
     )
 
 
