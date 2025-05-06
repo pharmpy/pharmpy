@@ -37,7 +37,7 @@ jupyter-client==8.6.3
 jupyter-core==5.7.2
 jupyter-sphinx==0.5.3
 jupyterlab-pygments==0.3.0
-jupyterlab-widgets==3.0.14
+jupyterlab-widgets==3.0.15
 lark==1.2.2
 locket==1.0.0
 lxml==5.4.0
