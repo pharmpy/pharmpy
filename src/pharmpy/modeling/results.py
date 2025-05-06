@@ -219,7 +219,7 @@ def calculate_individual_parameter_statistics(
     expr_or_exprs: Union[
         Iterable[BooleanExpr], Iterable[Expr], Iterable[str], BooleanExpr, Expr, str
     ],
-    parameter_estimates: Mapping,
+    parameter_estimates: Mapping[str, float],
     covariance_matrix: Optional[pd.DataFrame] = None,
     seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
@@ -239,14 +239,14 @@ def calculate_individual_parameter_statistics(
     ----------
     model : Model
         A previously estimated model
-    parameter_estimates : Mapping
-        Parameter estimates
-    covariance_matrix : pd.DataFrame
-        Parameter uncertainty covariance matrix
     expr_or_exprs : str
         expression or iterable of str or expressions
         Expressions or equations for parameters of interest. If equations are used
         the names of the left hand sides will be used as the names of the parameters.
+    parameter_estimates : Mapping
+        Parameter estimates
+    covariance_matrix : pd.DataFrame
+        Parameter uncertainty covariance matrix
     seed : Generator or int
         Random number generator or int seed
 
