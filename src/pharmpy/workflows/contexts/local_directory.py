@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os.path
+from functools import partial
 from pathlib import Path
 from typing import Any, Literal, Optional
 
@@ -126,7 +127,8 @@ class LocalDirectoryContext(Context):
         res.to_csv(path=self.path / 'results.csv')
 
     def retrieve_results(self) -> Results:
-        res = read_results(self.path / 'results.json')
+        func = partial(_deserialize_model_from_hash, modeldb=self.model_database)
+        res = read_results(self.path / 'results.json', model_deserialization_func=func)
         return res
 
     @property
@@ -333,3 +335,8 @@ class MetadataJSONDecoder(json.JSONDecoder):
 
     def object_hook(self, obj):
         return obj
+
+
+def _deserialize_model_from_hash(obj, key, modeldb):
+    model = modeldb.retrieve_model(ModelHash(key))
+    return model

@@ -97,8 +97,13 @@ class ResultsJSONEncoder(json.JSONEncoder):
             d['__class__'] = obj.__class__.__qualname__
             return d
         elif isinstance(obj, Model):
-            # TODO: Consider using other representation, e.g. path
-            return None
+            d = obj.to_dict()
+            d['__module__'] = obj.__class__.__module__
+            d['__class__'] = obj.__class__.__qualname__
+            from .hashing import ModelHash
+
+            d['__hash__'] = str(ModelHash(obj))
+            return d
         elif isinstance(obj, Log):
             d: dict[Any, Any] = obj.to_dict()
             d['__class__'] = obj.__class__.__qualname__
@@ -127,7 +132,8 @@ def _multi_index_read_json(obj) -> pd.MultiIndex:
 
 
 class ResultsJSONDecoder(json.JSONDecoder):
-    def __init__(self, *args, **kwargs):
+    def __init__(self, model_deserialization_func=None, *args, **kwargs):
+        self._model_deserialization_func = model_deserialization_func
         json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
 
     def object_hook(self, obj):
@@ -143,6 +149,10 @@ class ResultsJSONDecoder(json.JSONDecoder):
         if '__class__' in obj:
             cls = obj['__class__']
             del obj['__class__']
+
+        if '__hash__' in obj:
+            key = obj['__hash__']
+            del obj['__hash__']
 
         # NOTE: Handling cls not None and module is None is kept for backwards
         # compatibility
@@ -199,7 +209,12 @@ class ResultsJSONDecoder(json.JSONDecoder):
 
         if cls == 'PosixPath':
             return Path(obj)
-        if cls == 'Log':
+        elif cls == 'Model':
+            if self._model_deserialization_func is None:
+                return Model.from_dict(obj)
+            else:
+                return self._model_deserialization_func(obj, key)
+        elif cls == 'Log':
             from pharmpy.workflows import Log
 
             return Log.from_dict(obj)
@@ -214,7 +229,7 @@ def _is_likely_to_be_json(source: str):
     return match is not None and match.group(1) == '{'
 
 
-def read_results(path_or_str: Union[str, Path]):
+def read_results(path_or_str: Union[str, Path], model_deserialization_func=None):
     if isinstance(path_or_str, str) and _is_likely_to_be_json(path_or_str):
         manager = closing(StringIO(path_or_str))
     else:
@@ -228,7 +243,9 @@ def read_results(path_or_str: Union[str, Path]):
             manager = open(path, 'r')
 
     with manager as readable:
-        return json.load(readable, cls=ResultsJSONDecoder)
+        return json.load(
+            readable, cls=ResultsJSONDecoder, model_deserialization_func=model_deserialization_func
+        )
 
 
 @dataclass(frozen=True)

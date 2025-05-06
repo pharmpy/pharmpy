@@ -21,6 +21,7 @@ def test_results_linearize(datadir, tmp_path):
     shutil.copy(path / 'pheno_linbase.ext', tmp_path)
     shutil.copy(path / 'pheno_linbase.lst', tmp_path)
     shutil.copy(path / 'pheno_linbase.phi', tmp_path)
+    shutil.copy(path / 'scm_dir1' / 'pheno_linbase.dta', tmp_path)
     scmdir = tmp_path / 'scm_dir1'
     scmdir.mkdir()
     shutil.copy(path / 'scm_dir1' / 'derivatives.mod', scmdir)
