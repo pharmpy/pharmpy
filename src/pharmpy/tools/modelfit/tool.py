@@ -87,7 +87,6 @@ def retrieve_from_database_or_execute_model_with_tool():
     def task(context, model_entry):
         if model_entry.modelfit_results is not None:
             return model_entry
-        tool = context.retrieve_common_options().get('esttool', None)
         assert isinstance(model_entry, ModelEntry)
         model = model_entry.model
         try:
@@ -103,6 +102,7 @@ def retrieve_from_database_or_execute_model_with_tool():
                 return me
 
         # NOTE: Fallback to executing the model
+        tool = context.retrieve_common_options().get('esttool', None)
         execute_model = get_execute_model(tool)
         me = execute_model(model_entry, context)
         return me
