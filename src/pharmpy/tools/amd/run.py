@@ -662,6 +662,7 @@ def run_amd_task(
 
     res = AMDResults(
         final_model=final_model.name,
+        final_results=final_results,
         summary_tool=summary_tool,
         summary_models=summary_models,
         summary_errors=summary_errors,

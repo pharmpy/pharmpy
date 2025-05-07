@@ -5,12 +5,13 @@ from typing import Any, Optional
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import pandas as pd
-from pharmpy.workflows import Results
+from pharmpy.workflows import ModelfitResults, Results
 
 
 @dataclass(frozen=True)
 class AMDResults(Results):
     final_model: Optional[str] = None
+    final_results: Optional[ModelfitResults] = None
     summary_tool: Optional[Any] = None
     summary_models: Optional[Any] = None
     summary_errors: Optional[pd.DataFrame] = None
