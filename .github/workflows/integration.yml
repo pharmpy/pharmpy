@@ -108,7 +108,7 @@ jobs:
           ZIP_KEY: ${{secrets.ZIP_751_KEY}}
 
       - name: Setup gfortran
-        uses: fortran-lang/setup-fortran@v1
+        uses: rikardn/setup-fortran
         with:
           compiler: gcc
           version: 12
@@ -166,7 +166,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup gfortran
-        uses: fortran-lang/setup-fortran@v1
+        uses: rikardn/setup-fortran
         with:
           compiler: gcc
           version: 12
@@ -219,7 +219,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup gfortran
-        uses: fortran-lang/setup-fortran@v1
+        uses: rikardn/setup-fortran
         with:
           compiler: gcc
           version: 12
