@@ -108,7 +108,7 @@ jobs:
           ZIP_KEY: ${{secrets.ZIP_751_KEY}}
 
       - name: Setup gfortran
-        uses: rikardn/setup-fortran
+        uses: rikardn/setup-fortran@313dfd5925769408cb468ba276bfd5768a6e4265
         with:
           compiler: gcc
           version: 12
@@ -166,7 +166,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup gfortran
-        uses: rikardn/setup-fortran
+        uses: rikardn/setup-fortran@313dfd5925769408cb468ba276bfd5768a6e4265
         with:
           compiler: gcc
           version: 12
@@ -219,7 +219,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Setup gfortran
-        uses: rikardn/setup-fortran
+        uses: rikardn/setup-fortran@313dfd5925769408cb468ba276bfd5768a6e4265
         with:
           compiler: gcc
           version: 12
