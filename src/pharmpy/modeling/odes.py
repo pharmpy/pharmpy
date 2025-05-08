@@ -1474,6 +1474,9 @@ def set_seq_zo_fo_absorption(model: Model):
 def has_weibull_absorption(model: Model) -> bool:
     """Check if ode system describes a weibull type absorption
 
+    .. warning::
+        This function is still under development.
+
     Parameters
     ----------
     model : Model
@@ -1514,6 +1517,9 @@ def set_weibull_absorption(model: Model) -> Model:
     Weibull absorption cannot be used together with lag time and transit compartments.
 
     Assumes that absorption of one does is done when next dose is given.
+
+    .. warning::
+        This function is still under development.
 
     Parameters
     ----------
