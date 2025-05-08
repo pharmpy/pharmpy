@@ -16,6 +16,7 @@ Bugfixes
 
 * Fix bug causing groups!=4 in ruvsearch to crash or give wrong results
 * Set :code:`MDVRES` in the NONMEM code for BLQ models
+* Handle argument types properly for add_estimation_step in pharmr. Now :code:`add_estimationstep(..., maximum_evalutions=9999)` will not lead to MAXEVAL=9999.0 in the NONMEM code.
 
 
 1.6.0 (2025-02-10)

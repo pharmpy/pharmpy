@@ -5,6 +5,7 @@ from typing import Any, Iterable, Literal, Mapping, Optional, Sequence, Union
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.model import EstimationStep, ExecutionSteps, Model, SimulationStep
 from pharmpy.modeling.help_functions import _as_integer
 
@@ -69,7 +70,28 @@ def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs
     return model.update_source()
 
 
-def add_estimation_step(model: Model, method: MethodType, idx: Optional[int] = None, **kwargs):
+def add_estimation_step(
+    model: Model,
+    method: MethodType,
+    idx: Optional[int] = None,
+    interaction: Optional[bool] = False,
+    parameter_uncertainty_method: Optional[str] = None,
+    evaluation: bool = False,
+    maximum_evaluations: Optional[int] = None,
+    laplace: bool = False,
+    isample: Optional[int] = None,
+    niter: Optional[int] = None,
+    auto: Optional[bool] = None,
+    keep_every_nth_iter: Optional[int] = None,
+    residuals: Sequence[str] = (),
+    predictions: Sequence[str] = (),
+    solver: Optional[str] = None,
+    solver_rtol: Optional[int] = None,
+    solver_atol: Optional[int] = None,
+    tool_options: Mapping[str, Any] = frozenmapping({}),
+    derivatives: Sequence[Sequence[Expr]] = (),
+    individual_eta_samples: bool = False,
+):
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -83,8 +105,40 @@ def add_estimation_step(model: Model, method: MethodType, idx: Optional[int] = N
         estimation method to change to
     idx : int
         index of estimation step (starting from 0), default is None (adds step at the end)
-    kwargs
-        Arguments to pass to EstimationStep (such as interaction, evaluation)
+    interaction : Optional[bool]
+        See :class:`~pharmpy.model.EstimationStep` for more information on options
+    parameter_uncertainty_method : Optional[str]
+        See above
+    evaluation : bool
+        See above
+    maximum_evaluations: Optional[int]
+        See above
+    laplace : bool
+        See above
+    isample : Optional[int]
+        See above
+    niter : Optional[int]
+        See above
+    auto : Optional[bool]
+        See above
+    keep_every_nth_iter : Optional[int]
+        See above
+    residuals : Sequence[str]
+        See above
+    predictions : Sequence[str]
+        See above
+    solver : Optional[str]
+        See above
+    solver_rtol : Optional[int]
+        See above
+    solver_atol : Optional[int]
+        See above
+    tool_options : Mapping[str, Any]
+        See above
+    derivatives : Sequence[Sequence[Expr]]
+        See above
+    individual_eta_samples : bool
+        See above
 
     Returns
     -------
@@ -113,7 +167,26 @@ def add_estimation_step(model: Model, method: MethodType, idx: Optional[int] = N
     set_evaluation_step
 
     """
-    meth = EstimationStep.create(method, **kwargs)
+    meth = EstimationStep.create(
+        method,
+        interaction=interaction,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        evaluation=evaluation,
+        maximum_evaluations=maximum_evaluations,
+        laplace=laplace,
+        isample=isample,
+        niter=niter,
+        auto=auto,
+        keep_every_nth_iter=keep_every_nth_iter,
+        residuals=residuals,
+        predictions=predictions,
+        solver=solver,
+        solver_rtol=solver_rtol,
+        solver_atol=solver_atol,
+        tool_options=tool_options,
+        derivatives=derivatives,
+        individual_eta_samples=individual_eta_samples,
+    )
 
     if idx is not None:
         try:
