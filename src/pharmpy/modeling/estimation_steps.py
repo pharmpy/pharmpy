@@ -74,7 +74,7 @@ def add_estimation_step(
     model: Model,
     method: MethodType,
     idx: Optional[int] = None,
-    interaction: Optional[bool] = False,
+    interaction: bool = False,
     parameter_uncertainty_method: Optional[str] = None,
     evaluation: bool = False,
     maximum_evaluations: Optional[int] = None,
@@ -105,7 +105,7 @@ def add_estimation_step(
         estimation method to change to
     idx : int
         index of estimation step (starting from 0), default is None (adds step at the end)
-    interaction : Optional[bool]
+    interaction : bool
         See :class:`~pharmpy.model.EstimationStep` for more information on options
     parameter_uncertainty_method : Optional[str]
         See above
