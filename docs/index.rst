@@ -46,7 +46,7 @@ Pharmpy is maintained by the Uppsala University Pharmacometrics group and is an 
    getting_started
    user_guide
    api
-   changelog
+   news
    contribute
    References and citation <citation>
    license

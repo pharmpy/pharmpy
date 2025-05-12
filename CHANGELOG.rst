@@ -1,22 +1,45 @@
-next version
-------------
+.. _1.7.0:
+
+1.7.0 (2025-05-12) 
+------------------
 
 New features
 ============
 
-* Add :code:`modeling.set_weibull_absorption` and :code:`modeling.has_weibull_absorption`
 * Add :code:`dv` option to :code:`get_observations`
 * Add context method :code:`spawn_seed`
 * Add :code:`modeling.is_simulation_model`
 * Add :code:`symbol` attribute to :code:`ColumnInfo` class
 * Add :code:`final_results` to :code:`AMDResults` class
+* Improve reports of AMD tools
+* Add option :code:`dofv` to bootstrap
+* Add address of dask dashboard to the log message when using the dask dispatcher
+* Add :code:`modeling.get_nested_model`
+* Add :code:`modeling.set_weibull_absorption` and :code:`modeling.has_weibull_absorption`
 
+Changes
+=======
+
+* Let :code:`minimization_successful` be False if any final estimate is reported as infinity.
+* AMD will be aborted if all models failed in modelsearch
+* Results objects are no longer serialized into the metadata.json. Instead a reference to the model databases is stored.
+* All common options are only present in the metadata.json of the top level tool 
+* Let :code:`results.final_model` be the actual model object in AMD
+* Serialize all model objects in results objects (and in results.json)
+  
 Bugfixes
 ========
 
+* Fix serious bug in the bootstrap tool causing replacements to be done
 * Fix bug causing groups!=4 in ruvsearch to crash or give wrong results
 * Set :code:`MDVRES` in the NONMEM code for BLQ models
 * Handle argument types properly for add_estimation_step in pharmr. Now :code:`add_estimationstep(..., maximum_evalutions=9999)` will not lead to MAXEVAL=9999.0 in the NONMEM code.
+* Infinite or NaN values are no longer accepted as parameter initial estimates
+* Arguments to :code:`run_amd` will be validated before creating the directory
+* Fix running nlmixr on Windows
+* Fix cases where :code:`LTH` was removed from :code:`$SIZES` in the NONMEM code when it had a negative value 
+* Set :code:`model.value_type` in :code:`modeling.transform_blq`. This didn't affect any generated NONMEM code, but left the Pharmpy model in an incorrect state.
+* Make sure to keep the zero protection when going to a combined error model
 
 
 1.6.0 (2025-02-10)
@@ -64,14 +87,26 @@ New features
 * Add method Statements.get_assign
 * Allow THETA, OMEGA, SIGMA and TABLE to be encoded THETAS, OMEGAS, SIGMAS and TABLES in NONMEM models
 * Automatically update the ISAMPLEMAX in $SIZES when needed
+* Better support for :code:`NEWIND` in NONMEM code
+* Add option :code:`ncores` to set a limit for the number of cpu cores to use when running a tool or :code:`fit`
+* New common option :code:`dispatcher` to tools.
+* New dispatcher :code:`local_serial` that can use NONMEM parallelization via MPI
+* Automatically create the parafile for NONMEM both for running on Slurm and locally when using the :code:`local_serial` dispatcher
+* Directly retrieve results if tool is rerun in same context. This will enable scripts to be rerun without changes
+* Allow for resuming a previously interrupted run by running the exact same call
+* Add :code:`ref` and :code:`name` common options to select run directory for a tool
 
 Changes
 =======
 
-* Use a default seed if seed was not given to a tool
+* Use a random seed if seed was not given to a tool
 * Improved the initial estimate of EMAX for indirect effect degradation models in structsearch
 * model and results are now mandatory arguments to modelsearch, covsearch, ruvsearch, structsearch, iovsearch, iivsearch and allometry
 * AMD can no longer take a DataFrame as input (only a dataset file). This didn't work previously. 
+* Replace the :code:`path` option from :code:`fit` with :code:`name`
+* Rename :code:`init_context` to :code:`open_context`
+* Remove the now legacy :code:`resume` common option
+* Let :code:`fit` by default use the :code:`local_serial` dispatcher
 
 Bugfixes
 ========
@@ -87,6 +122,8 @@ Bugfixes
 * Fix bad parsing of some NONMEM models with multiple DVs
 * Fix crashes in transformation functions for NONMEM models using T in $DES non-derivative assignments
 * Fix issues with roundtrips of NONMEM parameter records having decimal values starting with . (dot)
+* Do not test any etas on the RUV model in iivsearch
+* Fix issues where tmp directory couldn't be removed on Windows causing a crash
 
 
 1.4.0 (2024-12-04)
