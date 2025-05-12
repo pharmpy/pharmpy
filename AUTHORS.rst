@@ -11,8 +11,8 @@ The following have contributed by writing and/or designing the code base of Phar
 Current team
 ------------
 
-* Rikard Nordgren, rikard.nordgren@farmaci.uu.se (maintainer)
-* Stella Belin, stella.belin@farmaci.uu.se (maintainer)
+* Rikard Nordgren, rikard.nordgren@uu.se (maintainer)
+* Stella Belin, stella.belin@uu.se (maintainer)
 
 All developers past and present
 -------------------------------
