@@ -8,11 +8,14 @@ Development
 
 The following have contributed by writing and/or designing the code base of Pharmpy.
 
-Current team
-------------
+Current developers and core scientists
+--------------------------------------
 
 * Rikard Nordgren, rikard.nordgren@uu.se (maintainer)
 * Stella Belin, stella.belin@uu.se (maintainer)
+* Mats O. Karlsson
+* Andrew C. Hooker
+* Xiaomei Chen
 
 All developers past and present
 -------------------------------
@@ -29,8 +32,8 @@ All developers past and present
 * David Sjöberg
 * Peng Man
 
-Scientific input
-~~~~~~~~~~~~~~~~
+All scientific team members past and present
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 * Mats O. Karlsson
 * Andrew C. Hooker
