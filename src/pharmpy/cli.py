@@ -287,7 +287,7 @@ def run_amd(args):
     run_tool_wrapper(
         'amd',
         args,
-        input,
+        input=input,
         results=args.results,
         modeltype=args.modeltype,
         administration=args.administration,
