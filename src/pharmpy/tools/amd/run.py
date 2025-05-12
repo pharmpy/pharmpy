@@ -661,7 +661,7 @@ def run_amd_task(
         final_vpc_plot = None
 
     res = AMDResults(
-        final_model=final_model.name,
+        final_model=final_model,
         final_results=final_results,
         summary_tool=summary_tool,
         summary_models=summary_models,
