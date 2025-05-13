@@ -36,9 +36,10 @@ Features include:
 * An **abstraction for modelfit results** which splits a parsed results into core components: e.g. OFV, parameter
   estimates, relative standard errors (RSEs), residuals, predictions
 * **Functions for manipulation of models and datasets** in the modeling-module: e.g. change structural model, add
-  time-after-dose column, deidentify dataset
+  time-after-dose column, add covariate effects
 * **Tools to aid model development** in the tools-module: execution of models within Python/R scripts, automatic
   development of models (e.g. AMD, IIVSearch, RUVSearch), comparison of estimation methods
+* **Simplify scripting** of workflows. Makes it possible to run scripts including calls to long running tools multiple times without having to rerun already finished tool runs.
 * Support for **multiple estimation tools**: parse NONMEM models, execute NONMEM, nlmixr2, and rxODE2 models, run all
   Pharmpy tools with NONMEM and some with nlmixr2
 
@@ -49,9 +50,6 @@ or via its built in command line interface.
 
 Getting started
 ===============
-
-The sections below are intended as first steps, please check our `website <https://pharmpy.github.io>`_ website for
-more comprehensive documentation, such as user guides and API references.
 
 Installation
 ------------
@@ -103,6 +101,10 @@ CLI Example
     # Run tool for selecting IIV structure
     pharmpy run iivsearch run1.mod
 
+User guide
+----------
+
+There is also a `user guide for getting started <https://pharmpy.github.io/latest/getting_started.html>`_
 
 Contact
 =======
