@@ -34,6 +34,7 @@ from pharmpy.tools.run import (
     is_strictness_fulfilled,
     load_example_modelfit_results,
     rank_models,
+    rank_models_from_entries,
     read_modelfit_results,
     summarize_errors_from_entries,
     summarize_modelfit_results_from_entries,
@@ -198,6 +199,14 @@ def test_rank_models(
     assert list(best_models) == best_model_names
     ranked_models = df.dropna().index.values
     assert len(ranked_models) == no_of_ranked_models
+
+    me_base = ModelEntry.create(base, modelfit_results=base_res)
+    me_models = [
+        ModelEntry.create(model, modelfit_results=res) for model, res in zip(models, models_res)
+    ]
+    df_from_entries = rank_models_from_entries(me_base, me_models, **kwargs)
+
+    assert df_from_entries.equals(df)
 
 
 @pytest.mark.parametrize(
