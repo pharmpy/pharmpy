@@ -874,6 +874,40 @@ def summarize_errors_from_entries(mes: list[ModelEntry]):
     return df.sort_index()
 
 
+def rank_models_from_entries(
+    me_base: ModelEntry,
+    me_models: list[ModelEntry],
+    strictness: str = "minimization_successful",
+    rank_type: str = 'ofv',
+    cutoff: Optional[float] = None,
+    penalties: Optional[list[float]] = None,
+    **kwargs,
+) -> pd.DataFrame:
+    base_model, base_res = me_base.model, me_base.modelfit_results
+    parent_dict = {base_model.name: me_base.parent if me_base.parent else None}
+    models, models_res = [], []
+    for me in me_models:
+        models.append(me.model)
+        models_res.append(me.modelfit_results)
+        parent_dict[me.model.name] = me.parent.name if me.parent else None
+
+    if all(val is None for val in parent_dict.values()):
+        parent_dict = None
+
+    return rank_models(
+        base_model,
+        base_res,
+        models,
+        models_res,
+        parent_dict=parent_dict,
+        strictness=strictness,
+        rank_type=rank_type,
+        cutoff=cutoff,
+        penalties=penalties,
+        **kwargs,
+    )
+
+
 def rank_models(
     base_model: Model,
     base_model_res: ModelfitResults,
