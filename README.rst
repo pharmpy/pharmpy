@@ -37,8 +37,9 @@ Features include:
   estimates, relative standard errors (RSEs), residuals, predictions
 * **Functions for manipulation of models and datasets** in the modeling-module: e.g. change structural model, add
   time-after-dose column, add covariate effects
-* **Tools to aid model development** in the tools-module: execution of models within Python/R scripts, automatic
-  development of models (e.g. AMD, IIVSearch, RUVSearch), comparison of estimation methods
+* **Tools for automated model development**: building various aspects (structural, iiv, iov, ruv, covariates, ...) of PK, PKPD, TMDD and drug-metabolite models automatically
+* **Tools to aid model development** in the tools-module: execution of models within Python/R scripts, bootstrap, 
+  comparison of estimation methods
 * **Simplify scripting** of workflows. Makes it possible to run scripts including calls to long running tools multiple times without having to rerun already finished tool runs.
 * Support for **multiple estimation tools**: parse NONMEM models, execute NONMEM, nlmixr2, and rxODE2 models, run all
   Pharmpy tools with NONMEM and some with nlmixr2
