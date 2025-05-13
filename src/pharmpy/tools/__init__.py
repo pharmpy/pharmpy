@@ -29,6 +29,7 @@ __all__ = (
     'run_linearize',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelfit',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelsearch',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_rank',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_retries',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_ruvsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_structsearch',  # pyright: ignore [reportUnsupportedDunderAll]
