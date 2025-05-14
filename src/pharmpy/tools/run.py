@@ -235,6 +235,8 @@ def run_tool_with_name(
     dispatcher = Dispatcher.select_dispatcher(dispatching_options['dispatcher'])
     ctx = get_context(dispatching_options, tool_name)
 
+    create_workflow = tool.create_workflow
+
     if ctx.has_started():
         if ctx.has_completed():
             tool_params = inspect.signature(tool.create_workflow).parameters
@@ -244,7 +246,14 @@ def run_tool_with_name(
                 ctx.retrieve_metadata(), tool_params, tool_param_types, ctx
             )
 
-            if tool_options != prev_tool_options:
+            tool_metadata = _create_metadata_tool(
+                ctx, tool_name, create_workflow, args, tool_options
+            )
+            new_tool_options = _parse_tool_options_from_json_metadata(
+                tool_metadata, tool_params, tool_param_types, ctx
+            )
+
+            if new_tool_options != prev_tool_options:
                 raise DispatchingError(
                     "The arguments to the tool are different from the first time "
                     "it was run. "
@@ -264,8 +273,6 @@ def run_tool_with_name(
         'name': str(ctx.name),
         'ref': str(ctx.ref),
     }
-
-    create_workflow = tool.create_workflow
 
     tool_metadata = create_metadata(
         database=ctx,
