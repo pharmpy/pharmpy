@@ -3,6 +3,14 @@ News
 ====
 
 
+Pharmpy and pharmr 1.7.1 released
+---------------------------------
+
+*2025-05-14* --- A problematic issue with the rerun functionality surfaced and therefore we released Pharmpy 1.7.1 and pharmr 1.7.1 with a fix.
+
+See :ref:`CHANGELOG<1.7.1>` for (slightly more) details.
+
+
 Pharmpy and pharmr 1.7.0 released
 ---------------------------------
 

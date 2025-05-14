@@ -1,3 +1,13 @@
+.. _1.7.1:
+
+1.7.1 (2025-05-14)
+------------------
+
+Bugfixes
+========
+
+* Fix issue causing default values of options not to be used when detecting if a tool run is run with the same options or not
+ 
 .. _1.7.0:
 
 1.7.0 (2025-05-12) 
