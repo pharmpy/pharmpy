@@ -8,7 +8,7 @@ import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Union, get_type_hints
+from typing import Any, Optional, Union, get_args, get_origin, get_type_hints
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -456,24 +456,35 @@ def _parse_tool_options_from_json_metadata(
                 f'Cannot resume run because model argument "{model_key}" cannot be restored.'
             )
 
-        assert model_metadata['__class__'] == 'Model'
-        model_hash = model_metadata['key']
+        if isinstance(model_metadata, dict):
+            assert model_metadata['__class__'] == 'Model'
+            model_hashes = [model_metadata['key']]
+        else:
+            assert all(entry['__class__'] == 'Model' for entry in model_metadata)
+            model_hashes = [entry['key'] for entry in model_metadata]
 
-        try:
-            model = db.retrieve_model(model_hash)
-        except KeyError:
-            raise ValueError(
-                f'Cannot resume run because model argument "{model_key}" ({model_hash}) cannot be restored.'
-            )
+        models = []
+        for model_hash in model_hashes:
+            try:
+                models.append(db.retrieve_model(model_hash))
+            except KeyError:
+                raise ValueError(
+                    f'Cannot resume run because model argument "{model_key}" ({model_hash}) cannot be restored.'
+                )
+
         tool_options = tool_options.copy()
-        tool_options[model_key] = model
+        tool_options[model_key] = models[0] if isinstance(model_metadata, dict) else models
 
     # NOTE: Load results to memory
     for results_key in _results_param_keys(tool_params, tool_param_types):
         results_json = tool_options.get(results_key)
         if results_json is not None:
             tool_options = tool_options.copy()
-            tool_options[results_key] = db.retrieve_modelfit_results(results_json["key"])
+            if isinstance(results_json, dict):
+                results = db.retrieve_modelfit_results(results_json["key"])
+            else:
+                results = [db.retrieve_modelfit_results(res["key"]) for res in results_json]
+            tool_options[results_key] = results
 
     return tool_options
 
@@ -539,13 +550,13 @@ def _store_input_models(db, metadata, tool_params, kwargs):
     previous_arg = None
     for arg in tool_params.keys():
         current = kwargs.get(arg, None)
-        if isinstance(current, (Model, ModelfitResults)):
+        if _is_model_arg(current) or _is_results_arg(current):
             if previous is None:
                 previous = current
                 previous_arg = arg
             else:
-                previous_is_model = isinstance(previous, Model)
-                current_is_model = isinstance(current, Model)
+                previous_is_model = _is_model_arg(previous)
+                current_is_model = _is_model_arg(current)
                 if previous_is_model and not current_is_model:
                     _store_model_and_results(db, metadata, previous_arg, previous, arg, current)
                     previous = None
@@ -563,22 +574,48 @@ def _store_input_models(db, metadata, tool_params, kwargs):
         _store_model(db, metadata, previous_arg, previous)
 
 
+def _is_model_arg(model_or_list_of_models):
+    return isinstance(model_or_list_of_models, Model) or (
+        isinstance(model_or_list_of_models, list) and isinstance(model_or_list_of_models[0], Model)
+    )
+
+
+def _is_results_arg(results_or_list_of_results):
+    return isinstance(results_or_list_of_results, ModelfitResults) or (
+        isinstance(results_or_list_of_results, list)
+        and isinstance(results_or_list_of_results[0], ModelfitResults)
+    )
+
+
 def _store_model_and_results(
-    db: ModelDatabase, metadata, model_arg: str, model: Model, results_arg, results: ModelfitResults
+    db: ModelDatabase,
+    metadata: dict,
+    model_arg: str,
+    model: Union[Model, list[Model]],
+    results_arg,
+    results: Union[ModelfitResults, list[ModelfitResults]],
 ):
-    me = ModelEntry.create(model=model, modelfit_results=results)
-    with db.transaction(me) as txn:
-        txn.store_model()
-        txn.store_modelfit_results()
-        dbkey = str(txn.key)
-        metadata['tool_options'][model_arg] = {
-            '__class__': 'Model',
-            'key': dbkey,
-        }
-        metadata['tool_options'][results_arg] = {
-            '__class__': 'ModelfitResults',
-            'key': dbkey,
-        }
+    list_of_models = [model] if isinstance(model, Model) else model
+    list_of_results = [results] if isinstance(results, ModelfitResults) else results
+
+    dbkeys = []
+    for m, res in zip(list_of_models, list_of_results):
+        me = ModelEntry.create(model=m, modelfit_results=res)
+        with db.transaction(me) as txn:
+            txn.store_model()
+            txn.store_modelfit_results()
+            dbkey = str(txn.key)
+            dbkeys.append(dbkey)
+
+    model_metadata = [{'__class__': 'Model', 'key': dbkey} for dbkey in dbkeys]
+    results_metadata = [{'__class__': 'ModelfitResults', 'key': dbkey} for dbkey in dbkeys]
+
+    metadata['tool_options'][model_arg] = (
+        model_metadata[0] if isinstance(model, Model) else model_metadata
+    )
+    metadata['tool_options'][results_arg] = (
+        results_metadata[0] if isinstance(results, ModelfitResults) else results_metadata
+    )
 
 
 def _store_model(db: ModelDatabase, metadata, arg: str, model: Model):
@@ -605,10 +642,14 @@ def _create_metadata_common(
 
 
 def _filter_params(kind, params, types):
+    if get_origin(kind) is Union:
+        kind = get_args(kind)
+    else:
+        kind = tuple()
     for i, param_key in enumerate(params):
         param = params[param_key]
         param_type = types.get(param_key)
-        if param_type in (kind, Optional[kind]):
+        if param_type in (*kind, *(Optional[k] for k in kind)):
             # NOTE: We do not handle *{param_key}, or **{param_key}
             assert param.kind != param.VAR_POSITIONAL
             assert param.kind != param.VAR_KEYWORD
@@ -616,12 +657,14 @@ def _filter_params(kind, params, types):
 
 
 def _input_model_param_keys(params, types):
-    for _, param_key in _filter_params(Model, params, types):
+    for _, param_key in _filter_params(Union[Model, list[Model]], params, types):
         yield param_key
 
 
 def _results_param_keys(params, types):
-    for _, param_key in _filter_params(ModelfitResults, params, types):
+    for _, param_key in _filter_params(
+        Union[ModelfitResults, list[ModelfitResults]], params, types
+    ):
         yield param_key
 
 
