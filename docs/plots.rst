@@ -47,3 +47,4 @@ To have different limits for the plots, set ``"resolve": {"scale": {"x": "indepe
     "resolve": {"scale": {"x": "shared"}},
     ...
 
+
