@@ -19,6 +19,7 @@ from pharmpy.modeling import (
     read_model,
     remove_iiv,
     remove_iov,
+    set_initial_estimates,
     set_lower_bounds,
     set_seq_zo_fo_absorption,
     set_zero_order_absorption,
@@ -76,6 +77,42 @@ def test_create_metadata_tool(tmp_path, testdata, load_model_for_test, kwargs):
         assert 'key' in metadata['tool_options']['model']
         assert metadata['tool_options']['rank_type'] == 'bic'
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
+
+
+def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_test):
+    with chdir(tmp_path):
+        tool_name = 'rank'
+        database = LocalDirectoryContext(tool_name)
+        tool = import_tool(tool_name)
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+        results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+
+        models = [set_initial_estimates(model, {'TVCL': float(i)}) for i in range(5)]
+
+        kwargs = {
+            'model_ref': model,
+            'results_ref': results,
+            'models_cand': models,
+            'results_cand': [results] * 5,
+        }
+        metadata = _create_metadata_tool(
+            database=database,
+            tool_name=tool_name,
+            tool_func=tool.create_workflow,
+            args=tuple(),
+            kwargs=kwargs,
+        )
+
+        rundir = tmp_path / 'rank'
+
+        assert (rundir / 'models').exists()
+
+        assert metadata['tool_options']['model_ref']['__class__'] == 'Model'
+        assert 'key' in metadata['tool_options']['model_ref']
+        assert isinstance(metadata['tool_options']['models_cand'], list)
+        assert len(metadata['tool_options']['models_cand']) == len(models)
+        assert metadata['tool_options']['models_cand'][0]['__class__'] == 'Model'
+        assert 'key' in metadata['tool_options']['models_cand'][0]
 
 
 def test_create_metadata_tool_not_raises(tmp_path, testdata, load_model_for_test):
