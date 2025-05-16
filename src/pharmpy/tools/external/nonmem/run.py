@@ -181,7 +181,7 @@ def nmfe_path():
         for nmfe in nmfe_candidates:
             candidate_path = shutil.which(nmfe)
             if candidate_path is not None:
-                path = candidate_path
+                path = Path(candidate_path)
                 break
         else:
             with warnings.catch_warnings():
