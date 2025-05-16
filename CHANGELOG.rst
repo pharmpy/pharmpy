@@ -1,3 +1,14 @@
+.. _1.7.2:
+
+1.7.2 (2025-05-19)
+------------------
+
+Bugfixes
+========
+
+* Fix crash when using nmfe in PATH when running NONMEM
+* Fix bug causing metadata to not have proper serialization of models and results for input arguments causing rerunning to crash
+
 .. _1.7.1:
 
 1.7.1 (2025-05-14)
