@@ -78,7 +78,7 @@ pyzmq==26.4.0
 referencing==0.36.2
 requests==2.32.3
 rich==14.0.0
-rpds-py==0.24.0
+rpds-py==0.25.0
 scipy==1.15.3
 six==1.17.0
 snowballstemmer==3.0.1
