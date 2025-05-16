@@ -528,7 +528,7 @@ def _create_metadata_tool(
 
     if tool_name != 'modelfit':
         db = database.model_database
-        _store_input_models(db, tool_metadata, tool_params, kwargs)
+        _store_input_models(db, tool_metadata, tool_params, tool_metadata['tool_options'])
 
     return tool_metadata
 
