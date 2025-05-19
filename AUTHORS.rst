@@ -31,6 +31,7 @@ All developers past and present
 * Viktor Rognås
 * David Sjöberg
 * Peng Man
+* Ezra Lu
 
 All scientific team members past and present
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
