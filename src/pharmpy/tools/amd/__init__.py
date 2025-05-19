@@ -1,3 +1,3 @@
-from .run import create_workflow
+from .run import create_workflow, validate_input
 
-__all__ = ['create_workflow']
+__all__ = ['create_workflow', 'validate_input']
