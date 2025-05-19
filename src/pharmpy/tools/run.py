@@ -316,8 +316,9 @@ def run_tool_with_name(
         or res is None
     )
 
-    tool_metadata = _update_metadata(tool_metadata)
-    ctx.store_metadata(tool_metadata)
+    if res is not None:
+        tool_metadata = _update_metadata(tool_metadata)
+        ctx.store_metadata(tool_metadata)
 
     ctx.finalize()
 

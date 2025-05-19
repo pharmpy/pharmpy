@@ -8,6 +8,7 @@ Bugfixes
 
 * Fix crash when using nmfe in PATH when running NONMEM
 * Fix bug causing metadata to not have proper serialization of models and results for input arguments causing rerunning to crash
+* Fix bug when end time is added to metadata at workflow abort
 
 .. _1.7.1:
 
