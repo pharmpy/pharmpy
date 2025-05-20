@@ -25,8 +25,8 @@ def _model_count(rundir: Path):
             {
                 'modeltype': 'basic_pk',
                 'administration': 'iv',
-                'cl_init': 1,
-                'vc_init': 10,
+                'cl_init': 1.0,
+                'vc_init': 10.0,
                 'occasion': 'VISI',
             },
             {'strategy': 'default', 'retries_strategy': 'skip'},
@@ -46,8 +46,8 @@ def _model_count(rundir: Path):
             {
                 'modeltype': 'basic_pk',
                 'administration': 'iv',
-                'cl_init': 1,
-                'vc_init': 10,
+                'cl_init': 1.0,
+                'vc_init': 10.0,
                 'occasion': 'VISI',
             },
             {'strategy': 'reevaluation', 'retries_strategy': 'skip'},
