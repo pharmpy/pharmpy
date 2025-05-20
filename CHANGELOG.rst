@@ -10,6 +10,10 @@ Bugfixes
 * Fix bug causing metadata to not have proper serialization of models and results for input arguments causing rerunning to crash
 * Fix bug when end time is added to metadata at workflow abort
 * Handle metadata and resume functionality for :code:`fit()`
+* Readd input validation for :code:`run_amd`
+* pharmr: Make return values invisible in case of a critical error when running a tool
+* pharmr: Previous errors could sometimes be shadowing current errors. Fixed by clearing last Python error.
+* pharmr: Give proper error message for :code:`DispatchingError`
 
 .. _1.7.1:
 
