@@ -14,6 +14,7 @@ Bugfixes
 * pharmr: Make return values invisible in case of a critical error when running a tool
 * pharmr: Previous errors could sometimes be shadowing current errors. Fixed by clearing last Python error.
 * pharmr: Give proper error message for :code:`DispatchingError`
+* Fix crash when using version 2.4.0 of direct dependecy itables
 
 .. _1.7.1:
 

@@ -214,4 +214,9 @@ def display_table(df, format=None, remove_nan_columns=True):
 
     from itables import show
 
-    show(styler, buttons=["copyHtml5", "csvHtml5"], style='width: fit-content; float: left;')
+    show(
+        styler,
+        buttons=["copyHtml5", "csvHtml5"],
+        style='width: fit-content; float: left',
+        allow_html=True,
+    )
