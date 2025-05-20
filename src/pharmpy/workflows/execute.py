@@ -51,7 +51,7 @@ def execute_workflow(
     workflow = Workflow(wb)
 
     res: T = dispatcher.run(workflow, context)
-    if isinstance(res, Results) and not isinstance(res, ModelfitResults):
+    if isinstance(res, Results):
         handle_results(res, context)
 
     return res

@@ -358,7 +358,7 @@ class Results(Immutable):
                 continue
             elif isinstance(value, ModelfitResults):
                 continue
-            elif isinstance(value, list) and isinstance(value[0], Model):
+            elif isinstance(value, list) and len(value) > 0 and isinstance(value[0], Model):
                 continue
             s += f'{key}\n'
             if isinstance(value, pd.DataFrame):

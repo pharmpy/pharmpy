@@ -95,9 +95,7 @@ def fit(
 
     """
     single, models = (
-        (True, [model_or_models])
-        if isinstance(model_or_models, Model)
-        else (False, model_or_models)
+        (True, model_or_models) if isinstance(model_or_models, Model) else (False, model_or_models)
     )
 
     if not context:
@@ -527,9 +525,8 @@ def _create_metadata_tool(
 
         tool_metadata['tool_options'][name] = value
 
-    if tool_name != 'modelfit':
-        db = database.model_database
-        _store_input_models(db, tool_metadata, tool_params, tool_metadata['tool_options'])
+    db = database.model_database
+    _store_input_models(db, tool_metadata, tool_params, tool_metadata['tool_options'])
 
     return tool_metadata
 
