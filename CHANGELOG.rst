@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Support for AArch64 (ARM64) on Linux added
+
 .. _1.7.2:
 
 1.7.2 (2025-05-21)
