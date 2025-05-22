@@ -17,13 +17,15 @@ jobs:
   unit:
     strategy:
       matrix:
-        platform: [ubuntu-24.04, ubuntu-24.04-arm, macos-13, macos-14, windows-2022]
+        platform: [ubuntu-24.04, macos-13, macos-14, windows-2022]
         python-version: ['3.11', '3.12', '3.13']
         include:
           - tox-env: 'unit'
           - python-version: '3.13'
             platform: 'ubuntu-24.04'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
+          - python-version: '3.13'
+            platform: 'ubuntu-24-04-arm'
 
     runs-on: ${{ matrix.platform }}
 
