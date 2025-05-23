@@ -99,7 +99,7 @@ sympy==1.13.3
 tblib==3.1.0
 tinycss2==1.4.0
 toolz==1.0.0
-tornado==6.5
+tornado==6.5.1
 traitlets==5.14.3
 typing-extensions==4.13.2
 tzdata==2025.2
