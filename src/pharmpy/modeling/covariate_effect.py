@@ -34,7 +34,7 @@ EffectType = Union[Literal['lin', 'cat', 'cat2', 'piece_lin', 'exp', 'pow'], str
 OperationType = Literal['*', '+']
 
 
-def get_covariate_effects(model: Model) -> dict[list]:
+def get_covariate_effects(model: Model) -> dict:
     """Return a dictionary of all used covariates within a model
 
     The dictionary will have parameter name as key with a connected value as
@@ -81,13 +81,15 @@ def _get_covariate_effect(model: Model, symbol, covariate):
     elif isinstance(param_expr, sympy.Add):
         op = "+"
     else:
-        # Do nothing ?
-        pass
+        # This shouldn't happen
+        assert False
 
+    cov_effect = None
     cov_expression = None
     perform_matching = False
     for arg in param_expr.args:
         check_covariate = False
+        expression = None
         free_symbols = arg.free_symbols
         if any(eta in free_symbols for eta in etas):
             if Expr(arg).is_exp() and covariate in free_symbols:
@@ -107,7 +109,7 @@ def _get_covariate_effect(model: Model, symbol, covariate):
             check_covariate = True
             expression = arg
 
-        if check_covariate:
+        if check_covariate and expression is not None:
             if covariate in free_symbols:
                 cov_expression = expression
                 # Need at least one theta to perform matching
@@ -163,7 +165,10 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
         if key == "cov":
             covariate = sympy.Symbol(covariate)
             if all(value in match.keys() for value in values):
-                if all(match[value] not in [covariate, 1 / covariate] for value in values):
+                if all(
+                    match[value] not in [covariate, sympy.Integer(1) / covariate]
+                    for value in values
+                ):
                     return False
         if key == "median":
             if all(value in match.keys() for value in values):
@@ -247,7 +252,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     kept_parameters = model.random_variables.free_symbols.union(
         kept_thetas, model.statements.after_odes.free_symbols
     )
-    parameters = Parameters.create((p for p in model.parameters if p.symbol in kept_parameters))
+    parameters = Parameters.create([p for p in model.parameters if p.symbol in kept_parameters])
     model = model.replace(statements=statements, parameters=parameters)
 
     return model.update_source()
@@ -309,7 +314,7 @@ def add_covariate_effect(
             .. math::
 
                 \\text{coveff} = \\text{theta}
-
+    cov_effect = None
         - Init: 0.001
         - Upper: 6
         - Lower: 0
@@ -427,6 +432,7 @@ def add_covariate_effect(
         mu_symbol = get_mu_connected_to_parameter(model, parameter)
         last_existing_parameter_assignment = sset.find_assignment(mu_symbol)
     else:
+        mu_symbol = None
         last_existing_parameter_assignment = sset.find_assignment(parameter)
     assert last_existing_parameter_assignment is not None
     insertion_index = sset.index(last_existing_parameter_assignment) + 1
@@ -445,9 +451,11 @@ def add_covariate_effect(
         Expr.symbol(f'{parameter}{col_name}') for col_name in model.datainfo.names
     }
 
-    if has_mu_reference(model):
+    if mu_symbol is not None:
         mu_assignment = sset.find_assignment(mu_symbol)
+        assert mu_assignment is not None
         parameter_assignment = sset.find_assignment(parameter)
+        assert parameter_assignment is not None
 
         index = {Expr.symbol(eta): i for i, eta in enumerate(model.random_variables.etas.names, 1)}
         etas = set(index)
@@ -709,15 +717,21 @@ class CovariateEffect:
         template_str = [str(symbol) for symbol in self.template.free_symbols]
 
         if 'mean' in template_str:
-            self.template = self.template.subs({'mean': f'{covariate}_MEAN'})
+            self.template = self.template.subs(
+                {Expr.symbol('mean'): Expr.symbol(f'{covariate}_MEAN')}
+            )
             s = Assignment.create(Expr.symbol(f'{covariate}_MEAN'), statistics['mean'])
             self.statistic_statements.append(s)
         if 'median' in template_str:
-            self.template = self.template.subs({'median': f'{covariate}_MEDIAN'})
+            self.template = self.template.subs(
+                {Expr.symbol('median'): Expr.symbol(f'{covariate}_MEDIAN')}
+            )
             s = Assignment.create(Expr.symbol(f'{covariate}_MEDIAN'), statistics['median'])
             self.statistic_statements.append(s)
         if 'std' in template_str:
-            self.template = self.template.subs({'std': f'{covariate}_STD'})
+            self.template = self.template.subs(
+                {Expr.symbol('std'): Expr.symbol(f'{covariate}_STD')}
+            )
             s = Assignment.create(Expr.symbol(f'{covariate}_STD'), statistics['std'])
             self.statistic_statements.append(s)
 
