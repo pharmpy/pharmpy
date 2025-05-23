@@ -117,6 +117,10 @@ def add_allometry(
                     initials.append(0.75)
                 elif p in vcs:
                     initials.append(1.0)
+                else:
+                    raise ValueError(
+                        f"Parameter {p} could not be mapped to CL/Q or V: argument `initials` must be provided"
+                    )
 
     if not parsed_parameters:
         raise ValueError("No parameters provided")

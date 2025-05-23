@@ -60,6 +60,12 @@ def test_allometry(load_model_for_test, testdata):
     with pytest.raises(ValueError):
         add_allometry(model, allometric_variable='WGT', reference_value=70, parameters=[])
 
+    bw_col = model.datainfo.descriptorix["body weight"][0].replace(descriptor=None)
+    di = model.datainfo.set_column(bw_col)
+    model_2 = model.replace(datainfo=di)
+    with pytest.raises(ValueError):
+        add_allometry(model_2, allometric_variable=None)
+
     model = add_allometry(
         ref_model,
         allometric_variable='WGT',
@@ -119,6 +125,31 @@ def test_allometry(load_model_for_test, testdata):
         lower_bounds=[0],
         upper_bounds=[1],
     )
+
+    model = add_allometry(
+        ref_model,
+        allometric_variable='WGT',
+        reference_value=70,
+    )
+
+    assert model.statements[1] == Assignment.create('CL', 'CL*(WGT/70)**ALLO_CL')
+    assert model.parameters['ALLO_CL'].init == 0.75
+    assert model.parameters['ALLO_CL'].lower == 0
+    assert model.parameters['ALLO_CL'].upper == 2
+    assert model.parameters['ALLO_V'].init == 1.0
+    assert model.parameters['ALLO_V'].lower == 0
+    assert model.parameters['ALLO_V'].upper == 2
+
+    model = add_allometry(
+        ref_model, allometric_variable='WGT', reference_value=70, initials=[0.6, 0.6]
+    )
+
+    assert model.statements[1] == Assignment.create('CL', 'CL*(WGT/70)**ALLO_CL')
+    assert model.parameters['ALLO_CL'].init == 0.6
+    assert model.parameters['ALLO_V'].init == 0.6
+
+    with pytest.raises(ValueError):
+        add_allometry(model, allometric_variable='WGT', reference_value=70, parameters=['X'])
 
 
 def test_add_allometry_tmdd(pheno_path, load_model_for_test):
