@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import math
 from itertools import chain
-from typing import Iterable, Literal, Mapping, Optional, Union
+from typing import Iterable, Literal, Mapping, Optional, Sequence, Union
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import BooleanExpr, Expr
@@ -475,6 +475,7 @@ def calculate_pk_parameters_statistics(
         ode_list = sympy.sympify(ode_list)
         ics = sympy.sympify(ics)
         sols = sympy.dsolve(ode_list, ics=ics)
+        assert isinstance(sols, Sequence)
         expr = sols[1].rhs
         d = sympy.diff(expr, odes.t)
         tmax_closed_form = sympy.solve(d, odes.t)[0]
@@ -498,6 +499,7 @@ def calculate_pk_parameters_statistics(
         ic = sympy.Function(elimination_system.amounts[0].name)(0)
         A0 = sympy.Symbol('A0')
         sols = sympy.dsolve(eq, ics={ic: A0})
+        assert isinstance(sols, sympy.Eq)
         eq_half = sympy.Eq(sympy.Rational(1, 2) * A0, sols.rhs)
         thalf_elim = sympy.solve(eq_half, odes.t)[0]
         expressions.append(sympy.Eq(sympy.Symbol('t_half_elim'), thalf_elim))
@@ -508,6 +510,7 @@ def calculate_pk_parameters_statistics(
         ode_list = sympy.sympify(ode_list)
         ics = sympy.sympify(ics)
         sols = sympy.dsolve(ode_list, ics=ics)
+        assert isinstance(sols, Sequence)
         A = sympy.Wild('A')
         B = sympy.Wild('B')
         alpha = sympy.Wild('alpha')
