@@ -136,8 +136,8 @@ General arguments
 |                                                   | For more information about these methods see                                                                    |
 |                                                   | :py:func:`here<pharmpy.model.EstimationStep.parameter_uncertainty_method>`.                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``ignore_datainfo_fallback``                      | Decide wether or not to use connected datainfo object to infer information about the model. If True, all        |
-|                                                   | information regarding the model must be given explicitly by the user, such as the allometric varible. If False, |
+| ``ignore_datainfo_fallback``                      | Decide whether or not to use connected datainfo object to infer information about the model. If True, all        |
+|                                                   | information regarding the model must be given explicitly by the user, such as the allometric variable. If False, |
 |                                                   | such information is extracted using the datainfo, in the absence of arguments given by the user. Default        |
 |                                                   | is False.                                                                                                       |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
@@ -198,7 +198,7 @@ For a PK oral model, the default is:
     COVARIATE?(@IIV, @CONTINUOUS, *)
     COVARIATE?(@IIV, @CATEGORICAL, CAT)
 
-Note that defaults are overriden selectively: structural model features
+Note that defaults are overridden selectively: structural model features
 defaults will be ignored as soon as one structural model feature is explicitly
 given, but the covariate model defaults will stay in place, and vice versa. For
 instance, if one defines ``search_space`` as ``LAGTIME(ON)``, the effective
@@ -266,7 +266,7 @@ reevaluation
 ~~~~~~~~~~~~
 
 The reevaluation strategy is an extension of the 'default' strategy. It is defined by the re-running
-of IIVsearch and RUVsearch. This indicate that the tool follow the exact same principles
+of IIVsearch and RUVsearch. This indicates that the tool follows the exact same principles
 and the workflow hence is dependent on the model type in question.
 
 The general order of subtools hence become:
