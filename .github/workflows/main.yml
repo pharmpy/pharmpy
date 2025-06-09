@@ -17,25 +17,40 @@ jobs:
   unit:
     strategy:
       matrix:
-        platform: [ubuntu-24.04, ubuntu-24.04-arm, macos-13, macos-14, windows-2022]
-        python-version: ['3.11', '3.12', '3.13']
         include:
-          - tox-env: 'unit'
+          - python-version: '3.11'
+            platform: 'ubuntu-24.04'
+            tox-env: 'unit'
+          - python-version: '3.12'
+            platform: 'ubuntu-24.04'
+            tox-env: 'unit'
           - python-version: '3.13'
             platform: 'ubuntu-24.04'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
+          - platform: 'windows-2022'
+            python-version: '3.11'
+            tox-env: 'unit'
+          - platform: 'windows-2022'
+            python-version: '3.12'
+            tox-env: 'unit'
           - platform: 'windows-2025'
             python-version: '3.13'
             tox-env: 'unit'
-        exclude:
-          - python-version: '3.12'
-            platform: 'ubuntu-24.04-arm'
-          - python-version: '3.11'
-            platform: 'ubuntu-24.04-arm'
-          - python-version: '3.12'
-            platform: 'macos-13'
-          - python-version: '3.11'
-            platform: 'macos-13'
+          - platform: 'ubuntu-24.04-arm'
+            python-version: '3.13'
+            tox-env: 'unit'
+          - platform: 'macos-13'
+            python-version: '3.13'
+            tox-env: 'unit'
+          - platform: 'macos-14'
+            python-version: '3.11'
+            tox-env: 'unit'
+          - platform: 'macos-14'
+            python-version: '3.12'
+            tox-env: 'unit'
+          - platform: 'macos-15'
+            python-version: '3.13'
+            tox-env: 'unit'
 
     runs-on: ${{ matrix.platform }}
 
