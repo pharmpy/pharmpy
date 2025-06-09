@@ -24,8 +24,9 @@ jobs:
           - python-version: '3.13'
             platform: 'ubuntu-24.04'
             tox-env: ${{ github.actor != 'dependabot[bot]' && 'unit-cover' || 'unit' }}
-          - python-version: '3.13'
-            platform: 'windows-2025'
+          - platform: 'windows-2025'
+            python-version: '3.13'
+            tox-env: 'unit'
         exclude:
           - python-version: '3.12'
             platform: 'ubuntu-24.04-arm'
