@@ -6,6 +6,7 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import convert_model, create_basic_pk_model, filter_dataset
 from pharmpy.tools import fit, run_structsearch
+from pharmpy.tools.mfl.parse import parse as mfl_parse
 
 
 def test_pkpd(tmp_path, load_model_for_test, testdata):
@@ -83,4 +84,39 @@ def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands
         )
 
         assert len(res.summary_tool) == no_of_cands + 2
+        assert len(res.summary_models) == no_of_cands + 1
+
+
+@pytest.mark.parametrize(
+    'kwargs, as_mfl, no_of_cands',
+    [
+        ({'search_space': 'METABOLITE([PSC, BASIC])'}, True, 2),
+        ({'search_space': 'METABOLITE([PSC, BASIC])'}, False, 2),
+    ],
+)
+def test_drug_metabolite_dummy(
+    tmp_path, load_model_for_test, testdata, kwargs, as_mfl, no_of_cands
+):
+    with chdir(tmp_path):
+        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = convert_model(model, 'nonmem')
+        pk_res = fit(model, esttool='dummy')
+
+        if as_mfl:
+            mfl = mfl_parse(kwargs['search_space'], mfl_class=True)
+        else:
+            mfl = kwargs['search_space']
+
+        kwargs['search_space'] = mfl
+        res = run_structsearch(
+            type='drug_metabolite',
+            results=pk_res,
+            model=model,
+            esttool='dummy',
+            search_space=mfl,
+        )
+
+        print(res.summary_tool)
+
+        assert len(res.summary_tool) == no_of_cands
         assert len(res.summary_models) == no_of_cands + 1

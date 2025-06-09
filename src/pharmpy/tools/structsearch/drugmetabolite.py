@@ -16,6 +16,8 @@ def create_drug_metabolite_models(
 
     if isinstance(search_space, str):
         mfl_statements = mfl_parse(search_space, True)
+    else:
+        mfl_statements = search_space
     metabolite_functions = mfl_statements.convert_to_funcs(
         attribute_type=["metabolite"], subset_features="metabolite"
     )
