@@ -285,6 +285,8 @@ def _is_allowed(feat_current, func_current, feat_previous, mfl_funcs):
         (('ABSORPTION', 'INST'), ('LAGTIME', 'ON')),
         (('ABSORPTION', 'INST'), ('TRANSITS',)),
         (('LAGTIME', 'ON'), ('TRANSITS',)),
+        (('ABSORPTION', 'WEIBULL'), ('TRANSITS',)),
+        (('ABSORPTION', 'WEIBULL'), ('LAGTIME', 'ON')),
     ]
     for feat_1, feat_2 in not_supported_combo:
         if any(
