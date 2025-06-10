@@ -203,6 +203,7 @@ def test_option_errors(parser, buf):
         ('$TABLE ID ETAS(3:1) TIME', 3, ['ID', 'ETA3', 'ETA2', 'ETA1', 'TIME']),
         ('$TABLE ID ETAS(4:1 BY -2) TIME', 4, ['ID', 'ETA4', 'ETA2', 'TIME']),
         ('$TABLE ID ETAS(1:4 BY -1) TIME', 4, ['ID', 'ETA4', 'ETA3', 'ETA2', 'ETA1', 'TIME']),
+        ('$TABLE NPDE NPDTYPE=1', 1, ['NPDE', 'NPDTYPE']),
     ],
 )
 def test_table_parsing(parser, buf, netas, correct):

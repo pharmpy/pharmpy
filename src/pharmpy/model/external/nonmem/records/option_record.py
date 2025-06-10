@@ -585,7 +585,11 @@ class EnumOpt(Opt):
         super().__init__(**kwargs)
 
     def convert_value(self, value):
-        enum = value.upper()
+        first_allowed = self.allowed[0]
+        if isinstance(first_allowed, int):
+            enum = int(value)
+        else:
+            enum = value.upper()
         if enum in self.allowed:
             return enum
         else:

@@ -4,7 +4,12 @@ next version
 New features
 ============
 
-* Support for AArch64 (ARM64) on Linux added
+* Support for Linux on AArch64 (ARM64) added
+
+Bugfixes
+========
+
+* Fix crash when parsing some numeric options in NONMEM $TABLE (For example NPDTYPE=1)
 
 .. _1.7.2:
 
