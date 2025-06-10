@@ -161,7 +161,7 @@ def get_rpath():
     if default_path != Path(''):
         path = default_path / 'bin' / r_candidate
         if not path.is_file():
-            raise FileNotFoundError(f'Cannot find R script for nlmixr exection ({default_path})')
+            raise FileNotFoundError(f'Cannot find R script for nlmixr execution ({default_path})')
     else:
         # Not in configuration file
         path = shutil.which(r_candidate)
