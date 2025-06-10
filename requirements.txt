@@ -76,7 +76,7 @@ pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation !
 PyYAML==6.0.2
 pyzmq==26.4.0
 referencing==0.36.2
-requests==2.32.3
+requests==2.32.4
 rich==14.0.0
 roman-numerals-py==3.1.0
 rpds-py==0.25.1

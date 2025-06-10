@@ -36,7 +36,7 @@ pycparser==2.22
 pyflakes==3.3.2
 Pygments==2.19.1
 pyproject_hooks==1.2.0
-requests==2.32.3
+requests==2.32.4
 requests-toolbelt==1.0.0
 rfc3986==2.0.0
 rich==14.0.0
