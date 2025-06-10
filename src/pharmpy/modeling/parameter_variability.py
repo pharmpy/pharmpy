@@ -113,9 +113,14 @@ def add_iiv(
     list_of_options = _format_options([expression, operation, eta_names], len(list_of_parameters))
     expression, operation, eta_names = list_of_options
 
-    if eta_names is not None:
-        if all(eta_name is None for eta_name in eta_names):
-            eta_names = None
+    if all(eta_name is None for eta_name in eta_names):
+        eta_names = None
+    elif None not in eta_names:
+        eta_names = eta_names
+    else:
+        raise ValueError(
+            f'Invalid `eta_names`: must be either names or all None for defaults, got {eta_names}'
+        )
 
     if not all(len(opt) == len(list_of_parameters) for opt in list_of_options if opt):
         raise ValueError(
@@ -511,6 +516,10 @@ def add_pd_iiv(model: Model, initial_estimate: float = 0.09):
     remove_iov
 
     """
+    # FIXME: fix when supporting pure PD models
+    if len(model.dependent_variables) == 1:
+        raise ValueError('Model must have more than one DVID')
+
     params_to_add_etas = [
         param for param in get_pd_parameters(model) if not has_random_effect(model, param, 'iiv')
     ]
@@ -667,18 +676,19 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None):
         new = []
         for s in sset:
             if eta_sym in s.free_symbols:
+                # FIXME: sympy used here since symengine cannot expand exponential expressions
+                #  e.g. exp(x + y)
                 expr = sympy.sympify(s.expression).expand()
-                if len(expr.args) == 0:
+                if len(expr.args) == 0 or (len(expr.args) == 1 and expr.func == sympy.exp):
                     new_s = s.subs({Expr(expr): 0})
-                elif len(expr.args) == 1 and expr.fun == sympy.exp:
-                    new_s = s.subs({eta_sym: 0})
                 else:
                     expr_subs = expr
                     for i in range(len(expr.args)):
                         if eta_sym in Expr(expr.args[i]).free_symbols:
-                            if expr.func == sympy.Mul:
+                            if expr.func == sympy.Mul or expr.func == sympy.Pow:
                                 expr_subs = expr_subs.subs({expr.args[i]: 1})
-                            elif expr.func == sympy.Add:
+                            else:
+                                assert expr.func == sympy.Add
                                 if len(expr.args[i].args) == 1 and expr.args[i].func == sympy.exp:
                                     expr_subs = expr_subs.subs({(expr.args[i]): 0})
                                 else:
@@ -1161,11 +1171,8 @@ def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
     if last_estimation_step.method == 'FO':
         return init_default
     elif individual_estimates is not None:
-        try:
-            ie = individual_estimates
-            if not all(eta in ie.columns for eta in etas):
-                return init_default
-        except KeyError:
+        ie = individual_estimates
+        if not all(eta in ie.columns for eta in etas):
             return init_default
         # NOTE: Use pd.corr() and not pd.cov(). SD is chosen from the final estimates, if cov is used
         # it will be calculated from the EBEs.

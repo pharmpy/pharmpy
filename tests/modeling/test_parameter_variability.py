@@ -6,17 +6,22 @@ from operator import add, mul
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.model import Assignment, NormalDistribution
+from pharmpy.model import Assignment, NormalDistribution, Parameter
 from pharmpy.modeling import (
     add_iiv,
     add_individual_parameter,
     add_iov,
+    add_pd_iiv,
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
+    fix_parameters,
     remove_iiv,
     remove_iov,
+    set_direct_effect,
     set_first_order_absorption,
     set_transit_compartments,
     set_zero_order_elimination,
@@ -30,6 +35,8 @@ from pharmpy.modeling.parameter_variability import (
     EtaAddition,
     EtaTransformation,
     _choose_cov_param_init,
+    _transform_etas,
+    get_occasion_levels,
 )
 from pharmpy.tools import read_modelfit_results
 
@@ -128,10 +135,29 @@ def test_add_iiv(
     assert '$OMEGA  0.09 ; IIV_' in str(omega_rec[-1])
 
 
-def test_add_iiv_missing_param(load_model_for_test, pheno_path):
+def test_add_iiv_raises(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     with pytest.raises(ValueError):
         add_iiv(model, 'non_existing_param', 'add')
+
+    with pytest.raises(ValueError):
+        add_iiv(model, ['S1'], expression=['add', 'add'])
+
+    with pytest.raises(ValueError):
+        add_iiv(model, ['V', 'S1'], 'add', eta_names=['x', None])
+
+
+def test_add_pd_iiv(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    model_pd = set_direct_effect(model, expr='linear')
+
+    model_pd_iiv = add_pd_iiv(model_pd)
+
+    assert len(model_pd_iiv.random_variables.names) == len(model_pd.random_variables.names) + 2
+    assert model_pd_iiv.random_variables == add_pd_iiv(model_pd_iiv).random_variables
+
+    with pytest.raises(ValueError):
+        add_pd_iiv(model)
 
 
 @pytest.mark.parametrize(
@@ -520,6 +546,28 @@ def test_add_iov_only_one_level(load_model_for_test, pheno_path):
 
 
 @pytest.mark.parametrize(
+    'values',
+    [
+        ([1, 2, 3]),
+        ([1.0, 2.0, 3.0]),
+        (['1', '2', '3']),
+        (['1.0', '2.0', '3.0']),
+        ([1, 2.0, '3.0']),
+    ],
+)
+def test_get_occasion_levels(values):
+    col_values = np.random.choice(values, size=100)
+    df = pd.DataFrame(col_values, columns=['occ'])
+    assert get_occasion_levels(df, 'occ') == [1, 2, 3]
+
+
+def test_get_occasion_levels_raises():
+    df = pd.DataFrame([True], columns=['occ'])
+    with pytest.raises(ValueError):
+        get_occasion_levels(df, 'occ')
+
+
+@pytest.mark.parametrize(
     'occ, params, new_eta_names, distribution, error, message',
     (
         (
@@ -674,6 +722,7 @@ def test_add_pk_iiv_1(load_model_for_test, pheno_path):
     model = add_pk_iiv(model)
     iivs = set(model.random_variables.iiv.names)
     assert iivs == {'ETA_1', 'ETA_2', 'ETA_KM', 'ETA_VP1', 'ETA_QP1'}
+    assert model.random_variables == add_pk_iiv(model).random_variables
 
 
 def test_add_pk_iiv_2(load_model_for_test, pheno_path):
@@ -836,7 +885,7 @@ def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
     assert model7.statements.find_assignment('Y') == model.statements.find_assignment('Y')
 
     model8 = add_iiv(model, 'Y', 'add')
-    model8 = remove_iiv(model7, 'Y')
+    model8 = remove_iiv(model8, 'Y')
     assert model8.statements.find_assignment('Y') == model.statements.find_assignment('Y')
 
     # Check that exp(ETA + IOV) becomes exp(IOV) after removing iiv
@@ -845,6 +894,36 @@ def test_remove_iiv2(load_model_for_test, testdata, iiv_type, operation):
     assert model.statements.find_assignment('CL') == Assignment(
         S('CL'), S('TVCL') * S('IOVCL').exp()
     )
+
+
+@pytest.mark.parametrize(
+    'func',
+    [
+        None,
+        Expr.exp,
+    ],
+)
+def test_remove_iiv_assignment(load_model_for_test, testdata, func):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+
+    param = Parameter.create('omega', 0.09)
+    eta = NormalDistribution.create('ETA_X', 'iiv', 0, param.symbol)
+    if func:
+        expr = func(Expr.symbol(eta.names[0]))
+    else:
+        expr = eta.names[0]
+    s = Assignment.create('X', expr)
+    s_new = model.statements.before_odes[-1]
+    expr_new = s_new.expression + s.symbol
+    sset = model.statements.reassign(s_new.symbol, expr_new)
+
+    params = [param] + model.parameters
+    rvs = [eta] + model.random_variables
+    sset = [s] + sset
+    model = model.replace(parameters=params, random_variables=rvs, statements=sset)
+
+    model = remove_iiv(model, 'ETA_X')
+    assert model.statements.find_assignment('X').expression == 0
 
 
 def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
@@ -1244,6 +1323,21 @@ def test_transform_etas_apply(eta_trans, symbol, expression):
     assert eta_trans.assignments[1].expression == expression
 
 
+def test_custom_eta_transformation(load_model_for_test, pheno_path):
+    symb = Expr.symbol('etan1')
+    expr = Expr.symbol('eta1') * 2
+    assignments = [Assignment.create(symb, expr)]
+    theta_type = 'lambda'
+
+    transformation = EtaTransformation('custom', assignments, theta_type)
+    assert str(transformation) == '[etan₁ = 2⋅η₁]'
+
+    model = load_model_for_test(pheno_path)
+    model = _transform_etas(model, transformation, ['ETA_1'])
+    model = model.update_source()
+    assert 'ETAN1 = 2*ETA(1)' in model.code
+
+
 @pytest.mark.parametrize(
     'etas, abbr_ref, omega_ref',
     [
@@ -1477,6 +1571,14 @@ def test_create_joint_distribution_nested(load_model_for_test, testdata, etas, a
     cov_params = {p.symbol for p in model.parameters if p.symbol.name.startswith('IIV')}
     assert all(p in model.random_variables.free_symbols for p in cov_params)
     assert not re.search(r'\$THETA\s+0\.\d+\s+;\s+IIV_', model.code)
+
+
+def test_create_joint_distribution_fixed_params(load_example_model_for_test):
+    moxo = load_example_model_for_test('moxo')
+    model = split_joint_distribution(moxo, ['ETA_1', 'ETA_2'])
+    model = fix_parameters(model, parameter_names=['OMEGA_1_1'])
+    model = create_joint_distribution(model, None)
+    assert len(model.random_variables.iiv[0].names) == len(moxo.random_variables.iiv[0].names) - 1
 
 
 @pytest.mark.parametrize(
