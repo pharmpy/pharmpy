@@ -2787,8 +2787,8 @@ def test_issue_2161(testdata, load_model_for_test, load_example_model_for_test):
 def test_set_weibull_absorption(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     model = set_weibull_absorption(model)
-    assert Expr.symbol('POP_BETA') in model.statements.before_odes.free_symbols
-    assert Expr.symbol('POP_ALPHA') in model.statements.before_odes.free_symbols
+    assert Expr.symbol('POP_K') in model.statements.before_odes.free_symbols
+    assert Expr.symbol('POP_LAMBDA') in model.statements.before_odes.free_symbols
 
 
 def test_has_weibull_absorption(load_example_model_for_test):

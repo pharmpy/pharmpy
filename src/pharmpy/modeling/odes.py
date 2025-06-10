@@ -1507,19 +1507,20 @@ def has_weibull_absorption(model: Model) -> bool:
 
 
 def set_weibull_absorption(model: Model) -> Model:
-    """Set or change to Weibull type absorption
+    r"""Set or change to Weibull type absorption
 
-    Initial estimate for absorption rate is set to??
+    The Weibull absorption has an abosption rate varying with time (or rather time after dose).
+    :math:`k_a(t) = (\frac{k}{\lambda} * (\frac{t}{\lambda}^{k - 1}`
 
-    If multiple doses is set to the affected compartment, currently only iv+oral
-    doses (one of each) is supported
+    Initial parameter estimates will be set as follows:
 
-    Weibull absorption cannot be used together with lag time and transit compartments.
 
-    Assumes that absorption of one does is done when next dose is given.
+    If multiple doses are fed into the affected compartment, currently only iv+oral
+    doses (one of each) is supported.
 
-    .. warning::
-        This function is still under development.
+    Weibull absorption cannot be used together with lag time or transit compartments.
+
+    Assumes that absorption of one dose is complete when the next dose is given.
 
     Parameters
     ----------
@@ -1562,16 +1563,16 @@ def set_weibull_absorption(model: Model) -> Model:
         init_mdt = None
 
     if init_mat is not None and init_mdt is None:
-        init_beta = 1.0
-        init_alpha = init_mat
+        init_k = 1.0
+        init_lambda = init_mat
     elif init_mdt is not None and init_mat is None:
-        init_beta = 1.0
-        init_alpha = init_mdt
+        init_k = 1.0
+        init_lambda = init_mdt
     else:
         if init_mat is None:
             init_mat = _get_absorption_init(model, "MAT")
-        init_beta = 1.5
-        init_alpha = init_mat / math.gamma(1.0 + 1.0 / init_beta)
+        init_k = 1.5
+        init_lambda = init_mat / math.gamma(1.0 + 1.0 / init_k)
 
     model = remove_lag_time(model)
     model = set_transit_compartments(model, 0, keep_depot=True)
@@ -1579,12 +1580,12 @@ def set_weibull_absorption(model: Model) -> Model:
     model = add_time_after_dose(model)
     tad = model.datainfo.descriptorix['time after dose'][0].symbol
 
-    alpha = Expr.symbol("ALPHA")
-    beta = Expr.symbol("BETA")
-    model = add_individual_parameter(model, alpha.name, init=init_alpha, lower=0.0)
-    model = add_individual_parameter(model, beta.name, init=init_beta, lower=0.0)
+    lmbda = Expr.symbol("LAMBDA")
+    k = Expr.symbol("K")
+    model = add_individual_parameter(model, lmbda.name, init=init_lambda, lower=0.0)
+    model = add_individual_parameter(model, k.name, init=init_k, lower=0.0)
 
-    ka = (beta / alpha) * (tad / alpha) ** (beta - 1)
+    ka = (k / lmbda) * (tad / lmbda) ** (k - 1)
 
     odes = get_and_check_odes(model)
 
