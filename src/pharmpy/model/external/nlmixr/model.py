@@ -168,18 +168,23 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
                             dependencies.update(dv_term.dependencies())
 
                             dv_term.create_res_alias()
-                            res_alias.update(dv_term.res_alias)
+                            ra = dv_term.res_alias
+                            assert ra is not None
+                            res_alias.update(ra)
                 else:
                     dv_term = res_error_term(model, s.expression)
                     dependencies.update(dv_term.dependencies())
 
                     dv_term.create_res_alias()
-                    res_alias.update(dv_term.res_alias)
+                    ra = dv_term.res_alias
+                    assert ra is not None
+                    res_alias.update(ra)
     else:
         dv_term = res_error_term(model, dv_statement.expression)
         dependencies = dv_term.dependencies()
         dv_term.create_res_alias()
         res_alias = dv_term.res_alias
+        assert res_alias is not None
 
     # Add bioavailability statements
     if model.statements.ode_system is not None:
@@ -225,7 +230,7 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     else:
         fix_eta = False
 
-    if [s.evaluation for s in model.execution_steps._steps][0] is True:
+    if [s.evaluation for s in model.execution_steps][0] is True:
         max_eval = 0
     else:
         max_eval = execution_steps.maximum_evaluations
