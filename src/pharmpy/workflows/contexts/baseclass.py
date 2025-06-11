@@ -310,10 +310,10 @@ class Context(ABC):
         res = self.dispatcher.call_workflow(workflow, unique_name, self)
         return res
 
-    def abort_workflow(self, message):
-        """Ask the dispatcher to abort the currently running workflow directly"""
-        self.log_message("critical", message)
-        self.dispatcher.abort_workflow()
+    @abstractmethod
+    def abort_workflow(self, message: str):
+        """Ask the dispatcher to abort the currently running workflow immediately"""
+        pass
 
     def has_started(self):
         """Check if the tool running in the context has started"""

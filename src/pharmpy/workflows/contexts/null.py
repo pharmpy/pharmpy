@@ -85,3 +85,6 @@ class NullContext(Context):
 
     def finalize(self):
         pass
+
+    def abort_workflow(self, msg):
+        pass

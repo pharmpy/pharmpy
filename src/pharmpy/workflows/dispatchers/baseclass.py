@@ -60,6 +60,8 @@ class Dispatcher(ABC):
 
     @abstractmethod
     def abort_workflow(self) -> None:
+        # It is not safe to call this more than once per dispatched workflow
+        # This is the responsibility of the Context
         pass
 
     @abstractmethod

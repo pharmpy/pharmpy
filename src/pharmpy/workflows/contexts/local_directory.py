@@ -312,6 +312,22 @@ class LocalDirectoryContext(Context):
     def finalize(self):
         self._delete_lock(self._annotations_path)
         self._delete_lock(self._log_path)
+        abort_path = self._top_path / 'aborting'
+        if abort_path.is_file():
+            self._delete_lock(abort_path)
+            abort_path.unlink()
+
+    def abort_workflow(self, message: str):
+        # We need to make sure to only abort once
+        path = self._top_path / 'aborting'
+        with self._write_lock(path):
+            if path.is_file():
+                # Aborting was already done
+                return
+            else:
+                path.touch()
+            self.log_message("critical", message)
+            self.dispatcher.abort_workflow()
 
 
 class MetadataJSONEncoder(json.JSONEncoder):
