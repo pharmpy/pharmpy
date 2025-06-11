@@ -10,6 +10,8 @@ Bugfixes
 ========
 
 * Fix crash when parsing some numeric options in NONMEM $TABLE (For example NPDTYPE=1)
+* Handle MFL as input to structsearch for drug metabolite (#3821) 
+* Fix seeds for simulations in NONMEM models to often get to big
 
 .. _1.7.2:
 
