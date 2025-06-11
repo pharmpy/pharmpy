@@ -1496,7 +1496,7 @@ def has_weibull_absorption(model: Model) -> bool:
     rate = odes.get_flow(depot, central)
     rate = model.statements.before_odes.full_expression(rate)
     if rate.is_piecewise():
-        rate = rate.args[1][0]
+        rate = rate.piecewise_args[1][0]
     else:
         return False
 
@@ -1597,7 +1597,7 @@ def set_weibull_absorption(model: Model) -> Model:
     model = add_individual_parameter(model, k.name, init=init_k, lower=0.0)
 
     expr = (k / lmbda) * (tad / lmbda) ** (k - 1)
-    ka = Expr.piecewise((Expr.integer(0), sympy.Eq(tad, 0)), (expr, sympy.true))
+    ka = Expr.piecewise((0.000001, sympy.Eq(tad, 0)), (expr, sympy.true))
 
     odes = get_and_check_odes(model)
 
