@@ -281,8 +281,16 @@ def run_amd_task(
     kwargs['input'] = model
     del kwargs['context']
     later_input_validation(**kwargs)
+
+    order = get_subtool_order(strategy)
     to_be_skipped = check_skip(
-        context, model, occasion, allometric_variable, ignore_datainfo_fallback, search_space
+        context,
+        model,
+        occasion,
+        allometric_variable,
+        order,
+        ignore_datainfo_fallback,
+        search_space,
     )
 
     if parameter_uncertainty_method is not None:
@@ -294,26 +302,6 @@ def run_amd_task(
             method=lloq_method,
             lloq=lloq_limit,
         )
-
-    if strategy == "default":
-        order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
-    elif strategy == "reevaluation":
-        order = [
-            'structural',
-            'iivsearch',
-            'residual',
-            'iovsearch',
-            'allometry',
-            'covariates',
-            'iivsearch',
-            'residual',
-        ]
-    elif strategy == 'SIR':
-        order = ['structural', 'iivsearch', 'residual']
-    elif strategy == 'SRI':
-        order = ['structural', 'residual', 'iivsearch']
-    elif strategy == 'RSI':
-        order = ['residual', 'structural', 'iivsearch']
 
     if modeltype == 'pkpd' and 'allometry' in order:
         context.log_warning('Skipping allometry since modeltype is "pkpd"')
@@ -1211,50 +1199,69 @@ def check_skip(
     model: Model,
     occasion: str,
     allometric_variable: str,
+    order: list[str],
     ignore_datainfo_fallback: bool = False,
     search_space: Optional[str] = None,
 ):
     to_be_skipped = []
 
     # IOVSEARCH
-    if occasion is None:
-        context.log_warning('IOVsearch will be skipped because occasion is None.')
-        to_be_skipped.append("iovsearch")
-    else:
-        categories = get_occasion_levels(model.dataset, occasion)
-        if len(categories) < 2:
-            context.log_warning(
-                f'Skipping IOVsearch because there are less than two '
-                f'occasion categories in column "{occasion}": {categories}.'
-            )
+    if 'iovsearch' in order:
+        if occasion is None:
+            context.log_warning('IOVsearch will be skipped because occasion is None.')
             to_be_skipped.append("iovsearch")
+        else:
+            categories = get_occasion_levels(model.dataset, occasion)
+            if len(categories) < 2:
+                context.log_warning(
+                    f'Skipping IOVsearch because there are less than two '
+                    f'occasion categories in column "{occasion}": {categories}.'
+                )
+                to_be_skipped.append("iovsearch")
 
     # ALLOMETRY
-    if allometric_variable is None:
-        if not ignore_datainfo_fallback:
-            try:
-                model.datainfo.descriptorix["body weight"]
-            except IndexError:
+    if 'allometry' in order:
+        if allometric_variable is None:
+            if not ignore_datainfo_fallback:
+                try:
+                    model.datainfo.descriptorix["body weight"]
+                except IndexError:
+                    context.log_warning(
+                        'Allometry will be skipped because allometric_variable is None and could'
+                        ' not be inferred through .datainfo via "body weight" descriptor.'
+                    )
+                    to_be_skipped.append("allometry")
+            else:
                 context.log_warning(
-                    'Allometry will be skipped because allometric_variable is None and could'
-                    ' not be inferred through .datainfo via "body weight" descriptor.'
+                    'Allometry will be skipped because allometric_variable is None and'
+                    ' ignore_datainfo_fallback is True'
                 )
                 to_be_skipped.append("allometry")
-        else:
-            context.log_warning(
-                'Allometry will be skipped because allometric_variable is None and'
-                ' ignore_datainfo_fallback is True'
-            )
-            to_be_skipped.append("allometry")
 
-    if search_space is not None:
-        ss_mfl = mfl_parse(search_space, True)
-        covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
-        covsearch_features = covsearch_features.expand(model)
-        covariates = []
-        if cov_attr := covsearch_features.covariate:
-            covariates.extend([x for cov in cov_attr for x in cov.covariate])
-        if not covariates:
+    if 'covsearch' in order:
+        if search_space is not None:
+            ss_mfl = mfl_parse(search_space, True)
+            covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
+            covsearch_features = covsearch_features.expand(model)
+            covariates = []
+            if cov_attr := covsearch_features.covariate:
+                covariates.extend([x for cov in cov_attr for x in cov.covariate])
+            if not covariates:
+                if ignore_datainfo_fallback:
+                    context.log_warning(
+                        'COVsearch will be skipped because no covariates were given'
+                        ' and ignore_datainfo_fallback is True.'
+                    )
+                    to_be_skipped.append("covariates")
+                elif not any(column.type == 'covariate' for column in model.datainfo):
+                    context.log_warning(
+                        'COVsearch will be skipped because no covariates were given'
+                        ' or could be extracted.'
+                        ' Check search_space definition'
+                        ' and .datainfo usage of "covariate" type and "continuous" flag.'
+                    )
+                    to_be_skipped.append("covariates")
+        else:
             if ignore_datainfo_fallback:
                 context.log_warning(
                     'COVsearch will be skipped because no covariates were given'
@@ -1269,21 +1276,6 @@ def check_skip(
                     ' and .datainfo usage of "covariate" type and "continuous" flag.'
                 )
                 to_be_skipped.append("covariates")
-    else:
-        if ignore_datainfo_fallback:
-            context.log_warning(
-                'COVsearch will be skipped because no covariates were given'
-                ' and ignore_datainfo_fallback is True.'
-            )
-            to_be_skipped.append("covariates")
-        elif not any(column.type == 'covariate' for column in model.datainfo):
-            context.log_warning(
-                'COVsearch will be skipped because no covariates were given'
-                ' or could be extracted.'
-                ' Check search_space definition'
-                ' and .datainfo usage of "covariate" type and "continuous" flag.'
-            )
-            to_be_skipped.append("covariates")
 
     return to_be_skipped
 
@@ -1476,3 +1468,26 @@ def later_input_validation(
                         f' search_space: got `{covariate}`,'
                         f' must be in {sorted(allowed_covariates)}.'
                     )
+
+
+def get_subtool_order(strategy):
+    if strategy == "default":
+        order = ['structural', 'iivsearch', 'residual', 'iovsearch', 'allometry', 'covariates']
+    elif strategy == "reevaluation":
+        order = [
+            'structural',
+            'iivsearch',
+            'residual',
+            'iovsearch',
+            'allometry',
+            'covariates',
+            'iivsearch',
+            'residual',
+        ]
+    elif strategy == 'SIR':
+        order = ['structural', 'iivsearch', 'residual']
+    elif strategy == 'SRI':
+        order = ['structural', 'residual', 'iivsearch']
+    elif strategy == 'RSI':
+        order = ['residual', 'structural', 'iivsearch']
+    return order
