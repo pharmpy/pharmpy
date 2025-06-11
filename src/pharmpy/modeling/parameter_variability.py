@@ -109,18 +109,17 @@ def add_iiv(
         model.statements,
     )
 
+    if isinstance(eta_names, list) and None in eta_names:
+        raise ValueError(
+            f'Invalid `eta_names`: must be either names or None for defaults, got {eta_names}'
+        )
+
     list_of_parameters = _format_input_list(list_of_parameters)
     list_of_options = _format_options([expression, operation, eta_names], len(list_of_parameters))
     expression, operation, eta_names = list_of_options
 
-    if all(eta_name is None for eta_name in eta_names):
+    if eta_names and all(eta_name is None for eta_name in eta_names):
         eta_names = None
-    elif None not in eta_names:
-        eta_names = eta_names
-    else:
-        raise ValueError(
-            f'Invalid `eta_names`: must be either names or all None for defaults, got {eta_names}'
-        )
 
     if not all(len(opt) == len(list_of_parameters) for opt in list_of_options if opt):
         raise ValueError(
