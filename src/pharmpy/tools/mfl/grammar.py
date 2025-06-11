@@ -62,7 +62,7 @@ metabolite_wildcard: WILDCARD
 _absorption_option: absorption_modes | absorption_wildcard
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
 absorption_wildcard: WILDCARD
-ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i | "INST"i
+ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i | "INST"i | "WEIBULL"i
 
 _elimination_option: elimination_modes | elimination_wildcard
 elimination_modes: ELIMINATION_MODE | "[" [ELIMINATION_MODE ("," ELIMINATION_MODE)*] "]"

@@ -35,6 +35,7 @@ from pharmpy.tools.mfl.stringify import stringify
                 ('ABSORPTION', 'ZO'),
                 ('ABSORPTION', 'SEQ-ZO-FO'),
                 ('ABSORPTION', 'INST'),
+                ('ABSORPTION', 'WEIBULL'),
             ),
         ),
         (
@@ -664,6 +665,7 @@ def test_get_model_features(load_model_for_test, pheno_path):
                 ('ABSORPTION', 'ZO'),
                 ('ABSORPTION', 'SEQ-ZO-FO'),
                 ('ABSORPTION', 'INST'),
+                ('ABSORPTION', 'WEIBULL'),
                 ('ELIMINATION', 'FO'),
                 ('TRANSITS', 0, 'DEPOT'),
                 ('PERIPHERALS', 0),

@@ -57,8 +57,8 @@ MFL support the following model features:
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | Category      | Options                        | Description                                                        |
 +===============+================================+====================================================================+
-| ABSORPTION    | :code:`INST, FO, ZO, SEQ-ZO-FO`| Absorption rate (instantaneous, first order, zero order, sequential|
-|               |                                | zero order first order)                                            |
+| ABSORPTION    | :code:`INST, FO, ZO, SEQ-ZO-FO,| Absorption rate (instantaneous, first order, zero order, sequential|
+|               | WEIBULL                        | zero order first order and Weibull)                                |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM`  | Elimination rate (first order, zero order, Michaelis-Menten,       |
 |               |                                | mixed first order Michaelis-Menten)                                |

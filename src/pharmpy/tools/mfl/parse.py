@@ -17,6 +17,7 @@ from pharmpy.modeling.odes import (
     has_michaelis_menten_elimination,
     has_mixed_mm_fo_elimination,
     has_seq_zo_fo_absorption,
+    has_weibull_absorption,
     has_zero_order_absorption,
     has_zero_order_elimination,
 )
@@ -150,7 +151,7 @@ class ModelFeatures:
     ):
         # TODO : Check if allowed input value
         if absorption is not None and not isinstance(absorption, Absorption):
-            raise ValueError(f"Absorption : {absorption} is not suppoerted")
+            raise ValueError(f"Absorption : {absorption} is not supported")
 
         if elimination is not None and not isinstance(elimination, Elimination):
             raise ValueError(f"Elimination : {elimination} is not supported")
@@ -985,6 +986,8 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
         absorption = "FO"
     elif has_instantaneous_absorption(model):
         absorption = "INST"
+    elif has_weibull_absorption(model):
+        absorption = "WEIBULL"
 
     if not supress_warnings:
         if absorption is None:
