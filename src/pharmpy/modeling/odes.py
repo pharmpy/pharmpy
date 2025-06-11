@@ -1474,9 +1474,6 @@ def set_seq_zo_fo_absorption(model: Model):
 def has_weibull_absorption(model: Model) -> bool:
     """Check if ode system describes a weibull type absorption
 
-    .. warning::
-        This function is still under development.
-
     Parameters
     ----------
     model : Model
@@ -1502,8 +1499,8 @@ def has_weibull_absorption(model: Model) -> bool:
     alpha = sympy.Wild("alpha")
     tad = sympy.Wild("tad")
     ka = (beta / alpha) * (tad / alpha) ** (beta - 1)  # pyright: ignore [reportOperatorIssue]
-    matches = sympy.sympify(rate).match(ka) is not None
-    return matches
+    match = sympy.sympify(rate).match(ka)
+    return match is not None and len(match) == 3
 
 
 def set_weibull_absorption(model: Model) -> Model:
