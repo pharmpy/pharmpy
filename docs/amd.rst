@@ -136,8 +136,8 @@ General arguments
 |                                                   | For more information about these methods see                                                                    |
 |                                                   | :py:func:`here<pharmpy.model.EstimationStep.parameter_uncertainty_method>`.                                     |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
-| ``ignore_datainfo_fallback``                      | Decide whether or not to use connected datainfo object to infer information about the model. If True, all        |
-|                                                   | information regarding the model must be given explicitly by the user, such as the allometric variable. If False, |
+| ``ignore_datainfo_fallback``                      | Decide whether or not to use connected datainfo object to infer information about the model. If True, all       |
+|                                                   | information regarding the model must be given explicitly by the user, such as the allometric variable. If False,|
 |                                                   | such information is extracted using the datainfo, in the absence of arguments given by the user. Default        |
 |                                                   | is False.                                                                                                       |
 +---------------------------------------------------+-----------------------------------------------------------------------------------------------------------------+
