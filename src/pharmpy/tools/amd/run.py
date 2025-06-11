@@ -624,7 +624,7 @@ def run_amd_task(
 
     # run simulation for VPC plot
     # NOTE: The seed is set to be in range for NONMEM
-    sim_model = set_simulation(final_model, n=300, seed=context.spawn_seed(rng, n=32))
+    sim_model = set_simulation(final_model, n=300, seed=context.spawn_seed(rng, n=31))
     sim_res = _run_simulation(sim_model, context)
     simulation_data = sim_res.table
 
