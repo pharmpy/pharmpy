@@ -1494,6 +1494,7 @@ def has_weibull_absorption(model: Model) -> bool:
         return False
 
     rate = odes.get_flow(depot, central)
+    rate = model.statements.before_odes.full_expression(rate)
 
     beta = sympy.Wild("beta")
     alpha = sympy.Wild("alpha")

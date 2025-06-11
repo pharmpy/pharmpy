@@ -2795,4 +2795,5 @@ def test_has_weibull_absorption(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     assert not has_weibull_absorption(model)
     model = set_weibull_absorption(model)
+    print(model.statements)
     assert has_weibull_absorption(model)
