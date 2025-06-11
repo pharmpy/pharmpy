@@ -1510,10 +1510,19 @@ def set_weibull_absorption(model: Model) -> Model:
     r"""Set or change to Weibull type absorption
 
     The Weibull absorption has an abosption rate varying with time (or rather time after dose).
-    :math:`k_a(t) = (\frac{k}{\lambda} * (\frac{t}{\lambda}^{k - 1}`
+    :math:`k_a(t) = (\frac{k}{\lambda} (\frac{t}{\lambda})^{k - 1}`
 
-    Initial parameter estimates will be set as follows:
+    Initial parameter estimates will be set differently depending if the original model
+    has MAT and/or MDT.
 
+    === === ========= =======================================================
+    MAT MDT :math:`k` :math:`\lambda`
+    === === ========= =======================================================
+    yes yes 1.5       :math:`\frac{\mathsf{MAT}}{\Gamma(1 + \frac{1}{k})}`
+    yes no  1.0       MAT
+    no  yes 1.0       MDT
+    no  no  1.5       Same as if having MAT, but use min observation time * 2
+    === === ========= =======================================================
 
     If multiple doses are fed into the affected compartment, currently only iv+oral
     doses (one of each) is supported.
