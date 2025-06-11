@@ -7,6 +7,9 @@ from pharmpy.deps import numpy as np
 from pharmpy.modeling import add_iov
 from pharmpy.modeling.covariate_effect import (
     CovariateEffect,
+    _calculate_mean,
+    _calculate_median,
+    _calculate_std,
     _choose_param_inits,
     add_covariate_effect,
     get_covariate_effects,
@@ -389,6 +392,25 @@ def test_nested_add_covariate_effect(load_model_for_test, testdata):
             '+V = V + VWT\n',
             False,
         ),
+        (
+            ('nonmem', 'models', 'mox2.mod'),
+            [('MAT', 'SEX', 'cat2', '*')],
+            '@@ -4,0 +5,3 @@\n'
+            '+IF (SEX.EQ.1) MATSEX = 1\n'
+            '+IF (SEX.EQ.2) MATSEX = THETA(4)\n'
+            '+MAT = MAT*MATSEX\n',
+            False,
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            [('CL', 'WGT', 'theta - cov + mean', '*')],
+            '@@ -1,0 +2 @@\n'
+            '+WGT_MEAN = 1.52542372881356\n'
+            '@@ -7,0 +9,2 @@\n'
+            '+CLWGT = THETA(4) - WGT + WGT_MEAN\n'
+            '+CL = CL*CLWGT\n',
+            True,
+        ),
     ],
     ids=repr,
 )
@@ -443,6 +465,19 @@ def test_add_covariate_effect(
 
 
 @pytest.mark.parametrize(
+    'model_path, effect, error_type',
+    [
+        (('nonmem', 'pheno.mod'), ('CL', 'WGT', 'exp', '-'), NotImplementedError),
+    ],
+    ids=repr,
+)
+def test_add_covariate_effect_raises(load_model_for_test, testdata, model_path, effect, error_type):
+    model = load_model_for_test(testdata.joinpath(*model_path))
+    with pytest.raises(error_type):
+        add_covariate_effect(model, *effect)
+
+
+@pytest.mark.parametrize(
     'cov_eff,symbol,expression',
     [
         (
@@ -467,16 +502,55 @@ def test_apply(cov_eff, symbol, expression):
 
 
 @pytest.mark.parametrize(
-    'cov_eff, init, lower, upper', [('exp', 0.001, -0.8696, 0.8696), ('pow', 0.001, -100, 100000)]
+    'cov_eff,cov_str',
+    [
+        (
+            CovariateEffect.exponential(),
+            '          θ⋅(cov - median)\nsymbol = ℯ',  # Extra spaces due to theta expression being in exp
+        ),
+    ],
 )
-def test_choose_param_inits(pheno_path, load_model_for_test, cov_eff, init, lower, upper):
+def test_covariate_effect_str(cov_eff, cov_str):
+    assert str(cov_eff) == cov_str
+
+
+@pytest.mark.parametrize(
+    'cov_eff, cov, index, init, lower, upper',
+    [
+        ('exp', 'WGT', None, 0.001, -0.8696, 0.8696),
+        ('pow', 'WGT', None, 0.001, -100, 100000),
+        ('exp', 'FA1', None, 50.005, 0.01, 100),
+        ('lin', 'FA2', None, 0.001, -100000, 100000),
+        ('piece_lin', 'WGT', 1, 0.001, -100000, 1.4286),
+        ('piece_lin', 'WGT', 2, 0.001, -0.4348, 100000),
+    ],
+)
+def test_choose_param_inits(
+    pheno_path, load_model_for_test, cov_eff, cov, index, init, lower, upper
+):
     model = load_model_for_test(pheno_path)
 
-    inits = _choose_param_inits(cov_eff, model, 'WGT')
+    if cov == 'FA2':
+        df = model.dataset.copy()
+        df['FA2'] = 0.0
+        model = model.replace(dataset=df)
+
+    inits = _choose_param_inits(cov_eff, model, cov, index=index)
 
     assert inits['init'] == init
     assert inits['lower'] == lower
     assert inits['upper'] == upper
+
+
+def test_choose_param_inits_raises(pheno_path, load_model_for_test):
+    model = load_model_for_test(pheno_path)
+
+    df = model.dataset.copy()
+    df['FA1'] = 1.0
+    model = model.replace(dataset=df)
+
+    with pytest.raises(ValueError):
+        _choose_param_inits('piece_lin', model, 'FA1')
 
 
 @pytest.mark.parametrize(
@@ -953,113 +1027,134 @@ def test_remove_covariate_effect(load_model_for_test, testdata, model_path, effe
     assert error_record_after == error_record_before
 
 
+def test_remove_covariate_effect_with_effect(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_removed = remove_covariate_effect(model, 'CL', 'WGT')
+    assert model == model_removed
+
+
 @pytest.mark.parametrize(
     ('model_path', 'effects', 'expected'),
     [
         (
             ('nonmem', 'pheno_real.mod'),
-            (('CL', 'WGT', 'lin'),),
+            (('CL', 'WGT', 'lin', '*'),),
             {('CL', Expr('WGT')): [('lin', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
-            (('CL', 'WGT', 'cat'),),
+            (('CL', 'WGT', 'cat', '*'),),
             {('CL', Expr('WGT')): [('cat', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
-            (('CL', 'WGT', 'piece_lin'),),
+            (('CL', 'WGT', 'cat2', '*'),),
+            {('CL', Expr('WGT')): [('cat2', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', 'piece_lin', '*'),),
             {('CL', Expr('WGT')): [('piece_lin', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
-            (('CL', 'WGT', 'exp'),),
+            (('CL', 'WGT', 'exp', '*'),),
             {('CL', Expr('WGT')): [('exp', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
-            (('CL', 'WGT', 'pow'),),
+            (('CL', 'WGT', 'pow', '*'),),
             {('CL', Expr('WGT')): [('pow', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'lin'),
-                ('CL', 'APGR', 'cat'),
+                ('CL', 'WGT', 'lin', '*'),
+                ('CL', 'APGR', 'cat', '*'),
             ),
             {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('cat', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'lin'),
-                ('CL', 'APGR', 'piece_lin'),
+                ('CL', 'WGT', 'lin', '*'),
+                ('CL', 'APGR', 'piece_lin', '*'),
             ),
             {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('piece_lin', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'lin'),
-                ('CL', 'APGR', 'exp'),
+                ('CL', 'WGT', 'lin', '*'),
+                ('CL', 'APGR', 'exp', '*'),
             ),
             {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('exp', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'lin'),
-                ('CL', 'APGR', 'pow'),
+                ('CL', 'WGT', 'lin', '*'),
+                ('CL', 'APGR', 'pow', '*'),
             ),
             {('CL', Expr('WGT')): [('lin', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'cat'),
-                ('CL', 'APGR', 'piece_lin'),
+                ('CL', 'WGT', 'cat', '*'),
+                ('CL', 'APGR', 'piece_lin', '*'),
             ),
             {('CL', Expr('WGT')): [('cat', '*')], ('CL', Expr('APGR')): [('piece_lin', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'cat'),
-                ('CL', 'APGR', 'exp'),
+                ('CL', 'WGT', 'cat', '*'),
+                ('CL', 'APGR', 'exp', '*'),
             ),
             {('CL', Expr('WGT')): [('cat', '*')], ('CL', Expr('APGR')): [('exp', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'cat'),
-                ('CL', 'APGR', 'pow'),
+                ('CL', 'WGT', 'cat', '*'),
+                ('CL', 'APGR', 'pow', '*'),
             ),
             {('CL', Expr('WGT')): [('cat', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'piece_lin'),
-                ('CL', 'APGR', 'exp'),
+                ('CL', 'WGT', 'piece_lin', '*'),
+                ('CL', 'APGR', 'exp', '*'),
             ),
             {('CL', Expr('WGT')): [('piece_lin', '*')], ('CL', Expr('APGR')): [('exp', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'piece_lin'),
-                ('CL', 'APGR', 'pow'),
+                ('CL', 'WGT', 'piece_lin', '*'),
+                ('CL', 'APGR', 'pow', '*'),
             ),
             {('CL', Expr('WGT')): [('piece_lin', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             (
-                ('CL', 'WGT', 'exp'),
-                ('CL', 'APGR', 'pow'),
+                ('CL', 'WGT', 'exp', '*'),
+                ('CL', 'APGR', 'pow', '*'),
             ),
             {('CL', Expr('WGT')): [('exp', '*')], ('CL', Expr('APGR')): [('pow', '*')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', 'exp', '+'),),
+            {('CL', Expr('WGT')): [('exp', '+')]},
+        ),
+        (
+            ('nonmem', 'pheno_real.mod'),
+            (('CL', 'WGT', '((cov/std) - median) * theta', '*'),),
+            {('CL', Expr('WGT')): [('CUSTOM', '*')]},
         ),
     ],
     ids=repr,
@@ -1079,8 +1174,8 @@ def test_get_covariate_effects(load_model_for_test, testdata, model_path, effect
     ):
         model = remove_covariate_effect(model, param, cov)
 
-    for param, cov, eff in effects:
-        model = add_covariate_effect(model, param, cov, eff)
+    for param, cov, eff, op in effects:
+        model = add_covariate_effect(model, param, cov, eff, op)
 
     extracted_cov_effects = get_covariate_effects(model)
 
@@ -1105,3 +1200,18 @@ def test_avoid_IOV_in_get_covariate_effects(load_model_for_test, testdata):
 
     cov_effects = get_covariate_effects(model)
     assert len(cov_effects) == 0
+
+
+@pytest.mark.parametrize(
+    'func, ref_val',
+    [
+        (_calculate_mean, 78.54795),
+        (_calculate_median, 77.0),
+        (_calculate_std, 15.91299),
+    ],
+)
+def test_calculate_baselines(load_model_for_test, testdata, func, ref_val):
+    model = load_model_for_test(testdata / "nonmem" / "models" / "mox2.mod")
+    val = func(model, 'WT', baselines=True)
+    assert round(val, 5) == ref_val
+    assert val != func(model, 'WT', baselines=False)

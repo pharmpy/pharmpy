@@ -76,13 +76,11 @@ def _get_covariate_effect(model: Model, symbol, covariate):
     etas = tuple(sympy.sympify(e) for e in model.random_variables.etas.symbols)
     thetas = tuple(sympy.sympify(t) for t in get_thetas(model).symbols)
 
+    assert type(param_expr) in (sympy.Mul, sympy.Add)
     if isinstance(param_expr, sympy.Mul):
         op = "*"
-    elif isinstance(param_expr, sympy.Add):
-        op = "+"
     else:
-        # This shouldn't happen
-        assert False
+        op = "+"
 
     cov_effect = None
     cov_expression = None
@@ -122,14 +120,16 @@ def _get_covariate_effect(model: Model, symbol, covariate):
             template = template.template.expression
             template = sympy.sympify(template)
             wild_dict = defaultdict(list)
-            for s in template.free_symbols:
+            template_symbs = sorted(template.free_symbols, key=lambda x: x.name)
+            for s in template_symbs:
                 wild_symbol = sympy.Wild(str(s))
                 template = template.subs({s: wild_symbol})
                 if str(s).startswith("theta"):
                     wild_dict["theta"].append(wild_symbol)
                 elif str(s).startswith("cov"):
                     wild_dict["cov"].append(wild_symbol)
-                elif str(s).startswith("median"):
+                else:
+                    assert str(s).startswith("median")
                     wild_dict["median"].append(wild_symbol)
 
             cov_expression = sympy.sympify(cov_expression)
@@ -157,23 +157,22 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
             match[sympy.Wild("median")] = temp
 
     for key, values in symbols.items():
+        # match keys will always be generated from cov effect template (e.g.
+        # symbols {'cov': [cov_]} and match {cov_: WGT}
+        assert all(value in match.keys() for value in values)
         if key == "theta":
             thetas = get_thetas(model).symbols
-            if all(value in match.keys() for value in values):
-                if any(match[value] not in thetas for value in values):
-                    return False
+            if any(match[value] not in thetas for value in values):
+                return False
         if key == "cov":
             covariate = sympy.Symbol(covariate)
-            if all(value in match.keys() for value in values):
-                if all(
-                    match[value] not in [covariate, sympy.Integer(1) / covariate]
-                    for value in values
-                ):
-                    return False
+            if all(
+                match[value] not in [covariate, sympy.Integer(1) / covariate] for value in values
+            ):
+                return False
         if key == "median":
-            if all(value in match.keys() for value in values):
-                if not all(match[value].is_number for value in values):
-                    return False
+            if not all(match[value].is_number for value in values):
+                return False
     return True
 
 
@@ -417,7 +416,7 @@ def add_covariate_effect(
         return model
 
     statistics = {}
-    statistics['mean'] = _calculate_mean(model.dataset, covariate)
+    statistics['mean'] = _calculate_mean(model, covariate)
     statistics['median'] = _calculate_median(model, covariate)
     statistics['std'] = _calculate_std(model, covariate)
 
@@ -543,12 +542,13 @@ def _count_categorical(model, covariate):
     return counts
 
 
-def _calculate_mean(df, covariate, baselines=False):
+def _calculate_mean(model, covariate, baselines=False):
     """Calculate mean. Can be set to use baselines, otherwise it is
     calculated first per individual, then for the group."""
     if baselines:
-        return df[str(covariate)].mean()
+        return get_baselines(model)[str(covariate)].mean()
     else:
+        df = model.dataset
         return df.groupby('ID')[str(covariate)].mean().mean()
 
 
@@ -638,11 +638,11 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
             lower = 1 / (cov_median - cov_max)
     elif effect == 'piece_lin':
         if cov_median == cov_min or cov_median == cov_max:
-            raise Exception(
+            raise ValueError(
                 'Median cannot be same as min or max, cannot use '
                 'piecewise-linear parameterization.'
             )
-        if index == 0:
+        if index == 1:
             lower = -100000
             upper = 1 / (cov_median - cov_min)
         else:
