@@ -8,7 +8,7 @@ import math
 from collections.abc import Iterable, Mapping
 from typing import Literal, Optional, Union
 
-from pharmpy.basic import Expr, Matrix, TExpr
+from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr
 from pharmpy.deps import sympy
 from pharmpy.internals.unicode import bracket
 from pharmpy.model import (
@@ -1597,7 +1597,7 @@ def set_weibull_absorption(model: Model) -> Model:
     model = add_individual_parameter(model, k.name, init=init_k, lower=0.0)
 
     expr = (k / lmbda) * (tad / lmbda) ** (k - 1)
-    ka = Expr.piecewise((0.000001, sympy.Eq(tad, 0)), (expr, sympy.true))
+    ka = Expr.piecewise((0.000001, BooleanExpr.eq(tad, 0)), (expr, BooleanExpr.true()))
 
     odes = get_and_check_odes(model)
 
