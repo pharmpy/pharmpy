@@ -263,7 +263,7 @@ def _compartmental_model(
         sset = des.statements.subs(subs_dict)
         eqs = [sympy.Eq(s.symbol, s.expression) for s in sset if s.symbol.is_derivative()]
 
-        cs = to_compartmental_system(func_to_name, eqs)
+        cs = to_compartmental_system(func_to_name, eqs)  # pyright: ignore [reportArgumentType]
         cb = CompartmentalSystemBuilder(cs)
         doses = dosing(di, dataset, defdose[1])
         for name, i in comp_map.items():
