@@ -5,6 +5,7 @@ New features
 ============
 
 * Support for Linux on AArch64 (ARM64) added
+* Add :code:`modeling.time_of_last_dose`
 
 Bugfixes
 ========

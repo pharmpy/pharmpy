@@ -4,6 +4,7 @@ import pytest
 from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     add_time_after_dose,
+    add_time_of_last_dose,
     bin_observations,
     check_dataset,
     deidentify_data,
@@ -229,6 +230,14 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:16])
     assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 0.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
+
+
+def test_add_time_of_last_dose(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    model = add_time_of_last_dose(model)
+    a = model.statements[0]
+    assert a.symbol.name == 'TDOSE'
+    assert a.expression.is_function
 
 
 def test_get_concentration_parameters_from_data(load_example_model_for_test):

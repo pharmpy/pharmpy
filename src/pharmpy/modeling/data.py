@@ -14,6 +14,7 @@ from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import (
+    Assignment,
     ColumnInfo,
     CompartmentalSystem,
     DataInfo,
@@ -1096,6 +1097,35 @@ def add_cmt(model: Model):
     return model.update_source()
 
 
+def add_time_of_last_dose(model: Model, name: str = "TDOSE"):
+    """Add a variable for time of last dose to the model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    name : str
+        Name of time of last dose variable
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    See also
+    --------
+    add_time_after_dose : Add time after dose to dataset
+    """
+    idv = model.datainfo.idv_column.symbol
+    amt = model.datainfo.typeix['dose'][0].symbol
+    expr = Expr.forward(idv, amt > 0)
+    symbol = Expr.symbol(name)
+    assignment = Assignment(symbol, expr)
+    statements = assignment + model.statements
+    model = model.replace(statements=statements)
+    return model.update_source()
+
+
 def add_time_after_dose(model: Model):
     """Calculate and add a TAD column to the dataset
 
@@ -1115,7 +1145,11 @@ def add_time_after_dose(model: Model):
     >>> model = load_example_model("pheno")
     >>> model = add_time_after_dose(model)
 
+    See also
+    --------
+    add_time_of_last_dose : Add time of last dose to model
     """
+
     try:
         model.datainfo.descriptorix['time after dose']
     except IndexError:
