@@ -96,6 +96,11 @@ def test_init_boolean_expr():
     assert expr1 == expr2
 
 
+def test_true():
+    expr = BooleanExpr.true()
+    assert expr._sympy_() == sympy.true
+
+
 @pytest.mark.parametrize(
     'expr_lhs, expr_rhs',
     [

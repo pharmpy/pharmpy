@@ -367,6 +367,10 @@ class BooleanExpr:
     def le(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
         return cls(sympy.Le(lhs, rhs))
 
+    @classmethod
+    def true(cls) -> BooleanExpr:
+        return cls(sympy.true)
+
     def unicode(self) -> str:
         return ExprPrinter().doprint(sympy.sympify(self._expr))
 
