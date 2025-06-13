@@ -94,6 +94,8 @@ def test_init_boolean_expr():
     expr1 = BooleanExpr(sympy.Eq(Expr('x'), Expr('y')))
     expr2 = BooleanExpr(expr1)
     assert expr1 == expr2
+    expr3 = BooleanExpr(sympy.Gt(Expr('x'), Expr(0)))
+    assert expr3.lhs == Expr('x')
 
 
 def test_true():
@@ -155,3 +157,5 @@ def test_newind():
 def test_forward():
     expr = Expr.forward(Expr.symbol('TIME'), Expr.symbol('AMT') > 0)
     assert expr == Expr.function("forward", ('TIME', 'AMT > 0'))
+    assert isinstance(expr.args[0], Expr)
+    assert isinstance(expr.args[1], BooleanExpr)

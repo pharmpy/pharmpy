@@ -51,13 +51,15 @@ class Expr:
             raise ValueError("Expression has no name")
 
     @property
-    def args(self) -> tuple[Union[Expr, tuple[Union[Expr, BooleanExpr], ...]], ...]:
+    def args(self) -> tuple[Union[Expr, BooleanExpr, tuple[Union[Expr, BooleanExpr], ...]], ...]:
+        x = self._expr.args
         if isinstance(self._expr, symengine.Piecewise):
             # Due to https://github.com/symengine/symengine.py/issues/469
-            x = self._expr.args
             args = tuple((Expr(x[i]), BooleanExpr(x[i + 1])) for i in range(0, len(x), 2))
+        elif isinstance(self._expr, symengine.Function) and self.name == 'forward':
+            args = (Expr(x[0]), BooleanExpr(x[1]))
         else:
-            args = tuple(Expr(a) for a in self._expr.args)
+            args = tuple(Expr(a) for a in x)
         return args
 
     @property
@@ -309,7 +311,10 @@ class BooleanExpr:
         if isinstance(source, BooleanExpr):
             self._expr = source._expr
         else:
-            self._expr = sympy.sympify(source)
+            expr = sympy.sympify(source)
+            if isinstance(expr, sympy.StrictLessThan) and expr.rhs.is_Symbol:
+                expr = sympy.StrictGreaterThan(expr.rhs, expr.lhs)
+            self._expr = expr
 
     @property
     def free_symbols(self) -> set[Expr]:
