@@ -23,12 +23,6 @@ def create_workflow_rename(new_name, mock_name=None, model: Optional[Model] = No
     return Workflow(wb)
 
 
-@with_same_arguments_as(create_workflow_rename)
-def validate_input_rename(model, new_name):
-    assert isinstance(new_name, str)
-    assert isinstance(model, Model)
-
-
 def create_workflow_generic(name=None, model: Optional[Model] = None, mock_name=None):
     return Workflow(
         WorkflowBuilder(tasks=[Task('copy', lambda _: Results(), model)], name=mock_name)

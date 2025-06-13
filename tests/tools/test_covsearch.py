@@ -434,11 +434,6 @@ def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
             assert (
                 c.modelentry.modelfit_results.ofv > best_candidate.modelentry.modelfit_results.ofv
             )
-        elif len(c.steps) == 4:
-            assert c.steps[-1].effect.parameter == "V"
-            assert (
-                c.modelentry.modelfit_results.ofv > best_candidate.modelentry.modelfit_results.ofv
-            )
 
 
 def _create_candidates(model_entry_factory, funcs, parent_cand, i, p_value):

@@ -705,8 +705,6 @@ def test_validate_input_warn(
     warning,
     match,
 ):
-    if not model_path:
-        model_path = ('nonmem/pheno.mod',)
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
     results = read_modelfit_results(path)

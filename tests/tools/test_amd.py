@@ -1,9 +1,5 @@
-import shutil
-from pathlib import Path
-
 import pytest
 
-from pharmpy.model import Model
 from pharmpy.tools import read_modelfit_results, read_results
 from pharmpy.tools.amd.run import (
     _create_model_summary,
@@ -13,7 +9,6 @@ from pharmpy.tools.amd.run import (
     validate_input,
 )
 from pharmpy.tools.mfl.parse import parse as mfl_parse
-from pharmpy.workflows import default_context
 from pharmpy.workflows.contexts import NullContext
 
 
@@ -375,38 +370,3 @@ def test_mechanistic_covariate_extraction(
         assert filtered_ss == mfl_parse(expected_filtered_ss, True)
     else:
         assert not filtered_ss.covariate
-
-
-def _load_model(testdata: Path, with_datainfo: bool = False):
-    models = testdata / 'nonmem' / 'models'
-
-    # NOTE: We need to make a local copy and read the model locally to avoid
-    # reading the .datainfo which contains allometry information we do not want
-    # to ignore.
-
-    shutil.copy2(models / 'mox_simulated_normal.csv', '.')
-    if with_datainfo:
-        shutil.copy2(models / 'mox_simulated_normal.datainfo', '.')
-    shutil.copy2(models / 'mox2.mod', '.')
-    shutil.copy2(models / 'mox2.ext', '.')
-    shutil.copy2(models / 'mox2.lst', '.')
-    shutil.copy2(models / 'mox2.phi', '.')
-
-    model = Model.parse_model('mox2.mod')
-    model = model.replace(name='start')
-    res = read_modelfit_results('mox2.mod')
-
-    # NOTE: Load results directly in DB to skip fitting
-    db_tool = default_context(name='amd', ref='amd_dir1')
-    db_fit = default_context(name='modelfit', ref=db_tool.path)
-
-    with db_fit.model_database.transaction(model) as txn:
-        txn.store_model()
-        txn.store_modelfit_results()
-        # NOTE: This are needed because currently caching of the results cannot
-        # read from the JSON file created above.
-        txn.store_local_file(models / 'mox2.ext', 'start.ext')
-        txn.store_local_file(models / 'mox2.lst', 'start.lst')
-        txn.store_local_file(models / 'mox2.phi', 'start.phi')
-
-    return db_tool, model, res
