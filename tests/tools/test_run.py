@@ -90,10 +90,9 @@ def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_
         models = [set_initial_estimates(model, {'TVCL': float(i)}) for i in range(5)]
 
         kwargs = {
-            'model_ref': model,
-            'results_ref': results,
-            'models_cand': models,
-            'results_cand': [results] * 5,
+            'models': [model] + models,
+            'results': [results] * 6,
+            'ref_model': model,
         }
         metadata = _create_metadata_tool(
             database=database,
@@ -107,12 +106,18 @@ def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_
 
         assert (rundir / 'models').exists()
 
-        assert metadata['tool_options']['model_ref']['__class__'] == 'Model'
-        assert 'key' in metadata['tool_options']['model_ref']
-        assert isinstance(metadata['tool_options']['models_cand'], list)
-        assert len(metadata['tool_options']['models_cand']) == len(models)
-        assert metadata['tool_options']['models_cand'][0]['__class__'] == 'Model'
-        assert 'key' in metadata['tool_options']['models_cand'][0]
+        assert metadata['tool_options']['ref_model']['__class__'] == 'Model'
+        assert 'key' in metadata['tool_options']['ref_model']
+
+        assert isinstance(metadata['tool_options']['models'], list)
+        assert len(metadata['tool_options']['models']) == len(models) + 1
+        assert metadata['tool_options']['models'][0]['__class__'] == 'Model'
+        assert 'key' in metadata['tool_options']['models'][0]
+
+        assert isinstance(metadata['tool_options']['results'], list)
+        assert len(metadata['tool_options']['results']) == len(models) + 1
+        assert metadata['tool_options']['results'][0]['__class__'] == 'ModelfitResults'
+        assert 'key' in metadata['tool_options']['results'][0]
 
 
 def test_create_metadata_tool_not_raises(tmp_path, testdata, load_model_for_test):

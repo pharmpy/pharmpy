@@ -17,10 +17,9 @@ RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic_mixed', 'bic_iiv', 'mbic_mixed
 
 
 def create_workflow(
-    model_ref: Model,  # Use ref value instead of a model object?
-    results_ref: ModelfitResults,
-    models_cand: list[Model],
-    results_cand: list[ModelfitResults],
+    models: list[Model],
+    results: list[ModelfitResults],
+    ref_model: Model,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     rank_type: Literal[tuple(RANK_TYPES)] = 'ofv',
     cutoff: Optional[float] = None,
@@ -32,14 +31,12 @@ def create_workflow(
 
     Parameters
     ----------
-    model_ref : Model
-        Pharmpy model to use as reference (e.g. when calculating dOFV etc)
-    results_ref : ModelfitResults
-        Results for reference model
-    models_cand : list[Model]
-        Candidate models to rank
-    results_cand : list[ModelfitResults]
-        Candidate modelfit results
+    models : list[Model]
+        Models to rank
+    results : list[ModelfitResults]
+        Modelfit results to rank on
+    ref_model : Model
+        Model to compare to
     strictness : str or None
         Strictness criteria
     rank_type : {'ofv', 'lrt', 'aic', 'bic_mixed', 'bic_iiv'}
@@ -65,10 +62,9 @@ def create_workflow(
     start_task = Task(
         'start_rank',
         start,
-        model_ref,
-        results_ref,
-        models_cand,
-        results_cand,
+        models,
+        results,
+        ref_model,
         strictness,
         rank_type,
         cutoff,
@@ -85,10 +81,9 @@ def create_workflow(
 
 def start(
     context: Context,
-    model_ref: Model,
-    results_ref: ModelfitResults,
-    models_cand: list[Model],
-    results_cand: list[ModelfitResults],
+    models: list[Model],
+    results: list[ModelfitResults],
+    ref_model: Model,
     strictness: str,
     rank_type: str,
     cutoff: Optional[float],
@@ -100,7 +95,7 @@ def start(
 
     wb = WorkflowBuilder()
 
-    me_ref, mes_cand = prepare_model_entries(model_ref, results_ref, models_cand, results_cand)
+    me_ref, mes_cand = prepare_model_entries(models, results, ref_model)
     for me in [me_ref] + mes_cand:
         context.store_model_entry(me)
 
@@ -129,15 +124,20 @@ def start(
 
 
 def prepare_model_entries(
-    model_ref: Model,
-    results_ref: ModelfitResults,
-    models_cand: list[Model],
-    results_cand: list[ModelfitResults],
+    models: list[Model],
+    results: list[ModelfitResults],
+    ref_model: Model,
 ):
-    me_ref = ModelEntry.create(model_ref, modelfit_results=results_ref)
-    me_cands = [
-        ModelEntry.create(m, modelfit_results=res) for m, res in zip(models_cand, results_cand)
-    ]
+    me_cands = []
+    me_ref = None
+    for model, results in zip(models, results):
+        me = ModelEntry.create(model, modelfit_results=results)
+        if model == ref_model:
+            assert me_ref is None
+            me_ref = me
+        else:
+            me_cands.append(me)
+
     return me_ref, me_cands
 
 
@@ -224,10 +224,9 @@ def _results(context: Context, res: Results):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    model_ref,
-    results_ref,
-    models_cand,
-    results_cand,
+    models,
+    results,
+    ref_model,
     strictness,
     rank_type,
     cutoff,
@@ -235,18 +234,15 @@ def validate_input(
     E,
     _parent_dict,
 ):
-    if len(models_cand) != len(results_cand):
+    if len(models) != len(results):
         raise ValueError(
-            f'Length mismatch: `models_cand` ({len(models_cand)}) must be same length as '
-            f'`results_cand ({len(results_cand)})`'
+            f'Length mismatch: `models` ({len(models)}) must be same length as '
+            f'`results ({len(results)})`'
         )
 
     # FIXME: Remove when tool supports running models with parameter uncertainty step
     if strictness is not None and "rse" in strictness.lower():
-        if any(
-            model.execution_steps[-1].parameter_uncertainty_method is None
-            for model in [model_ref] + models_cand
-        ):
+        if any(model.execution_steps[-1].parameter_uncertainty_method is None for model in models):
             raise ValueError(
                 '`parameter_uncertainty_method` not set for one or more models, '
                 'cannot calculate relative standard errors.'

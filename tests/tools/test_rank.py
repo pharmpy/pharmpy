@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import remove_parameter_uncertainty_step, set_name
+from pharmpy.modeling import remove_parameter_uncertainty_step, set_initial_estimates, set_name
 from pharmpy.tools.rank.tool import (
     get_rank_type_kwargs,
     prepare_model_entries,
@@ -15,9 +15,11 @@ from pharmpy.workflows import ModelEntry
 def test_prepare_model_entries(load_model_for_test, pheno_path):
     model_ref = load_model_for_test(pheno_path)
     res_ref = read_modelfit_results(pheno_path)
-    models_cand = [model_ref] * 5
+    models_cand = [set_initial_estimates(model_ref, {'PTVCL': float(i)}) for i in range(5)]
     res_cand = [res_ref] * 5
-    me_ref, me_cands = prepare_model_entries(model_ref, res_ref, models_cand, res_cand)
+    me_ref, me_cands = prepare_model_entries(
+        [model_ref] + models_cand, [res_ref] + res_cand, model_ref
+    )
     assert len(me_cands) == len(models_cand) == len(res_cand)
     assert me_ref.model == model_ref
 
@@ -131,4 +133,9 @@ def test_validate_input_raises(
     res_cand = [res_ref] * no_of_res
 
     with pytest.raises(exception, match=match):
-        validate_input(model_ref, res_ref, models_cand, res_cand, **kwargs)
+        validate_input(
+            models=[model_ref] + models_cand,
+            results=[res_ref] + res_cand,
+            ref_model=model_ref,
+            **kwargs,
+        )

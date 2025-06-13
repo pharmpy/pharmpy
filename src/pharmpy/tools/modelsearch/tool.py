@@ -261,13 +261,16 @@ def post_process(context, mfl, rank_type, cutoff, strictness, E, *model_entries)
         for me in model_entries
     }
 
+    models = [base_model_entry.model] + [me.model for me in res_model_entries]
+    results = [base_model_entry.modelfit_results] + [
+        me.modelfit_results for me in res_model_entries
+    ]
     rank_res = run_subtool(
         tool_name='rank',
         ctx=context,
-        model_ref=base_model_entry.model,
-        results_ref=base_model_entry.modelfit_results,
-        models_cand=[me.model for me in res_model_entries],
-        results_cand=[me.modelfit_results for me in res_model_entries],
+        models=models,
+        results=results,
+        ref_model=base_model_entry.model,
         rank_type=rank_type,
         cutoff=cutoff,
         strictness=strictness,
