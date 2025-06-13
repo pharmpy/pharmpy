@@ -5,15 +5,15 @@ import pytest
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import add_covariate_effect, set_name
 from pharmpy.tools import fit, run_rank
-from pharmpy.tools.context import open_context
 
 
 @pytest.mark.parametrize(
     'kwargs, no_of_ranked_models, best_model_name',
     [
         ({'rank_type': 'ofv'}, 5, 'model1'),
-        # ({'rank_type': 'bic_mixed'}, 5, 'model1'),
-        # ({'rank_type': 'lrt', 'cutoff': 0.05}, 3, 'model1'),
+        ({'rank_type': 'bic_mixed'}, 5, 'model1'),
+        ({'rank_type': 'lrt', 'cutoff': 0.05}, 3, 'model1'),
+        ({'rank_type': 'mbic_mixed', 'E': 1.0, 'search_space': 'ABSORPTION(FO)'}, 5, 'model1'),
     ],
 )
 def test_rank_dummy(
@@ -29,22 +29,11 @@ def test_rank_dummy(
             models.append(model)
         results = fit([model_base] + models, esttool='dummy')
 
-        ctx = open_context('ctx1', tmp_path)
         res = run_rank(
             model_ref=model_base,
             results_ref=results[0],
             models_cand=models,
             results_cand=results[1:],
-            context=ctx,
-            **kwargs,
-        )
-
-        res2 = run_rank(
-            model_ref=model_base,
-            results_ref=results[0],
-            models_cand=models,
-            results_cand=results[1:],
-            context=ctx,
             **kwargs,
         )
 
@@ -52,8 +41,3 @@ def test_rank_dummy(
         assert len(res.summary_tool.dropna(subset=['rank'])) == no_of_ranked_models
         assert res.final_model.name == best_model_name
         assert res.final_results
-        import pandas as pd
-
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_columns', None)
-        print(res.summary_tool)
