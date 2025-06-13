@@ -760,7 +760,7 @@ def get_and_check_odes(model: Model) -> CompartmentalSystem:
 
 
 def get_and_check_dataset(model: Model) -> pd.DataFrame:
-    """Get the ode_system from model and raise if not a CompartmentalSystem
+    """Get the dataset from a model and raise if the model has no dataset
 
     Parameters
     ----------
