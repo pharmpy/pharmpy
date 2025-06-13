@@ -30,10 +30,9 @@ def test_rank_dummy(
         results = fit([model_base] + models, esttool='dummy')
 
         res = run_rank(
-            model_ref=model_base,
-            results_ref=results[0],
-            models_cand=models,
-            results_cand=results[1:],
+            models=[model_base] + models,
+            results=results,
+            ref_model=model_base,
             **kwargs,
         )
 
