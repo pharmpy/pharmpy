@@ -37,7 +37,8 @@ def test_rank_models(
     models_cand = [set_name(model, f'model{i}') for i, model in enumerate([model_ref] * 5)]
     mes_cand = model_entry_factory(models_cand)
 
-    res = rank_models(me_ref, mes_cand, strictness, rank_type, cutoff)
+    parent_dict = {me.model.name: me_ref.model.name for me in [me_ref] + mes_cand}
+    res = rank_models(me_ref, mes_cand, strictness, rank_type, cutoff, None, parent_dict)
 
     assert len(res.summary_tool) == 6
     assert res.final_model.name == 'model1'
@@ -59,6 +60,7 @@ def test_rank_models(
         ('ofv', {'rank_type': 'ofv'}),
         ('bic_mixed', {'rank_type': 'bic', 'bic_type': 'mixed'}),
         ('bic_iiv', {'rank_type': 'bic', 'bic_type': 'iiv'}),
+        ('mbic_mixed', {'rank_type': 'bic', 'bic_type': 'mixed'}),
     ],
 )
 def test_get_rank_type_kwargs(rank_type, kwargs):
@@ -84,6 +86,38 @@ def test_get_rank_type_kwargs(rank_type, kwargs):
             {'strictness': 'rse'},
             ValueError,
             '`parameter_uncertainty_method`',
+        ),
+        (
+            5,
+            dict(search_space=1),
+            TypeError,
+            'Invalid `search_space`',
+        ),
+        (
+            5,
+            dict(search_space='x'),
+            ValueError,
+            'Invalid `search_space`',
+        ),
+        (5, {'rank_type': 'ofv', 'E': 1.0}, ValueError, 'E can only be provided'),
+        (5, {'rank_type': 'mbic_mixed'}, ValueError, 'Argument `search_space` must be provided'),
+        (
+            5,
+            {'search_space': 'ABSORPTION(FO)', 'rank_type': 'mbic_mixed'},
+            ValueError,
+            'Value `E` must be provided when using mbic',
+        ),
+        (
+            5,
+            {'search_space': 'ABSORPTION(FO)', 'rank_type': 'mbic_mixed', 'E': 0.0},
+            ValueError,
+            'Value `E` must be more than 0',
+        ),
+        (
+            5,
+            {'search_space': 'ABSORPTION(FO)', 'rank_type': 'mbic_mixed', 'E': '10'},
+            ValueError,
+            'Value `E` must be denoted with `%`',
         ),
     ],
 )
