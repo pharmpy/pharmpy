@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy.deps import pandas as pd
 from pharmpy.modeling import remove_parameter_uncertainty_step, set_initial_estimates, set_name
-from pharmpy.tools.rank.tool import (
+from pharmpy.tools.modelrank.tool import (
     get_rank_type_kwargs,
     prepare_model_entries,
     rank_models,

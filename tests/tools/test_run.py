@@ -81,7 +81,7 @@ def test_create_metadata_tool(tmp_path, testdata, load_model_for_test, kwargs):
 
 def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_test):
     with chdir(tmp_path):
-        tool_name = 'rank'
+        tool_name = 'modelrank'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
         model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
@@ -102,7 +102,7 @@ def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_
             kwargs=kwargs,
         )
 
-        rundir = tmp_path / 'rank'
+        rundir = tmp_path / 'modelrank'
 
         assert (rundir / 'models').exists()
 
