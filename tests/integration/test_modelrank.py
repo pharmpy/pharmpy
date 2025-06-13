@@ -4,7 +4,7 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import add_covariate_effect, set_name
-from pharmpy.tools import fit, run_rank
+from pharmpy.tools import fit, run_modelrank
 
 
 @pytest.mark.parametrize(
@@ -16,7 +16,7 @@ from pharmpy.tools import fit, run_rank
         ({'rank_type': 'mbic_mixed', 'E': 1.0, 'search_space': 'ABSORPTION(FO)'}, 5, 'model1'),
     ],
 )
-def test_rank_dummy(
+def test_modelrank_dummy(
     tmp_path, load_model_for_test, testdata, kwargs, no_of_ranked_models, best_model_name
 ):
     with chdir(tmp_path):
@@ -29,7 +29,7 @@ def test_rank_dummy(
             models.append(model)
         results = fit([model_base] + models, esttool='dummy')
 
-        res = run_rank(
+        res = run_modelrank(
             models=[model_base] + models,
             results=results,
             ref_model=model_base,

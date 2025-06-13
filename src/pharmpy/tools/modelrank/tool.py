@@ -27,7 +27,7 @@ def create_workflow(
     E: Optional[Union[float, str, tuple[float], tuple[str]]] = None,
     _parent_dict: dict[str, str] = None,
 ):
-    """Run Rank tool.
+    """Run ModelRank tool.
 
     Parameters
     ----------
@@ -58,7 +58,7 @@ def create_workflow(
         Rank tool result object
 
     """
-    wb = WorkflowBuilder(name='rank')
+    wb = WorkflowBuilder(name='modelrank')
     start_task = Task(
         'start_rank',
         start,
