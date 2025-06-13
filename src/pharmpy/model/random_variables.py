@@ -916,13 +916,13 @@ class RandomVariables(CollectionsSequence, Immutable):
                 # sympy.stats.MultivariateNormal uses variance, sympy.stats.Normal takes std
                 dist = sympy_stats.MultivariateNormal(f'__rv{i}', rv.mean, rv.variance)
                 for j in range(0, len(rv.names)):
-                    subs_dict[rv.names[j]] = dist[j]  # pyright: ignore reportIndexIssue
+                    subs_dict[rv.names[j]] = dist[j]  # pyright: ignore [reportIndexIssue]
             else:
                 subs_dict[rv.names[0]] = sympy_stats.Normal(
                     f'__rv{i}', rv.mean, sympy.sqrt(rv.variance)
                 )
         sympy_expr = sympy.sympify(expr).subs(subs_dict)
-        return sympy_expr
+        return sympy_expr  # pyright: ignore [reportReturnType]
 
 
 def _sample_from_distributions(distributions, expr, parameters, nsamples, rng):

@@ -328,6 +328,7 @@ class BooleanExpr:
 
     @property
     def lhs(self) -> Expr:
+        assert isinstance(self._expr, sympy.core.relational.Relational)
         lhs = self._expr.lhs
         rhs = self._expr.rhs
         # Coming from piecewise and symengine changed the order
@@ -338,6 +339,7 @@ class BooleanExpr:
 
     @property
     def rhs(self) -> Expr:
+        assert isinstance(self._expr, sympy.core.relational.Relational)
         lhs = self._expr.lhs
         rhs = self._expr.rhs
         # Coming from piecewise and symengine changed the order
@@ -380,7 +382,7 @@ class BooleanExpr:
         return ExprPrinter().doprint(sympy.sympify(self._expr))
 
     def atoms(self, *types):
-        return self._expr.atoms(types)
+        return self._expr.atoms(types)  # pyright: ignore [reportArgumentType]
 
     def _symengine_(self) -> symengine.Expr:
         return symengine.sympify(self._expr)

@@ -1503,7 +1503,7 @@ def has_weibull_absorption(model: Model) -> bool:
     beta = sympy.Wild("beta")
     alpha = sympy.Wild("alpha")
     tad = sympy.Wild("tad")
-    ka = (beta / alpha) * (tad / alpha) ** (beta - 1)  # pyright: ignore [reportOperatorIssue]
+    ka = (beta / alpha) * (tad / alpha) ** (beta - 1)
     match = sympy.sympify(rate).match(ka)
     return match is not None and len(match) == 3
 
@@ -2604,7 +2604,9 @@ def _check_all_cycles(model):
                 flow2 = odes.get_flow(cycle[0], cycle[i])
             prod1 *= flow1
             prod2 *= flow2
-        eq = sympy.sympify(prod1).equals(sympy.sympify(prod2))
+        eq = sympy.sympify(prod1).equals(  # pyright: ignore [reportAttributeAccessIssue]
+            sympy.sympify(prod2)
+        )
         if not eq:
             return False
     return True

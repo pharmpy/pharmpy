@@ -2123,7 +2123,7 @@ def update_ccontra(model, path=None, force=False):
     ll = sympy.sympify(ll).subs(sympy.Symbol('y', real=True, positive=True), y)
 
     tr = create_name_map(model)
-    tr = {sympy.Symbol(key): sympy.Symbol(value) for key, value in tr.items()}
+    tr = [(sympy.Symbol(key), sympy.Symbol(value)) for key, value in tr.items()]
     ll = ll.subs(tr)
     h = sympy.sympify(h).subs(tr)
 

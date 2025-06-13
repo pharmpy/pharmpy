@@ -96,7 +96,7 @@ def _get_covariate_effect(model: Model, symbol, covariate):
                 exp_terms = arg.args[0]
                 for a in exp_terms.args:
                     if covariate not in a.free_symbols:
-                        expression = expression.subs({a: Expr(0)})
+                        expression = expression.subs(a, 0)
                     else:
                         # If both covariate and ETA in same term -> SKIP
                         if any(eta in a.free_symbols for eta in etas):
@@ -120,7 +120,10 @@ def _get_covariate_effect(model: Model, symbol, covariate):
             template = template.template.expression
             template = sympy.sympify(template)
             wild_dict = defaultdict(list)
-            template_symbs = sorted(template.free_symbols, key=lambda x: x.name)
+            template_symbs = sorted(
+                template.free_symbols,
+                key=lambda x: x.name,  # pyright: ignore [reportAttributeAccessIssue]
+            )
             for s in template_symbs:
                 wild_symbol = sympy.Wild(str(s))
                 template = template.subs({s: wild_symbol})

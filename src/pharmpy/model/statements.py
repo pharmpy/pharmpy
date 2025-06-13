@@ -576,9 +576,14 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                     if _is_positive(term):
                         for second_comp in concentrations.intersection(free_images(term)):
                             for eq_2 in eqs:
-                                if eq_2.lhs.args[0].name == second_comp.name:
+                                if (
+                                    eq_2.lhs.args[
+                                        0
+                                    ].name  # pyright: ignore [reportAttributeAccessIssue]
+                                    == second_comp.name
+                                ):
                                     # If this is False, then input to compartment is of second order
-                                    if -term in sympy.Add.make_args(eq_2.rhs.expand()):
+                                    if -term in sympy.Add.make_args(sympy.expand(eq_2.rhs)):
                                         from_comp = compartments[names[Expr(second_comp)]]
                                         to_comp = compartments[names[Expr(eq.lhs.args[0])]]
                 else:
@@ -586,7 +591,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                     # compartments or not
                     if _is_positive(term):
                         for eq_2 in eqs:
-                            if -term in sympy.Add.make_args(eq_2.rhs.expand()):
+                            if -term in sympy.Add.make_args(sympy.expand(eq_2.rhs)):
                                 from_comp = compartments[names[Expr(eq_2.lhs.args[0])]]
                                 to_comp = compartments[names[Expr(eq.lhs.args[0])]]
 
@@ -602,24 +607,36 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                     for i, neweq in enumerate(neweqs):
                         xrhs = neweq.rhs
                         assert isinstance(xrhs, sympy.Expr)
-                        if neweq.lhs.args[0].name == eq.lhs.args[0].name:
-                            neweqs[i] = sympy.Eq(
-                                neweq.lhs, sympy.expand(xrhs - term)  # pyright: ignore
+                        if (
+                            neweq.lhs.args[0].name  # pyright: ignore [reportAttributeAccessIssue]
+                            == eq.lhs.args[0].name  # pyright: ignore [reportAttributeAccessIssue]
+                        ):
+                            neweqs[i] = (  # pyright: ignore [reportArgumentType, reportCallIssue]
+                                sympy.Eq(
+                                    neweq.lhs,
+                                    sympy.expand(xrhs - term),
+                                )
                             )
-                        elif neweq.lhs.args[0].name == comp_func.name:
-                            neweqs[i] = sympy.Eq(
-                                neweq.lhs, sympy.expand(xrhs + term)  # pyright: ignore
+                        elif (
+                            neweq.lhs.args[0].name  # pyright: ignore [reportAttributeAccessIssue]
+                            == comp_func.name
+                        ):
+                            neweqs[i] = (  # pyright: ignore [reportArgumentType, reportCallIssue]
+                                sympy.Eq(
+                                    neweq.lhs,
+                                    sympy.expand(xrhs + term),
+                                )
                             )
     for eq in neweqs:
         if eq.rhs != 0:
             i = sympy.Integer(0)
             o = sympy.Integer(0)
-            for term in sympy.Add.make_args(eq.rhs):
+            for term in sympy.Add.make_args(eq.rhs):  # pyright: ignore [reportArgumentType]
                 assert isinstance(term, sympy.Expr)
                 if _is_positive(term):
-                    i = i + term  # pyright: ignore
+                    i = i + term
                 else:
-                    o = o + term  # pyright: ignore
+                    o = o + term
             comp_func = eq.lhs.args[0]
             from_comp = compartments[names[Expr(comp_func)]]
             if o != 0:

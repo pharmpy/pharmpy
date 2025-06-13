@@ -291,7 +291,7 @@ def _compartmental_model(
 def des_assign_statements(
     control_stream: NMTranControlStream,
     des=None,
-):
+) -> list[tuple[Expr, Expr]]:
     if des:
         rec_model = control_stream.get_records('MODEL')[0]
 
@@ -309,13 +309,13 @@ def des_assign_statements(
         sset = des.statements.subs(subs_dict)
 
         statements = [
-            sympy.Eq(s.symbol, s.expression)
+            (s.symbol, s.expression)
             for s in sset
             if s.symbol.is_symbol() and not s.symbol.is_derivative()
         ]
-        if len(statements) == 0:
-            statements = None
         return statements
+    else:
+        return []
 
 
 def _f_link_assignment(

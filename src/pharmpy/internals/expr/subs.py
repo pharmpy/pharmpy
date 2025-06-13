@@ -20,7 +20,7 @@ def subs(expr: sympy.Expr, mapping: Mapping[Any, Any], simultaneous: bool = Fals
             _mapping[sympy.Pow] = lambda a, x: new_base**x if a is sympy.S.Exp1 else a**x
             return _subs_atoms_simultaneously(_subs_atom_or_func(_mapping), expr)
         return _subs_atoms_simultaneously(_subs_atom(_mapping), expr)
-    return expr.subs(_mapping, simultaneous=simultaneous)  # pyright: ignore [reportReturnType]
+    return expr.subs(_mapping, simultaneous=simultaneous)
 
 
 def xreplace_dict(dictlike) -> dict[Any, Any]:

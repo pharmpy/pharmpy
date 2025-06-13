@@ -244,7 +244,7 @@ def evaluate_individual_prediction(
 
 def _replace_parameters(model: Model, y: list[sympy.Expr], parameters: Optional[ParameterMap]):
     mapping = model.parameters.inits if parameters is None else parameters
-    return [x.subs(mapping) for x in y]
+    return [x.subs(mapping) for x in y]  # pyright: ignore [reportCallIssue, reportArgumentType]
 
 
 def evaluate_eta_gradient(

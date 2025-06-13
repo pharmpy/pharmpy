@@ -876,9 +876,11 @@ def test_display_odes(load_model_for_test, pheno_path):
 
 def test_is_real(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    assert is_real(model, "CL")
-    assert not is_real(model, "I*CL")
-    assert is_real(model, "sqrt(CL)") is None
+    assert is_real(model, "CL") is True
+    assert is_real(model, "I*CL") is False
+    # We cannot test this because of a regression from sympy 1.13.3 to 1.14.0
+    # https://github.com/sympy/sympy/issues/28142
+    # assert is_real(model, "sqrt(CL)") is None
 
 
 def test_is_linearized(load_example_model_for_test):
