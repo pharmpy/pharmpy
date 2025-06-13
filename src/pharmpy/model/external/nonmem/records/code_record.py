@@ -174,12 +174,26 @@ def expression_to_nmtran(expr, rvs=None, trans=None):
 
 
 def nmtran_assignment_string(assignment: Assignment, defined_symbols: set[Expr], rvs, trans):
-    if assignment.expression.is_piecewise():
+    expr = assignment.expression
+    if expr.is_piecewise():
         s = _translate_sympy_piecewise(assignment, defined_symbols, rvs, trans)
-    elif re.search('sign', str(assignment.expression)):  # FIXME: Don't use re here
+    elif re.search('sign', str(expr)):  # FIXME: Don't use re here
         s = _translate_sympy_sign(assignment)
+    elif expr.is_function() and expr.name == 'forward':
+        s = _translate_forward(assignment, defined_symbols, rvs, trans)
     else:
-        s = f'{str(assignment.symbol).upper()} = {expression_to_nmtran(assignment.expression, rvs, trans)}'
+        s = f'{str(assignment.symbol).upper()} = {expression_to_nmtran(expr, rvs, trans)}'
+    return s
+
+
+def _translate_forward(assignment, defined_symbols, rvs, trans):
+    symbol = assignment.symbol
+    expr = assignment.expression
+    value = expr.args[0]
+    cond = expr.args[1]
+    piecewise_expr = Expr.piecewise((value, cond))
+    piecewise_assignment = Assignment.create(symbol, piecewise_expr)
+    s = _translate_sympy_piecewise(piecewise_assignment, defined_symbols, rvs, trans)
     return s
 
 
