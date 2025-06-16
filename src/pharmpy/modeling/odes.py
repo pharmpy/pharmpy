@@ -1555,9 +1555,9 @@ def set_weibull_absorption(model: Model) -> Model:
     >>> model = set_weibull_absorption(model)
     >>> model.statements.ode_system
     Bolus(AMT, admid=1) → DEPOT
-    ┌─────┐     ┌───────┐
-    │DEPOT│──KA→│CENTRAL│──CL/V→
-    └─────┘     └───────┘
+	┌─────┐      ┌───────┐
+    │DEPOT│──KAW→│CENTRAL│──CL/V→
+    └─────┘      └───────┘
 
     See also
     --------
