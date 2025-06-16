@@ -899,7 +899,7 @@ def _cut_partial_odes(model, g, dv):
         from sympy.core.function import AppliedUndef
 
         funcs = eq._sympy_().atoms(AppliedUndef)
-        funcs = {Expr(func) for func in funcs}
+        funcs = {Expr(func) for func in funcs if func in odes.amounts}
         return funcs
 
     def dep_amounts(ode_deps, amounts):
