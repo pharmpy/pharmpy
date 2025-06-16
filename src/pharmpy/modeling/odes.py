@@ -30,7 +30,7 @@ from pharmpy.model import (
 from pharmpy.modeling.help_functions import _as_integer
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols
-from .data import add_time_after_dose, get_observations
+from .data import add_time_of_last_dose, get_observations
 from .expressions import create_symbol, is_real
 from .parameters import (
     add_population_parameter,
@@ -1502,9 +1502,14 @@ def has_weibull_absorption(model: Model) -> bool:
 
     beta = sympy.Wild("beta")
     alpha = sympy.Wild("alpha")
-    tad = sympy.Wild("tad")
-    ka = (beta / alpha) * (tad / alpha) ** (beta - 1)
-    match = sympy.sympify(rate).match(ka)
+    t = sympy.Wild("t")
+    forward = sympy.Function("forward")
+    rate = sympy.sympify(rate)
+    rate = rate.replace(forward, lambda x, y: sympy.Integer(0))
+    ka = (beta / alpha) * (t / alpha) ** (beta - 1)
+    match = rate.match(ka)
+    print(match)
+    print(rate)
     return match is not None and len(match) == 3
 
 
@@ -1514,7 +1519,7 @@ def set_weibull_absorption(model: Model) -> Model:
     The Weibull absorption has an abosption rate varying with time (or rather time after dose).
     :math:`k_a(t) = (\frac{k}{\lambda} (\frac{t}{\lambda})^{k - 1}`
 
-    Initial parameter estimates will be set differently depending if the original model
+    Initial parameter estimates will be set differently depending on whether the original model
     has MAT and/or MDT.
 
     === === ========= =======================================================
@@ -1588,8 +1593,9 @@ def set_weibull_absorption(model: Model) -> Model:
     model = remove_lag_time(model)
     model = set_transit_compartments(model, 0, keep_depot=True)
     model = set_first_order_absorption(model)
-    model = add_time_after_dose(model)
-    tad = model.datainfo.descriptorix['time after dose'][0].symbol
+    model = add_time_of_last_dose(model)
+    odes = get_and_check_odes(model)
+    tad = odes.t - Expr.symbol("TDOSE")
 
     lmbda = Expr.symbol("LAMBDA")
     k = Expr.symbol("K")
