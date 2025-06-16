@@ -64,8 +64,9 @@ class LocalDirectoryContext(Context):
             return False
 
     def _init_subcontexts(self):
-        if not (self.path / 'subcontexts').is_dir():
-            (self.path / 'subcontexts').mkdir()
+        subpath = self.path / 'subcontexts'
+        if not subpath.is_dir():
+            subpath.mkdir()
 
     def _init_top_path(self):
         path = self.path
