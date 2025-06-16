@@ -8,7 +8,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools import is_strictness_fulfilled, read_modelfit_results
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry
@@ -94,7 +94,12 @@ def plot_parameter_estimates_histogram(res):
 
 
 def calculate_results(
-    bootstrap_models, results, original_results=None, included_individuals=None, dofv_results=None
+    bootstrap_models,
+    results,
+    original_results=None,
+    included_individuals=None,
+    dofv_results=None,
+    strictness: str = "",
 ):
     if original_results is None:
         warnings.warn(
@@ -102,6 +107,7 @@ def calculate_results(
             'original_bootdata_ofv'
         )
 
+    bootstrap_models, results = filter_strictness(bootstrap_models, results, strictness)
     df = pd.DataFrame()
     for res in results:
         df = pd.concat([df, res.parameter_estimates], axis=1, ignore_index=True, sort=False)
@@ -185,6 +191,16 @@ def calculate_results(
         dofv_quantiles_plot=plot_dofv_quantiles(res),
         parameter_estimates_histogram=plot_parameter_estimates_histogram(res),
     )
+
+
+def filter_strictness(bootstrap_models, results, strictness):
+    kept_models = []
+    kept_results = []
+    for model, res in zip(bootstrap_models, results):
+        if is_strictness_fulfilled(model, res, strictness):
+            kept_models.append(model)
+            kept_results.append(res)
+    return kept_models, kept_results
 
 
 def create_distribution(df):

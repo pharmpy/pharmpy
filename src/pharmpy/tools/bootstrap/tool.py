@@ -18,7 +18,11 @@ from pharmpy.workflows.results import ModelfitResults
 
 
 def create_workflow(
-    model: Model, results: Optional[ModelfitResults] = None, resamples: int = 1, dofv: bool = False
+    model: Model,
+    results: Optional[ModelfitResults] = None,
+    resamples: int = 1,
+    dofv: bool = False,
+    strictness: str = "",
 ):
     """Run bootstrap tool
 
@@ -32,6 +36,9 @@ def create_workflow(
         Number of bootstrap resamples
     dofv : bool
         Will evaluate bootstrap models with original dataset if set
+    strictness : str
+        Strictness expression for which models should be used in the
+        calculations. Default is all models.
 
     Returns
     -------
@@ -60,7 +67,7 @@ def create_workflow(
             task_dofv = Task('run_dofv', run_dofv, model)
             wb.add_task(task_dofv, predecessors=task_execute)
 
-    task_result = Task('results', post_process_results, model, results)
+    task_result = Task('results', post_process_results, model, results, strictness)
     wb.add_task(task_result, predecessors=wb.output_tasks)
 
     return Workflow(wb)
@@ -106,7 +113,7 @@ def run_dofv(context, input_model, tpl):
     return (me, groups, res_me)
 
 
-def post_process_results(context, original_model, original_model_res, *tpls):
+def post_process_results(context, original_model, original_model_res, strictness, *tpls):
     model_entries = [tpl[0] for tpl in tpls]
     groups = [tpl[1] for tpl in tpls]
     dofv_mes = [tpl[2] for tpl in tpls]
@@ -119,6 +126,7 @@ def post_process_results(context, original_model, original_model_res, *tpls):
         original_results=original_model_res,
         included_individuals=groups,
         dofv_results=dofv_results,
+        strictness=strictness,
     )
     context.log_info("Finishing tool bootstrap")
     return res
