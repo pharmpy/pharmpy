@@ -10,6 +10,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Union, get_args, get_origin, get_type_hints
 
+from lark import UnexpectedToken
+
 import pharmpy
 import pharmpy.tools.modelfit
 import pharmpy.workflows.results
@@ -23,8 +25,10 @@ from pharmpy.modeling import (
     check_high_correlations,
     check_parameters_near_bounds,
     get_omegas,
+    get_parameter_rv,
     get_sigmas,
     get_thetas,
+    has_random_effect,
     read_model,
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
@@ -1518,26 +1522,21 @@ def calculate_mbic_penalty(
                 'Missing value for `E_p`, must be specified when using MFL in `search_space`'
             )
 
-        cand_features = get_model_features(candidate_model)
+        try:
+            search_space_mfl, cand_mfl = parse_search_space_modelsearch(
+                candidate_model, search_space
+            )
+        except UnexpectedToken:
+            search_space_mfl, cand_mfl = None, None
 
-        if isinstance(search_space, str):
-            search_space_mfl = parse(search_space, mfl_class=True)
+        if search_space_mfl:
+            p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
+            q = 0
+            k_q = 0
         else:
-            search_space_mfl = search_space
-        cand_mfl = parse(cand_features, mfl_class=True)
-        # FIXME: Workaround to skip covariate effects detected in search space
-        cand_mfl = ModelFeatures.create(
-            absorption=cand_mfl.absorption,
-            elimination=cand_mfl.elimination,
-            transits=cand_mfl.transits,
-            peripherals=cand_mfl.peripherals,
-            lagtime=cand_mfl.lagtime,
-        )
-
-        p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
-
-        q = 0
-        k_q = 0
+            if keep is not None:
+                raise ValueError('Cannot provide both `search_space` and `keep`')
+            p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate_model, search_space)
     if isinstance(search_space, list):
         allowed_options = ['iiv_diag', 'iiv_block', 'iov']
         for search_space_type in search_space:
@@ -1586,6 +1585,25 @@ def _prepare_E_value(e, p, type='p'):
     if e > p:
         raise ValueError(f'`E_{type}` cannot be bigger than `{type}`: E_{type}={e}, {type}={p}')
     return e
+
+
+def parse_search_space_modelsearch(model, search_space):
+    if isinstance(search_space, str):
+        search_space_mfl = parse(search_space, mfl_class=True)
+    else:
+        search_space_mfl = search_space
+    cand_features = get_model_features(model)
+    cand_mfl = parse(cand_features, mfl_class=True)
+    # FIXME: Workaround to skip covariate effects detected in search space
+    cand_mfl = ModelFeatures.create(
+        absorption=cand_mfl.absorption,
+        elimination=cand_mfl.elimination,
+        transits=cand_mfl.transits,
+        peripherals=cand_mfl.peripherals,
+        lagtime=cand_mfl.lagtime,
+    )
+
+    return search_space_mfl, cand_mfl
 
 
 def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
@@ -1654,24 +1672,69 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
 
 
 def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
-    base_etas = _get_var_params(base_model, search_space)
-    cand_etas = _get_var_params(cand_model, search_space)
+    if isinstance(search_space, str):
+        iiv_params, iov_params, cov_params = parse_search_space_rvs(search_space)
+        p = len(iiv_params) + len(iov_params)
+        k_p = get_k_p(cand_model, iiv_params, 'iiv') + get_k_p(cand_model, iov_params, 'iov')
+        if cov_params:
+            q = int((len(cov_params) * (len(cov_params) - 1)) / 2)
+            k_q = get_k_q(cand_model, cov_params)
+        else:
+            q, k_q = 0, 0
+    else:
+        base_etas = _get_var_params(base_model, search_space)
+        cand_etas = _get_var_params(cand_model, search_space)
 
-    p, k_p, q, k_q = 0, 0, 0, 0
-    if 'iiv_diag' in search_space or 'iov' in search_space:
-        p = len(base_etas.variance_parameters)
-        k_p = len(cand_etas.variance_parameters)
-        if keep:
-            p -= len(keep)
-            k_p -= len(keep)
-    if 'iiv_block' in search_space:
-        q = int(len(base_etas.variance_parameters) * (len(base_etas.variance_parameters) - 1) / 2)
-        cov_params = [
-            p for p in cand_etas.parameter_names if p not in cand_etas.variance_parameters
-        ]
-        k_q = len(cov_params)
+        p, k_p, q, k_q = 0, 0, 0, 0
+        if 'iiv_diag' in search_space or 'iov' in search_space:
+            p = len(base_etas.variance_parameters)
+            k_p = len(cand_etas.variance_parameters)
+            if keep:
+                p -= len(keep)
+                k_p -= len(keep)
+        if 'iiv_block' in search_space:
+            q = int(
+                len(base_etas.variance_parameters) * (len(base_etas.variance_parameters) - 1) / 2
+            )
+            cov_params = [
+                p for p in cand_etas.parameter_names if p not in cand_etas.variance_parameters
+            ]
+            k_q = len(cov_params)
 
     return p, k_p, q, k_q
+
+
+def parse_search_space_rvs(search_space):
+    iiv_params, iov_params, cov_params = [], [], []
+    for subexpr in search_space.split(';'):
+        assert subexpr.startswith('IIV') or subexpr.startswith('IOV') or subexpr.startswith('COV')
+        if '?' not in subexpr:
+            continue
+        if subexpr.startswith('COV'):
+            pattern = r'COV\?\(\[*([\w,]*)\]*\)'
+            params = re.match(pattern, subexpr).group(1).split(',')
+            cov_params.extend(params)
+        else:
+            pattern = r'(IIV|IOV)\?\(\[*([\w,]*)\]*,'
+            params = re.match(pattern, subexpr).group(2).split(',')
+            if subexpr.startswith('IIV'):
+                iiv_params.extend(params)
+            else:
+                iov_params.extend(params)
+    return iiv_params, iov_params, cov_params
+
+
+def get_k_p(model, params, level):
+    params = [p for p in params if has_random_effect(model, p, level)]
+    return len(params)
+
+
+def get_k_q(model, params):
+    param_rvs = [get_parameter_rv(model, p) for p in params]
+    param_rvs = [item for sublist in param_rvs for item in sublist]
+    rvs = model.random_variables[param_rvs]
+    cov_params = [p for p in rvs.parameter_names if p not in rvs.variance_parameters]
+    return len(cov_params)
 
 
 def _get_var_params(model, search_space):
