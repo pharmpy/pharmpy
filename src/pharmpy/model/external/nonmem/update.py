@@ -510,7 +510,12 @@ def is_nonlinear_odes(model: Model):
     """Check if ode system is nonlinear"""
     odes = get_odes(model)
     M = odes.compartmental_matrix
-    return odes.t in M.free_symbols
+    pk = model.statements.before_odes
+    for i in range(M.rows):
+        for j in range(M.cols):
+            if odes.t in pk.full_expression(M[i, j]).free_symbols:
+                return True
+    return False
 
 
 def get_odes(model_or_statements) -> CompartmentalSystem:

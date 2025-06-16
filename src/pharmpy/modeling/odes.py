@@ -1603,7 +1603,9 @@ def set_weibull_absorption(model: Model) -> Model:
     model = add_individual_parameter(model, k.name, init=init_k, lower=0.0)
 
     expr = (k / lmbda) * (tad / lmbda) ** (k - 1)
-    ka = Expr.piecewise((0.000001, BooleanExpr.eq(tad, 0)), (expr, BooleanExpr.true()))
+    ka_expr = Expr.piecewise((0.000001, BooleanExpr.eq(tad, 0)), (expr, BooleanExpr.true()))
+    ka_symbol = Expr.symbol("KAW")
+    ka_assignment = Assignment.create(ka_symbol, ka_expr)
 
     odes = get_and_check_odes(model)
 
@@ -1613,10 +1615,10 @@ def set_weibull_absorption(model: Model) -> Model:
     depot = odes.find_depot(model.statements)
     assert isinstance(depot, Compartment)
     oldrate = odes.get_flow(depot, central)
-    cb.add_flow(depot, central, ka)
+    cb.add_flow(depot, central, ka_symbol)
     odes = CompartmentalSystem(cb)
 
-    statements = model.statements.before_odes + odes + model.statements.after_odes
+    statements = model.statements.before_odes + ka_assignment + odes + model.statements.after_odes
     statements = statements.remove_symbol_definitions(oldrate.free_symbols, odes)
     model = model.replace(statements=statements)
 
