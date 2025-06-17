@@ -15,6 +15,7 @@ Bugfixes
 * Fix seeds for simulations in NONMEM models to often get to big
 * Do not warn about not running iovsearch, covsearch or allometry if not requested in strategy
 * Fix crash when interrupting a tool multiple times (when clicking stop multiple times in rstudio or spyder for example)
+* Fix crash when resuming an interrupted amd run
 
 .. _1.7.2:
 

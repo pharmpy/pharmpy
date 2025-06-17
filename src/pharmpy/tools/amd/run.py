@@ -39,6 +39,7 @@ from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.statement import Statement
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import is_strictness_fulfilled, run_subtool, summarize_errors_from_entries
 from pharmpy.workflows import Context, ModelEntry, Results, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
@@ -545,11 +546,13 @@ def run_amd_task(
 
     if results is None:
         context.log_info('Running base model')
-        results = run_subtool('modelfit', context, model_or_models=model)
+        model = model.replace(name='base')
+        me = ModelEntry.create(model=model)
+        fit_wf = create_fit_workflow(me)
+        model_entry = context.call_workflow(fit_wf, 'Run base model')
+        results = model_entry.modelfit_results
         if not is_strictness_fulfilled(model, results, DEFAULT_STRICTNESS):
             context.log_warning('Base model failed strictness')
-        model = model.replace(name='base')
-        context.store_model_entry(ModelEntry.create(model=model, modelfit_results=results))
 
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
     next_model_entry = model_entry
