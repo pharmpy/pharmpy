@@ -1517,7 +1517,7 @@ def set_weibull_absorption(model: Model) -> Model:
     r"""Set or change to Weibull type absorption
 
     The Weibull absorption has an abosption rate varying with time (or rather time after dose).
-    :math:`k_a(t) = (\frac{k}{\lambda} (\frac{t}{\lambda})^{k - 1}`
+    :math:`k_a(t) = \frac{k}{\lambda} (\frac{t}{\lambda})^{k - 1}`
 
     Initial parameter estimates will be set differently depending on whether the original model
     has MAT and/or MDT.
