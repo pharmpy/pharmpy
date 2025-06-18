@@ -32,7 +32,6 @@ def _model_count(rundir: Path):
             {'strategy': 'default', 'retries_strategy': 'skip'},
             'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
             {
-                'modelfit',
                 'modelsearch',
                 'iivsearch',
                 'ruvsearch',
@@ -53,7 +52,6 @@ def _model_count(rundir: Path):
             {'strategy': 'reevaluation', 'retries_strategy': 'skip'},
             'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
             {
-                'modelfit',
                 'modelsearch',
                 'iivsearch',
                 'ruvsearch',
@@ -110,7 +108,6 @@ def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, s
 #         assert (rundir / 'results.json').exists()
 #         assert (rundir / 'results.csv').exists()
 #         subrundir = [
-#             'modelfit',
 #             'modelsearch',
 #             'iivsearch',
 #             'ruvsearch',
