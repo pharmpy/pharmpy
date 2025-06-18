@@ -146,6 +146,7 @@ def set_additive_error_model(
     dv = get_dv_symbol(model, dv)
     if has_additive_error_model(model, dv):
         return model
+    original_model = model
     stats, y, f = _preparations(model, dv)
     ruv = create_symbol(model, 'epsilon_a')
 
@@ -169,7 +170,27 @@ def set_additive_error_model(
     model = model.replace(
         statements=stats.reassign(y, expr), random_variables=rvs_new, parameters=params_new
     )
+    no_longer_needed = _statements_no_longer_needed(original_model, model)
+    model = _remove_assignments(model, no_longer_needed)
     return model.update_source()
+
+
+def _remove_assignments(model, symbols):
+    new_error = [s for s in model.statements.error if s.symbol not in symbols]
+    new_statements = model.statements.before_odes + model.statements.ode_system + new_error
+    model = model.replace(statements=new_statements)
+    return model
+
+
+def _statements_no_longer_needed(base, updated):
+    base_lhs = base.statements.error.lhs_symbols
+    base_rhs = base.statements.error.rhs_symbols
+    base_needed = base_rhs.intersection(base_lhs)
+    updated_lhs = updated.statements.error.lhs_symbols
+    updated_rhs = updated.statements.error.rhs_symbols
+    updated_needed = updated_rhs.intersection(updated_lhs)
+    no_longer_needed = base_needed - updated_needed
+    return no_longer_needed
 
 
 def _get_prop_init(model):

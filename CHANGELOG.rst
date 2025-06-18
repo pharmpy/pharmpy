@@ -16,7 +16,8 @@ Bugfixes
 * Do not warn about not running iovsearch, covsearch or allometry if not requested in strategy
 * Fix crash when interrupting a tool multiple times (when clicking stop multiple times in rstudio or spyder for example)
 * Fix crash when resuming an interrupted amd run
-
+* Remove IPREDADJ when going from a proportional error to an additive
+ 
 .. _1.7.2:
 
 1.7.2 (2025-05-21)

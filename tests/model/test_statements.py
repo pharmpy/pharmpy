@@ -81,6 +81,17 @@ def test_lhs_symbols(load_example_model_for_test):
     }
 
 
+def test_rhs_symbols(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert model.statements.error.rhs_symbols == {
+        S('F'),
+        Expr.function("A_CENTRAL", "t"),
+        S("S1"),
+        S("t"),
+        S("EPS_1"),
+    }
+
+
 def test_find_assignment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements

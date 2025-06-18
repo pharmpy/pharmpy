@@ -2090,6 +2090,22 @@ class Statements(Sequence, Immutable):
                 symbs |= set(s.amounts)
         return symbs
 
+    @property
+    def rhs_symbols(self) -> set[Expr]:
+        """Get set of all symbols used in this Statements
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.before_odes.rhs_symbols   # doctest: +SKIP
+        {TVV, CL, VC, V, TVCL}
+        """
+        symbs = set()
+        for s in self:
+            symbs |= s.rhs_symbols
+        return symbs
+
     def _get_ode_system_index(self):
         return next(
             map(
