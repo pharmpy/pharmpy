@@ -355,7 +355,8 @@ def _update_metadata(tool_metadata):
 
 def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
     if not name:
-        name = tool_name
+        name = _create_new_subcontext_name(ctx, tool_name)
+
     tool = import_tool(tool_name)
     subctx = ctx.create_subcontext(name)
 
@@ -580,13 +581,16 @@ def _store_input_models(db, metadata, tool_params, kwargs):
 
 def _is_model_arg(model_or_list_of_models):
     return isinstance(model_or_list_of_models, Model) or (
-        isinstance(model_or_list_of_models, list) and isinstance(model_or_list_of_models[0], Model)
+        isinstance(model_or_list_of_models, list)
+        and len(model_or_list_of_models) > 0
+        and isinstance(model_or_list_of_models[0], Model)
     )
 
 
 def _is_results_arg(results_or_list_of_results):
     return isinstance(results_or_list_of_results, ModelfitResults) or (
         isinstance(results_or_list_of_results, list)
+        and len(results_or_list_of_results) > 0
         and isinstance(results_or_list_of_results[0], ModelfitResults)
     )
 
@@ -688,6 +692,16 @@ def _create_new_context_name(context: type[Context], tool_name: str) -> str:
     while True:
         name = f"{tool_name}{n}"
         if not context.exists(name):
+            break
+        n += 1
+    return name
+
+
+def _create_new_subcontext_name(context: Context, tool_name: str) -> str:
+    n = 1
+    while True:
+        name = f"{tool_name}{n}"
+        if name not in context.list_all_subcontexts():
             break
         n += 1
     return name
@@ -1038,6 +1052,7 @@ def rank_models(
         if np.isnan(rank_value):
             continue
         if penalties:
+            print(model, rank_value, penalties[i])
             rank_value += penalties[i]
         if model.name == base_model.name:
             pass

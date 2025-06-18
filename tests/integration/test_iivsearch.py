@@ -24,7 +24,7 @@ from pharmpy.workflows import LocalDirectoryContext
             {'rank_type': 'mbic', 'E_p': '50%', 'E_q': '50%'},
             4,
             2,
-            'iivsearch_run4',
+            'iivsearch_run1',
         ),
         (
             'bottom_up_stepwise',
@@ -116,7 +116,6 @@ def test_no_of_etas_linearization(
             model=start_modelres[0],
             results=start_modelres[1],
             algorithm=algorithm,
-            linearize=True,
             correlation_algorithm=correlation_algorithm,
             iiv_strategy=strategy,
         )
