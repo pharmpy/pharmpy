@@ -1052,7 +1052,6 @@ def rank_models(
         if np.isnan(rank_value):
             continue
         if penalties:
-            print(model, rank_value, penalties[i])
             rank_value += penalties[i]
         if model.name == base_model.name:
             pass

@@ -359,6 +359,7 @@ def start(
                 input_model_entry=input_model_entry,
                 list_of_algorithms=list_of_algorithms,
                 rank_type=rank_type,
+                cutoff=cutoff,
                 E_p=E_p,
                 E_q=E_q,
                 keep=keep,
