@@ -72,10 +72,8 @@ def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, s
         input = 'moxo_simulated_amd.csv'
         res = run_amd(input, **model_kwargs, **run_kwargs, esttool='dummy')
 
-        assert (
-            len(res.summary_tool) == len(subtools) - 1
-        )  # Simulation is not part of the result table
-        assert len(res.summary_models) > len(subtools)
+        assert len(res.summary_tool) == len(subtools)  # Simulation is not part of the result table
+        assert len(res.summary_models) > len(subtools) + 1
 
         rundir = tmp_path / 'amd1'
         assert rundir.is_dir()
