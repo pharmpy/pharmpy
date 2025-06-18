@@ -31,18 +31,18 @@ from pharmpy.tools.iivsearch.algorithms import (
 )
 from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
+    categorize_model_entries,
     create_param_mapping,
     create_workflow,
+    flatten_list,
     get_mbic_search_space,
     get_ref_model,
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
+    update_input_model_description,
     update_linearized_base_model,
     validate_input,
-    flatten_list,
-    categorize_model_entries,
-    update_input_model_description,
 )
 from pharmpy.workflows import ModelEntry, Workflow
 
