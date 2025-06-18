@@ -33,7 +33,7 @@ from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     create_param_mapping,
     create_workflow,
-    get_mbic_penalties,
+    get_mbic_search_space,
     get_ref_model,
     prepare_algorithms,
     prepare_base_model,
@@ -529,24 +529,34 @@ def test_get_ref_model(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'as_fullblock, penalties_ref',
+    'funcs, kwargs, search_space',
     [
+        ([], {'keep': [], 'E_p': 1, 'E_q': None}, 'IIV?([CL,MAT,VC],exp)'),
+        ([], {'keep': [], 'E_p': 1, 'E_q': 1}, 'IIV?([CL,MAT,VC],exp);COV?([CL,MAT,VC])'),
+        ([], {'keep': [], 'E_p': None, 'E_q': 1}, 'IIV([CL,MAT,VC],exp);COV?([CL,MAT,VC])'),
+        ([], {'keep': ['CL'], 'E_p': 1, 'E_q': None}, 'IIV([CL],exp);IIV?([MAT,VC],exp)'),
         (
-            False,
-            [2.77, 1.39, 0],
+            [],
+            {'keep': ['CL'], 'E_p': 1, 'E_q': 1},
+            'IIV([CL],exp);IIV?([MAT,VC],exp);COV?([CL,MAT,VC])',
         ),
-        (True, [9.36, 3.58, 0]),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            {'keep': [], 'E_p': 1, 'E_q': 1},
+            'IIV?([CL,MAT,QP1,VC,VP1],exp);COV?([CL,MAT,QP1,VC,VP1])',
+        ),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            {'keep': ['CL'], 'E_p': 1, 'E_q': 1},
+            'IIV([CL],exp);IIV?([MAT,QP1,VC,VP1],exp);COV?([CL,MAT,QP1,VC,VP1])',
+        ),
     ],
 )
-def test_get_mbic_penalties(load_model_for_test, testdata, as_fullblock, penalties_ref):
-    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    if as_fullblock:
-        model_base = create_joint_distribution(model_base)
-    cand1 = remove_iiv(model_base, 'VC')
-    cand2 = remove_iiv(model_base, ['VC', 'MAT'])
-
-    penalties = get_mbic_penalties(model_base, [model_base, cand1, cand2], ['CL'], E_p=1, E_q=1)
-    assert [round(p, 2) for p in penalties] == penalties_ref
+def test_get_mbic_search_space(load_model_for_test, testdata, funcs, kwargs, search_space):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+    assert get_mbic_search_space(model, **kwargs) == search_space
 
 
 @pytest.mark.parametrize(

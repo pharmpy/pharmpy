@@ -1,3 +1,4 @@
+import re
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
@@ -13,7 +14,7 @@ from pharmpy.workflows import Context, ModelEntry, ModelfitResults, Task, Workfl
 from ..mfl.parse import parse as mfl_parse
 from ..modelsearch.filter import mfl_filtering
 
-RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic_mixed', 'bic_iiv', 'mbic_mixed'))
+RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic_mixed', 'bic_iiv', 'mbic_mixed', 'mbic_iiv'))
 
 
 def create_workflow(
@@ -99,7 +100,7 @@ def start(
     for me in [me_ref] + mes_cand:
         context.store_model_entry(me)
 
-    if rank_type == 'mbic':
+    if rank_type in ('mbic_mixed', 'mbic_iiv'):
         penalties = prepare_penalties(search_space, E, me_ref, mes_cand)
     else:
         penalties = None
@@ -209,7 +210,7 @@ def _modify_rank_table(
 def get_rank_type_kwargs(rank_type: str):
     if rank_type in ('bic_mixed', 'mbic_mixed'):
         kwargs = {'rank_type': 'bic', 'bic_type': 'mixed'}
-    elif rank_type == 'bic_iiv':
+    elif rank_type in ('bic_iiv', 'mbic_iiv'):
         kwargs = {'rank_type': 'bic', 'bic_type': 'iiv'}
     else:
         kwargs = {'rank_type': rank_type}
@@ -253,7 +254,14 @@ def validate_input(
             try:
                 statements = mfl_parse(search_space)
             except:  # noqa E722
-                raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+                pattern_cov = r'COV\?\(\[*([\w,]*)\]*\)'
+                pattern_var = r'(IIV|IOV)\?\(\[*([\w,]*)\]*,\w+\)'
+                if not re.match(pattern_cov, search_space) and not re.match(
+                    pattern_var, search_space
+                ):
+                    raise ValueError(
+                        f'Invalid `search_space`, could not be parsed: "{search_space}"'
+                    )
         else:
             statements = search_space.filter("pk").mfl_statement_list()
 
