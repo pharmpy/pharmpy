@@ -608,26 +608,8 @@ def post_process(
     context,
     *model_entries,
 ):
-    res_model_entries = []
-    base_model_entry = None
-
-    def flatten_list(lst):
-        result = []
-        for item in lst:
-            if isinstance(item, list):
-                result.extend(flatten_list(item))
-            else:
-                result.append(item)
-        return result
-
     model_entries = flatten_list(model_entries)
-
-    base_model = get_ref_model([me.model for me in model_entries], algorithm)
-    for model_entry in model_entries:
-        if model_entry.model.name == base_model.name:
-            base_model_entry = model_entry
-        else:
-            res_model_entries.append(model_entry)
+    base_model_entry, res_model_entries = categorize_model_entries(model_entries, algorithm)
 
     if algorithm == 'bu_stepwise_no_of_etas':
         base_model_entry = ModelEntry.create(
@@ -636,20 +618,10 @@ def post_process(
             parent=input_model_entry.model,
         )
 
-    assert len(res_model_entries) > 0
-
-    if not base_model_entry:
-        raise ValueError('Error in workflow: No base model')
-
     # In order to have the IIV structure of the input model in the description column
     # in the result summaries
     if input_model_entry.model.name == base_model_entry.model.name:
-        base_model = base_model_entry.model
-        base_model_description = algorithms.create_description(base_model)
-        base_model = base_model.replace(description=base_model_description)
-        base_model_entry = ModelEntry.create(
-            base_model, modelfit_results=base_model_entry.modelfit_results
-        )
+        base_model_entry = update_input_model_description(input_model_entry)
 
     models_to_rank = [base_model_entry.model] + [me.model for me in res_model_entries]
     results_to_rank = [base_model_entry.modelfit_results] + [
@@ -686,6 +658,41 @@ def post_process(
         final_results=rank_res.final_results,
     )
     return res
+
+
+def flatten_list(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(flatten_list(item))
+        else:
+            result.append(item)
+    return result
+
+
+def categorize_model_entries(model_entries, algorithm):
+    res_model_entries = []
+    base_model_entry = None
+
+    base_model = get_ref_model([me.model for me in model_entries], algorithm)
+    for model_entry in model_entries:
+        if model_entry.model.name == base_model.name:
+            base_model_entry = model_entry
+        else:
+            res_model_entries.append(model_entry)
+
+    assert base_model_entry
+    assert len(res_model_entries) > 0
+
+    return base_model_entry, res_model_entries
+
+
+def update_input_model_description(input_model_entry):
+    model = input_model_entry.model
+    description = algorithms.create_description(model)
+    model = model.replace(description=description)
+    model_entry = ModelEntry.create(model, modelfit_results=input_model_entry.modelfit_results)
+    return model_entry
 
 
 def get_modelrank_opts(ref_model, model_entries, rank_type, keep, E_p, E_q):

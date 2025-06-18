@@ -40,6 +40,9 @@ from pharmpy.tools.iivsearch.tool import (
     prepare_input_model,
     update_linearized_base_model,
     validate_input,
+    flatten_list,
+    categorize_model_entries,
+    update_input_model_description,
 )
 from pharmpy.workflows import ModelEntry, Workflow
 
@@ -177,6 +180,51 @@ def test_add_iiv(load_model_for_test, testdata, iiv_strategy, linearize, no_of_a
         len(model_iiv.parameters.nonfixed) - len(model_input.parameters.nonfixed)
         == no_of_added_params
     )
+
+
+def test_flatten_list():
+    assert flatten_list([['x'], 'y', [['z']]]) == ['x', 'y', 'z']
+
+
+@pytest.mark.parametrize(
+    'algorithm, base_model_name',
+    [
+        ('td_exhaustive_no_of_etas', 'pheno'),
+        ('bu_stepwise_no_of_etas', 'model_2'),
+    ],
+)
+def test_categorize_model_entries(
+    load_model_for_test, testdata, model_entry_factory, algorithm, base_model_name
+):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    model_start = add_peripheral_compartment(model_start)
+    model_start = add_pk_iiv(model_start)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    model_1 = remove_iiv(model_start, 'QP1')
+    model_1 = model_1.replace(name='model_1')
+    model_2 = remove_iiv(model_1, 'VP1')
+    model_2 = model_2.replace(name='model_2')
+
+    candidate_entries = model_entry_factory([model_1, model_2])
+    model_entries = [me_start] + candidate_entries
+
+    base_model_entry, res_model_entries = categorize_model_entries(model_entries, algorithm)
+
+    assert len(res_model_entries) == 2
+    assert base_model_entry.model.name == base_model_name
+
+
+def test_update_input_model_description(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    model_start = add_peripheral_compartment(model_start)
+    model_start = add_pk_iiv(model_start)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    me = update_input_model_description(me_start)
+    assert me.model.description == '[CL]+[V1]+[QP1]+[VP1]'
 
 
 @pytest.mark.parametrize(
