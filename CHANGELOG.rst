@@ -1,18 +1,21 @@
-next version
-------------
+.. _1.8.0:
+
+1.8.0 (2025-06-19)
+------------------
 
 New features
 ============
 
 * Support for Linux on AArch64 (ARM64) added
 * Add :code:`modeling.time_of_last_dose`
+* Add :code:`strictness` option to the bootstrap tool 
 
 Bugfixes
 ========
 
 * Fix crash when parsing some numeric options in NONMEM $TABLE (For example NPDTYPE=1)
 * Handle MFL as input to structsearch for drug metabolite (#3821) 
-* Fix seeds for simulations in NONMEM models to often get to big
+* Fix seeds for simulations in amd for NONMEM models to get too big
 * Do not warn about not running iovsearch, covsearch or allometry if not requested in strategy
 * Fix crash when interrupting a tool multiple times (when clicking stop multiple times in rstudio or spyder for example)
 * Fix crash when resuming an interrupted amd run

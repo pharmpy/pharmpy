@@ -2,6 +2,13 @@
 News
 ====
 
+Pharmpy and pharmr 1.8.0 released
+---------------------------------
+
+*2025-06-19* --- This is mostly a bugfix release. Most importantly a bug causing resuming a crashed amd run to fail. Adding the :code:`strictness` option to the bootstrap tool makes it almost as feature complete as the PsN bootstrap. 
+
+See :ref:`CHANGELOG<1.8.0>` for details.
+
 Pharmpy and pharmr 1.7.2 released
 ---------------------------------
 
