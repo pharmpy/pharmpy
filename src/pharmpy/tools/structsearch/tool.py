@@ -11,14 +11,20 @@ from pharmpy.model import Model
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools.common import (
     ToolResults,
+    create_plots,
     create_results,
     summarize_tool,
+    table_final_eta_shrinkage,
     update_initial_estimates,
 )
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    run_subtool,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -270,16 +276,43 @@ def run_pkpd(
     summary_input = summarize_modelfit_results_from_entries([model_entry])
     summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
 
-    res = create_results(
-        StructSearchResults,
-        model_entry,
-        pd_baseline_fit[0],
-        list(pkpd_models_fit),
-        rank_type='bic',
-        cutoff=None,
-        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
+    base_model_entry = pd_baseline_fit[0]
+    mes = [base_model_entry] + list(pkpd_models_fit)
+    models = [me.model for me in mes]
+    results = [me.modelfit_results for me in mes]
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else base_model_entry.model.name for me in mes
+    }
+
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=base_model_entry.model,
+        rank_type='bic_mixed',
         strictness=strictness,
-        context=context,
+        _parent_dict=parent_dict,
+    )
+
+    summary_models = pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"])
+    summary_errors = summarize_errors_from_entries(mes)
+    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
+
+    plots = create_plots(rank_res.final_model, rank_res.final_results)
+
+    res = StructSearchResults(
+        summary_tool=rank_res.summary_tool,
+        summary_models=summary_models,
+        summary_errors=summary_errors,
+        final_model=rank_res.final_model,
+        final_results=rank_res.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
     )
 
     final_model = res.final_model.replace(name="final")
