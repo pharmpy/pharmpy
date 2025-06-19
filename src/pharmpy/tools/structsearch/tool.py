@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Literal, Optional, Union
 
-from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -13,7 +12,6 @@ from pharmpy.tools.common import (
     ToolResults,
     create_plots,
     create_results,
-    summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
@@ -157,14 +155,10 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb.add_task(task_results, predecessors=wf.output_tasks)
     qss_run_entries = context.call_workflow(Workflow(wb), 'results_QSS')
 
-    ofvs = [
-        model_entry.modelfit_results.ofv if model_entry.modelfit_results is not None else np.nan
-        for model_entry in qss_run_entries
-    ]
-    minindex = ofvs.index(np.nanmin(ofvs))
-    best_qss_entry = qss_run_entries[minindex]
+    rank_res_step_1 = rank_models(context, model_entry, list(qss_run_entries), strictness)
+
     best_qss_entry = ModelEntry.create(
-        best_qss_entry.model, modelfit_results=best_qss_entry.modelfit_results
+        rank_res_step_1.final_model, modelfit_results=rank_res_step_1.final_results
     )
 
     models = create_remaining_models(
@@ -185,21 +179,29 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     run_model_entries = context.call_workflow(Workflow(wb2), 'results_remaining')
 
-    tables = create_result_tables(
-        model_entry, (list(qss_run_entries), list(run_model_entries)), strictness
-    )
+    rank_res_step_2 = rank_models(context, best_qss_entry, list(run_model_entries), strictness)
 
-    res = create_results(
-        StructSearchResults,
-        model_entry,
-        best_qss_entry,
-        list(run_model_entries),
-        rank_type='bic',
-        cutoff=None,
-        strictness=strictness,
-        context=context,
+    summaries = [rank_res_step_1.summary_tool, rank_res_step_2.summary_tool]
+    summary_tool = _concat_summaries(summaries, keys=[1, 2])
+    tables = create_result_tables(model_entry, (list(qss_run_entries), list(run_model_entries)))
+    eta_shrinkage = table_final_eta_shrinkage(
+        rank_res_step_2.final_model, rank_res_step_2.final_results
     )
-    res = replace(res, summary_models=tables['summary_models'], summary_tool=tables['summary_tool'])
+    plots = create_plots(rank_res_step_2.final_model, rank_res_step_2.final_results)
+
+    res = StructSearchResults(
+        summary_tool=summary_tool,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
+        final_model=rank_res_step_2.final_model,
+        final_results=rank_res_step_2.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
+    )
 
     final_model = res.final_model.replace(name="final")
     context.store_final_model_entry(final_model)
@@ -208,33 +210,49 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     return res
 
 
-def create_result_tables(input_model_entry, candidate_steps, strictness):
-    sum_models, sum_tool = [summarize_modelfit_results_from_entries([input_model_entry])], []
-    ref_model_entry = input_model_entry
+def rank_models(context, base_model_entry, candidate_model_entries, strictness):
+    model_entries = [base_model_entry] + candidate_model_entries
+    models = [me.model for me in model_entries]
+    results = [me.modelfit_results for me in model_entries]
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else base_model_entry.model.name
+        for me in model_entries
+    }
+
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=base_model_entry.model,
+        rank_type='bic_mixed',
+        strictness=strictness,
+        _parent_dict=parent_dict,
+    )
+
+    return rank_res
+
+
+def create_result_tables(input_model_entry, candidate_steps):
+    sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
+    model_entries = []
     for candidates in candidate_steps:
         sum_models.append(summarize_modelfit_results_from_entries(candidates))
-        tool_df = summarize_tool(
-            candidates,
-            ref_model_entry,
-            'bic',
-            cutoff=None,
-            bic_type='mixed',
-            strictness=strictness,
-        )
-        sum_tool.append(tool_df)
-        best_model_name = tool_df['rank'].idxmin()
-        ref_model_entry = next(
-            filter(lambda model_entry: model_entry.model.name == best_model_name, candidates),
-            input_model_entry,
-        )
+        model_entries.extend(candidates)
 
-    summary_models = pd.concat(sum_models, keys=range(0, len(candidate_steps) + 1), names=['step'])
-    summary_tool = pd.concat(sum_tool, keys=range(1, len(candidate_steps) + 1), names=['step'])
+    keys = range(0, len(candidate_steps) + 1)
+    summary_models = _concat_summaries(sum_models, keys)
+    summary_errors = summarize_errors_from_entries(model_entries)
+
     tables = {
         'summary_models': summary_models,
-        'summary_tool': summary_tool,
+        'summary_errors': summary_errors,
     }
     return tables
+
+
+def _concat_summaries(summaries, keys):
+    return pd.concat(summaries, keys=keys, names=['step'])
 
 
 def run_pkpd(
@@ -276,27 +294,10 @@ def run_pkpd(
     summary_input = summarize_modelfit_results_from_entries([model_entry])
     summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
 
-    base_model_entry = pd_baseline_fit[0]
-    mes = [base_model_entry] + list(pkpd_models_fit)
-    models = [me.model for me in mes]
-    results = [me.modelfit_results for me in mes]
-    parent_dict = {
-        me.model.name: me.parent.name if me.parent else base_model_entry.model.name for me in mes
-    }
-
-    rank_res = run_subtool(
-        tool_name='modelrank',
-        ctx=context,
-        models=models,
-        results=results,
-        ref_model=base_model_entry.model,
-        rank_type='bic_mixed',
-        strictness=strictness,
-        _parent_dict=parent_dict,
-    )
+    rank_res = rank_models(context, pd_baseline_fit[0], list(pkpd_models_fit), strictness)
 
     summary_models = pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"])
-    summary_errors = summarize_errors_from_entries(mes)
+    summary_errors = summarize_errors_from_entries([pd_baseline_fit] + list(pkpd_models_fit))
     eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
 
     plots = create_plots(rank_res.final_model, rank_res.final_results)
