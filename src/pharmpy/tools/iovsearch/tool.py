@@ -385,32 +385,14 @@ def task_results(context, step_mapping_and_model_entries):
     final_model_entry = model_dict[step_mapping.pop(-1)]
     final_model, final_res = final_model_entry.model, final_model_entry.modelfit_results
 
-    sum_mod, sum_tool = [], []
-    rank_ctx_names = [
-        ctx_name for ctx_name in context.list_all_subcontexts() if ctx_name.startswith('modelrank')
-    ]
-    for step, model_names in step_mapping.items():
-        candidate_entries = [
-            model_entry
-            for model_name, model_entry in model_dict.items()
-            if model_name in model_names
-        ]
-        sum_mod_step = summarize_modelfit_results_from_entries(candidate_entries)
-        sum_mod.append(sum_mod_step)
-        if step >= 1:
-            rank_ctx = context.get_subcontext(rank_ctx_names[step - 1])
-            sum_tool_step = rank_ctx.retrieve_results().summary_tool
-            sum_tool.append(sum_tool_step)
-
-    keys = list(range(1, len(step_mapping)))
-
-    summary_errors = summarize_errors_from_entries([base_model_entry] + res_model_entries)
-
+    summary_tool = create_summary_tool(context)
+    tables = create_results_tables(step_mapping, model_dict)
     plots = create_plots(final_model, final_res)
+
     res = IOVSearchResults(
-        summary_tool=_concat_summaries(sum_tool, keys=keys),
-        summary_models=_concat_summaries(sum_mod, keys=[0] + keys),
-        summary_errors=summary_errors,
+        summary_tool=summary_tool,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
         final_model=final_model,
         final_results=final_res,
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
@@ -426,6 +408,40 @@ def task_results(context, step_mapping_and_model_entries):
 
     context.log_info("Finishing tool iovsearch")
     return res
+
+
+def create_summary_tool(context):
+    rank_ctx = [
+        context.get_subcontext(ctx_name)
+        for ctx_name in context.list_all_subcontexts()
+        if ctx_name.startswith('modelrank')
+    ]
+    rank_summaries = [ctx.retrieve_results().summary_tool for ctx in rank_ctx]
+
+    keys = list(range(1, len(rank_summaries) + 1))
+    summary_tool = _concat_summaries(rank_summaries, keys)
+    return summary_tool
+
+
+def create_results_tables(step_mapping, model_dict):
+    sum_mod = []
+    for step, model_names in step_mapping.items():
+        candidate_entries = [
+            model_entry
+            for model_name, model_entry in model_dict.items()
+            if model_name in model_names
+        ]
+        sum_mod_step = summarize_modelfit_results_from_entries(candidate_entries)
+        sum_mod.append(sum_mod_step)
+
+    keys = list(range(0, len(step_mapping)))
+    summary_models = _concat_summaries(sum_mod, keys=keys)
+    summary_errors = summarize_errors_from_entries(model_dict.values())
+
+    return {
+        'summary_models': summary_models,
+        'summary_errors': summary_errors,
+    }
 
 
 def _concat_summaries(summaries, keys):
