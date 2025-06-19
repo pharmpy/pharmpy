@@ -66,10 +66,13 @@ def test_drug_metabolite(tmp_path, load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'kwargs, no_of_cands',
-    [({}, 20), ({'dv_types': {'drug': 1, 'target': 2}}, 15)],
+    'kwargs, no_of_cands, best_model',
+    [
+        ({}, 20, 'structsearch_run19'),
+        ({'dv_types': {'drug': 1, 'target': 2}}, 15, 'structsearch_run10'),
+    ],
 )
-def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands):
+def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands, best_model):
     with chdir(tmp_path):
         model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
         model = convert_model(model, 'nonmem')
@@ -84,6 +87,7 @@ def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands
 
         assert len(res.summary_tool) == no_of_cands + 2
         assert len(res.summary_models) == no_of_cands + 1
+        assert res.final_model.name == best_model
 
 
 @pytest.mark.parametrize(
