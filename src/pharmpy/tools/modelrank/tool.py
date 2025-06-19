@@ -14,7 +14,19 @@ from pharmpy.workflows import Context, ModelEntry, ModelfitResults, Task, Workfl
 from ..mfl.parse import parse as mfl_parse
 from ..modelsearch.filter import mfl_filtering
 
-RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic_mixed', 'bic_iiv', 'mbic_mixed', 'mbic_iiv'))
+RANK_TYPES = frozenset(
+    (
+        'ofv',
+        'lrt',
+        'aic',
+        'bic_mixed',
+        'bic_iiv',
+        'bic_random',
+        'mbic_mixed',
+        'mbic_iiv',
+        'mbic_random',
+    )
+)
 
 
 def create_workflow(
@@ -40,8 +52,9 @@ def create_workflow(
         Model to compare to
     strictness : str or None
         Strictness criteria
-    rank_type : {'ofv', 'lrt', 'aic', 'bic_mixed', 'bic_iiv'}
-        Which ranking type should be used. Default is OFV .
+    rank_type : str
+        Which ranking type should be used. Supported types are OFV, LRT, AIC, BIC (mixed, IIV,
+        random), and mBIC (mixed, IIV, random). Default is OFV.
     cutoff : float
         Cutoff for which value of the ranking function that is considered significant. Default
         is None (all models will be ranked)
@@ -212,6 +225,8 @@ def get_rank_type_kwargs(rank_type: str):
         kwargs = {'rank_type': 'bic', 'bic_type': 'mixed'}
     elif rank_type in ('bic_iiv', 'mbic_iiv'):
         kwargs = {'rank_type': 'bic', 'bic_type': 'iiv'}
+    elif rank_type in ('bic_random', 'mbic_random'):
+        kwargs = {'rank_type': 'bic', 'bic_type': 'random'}
     else:
         kwargs = {'rank_type': rank_type}
     return kwargs

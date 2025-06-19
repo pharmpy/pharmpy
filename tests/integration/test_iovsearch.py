@@ -1,5 +1,7 @@
 import shutil
 
+import pytest
+
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import fix_parameters
@@ -48,14 +50,31 @@ def test_default_mox1(tmp_path, model_count, testdata):
         assert res.final_model.name == 'input'
 
 
-def test_default_mox1_dummy(tmp_path, model_count, testdata):
+@pytest.mark.parametrize(
+    'kwargs, no_of_candidate_models, best_model',
+    [
+        (dict(), 9, 'iovsearch_run8'),
+        ({'rank_type': 'mbic', 'E': 1.0}, 9, 'iovsearch_run8'),
+    ],
+)
+def test_iovsearch_dummy(
+    tmp_path, model_count, testdata, kwargs, no_of_candidate_models, best_model
+):
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox1.mod', tmp_path)
     shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_log.csv', tmp_path)
     with chdir(tmp_path):
         start_model = Model.parse_model('mox1.mod')
         start_res = fit(start_model, esttool='dummy')
-        res = run_iovsearch(model=start_model, results=start_res, column='VISI', esttool='dummy')
-        rundir = tmp_path / 'iovsearch1'
-        assert model_count(rundir) == 10
+        res = run_iovsearch(
+            model=start_model, results=start_res, column='VISI', esttool='dummy', **kwargs
+        )
 
         assert res.final_model.name == 'iovsearch_run8'
+
+        rundir = tmp_path / 'iovsearch1'
+        assert model_count(rundir) == no_of_candidate_models + 1
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
+        assert (rundir / 'models' / 'iovsearch_run1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'iovsearch_run1' / 'model.lst').exists()

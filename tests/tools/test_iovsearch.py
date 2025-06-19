@@ -5,6 +5,8 @@ import pytest
 from pharmpy.basic import Expr
 from pharmpy.modeling import (
     add_iov,
+    add_peripheral_compartment,
+    add_pk_iiv,
     create_joint_distribution,
     fix_parameters,
     remove_iiv,
@@ -17,6 +19,7 @@ from pharmpy.tools.iovsearch.tool import (
     create_candidate_model_entry,
     create_iov_base_model_entry,
     create_workflow,
+    get_mbic_search_space,
     prepare_list_of_parameters,
     validate_input,
 )
@@ -122,6 +125,30 @@ def test_create_candidate_model_entry(
     assert len(rvs_base.iiv.names) == no_of_iiv
     assert len(rvs_base.iov.names) == no_of_iov
     assert model_cand.description == desc_ref
+
+
+@pytest.mark.parametrize(
+    'funcs, list_of_parameters, search_space',
+    [
+        ([], None, 'IIV?([CL,MAT,VC],exp);IOV?([CL,MAT,VC])'),
+        ([], ['ETA_1', 'ETA_2', 'ETA_3'], 'IIV?([CL,MAT,VC],exp);IOV?([CL,MAT,VC])'),
+        ([], ['ETA_1'], 'IIV?([CL],exp);IOV?([CL])'),
+        (
+            [add_peripheral_compartment],
+            None,
+            'IIV?([CL,MAT,QP1,VC,VP1],exp);IOV?([CL,MAT,QP1,VC,VP1])',
+        ),
+    ],
+)
+def test_get_mbic_search_space(
+    load_model_for_test, testdata, funcs, list_of_parameters, search_space
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+        model = add_pk_iiv(model)
+    list_of_parameters = prepare_list_of_parameters(model, list_of_parameters)
+    assert get_mbic_search_space(model, list_of_parameters) == search_space
 
 
 def test_ignore_fixed_iiv(load_model_for_test, testdata):

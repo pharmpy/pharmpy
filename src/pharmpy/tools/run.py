@@ -1729,8 +1729,11 @@ def parse_search_space_rvs(search_space):
             params = re.match(pattern, subexpr).group(1).split(',')
             cov_params.extend(params)
         else:
-            pattern = r'(IIV|IOV)\?\(\[*([\w,]*)\]*,'
-            params = re.match(pattern, subexpr).group(2).split(',')
+            if subexpr.startswith('IIV'):
+                pattern = r'IIV\?\(\[*([\w,]*)\]*,\w+\)'
+            else:
+                pattern = r'IOV\?\(\[*([\w,]*)\]*\)'
+            params = re.match(pattern, subexpr).group(1).split(',')
             if subexpr.startswith('IIV'):
                 iiv_params.extend(params)
             else:
