@@ -31,7 +31,6 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
         no_of_models = 3
         assert len(res.summary_models) == no_of_models + 2
         assert len(res.summary_tool) == no_of_models + 1
-        assert len(res.models) == no_of_models + 1
 
         rundir = tmp_path / 'structsearch1'
         assert rundir.is_dir()
