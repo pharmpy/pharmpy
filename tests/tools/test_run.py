@@ -624,7 +624,7 @@ def test_strictness_parameters(testdata):
         ),
         (
             [partial(add_iov, occ='FA1')],
-            'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT],exp)',
+            'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])',
             {},
             [partial(remove_iov, to_remove='ETA_IOV_1_1'), partial(remove_iiv, to_remove='ETA_CL')],
             [4.39, 4.39],
@@ -1021,7 +1021,7 @@ def test_get_mbic_penalty_parameters_mfl(
         ),
         (
             [partial(add_iov, occ='FA1')],
-            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT],exp)'},
+            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
             [],
             3,
             3,
@@ -1030,7 +1030,7 @@ def test_get_mbic_penalty_parameters_mfl(
         ),
         (
             [partial(add_iov, occ='FA1')],
-            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT],exp)'},
+            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
             [partial(remove_iiv, to_remove=['ETA_CL'])],
             3,
             3,
@@ -1039,7 +1039,7 @@ def test_get_mbic_penalty_parameters_mfl(
         ),
         (
             [partial(add_iov, occ='FA1')],
-            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT],exp)'},
+            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
             [
                 partial(remove_iov, to_remove='ETA_IOV_1_1'),
             ],
@@ -1078,8 +1078,8 @@ def test_get_mbic_penalty_parameters_rvs(
         ('IIV?([CL,VC,MAT],exp)', ['CL', 'VC', 'MAT'], [], []),
         ('IIV(CL,exp);IIV?(VC,exp)', ['VC'], [], []),
         ('IIV?([CL,VC,MAT],exp)', ['CL', 'VC', 'MAT'], [], []),
-        ('IOV?([CL,VC,MAT],exp)', [], ['CL', 'VC', 'MAT'], []),
-        ('IIV?([CL,VC,MAT],exp);IOV?([CL,VC],exp)', ['CL', 'VC', 'MAT'], ['CL', 'VC'], []),
+        ('IOV?([CL,VC,MAT])', [], ['CL', 'VC', 'MAT'], []),
+        ('IIV?([CL,VC,MAT],exp);IOV?([CL,VC])', ['CL', 'VC', 'MAT'], ['CL', 'VC'], []),
         ('IIV?(CL,exp);IIV?(VC,exp)', ['CL', 'VC'], [], []),
         ('IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])', ['CL', 'VC', 'MAT'], [], ['CL', 'VC', 'MAT']),
         ('IIV?([CL,VC,MAT],exp);COV?([CL,VC])', ['CL', 'VC', 'MAT'], [], ['CL', 'VC']),
