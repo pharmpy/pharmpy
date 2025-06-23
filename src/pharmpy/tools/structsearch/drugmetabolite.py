@@ -11,7 +11,7 @@ from ..mfl.parse import parse as mfl_parse
 
 def create_drug_metabolite_models(
     model: Model, results, search_space: Union[str, ModelFeatures]
-) -> tuple[list[Model], Model]:
+) -> tuple[WorkflowBuilder, list[Task], str]:
     # FIXME : Implement ModelFeatures when we can extract METABOLITE information
 
     if isinstance(search_space, str):

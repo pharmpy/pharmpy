@@ -119,11 +119,6 @@ def test_drug_metabolite_dummy(
             search_space=mfl,
         )
 
-        import pandas as pd
-
-        pd.set_option('display.max_rows', None)
-        pd.set_option('display.max_columns', None)
-        print(res.summary_tool)
         assert len(res.summary_tool) == no_of_cands
         assert len(res.summary_models) == no_of_cands + 1
         assert res.final_model.name == best_model
