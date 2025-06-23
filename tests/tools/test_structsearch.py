@@ -1,9 +1,17 @@
+from functools import partial
+
 import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import create_rng
+from pharmpy.modeling import (
+    add_metabolite,
+    add_peripheral_compartment,
+    create_rng,
+    set_description,
+    set_name,
+)
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models
@@ -17,7 +25,12 @@ from pharmpy.tools.structsearch.tmdd import (
     create_remaining_models,
     create_wagner_model,
 )
-from pharmpy.tools.structsearch.tool import create_result_tables, create_workflow, validate_input
+from pharmpy.tools.structsearch.tool import (
+    categorize_drug_metabolite_model_entries,
+    create_result_tables,
+    create_workflow,
+    validate_input,
+)
 from pharmpy.workflows import ModelEntry, ModelfitResults, Workflow
 
 ests = pd.Series(
@@ -167,6 +180,50 @@ def test_drug_metabolite(load_model_for_test, testdata):
     )
     assert base_model_description == "METABOLITE_BASIC;PERIPHERALS(0, METABOLITE)"
     assert len(candidate_tasks) == 2
+
+
+def test_categorize_drug_metabolite_model_entries(
+    load_model_for_test, testdata, model_entry_factory
+):
+    model_start = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    res_start = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+    me_start = ModelEntry(model_start, modelfit_results=res_start)
+
+    base_description = 'base'
+    funcs = [partial(add_metabolite), partial(add_peripheral_compartment, name='METABOLITE')]
+
+    model = model_start
+    candidates = []
+    for i, func in enumerate(funcs):
+        model = func(model=model)
+        model = set_name(model, f'run{i}')
+        candidates.append(model)
+
+    mes = model_entry_factory(candidates, parent=model_start)
+
+    base_model_entry, res_model_entries = categorize_drug_metabolite_model_entries(
+        me_start, mes, base_description
+    )
+
+    assert base_model_entry.model == model_start
+    assert len(res_model_entries) == len(funcs)
+
+    base = candidates.pop(0)
+    base = set_description(base, base_description)
+    candidates.append(base)
+
+    mes = model_entry_factory(candidates, parent=model_start)
+
+    base_model_entry, res_model_entries = categorize_drug_metabolite_model_entries(
+        me_start, mes, base_description
+    )
+
+    assert base_model_entry.model != model_start
+    assert base_model_entry.model.name.startswith('run')
+    assert len(res_model_entries) == len(funcs) - 1
+
+    with pytest.raises(ValueError):
+        categorize_drug_metabolite_model_entries(None, mes, base_description)
 
 
 def test_create_workflow_pkpd(load_model_for_test, testdata):
