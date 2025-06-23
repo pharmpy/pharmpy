@@ -11,7 +11,6 @@ from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools.common import (
     ToolResults,
     create_plots,
-    create_results,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
@@ -406,21 +405,31 @@ def post_process_drug_metabolite(
     if res_models:
         results_to_summarize.extend(res_models)
 
+    rank_res = rank_models(context, base_model_entry, res_models, strictness)
+
     summary_models = summarize_modelfit_results_from_entries(results_to_summarize)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
+    summary_errors = summarize_errors_from_entries(results_to_summarize)
 
-    return create_results(
-        StructSearchResults,
-        input_model_entry,
-        base_model_entry,
-        res_models,
-        rank_type,
-        cutoff,
+    plots = create_plots(rank_res.final_model, rank_res.final_results)
+    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
+
+    res = StructSearchResults(
+        summary_tool=rank_res.summary_tool,
         summary_models=summary_models,
-        strictness=strictness,
-        context=context,
+        summary_errors=summary_errors,
+        final_model=rank_res.final_model,
+        final_results=rank_res.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
     )
+
+    return res
 
 
 def bundle_results(*args):
