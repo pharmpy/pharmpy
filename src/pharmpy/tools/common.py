@@ -264,3 +264,17 @@ def table_final_eta_shrinkage(model, results):
     else:
         eta_shrinkage = None
     return eta_shrinkage
+
+
+def flatten_list(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(flatten_list(item))
+        else:
+            result.append(item)
+    return result
+
+
+def concat_summaries(summaries, keys):
+    return pd.concat(summaries, keys=keys, names=['step'])

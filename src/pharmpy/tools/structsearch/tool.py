@@ -3,14 +3,15 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, Optional, Union
 
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools.common import (
     ToolResults,
+    concat_summaries,
     create_plots,
+    flatten_list,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
@@ -181,12 +182,13 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     rank_res_step_2 = rank_models(context, best_qss_entry, list(run_model_entries), strictness)
 
     summaries = [rank_res_step_1.summary_tool, rank_res_step_2.summary_tool]
-    summary_tool = _concat_summaries(summaries, keys=[1, 2])
-    tables = create_result_tables(model_entry, (list(qss_run_entries), list(run_model_entries)))
+    summary_tool = concat_summaries(summaries, keys=[1, 2])
+
+    tables = create_result_tables([[model_entry], list(qss_run_entries), list(run_model_entries)])
+    plots = create_plots(rank_res_step_2.final_model, rank_res_step_2.final_results)
     eta_shrinkage = table_final_eta_shrinkage(
         rank_res_step_2.final_model, rank_res_step_2.final_results
     )
-    plots = create_plots(rank_res_step_2.final_model, rank_res_step_2.final_results)
 
     res = StructSearchResults(
         summary_tool=summary_tool,
@@ -232,15 +234,11 @@ def rank_models(context, base_model_entry, candidate_model_entries, strictness):
     return rank_res
 
 
-def create_result_tables(input_model_entry, candidate_steps):
-    sum_models = [summarize_modelfit_results_from_entries([input_model_entry])]
-    model_entries = []
-    for candidates in candidate_steps:
-        sum_models.append(summarize_modelfit_results_from_entries(candidates))
-        model_entries.extend(candidates)
-
-    keys = range(0, len(candidate_steps) + 1)
-    summary_models = _concat_summaries(sum_models, keys)
+def create_result_tables(model_entries_per_step: list[list[ModelEntry]]):
+    sum_models = [summarize_modelfit_results_from_entries(mes) for mes in model_entries_per_step]
+    keys = range(0, len(model_entries_per_step))
+    summary_models = concat_summaries(sum_models, keys)
+    model_entries = flatten_list(model_entries_per_step)
     summary_errors = summarize_errors_from_entries(model_entries)
 
     tables = {
@@ -248,10 +246,6 @@ def create_result_tables(input_model_entry, candidate_steps):
         'summary_errors': summary_errors,
     }
     return tables
-
-
-def _concat_summaries(summaries, keys):
-    return pd.concat(summaries, keys=keys, names=['step'])
 
 
 def run_pkpd(
@@ -290,21 +284,17 @@ def run_pkpd(
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     pkpd_models_fit = context.call_workflow(Workflow(wb2), 'results_remaining')
 
-    summary_input = summarize_modelfit_results_from_entries([model_entry])
-    summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
-
     rank_res = rank_models(context, pd_baseline_fit[0], list(pkpd_models_fit), strictness)
 
-    summary_models = pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"])
-    summary_errors = summarize_errors_from_entries([pd_baseline_fit] + list(pkpd_models_fit))
-    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
-
+    tables = create_result_tables([[model_entry], list(pd_baseline_fit), list(pkpd_models_fit)])
     plots = create_plots(rank_res.final_model, rank_res.final_results)
+
+    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
 
     res = StructSearchResults(
         summary_tool=rank_res.summary_tool,
-        summary_models=summary_models,
-        summary_errors=summary_errors,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
         final_model=rank_res.final_model,
         final_results=rank_res.final_results,
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
@@ -398,27 +388,23 @@ def post_process_drug_metabolite(
             for me in res_models
         ]
 
-    results_to_summarize = [user_input_model_entry]
+    results_to_summarize = [[user_input_model_entry]]
 
     if user_input_model_entry != base_model_entry:
-        results_to_summarize.append(base_model_entry)
+        results_to_summarize.append([base_model_entry])
     if res_models:
-        results_to_summarize.extend(res_models)
+        results_to_summarize.append(res_models)
 
     rank_res = rank_models(context, base_model_entry, res_models, strictness)
 
-    summary_models = summarize_modelfit_results_from_entries(results_to_summarize)
-    summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
-    summary_models = summary_models.reset_index().set_index(['step', 'model'])
-    summary_errors = summarize_errors_from_entries(results_to_summarize)
-
+    tables = create_result_tables(results_to_summarize)
     plots = create_plots(rank_res.final_model, rank_res.final_results)
     eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
 
     res = StructSearchResults(
         summary_tool=rank_res.summary_tool,
-        summary_models=summary_models,
-        summary_errors=summary_errors,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
         final_model=rank_res.final_model,
         final_results=rank_res.final_results,
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],

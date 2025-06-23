@@ -203,7 +203,7 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     )
     remaining_entries = model_entry_factory(remaining_models)
 
-    tables = create_result_tables(me_start, (qss_entries, remaining_entries))
+    tables = create_result_tables([[me_start], qss_entries, remaining_entries])
 
     model_entries = [me_start] + qss_entries + remaining_entries
     summary_models = tables['summary_models']
