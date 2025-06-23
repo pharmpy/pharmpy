@@ -344,7 +344,7 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
 
 def post_process_drug_metabolite(
     context,
-    user_input_model_entry,
+    input_model_entry,
     base_model_description,
     rank_type,
     cutoff,
@@ -352,50 +352,18 @@ def post_process_drug_metabolite(
     *model_entries,
 ):
     # NOTE : The base model is part of the model_entries but not the user_input_model
-    res_models = []
-    input_model_entry = None
-    base_model_entry = None
-    for model_entry in model_entries:
-        model = model_entry.model
-        if model.description == base_model_description:
-            model_entry = ModelEntry.create(
-                model=model_entry.model, parent=None, modelfit_results=model_entry.modelfit_results
-            )
-            input_model_entry = model_entry
-            base_model_entry = model_entry
-        else:
-            res_models.append(model_entry)
-    if not base_model_entry:
-        # No base model found indicate user_input_model is base
-        input_model_entry = user_input_model_entry
-        base_model_entry = user_input_model_entry
-    if not input_model_entry:
-        raise ValueError('Error in workflow: No input model')
+    base_model_entry, res_model_entries = categorize_drug_metabolite_model_entries(
+        input_model_entry, model_entries, base_model_description
+    )
 
-    if base_model_entry != user_input_model_entry:
-        # Change parent model to base model instead of temporary model names or input model
-        res_models = [
-            (
-                me
-                if me.parent.name
-                not in ("TEMP", user_input_model_entry.model.name)  # TEMP name for drug-met models
-                else ModelEntry.create(
-                    model=me.model,
-                    parent=base_model_entry.model,
-                    modelfit_results=me.modelfit_results,
-                )
-            )
-            for me in res_models
-        ]
+    results_to_summarize = [[input_model_entry]]
 
-    results_to_summarize = [[user_input_model_entry]]
-
-    if user_input_model_entry != base_model_entry:
+    if input_model_entry != base_model_entry:
         results_to_summarize.append([base_model_entry])
-    if res_models:
-        results_to_summarize.append(res_models)
+    if res_model_entries:
+        results_to_summarize.append(res_model_entries)
 
-    rank_res = rank_models(context, base_model_entry, res_models, strictness)
+    rank_res = rank_models(context, base_model_entry, res_model_entries, strictness)
 
     tables = create_result_tables(results_to_summarize)
     plots = create_plots(rank_res.final_model, rank_res.final_results)
@@ -416,6 +384,46 @@ def post_process_drug_metabolite(
     )
 
     return res
+
+
+def categorize_drug_metabolite_model_entries(
+    input_model_entry, model_entries, base_model_description
+):
+    # NOTE : The base model is part of the model_entries but not the user_input_model
+    res_models = []
+    base_model_entry = None
+    for model_entry in model_entries:
+        model = model_entry.model
+        if model.description == base_model_description:
+            model_entry = ModelEntry.create(
+                model=model_entry.model, parent=None, modelfit_results=model_entry.modelfit_results
+            )
+            base_model_entry = model_entry
+        else:
+            res_models.append(model_entry)
+    if not base_model_entry:
+        # No base model found indicate user_input_model is base
+        base_model_entry = input_model_entry
+    if not input_model_entry:
+        raise ValueError('Error in workflow: No input model')
+
+    if base_model_entry != input_model_entry:
+        # Change parent model to base model instead of temporary model names or input model
+        res_models = [
+            (
+                me
+                if me.parent.name
+                not in ("TEMP", input_model_entry.model.name)  # TEMP name for drug-met models
+                else ModelEntry.create(
+                    model=me.model,
+                    parent=base_model_entry.model,
+                    modelfit_results=me.modelfit_results,
+                )
+            )
+            for me in res_models
+        ]
+
+    return base_model_entry, res_models
 
 
 def bundle_results(*args):
