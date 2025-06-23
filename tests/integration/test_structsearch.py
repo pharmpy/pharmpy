@@ -70,6 +70,7 @@ def test_drug_metabolite(tmp_path, load_model_for_test, testdata):
     [
         ({}, 20, 'structsearch_run19'),
         ({'dv_types': {'drug': 1, 'target': 2}}, 15, 'structsearch_run10'),
+        ({'rank_type': 'ofv'}, 20, 'structsearch_run19'),
     ],
 )
 def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands, best_model):
@@ -95,6 +96,12 @@ def test_tmdd_dummy(tmp_path, load_model_for_test, testdata, kwargs, no_of_cands
     [
         ({'search_space': 'METABOLITE([PSC, BASIC])'}, True, 2, 'structsearch_run1'),
         ({'search_space': 'METABOLITE([PSC, BASIC])'}, False, 2, 'structsearch_run1'),
+        (
+            {'search_space': 'METABOLITE([PSC, BASIC])', 'rank_type': 'ofv'},
+            True,
+            2,
+            'structsearch_run1',
+        ),
     ],
 )
 def test_drug_metabolite_dummy(
