@@ -6,7 +6,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.tools.common import Results
+from pharmpy.tools.common import ToolResults
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.run import calculate_mbic_penalty, rank_models_from_entries
 from pharmpy.workflows import Context, ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
@@ -105,7 +105,7 @@ def start(
     E,
     _parent_dict,
 ):
-    context.log_info("Starting tool rank")
+    context.log_info("Starting tool modelrank")
 
     wb = WorkflowBuilder()
 
@@ -184,7 +184,7 @@ def rank_models(
     best_model_name = summary_tool['rank'].idxmin()
     best_me = next(filter(lambda me: me.model.name == best_model_name, mes_cand), me_ref)
 
-    res = RankToolResults(
+    res = ModelRankToolResults(
         summary_tool=summary_tool, final_model=best_me.model, final_results=best_me.modelfit_results
     )
     return res
@@ -232,8 +232,8 @@ def get_rank_type_kwargs(rank_type: str):
     return kwargs
 
 
-def _results(context: Context, res: Results):
-    context.log_info("Finishing tool rank")
+def _results(context: Context, res: ToolResults):
+    context.log_info("Finishing tool modelrank")
     return res
 
 
@@ -304,7 +304,7 @@ def validate_input(
 
 
 @dataclass(frozen=True)
-class RankToolResults(Results):
+class ModelRankToolResults(ToolResults):
     summary_tool: Optional[Any] = None
     final_model: Optional[Model] = None
     final_results: Optional[ModelfitResults] = None
