@@ -8,6 +8,7 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools.common import (
+    RANK_TYPES,
     ToolResults,
     concat_summaries,
     create_plots,
@@ -43,6 +44,8 @@ def create_workflow(
     ec50_init: Optional[Union[int, float]] = None,
     met_init: Optional[Union[int, float]] = None,
     extra_model: Optional[Model] = None,
+    rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: Optional[ModelfitResults] = None,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
@@ -71,6 +74,11 @@ def create_workflow(
         Optional extra Pharmpy model to use in TMDD structsearch
     extra_model_results : ModelfitResults
         Results for the extra model
+    rank_type : {'ofv', 'lrt', 'aic', 'bic'}
+        Which ranking type should be used. Default is BIC.
+    cutoff : float
+        Cutoff for which value of the ranking function that is considered significant. Default
+        is None (all models will be ranked)
     strictness : str or None
         Strictness criteria
     dv_types : dict
@@ -99,6 +107,8 @@ def create_workflow(
             results,
             extra_model,
             extra_model_results,
+            rank_type,
+            cutoff,
             strictness,
             dv_types,
         )
@@ -113,17 +123,36 @@ def create_workflow(
             emax_init,
             ec50_init,
             met_init,
+            rank_type,
+            cutoff,
             strictness,
         )
     elif type == 'drug_metabolite':
         start_task = Task(
-            'run_drug_metabolite', run_drug_metabolite, model, search_space, results, strictness
+            'run_drug_metabolite',
+            run_drug_metabolite,
+            model,
+            search_space,
+            results,
+            rank_type,
+            cutoff,
+            strictness,
         )
     wb.add_task(start_task)
     return Workflow(wb)
 
 
-def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
+def run_tmdd(
+    context,
+    model,
+    results,
+    extra_model,
+    extra_model_results,
+    rank_type,
+    cutoff,
+    strictness,
+    dv_types,
+):
     context.log_info("Starting tool structsearch")
     model = store_input_model(context, model, results)
 
@@ -155,7 +184,9 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb.add_task(task_results, predecessors=wf.output_tasks)
     qss_run_entries = context.call_workflow(Workflow(wb), 'results_QSS')
 
-    rank_res_step_1 = rank_models(context, model_entry, list(qss_run_entries), strictness)
+    rank_res_step_1 = rank_models(
+        context, model_entry, list(qss_run_entries), rank_type, cutoff, strictness
+    )
 
     best_qss_entry = ModelEntry.create(
         rank_res_step_1.final_model, modelfit_results=rank_res_step_1.final_results
@@ -179,7 +210,9 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     run_model_entries = context.call_workflow(Workflow(wb2), 'results_remaining')
 
-    rank_res_step_2 = rank_models(context, best_qss_entry, list(run_model_entries), strictness)
+    rank_res_step_2 = rank_models(
+        context, best_qss_entry, list(run_model_entries), rank_type, cutoff, strictness
+    )
 
     summaries = [rank_res_step_1.summary_tool, rank_res_step_2.summary_tool]
     summary_tool = concat_summaries(summaries, keys=[1, 2])
@@ -211,7 +244,7 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     return res
 
 
-def rank_models(context, base_model_entry, candidate_model_entries, strictness):
+def rank_models(context, base_model_entry, candidate_model_entries, rank_type, cutoff, strictness):
     model_entries = [base_model_entry] + candidate_model_entries
     models = [me.model for me in model_entries]
     results = [me.modelfit_results for me in model_entries]
@@ -220,13 +253,16 @@ def rank_models(context, base_model_entry, candidate_model_entries, strictness):
         for me in model_entries
     }
 
+    rank_type = rank_type + '_mixed' if rank_type == 'bic' else rank_type
+
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
         models=models,
         results=results,
         ref_model=base_model_entry.model,
-        rank_type='bic_mixed',
+        rank_type=rank_type,
+        cutoff=cutoff,
         strictness=strictness,
         _parent_dict=parent_dict,
     )
@@ -249,7 +285,17 @@ def create_result_tables(model_entries_per_step: list[list[ModelEntry]]):
 
 
 def run_pkpd(
-    context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
+    context,
+    input_model,
+    results,
+    search_space,
+    b_init,
+    emax_init,
+    ec50_init,
+    met_init,
+    rank_type,
+    cutoff,
+    strictness,
 ):
     context.log_info("Starting tool structsearch")
     input_model = store_input_model(context, input_model, results)
@@ -284,7 +330,9 @@ def run_pkpd(
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     pkpd_models_fit = context.call_workflow(Workflow(wb2), 'results_remaining')
 
-    rank_res = rank_models(context, pd_baseline_fit[0], list(pkpd_models_fit), strictness)
+    rank_res = rank_models(
+        context, pd_baseline_fit[0], list(pkpd_models_fit), rank_type, cutoff, strictness
+    )
 
     tables = create_result_tables([[model_entry], list(pd_baseline_fit), list(pkpd_models_fit)])
     plots = create_plots(rank_res.final_model, rank_res.final_results)
@@ -312,7 +360,7 @@ def run_pkpd(
     return res
 
 
-def run_drug_metabolite(context, model, search_space, results, strictness):
+def run_drug_metabolite(context, model, search_space, results, rank_type, cutoff, strictness):
     context.log_info("Starting tool structsearch")
     # Create links to input model
     model = store_input_model(context, model, results)
@@ -327,8 +375,8 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
         post_process_drug_metabolite,
         ModelEntry.create(model=model, modelfit_results=results),
         base_model_description,
-        "bic",
-        None,
+        rank_type,
+        cutoff,
         strictness,
     )
 
@@ -363,7 +411,9 @@ def post_process_drug_metabolite(
     if res_model_entries:
         results_to_summarize.append(res_model_entries)
 
-    rank_res = rank_models(context, base_model_entry, res_model_entries, strictness)
+    rank_res = rank_models(
+        context, base_model_entry, res_model_entries, rank_type, cutoff, strictness
+    )
 
     tables = create_result_tables(results_to_summarize)
     plots = create_plots(rank_res.final_model, rank_res.final_results)
@@ -434,6 +484,8 @@ def bundle_results(*args):
 @with_same_arguments_as(create_workflow)
 def validate_input(
     type,
+    rank_type,
+    cutoff,
     strictness,
     model,
     dv_types,
