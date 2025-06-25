@@ -2,7 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.basic import BooleanExpr
-from pharmpy.basic.expr import Expr, ExprPrinter
+from pharmpy.basic.expr import Expr, ExprPrinter, LogicalExpr
 
 
 def test_init_expr():
@@ -164,3 +164,18 @@ def test_forward():
 def test_loggamma():
     expr = Expr('x').loggamma()
     assert str(expr) == 'loggamma(x)'
+
+
+def test_logical_expr():
+    expr = LogicalExpr('x & y')
+    assert expr.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
+    assert expr == LogicalExpr(expr)
+
+
+def test_logical_expr_args():
+    expr = LogicalExpr('x | (y & z)')
+    assert expr.free_symbols == {Expr.symbol('x'), Expr.symbol('y'), Expr.symbol('z')}
+    assert expr.args[0] == Expr.symbol('x')
+    assert expr.args[1] == LogicalExpr('y & z')
+    assert expr.args[1].args[0] == Expr.symbol('y')
+

@@ -397,7 +397,39 @@ class BooleanExpr:
         return repr(self._expr)
 
 
+class LogicalExpr:
+    def __init__(self, source: TLogicalExpr):
+        if isinstance(source, LogicalExpr):
+            self._expr = source._expr
+        else:
+            self._expr = sympy.sympify(source)
+
+    @property
+    def free_symbols(self) -> set[Expr]:
+        symbs = {Expr(a) for a in self._expr.free_symbols}
+        return symbs
+
+    @property
+    def args(self) -> tuple[LogicalExpr, ...]:
+        args = [LogicalExpr(a) if len(self._expr.args) > 1 else Expr(a) for a in self._expr.args]
+        return tuple(args)
+
+    def subs(self, d: Mapping[TLogicalExpr, TLogicalExpr]) -> TLogicalExpr:
+        expr = self._expr.subs(d)
+        if expr in (True, False):
+            return expr
+        else:
+            return LogicalExpr(self._expr.subs(d))
+
+    def __eq__(self, other) -> bool:
+        return self._expr == other
+
+    def __repr__(self) -> str:
+        return repr(self._expr)
+
+
 # Type hint for public functions taking an expression as input
 TExpr = Union[int, float, str, sympy.Expr, symengine.Basic, Expr]
 TSymbol = Union[str, sympy.Expr, symengine.Basic, Expr]
 TBooleanExpr = Union[str, sympy.Basic, symengine.Basic, BooleanExpr]
+TLogicalExpr = Union[str, sympy.Basic, symengine.Basic, LogicalExpr]
