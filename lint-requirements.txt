@@ -41,6 +41,7 @@ requests-toolbelt==1.0.0
 rfc3986==2.0.0
 rich==14.0.0
 SecretStorage==3.3.3
+scipy==1.15.3
 tomli==2.2.1
 typing-extensions==4.14.0
 urllib3==2.5.0
