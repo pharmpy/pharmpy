@@ -1,7 +1,24 @@
+from functools import partial
+
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import remove_parameter_uncertainty_step, set_initial_estimates, set_name
+from pharmpy.modeling import (
+    add_peripheral_compartment,
+    create_joint_distribution,
+    remove_iiv,
+    remove_parameter_uncertainty_step,
+    set_initial_estimates,
+    set_name,
+)
+from pharmpy.tools.modelrank.ranking import (
+    get_aic,
+    get_bic,
+    get_ofv,
+    perform_lrt,
+    rank_model_entries,
+)
 from pharmpy.tools.modelrank.strictness import (
     evaluate_strictness,
     get_strictness_expr,
@@ -200,6 +217,303 @@ def test_evaluate_strictness(
     expr = get_strictness_expr(strictness)
     predicates = get_strictness_predicates(me_start, expr)
     assert evaluate_strictness(expr, predicates) == strictness_fulfilled
+
+
+@pytest.mark.parametrize(
+    'rank_func, kwargs, ref_dict',
+    [
+        (get_ofv, {'ref_value': None}, {'dofv': 0, 'ofv': -1292.18676, 'rank_val': -1292.18676}),
+        (
+            get_ofv,
+            {'ref_value': -1200.0},
+            {'dofv': 92.18676, 'ofv': -1292.18676, 'rank_val': -1292.18676},
+        ),
+        (
+            get_aic,
+            {'ref_value': None},
+            {
+                'ofv': -1292.18676,
+                'aic_penalty': 16,
+                'daic': 0,
+                'aic': -1276.18676,
+                'rank_val': -1276.18676,
+            },
+        ),
+        (
+            get_aic,
+            {'ref_value': -1200.0},
+            {
+                'ofv': -1292.18676,
+                'aic_penalty': 16,
+                'daic': 76.18676,
+                'aic': -1276.18676,
+                'rank_val': -1276.18676,
+            },
+        ),
+        (
+            get_bic,
+            {'ref_value': None, 'rank_type': 'bic_fixed', 'search_space': None},
+            {
+                'ofv': -1292.18676,
+                'bic_penalty': 55.30990,
+                'dbic': 0,
+                'bic': -1236.87686,
+                'rank_val': -1236.87686,
+            },
+        ),
+        (
+            get_bic,
+            {'ref_value': -1200, 'rank_type': 'bic_fixed', 'search_space': None},
+            {
+                'ofv': -1292.18676,
+                'bic_penalty': 55.30990,
+                'dbic': 36.87686,
+                'bic': -1236.87686,
+                'rank_val': -1236.87686,
+            },
+        ),
+        (
+            get_bic,
+            {'ref_value': None, 'rank_type': 'bic_mixed', 'search_space': None},
+            {
+                'ofv': -1292.18676,
+                'bic_penalty': 36.94695,
+                'dbic': 0,
+                'bic': -1255.23981,
+                'rank_val': -1255.23981,
+            },
+        ),
+        (
+            get_bic,
+            {'ref_value': None, 'rank_type': 'bic_iiv', 'search_space': None},
+            {
+                'ofv': -1292.18676,
+                'bic_penalty': 17.16184,
+                'dbic': 0,
+                'bic': -1275.02492,
+                'rank_val': -1275.02492,
+            },
+        ),
+        (
+            get_bic,
+            {
+                'ref_value': None,
+                'rank_type': 'mbic_mixed',
+                'search_space': 'IIV?([CL,VC,MAT],exp)',
+                'E': 1.0,
+            },
+            {
+                'ofv': -1292.18676,
+                'bic_penalty': 36.94695,
+                'mbic_penalty': 6.59167,
+                'dbic': 0,
+                'bic': -1248.64813,
+                'rank_val': -1248.64813,
+            },
+        ),
+        (
+            get_bic,
+            {
+                'ref_value': None,
+                'rank_type': 'mbic_mixed',
+                'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
+                'E': (1.0, 1.0),
+            },
+            {
+                'ofv': -1292.18676,
+                'bic_penalty': 36.94695,
+                'mbic_penalty': 8.78890,
+                'dbic': 0,
+                'bic': -1246.45091,
+                'rank_val': -1246.45091,
+            },
+        ),
+    ],
+)
+def test_get_rank_values(testdata, load_model_for_test, rank_func, kwargs, ref_dict):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_start = create_joint_distribution(model_start, rvs=['ETA_1', 'ETA_2'])
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    rank_dict = rank_func(me_start, **kwargs)
+    assert rank_dict.keys() == ref_dict.keys()
+    for key1, key2 in zip(rank_dict.keys(), ref_dict.keys()):
+        val1 = rank_dict[key1]
+        val2 = ref_dict[key2]
+        assert pytest.approx(val1) == pytest.approx(val2)
+
+
+class DummyResults:
+    def __init__(
+        self,
+        name,
+        ofv,
+    ):
+        self.name = name
+        self.ofv = ofv
+
+
+@pytest.mark.parametrize(
+    'funcs, ofv, p_value, ref_dict',
+    [
+        (
+            [add_peripheral_compartment],
+            -1300,
+            0.05,
+            {
+                'df': 2,
+                'alpha': 0.05,
+                'p_value': 5.99146,
+                'dofv': 7.81324,
+                'ofv': -1300,
+                'significant': True,
+                'rank_val': -1300,
+            },
+        ),
+        (
+            [add_peripheral_compartment],
+            -1300,
+            0.01,
+            {
+                'df': 2,
+                'alpha': 0.01,
+                'p_value': 9.21034,
+                'dofv': 7.81324,
+                'ofv': -1300,
+                'significant': False,
+                'rank_val': np.nan,
+            },
+        ),
+        (
+            [add_peripheral_compartment],
+            -1295,
+            0.05,
+            {
+                'df': 2,
+                'alpha': 0.05,
+                'p_value': 5.99146,
+                'dofv': 2.81324,
+                'ofv': -1295,
+                'significant': False,
+                'rank_val': np.nan,
+            },
+        ),
+        (
+            [partial(create_joint_distribution, rvs=['ETA_1', 'ETA_2'])],
+            -1300,
+            0.05,
+            {
+                'df': 1,
+                'alpha': 0.05,
+                'p_value': 3.84146,
+                'dofv': 7.81324,
+                'ofv': -1300,
+                'significant': True,
+                'rank_val': -1300,
+            },
+        ),
+        (
+            [partial(remove_iiv, to_remove=['ETA_3'])],
+            -1290,
+            (0.01, 0.05),
+            {
+                'df': -1,
+                'alpha': 0.05,
+                'p_value': -3.84146,
+                'dofv': -2.18676,
+                'ofv': -1290,
+                'significant': True,
+                'rank_val': -1290,
+            },
+        ),
+    ],
+)
+def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, p_value, ref_dict):
+    model_parent = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_parent = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_parent = ModelEntry.create(model_parent, modelfit_results=res_parent)
+
+    model_child = set_name(model_parent, 'cand')
+    for func in funcs:
+        model_child = func(model_child)
+
+    res_child = DummyResults(name='cand', ofv=ofv)
+    me_child = ModelEntry.create(model_child, modelfit_results=res_child, parent=model_parent)
+
+    rank_dict = perform_lrt(me_child, me_parent, p_value)
+    assert rank_dict.keys() == ref_dict.keys()
+    for key1, key2 in zip(rank_dict.keys(), ref_dict.keys()):
+        val1 = rank_dict[key1]
+        val2 = ref_dict[key2]
+        if isinstance(val1, bool):
+            assert val1 == val2
+        elif np.isnan(val1):
+            assert np.isnan(val2)
+        else:
+            assert pytest.approx(val1) == pytest.approx(val2)
+
+
+@pytest.mark.parametrize(
+    'rank_type, rank_kwargs, final_model',
+    [
+        ('ofv', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
+        ('aic', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
+        ('bic_mixed', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
+        ('bic_iiv', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
+        ('bic_fixed', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
+        (
+            'mbic_mixed',
+            {'p_value': None, 'search_space': 'IIV?([CL,VC,MAT],exp)', 'E': 1.0},
+            'model1',
+        ),
+        (
+            'mbic_iiv',
+            {
+                'p_value': None,
+                'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
+                'E': (1.0, 1.0),
+            },
+            'model1',
+        ),
+        ('lrt', {'p_value': 0.05, 'search_space': None, 'E': None}, 'model1'),
+        (
+            'lrt',
+            {'p_value': 0.0000000000000000000000000001, 'search_space': None, 'E': None},
+            'mox2',
+        ),
+    ],
+)
+def test_rank_model_entries(
+    load_model_for_test, testdata, model_entry_factory, rank_type, rank_kwargs, final_model
+):
+    model_ref = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_ref = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
+
+    funcs = [
+        add_peripheral_compartment,
+        partial(create_joint_distribution, rvs=['ETA_1', 'ETA_2']),
+        create_joint_distribution,
+    ]
+
+    models_cand = []
+    for i, func in enumerate(funcs):
+        model = set_name(model_ref, f'model{i}')
+        model = func(model)
+        models_cand.append(model)
+
+    mes_cand = model_entry_factory(models_cand, ref_val=res_ref.ofv, parent=model_ref)
+
+    ranking = rank_model_entries(me_ref, mes_cand, rank_type, **rank_kwargs)
+
+    assert len(ranking) == len(models_cand) + 1
+    assert round(ranking[me_ref]['ofv'], 5) == -1292.18676
+    if rank_type not in ('ofv', 'lrt'):
+        assert ranking[me_ref]['rank_val'] > ranking[me_ref]['ofv']
+    me_best = list(ranking.keys())[0]
+    assert me_best.model.name == final_model
+    assert ranking[me_best]['rank_val'] == min(d['rank_val'] for d in ranking.values())
 
 
 @pytest.mark.parametrize(
