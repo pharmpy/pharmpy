@@ -13,7 +13,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             algorithm='exhaustive',
             rank_type='mbic',
-            E=1.0,
+            E=0.5,
         )
 
         assert len(res.summary_tool) == 4

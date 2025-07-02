@@ -16,6 +16,8 @@ from pharmpy.tools.modelrank.ranking import (
     get_aic,
     get_bic,
     get_ofv,
+    get_rank_type,
+    get_rank_values,
     perform_lrt,
     rank_model_entries,
 )
@@ -25,7 +27,6 @@ from pharmpy.tools.modelrank.strictness import (
     get_strictness_predicates,
 )
 from pharmpy.tools.modelrank.tool import (
-    get_rank_type_kwargs,
     prepare_model_entries,
     rank_models,
     validate_input,
@@ -37,13 +38,31 @@ from pharmpy.workflows import ModelEntry
 def test_prepare_model_entries(load_model_for_test, pheno_path):
     model_ref = load_model_for_test(pheno_path)
     res_ref = read_modelfit_results(pheno_path)
-    models_cand = [set_initial_estimates(model_ref, {'PTVCL': float(i)}) for i in range(5)]
+    models_cand = []
+    for i in range(5):
+        model = set_initial_estimates(model_ref, {'PTVCL': float(i)})
+        model = set_name(model, f'model{i}')
+        models_cand.append(model)
     res_cand = [res_ref] * 5
+    parent_dict = {
+        model_ref.name: model_ref.name,
+        **{model.name: model_ref.name for model in models_cand},
+    }
     me_ref, me_cands = prepare_model_entries(
-        [model_ref] + models_cand, [res_ref] + res_cand, model_ref
+        [model_ref] + models_cand, [res_ref] + res_cand, model_ref, parent_dict
     )
     assert len(me_cands) == len(models_cand) == len(res_cand)
     assert me_ref.model == model_ref
+    assert me_ref.parent is None
+    assert me_cands[0].parent == me_ref.model
+
+    me_ref, me_cands = prepare_model_entries(
+        [model_ref] + models_cand, [res_ref] + res_cand, model_ref, parent_dict=None
+    )
+    assert len(me_cands) == len(models_cand) == len(res_cand)
+    assert me_ref.model == model_ref
+    assert me_ref.parent is None
+    assert me_cands[0].parent == me_ref.model
 
 
 @pytest.mark.parametrize(
@@ -76,19 +95,6 @@ def test_rank_models(
     pd.testing.assert_frame_equal(
         summary_tool_sorted_by_d_rank_type, summary_tool_sorted_by_rank_type
     )
-
-
-@pytest.mark.parametrize(
-    'rank_type, kwargs',
-    [
-        ('ofv', {'rank_type': 'ofv'}),
-        ('bic_mixed', {'rank_type': 'bic', 'bic_type': 'mixed'}),
-        ('bic_iiv', {'rank_type': 'bic', 'bic_type': 'iiv'}),
-        ('mbic_mixed', {'rank_type': 'bic', 'bic_type': 'mixed'}),
-    ],
-)
-def test_get_rank_type_kwargs(rank_type, kwargs):
-    assert get_rank_type_kwargs(rank_type) == kwargs
 
 
 @pytest.mark.parametrize(
@@ -222,11 +228,11 @@ def test_evaluate_strictness(
 @pytest.mark.parametrize(
     'rank_func, kwargs, ref_dict',
     [
-        (get_ofv, {'ref_value': None}, {'dofv': 0, 'ofv': -1292.18676, 'rank_val': -1292.18676}),
+        (get_ofv, {'ref_value': None}, {'dofv': 0, 'ofv': -1292.18676}),
         (
             get_ofv,
             {'ref_value': -1200.0},
-            {'dofv': 92.18676, 'ofv': -1292.18676, 'rank_val': -1292.18676},
+            {'dofv': 92.18676, 'ofv': -1292.18676},
         ),
         (
             get_aic,
@@ -236,7 +242,6 @@ def test_evaluate_strictness(
                 'aic_penalty': 16,
                 'daic': 0,
                 'aic': -1276.18676,
-                'rank_val': -1276.18676,
             },
         ),
         (
@@ -247,7 +252,6 @@ def test_evaluate_strictness(
                 'aic_penalty': 16,
                 'daic': 76.18676,
                 'aic': -1276.18676,
-                'rank_val': -1276.18676,
             },
         ),
         (
@@ -258,7 +262,6 @@ def test_evaluate_strictness(
                 'bic_penalty': 55.30990,
                 'dbic': 0,
                 'bic': -1236.87686,
-                'rank_val': -1236.87686,
             },
         ),
         (
@@ -269,7 +272,6 @@ def test_evaluate_strictness(
                 'bic_penalty': 55.30990,
                 'dbic': 36.87686,
                 'bic': -1236.87686,
-                'rank_val': -1236.87686,
             },
         ),
         (
@@ -280,7 +282,6 @@ def test_evaluate_strictness(
                 'bic_penalty': 36.94695,
                 'dbic': 0,
                 'bic': -1255.23981,
-                'rank_val': -1255.23981,
             },
         ),
         (
@@ -291,7 +292,6 @@ def test_evaluate_strictness(
                 'bic_penalty': 17.16184,
                 'dbic': 0,
                 'bic': -1275.02492,
-                'rank_val': -1275.02492,
             },
         ),
         (
@@ -308,7 +308,6 @@ def test_evaluate_strictness(
                 'mbic_penalty': 6.59167,
                 'dbic': 0,
                 'bic': -1248.64813,
-                'rank_val': -1248.64813,
             },
         ),
         (
@@ -325,7 +324,6 @@ def test_evaluate_strictness(
                 'mbic_penalty': 8.78890,
                 'dbic': 0,
                 'bic': -1246.45091,
-                'rank_val': -1246.45091,
             },
         ),
     ],
@@ -368,7 +366,6 @@ class DummyResults:
                 'dofv': 7.81324,
                 'ofv': -1300,
                 'significant': True,
-                'rank_val': -1300,
             },
         ),
         (
@@ -382,7 +379,6 @@ class DummyResults:
                 'dofv': 7.81324,
                 'ofv': -1300,
                 'significant': False,
-                'rank_val': np.nan,
             },
         ),
         (
@@ -396,7 +392,6 @@ class DummyResults:
                 'dofv': 2.81324,
                 'ofv': -1295,
                 'significant': False,
-                'rank_val': np.nan,
             },
         ),
         (
@@ -410,7 +405,6 @@ class DummyResults:
                 'dofv': 7.81324,
                 'ofv': -1300,
                 'significant': True,
-                'rank_val': -1300,
             },
         ),
         (
@@ -424,7 +418,6 @@ class DummyResults:
                 'dofv': -2.18676,
                 'ofv': -1290,
                 'significant': True,
-                'rank_val': -1290,
             },
         ),
     ],
@@ -505,12 +498,17 @@ def test_rank_model_entries(
 
     mes_cand = model_entry_factory(models_cand, ref_val=res_ref.ofv, parent=model_ref)
 
-    ranking = rank_model_entries(me_ref, mes_cand, rank_type, **rank_kwargs)
+    rank_values = get_rank_values(
+        me_ref, mes_cand, rank_type, **rank_kwargs, mes_to_rank=[me_ref] + mes_cand
+    )
 
-    assert len(ranking) == len(models_cand) + 1
-    assert round(ranking[me_ref]['ofv'], 5) == -1292.18676
+    assert len(rank_values) == len(models_cand) + 1
+    assert round(rank_values[me_ref]['ofv'], 5) == -1292.18676
     if rank_type not in ('ofv', 'lrt'):
-        assert ranking[me_ref]['rank_val'] > ranking[me_ref]['ofv']
+        assert rank_values[me_ref]['rank_val'] > rank_values[me_ref]['ofv']
+
+    ranking = rank_model_entries(rank_values, get_rank_type(rank_type))
+
     me_best = list(ranking.keys())[0]
     assert me_best.model.name == final_model
     assert ranking[me_best]['rank_val'] == min(d['rank_val'] for d in ranking.values())

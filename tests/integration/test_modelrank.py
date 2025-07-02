@@ -2,6 +2,7 @@ import itertools
 
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import add_covariate_effect, set_name
 from pharmpy.tools import fit, run_modelrank
@@ -38,5 +39,10 @@ def test_modelrank_dummy(
 
         assert len(res.summary_tool) == len([model_base] + models)
         assert len(res.summary_tool.dropna(subset=['rank'])) == no_of_ranked_models
+
         assert res.final_model.name == best_model_name
         assert res.final_results
+
+        assert len(res.summary_strictness) == len([model_base] + models)
+        assert len(res.summary_selection_criteria) == len([model_base] + models)
+        assert not np.isnan(res.summary_selection_criteria.loc[res.final_model.name, 'rank_val'])

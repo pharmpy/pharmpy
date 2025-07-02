@@ -62,7 +62,11 @@ def preprocess_string(strictness: str) -> str:
 
 
 def evaluate_strictness(expr: LogicalExpr, predicates: dict[str, Optional[bool]]) -> Optional[bool]:
-    sub_dict = {key: value for key, value in predicates.items() if value is not None}
+    sub_dict = dict()
+    for key, value in predicates.items():
+        if value is None or (isinstance(value, float) and np.isnan(value)):
+            continue
+        sub_dict[key] = value
     expr_subs = expr.subs(sub_dict)
     if expr_subs not in (True, False):
         return None
@@ -82,8 +86,11 @@ def get_strictness_predicates(me: ModelEntry, expr: LogicalExpr) -> dict[str, Op
             if len(sub_expr.free_symbols) != 1:
                 return
             symb = str(sub_expr.free_symbols.pop())
-            if symb in expr_dict.keys() and expr_dict[symb] is not None:
-                expr_dict[expr_key] = sub_expr.subs({symb: expr_dict[symb]})
+            if symb in expr_dict.keys() and (symb_expr := expr_dict[symb]) is not None:
+                if np.isnan(symb_expr):
+                    expr_dict[expr_key] = False
+                else:
+                    expr_dict[expr_key] = bool(sub_expr.subs({symb: expr_dict[symb]}))
             else:
                 expr_dict[expr_key] = None
         else:
