@@ -1,5 +1,5 @@
-from .tool import ModelRankToolResults, create_workflow, validate_input
+from .tool import ModelRankResults, create_workflow, validate_input
 
-results_class = ModelRankToolResults
+results_class = ModelRankResults
 
-__all__ = ('create_workflow', 'ModelRankToolResults', 'validate_input')
+__all__ = ('create_workflow', 'ModelRankResults', 'validate_input')
