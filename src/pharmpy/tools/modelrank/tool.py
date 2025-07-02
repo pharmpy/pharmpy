@@ -7,12 +7,12 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.tools.common import ToolResults
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows import (
     Context,
     ModelEntry,
     ModelfitResults,
+    Results,
     Task,
     Workflow,
     WorkflowBuilder,
@@ -21,7 +21,7 @@ from pharmpy.workflows import (
 from ..mfl.parse import parse as mfl_parse
 from ..modelsearch.filter import mfl_filtering
 from .ranking import get_rank_type, get_rank_values, rank_model_entries
-from .strictness import evaluate_strictness, get_strictness_expr, get_strictness_predicates
+from .strictness import get_strictness_expr, get_strictness_predicates
 
 RANK_TYPES = frozenset(
     (
@@ -181,11 +181,9 @@ def rank_models(
 ):
     expr = get_strictness_expr(strictness)
     me_predicates = {me: get_strictness_predicates(me, expr) for me in [me_ref] + mes_cand}
-
-    mes_to_rank = []
-    for me, predicates in me_predicates.items():
-        if evaluate_strictness(expr, predicates):
-            mes_to_rank.append(me)
+    mes_to_rank = [
+        me for me, predicates in me_predicates.items() if predicates['strictness_fulfilled']
+    ]
 
     me_rank_values = get_rank_values(
         me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
@@ -199,7 +197,7 @@ def rank_models(
 
     best_me = list(mes_sorted_by_rank.keys())[0]
 
-    res = ModelRankToolResults(
+    res = ModelRankResults(
         summary_tool=summary_ranking,
         summary_strictness=summary_strictness,
         summary_selection_criteria=summary_selection_criteria,
@@ -255,7 +253,7 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
     return df
 
 
-def _results(context: Context, res: ToolResults):
+def _results(context: Context, res: Results):
     context.log_info("Finishing tool modelrank")
     return res
 
@@ -327,7 +325,7 @@ def validate_input(
 
 
 @dataclass(frozen=True)
-class ModelRankToolResults(ToolResults):
+class ModelRankResults(Results):
     summary_tool: Optional[Any] = None
     summary_strictness: Optional[Any] = None
     summary_selection_criteria: Optional[Any] = None

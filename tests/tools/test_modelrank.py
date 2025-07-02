@@ -78,10 +78,9 @@ def test_rank_models(
     res_ref = read_modelfit_results(pheno_path)
     me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
     models_cand = [set_name(model, f'model{i}') for i, model in enumerate([model_ref] * 5)]
-    mes_cand = model_entry_factory(models_cand)
+    mes_cand = model_entry_factory(models_cand, parent=model_ref)
 
-    parent_dict = {me.model.name: me_ref.model.name for me in [me_ref] + mes_cand}
-    res = rank_models(me_ref, mes_cand, strictness, rank_type, cutoff, None, parent_dict)
+    res = rank_models(me_ref, mes_cand, strictness, rank_type, cutoff, None, None)
 
     assert len(res.summary_tool) == 6
     assert res.final_model.name == 'model1'
@@ -100,11 +99,19 @@ def test_rank_models(
 @pytest.mark.parametrize(
     'strictness, model_path, ref_predicates',
     [
-        ('minimization_successful', 'models/mox2.mod', {'minimization_successful': True}),
+        (
+            'minimization_successful',
+            'models/mox2.mod',
+            {'minimization_successful': True, 'strictness_fulfilled': True},
+        ),
         (
             'minimization_successful or rounding_errors',
             'models/mox2.mod',
-            {'minimization_successful': True, 'rounding_errors': False},
+            {
+                'minimization_successful': True,
+                'rounding_errors': False,
+                'strictness_fulfilled': True,
+            },
         ),
         (
             'minimization_successful or (rounding_errors and sigdigs >= 0.1)',
@@ -114,17 +121,27 @@ def test_rank_models(
                 'rounding_errors': False,
                 'sigdigs': 3.8,
                 'sigdigs >= 0.1': True,
+                'strictness_fulfilled': True,
             },
         ),
         (
             'minimization_successful or (rse <= 0.1)',
             'models/mox2.mod',
-            {'minimization_successful': True, 'rse': None, 'rse <= 0.1': None},
+            {
+                'minimization_successful': True,
+                'rse': None,
+                'rse <= 0.1': None,
+                'strictness_fulfilled': True,
+            },
         ),
         (
             'not minimization_successful',
             'models/mox2.mod',
-            {'~minimization_successful': False, 'minimization_successful': True},
+            {
+                '~minimization_successful': False,
+                'minimization_successful': True,
+                'strictness_fulfilled': False,
+            },
         ),
         (
             'not minimization_successful or not rounding_errors',
@@ -134,12 +151,17 @@ def test_rank_models(
                 'minimization_successful': True,
                 '~rounding_errors': True,
                 'rounding_errors': False,
+                'strictness_fulfilled': True,
             },
         ),
         (
             'not estimate_near_boundary',
             'models/mox2.mod',
-            {'~estimate_near_boundary': False, 'estimate_near_boundary': True},
+            {
+                '~estimate_near_boundary': False,
+                'estimate_near_boundary': True,
+                'strictness_fulfilled': False,
+            },
         ),
         (
             'not estimate_near_boundary_theta and not estimate_near_boundary_omega',
@@ -149,27 +171,46 @@ def test_rank_models(
                 'estimate_near_boundary_theta': False,
                 '~estimate_near_boundary_omega': False,
                 'estimate_near_boundary_omega': True,
+                'strictness_fulfilled': False,
             },
         ),
         (
             'condition_number <= 100',
             'models/mox2.mod',
-            {'condition_number': None, 'condition_number <= 100': None},
+            {
+                'condition_number': None,
+                'condition_number <= 100': None,
+                'strictness_fulfilled': None,
+            },
         ),
         (
             'minimization_successful and (rse <= 1.0)',
             'models/pheno5.mod',
-            {'minimization_successful': True, 'rse': 0.5814089116181571, 'rse <= 1.0': True},
+            {
+                'minimization_successful': True,
+                'rse': 0.5814089116181571,
+                'rse <= 1.0': True,
+                'strictness_fulfilled': True,
+            },
         ),
         (
             'minimization_successful and (rse <= 0.5)',
             'models/pheno5.mod',
-            {'minimization_successful': True, 'rse': 0.5814089116181571, 'rse <= 0.5': False},
+            {
+                'minimization_successful': True,
+                'rse': 0.5814089116181571,
+                'rse <= 0.5': False,
+                'strictness_fulfilled': False,
+            },
         ),
         (
             'condition_number <= 100',
             'models/pheno5.mod',
-            {'condition_number': 6828363899484635.0, 'condition_number <= 100': False},
+            {
+                'condition_number': 6828363899484635.0,
+                'condition_number <= 100': False,
+                'strictness_fulfilled': False,
+            },
         ),
     ],
 )

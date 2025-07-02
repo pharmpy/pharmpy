@@ -71,11 +71,11 @@ def evaluate_strictness(expr: LogicalExpr, predicates: dict[str, Optional[bool]]
     if expr_subs not in (True, False):
         return None
     else:
-        return expr_subs
+        return bool(expr_subs)
 
 
 def get_strictness_predicates(me: ModelEntry, expr: LogicalExpr) -> dict[str, Optional[bool]]:
-    expr_dict = dict()
+    predicates = dict()
 
     def _eval_tree(sub_expr):
         for arg in sub_expr.args:
@@ -86,19 +86,22 @@ def get_strictness_predicates(me: ModelEntry, expr: LogicalExpr) -> dict[str, Op
             if len(sub_expr.free_symbols) != 1:
                 return
             symb = str(sub_expr.free_symbols.pop())
-            if symb in expr_dict.keys() and (symb_expr := expr_dict[symb]) is not None:
+            if symb in predicates.keys() and (symb_expr := predicates[symb]) is not None:
                 if np.isnan(symb_expr):
-                    expr_dict[expr_key] = False
+                    predicates[expr_key] = False
                 else:
-                    expr_dict[expr_key] = bool(sub_expr.subs({symb: expr_dict[symb]}))
+                    predicates[expr_key] = bool(sub_expr.subs({symb: predicates[symb]}))
             else:
-                expr_dict[expr_key] = None
+                predicates[expr_key] = None
         else:
-            expr_dict[expr_key] = expr_eval
+            predicates[expr_key] = expr_eval
 
     _eval_tree(expr)
 
-    return expr_dict
+    strictness_fulfilled = evaluate_strictness(expr, predicates)
+    predicates['strictness_fulfilled'] = strictness_fulfilled
+
+    return predicates
 
 
 def _eval_strictness_arg(me: ModelEntry, arg: str):
