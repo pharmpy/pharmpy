@@ -156,8 +156,9 @@ def prepare_model_entries(
         parent_dict = {model.name: ref_model.name for model in models}
 
     for model, results in zip(models, results):
-        if model.name in parent_dict.keys() and model.name != parent_dict[model.name]:
-            parent = model_dict[parent_dict[model.name]]
+        parent_name = parent_dict.get(model.name)
+        if parent_name and parent_name in model_dict.keys() and model.name != parent_name:
+            parent = model_dict[parent_name]
         else:
             parent = None
         me = ModelEntry.create(model, modelfit_results=results, parent=parent)
