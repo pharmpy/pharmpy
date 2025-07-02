@@ -2,17 +2,26 @@ import re
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.tools.common import ToolResults
 from pharmpy.tools.mfl.parse import ModelFeatures
-from pharmpy.tools.run import calculate_mbic_penalty, rank_models_from_entries
-from pharmpy.workflows import Context, ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import (
+    Context,
+    ModelEntry,
+    ModelfitResults,
+    Task,
+    Workflow,
+    WorkflowBuilder,
+)
 
 from ..mfl.parse import parse as mfl_parse
 from ..modelsearch.filter import mfl_filtering
+from .ranking import get_rank_type, get_rank_values, rank_model_entries
+from .strictness import evaluate_strictness, get_strictness_expr, get_strictness_predicates
 
 RANK_TYPES = frozenset(
     (
@@ -38,7 +47,7 @@ def create_workflow(
     cutoff: Optional[float] = None,
     search_space: Optional[Union[str, ModelFeatures]] = None,
     E: Optional[Union[float, str, tuple[float], tuple[str]]] = None,
-    _parent_dict: dict[str, str] = None,
+    _parent_dict: Optional[dict[str, str]] = None,
 ):
     """Run ModelRank tool.
 
@@ -101,22 +110,17 @@ def start(
     strictness: str,
     rank_type: str,
     cutoff: Optional[float],
-    search_space,
-    E,
-    _parent_dict,
+    search_space: Optional[str],
+    E: Union[float, tuple[float]],
+    _parent_dict: Optional[dict[str, str]],
 ):
     context.log_info("Starting tool modelrank")
 
     wb = WorkflowBuilder()
 
-    me_ref, mes_cand = prepare_model_entries(models, results, ref_model)
+    me_ref, mes_cand = prepare_model_entries(models, results, ref_model, _parent_dict)
     for me in [me_ref] + mes_cand:
         context.store_model_entry(me)
-
-    if rank_type in ('mbic_mixed', 'mbic_iiv'):
-        penalties = prepare_penalties(search_space, E, me_ref, mes_cand)
-    else:
-        penalties = None
 
     context.log_info("Ranking models")
     rank_task = Task(
@@ -127,8 +131,8 @@ def start(
         strictness,
         rank_type,
         cutoff,
-        penalties,
-        _parent_dict,
+        search_space,
+        E,
     )
     wb.add_task(rank_task)
 
@@ -141,11 +145,22 @@ def prepare_model_entries(
     models: list[Model],
     results: list[ModelfitResults],
     ref_model: Model,
+    parent_dict: Optional[dict[str, str]],
 ):
     me_cands = []
     me_ref = None
+
+    model_dict = {model.name: model for model in models}
+
+    if not parent_dict:
+        parent_dict = {model.name: ref_model.name for model in models}
+
     for model, results in zip(models, results):
-        me = ModelEntry.create(model, modelfit_results=results)
+        if model.name in parent_dict.keys() and model.name != parent_dict[model.name]:
+            parent = model_dict[parent_dict[model.name]]
+        else:
+            parent = None
+        me = ModelEntry.create(model, modelfit_results=results, parent=parent)
         if model == ref_model:
             assert me_ref is None
             me_ref = me
@@ -155,81 +170,89 @@ def prepare_model_entries(
     return me_ref, me_cands
 
 
-def prepare_penalties(search_space, E, me_ref, mes_cand):
-    if isinstance(E, tuple):
-        E_kwargs = {'E_p': E[0], 'E_q': E[1]}
-    else:
-        E_kwargs = {'E_p': E}
-    penalties = [
-        calculate_mbic_penalty(me.model, search_space, **E_kwargs) for me in [me_ref] + mes_cand
-    ]
-    return penalties
-
-
 def rank_models(
     me_ref: ModelEntry,
     mes_cand: list[ModelEntry],
     strictness: str,
     rank_type: str,
     cutoff: Optional[float],
-    penalties: Optional[list[float]],
-    _parent_dict: dict[str, str],
+    search_space,
+    E,
 ):
-    kwargs = get_rank_type_kwargs(rank_type)
-    df_rank = rank_models_from_entries(
-        me_ref, mes_cand, strictness=strictness, cutoff=cutoff, penalties=penalties, **kwargs
-    )
-    summary_tool = _modify_rank_table(me_ref, mes_cand, df_rank, _parent_dict)
+    expr = get_strictness_expr(strictness)
+    me_predicates = {me: get_strictness_predicates(me, expr) for me in [me_ref] + mes_cand}
 
-    best_model_name = summary_tool['rank'].idxmin()
-    best_me = next(filter(lambda me: me.model.name == best_model_name, mes_cand), me_ref)
+    mes_to_rank = []
+    for me, predicates in me_predicates.items():
+        if evaluate_strictness(expr, predicates):
+            mes_to_rank.append(me)
+
+    me_rank_values = get_rank_values(
+        me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
+    )
+
+    summary_strictness = create_table(me_predicates)
+    summary_selection_criteria = create_table(me_rank_values)
+
+    mes_sorted_by_rank = rank_model_entries(me_rank_values, get_rank_type(rank_type))
+    summary_ranking = create_ranking_table(me_ref, mes_sorted_by_rank, get_rank_type(rank_type))
+
+    best_me = list(mes_sorted_by_rank.keys())[0]
 
     res = ModelRankToolResults(
-        summary_tool=summary_tool, final_model=best_me.model, final_results=best_me.modelfit_results
+        summary_tool=summary_ranking,
+        summary_strictness=summary_strictness,
+        summary_selection_criteria=summary_selection_criteria,
+        final_model=best_me.model,
+        final_results=best_me.modelfit_results,
     )
     return res
 
 
-def _modify_rank_table(
-    me_ref: ModelEntry,
-    mes_cand: list[ModelEntry],
-    df_rank: pd.DataFrame,
-    _parent_dict: dict[str, str],
-):
-    rows = {}
-    params_ref = len(me_ref.model.parameters.nonfixed)
-    for model_entry in [me_ref] + mes_cand:
-        model = model_entry.model
-        description = model.description
-        if _parent_dict:
-            parent = _parent_dict[model.name]
-        else:
-            parent = None
-        n_params = len(model.parameters.nonfixed)
-        d_params = n_params - params_ref
-        rows[model.name] = (description, n_params, d_params, parent)
-
-    colnames = ['description', 'n_params', 'd_params', 'parent_model']
-    index = pd.Index(rows.keys(), name='model')
-    df_descr = pd.DataFrame(rows.values(), index=index, columns=colnames)
-
-    df = pd.concat([df_descr, df_rank], axis=1)
-    df = df.reindex(df_rank.index)
-    df['parent_model'] = df.pop('parent_model')
-
+def create_table(me_dict):
+    col_names = list(list(me_dict.values())[0].keys())
+    df_data = {col: [] for col in ['model'] + col_names}
+    for me, predicates in me_dict.items():
+        df_data['model'].append(me.model.name)
+        for col in col_names:
+            df_data[col].append(predicates[col])
+    df = pd.DataFrame(df_data).set_index(['model'])
     return df
 
 
-def get_rank_type_kwargs(rank_type: str):
-    if rank_type in ('bic_mixed', 'mbic_mixed'):
-        kwargs = {'rank_type': 'bic', 'bic_type': 'mixed'}
-    elif rank_type in ('bic_iiv', 'mbic_iiv'):
-        kwargs = {'rank_type': 'bic', 'bic_type': 'iiv'}
-    elif rank_type in ('bic_random', 'mbic_random'):
-        kwargs = {'rank_type': 'bic', 'bic_type': 'random'}
-    else:
-        kwargs = {'rank_type': rank_type}
-    return kwargs
+def create_ranking_table(me_ref, me_rank_values, rank_type):
+    col_names = [
+        'model',
+        'description',
+        'n_params',
+        'd_params',
+        f'd{rank_type}',
+        f'{rank_type}',
+        'rank',
+        'parent_model',
+    ]
+    df_data = {col: [] for col in col_names}
+    params_ref = len(me_ref.model.parameters.nonfixed)
+    for i, (me, predicates) in enumerate(me_rank_values.items(), 1):
+        model = me.model
+        n_params = len(me.model.parameters.nonfixed)
+        parent = me.parent.name if me.parent else ''
+        rank = i if not np.isnan(predicates['rank_val']) else np.nan
+        me_dict = {
+            'model': model.name,
+            'description': model.description,
+            'n_params': n_params,
+            'd_params': n_params - params_ref,
+            f'd{rank_type}': predicates[f'd{rank_type}'],
+            f'{rank_type}': predicates[f'{rank_type}'],
+            'rank': rank,
+            'parent_model': parent,
+        }
+        for key, value in me_dict.items():
+            df_data[key].append(value)
+
+    df = pd.DataFrame(df_data).set_index(['model'])
+    return df
 
 
 def _results(context: Context, res: ToolResults):
@@ -306,5 +329,7 @@ def validate_input(
 @dataclass(frozen=True)
 class ModelRankToolResults(ToolResults):
     summary_tool: Optional[Any] = None
+    summary_strictness: Optional[Any] = None
+    summary_selection_criteria: Optional[Any] = None
     final_model: Optional[Model] = None
     final_results: Optional[ModelfitResults] = None
