@@ -46,3 +46,6 @@ def test_modelrank_dummy(
         assert len(res.summary_strictness) == len([model_base] + models)
         assert len(res.summary_selection_criteria) == len([model_base] + models)
         assert not np.isnan(res.summary_selection_criteria.loc[res.final_model.name, 'rank_val'])
+        assert (
+            bool(res.summary_strictness.loc[res.final_model.name, 'strictness_fulfilled']) is True
+        )
