@@ -24,7 +24,7 @@ from ..mfl.parse import parse as mfl_parse
 from ..modelfit import create_fit_workflow
 from ..modelsearch.filter import mfl_filtering
 from ..run import summarize_modelfit_results_from_entries
-from .ranking import get_rank_type, get_rank_values, rank_model_entries
+from .ranking import get_rank_name, get_rank_values, rank_model_entries
 from .strictness import get_strictness_expr, get_strictness_predicates, get_strictness_predicates_me
 
 RANK_TYPES = frozenset(
@@ -208,11 +208,11 @@ def rank_models(
     me_rank_values = get_rank_values(
         me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
     )
-    me_rank_values_sorted = rank_model_entries(me_rank_values, get_rank_type(rank_type))
+    me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
 
     summary_strictness = create_table(me_predicates)
     summary_selection_criteria = create_table(me_rank_values)
-    summary_ranking = create_ranking_table(me_ref, me_rank_values_sorted, get_rank_type(rank_type))
+    summary_ranking = create_ranking_table(me_ref, me_rank_values_sorted, rank_type)
 
     best_me = list(me_rank_values_sorted.keys())[0]
 
@@ -238,13 +238,14 @@ def create_table(me_dict):
 
 
 def create_ranking_table(me_ref, me_rank_values, rank_type):
+    rank_name = get_rank_name(rank_type)
     col_names = [
         'model',
         'description',
         'n_params',
         'd_params',
-        f'd{rank_type}',
-        f'{rank_type}',
+        f'd{rank_name}',
+        f'{rank_name}',
         'rank',
         'parent_model',
     ]
@@ -260,8 +261,8 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
             'description': model.description,
             'n_params': n_params,
             'd_params': n_params - params_ref,
-            f'd{rank_type}': predicates[f'd{rank_type}'],
-            f'{rank_type}': predicates[f'{rank_type}'],
+            f'd{rank_name}': predicates[f'd{rank_name}'],
+            f'{rank_name}': predicates[f'{rank_name}'],
             'rank': rank,
             'parent_model': parent,
         }
@@ -286,19 +287,18 @@ def rank_models_with_uncertainty(
     expr = get_strictness_expr(strictness)
     me_predicates = get_strictness_predicates([me_ref] + mes_cand, expr)
     mes_to_rank = get_model_entries_to_rank(me_predicates, strict=False)
-
     me_rank_values = get_rank_values(
         me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
     )
-    me_rank_values_sorted = rank_model_entries(me_rank_values, get_rank_type(rank_type))
+    me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
 
     no_cov_strictness = create_table(me_predicates)
     no_cov_selection_criteria = create_table(me_rank_values)
-    no_cov_ranking = create_ranking_table(me_ref, me_rank_values_sorted, get_rank_type(rank_type))
     no_cov_models = summarize_modelfit_results_from_entries([me_ref] + mes_cand)
 
-    cov_strictness, cov_selection_criteria, cov_ranking, cov_models = [], [], [], []
+    cov_strictness, cov_selection_criteria, cov_models = [], [], []
     mes_to_run = list(me_rank_values_sorted.keys())
+    me_predicates_reeval = me_predicates.copy()
     i = 0
     best_me = None
     while mes_to_run:
@@ -313,19 +313,10 @@ def rank_models_with_uncertainty(
 
         context.log_info(f'Running model {me.model.name} with parameter uncertainty')
         i += 1
-        name = f'modelrank_run{i}'
-        candidate_task = Task(
-            'cand', create_candidate_with_uncertainty, me.model, name, parameter_uncertainty_method
-        )
+        me_cov = run_candidate(context, me.model, i, parameter_uncertainty_method)
 
-        wb = WorkflowBuilder()
-        wb.add_task(candidate_task)
-        wf_fit = create_fit_workflow(n=1)
-        wb.insert_workflow(wf_fit)
-        wf = Workflow(wb)
-
-        me_cov = context.call_workflow(wf, f'fit_{me.model.name}_cov')
         predicates = get_strictness_predicates_me(me_cov, expr)
+        me_predicates_reeval[me] = predicates
 
         strictness_fulfilled = predicates['strictness_fulfilled']
         assert strictness_fulfilled is not None
@@ -335,12 +326,10 @@ def rank_models_with_uncertainty(
 
         me_strictness = create_table({me_cov: predicates})
         me_selection_criteria = create_table({me_cov: rank_values})
-        me_ranking = create_ranking_table(me_ref, {me_cov: rank_values}, get_rank_type(rank_type))
         me_modelfit = summarize_modelfit_results_from_entries([me_cov])
 
         cov_strictness.append(me_strictness)
         cov_selection_criteria.append(me_selection_criteria)
-        cov_ranking.append(me_ranking)
         cov_models.append(me_modelfit)
 
         if strictness_fulfilled:
@@ -366,8 +355,14 @@ def rank_models_with_uncertainty(
     summary_selection_criteria = concat_summaries(
         [no_cov_selection_criteria] + cov_selection_criteria, keys=keys
     )
-    summary_ranking = concat_summaries([no_cov_ranking] + cov_ranking, keys=keys)
     summary_models = concat_summaries([no_cov_models] + cov_models, keys=keys)
+
+    mes_to_rank = get_model_entries_to_rank(me_predicates_reeval, strict=False)
+    me_rank_values = get_rank_values(
+        me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
+    )
+    me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
+    summary_ranking = create_ranking_table(me_ref, me_rank_values_sorted, rank_type)
 
     res = ModelRankResults(
         summary_tool=summary_ranking,
@@ -379,6 +374,22 @@ def rank_models_with_uncertainty(
     )
 
     return res
+
+
+def run_candidate(context, model_ref, i, parameter_uncertainty_method):
+    name = f'modelrank_run{i}'
+    candidate_task = Task(
+        'cand', create_candidate_with_uncertainty, model_ref, name, parameter_uncertainty_method
+    )
+
+    wb = WorkflowBuilder()
+    wb.add_task(candidate_task)
+    wf_fit = create_fit_workflow(n=1)
+    wb.insert_workflow(wf_fit)
+    wf = Workflow(wb)
+
+    cand_me = context.call_workflow(wf, f'fit_{model_ref.name}_cov')
+    return cand_me
 
 
 def create_candidate_with_uncertainty(base_model, name, parameter_uncertainty_method):

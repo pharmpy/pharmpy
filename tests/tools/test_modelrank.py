@@ -16,7 +16,6 @@ from pharmpy.tools.modelrank.ranking import (
     get_aic,
     get_bic,
     get_ofv,
-    get_rank_type,
     get_rank_values,
     perform_lrt,
     rank_model_entries,
@@ -567,7 +566,7 @@ def test_rank_model_entries(
     if rank_type not in ('ofv', 'lrt'):
         assert rank_values[me_ref]['rank_val'] > rank_values[me_ref]['ofv']
 
-    ranking = rank_model_entries(rank_values, get_rank_type(rank_type))
+    ranking = rank_model_entries(rank_values, rank_type)
 
     me_best = list(ranking.keys())[0]
     assert me_best.model.name == final_model

@@ -73,7 +73,8 @@ def perform_lrt(me, me_parent, p_value) -> dict[str, Union[float, int, bool]]:
     return rank_dict
 
 
-def rank_model_entries(me_rank_values, sort_by):
+def rank_model_entries(me_rank_values, rank_type):
+    sort_by = get_rank_name(rank_type)
     rank_values_no_nan = {
         me: vals for me, vals in me_rank_values.items() if not np.isnan(vals['rank_val'])
     }
@@ -86,7 +87,7 @@ def rank_model_entries(me_rank_values, sort_by):
     return ranking
 
 
-def get_rank_type(rank_type):
+def get_rank_name(rank_type):
     if rank_type == 'lrt':
         return 'ofv'
     elif 'bic' in rank_type:
