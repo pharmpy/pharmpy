@@ -124,13 +124,22 @@ def create_dummy_modelfit_results(model, ref=None):
     params = list(map(lambda x: _get_param_init(x), list(model.parameters)))
     params = pd.Series(Parameters.create(params).inits)
 
-    rse = pd.Series(model.parameters.inits)
-    rse.iloc[:] = rng.uniform(-1, 1)
-    rse.name = 'RSE'
+    if any(step.parameter_uncertainty_method is not None for step in model.execution_steps):
+        rse = pd.Series(model.parameters.inits)
+        rse.iloc[:] = rng.uniform(-1, 1)
+        rse.name = 'RSE'
 
-    se = pd.Series(model.parameters.inits)
-    se.iloc[:] = rng.uniform(-1, 1)
-    se.name = 'SE'
+        se = pd.Series(model.parameters.inits)
+        se.iloc[:] = rng.uniform(-1, 1)
+        se.name = 'SE'
+
+        param_names = model.parameters.names
+        pes = pd.Series(_rand_array(1, len(param_names), rng), name='estimates')
+        pes.index = param_names
+        ses = pd.Series(_rand_array(1, len(param_names), rng), name='SE_sdcorr')
+        ses.index = param_names
+    else:
+        rse, se, pes, ses = None, None, None, None
 
     if obs is None:
         residuals = None
@@ -157,12 +166,6 @@ def create_dummy_modelfit_results(model, ref=None):
     cov_eta.index = eta_names
     iec = pd.Series([cov_eta] * n_id)
     iec.index = model.dataset[id_name].unique()
-
-    param_names = model.parameters.names
-    pes = pd.Series(_rand_array(1, len(param_names), rng), name='estimates')
-    pes.index = param_names
-    ses = pd.Series(_rand_array(1, len(param_names), rng), name='SE_sdcorr')
-    ses.index = param_names
 
     results_dict = {
         'parameter_estimates': params,
