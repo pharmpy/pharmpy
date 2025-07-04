@@ -41,3 +41,11 @@ def test_attach_results(load_model_for_test, testdata):
 
     with pytest.raises(ValueError):
         model_entry_res.attach_results(modelfit_results=res)
+
+
+def test_repr(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+
+    model_entry = ModelEntry(model)
+
+    assert repr(model_entry) == '<Pharmpy model entry object pheno>'
