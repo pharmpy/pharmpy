@@ -49,6 +49,7 @@ def create_workflow(
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: Optional[ModelfitResults] = None,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -83,6 +84,9 @@ def create_workflow(
         Strictness criteria
     dv_types : dict
         Dictionary of DV types for TMDD models with multiple DVs
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -110,6 +114,7 @@ def create_workflow(
             rank_type,
             cutoff,
             strictness,
+            parameter_uncertainty_method,
             dv_types,
         )
     elif type == 'pkpd':
@@ -126,6 +131,7 @@ def create_workflow(
             rank_type,
             cutoff,
             strictness,
+            parameter_uncertainty_method,
         )
     elif type == 'drug_metabolite':
         start_task = Task(
@@ -137,6 +143,7 @@ def create_workflow(
             rank_type,
             cutoff,
             strictness,
+            parameter_uncertainty_method,
         )
     wb.add_task(start_task)
     return Workflow(wb)
@@ -151,6 +158,7 @@ def run_tmdd(
     rank_type,
     cutoff,
     strictness,
+    parameter_uncertainty_method,
     dv_types,
 ):
     context.log_info("Starting tool structsearch")
@@ -185,7 +193,13 @@ def run_tmdd(
     qss_run_entries = context.call_workflow(Workflow(wb), 'results_QSS')
 
     rank_res_step_1 = rank_models(
-        context, model_entry, list(qss_run_entries), rank_type, cutoff, strictness
+        context,
+        model_entry,
+        list(qss_run_entries),
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
     )
 
     best_qss_entry = ModelEntry.create(
@@ -211,7 +225,13 @@ def run_tmdd(
     run_model_entries = context.call_workflow(Workflow(wb2), 'results_remaining')
 
     rank_res_step_2 = rank_models(
-        context, best_qss_entry, list(run_model_entries), rank_type, cutoff, strictness
+        context,
+        best_qss_entry,
+        list(run_model_entries),
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
     )
 
     summaries = [rank_res_step_1.summary_tool, rank_res_step_2.summary_tool]
@@ -244,7 +264,15 @@ def run_tmdd(
     return res
 
 
-def rank_models(context, base_model_entry, candidate_model_entries, rank_type, cutoff, strictness):
+def rank_models(
+    context,
+    base_model_entry,
+    candidate_model_entries,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+):
     model_entries = [base_model_entry] + candidate_model_entries
     models = [me.model for me in model_entries]
     results = [me.modelfit_results for me in model_entries]
@@ -264,6 +292,7 @@ def rank_models(context, base_model_entry, candidate_model_entries, rank_type, c
         rank_type=rank_type,
         cutoff=cutoff,
         strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
         _parent_dict=parent_dict,
     )
 
@@ -296,6 +325,7 @@ def run_pkpd(
     rank_type,
     cutoff,
     strictness,
+    parameter_uncertainty_method,
 ):
     context.log_info("Starting tool structsearch")
     input_model = store_input_model(context, input_model, results)
@@ -331,7 +361,13 @@ def run_pkpd(
     pkpd_models_fit = context.call_workflow(Workflow(wb2), 'results_remaining')
 
     rank_res = rank_models(
-        context, pd_baseline_fit[0], list(pkpd_models_fit), rank_type, cutoff, strictness
+        context,
+        pd_baseline_fit[0],
+        list(pkpd_models_fit),
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
     )
 
     tables = create_result_tables([[model_entry], list(pd_baseline_fit), list(pkpd_models_fit)])
@@ -360,7 +396,16 @@ def run_pkpd(
     return res
 
 
-def run_drug_metabolite(context, model, search_space, results, rank_type, cutoff, strictness):
+def run_drug_metabolite(
+    context,
+    model,
+    search_space,
+    results,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+):
     context.log_info("Starting tool structsearch")
     # Create links to input model
     model = store_input_model(context, model, results)
@@ -378,6 +423,7 @@ def run_drug_metabolite(context, model, search_space, results, rank_type, cutoff
         rank_type,
         cutoff,
         strictness,
+        parameter_uncertainty_method,
     )
 
     wb.add_task(task_results, predecessors=candidate_model_tasks)
@@ -397,6 +443,7 @@ def post_process_drug_metabolite(
     rank_type,
     cutoff,
     strictness,
+    parameter_uncertainty_method,
     *model_entries,
 ):
     # NOTE : The base model is part of the model_entries but not the user_input_model
@@ -412,7 +459,13 @@ def post_process_drug_metabolite(
         results_to_summarize.append(res_model_entries)
 
     rank_res = rank_models(
-        context, base_model_entry, res_model_entries, rank_type, cutoff, strictness
+        context,
+        base_model_entry,
+        res_model_entries,
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
     )
 
     tables = create_result_tables(results_to_summarize)
@@ -496,8 +549,13 @@ def validate_input(
     met_init,
     extra_model,
     extra_model_results,
+    parameter_uncertainty_method,
 ):
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
