@@ -50,6 +50,7 @@ def create_workflow(
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     E: Optional[Union[float, str]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -74,6 +75,9 @@ def create_workflow(
         Strictness criteria
     E : float
         Expected number of predictors (used for mBIC). Must be set when using mBIC
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -103,6 +107,7 @@ def create_workflow(
         cutoff,
         E,
         strictness,
+        parameter_uncertainty_method,
         distribution,
     )
 
@@ -142,6 +147,7 @@ def task_brute_force_search(
     cutoff: Union[None, float],
     E: Optional[float],
     strictness: str,
+    parameter_uncertainty_method: Optional[str],
     distribution: str,
     input_model_entry: ModelEntry,
 ):
@@ -196,6 +202,7 @@ def task_brute_force_search(
         search_space=search_space,
         E=E,
         strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
     )
 
     current_step += 1
@@ -233,6 +240,7 @@ def task_brute_force_search(
         rank_type=rank_type,
         cutoff=cutoff,
         strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
         search_space=search_space,
         E=E,
     )
@@ -337,6 +345,7 @@ def get_best_model(
     rank_type: str,
     cutoff: Union[None, float],
     strictness: str,
+    parameter_uncertainty_method: Optional[str] = None,
     search_space: Optional[str] = None,
     E: Optional[Union[float, str]] = None,
 ):
@@ -363,6 +372,7 @@ def get_best_model(
         strictness=strictness,
         search_space=search_space,
         E=E,
+        parameter_uncertainty_method=parameter_uncertainty_method,
         _parent_dict=parent_dict,
     )
 
@@ -458,6 +468,7 @@ def validate_input(
     distribution,
     strictness,
     E,
+    parameter_uncertainty_method,
 ):
     if model is not None:
         if column not in model.datainfo.names:
@@ -475,7 +486,11 @@ def validate_input(
                     f'Invalid `list_of_parameters`: got `{list_of_parameters}`,'
                     f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
                 )
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
