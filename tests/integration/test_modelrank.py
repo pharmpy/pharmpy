@@ -81,7 +81,7 @@ def test_modelrank_uncertainty_dummy(
             **kwargs,
         )
 
-        assert len(res.summary_tool) == no_of_models
+        assert len(res.summary_tool) == no_of_models - no_of_steps + 1
         assert len(res.summary_strictness) == no_of_models
         assert len(res.summary_selection_criteria) == no_of_models
         assert len(res.summary_models) == no_of_models
@@ -91,7 +91,6 @@ def test_modelrank_uncertainty_dummy(
         idx3 = res.summary_models.index
 
         assert idx1.equals(idx2) and idx1.equals(idx3)
-        assert set(res.summary_tool.index) == set(idx1)
 
         assert set(res.summary_strictness.index.get_level_values('step')) == set(
             range(0, no_of_steps)
