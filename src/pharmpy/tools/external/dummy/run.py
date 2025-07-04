@@ -139,7 +139,10 @@ def create_dummy_modelfit_results(model, ref=None):
         ses = pd.Series(_rand_array(1, len(param_names), rng), name='SE_sdcorr')
         ses.index = param_names
     else:
-        rse, se, pes, ses = None, None, None, None
+        rse = pd.Series(np.nan, index=params.index, name="RSE")
+        se = pd.Series(np.nan, index=params.index, name="SE")
+        pes = pd.Series(np.nan, index=params.index, name="SE_sdcorr")
+        ses = pd.Series(np.nan, index=params.index, name="RSE_sdcorr")
 
     if obs is None:
         residuals = None

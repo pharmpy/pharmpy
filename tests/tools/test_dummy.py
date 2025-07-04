@@ -27,12 +27,10 @@ def test_create_dummy_modelfit_results(load_example_model_for_test, ref_value, w
         assert abs(res.ofv) < 20
     no_of_params = len(model.parameters)
     assert len(res.parameter_estimates) == no_of_params
-    if with_uncertainty:
-        assert len(res.relative_standard_errors) == no_of_params
-        assert len(res.standard_errors) == no_of_params
-    else:
-        assert res.relative_standard_errors is None
-        assert res.standard_errors is None
+    assert len(res.relative_standard_errors) == no_of_params
+    assert len(res.standard_errors) == no_of_params
+    if not with_uncertainty:
+        assert all(np.isnan(val) for val in res.relative_standard_errors.values)
     no_of_individuals = get_number_of_individuals(model)
     assert len(res.individual_ofv) == no_of_individuals
     assert len(res.individual_estimates)
