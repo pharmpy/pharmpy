@@ -5,7 +5,17 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_modelsearch
 
 
-def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        dict(),
+        {
+            'strictness': 'minimization_successful and rse <= 0.7',
+            'parameter_uncertainty_method': 'SANDWICH',
+        },
+    ],
+)
+def test_modelsearch_nonmem(tmp_path, model_count, start_modelres, kwargs):
     with chdir(tmp_path):
         res = run_modelsearch(
             model=start_modelres[0],
@@ -14,6 +24,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             algorithm='exhaustive',
             rank_type='mbic',
             E=0.5,
+            **kwargs,
         )
 
         assert len(res.summary_tool) == 4
@@ -102,6 +113,18 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             2,
             'modelsearch_run4',
         ),
+        (
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive_stepwise',
+            {
+                'parameter_uncertainty_method': 'SANDWICH',
+                'strictness': 'minimization_successful and rse <= 0.6',
+            },
+            False,
+            4,
+            2,
+            'modelsearch_run4',
+        ),
     ],
 )
 def test_modelsearch_dummy(
@@ -123,7 +146,7 @@ def test_modelsearch_dummy(
             search_space=search_space,
             algorithm=algorithm,
             esttool='dummy',
-            **kwargs
+            **kwargs,
         )
 
         if has_base_model:
