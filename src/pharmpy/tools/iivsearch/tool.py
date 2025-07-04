@@ -69,6 +69,7 @@ def create_workflow(
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
     E_p: Optional[Union[float, str]] = None,
     E_q: Optional[Union[float, str]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -102,6 +103,9 @@ def create_workflow(
     E_q : float
         Expected number of predictors for off-diagonal elements (used for mBIC). Must be set when using mBIC
         and when the argument `correlation_algorithm` is not `skip` or None
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -133,6 +137,7 @@ def create_workflow(
         cutoff,
         keep,
         strictness,
+        parameter_uncertainty_method,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -151,6 +156,7 @@ def create_step_workflow(
     cutoff,
     strictness,
     keep,
+    parameter_uncertainty_method,
     context,
 ):
     wb = WorkflowBuilder()
@@ -179,6 +185,7 @@ def create_step_workflow(
         E_p,
         E_q,
         keep,
+        parameter_uncertainty_method,
         context,
     )
 
@@ -295,6 +302,7 @@ def start(
     cutoff,
     keep,
     strictness,
+    parameter_uncertainty_method,
 ):
     context.log_info("Starting tool iivsearch")
     input_model, input_model_entry = prepare_input_model(input_model, input_res)
@@ -362,6 +370,7 @@ def start(
                 cutoff=cutoff,
                 E_p=E_p,
                 E_q=E_q,
+                parameter_uncertainty_method=parameter_uncertainty_method,
                 keep=keep,
                 param_mapping=param_mapping,
                 clearance_parameter=clearance_parameter,
@@ -382,6 +391,7 @@ def start(
             cutoff=cutoff,
             strictness=strictness,
             keep=keep,
+            parameter_uncertainty_method=parameter_uncertainty_method,
             context=context,
         )
         context.log_info(f"Starting step '{algorithm_cur}'")
@@ -486,6 +496,7 @@ def start(
             strictness=strictness,
             search_space=modelrank_opts['search_space'],
             E=(E_p, E_q),
+            parameter_uncertainty_method=parameter_uncertainty_method,
             _parent_dict=modelrank_opts['parent_dict'],
         )
 
@@ -606,6 +617,7 @@ def post_process(
     E_p,
     E_q,
     keep,
+    parameter_uncertainty_method,
     context,
     *model_entries,
 ):
@@ -644,6 +656,7 @@ def post_process(
         strictness=strictness,
         search_space=modelrank_opts['search_space'],
         E=(E_p, E_q),
+        parameter_uncertainty_method=parameter_uncertainty_method,
         _parent_dict=modelrank_opts['parent_dict'],
     )
 
@@ -766,7 +779,16 @@ def modify_summary_tool(summary_tool, first_model_name):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm, E_p, E_q
+    algorithm,
+    iiv_strategy,
+    rank_type,
+    model,
+    keep,
+    strictness,
+    correlation_algorithm,
+    E_p,
+    E_q,
+    parameter_uncertainty_method,
 ):
     if keep and model:
         for parameter in keep:
@@ -775,7 +797,11 @@ def validate_input(
             if not has_random_effect(model, parameter, "iiv"):
                 warnings.warn(f"Parameter `{parameter}` has no iiv and is ignored")
 
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
