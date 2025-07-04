@@ -25,8 +25,11 @@ from pharmpy.tools.modelrank.strictness import (
     evaluate_strictness,
     get_strictness_expr,
     get_strictness_predicates,
+    get_strictness_predicates_me,
 )
 from pharmpy.tools.modelrank.tool import (
+    create_candidate_with_uncertainty,
+    get_model_entries_to_rank,
     prepare_model_entries,
     rank_models,
     validate_input,
@@ -63,6 +66,18 @@ def test_prepare_model_entries(load_model_for_test, pheno_path):
     assert me_ref.model == model_ref
     assert me_ref.parent is None
     assert me_cands[0].parent == me_ref.model
+
+
+def test_create_candidate_with_uncertainty(load_model_for_test, testdata):
+    base_model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    assert base_model.execution_steps[-1].parameter_uncertainty_method is None
+    model_entry = create_candidate_with_uncertainty(base_model, 'run1', 'SANDWICH')
+    model = model_entry.model
+    assert model.execution_steps[-1].parameter_uncertainty_method == 'SANDWICH'
+    assert model.name == 'run1'
+    assert model.description != base_model.description
+    assert model_entry.modelfit_results is None
+    assert model_entry.parent == base_model
 
 
 @pytest.mark.parametrize(
@@ -129,7 +144,7 @@ def test_rank_models(
             'models/mox2.mod',
             {
                 'minimization_successful': True,
-                'rse': None,
+                'rse': np.nan,
                 'rse <= 0.1': None,
                 'strictness_fulfilled': True,
             },
@@ -138,8 +153,8 @@ def test_rank_models(
             'not minimization_successful',
             'models/mox2.mod',
             {
-                '~minimization_successful': False,
                 'minimization_successful': True,
+                '~minimization_successful': False,
                 'strictness_fulfilled': False,
             },
         ),
@@ -147,10 +162,10 @@ def test_rank_models(
             'not minimization_successful or not rounding_errors',
             'models/mox2.mod',
             {
-                '~minimization_successful': False,
                 'minimization_successful': True,
-                '~rounding_errors': True,
+                '~minimization_successful': False,
                 'rounding_errors': False,
+                '~rounding_errors': True,
                 'strictness_fulfilled': True,
             },
         ),
@@ -158,8 +173,8 @@ def test_rank_models(
             'not estimate_near_boundary',
             'models/mox2.mod',
             {
-                '~estimate_near_boundary': False,
                 'estimate_near_boundary': True,
+                '~estimate_near_boundary': False,
                 'strictness_fulfilled': False,
             },
         ),
@@ -167,10 +182,10 @@ def test_rank_models(
             'not estimate_near_boundary_theta and not estimate_near_boundary_omega',
             'models/mox2.mod',
             {
-                '~estimate_near_boundary_theta': True,
-                'estimate_near_boundary_theta': False,
-                '~estimate_near_boundary_omega': False,
                 'estimate_near_boundary_omega': True,
+                '~estimate_near_boundary_omega': False,
+                'estimate_near_boundary_theta': False,
+                '~estimate_near_boundary_theta': True,
                 'strictness_fulfilled': False,
             },
         ),
@@ -222,10 +237,25 @@ def test_get_strictness_predicates(
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     expr = get_strictness_expr(strictness)
-    predicates = get_strictness_predicates(me_start, expr)
+    predicates = get_strictness_predicates_me(me_start, expr)
+
     assert predicates.keys() == ref_predicates.keys()
-    for key, value in predicates.items():
-        assert ref_predicates[key] == value
+    assert all(_is_equal(v1, v2) for v1, v2 in zip(predicates.values(), ref_predicates.values()))
+
+    me_predicates = get_strictness_predicates([me_start], expr)
+    assert predicates.keys() == me_predicates[me_start].keys()
+    assert all(
+        _is_equal(v1, v2) for v1, v2 in zip(predicates.values(), me_predicates[me_start].values())
+    )
+
+
+def _is_equal(val1, val2):
+    if val1 and np.isnan(val1):
+        return np.isnan(val2)
+    elif isinstance(val1, float):
+        return pytest.approx(val1) == pytest.approx(val2)
+    else:
+        return val1 == val2
 
 
 @pytest.mark.parametrize(
@@ -262,7 +292,7 @@ def test_evaluate_strictness(
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     expr = get_strictness_expr(strictness)
-    predicates = get_strictness_predicates(me_start, expr)
+    predicates = get_strictness_predicates_me(me_start, expr)
     assert evaluate_strictness(expr, predicates) == strictness_fulfilled
 
 
@@ -525,18 +555,7 @@ def test_rank_model_entries(
     res_ref = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
 
-    funcs = [
-        add_peripheral_compartment,
-        partial(create_joint_distribution, rvs=['ETA_1', 'ETA_2']),
-        create_joint_distribution,
-    ]
-
-    models_cand = []
-    for i, func in enumerate(funcs):
-        model = set_name(model_ref, f'model{i}')
-        model = func(model)
-        models_cand.append(model)
-
+    models_cand = _create_candidates(model_ref)
     mes_cand = model_entry_factory(models_cand, ref_val=res_ref.ofv, parent=model_ref)
 
     rank_values = get_rank_values(
@@ -553,6 +572,53 @@ def test_rank_model_entries(
     me_best = list(ranking.keys())[0]
     assert me_best.model.name == final_model
     assert ranking[me_best]['rank_val'] == min(d['rank_val'] for d in ranking.values())
+
+
+def _create_candidates(model_ref):
+    funcs = [
+        add_peripheral_compartment,
+        partial(create_joint_distribution, rvs=['ETA_1', 'ETA_2']),
+        create_joint_distribution,
+    ]
+
+    models_cand = []
+    for i, func in enumerate(funcs):
+        model = set_name(model_ref, f'model{i}')
+        model = func(model)
+        models_cand.append(model)
+
+    return models_cand
+
+
+@pytest.mark.parametrize(
+    'strictness, no_of_mes_not_strict, no_of_mes_strict',
+    [
+        ('minimization_successful', 4, 4),
+        ('minimization_successful and (rse <= 0.1)', 4, 0),
+        ('not minimization_successful', 0, 0),
+        ('not minimization_successful and (rse <= 0.1)', 0, 0),
+    ],
+)
+def test_get_model_entries_to_rank(
+    testdata,
+    load_model_for_test,
+    model_entry_factory,
+    strictness,
+    no_of_mes_not_strict,
+    no_of_mes_strict,
+):
+    model_ref = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_ref = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
+
+    models_cand = _create_candidates(model_ref)
+    mes_cand = model_entry_factory(models_cand, ref_val=res_ref.ofv, parent=model_ref)
+
+    expr = get_strictness_expr(strictness)
+    me_predicates = get_strictness_predicates([me_ref] + mes_cand, expr)
+
+    assert len(get_model_entries_to_rank(me_predicates, strict=False)) == no_of_mes_not_strict
+    assert len(get_model_entries_to_rank(me_predicates, strict=True)) == no_of_mes_strict
 
 
 @pytest.mark.parametrize(

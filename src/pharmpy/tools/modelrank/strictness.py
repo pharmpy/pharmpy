@@ -74,7 +74,13 @@ def evaluate_strictness(expr: LogicalExpr, predicates: dict[str, Optional[bool]]
         return bool(expr_subs)
 
 
-def get_strictness_predicates(me: ModelEntry, expr: LogicalExpr) -> dict[str, Optional[bool]]:
+def get_strictness_predicates(
+    model_entries: list[ModelEntry], expr: LogicalExpr
+) -> dict[ModelEntry, dict[str, Optional[bool]]]:
+    return {me: get_strictness_predicates_me(me, expr) for me in model_entries}
+
+
+def get_strictness_predicates_me(me: ModelEntry, expr: LogicalExpr) -> dict[str, Optional[bool]]:
     predicates = dict()
 
     def _eval_tree(sub_expr):
@@ -88,7 +94,7 @@ def get_strictness_predicates(me: ModelEntry, expr: LogicalExpr) -> dict[str, Op
             symb = str(sub_expr.free_symbols.pop())
             if symb in predicates.keys() and (symb_expr := predicates[symb]) is not None:
                 if np.isnan(symb_expr):
-                    predicates[expr_key] = False
+                    predicates[expr_key] = None
                 else:
                     predicates[expr_key] = bool(sub_expr.subs({symb: predicates[symb]}))
             else:
@@ -117,9 +123,9 @@ def _eval_strictness_arg(me: ModelEntry, arg: str):
         near_bounds = check_parameters_near_bounds(model, ests).any()
         return bool(near_bounds)
     elif arg.startswith('rse') and not arg.startswith('rse '):
-        if res.relative_standard_errors.isna().any():
-            return None
-        rse = _get_subset_on_param_type(res.relative_standard_errors, arg, model)
+        if (rse := res.relative_standard_errors) is None or rse.isna().any():
+            return np.nan
+        rse = _get_subset_on_param_type(rse, arg, model)
         return max(rse)
     elif arg.startswith('final_zero_gradient'):
         if res.gradients is None:
