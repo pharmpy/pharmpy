@@ -79,6 +79,7 @@ def bu_stepwise_no_of_etas(
     cutoff=None,
     E_p=None,
     E_q=None,
+    parameter_uncertainty_method=None,
     keep=None,
     param_mapping=None,
     clearance_parameter="",
@@ -96,6 +97,7 @@ def bu_stepwise_no_of_etas(
         cutoff,
         E_p,
         E_q,
+        parameter_uncertainty_method,
         keep,
         param_mapping,
         clearance_parameter,
@@ -115,6 +117,7 @@ def stepwise_BU_algorithm(
     cutoff,
     E_p,
     E_q,
+    parameter_uncertainty_method,
     keep,
     param_mapping,
     clearance_parameter,
@@ -236,7 +239,14 @@ def stepwise_BU_algorithm(
         from .tool import get_modelrank_opts
 
         modelrank_opts = get_modelrank_opts(base_model, all_modelentries, rank_type, keep, E_p, E_q)
-        modelrank_opts.update({'cutoff': cutoff, 'strictness': strictness, 'E': (E_p, E_q)})
+        modelrank_opts.update(
+            {
+                'cutoff': cutoff,
+                'strictness': strictness,
+                'E': (E_p, E_q),
+                'parameter_uncertainty_method': parameter_uncertainty_method,
+            }
+        )
 
         selected_model_entry = select_model_entry(
             context, best_model_entry, new_candidate_modelentries, modelrank_opts
@@ -268,6 +278,7 @@ def select_model_entry(context, base_model_entry, model_entries, modelrank_opts)
         strictness=modelrank_opts['strictness'],
         search_space=modelrank_opts['search_space'],
         E=modelrank_opts['E'],
+        parameter_uncertainty_method=modelrank_opts['parameter_uncertainty_method'],
         _parent_dict=modelrank_opts['parent_dict'],
     )
     if rank_res.final_model and rank_res.final_model != base_model_entry.model:

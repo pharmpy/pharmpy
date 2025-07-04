@@ -34,6 +34,28 @@ from pharmpy.workflows import LocalDirectoryContext
             2,
             'iivsearch_run5',
         ),
+        (
+            'top_down_exhaustive',
+            None,
+            {
+                'parameter_uncertainty_method': 'SANDWICH',
+                'strictness': 'minimization_successful and rse <= 0.5',
+            },
+            4,
+            2,
+            'iivsearch_run1',
+        ),
+        (
+            'bottom_up_stepwise',
+            'skip',
+            {
+                'parameter_uncertainty_method': 'SANDWICH',
+                'strictness': 'minimization_successful and rse <= 0.5',
+            },
+            4,
+            2,
+            'iivsearch_run2',
+        ),
     ],
 )
 def test_iivsearch_dummy(
