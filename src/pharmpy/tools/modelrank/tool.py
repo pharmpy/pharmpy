@@ -77,13 +77,16 @@ def create_workflow(
     E : float
         Expected number of predictors (used for mBIC). Must be set when using mBIC. Tuple
         if mBIC for IIV (both diagonals and off-diagonals)
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
     _parent_dict : dict
         EXPERIMENTAL FEATURE, WILL BE REMOVED. Dictionary of parent and child models.
 
     Returns
     -------
-    RankToolResults
-        Rank tool result object
+    ModelRankResults
+        ModelRank tool result object
 
     """
     wb = WorkflowBuilder(name='modelrank')
