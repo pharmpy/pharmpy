@@ -18,10 +18,14 @@ from pharmpy.workflows import (
     WorkflowBuilder,
 )
 
+from ...modeling import add_parameter_uncertainty_step, set_description, set_name
+from ..common import concat_summaries
 from ..mfl.parse import parse as mfl_parse
+from ..modelfit import create_fit_workflow
 from ..modelsearch.filter import mfl_filtering
+from ..run import summarize_modelfit_results_from_entries
 from .ranking import get_rank_type, get_rank_values, rank_model_entries
-from .strictness import get_strictness_expr, get_strictness_predicates
+from .strictness import get_strictness_expr, get_strictness_predicates, get_strictness_predicates_me
 
 RANK_TYPES = frozenset(
     (
@@ -47,6 +51,7 @@ def create_workflow(
     cutoff: Optional[float] = None,
     search_space: Optional[Union[str, ModelFeatures]] = None,
     E: Optional[Union[float, str, tuple[float], tuple[str]]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     _parent_dict: Optional[dict[str, str]] = None,
 ):
     """Run ModelRank tool.
@@ -93,6 +98,7 @@ def create_workflow(
         cutoff,
         search_space,
         E,
+        parameter_uncertainty_method,
         _parent_dict,
     )
     wb.add_task(start_task)
@@ -112,6 +118,7 @@ def start(
     cutoff: Optional[float],
     search_space: Optional[str],
     E: Union[float, tuple[float]],
+    parameter_uncertainty_method: Optional[str],
     _parent_dict: Optional[dict[str, str]],
 ):
     context.log_info("Starting tool modelrank")
@@ -123,17 +130,31 @@ def start(
         context.store_model_entry(me)
 
     context.log_info("Ranking models")
-    rank_task = Task(
-        'rank_models',
-        rank_models,
-        me_ref,
-        mes_cand,
-        strictness,
-        rank_type,
-        cutoff,
-        search_space,
-        E,
-    )
+    if parameter_uncertainty_method:
+        rank_task = Task(
+            'rank_models',
+            rank_models_with_uncertainty,
+            me_ref,
+            mes_cand,
+            strictness,
+            rank_type,
+            cutoff,
+            search_space,
+            E,
+            parameter_uncertainty_method,
+        )
+    else:
+        rank_task = Task(
+            'rank_models',
+            rank_models,
+            me_ref,
+            mes_cand,
+            strictness,
+            rank_type,
+            cutoff,
+            search_space,
+            E,
+        )
     wb.add_task(rank_task)
 
     res = context.call_workflow(wb, 'rank_models')
@@ -177,26 +198,23 @@ def rank_models(
     strictness: str,
     rank_type: str,
     cutoff: Optional[float],
-    search_space,
-    E,
+    search_space: Optional[str],
+    E: Union[float, tuple[float]],
 ):
     expr = get_strictness_expr(strictness)
-    me_predicates = {me: get_strictness_predicates(me, expr) for me in [me_ref] + mes_cand}
-    mes_to_rank = [
-        me for me, predicates in me_predicates.items() if predicates['strictness_fulfilled']
-    ]
+    me_predicates = get_strictness_predicates([me_ref] + mes_cand, expr)
+    mes_to_rank = get_model_entries_to_rank(me_predicates, strict=True)
 
     me_rank_values = get_rank_values(
         me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
     )
+    me_rank_values_sorted = rank_model_entries(me_rank_values, get_rank_type(rank_type))
 
     summary_strictness = create_table(me_predicates)
     summary_selection_criteria = create_table(me_rank_values)
+    summary_ranking = create_ranking_table(me_ref, me_rank_values_sorted, get_rank_type(rank_type))
 
-    mes_sorted_by_rank = rank_model_entries(me_rank_values, get_rank_type(rank_type))
-    summary_ranking = create_ranking_table(me_ref, mes_sorted_by_rank, get_rank_type(rank_type))
-
-    best_me = list(mes_sorted_by_rank.keys())[0]
+    best_me = list(me_rank_values_sorted.keys())[0]
 
     res = ModelRankResults(
         summary_tool=summary_ranking,
@@ -254,6 +272,142 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
     return df
 
 
+def rank_models_with_uncertainty(
+    context: Context,
+    me_ref: ModelEntry,
+    mes_cand: list[ModelEntry],
+    strictness: str,
+    rank_type: str,
+    cutoff: Optional[float],
+    search_space: Optional[str],
+    E: Union[float, tuple[float]],
+    parameter_uncertainty_method: Optional[str],
+):
+    expr = get_strictness_expr(strictness)
+    me_predicates = get_strictness_predicates([me_ref] + mes_cand, expr)
+    mes_to_rank = get_model_entries_to_rank(me_predicates, strict=False)
+
+    me_rank_values = get_rank_values(
+        me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
+    )
+    me_rank_values_sorted = rank_model_entries(me_rank_values, get_rank_type(rank_type))
+
+    no_cov_strictness = create_table(me_predicates)
+    no_cov_selection_criteria = create_table(me_rank_values)
+    no_cov_ranking = create_ranking_table(me_ref, me_rank_values_sorted, get_rank_type(rank_type))
+    no_cov_models = summarize_modelfit_results_from_entries([me_ref] + mes_cand)
+
+    cov_strictness, cov_selection_criteria, cov_ranking, cov_models = [], [], [], []
+    mes_to_run = list(me_rank_values_sorted.keys())
+    i = 0
+    best_me = None
+    while mes_to_run:
+        me = mes_to_run.pop(0)
+        strictness_fulfilled = me_predicates[me]['strictness_fulfilled']
+        if strictness_fulfilled:
+            context.log_info(f'Model {me.model.name} already fulfilled strictness')
+            best_me = me
+            break
+        elif strictness_fulfilled is False:
+            break
+
+        context.log_info(f'Running model {me.model.name} with parameter uncertainty')
+        i += 1
+        name = f'modelrank_run{i}'
+        candidate_task = Task(
+            'cand', create_candidate_with_uncertainty, me.model, name, parameter_uncertainty_method
+        )
+
+        wb = WorkflowBuilder()
+        wb.add_task(candidate_task)
+        wf_fit = create_fit_workflow(n=1)
+        wb.insert_workflow(wf_fit)
+        wf = Workflow(wb)
+
+        me_cov = context.call_workflow(wf, f'fit_{me.model.name}_cov')
+        predicates = get_strictness_predicates_me(me_cov, expr)
+
+        strictness_fulfilled = predicates['strictness_fulfilled']
+        assert strictness_fulfilled is not None
+
+        rank_values = me_rank_values[me].copy()
+        rank_values['rank_val'] = np.nan if not strictness_fulfilled else rank_values['rank_val']
+
+        me_strictness = create_table({me_cov: predicates})
+        me_selection_criteria = create_table({me_cov: rank_values})
+        me_ranking = create_ranking_table(me_ref, {me_cov: rank_values}, get_rank_type(rank_type))
+        me_modelfit = summarize_modelfit_results_from_entries([me_cov])
+
+        cov_strictness.append(me_strictness)
+        cov_selection_criteria.append(me_selection_criteria)
+        cov_ranking.append(me_ranking)
+        cov_models.append(me_modelfit)
+
+        if strictness_fulfilled:
+            context.log_info(
+                f'Model {me.model.name} passed parameter uncertainty strictness criteria'
+            )
+            best_me = me
+            break
+        else:
+            context.log_info(
+                f'Model {me.model.name} did not pass parameter uncertainty strictness criteria, testing next model'
+            )
+
+    if best_me is None:
+        context.log_warning('All models failed the strictness criteria')
+        final_model, final_results = None, None
+    else:
+        final_model, final_results = best_me.model, best_me.modelfit_results
+
+    keys = list(range(0, i + 1))
+
+    summary_strictness = concat_summaries([no_cov_strictness] + cov_strictness, keys=keys)
+    summary_selection_criteria = concat_summaries(
+        [no_cov_selection_criteria] + cov_selection_criteria, keys=keys
+    )
+    summary_ranking = concat_summaries([no_cov_ranking] + cov_ranking, keys=keys)
+    summary_models = concat_summaries([no_cov_models] + cov_models, keys=keys)
+
+    res = ModelRankResults(
+        summary_tool=summary_ranking,
+        summary_strictness=summary_strictness,
+        summary_selection_criteria=summary_selection_criteria,
+        summary_models=summary_models,
+        final_model=final_model,
+        final_results=final_results,
+    )
+
+    return res
+
+
+def create_candidate_with_uncertainty(base_model, name, parameter_uncertainty_method):
+    model = set_name(base_model, name)
+    model = set_description(model, f'{base_model.name} with uncertainty')
+    model = add_parameter_uncertainty_step(
+        model, parameter_uncertainty_method=parameter_uncertainty_method
+    )
+    me = ModelEntry.create(model, parent=base_model)
+    return me
+
+
+def get_model_entries_to_rank(me_predicates, strict=True):
+    if strict:
+        mes_to_rank = [
+            me
+            for me, predicates in me_predicates.items()
+            if predicates['strictness_fulfilled'] is True
+        ]
+    else:
+        mes_to_rank = [
+            me
+            for me, predicates in me_predicates.items()
+            if predicates['strictness_fulfilled'] is not False
+        ]
+
+    return mes_to_rank
+
+
 def _results(context: Context, res: Results):
     context.log_info("Finishing tool modelrank")
     return res
@@ -270,6 +424,7 @@ def validate_input(
     cutoff,
     search_space,
     E,
+    parameter_uncertainty_method,
     _parent_dict,
 ):
     if len(models) != len(results):
@@ -278,8 +433,7 @@ def validate_input(
             f'`results ({len(results)})`'
         )
 
-    # FIXME: Remove when tool supports running models with parameter uncertainty step
-    if strictness is not None and "rse" in strictness.lower():
+    if not parameter_uncertainty_method and "rse" in strictness.lower():
         if any(model.execution_steps[-1].parameter_uncertainty_method is None for model in models):
             raise ValueError(
                 '`parameter_uncertainty_method` not set for one or more models, '
@@ -330,5 +484,6 @@ class ModelRankResults(Results):
     summary_tool: Optional[Any] = None
     summary_strictness: Optional[Any] = None
     summary_selection_criteria: Optional[Any] = None
+    summary_models: Optional[Any] = None
     final_model: Optional[Model] = None
     final_results: Optional[ModelfitResults] = None
