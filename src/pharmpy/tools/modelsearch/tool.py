@@ -38,6 +38,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     E: Optional[Union[float, str]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
@@ -62,6 +63,9 @@ def create_workflow(
         Strictness criteria
     E : float
         Expected number of predictors (used for mBIC). Must be set when using mBIC
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -91,6 +95,7 @@ def create_workflow(
         model,
         strictness,
         E,
+        parameter_uncertainty_method,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -109,6 +114,7 @@ def start(
     model,
     strictness,
     E,
+    parameter_uncertainty_method,
 ):
     context.log_info("Starting tool modelsearch")
 
@@ -158,6 +164,7 @@ def start(
         cutoff,
         strictness,
         E,
+        parameter_uncertainty_method,
     )
 
     # Filter the mfl_statements from base model attributes
@@ -189,17 +196,18 @@ def start(
 
     context.log_info(f"Starting algorithm '{algorithm}'")
     res = context.call_workflow(wb, 'run_candidate_models')
-    context.log_info(
-        f"Finished algorithm '{algorithm}'. Best model: "
-        f"{res.final_model.name}, OFV: {res.final_results.ofv:.3f}"
-    )
-
-    if res.final_model.name == model.name:
-        context.log_warning(
-            f'Worse {rank_type} in final model {res.final_model.name} '
-            f'than {model.name}, selecting input model'
+    if res.final_model:
+        context.log_info(
+            f"Finished algorithm '{algorithm}'. Best model: "
+            f"{res.final_model.name}, OFV: {res.final_results.ofv:.3f}"
         )
-    context.store_final_model_entry(res.final_model)
+
+        if res.final_model.name == model.name:
+            context.log_warning(
+                f'Worse {rank_type} in final model {res.final_model.name} '
+                f'than {model.name}, selecting input model'
+            )
+        context.store_final_model_entry(res.final_model)
 
     return res
 
@@ -250,7 +258,9 @@ def create_base_model(ss, allometry, model_or_model_entry):
     return ModelEntry.create(base, modelfit_results=None, parent=model)
 
 
-def post_process(context, mfl, rank_type, cutoff, strictness, E, *model_entries):
+def post_process(
+    context, mfl, rank_type, cutoff, strictness, E, parameter_uncertainty_method, *model_entries
+):
     input_model_entry, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
 
     rank_type += '_mixed' if rank_type in ('bic', 'mbic') else ''
@@ -276,6 +286,7 @@ def post_process(context, mfl, rank_type, cutoff, strictness, E, *model_entries)
         strictness=strictness,
         search_space=mfl,
         E=E,
+        parameter_uncertainty_method=parameter_uncertainty_method,
         _parent_dict=parent_dict,
     )
 
@@ -340,6 +351,7 @@ def validate_input(
     model,
     strictness,
     E,
+    parameter_uncertainty_method,
 ):
     if isinstance(search_space, str):
         try:
@@ -367,7 +379,11 @@ def validate_input(
                 f'Invalid `search_space`: allometric variable \'{covariate}\' not in dataset'
             )
 
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
