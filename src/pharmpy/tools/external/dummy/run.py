@@ -6,7 +6,7 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Parameters, SimulationStep
+from pharmpy.model import EstimationStep, Parameters, SimulationStep
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import create_rng, get_observations, write_csv, write_model
 from pharmpy.workflows import ModelEntry, SimulationResults
@@ -124,7 +124,11 @@ def create_dummy_modelfit_results(model, ref=None):
     params = list(map(lambda x: _get_param_init(x), list(model.parameters)))
     params = pd.Series(Parameters.create(params).inits)
 
-    if any(step.parameter_uncertainty_method is not None for step in model.execution_steps):
+    if any(
+        step.parameter_uncertainty_method is not None
+        for step in model.execution_steps
+        if isinstance(step, EstimationStep)
+    ):
         rse = pd.Series(model.parameters.inits)
         rse.iloc[:] = rng.uniform(-1, 1)
         rse.name = 'RSE'
