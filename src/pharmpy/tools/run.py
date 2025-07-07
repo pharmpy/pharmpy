@@ -18,7 +18,7 @@ import pharmpy.workflows.results
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
-from pharmpy.model import Model, RandomVariables
+from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_aic,
     calculate_bic,
@@ -1521,63 +1521,26 @@ def load_example_modelfit_results(name: str):
 def calculate_mbic_penalty(
     candidate_model: Model,
     search_space: Union[str, list[str], ModelFeatures],
-    base_model: Optional[Model] = None,
     E_p: Optional[Union[float, str]] = 1.0,
     E_q: Optional[Union[float, str]] = 1.0,
-    keep: Optional[list[str]] = None,
 ):
     if E_p == 0 or E_q == 0:
         raise ValueError('E-values cannot be 0')
-    if isinstance(search_space, str) or isinstance(search_space, ModelFeatures):
-        if base_model:
-            raise ValueError('Cannot provide both `search_space` and `base_model`')
+
+    if E_p is None and E_q is None:
+        raise ValueError('Missing values for `E_p` and `E_q`, either must be specified')
+
+    try:
+        search_space_mfl, cand_mfl = parse_search_space_modelsearch(candidate_model, search_space)
         if E_p is None:
             raise ValueError(
-                'Missing value for `E_p`, must be specified when using MFL in `search_space`'
+                'Missing value for `E_p`, must be specified when using structual MFL in `search_space`'
             )
-
-        try:
-            search_space_mfl, cand_mfl = parse_search_space_modelsearch(
-                candidate_model, search_space
-            )
-        except UnexpectedToken:
-            search_space_mfl, cand_mfl = None, None
-
-        if search_space_mfl:
-            p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
-            q = 0
-            k_q = 0
-        else:
-            if keep is not None:
-                raise ValueError('Cannot provide both `search_space` and `keep`')
-            p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate_model, search_space)
-    if isinstance(search_space, list):
-        allowed_options = ['iiv_diag', 'iiv_block', 'iov']
-        for search_space_type in search_space:
-            if search_space_type not in allowed_options:
-                raise ValueError(
-                    f'Unknown `search_space`: {search_space_type} (must be one of {allowed_options})'
-                )
-        if 'iiv_block' in search_space:
-            if 'iov' in search_space:
-                raise ValueError(
-                    'Incorrect `search_space`: `iiv_block` and `iov` cannot be tested in same search space'
-                )
-            if E_q is None:
-                raise ValueError(
-                    'Missing value for `E_q`, must be specified when using `iiv_block` in `search_space`'
-                )
-        if 'iiv_diag' in search_space or 'iov' in search_space:
-            if E_p is None:
-                raise ValueError(
-                    'Missing value for `E_p`, must be specified when using `iiv_diag` or `iov` in `search_space`'
-                )
-        if not base_model:
-            raise ValueError(
-                'Missing `base_model`: reference model is needed to determine search space'
-            )
-
-        p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate_model, search_space, keep)
+        p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
+        q = 0
+        k_q = 0
+    except UnexpectedToken:
+        p, k_p, q, k_q = get_penalty_parameters_rvs(candidate_model, search_space)
 
     # To avoid domain error
     p = p if k_p != 0 else 1
@@ -1685,35 +1648,15 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
     return p, k_p
 
 
-def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
-    if isinstance(search_space, str):
-        iiv_params, iov_params, cov_params = parse_search_space_rvs(search_space)
-        p = len(iiv_params) + len(iov_params)
-        k_p = get_k_p(cand_model, iiv_params, 'iiv') + get_k_p(cand_model, iov_params, 'iov')
-        if cov_params:
-            q = int((len(cov_params) * (len(cov_params) - 1)) / 2)
-            k_q = get_k_q(cand_model, cov_params)
-        else:
-            q, k_q = 0, 0
+def get_penalty_parameters_rvs(cand_model, search_space):
+    iiv_params, iov_params, cov_params = parse_search_space_rvs(search_space)
+    p = len(iiv_params) + len(iov_params)
+    k_p = get_k_p(cand_model, iiv_params, 'iiv') + get_k_p(cand_model, iov_params, 'iov')
+    if cov_params:
+        q = int((len(cov_params) * (len(cov_params) - 1)) / 2)
+        k_q = get_k_q(cand_model, cov_params)
     else:
-        base_etas = _get_var_params(base_model, search_space)
-        cand_etas = _get_var_params(cand_model, search_space)
-
-        p, k_p, q, k_q = 0, 0, 0, 0
-        if 'iiv_diag' in search_space or 'iov' in search_space:
-            p = len(base_etas.variance_parameters)
-            k_p = len(cand_etas.variance_parameters)
-            if keep:
-                p -= len(keep)
-                k_p -= len(keep)
-        if 'iiv_block' in search_space:
-            q = int(
-                len(base_etas.variance_parameters) * (len(base_etas.variance_parameters) - 1) / 2
-            )
-            cov_params = [
-                p for p in cand_etas.parameter_names if p not in cand_etas.variance_parameters
-            ]
-            k_q = len(cov_params)
+        q, k_q = 0, 0
 
     return p, k_p, q, k_q
 
@@ -1752,18 +1695,3 @@ def get_k_q(model, params):
     rvs = model.random_variables[param_rvs]
     cov_params = [p for p in rvs.parameter_names if p not in rvs.variance_parameters]
     return len(cov_params)
-
-
-def _get_var_params(model, search_space):
-    etas = []
-    fixed_params = model.parameters.fixed.names
-    if any(s.startswith('iiv') for s in search_space):
-        iivs = model.random_variables.iiv
-        iivs_non_fixed = [iiv for iiv in iivs if set(iiv.parameter_names).isdisjoint(fixed_params)]
-        etas.extend(iivs_non_fixed)
-    if 'iov' in search_space:
-        iovs = model.random_variables.iov
-        iovs_non_fixed = [iov for iov in iovs if set(iov.parameter_names).isdisjoint(fixed_params)]
-        etas.extend(iovs_non_fixed)
-
-    return RandomVariables.create(etas)
