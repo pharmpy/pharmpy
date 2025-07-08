@@ -56,7 +56,7 @@ def validate_string(strictness: str):
 def preprocess_string(strictness: str) -> str:
     strictness = strictness.lower()
     strictness = strictness.replace(' and ', ' & ').replace(' or ', ' | ').replace('not ', '~')
-    comparison_pattern = r'(\w+\s*[<>=]=\s*\d+.*\d+)'
+    comparison_pattern = r'(\w+\s*[<>=]+\s*\d+\.\d+)'
     strictness = re.sub(comparison_pattern, r'(\1)', strictness)
     return strictness
 
