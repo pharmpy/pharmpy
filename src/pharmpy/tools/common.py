@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import warnings
 from dataclasses import dataclass
 from typing import Any, Optional, Sequence, TypeVar
 
@@ -211,4 +212,12 @@ def flatten_list(lst):
 
 
 def concat_summaries(summaries, keys):
-    return pd.concat(summaries, keys=keys, names=['step'])
+    with warnings.catch_warnings():
+        # Needed because of warning in pandas 2.1.1
+        warnings.filterwarnings(
+            "ignore",
+            message="The behavior of DataFrame concatenation with empty or all-NA entries is deprecated",
+            category=FutureWarning,
+        )
+
+        return pd.concat(summaries, keys=keys, names=['step'])
