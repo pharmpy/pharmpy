@@ -75,15 +75,22 @@ def perform_lrt(me, me_parent, p_value) -> dict[str, Union[float, int, bool]]:
 
 def rank_model_entries(me_rank_values, rank_type):
     sort_by = get_rank_name(rank_type)
-    rank_values_no_nan = {
+
+    mes_to_rank = {
         me: vals for me, vals in me_rank_values.items() if not np.isnan(vals['rank_val'])
     }
-    ranking = dict(sorted(rank_values_no_nan.items(), key=lambda x: x[1]['rank_val']))
-    rank_values_nan = {
-        me: vals for me, vals in me_rank_values.items() if me not in rank_values_no_nan.keys()
+    mes_ranked = dict(sorted(mes_to_rank.items(), key=lambda x: x[1]['rank_val']))
+
+    mes_to_sort = {
+        me: vals
+        for me, vals in me_rank_values.items()
+        if me not in mes_ranked.keys() and not np.isnan(vals[sort_by])
     }
-    ranking_nan = dict(sorted(rank_values_nan.items(), key=lambda x: x[1][sort_by]))
-    ranking = {**ranking, **ranking_nan}
+    mes_sorted = dict(sorted(mes_to_sort.items(), key=lambda x: x[1][sort_by]))
+
+    mes_nan = {me: vals for me, vals in me_rank_values.items() if np.isnan(vals[sort_by])}
+    ranking = {**mes_ranked, **mes_sorted, **mes_nan}
+    assert len(ranking) == len(me_rank_values)
     return ranking
 
 

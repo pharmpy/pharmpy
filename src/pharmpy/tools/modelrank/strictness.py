@@ -64,11 +64,15 @@ def preprocess_string(strictness: str) -> str:
 def evaluate_strictness(expr: LogicalExpr, predicates: dict[str, Optional[bool]]) -> Optional[bool]:
     sub_dict = dict()
     for key, value in predicates.items():
+        # NaNs will raise in subs
         if value is None or (isinstance(value, float) and np.isnan(value)):
             continue
         sub_dict[key] = value
     expr_subs = expr.subs(sub_dict)
     if expr_subs not in (True, False):
+        # Subs with expressions like sigdigs >= 3.8 will not replace, only symbols
+        if str(expr_subs) in predicates.keys():
+            return predicates[str(expr_subs)]
         return None
     else:
         return bool(expr_subs)
@@ -94,7 +98,8 @@ def get_strictness_predicates_me(me: ModelEntry, expr: LogicalExpr) -> dict[str,
             symb = str(sub_expr.free_symbols.pop())
             if symb in predicates.keys() and (symb_expr := predicates[symb]) is not None:
                 if np.isnan(symb_expr):
-                    predicates[expr_key] = None
+                    # All comparisons with NaN should be False
+                    predicates[expr_key] = False
                 else:
                     predicates[expr_key] = bool(sub_expr.subs({symb: predicates[symb]}))
             else:
@@ -123,6 +128,8 @@ def _eval_strictness_arg(me: ModelEntry, arg: str):
         near_bounds = check_parameters_near_bounds(model, ests).any()
         return bool(near_bounds)
     elif arg.startswith('rse') and not arg.startswith('rse '):
+        if model.execution_steps[-1].parameter_uncertainty_method is None:
+            return None
         if (rse := res.relative_standard_errors) is None or rse.isna().any():
             return np.nan
         rse = _get_subset_on_param_type(rse, arg, model)
