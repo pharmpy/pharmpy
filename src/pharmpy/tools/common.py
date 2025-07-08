@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Any, Optional, Sequence, Type, TypeVar
+from typing import Any, Optional, Sequence, TypeVar
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
@@ -16,7 +16,7 @@ from pharmpy.modeling import (
     plot_eta_distributions,
     set_initial_estimates,
 )
-from pharmpy.tools.run import rank_models, summarize_errors_from_entries
+from pharmpy.tools.run import rank_models
 from pharmpy.workflows import ModelEntry, ModelfitResults, Results
 
 DataFrame = Any  # NOTE: Should be pd.DataFrame but we want lazy loading
@@ -62,72 +62,6 @@ class ToolResults(Results):
 
 
 T = TypeVar('T', bound=ToolResults)
-
-
-def create_results(
-    res_class: Type[T],
-    input_model_entry: ModelEntry,
-    base_model_entry: ModelEntry,
-    cand_model_entries: Sequence[ModelEntry],
-    rank_type: str,
-    cutoff: Optional[float],
-    bic_type: str = 'mixed',
-    strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
-    penalties=None,
-    context=None,
-    **rest,
-) -> T:
-    summary_tool = summarize_tool(
-        cand_model_entries, base_model_entry, rank_type, cutoff, bic_type, strictness, penalties
-    )
-    base_model = base_model_entry.model
-    cand_models = [model_entry.model for model_entry in cand_model_entries]
-
-    summary_errors = summarize_errors_from_entries([base_model_entry] + cand_model_entries)
-
-    if summary_tool['rank'].isnull().all():
-        best_model = None
-    else:
-        best_model_name = summary_tool['rank'].idxmin()
-        best_model = next(
-            filter(lambda model: model.name == best_model_name, cand_models), base_model
-        )
-
-    if base_model.name != input_model_entry.model.name:
-        models = [base_model] + cand_models
-    else:
-        # Check if any resulting models exist
-        if cand_models:
-            models = [base_model] + cand_models
-        else:
-            models = None
-
-    final_results = None
-    if best_model is not None:
-        for me in cand_model_entries + [base_model_entry]:
-            if me.model.name == best_model.name:
-                final_results = me.modelfit_results
-                break
-
-    plots = create_plots(best_model, final_results)
-
-    # FIXME: Remove best_model, input_model, models when there is function to read db
-    res = res_class(
-        summary_tool=summary_tool,
-        summary_errors=summary_errors,
-        final_model=best_model,
-        final_results=final_results,
-        models=models,
-        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
-        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
-        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
-        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
-        final_model_eta_distribution_plot=plots['eta_distribution'],
-        final_model_eta_shrinkage=table_final_eta_shrinkage(best_model, final_results),
-        **rest,
-    )
-
-    return res
 
 
 def summarize_tool(
