@@ -143,7 +143,7 @@ def test_rank_models(
             'models/mox2.mod',
             {
                 'minimization_successful': True,
-                'rse': np.nan,
+                'rse': None,
                 'rse <= 0.1': None,
                 'strictness_fulfilled': True,
             },
