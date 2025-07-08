@@ -226,6 +226,19 @@ def test_rank_models(
                 'strictness_fulfilled': False,
             },
         ),
+        (
+            '(minimization_successful or (rounding_errors and sigdigs >= 0.1)) and rse <= 0.5',
+            'models/mox2.mod',
+            {
+                'rse': None,
+                'rse <= 0.5': None,
+                'minimization_successful': True,
+                'rounding_errors': False,
+                'sigdigs': 3.8,
+                'sigdigs >= 0.1': True,
+                'strictness_fulfilled': None,
+            },
+        ),
     ],
 )
 def test_get_strictness_predicates(
