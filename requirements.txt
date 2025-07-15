@@ -6,7 +6,7 @@ attrs==25.3.0
 Babel==2.17.0
 beautifulsoup4==4.13.4
 bleach==6.2.0
-certifi==2025.6.15
+certifi==2025.7.14
 charset-normalizer==3.4.2
 click==8.2.1
 cloudpickle==3.1.1
