@@ -5,7 +5,7 @@ tox==4.27.0
 cachetools==6.1.0
 chardet==5.2.0
 colorama==0.4.6
-distlib==0.3.9
+distlib==0.4.0
 filelock==3.18.0
 packaging==25.0
 platformdirs==4.3.8
