@@ -1,6 +1,6 @@
 # Direct dependencies
 pip==25.1.1
-tox==4.27.0
+tox==4.28.0
 # Indirect dependencies
 cachetools==6.1.0
 chardet==5.2.0
