@@ -5,7 +5,7 @@ docutils==0.21.2
 flake8==7.3.0
 flake8-black==0.3.6
 isort==6.0.1
-pyright==1.1.402
+pyright==1.1.403
 readme-renderer==44.0
 twine==6.1.0 
 # Indirect dependencies
@@ -39,7 +39,7 @@ pyproject_hooks==1.2.0
 requests==2.32.4
 requests-toolbelt==1.0.0
 rfc3986==2.0.0
-rich==14.0.0
+rich==14.1.0
 SecretStorage==3.3.3
 tomli==2.2.1
 typing-extensions==4.14.1
