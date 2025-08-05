@@ -74,7 +74,7 @@ setup(
         'rich>=4.2.0',
         'jupyter-sphinx>=0.2.0',
         'ipykernel>=5.4.0',
-        'statsmodels>=0.14.1',
+        'statsmodels>=0.14.5',
     ],
     extras_require={
         'nlmixr': ["pyreadr>=0.5.3"],
