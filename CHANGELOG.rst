@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix crash when updating $THETA with some changes to a record of multiple theta parameters
+
 .. _1.8.0:
 
 1.8.0 (2025-06-19)

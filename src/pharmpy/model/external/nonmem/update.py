@@ -103,6 +103,7 @@ def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters
     new_theta_records = []
     cur_to_change = []
     cur_to_remove = []
+    record_changed = False
     i = 0
 
     for op, param in new_diff:
@@ -110,6 +111,7 @@ def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters
             if param.name in kept_theta_names:
                 # Changed
                 cur_to_change.append(param)
+                record_changed = True
                 i += 1
             else:
                 # Added
@@ -129,15 +131,17 @@ def update_thetas(model: Model, control_stream, old: Parameters, new: Parameters
                 new_theta_records.append(record)
                 record_index += 1
             else:
+                cur_to_change.append(param)
                 i += 1
         if record_index < len(theta_records) and len(theta_records[record_index]) == i:
             if len(cur_to_remove) != len(theta_records[record_index]):
                 # Don't remove all
                 newrec = theta_records[record_index].remove(cur_to_remove)
-                if cur_to_change:
+                if record_changed:
                     newrec = newrec.update(cur_to_change)
                 new_theta_records.append(newrec)
             i = 0
+            record_changed = False
             cur_to_remove = []
             cur_to_change = []
             record_index += 1
