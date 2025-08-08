@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Support additive error model in ruvsearch
+
 Bugfixes
 ========
 

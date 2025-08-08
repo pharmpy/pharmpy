@@ -79,6 +79,8 @@ functions used to create them.
 +------------------+----------------------------------------------------------------------------------------+
 | ``time_varying`` | :py:func:`set_time_varying_error_model<pharmpy.modeling.set_time_varying_error_model>` |
 +------------------+----------------------------------------------------------------------------------------+
+| ``additive``     | :py:func:`set_additive_error_model<pharmpy.modeling.set_time_varying_error_model>`     |
++------------------+----------------------------------------------------------------------------------------+
 
 
 ~~~~~~~~~

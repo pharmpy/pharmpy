@@ -24,7 +24,9 @@ from pharmpy.modeling import (
     add_time_after_dose,
     create_symbol,
     get_mdv,
+    get_sigmas,
     has_proportional_error_model,
+    set_additive_error_model,
     set_combined_error_model,
     set_iiv_on_ruv,
     set_initial_estimates,
@@ -333,6 +335,43 @@ def _results(context, res):
     return res
 
 
+def create_additive_nlme_model(best_model: Model, best_model_name: str, dv) -> Optional[Model]:
+    is_combined = best_model_name.startswith("combined")
+    is_power = best_model_name.startswith("power")
+    if not (is_combined or is_power):
+        return None
+
+    if is_combined:
+        sigma_init = best_model.parameters['sigma_add'].init
+    else:
+        sigma_init = get_sigmas(best_model)[0].init
+
+    model = set_additive_error_model(best_model, dv=dv)
+    model = set_initial_estimates(model, {'sigma': sigma_init})
+    return model
+
+
+def _have_residuals_and_predictions(me):
+    results = me.modelfit_results
+    have_all = (
+        results is not None
+        and results.ofv is not None
+        and results.residuals is not None
+        and results.predictions is not None
+    )
+    return have_all
+
+
+def _is_significantly_better(me, base_me, strictness, cutoff):
+    if _have_residuals_and_predictions(me):
+        delta_ofv = base_me.modelfit_results.ofv - me.modelfit_results.ofv
+        return (
+            is_strictness_fulfilled(me.model, me.modelfit_results, strictness)
+            and delta_ofv > cutoff
+        )
+    return False
+
+
 def post_process(
     context, start_model_entry, *model_entries, cutoff, current_iteration, strictness, dv, groups
 ):
@@ -341,25 +380,35 @@ def post_process(
         start_model_entry, res, current_iteration, cutoff=cutoff, dv=dv, groups=groups
     )
     if best_model_unfitted is not None:
-        fit_wf = create_fit_workflow(modelentries=[best_model_unfitted])
-        best_model_entry = context.call_workflow(fit_wf, f'fit{current_iteration}')
-        if best_model_entry.modelfit_results is not None:
-            best_model_check = [
-                best_model_entry.modelfit_results.ofv,
-                best_model_entry.modelfit_results.residuals,
-                best_model_entry.modelfit_results.predictions,
-            ]
-            if all(check is not None for check in best_model_check):
-                delta_ofv = (
-                    start_model_entry.modelfit_results.ofv - best_model_entry.modelfit_results.ofv
-                )
-                if (
-                    is_strictness_fulfilled(
-                        best_model_entry.model, best_model_entry.modelfit_results, strictness
-                    )
-                    and delta_ofv > cutoff
-                ):
-                    return (res, best_model_entry, selected_model_name)
+        additive_model = create_additive_nlme_model(best_model_unfitted, selected_model_name, dv)
+        models_to_fit = [best_model_unfitted]
+        if additive_model is not None:
+            models_to_fit.append(additive_model)
+
+        fit_wf = create_fit_workflow(modelentries=models_to_fit)
+        best_model_entries = context.call_workflow(fit_wf, f'fit{current_iteration}')
+
+        if isinstance(best_model_entries, ModelEntry):
+            if _is_significantly_better(best_model_entries, start_model_entry, strictness, cutoff):
+                return (res, best_model_entries, selected_model_name)
+        else:
+            me1 = best_model_entries[0]
+            me2 = best_model_entries[1]
+            me1_better = _is_significantly_better(me1, start_model_entry, strictness, cutoff)
+            me2_better = _is_significantly_better(me2, start_model_entry, strictness, cutoff)
+            if me1_better and me2_better:
+                if me1.modelfit_results.ofv > me2.modelfit_results.ofv:
+                    selected = me1
+                else:
+                    selected = me2
+            elif me1_better:
+                selected = me1
+            elif me2_better:
+                selected = me2
+            else:
+                selected = None
+            if selected is not None:
+                return (res, selected, selected_model_name)
 
     return (res, start_model_entry, f"base_{current_iteration}")
 
