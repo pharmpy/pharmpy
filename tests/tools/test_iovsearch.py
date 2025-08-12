@@ -5,6 +5,8 @@ import pytest
 from pharmpy.basic import Expr
 from pharmpy.modeling import (
     add_iov,
+    add_peripheral_compartment,
+    add_pk_iiv,
     create_joint_distribution,
     fix_parameters,
     remove_iiv,
@@ -16,7 +18,9 @@ from pharmpy.tools.iovsearch.tool import (
     _get_nonfixed_iivs,
     create_candidate_model_entry,
     create_iov_base_model_entry,
+    create_results_tables,
     create_workflow,
+    get_mbic_search_space,
     prepare_list_of_parameters,
     validate_input,
 )
@@ -124,6 +128,30 @@ def test_create_candidate_model_entry(
     assert model_cand.description == desc_ref
 
 
+@pytest.mark.parametrize(
+    'funcs, list_of_parameters, search_space',
+    [
+        ([], None, 'IIV?([CL,MAT,VC],exp);IOV?([CL,MAT,VC])'),
+        ([], ['ETA_1', 'ETA_2', 'ETA_3'], 'IIV?([CL,MAT,VC],exp);IOV?([CL,MAT,VC])'),
+        ([], ['ETA_1'], 'IIV?([CL],exp);IOV?([CL])'),
+        (
+            [add_peripheral_compartment],
+            None,
+            'IIV?([CL,MAT,QP1,VC,VP1],exp);IOV?([CL,MAT,QP1,VC,VP1])',
+        ),
+    ],
+)
+def test_get_mbic_search_space(
+    load_model_for_test, testdata, funcs, list_of_parameters, search_space
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+        model = add_pk_iiv(model)
+    list_of_parameters = prepare_list_of_parameters(model, list_of_parameters)
+    assert get_mbic_search_space(model, list_of_parameters) == search_space
+
+
 def test_ignore_fixed_iiv(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert len(model.random_variables.iiv.names) == 2
@@ -154,6 +182,34 @@ def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
     assert isinstance(create_workflow(model=model, results=results, column='APGR'), Workflow)
+
+
+def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    model_1 = add_iov(model_start, occ='VISI', list_of_parameters=['ETA_1'])
+    model_1 = model_1.replace(name='model_1')
+    model_2 = add_iov(model_1, occ='VISI', list_of_parameters=['ETA_2'])
+    model_2 = model_2.replace(name='model_2')
+    model_3 = add_iov(model_2, occ='VISI', list_of_parameters=['ETA_3'])
+    model_3 = model_3.replace(name='model_3')
+    model_4 = remove_iiv(model_3, to_remove=['ETA_1'])
+    model_4 = model_4.replace(name='model_4')
+
+    candidate_entries = model_entry_factory([model_1, model_2, model_3, model_4])
+    model_entries = [me_start] + candidate_entries
+
+    model_dict = {me.model.name: me for me in model_entries}
+    model_names = list(model_dict.keys())
+    step_mapping = {0: model_names[0], 1: model_names[1:-1], 2: model_names[-1]}
+    tables = create_results_tables(step_mapping, model_dict)
+
+    summary_models = tables['summary_models']
+    assert len(summary_models) == len(model_entries)
+    steps = list(summary_models.index.get_level_values('step'))
+    assert steps == [0, 1, 1, 1, 2]
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):

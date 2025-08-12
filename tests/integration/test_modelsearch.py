@@ -5,7 +5,17 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_modelsearch
 
 
-def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        dict(),
+        {
+            'strictness': 'minimization_successful and rse <= 0.7',
+            'parameter_uncertainty_method': 'SANDWICH',
+        },
+    ],
+)
+def test_modelsearch_nonmem(tmp_path, model_count, start_modelres, kwargs):
     with chdir(tmp_path):
         res = run_modelsearch(
             model=start_modelres[0],
@@ -13,12 +23,12 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             algorithm='exhaustive',
             rank_type='mbic',
-            E=1.0,
+            E=0.5,
+            **kwargs,
         )
 
         assert len(res.summary_tool) == 4
         assert len(res.summary_models) == 4
-        assert len(res.models) == 4
 
         rundir = tmp_path / 'modelsearch1'
         assert rundir.is_dir()
@@ -94,6 +104,27 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres):
             4,
             'modelsearch_run2',
         ),
+        (
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive_stepwise',
+            {'rank_type': 'mbic', 'E': 1.0},
+            False,
+            4,
+            2,
+            'modelsearch_run4',
+        ),
+        (
+            'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            'exhaustive_stepwise',
+            {
+                'parameter_uncertainty_method': 'SANDWICH',
+                'strictness': 'minimization_successful and rse <= 0.6',
+            },
+            False,
+            4,
+            2,
+            'modelsearch_run4',
+        ),
     ],
 )
 def test_modelsearch_dummy(
@@ -115,7 +146,7 @@ def test_modelsearch_dummy(
             search_space=search_space,
             algorithm=algorithm,
             esttool='dummy',
-            **kwargs
+            **kwargs,
         )
 
         if has_base_model:
@@ -125,7 +156,6 @@ def test_modelsearch_dummy(
 
         assert len(res.summary_tool) == no_of_ranked_models
         assert len(res.summary_models) == no_of_cands + 1
-        assert len(res.models) == no_of_ranked_models
         assert res.summary_tool['d_params'].max() == max_added_params
 
         # FIXME: move to unit test

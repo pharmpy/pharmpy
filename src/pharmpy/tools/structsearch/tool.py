@@ -1,24 +1,29 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Literal, Optional, Union
 
-from pharmpy.deps import numpy as np
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools.common import (
+    RANK_TYPES,
     ToolResults,
-    create_results,
-    summarize_tool,
+    concat_summaries,
+    create_plots,
+    flatten_list,
+    table_final_eta_shrinkage,
     update_initial_estimates,
 )
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    run_subtool,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -39,9 +44,12 @@ def create_workflow(
     ec50_init: Optional[Union[int, float]] = None,
     met_init: Optional[Union[int, float]] = None,
     extra_model: Optional[Model] = None,
+    rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
+    cutoff: Optional[Union[float, int]] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: Optional[ModelfitResults] = None,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 
@@ -67,10 +75,18 @@ def create_workflow(
         Optional extra Pharmpy model to use in TMDD structsearch
     extra_model_results : ModelfitResults
         Results for the extra model
+    rank_type : {'ofv', 'lrt', 'aic', 'bic'}
+        Which ranking type should be used. Default is BIC.
+    cutoff : float
+        Cutoff for which value of the ranking function that is considered significant. Default
+        is None (all models will be ranked)
     strictness : str or None
         Strictness criteria
     dv_types : dict
         Dictionary of DV types for TMDD models with multiple DVs
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -95,7 +111,10 @@ def create_workflow(
             results,
             extra_model,
             extra_model_results,
+            rank_type,
+            cutoff,
             strictness,
+            parameter_uncertainty_method,
             dv_types,
         )
     elif type == 'pkpd':
@@ -109,17 +128,39 @@ def create_workflow(
             emax_init,
             ec50_init,
             met_init,
+            rank_type,
+            cutoff,
             strictness,
+            parameter_uncertainty_method,
         )
     elif type == 'drug_metabolite':
         start_task = Task(
-            'run_drug_metabolite', run_drug_metabolite, model, search_space, results, strictness
+            'run_drug_metabolite',
+            run_drug_metabolite,
+            model,
+            search_space,
+            results,
+            rank_type,
+            cutoff,
+            strictness,
+            parameter_uncertainty_method,
         )
     wb.add_task(start_task)
     return Workflow(wb)
 
 
-def run_tmdd(context, model, results, extra_model, extra_model_results, strictness, dv_types):
+def run_tmdd(
+    context,
+    model,
+    results,
+    extra_model,
+    extra_model_results,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+    dv_types,
+):
     context.log_info("Starting tool structsearch")
     model = store_input_model(context, model, results)
 
@@ -151,14 +192,18 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb.add_task(task_results, predecessors=wf.output_tasks)
     qss_run_entries = context.call_workflow(Workflow(wb), 'results_QSS')
 
-    ofvs = [
-        model_entry.modelfit_results.ofv if model_entry.modelfit_results is not None else np.nan
-        for model_entry in qss_run_entries
-    ]
-    minindex = ofvs.index(np.nanmin(ofvs))
-    best_qss_entry = qss_run_entries[minindex]
+    rank_res_step_1 = rank_models(
+        context,
+        model_entry,
+        list(qss_run_entries),
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
+    )
+
     best_qss_entry = ModelEntry.create(
-        best_qss_entry.model, modelfit_results=best_qss_entry.modelfit_results
+        rank_res_step_1.final_model, modelfit_results=rank_res_step_1.final_results
     )
 
     models = create_remaining_models(
@@ -179,21 +224,38 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     run_model_entries = context.call_workflow(Workflow(wb2), 'results_remaining')
 
-    tables = create_result_tables(
-        model_entry, (list(qss_run_entries), list(run_model_entries)), strictness
-    )
-
-    res = create_results(
-        StructSearchResults,
-        model_entry,
+    rank_res_step_2 = rank_models(
+        context,
         best_qss_entry,
         list(run_model_entries),
-        rank_type='bic',
-        cutoff=None,
-        strictness=strictness,
-        context=context,
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
     )
-    res = replace(res, summary_models=tables['summary_models'], summary_tool=tables['summary_tool'])
+
+    summaries = [rank_res_step_1.summary_tool, rank_res_step_2.summary_tool]
+    summary_tool = concat_summaries(summaries, keys=[1, 2])
+
+    tables = create_result_tables([[model_entry], list(qss_run_entries), list(run_model_entries)])
+    plots = create_plots(rank_res_step_2.final_model, rank_res_step_2.final_results)
+    eta_shrinkage = table_final_eta_shrinkage(
+        rank_res_step_2.final_model, rank_res_step_2.final_results
+    )
+
+    res = StructSearchResults(
+        summary_tool=summary_tool,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
+        final_model=rank_res_step_2.final_model,
+        final_results=rank_res_step_2.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
+    )
 
     final_model = res.final_model.replace(name="final")
     context.store_final_model_entry(final_model)
@@ -202,37 +264,68 @@ def run_tmdd(context, model, results, extra_model, extra_model_results, strictne
     return res
 
 
-def create_result_tables(input_model_entry, candidate_steps, strictness):
-    sum_models, sum_tool = [summarize_modelfit_results_from_entries([input_model_entry])], []
-    ref_model_entry = input_model_entry
-    for candidates in candidate_steps:
-        sum_models.append(summarize_modelfit_results_from_entries(candidates))
-        tool_df = summarize_tool(
-            candidates,
-            ref_model_entry,
-            'bic',
-            cutoff=None,
-            bic_type='mixed',
-            strictness=strictness,
-        )
-        sum_tool.append(tool_df)
-        best_model_name = tool_df['rank'].idxmin()
-        ref_model_entry = next(
-            filter(lambda model_entry: model_entry.model.name == best_model_name, candidates),
-            input_model_entry,
-        )
+def rank_models(
+    context,
+    base_model_entry,
+    candidate_model_entries,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+):
+    model_entries = [base_model_entry] + candidate_model_entries
+    models = [me.model for me in model_entries]
+    results = [me.modelfit_results for me in model_entries]
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else base_model_entry.model.name
+        for me in model_entries
+    }
 
-    summary_models = pd.concat(sum_models, keys=range(0, len(candidate_steps) + 1), names=['step'])
-    summary_tool = pd.concat(sum_tool, keys=range(1, len(candidate_steps) + 1), names=['step'])
+    rank_type = rank_type + '_mixed' if rank_type == 'bic' else rank_type
+
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=base_model_entry.model,
+        rank_type=rank_type,
+        cutoff=cutoff,
+        strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        _parent_dict=parent_dict,
+    )
+
+    return rank_res
+
+
+def create_result_tables(model_entries_per_step: list[list[ModelEntry]]):
+    sum_models = [summarize_modelfit_results_from_entries(mes) for mes in model_entries_per_step]
+    keys = range(0, len(model_entries_per_step))
+    summary_models = concat_summaries(sum_models, keys)
+    model_entries = flatten_list(model_entries_per_step)
+    summary_errors = summarize_errors_from_entries(model_entries)
+
     tables = {
         'summary_models': summary_models,
-        'summary_tool': summary_tool,
+        'summary_errors': summary_errors,
     }
     return tables
 
 
 def run_pkpd(
-    context, input_model, results, search_space, b_init, emax_init, ec50_init, met_init, strictness
+    context,
+    input_model,
+    results,
+    search_space,
+    b_init,
+    emax_init,
+    ec50_init,
+    met_init,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
 ):
     context.log_info("Starting tool structsearch")
     input_model = store_input_model(context, input_model, results)
@@ -267,19 +360,33 @@ def run_pkpd(
     wb2.add_task(task_results, predecessors=wf2.output_tasks)
     pkpd_models_fit = context.call_workflow(Workflow(wb2), 'results_remaining')
 
-    summary_input = summarize_modelfit_results_from_entries([model_entry])
-    summary_candidates = summarize_modelfit_results_from_entries(pd_baseline_fit + pkpd_models_fit)
-
-    res = create_results(
-        StructSearchResults,
-        model_entry,
+    rank_res = rank_models(
+        context,
         pd_baseline_fit[0],
         list(pkpd_models_fit),
-        rank_type='bic',
-        cutoff=None,
-        summary_models=pd.concat([summary_input, summary_candidates], keys=[0, 1], names=["step"]),
-        strictness=strictness,
-        context=context,
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
+    )
+
+    tables = create_result_tables([[model_entry], list(pd_baseline_fit), list(pkpd_models_fit)])
+    plots = create_plots(rank_res.final_model, rank_res.final_results)
+
+    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
+
+    res = StructSearchResults(
+        summary_tool=rank_res.summary_tool,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
+        final_model=rank_res.final_model,
+        final_results=rank_res.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
     )
 
     final_model = res.final_model.replace(name="final")
@@ -289,7 +396,16 @@ def run_pkpd(
     return res
 
 
-def run_drug_metabolite(context, model, search_space, results, strictness):
+def run_drug_metabolite(
+    context,
+    model,
+    search_space,
+    results,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+):
     context.log_info("Starting tool structsearch")
     # Create links to input model
     model = store_input_model(context, model, results)
@@ -304,9 +420,10 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
         post_process_drug_metabolite,
         ModelEntry.create(model=model, modelfit_results=results),
         base_model_description,
-        "bic",
-        None,
+        rank_type,
+        cutoff,
         strictness,
+        parameter_uncertainty_method,
     )
 
     wb.add_task(task_results, predecessors=candidate_model_tasks)
@@ -321,16 +438,62 @@ def run_drug_metabolite(context, model, search_space, results, strictness):
 
 def post_process_drug_metabolite(
     context,
-    user_input_model_entry,
+    input_model_entry,
     base_model_description,
     rank_type,
     cutoff,
     strictness,
+    parameter_uncertainty_method,
     *model_entries,
 ):
     # NOTE : The base model is part of the model_entries but not the user_input_model
+    base_model_entry, res_model_entries = categorize_drug_metabolite_model_entries(
+        input_model_entry, model_entries, base_model_description
+    )
+
+    results_to_summarize = [[input_model_entry]]
+
+    if input_model_entry != base_model_entry:
+        results_to_summarize.append([base_model_entry])
+    if res_model_entries:
+        results_to_summarize.append(res_model_entries)
+
+    rank_res = rank_models(
+        context,
+        base_model_entry,
+        res_model_entries,
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
+    )
+
+    tables = create_result_tables(results_to_summarize)
+    plots = create_plots(rank_res.final_model, rank_res.final_results)
+    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
+
+    res = StructSearchResults(
+        summary_tool=rank_res.summary_tool,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
+        final_model=rank_res.final_model,
+        final_results=rank_res.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
+    )
+
+    return res
+
+
+def categorize_drug_metabolite_model_entries(
+    input_model_entry, model_entries, base_model_description
+):
+    # NOTE : The base model is part of the model_entries but not the user_input_model
     res_models = []
-    input_model_entry = None
     base_model_entry = None
     for model_entry in model_entries:
         model = model_entry.model
@@ -338,24 +501,22 @@ def post_process_drug_metabolite(
             model_entry = ModelEntry.create(
                 model=model_entry.model, parent=None, modelfit_results=model_entry.modelfit_results
             )
-            input_model_entry = model_entry
             base_model_entry = model_entry
         else:
             res_models.append(model_entry)
     if not base_model_entry:
         # No base model found indicate user_input_model is base
-        input_model_entry = user_input_model_entry
-        base_model_entry = user_input_model_entry
+        base_model_entry = input_model_entry
     if not input_model_entry:
         raise ValueError('Error in workflow: No input model')
 
-    if base_model_entry != user_input_model_entry:
+    if base_model_entry != input_model_entry:
         # Change parent model to base model instead of temporary model names or input model
         res_models = [
             (
                 me
                 if me.parent.name
-                not in ("TEMP", user_input_model_entry.model.name)  # TEMP name for drug-met models
+                not in ("TEMP", input_model_entry.model.name)  # TEMP name for drug-met models
                 else ModelEntry.create(
                     model=me.model,
                     parent=base_model_entry.model,
@@ -365,28 +526,7 @@ def post_process_drug_metabolite(
             for me in res_models
         ]
 
-    results_to_summarize = [user_input_model_entry]
-
-    if user_input_model_entry != base_model_entry:
-        results_to_summarize.append(base_model_entry)
-    if res_models:
-        results_to_summarize.extend(res_models)
-
-    summary_models = summarize_modelfit_results_from_entries(results_to_summarize)
-    summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
-    summary_models = summary_models.reset_index().set_index(['step', 'model'])
-
-    return create_results(
-        StructSearchResults,
-        input_model_entry,
-        base_model_entry,
-        res_models,
-        rank_type,
-        cutoff,
-        summary_models=summary_models,
-        strictness=strictness,
-        context=context,
-    )
+    return base_model_entry, res_models
 
 
 def bundle_results(*args):
@@ -397,6 +537,8 @@ def bundle_results(*args):
 @with_same_arguments_as(create_workflow)
 def validate_input(
     type,
+    rank_type,
+    cutoff,
     strictness,
     model,
     dv_types,
@@ -407,8 +549,13 @@ def validate_input(
     met_init,
     extra_model,
     extra_model_results,
+    parameter_uncertainty_method,
 ):
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'

@@ -2,7 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.basic import BooleanExpr
-from pharmpy.basic.expr import Expr, ExprPrinter
+from pharmpy.basic.expr import Expr, ExprPrinter, LogicalExpr
 
 
 def test_init_expr():
@@ -159,3 +159,17 @@ def test_forward():
     assert expr == Expr.function("forward", ('TIME', 'AMT > 0'))
     assert isinstance(expr.args[0], Expr)
     assert isinstance(expr.args[1], BooleanExpr)
+
+
+def test_logical_expr():
+    expr = LogicalExpr('x & y')
+    assert expr.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
+    assert expr == LogicalExpr(expr)
+
+
+def test_logical_expr_args():
+    expr = LogicalExpr('x | (y & z)')
+    assert expr.free_symbols == {Expr.symbol('x'), Expr.symbol('y'), Expr.symbol('z')}
+    assert expr.args[0] == Expr.symbol('x')
+    assert expr.args[1] == LogicalExpr('y & z')
+    assert expr.args[1].args[0] == Expr.symbol('y')

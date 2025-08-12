@@ -727,7 +727,7 @@ def noop_subfunc(_: Model):
 
 
 def _run_simulation(model, ctx):
-    res = run_subtool('simulation', ctx, model=model)
+    res = run_subtool('simulation', ctx, name='simulation', model=model)
     return res
 
 
@@ -762,6 +762,7 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
         res = run_subtool(
             'modelsearch',
             ctx,
+            name='modelsearch',
             model=model,
             results=modelfit_results,
             search_space=search_space,
@@ -785,6 +786,7 @@ def _subfunc_structsearch(ctx, **kwargs) -> SubFunc:
         res = run_subtool(
             'structsearch',
             ctx,
+            name='structsearch',
             model=model,
             results=modelfit_results,
             **kwargs,
@@ -802,6 +804,7 @@ def _subfunc_structsearch_tmdd(
         res = run_subtool(
             'modelsearch',
             ctx,
+            name='modelsearch',
             model=model,
             results=modelfit_results,
             search_space=search_space,
@@ -880,6 +883,7 @@ def _subfunc_structsearch_tmdd(
         res = run_subtool(
             'structsearch',
             ctx,
+            name='structsearch',
             model=final_model,
             results=final_res,
             type=type,
@@ -1162,6 +1166,7 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
         res = run_subtool(
             'allometry',
             ctx,
+            name='allometry',
             model=model,
             results=modelfit_results,
             allometric_variable=allometric_variable,
@@ -1184,6 +1189,7 @@ def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
         res = run_subtool(
             'iovsearch',
             ctx,
+            name='iovsearch',
             model=model,
             results=modelfit_results,
             column=occasion,
