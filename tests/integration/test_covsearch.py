@@ -56,7 +56,10 @@ def test_covsearch_dummy(
 
         assert len(res.summary_tool) == no_of_models + 1
         assert len(res.summary_models) == no_of_models + 1
-        assert res.summary_tool['d_params'].max() == no_of_effects
+        assert (
+            res.summary_tool['n_params'].max()
+            == len(start_modelres_dummy[0].parameters) + no_of_effects
+        )
 
         step_1_description = res.summary_tool.loc[1]['description'].tolist()
         step_1_sorted = sorted(step_1_description)

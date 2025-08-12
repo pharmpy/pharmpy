@@ -10,13 +10,11 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import get_pk_parameters, remove_covariate_effect, set_estimation_step
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
-from pharmpy.modeling.lrt import best_of_many as lrt_best_of_many
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.tools import is_strictness_fulfilled
 from pharmpy.tools.common import (
+    concat_summaries,
     create_plots,
-    summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
@@ -30,12 +28,17 @@ from pharmpy.tools.mfl.statement.definition import Let
 from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.symbols import Option, Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    run_subtool,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.parse import ModelFeatures, get_model_features
+from ..modelrank import ModelRankResults
 from .results import COVSearchResults
 
 COVSEARCH_STATEMENT_TYPES = (
@@ -117,6 +120,7 @@ class SearchState:
     start_modelentry: ModelEntry
     best_candidate_so_far: Candidate
     all_candidates_so_far: list[Candidate]
+    rank_res: list[ModelRankResults]
 
 
 def create_workflow(
@@ -255,9 +259,6 @@ def create_workflow(
     results_task = Task(
         'results',
         task_results,
-        p_forward,
-        p_backward,
-        strictness,
     )
 
     wb.add_task(results_task, predecessors=search_output)
@@ -297,7 +298,9 @@ def _init_search_state(
     else:
         base_modelentry = modelentry
     base_candidate = Candidate(base_modelentry, ())
-    search_state_init = SearchState(modelentry, base_modelentry, base_candidate, [base_candidate])
+    search_state_init = SearchState(
+        modelentry, base_modelentry, base_candidate, [base_candidate], []
+    )
 
     return effect_funcs, search_state_init
 
@@ -422,7 +425,8 @@ def task_greedy_forward_search(
             for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
         ]
 
-    return _greedy_search(
+    new_state = _greedy_search(
+        context,
         state,
         handle_effects,
         candidate_effect_funcs,
@@ -431,6 +435,8 @@ def task_greedy_forward_search(
         strictness,
         adaptive_scope_reduction,
     )
+
+    return new_state
 
 
 def task_greedy_backward_search(
@@ -485,6 +491,7 @@ def task_greedy_backward_search(
     n_removable_effects = max(0, len(state.best_candidate_so_far.steps) - 1)
 
     return _greedy_search(
+        context,
         state,
         handle_effects,
         candidate_effect_funcs,
@@ -495,6 +502,7 @@ def task_greedy_backward_search(
 
 
 def _greedy_search(
+    context,
     state: SearchState,
     handle_effects: Callable[[int, Candidate, list[EffectLiteral], int], list[Candidate]],
     candidate_effect_funcs: dict,
@@ -510,15 +518,18 @@ def _greedy_search(
 
     steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
 
-    nonsignificant_effects, all_candidates_so_far, best_candidate_so_far = perform_step_procedure(
-        steps,
-        candidate_effect_funcs,
-        handle_effects,
-        all_candidates_so_far,
-        best_candidate_so_far,
-        strictness,
-        alpha,
-        adaptive_scope_reduction,
+    nonsignificant_effects, all_candidates_so_far, best_candidate_so_far, rank_res = (
+        perform_step_procedure(
+            context,
+            steps,
+            candidate_effect_funcs,
+            handle_effects,
+            all_candidates_so_far,
+            best_candidate_so_far,
+            strictness,
+            alpha,
+            adaptive_scope_reduction,
+        )
     )
 
     if nonsignificant_effects and adaptive_scope_reduction:
@@ -542,27 +553,33 @@ def _greedy_search(
             max_steps_taken = max([len(c.steps) for c in all_candidates_so_far])
             add_adaptive_step = len(best_candidate_so_far.steps) != max_steps_taken
 
-            _, all_candidates_so_far, best_candidate_so_far = perform_step_procedure(
-                steps,
-                nonsignificant_effects,
-                handle_effects,
-                all_candidates_so_far,
-                best_candidate_so_far,
-                strictness,
-                alpha,
-                adaptive_scope_reduction=False,
-                add_adaptive_step=add_adaptive_step,
+            _, all_candidates_so_far, best_candidate_so_far, rank_res_adapt = (
+                perform_step_procedure(
+                    context,
+                    steps,
+                    nonsignificant_effects,
+                    handle_effects,
+                    all_candidates_so_far,
+                    best_candidate_so_far,
+                    strictness,
+                    alpha,
+                    adaptive_scope_reduction=False,
+                    add_adaptive_step=add_adaptive_step,
+                )
             )
+            rank_res.extend(rank_res_adapt)
 
     return SearchState(
         state.user_input_modelentry,
         state.start_modelentry,
         best_candidate_so_far,
         all_candidates_so_far,
+        state.rank_res + rank_res,
     )
 
 
 def perform_step_procedure(
+    context,
     steps,
     candidate_effect_funcs,
     handle_effects,
@@ -574,6 +591,7 @@ def perform_step_procedure(
     add_adaptive_step=False,
 ):
     nonsignificant_effects = {}
+    rank_res = []
 
     for step in steps:
         if not candidate_effect_funcs:
@@ -602,10 +620,11 @@ def perform_step_procedure(
         parent_modelentry = best_candidate_so_far.modelentry
         assert parent_modelentry.modelfit_results is not None
 
-        best_candidate_so_far = get_best_candidate_so_far(
-            parent_modelentry, new_candidate_modelentries, all_candidates_so_far, strictness, alpha
+        rank_res_step = rank_model_entries(
+            context, parent_modelentry, new_candidate_modelentries, strictness, alpha
         )
-
+        rank_res.append(rank_res_step)
+        best_candidate_so_far = get_best_candidate(rank_res_step.final_model, all_candidates_so_far)
         if best_candidate_so_far.modelentry is parent_modelentry:
             break
 
@@ -625,35 +644,37 @@ def perform_step_procedure(
             candidate_effect_funcs, last_step_effect, nonsignificant_effects
         )
 
-    return nonsignificant_effects, all_candidates_so_far, best_candidate_so_far
+    return nonsignificant_effects, all_candidates_so_far, best_candidate_so_far, rank_res
 
 
-def get_best_candidate_so_far(
-    parent_modelentry, new_candidate_modelentries, all_candidates_so_far, strictness, alpha
-):
-    ofvs = [
-        (
-            np.nan
-            if modelentry.modelfit_results is None
-            or not is_strictness_fulfilled(
-                modelentry.model, modelentry.modelfit_results, strictness
-            )
-            else modelentry.modelfit_results.ofv
-        )
-        for modelentry in new_candidate_modelentries
+def rank_model_entries(context, parent_modelentry, new_candidate_modelentries, strictness, alpha):
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else parent_modelentry.model.name
+        for me in [parent_modelentry] + new_candidate_modelentries
+    }
+
+    models = [parent_modelentry.model] + [me.model for me in new_candidate_modelentries]
+    results = [parent_modelentry.modelfit_results] + [
+        me.modelfit_results for me in new_candidate_modelentries
     ]
-    best_model_so_far = lrt_best_of_many(
-        parent_modelentry,
-        new_candidate_modelentries,
-        parent_modelentry.modelfit_results.ofv,
-        ofvs,
-        alpha,
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=parent_modelentry.model,
+        rank_type='lrt',
+        cutoff=alpha,
+        strictness=strictness,
+        _parent_dict=parent_dict,
     )
+    return rank_res
 
+
+def get_best_candidate(model, candidates):
     best_candidate_so_far = next(
-        filter(lambda candidate: candidate.modelentry is best_model_so_far, all_candidates_so_far)
+        filter(lambda candidate: candidate.modelentry.model is model, candidates)
     )
-
     return best_candidate_so_far
 
 
@@ -810,7 +831,7 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     )
 
 
-def task_results(context, p_forward: float, p_backward: float, strictness: str, state: SearchState):
+def task_results(context, state: SearchState):
     candidates = state.all_candidates_so_far
     modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
     base_modelentry, *res_modelentries = modelentries
@@ -823,16 +844,15 @@ def task_results(context, p_forward: float, p_backward: float, strictness: str, 
         user_input_modelentry,
         base_modelentry,
         res_modelentries,
-        (p_forward, p_backward),
-        strictness,
     )
+    summary_tool = create_summary_tool(state.rank_res, tables['steps'], base_modelentry.model.name)
     plots = create_plots(best_modelentry.model, best_modelentry.modelfit_results)
 
     res = COVSearchResults(
         final_model=best_modelentry.model,
         final_results=best_modelentry.modelfit_results,
         summary_models=tables['summary_models'],
-        summary_tool=tables['summary_tool'],
+        summary_tool=summary_tool,
         summary_errors=tables['summary_errors'],
         steps=tables['steps'],
         ofv_summary=tables['ofv_summary'],
@@ -858,27 +878,16 @@ def create_result_tables(
     input_modelentry,
     base_modelentry,
     res_modelentries,
-    cutoff,
-    strictness,
 ):
     steps = _make_df_steps(best_modelentry, candidates)
     model_entries = [base_modelentry] + res_modelentries
     if input_modelentry != base_modelentry:
         model_entries.insert(0, input_modelentry)
     sum_models = _summarize_models(model_entries, steps)
-    sum_tool = summarize_tool(
-        res_modelentries,
-        base_modelentry,
-        rank_type='lrt',
-        cutoff=cutoff,
-        strictness=strictness,
-    )
-    sum_tool = _modify_summary_tool(sum_tool, steps)
     sum_errors = summarize_errors_from_entries(model_entries)
     ofv_summary = ofv_summary_dataframe(steps, final_included=True, iterations=True)
     sum_cand = candidate_summary_dataframe(steps)
     tables = {
-        'summary_tool': sum_tool,
         'summary_models': sum_models,
         'summary_errors': sum_errors,
         'steps': steps,
@@ -899,7 +908,19 @@ def _create_proxy_model_table(candidates, steps, proxy_models):
     return steps_df
 
 
-def _modify_summary_tool(summary_tool, steps):
+def create_summary_tool(rank_res, steps, base_model):
+    rank_summaries = [res.summary_tool for res in rank_res]
+
+    keys = list(range(1, len(rank_summaries) + 1))
+    summary_tool = concat_summaries(rank_summaries, keys)
+    summary_tool = _modify_summary_tool(summary_tool, steps, base_model)
+
+    return summary_tool
+
+
+def _modify_summary_tool(summary_tool, steps, base_model_name):
+    summary_tool = _add_input_model_row(summary_tool, base_model_name)
+
     step_cols_to_keep = ['step', 'pvalue', 'goal_pvalue', 'is_backward', 'selected', 'model']
     steps_df = steps.reset_index()[step_cols_to_keep].set_index(['step', 'model'])
 
@@ -909,6 +930,15 @@ def _modify_summary_tool(summary_tool, steps):
     summary_tool_new.insert(0, 'description', column_to_move)
 
     return summary_tool_new.drop(['rank'], axis=1)
+
+
+def _add_input_model_row(df, name):
+    target_row = df.loc[1, name]
+    index = pd.MultiIndex.from_tuples([(0, name)], names=['step', 'model'])
+    data = {col: [val] for col, val in zip(target_row.index.values, target_row.values)}
+    new_row = pd.DataFrame(data, index=index)
+    summary_tool = pd.concat([new_row, df])
+    return summary_tool
 
 
 def _summarize_models(modelentries, steps):
