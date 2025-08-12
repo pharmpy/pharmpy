@@ -40,22 +40,3 @@ Tools in Pharmpy
    Retries - Rerun a model with tweaked initial estimates <retries>
    Simulation - Run a simulation <simulation>
    Linearize - Linearize a model <linearize_tool>
-
-~~~~~~~~~~~~~~
-Common options
-~~~~~~~~~~~~~~
-
-In addition to the tool specific options, there are some options that all tools have in common.
-
-+-----------------+---------------------------------------------+
-| Argument        | Description                                 |
-+=================+=============================================+
-| ``path``        | Path to create (or resume in) tool database |
-+-----------------+---------------------------------------------+
-| ``resume``      | Flag whether to resume an existing tool run |
-+-----------------+---------------------------------------------+
-| ``broadcaster`` | Method of broadcasting messages to the user |
-|                 | while running. Default is ``terminal`` to do|
-|                 | terminal output. The other option is        |
-|                 | ``null`` to turn off broadcasting           |
-+-----------------+---------------------------------------------+
