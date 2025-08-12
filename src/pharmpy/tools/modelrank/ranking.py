@@ -4,6 +4,8 @@ from pharmpy.deps import numpy as np
 from pharmpy.modeling import calculate_aic, calculate_bic
 from pharmpy.modeling.lrt import cutoff as lrt_cutoff
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
+from pharmpy.modeling.lrt import p_value as lrt_p_value
+from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.run import calculate_mbic_penalty
 from pharmpy.workflows import ModelEntry
 
@@ -61,11 +63,18 @@ def perform_lrt(me, me_parent, p_value) -> dict[str, Union[float, int, bool]]:
     else:
         alpha = p_value
     rank_dict['alpha'] = alpha
-    rank_dict['p_value'] = lrt_cutoff(me_parent.model, me.model, alpha)
+    rank_dict['cutoff'] = lrt_cutoff(me_parent.model, me.model, alpha)
+    extended = me_parent if len(me_parent.model.parameters) > len(me.model.parameters) else me
+    reduced = me if extended.model is me_parent.model else me_parent
+    rank_dict['p_value'] = lrt_p_value(
+        reduced.model, extended.model, reduced.modelfit_results.ofv, extended.modelfit_results.ofv
+    )
     likelihood = me.modelfit_results.ofv
     rank_dict['dofv'] = me_parent.modelfit_results.ofv - likelihood
     rank_dict['ofv'] = likelihood
-    if rank_dict['dofv'] >= rank_dict['p_value']:
+    if lrt_test(
+        me_parent.model, me.model, me_parent.modelfit_results.ofv, me.modelfit_results.ofv, alpha
+    ):
         rank_dict['significant'] = True
     else:
         rank_dict['significant'] = False

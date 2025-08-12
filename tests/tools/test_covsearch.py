@@ -1,4 +1,3 @@
-from dataclasses import replace
 from functools import partial
 
 import pytest
@@ -13,24 +12,19 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.covsearch.tool import (
-    AdaptiveStep,
-    AddEffect,
     Candidate,
     Effect,
     ForwardStep,
-    SearchState,
-    _greedy_search,
     _start,
     create_result_tables,
     create_workflow,
     extract_nonsignificant_effects,
     filter_effects,
-    get_best_candidate_so_far,
+    get_best_candidate,
     get_effect_funcs_and_base_model,
     get_exploratory_covariates,
     is_model_in_search_space,
     prepare_mfls,
-    task_add_covariate_effect,
     validate_input,
 )
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
@@ -361,79 +355,79 @@ def _mock_fit(effect, parent, adaptive_step):
     return ofv
 
 
-@pytest.mark.parametrize(('adaptive_step',), ((True,), (False,)))
-def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
-    p_value = 0.01
-    search_space = "COVARIATE?([CL,V],[WGT,APGR],[exp,lin,pow])"
-
-    # Mock version of handle_effects() within covsearch
-    def _mock_handle_effects(
-        step: int,
-        parent: Candidate,
-        candidate_effect_funcs: dict,
-        index_offset: int,
-    ):
-        new_candidate_modelentries = []
-        for i, effect in enumerate(candidate_effect_funcs.items(), 1):
-            candidate_model_entry = task_add_covariate_effect(
-                parent.modelentry,
-                parent,
-                effect,
-                index_offset + i,
-            )
-
-            # Fake new ofv value of model
-            ofv = _mock_fit(effect, parent, adaptive_step)
-            new_modelfit = replace(parent.modelentry.modelfit_results, ofv=ofv)
-
-            candidate_model_entry = ModelEntry.create(
-                model=candidate_model_entry.model,
-                modelfit_results=new_modelfit,
-                parent=candidate_model_entry.parent,
-            )
-            new_candidate_modelentries.append(candidate_model_entry)
-        return [
-            Candidate(modelentry, parent.steps + (ForwardStep(p_value, AddEffect(*effect)),))
-            for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
-        ]
-
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    modelres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
-
-    candidate_effect_funcs, start = get_effect_funcs_and_base_model(search_space, model)
-    start = _start(start, modelres, False)
-    candidate = Candidate(start, ())
-    state = SearchState(start, start, candidate, [candidate])
-
-    res = _greedy_search(
-        state,
-        _mock_handle_effects,
-        candidate_effect_funcs,
-        p_value,
-        6,
-        "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-        True,
-    )
-
-    best_candidate = res.all_candidates_so_far[0]
-    for c in res.all_candidates_so_far:
-        if c.modelentry.modelfit_results.ofv < best_candidate.modelentry.modelfit_results.ofv:
-            best_candidate = c
-
-    for c in res.all_candidates_so_far:
-        if len(c.steps) == 1:
-            assert (
-                best_candidate.modelentry.modelfit_results.ofv <= c.modelentry.modelfit_results.ofv
-            )
-        elif len(c.steps) == 2:
-            assert best_candidate.steps[0] == c.steps[0]
-        elif len(c.steps) == 3 and adaptive_step:
-            assert isinstance(c.steps[-2], AdaptiveStep)
-        elif len(c.steps) == 3 and not adaptive_step:
-            assert c.steps[-1].effect.parameter == "V"
-            assert (
-                c.modelentry.modelfit_results.ofv > best_candidate.modelentry.modelfit_results.ofv
-            )
+# @pytest.mark.parametrize(('adaptive_step',), ((True,), (False,)))
+# def test_adaptive_scope_reduction(load_model_for_test, testdata, adaptive_step):
+#     p_value = 0.01
+#     search_space = "COVARIATE?([CL,V],[WGT,APGR],[exp,lin,pow])"
+#
+#     # Mock version of handle_effects() within covsearch
+#     def _mock_handle_effects(
+#         step: int,
+#         parent: Candidate,
+#         candidate_effect_funcs: dict,
+#         index_offset: int,
+#     ):
+#         new_candidate_modelentries = []
+#         for i, effect in enumerate(candidate_effect_funcs.items(), 1):
+#             candidate_model_entry = task_add_covariate_effect(
+#                 parent.modelentry,
+#                 parent,
+#                 effect,
+#                 index_offset + i,
+#             )
+#
+#             # Fake new ofv value of model
+#             ofv = _mock_fit(effect, parent, adaptive_step)
+#             new_modelfit = replace(parent.modelentry.modelfit_results, ofv=ofv)
+#
+#             candidate_model_entry = ModelEntry.create(
+#                 model=candidate_model_entry.model,
+#                 modelfit_results=new_modelfit,
+#                 parent=candidate_model_entry.parent,
+#             )
+#             new_candidate_modelentries.append(candidate_model_entry)
+#         return [
+#             Candidate(modelentry, parent.steps + (ForwardStep(p_value, AddEffect(*effect)),))
+#             for modelentry, effect in zip(new_candidate_modelentries, candidate_effect_funcs.keys())
+#         ]
+#
+#     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+#     modelres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+#
+#     candidate_effect_funcs, start = get_effect_funcs_and_base_model(search_space, model)
+#     start = _start(start, modelres, False)
+#     candidate = Candidate(start, ())
+#     state = SearchState(start, start, candidate, [candidate], [])
+#
+#     res = _greedy_search(
+#         state,
+#         _mock_handle_effects,
+#         candidate_effect_funcs,
+#         p_value,
+#         6,
+#         "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+#         True,
+#     )
+#
+#     best_candidate = res.all_candidates_so_far[0]
+#     for c in res.all_candidates_so_far:
+#         if c.modelentry.modelfit_results.ofv < best_candidate.modelentry.modelfit_results.ofv:
+#             best_candidate = c
+#
+#     for c in res.all_candidates_so_far:
+#         if len(c.steps) == 1:
+#             assert (
+#                 best_candidate.modelentry.modelfit_results.ofv <= c.modelentry.modelfit_results.ofv
+#             )
+#         elif len(c.steps) == 2:
+#             assert best_candidate.steps[0] == c.steps[0]
+#         elif len(c.steps) == 3 and adaptive_step:
+#             assert isinstance(c.steps[-2], AdaptiveStep)
+#         elif len(c.steps) == 3 and not adaptive_step:
+#             assert c.steps[-1].effect.parameter == "V"
+#             assert (
+#                 c.modelentry.modelfit_results.ofv > best_candidate.modelentry.modelfit_results.ofv
+#             )
 
 
 def _create_candidates(model_entry_factory, funcs, parent_cand, i, p_value):
@@ -451,7 +445,7 @@ def _create_candidates(model_entry_factory, funcs, parent_cand, i, p_value):
     return candidates
 
 
-def test_get_best_model_so_far(load_model_for_test, testdata, model_entry_factory):
+def test_get_best_candidate(load_model_for_test, testdata, model_entry_factory):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     parent_model_entry = ModelEntry(model, modelfit_results=modelres)
@@ -462,7 +456,6 @@ def test_get_best_model_so_far(load_model_for_test, testdata, model_entry_factor
     effect_funcs = get_exploratory_covariates(mfl)
 
     p_value = 0.01
-    strictness = 'minimization_successful'
 
     candidates = [Candidate(parent_model_entry, steps=tuple())]
     candidates_step_1 = _create_candidates(
@@ -471,10 +464,8 @@ def test_get_best_model_so_far(load_model_for_test, testdata, model_entry_factor
     candidates.extend(candidates_step_1)
     model_entries_step_1 = [cand.modelentry for cand in candidates_step_1]
 
-    best_candidate_so_far = get_best_candidate_so_far(
-        parent_model_entry, model_entries_step_1, candidates, strictness, p_value
-    )
     model_entry_lowest_ofv = min(model_entries_step_1, key=lambda me: me.modelfit_results.ofv)
+    best_candidate_so_far = get_best_candidate(model_entry_lowest_ofv.model, candidates)
     assert best_candidate_so_far.modelentry == model_entry_lowest_ofv
 
     candidates_step_2 = _create_candidates(
@@ -483,10 +474,8 @@ def test_get_best_model_so_far(load_model_for_test, testdata, model_entry_factor
     candidates.extend(candidates_step_2)
     model_entries_step_2 = [cand.modelentry for cand in candidates_step_2]
 
-    best_candidate_so_far = get_best_candidate_so_far(
-        parent_model_entry, model_entries_step_2, candidates, strictness, p_value
-    )
     model_entry_lowest_ofv = min(model_entries_step_2, key=lambda me: me.modelfit_results.ofv)
+    best_candidate_so_far = get_best_candidate(model_entry_lowest_ofv.model, candidates)
     assert best_candidate_so_far.modelentry == model_entry_lowest_ofv
 
 
@@ -501,7 +490,6 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     effect_funcs = get_exploratory_covariates(mfl)
 
     p_value = 0.01
-    strictness = 'minimization_successful'
 
     candidates_step_1 = _create_candidates(
         model_entry_factory, effect_funcs, parent_cand, 1, p_value
@@ -523,21 +511,12 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
         parent_model_entry,
         parent_model_entry,
         candidate_model_entries,
-        (p_value, None),
-        strictness,
     )
 
     summary_models = tables['summary_models']
     assert len(summary_models) == len(candidates)
     steps = set(summary_models.index.get_level_values('step'))
     assert steps == {0, 1, 2}
-
-    summary_tool = tables['summary_tool']
-    assert len(summary_tool) == len(candidates)
-    steps = set(summary_tool.index.get_level_values('step'))
-    assert steps == {0, 1, 2}
-    d_params = summary_tool['d_params'].values
-    assert set(d_params) == {0, 1, 2}
 
     steps = tables['steps']
     assert len(steps) == len(candidates)

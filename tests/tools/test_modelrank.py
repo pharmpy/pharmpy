@@ -445,7 +445,8 @@ class DummyResults:
             {
                 'df': 2,
                 'alpha': 0.05,
-                'p_value': 5.99146,
+                'cutoff': 5.99146,
+                'p_value': 0.02010836,
                 'dofv': 7.81324,
                 'ofv': -1300,
                 'significant': True,
@@ -458,7 +459,8 @@ class DummyResults:
             {
                 'df': 2,
                 'alpha': 0.01,
-                'p_value': 9.21034,
+                'cutoff': 9.21034,
+                'p_value': 0.02010836,
                 'dofv': 7.81324,
                 'ofv': -1300,
                 'significant': False,
@@ -471,7 +473,8 @@ class DummyResults:
             {
                 'df': 2,
                 'alpha': 0.05,
-                'p_value': 5.99146,
+                'cutoff': 5.99146,
+                'p_value': 0.244970,
                 'dofv': 2.81324,
                 'ofv': -1295,
                 'significant': False,
@@ -484,7 +487,8 @@ class DummyResults:
             {
                 'df': 1,
                 'alpha': 0.05,
-                'p_value': 3.84146,
+                'cutoff': 3.84146,
+                'p_value': 0.00518648,
                 'dofv': 7.81324,
                 'ofv': -1300,
                 'significant': True,
@@ -497,7 +501,8 @@ class DummyResults:
             {
                 'df': -1,
                 'alpha': 0.05,
-                'p_value': -3.84146,
+                'cutoff': -3.84146,
+                'p_value': 0.1392018,
                 'dofv': -2.18676,
                 'ofv': -1290,
                 'significant': True,
