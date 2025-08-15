@@ -45,6 +45,19 @@ class SizesRecord(OptionRecord):
         return newrec
 
     @property
+    def PD(self):
+        pd = self.option_pairs.get('PD', 50)
+        assert pd is not None
+        return int(pd)
+
+    def set_PD(self, value) -> Self:
+        if value > 50:
+            newrec = self.set_option('PD', str(value))
+        else:
+            newrec = self.remove_option('PD')
+        return newrec
+
+    @property
     def ISAMPLEMAX(self) -> int:
         isamplemax = self.option_pairs.get('ISAMPLEMAX', DEFAULT_ISAMPLEMAX)
         assert isamplemax is not None

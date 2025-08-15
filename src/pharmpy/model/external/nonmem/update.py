@@ -2208,6 +2208,10 @@ def update_sizes(control_stream, model: Model):
     n_compartments = get_needed_PC(model)
     sizes = sizes.set_PC(n_compartments)
 
+    n_data_columns = get_needed_PD(model)
+    if n_data_columns is not None:
+        sizes = sizes.set_PD(n_data_columns)
+
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     sizes = sizes.set_LTH(len(thetas))
 
@@ -2231,6 +2235,14 @@ def get_needed_PC(model: Model) -> int:
     else:
         n_compartments = 0
     return n_compartments
+
+
+def get_needed_PD(model: Model) -> Optional[int]:
+    df = model.dataset
+    if df is None:
+        return None
+    else:
+        return len(df.columns)
 
 
 def get_needed_ISAMPLEMAX(model: Model) -> int:

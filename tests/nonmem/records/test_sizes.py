@@ -5,6 +5,7 @@ import pytest
     "buf,option,old_value,value,expected",
     [
         ('$SIZES PC=23', 'PC', 23, 40, '$SIZES PC=40'),
+        ('$SIZES PD=40', 'PD', 40, 52, '$SIZES PD=52'),
         ('$SIZES LIM1=5', 'PC', 30, 23, '$SIZES LIM1=5'),
         ('$SIZES LIM1=5', 'PC', 30, 31, '$SIZES LIM1=5 PC=31'),
         ('$SIZES LIM1=5 PC=23', 'PC', 23, 29, '$SIZES LIM1=5'),
@@ -18,8 +19,10 @@ def test_set_option(parser, buf, option, old_value, value, expected):
     assert getattr(rec, option) == old_value
     if option == 'PC':
         newrec = rec.set_PC(value)
-    else:  # option == 'LTH'
+    elif option == 'LTH':
         newrec = rec.set_LTH(value)
+    elif option == 'PD':
+        newrec = rec.set_PD(value)
     assert str(newrec) == expected
 
 
