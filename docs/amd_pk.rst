@@ -16,6 +16,7 @@ The code to initiate the AMD tool for a PK model:
 
     from pharmpy.tools import run_amd
 
+    search_space = 'COVARIATE?(@IIV,SEX,EXP);COVARIATE?(@IIV,AGE,CAT)'
     res = run_amd(input='path/to/dataset',
                   modeltype='basic_pk',
                   administration='oral',
@@ -23,7 +24,7 @@ The code to initiate the AMD tool for a PK model:
                   vc_init=5.0,
                   mat_init=3.0,
                   strategy='default',
-                  search_space='ABSORPTION(FO);ELIMINATION(ZO)',
+                  search_space=search_space,
                   allometric_variable='WGT',
                   occasion='VISI'
     )
