@@ -31,6 +31,7 @@ from .parsing import (
 )
 from .update import (
     abbr_translation,
+    add_dummy_dv,
     create_name_map,
     update_ccontra,
     update_description,
@@ -202,6 +203,7 @@ class Model(BaseModel):
             data_record = control_stream.get_records('DATA')[0]
             label = model.datainfo.names[0]
             newdata = data_record.set_ignore_character_from_header(label)
+            model = add_dummy_dv(model)
             cs = update_input(cs, model)
 
             # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple

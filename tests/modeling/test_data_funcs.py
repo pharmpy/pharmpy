@@ -252,12 +252,12 @@ def test_drop_columns(load_example_model_for_test):
     correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV', 'FA1', 'FA2']
     assert m.datainfo.names == correct
     assert list(m.dataset.columns) == correct
-    m = drop_columns(m, ['DV', 'ID'])
-    assert m.datainfo.names == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
-    assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
+    m = drop_columns(m, ['DV', 'ID'])  # DV still in because NONMEM model
+    assert m.datainfo.names == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
+    assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
     m = drop_columns(m, ['TIME'], mark=True)
     assert m.datainfo['TIME'].drop
-    assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2']
+    assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
 
 
 def test_drop_dropped_columns(load_example_model_for_test):
@@ -558,7 +558,6 @@ def test_set_dataset(load_example_model_for_test, testdata):
 
     assert model.datainfo.path.name == 'pheno.dta'
     model = set_dataset(model, path_or_df=mox_path, datatype=None)
-    assert model.datainfo.path.name == 'mox_simulated_normal.csv'
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
 

@@ -13,6 +13,7 @@ from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
     Assignment,
     Bolus,
+    ColumnInfo,
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -2252,6 +2253,19 @@ def get_needed_ISAMPLEMAX(model: Model) -> int:
         if isinstance(step, EstimationStep) and step.method == 'SAEM' and step.isample is not None:
             curmax = max(curmax, step.isample)
     return curmax
+
+
+def add_dummy_dv(model: Model) -> Model:
+    """Add a dummy column if DV not present"""
+    try:
+        model.datainfo.dv_column
+    except IndexError:
+        df = model.dataset.copy()
+        df['DV'] = 0.0
+        colinfo = ColumnInfo(name='DV', type='dv')
+        di = model.datainfo + colinfo
+        model = model.replace(dataset=df, datainfo=di)
+    return model
 
 
 def update_input(control_stream, model: Model):
