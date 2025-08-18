@@ -2260,11 +2260,12 @@ def add_dummy_dv(model: Model) -> Model:
     try:
         model.datainfo.dv_column
     except IndexError:
-        df = model.dataset.copy()
-        df['DV'] = 0.0
-        colinfo = ColumnInfo(name='DV', type='dv')
-        di = model.datainfo + colinfo
-        model = model.replace(dataset=df, datainfo=di)
+        if model.dataset is not None:
+            df = model.dataset.copy()
+            df['DV'] = 0.0
+            colinfo = ColumnInfo(name='DV', type='dv')
+            di = model.datainfo + colinfo
+            model = model.replace(dataset=df, datainfo=di)
     return model
 
 

@@ -624,7 +624,7 @@ class DataInfo(Sequence, Immutable):
             missing_data_token=str(missing_data_token),
         )
 
-    def __add__(self, other: DataInfo) -> DataInfo:
+    def __add__(self, other: Union[DataInfo, ColumnInfo, Sequence[ColumnInfo]]) -> DataInfo:
         if isinstance(other, DataInfo):
             return DataInfo.create(
                 columns=self._columns + other._columns, path=self.path, separator=self.separator
