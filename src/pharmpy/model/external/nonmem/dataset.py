@@ -220,7 +220,6 @@ def _filter_ignore_accept(df, ignore, accept, null_value, missing_data_token):
                 expression = 'not(' + expression + ')'
             df.query(expression, inplace=True)
             df.drop(labels=magic_colname, axis=1, inplace=True)
-    df.reset_index(drop=True, inplace=True)
     return df
 
 

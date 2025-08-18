@@ -11,6 +11,7 @@ Bugfixes
 ========
 
 * Fix crash when updating $THETA with some changes to a record of multiple theta parameters
+* Fix crash in creating plots using residuals or predictions
 
 .. _1.8.0:
 
