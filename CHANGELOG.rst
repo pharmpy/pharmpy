@@ -5,6 +5,7 @@ New features
 ============
 
 * Support additive error model in ruvsearch
+* Automatically set PD in $SIZES for NONMEM models when needed
 
 Bugfixes
 ========
