@@ -58,8 +58,13 @@ html_theme_options = {
         {
             "name": "Report issues",
             "url": "https://github.com/pharmpy/pharmpy/issues",
+            "icon": "fa fa-bug",
+        },
+        {
+            "name": "Discussions",
+            "url": "https://github.com/pharmpy/pharmpy/discussions",
             "icon": "fa fa-comments",
-        }
+        },
     ]
 }
 html_favicon = 'images/Pharmpy_symbol.svg'

@@ -2,6 +2,13 @@
 News
 ====
 
+Pharmpy now has a discussions page!
+-----------------------------------
+
+*2025-08-18* --- We now have a Discussions page on GitHub! At this page you can ask questions and discuss with other users and developers from the Pharmpy community.
+
+Link `here <https://github.com/pharmpy/pharmpy/discussions>`_.
+
 Pharmpy and pharmr 1.8.0 released
 ---------------------------------
 

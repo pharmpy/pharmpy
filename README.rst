@@ -49,6 +49,9 @@ For more comprehensive information and documentation, see: https://pharmpy.githu
 Pharmpy can be used as a regular Python package, in R via the `pharmr <https://github.com/pharmpy/pharmr>`_ package,
 or via its built in command line interface.
 
+If you have any questions or want to discuss with other users and developers in the Pharmpy community, you can go to our
+discussion page: https://github.com/pharmpy/pharmpy/discussions
+
 Getting started
 ===============
 
