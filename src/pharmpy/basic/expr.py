@@ -182,6 +182,9 @@ class Expr:
     def sqrt(self) -> Expr:
         return Expr(symengine.sqrt(self._expr))
 
+    def loggamma(self) -> Expr:
+        return Expr(symengine.loggamma(self._expr))
+
     def sign(self) -> Expr:
         return Expr(symengine.sign(self._expr))
 

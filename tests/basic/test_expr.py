@@ -159,3 +159,8 @@ def test_forward():
     assert expr == Expr.function("forward", ('TIME', 'AMT > 0'))
     assert isinstance(expr.args[0], Expr)
     assert isinstance(expr.args[1], BooleanExpr)
+
+
+def test_loggamma():
+    expr = Expr('x').loggamma()
+    assert str(expr) == 'loggamma(x)'
