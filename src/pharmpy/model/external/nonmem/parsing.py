@@ -884,7 +884,8 @@ def filter_observations(df, di):
             try:
                 label = di.typeix['dose'][0].name
             except IndexError:
-                raise ValueError("Unable to find dosing records in the dataset")
+                # No event or dose information in dataset
+                return df
 
     df_obs = df.astype({label: 'float'}).query(f'{label} == 0')
     have_obs = set(df_obs['ID'].unique())
