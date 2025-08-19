@@ -21,7 +21,7 @@ To initiate IIVsearch in Python/R:
     from pharmpy.tools import read_modelfit_results, run_iivsearch
 
     start_model = read_model('path/to/model')
-    start_model_results = read_model_results('path/to/model')
+    start_model_results = read_modelfit_results('path/to/model')
     res = run_iivsearch(model=start_model,
                         results=start_model_results,
                         algorithm='top_down_exhaustive',
