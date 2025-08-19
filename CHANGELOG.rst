@@ -13,6 +13,7 @@ Bugfixes
 
 * Fix crash when updating $THETA with some changes to a record of multiple theta parameters
 * Fix crash in creating plots using residuals or predictions
+* Fix crash when reading NONMEM model with $PK, but no dosing column in the dataset
 
 .. _1.8.0:
 

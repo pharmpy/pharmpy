@@ -265,12 +265,13 @@ def _compartmental_model(
 
         cs = to_compartmental_system(func_to_name, eqs)  # pyright: ignore [reportArgumentType]
         cb = CompartmentalSystemBuilder(cs)
-        doses = dosing(di, dataset, defdose[1])
+        doses = dosing(di, dataset, defdose[1], des=True)
         for name, i in comp_map.items():
             comp = cs.find_compartment(name)
             if comp is None:  # Compartments can be in $MODEL but not used in $DES
                 continue
-            cb.set_dose(comp, find_dose(doses, i))
+            if doses is not None:
+                cb.set_dose(comp, find_dose(doses, i))
             comp = cb.find_compartment(name)
             assert comp is not None
             f = _get_bioavailability(control_stream, i)
@@ -607,10 +608,17 @@ def _advan12_trans(trans: str):
         )
 
 
-def dosing(di: DataInfo, dataset, dose_comp: int):
+def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
     # Only check doses
     if dataset is not None:
-        amtcol = di.typeix["dose"][0].name
+        try:
+            amtcol = di.typeix["dose"][0].name
+        except IndexError as e:
+            # No dose column. This is OK for $DES models
+            if des:
+                return None
+            else:
+                raise e
         dataset = dataset[dataset[amtcol] != 0]
 
     cmt_loop = False
