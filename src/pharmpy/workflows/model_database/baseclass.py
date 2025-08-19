@@ -77,32 +77,39 @@ class ModelSnapshot(ABC):
         self.key = ModelHash(model)
 
     @abstractmethod
-    def retrieve_local_files(self, destination_path: Path) -> None:
-        """Retrieve all files related to the model bound to this snapshot
+    def list_all_files(self) -> list[str]:
+        """Lists all file names related to a model run bound to this snapshot
 
-        Parameters
-        ----------
-        destination_path : Path
-            Local destination path
+        Note that this will not return a list of full paths, only the name of the files
+
+        Returns
+        -------
+        list[str]
+            List of file names
         """
         pass
 
     @abstractmethod
-    def retrieve_file(self, filename: str) -> Path:
-        """Retrieve one file related to the model bound to this snapshot
-
-        Note that if the database is implemented in the local filesystem
-        it is allowed to return a path directly to the file in the database.
+    def retrieve_file(self, filename: str, destination_path: Path) -> None:
+        """Retrieve one file related to a model run bound to this snapshot
 
         Parameters
         ----------
         filename : str
             Name of file
+        destination_path : Path
+            Destination path
+        """
+        pass
 
-        Returns
-        -------
-        Path
-            Path to local file
+    @abstractmethod
+    def retrieve_all_files(self, destination_path: Path) -> None:
+        """Retrieve all files related to a model run bound to this snapshot
+
+        Parameters
+        ----------
+        destination_path : Path
+            Destination path
         """
         pass
 
@@ -222,36 +229,50 @@ class ModelDatabase(ABC):
         pass
 
     @abstractmethod
-    def retrieve_local_files(self, model: Union[Model, ModelHash], destination_path: Path) -> None:
-        """Retrieve all files related to a model
+    def list_all_files(self, model: Union[Model, ModelHash]) -> list[str]:
+        """Lists all file names related to a model run
+
+        Note that this will not return a list of full paths, only the name of the files
 
         Parameters
         ----------
-        model_name : str
-            Name of the model
-        destination_path : Path
-            Local destination path
+        model : Model, ModelHash
+            Model object or ModelHash
+
+        Returns
+        -------
+        list[str]
+            List of file names
         """
         pass
 
     @abstractmethod
-    def retrieve_file(self, model: Union[Model, ModelHash], filename: str) -> Path:
-        """Retrieve one file related to a model
-
-        Note that if the database is implemented in the local filesystem
-        it is allowed to return a path directly to the file in the database.
+    def retrieve_file(
+        self, model: Union[Model, ModelHash], filename: str, destination_path: Path
+    ) -> None:
+        """Retrieve one file related to a model run
 
         Parameters
         ----------
-        model_name : str
-            Name of the model
+        model : Model, ModelHash
+            Model object or ModelHash
         filename : str
             Name of file
+        destination_path : Path
+            Destination path
+        """
+        pass
 
-        Returns
-        -------
-        Path
-            Path to local file
+    @abstractmethod
+    def retrieve_all_files(self, model: Union[Model, ModelHash], destination_path: Path) -> None:
+        """Retrieve all files related to a model run
+
+        Parameters
+        ----------
+        model : Model, ModelHash
+            Model object or ModelHash
+        destination_path : Path
+            Destination path
         """
         pass
 
@@ -371,11 +392,14 @@ class DummySnapshot(ModelSnapshot):
         self.db = database
         self.name = model_name
 
-    def retrieve_local_files(self, destination_path: Path) -> None:
-        return self.db.retrieve_local_files(self.name, destination_path)
+    def list_all_files(self) -> list[str]:
+        return self.db.list_all_files(self.name)
 
-    def retrieve_file(self, filename: str) -> Path:
-        return self.db.retrieve_file(self.name, filename)
+    def retrieve_file(self, filename: str, destination_path: Path) -> None:
+        self.db.retrieve_file(self.name, filename, destination_path)
+
+    def retrieve_all_files(self, destination_path: Path) -> None:
+        self.db.retrieve_all_files(self.name, destination_path)
 
     def retrieve_model(self) -> Model:
         return self.db.retrieve_model(self.name)
@@ -413,15 +437,21 @@ class TransactionalModelDatabase(ModelDatabase):
         with self.transaction(model_entry) as txn:
             return txn.store_model_entry()
 
-    def retrieve_file(self, obj: Union[Model, ModelEntry, ModelHash], filename: str) -> Path:
+    def list_all_files(self, obj: Union[Model, ModelEntry, ModelHash]) -> list[str]:
         with self.snapshot(obj) as sn:
-            return sn.retrieve_file(filename)
+            return sn.list_all_files()
 
-    def retrieve_local_files(
-        self, obj: Union[Model, ModelEntry, ModelHash], destination_path: Path
+    def retrieve_file(
+        self, obj: Union[Model, ModelEntry, ModelHash], filename: str, destination_path: Path
     ) -> None:
         with self.snapshot(obj) as sn:
-            return sn.retrieve_local_files(destination_path)
+            sn.retrieve_file(filename, destination_path)
+
+    def retrieve_all_files(
+        self, obj: Union[Model, ModelEntry, ModelHash], destination_path
+    ) -> None:
+        with self.snapshot(obj) as sn:
+            sn.retrieve_all_files(destination_path)
 
     def retrieve_model(self, obj: Union[Model, ModelEntry, ModelHash]) -> Model:
         with self.snapshot(obj) as sn:

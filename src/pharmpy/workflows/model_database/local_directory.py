@@ -112,19 +112,27 @@ class LocalDirectoryDatabase(NonTransactionalModelDatabase):
                 dest_path = self.path / new_filename
             shutil.copy2(path, dest_path)
 
-    def retrieve_local_files(self, name, destination_path):
+    def list_all_files(self, name):
         # Retrieve all files stored for one model
-        files = self.path.glob(f'{name}.*')
-        for f in files:
-            shutil.copy2(f, destination_path)
+        file_names = [f.name for f in self.path.glob(f'{name}.*') if f.is_file()]
+        return file_names
 
-    def retrieve_file(self, name, filename):
+    def retrieve_file(self, name, filename, destination_path):
         # Return path to file
         path = self.path / filename
         if path.is_file() and stat(path).st_size > 0:
-            return path
+            shutil.copy2(path, destination_path)
         else:
             raise FileNotFoundError(f"Cannot retrieve {filename} for {name}")
+
+    def retrieve_all_files(self, name, destination_path):
+        # Retrieve all files stored for one model
+        if destination_path.is_file():
+            raise ValueError(f"Cannot copy files to `{destination_path}`:  is a file")
+
+        file_names = self.list_all_files(name)
+        for file_name in file_names:
+            shutil.copy2(self.path / file_name, destination_path)
 
     def retrieve_model(self, name):
         filename = name + self.file_extension
@@ -324,22 +332,33 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
 
 
 class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
-    def retrieve_local_files(self, destination_path):
+    def list_all_files(self):
         path = self.database.path / str(self.key)
-        files = path.glob('*')
-        for f in files:
-            if f.is_file():
-                shutil.copy2(f, destination_path)
-            else:
-                shutil.copytree(f, Path(destination_path) / f.stem)
+        file_names = [f.name for f in path.iterdir() if f.is_file()]
+        if len(file_names) > 0:
+            return file_names
+        else:
+            raise ValueError(f"Cannot find any files for {self.key}")
 
-    def retrieve_file(self, filename):
+    def retrieve_file(self, filename, destination_path):
         # Return path to file
         path = self.database.path / str(self.key) / filename
         if path.is_file() and stat(path).st_size > 0:
-            return path
+            shutil.copy2(path, destination_path)
         else:
-            raise FileNotFoundError(f"Cannot retrieve {filename} for {self.name}")
+            raise FileNotFoundError(f"Cannot retrieve {filename} for {self.key}")
+
+    def retrieve_all_files(self, destination_path):
+        if not destination_path.exists():
+            raise ValueError(
+                f"Cannot copy files to `{destination_path}`:  directory does not exist"
+            )
+        if destination_path.is_file():
+            raise ValueError(f"Cannot copy files to `{destination_path}`:  is a file")
+        path = self.database.path / str(self.key)
+        file_names = self.list_all_files()
+        for file_name in file_names:
+            shutil.copy2(path / file_name, destination_path)
 
     def retrieve_model(self):
         path = self._find_full_model_path()

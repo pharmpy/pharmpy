@@ -27,10 +27,13 @@ class NullModelDatabase(NonTransactionalModelDatabase):
     def store_model_entry(self, model_entry: ModelEntry) -> None:
         pass
 
-    def retrieve_file(self, model_name, filename):
+    def list_all_files(self, name):
         pass
 
-    def retrieve_local_files(self, name, destination_path):
+    def retrieve_file(self, name, filename, destination_path):
+        pass
+
+    def retrieve_all_files(self, name, destination_path):
         pass
 
     def retrieve_model(self, name):

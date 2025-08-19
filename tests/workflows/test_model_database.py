@@ -79,7 +79,6 @@ def test_store_model(tmp_path, load_model_for_test, testdata):
         assert not (Path("database") / ".datasets" / "data2.csv").is_file()
 
         run2 = model.replace(name="run2")
-        print(run2.statements)
         run2 = add_time_after_dose(run2)
         db.store_model(run2)
 
@@ -138,3 +137,73 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
 
         assert model_entry_retrieve.model == model
         assert model_entry_retrieve.modelfit_results.ofv == modelfit_results.ofv
+
+
+def test_list_all_files(tmp_path, load_example_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = load_example_model_for_test("pheno")
+
+        db = LocalModelDirectoryDatabase("database")
+        db.store_model(model)
+        assert set(db.list_all_files(model)) == {'model.ctl'}
+
+        files_to_copy = {'pheno.lst', 'pheno.ext', 'pheno.phi'}
+        for file_name in files_to_copy:
+            path = testdata / 'nonmem' / file_name
+            db.store_local_file(model, path)
+
+        assert set(db.list_all_files(model)) == {'model.ctl', *files_to_copy}
+
+        with db.snapshot(model) as snp:
+            assert set(snp.list_all_files()) == {'model.ctl', *files_to_copy}
+
+
+def test_retrieve_file(tmp_path, load_example_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = load_example_model_for_test("pheno")
+
+        db = LocalModelDirectoryDatabase("database")
+        db.store_model(model)
+        db.store_local_file(model, testdata / 'nonmem' / 'pheno.lst')
+
+        assert not (tmp_path / 'pheno.lst').exists()
+        db.retrieve_file(model, 'pheno.lst', tmp_path)
+        assert (tmp_path / 'pheno.lst').exists()
+
+        db.store_local_file(model, testdata / 'nonmem' / 'pheno.ext')
+        with db.snapshot(model) as snp:
+            snp.retrieve_file('pheno.ext', tmp_path)
+        assert (tmp_path / 'pheno.ext').exists()
+
+        with pytest.raises(FileNotFoundError):
+            db.retrieve_file(model, 'x', tmp_path)
+
+
+def test_retrieve_all_files(tmp_path, load_example_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = load_example_model_for_test("pheno")
+
+        db = LocalModelDirectoryDatabase("database")
+        db.store_model(model)
+
+        files_to_copy = {'pheno.lst', 'pheno.ext', 'pheno.phi'}
+        for file_name in files_to_copy:
+            path = testdata / 'nonmem' / file_name
+            db.store_local_file(model, path)
+
+        os.mkdir(tmp_path / 'dir1')
+        db.retrieve_all_files(model, tmp_path / 'dir1')
+        assert all((tmp_path / 'dir1' / file).exists() for file in files_to_copy)
+
+        os.mkdir(tmp_path / 'dir2')
+        with db.snapshot(model) as snp:
+            snp.retrieve_all_files(tmp_path / 'dir2')
+        assert all((tmp_path / 'dir2' / file).exists() for file in files_to_copy)
+
+        with pytest.raises(ValueError):
+            db.retrieve_all_files(model, Path('x'))
+
+        with open(tmp_path / 'file.txt', 'w'):
+            pass
+        with pytest.raises(ValueError):
+            db.retrieve_all_files(model, tmp_path / 'file.txt')
