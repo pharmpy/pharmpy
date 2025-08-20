@@ -143,9 +143,9 @@ def _eval_strictness_arg(me: ModelEntry, arg: str):
         grd = _get_subset_on_param_type(res.gradients, arg, model)
         return bool((grd == 0).any()) or bool(grd.isnull().any())
     elif arg == 'condition_number':
-        if res.covariance_matrix is None:
+        if res.correlation_matrix is None:
             return None
-        return np.linalg.cond(res.covariance_matrix)
+        return np.linalg.cond(res.correlation_matrix)
     else:
         try:
             return getattr(res, arg)

@@ -1227,9 +1227,9 @@ def is_strictness_fulfilled(
             final_zero_gradient = 'final_zero_gradient' in results.warnings  # noqa
             estimate_near_boundary = 'estimate_near_boundary' in results.warnings  # noqa
             if 'condition_number' in args_in_statement:
-                if results.covariance_matrix is not None:
+                if results.correlation_matrix is not None:
                     condition_number = ArrayEvaluator(  # noqa
-                        [np.linalg.cond(results.covariance_matrix)]
+                        [np.linalg.cond(results.correlation_matrix)]
                     )
                 else:
                     raise ValueError("Could not calculate condition_number.")

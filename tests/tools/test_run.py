@@ -479,12 +479,12 @@ def test_load_example_modelfit_results():
         (
             'nonmem/pheno_real.mod',
             'condition_number < 1000',
-            False,
+            True,
         ),
         (
             'nonmem/pheno_real.mod',
-            'condition_number < 300000',
-            True,
+            'condition_number < 3',
+            False,
         ),
         (
             'nonmem/modelfit_results/onePROB/oneEST/noSIM/maxeval3.mod',

@@ -221,7 +221,7 @@ def test_rank_models(
             'condition_number <= 100',
             'models/pheno5.mod',
             {
-                'condition_number': 6828363899484635.0,
+                'condition_number': 6595781.0,
                 'condition_number <= 100': False,
                 'strictness_fulfilled': False,
             },
