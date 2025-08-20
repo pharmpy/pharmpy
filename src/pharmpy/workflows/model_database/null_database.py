@@ -30,10 +30,10 @@ class NullModelDatabase(NonTransactionalModelDatabase):
     def list_all_files(self, name):
         pass
 
-    def retrieve_file(self, name, filename, destination_path):
+    def retrieve_file(self, name, filename, destination_path, force):
         pass
 
-    def retrieve_all_files(self, name, destination_path):
+    def retrieve_all_files(self, name, destination_path, force):
         pass
 
     def retrieve_model(self, name):

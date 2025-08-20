@@ -90,7 +90,7 @@ class ModelSnapshot(ABC):
         pass
 
     @abstractmethod
-    def retrieve_file(self, filename: str, destination_path: Path) -> None:
+    def retrieve_file(self, filename: str, destination_path: Path, force: bool = False) -> None:
         """Retrieve one file related to a model run bound to this snapshot
 
         Parameters
@@ -99,17 +99,21 @@ class ModelSnapshot(ABC):
             Name of file
         destination_path : Path
             Destination path
+        force : bool
+            Force overwrite of file (default False)
         """
         pass
 
     @abstractmethod
-    def retrieve_all_files(self, destination_path: Path) -> None:
+    def retrieve_all_files(self, destination_path: Path, force: bool = False) -> None:
         """Retrieve all files related to a model run bound to this snapshot
 
         Parameters
         ----------
         destination_path : Path
             Destination path
+        force : bool
+            Force overwrite of files (default False)
         """
         pass
 
@@ -248,7 +252,11 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def retrieve_file(
-        self, model: Union[Model, ModelHash], filename: str, destination_path: Path
+        self,
+        model: Union[Model, ModelHash],
+        filename: str,
+        destination_path: Path,
+        force: bool = False,
     ) -> None:
         """Retrieve one file related to a model run
 
@@ -260,11 +268,15 @@ class ModelDatabase(ABC):
             Name of file
         destination_path : Path
             Destination path
+        force : bool
+            Force overwrite of file (default False)
         """
         pass
 
     @abstractmethod
-    def retrieve_all_files(self, model: Union[Model, ModelHash], destination_path: Path) -> None:
+    def retrieve_all_files(
+        self, model: Union[Model, ModelHash], destination_path: Path, force: bool = False
+    ) -> None:
         """Retrieve all files related to a model run
 
         Parameters
@@ -273,6 +285,8 @@ class ModelDatabase(ABC):
             Model object or ModelHash
         destination_path : Path
             Destination path
+        force : bool
+            Force overwrite of files (default False)
         """
         pass
 
@@ -395,11 +409,11 @@ class DummySnapshot(ModelSnapshot):
     def list_all_files(self) -> list[str]:
         return self.db.list_all_files(self.name)
 
-    def retrieve_file(self, filename: str, destination_path: Path) -> None:
-        self.db.retrieve_file(self.name, filename, destination_path)
+    def retrieve_file(self, filename: str, destination_path: Path, force: bool = False) -> None:
+        self.db.retrieve_file(self.name, filename, destination_path, force)
 
-    def retrieve_all_files(self, destination_path: Path) -> None:
-        self.db.retrieve_all_files(self.name, destination_path)
+    def retrieve_all_files(self, destination_path: Path, force: bool = False) -> None:
+        self.db.retrieve_all_files(self.name, destination_path, force)
 
     def retrieve_model(self) -> Model:
         return self.db.retrieve_model(self.name)
@@ -442,16 +456,20 @@ class TransactionalModelDatabase(ModelDatabase):
             return sn.list_all_files()
 
     def retrieve_file(
-        self, obj: Union[Model, ModelEntry, ModelHash], filename: str, destination_path: Path
+        self,
+        obj: Union[Model, ModelEntry, ModelHash],
+        filename: str,
+        destination_path: Path,
+        force: bool = False,
     ) -> None:
         with self.snapshot(obj) as sn:
-            sn.retrieve_file(filename, destination_path)
+            sn.retrieve_file(filename, destination_path, force)
 
     def retrieve_all_files(
-        self, obj: Union[Model, ModelEntry, ModelHash], destination_path
+        self, obj: Union[Model, ModelEntry, ModelHash], destination_path, force: bool = False
     ) -> None:
         with self.snapshot(obj) as sn:
-            sn.retrieve_all_files(destination_path)
+            sn.retrieve_all_files(destination_path, force)
 
     def retrieve_model(self, obj: Union[Model, ModelEntry, ModelHash]) -> Model:
         with self.snapshot(obj) as sn:

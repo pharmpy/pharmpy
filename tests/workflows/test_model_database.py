@@ -178,6 +178,10 @@ def test_retrieve_file(tmp_path, load_example_model_for_test, testdata):
         with pytest.raises(FileNotFoundError):
             db.retrieve_file(model, 'x', tmp_path)
 
+        with pytest.raises(ValueError):
+            db.retrieve_file(model, 'pheno.lst', tmp_path)
+        db.retrieve_file(model, 'pheno.lst', tmp_path, force=True)
+
 
 def test_retrieve_all_files(tmp_path, load_example_model_for_test, testdata):
     with chdir(tmp_path):
@@ -207,3 +211,8 @@ def test_retrieve_all_files(tmp_path, load_example_model_for_test, testdata):
             pass
         with pytest.raises(ValueError):
             db.retrieve_all_files(model, tmp_path / 'file.txt')
+
+        with pytest.raises(ValueError):
+            db.retrieve_all_files(model, tmp_path / 'dir1')
+
+        db.retrieve_all_files(model, tmp_path / 'dir1', force=True)
