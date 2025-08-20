@@ -1,7 +1,7 @@
 import re
 from typing import Optional
 
-from pharmpy.basic.expr import LogicalExpr
+from pharmpy.basic.expr import BooleanExpr
 from pharmpy.deps import numpy as np
 from pharmpy.modeling import check_parameters_near_bounds, get_omegas, get_sigmas, get_thetas
 from pharmpy.workflows import ModelEntry
@@ -29,10 +29,10 @@ ALLOWED_ARGS = (
 LOGICAL_ARGS = ('and', 'or', 'not')
 
 
-def get_strictness_expr(strictness: str) -> LogicalExpr:
+def get_strictness_expr(strictness: str) -> BooleanExpr:
     validate_string(strictness)
     strictness = preprocess_string(strictness)
-    expr = LogicalExpr(strictness)
+    expr = BooleanExpr(strictness)
     return expr
 
 
@@ -61,7 +61,7 @@ def preprocess_string(strictness: str) -> str:
     return strictness
 
 
-def evaluate_strictness(expr: LogicalExpr, predicates: dict[str, Optional[bool]]) -> Optional[bool]:
+def evaluate_strictness(expr: BooleanExpr, predicates: dict[str, Optional[bool]]) -> Optional[bool]:
     sub_dict = dict()
     for key, value in predicates.items():
         # NaNs will raise in subs
@@ -69,22 +69,22 @@ def evaluate_strictness(expr: LogicalExpr, predicates: dict[str, Optional[bool]]
             continue
         sub_dict[key] = value
     expr_subs = expr.subs(sub_dict)
-    if expr_subs not in (True, False):
+    if expr_subs.is_indeterminate():
         # Subs with expressions like sigdigs >= 3.8 will not replace, only symbols
         if str(expr_subs) in predicates.keys():
             return predicates[str(expr_subs)]
         return None
     else:
-        return bool(expr_subs)
+        return True if expr_subs.is_true() else False
 
 
 def get_strictness_predicates(
-    model_entries: list[ModelEntry], expr: LogicalExpr
+    model_entries: list[ModelEntry], expr: BooleanExpr
 ) -> dict[ModelEntry, dict[str, Optional[bool]]]:
     return {me: get_strictness_predicates_me(me, expr) for me in model_entries}
 
 
-def get_strictness_predicates_me(me: ModelEntry, expr: LogicalExpr) -> dict[str, Optional[bool]]:
+def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str, Optional[bool]]:
     predicates = dict()
 
     def _eval_tree(sub_expr):
@@ -101,7 +101,10 @@ def get_strictness_predicates_me(me: ModelEntry, expr: LogicalExpr) -> dict[str,
                     # All comparisons with NaN should be False
                     predicates[expr_key] = False
                 else:
-                    predicates[expr_key] = bool(sub_expr.subs({symb: predicates[symb]}))
+                    sub_expr = sub_expr.subs({symb: predicates[symb]})
+                    if not sub_expr.is_indeterminate():
+                        sub_expr = True if sub_expr.is_true() else False
+                    predicates[expr_key] = sub_expr
             else:
                 predicates[expr_key] = None
         else:

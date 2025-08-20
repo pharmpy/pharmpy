@@ -2,7 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.basic import BooleanExpr
-from pharmpy.basic.expr import Expr, ExprPrinter, LogicalExpr
+from pharmpy.basic.expr import Expr, ExprPrinter
 
 
 def test_init_expr():
@@ -24,7 +24,7 @@ def test_symbol():
     assert expr.name == "f"
     expr = Expr.function('f', ('x', 'y'))
     assert expr.name == "f"
-    expr = Expr.log(Expr.symbol("x")).name == 'log'
+    assert Expr.log(Expr.symbol("x")).name == 'log'
 
 
 def test_piecewise():
@@ -96,11 +96,37 @@ def test_init_boolean_expr():
     assert expr1 == expr2
     expr3 = BooleanExpr(sympy.Gt(Expr('x'), Expr(0)))
     assert expr3.lhs == Expr('x')
+    expr4 = BooleanExpr('x & y')
+    assert expr4.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
+    assert expr4 == BooleanExpr(expr4)
 
 
 def test_true():
     expr = BooleanExpr.true()
     assert expr._sympy_() == sympy.true
+
+
+def test_boolean_expr_free_symbols():
+    expr1 = BooleanExpr(sympy.Eq(Expr('x'), Expr('y')))
+    assert expr1.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
+    expr2 = BooleanExpr(sympy.Gt(Expr('x'), Expr(0)))
+    assert expr2.free_symbols == {Expr.symbol('x')}
+    expr3 = BooleanExpr('x & y')
+    assert expr3.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
+
+
+def test_boolean_expr_args():
+    expr1 = BooleanExpr(sympy.Eq(Expr('x'), Expr('y')))
+    assert expr1.args[0] == Expr.symbol('x')
+    assert expr1.args[1] == Expr.symbol('y')
+    expr2 = BooleanExpr(sympy.Gt(Expr('x'), Expr(0)))
+    assert expr2.args[0] == Expr.symbol('x')
+    assert expr2.args[1] == Expr(0)
+    expr3 = BooleanExpr('x | (y & z)')
+    assert expr3.free_symbols == {Expr.symbol('x'), Expr.symbol('y'), Expr.symbol('z')}
+    assert expr3.args[0] == Expr.symbol('x')
+    assert expr3.args[1] == BooleanExpr('y & z')
+    assert expr3.args[1].args[0] == Expr.symbol('y')
 
 
 @pytest.mark.parametrize(
@@ -111,7 +137,7 @@ def test_true():
         (Expr('x'), Expr.function('f', 't')),
     ],
 )
-def test_boolean_expr_args(expr_lhs, expr_rhs):
+def test_boolean_expr_args_rel(expr_lhs, expr_rhs):
     expr = BooleanExpr.eq(expr_lhs, expr_rhs)
     assert expr.args == (expr_lhs, expr_rhs)
     expr = BooleanExpr.ne(expr_lhs, expr_rhs)
@@ -127,6 +153,48 @@ def test_boolean_expr_args(expr_lhs, expr_rhs):
 )
 def test_boolean_expr_unicode(expr, ref):
     assert expr.unicode() == ref
+
+
+@pytest.mark.parametrize(
+    'expr, ref',
+    [
+        (BooleanExpr(True), True),
+        (BooleanExpr(False), False),
+        (BooleanExpr(True & False), False),
+        (BooleanExpr(True | False), True),
+        (BooleanExpr('x & y'), False),
+    ],
+)
+def test_boolean_expr_is_true(expr, ref):
+    assert expr.is_true() == ref
+
+
+@pytest.mark.parametrize(
+    'expr, ref',
+    [
+        (BooleanExpr(True), False),
+        (BooleanExpr(False), True),
+        (BooleanExpr(True & False), True),
+        (BooleanExpr(True | False), False),
+        (BooleanExpr('x & y'), False),
+    ],
+)
+def test_boolean_expr_is_false(expr, ref):
+    assert expr.is_false() == ref
+
+
+@pytest.mark.parametrize(
+    'expr, ref',
+    [
+        (BooleanExpr(True), False),
+        (BooleanExpr(False), False),
+        (BooleanExpr(True & False), False),
+        (BooleanExpr(True | False), False),
+        (BooleanExpr('x & y'), True),
+    ],
+)
+def test_boolean_expr_is_indeterminate(expr, ref):
+    assert expr.is_indeterminate() == ref
 
 
 @pytest.mark.parametrize(
@@ -164,18 +232,3 @@ def test_forward():
 def test_loggamma():
     expr = Expr('x').loggamma()
     assert str(expr) == 'loggamma(x)'
-
-
-def test_logical_expr():
-    expr = LogicalExpr('x & y')
-    assert expr.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
-    assert expr == LogicalExpr(expr)
-
-
-def test_logical_expr_args():
-    expr = LogicalExpr('x | (y & z)')
-    assert expr.free_symbols == {Expr.symbol('x'), Expr.symbol('y'), Expr.symbol('z')}
-    assert expr.args[0] == Expr.symbol('x')
-    assert expr.args[1] == LogicalExpr('y & z')
-    assert expr.args[1].args[0] == Expr.symbol('y')
-
