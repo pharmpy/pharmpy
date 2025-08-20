@@ -1,7 +1,7 @@
 $PROBLEM    MOXONIDINE PK,FINAL ESTIMATES,simulated data
 $INPUT      ID VISI AGE SEX WT COMP TIME CRCL AMT SS II CMT=DROP DV
             EVID
-$DATA      moxo_simulated_final.csv IGNORE=@
+$DATA      moxo.csv IGNORE=@
 $SUBROUTINE ADVAN2 TRANS1
 $PK
 ;-----------OCCASIONS----------
