@@ -335,12 +335,15 @@ def _results(context, res):
     return res
 
 
-def create_additive_nlme_model(best_model: Model, best_model_name: str, dv) -> Optional[Model]:
+def create_additive_nlme_model(
+    best_model_entry: ModelEntry, best_model_name: str, dv
+) -> Optional[Model]:
     is_combined = best_model_name.startswith("combined")
     is_power = best_model_name.startswith("power")
     if not (is_combined or is_power):
         return None
 
+    best_model = best_model_entry.model
     if is_combined:
         sigma_init = best_model.parameters['sigma_add'].init
     else:
@@ -383,14 +386,24 @@ def post_process(
         additive_model = create_additive_nlme_model(best_model_unfitted, selected_model_name, dv)
         models_to_fit = [best_model_unfitted]
         if additive_model is not None:
-            models_to_fit.append(additive_model)
+            models_to_fit.append(ModelEntry.create(model=additive_model))
 
         fit_wf = create_fit_workflow(modelentries=models_to_fit)
+        wb = WorkflowBuilder(fit_wf)
+
+        def _results(*mes):
+            return mes
+
+        task_results = Task('results', _results)
+        wb.add_task(task_results, predecessors=wb.output_tasks)
+        fit_wf = Workflow(wb)
         best_model_entries = context.call_workflow(fit_wf, f'fit{current_iteration}')
 
-        if isinstance(best_model_entries, ModelEntry):
-            if _is_significantly_better(best_model_entries, start_model_entry, strictness, cutoff):
-                return (res, best_model_entries, selected_model_name)
+        if len(best_model_entries) == 1:
+            if _is_significantly_better(
+                best_model_entries[0], start_model_entry, strictness, cutoff
+            ):
+                return (res, best_model_entries[0], selected_model_name)
         else:
             me1 = best_model_entries[0]
             me2 = best_model_entries[1]
