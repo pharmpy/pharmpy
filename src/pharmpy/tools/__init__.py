@@ -3,6 +3,7 @@ from threading import Lock
 __all__ = (
     'broadcast_log',  # pyright: ignore [reportUnsupportedDunderAll]
     'create_report',  # pyright: ignore [reportUnsupportedDunderAll]
+    'export_model_files',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
     'open_context',  # pyright: ignore [reportUnsupportedDunderAll]
     'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -66,6 +67,7 @@ _not_wrapped = {
         'retrieve_model',
         'retrieve_modelfit_results',
         'list_models',
+        'export_model_files',
     ),
 }
 

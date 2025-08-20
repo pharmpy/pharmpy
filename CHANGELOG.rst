@@ -7,6 +7,7 @@ New features
 * Support additive error model in ruvsearch
 * Automatically set PD in $SIZES for NONMEM models when needed
 * Automatically add a dummy DV column in NONMEM if needed. This will make it possible to do simulations in NONMEM without having a DV in the dataset.
+* Add :code:`modeling.export_model_files`
 
 Bugfixes
 ========

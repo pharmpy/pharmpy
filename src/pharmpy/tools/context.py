@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 from typing import Optional, Union
 
@@ -6,6 +7,7 @@ from pharmpy.model import Model
 from pharmpy.workflows import ModelfitResults
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
+from pharmpy.workflows.contexts.baseclass import FINAL_MODEL_NAME, INPUT_MODEL_NAME
 
 
 def open_context(name: str, ref: Union[str, Path, None] = None):
@@ -191,3 +193,60 @@ def _get_model_names_recursive(context):
         subctx_names = _get_model_names_recursive(subctx)
         names += subctx_names
     return names
+
+
+def export_model_files(
+    context: Context, destination_path: Union[str, Path, None] = None, force: bool = False
+):
+    """Exports all model files to specified directory.
+
+    Will export all model files generated/related to the external software used. Files will be named with model
+    name (from context) and original suffix (e.g. model.ctl for modelsearch_run1 -> modelsearch_run1.ctl). If no
+    suffix, file will be named model name and original name (e.g. mytab for modelsearch_run1 ->
+    modelsearch_run1_mytab)
+
+    Parameters
+    ----------
+    context : Context
+        The context
+    destination_path : str, Path, None
+        Path to export model files to, None means current working directory
+    force : bool
+        Allow file overwrite (default is False)
+
+    Examples
+    --------
+    >>> from pharmpy.tools import export_model_files
+    >>> ctx = open_context("myrun")  # doctest: +SKIP
+    >>> export_model_files(ctx)  # doctest: +SKIP
+
+    """
+    destination_path = (
+        normalize_user_given_path(destination_path) if destination_path is not None else Path.cwd()
+    )
+    if destination_path.is_file():
+        raise ValueError(f'Cannot export files to `destination_path`: {destination_path} is a file')
+    if not destination_path.exists():
+        os.mkdir(destination_path)
+    db = context.model_database
+    model_files_map = dict()
+    for model_name in context.list_all_names():
+        if model_name in (INPUT_MODEL_NAME, FINAL_MODEL_NAME):
+            continue
+        key = context.retrieve_key(model_name)
+        copy_map = dict()
+        for file_name in db.list_all_files(key):
+            file = Path(file_name)
+            if file.suffix:
+                new_name = model_name + file.suffix
+            else:
+                new_name = model_name + '_' + file.name
+            dst = destination_path / new_name
+            if dst.exists() and force is not True:
+                raise ValueError(f'File {dst} already exists, aborting export')
+            copy_map[file_name] = dst
+        model_files_map[key] = copy_map
+
+    for model_key, copy_map in model_files_map.items():
+        for src, dst in copy_map.items():
+            db.retrieve_file(model_key, src, dst, force)
