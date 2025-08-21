@@ -8,6 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import (
     add_iiv,
+    add_iov,
     add_population_parameter,
     create_joint_distribution,
     fix_or_unfix_parameters,
@@ -16,6 +17,7 @@ from pharmpy.modeling import (
     get_omegas,
     get_sigmas,
     get_thetas,
+    map_eta_parameters,
     replace_fixed_thetas,
     set_initial_estimates,
     set_lower_bounds,
@@ -265,3 +267,55 @@ def test_replace_fixed_thetas(load_example_model_for_test):
     assert 'POP_CL' not in m2.parameters
     assert len(m2.statements) == len(model.statements) + 1
     assert m2.statements[0].symbol.name == 'POP_CL'
+
+
+@pytest.mark.parametrize(
+    'transform,keys,values,level,correct',
+    [
+        (lambda x: x, 'parameters', 'etas', 'iiv', {'CL': ['ETA_CL'], 'VC': ['ETA_VC']}),
+        (lambda x: x, 'etas', 'parameters', 'iiv', {'ETA_CL': ['CL'], 'ETA_VC': ['VC']}),
+        (lambda x: x, 'parameters', 'omegas', 'iiv', {'CL': ['IIV_CL'], 'VC': ['IIV_VC']}),
+        (lambda x: x, 'omegas', 'parameters', 'iiv', {'IIV_CL': ['CL'], 'IIV_VC': ['VC']}),
+        (lambda x: x, 'omegas', 'etas', 'iiv', {'IIV_CL': ['ETA_CL'], 'IIV_VC': ['ETA_VC']}),
+        (lambda x: x, 'etas', 'omegas', 'iiv', {'ETA_CL': ['IIV_CL'], 'ETA_VC': ['IIV_VC']}),
+        (lambda x: x, 'parameters', 'etas', 'iov', {}),
+        (lambda x: x, 'etas', 'parameters', 'iov', {}),
+        (lambda x: x, 'parameters', 'omegas', 'iov', {}),
+        (lambda x: x, 'omegas', 'parameters', 'iov', {}),
+        (lambda x: x, 'omegas', 'etas', 'iov', {}),
+        (lambda x: x, 'etas', 'omegas', 'iov', {}),
+        (
+            lambda x: add_iov(x, "FA1", "CL"),
+            'etas',
+            'omegas',
+            'iov',
+            {'ETA_IOV_1_1': ['OMEGA_IOV_1'], 'ETA_IOV_1_2': ['OMEGA_IOV_1']},
+        ),
+        (
+            lambda x: add_iov(x, "FA1", "CL"),
+            'omegas',
+            'etas',
+            'iov',
+            {'OMEGA_IOV_1': ['ETA_IOV_1_1', 'ETA_IOV_1_2']},
+        ),
+        (
+            lambda x: add_iov(x, "FA1", "CL"),
+            'parameters',
+            'etas',
+            'iov',
+            {'CL': ['ETA_IOV_1_1', 'ETA_IOV_1_2']},
+        ),
+        (
+            lambda x: add_iov(x, "FA1", "CL"),
+            'parameters',
+            'etas',
+            'iov',
+            {'CL': ['ETA_IOV_1_1', 'ETA_IOV_1_2']},
+        ),
+    ],
+)
+def test_map_eta_parameters(load_example_model_for_test, transform, keys, values, level, correct):
+    model = load_example_model_for_test("pheno")
+    model = transform(model)
+    d = map_eta_parameters(model, keys, values, level=level)
+    assert d == correct

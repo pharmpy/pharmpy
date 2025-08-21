@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Iterable, Optional, Union
+from typing import Iterable, Literal, Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.model import (
@@ -735,3 +735,116 @@ def replace_fixed_thetas(model: Model):
     )
     model = model.update_source()
     return model
+
+
+def map_eta_parameters(
+    model: Model,
+    keys: Literal['parameters', 'omegas', 'etas'],
+    values: Literal['parameters', 'omegas', 'etas'],
+    level: Literal['iiv', 'iov'] = 'iiv',
+) -> dict[str, list[str]]:
+    """Create a map with the connections from and to individual parameters, omegas and/or etas
+
+    The mapping will always be one to many.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    keys : str
+        What to map from. Either parameters, omegas or etas
+    values : str
+        What to map to. Either parameters, omegas or etas
+    level : str
+        Which variability level to consider. Either iiv or iov. iiv is the default.
+
+    Returns
+    -------
+    dict
+        A dictionary from parameters, omegas or etas to a list of connected parameters, omegas or etas.
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import map_eta_parameters, load_example_model
+    >>> model = load_example_model("pheno")
+    >>> map_eta_parameters(model, "parameters", "omegas")
+    {'CL': ['IIV_CL'], 'VC': ['IIV_VC']}
+    """
+
+    if keys == values:
+        raise ValueError("keys and values are the same in map_eta_parameters")
+    if level.lower() not in ('iiv', 'iov'):
+        raise ValueError(f"level can only be iiv or iov in map_eta_parameters. Was {level}")
+
+    def get_etas_and_omegas(model, level):
+        if level == 'iiv':
+            etas = model.random_variables.iiv
+        else:  # level == 'iov':
+            etas = model.random_variables.iov
+        omegas = [str(symbol) for symbol in etas.covariance_matrix.diagonal()]
+        eta_names = etas.names
+        return eta_names, omegas
+
+    def get_omega_to_eta(model, level):
+        eta_to_omega = get_eta_to_omega(model, level)
+        d = reverse_and_explode_dict(eta_to_omega)
+        return d
+
+    def get_eta_to_omega(model, level):
+        etas, omegas = get_etas_and_omegas(model, level)
+        d = {}
+        for eta, omega in zip(etas, omegas):
+            if eta in d:
+                d[eta].append(omega)
+            else:
+                d[eta] = [omega]
+        return d
+
+    def get_param_to_etas(model, level):
+        from .expressions import get_individual_parameters, get_parameter_rv
+
+        indpars = get_individual_parameters(model, level=level)
+        d = {param: get_parameter_rv(model, param, var_type=level) for param in indpars}
+        return d
+
+    def get_param_to_omegas(model, level):
+        param_to_etas = get_param_to_etas(model, level)
+        eta_to_omega = get_eta_to_omega(model, level)
+        d = {}
+        for param, eta in param_to_etas.items():
+            a = []
+            for e in eta:
+                a.extend(eta_to_omega[e])
+            d[param] = a
+        return d
+
+    def reverse_and_explode_dict(d):
+        new = {}
+        for key, value in d.items():
+            for e in value:
+                if e in new:
+                    new[e].append(key)
+                else:
+                    new[e] = [key]
+        return new
+
+    if keys == 'parameters' and values == 'etas':
+        d = get_param_to_etas(model, level)
+    elif keys == 'parameters' and values == 'omegas':
+        d = get_param_to_omegas(model, level)
+    elif keys == 'etas' and values == 'parameters':
+        param_to_etas = get_param_to_etas(model, level)
+        d = reverse_and_explode_dict(param_to_etas)
+    elif keys == 'omegas' and values == 'parameters':
+        param_to_omegas = get_param_to_omegas(model, level)
+        d = reverse_and_explode_dict(param_to_omegas)
+    elif keys == 'omegas' and values == 'etas':
+        d = get_omega_to_eta(model, level)
+    elif keys == 'etas' and values == 'omegas':
+        d = get_eta_to_omega(model, level)
+    else:
+        raise ValueError(
+            f"Bad combination of values and keys to map_eta_parameters. "
+            f"(keys={keys} and values={values})"
+        )
+    return d
