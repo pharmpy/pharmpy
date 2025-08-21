@@ -65,7 +65,11 @@ class Matrix:
         return self._m.cols
 
     def diagonal(self) -> Matrix:
-        return Matrix(sympy.sympify(self._m).diagonal())
+        M = sympy.sympify(self._m)
+        if len(M) == 0:
+            return Matrix([])
+        else:
+            return Matrix(sympy.sympify(self._m).diagonal())
 
     def serialize(self) -> str:
         return sympy.srepr(sympy.sympify(self._m))
