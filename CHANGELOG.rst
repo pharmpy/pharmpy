@@ -15,7 +15,8 @@ Bugfixes
 * Fix crash when updating $THETA with some changes to a record of multiple theta parameters
 * Fix crash in creating plots using residuals or predictions
 * Fix crash when reading NONMEM model with $PK, but no dosing column in the dataset
-* Fix crash when reading NONMEM model with $PK and no event, MDV or dose column in the dataset 
+* Fix crash when reading NONMEM model with $PK and no event, MDV or dose column in the dataset
+* Fix incorrect condition number calculation in strictness evaluation (now uses the correlation matrix instead of covariance matrix)
 
 .. _1.8.0:
 

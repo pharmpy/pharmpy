@@ -325,9 +325,15 @@ class BooleanExpr:
         return symbs
 
     @property
-    def args(self) -> tuple[Expr, ...]:
-        args = [Expr(a) for a in self._expr.args]
-        return tuple(args)
+    def args(self) -> tuple[Union[BooleanExpr, Expr], ...]:
+        args = tuple(
+            BooleanExpr(a) if len(self._expr.args) > 1 else Expr(a) for a in self._expr.args
+        )
+        return args
+
+    def subs(self, d: Mapping[TBooleanExpr | TExpr, TBooleanExpr | TExpr]) -> BooleanExpr:
+        expr = self._expr.subs(d)  # pyright: ignore [reportCallIssue,reportArgumentType]
+        return BooleanExpr(expr)
 
     @property
     def lhs(self) -> Expr:
@@ -395,6 +401,15 @@ class BooleanExpr:
 
     def __repr__(self) -> str:
         return repr(self._expr)
+
+    def is_true(self):
+        return self._expr == sympy.true
+
+    def is_false(self):
+        return self._expr == sympy.false
+
+    def is_indeterminate(self):
+        return not self.is_true() and not self.is_false()
 
 
 # Type hint for public functions taking an expression as input

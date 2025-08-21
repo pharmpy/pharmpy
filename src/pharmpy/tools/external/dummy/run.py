@@ -6,7 +6,7 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Parameters, SimulationStep
+from pharmpy.model import EstimationStep, Parameters, SimulationStep
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import create_rng, get_observations, write_csv, write_model
 from pharmpy.workflows import ModelEntry, SimulationResults
@@ -124,13 +124,29 @@ def create_dummy_modelfit_results(model, ref=None):
     params = list(map(lambda x: _get_param_init(x), list(model.parameters)))
     params = pd.Series(Parameters.create(params).inits)
 
-    rse = pd.Series(model.parameters.inits)
-    rse.iloc[:] = rng.uniform(-1, 1)
-    rse.name = 'RSE'
+    if any(
+        step.parameter_uncertainty_method is not None
+        for step in model.execution_steps
+        if isinstance(step, EstimationStep)
+    ):
+        rse = pd.Series(model.parameters.inits)
+        rse.iloc[:] = rng.uniform(-1, 1)
+        rse.name = 'RSE'
 
-    se = pd.Series(model.parameters.inits)
-    se.iloc[:] = rng.uniform(-1, 1)
-    se.name = 'SE'
+        se = pd.Series(model.parameters.inits)
+        se.iloc[:] = rng.uniform(-1, 1)
+        se.name = 'SE'
+
+        param_names = model.parameters.names
+        pes = pd.Series(_rand_array(1, len(param_names), rng), name='estimates')
+        pes.index = param_names
+        ses = pd.Series(_rand_array(1, len(param_names), rng), name='SE_sdcorr')
+        ses.index = param_names
+    else:
+        rse = pd.Series(np.nan, index=params.index, name="RSE")
+        se = pd.Series(np.nan, index=params.index, name="SE")
+        pes = pd.Series(np.nan, index=params.index, name="SE_sdcorr")
+        ses = pd.Series(np.nan, index=params.index, name="RSE_sdcorr")
 
     if obs is None:
         residuals = None
@@ -157,12 +173,6 @@ def create_dummy_modelfit_results(model, ref=None):
     cov_eta.index = eta_names
     iec = pd.Series([cov_eta] * n_id)
     iec.index = model.dataset[id_name].unique()
-
-    param_names = model.parameters.names
-    pes = pd.Series(_rand_array(1, len(param_names), rng), name='estimates')
-    pes.index = param_names
-    ses = pd.Series(_rand_array(1, len(param_names), rng), name='SE_sdcorr')
-    ses.index = param_names
 
     results_dict = {
         'parameter_estimates': params,

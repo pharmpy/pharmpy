@@ -9,6 +9,7 @@ from pharmpy.modeling import (
     has_first_order_absorption,
     has_seq_zo_fo_absorption,
     set_mixed_mm_fo_elimination,
+    set_name,
     set_peripheral_compartments,
     set_seq_zo_fo_absorption,
     set_zero_order_absorption,
@@ -32,6 +33,7 @@ from pharmpy.tools.modelsearch.tool import (
     categorize_model_entries,
     clear_description,
     create_base_model,
+    create_result_tables,
     create_workflow,
     filter_mfl_statements,
     validate_input,
@@ -417,6 +419,25 @@ def test_categorize_model_entries(load_model_for_test, testdata, model_entry_fac
 
     with pytest.raises(ValueError):
         categorize_model_entries(candidates)
+
+
+def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    funcs = [set_zero_order_absorption, add_peripheral_compartment, set_zero_order_elimination]
+
+    cands = [func(model_start) for func in funcs]
+    cands = [set_name(model, f'cand{i}') for i, model in enumerate(cands)]
+
+    candidate_entries = model_entry_factory(cands)
+    model_entries = [me_start] + candidate_entries
+    tables = create_result_tables(model_entries)
+
+    summary_models = tables['summary_models']
+    assert len(summary_models) == len(model_entries)
+    assert round(summary_models.loc[1, 'cand2']['ofv'], 5) == 12.48158
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):

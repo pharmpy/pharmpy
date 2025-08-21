@@ -19,6 +19,7 @@ from pharmpy.modeling import (
     read_model,
     remove_iiv,
     remove_iov,
+    set_initial_estimates,
     set_lower_bounds,
     set_seq_zo_fo_absorption,
     set_zero_order_absorption,
@@ -33,7 +34,9 @@ from pharmpy.tools.run import (
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
+    parse_search_space_rvs,
     rank_models,
+    rank_models_from_entries,
     read_modelfit_results,
     summarize_errors_from_entries,
     summarize_modelfit_results_from_entries,
@@ -75,6 +78,47 @@ def test_create_metadata_tool(tmp_path, testdata, load_model_for_test, kwargs):
         assert 'key' in metadata['tool_options']['model']
         assert metadata['tool_options']['rank_type'] == 'bic'
         assert metadata['tool_options']['algorithm'] == 'exhaustive'
+
+
+def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_test):
+    with chdir(tmp_path):
+        tool_name = 'modelrank'
+        database = LocalDirectoryContext(tool_name)
+        tool = import_tool(tool_name)
+        model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+        results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+
+        models = [set_initial_estimates(model, {'TVCL': float(i)}) for i in range(5)]
+
+        kwargs = {
+            'models': [model] + models,
+            'results': [results] * 6,
+            'ref_model': model,
+        }
+        metadata = _create_metadata_tool(
+            database=database,
+            tool_name=tool_name,
+            tool_func=tool.create_workflow,
+            args=tuple(),
+            kwargs=kwargs,
+        )
+
+        rundir = tmp_path / 'modelrank'
+
+        assert (rundir / 'models').exists()
+
+        assert metadata['tool_options']['ref_model']['__class__'] == 'Model'
+        assert 'key' in metadata['tool_options']['ref_model']
+
+        assert isinstance(metadata['tool_options']['models'], list)
+        assert len(metadata['tool_options']['models']) == len(models) + 1
+        assert metadata['tool_options']['models'][0]['__class__'] == 'Model'
+        assert 'key' in metadata['tool_options']['models'][0]
+
+        assert isinstance(metadata['tool_options']['results'], list)
+        assert len(metadata['tool_options']['results']) == len(models) + 1
+        assert metadata['tool_options']['results'][0]['__class__'] == 'ModelfitResults'
+        assert 'key' in metadata['tool_options']['results'][0]
 
 
 def test_create_metadata_tool_not_raises(tmp_path, testdata, load_model_for_test):
@@ -198,6 +242,14 @@ def test_rank_models(
     assert list(best_models) == best_model_names
     ranked_models = df.dropna().index.values
     assert len(ranked_models) == no_of_ranked_models
+
+    me_base = ModelEntry.create(base, modelfit_results=base_res)
+    me_models = [
+        ModelEntry.create(model, modelfit_results=res) for model, res in zip(models, models_res)
+    ]
+    df_from_entries = rank_models_from_entries(me_base, me_models, **kwargs)
+
+    assert df_from_entries.equals(df)
 
 
 @pytest.mark.parametrize(
@@ -427,12 +479,12 @@ def test_load_example_modelfit_results():
         (
             'nonmem/pheno_real.mod',
             'condition_number < 1000',
-            False,
+            True,
         ),
         (
             'nonmem/pheno_real.mod',
-            'condition_number < 300000',
-            True,
+            'condition_number < 3',
+            False,
         ),
         (
             'nonmem/modelfit_results/onePROB/oneEST/noSIM/maxeval3.mod',
@@ -538,22 +590,22 @@ def test_strictness_parameters(testdata):
         ),
         (
             [split_joint_distribution],
-            ['iiv_diag'],
-            {'base_model': None},
+            'IIV?([CL,VC,MAT],exp)',
+            {},
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [4.39, 2.20],
         ),
         (
             [create_joint_distribution],
-            ['iiv_diag', 'iiv_block'],
-            {'base_model': None},
+            'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
+            {},
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [6.59, 2.20],
         ),
         (
             [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
-            ['iiv_diag', 'iiv_block'],
-            {'base_model': None},
+            'IIV?([CL,VC,MAT,VP1,QP1],exp);COV?([CL,VC,MAT,VP1,QP1])',
+            {},
             [
                 partial(remove_iiv, to_remove=['ETA_VP1']),
                 partial(remove_iiv, to_remove=['ETA_QP1']),
@@ -562,8 +614,8 @@ def test_strictness_parameters(testdata):
         ),
         (
             [add_lag_time, add_pk_iiv, create_joint_distribution],
-            ['iiv_diag', 'iiv_block'],
-            {'keep': ['ETA_CL'], 'base_model': None},
+            'IIV([CL],exp);IIV?([VC,MAT,MDT],exp);COV?([CL,VC,MAT,MDT])',
+            {},
             [
                 partial(remove_iiv, to_remove=['ETA_MDT']),
                 partial(split_joint_distribution, rvs=['ETA_MAT']),
@@ -572,8 +624,8 @@ def test_strictness_parameters(testdata):
         ),
         (
             [partial(add_iov, occ='FA1')],
-            ['iov'],
-            {'base_model': None},
+            'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])',
+            {},
             [partial(remove_iov, to_remove='ETA_IOV_1_1'), partial(remove_iiv, to_remove='ETA_CL')],
             [4.39, 4.39],
         ),
@@ -601,15 +653,15 @@ def test_strictness_parameters(testdata):
         ),
         (
             [create_joint_distribution],
-            ['iiv_diag', 'iiv_block'],
-            {'base_model': None, 'E_p': 1.5},
+            'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
+            {'E_p': 1.5},
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [4.97, 1.39],
         ),
         (
             [create_joint_distribution],
-            ['iiv_diag', 'iiv_block'],
-            {'base_model': None, 'E_p': '50%'},
+            'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
+            {'E_p': '50%'},
             [partial(remove_iiv, to_remove=['ETA_CL']), partial(remove_iiv, to_remove=['ETA_VC'])],
             [4.97, 1.39],
         ),
@@ -636,47 +688,25 @@ def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_func
             'E-values cannot be 0',
         ),
         (
-            {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'base_model': None},
-            'Cannot provide both `search_space` and `base_model`',
-        ),
-        (
             {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': None},
             'Missing value for `E_p`',
-        ),
-        (
-            {'search_space': ['iiv_diag', 'x']},
-            'Unknown `search_space`: x',
-        ),
-        (
-            {'search_space': ['iiv_block', 'iov']},
-            'Incorrect `search_space`: `iiv_block` and `iov`',
-        ),
-        (
-            {'search_space': ['iiv_block'], 'E_q': None},
-            'Missing value for `E_q`',
-        ),
-        (
-            {'search_space': ['iiv_diag'], 'E_p': None},
-            'Missing value for `E_p`',
-        ),
-        (
-            {'search_space': ['iiv_diag']},
-            'Missing `base_model`:',
         ),
         (
             {'search_space': 'ABSORPTION([FO,SEQ-ZO-FO])', 'E_p': 10},
             '`E_p` cannot be bigger than `p`',
         ),
         (
-            {'search_space': ['iiv_block'], 'E_q': 10, 'base_model': None},
+            {'search_space': 'COV?([CL,VC,MAT])', 'E_p': None, 'E_q': None},
+            'Missing values for `E_p` and `E_q`',
+        ),
+        (
+            {'search_space': 'COV?([CL,VC,MAT])', 'E_q': 10},
             '`E_q` cannot be bigger than `q`',
         ),
     ],
 )
 def test_mbic_penalty_raises(testdata, kwargs, error):
     model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
-    if 'base_model' in kwargs.keys():
-        kwargs['base_model'] = model
     with pytest.raises(ValueError, match=error):
         calculate_mbic_penalty(model, **kwargs)
 
@@ -784,10 +814,10 @@ def test_get_mbic_penalty_parameters_mfl(
         'k_q_expected',
     ),
     [
-        ([], {'search_space': ['iiv_diag']}, [], 3, 3, 0, 0),
+        ([], {'search_space': 'IIV?([CL,VC,MAT],exp)'}, [], 3, 3, 0, 0),
         (
             [],
-            {'search_space': ['iiv_diag']},
+            {'search_space': 'IIV?([CL,VC,MAT],exp)'},
             [partial(remove_iiv, to_remove=['ETA_CL'])],
             3,
             2,
@@ -796,28 +826,44 @@ def test_get_mbic_penalty_parameters_mfl(
         ),
         (
             [split_joint_distribution],
-            {'search_space': ['iiv_diag']},
+            {'search_space': 'IIV?([CL,VC,MAT],exp)'},
             [partial(remove_iiv, to_remove=['ETA_CL'])],
             3,
             2,
             0,
             0,
         ),
-        ([], {'search_space': ['iiv_diag'], 'keep': ['CL']}, [], 2, 2, 0, 0),
-        ([create_joint_distribution], {'search_space': ['iiv_block']}, [], 0, 0, 3, 3),
+        ([], {'search_space': 'IIV([CL],exp);IIV?([VC,MAT],exp)'}, [], 2, 2, 0, 0),
         (
             [create_joint_distribution],
-            {'search_space': ['iiv_block']},
+            {'search_space': 'IIV([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
+            [],
+            0,
+            0,
+            3,
+            3,
+        ),
+        (
+            [create_joint_distribution],
+            {'search_space': 'IIV([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
             [partial(remove_iiv, to_remove=['ETA_CL'])],
             0,
             0,
             3,
             1,
         ),
-        ([create_joint_distribution], {'search_space': ['iiv_diag', 'iiv_block']}, [], 3, 3, 3, 3),
         (
             [create_joint_distribution],
-            {'search_space': ['iiv_diag', 'iiv_block']},
+            {'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
+            [],
+            3,
+            3,
+            3,
+            3,
+        ),
+        (
+            [create_joint_distribution],
+            {'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
             [partial(remove_iiv, to_remove=['ETA_CL'])],
             3,
             2,
@@ -826,7 +872,7 @@ def test_get_mbic_penalty_parameters_mfl(
         ),
         (
             [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
-            {'search_space': ['iiv_diag', 'iiv_block']},
+            {'search_space': 'IIV?([CL,VC,MAT,VP1,QP1],exp);COV?([CL,VC,MAT,VP1,QP1])'},
             [
                 partial(remove_iiv, to_remove=['ETA_VP1']),
                 partial(remove_iiv, to_remove=['ETA_QP1']),
@@ -838,7 +884,7 @@ def test_get_mbic_penalty_parameters_mfl(
         ),
         (
             [add_lag_time, add_pk_iiv, create_joint_distribution],
-            {'search_space': ['iiv_diag', 'iiv_block'], 'keep': ['ETA_CL']},
+            {'search_space': 'IIV([CL],exp);IIV?([VC,MAT,MDT],exp);COV?([CL,VC,MAT,MDT])'},
             [
                 partial(remove_iiv, to_remove=['ETA_MDT']),
                 partial(split_joint_distribution, rvs=['ETA_MAT']),
@@ -850,28 +896,34 @@ def test_get_mbic_penalty_parameters_mfl(
         ),
         (
             [partial(fix_parameters, parameter_names='IIV_MAT')],
-            {'search_space': ['iiv_diag']},
+            {'search_space': 'IIV([MAT],exp);IIV?([CL,VC],exp)'},
             [],
             2,
             2,
             0,
             0,
         ),
-        ([], {'search_space': ['iiv_diag']}, [], 3, 3, 0, 0),
-        ([partial(add_iov, occ='FA1')], {'search_space': ['iov']}, [], 3, 3, 0, 0),
         (
             [partial(add_iov, occ='FA1')],
-            {'search_space': ['iov']},
+            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
+            [],
+            3,
+            3,
+            0,
+            0,
+        ),
+        (
+            [partial(add_iov, occ='FA1')],
+            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
             [partial(remove_iiv, to_remove=['ETA_CL'])],
             3,
             3,
             0,
             0,
         ),
-        ([partial(add_iov, occ='FA1')], {'search_space': ['iov']}, [], 3, 3, 0, 0),
         (
             [partial(add_iov, occ='FA1')],
-            {'search_space': ['iov']},
+            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
             [
                 partial(remove_iov, to_remove='ETA_IOV_1_1'),
             ],
@@ -898,5 +950,25 @@ def test_get_mbic_penalty_parameters_rvs(
     candidate = base_model
     for func in candidate_funcs:
         candidate = func(candidate)
-    p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate, **kwargs)
+    p, k_p, q, k_q = get_penalty_parameters_rvs(candidate, **kwargs)
     assert (p, k_p, q, k_q) == (p_expected, k_p_expected, q_expected, k_q_expected)
+
+
+@pytest.mark.parametrize(
+    'search_space, iiv_params, iov_params, cov_params',
+    [
+        ('IIV(CL,exp)', [], [], []),
+        ('IIV?(CL,exp)', ['CL'], [], []),
+        ('IIV?([CL,VC,MAT],exp)', ['CL', 'VC', 'MAT'], [], []),
+        ('IIV(CL,exp);IIV?(VC,exp)', ['VC'], [], []),
+        ('IIV?([CL,VC,MAT],exp)', ['CL', 'VC', 'MAT'], [], []),
+        ('IOV?([CL,VC,MAT])', [], ['CL', 'VC', 'MAT'], []),
+        ('IIV?([CL,VC,MAT],exp);IOV?([CL,VC])', ['CL', 'VC', 'MAT'], ['CL', 'VC'], []),
+        ('IIV?(CL,exp);IIV?(VC,exp)', ['CL', 'VC'], [], []),
+        ('IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])', ['CL', 'VC', 'MAT'], [], ['CL', 'VC', 'MAT']),
+        ('IIV?([CL,VC,MAT],exp);COV?([CL,VC])', ['CL', 'VC', 'MAT'], [], ['CL', 'VC']),
+        ('IIV([CL,VC,MAT],exp);COV?([CL,VC,MAT])', [], [], ['CL', 'VC', 'MAT']),
+    ],
+)
+def test_parse_search_space_rvs(search_space, iiv_params, iov_params, cov_params):
+    assert parse_search_space_rvs(search_space) == (iiv_params, iov_params, cov_params)

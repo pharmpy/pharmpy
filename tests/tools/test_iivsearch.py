@@ -31,13 +31,16 @@ from pharmpy.tools.iivsearch.algorithms import (
 )
 from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
+    categorize_model_entries,
     create_param_mapping,
     create_workflow,
-    get_mbic_penalties,
+    flatten_list,
+    get_mbic_search_space,
     get_ref_model,
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
+    update_input_model_description,
     update_linearized_base_model,
     validate_input,
 )
@@ -177,6 +180,51 @@ def test_add_iiv(load_model_for_test, testdata, iiv_strategy, linearize, no_of_a
         len(model_iiv.parameters.nonfixed) - len(model_input.parameters.nonfixed)
         == no_of_added_params
     )
+
+
+def test_flatten_list():
+    assert flatten_list([['x'], 'y', [['z']]]) == ['x', 'y', 'z']
+
+
+@pytest.mark.parametrize(
+    'algorithm, base_model_name',
+    [
+        ('td_exhaustive_no_of_etas', 'pheno'),
+        ('bu_stepwise_no_of_etas', 'model_2'),
+    ],
+)
+def test_categorize_model_entries(
+    load_model_for_test, testdata, model_entry_factory, algorithm, base_model_name
+):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    model_start = add_peripheral_compartment(model_start)
+    model_start = add_pk_iiv(model_start)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    model_1 = remove_iiv(model_start, 'QP1')
+    model_1 = model_1.replace(name='model_1')
+    model_2 = remove_iiv(model_1, 'VP1')
+    model_2 = model_2.replace(name='model_2')
+
+    candidate_entries = model_entry_factory([model_1, model_2])
+    model_entries = [me_start] + candidate_entries
+
+    base_model_entry, res_model_entries = categorize_model_entries(model_entries, algorithm)
+
+    assert len(res_model_entries) == 2
+    assert base_model_entry.model.name == base_model_name
+
+
+def test_update_input_model_description(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    model_start = add_peripheral_compartment(model_start)
+    model_start = add_pk_iiv(model_start)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    me = update_input_model_description(me_start)
+    assert me.model.description == '[CL]+[V1]+[QP1]+[VP1]'
 
 
 @pytest.mark.parametrize(
@@ -529,24 +577,34 @@ def test_get_ref_model(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'as_fullblock, penalties_ref',
+    'funcs, kwargs, search_space',
     [
+        ([], {'keep': [], 'E_p': 1, 'E_q': None}, 'IIV?([CL,MAT,VC],exp)'),
+        ([], {'keep': [], 'E_p': 1, 'E_q': 1}, 'IIV?([CL,MAT,VC],exp);COV?([CL,MAT,VC])'),
+        ([], {'keep': [], 'E_p': None, 'E_q': 1}, 'IIV([CL,MAT,VC],exp);COV?([CL,MAT,VC])'),
+        ([], {'keep': ['CL'], 'E_p': 1, 'E_q': None}, 'IIV([CL],exp);IIV?([MAT,VC],exp)'),
         (
-            False,
-            [2.77, 1.39, 0],
+            [],
+            {'keep': ['CL'], 'E_p': 1, 'E_q': 1},
+            'IIV([CL],exp);IIV?([MAT,VC],exp);COV?([CL,MAT,VC])',
         ),
-        (True, [9.36, 3.58, 0]),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            {'keep': [], 'E_p': 1, 'E_q': 1},
+            'IIV?([CL,MAT,QP1,VC,VP1],exp);COV?([CL,MAT,QP1,VC,VP1])',
+        ),
+        (
+            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
+            {'keep': ['CL'], 'E_p': 1, 'E_q': 1},
+            'IIV([CL],exp);IIV?([MAT,QP1,VC,VP1],exp);COV?([CL,MAT,QP1,VC,VP1])',
+        ),
     ],
 )
-def test_get_mbic_penalties(load_model_for_test, testdata, as_fullblock, penalties_ref):
-    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    if as_fullblock:
-        model_base = create_joint_distribution(model_base)
-    cand1 = remove_iiv(model_base, 'VC')
-    cand2 = remove_iiv(model_base, ['VC', 'MAT'])
-
-    penalties = get_mbic_penalties(model_base, [model_base, cand1, cand2], ['CL'], E_p=1, E_q=1)
-    assert [round(p, 2) for p in penalties] == penalties_ref
+def test_get_mbic_search_space(load_model_for_test, testdata, funcs, kwargs, search_space):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+    assert get_mbic_search_space(model, **kwargs) == search_space
 
 
 @pytest.mark.parametrize(

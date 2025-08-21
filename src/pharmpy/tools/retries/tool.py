@@ -1,4 +1,4 @@
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Literal, Optional
 
 from pharmpy.deps import pandas as pd
@@ -12,9 +12,17 @@ from pharmpy.modeling import (
     sample_parameters_uniformly,
     set_initial_estimates,
 )
-from pharmpy.tools.common import ToolResults, create_results
+from pharmpy.tools.common import (
+    ToolResults,
+    create_plots,
+    table_final_eta_shrinkage,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    run_subtool,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -202,39 +210,60 @@ def task_results(context, strictness, retries):
             retry_runs.append(r)
         else:
             raise ValueError(f'Unknown type ({type(r)}) found when summarizing results.')
-    res_models = [r.modelentry for r in retry_runs]
     results_to_summarize = [input_model_entry] + [r.modelentry for r in retry_runs]
     rank_type = "ofv"
     cutoff = None
 
-    summary_models = summarize_modelfit_results_from_entries(results_to_summarize)
-    summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
-    summary_models = summary_models.reset_index().set_index(['step', 'model'])
+    models_to_rank = [me.model for me in results_to_summarize]
+    results_to_rank = [me.modelfit_results for me in results_to_summarize]
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else me.model.name for me in results_to_summarize
+    }
 
-    res = create_results(
-        RetriesResults,
-        input_model_entry,
-        input_model_entry,
-        res_models,
-        rank_type,
-        cutoff,
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models_to_rank,
+        results=results_to_rank,
+        ref_model=input_model_entry.model,
+        rank_type=rank_type,
+        cutoff=cutoff,
         strictness=strictness,
-        context=context,
-        summary_models=summary_models,
+        _parent_dict=parent_dict,
     )
 
-    res = replace(
-        res,
-        summary_tool=_modify_summary_tool(res.summary_tool, retry_runs),
+    summary_tool = _modify_summary_tool(rank_res.summary_tool, retry_runs)
+    tables = create_result_tables(results_to_summarize)
+    plots = create_plots(rank_res.final_model, rank_res.final_results)
+    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
+
+    res = RetriesResults(
+        summary_tool=summary_tool,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
+        final_model=rank_res.final_model,
+        final_results=rank_res.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
     )
 
-    final_model = res.final_model.replace(name="final")
-    # Create links to final model
-    context.store_final_model_entry(final_model)
+    context.store_final_model_entry(rank_res.final_model)
     context.log_info(f"Final model OFV: {res.final_results.ofv:.3f}")
     context.log_info("Finishing tool retries")
 
     return res
+
+
+def create_result_tables(model_entries):
+    summary_models = summarize_modelfit_results_from_entries(model_entries)
+    summary_models['step'] = [0] + [1] * (len(model_entries) - 1)
+    summary_models = summary_models.reset_index().set_index(['step', 'model'])
+    summary_errors = summarize_errors_from_entries(model_entries)
+    return {'summary_models': summary_models, 'summary_errors': summary_errors}
 
 
 def convert_to_posdef(model):

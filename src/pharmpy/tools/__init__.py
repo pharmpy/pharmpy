@@ -28,6 +28,7 @@ __all__ = (
     'run_iovsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_linearize',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelfit',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_modelrank',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_modelsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_retries',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_ruvsearch',  # pyright: ignore [reportUnsupportedDunderAll]

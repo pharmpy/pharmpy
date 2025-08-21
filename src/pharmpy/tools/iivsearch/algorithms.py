@@ -3,7 +3,6 @@ from typing import Optional
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
-from pharmpy.deps import numpy as np
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.model import Model, RandomVariables
@@ -15,7 +14,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
-from pharmpy.tools.run import calculate_mbic_penalty, get_rankval
+from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
 
@@ -77,8 +76,10 @@ def bu_stepwise_no_of_etas(
     input_model_entry=None,
     list_of_algorithms=None,
     rank_type=None,
+    cutoff=None,
     E_p=None,
     E_q=None,
+    parameter_uncertainty_method=None,
     keep=None,
     param_mapping=None,
     clearance_parameter="",
@@ -93,8 +94,10 @@ def bu_stepwise_no_of_etas(
         input_model_entry,
         list_of_algorithms,
         rank_type,
+        cutoff,
         E_p,
         E_q,
+        parameter_uncertainty_method,
         keep,
         param_mapping,
         clearance_parameter,
@@ -111,8 +114,10 @@ def stepwise_BU_algorithm(
     input_model_entry,
     list_of_algorithms,
     rank_type,
+    cutoff,
     E_p,
     E_q,
+    parameter_uncertainty_method,
     keep,
     param_mapping,
     clearance_parameter,
@@ -229,41 +234,61 @@ def stepwise_BU_algorithm(
         )
         all_modelentries.extend(new_candidate_modelentries)
         old_best_name = best_model_entry.model.name
-        for me in new_candidate_modelentries:
-            if rank_type == 'mbic':
-                rank_name = 'bic'
-            else:
-                rank_name = rank_type
-            rankval_me = get_rankval(
-                me.model, me.modelfit_results, strictness, rank_type=rank_name, bic_type='iiv'
-            )
-            rankval_best = get_rankval(
-                best_model_entry.model,
-                best_model_entry.modelfit_results,
-                strictness,
-                rank_type=rank_name,
-                bic_type='iiv',
-            )
-            if not np.isnan(rankval_me) and not np.isnan(rankval_best):
-                if rank_type == 'mbic':
-                    rankval_me += calculate_mbic_penalty(
-                        me.model, search_space, base_model=base_model, keep=keep, E_p=E_p, E_q=E_q
-                    )
-                    rankval_best += calculate_mbic_penalty(
-                        best_model_entry.model,
-                        search_space,
-                        base_model=base_model,
-                        keep=keep,
-                        E_p=E_p,
-                        E_q=E_q,
-                    )
-                if rankval_best > rankval_me:
-                    best_model_entry = me
-                    previous_removed = effect_dict[me.model.name]
+
+        # FIXME: remove once search space and parent dict are properly handled
+        from .tool import get_modelrank_opts
+
+        modelrank_opts = get_modelrank_opts(base_model, all_modelentries, rank_type, keep, E_p, E_q)
+        modelrank_opts.update(
+            {
+                'cutoff': cutoff,
+                'strictness': strictness,
+                'E': (E_p, E_q),
+                'parameter_uncertainty_method': parameter_uncertainty_method,
+            }
+        )
+
+        selected_model_entry = select_model_entry(
+            context, best_model_entry, new_candidate_modelentries, modelrank_opts
+        )
+        if selected_model_entry.model != best_model_entry.model:
+            best_model_entry = selected_model_entry
+            previous_removed = effect_dict[best_model_entry.model.name]
+
         if old_best_name == best_model_entry.model.name:
             return all_modelentries
 
     return all_modelentries
+
+
+def select_model_entry(context, base_model_entry, model_entries, modelrank_opts):
+    models_to_rank = [base_model_entry.model] + [me.model for me in model_entries]
+    results_to_rank = [base_model_entry.modelfit_results] + [
+        me.modelfit_results for me in model_entries
+    ]
+
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models_to_rank,
+        results=results_to_rank,
+        ref_model=base_model_entry.model,
+        rank_type=modelrank_opts['rank_type'],
+        cutoff=modelrank_opts['cutoff'],
+        strictness=modelrank_opts['strictness'],
+        search_space=modelrank_opts['search_space'],
+        E=modelrank_opts['E'],
+        parameter_uncertainty_method=modelrank_opts['parameter_uncertainty_method'],
+        _parent_dict=modelrank_opts['parent_dict'],
+    )
+    if rank_res.final_model and rank_res.final_model != base_model_entry.model:
+        mes_best = [me for me in model_entries if me.model == rank_res.final_model]
+        assert len(mes_best) == 1
+        selected_me = mes_best[0]
+    else:
+        selected_me = base_model_entry
+
+    return selected_me
 
 
 def td_exhaustive_block_structure(base_model, index_offset=0, param_mapping=None):

@@ -5,11 +5,21 @@ import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.tools.common import RANK_TYPES, ToolResults, create_results, update_initial_estimates
+from pharmpy.tools.common import (
+    RANK_TYPES,
+    ToolResults,
+    create_plots,
+    table_final_eta_shrinkage,
+    update_initial_estimates,
+)
 from pharmpy.tools.mfl.least_number_of_transformations import least_number_of_transformations
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    run_subtool,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -28,6 +38,7 @@ def create_workflow(
     cutoff: Optional[Union[float, int]] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     E: Optional[Union[float, str]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.
 
@@ -52,6 +63,9 @@ def create_workflow(
         Strictness criteria
     E : float
         Expected number of predictors (used for mBIC). Must be set when using mBIC
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -81,6 +95,7 @@ def create_workflow(
         model,
         strictness,
         E,
+        parameter_uncertainty_method,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -99,6 +114,7 @@ def start(
     model,
     strictness,
     E,
+    parameter_uncertainty_method,
 ):
     context.log_info("Starting tool modelsearch")
 
@@ -148,7 +164,7 @@ def start(
         cutoff,
         strictness,
         E,
-        context,
+        parameter_uncertainty_method,
     )
 
     # Filter the mfl_statements from base model attributes
@@ -180,17 +196,18 @@ def start(
 
     context.log_info(f"Starting algorithm '{algorithm}'")
     res = context.call_workflow(wb, 'run_candidate_models')
-    context.log_info(
-        f"Finished algorithm '{algorithm}'. Best model: "
-        f"{res.final_model.name}, OFV: {res.final_results.ofv:.3f}"
-    )
-
-    if res.final_model.name == model.name:
-        context.log_warning(
-            f'Worse {rank_type} in final model {res.final_model.name} '
-            f'than {model.name}, selecting input model'
+    if res.final_model:
+        context.log_info(
+            f"Finished algorithm '{algorithm}'. Best model: "
+            f"{res.final_model.name}, OFV: {res.final_results.ofv:.3f}"
         )
-    context.store_final_model_entry(res.final_model)
+
+        if res.final_model.name == model.name:
+            context.log_warning(
+                f'Worse {rank_type} in final model {res.final_model.name} '
+                f'than {model.name}, selecting input model'
+            )
+        context.store_final_model_entry(res.final_model)
 
     return res
 
@@ -241,34 +258,66 @@ def create_base_model(ss, allometry, model_or_model_entry):
     return ModelEntry.create(base, modelfit_results=None, parent=model)
 
 
-def post_process(mfl, rank_type, cutoff, strictness, E, context, *model_entries):
+def post_process(
+    context, mfl, rank_type, cutoff, strictness, E, parameter_uncertainty_method, *model_entries
+):
     input_model_entry, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
 
+    rank_type += '_mixed' if rank_type in ('bic', 'mbic') else ''
+
+    # FIXME: remove when parent dict is part of context
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else base_model_entry.model.name
+        for me in model_entries
+    }
+
+    models = [base_model_entry.model] + [me.model for me in res_model_entries]
+    results = [base_model_entry.modelfit_results] + [
+        me.modelfit_results for me in res_model_entries
+    ]
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=base_model_entry.model,
+        rank_type=rank_type,
+        cutoff=cutoff,
+        strictness=strictness,
+        search_space=mfl,
+        E=E,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        _parent_dict=parent_dict,
+    )
+
+    tables = create_result_tables(model_entries)
+    plots = create_plots(rank_res.final_model, rank_res.final_results)
+    eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
+
+    res = ModelSearchResults(
+        summary_tool=rank_res.summary_tool,
+        **tables,
+        final_model=rank_res.final_model,
+        final_results=rank_res.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
+    )
+
+    return res
+
+
+def create_result_tables(model_entries):
     summary_models = summarize_modelfit_results_from_entries(model_entries)
     summary_models['step'] = [0] + [1] * (len(summary_models) - 1)
     summary_models = summary_models.reset_index().set_index(['step', 'model'])
 
-    if rank_type == 'mbic':
-        penalties = [
-            calculate_mbic_penalty(me.model, mfl, E_p=E)
-            for me in [base_model_entry] + res_model_entries
-        ]
-    else:
-        penalties = None
+    summary_errors = summarize_errors_from_entries(model_entries)
 
-    res = create_results(
-        ModelSearchResults,
-        input_model_entry,
-        base_model_entry,
-        res_model_entries,
-        rank_type,
-        cutoff,
-        summary_models=summary_models,
-        strictness=strictness,
-        penalties=penalties,
-        context=context,
-    )
-    return res
+    return {'summary_models': summary_models, 'summary_errors': summary_errors}
 
 
 def categorize_model_entries(model_entries):
@@ -302,6 +351,7 @@ def validate_input(
     model,
     strictness,
     E,
+    parameter_uncertainty_method,
 ):
     if isinstance(search_space, str):
         try:
@@ -329,7 +379,11 @@ def validate_input(
                 f'Invalid `search_space`: allometric variable \'{covariate}\' not in dataset'
             )
 
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'

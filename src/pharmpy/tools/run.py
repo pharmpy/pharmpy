@@ -8,7 +8,9 @@ import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Union, get_type_hints
+from typing import Any, Optional, Union, get_args, get_origin, get_type_hints
+
+from lark import UnexpectedToken
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -16,15 +18,17 @@ import pharmpy.workflows.results
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
-from pharmpy.model import Model, RandomVariables
+from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_aic,
     calculate_bic,
     check_high_correlations,
     check_parameters_near_bounds,
     get_omegas,
+    get_parameter_rv,
     get_sigmas,
     get_thetas,
+    has_random_effect,
     read_model,
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
@@ -351,7 +355,8 @@ def _update_metadata(tool_metadata):
 
 def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
     if not name:
-        name = tool_name
+        name = _create_new_subcontext_name(ctx, tool_name)
+
     tool = import_tool(tool_name)
     subctx = ctx.create_subcontext(name)
 
@@ -456,24 +461,35 @@ def _parse_tool_options_from_json_metadata(
                 f'Cannot resume run because model argument "{model_key}" cannot be restored.'
             )
 
-        assert model_metadata['__class__'] == 'Model'
-        model_hash = model_metadata['key']
+        if isinstance(model_metadata, dict):
+            assert model_metadata['__class__'] == 'Model'
+            model_hashes = [model_metadata['key']]
+        else:
+            assert all(entry['__class__'] == 'Model' for entry in model_metadata)
+            model_hashes = [entry['key'] for entry in model_metadata]
 
-        try:
-            model = db.retrieve_model(model_hash)
-        except KeyError:
-            raise ValueError(
-                f'Cannot resume run because model argument "{model_key}" ({model_hash}) cannot be restored.'
-            )
+        models = []
+        for model_hash in model_hashes:
+            try:
+                models.append(db.retrieve_model(model_hash))
+            except KeyError:
+                raise ValueError(
+                    f'Cannot resume run because model argument "{model_key}" ({model_hash}) cannot be restored.'
+                )
+
         tool_options = tool_options.copy()
-        tool_options[model_key] = model
+        tool_options[model_key] = models[0] if isinstance(model_metadata, dict) else models
 
     # NOTE: Load results to memory
     for results_key in _results_param_keys(tool_params, tool_param_types):
         results_json = tool_options.get(results_key)
         if results_json is not None:
             tool_options = tool_options.copy()
-            tool_options[results_key] = db.retrieve_modelfit_results(results_json["key"])
+            if isinstance(results_json, dict):
+                results = db.retrieve_modelfit_results(results_json["key"])
+            else:
+                results = [db.retrieve_modelfit_results(res["key"]) for res in results_json]
+            tool_options[results_key] = results
 
     return tool_options
 
@@ -539,13 +555,13 @@ def _store_input_models(db, metadata, tool_params, kwargs):
     previous_arg = None
     for arg in tool_params.keys():
         current = kwargs.get(arg, None)
-        if isinstance(current, (Model, ModelfitResults)):
+        if _is_model_arg(current) or _is_results_arg(current):
             if previous is None:
                 previous = current
                 previous_arg = arg
             else:
-                previous_is_model = isinstance(previous, Model)
-                current_is_model = isinstance(current, Model)
+                previous_is_model = _is_model_arg(previous)
+                current_is_model = _is_model_arg(current)
                 if previous_is_model and not current_is_model:
                     _store_model_and_results(db, metadata, previous_arg, previous, arg, current)
                     previous = None
@@ -563,22 +579,51 @@ def _store_input_models(db, metadata, tool_params, kwargs):
         _store_model(db, metadata, previous_arg, previous)
 
 
+def _is_model_arg(model_or_list_of_models):
+    return isinstance(model_or_list_of_models, Model) or (
+        isinstance(model_or_list_of_models, list)
+        and len(model_or_list_of_models) > 0
+        and isinstance(model_or_list_of_models[0], Model)
+    )
+
+
+def _is_results_arg(results_or_list_of_results):
+    return isinstance(results_or_list_of_results, ModelfitResults) or (
+        isinstance(results_or_list_of_results, list)
+        and len(results_or_list_of_results) > 0
+        and isinstance(results_or_list_of_results[0], ModelfitResults)
+    )
+
+
 def _store_model_and_results(
-    db: ModelDatabase, metadata, model_arg: str, model: Model, results_arg, results: ModelfitResults
+    db: ModelDatabase,
+    metadata: dict,
+    model_arg: str,
+    model: Union[Model, list[Model]],
+    results_arg,
+    results: Union[ModelfitResults, list[ModelfitResults]],
 ):
-    me = ModelEntry.create(model=model, modelfit_results=results)
-    with db.transaction(me) as txn:
-        txn.store_model()
-        txn.store_modelfit_results()
-        dbkey = str(txn.key)
-        metadata['tool_options'][model_arg] = {
-            '__class__': 'Model',
-            'key': dbkey,
-        }
-        metadata['tool_options'][results_arg] = {
-            '__class__': 'ModelfitResults',
-            'key': dbkey,
-        }
+    list_of_models = [model] if isinstance(model, Model) else model
+    list_of_results = [results] if isinstance(results, ModelfitResults) else results
+
+    dbkeys = []
+    for m, res in zip(list_of_models, list_of_results):
+        me = ModelEntry.create(model=m, modelfit_results=res)
+        with db.transaction(me) as txn:
+            txn.store_model()
+            txn.store_modelfit_results()
+            dbkey = str(txn.key)
+            dbkeys.append(dbkey)
+
+    model_metadata = [{'__class__': 'Model', 'key': dbkey} for dbkey in dbkeys]
+    results_metadata = [{'__class__': 'ModelfitResults', 'key': dbkey} for dbkey in dbkeys]
+
+    metadata['tool_options'][model_arg] = (
+        model_metadata[0] if isinstance(model, Model) else model_metadata
+    )
+    metadata['tool_options'][results_arg] = (
+        results_metadata[0] if isinstance(results, ModelfitResults) else results_metadata
+    )
 
 
 def _store_model(db: ModelDatabase, metadata, arg: str, model: Model):
@@ -605,10 +650,14 @@ def _create_metadata_common(
 
 
 def _filter_params(kind, params, types):
+    if get_origin(kind) is Union:
+        kind = get_args(kind)
+    else:
+        kind = tuple()
     for i, param_key in enumerate(params):
         param = params[param_key]
         param_type = types.get(param_key)
-        if param_type in (kind, Optional[kind]):
+        if param_type in (*kind, *(Optional[k] for k in kind)):
             # NOTE: We do not handle *{param_key}, or **{param_key}
             assert param.kind != param.VAR_POSITIONAL
             assert param.kind != param.VAR_KEYWORD
@@ -616,12 +665,14 @@ def _filter_params(kind, params, types):
 
 
 def _input_model_param_keys(params, types):
-    for _, param_key in _filter_params(Model, params, types):
+    for _, param_key in _filter_params(Union[Model, list[Model]], params, types):
         yield param_key
 
 
 def _results_param_keys(params, types):
-    for _, param_key in _filter_params(ModelfitResults, params, types):
+    for _, param_key in _filter_params(
+        Union[ModelfitResults, list[ModelfitResults]], params, types
+    ):
         yield param_key
 
 
@@ -641,6 +692,16 @@ def _create_new_context_name(context: type[Context], tool_name: str) -> str:
     while True:
         name = f"{tool_name}{n}"
         if not context.exists(name):
+            break
+        n += 1
+    return name
+
+
+def _create_new_subcontext_name(context: Context, tool_name: str) -> str:
+    n = 1
+    while True:
+        name = f"{tool_name}{n}"
+        if name not in context.list_all_subcontexts():
             break
         n += 1
     return name
@@ -872,6 +933,40 @@ def summarize_errors_from_entries(mes: list[ModelEntry]):
         df = pd.DataFrame(columns=col_names, index=index)
 
     return df.sort_index()
+
+
+def rank_models_from_entries(
+    me_base: ModelEntry,
+    me_models: list[ModelEntry],
+    strictness: str = "minimization_successful",
+    rank_type: str = 'ofv',
+    cutoff: Optional[float] = None,
+    penalties: Optional[list[float]] = None,
+    **kwargs,
+) -> pd.DataFrame:
+    base_model, base_res = me_base.model, me_base.modelfit_results
+    parent_dict = {base_model.name: me_base.parent if me_base.parent else None}
+    models, models_res = [], []
+    for me in me_models:
+        models.append(me.model)
+        models_res.append(me.modelfit_results)
+        parent_dict[me.model.name] = me.parent.name if me.parent else None
+
+    if all(val is None for val in parent_dict.values()):
+        parent_dict = None
+
+    return rank_models(
+        base_model,
+        base_res,
+        models,
+        models_res,
+        parent_dict=parent_dict,
+        strictness=strictness,
+        rank_type=rank_type,
+        cutoff=cutoff,
+        penalties=penalties,
+        **kwargs,
+    )
 
 
 def rank_models(
@@ -1132,9 +1227,9 @@ def is_strictness_fulfilled(
             final_zero_gradient = 'final_zero_gradient' in results.warnings  # noqa
             estimate_near_boundary = 'estimate_near_boundary' in results.warnings  # noqa
             if 'condition_number' in args_in_statement:
-                if results.covariance_matrix is not None:
+                if results.correlation_matrix is not None:
                     condition_number = ArrayEvaluator(  # noqa
-                        [np.linalg.cond(results.covariance_matrix)]
+                        [np.linalg.cond(results.correlation_matrix)]
                     )
                 else:
                     raise ValueError("Could not calculate condition_number.")
@@ -1426,68 +1521,26 @@ def load_example_modelfit_results(name: str):
 def calculate_mbic_penalty(
     candidate_model: Model,
     search_space: Union[str, list[str], ModelFeatures],
-    base_model: Optional[Model] = None,
     E_p: Optional[Union[float, str]] = 1.0,
     E_q: Optional[Union[float, str]] = 1.0,
-    keep: Optional[list[str]] = None,
 ):
     if E_p == 0 or E_q == 0:
         raise ValueError('E-values cannot be 0')
-    if isinstance(search_space, str) or isinstance(search_space, ModelFeatures):
-        if base_model:
-            raise ValueError('Cannot provide both `search_space` and `base_model`')
+
+    if E_p is None and E_q is None:
+        raise ValueError('Missing values for `E_p` and `E_q`, either must be specified')
+
+    try:
+        search_space_mfl, cand_mfl = parse_search_space_modelsearch(candidate_model, search_space)
         if E_p is None:
             raise ValueError(
-                'Missing value for `E_p`, must be specified when using MFL in `search_space`'
+                'Missing value for `E_p`, must be specified when using structual MFL in `search_space`'
             )
-
-        cand_features = get_model_features(candidate_model)
-
-        if isinstance(search_space, str):
-            search_space_mfl = parse(search_space, mfl_class=True)
-        else:
-            search_space_mfl = search_space
-        cand_mfl = parse(cand_features, mfl_class=True)
-        # FIXME: Workaround to skip covariate effects detected in search space
-        cand_mfl = ModelFeatures.create(
-            absorption=cand_mfl.absorption,
-            elimination=cand_mfl.elimination,
-            transits=cand_mfl.transits,
-            peripherals=cand_mfl.peripherals,
-            lagtime=cand_mfl.lagtime,
-        )
-
         p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
-
         q = 0
         k_q = 0
-    if isinstance(search_space, list):
-        allowed_options = ['iiv_diag', 'iiv_block', 'iov']
-        for search_space_type in search_space:
-            if search_space_type not in allowed_options:
-                raise ValueError(
-                    f'Unknown `search_space`: {search_space_type} (must be one of {allowed_options})'
-                )
-        if 'iiv_block' in search_space:
-            if 'iov' in search_space:
-                raise ValueError(
-                    'Incorrect `search_space`: `iiv_block` and `iov` cannot be tested in same search space'
-                )
-            if E_q is None:
-                raise ValueError(
-                    'Missing value for `E_q`, must be specified when using `iiv_block` in `search_space`'
-                )
-        if 'iiv_diag' in search_space or 'iov' in search_space:
-            if E_p is None:
-                raise ValueError(
-                    'Missing value for `E_p`, must be specified when using `iiv_diag` or `iov` in `search_space`'
-                )
-        if not base_model:
-            raise ValueError(
-                'Missing `base_model`: reference model is needed to determine search space'
-            )
-
-        p, k_p, q, k_q = get_penalty_parameters_rvs(base_model, candidate_model, search_space, keep)
+    except UnexpectedToken:
+        p, k_p, q, k_q = get_penalty_parameters_rvs(candidate_model, search_space)
 
     # To avoid domain error
     p = p if k_p != 0 else 1
@@ -1509,6 +1562,25 @@ def _prepare_E_value(e, p, type='p'):
     if e > p:
         raise ValueError(f'`E_{type}` cannot be bigger than `{type}`: E_{type}={e}, {type}={p}')
     return e
+
+
+def parse_search_space_modelsearch(model, search_space):
+    if isinstance(search_space, str):
+        search_space_mfl = parse(search_space, mfl_class=True)
+    else:
+        search_space_mfl = search_space
+    cand_features = get_model_features(model)
+    cand_mfl = parse(cand_features, mfl_class=True)
+    # FIXME: Workaround to skip covariate effects detected in search space
+    cand_mfl = ModelFeatures.create(
+        absorption=cand_mfl.absorption,
+        elimination=cand_mfl.elimination,
+        transits=cand_mfl.transits,
+        peripherals=cand_mfl.peripherals,
+        lagtime=cand_mfl.lagtime,
+    )
+
+    return search_space_mfl, cand_mfl
 
 
 def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
@@ -1576,37 +1648,50 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
     return p, k_p
 
 
-def get_penalty_parameters_rvs(base_model, cand_model, search_space, keep=None):
-    base_etas = _get_var_params(base_model, search_space)
-    cand_etas = _get_var_params(cand_model, search_space)
-
-    p, k_p, q, k_q = 0, 0, 0, 0
-    if 'iiv_diag' in search_space or 'iov' in search_space:
-        p = len(base_etas.variance_parameters)
-        k_p = len(cand_etas.variance_parameters)
-        if keep:
-            p -= len(keep)
-            k_p -= len(keep)
-    if 'iiv_block' in search_space:
-        q = int(len(base_etas.variance_parameters) * (len(base_etas.variance_parameters) - 1) / 2)
-        cov_params = [
-            p for p in cand_etas.parameter_names if p not in cand_etas.variance_parameters
-        ]
-        k_q = len(cov_params)
+def get_penalty_parameters_rvs(cand_model, search_space):
+    iiv_params, iov_params, cov_params = parse_search_space_rvs(search_space)
+    p = len(iiv_params) + len(iov_params)
+    k_p = get_k_p(cand_model, iiv_params, 'iiv') + get_k_p(cand_model, iov_params, 'iov')
+    if cov_params:
+        q = int((len(cov_params) * (len(cov_params) - 1)) / 2)
+        k_q = get_k_q(cand_model, cov_params)
+    else:
+        q, k_q = 0, 0
 
     return p, k_p, q, k_q
 
 
-def _get_var_params(model, search_space):
-    etas = []
-    fixed_params = model.parameters.fixed.names
-    if any(s.startswith('iiv') for s in search_space):
-        iivs = model.random_variables.iiv
-        iivs_non_fixed = [iiv for iiv in iivs if set(iiv.parameter_names).isdisjoint(fixed_params)]
-        etas.extend(iivs_non_fixed)
-    if 'iov' in search_space:
-        iovs = model.random_variables.iov
-        iovs_non_fixed = [iov for iov in iovs if set(iov.parameter_names).isdisjoint(fixed_params)]
-        etas.extend(iovs_non_fixed)
+def parse_search_space_rvs(search_space):
+    iiv_params, iov_params, cov_params = [], [], []
+    for subexpr in search_space.split(';'):
+        assert subexpr.startswith('IIV') or subexpr.startswith('IOV') or subexpr.startswith('COV')
+        if '?' not in subexpr:
+            continue
+        if subexpr.startswith('COV'):
+            pattern = r'COV\?\(\[*([\w,]*)\]*\)'
+            params = re.match(pattern, subexpr).group(1).split(',')
+            cov_params.extend(params)
+        else:
+            if subexpr.startswith('IIV'):
+                pattern = r'IIV\?\(\[*([\w,]*)\]*,\w+\)'
+            else:
+                pattern = r'IOV\?\(\[*([\w,]*)\]*\)'
+            params = re.match(pattern, subexpr).group(1).split(',')
+            if subexpr.startswith('IIV'):
+                iiv_params.extend(params)
+            else:
+                iov_params.extend(params)
+    return iiv_params, iov_params, cov_params
 
-    return RandomVariables.create(etas)
+
+def get_k_p(model, params, level):
+    params = [p for p in params if has_random_effect(model, p, level)]
+    return len(params)
+
+
+def get_k_q(model, params):
+    param_rvs = [get_parameter_rv(model, p) for p in params]
+    param_rvs = [item for sublist in param_rvs for item in sublist]
+    rvs = model.random_variables[param_rvs]
+    cov_params = [p for p in rvs.parameter_names if p not in rvs.variance_parameters]
+    return len(cov_params)

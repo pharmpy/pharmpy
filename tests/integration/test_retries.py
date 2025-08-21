@@ -7,6 +7,7 @@ from pharmpy.modeling import (
     set_initial_estimates,
 )
 from pharmpy.tools import run_retries
+from pharmpy.tools.run import retrieve_models
 
 
 @pytest.mark.parametrize(
@@ -28,16 +29,18 @@ def test_retries(tmp_path, model_count, scale, start_modelres):
         # All candidate models + start model
         assert len(res.summary_tool) == 3
         assert len(res.summary_models) == 3
-        assert len(res.models) == 3
-        for model in res.models:
-            if model != start_modelres[0]:
-                is_within_fraction(start_modelres[0], start_modelres[1], model, scale, fraction)
+
         rundir = tmp_path / 'retries1'
         assert rundir.is_dir()
         assert model_count(rundir) == 2 + 2
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
+
+        models = retrieve_models(rundir)
+        for model in models:
+            if model != start_modelres[0]:
+                is_within_fraction(start_modelres[0], start_modelres[1], model, scale, fraction)
 
 
 def is_within_fraction(start_model, start_model_res, candidate_model, scale, fraction):

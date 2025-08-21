@@ -130,3 +130,6 @@ class ModelEntry(Immutable):
     def log(self):
         """Log of main model"""
         return self._log
+
+    def __repr__(self):
+        return f'<Pharmpy model entry object {self.model.name}>'

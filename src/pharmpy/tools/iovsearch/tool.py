@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Callable, Iterable, Literal, Optional, TypeVar, Union
 
 import pharmpy.tools.iivsearch.algorithms
@@ -10,17 +10,28 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
 from pharmpy.model import Assignment, Model, RandomVariables
-from pharmpy.modeling import add_iov, get_omegas, get_pk_parameters, remove_iiv, remove_iov
+from pharmpy.modeling import (
+    add_iov,
+    get_omegas,
+    get_pk_parameters,
+    get_rv_parameters,
+    remove_iiv,
+    remove_iov,
+)
 from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
-    create_results,
-    summarize_tool,
+    create_plots,
+    table_final_eta_shrinkage,
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    run_subtool,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -39,6 +50,7 @@ def create_workflow(
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     E: Optional[Union[float, str]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -63,6 +75,9 @@ def create_workflow(
         Strictness criteria
     E : float
         Expected number of predictors (used for mBIC). Must be set when using mBIC
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -83,7 +98,6 @@ def create_workflow(
     init_task = create_init(model, results)
     wb.add_task(init_task)
 
-    bic_type = 'random'
     search_task = Task(
         'search',
         task_brute_force_search,
@@ -91,9 +105,9 @@ def create_workflow(
         list_of_parameters,
         rank_type,
         cutoff,
-        bic_type,
         E,
         strictness,
+        parameter_uncertainty_method,
         distribution,
     )
 
@@ -103,11 +117,6 @@ def create_workflow(
     results_task = Task(
         'results',
         task_results,
-        rank_type,
-        cutoff,
-        bic_type,
-        E,
-        strictness,
     )
 
     wb.add_task(results_task, predecessors=search_output)
@@ -136,9 +145,9 @@ def task_brute_force_search(
     list_of_parameters: Union[None, list],
     rank_type: str,
     cutoff: Union[None, float],
-    bic_type: Union[None, str],
     E: Optional[float],
     strictness: str,
+    parameter_uncertainty_method: Optional[str],
     distribution: str,
     input_model_entry: ModelEntry,
 ):
@@ -178,24 +187,22 @@ def task_brute_force_search(
     )
     iov_candidate_entries = context.call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs')
 
-    if rank_type == "mbic":
-        ref = model_with_iov
-        penalties = [
-            calculate_mbic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
-            for me in [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
-        ]
+    if rank_type == 'mbic':
+        search_space = get_mbic_search_space(input_model, list_of_parameters)
     else:
-        penalties = None
+        search_space = None
 
     # NOTE: Keep the best candidate.
     best_model_entry_so_far = get_best_model(
+        context,
         input_model_entry,
         [model_with_iov_entry, *iov_candidate_entries],
         rank_type=rank_type,
-        penalties=penalties,
         cutoff=cutoff,
-        bic_type=bic_type,
+        search_space=search_space,
+        E=E,
         strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
     )
 
     current_step += 1
@@ -205,6 +212,7 @@ def task_brute_force_search(
 
     # NOTE: If no improvement with respect to input model, STOP.
     if best_model_entry_so_far.model is input_model:
+        step_mapping[-1] = best_model_entry_so_far.model.name
         return step_mapping, [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
 
     # NOTE: Remove IIV with corresponding IOVs. Test all subsets (~2^n).
@@ -225,6 +233,19 @@ def task_brute_force_search(
     iiv_candidate_entries = context.call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs')
     current_step += 1
     step_mapping[current_step] = [model_entry.model.name for model_entry in iiv_candidate_entries]
+    best_model_entry = get_best_model(
+        context,
+        best_model_entry_so_far,
+        list(iiv_candidate_entries),
+        rank_type=rank_type,
+        cutoff=cutoff,
+        strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        search_space=search_space,
+        E=E,
+    )
+
+    step_mapping[-1] = best_model_entry.model.name
 
     return step_mapping, [
         input_model_entry,
@@ -232,6 +253,14 @@ def task_brute_force_search(
         *iov_candidate_entries,
         *iiv_candidate_entries,
     ]
+
+
+def get_mbic_search_space(model, list_of_parameters):
+    params = [get_rv_parameters(model, p) for p in list_of_parameters]
+    params = _flatten_list(params)
+    params_str = ','.join(sorted(params))
+    search_space = f'IIV?([{params_str}],exp);IOV?([{params_str}])'
+    return search_space
 
 
 def prepare_list_of_parameters(input_model, list_of_parameters):
@@ -310,46 +339,102 @@ def wf_etas_removal(
 
 
 def get_best_model(
+    context,
     base_entry: ModelEntry,
     model_entries: list[ModelEntry],
     rank_type: str,
-    penalties: Union[None, list[float]],
     cutoff: Union[None, float],
-    bic_type: Union[None, str],
     strictness: str,
+    parameter_uncertainty_method: Optional[str] = None,
+    search_space: Optional[str] = None,
+    E: Optional[Union[float, str]] = None,
 ):
     candidate_entries = [base_entry, *model_entries]
-    df = summarize_tool(
-        model_entries,
-        base_entry,
+
+    models_to_rank = [me.model for me in candidate_entries]
+    results_to_rank = [me.modelfit_results for me in candidate_entries]
+
+    # FIXME: remove when parent dict is part of context
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else me.model.name for me in candidate_entries
+    }
+
+    rank_type = rank_type + '_random' if rank_type in ('bic', 'mbic') else rank_type
+
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models_to_rank,
+        results=results_to_rank,
+        ref_model=base_entry.model,
         rank_type=rank_type,
-        penalties=penalties,
         cutoff=cutoff,
-        bic_type=bic_type,
         strictness=strictness,
+        search_space=search_space,
+        E=E,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        _parent_dict=parent_dict,
     )
-    best_model_name = df['rank'].idxmin()
 
     try:
         return [
             model_entry
             for model_entry in candidate_entries
-            if model_entry.model.name == best_model_name
+            if model_entry.model == rank_res.final_model
         ][0]
     except IndexError:
         return base_entry
 
 
-def task_results(
-    context, rank_type, cutoff, bic_type, E, strictness, step_mapping_and_model_entries
-):
+def task_results(context, step_mapping_and_model_entries):
     step_mapping, (base_model_entry, *res_model_entries) = step_mapping_and_model_entries
 
-    model_dict = {
-        model_entry.model.name: model_entry
-        for model_entry in [base_model_entry] + res_model_entries
-    }
-    sum_mod, sum_tool = [], []
+    model_entries = [base_model_entry] + res_model_entries
+    model_dict = {model_entry.model.name: model_entry for model_entry in model_entries}
+
+    final_model_entry = model_dict[step_mapping.pop(-1)]
+    final_model, final_res = final_model_entry.model, final_model_entry.modelfit_results
+
+    summary_tool = create_summary_tool(context)
+    tables = create_results_tables(step_mapping, model_dict)
+    plots = create_plots(final_model, final_res)
+
+    res = IOVSearchResults(
+        summary_tool=summary_tool,
+        summary_models=tables['summary_models'],
+        summary_errors=tables['summary_errors'],
+        final_model=final_model,
+        final_results=final_res,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=table_final_eta_shrinkage(final_model, final_res),
+    )
+
+    final_model = res.final_model.replace(name="final")
+    context.store_final_model_entry(final_model)
+
+    context.log_info("Finishing tool iovsearch")
+    return res
+
+
+def create_summary_tool(context):
+    rank_ctx = [
+        context.get_subcontext(ctx_name)
+        for ctx_name in context.list_all_subcontexts()
+        if ctx_name.startswith('modelrank')
+    ]
+    rank_summaries = [ctx.retrieve_results().summary_tool for ctx in rank_ctx]
+
+    keys = list(range(1, len(rank_summaries) + 1))
+    summary_tool = _concat_summaries(rank_summaries, keys)
+    return summary_tool
+
+
+def create_results_tables(step_mapping, model_dict):
+    sum_mod = []
     for step, model_names in step_mapping.items():
         candidate_entries = [
             model_entry
@@ -358,52 +443,19 @@ def task_results(
         ]
         sum_mod_step = summarize_modelfit_results_from_entries(candidate_entries)
         sum_mod.append(sum_mod_step)
-        if step >= 1:
-            ref_model_entry = model_dict[candidate_entries[0].parent.name]
-            sum_tool_step = summarize_tool(
-                candidate_entries,
-                ref_model_entry,
-                rank_type=rank_type,
-                cutoff=cutoff,
-                bic_type=bic_type,
-                strictness=strictness,
-            )
-            sum_tool.append(sum_tool_step)
 
-    keys = list(range(1, len(step_mapping)))
+    keys = list(range(0, len(step_mapping)))
+    summary_models = _concat_summaries(sum_mod, keys=keys)
+    summary_errors = summarize_errors_from_entries(model_dict.values())
 
-    if rank_type == "mbic":
-        models = [me.model for me in [base_model_entry] + res_model_entries]
-        ref = sorted(models, key=lambda model: len(model.parameters), reverse=True)[0]
-        penalties = [
-            calculate_mbic_penalty(me.model, ['iov'], base_model=ref, E_p=E)
-            for me in [base_model_entry] + res_model_entries
-        ]
-    else:
-        penalties = None
+    return {
+        'summary_models': summary_models,
+        'summary_errors': summary_errors,
+    }
 
-    res = create_results(
-        IOVSearchResults,
-        base_model_entry,
-        base_model_entry,
-        res_model_entries,
-        rank_type,
-        cutoff,
-        bic_type=bic_type,
-        penalties=penalties,
-        summary_models=pd.concat(sum_mod, keys=[0] + keys, names=['step']),
-        strictness=strictness,
-        context=context,
-    )
 
-    # NOTE: This overwrites the default summary_tool field
-    res = replace(res, summary_tool=pd.concat(sum_tool, keys=keys, names=['step']))
-
-    final_model = res.final_model.replace(name="final")
-    context.store_final_model_entry(final_model)
-
-    context.log_info("Finisihing tool iovsearch")
-    return res
+def _concat_summaries(summaries, keys):
+    return pd.concat(summaries, keys=keys, names=['step'])
 
 
 @with_runtime_arguments_type_check
@@ -416,6 +468,7 @@ def validate_input(
     distribution,
     strictness,
     E,
+    parameter_uncertainty_method,
 ):
     if model is not None:
         if column not in model.datainfo.names:
@@ -433,7 +486,11 @@ def validate_input(
                     f'Invalid `list_of_parameters`: got `{list_of_parameters}`,'
                     f' must be NULL/None or a subset of {sorted(allowed_parameters)}.'
                 )
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'

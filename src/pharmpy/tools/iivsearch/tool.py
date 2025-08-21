@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import warnings
-from dataclasses import dataclass, replace
+from dataclasses import dataclass
 from typing import Iterable, Literal, Optional, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
@@ -15,6 +15,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     find_clearance_parameters,
     fix_parameters,
+    get_individual_parameters,
     has_random_effect,
     unfix_parameters,
 )
@@ -22,7 +23,6 @@ from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
     create_plots,
-    create_results,
     summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
@@ -30,7 +30,11 @@ from pharmpy.tools.common import (
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, get_eta_names
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import calculate_mbic_penalty, summarize_modelfit_results_from_entries
+from pharmpy.tools.run import (
+    run_subtool,
+    summarize_errors_from_entries,
+    summarize_modelfit_results_from_entries,
+)
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -65,6 +69,7 @@ def create_workflow(
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
     E_p: Optional[Union[float, str]] = None,
     E_q: Optional[Union[float, str]] = None,
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -98,6 +103,9 @@ def create_workflow(
     E_q : float
         Expected number of predictors for off-diagonal elements (used for mBIC). Must be set when using mBIC
         and when the argument `correlation_algorithm` is not `skip` or None
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -129,6 +137,7 @@ def create_workflow(
         cutoff,
         keep,
         strictness,
+        parameter_uncertainty_method,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -147,6 +156,7 @@ def create_step_workflow(
     cutoff,
     strictness,
     keep,
+    parameter_uncertainty_method,
     context,
 ):
     wb = WorkflowBuilder()
@@ -175,6 +185,7 @@ def create_step_workflow(
         E_p,
         E_q,
         keep,
+        parameter_uncertainty_method,
         context,
     )
 
@@ -291,6 +302,7 @@ def start(
     cutoff,
     keep,
     strictness,
+    parameter_uncertainty_method,
 ):
     context.log_info("Starting tool iivsearch")
     input_model, input_model_entry = prepare_input_model(input_model, input_res)
@@ -355,8 +367,10 @@ def start(
                 input_model_entry=input_model_entry,
                 list_of_algorithms=list_of_algorithms,
                 rank_type=rank_type,
+                cutoff=cutoff,
                 E_p=E_p,
                 E_q=E_q,
+                parameter_uncertainty_method=parameter_uncertainty_method,
                 keep=keep,
                 param_mapping=param_mapping,
                 clearance_parameter=clearance_parameter,
@@ -377,6 +391,7 @@ def start(
             cutoff=cutoff,
             strictness=strictness,
             keep=keep,
+            parameter_uncertainty_method=parameter_uncertainty_method,
             context=context,
         )
         context.log_info(f"Starting step '{algorithm_cur}'")
@@ -460,27 +475,34 @@ def start(
     # NOTE: Compute final final model
     final_final_model = last_res.final_model
     if input_res and final_res:
-        if rank_type == 'mbic':
-            penalties = get_mbic_penalties(
-                base_model,
-                [input_model, final_model],
-                keep=keep,
-                E_p=E_p,
-                E_q=E_q,
-            )
-        else:
-            penalties = None
-        summary_final_step = summarize_tool(
-            [final_model_entry],
-            input_model_entry,
+        context.log_info('Comparing final model to input model')
+        # FIXME: remove once search space and parent dict are properly handled
+        modelrank_opts = get_modelrank_opts(
+            _get_full_model([base_model]),
+            [input_model_entry, final_model_entry],
             rank_type,
-            cutoff=cutoff,
-            bic_type='iiv',
-            strictness=strictness,
-            penalties=penalties,
+            keep,
+            E_p,
+            E_q,
         )
+        rank_res = run_subtool(
+            tool_name='modelrank',
+            ctx=context,
+            models=[input_model, final_model],
+            results=[input_res, final_res],
+            ref_model=input_model,
+            rank_type=modelrank_opts['rank_type'],
+            cutoff=cutoff,
+            strictness=strictness,
+            search_space=modelrank_opts['search_space'],
+            E=(E_p, E_q),
+            parameter_uncertainty_method=parameter_uncertainty_method,
+            _parent_dict=modelrank_opts['parent_dict'],
+        )
+
+        summary_final_step = rank_res.summary_tool
         sum_tools.append(summary_final_step)
-        best_model_name = summary_final_step['rank'].idxmin()
+        best_model_name = rank_res.final_model.name
 
         if best_model_name == input_model.name:
             context.log_warning(
@@ -536,6 +558,13 @@ def get_ref_model(models, algorithm):
         raise ValueError(f'Unknown ref model type: {algorithm}')
 
 
+def _get_full_model(models):
+    def _no_of_params(model):
+        return len(model.random_variables.iiv.parameter_names)
+
+    return max(models, key=_no_of_params)
+
+
 def _concat_summaries(summaries, keys):
     with warnings.catch_warnings():
         warnings.filterwarnings(
@@ -588,29 +617,12 @@ def post_process(
     E_p,
     E_q,
     keep,
+    parameter_uncertainty_method,
     context,
     *model_entries,
 ):
-    res_model_entries = []
-    base_model_entry = None
-
-    def flatten_list(lst):
-        result = []
-        for item in lst:
-            if isinstance(item, list):
-                result.extend(flatten_list(item))
-            else:
-                result.append(item)
-        return result
-
     model_entries = flatten_list(model_entries)
-
-    base_model = get_ref_model([me.model for me in model_entries], algorithm)
-    for model_entry in model_entries:
-        if model_entry.model.name == base_model.name:
-            base_model_entry = model_entry
-        else:
-            res_model_entries.append(model_entry)
+    base_model_entry, res_model_entries = categorize_model_entries(model_entries, algorithm)
 
     if algorithm == 'bu_stepwise_no_of_etas':
         base_model_entry = ModelEntry.create(
@@ -619,49 +631,94 @@ def post_process(
             parent=input_model_entry.model,
         )
 
-    assert len(res_model_entries) > 0
-
-    if not base_model_entry:
-        raise ValueError('Error in workflow: No base model')
-
     # In order to have the IIV structure of the input model in the description column
     # in the result summaries
     if input_model_entry.model.name == base_model_entry.model.name:
-        base_model = base_model_entry.model
-        base_model_description = algorithms.create_description(base_model)
-        base_model = base_model.replace(description=base_model_description)
-        base_model_entry = ModelEntry.create(
-            base_model, modelfit_results=base_model_entry.modelfit_results
-        )
+        base_model_entry = update_input_model_description(input_model_entry)
 
-    if rank_type == "mbic":
-        models = [me.model for me in model_entries]
-        if algorithm == 'bu_stepwise_no_of_etas':
-            ref_model = get_ref_model(models, 'td')
-        else:
-            ref_model = base_model
-        penalties = get_mbic_penalties(ref_model, models, keep, E_p=E_p, E_q=E_q)
-    else:
-        penalties = None
+    models_to_rank = [base_model_entry.model] + [me.model for me in res_model_entries]
+    results_to_rank = [base_model_entry.modelfit_results] + [
+        me.modelfit_results for me in res_model_entries
+    ]
 
-    res = create_results(
-        IIVSearchResults,
-        input_model_entry,
-        base_model_entry,
-        res_model_entries,
-        rank_type=rank_type,
+    # FIXME: remove once search space and parent dict are properly handled
+    modelrank_opts = get_modelrank_opts(
+        _get_full_model(models_to_rank), model_entries, rank_type, keep, E_p, E_q
+    )
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models_to_rank,
+        results=results_to_rank,
+        ref_model=base_model_entry.model,
+        rank_type=modelrank_opts['rank_type'],
         cutoff=cutoff,
-        bic_type='iiv',
         strictness=strictness,
-        penalties=penalties,
-        context=context,
+        search_space=modelrank_opts['search_space'],
+        E=(E_p, E_q),
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        _parent_dict=modelrank_opts['parent_dict'],
     )
 
-    summary_tool = res.summary_tool
+    summary_tool = rank_res.summary_tool
     assert summary_tool is not None
     summary_models = summarize_modelfit_results_from_entries(model_entries)
+    summary_errors = summarize_errors_from_entries(model_entries)
+    res = IIVSearchResults(
+        summary_tool=rank_res.summary_tool,
+        summary_models=summary_models,
+        summary_errors=summary_errors,
+        final_model=rank_res.final_model,
+        final_results=rank_res.final_results,
+    )
+    return res
 
-    return replace(res, summary_models=summary_models)
+
+def flatten_list(lst):
+    result = []
+    for item in lst:
+        if isinstance(item, list):
+            result.extend(flatten_list(item))
+        else:
+            result.append(item)
+    return result
+
+
+def categorize_model_entries(model_entries, algorithm):
+    res_model_entries = []
+    base_model_entry = None
+
+    base_model = get_ref_model([me.model for me in model_entries], algorithm)
+    for model_entry in model_entries:
+        if model_entry.model.name == base_model.name:
+            base_model_entry = model_entry
+        else:
+            res_model_entries.append(model_entry)
+
+    assert base_model_entry
+    assert len(res_model_entries) > 0
+
+    return base_model_entry, res_model_entries
+
+
+def update_input_model_description(input_model_entry):
+    model = input_model_entry.model
+    description = algorithms.create_description(model)
+    model = model.replace(description=description)
+    model_entry = ModelEntry.create(model, modelfit_results=input_model_entry.modelfit_results)
+    return model_entry
+
+
+def get_modelrank_opts(ref_model, model_entries, rank_type, keep, E_p, E_q):
+    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+    # FIXME: not needed when proper search space has been implemented
+    search_space = get_mbic_search_space(ref_model, keep, E_p, E_q)
+    # FIXME: remove when parent dict is part of context
+    parent_dict = {
+        me.model.name: me.parent.name if me.parent else me.model.name for me in model_entries
+    }
+
+    return {'rank_type': rank_type, 'search_space': search_space, 'parent_dict': parent_dict}
 
 
 def create_delinearize_workflow(input_model, final_model, param_mapping, stepno):
@@ -685,19 +742,24 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno)
     return dl_wf
 
 
-def get_mbic_penalties(ref_model, candidate_models, keep, E_p, E_q):
-    search_space = []
+def get_mbic_search_space(model, keep, E_p, E_q):
+    params = get_individual_parameters(model, 'iiv')
     if E_p:
-        search_space.append('iiv_diag')
-    if E_q:
-        search_space.append('iiv_block')
-    penalties = [
-        calculate_mbic_penalty(
-            model, search_space, base_model=ref_model, keep=keep, E_p=E_p, E_q=E_q
+        params_keep = [p for p in params if p in keep]
+    else:
+        params_keep = params.copy()
+    search_space_str = []
+    if params_keep:
+        search_space_str.append(f'IIV([{",".join(params_keep)}],exp)')
+    if E_p:
+        search_space_str.append(
+            f'IIV?([{",".join(p for p in params if p not in params_keep)}],exp)'
         )
-        for model in candidate_models
-    ]
-    return penalties
+    if E_q:
+        search_space_str.append(f'COV?([{",".join(params)}])')
+
+    search_space = ';'.join(search_space_str)
+    return search_space
 
 
 def modify_summary_tool(summary_tool, first_model_name):
@@ -717,7 +779,16 @@ def modify_summary_tool(summary_tool, first_model_name):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    algorithm, iiv_strategy, rank_type, model, keep, strictness, correlation_algorithm, E_p, E_q
+    algorithm,
+    iiv_strategy,
+    rank_type,
+    model,
+    keep,
+    strictness,
+    correlation_algorithm,
+    E_p,
+    E_q,
+    parameter_uncertainty_method,
 ):
     if keep and model:
         for parameter in keep:
@@ -726,7 +797,11 @@ def validate_input(
             if not has_random_effect(model, parameter, "iiv"):
                 warnings.warn(f"Parameter `{parameter}` has no iiv and is ignored")
 
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'

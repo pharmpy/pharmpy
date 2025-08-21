@@ -932,4 +932,5 @@ def create_failed_results(model, log):
         ofv=float("NaN"),
         parameter_estimates=_create_failed_parameter_estimates(model.parameters),
         log=log,
+        significant_digits=np.nan,
     )
