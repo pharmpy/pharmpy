@@ -3,6 +3,7 @@ from functools import partial
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     add_iov,
     add_peripheral_compartment,
@@ -198,18 +199,40 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     model_4 = remove_iiv(model_3, to_remove=['ETA_1'])
     model_4 = model_4.replace(name='model_4')
 
-    candidate_entries = model_entry_factory([model_1, model_2, model_3, model_4])
-    model_entries = [me_start] + candidate_entries
+    iov_entries = model_entry_factory([model_1, model_2, model_3])
+    iiv_entries = model_entry_factory([model_4])
+    model_entries = [me_start] + iov_entries + iiv_entries
 
     model_dict = {me.model.name: me for me in model_entries}
-    model_names = list(model_dict.keys())
-    step_mapping = {0: model_names[0], 1: model_names[1:-1], 2: model_names[-1]}
+
+    def _create_summary_step(mes):
+        df = pd.DataFrame({'model': [me.model.name for me in mes], 'rank': range(1, len(mes) + 1)})
+        df = df.set_index('model')
+        return df
+
+    iov_summary = _create_summary_step(iov_entries)
+    iiv_summary = _create_summary_step(iiv_entries)
+
+    iov_names, iiv_names = [me.model.name for me in iov_entries], [
+        me.model.name for me in iiv_entries
+    ]
+
+    step_mapping = {
+        0: ([me_start.model.name], None),
+        1: (iov_names, iov_summary),
+        2: (iiv_names, iiv_summary),
+    }
     tables = create_results_tables(step_mapping, model_dict)
 
     summary_models = tables['summary_models']
     assert len(summary_models) == len(model_entries)
     steps = list(summary_models.index.get_level_values('step'))
     assert steps == [0, 1, 1, 1, 2]
+
+    summary_tool = tables['summary_tool']
+    assert len(summary_tool) == len(iov_entries + iiv_entries)
+    steps = list(summary_tool.index.get_level_values('step'))
+    assert steps == [1, 1, 1, 2]
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):

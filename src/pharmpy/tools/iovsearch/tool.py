@@ -22,6 +22,7 @@ from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
+    concat_summaries,
     create_plots,
     table_final_eta_shrinkage,
     update_initial_estimates,
@@ -159,7 +160,7 @@ def task_brute_force_search(
     list_of_parameters = prepare_list_of_parameters(input_model, list_of_parameters)
 
     current_step = 0
-    step_mapping = {current_step: [input_model.name]}
+    step_mapping = {current_step: ([input_model.name], None)}
 
     # NOTE: Check that model has at least one IIV.
     if not list_of_parameters:
@@ -193,7 +194,7 @@ def task_brute_force_search(
         search_space = None
 
     # NOTE: Keep the best candidate.
-    best_model_entry_so_far = get_best_model(
+    best_model_entry_so_far, summary_iov_step = get_best_model_and_ranking(
         context,
         input_model_entry,
         [model_with_iov_entry, *iov_candidate_entries],
@@ -206,13 +207,14 @@ def task_brute_force_search(
     )
 
     current_step += 1
-    step_mapping[current_step] = [model_with_iov.name] + [
+    models_iov_step = [model_with_iov.name] + [
         model_entry.model.name for model_entry in iov_candidate_entries
     ]
+    step_mapping[current_step] = (models_iov_step, summary_iov_step)
 
     # NOTE: If no improvement with respect to input model, STOP.
     if best_model_entry_so_far.model is input_model:
-        step_mapping[-1] = best_model_entry_so_far.model.name
+        step_mapping[-1] = (best_model_entry_so_far.model.name, None)
         return step_mapping, [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
 
     # NOTE: Remove IIV with corresponding IOVs. Test all subsets (~2^n).
@@ -231,9 +233,7 @@ def task_brute_force_search(
         no_of_models + 1,
     )
     iiv_candidate_entries = context.call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs')
-    current_step += 1
-    step_mapping[current_step] = [model_entry.model.name for model_entry in iiv_candidate_entries]
-    best_model_entry = get_best_model(
+    best_model_entry, summary_iiv_step = get_best_model_and_ranking(
         context,
         best_model_entry_so_far,
         list(iiv_candidate_entries),
@@ -245,7 +245,10 @@ def task_brute_force_search(
         E=E,
     )
 
-    step_mapping[-1] = best_model_entry.model.name
+    current_step += 1
+    models_iiv_step = [model_entry.model.name for model_entry in iiv_candidate_entries]
+    step_mapping[current_step] = (models_iiv_step, summary_iiv_step)
+    step_mapping[-1] = (best_model_entry.model.name, None)
 
     return step_mapping, [
         input_model_entry,
@@ -338,7 +341,7 @@ def wf_etas_removal(
     return Workflow(wb)
 
 
-def get_best_model(
+def get_best_model_and_ranking(
     context,
     base_entry: ModelEntry,
     model_entries: list[ModelEntry],
@@ -381,9 +384,9 @@ def get_best_model(
             model_entry
             for model_entry in candidate_entries
             if model_entry.model == rank_res.final_model
-        ][0]
+        ][0], rank_res.summary_tool
     except IndexError:
-        return base_entry
+        return base_entry, rank_res.summary_tool
 
 
 def task_results(context, step_mapping_and_model_entries):
@@ -391,16 +394,15 @@ def task_results(context, step_mapping_and_model_entries):
 
     model_entries = [base_model_entry] + res_model_entries
     model_dict = {model_entry.model.name: model_entry for model_entry in model_entries}
-
-    final_model_entry = model_dict[step_mapping.pop(-1)]
+    final_step = step_mapping.pop(-1)
+    final_model_entry = model_dict[final_step[0]]
     final_model, final_res = final_model_entry.model, final_model_entry.modelfit_results
 
-    summary_tool = create_summary_tool(context)
     tables = create_results_tables(step_mapping, model_dict)
     plots = create_plots(final_model, final_res)
 
     res = IOVSearchResults(
-        summary_tool=summary_tool,
+        summary_tool=tables['summary_tool'],
         summary_models=tables['summary_models'],
         summary_errors=tables['summary_errors'],
         final_model=final_model,
@@ -420,22 +422,9 @@ def task_results(context, step_mapping_and_model_entries):
     return res
 
 
-def create_summary_tool(context):
-    rank_ctx = [
-        context.get_subcontext(ctx_name)
-        for ctx_name in context.list_all_subcontexts()
-        if ctx_name.startswith('modelrank')
-    ]
-    rank_summaries = [ctx.retrieve_results().summary_tool for ctx in rank_ctx]
-
-    keys = list(range(1, len(rank_summaries) + 1))
-    summary_tool = _concat_summaries(rank_summaries, keys)
-    return summary_tool
-
-
 def create_results_tables(step_mapping, model_dict):
-    sum_mod = []
-    for step, model_names in step_mapping.items():
+    sum_tool, sum_mod = [], []
+    for step, (model_names, summary_step) in step_mapping.items():
         candidate_entries = [
             model_entry
             for model_name, model_entry in model_dict.items()
@@ -443,12 +432,16 @@ def create_results_tables(step_mapping, model_dict):
         ]
         sum_mod_step = summarize_modelfit_results_from_entries(candidate_entries)
         sum_mod.append(sum_mod_step)
+        if summary_step is not None:
+            sum_tool.append(summary_step)
 
     keys = list(range(0, len(step_mapping)))
-    summary_models = _concat_summaries(sum_mod, keys=keys)
+    summary_tool = concat_summaries(sum_tool, keys=list(range(1, len(sum_tool) + 1)))
+    summary_models = concat_summaries(sum_mod, keys=keys)
     summary_errors = summarize_errors_from_entries(model_dict.values())
 
     return {
+        'summary_tool': summary_tool,
         'summary_models': summary_models,
         'summary_errors': summary_errors,
     }
