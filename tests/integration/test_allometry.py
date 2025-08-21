@@ -25,8 +25,9 @@ def test_allometry(tmp_path, testdata):
         assert str(context.retrieve_model_entry(model_name).model.datainfo.path).endswith(
             f'{sep}allometry1{sep}.modeldb{sep}.datasets{sep}data1.csv'
         )
-        path = context.model_database.retrieve_file(context.retrieve_key(model_name), 'model.lst')
-        with open(path, 'r') as fh:
+        key = context.retrieve_key(model_name)
+        context.model_database.retrieve_file(key, 'model.lst', tmp_path)
+        with open(tmp_path / 'model.lst', 'r') as fh:
             while line := fh.readline():
                 # NOTE: Skip date, time, description etc
                 if line[:6] == '$DATA ':
