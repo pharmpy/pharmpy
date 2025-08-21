@@ -135,6 +135,7 @@ def create_init(model, modelfit_results):
 
 def _init(context, modelfit_results, model):
     context.log_info("Starting tool iovsearch")
+    context.log_info(f"Input model OFV: {modelfit_results.ofv:.3f}")
     model = model.replace(name="input", description="")
     me = ModelEntry.create(model, modelfit_results=modelfit_results)
     return me
@@ -170,6 +171,7 @@ def task_brute_force_search(
         input_model_entry, occ, list_of_parameters, distribution
     )
     wf = create_fit_workflow(modelentries=[model_with_iov_entry])
+    context.log_info('Running IOV candidate with IOV on all relevant parameters')
     model_with_iov_entry = context.call_workflow(wf, f'{NAME_WF}-fit-with-matching-IOVs')
     model_with_iov = model_with_iov_entry.model
 
@@ -179,13 +181,15 @@ def task_brute_force_search(
     # NOTE: We only need to remove the IOV ETA corresponding to the first
     # category in order to remove all IOV ETAs of the other categories
     all_iov_parameters = list(filter(lambda name: name.endswith('_1'), iov.names))
+    iov_subsets = list(non_empty_proper_subsets(all_iov_parameters))
     no_of_models = 1
     wf = wf_etas_removal(
         remove_iov,
         model_with_iov_entry,
-        non_empty_proper_subsets(all_iov_parameters),
+        iov_subsets,
         no_of_models + 1,
     )
+    context.log_info(f'Running IOV candidates, number of candidates to run: {len(iov_subsets)}')
     iov_candidate_entries = context.call_workflow(wf, f'{NAME_WF}-fit-with-removed-IOVs')
 
     if rank_type == 'mbic':
@@ -214,6 +218,7 @@ def task_brute_force_search(
 
     # NOTE: If no improvement with respect to input model, STOP.
     if best_model_entry_so_far.model is input_model:
+        context.log_info('No candidate model better than input model, selecting input model')
         step_mapping[-1] = (best_model_entry_so_far.model.name, None)
         return step_mapping, [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
 
@@ -226,11 +231,15 @@ def task_brute_force_search(
     )
     # TODO: Should we exclude already present IOVs?
     no_of_models = len(iov_candidate_entries) + 1
+    iiv_subsets = list(non_empty_subsets(iiv_parameters_with_associated_iov))
     wf = wf_etas_removal(
         remove_iiv,
         best_model_entry_so_far,
-        non_empty_subsets(iiv_parameters_with_associated_iov),
+        iiv_subsets,
         no_of_models + 1,
+    )
+    context.log_info(
+        f'Running IIV candidates, number of candidates to run: {len(list(iiv_subsets))}'
     )
     iiv_candidate_entries = context.call_workflow(wf, f'{NAME_WF}-fit-with-removed-IIVs')
     best_model_entry, summary_iiv_step = get_best_model_and_ranking(
@@ -414,6 +423,8 @@ def task_results(context, step_mapping_and_model_entries):
         final_model_eta_distribution_plot=plots['eta_distribution'],
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_model, final_res),
     )
+
+    context.log_info(f"Best model: {res.final_model.name}, OFV: {res.final_results.ofv:.3f}")
 
     final_model = res.final_model.replace(name="final")
     context.store_final_model_entry(final_model)

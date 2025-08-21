@@ -268,6 +268,7 @@ def create_workflow(
 
 def _store_input_model(context, model, results, max_eval):
     context.log_info("Starting tool covsearch")
+    context.log_info(f"Input model OFV: {results.ofv:.3f}")
     model = model.replace(name="input", description="")
     me = ModelEntry.create(model=model, modelfit_results=results)
     context.store_input_model_entry(me)
@@ -403,6 +404,7 @@ def task_greedy_forward_search(
     adaptive_scope_reduction: bool,
     state_and_effect: tuple[SearchState, dict],
 ) -> SearchState:
+    context.log_info('Starting forward search')
     for temp in state_and_effect:
         if isinstance(temp, SearchState):
             state = temp
@@ -447,6 +449,8 @@ def task_greedy_backward_search(
     strictness: str,
     state: SearchState,
 ) -> SearchState:
+    context.log_info('Starting backward search')
+
     def handle_effects(
         step: int,
         parent: Candidate,
@@ -552,7 +556,7 @@ def _greedy_search(
             # Add adaptive step if the best candidate model is not part of the latest step
             max_steps_taken = max([len(c.steps) for c in all_candidates_so_far])
             add_adaptive_step = len(best_candidate_so_far.steps) != max_steps_taken
-
+            context.log_info('Starting adaptive step')
             _, all_candidates_so_far, best_candidate_so_far, rank_res_adapt = (
                 perform_step_procedure(
                     context,
@@ -596,6 +600,9 @@ def perform_step_procedure(
     for step in steps:
         if not candidate_effect_funcs:
             break
+        context.log_info(
+            f'Starting step {step}, number of candidates to run: {len(candidate_effect_funcs)}'
+        )
         if add_adaptive_step and step == 1:
             temp_best_candidate_so_far = Candidate(
                 best_candidate_so_far.modelentry,
@@ -868,6 +875,7 @@ def task_results(context, state: SearchState):
     )
 
     context.store_final_model_entry(best_modelentry)
+    context.log_info(f"Best model: {res.final_model.name}, OFV: {res.final_results.ofv:.3f}")
     context.log_info("Finishing tool covsearch")
     return res
 
