@@ -198,6 +198,9 @@ def test_set_initial_estimates_move_est(load_model_for_test, pheno_path):
     model5 = set_initial_estimates(model5, param_est, move_est_close_to_bounds=True)
     assert model5.parameters['THETA_3'].init == 0.095
 
+    model6 = set_initial_estimates(model, {'THETA_3': float("nan")}, strict=False)
+    assert model6.parameters['THETA_3'] == model.parameters['THETA_3']
+
 
 def test_set_initial_estimates_zero_fix(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)

@@ -10,6 +10,11 @@ New features
 * Add :code:`modeling.export_model_files`
 * Add :code:`modeling.map_eta_parameters` for creation of mappings between connected individual parameters, etas or omegas.
 
+Changes
+=======
+
+* :code:`set_initial_estimates` with :code:`strict=False` will ignore any new inits being NaN.
+
 Bugfixes
 ========
 

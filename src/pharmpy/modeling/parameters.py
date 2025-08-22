@@ -4,6 +4,7 @@ from collections.abc import Mapping
 from typing import Iterable, Literal, Optional, Union
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
 from pharmpy.model import (
     Assignment,
     JointNormalDistribution,
@@ -132,6 +133,8 @@ def set_initial_estimates(
         be set to 0.9, if variance is <0.001 the variance will be set to 0.01.
     strict : bool
         Whether all parameters in input need to exist in the model. Default is True
+        Setting strict to False will also disregard any initial estimate being NaN and keep
+        the original value for these parameters.
 
     Returns
     -------
@@ -162,6 +165,8 @@ def set_initial_estimates(
     """
     if strict:
         _check_input_params(model, inits.keys())
+    else:
+        inits = _remove_nan(inits)
     if move_est_close_to_bounds:
         inits = _move_est_close_to_bounds(model, inits)
 
@@ -169,6 +174,10 @@ def set_initial_estimates(
     model = model.replace(parameters=new)
 
     return model.update_source()
+
+
+def _remove_nan(inits):
+    return {key: value for key, value in inits.items() if not np.isnan(value)}
 
 
 def _get_nonfixed_rvs(model):
