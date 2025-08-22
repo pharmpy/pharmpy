@@ -35,6 +35,7 @@ __all__ = (
     'run_structsearch',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_tool',  # pyright: ignore [reportUnsupportedDunderAll]
     'run_simulation',  # pyright: ignore [reportUnsupportedDunderAll]
+    'run_vpc',  # pyright: ignore [reportUnsupportedDunderAll]
     'summarize_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'write_results',  # pyright: ignore [reportUnsupportedDunderAll]
 )
