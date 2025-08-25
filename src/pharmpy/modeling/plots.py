@@ -846,6 +846,8 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', 
         stratify_on=stratify_on,
     )
 
+    x_scale = alt.Scale(domain=[-1, data[idv].max() * 1.01])
+
     scatter = (
         alt.Chart(data)
         .mark_circle(color='blue', filled=False)
@@ -853,7 +855,7 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', 
             x=alt.X(
                 f'{idv}',
                 title=f'{idv}',
-                scale=alt.Scale(domain=[-1, data[idv].max() * 1.01]),
+                scale=x_scale,
             ),
             y=alt.Y(
                 'DV',
@@ -866,34 +868,51 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', 
         .interactive()
     )
 
-    obs_mid = alt.Chart(df).mark_line(color='red').encode(x='bin_midpoint', y='obs_central')
+    obs_mid = (
+        alt.Chart(df)
+        .mark_line(color='red')
+        .encode(x=alt.X('bin_midpoint', scale=x_scale), y='obs_central')
+    )
     obs_lower = (
         alt.Chart(df)
         .mark_line(color='red', strokeDash=[8, 4])
-        .encode(x='bin_midpoint', y='obs_lower')
+        .encode(x=alt.X('bin_midpoint', scale=x_scale), y='obs_lower')
     )
     obs_upper = (
         alt.Chart(df)
         .mark_line(color='red', strokeDash=[8, 4])
-        .encode(x='bin_midpoint', y='obs_upper')
+        .encode(x=alt.X('bin_midpoint', scale=x_scale), y='obs_upper')
     )
 
     central_ci = (
         alt.Chart(df)
         .mark_rect(opacity=0.3, color='red')
         .encode(
-            x='bin_edges_left', x2='bin_edges_right', y='sim_central_lower', y2='sim_central_upper'
+            x=alt.X('bin_edges_left', scale=x_scale),
+            x2='bin_edges_right',
+            y='sim_central_lower',
+            y2='sim_central_upper',
         )
     )
     lower_ci = (
         alt.Chart(df)
         .mark_rect(opacity=0.3, color='blue')
-        .encode(x='bin_edges_left', x2='bin_edges_right', y='sim_lower_lower', y2='sim_lower_upper')
+        .encode(
+            x=alt.X('bin_edges_left', scale=x_scale),
+            x2='bin_edges_right',
+            y='sim_lower_lower',
+            y2='sim_lower_upper',
+        )
     )
     upper_ci = (
         alt.Chart(df)
         .mark_rect(opacity=0.3, color='blue')
-        .encode(x='bin_edges_left', x2='bin_edges_right', y='sim_upper_lower', y2='sim_upper_upper')
+        .encode(
+            x=alt.X('bin_edges_left', scale=x_scale),
+            x2='bin_edges_right',
+            y='sim_upper_lower',
+            y2='sim_upper_upper',
+        )
     )
 
     chart = scatter + obs_mid + obs_lower + obs_upper + central_ci + upper_ci + lower_ci
