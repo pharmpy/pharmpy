@@ -723,10 +723,10 @@ def _calculate_vpc(
     if query is not None:
         obstab = obstab.query(query)
     obstab = obstab[dv]
-
     bincol, boundaries = bin_observations(model, binning, nbins)
+    populated_bins = bincol.loc[obstab.index].unique()
 
-    if len(bincol.unique()) != bincol.unique().max() + 1:
+    if len(bincol.unique()) != bincol.unique().max() + 1 or len(populated_bins) < nbins:
         raise ValueError("Some bins are empty, please choose a different number of bins.")
 
     obsgroup = obstab.groupby(bincol)
@@ -993,7 +993,7 @@ def plot_vpc(
         if n_unique > 8:
             bin_stratification = np.linspace(df[stratify_on].min(), df[stratify_on].max(), 9)
             for i in range(len(bin_stratification) - 1):
-                query = f'{stratify_on} >= {bin_stratification[i] and {stratify_on} < {bin_stratification[i+1]}}'
+                query = f'{stratify_on} >= {bin_stratification[i]} and {stratify_on} < {bin_stratification[i+1]}'
                 charts.append(
                     _vpc_plot(
                         model,
