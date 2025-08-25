@@ -46,25 +46,17 @@ def test_prepare_model_entries(load_model_for_test, pheno_path):
         model = set_name(model, f'model{i}')
         models_cand.append(model)
     res_cand = [res_ref] * 5
-    parent_dict = {
-        model_ref.name: model_ref.name,
-        **{model.name: model_ref.name for model in models_cand},
-    }
     me_ref, me_cands = prepare_model_entries(
-        [model_ref] + models_cand, [res_ref] + res_cand, model_ref, parent_dict
+        [model_ref] + models_cand, [res_ref] + res_cand, model_ref
     )
     assert len(me_cands) == len(models_cand) == len(res_cand)
     assert me_ref.model == model_ref
-    assert me_ref.parent is None
-    assert me_cands[0].parent == me_ref.model
 
     me_ref, me_cands = prepare_model_entries(
-        [model_ref] + models_cand, [res_ref] + res_cand, model_ref, parent_dict=None
+        [model_ref] + models_cand, [res_ref] + res_cand, model_ref
     )
     assert len(me_cands) == len(models_cand) == len(res_cand)
     assert me_ref.model == model_ref
-    assert me_ref.parent is None
-    assert me_cands[0].parent == me_ref.model
 
 
 def test_create_candidate_with_uncertainty(load_model_for_test, testdata):

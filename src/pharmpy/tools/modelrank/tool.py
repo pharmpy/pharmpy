@@ -102,7 +102,6 @@ def create_workflow(
         search_space,
         E,
         parameter_uncertainty_method,
-        _parent_dict,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -122,13 +121,12 @@ def start(
     search_space: Optional[str],
     E: Union[float, tuple[float]],
     parameter_uncertainty_method: Optional[str],
-    _parent_dict: Optional[dict[str, str]],
 ):
     context.log_info("Starting tool modelrank")
 
     wb = WorkflowBuilder()
 
-    me_ref, mes_cand = prepare_model_entries(models, results, ref_model, _parent_dict)
+    me_ref, mes_cand = prepare_model_entries(models, results, ref_model)
     for me in [me_ref] + mes_cand:
         context.store_model_entry(me)
 
@@ -169,23 +167,12 @@ def prepare_model_entries(
     models: list[Model],
     results: list[ModelfitResults],
     ref_model: Model,
-    parent_dict: Optional[dict[str, str]],
 ):
     me_cands = []
     me_ref = None
 
-    model_dict = {model.name: model for model in models}
-
-    if not parent_dict:
-        parent_dict = {model.name: ref_model.name for model in models}
-
     for model, results in zip(models, results):
-        parent_name = parent_dict.get(model.name)
-        if parent_name and parent_name in model_dict.keys() and model.name != parent_name:
-            parent = model_dict[parent_name]
-        else:
-            parent = None
-        me = ModelEntry.create(model, modelfit_results=results, parent=parent)
+        me = ModelEntry.create(model, modelfit_results=results)
         if model == ref_model:
             assert me_ref is None
             me_ref = me
@@ -250,14 +237,12 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
         f'd{rank_name}',
         f'{rank_name}',
         'rank',
-        'parent_model',
     ]
     df_data = {col: [] for col in col_names}
     params_ref = len(me_ref.model.parameters.nonfixed)
     for i, (me, predicates) in enumerate(me_rank_values.items(), 1):
         model = me.model
         n_params = len(me.model.parameters.nonfixed)
-        parent = me.parent.name if me.parent else ''
         rank = i if not np.isnan(predicates['rank_val']) else np.nan
         me_dict = {
             'model': model.name,
@@ -267,7 +252,6 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
             f'd{rank_name}': predicates[f'd{rank_name}'],
             f'{rank_name}': predicates[f'{rank_name}'],
             'rank': rank,
-            'parent_model': parent,
         }
         for key, value in me_dict.items():
             df_data[key].append(value)
@@ -439,7 +423,6 @@ def validate_input(
     search_space,
     E,
     parameter_uncertainty_method,
-    _parent_dict,
 ):
     if len(models) != len(results):
         raise ValueError(

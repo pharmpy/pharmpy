@@ -21,10 +21,9 @@ def get_rank_values(
 ) -> dict[ModelEntry, dict[str, float]]:
 
     if rank_type == 'lrt':
-        me_dict = {me.model: me for me in [me_ref] + mes_cand}
         rank_val = 'ofv'
         ref = perform_lrt(me_ref, me_ref, p_value)
-        cands = {me: perform_lrt(me, me_dict[me.parent], p_value) for me in mes_cand}
+        cands = {me: perform_lrt(me, me_ref, p_value) for me in mes_cand}
         rank_values = {me_ref: ref, **cands}
     else:
         if rank_type == 'ofv':
