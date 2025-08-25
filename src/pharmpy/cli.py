@@ -151,6 +151,11 @@ def run_bootstrap(args):
     )
 
 
+def run_vpc(args):
+    model, res = args.model
+    run_tool_wrapper('vpc', args, model=model, results=res)
+
+
 def run_execute(args):
     from pharmpy.tools import fit
 
@@ -877,6 +882,25 @@ parser_definition = [
                                 'help': 'Also run evaluation of the bootstrap models on the '
                                 'original dataset',
                                 'default': False,
+                            },
+                            {
+                                'name': '--path',
+                                'type': Path,
+                                'help': 'Path to output directory',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'vpc': {
+                        'help': 'VPC',
+                        'func': run_vpc,
+                        'parents': [args_model_input, args_random, args_tools],
+                        'args': [
+                            {
+                                'name': '--samples',
+                                'type': int,
+                                'help': 'Number of samples',
                             },
                             {
                                 'name': '--path',
