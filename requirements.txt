@@ -59,7 +59,7 @@ numpy==2.3.2
 packaging==25.0
 pandas==2.3.2
 pandocfilters==1.5.1
-parso==0.8.4
+parso==0.8.5
 partd==1.4.2
 patsy==1.0.1
 pexpect==4.9.0
