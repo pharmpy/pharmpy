@@ -221,3 +221,10 @@ def concat_summaries(summaries, keys):
         )
 
         return pd.concat(summaries, keys=keys, names=['step'])
+
+
+def add_parent_column(df, model_entries):
+    parent_dict = {me.model.name: me.parent.name if me.parent else '' for me in model_entries}
+    model_names = df.index.values
+    df['parent_model'] = [parent_dict[name] for name in model_names]
+    return df
