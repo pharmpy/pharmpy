@@ -4,8 +4,29 @@
 IIVsearch
 =========
 
-The IIVsearch tool is a general tool to decide the best IIV structure given a start model. This includes deciding which IIV
+The IIVsearch tool is a general tool to decide the best IIV structure given an input model. This includes deciding which IIV
 to keep and the covariance structure based on a chosen selection criteria.
+
+The default behavior of the tool (given default arguments) is the following:
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial",shape="rect"];
+            rankdir="LR";
+            base [label="Input model", shape="oval"]
+            s0 [label="Base model", shape="oval"]
+            s1 [label="Number of IIVs algorithm"]
+            s2 [label="Covariance algorithm"]
+            s3 [label="Final model", shape="oval"]
+
+            base -> s0 [label = "Add IIVs"]
+            s0 -> s1
+            s1 -> s2 [label = "Select best model"]
+            s2 -> s3
+
+    }
+
 
 ~~~~~~~
 Running
@@ -25,12 +46,15 @@ To initiate IIVsearch in Python/R:
     res = run_iivsearch(model=start_model,
                         results=start_model_results,
                         algorithm='top_down_exhaustive',
+                        correlation_algorithm=None,
                         iiv_strategy='fullblock',
                         rank_type='bic')
 
 This will take an input ``model`` and run the top down exhaustive ``algorithm`` for the number of etas.
-No IIVs on structural parameters (such as mean absorption time) will be added since the ``iiv_strategy``
-is ``'no_add'``. The candidate models will be ranked using ``bic``.
+Since ``correlation_algorithm`` is not provided, the default is to use the same algorithm as the number of
+etas (``'top_down_exhaustive'``). IIVs on structural parameters (such as mean absorption time) will be added
+to all PK parameters as a full block since the ``iiv_strategy`` is ``'fullblock'``. The candidate models
+will be ranked using ``bic``.
 
 To run IIVsearch from the command line, the example code is redefined accordingly:
 
@@ -62,7 +86,7 @@ Optional
 +-----------------------------------------------+--------------------------------------------------------------------+
 | Argument                                      | Description                                                        |
 +===============================================+====================================================================+
-| ``iiv_strategy``                              | If/how IIV should be added to start model (default is to not add). |
+| ``iiv_strategy``                              | If/how IIV should be added to input model (default is to not add). |
 |                                               | See :ref:`iiv_strategies_iivsearch`                                |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``rank_type``                                 | Which :ref:`selection criteria<ranking_iivsearch>` to rank models  | 
@@ -73,7 +97,7 @@ Optional
 |                                               | See :ref:`linearization tool<linearize>` for more. Default value   |
 |                                               | is False.                                                          |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| ``cutoff``                                    | :ref:`Cutoff<ranking_iivsearch>` for the ranking function, exclude |
+| ``cutoff``                                    | :ref:`cutoff<ranking_iivsearch>` for the ranking function, exclude |
 |                                               | models that are below cutoff (default is none)                     |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``keep``                                      | List of IIVs to keep, either by parameter name or ETA name.        |
@@ -85,7 +109,7 @@ Optional
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``correlation_algorithm``                     | Specify if an algorithm different from the argument ``algorithm``  |
 |                                               | should be used when searching for the correlation structure for    |
-|                                               | the added IIVs. If not specified, the same algorithm will be used  |
+|                                               | the IIVs. If not specified, the same algorithm will be used        |
 |                                               | when searching for which IIVs to add as well as for the            |
 |                                               | correlation structure.                                             |
 +-----------------------------------------------+--------------------------------------------------------------------+
@@ -94,7 +118,7 @@ Optional
 .. note::
 
     In this documentation, "base model" will be used to describe the model which all candidates are based on. Note
-    that if you have set ``iiv_strategy`` to anything other than 'no_add', `this model will be different to the
+    that if you have set ``iiv_strategy`` to anything other than ``'no_add'``, this model will be different to the
     input model`. The term "base model" can thus be either the input model or a copy with added IIVs.
 
 
@@ -104,86 +128,65 @@ Optional
 Algorithms
 ~~~~~~~~~~
 
-Different aspects of the IIV structure can be explored in the tool depending on which algorithm is chosen. The
-available algorithms can be seen in the table below.
+Different aspects of the IIV structure can be explored in the tool depending on which algorithm is chosen. If only
+``algorithm`` is specified, the same will be applied to ``correlation_algorithm`` if possible. If not, please see
+description :ref:`below<iiv_algorithms_combined>` which would be used. We recommend setting both arguments if specific
+algorithms are wanted.
 
-.. note::
+.. warning::
+    At least one algorithm argument must be set.
 
-    If only ``algorithm`` is specified, the same will be applied to ``correlation_algorithm`` if possible.
-    If not, please see description below which would be used.
-    We recommend setting both arguments if specific algorithms are wanted.
+
+Number of IIVs
+--------------
 
 +-------------------------------------+--------------------------------------------------------------------------------+
 | Algorithm                           | Description                                                                    |
 +=====================================+================================================================================+
-| ``'top_down_exhaustive'``           | Removes available IIV in all possible combinations. The covariance structure   |
-|                                     | search will search all possible IIV variance and covariance structure          |
+| ``'top_down_exhaustive'``           | Removes available IIV in all possible combinations (except for IIVs specified  |
+|                                     | in ``keep``-option)                                                            |
 +-------------------------------------+--------------------------------------------------------------------------------+
 | ``'bottom_up_stepwise'``            | Iteratively adds all available IIV, one at a time. After each addition, the    |
 |                                     | best model is selected. The algorithm stops when no better model was found     |
-|                                     | after adding a new ETA. The following covariance structure search uses         |
-|                                     | the same approach as 'top_down_exhaustive'                                     |
+|                                     | after adding a new ETA.                                                        |
 +-------------------------------------+--------------------------------------------------------------------------------+
-| ``'skip'``                          | Set this argument if you are certain to skip either the search for number of   |
-|                                     | etas (:code:`algorithm='skip'`) or to skip the search for the best covariance  |
-|                                     | structure (:code:`correlation_algorithm='skip'`). However, if algorithm is set |
-|                                     | to skip, then ``correlation_algorithm`` need to be set to a valid value.       |
+| ``'skip'``                          | Skip assessing number of IIVs (then :code:`correlation_algorithm` needs        |
+|                                     | to be set).                                                                    |
 +-------------------------------------+--------------------------------------------------------------------------------+
-
 
 Top down exhaustive search
---------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-The ``top_down_exhaustive`` search combines the top down exhaustive approach for choosing number of etas with the brute force
-algorithm for the block structure, by first choosing the number of etas then the block structure.
+The ``top_down_exhaustive`` algorithm for choosing number of etas will create candidate models for all combinations of
+removed IIVs. If no etas are set in the ``keep`` option, it will also create a naive pooled model meaning all the etas
+are fixed to 0. This can be useful when identifying local minima, since all other candidate models should have a lower
+OFV than the naive pooled model (which doesn't have any inter-individual variability).
 
-The ``top_down_exhaustive`` algorithm for choosing number of etas will create candidate models for all combinations of removed IIVs. It will
-also create a naive pooled model meaning all the etas are fixed to 0. This can be useful in identifying local minima,
-since all other candidate models should have a lower OFV than the naive pooled model (which doesn't have any
-inter-individual variability).
-
-For the covariance structure search, the ``top_down_exhaustive`` algorithm will create candidates with all possible IIV variance and 
-covariance structures from the IIVs in the base model.
+Given a model with IIV on clearance (CL), central volume (VC), mean absorption time (MAT), and mean delay time (MDT),
+the algorithm would try the following models (and rank all):
 
 .. graphviz::
 
     digraph BST {
             node [fontname="Arial"];
-            base [label="Base model"]
-            s0 [label="Naive pooled"]
+            base [label="[CL,VC,MAT,MDT]"]
             s1 [label="[CL]"]
-            s2 [label="[V]"]
-            s3 [label="[MAT]"]
-            s4 [label="[CL,V]"]
-            s5 [label="[CL,MAT]"]
-            s6 [label="[V,MAT]"]
-            s7 [label="[CL,V,MAT]"]
+            s2 [label="[CL,VC]"]
+            s3 [label="[CL,MAT]"]
+            s4 [label="[CL,MDT]"]
+            s5 [label="[CL,VC,MAT]"]
+            s6 [label="[CL,VC,MDT]"]
 
-            base -> s0
             base -> s1
             base -> s2
             base -> s3
             base -> s4
             base -> s5
             base -> s6
-            base -> s7
-
-            s8 [label="[CL]+[V]+[MAT]"]
-            s9 [label="[CL,V]+[MAT]"]
-            s10 [label="[CL,MAT]+[V]"]
-            s11 [label="[V,MAT]+[CL]"]
-            s12 [label="[CL,V,MAT]"]
-
-            s7 -> s8
-            s7 -> s9
-            s7 -> s10
-            s7 -> s11
-            s7 -> s12
-
         }
-        
+
 Bottom up stepwise search
--------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``bottom_up_stepwise`` algorithm differ from the ``top_down_exhaustive`` as the models are created
 in iterative steps, each adding a single ETA. The algorithm will create a model with all possible IIVs and in the first step
@@ -194,40 +197,128 @@ is chosen for the next step, updating the initial values once more.
 
 The candidate models are then compared using the specified rank type and if no better model can be found, the algorithm stops.
 
-However, this algorithm is not supported to run for the covariance structure search and thusly it will use the algorithm ``top_down_exhaustive``
-for this step.
+Given a model with IIV on clearance (CL), central volume (VC), mean absorption time (MAT), and mean delay time (MDT),
+the algorithm would try the following models (given that each candidate is better than its parent):
+
 
 .. graphviz::
 
     digraph BST {
             node [fontname="Arial"];
             s1 [label="[CL]"]
-            s2 [label="[CL,V]"]
+            s2 [label="[CL,VC]"]
             s3 [label="[CL,MAT]"]
-            s4 [label="[CL,V,MAT]"]
+            s4 [label="[CL,MDT]"]
+            s5 [label="[CL,VC,MAT]"]
+            s6 [label="[CL,VC,MDT]"]
+            s7 [label="[CL,VC,MDT,MAT]"]
 
             s1 -> s2
             s1 -> s3
-            s2 -> s4
-            
-            s5 [label="[CL]+[V]+[MAT]"]
-            s6 [label="[CL,V]+[MAT]"]
-            s7 [label="[CL,MAT]+[V]"]
-            s8 [label="[V,MAT]+[CL]"]
-            s9 [label="[CL,V,MAT]"]
-            
-            s4 -> s5
-            s4 -> s6
-            s4 -> s7
-            s4 -> s8
-            s4 -> s9
-            
+            s1 -> s4
+            s2 -> s5
+            s2 -> s6
+            s6 -> s7
+
         }
+
+
+Correlation structure
+---------------------
+
++-------------------------------------+--------------------------------------------------------------------------------+
+| Algorithm                           | Description                                                                    |
++=====================================+================================================================================+
+| ``'top_down_exhaustive'``           | Searches all combinations of covariances                                       |
++-------------------------------------+--------------------------------------------------------------------------------+
+| ``'skip'``                          | Skip assessing correlation structures (then :code:`algorithm` needs            |
+|                                     | to be set).                                                                    |
++-------------------------------------+--------------------------------------------------------------------------------+
+
+Top down exhaustive search
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For the covariance structure search, the ``top_down_exhaustive`` algorithm will create candidates with all possible IIV variance and
+covariance structures from the IIVs in the base model.
+
+Given a model with IIV on clearance (CL), central volume (VC), and mean absorption time (MAT), the algorithm would try
+the following models:
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"];
+            base [label="[CL,VC,MAT]"]
+            s1 [label="[CL]+[VC]+[MAT]"]
+            s2 [label="[CL,VC]+[MAT]"]
+            s3 [label="[CL,MAT]+[VC]"]
+            s4 [label="[CL]+[MAT,VC]"]
+
+            base -> s1
+            base -> s2
+            base -> s3
+            base -> s4
+
+        }
+
+.. _iiv_algorithms_combined:
+
+Combing algorithms
+------------------
+
+If both :code:`algorithm` and :code:`correlation_algorithm` are set, they will be performed in a stepwise manner.
+
+Given a model with IIV on clearance (CL), central volume (VC), mean absorption time (MAT), and mean delay time (MDT),
+and using top down exhaustive for both steps, the tool would try the following candidates :
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"];
+            base [label="[CL,VC,MAT,MDT]"]
+            s1 [label="[CL]"]
+            s2 [label="[CL,VC]"]
+            s3 [label="[CL,MAT]"]
+            s4 [label="[CL,MDT]"]
+            s5 [label="[CL,VC,MAT]"]
+            s6 [label="[CL,VC,MDT]"]
+
+            base -> s1
+            base -> s2
+            base -> s3
+            base -> s4
+            base -> s5
+            base -> s6
+
+            s7 [label="[CL]+[VC]+[MAT]"]
+            s8 [label="[CL,VC]+[MAT]"]
+            s9 [label="[CL,MAT]+[V]"]
+            s10 [label="[VC,MAT]+[CL]"]
+
+            s5 -> s7
+            s5 -> s8
+            s5 -> s9
+            s5 -> s10
+
+        }
+
+:code:`algorithm` must be set explicitly, but if :code:`correlation_algorithm'` is ``None/NULL``, the behavior
+will be the following:
+
++---------------------------+------------------------------+---------------------------------------------------+
+| ``algorithm``             | ``correlation_algorithm``    | Behavior                                          |
++===========================+==============================+===================================================+
+| ``'top_down_exhaustive'`` | ``None/NULL``                | Top down exhausive for both steps                 |
++---------------------------+------------------------------+---------------------------------------------------+
+| ``'bottom_up_stepwise'``  | ``None/NULL``                | Bottom down stepwise for number of IIVs, top down |
+|                           |                              | exhaustive for correlation structure              |
++---------------------------+------------------------------+---------------------------------------------------+
+
 
 .. _iiv_strategies_iivsearch:
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Adding IIV to the start model
+Adding IIV to the input model
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the input model.
@@ -238,9 +329,13 @@ The different strategies can be seen here:
 +========================+==================================================================================+
 | ``'no_add'``           | Input model is kept as base model                                                |
 +------------------------+----------------------------------------------------------------------------------+
-| ``'add_diagonal'``     | Diagonal IIV is added to all structural parameters                               |
+| ``'add_diagonal'``     | Diagonal IIV is added to all PK parameters                                       |
 +------------------------+----------------------------------------------------------------------------------+
-| ``'fullblock'``        | IIV is added to all structural parameters, and all IIVs will be in a full block  |
+| ``'fullblock'``        | IIV is added to all PK parameters, and all IIVs will be in a full block          |
++------------------------+----------------------------------------------------------------------------------+
+| ``'pd_add_diagonal'``  | Diagonal IIV is added to all PD parameters                                       |
++------------------------+----------------------------------------------------------------------------------+
+| ``'pd_fullblock'``     | IIV is added to all PD parameters, and all IIVs will be in a full block          |
 +------------------------+----------------------------------------------------------------------------------+
 
 
@@ -271,7 +366,7 @@ Information about how BIC is calculated can be found in :py:func:`pharmpy.modeli
 Linearization approach
 ~~~~~~~~~~~~~~~~~~~~~~
 
-IIVsearch can be run with linearization. In this approach, a base model with all possible IIVs will first be created and
+IIVsearch can be run with linearization. In this approach, a base model with all relevant IIVs will first be created and
 run in order to get the derivatives. Next, IIVsearch calls the linearize tool to linearize and run the model. All
 subsequent candidate models in IIVsearch will be linearized and estimated. Once the best model of these candidates
 have been selected, a delinearized version of the best candidate is created and estimated.
@@ -344,13 +439,13 @@ Consider a iivsearch run:
 
     res = run_iivsearch(model=start_model,
                         results=start_model_results,
-                        algorithm='td_brute_force',
+                        algorithm='top_down_exhaustive',
                         iiv_strategy='no_add',
                         rank_type='bic')
 
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the
-start model (in this case comparing BIC), and final ranking:
+input model (in this case comparing BIC), and final ranking:
 
 .. pharmpy-execute::
     :hide-code:
