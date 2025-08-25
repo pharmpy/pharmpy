@@ -22,6 +22,7 @@ from pharmpy.modeling.parameter_variability import ADD_IOV_DISTRIBUTION
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
+    add_parent_column,
     concat_summaries,
     create_plots,
     table_final_eta_shrinkage,
@@ -366,11 +367,6 @@ def get_best_model_and_ranking(
     models_to_rank = [me.model for me in candidate_entries]
     results_to_rank = [me.modelfit_results for me in candidate_entries]
 
-    # FIXME: remove when parent dict is part of context
-    parent_dict = {
-        me.model.name: me.parent.name if me.parent else me.model.name for me in candidate_entries
-    }
-
     rank_type = rank_type + '_random' if rank_type in ('bic', 'mbic') else rank_type
 
     rank_res = run_subtool(
@@ -385,17 +381,18 @@ def get_best_model_and_ranking(
         search_space=search_space,
         E=E,
         parameter_uncertainty_method=parameter_uncertainty_method,
-        _parent_dict=parent_dict,
     )
+
+    summary_step = add_parent_column(rank_res.summary_tool, candidate_entries)
 
     try:
         return [
             model_entry
             for model_entry in candidate_entries
             if model_entry.model == rank_res.final_model
-        ][0], rank_res.summary_tool
+        ][0], summary_step
     except IndexError:
-        return base_entry, rank_res.summary_tool
+        return base_entry, summary_step
 
 
 def task_results(context, step_mapping_and_model_entries):

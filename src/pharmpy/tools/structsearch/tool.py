@@ -10,6 +10,7 @@ from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
+    add_parent_column,
     concat_summaries,
     create_plots,
     flatten_list,
@@ -234,8 +235,10 @@ def run_tmdd(
         parameter_uncertainty_method,
     )
 
-    summaries = [rank_res_step_1.summary_tool, rank_res_step_2.summary_tool]
-    summary_tool = concat_summaries(summaries, keys=[1, 2])
+    model_entries = [model_entry] + list(qss_run_entries) + list(run_model_entries)
+    summary_step_1 = add_parent_column(rank_res_step_1.summary_tool, model_entries)
+    summary_step_2 = add_parent_column(rank_res_step_2.summary_tool, model_entries)
+    summary_tool = concat_summaries([summary_step_1, summary_step_2], keys=[1, 2])
 
     tables = create_result_tables([[model_entry], list(qss_run_entries), list(run_model_entries)])
     plots = create_plots(rank_res_step_2.final_model, rank_res_step_2.final_results)
@@ -276,10 +279,6 @@ def rank_models(
     model_entries = [base_model_entry] + candidate_model_entries
     models = [me.model for me in model_entries]
     results = [me.modelfit_results for me in model_entries]
-    parent_dict = {
-        me.model.name: me.parent.name if me.parent else base_model_entry.model.name
-        for me in model_entries
-    }
 
     rank_type = rank_type + '_mixed' if rank_type == 'bic' else rank_type
 
@@ -293,7 +292,6 @@ def rank_models(
         cutoff=cutoff,
         strictness=strictness,
         parameter_uncertainty_method=parameter_uncertainty_method,
-        _parent_dict=parent_dict,
     )
 
     return rank_res
@@ -370,13 +368,16 @@ def run_pkpd(
         parameter_uncertainty_method,
     )
 
+    summary_tool = add_parent_column(
+        rank_res.summary_tool, [pd_baseline_fit[0]] + list(pkpd_models_fit)
+    )
     tables = create_result_tables([[model_entry], list(pd_baseline_fit), list(pkpd_models_fit)])
     plots = create_plots(rank_res.final_model, rank_res.final_results)
 
     eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
 
     res = StructSearchResults(
-        summary_tool=rank_res.summary_tool,
+        summary_tool=summary_tool,
         summary_models=tables['summary_models'],
         summary_errors=tables['summary_errors'],
         final_model=rank_res.final_model,
@@ -468,12 +469,13 @@ def post_process_drug_metabolite(
         parameter_uncertainty_method,
     )
 
+    summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
     tables = create_result_tables(results_to_summarize)
     plots = create_plots(rank_res.final_model, rank_res.final_results)
     eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
 
     res = StructSearchResults(
-        summary_tool=rank_res.summary_tool,
+        summary_tool=summary_tool,
         summary_models=tables['summary_models'],
         summary_errors=tables['summary_errors'],
         final_model=rank_res.final_model,

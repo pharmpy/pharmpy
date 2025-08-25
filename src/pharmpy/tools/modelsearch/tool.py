@@ -8,6 +8,7 @@ from pharmpy.model import Model
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
+    add_parent_column,
     create_plots,
     table_final_eta_shrinkage,
     update_initial_estimates,
@@ -265,12 +266,6 @@ def post_process(
 
     rank_type += '_mixed' if rank_type in ('bic', 'mbic') else ''
 
-    # FIXME: remove when parent dict is part of context
-    parent_dict = {
-        me.model.name: me.parent.name if me.parent else base_model_entry.model.name
-        for me in model_entries
-    }
-
     models = [base_model_entry.model] + [me.model for me in res_model_entries]
     results = [base_model_entry.modelfit_results] + [
         me.modelfit_results for me in res_model_entries
@@ -287,15 +282,15 @@ def post_process(
         search_space=mfl,
         E=E,
         parameter_uncertainty_method=parameter_uncertainty_method,
-        _parent_dict=parent_dict,
     )
 
+    summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
     tables = create_result_tables(model_entries)
     plots = create_plots(rank_res.final_model, rank_res.final_results)
     eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
 
     res = ModelSearchResults(
-        summary_tool=rank_res.summary_tool,
+        summary_tool=summary_tool,
         **tables,
         final_model=rank_res.final_model,
         final_results=rank_res.final_results,

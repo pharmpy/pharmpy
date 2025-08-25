@@ -235,18 +235,21 @@ def stepwise_BU_algorithm(
         all_modelentries.extend(new_candidate_modelentries)
         old_best_name = best_model_entry.model.name
 
-        # FIXME: remove once search space and parent dict are properly handled
-        from .tool import get_modelrank_opts
+        rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
 
-        modelrank_opts = get_modelrank_opts(base_model, all_modelentries, rank_type, keep, E_p, E_q)
-        modelrank_opts.update(
-            {
-                'cutoff': cutoff,
-                'strictness': strictness,
-                'E': (E_p, E_q),
-                'parameter_uncertainty_method': parameter_uncertainty_method,
-            }
-        )
+        # FIXME: remove once search space is properly handled
+        from .tool import get_mbic_search_space
+
+        search_space = get_mbic_search_space(base_model, keep, E_p, E_q)
+
+        modelrank_opts = {
+            'search_space': search_space,
+            'rank_type': rank_type,
+            'cutoff': cutoff,
+            'strictness': strictness,
+            'E': (E_p, E_q),
+            'parameter_uncertainty_method': parameter_uncertainty_method,
+        }
 
         selected_model_entry = select_model_entry(
             context, best_model_entry, new_candidate_modelentries, modelrank_opts
@@ -279,7 +282,6 @@ def select_model_entry(context, base_model_entry, model_entries, modelrank_opts)
         search_space=modelrank_opts['search_space'],
         E=modelrank_opts['E'],
         parameter_uncertainty_method=modelrank_opts['parameter_uncertainty_method'],
-        _parent_dict=modelrank_opts['parent_dict'],
     )
     if rank_res.final_model and rank_res.final_model != base_model_entry.model:
         mes_best = [me for me in model_entries if me.model == rank_res.final_model]

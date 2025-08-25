@@ -22,6 +22,7 @@ from pharmpy.modeling import (
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
+    add_parent_column,
     create_plots,
     summarize_tool,
     table_final_eta_shrinkage,
@@ -476,31 +477,26 @@ def start(
     final_final_model = last_res.final_model
     if input_res and final_res:
         context.log_info('Comparing final model to input model')
-        # FIXME: remove once search space and parent dict are properly handled
-        modelrank_opts = get_modelrank_opts(
-            _get_full_model([base_model]),
-            [input_model_entry, final_model_entry],
-            rank_type,
-            keep,
-            E_p,
-            E_q,
-        )
+        rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+        # FIXME: remove once search space is properly handled
+        search_space = get_mbic_search_space(_get_full_model([base_model]), keep, E_p, E_q)
         rank_res = run_subtool(
             tool_name='modelrank',
             ctx=context,
             models=[input_model, final_model],
             results=[input_res, final_res],
             ref_model=input_model,
-            rank_type=modelrank_opts['rank_type'],
+            rank_type=rank_type,
             cutoff=cutoff,
             strictness=strictness,
-            search_space=modelrank_opts['search_space'],
+            search_space=search_space,
             E=(E_p, E_q),
             parameter_uncertainty_method=parameter_uncertainty_method,
-            _parent_dict=modelrank_opts['parent_dict'],
         )
 
-        summary_final_step = rank_res.summary_tool
+        summary_final_step = add_parent_column(
+            rank_res.summary_tool, [input_model_entry, final_model_entry]
+        )
         sum_tools.append(summary_final_step)
         best_model_name = rank_res.final_model.name
 
@@ -641,26 +637,24 @@ def post_process(
         me.modelfit_results for me in res_model_entries
     ]
 
-    # FIXME: remove once search space and parent dict are properly handled
-    modelrank_opts = get_modelrank_opts(
-        _get_full_model(models_to_rank), model_entries, rank_type, keep, E_p, E_q
-    )
+    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+    # FIXME: remove once search space is properly handled
+    search_space = get_mbic_search_space(_get_full_model(models_to_rank), keep, E_p, E_q)
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
         models=models_to_rank,
         results=results_to_rank,
         ref_model=base_model_entry.model,
-        rank_type=modelrank_opts['rank_type'],
+        rank_type=rank_type,
         cutoff=cutoff,
         strictness=strictness,
-        search_space=modelrank_opts['search_space'],
+        search_space=search_space,
         E=(E_p, E_q),
         parameter_uncertainty_method=parameter_uncertainty_method,
-        _parent_dict=modelrank_opts['parent_dict'],
     )
 
-    summary_tool = rank_res.summary_tool
+    summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
     assert summary_tool is not None
     summary_models = summarize_modelfit_results_from_entries(model_entries)
     summary_errors = summarize_errors_from_entries(model_entries)
@@ -707,18 +701,6 @@ def update_input_model_description(input_model_entry):
     model = model.replace(description=description)
     model_entry = ModelEntry.create(model, modelfit_results=input_model_entry.modelfit_results)
     return model_entry
-
-
-def get_modelrank_opts(ref_model, model_entries, rank_type, keep, E_p, E_q):
-    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
-    # FIXME: not needed when proper search space has been implemented
-    search_space = get_mbic_search_space(ref_model, keep, E_p, E_q)
-    # FIXME: remove when parent dict is part of context
-    parent_dict = {
-        me.model.name: me.parent.name if me.parent else me.model.name for me in model_entries
-    }
-
-    return {'rank_type': rank_type, 'search_space': search_space, 'parent_dict': parent_dict}
 
 
 def create_delinearize_workflow(input_model, final_model, param_mapping, stepno):

@@ -13,6 +13,7 @@ from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariat
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
 from pharmpy.tools.common import (
+    add_parent_column,
     concat_summaries,
     create_plots,
     table_final_eta_shrinkage,
@@ -655,11 +656,6 @@ def perform_step_procedure(
 
 
 def rank_model_entries(context, parent_modelentry, new_candidate_modelentries, strictness, alpha):
-    parent_dict = {
-        me.model.name: me.parent.name if me.parent else parent_modelentry.model.name
-        for me in [parent_modelentry] + new_candidate_modelentries
-    }
-
     models = [parent_modelentry.model] + [me.model for me in new_candidate_modelentries]
     results = [parent_modelentry.modelfit_results] + [
         me.modelfit_results for me in new_candidate_modelentries
@@ -673,7 +669,6 @@ def rank_model_entries(context, parent_modelentry, new_candidate_modelentries, s
         rank_type='lrt',
         cutoff=alpha,
         strictness=strictness,
-        _parent_dict=parent_dict,
     )
     return rank_res
 
@@ -852,7 +847,9 @@ def task_results(context, state: SearchState):
         base_modelentry,
         res_modelentries,
     )
-    summary_tool = create_summary_tool(state.rank_res, tables['steps'], base_modelentry.model.name)
+    summary_tool = create_summary_tool(
+        state.rank_res, tables['steps'], base_modelentry.model.name, modelentries
+    )
     plots = create_plots(best_modelentry.model, best_modelentry.modelfit_results)
 
     res = COVSearchResults(
@@ -916,8 +913,8 @@ def _create_proxy_model_table(candidates, steps, proxy_models):
     return steps_df
 
 
-def create_summary_tool(rank_res, steps, base_model):
-    rank_summaries = [res.summary_tool for res in rank_res]
+def create_summary_tool(rank_res, steps, base_model, model_entries):
+    rank_summaries = [add_parent_column(res.summary_tool, model_entries) for res in rank_res]
 
     keys = list(range(1, len(rank_summaries) + 1))
     summary_tool = concat_summaries(rank_summaries, keys)
