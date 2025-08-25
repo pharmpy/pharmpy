@@ -10,8 +10,8 @@ class VPCResults(Results):
     plot: Optional[Any] = None
 
 
-def calculate_results(input_model, simulation_results):
-    vpc_plot = plot_vpc(input_model, simulation_results)  # , stratify_on=dvid_name)
+def calculate_results(input_model, simulation_results, stratify):
+    vpc_plot = plot_vpc(input_model, simulation_results, stratify_on=stratify)
     res = VPCResults(
         plot=vpc_plot,
     )

@@ -17,6 +17,7 @@ def create_workflow(
     model: Model,
     results: Optional[ModelfitResults] = None,
     samples: int = 20,
+    stratify: Optional[str] = None,
 ):
     """Run VPC
 
@@ -28,6 +29,8 @@ def create_workflow(
         Results for model
     samples : int
         Number of samples
+    stratify : str
+        Column to stratify on
 
     Returns
     -------
@@ -51,7 +54,7 @@ def create_workflow(
     simulation_task = Task('simulation', simulation, samples)
     wb.add_task(simulation_task, predecessors=wb.output_tasks)
 
-    task_result = Task('results', post_process_results, model)
+    task_result = Task('results', post_process_results, model, stratify)
     wb.add_task(task_result, predecessors=wb.output_tasks)
 
     return Workflow(wb)
@@ -77,8 +80,8 @@ def simulation(context, samples, input_me):
     return simulation_data
 
 
-def post_process_results(context, input_model, simulation_data):
-    res = calculate_results(input_model, simulation_data)
+def post_process_results(context, input_model, stratify, simulation_data):
+    res = calculate_results(input_model, simulation_data, stratify=stratify)
     context.log_info("Finishing tool vpc")
     return res
 

@@ -153,7 +153,9 @@ def run_bootstrap(args):
 
 def run_vpc(args):
     model, res = args.model
-    run_tool_wrapper('vpc', args, model=model, results=res)
+    run_tool_wrapper(
+        'vpc', args, model=model, results=res, samples=args.samples, stratify=args.stratify
+    )
 
 
 def run_execute(args):
@@ -901,6 +903,11 @@ parser_definition = [
                                 'name': '--samples',
                                 'type': int,
                                 'help': 'Number of samples',
+                            },
+                            {
+                                'name': '--stratify',
+                                'type': str,
+                                'help': 'Column to stratify on',
                             },
                             {
                                 'name': '--path',
