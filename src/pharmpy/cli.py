@@ -903,6 +903,7 @@ parser_definition = [
                                 'name': '--samples',
                                 'type': int,
                                 'help': 'Number of samples',
+                                'required': True,
                             },
                             {
                                 'name': '--stratify',
