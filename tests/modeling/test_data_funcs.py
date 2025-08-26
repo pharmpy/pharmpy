@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     get_number_of_observations,
     get_number_of_observations_per_individual,
     get_observations,
+    infer_datatypes,
     list_time_varying_covariates,
     load_dataset,
     remove_loq_data,
@@ -594,3 +595,18 @@ def test_bin_observations(load_example_model_for_test):
     assert bin_edges[0] == 0
     assert bin_edges[1] == 1.8
     assert bin_edges[2] == 5.5
+
+
+def test_infer_datatypes(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    m2 = infer_datatypes(model, columns=("APGR",))
+    assert m2.datainfo['APGR'].datatype == 'int32'
+    assert m2.datainfo['FA1'].datatype == 'float64'
+    assert m2.dataset['APGR'].dtype == np.int32
+    assert m2.dataset['FA1'].dtype == np.float64
+
+    m2 = infer_datatypes(model)
+    assert m2.datainfo['APGR'].datatype == 'int32'
+    assert m2.datainfo['FA1'].datatype == 'int32'
+    assert m2.dataset['APGR'].dtype == np.int32
+    assert m2.dataset['FA1'].dtype == np.int32

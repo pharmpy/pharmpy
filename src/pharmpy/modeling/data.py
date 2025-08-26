@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Collection, Literal, Optional, Union
 
 from pharmpy.basic import Expr, Unit
 from pharmpy.deps import numpy as np
@@ -1745,6 +1745,72 @@ def set_reference_values(model: Model, refs: dict[str, Union[int, float]]):
         dtypes[colname] = datatype
     df = df.assign(**newcols).astype(dtypes)
     model = model.replace(dataset=df)
+    return model
+
+
+def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> Model:
+    """Infer and set datatypes for the dataset
+
+        All columns or only the ones set in the columns option will be checked
+        for conversion to a simpler datatype. Currently only int32 will be checked since
+        this corresponds to the integer type in R.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+    columns : list[str]
+        The columns to attempt conversion or None for all
+
+    Returns
+    -------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = infer_datatypes(model, ['APGR'])
+    >>> model.dataset
+         ID   TIME  AMT  WGT  APGR    DV  FA1  FA2
+    0     1    0.0  4.0  0.5     7   0.0  1.0  1.0
+    1     1    2.0  0.0  0.5     7  17.3  0.0  0.0
+    2     1   12.5  4.0  0.5     7   0.0  1.0  1.0
+    3     1   24.5  4.0  0.5     7   0.0  1.0  1.0
+    4     1   37.0  4.0  0.5     7   0.0  1.0  1.0
+    ..   ..    ...  ...  ...   ...   ...  ...  ...
+    739  59  108.3  4.0  0.5     6   0.0  1.0  1.0
+    740  59  120.5  4.0  0.5     6   0.0  1.0  1.0
+    741  59  132.3  4.0  0.5     6   0.0  1.0  1.0
+    742  59  144.8  4.0  0.5     6   0.0  1.0  1.0
+    743  59  146.8  0.0  0.5     6  40.2  0.0  0.0
+    <BLANKLINE>
+    [744 rows x 8 columns]
+    """
+
+    if columns is None:
+        columns = model.dataset.columns
+    df = model.dataset
+    if df is None:
+        return model
+
+    di = model.datainfo
+    changed = False
+
+    for col in columns:
+        if df[col].dtype != np.int32:
+            asint = df[col].astype('int32')
+            if all(asint == df[col]):
+                changed = True
+                df = df.assign(**{col: asint})
+                ci = di[col]
+                ci = ci.replace(datatype='int32')
+                di = di.set_column(ci)
+
+    if changed:
+        model = model.replace(dataset=df, datainfo=di)
+
     return model
 
 
