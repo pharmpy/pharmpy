@@ -69,14 +69,12 @@ def start(context, input_model, results):
 
 def simulation(context, samples, input_me):
     # NOTE: The seed is set to be in range for NONMEM
-    context.log_info(f"Starting simulation with {samples} samples.")
     rng = context.create_rng(1)
     sim_model = set_simulation(input_me.model, n=samples, seed=context.spawn_seed(rng, n=31))
     if input_me.modelfit_results is not None:
         sim_model = set_initial_estimates(sim_model, input_me.modelfit_results.parameter_estimates)
     sim_res = run_subtool('simulation', context, name='simulation', model=sim_model)
     simulation_data = sim_res.table
-    context.log_info("Simulation finished.")
     return simulation_data
 
 
