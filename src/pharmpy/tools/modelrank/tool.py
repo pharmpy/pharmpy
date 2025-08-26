@@ -52,7 +52,6 @@ def create_workflow(
     search_space: Optional[Union[str, ModelFeatures]] = None,
     E: Optional[Union[float, str, tuple[float], tuple[str]]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
-    _parent_dict: Optional[dict[str, str]] = None,
 ):
     """Run ModelRank tool.
 
@@ -80,8 +79,6 @@ def create_workflow(
     parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method. Will be used in ranking models if strictness includes
         parameter uncertainty
-    _parent_dict : dict
-        EXPERIMENTAL FEATURE, WILL BE REMOVED. Dictionary of parent and child models.
 
     Returns
     -------
