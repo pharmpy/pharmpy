@@ -34,7 +34,6 @@ from pharmpy.tools.iivsearch.tool import (
     categorize_model_entries,
     create_param_mapping,
     create_workflow,
-    flatten_list,
     get_mbic_search_space,
     get_ref_model,
     prepare_algorithms,
@@ -180,10 +179,6 @@ def test_add_iiv(load_model_for_test, testdata, iiv_strategy, linearize, no_of_a
         len(model_iiv.parameters.nonfixed) - len(model_input.parameters.nonfixed)
         == no_of_added_params
     )
-
-
-def test_flatten_list():
-    assert flatten_list([['x'], 'y', [['z']]]) == ['x', 'y', 'z']
 
 
 @pytest.mark.parametrize(

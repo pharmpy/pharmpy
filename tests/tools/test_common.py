@@ -1,7 +1,21 @@
 from pharmpy.deps import pandas as pd
 from pharmpy.modeling import set_name
-from pharmpy.tools.common import add_parent_column
+from pharmpy.tools.common import add_parent_column, concat_summaries, flatten_list
 from pharmpy.workflows import ModelEntry
+
+
+def test_flatten_list():
+    assert flatten_list([['x'], 'y', [['z']]]) == ['x', 'y', 'z']
+
+
+def test_concat_summaries():
+    df1 = pd.DataFrame({'model': ['x', 'y'], 'col1': [0, 1], 'col2': ['a', 'b']}).set_index('model')
+    df2 = pd.DataFrame({'model': ['y', 'z'], 'col1': [2, 3], 'col2': ['c', 'd']}).set_index('model')
+
+    df_concat = concat_summaries([df1, df2], keys=[1, 2])
+    assert list(df_concat.index.values) == [(1, 'x'), (1, 'y'), (2, 'y'), (2, 'z')]
+    assert df_concat['col1'].values.tolist() == [0, 1, 2, 3]
+    assert df_concat['col2'].values.tolist() == ['a', 'b', 'c', 'd']
 
 
 def test_add_parent_column(load_model_for_test, pheno_path):

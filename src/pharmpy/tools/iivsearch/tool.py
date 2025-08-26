@@ -5,7 +5,6 @@ from dataclasses import dataclass
 from typing import Iterable, Literal, Optional, Union
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
-from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
@@ -23,7 +22,9 @@ from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
     add_parent_column,
+    concat_summaries,
     create_plots,
+    flatten_list,
     summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
@@ -524,11 +525,11 @@ def start(
         keys_summary_models += [len(keys) + 1]
 
     final_results = IIVSearchResults(
-        summary_tool=_concat_summaries(
+        summary_tool=concat_summaries(
             sum_tools, keys_summary_tool
         ),  # To include step comparing input to final
-        summary_models=_concat_summaries(sum_models, keys_summary_models),  # To include input model
-        summary_errors=_concat_summaries(sum_errs, keys),
+        summary_models=concat_summaries(sum_models, keys_summary_models),  # To include input model
+        summary_errors=concat_summaries(sum_errs, keys),
         final_model=final_final_model,
         final_results=final_results,
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
@@ -559,16 +560,6 @@ def _get_full_model(models):
         return len(model.random_variables.iiv.parameter_names)
 
     return max(models, key=_no_of_params)
-
-
-def _concat_summaries(summaries, keys):
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="The behavior of DataFrame concatenation with empty or all-NA",
-            category=FutureWarning,
-        )
-        return pd.concat(summaries, keys=keys, names=['step'])
 
 
 def _results(context, res):
@@ -666,16 +657,6 @@ def post_process(
         final_results=rank_res.final_results,
     )
     return res
-
-
-def flatten_list(lst):
-    result = []
-    for item in lst:
-        if isinstance(item, list):
-            result.extend(flatten_list(item))
-        else:
-            result.append(item)
-    return result
 
 
 def categorize_model_entries(model_entries, algorithm):
