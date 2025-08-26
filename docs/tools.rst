@@ -40,3 +40,4 @@ Tools in Pharmpy
    Retries - Rerun a model with tweaked initial estimates <retries>
    Simulation - Run a simulation <simulation>
    Linearize - Linearize a model <linearize_tool>
+   VPC - Visual predictive check <vpc>
