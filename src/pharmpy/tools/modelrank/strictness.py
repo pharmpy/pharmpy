@@ -54,6 +54,8 @@ def validate_string(strictness: str):
 
 
 def preprocess_string(strictness: str) -> str:
+    if strictness == '':
+        return 'True'
     strictness = strictness.lower()
     strictness = strictness.replace(' and ', ' & ').replace(' or ', ' | ').replace('not ', '~')
     comparison_pattern = r'(\w+\s*[<>=]+\s*\d+\.\d+)'
@@ -110,10 +112,12 @@ def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str,
         else:
             predicates[expr_key] = expr_eval
 
-    _eval_tree(expr)
-
-    strictness_fulfilled = evaluate_strictness(expr, predicates)
-    predicates['strictness_fulfilled'] = strictness_fulfilled
+    if expr.is_indeterminate():
+        _eval_tree(expr)
+        strictness_fulfilled = evaluate_strictness(expr, predicates)
+        predicates['strictness_fulfilled'] = strictness_fulfilled
+    else:
+        predicates['strictness_fulfilled'] = True if expr.is_true() else False
 
     return predicates
 

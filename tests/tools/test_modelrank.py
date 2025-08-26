@@ -111,6 +111,11 @@ def test_rank_models(
             {'minimization_successful': True, 'strictness_fulfilled': True},
         ),
         (
+            '',
+            'models/mox2.mod',
+            {'strictness_fulfilled': True},
+        ),
+        (
             'minimization_successful or rounding_errors',
             'models/mox2.mod',
             {
