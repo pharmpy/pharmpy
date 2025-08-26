@@ -14,6 +14,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.common import (
     ToolResults,
+    add_parent_column,
     create_plots,
     table_final_eta_shrinkage,
 )
@@ -216,9 +217,6 @@ def task_results(context, strictness, retries):
 
     models_to_rank = [me.model for me in results_to_summarize]
     results_to_rank = [me.modelfit_results for me in results_to_summarize]
-    parent_dict = {
-        me.model.name: me.parent.name if me.parent else me.model.name for me in results_to_summarize
-    }
 
     rank_res = run_subtool(
         tool_name='modelrank',
@@ -229,10 +227,9 @@ def task_results(context, strictness, retries):
         rank_type=rank_type,
         cutoff=cutoff,
         strictness=strictness,
-        _parent_dict=parent_dict,
     )
-
-    summary_tool = _modify_summary_tool(rank_res.summary_tool, retry_runs)
+    summary_tool = add_parent_column(rank_res.summary_tool, results_to_summarize)
+    summary_tool = _modify_summary_tool(summary_tool, retry_runs)
     tables = create_result_tables(results_to_summarize)
     plots = create_plots(rank_res.final_model, rank_res.final_results)
     eta_shrinkage = table_final_eta_shrinkage(rank_res.final_model, rank_res.final_results)
