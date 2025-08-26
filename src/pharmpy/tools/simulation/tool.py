@@ -46,6 +46,8 @@ def run_simulations(context, model):
     wb = WorkflowBuilder(wf)
     task_results = Task('results', bundle_results)
     wb.add_task(task_results, predecessors=wf.output_tasks)
+    nsamples = model.execution_steps[-1].n
+    context.log_info(f"Starting simulation with {nsamples} samples")
     modelentry_simulation = context.call_workflow(Workflow(wb), 'results_remaining')[0]
     return modelentry_simulation.simulation_results
 
