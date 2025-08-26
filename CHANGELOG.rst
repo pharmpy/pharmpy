@@ -10,6 +10,7 @@ New features
 * Add :code:`modeling.export_model_files`
 * Add :code:`modeling.map_eta_parameters` for creation of mappings between connected individual parameters, etas or omegas.
 * Add :code`modeling.infer_datatypes` to infer and check if data columns can be converted a simpler datatype (e.g. int32)
+* Add first version of a VPC tool
 
 Changes
 =======
