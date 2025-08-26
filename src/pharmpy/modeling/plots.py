@@ -13,7 +13,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import scipy, sympy, sympy_stats
 from pharmpy.model import Assignment, Model, get_and_check_dataset
-from pharmpy.modeling import bin_observations
+from pharmpy.modeling import bin_observations, infer_datatypes
 
 from .data import get_observations
 
@@ -1003,7 +1003,8 @@ def plot_vpc(
         simulations = simulations.set_index(['SIM', 'index'])
 
     if stratify_on is not None:
-        df = get_and_check_dataset(model)
+        m2 = infer_datatypes(model, columns=(stratify_on,))
+        df = get_and_check_dataset(m2)
         if f'{stratify_on}' not in df.columns:
             raise ValueError(f'{stratify_on} column does not exist in dataset.')
         charts = []
@@ -1038,7 +1039,7 @@ def plot_vpc(
                         qi=qi,
                         ci=ci,
                         query=query,
-                        title=f'{stratify_on} {value}',
+                        title=f'{stratify_on}={value}',
                         stratify_on=stratify_on,
                     )
                 )
