@@ -36,14 +36,15 @@ from pharmpy.modeling import (
 from pharmpy.modeling.blq import has_blq_transformation
 from pharmpy.modeling.error import remove_error_model, set_time_varying_error_model
 from pharmpy.tools.common import (
+    add_parent_column,
+    concat_summaries,
     create_plots,
-    summarize_tool,
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import (
-    is_strictness_fulfilled,
+    run_subtool,
     summarize_errors_from_entries,
     summarize_modelfit_results_from_entries,
 )
@@ -64,6 +65,7 @@ def create_workflow(
     max_iter: int = 3,
     dv: Optional[int] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -85,6 +87,9 @@ def create_workflow(
         Which DV to assess the error model for.
     strictness : str
         Strictness criteria
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -103,7 +108,17 @@ def create_workflow(
 
     wb = WorkflowBuilder(name="ruvsearch")
     start_task = Task(
-        'start_ruvsearch', start, model, results, groups, p_value, skip, max_iter, dv, strictness
+        'start_ruvsearch',
+        start,
+        model,
+        results,
+        groups,
+        p_value,
+        skip,
+        max_iter,
+        dv,
+        strictness,
+        parameter_uncertainty_method,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -111,7 +126,17 @@ def create_workflow(
     return Workflow(wb)
 
 
-def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iteration, strictness, dv):
+def create_iteration_workflow(
+    model_entry,
+    groups,
+    p_value,
+    cutoff,
+    skip,
+    current_iteration,
+    strictness,
+    parameter_uncertainty_method,
+    dv,
+):
     wb = WorkflowBuilder()
 
     start_task = Task('start_iteration', _start_iteration, model_entry)
@@ -157,13 +182,18 @@ def create_iteration_workflow(model_entry, groups, cutoff, skip, current_iterati
             tasks.append(task)
             wb.add_task(task, predecessors=task_base_model)
 
+    if not tasks:
+        return None
+
     fit_wf = create_fit_workflow(n=1 + len(tasks))
     wb.insert_workflow(fit_wf, predecessors=[task_base_model] + tasks)
     post_pro = partial(
         post_process,
+        p_value=p_value,
         cutoff=cutoff,
         current_iteration=current_iteration,
         strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
         dv=dv,
         groups=groups,
     )
@@ -197,7 +227,18 @@ def _change_proportional_model(model_entry):
     return ModelEntry.create(model, modelfit_results=None)
 
 
-def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, strictness):
+def start(
+    context,
+    input_model,
+    input_res,
+    groups,
+    p_value,
+    skip,
+    max_iter,
+    dv,
+    strictness,
+    parameter_uncertainty_method,
+):
     context.log_info("Starting tool ruvsearch")
     cutoff = float(stats.chi2.isf(q=p_value, df=1))
     if skip is None:
@@ -222,17 +263,29 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         prop_model_entry = None
         selected_model_entries = [model_entry]
 
-    cwres_models = []
+    cwres_models, summary_steps = [], []
     for current_iteration in range(1, max_iter + 1):
         context.log_info(f"Starting iteration {current_iteration}")
         wf = create_iteration_workflow(
-            model_entry, groups, cutoff, skip, current_iteration, strictness=strictness, dv=dv
+            model_entry,
+            groups,
+            p_value,
+            cutoff,
+            skip,
+            current_iteration,
+            strictness=strictness,
+            parameter_uncertainty_method=parameter_uncertainty_method,
+            dv=dv,
         )
+        # This happens if only base model is created
+        if wf is None:
+            break
         res, best_model_entry, selected_model_name = context.call_workflow(
             wf, f'results{current_iteration}'
         )
         cwres_models.append(res.cwres_models)
-
+        if res.summary_tool is not None:
+            summary_steps.append(res.summary_tool)
         if not selected_model_name.startswith('base'):
             selected_model_entries.append(best_model_entry)
 
@@ -263,7 +316,8 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
             f"The {changing} model with OFV {model_entry.modelfit_results.ofv:.3f} was better than the selected model"
         )
 
-    tables = create_result_tables(selected_model_entries, cutoff, strictness)
+    summary_tool = concat_summaries(summary_steps, keys=range(1, len(summary_steps) + 1))
+    tables = create_result_tables(selected_model_entries)
     plots = create_plots(model_entry.model, model_entry.modelfit_results)
     final_model = model_entry.model.replace(name="final")
 
@@ -272,7 +326,7 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
         final_model=final_model,
         final_results=model_entry.modelfit_results,
         summary_models=tables['summary_models'],
-        summary_tool=tables['summary_tool'],
+        summary_tool=summary_tool,
         summary_errors=tables['summary_errors'],
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
@@ -289,41 +343,16 @@ def start(context, input_model, input_res, groups, p_value, skip, max_iter, dv, 
     return res
 
 
-def create_result_tables(model_entries, cutoff, strictness):
+def create_result_tables(model_entries):
     sum_models = summarize_modelfit_results_from_entries(model_entries)
     sum_models['step'] = list(range(len(sum_models)))
     summf = sum_models.reset_index().set_index(['step', 'model'])
-    summary_tool = _create_summary_tool(model_entries, cutoff, strictness)
     summary_errors = summarize_errors_from_entries(model_entries)
     tables = {
         'summary_models': summf,
-        'summary_tool': summary_tool,
         'summary_errors': summary_errors,
     }
     return tables
-
-
-def _create_summary_tool(selected_model_entries, cutoff, strictness):
-    selected_models = [model_entry.model for model_entry in selected_model_entries]
-    model_names = [model.name for model in selected_models]
-    iteration_map = {model.name: model_names.index(model.name) for model in selected_models}
-
-    base_model_entry = selected_model_entries[0]
-    ruvsearch_model_entries = selected_model_entries[1:]
-
-    sum_tool = summarize_tool(
-        ruvsearch_model_entries, base_model_entry, 'ofv', cutoff, strictness=strictness
-    ).reset_index()
-    sum_tool['step'] = sum_tool['model'].map(iteration_map)
-    sum_tool_by_iter = sum_tool.set_index(['step', 'model']).sort_index()
-
-    # FIXME: Workaround since rank_models will exclude ranking of base model since dofv will be 0
-    sum_tool_by_iter.loc[(0, base_model_entry.model.name), 'ofv'] = (
-        base_model_entry.modelfit_results.ofv
-    )
-    sum_tool_by_iter.loc[(0, base_model_entry.model.name), 'dofv'] = 0
-
-    return sum_tool_by_iter.drop(columns=['rank'])
 
 
 def _start_iteration(model_or_model_entry):
@@ -351,6 +380,7 @@ def create_additive_nlme_model(
 
     model = set_additive_error_model(best_model, dv=dv)
     model = set_initial_estimates(model, {'sigma': sigma_init})
+    model = model.replace(name=f'{best_model.name}_add', description='additive')
     return model
 
 
@@ -365,18 +395,17 @@ def _have_residuals_and_predictions(me):
     return have_all
 
 
-def _is_significantly_better(me, base_me, strictness, cutoff):
-    if _have_residuals_and_predictions(me):
-        delta_ofv = base_me.modelfit_results.ofv - me.modelfit_results.ofv
-        return (
-            is_strictness_fulfilled(me.model, me.modelfit_results, strictness)
-            and delta_ofv > cutoff
-        )
-    return False
-
-
 def post_process(
-    context, start_model_entry, *model_entries, cutoff, current_iteration, strictness, dv, groups
+    context,
+    start_model_entry,
+    *model_entries,
+    p_value,
+    cutoff,
+    current_iteration,
+    strictness,
+    parameter_uncertainty_method,
+    dv,
+    groups,
 ):
     res = calculate_results(model_entries)
     best_model_unfitted, selected_model_name = _create_best_model(
@@ -386,7 +415,9 @@ def post_process(
         additive_model = create_additive_nlme_model(best_model_unfitted, selected_model_name, dv)
         models_to_fit = [best_model_unfitted]
         if additive_model is not None:
-            models_to_fit.append(ModelEntry.create(model=additive_model))
+            models_to_fit.append(
+                ModelEntry.create(model=additive_model, parent=start_model_entry.model)
+            )
 
         fit_wf = create_fit_workflow(modelentries=models_to_fit)
         wb = WorkflowBuilder(fit_wf)
@@ -399,31 +430,51 @@ def post_process(
         fit_wf = Workflow(wb)
         best_model_entries = context.call_workflow(fit_wf, f'fit{current_iteration}')
 
-        if len(best_model_entries) == 1:
-            if _is_significantly_better(
-                best_model_entries[0], start_model_entry, strictness, cutoff
-            ):
-                return (res, best_model_entries[0], selected_model_name)
-        else:
-            me1 = best_model_entries[0]
-            me2 = best_model_entries[1]
-            me1_better = _is_significantly_better(me1, start_model_entry, strictness, cutoff)
-            me2_better = _is_significantly_better(me2, start_model_entry, strictness, cutoff)
-            if me1_better and me2_better:
-                if me1.modelfit_results.ofv > me2.modelfit_results.ofv:
-                    selected = me1
-                else:
-                    selected = me2
-            elif me1_better:
-                selected = me1
-            elif me2_better:
-                selected = me2
+        best_model_entries_valid = [
+            me for me in best_model_entries if _have_residuals_and_predictions(me)
+        ]
+        if best_model_entries_valid:
+            model_entries = [start_model_entry] + best_model_entries_valid
+            if additive_model:
+                # Combined or power model
+                ref_model = best_model_unfitted.model
             else:
-                selected = None
-            if selected is not None:
-                return (res, selected, selected_model_name)
+                ref_model = start_model_entry.model
+        else:
+            model_entries = [start_model_entry]
+            ref_model = start_model_entry.model
+    else:
+        model_entries = [start_model_entry]
+        ref_model = start_model_entry.model
+        selected_model_name = f"base_{current_iteration}"
 
-    return (res, start_model_entry, f"base_{current_iteration}")
+    rank_res = rank_models(
+        context, model_entries, ref_model, p_value, strictness, parameter_uncertainty_method
+    )
+    summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
+    res = RUVSearchResults(cwres_models=res.cwres_models, summary_tool=summary_tool)
+    best_model_entry = next(filter(lambda me: me.model is rank_res.final_model, model_entries))
+
+    return res, best_model_entry, selected_model_name
+
+
+def rank_models(
+    context, model_entries, ref_model, p_value, strictness, parameter_uncertainty_method
+):
+    models = [me.model for me in model_entries]
+    results = [me.modelfit_results for me in model_entries]
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=ref_model,
+        rank_type='lrt',
+        cutoff=p_value,
+        strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+    )
+    return rank_res
 
 
 def _create_base_model(input_model_entry, current_iteration, dv):

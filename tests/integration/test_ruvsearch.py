@@ -1,5 +1,7 @@
 import shutil
 
+import pytest
+
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
 from pharmpy.modeling import (  # convert_model,; create_basic_pk_model,
@@ -88,7 +90,14 @@ def test_ruvsearch_blq(tmp_path, testdata):
         assert len(res.cwres_models) > 1
 
 
-def test_ruvsearch_dummy(tmp_path, testdata):
+@pytest.mark.parametrize(
+    'kwargs, no_of_steps, no_of_models',
+    [
+        (dict(), 3, 5),
+        ({'skip': ['IIV_on_RUV', 'time_varying']}, 1, 3),
+    ],
+)
+def test_ruvsearch_dummy(tmp_path, testdata, kwargs, no_of_steps, no_of_models):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
             shutil.copy2(path, tmp_path)
@@ -98,15 +107,24 @@ def test_ruvsearch_dummy(tmp_path, testdata):
         model = Model.parse_model('mox3.mod')
         results = read_modelfit_results('mox3.mod')
         model = remove_parameter_uncertainty_step(model)
-        run_tool(
+        res = run_tool(
             'ruvsearch',
             model=model,
             results=results,
             groups=4,
             p_value=0.05,
-            skip=[],
             esttool='dummy',
+            dispatcher='local_serial',  # In order for dummy OFVs to work properly
+            ncores=1,
+            **kwargs,
         )
+
+        steps = set(res.summary_tool.index.get_level_values('step'))
+        assert len(steps) == no_of_steps
+
+        models = set(res.summary_tool.index.get_level_values('model'))
+        assert len(models) == no_of_models
+
         rundir = tmp_path / 'ruvsearch1'
         assert (rundir / 'models' / 'base_1' / 'model.ctl').exists()
         assert (rundir / 'models' / 'base_1' / 'model_results.json').exists()

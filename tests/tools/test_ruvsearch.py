@@ -131,7 +131,6 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
         assert (df['DV'] != 0).all()
 
 
-@pytest.mark.filterwarnings("ignore::UserWarning")
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
@@ -144,19 +143,12 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
     candidate_entries = model_entry_factory([model_1, model_2])
     model_entries = [me_start] + candidate_entries
-    tables = create_result_tables(model_entries, cutoff=3.84, strictness='minimization_successful')
+    tables = create_result_tables(model_entries)
 
     summary_models = tables['summary_models']
     assert len(summary_models) == len(model_entries)
     steps = list(summary_models.index.get_level_values('step'))
     assert steps == [0, 1, 2]
-
-    summary_tool = tables['summary_tool']
-    assert len(summary_tool) == len(model_entries)
-    steps = list(summary_tool.index.get_level_values('step'))
-    assert steps == [0, 1, 2]
-    n_params = summary_tool['n_params'].values
-    assert list(n_params) == [5, 6, 7]
 
 
 def test_change_proportional_model(load_model_for_test, testdata):
