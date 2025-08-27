@@ -427,6 +427,22 @@ def validate_input(
             f'`results ({len(results)})`'
         )
 
+    if ref_model not in models:
+        raise ValueError(
+            'Incorrect `ref_model`: reference model must be part of input' 'models and results'
+        )
+
+    if rank_type == 'lrt':
+        for model in models:
+            if model is ref_model:
+                continue
+            df = len(ref_model.parameters.nonfixed) - len(model.parameters.nonfixed)
+            if df == 0:
+                raise ValueError(
+                    'Cannot perform LRT: at least one model candidate has 0'
+                    'degrees of freedom compared to reference model'
+                )
+
     if not parameter_uncertainty_method and "rse" in strictness.lower():
         if any(model.execution_steps[-1].parameter_uncertainty_method is None for model in models):
             raise ValueError(
@@ -435,30 +451,34 @@ def validate_input(
             )
 
     if search_space:
+        # FIXME: will be less messy once IIV/IOV is implemented in MFL
         if isinstance(search_space, str):
             try:
                 statements = mfl_parse(search_space)
             except:  # noqa E722
-                pattern_cov = r'COV\?\(\[*([\w,]*)\]*\)'
-                pattern_var = r'(IIV|IOV)\?\(\[*([\w,]*)\]*,\w+\)'
+                pattern_cov = r'COV\?*\(\[([\w,]*)\]*\)'
+                pattern_var = r'(IIV|IOV)\?*\(\[(\w+,*)+\],\w+\)'
                 if not re.match(pattern_cov, search_space) and not re.match(
                     pattern_var, search_space
                 ):
                     raise ValueError(
                         f'Invalid `search_space`, could not be parsed: "{search_space}"'
                     )
+                else:
+                    statements = None
         else:
             statements = search_space.filter("pk").mfl_statement_list()
 
-        modelsearch_statements = mfl_filtering(statements, 'modelsearch')
-        bad_statements = list(
-            filter(lambda statement: statement not in modelsearch_statements, statements)
-        )
-
-        if bad_statements:
-            raise ValueError(
-                f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
+        if statements:
+            modelsearch_statements = mfl_filtering(statements, 'modelsearch')
+            bad_statements = list(
+                filter(lambda statement: statement not in modelsearch_statements, statements)
             )
+
+            if bad_statements:
+                raise ValueError(
+                    f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
+                )
 
     if rank_type != 'mbic_mixed' and E is not None:
         raise ValueError(f'E can only be provided when `rank_type` is mbic: got `{rank_type}`')

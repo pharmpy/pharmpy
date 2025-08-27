@@ -705,3 +705,27 @@ def test_validate_input_raises(
             ref_model=model_ref,
             **kwargs,
         )
+
+
+def test_validate_input_raises_ref_model(load_model_for_test, pheno_path):
+    model_ref = load_model_for_test(pheno_path)
+    res_ref = read_modelfit_results(pheno_path)
+
+    models_cand = []
+    for i in range(5):
+        model = set_initial_estimates(model_ref, {'PTVCL': float(i)})
+        model = set_name(model, f'model{i}')
+        models_cand.append(model)
+
+    res_cand = [res_ref] * 5
+
+    with pytest.raises(ValueError, match='Incorrect `ref_model`'):
+        validate_input(models=models_cand, results=res_cand, ref_model=model_ref)
+
+    with pytest.raises(ValueError, match='Cannot perform LRT'):
+        validate_input(
+            models=[model_ref] + models_cand,
+            results=[res_ref] + res_cand,
+            ref_model=model_ref,
+            rank_type='lrt',
+        )
