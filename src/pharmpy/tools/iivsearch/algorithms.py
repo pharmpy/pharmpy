@@ -240,6 +240,7 @@ def stepwise_BU_algorithm(
         # FIXME: remove once search space is properly handled
         from .tool import get_mbic_search_space
 
+        E = (E_p, E_q) if E_p is not None or E_q is not None else None
         search_space = get_mbic_search_space(base_model, keep, E_p, E_q)
 
         modelrank_opts = {
@@ -247,7 +248,7 @@ def stepwise_BU_algorithm(
             'rank_type': rank_type,
             'alpha': cutoff,
             'strictness': strictness,
-            'E': (E_p, E_q),
+            'E': E,
             'parameter_uncertainty_method': parameter_uncertainty_method,
         }
 

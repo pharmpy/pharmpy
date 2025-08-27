@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import warnings
 from dataclasses import dataclass
 from typing import Iterable, Literal, Optional, Union
 
@@ -311,6 +310,10 @@ def start(
     context.store_input_model_entry(input_model_entry)
     context.log_info(f"Input model OFV: {input_res.ofv:.3f}")
 
+    for parameter in keep:
+        if not has_random_effect(input_model, parameter, "iiv"):
+            context.log_warning(f"Parameter `{parameter}` has no iiv and is ignored")
+
     list_of_algorithms = prepare_algorithms(algorithm, correlation_algorithm)
 
     sum_tools, sum_errs = [], []
@@ -479,6 +482,7 @@ def start(
     if input_res and final_res:
         context.log_info('Comparing final model to input model')
         rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+        E = (E_p, E_q) if E_p is not None or E_q is not None else None
         # FIXME: remove once search space is properly handled
         search_space = get_mbic_search_space(_get_full_model([base_model]), keep, E_p, E_q)
         rank_res = run_subtool(
@@ -491,7 +495,7 @@ def start(
             alpha=cutoff,
             strictness=strictness,
             search_space=search_space,
-            E=(E_p, E_q),
+            E=E,
             parameter_uncertainty_method=parameter_uncertainty_method,
         )
 
@@ -629,6 +633,7 @@ def post_process(
     ]
 
     rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+    E = (E_p, E_q) if E_p is not None or E_q is not None else None
     # FIXME: remove once search space is properly handled
     search_space = get_mbic_search_space(_get_full_model(models_to_rank), keep, E_p, E_q)
     rank_res = run_subtool(
@@ -641,7 +646,7 @@ def post_process(
         alpha=cutoff,
         strictness=strictness,
         search_space=search_space,
-        E=(E_p, E_q),
+        E=E,
         parameter_uncertainty_method=parameter_uncertainty_method,
     )
 
@@ -757,8 +762,6 @@ def validate_input(
         for parameter in keep:
             if parameter not in map(lambda x: str(x), model.statements.free_symbols):
                 raise ValueError(f'Symbol `{parameter}` does not exist in input model')
-            if not has_random_effect(model, parameter, "iiv"):
-                warnings.warn(f"Parameter `{parameter}` has no iiv and is ignored")
 
     if (
         strictness is not None

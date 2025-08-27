@@ -744,30 +744,3 @@ def test_validate_input_raises(
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
-
-
-@pytest.mark.parametrize(
-    ('model_path', 'arguments', 'warning', 'match'),
-    [(["nonmem", "pheno.mod"], dict(keep=["CL"]), UserWarning, 'Parameter')],
-)
-def test_validate_input_warn(
-    load_model_for_test,
-    testdata,
-    model_path,
-    arguments,
-    warning,
-    match,
-):
-    path = testdata.joinpath(*model_path)
-    model = load_model_for_test(path)
-    results = read_modelfit_results(path)
-    model = remove_iiv(model, 'CL')
-
-    harmless_arguments = dict(
-        algorithm='top_down_exhaustive',
-    )
-
-    kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
-
-    with pytest.warns(warning, match=match):
-        validate_input(**kwargs)
