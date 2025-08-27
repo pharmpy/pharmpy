@@ -667,7 +667,7 @@ def rank_model_entries(context, parent_modelentry, new_candidate_modelentries, s
         results=results,
         ref_model=parent_modelentry.model,
         rank_type='lrt',
-        cutoff=alpha,
+        alpha=alpha,
         strictness=strictness,
     )
     return rank_res

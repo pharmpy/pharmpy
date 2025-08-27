@@ -376,7 +376,7 @@ def get_best_model_and_ranking(
         results=results_to_rank,
         ref_model=base_entry.model,
         rank_type=rank_type,
-        cutoff=cutoff,
+        alpha=cutoff,
         strictness=strictness,
         search_space=search_space,
         E=E,

@@ -245,7 +245,7 @@ def stepwise_BU_algorithm(
         modelrank_opts = {
             'search_space': search_space,
             'rank_type': rank_type,
-            'cutoff': cutoff,
+            'alpha': cutoff,
             'strictness': strictness,
             'E': (E_p, E_q),
             'parameter_uncertainty_method': parameter_uncertainty_method,

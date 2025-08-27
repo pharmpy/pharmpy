@@ -289,7 +289,7 @@ def rank_models(
         results=results,
         ref_model=base_model_entry.model,
         rank_type=rank_type,
-        cutoff=cutoff,
+        alpha=cutoff,
         strictness=strictness,
         parameter_uncertainty_method=parameter_uncertainty_method,
     )

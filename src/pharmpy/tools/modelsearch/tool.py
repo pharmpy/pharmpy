@@ -277,7 +277,7 @@ def post_process(
         results=results,
         ref_model=base_model_entry.model,
         rank_type=rank_type,
-        cutoff=cutoff,
+        alpha=cutoff,
         strictness=strictness,
         search_space=mfl,
         E=E,

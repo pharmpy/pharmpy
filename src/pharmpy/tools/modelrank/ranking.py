@@ -14,7 +14,7 @@ def get_rank_values(
     me_ref: ModelEntry,
     mes_cand: list[ModelEntry],
     rank_type: str,
-    p_value: Optional[float],
+    alpha: Optional[float],
     search_space: Optional[str],
     E: Optional[float],
     mes_to_rank: list[ModelEntry],
@@ -22,8 +22,8 @@ def get_rank_values(
 
     if rank_type == 'lrt':
         rank_val = 'ofv'
-        ref = perform_lrt(me_ref, me_ref, p_value)
-        cands = {me: perform_lrt(me, me_ref, p_value) for me in mes_cand}
+        ref = perform_lrt(me_ref, me_ref, alpha)
+        cands = {me: perform_lrt(me, me_ref, alpha) for me in mes_cand}
         rank_values = {me_ref: ref, **cands}
     else:
         if rank_type == 'ofv':
@@ -54,13 +54,13 @@ def get_rank_values(
     return rank_values
 
 
-def perform_lrt(me, me_parent, p_value) -> dict[str, Union[float, int, bool]]:
+def perform_lrt(me, me_parent, alpha) -> dict[str, Union[float, int, bool]]:
     rank_dict = dict()
     rank_dict['df'] = lrt_df(me_parent, me)
-    if isinstance(p_value, tuple):
-        alpha = p_value[0] if rank_dict['df'] >= 0 else p_value[1]
+    if isinstance(alpha, tuple):
+        alpha = alpha[0] if rank_dict['df'] >= 0 else alpha[1]
     else:
-        alpha = p_value
+        alpha = alpha
     rank_dict['alpha'] = alpha
     rank_dict['cutoff'] = lrt_cutoff(me_parent.model, me.model, alpha)
     extended = me_parent if len(me_parent.model.parameters) > len(me.model.parameters) else me

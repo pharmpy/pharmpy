@@ -225,7 +225,7 @@ def task_results(context, strictness, retries):
         results=results_to_rank,
         ref_model=input_model_entry.model,
         rank_type=rank_type,
-        cutoff=cutoff,
+        alpha=cutoff,
         strictness=strictness,
     )
     summary_tool = add_parent_column(rank_res.summary_tool, results_to_summarize)

@@ -470,7 +470,7 @@ def rank_models(
         results=results,
         ref_model=ref_model,
         rank_type='lrt',
-        cutoff=p_value,
+        alpha=p_value,
         strictness=strictness,
         parameter_uncertainty_method=parameter_uncertainty_method,
     )

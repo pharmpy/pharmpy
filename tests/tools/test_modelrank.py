@@ -72,13 +72,13 @@ def test_create_candidate_with_uncertainty(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'strictness, rank_type, cutoff',
+    'strictness, rank_type, alpha',
     [
         ('minimization_successful', 'ofv', None),
     ],
 )
 def test_rank_models(
-    load_model_for_test, pheno_path, model_entry_factory, strictness, rank_type, cutoff
+    load_model_for_test, pheno_path, model_entry_factory, strictness, rank_type, alpha
 ):
     model_ref = load_model_for_test(pheno_path)
     res_ref = read_modelfit_results(pheno_path)
@@ -86,7 +86,7 @@ def test_rank_models(
     models_cand = [set_name(model, f'model{i}') for i, model in enumerate([model_ref] * 5)]
     mes_cand = model_entry_factory(models_cand, parent=model_ref)
 
-    res = rank_models(me_ref, mes_cand, strictness, rank_type, cutoff, None, None)
+    res = rank_models(me_ref, mes_cand, strictness, rank_type, alpha, None, None)
 
     assert len(res.summary_tool) == 6
     assert res.final_model.name == 'model1'
@@ -433,7 +433,7 @@ class DummyResults:
 
 
 @pytest.mark.parametrize(
-    'funcs, ofv, p_value, ref_dict',
+    'funcs, ofv, alpha, ref_dict',
     [
         (
             [add_peripheral_compartment],
@@ -507,7 +507,7 @@ class DummyResults:
         ),
     ],
 )
-def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, p_value, ref_dict):
+def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, alpha, ref_dict):
     model_parent = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     res_parent = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_parent = ModelEntry.create(model_parent, modelfit_results=res_parent)
@@ -519,7 +519,7 @@ def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, p_value, ref_dic
     res_child = DummyResults(name='cand', ofv=ofv)
     me_child = ModelEntry.create(model_child, modelfit_results=res_child, parent=model_parent)
 
-    rank_dict = perform_lrt(me_child, me_parent, p_value)
+    rank_dict = perform_lrt(me_child, me_parent, alpha)
     assert rank_dict.keys() == ref_dict.keys()
     for key1, key2 in zip(rank_dict.keys(), ref_dict.keys()):
         val1 = rank_dict[key1]
@@ -535,29 +535,29 @@ def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, p_value, ref_dic
 @pytest.mark.parametrize(
     'rank_type, rank_kwargs, final_model',
     [
-        ('ofv', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
-        ('aic', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
-        ('bic_mixed', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
-        ('bic_iiv', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
-        ('bic_fixed', {'p_value': None, 'search_space': None, 'E': None}, 'model1'),
+        ('ofv', {'alpha': None, 'search_space': None, 'E': None}, 'model1'),
+        ('aic', {'alpha': None, 'search_space': None, 'E': None}, 'model1'),
+        ('bic_mixed', {'alpha': None, 'search_space': None, 'E': None}, 'model1'),
+        ('bic_iiv', {'alpha': None, 'search_space': None, 'E': None}, 'model1'),
+        ('bic_fixed', {'alpha': None, 'search_space': None, 'E': None}, 'model1'),
         (
             'mbic_mixed',
-            {'p_value': None, 'search_space': 'IIV?([CL,VC,MAT],exp)', 'E': 1.0},
+            {'alpha': None, 'search_space': 'IIV?([CL,VC,MAT],exp)', 'E': 1.0},
             'model1',
         ),
         (
             'mbic_iiv',
             {
-                'p_value': None,
+                'alpha': None,
                 'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
                 'E': (1.0, 1.0),
             },
             'model1',
         ),
-        ('lrt', {'p_value': 0.05, 'search_space': None, 'E': None}, 'model1'),
+        ('lrt', {'alpha': 0.05, 'search_space': None, 'E': None}, 'model1'),
         (
             'lrt',
-            {'p_value': 0.0000000000000000000000000001, 'search_space': None, 'E': None},
+            {'alpha': 0.0000000000000000000000000001, 'search_space': None, 'E': None},
             'mox2',
         ),
     ],

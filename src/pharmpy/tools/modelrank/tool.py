@@ -48,7 +48,7 @@ def create_workflow(
     ref_model: Model,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     rank_type: Literal[tuple(RANK_TYPES)] = 'ofv',
-    cutoff: Optional[float] = None,
+    alpha: Optional[float] = 0.05,
     search_space: Optional[Union[str, ModelFeatures]] = None,
     E: Optional[Union[float, str, tuple[float], tuple[str]]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
@@ -68,9 +68,9 @@ def create_workflow(
     rank_type : str
         Which ranking type should be used. Supported types are OFV, LRT, AIC, BIC (mixed, IIV,
         random), and mBIC (mixed, IIV, random). Default is OFV.
-    cutoff : float
-        Cutoff for which value of the ranking function that is considered significant. Default
-        is None (all models will be ranked)
+    alpha : float
+        Cutoff p-value that is considered significant in likelihood ratio test. Default
+        is None
     search_space : str, ModelFeatures or None
         Search space to test. Either as a string or a ModelFeatures object.
     E : float
@@ -95,7 +95,7 @@ def create_workflow(
         ref_model,
         strictness,
         rank_type,
-        cutoff,
+        alpha,
         search_space,
         E,
         parameter_uncertainty_method,
@@ -114,7 +114,7 @@ def start(
     ref_model: Model,
     strictness: str,
     rank_type: str,
-    cutoff: Optional[float],
+    alpha: Optional[float],
     search_space: Optional[str],
     E: Union[float, tuple[float]],
     parameter_uncertainty_method: Optional[str],
@@ -136,7 +136,7 @@ def start(
             mes_cand,
             strictness,
             rank_type,
-            cutoff,
+            alpha,
             search_space,
             E,
             parameter_uncertainty_method,
@@ -149,7 +149,7 @@ def start(
             mes_cand,
             strictness,
             rank_type,
-            cutoff,
+            alpha,
             search_space,
             E,
         )
@@ -184,7 +184,7 @@ def rank_models(
     mes_cand: list[ModelEntry],
     strictness: str,
     rank_type: str,
-    cutoff: Optional[float],
+    alpha: Optional[float],
     search_space: Optional[str],
     E: Union[float, tuple[float]],
 ):
@@ -193,7 +193,7 @@ def rank_models(
     mes_to_rank = get_model_entries_to_rank(me_predicates, strict=True)
 
     me_rank_values = get_rank_values(
-        me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
+        me_ref, mes_cand, rank_type, alpha, search_space, E, mes_to_rank
     )
     me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
 
@@ -263,7 +263,7 @@ def rank_models_with_uncertainty(
     mes_cand: list[ModelEntry],
     strictness: str,
     rank_type: str,
-    cutoff: Optional[float],
+    alpha: Optional[float],
     search_space: Optional[str],
     E: Union[float, tuple[float]],
     parameter_uncertainty_method: Optional[str],
@@ -272,7 +272,7 @@ def rank_models_with_uncertainty(
     me_predicates = get_strictness_predicates([me_ref] + mes_cand, expr)
     mes_to_rank = get_model_entries_to_rank(me_predicates, strict=False)
     me_rank_values = get_rank_values(
-        me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
+        me_ref, mes_cand, rank_type, alpha, search_space, E, mes_to_rank
     )
     me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
 
@@ -343,7 +343,7 @@ def rank_models_with_uncertainty(
 
     mes_to_rank = get_model_entries_to_rank(me_predicates_reeval, strict=False)
     me_rank_values = get_rank_values(
-        me_ref, mes_cand, rank_type, cutoff, search_space, E, mes_to_rank
+        me_ref, mes_cand, rank_type, alpha, search_space, E, mes_to_rank
     )
     me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
     summary_ranking = create_ranking_table(me_ref, me_rank_values_sorted, rank_type)
@@ -416,7 +416,7 @@ def validate_input(
     ref_model,
     strictness,
     rank_type,
-    cutoff,
+    alpha,
     search_space,
     E,
     parameter_uncertainty_method,
