@@ -358,6 +358,10 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
         name = _create_new_subcontext_name(ctx, tool_name)
 
     tool = import_tool(tool_name)
+
+    if validate_input := getattr(tool, 'validate_input', None):
+        validate_input(**kwargs)
+
     subctx = ctx.create_subcontext(name)
 
     if subctx.has_completed():
