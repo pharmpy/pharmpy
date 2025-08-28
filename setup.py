@@ -20,7 +20,7 @@ setup(
     long_description=read('README.rst'),
     long_description_content_type='text/x-rst',
     author='Rikard Nordgren',
-    author_email='rikard.nordgren@farmaci.uu.se',
+    author_email='rikard.nordgren@uu.se',
     url='https://pharmpy.github.io',
     project_urls={
         "Bug Tracker": 'https://github.com/pharmpy/pharmpy/issues',
