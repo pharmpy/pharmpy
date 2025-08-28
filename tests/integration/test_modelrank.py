@@ -13,7 +13,7 @@ from pharmpy.tools import fit, run_modelrank
     [
         ({'rank_type': 'ofv'}, 5, 'model1'),
         ({'rank_type': 'bic_mixed'}, 5, 'model1'),
-        ({'rank_type': 'lrt', 'cutoff': 0.05}, 3, 'model1'),
+        ({'rank_type': 'lrt', 'alpha': 0.05}, 3, 'model1'),
         ({'rank_type': 'mbic_mixed', 'E': 1.0, 'search_space': 'ABSORPTION(FO)'}, 5, 'model1'),
     ],
 )

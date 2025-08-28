@@ -50,7 +50,7 @@ def create_workflow(
     rank_type: Literal[tuple(RANK_TYPES)] = 'ofv',
     alpha: Optional[float] = 0.05,
     search_space: Optional[Union[str, ModelFeatures]] = None,
-    E: Optional[Union[float, str, tuple[float], tuple[str]]] = None,
+    E: Optional[Union[float, str, tuple[float | str, float | str]]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run ModelRank tool.
@@ -480,9 +480,7 @@ def validate_input(
                     f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
                 )
 
-    if rank_type != 'mbic_mixed' and E is not None:
-        raise ValueError(f'E can only be provided when `rank_type` is mbic: got `{rank_type}`')
-    if rank_type == 'mbic_mixed':
+    if rank_type.startswith('mbic'):
         if search_space is None:
             raise ValueError('Argument `search_space` must be provided when using mbic')
         if E is None:
@@ -491,6 +489,9 @@ def validate_input(
             raise ValueError(f'Value `E` must be more than 0: got `{E}`')
         if isinstance(E, str) and not E.endswith('%'):
             raise ValueError(f'Value `E` must be denoted with `%`: got `{E}`')
+    else:
+        if E is not None:
+            raise ValueError(f'E can only be provided when `rank_type` is mbic: got `{rank_type}`')
 
 
 @dataclass(frozen=True)

@@ -278,7 +278,7 @@ def select_model_entry(context, base_model_entry, model_entries, modelrank_opts)
         results=results_to_rank,
         ref_model=base_model_entry.model,
         rank_type=modelrank_opts['rank_type'],
-        cutoff=modelrank_opts['cutoff'],
+        alpha=modelrank_opts['alpha'],
         strictness=modelrank_opts['strictness'],
         search_space=modelrank_opts['search_space'],
         E=modelrank_opts['E'],
