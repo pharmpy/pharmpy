@@ -31,7 +31,7 @@ Installation
     If you plan to use Pharmpy in R, please follow the steps in :ref:`install_pharmr`.
 
 .. warning::
-    Pharmpy requires Python 3.11 or later, and is currently tested on Python 3.11, 3.12 and 3.13
+    Pharmpy requires Python 3.11 or later, and is currently tested on Python 3.11, 3.12, 3.13 and 3.14
     in all supported platforms.
 
 Install the latest stable version from PyPI with::
