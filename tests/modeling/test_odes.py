@@ -35,6 +35,7 @@ from pharmpy.modeling import (
     set_instantaneous_absorption,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
+    set_n_transit_compartments,
     set_ode_solver,
     set_peripheral_compartments,
     set_seq_zo_fo_absorption,
@@ -2796,3 +2797,9 @@ def test_has_weibull_absorption(load_example_model_for_test):
     assert not has_weibull_absorption(model)
     model = set_weibull_absorption(model)
     assert has_weibull_absorption(model)
+
+
+def test_set_n_transit_compartments(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    model = set_n_transit_compartments(model)
+    assert "GAMLN" in model.code

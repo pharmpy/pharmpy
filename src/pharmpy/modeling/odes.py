@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping
 from typing import Literal, Optional, Union
 
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr
-from pharmpy.deps import sympy
+from pharmpy.deps import symengine, sympy
 from pharmpy.internals.unicode import bracket
 from pharmpy.model import (
     Assignment,
@@ -797,11 +797,93 @@ def _get_mm_inits(model: Model, rate_numer, combined):
     return km_init, clmm_init
 
 
+def set_n_transit_compartments(model: Model, keep_depot: bool = True):
+    """Set the n-transit compartments model
+
+    This is the absorption delay model where the number of transit compartments is a parameter
+    to be estimated. Initial estimate for absorption rate is
+    set the previous rate if available, otherwise it is set to the time of first observation/2.
+    Initial estimate for the number of transit compartments is set to 2.
+
+    Currently only handles a single oral route of administration.
+    Assumes complete absorption between doses
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    keep_depot : bool
+        False to convert depot compartment into a transit compartment
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = set_n_transit_compartments(model)
+
+    See also
+    --------
+    add_lag_time
+    set_transit_compartments
+
+    """
+
+    model = set_transit_compartments(model, 0)
+    odes = get_and_check_odes(model)
+    t = odes.t
+
+    model, mdt_symb = _add_parameter(model, 'MDT', init=_get_absorption_init(model, 'MDT'))
+    model, n_symb = _add_parameter(model, 'N', init=2.0)
+
+    amt = Expr.symbol(model.datainfo.typeix['dose'][0].name)
+    podo = Expr.symbol("PODO")
+    podo_assignment = Assignment.create(podo, Expr.forward(amt, amt > 0))
+
+    ktr = Expr.symbol("KTR")
+    ktr_assignment = Assignment.create(ktr, n_symb / mdt_symb)
+
+    # Expression logged to avoid numerical issues with large values from the gamma and power
+    # EXP( LOG(BIO*PODO) + LOG(KTR) + N*LOG(KTR*T) − KTR*T − LNFAC) − KA*A(1)
+    # FIXME: UnevaluatedExpr is an ugly trick. It stops symengine from automatically extract
+    #        log(ktr) from inside the exp to ktr*exp(..)
+    expr = (
+        Expr(symengine.UnevaluatedExpr(podo.log()))
+        + n_symb * (ktr * t).log()
+        + symengine.UnevaluatedExpr(ktr.log())
+        - ktr * t
+        - (n_symb + 1).loggamma()
+    ).exp()
+
+    dosing_comp = odes.dosing_compartments[0]
+    cb = CompartmentalSystemBuilder(odes)
+    dosing_comp = cb.set_input(dosing_comp, expr)
+    cb.set_bioavailability(dosing_comp, 0)
+
+    new_odes = CompartmentalSystem(cb)
+    new_statements = (
+        model.statements.before_odes
+        + ktr_assignment
+        + podo_assignment
+        + new_odes
+        + model.statements.after_odes
+    )
+
+    model = model.replace(statements=new_statements)
+    model = model.update_source()
+
+    return model
+
+
 def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     """Set the number of transit compartments of model.
 
-    Initial estimate for absorption rate is
-    set the previous rate if available, otherwise it is set to the time of first observation/2.
+    Initial estimate for the absorption delay is
+    set the previous delay if available, otherwise it is set to the time of first observation/2.
 
     Parameters
     ----------
@@ -831,6 +913,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     See also
     --------
     add_lag_time
+    set_n_transit_compartments
 
     """
     statements = model.statements

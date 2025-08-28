@@ -110,6 +110,8 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
             name = expr.name
         except AttributeError:
             name = expr.__class__.__name__.upper()
+        if name == "LOGGAMMA":
+            name = "GAMLN"
         return f'{name}({super().doprint(expr.args[0])})'
 
     def _print_Pow(self, expr, rational=False):
