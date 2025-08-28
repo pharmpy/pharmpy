@@ -1,5 +1,6 @@
 from collections.abc import Collection, Container, Iterable, Iterator, Sequence, Sized
 from inspect import signature
+from types import UnionType
 from typing import Any, List, Literal, Optional, Type, Union, get_args, get_origin, get_type_hints
 
 from ..unicode import itemize_strings
@@ -100,7 +101,7 @@ def _match_sequence_items(args, value):
 
 def _match(typing, value):
     origin = get_origin(typing)
-
+    print(origin, type(origin))
     if origin is None:
         if typing is Any or typing is Optional:
             return True
@@ -128,7 +129,7 @@ def _match(typing, value):
         else:
             return len(value) == n and all(map(_match, args, value))
 
-    if origin is Union:
+    if origin is Union or origin is UnionType:
         # NOTE: Empty unions return False
         return any(map(lambda t: _match(t, value), get_args(typing)))
 
