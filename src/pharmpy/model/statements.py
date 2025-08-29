@@ -2295,6 +2295,33 @@ class Statements(Sequence, Immutable):
             raise ValueError(f"Assignment of {symbol} not found")
         return assignment
 
+    def get_assignment_index(self, symbol: TSymbol) -> int:
+        """Returns index of last assignment of symbol
+
+        Raises if assignment could not be found
+
+        Parameters
+        ----------
+        symbol : Symbol or str
+            Symbol to look for
+
+        Returns
+        -------
+        int
+            Index of Assignment
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.statements.find_assignment_index("CL")
+        3
+        """
+        ind = self._lookup_last_assignment(symbol)[0]
+        if ind is None:
+            raise ValueError(f"Assignment of {symbol} not found")
+        return ind
+
     def find_assignment_index(self, symbol: TSymbol) -> Optional[int]:
         """Returns index of last assignment of symbol
 

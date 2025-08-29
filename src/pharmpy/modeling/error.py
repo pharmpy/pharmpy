@@ -862,7 +862,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
         (-1000000000, True),
     )
     ipredass = Assignment(Expr.symbol('IPRED'), ipred)
-    yexpr_ind = stats.find_assignment_index(y.name)
+    yexpr_ind = stats.get_assignment_index(y.name)
     yexpr = stats[yexpr_ind].subs({f: Expr.symbol('IPRED')})
 
     statements = (
