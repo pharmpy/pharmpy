@@ -5,6 +5,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.modeling import (
     convert_model,
+    create_basic_pd_model,
     create_basic_pk_model,
     set_zero_order_absorption,
 )
@@ -58,3 +59,9 @@ def test_create_basic_pk_model_raises(testdata):
             administration='ivoral',
             dataset_path=dataset_path,
         )
+
+
+def test_create_basic_pd_model():
+    model = create_basic_pd_model()
+    assert model.dataset is None
+    assert len(model.parameters) == 2

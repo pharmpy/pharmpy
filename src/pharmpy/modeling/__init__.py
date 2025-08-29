@@ -1,5 +1,5 @@
 from .allometry import add_allometry
-from .basic_models import create_basic_pk_model
+from .basic_models import create_basic_pd_model, create_basic_pk_model
 from .blq import transform_blq
 from .common import (
     bump_model_number,
@@ -305,6 +305,7 @@ __all__ = [
     'check_parameters_near_bounds',
     'cleanup_model',
     'convert_model',
+    'create_basic_pd_model',
     'create_basic_pk_model',
     'create_config_template',
     'create_joint_distribution',

@@ -221,3 +221,80 @@ def create_basic_pk_model(
         )
 
     return model
+
+
+def create_basic_pd_model(
+    dataset_path: Optional[str | Path] = None,
+) -> Model:
+    """
+    Create a basic pd model.
+
+    The model will be very simple describing only a constant baseline effect
+    with an additive error.
+
+    Parameters
+    ----------
+    dataset_path : str or Path
+        Optional path to a dataset
+
+    Return
+    ------
+    Model
+        Pharmpy model object
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = create_basic_pd_model()
+
+    """
+
+    if dataset_path is not None:
+        dataset_path = normalize_user_given_path(dataset_path)
+        di = create_default_datainfo(dataset_path)
+        df = read_dataset_from_datainfo(di, datatype='nonmem')
+    else:
+        di_col_dict = {'ID': 'id', 'TIME': 'idv', 'DV': 'dv'}
+        di_ci = [ColumnInfo.create(key, type=value) for key, value in di_col_dict.items()]
+        di = DataInfo.create(di_ci)
+        df = None
+
+    pop_b = Parameter.create('POP_B', init=0.1)
+    sigma = Parameter.create('sigma', init=0.1)
+    parameters = Parameters.create((pop_b, sigma))
+
+    epsilon = Expr.symbol("EPS_1")
+    epsilon_rv = NormalDistribution.create(epsilon.name, 'ruv', 0, sigma.symbol)
+    rvs = RandomVariables.create((epsilon_rv,))
+
+    b = Expr.symbol("B")
+    b_assign = Assignment(b, pop_b.symbol)
+    e = Expr.symbol("E")
+    e_assign = Assignment(e, b)
+    y = Expr.symbol("Y")
+    y_assign = Assignment(y, e + epsilon)
+    statements = Statements((b_assign, e_assign, y_assign))
+
+    est = EstimationStep.create(
+        "FOCE",
+        interaction=True,
+        laplace=True,
+        maximum_evaluations=99999,
+        predictions=('PRED', 'CIPREDI'),
+        residuals=('CWRES',),
+    )
+    eststeps = ExecutionSteps.create([est])
+
+    model = Model.create(
+        name='start',
+        statements=statements,
+        execution_steps=eststeps,
+        dependent_variables={y_assign.symbol: 1},
+        random_variables=rvs,
+        parameters=parameters,
+        description='Start model',
+        dataset=df,
+        datainfo=di,
+    )
+
+    return model
