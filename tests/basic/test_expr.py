@@ -30,8 +30,6 @@ def test_symbol():
 def test_piecewise():
     expr = Expr.piecewise(("1", "x > 0"), ("2", "x < 0"))
     assert expr.is_piecewise()
-    assert expr.args[0][0] == Expr.integer(1)
-    assert expr.args[1][0] == Expr.integer(2)
 
     assert expr.piecewise_args[0][0] == Expr.integer(1)
     assert expr.piecewise_args[1][0] == Expr.integer(2)
@@ -46,8 +44,8 @@ def test_piecewise_fold():
     expr2 = Expr.piecewise((expr1, "y > 0"))
     expr_fold = expr2.piecewise_fold()
     assert expr2 != expr_fold
-    assert expr2.args[0][0].is_piecewise()
-    assert not expr_fold.args[0][0].is_piecewise()
+    assert expr2.piecewise_args[0][0].is_piecewise()
+    assert not expr_fold.piecewise_args[0][0].is_piecewise()
 
 
 def test_expand():

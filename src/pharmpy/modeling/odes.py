@@ -2738,7 +2738,7 @@ def get_initial_conditions(model: Model, dosing: bool = False) -> Mapping[Expr, 
         d[Expr.function(amt.name, 0)] = Expr.integer(0)
     for s in model.statements:
         if isinstance(s, Assignment) and s.symbol.is_function():
-            if not (s.symbol.args[0].free_symbols):  # pyright: ignore[reportAttributeAccessIssue]
+            if not (s.symbol.args[0].free_symbols):
                 d[s.symbol] = s.expression
 
     if dosing:

@@ -147,7 +147,7 @@ def add_true_statements(model, cg, statements):
 def add_piecewise(model: pharmpy.model.Model, cg: CodeGenerator, s):
     expr = s.expression
     first = True
-    for value, cond in expr.args:
+    for value, cond in expr.piecewise_args:
         value = sympy.sympify(value)
         cond = sympy.sympify(cond)
         if cond is not sympy.S.true:

@@ -195,8 +195,8 @@ def test_advan5(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'DDMODEL00000130')
     cm, ass, _ = compartmental_model(model, 'ADVAN5', 'TRANS1')
     assert ass.symbol == S('F')
-    assert ass.expression.args[1][0] == Expr.function('A_CMS1', 't')
-    assert ass.expression.args[0][0] == Expr.function('A_COL1', 't')
+    assert ass.expression.piecewise_args[1][0] == Expr.function('A_CMS1', 't')
+    assert ass.expression.piecewise_args[0][0] == Expr.function('A_COL1', 't')
     assert cm.amounts == Matrix(
         [
             Expr.function('A_CMS1', 't'),
@@ -611,16 +611,16 @@ def test_f_statement(load_model_for_test, testdata):
     _, f, _ = compartmental_model(model, 'ADVAN12', 'TRANS4')
     assert f.symbol.name == 'F'
     expr = f.expression
-    assert len(expr.args) == 2
-    assert expr.args[0][0] == Expr("A_DEPOT(t)")
-    assert str(expr.args[0][1]) == "Eq(0.0, AMT) & Eq(1.0, CMT)"
-    assert expr.args[1][0] == Expr("A_CENTRAL(t) / S2")
+    assert len(expr.piecewise_args) == 2
+    assert expr.piecewise_args[0][0] == Expr("A_DEPOT(t)")
+    assert str(expr.piecewise_args[0][1]) == "Eq(0.0, AMT) & Eq(1.0, CMT)"
+    assert expr.piecewise_args[1][0] == Expr("A_CENTRAL(t) / S2")
 
     df['CMT'] = [1.0] * len(df)
     model = model.replace(dataset=df)
     _, f, _ = compartmental_model(model, 'ADVAN12', 'TRANS4')
     assert f.symbol.name == 'F'
     expr = f.expression
-    assert len(expr.args) == 1
-    assert expr.args[0][0] == Expr("A_DEPOT(t)")
-    assert str(expr.args[0][1]) == "Eq(0.0, AMT) & Eq(1.0, CMT)"
+    assert len(expr.piecewise_args) == 1
+    assert expr.piecewise_args[0][0] == Expr("A_DEPOT(t)")
+    assert str(expr.piecewise_args[0][1]) == "Eq(0.0, AMT) & Eq(1.0, CMT)"

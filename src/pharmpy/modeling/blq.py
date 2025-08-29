@@ -265,7 +265,7 @@ def has_blq_transformation(model: Model):
     y_expr = y.expression
     if not y_expr.is_piecewise():
         return False
-    for statement, cond in y_expr.args:  # pyright: ignore [reportGeneralTypeIssues]
+    for statement, cond in y_expr.piecewise_args:
         blq_symb, _ = get_blq_symb_and_type(model)
         if blq_symb in cond.free_symbols:
             break

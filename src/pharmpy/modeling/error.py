@@ -342,7 +342,7 @@ def _get_updated_blq_statements(model, expr_dummy, f, f_dummy, eps_new):
 
 def _get_f_above_lloq(model, f):
     blq_symb, _ = get_blq_symb_and_type(model)
-    for expr, cond in f.args:
+    for expr, cond in f.piecewise_args:
         if blq_symb in cond.free_symbols:
             return Expr(expr)
     else:
@@ -470,7 +470,7 @@ def set_combined_error_model(
             ipredadj = None
             for s in model.statements.after_odes:
                 if s.expression.is_piecewise():
-                    args = s.expression.args
+                    args = s.expression.piecewise_args
                     for expr, cond in args:
                         if expr == ipred:
                             ipredadj = s.symbol

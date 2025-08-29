@@ -879,7 +879,7 @@ def rename_duplicate(params, stem):
 
 def _calculate_covariate_baselines(model, res, covariates):
     exprs = [
-        ass.expression.args[0][0]
+        ass.expression.piecewise_args[0][0]
         for ass in model.statements
         if Expr.symbol('FREMTYPE') in ass.free_symbols and ass.symbol.name == 'IPRED'
     ]

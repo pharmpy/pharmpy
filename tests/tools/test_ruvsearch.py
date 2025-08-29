@@ -207,7 +207,7 @@ def test_create_models(load_model_for_test, testdata, func, kwargs, description,
 
     y_expr = me_cand.model.statements.find_assignment('Y').expression
     if y_expr.is_piecewise():
-        y_expr = y_expr.args[0][0]
+        y_expr = y_expr.piecewise_args[0][0]
 
     assert y_expr == Expr(y_str)
 
@@ -261,7 +261,7 @@ def test_create_best_model(
 
     y_expr = me_best.model.statements.find_assignment('Y').expression
     if y_expr.is_piecewise():
-        y_expr = y_expr.args[0][0]
+        y_expr = y_expr.piecewise_args[0][0]
     assert y_expr == Expr(y_str)
     assert best_model_name == best_model_name_ref
 

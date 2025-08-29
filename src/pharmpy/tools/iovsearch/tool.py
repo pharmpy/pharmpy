@@ -517,7 +517,7 @@ def _get_iov_piecewise_assignment_symbols(model: Model):
     for statement in model.statements:
         if isinstance(statement, Assignment) and statement.expression.is_piecewise():
             try:
-                expression_symbols = [p[0] for p in statement.expression.args]
+                expression_symbols = [p[0] for p in statement.expression.piecewise_args]
             except (ValueError, NotImplementedError):
                 pass  # NOTE: These exceptions are raised by complex Piecewise
                 # statements that can be present in user code.

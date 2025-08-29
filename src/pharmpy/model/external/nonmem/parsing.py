@@ -283,20 +283,20 @@ def convert_dvs(statements, control_stream, dvid_name):
     for s in after:
         expr = s.expression
         if expr.is_piecewise() and Expr.symbol(f"{dvid_name}") in expr.free_symbols:
-            cond = expr.args[0][1]
+            cond = expr.piecewise_args[0][1]
             if cond.lhs == Expr.symbol(f"{dvid_name}") and cond.rhs == 1 and len(expr.args) > 1:
-                ass1 = s.replace(symbol=Expr.symbol('Y_1'), expression=expr.args[0][0])
-                ass2 = s.replace(symbol=Expr.symbol('Y_2'), expression=expr.args[1][0])
-                if expr.args[0][0] not in statements.free_symbols:
+                ass1 = s.replace(symbol=Expr.symbol('Y_1'), expression=expr.piecewise_args[0][0])
+                ass2 = s.replace(symbol=Expr.symbol('Y_2'), expression=expr.piecewise_args[1][0])
+                if expr.piecewise_args[0][0] not in statements.free_symbols:
                     kept.append(ass1)
                     dv_1 = 'Y_1'
                 else:
-                    dv_1 = str(expr.args[0][0])
-                if expr.args[1][0] not in statements.free_symbols:
+                    dv_1 = str(expr.piecewise_args[0][0])
+                if expr.piecewise_args[1][0] not in statements.free_symbols:
                     kept.append(ass2)
                     dv_2 = 'Y_2'
                 else:
-                    dv_2 = str(expr.args[1][0])
+                    dv_2 = str(expr.piecewise_args[1][0])
                 dvs = frozenmapping({Expr.symbol(dv_1): 1, Expr.symbol(dv_2): 2})
                 obs_trans = frozenmapping({dv: dv for dv in dvs.keys()})
                 change = True
