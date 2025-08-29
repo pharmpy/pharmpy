@@ -367,6 +367,9 @@ class BooleanExpr:
     def __eq__(self, other) -> bool:
         return self._expr == other
 
+    def __hash__(self):
+        return hash(self._expr)
+
     def __and__(self, other: BooleanExpr) -> BooleanExpr:
         return BooleanExpr(sympy.And(self._expr, other._expr))
 

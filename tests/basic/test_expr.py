@@ -239,3 +239,10 @@ def test_series():
     y = x.exp()
     ser = y.series(x, n=2)
     assert ser == x + 1
+
+
+def test_hashability():
+    x = Expr.symbol('x')
+    assert isinstance(hash(x), int)
+    y = BooleanExpr.true()
+    assert isinstance(hash(y), int)
