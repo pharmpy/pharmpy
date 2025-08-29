@@ -9,7 +9,6 @@ from typing import Optional, Union
 
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.model import Assignment, Model, NormalDistribution, Parameter, Parameters, Statements
 
 from .blq import get_blq_symb_and_type, get_sd_expr, has_blq_transformation
@@ -1002,7 +1001,7 @@ def set_power_on_ruv(
         # Extract ipred based on the dv
         ipred = get_ipred(model, dv=dv_symb)
     else:
-        ipred = parse_expr(ipred)
+        ipred = Expr(ipred)
 
     # Assert that the provided epsilons are used for the corresponding DV
     # Else give warning
@@ -1085,7 +1084,7 @@ def set_power_on_ruv(
             y = y.subs(subs_dict)
             sset = sset.reassign(y.symbol, y.expression)
 
-        if alternative:  # To avoid getting W*EPS*F**THETA
+        if alternative is not None:  # To avoid getting W*EPS*F**THETA
             subs_dict = {Expr.symbol(e) * alternative: Expr.symbol(e)}
             if not dv:
                 sset = sset.subs(subs_dict)
