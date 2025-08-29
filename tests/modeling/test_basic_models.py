@@ -61,7 +61,10 @@ def test_create_basic_pk_model_raises(testdata):
         )
 
 
-def test_create_basic_pd_model():
+def test_create_basic_pd_model(testdata):
     model = create_basic_pd_model()
     assert model.dataset is None
     assert len(model.parameters) == 2
+
+    dataset_path = testdata / 'nonmem/pheno.dta'
+    create_basic_pd_model(dataset_path)
