@@ -232,3 +232,10 @@ def test_forward():
 def test_loggamma():
     expr = Expr('x').loggamma()
     assert str(expr) == 'loggamma(x)'
+
+
+def test_series():
+    x = Expr.symbol('x')
+    y = x.exp()
+    ser = y.series(x, n=2)
+    assert ser == x + 1

@@ -188,8 +188,15 @@ class Expr:
     def sign(self) -> Expr:
         return Expr(symengine.sign(self._expr))
 
-    def diff(self, x) -> Expr:
+    def diff(self, x: Expr) -> Expr:
         return Expr(self._expr.diff(x._expr))
+
+    def series(self, expr: Expr, n: int) -> Expr:
+        # Series expansion to n terms without O
+        y = sympy.sympify(self)
+        x = sympy.sympify(expr)
+        series = y.series(x, n=n).removeO()  # pyright: ignore [reportAttributeAccessIssue]
+        return Expr(series)
 
     def is_symbol(self) -> bool:
         # NOTE: The concept of a symbol is wider than that of sympy and symengine

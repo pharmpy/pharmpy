@@ -155,8 +155,7 @@ def set_additive_error_model(
 
     if data_trans != dv:
         expr_subs = data_trans.subs({dv: expr})
-        series = sympy.sympify(expr_subs).series(sympy.sympify(ruv), n=series_terms).removeO()
-        expr = Expr(series)
+        expr = expr_subs.series(ruv, n=series_terms)
 
     sigma = create_symbol(model, 'sigma')
     model = add_population_parameter(model, sigma.name, _get_prop_init(model))
