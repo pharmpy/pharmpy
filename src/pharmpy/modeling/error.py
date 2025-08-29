@@ -435,9 +435,9 @@ def set_combined_error_model(
     elif data_trans == dv:
         # Time varying
         if expr.is_piecewise() and not has_blq_transformation(model):
-            expr_0 = expr.args[0][0]
-            expr_1 = expr.args[1][0]
-            cond_0 = expr.args[0][1]
+            expr_0 = expr.piecewise_args[0][0]
+            expr_1 = expr.piecewise_args[1][0]
+            cond_0 = expr.piecewise_args[0][1]
             error_expr = None
             for eps in model.random_variables.epsilons.names:
                 expr_0 = expr_0.subs({Expr.symbol(eps): ruv_prop})
@@ -1054,7 +1054,7 @@ def set_power_on_ruv(
                     sset = sset[0:ind] + guard_assignment + sset[ind:]
                 break
             if s.expression.is_piecewise():
-                args = s.expression.args
+                args = s.expression.piecewise_args
                 for expr, cond in args:
                     if expr == ipred:
                         ipredadj = s.symbol
@@ -1111,7 +1111,7 @@ def set_power_on_ruv(
 
         if has_blq_transformation(model):
             # FIXME: Make more general
-            y_above_lloq, _ = sset.get_assignment('Y').expression.args[0]
+            y_above_lloq, _ = sset.get_assignment('Y').expression.piecewise_args[0]
             sd = model.statements.get_assignment('SD')
             sd_new = get_sd_expr(y_above_lloq, model.random_variables, Parameters.create(pset))
             sset = sset.reassign(sd.symbol, sd_new)
