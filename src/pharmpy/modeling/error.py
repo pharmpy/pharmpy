@@ -802,6 +802,7 @@ def get_weighted_error_model_weight(model: Model):
 
     if len(eps_expr) == 1:
         eps_expr = eps_expr.pop()
+        assert isinstance(eps_expr, Expr)
         if len(eps_expr.args) == 2 and eps_expr.is_mul():
             a, b = eps_expr.args
             w_cand = a if a not in rvs_in_y else b
