@@ -114,6 +114,13 @@ def test_get_assignment(load_model_for_test, testdata):
         statements.get_assignment("X")
 
 
+def test_get_assignment_index(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+
+    with pytest.raises(ValueError):
+        model.statements.get_assignment_index("X")
+
+
 def test_eq_assignment(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     statements = model.statements
