@@ -7,7 +7,7 @@ from __future__ import annotations
 import warnings
 from typing import Optional, Union
 
-from pharmpy.basic import Expr, TExpr, TSymbol
+from pharmpy.basic import BooleanExpr, Expr, TExpr
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model, NormalDistribution, Parameter, Parameters, Statements
 
@@ -344,7 +344,7 @@ def _get_f_above_lloq(model, f):
     blq_symb, _ = get_blq_symb_and_type(model)
     for expr, cond in f.args:
         if blq_symb in cond.free_symbols:
-            return expr
+            return Expr(expr)
     else:
         raise AssertionError('BLQ symbol not found')
 
@@ -855,10 +855,10 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
 
     wass = Assignment(Expr.symbol('W'), (f**zeta) * Expr.symbol('W'))
     ipred = Expr.piecewise(
-        ((f**lam - 1) / lam, sympy.And(sympy.Ne(lam, 0), sympy.Ne(f, 0))),
-        (f.log(), sympy.And(sympy.Eq(lam, 0), sympy.Ne(f, 0))),
-        (-1 / lam, sympy.And(sympy.Eq(lam, 0), sympy.Eq(f, 0))),
-        (-1000000000, True),
+        ((f**lam - 1) / lam, BooleanExpr.ne(lam, 0) & BooleanExpr.ne(f, 0)),
+        (f.log(), BooleanExpr.eq(lam, 0) & BooleanExpr.ne(f, 0)),
+        (-1 / lam, BooleanExpr.eq(lam, 0) & BooleanExpr.eq(f, 0)),
+        (-1000000000, BooleanExpr.true()),
     )
     ipredass = Assignment(Expr.symbol('IPRED'), ipred)
     yexpr_ind = stats.get_assignment_index(y.name)
@@ -936,9 +936,9 @@ def set_time_varying_error_model(
 def set_power_on_ruv(
     model: Model,
     list_of_eps: Optional[Union[str, list]] = None,
-    dv: Union[TSymbol, int, None] = None,
+    dv: Union[Expr, int, None] = None,
     lower_limit: Optional[float] = 0.01,
-    ipred: Optional[TSymbol] = None,
+    ipred: Optional[Expr] = None,
     zero_protection: bool = False,
 ):
     """Applies a power effect to provided epsilons. If a dependent variable
@@ -1135,7 +1135,7 @@ def get_ipred(model, dv=None):
 
 def set_iiv_on_ruv(
     model: Model,
-    dv: Union[TSymbol, int, None] = None,
+    dv: Union[Expr, int, None] = None,
     list_of_eps: Optional[Union[list[str], str]] = None,
     same_eta: bool = True,
     eta_names: Optional[Union[list[str], str]] = None,
