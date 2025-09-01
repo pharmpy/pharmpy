@@ -21,7 +21,7 @@ def get_thetas(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -54,7 +54,7 @@ def get_omegas(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -85,7 +85,7 @@ def get_sigmas(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -125,7 +125,7 @@ def set_initial_estimates(
     Parameters
     ----------
     model : Model
-        Pharmpy model to update initial estimates
+        Pharmpy model
     inits : pd.Series or dict
         Initial parameter estimates to update
     move_est_close_to_bounds : bool
@@ -139,7 +139,7 @@ def set_initial_estimates(
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -278,7 +278,7 @@ def set_upper_bounds(model: Model, bounds: Mapping[str, float], strict: bool = T
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -323,7 +323,7 @@ def set_lower_bounds(model: Model, bounds: Mapping[str, float], strict: bool = T
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -371,7 +371,7 @@ def fix_parameters(model: Model, parameter_names: Union[Iterable[str], str], str
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -433,7 +433,7 @@ def unfix_parameters(model: Model, parameter_names: Union[Iterable[str], str], s
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -490,7 +490,7 @@ def fix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = T
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -546,7 +546,7 @@ def unfix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool =
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     See also
     --------
@@ -588,7 +588,7 @@ def fix_or_unfix_parameters(model: Model, parameters: Mapping[str, bool], strict
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     See also
     --------
@@ -639,7 +639,7 @@ def unconstrain_parameters(model: Model, parameter_names: Iterable[str], strict:
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     See also
     --------
@@ -691,7 +691,7 @@ def add_population_parameter(
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -726,7 +726,7 @@ def replace_fixed_thetas(model: Model):
     Returns
     -------
     Model
-        A new model
+        Updated Pharmpy model
     """
 
     keep = []

@@ -218,7 +218,7 @@ def sample_parameters_from_covariance_matrix(
     Parameters
     ----------
     model : Model
-        Input model
+        Pharmpy model
     parameter_estimates : pd.Series
         Parameter estimates to use as means in sampling
     covariance_matrix : pd.DataFrame

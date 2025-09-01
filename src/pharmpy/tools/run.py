@@ -753,7 +753,7 @@ def retrieve_models(
     Return
     ------
     list
-        List of retrieved model objects
+        List of retrieved Pharmpy models
 
     Examples
     --------
@@ -784,7 +784,7 @@ def retrieve_final_model(res: Results) -> Model:
     Return
     ------
     Model
-        Reference to final model
+        Pharmpy model
 
     Examples
     --------
@@ -814,7 +814,7 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     modelfit_results : ModelfitResults
         Pharmpy ModelfitResults object
     """

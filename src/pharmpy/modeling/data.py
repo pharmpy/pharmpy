@@ -411,7 +411,7 @@ def set_covariates(model: Model, covariates: list[str]):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
     """
     di = model.datainfo
     newcols = []
@@ -438,7 +438,7 @@ def set_dvid(model: Model, name: str):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
     """
     di = model.datainfo
     col = di[name]
@@ -678,7 +678,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     flag : bool
         True to add a boolean EXPANDED column to mark added records. In this case all
         columns in the original dataset will be kept. Care needs to be taken to handle
@@ -687,7 +687,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
     """
     try:
         addl = model.datainfo.typeix['additional'][0].name
@@ -953,7 +953,7 @@ def add_admid(model: Model):
     Returns
     -------
     model : Model
-        Pharmpy model
+        Updated Pharmpy model
 
     See also
     --------
@@ -986,7 +986,7 @@ def set_admid(model: Model, column_name: str):
     Returns
     -------
     model : Model
-        Pharmpy model
+        Updated Pharmpy model
 
     See also
     --------
@@ -1077,7 +1077,7 @@ def add_cmt(model: Model):
     Returns
     -------
     model : Model
-        Pharmpy model
+        Updated Pharmpy model
 
     See also
     --------
@@ -1110,7 +1110,7 @@ def add_time_of_last_dose(model: Model, name: str = "TDOSE"):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     See also
     --------
@@ -1137,7 +1137,7 @@ def add_time_after_dose(model: Model):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1210,7 +1210,7 @@ def get_concentration_parameters_from_data(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -1277,12 +1277,12 @@ def drop_dropped_columns(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -1314,7 +1314,7 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     column_names : list or str
         List of column names or one column name to drop or mark as dropped
     mark : bool
@@ -1323,7 +1323,7 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -1365,14 +1365,14 @@ def undrop_columns(model: Model, column_names: Union[list[str], str]):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     column_names : list or str
         List of column names or one column name to undrop
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -1523,12 +1523,12 @@ def translate_nmtran_time(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
     """
     if model.dataset is None:
         return model
@@ -1601,7 +1601,7 @@ def remove_loq_data(
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     lloq : float or str
         Value or column name for lower limit of quantification.
     uloq : float or str
@@ -1616,7 +1616,7 @@ def remove_loq_data(
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1656,7 +1656,7 @@ def set_lloq_data(
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     value : float or Expr
         The new dv value
     lloq : float or str
@@ -1667,7 +1667,7 @@ def set_lloq_data(
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1700,14 +1700,14 @@ def set_reference_values(model: Model, refs: dict[str, Union[int, float]]):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     refs : dict
         Pairs of column names and reference values
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1758,14 +1758,14 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     columns : list[str]
         The columns to attempt conversion or None for all
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1997,7 +1997,7 @@ def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     dataframe : bool
         True to return a DataFrame instead of printing to the console
     verbose : bool
@@ -2250,7 +2250,7 @@ def unload_dataset(model: Model):
     Returns
     -------
     Model
-        Pharmpy model with dataset removed
+        Updated Pharmpy model
 
     Example
     -------
@@ -2276,7 +2276,7 @@ def load_dataset(model: Model):
     Returns
     -------
     Model
-        Pharmpy model with dataset removed
+        Updated Pharmpy model
 
     Example
     -------
@@ -2325,7 +2325,7 @@ def set_dataset(
     Returns
     -------
     Model
-        Pharmpy model with new dataset and updated datainfo
+        Updated Pharmpy model
 
     Example
     -------

@@ -29,7 +29,7 @@ def calculate_ucp_scale(model: Model):
     Parameters
     ----------
     model : Model
-        Model for which to calculate an ucp scale
+        Pharmpy model
 
     Returns
     -------

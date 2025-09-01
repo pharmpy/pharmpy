@@ -20,7 +20,7 @@ def replace_non_random_rvs(model: Model):
     Returns
     -------
     Model
-        A new model
+        Updated Pharmpy model
     """
 
     dists = model.random_variables

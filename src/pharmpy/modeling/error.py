@@ -51,12 +51,12 @@ def remove_error_model(model: Model):
     Parameters
     ----------
     model : Model
-        Remove error model for this model
+        Pharmpy model
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -101,7 +101,7 @@ def set_additive_error_model(
     Parameters
     ----------
     model : Model
-        Set error model for this model
+        Pharmpy model
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
@@ -114,7 +114,7 @@ def set_additive_error_model(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -224,7 +224,7 @@ def set_proportional_error_model(
     Parameters
     ----------
     model : Model
-        Set error model for this model
+        Pharmpy model
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
@@ -236,7 +236,7 @@ def set_proportional_error_model(
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -370,7 +370,7 @@ def set_combined_error_model(
     Parameters
     ----------
     model : Model
-        Set error model for this model
+        Pharmpy model
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
     data_trans : str or expression
@@ -380,7 +380,7 @@ def set_combined_error_model(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -508,7 +508,7 @@ def has_additive_error_model(model: Model, dv: Union[Expr, str, int, None] = Non
     Parameters
     ----------
     model : Model
-        The model to check
+        Pharmpy model
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
@@ -549,7 +549,7 @@ def has_proportional_error_model(model: Model, dv: Union[Expr, str, int, None] =
     Parameters
     ----------
     model : Model
-        The model to check
+        Pharmpy model
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
@@ -615,7 +615,7 @@ def has_combined_error_model(model: Model, dv: Union[Expr, str, int, None] = Non
     Parameters
     ----------
     model : Model
-        The model to check
+        Pharmpy model
     dv : Union[Expr, str, int, None]
         Name or DVID of dependent variable. None for the default (first or only)
 
@@ -666,7 +666,7 @@ def use_thetas_for_error_stdev(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     See also
     --------
@@ -711,7 +711,7 @@ def set_weighted_error_model(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -758,7 +758,7 @@ def has_weighted_error_model(model: Model):
     Parameters
     ----------
     model : Model
-        The model to check
+        Pharmpy model
 
     Return
     ------
@@ -831,7 +831,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -903,7 +903,7 @@ def set_time_varying_error_model(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -955,7 +955,7 @@ def set_power_on_ruv(
     Parameters
     ----------
     model : Model
-        Pharmpy model to create block effect on.
+        Pharmpy model
     list_of_eps : str or list or None
         Name/names of epsilons to apply power effect. If None, all epsilons will be used.
         None is default.
@@ -972,7 +972,7 @@ def set_power_on_ruv(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1149,7 +1149,7 @@ def set_iiv_on_ruv(
     Parameters
     ----------
     model : Model
-        Pharmpy model to apply IIV on epsilons.
+        Pharmpy model
     list_of_eps : str, list
         Name/names of epsilons to multiply with exponential etas. If None, all epsilons will
         be chosen. None is default.
@@ -1164,7 +1164,7 @@ def set_iiv_on_ruv(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

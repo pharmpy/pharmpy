@@ -62,7 +62,7 @@ def set_tmdd(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

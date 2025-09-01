@@ -83,7 +83,7 @@ def retrieve_model(context: Context, name: str) -> Model:
     Return
     ------
     Model
-        The model object
+        Pharmpy model
 
     Examples
     --------

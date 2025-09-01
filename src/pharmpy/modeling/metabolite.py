@@ -42,7 +42,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

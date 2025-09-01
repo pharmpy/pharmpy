@@ -122,7 +122,7 @@ def add_individual_parameter(model: Model, name: str, init: float = 0.1, lower: 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -160,7 +160,7 @@ def set_first_order_elimination(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -253,7 +253,7 @@ def add_bioavailability(model: Model, add_parameter: bool = True, logit_transfor
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -319,7 +319,7 @@ def remove_bioavailability(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -359,7 +359,7 @@ def set_zero_order_elimination(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -568,7 +568,7 @@ def set_michaelis_menten_elimination(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -622,7 +622,7 @@ def set_mixed_mm_fo_elimination(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -818,7 +818,7 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -897,7 +897,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1130,7 +1130,7 @@ def add_lag_time(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1197,7 +1197,7 @@ def remove_lag_time(model: Model):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1236,12 +1236,12 @@ def set_zero_order_absorption(model: Model):
     Parameters
     ----------
     model : Model
-        Model to set or change to first order absorption rate
+        Pharmpy model
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1325,12 +1325,12 @@ def set_first_order_absorption(model: Model):
     Parameters
     ----------
     model : Model
-        Model to set or change to use first order absorption rate
+        Pharmpy model
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1412,12 +1412,12 @@ def set_instantaneous_absorption(model: Model):
     Parameters
     ----------
     model : Model
-        Model to set or change absorption rate
+        Pharmpy model
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1488,12 +1488,12 @@ def set_seq_zo_fo_absorption(model: Model):
     Parameters
     ----------
     model : Model
-        Model to set or change absorption rate
+        Pharmpy model
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1624,12 +1624,12 @@ def set_weibull_absorption(model: Model) -> Model:
     Parameters
     ----------
     model : Model
-        Model to set or change to use Weibull absorption rate
+        Pharmpy model
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1795,7 +1795,8 @@ def has_first_order_absorption(model: Model):
 
     Return
     -------
-        Bool : True if model has first order absorption
+    bool
+        True if model has first order absorption
 
     """
 
@@ -1829,7 +1830,9 @@ def has_instantaneous_absorption(model: Model):
 
     Return
     -------
-        Bool : True if model has instantaneous absorption
+    bool
+        True if model has instantaneous absorption
+
     """
     odes = model.statements.ode_system
     if odes is None:
@@ -1851,7 +1854,12 @@ def has_seq_zo_fo_absorption(model: Model):
     Parameters
     ----------
     model : Model
-        DPharmpy model
+        Pharmpy model
+
+    Return
+    -------
+    bool
+        True if model has sequential zero-first absorption
 
     See also
     --------
@@ -1912,7 +1920,8 @@ def has_lag_time(model: Model):
 
     Return
     -------
-        Bool : True if model is defined with lagtime
+    bool
+        True if model is defined with lagtime
     """
     odes = model.statements.ode_system
     if odes is None:
@@ -2044,7 +2053,7 @@ def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -2125,7 +2134,7 @@ def add_peripheral_compartment(model: Model, name: Optional[str] = None):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -2278,7 +2287,7 @@ def remove_peripheral_compartment(model: Model, name: Optional[str] = None):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -2409,7 +2418,7 @@ def set_ode_solver(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -2780,7 +2789,7 @@ def set_initial_condition(
     Return
     ------
     model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -2862,7 +2871,7 @@ def set_zero_order_input(model: Model, compartment: str, expression: TExpr) -> M
     Return
     ------
     model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -2968,7 +2977,7 @@ def solve_ode_system(model: Model):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------

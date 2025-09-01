@@ -53,7 +53,7 @@ def add_allometry(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

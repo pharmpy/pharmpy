@@ -64,7 +64,7 @@ def create_basic_pk_model(
     Return
     ------
     Model
-        Pharmpy model object
+        Pharmpy model
 
     Examples
     --------
@@ -240,7 +240,7 @@ def create_basic_pd_model(
     Return
     ------
     Model
-        Pharmpy model object
+        Pharmpy model
 
     Examples
     --------

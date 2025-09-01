@@ -32,7 +32,7 @@ def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -143,7 +143,7 @@ def add_estimation_step(
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -217,7 +217,7 @@ def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED):
     Returns
     -------
     Model
-        Pharmpy model object
+        Update Pharmpy model
 
     Examples
     --------
@@ -261,7 +261,7 @@ def remove_estimation_step(model: Model, idx: int):
     Returns
     -------
     Model
-        Pharmpy model object
+        Update Pharmpy model
 
     Examples
     --------
@@ -310,7 +310,7 @@ def append_estimation_step_options(model: Model, tool_options: Mapping[str, Any]
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -361,7 +361,7 @@ def add_parameter_uncertainty_step(
     Returns
     -------
     Model
-        Pharmpy model object
+        Update Pharmpy model
 
     Examples
     --------
@@ -444,7 +444,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
     Returns
     -------
     Model
-        Pharmpy model object
+        Update Pharmpy model
 
     Examples
     --------
@@ -499,13 +499,14 @@ def add_derivative(
     Parameters
     ----------
     model : Model
-        Pharmpy modeas.
+        Pharmpy model
     with_respect_to : Union[str, Sequence[str, Sequence[str]]]
         Parameter name(s) to use as independent variables. Default is None.
 
     Returns
     -------
-    Pharmpy model.
+    Model
+        Updated Pharmpy model
 
     """
 
@@ -567,13 +568,14 @@ def remove_derivative(
     Parameters
     ----------
     model : Model
-        Pharmpy modeas.
+        Pharmpy model
     with_respect_to : Union[str, Sequence[str, Sequence[str]]]
         Parameter name(s) to use as independent variables. Default is None.
 
     Returns
     -------
-    Pharmpy model.
+    Model
+        Updated Pharmpy model
 
     """
 
@@ -624,7 +626,7 @@ def add_predictions(model: Model, pred: list[str]):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -682,7 +684,7 @@ def add_residuals(model: Model, res: list[str]):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -736,7 +738,7 @@ def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -788,7 +790,7 @@ def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

@@ -264,7 +264,7 @@ def resample_data(
     Parameters
     ----------
     dataset_or_model : pd.DataFrame or Model
-        Dataset or Model to use
+        Dataset or Pharmpy model to use
     group : str
         Name of column to group by
     resamples : int

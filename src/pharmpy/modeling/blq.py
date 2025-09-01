@@ -108,7 +108,7 @@ def transform_blq(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

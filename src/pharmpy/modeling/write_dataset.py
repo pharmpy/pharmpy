@@ -28,7 +28,7 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
     Parameters
     ----------
     model : Model
-        Model whose dataset to write to file
+        Pharmpy model
     path : None or str or Path
         Destination path. Default is to use original path with .csv suffix.
     force : bool
@@ -37,7 +37,7 @@ def write_csv(model: Model, path: Optional[Union[str, Path]] = None, force: bool
     Returns
     -------
     Model
-       Updated model object
+       Updated Pharmpy model
 
     Examples
     --------
@@ -78,7 +78,7 @@ def write_dataset(
     Parameters
     ----------
     model : Model
-        Model whose dataset to write to file
+        Pharmpy model
     path : None or str or Path
         Destination path. Default is to use original path with .csv suffix.
     force : bool
@@ -89,7 +89,7 @@ def write_dataset(
     Returns
     -------
     Model
-       Updated model object
+       Updated Pharmpy model
 
     Examples
     --------

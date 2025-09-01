@@ -69,7 +69,7 @@ def add_iiv(
     Parameters
     ----------
     model : Model
-        Pharmpy model to add new IIVs to.
+        Pharmpy model
     list_of_parameters : str, list
         Name/names of parameter to add new IIVs to.
     expression : str, list
@@ -84,7 +84,7 @@ def add_iiv(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -185,7 +185,7 @@ def add_iov(
     Parameters
     ----------
     model : Model
-        Pharmpy model to add new IOVs to.
+        Pharmpy model
     occ : str
         Name of occasion column.
     list_of_parameters : str, list
@@ -203,7 +203,7 @@ def add_iov(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -441,14 +441,14 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     Parameters
     ----------
     model : Model
-        Pharmpy model to add new IIVs to.
+        Pharmpy model
     initial_estimate : float
         Value of initial estimate of parameter. Default is 0.09
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -486,14 +486,14 @@ def add_pd_iiv(model: Model, initial_estimate: float = 0.09):
     Parameters
     ----------
     model : Model
-        Pharmpy model to add new IIVs to.
+        Pharmpy model
     initial_estimate : float
         Value of initial estimate of parameter. Default is 0.09
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -635,7 +635,7 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None):
     Parameters
     ----------
     model : Model
-        Pharmpy model to create block effect on.
+        Pharmpy model
     to_remove : str, list
         Name/names of etas and/or name/names of individual parameters to remove.
         If None, all etas that are IIVs will be removed. None is default.
@@ -643,7 +643,7 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -712,7 +712,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None):
     Parameters
     ----------
     model : Model
-        Pharmpy model to remove IOV from.
+        Pharmpy model
     to_remove : str, list
         Name/names of IOV etas to remove, e.g. 'ETA_IOV_1_1'.
         If None, all etas that are IOVs will be removed. None is default.
@@ -720,7 +720,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -788,14 +788,14 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[list[str], 
     Parameters
     ----------
     model : Model
-        Pharmpy model to apply boxcox transformation to.
+        Pharmpy model
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -826,14 +826,14 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[list[str], s
     Parameters
     ----------
     model : Model
-        Pharmpy model to apply t distribution transformation to.
+        Pharmpy model
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -868,14 +868,14 @@ def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[list[s
     Parameters
     ----------
     model : Model
-        Pharmpy model to apply John Draper transformation to.
+        Pharmpy model
     list_of_etas : str, list
         Name/names of etas to transform. If None, all etas will be transformed (default).
 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1043,7 +1043,7 @@ def create_joint_distribution(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1120,7 +1120,7 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[list[str], str]] 
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -1201,7 +1201,7 @@ def update_initial_individual_estimates(
     Parameters
     ----------
     model : Model
-        Pharmpy model to update initial estimates
+        Pharmpy model
     individual_estimates : pd.DataFrame
         Individual estimates to use
     force : bool
@@ -1210,7 +1210,7 @@ def update_initial_individual_estimates(
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------

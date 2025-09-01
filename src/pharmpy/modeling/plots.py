@@ -76,7 +76,7 @@ def plot_individual_predictions(
     Parameters
     ----------
     model : Model
-        Previously run Pharmpy model.
+        Pharmpy model
     predictions : pd.DataFrame
         One column for each type of prediction
     individuals : list
@@ -133,7 +133,7 @@ def plot_transformed_eta_distributions(
     Parameters
     ----------
     model : Model
-        Previously run Pharmpy model.
+        Pharmpy model
     parameter_estimates : Union[pd.Series, Mapping[str, float]]
         Parameter estimates of model fit
     individual_estimates : pd.DataFrame
@@ -216,7 +216,7 @@ def plot_eta_distributions(
     Parameters
     ----------
     model : Model
-        Previously run Pharmpy model.
+        Pharmpy model
     individual_estimates : pd.DataFrame
         Individual estimates for etas
 

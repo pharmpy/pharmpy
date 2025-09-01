@@ -64,7 +64,7 @@ def add_effect_compartment(model: Model, expr: PDTypes):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -144,7 +144,7 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -277,7 +277,7 @@ def add_indirect_effect(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -379,7 +379,7 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

@@ -37,7 +37,7 @@ def get_observation_expression(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -78,7 +78,7 @@ def get_individual_prediction_expression(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -109,7 +109,7 @@ def get_population_prediction_expression(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -141,7 +141,7 @@ def calculate_eta_gradient_expression(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -172,7 +172,7 @@ def calculate_epsilon_gradient_expression(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -202,7 +202,7 @@ def create_symbol(model: Model, stem: str, force_numbering: bool = False):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     stem : str
         First part of the new variable name
     force_numbering : bool
@@ -285,12 +285,12 @@ def mu_reference_model(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -383,7 +383,7 @@ def has_mu_reference(model: Model) -> bool:
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
@@ -412,7 +412,7 @@ def get_mu_connected_to_parameter(model: Model, parameter: str) -> Optional[str]
     Parameters
     ----------
     model : Model
-        Pharmpy model object.
+        Pharmpy model
     parameter : str
         Name of parameter which to find Mu parameter for.
 
@@ -435,7 +435,7 @@ def simplify_expression(model: Model, expr: Union[str, TExpr]):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     expr : TExpr or str
         Expression to simplify
 
@@ -499,7 +499,7 @@ def make_declarative(model: Model):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -587,12 +587,12 @@ def cleanup_model(model: Model):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
     Model
-        Updated model
+        Updated Pharmpy model
 
     Examples
     --------
@@ -673,7 +673,7 @@ def greekify_model(model: Model, named_subscripts: bool = False):
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -790,7 +790,7 @@ def get_individual_parameters(
     Parameters
     ----------
     model : Model
-        Pharmpy model to retrieve the individuals parameters from
+        Pharmpy model
     level : {'iiv', 'iov', 'random', 'all'}
         The variability level to look for: 'iiv', 'iov', 'random' or 'all' (default)
     dv : Union[Expr, str, int, None]
@@ -1140,7 +1140,7 @@ def has_random_effect(
     Parameters
     ----------
     model : Model
-        Input Pharmpy model
+        Pharmpy model
     parameter: str
         Input parameter
     level : {'iiv', 'iov', 'all'}
@@ -1180,7 +1180,7 @@ def get_rv_parameters(model: Model, rv: str) -> list[str]:
     Parameters
     ----------
     model : Model
-        Pharmpy model to retrieve parameters from
+        Pharmpy model
     rv : str
         Name of random variable to retrieve
 
@@ -1226,7 +1226,7 @@ def get_parameter_rv(
     Parameters
     ----------
     model : Model
-        Pharmpy model to retrieve parameters from
+        Pharmpy model
     parameter : str
         Name of parameter to retrieve random variable from
     var_type: {'iiv', 'iov'}
@@ -1530,7 +1530,7 @@ def get_pk_parameters(
     Parameters
     ----------
     model : Model
-        Pharmpy model to retrieve the PK parameters from
+        Pharmpy model
     kind : {'absorption', 'distribution', 'elimination', 'all'}
         The type of parameter to retrieve: 'absorption', 'distribution',
         'elimination', or 'all' (default).
@@ -1613,7 +1613,7 @@ def get_pd_parameters(model: Model) -> list[str]:
     Parameters
     ----------
     model : Model
-        Pharmpy model to retrieve the PD parameters from
+        Pharmpy model
 
     Return
     ------

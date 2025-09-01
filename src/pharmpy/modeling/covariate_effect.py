@@ -43,7 +43,7 @@ def get_covariate_effects(model: Model) -> dict:
     Parameters
     ----------
     model : Model
-        Model to extract covariates from.
+        Pharmpy model
 
     Returns
     -------
@@ -186,7 +186,7 @@ def has_covariate_effect(model: Model, parameter: str, covariate: str):
     Parameters
     ----------
     model : Model
-        Pharmpy model to check for covariate effect.
+        Pharmpy model
     parameter : str
         Name of parameter.
     covariate : str
@@ -215,7 +215,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     Parameters
     ----------
     model : Model
-        Pharmpy model from which to remove the covariate effect.
+        Pharmpy model
     parameter : str
         Name of parameter.
     covariate : str
@@ -224,7 +224,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str):
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -385,7 +385,7 @@ def add_covariate_effect(
     Parameters
     ----------
     model : Model
-        Pharmpy model to add covariate effect to.
+        Pharmpy model
     parameter : str
         Name of parameter to add covariate effect to.
     covariate : str
@@ -401,7 +401,7 @@ def add_covariate_effect(
     Return
     ------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------

@@ -28,7 +28,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     variable : str or Symbol
         Find physical unit of this variable
 

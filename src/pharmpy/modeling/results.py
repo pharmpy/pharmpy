@@ -238,7 +238,7 @@ def calculate_individual_parameter_statistics(
     Parameters
     ----------
     model : Model
-        A previously estimated model
+        Pharmpy model
     expr_or_exprs : str
         expression or iterable of str or expressions
         Expressions or equations for parameters of interest. If equations are used
@@ -422,7 +422,7 @@ def calculate_pk_parameters_statistics(
     Parameters
     ----------
     model : Model
-        A previously estimated model
+        Pharmpy model
     parameter_estimates : pd.Series
         Parameter estimates
     covariance_matrix : pd.DataFrame
@@ -570,7 +570,7 @@ def calculate_aic(model: Model, likelihood: float):
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     likelihood : float
         -2LL
 
@@ -615,7 +615,7 @@ def calculate_bic(
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     likelihood : float
         -2LL to use
     type : {'mixed', 'fixed', 'random', 'iiv'}
@@ -706,7 +706,7 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     cor : pd.DataFrame
         Estimated correlation matrix
     limit : float
@@ -742,7 +742,7 @@ def check_parameters_near_bounds(
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     values : pd.Series
         Series of values with index a subset of parameter names.
     zero_limit : float

@@ -44,7 +44,7 @@ def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None)
     Returns
     -------
     Model
-        Read model object
+        Pharmpy model
 
     Example
     -------
@@ -73,7 +73,7 @@ def read_model_from_string(code: str) -> Model:
     Returns
     -------
     Model
-        Pharmpy model object
+        Pharmpy model
 
     Example
     -------
@@ -115,7 +115,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True) -
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -160,14 +160,14 @@ def convert_model(
     Parameters
     ----------
     model : Model
-        Model to convert
+        Pharmpy model
     to_format : {'generic', 'nlmixr', 'nonmem', 'rxode'}
         Name of format to convert into. Currently supported 'generic', 'nlmixr', 'nonmem', and 'rxode'
 
     Returns
     -------
     Model
-        New model object with new underlying model format
+        Updated Pharmpy model
 
     Example
     -------
@@ -271,7 +271,7 @@ def set_name(model: Model, new_name: str) -> Model:
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -301,7 +301,7 @@ def set_description(model: Model, new_description: str) -> Model:
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -328,14 +328,14 @@ def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None) -> 
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     path : Path in which to find next unique number
         Default is to not look for files.
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Examples
     --------
@@ -378,7 +378,7 @@ def load_example_model(name: str) -> Model:
     Returns
     -------
     Model
-        Loaded model object
+        Pharmpy model
 
     Example
     -------
@@ -484,7 +484,7 @@ def print_model_symbols(model: Model) -> None:
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Example
     -------
@@ -583,12 +583,12 @@ def remove_unused_parameters_and_rvs(model: Model) -> Model:
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
     """
     new_rvs, new_params = _get_unused_parameters_and_rvs(
         model.statements, model.parameters, model.random_variables
@@ -640,14 +640,14 @@ def rename_symbols(model: Model, new_names: Mapping[TSymbol, TSymbol]) -> Model:
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     new_names : dict
         From old name or symbol to new name or symbol
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
     """
     d = {Expr(key): Expr(val) for key, val in new_names.items()}
 
@@ -678,14 +678,14 @@ def filter_dataset(model: Model, expr: str) -> Model:
     Parameters
     ----------
     model : Model
-        Pharmpy model object
+        Pharmpy model
     expr : str
         expression for dataset query
 
     Returns
     -------
     Model
-        Pharmpy model object
+        Updated Pharmpy model
 
     Example
     -------
@@ -757,14 +757,14 @@ def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
     Parameters
     ----------
     model_1 : Model
-        Pharmpy model object
+        Pharmpy model
     model_2 : Model
-        Pharmpy model object
+        Pharmpy model
 
     Returns
     -------
     Model | None
-        Pharmpy model object or None
+        Pharmpy model or None
 
     Example
     -------
