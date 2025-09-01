@@ -415,7 +415,10 @@ def add_covariate_effect(
     sset = model.statements
 
     if not allow_nested and depends_on(model, parameter, covariate):
-        warnings.warn(f'Covariate effect of {covariate} on {parameter} already exists')
+        warnings.warn(
+            f'Covariate effect of {covariate} on {parameter} already exists. '
+            'Returning the input model.'
+        )
         return model
 
     statistics = {}
