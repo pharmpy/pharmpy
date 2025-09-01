@@ -12,7 +12,7 @@ from typing import Optional
 
 import pharmpy.config as config
 from pharmpy.model.external.nonmem import convert_model
-from pharmpy.modeling import get_config_path, write_csv, write_model
+from pharmpy.modeling import get_config_path, write_dataset, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results, parse_simulation_results
 from pharmpy.workflows import ModelEntry
 
@@ -69,7 +69,7 @@ def execute_model(model_entry, context):
     datasets_path.mkdir(parents=True, exist_ok=True)
 
     # NOTE: Write dataset and model files so they can be used by NONMEM.
-    model = write_csv(model, path=dataset_path, force=True)
+    model = write_dataset(model, path=dataset_path, force=True)
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
     parafile_option = create_parafile_and_option(context, model_path / 'parafile.pnm', tmp_path)

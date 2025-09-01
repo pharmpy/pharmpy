@@ -15,7 +15,7 @@ from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
 from pharmpy.model.model import ModelInternals, update_datainfo
-from pharmpy.modeling.write_csv import write_csv
+from pharmpy.modeling.write_dataset import write_dataset
 
 from .nmtran_parser import NMTranControlStream, NMTranParser
 from .parsing import (
@@ -275,7 +275,7 @@ class Model(BaseModel):
             datapath = model.datainfo.path
             if datapath is None:
                 dir_path = Path(model.name + ".csv") if path is None else path.parent
-                model = write_csv(model, path=dir_path, force=force)
+                model = write_dataset(model, path=dir_path, force=force)
                 datapath = model.datainfo.path
                 assert datapath is not None
                 replace_dict['datainfo'] = model.datainfo.replace(path=datapath)

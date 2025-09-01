@@ -39,3 +39,6 @@ include *.txt
 
 # added by check-manifest
 recursive-include src *.py
+
+# added by check-manifest
+recursive-include src *.py

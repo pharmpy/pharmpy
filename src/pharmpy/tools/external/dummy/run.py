@@ -8,7 +8,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import EstimationStep, Parameters, SimulationStep
 from pharmpy.model.external.nonmem import convert_model
-from pharmpy.modeling import create_rng, get_observations, write_csv, write_model
+from pharmpy.modeling import create_rng, get_observations, write_dataset, write_model
 from pharmpy.workflows import ModelEntry, SimulationResults
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults
@@ -56,7 +56,7 @@ def execute_model(model_entry, context):
     datasets_path.mkdir(parents=True, exist_ok=True)
 
     # NOTE: Write dataset and model files so they can be used by NONMEM.
-    model = write_csv(model, path=dataset_path, force=True)
+    model = write_dataset(model, path=dataset_path, force=True)
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
     if model_entry.parent and model_entry.parent.name in context.list_all_names():

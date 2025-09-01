@@ -8,7 +8,7 @@ from typing import Union
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.model import DataInfo, Model
-from pharmpy.modeling import write_csv, write_model
+from pharmpy.modeling import write_dataset, write_model
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import ModelfitResults, read_results
 
@@ -294,7 +294,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
             data_path = path_absolute(datasets_path / dataset_filename)
             datainfo = model.datainfo.replace(path=data_path)
             model = model.replace(datainfo=datainfo)
-            model = write_csv(model, path=data_path, force=True)
+            model = write_dataset(model, path=data_path, force=True)
 
             # NOTE: Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there

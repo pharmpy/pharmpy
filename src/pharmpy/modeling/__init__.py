@@ -252,7 +252,7 @@ from .results import (
 )
 from .tmdd import set_tmdd
 from .units import get_unit_of
-from .write_csv import write_csv
+from .write_dataset import write_csv, write_dataset
 
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
@@ -486,6 +486,7 @@ __all__ = [
     'update_initial_individual_estimates',
     'use_thetas_for_error_stdev',
     'write_csv',
+    'write_dataset',
     'write_model',
     'unconstrain_parameters',
     'undrop_columns',

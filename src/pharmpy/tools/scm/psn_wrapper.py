@@ -3,7 +3,7 @@ import re
 import subprocess
 from pathlib import Path
 
-from pharmpy.modeling import read_model, write_csv, write_model
+from pharmpy.modeling import read_model, write_dataset, write_model
 from pharmpy.tools import read_results
 from pharmpy.workflows import default_context
 
@@ -47,7 +47,7 @@ def run_scm(model, relations, continuous=None, categorical=None, path=None):
     with open(config_path, 'w') as fh:
         fh.write(config)
 
-    write_csv(model, path=path)
+    write_dataset(model, path=path)
     write_model(model, path=path)
 
     os.system(f"scm {config_path} -directory={path / 'scmdir'} -auto_tv")

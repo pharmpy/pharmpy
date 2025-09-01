@@ -1,5 +1,7 @@
-next version
-------------
+.. _1.9.0:
+
+1.9.0 (2025-09-01)
+------------------
 
 New features
 ============
@@ -18,6 +20,9 @@ Changes
 =======
 
 * :code:`set_initial_estimates` with :code:`strict=False` will ignore any new inits being NaN.
+* Deprecate :code:`write_csv` in favour of :code:`write_dataset`. The old function will be removed
+  in the next minor version. This gives the function a more appropriate name and counters a collision
+  in pharmr with tidyverse.
 
 Bugfixes
 ========

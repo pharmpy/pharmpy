@@ -21,7 +21,7 @@ from pharmpy.modeling import (
     get_thetas,
     set_evaluation_step,
     set_initial_estimates,
-    write_csv,
+    write_dataset,
 )
 from pharmpy.tools import fit
 from pharmpy.workflows import ModelEntry, default_context
@@ -50,7 +50,7 @@ def execute_model(model_entry, context, evaluate=False, path=None):
     model = model.replace(internals=model.internals.replace(path=path))
     meta = path / '.pharmpy'
     meta.mkdir(parents=True, exist_ok=True)
-    write_csv(model, path=path)
+    write_dataset(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
     dataname = f'{model.name}.csv'

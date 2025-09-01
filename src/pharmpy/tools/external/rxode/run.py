@@ -11,7 +11,7 @@ import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.model.external.rxode import convert_model
-from pharmpy.modeling import get_omegas, get_sigmas, set_initial_estimates, write_csv
+from pharmpy.modeling import get_omegas, get_sigmas, set_initial_estimates, write_dataset
 from pharmpy.tools import fit
 from pharmpy.tools.external.nlmixr.run import compare_models, print_step
 from pharmpy.workflows import ModelEntry, default_context
@@ -30,7 +30,7 @@ def execute_model(model_entry, db):
     meta.mkdir(parents=True, exist_ok=True)
     if model.datainfo.path is not None:
         model = model.replace(datainfo=model.datainfo.replace(path=None))
-    write_csv(model, path=path)
+    write_dataset(model, path=path)
     model = model.replace(datainfo=model.datainfo.replace(path=path))
 
     dataname = f'{model.name}.csv'

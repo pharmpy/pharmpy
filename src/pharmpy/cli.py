@@ -344,10 +344,10 @@ def run_retries(args):
 def data_write(args):
     """Subcommand to write a dataset."""
     try:
-        from pharmpy.modeling import write_csv
+        from pharmpy.modeling import write_dataset
 
         # If no output_file supplied will use name of df
-        path = write_csv(args.model[0], path=args.output_file, force=args.force)
+        path = write_dataset(args.model[0], path=args.output_file, force=args.force)
         print(f'Dataset written to {path}')
     except OSError as e:
         error(e)
