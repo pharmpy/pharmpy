@@ -1,6 +1,6 @@
 .. _1.9.0:
 
-1.9.0 (2025-09-01)
+1.9.0 (2025-09-03)
 ------------------
 
 New features
@@ -15,6 +15,7 @@ New features
 * Add :code:`modeling.set_n_transit_compartments`
 * Add :code:`modeling.create_basic_pd_model`
 * Add first version of a VPC tool
+* Add tool ModelRank
 
 Changes
 =======
@@ -23,6 +24,8 @@ Changes
 * Deprecate :code:`write_csv` in favour of :code:`write_dataset`. The old function will be removed
   in the next minor version. This gives the function a more appropriate name and counters a collision
   in pharmr with tidyverse.
+* Use ModelRank in all AMD-tools
+* Do not assume PK model in COVSearch (previously raised InputValidationError when central compartment could not be found)
 
 Bugfixes
 ========
