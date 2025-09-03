@@ -13,7 +13,6 @@ Tools connected to PsN
 .. toctree::
    :maxdepth: 1
 
-   bootstrap
    cdd
    crossval
    frem

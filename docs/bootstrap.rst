@@ -2,7 +2,58 @@
 Bootstrap
 =========
 
-Pharmpy can do postprocessing for the PsN bootstrap tool.
+Perform a bootstrap
+
+~~~~~~~
+Running
+~~~~~~~
+
+The bootstrap tool is available both in Pharmpy/pharmr and from the command line.
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import read_model
+    from pharmpy.tools import read_modelfit_results, run_bootstrap
+
+    model = read_model('path/to/model')
+    model_results = read_modelfit_results('path/to/model')
+    res = run_bootstrap(model=model, results=model_results, samples=300)
+
+Example of running VPC from the command line:
+
+.. code::
+
+    pharmpy run bootstrap run1.mod --samples=300
+
+
+~~~~~~~~~
+Arguments
+~~~~~~~~~
+
+Mandatory
+---------
+
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| Argument                                          | Description                                                                             |
++===================================================+=========================================================================================+
+| ``model``                                         | Start model                                                                             |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``results``                                       | ModelfitResults for the start model                                                     |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``samples``                                       | Number of resamples of the dataset. Minimum 1                                           |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+
+Optional
+--------
+
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| Argument                                          | Description                                                                             |
++===================================================+=========================================================================================+
+| ``dofv``                                          | Compute dOFV by evaluating the original dataset with the boostrap parameter estimates.  |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+| ``strictness``                                    | Expression for which results to include in the calculations. Default include all.       |
++---------------------------------------------------+-----------------------------------------------------------------------------------------+
+
 
 .. math::
 
@@ -11,7 +62,7 @@ The Bootstrap postprocessing and results
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Parameter statistics
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 The ``parameter_statistics`` table contains summary statistics for over the bootstrap runs for the model parameters.
 
@@ -63,7 +114,7 @@ The raw parameter data is available in ``parameter_estimates``
 
 
 OFV statistics
-~~~~~~~~~~~~~~
+--------------
 
 Summary statistics for the objective function values of the bootstrap runs can be found in the ``ofv_statistics`` table, which has the following rows:
 
@@ -118,7 +169,7 @@ The raw ofv data is available in ``ofvs``.
 
 
 Covariance matrix
-~~~~~~~~~~~~~~~~~
+-----------------
 
 A covariance matrix for the parameters is available in ``covariance_matrix``:
 
@@ -128,7 +179,7 @@ A covariance matrix for the parameters is available in ``covariance_matrix``:
     res.covariance_matrix
 
 Included individuals
-~~~~~~~~~~~~~~~~~~~~
+--------------------
 
 The ``included_individuals`` is a list of lists with all individuals that were included in each bootstrap run.
 
