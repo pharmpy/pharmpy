@@ -15,7 +15,7 @@ The VPC tool is available both in Pharmpy/pharmr and from the command line.
 .. pharmpy-code::
 
     from pharmpy.modeling import read_model
-    from pharmpy.tools import read_modelfit_results, run_ruvsearch
+    from pharmpy.tools import read_modelfit_results, run_vpc
 
     model = read_model('path/to/model')
     model_results = read_modelfit_results('path/to/model')
