@@ -8,7 +8,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import get_pk_parameters, remove_covariate_effect, set_estimation_step
+from pharmpy.modeling import remove_covariate_effect, set_estimation_step
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
@@ -1128,7 +1128,7 @@ def validate_input(
         )  # Ignore OPTIONAL attribute
 
         allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
-        allowed_parameters = set(get_pk_parameters(model)).union(
+        allowed_parameters = set(
             str(statement.symbol) for statement in model.statements.before_odes
         )
 
