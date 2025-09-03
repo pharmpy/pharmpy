@@ -21,7 +21,7 @@ def get_rank_values(
 ) -> dict[ModelEntry, dict[str, float]]:
 
     if rank_type == 'lrt':
-        rank_val = 'ofv'
+        rank_val = 'p_value'
         ref = perform_lrt(me_ref, me_ref, alpha)
         cands = {me: perform_lrt(me, me_ref, alpha) for me in mes_cand}
         rank_values = {me_ref: ref, **cands}
@@ -71,7 +71,9 @@ def perform_lrt(me, me_parent, alpha) -> dict[str, Union[float, int, bool]]:
     likelihood = me.modelfit_results.ofv
     rank_dict['dofv'] = me_parent.modelfit_results.ofv - likelihood
     rank_dict['ofv'] = likelihood
-    if lrt_test(
+    if me.model is me_parent.model:
+        rank_dict['significant'] = None
+    elif lrt_test(
         me_parent.model, me.model, me_parent.modelfit_results.ofv, me.modelfit_results.ofv, alpha
     ):
         rank_dict['significant'] = True
@@ -83,21 +85,24 @@ def perform_lrt(me, me_parent, alpha) -> dict[str, Union[float, int, bool]]:
 
 def rank_model_entries(me_rank_values, rank_type):
     sort_by = get_rank_name(rank_type)
+    mes_to_rank, mes_to_sort, me_ref_lrt, mes_nan = {}, {}, {}, {}
 
-    mes_to_rank = {
-        me: vals for me, vals in me_rank_values.items() if not np.isnan(vals['rank_val'])
-    }
+    for me, rank_values in me_rank_values.items():
+        if not np.isnan(rank_values['rank_val']):
+            mes_to_rank[me] = rank_values
+        else:
+            if rank_type == 'lrt' and rank_values['significant'] is None:
+                me_ref_lrt[me] = rank_values
+            else:
+                if not np.isnan(rank_values[sort_by]):
+                    mes_to_sort[me] = rank_values
+                else:
+                    mes_nan[me] = rank_values
+
     mes_ranked = dict(sorted(mes_to_rank.items(), key=lambda x: x[1]['rank_val']))
-
-    mes_to_sort = {
-        me: vals
-        for me, vals in me_rank_values.items()
-        if me not in mes_ranked.keys() and not np.isnan(vals[sort_by])
-    }
     mes_sorted = dict(sorted(mes_to_sort.items(), key=lambda x: x[1][sort_by]))
 
-    mes_nan = {me: vals for me, vals in me_rank_values.items() if np.isnan(vals[sort_by])}
-    ranking = {**mes_ranked, **mes_sorted, **mes_nan}
+    ranking = {**mes_ranked, **me_ref_lrt, **mes_sorted, **mes_nan}
     assert len(ranking) == len(me_rank_values)
     return ranking
 

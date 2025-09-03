@@ -585,7 +585,11 @@ def test_rank_model_entries(
 
     me_best = list(ranking.keys())[0]
     assert me_best.model.name == final_model
-    assert ranking[me_best]['rank_val'] == min(d['rank_val'] for d in ranking.values())
+
+    if rank_type == 'lrt' and final_model == model_ref.name:
+        assert all(val['significant'] is not True for val in ranking.values())
+    else:
+        assert ranking[me_best]['rank_val'] == min(d['rank_val'] for d in ranking.values())
 
 
 def _create_candidates(model_ref):

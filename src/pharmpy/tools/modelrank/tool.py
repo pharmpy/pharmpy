@@ -240,7 +240,7 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
     for i, (me, predicates) in enumerate(me_rank_values.items(), 1):
         model = me.model
         n_params = len(me.model.parameters.nonfixed)
-        rank = i if not np.isnan(predicates['rank_val']) else pd.NA
+        rank = i if not np.isnan(predicates['rank_val']) or me.model is me_ref.model else pd.NA
         me_dict = {
             'model': model.name,
             'description': model.description,
