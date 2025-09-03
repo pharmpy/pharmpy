@@ -3,6 +3,7 @@ import itertools
 import pytest
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import add_covariate_effect, set_name
 from pharmpy.tools import fit, run_modelrank
@@ -110,4 +111,4 @@ def test_modelrank_uncertainty_dummy(
             assert res.final_model is None
             assert res.final_results is None
 
-            assert np.isnan(res.summary_tool.iloc[-1]['rank'])
+            assert pd.isna(res.summary_tool.iloc[-1]['rank'])
