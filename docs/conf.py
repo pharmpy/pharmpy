@@ -20,6 +20,7 @@ extensions = [
     'jupyter_sphinx',
     'sphinx_tabs.tabs',
     'sphinxcontrib.autoprogram',
+    'sphinxcontrib.bibtex',
     'pharmpy_snippet',
 ]
 if os.getenv('SPELLCHECK'):
@@ -80,6 +81,7 @@ napoleon_use_param = False
 automodapi_inheritance_diagram = False
 autodoc_typehints = 'none'
 graphviz_output_format = 'svg'
+bibtex_bibfiles = ['references.bib']
 
 import doctest
 doctest_show_success = False

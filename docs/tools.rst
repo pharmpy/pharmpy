@@ -41,3 +41,4 @@ Tools in Pharmpy
    Simulation - Run a simulation <simulation>
    Linearize - Linearize a model <linearize_tool>
    VPC - Visual predictive check <vpc>
+   ModelRank - rank models <modelrank>
