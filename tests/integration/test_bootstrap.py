@@ -14,5 +14,5 @@ def test_bootstrap(tmp_path, testdata):
         model = Model.parse_model('pheno.mod')
         results = read_modelfit_results('pheno.mod')
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
-        res = run_tool('bootstrap', model=model, results=results, resamples=3)
+        res = run_tool('bootstrap', model=model, results=results, samples=3)
         assert len(res.parameter_estimates) == 3

@@ -147,7 +147,7 @@ def run_tool_wrapper(toolname, args, **kwargs):
 def run_bootstrap(args):
     model, res = args.model
     run_tool_wrapper(
-        'bootstrap', args, model=model, results=res, resamples=args.samples, dofv=args.dofv
+        'bootstrap', args, model=model, results=res, samples=args.samples, dofv=args.dofv
     )
 
 

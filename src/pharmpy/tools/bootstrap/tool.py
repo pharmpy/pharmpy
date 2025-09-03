@@ -20,7 +20,7 @@ from pharmpy.workflows.results import ModelfitResults
 def create_workflow(
     model: Model,
     results: Optional[ModelfitResults] = None,
-    resamples: int = 1,
+    samples: int = 1,
     dofv: bool = False,
     strictness: str = "",
 ):
@@ -32,7 +32,7 @@ def create_workflow(
         Pharmpy model
     results : ModelfitResults
         Results for model
-    resamples : int
+    samples : int
         Number of bootstrap resamples
     dofv : bool
         Will evaluate bootstrap models with original dataset if set
@@ -51,14 +51,14 @@ def create_workflow(
     >>> from pharmpy.tools import run_bootstrap, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_bootstrap(model, res, resamples=500) # doctest: +SKIP
+    >>> run_bootstrap(model, res, samples=500) # doctest: +SKIP
     """
 
     wb = WorkflowBuilder(name='bootstrap')
 
     start_task = Task('start', start, model, results)
 
-    for i in range(resamples):
+    for i in range(samples):
         task_resample = Task('resample', resample_model, f'bs_{i + 1}', results)
         wb.add_task(task_resample, predecessors=start_task)
         task_execute = Task('run_model', run_model)
@@ -134,8 +134,8 @@ def post_process_results(context, original_model, original_model_res, strictness
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(model, results, resamples):
+def validate_input(model, results, samples):
     if is_simulation_model(model):
         raise ValueError('Input model is a simulation model. Bootstrap needs an estimation model')
-    if resamples < 1:
+    if samples < 1:
         raise ValueError('The number of samples must at least one')
