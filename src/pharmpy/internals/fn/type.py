@@ -101,7 +101,6 @@ def _match_sequence_items(args, value):
 
 def _match(typing, value):
     origin = get_origin(typing)
-    print(origin, type(origin))
     if origin is None:
         if typing is Any or typing is Optional:
             return True
