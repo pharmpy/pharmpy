@@ -87,7 +87,7 @@ functions used to create them.
 Procedure
 ~~~~~~~~~
 
-RUVsearch is doing modeling on the conditional weighted residual [Ibrahim]_ of the fit of the input model to quickly assess which residual
+RUVsearch is doing modeling on the conditional weighted residual :footcite:p:`ibrahim_2018` of the fit of the input model to quickly assess which residual
 model to select. The input model is then updated with the new residual error model and fit to see if the selected residual error
 model was indeed better. This is done multiple times to see if additional features of the residual error model should be added.
 (Due to the similarity between the power error model and the combined error model, the combination of these two error models is not considered in the procedure.
@@ -169,4 +169,9 @@ you can look at the ``summary_models`` table. The table is generated with
 
     res.summary_models
 
-.. [Ibrahim] Moustafa M. A. Ibrahim, Rikard Nordgren, Maria C. Kjellsson, Mats O. Karlsson. Model-Based Residual Post-Processing for Residual Model Identification. The AAPS Journal 2018 https://doi.org/10.1208/s12248-018-0240-7
+
+~~~~~~~~~~
+References
+~~~~~~~~~~
+
+.. footbibliography::
