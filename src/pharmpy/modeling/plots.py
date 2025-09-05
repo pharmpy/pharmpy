@@ -4,7 +4,7 @@ import re
 import warnings
 from functools import partial
 from pathlib import Path
-from typing import Literal, Mapping, Optional, Union
+from typing import Collection, Literal, Mapping, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.basic import Expr
@@ -69,7 +69,7 @@ def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str
 
 
 def plot_individual_predictions(
-    model: Model, predictions: pd.DataFrame, individuals: Optional[list[int]] = None
+    model: Model, predictions: pd.DataFrame, individuals: Optional[Collection[int]] = None
 ):
     """Plot DV and predictions grouped on individuals
 
