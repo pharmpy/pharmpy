@@ -73,6 +73,12 @@ def plot_individual_predictions(
 ):
     """Plot DV and predictions grouped on individuals
 
+    The predictions would normally be taken from the modelfit results, but any data frame of
+    appropriate format can be used. It should have one column per type of prediction where
+    the column name is the type (e.g. "PRED" or "IPRED"), one row for each record of the dataset
+    in the model. A predictions table containing only some of the individuals is ok to use,
+    but then care needs to be taken to get match the row index of the original dataset.
+
     Parameters
     ----------
     model : Model
