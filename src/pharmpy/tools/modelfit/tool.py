@@ -4,7 +4,7 @@ from pharmpy.model import Model
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.hashing import ModelHash
 
-SupportedExternalTools = Literal['nonmem', 'nlmixr', 'rxode']
+SupportedExternalTools = Literal['nonmem', 'nlmixr', 'rxode', 'dummy']
 
 
 def create_workflow(
