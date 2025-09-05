@@ -103,6 +103,9 @@ def read_model_from_string(code: str) -> Model:
 def write_model(model: Model, path: Union[str, Path] = '', force: bool = True) -> Model:
     """Write model code to file
 
+    An updated Pharmpy model is returned. This will have a new name based on the filename
+    and it might have updates to the model code (e.g. for $DATA in NONMEM models).
+
     Parameters
     ----------
     model : Model
