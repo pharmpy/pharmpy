@@ -697,16 +697,16 @@ def expand_additional_doses(model: Model, flag: bool = False):
     idv = model.datainfo.idv_column.name
     idcol = model.datainfo.id_column.name
 
-    df = get_and_check_dataset(model).copy()
+    df = get_and_check_dataset(model)
 
     try:
         event = model.datainfo.typeix['event'][0].name
     except IndexError:
-        df['_RESETGROUP'] = 1.0
+        df = df.assign(_RESETGROUP=1.0)
     else:
-        df['_FLAG'] = df[event] >= 3
-        df['_RESETGROUP'] = df.groupby('ID')['_FLAG'].cumsum()
-        df.drop('_FLAG', axis=1, inplace=True)
+        df = df.assign(_FLAG=df[event] >= 3)
+        df = df.assign(_RESETGROUP=df.groupby('ID')['_FLAG'].cumsum())
+        df = df.drop('_FLAG', axis=1)
 
     def fn(a):
         if a[addl] == 0:
