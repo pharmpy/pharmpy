@@ -124,6 +124,8 @@ def get_execute_model(tool: Optional[SupportedExternalTools]):
         from pharmpy.tools.external.rxode.run import execute_model
     elif tool == 'dummy':
         from pharmpy.tools.external.dummy.run import execute_model
+    elif tool == 'pharmpy':
+        from pharmpy.tools.modelfit.estimation import execute_model
     else:
         raise ValueError(f"Unknown estimation tool {tool}")
 

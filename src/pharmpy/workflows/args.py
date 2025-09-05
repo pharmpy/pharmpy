@@ -5,7 +5,7 @@ from typing import Any
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
 
-ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr')
+ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr', 'pharmpy')
 
 
 class InputValidationError(Exception):

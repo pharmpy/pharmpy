@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add support for a built in estimation engine in fit and other tools via :code:`esttool='pharmpy'`. It is so far limited to estimating some very basic models.
+
 .. _1.9.0:
 
 1.9.0 (2025-09-03)

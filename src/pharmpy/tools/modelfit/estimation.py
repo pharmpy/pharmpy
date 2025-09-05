@@ -3,8 +3,9 @@ from functools import partial
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.deps import scipy, symengine
+from pharmpy.deps import symengine
 from pharmpy.modeling import cleanup_model, get_thetas
+from pharmpy.tools.modelfit.input import check_input_model
 from pharmpy.tools.modelfit.ucp import (
     build_initial_values_matrix,
     build_parameter_coordinates,
@@ -17,7 +18,7 @@ from pharmpy.tools.modelfit.ucp import (
     scale_thetas,
     split_ucps,
 )
-from pharmpy.workflows import ModelfitResults
+from pharmpy.workflows import ModelEntry, ModelfitResults
 
 
 class EstimationState:
@@ -151,7 +152,7 @@ def ofv_func(
     state.omega = omega
     state.sigma = sigma
 
-    print(theta, omega, sigma)
+    # print(theta, omega, sigma)
 
     theta_subs = {parameter_symbols[i]: value for i, value in enumerate(theta)}
     subs_eta_gradient = [deta.subs(theta_subs) for deta in symbolic_eta_gradient]
@@ -216,7 +217,7 @@ def ofv_func(
     )
     grad = gradsum * grad_scale
 
-    print("OFV", OFVsum)
+    # print("OFV", OFVsum)
     return OFVsum, grad
 
 
@@ -232,10 +233,13 @@ def get_parameter_estimates(state):
 
 
 def estimate(model):
+    check_input_model(model)
     x, func, state = init(model)
 
     start_time = time.time()
-    optres = scipy.optimize.minimize(func, x, jac=True, method='BFGS')
+    from scipy.optimize import minimize
+
+    optres = minimize(func, x, jac=True, method='BFGS')
     end_time = time.time()
 
     parameter_estimates = get_parameter_estimates(state)
@@ -248,3 +252,8 @@ def estimate(model):
         parameter_estimates=parameter_estimates,
     )
     return res
+
+
+def execute_model(me, context):
+    res = estimate(me.model)
+    return ModelEntry(model=me.model, modelfit_results=res)

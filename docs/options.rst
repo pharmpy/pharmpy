@@ -34,10 +34,11 @@ Common options are options that can directly affect the execution of a tool and 
 +-----------------------------+-------------------------------------------------------------------------------------------------+
 | Option                      | Description                                                                                     |
 +=============================+=================================================================================================+
-| :code:`esttool`             | The external tool to use for model estimation and evaluation.                                   |
-|                             | The options are :code:`nonmem`, :code:`nlmixr` and :code:`dummy`. The dummy estimation tool     |
-|                             | doesn't do estimation, but instead randomizes the results. Since this is very fast it can be    |
-|                             | used for testing and demonstration purposes.                                                    |
+| :code:`esttool`             | The tool to use for model estimation and evaluation.                                            |
+|                             | The options are :code:`nonmem`, :code:`nlmixr`, :code:`pharmpy` and :code:`dummy`.              |
+|                             | The dummy estimation tool doesn't do estimation, but instead randomizes the results.            |
+|                             | Since this is very fast it can be used for testing and demonstration purposes.                  |
+|                             | The built in Pharmpy estimation engine is very limited.                                         |
 |                             | :code:`nonmem` is the default                                                                   |
 +-----------------------------+-------------------------------------------------------------------------------------------------+
 
