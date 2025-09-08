@@ -10,6 +10,7 @@
 # elimination(x)     - x can be FO, ZO, MM and MIX-FO-MM
 # peripherals(n)     - n can be 0, 1, ... or a..b for a range (inclusive in both ends)
 # transits(n[, d])   - n as above, d (optional) is DEPOT, NODEPOT, or *
+# transits(N)        - a literal "N"
 # covariate(p, c, e) - p is a parameter name, a list of parameter names, or a reference
 #                    - c is a covariate name, a list of covariate names, or a reference
 #                    - e is an effect, a list of effects, or * for all continuous effects
@@ -33,7 +34,7 @@ _feature: absorption | elimination | peripherals | transits | lagtime
 absorption: "ABSORPTION"i "(" (_absorption_option) ")"
 elimination: "ELIMINATION"i "(" (_elimination_option) ")"
 peripherals: "PERIPHERALS"i "(" (_counts) ["," _peripheral_comp] ")"
-transits: "TRANSITS"i "(" _counts ["," _depot_option] ")"
+transits: "TRANSITS"i "(" (n | (_counts ["," _depot_option])) ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
 covariate: "COVARIATE"i [optional_cov] "(" parameter_option "," covariate_option "," (_fp_options) ["," op_option] ")"
 allometry: "ALLOMETRY"i "(" value ["," decimal] ")"
@@ -106,6 +107,7 @@ values: value | _value_array
 _value_array: "[" [value ("," value)*] "]"
 value: /[a-zA-Z0-9-]+/
 
+n: "n"i
 _counts: count | count_array
 count_array: "[" [number ("," number)*] "]"
 count: number | range

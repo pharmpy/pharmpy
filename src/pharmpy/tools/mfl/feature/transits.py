@@ -3,7 +3,7 @@ from itertools import product
 from typing import Iterable
 
 from pharmpy.model import Model
-from pharmpy.modeling import set_transit_compartments
+from pharmpy.modeling import set_n_transit_compartments, set_transit_compartments
 
 from ..statement.feature.symbols import Wildcard
 from ..statement.feature.transits import TRANSITS_DEPOT_WILDCARD, Transits
@@ -20,7 +20,9 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
                 else statement.depot
             )
             for count, depot in product(statement.counts, depots):
-                if depot.name == 'DEPOT':
+                if count == "N":
+                    yield ('TRANSITS', count, depot.name), set_n_transit_compartments
+                elif depot.name == 'DEPOT':
                     yield ('TRANSITS', count, depot.name), partial(
                         set_transit_compartments, n=count
                     )

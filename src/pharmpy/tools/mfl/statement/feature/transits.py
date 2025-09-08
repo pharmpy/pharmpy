@@ -77,6 +77,8 @@ class TransitsInterpreter(CountInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert 1 <= len(children) <= 2
+        if children == ["N"]:
+            children = [["N"], [Name("NODEPOT")]]
         return feature(Transits, children)
 
     def depot_modes(self, tree):
@@ -85,3 +87,6 @@ class TransitsInterpreter(CountInterpreter):
 
     def depot_wildcard(self, tree):
         return Wildcard()
+
+    def n(self, tree):
+        return "N"

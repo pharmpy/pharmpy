@@ -228,6 +228,7 @@ from pharmpy.tools.mfl.stringify import stringify
         ('TRANSITS(1)', (('TRANSITS', 1, 'DEPOT'),)),
         ('TRANSITS(1, DEPOT)', (('TRANSITS', 1, 'DEPOT'),)),
         ('TRANSITS(1, NODEPOT)', (('TRANSITS', 1, 'NODEPOT'),)),
+        ('TRANSITS(N)', (('TRANSITS', 'N', 'NODEPOT'),)),
         ('LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)', []),
         (
             'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
