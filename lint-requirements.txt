@@ -32,7 +32,7 @@ pathspec==0.12.1
 pkginfo==1.12.1.2
 platformdirs==4.4.0
 pycodestyle==2.14.0
-pycparser==2.22
+pycparser==2.23
 pyflakes==3.4.0
 Pygments==2.19.2
 pyproject_hooks==1.2.0
