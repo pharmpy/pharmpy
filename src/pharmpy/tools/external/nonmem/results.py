@@ -927,10 +927,14 @@ def override_minimization_successful(minimization_successful, pe_iterations):
 
 
 def create_failed_results(model, log):
+    ests = _create_failed_parameter_estimates(model.parameters)
     return ModelfitResults(
         minimization_successful=False,
         ofv=float("NaN"),
-        parameter_estimates=_create_failed_parameter_estimates(model.parameters),
+        parameter_estimates=ests,
+        parameter_estimates_sdcorr=ests,
+        standard_errors=ests.rename("SE"),
+        standard_errors_sdcorr=ests.rename("SE_sdcorr"),
         log=log,
         significant_digits=np.nan,
     )
