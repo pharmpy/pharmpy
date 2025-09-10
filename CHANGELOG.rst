@@ -6,6 +6,11 @@ New features
 
 * Add support for a built in estimation engine in fit and other tools via :code:`esttool='pharmpy'`. It is so far limited to estimating some very basic models.
 
+Bugfixes
+========
+
+* Fix crash when reading in a dataset, which has a column header starting with #, in for example `create_basic_pk_model`
+
 .. _1.9.0:
 
 1.9.0 (2025-09-03)

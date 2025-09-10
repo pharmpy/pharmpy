@@ -2120,6 +2120,7 @@ def create_default_datainfo(path_or_df):
     if not isinstance(path_or_df, pd.DataFrame):
         path = path_absolute(path_or_df)
         datainfo_path = path.with_suffix('.datainfo')
+
         if datainfo_path.is_file():
             di = DataInfo.read_json(datainfo_path)
             di = di.replace(path=path)
@@ -2133,6 +2134,9 @@ def create_default_datainfo(path_or_df):
                 else:
                     colnames = list(pd.read_csv(path, nrows=0))
                     separator = ','
+            if len(colnames) > 0:
+                colnames[0] = colnames[0].lstrip('#')
+
     else:
         colnames = path_or_df.columns
         separator = None
