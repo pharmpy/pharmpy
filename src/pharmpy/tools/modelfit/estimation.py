@@ -227,17 +227,28 @@ def ofv_func(
 def get_parameter_estimates(state, model):
     names = [s.name for s in state.parameter_symbols]
     values = list(state.theta)
-    omega_inds = np.tril_indices_from(state.omega)
-    values.extend(list(state.omega[omega_inds]))
-    # FIXME: Also handle not estimated off-diagonal omegas
-    symb_sigma = model.random_variables.epsilons.covariance_matrix
-    for row in range(symb_sigma.rows):
-        for col in range(row + 1):
-            print(row, col, symb_sigma[row, col], state.sigma[row, col])
-            if symb_sigma[row, col] != 0:
-                values.append(state.sigma[row, col])
+
+    omegas = extract_parameter_estimates_from_matrix(
+        state.omega, model.random_variables.etas.covariance_matrix
+    )
+    values.extend(omegas)
+
+    sigmas = extract_parameter_estimates_from_matrix(
+        state.sigma, model.random_variables.epsilons.covariance_matrix
+    )
+    values.extend(sigmas)
+
     pe = pd.Series(values, index=names, name="estimates")
     return pe
+
+
+def extract_parameter_estimates_from_matrix(numeric, symbolic):
+    values = []
+    for row in range(symbolic.rows):
+        for col in range(row + 1):
+            if symbolic[row, col] != 0:
+                values.append(numeric[row, col])
+    return values
 
 
 def estimate(model):
