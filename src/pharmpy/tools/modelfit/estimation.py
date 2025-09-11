@@ -5,6 +5,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine
 from pharmpy.modeling import cleanup_model, get_thetas
+from pharmpy.tools.modelfit.evaluation import SymengineSubsEvaluator
 from pharmpy.tools.modelfit.input import check_input_model
 from pharmpy.tools.modelfit.ucp import (
     build_initial_values_matrix,
@@ -162,12 +163,14 @@ def ofv_func(
     OFVsum = 0.0
     gradsum = [0.0] * len(x)
 
+    evaluator = SymengineSubsEvaluator()
+
     for curid in ids:
         curdf = df[df[idcol] == curid]
         DVi = np.array(curdf[dvcol])
-        Gi = np.array([[float(val) for val in subs_eta_gradient]] * len(DVi))
-        Hi = np.array([[float(val) for val in subs_eps_gradient]] * len(DVi))
-        PREDi = np.array([float(subs_y_norvs)] * len(DVi))
+        Gi = evaluator.evaluate_vector(subs_eta_gradient, curdf)
+        Hi = evaluator.evaluate_vector(subs_eps_gradient, curdf)
+        PREDi = evaluator.evaluate_scalar(subs_y_norvs, curdf)
         RESi = DVi - PREDi
         Ci = Gi @ omega @ Gi.T + (Hi @ sigma @ Hi.T) * np.eye(len(DVi))
         try:
@@ -185,9 +188,9 @@ def ofv_func(
             symbolic_dG_dx_subs = [e.subs(theta_subs) for e in symbolic_dG_dx]
             symbolic_dH_dx_subs = [e.subs(theta_subs) for e in symbolic_dH_dx]
             symbolic_dP_dx_subs = symbolic_dP_dx.subs(theta_subs)
-            dGi = np.array([[float(val) for val in symbolic_dG_dx_subs]] * len(DVi))
-            dHi = np.array([[float(val) for val in symbolic_dH_dx_subs]] * len(DVi))
-            neg_dPi = -np.array([float(symbolic_dP_dx_subs)] * len(DVi))
+            dGi = evaluator.evaluate_vector(symbolic_dG_dx_subs, curdf)
+            dHi = evaluator.evaluate_vector(symbolic_dH_dx_subs, curdf)
+            neg_dPi = -evaluator.evaluate_scalar(symbolic_dP_dx_subs, curdf)
             symb_omega = omega_grads[i]
             symb_sigma = sigma_grads[i]
             dCi = (
@@ -221,13 +224,18 @@ def ofv_func(
     return OFVsum, grad
 
 
-def get_parameter_estimates(state):
+def get_parameter_estimates(state, model):
     names = [s.name for s in state.parameter_symbols]
     values = list(state.theta)
     omega_inds = np.tril_indices_from(state.omega)
     values.extend(list(state.omega[omega_inds]))
-    sigma_inds = np.tril_indices_from(state.sigma)
-    values.extend(list(state.sigma[sigma_inds]))
+    # FIXME: Also handle not estimated off-diagonal omegas
+    symb_sigma = model.random_variables.epsilons.covariance_matrix
+    for row in range(symb_sigma.rows):
+        for col in range(row + 1):
+            print(row, col, symb_sigma[row, col], state.sigma[row, col])
+            if symb_sigma[row, col] != 0:
+                values.append(state.sigma[row, col])
     pe = pd.Series(values, index=names, name="estimates")
     return pe
 
@@ -242,7 +250,7 @@ def estimate(model):
     optres = minimize(func, x, jac=True, method='BFGS')
     end_time = time.time()
 
-    parameter_estimates = get_parameter_estimates(state)
+    parameter_estimates = get_parameter_estimates(state, model)
 
     res = ModelfitResults(
         estimation_runtime=end_time - start_time,

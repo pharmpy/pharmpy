@@ -1,4 +1,4 @@
-from pharmpy.modeling import get_model_covariates, get_omegas, get_sigmas
+from pharmpy.modeling import get_omegas, get_sigmas
 
 
 def check_input_model(model):
@@ -27,12 +27,6 @@ def check_input_model(model):
     ndvs = len(model.dependent_variables)
     if ndvs > 1:
         raise ValueError(f"Currently only one DV is supported. Found {ndvs} in model.")
-
-    ncovs = len(get_model_covariates(model))
-    if ncovs > 0:
-        raise ValueError(
-            f"Found {ncovs} covariates in model. Currently covariates are not supported."
-        )
 
     omsi_symbols = {p.symbol for p in get_omegas(model) + get_sigmas(model)}
     if model.statements.free_symbols.intersection(omsi_symbols):

@@ -107,6 +107,22 @@ class SymengineSubsEvaluator(ExpressionEvaluator):
         res = data.apply(fn, axis=1)
         return res
 
+    def evaluate_vector(self, expressions, data):
+        # Evaluates a vector of expressions over the data into a matrix
+        # of dimensions len(data) x len(expressions)
+        # Simple implementation for now
+        d = {f'X{i}': expr for i, expr in enumerate(expressions)}
+        df = self.evaluate_expressions(d, data)
+        a = df.to_numpy()
+        return a
+
+    def evaluate_scalar(self, expression, data):
+        # Evaluate one single expression over data into a vector
+        # of dimension len(data)
+        # Simple implementation for now
+        a = self.evaluate_vector([expression], data)
+        return a[:, 0]
+
 
 class ODESolver(ABC):
     @abstractmethod
