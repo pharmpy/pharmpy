@@ -2,6 +2,8 @@ import numpy as np
 import pytest
 
 from pharmpy.basic import Expr
+from pharmpy.modeling import set_estimation_step
+from pharmpy.tools.modelfit.estimation import estimate
 from pharmpy.tools.modelfit.evaluation import (
     evaluate_model,
     get_functions_to_solve_for,
@@ -131,3 +133,14 @@ def test_evaluate_model(load_example_model_for_test):
     print(res)
     assert res.loc[0, 'Y'] == pytest.approx(17.695056, abs=1e-5)
     assert res.loc[743, 'Y'] == pytest.approx(34.411508, abs=1e-5)
+
+
+def test_minimal_model_estimation(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    model = set_estimation_step(model, 'FO', maximum_evaluations=99999)
+    res = estimate(model)
+    assert res.ofv == pytest.approx(2.5012262201375157)
+    pe = res.parameter_estimates
+    assert pe['THETA_1'] == pytest.approx(1.750000e00)
+    assert pe['OMEGA_1_1'] == pytest.approx(3.760446e-09)
+    assert pe['SIGMA_1_1'] == pytest.approx(6.875007e-01)
