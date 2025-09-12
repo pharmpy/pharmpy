@@ -144,3 +144,4 @@ def test_minimal_model_estimation(load_model_for_test, testdata):
     assert pe['THETA_1'] == pytest.approx(1.750000e00)
     assert pe['OMEGA_1_1'] == pytest.approx(3.760446e-09)
     assert pe['SIGMA_1_1'] == pytest.approx(6.875007e-01)
+    assert res.function_evaluations > 20
