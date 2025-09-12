@@ -941,7 +941,7 @@ def _create_new_thetas(model, transformation, no_of_thetas):
         theta_no = int(re.findall(r'\d', theta_name)[0])
 
         for i in range(1, no_of_thetas + 1):
-            pset.append(Parameter(theta_name, 0.01, -3, 3))
+            pset.append(Parameter(theta_name, *param_settings))
             thetas[f'theta{i}'] = theta_name
             theta_name = f'{transformation}{theta_no + i}'
 
