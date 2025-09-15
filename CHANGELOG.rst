@@ -11,6 +11,7 @@ Bugfixes
 
 * Fix crash when reading in a dataset, which has a column header starting with #, in for example `create_basic_pk_model`
 * Stop AMD from crashing when ext file of some model couldn't be parsed.
+* Fix recent regression in parsing of some NONMEM models with multiple DVs
 
 .. _1.9.0:
 
