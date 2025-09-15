@@ -722,7 +722,9 @@ def _create_best_model(model_entry, res, current_iteration, dv, groups, cutoff=3
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictness):
+def validate_input(
+    model, results, groups, p_value, skip, max_iter, dv, strictness, parameter_uncertainty_method
+):
     if groups < 2:
         raise ValueError(f'Invalid `groups`: got `{groups}`, must be >= 2.')
 
@@ -770,7 +772,11 @@ def validate_input(model, results, groups, p_value, skip, max_iter, dv, strictne
         if Expr.symbol('TAD') in model.statements.lhs_symbols:
             raise ValueError("Invalid `model`: TAD must be a column")
 
-    if strictness is not None and "rse" in strictness.lower():
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
                 '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'

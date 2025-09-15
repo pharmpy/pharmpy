@@ -5,31 +5,45 @@ from pharmpy.tools import run_covsearch, run_tool
 
 
 @pytest.mark.parametrize(
-    'search_space, algorithm, no_of_effects, best_model',
+    'search_space, algorithm, kwargs, no_of_effects, best_model',
     [
         (
             'COVARIATE?([CL,MAT,VC],[AGE,WT],exp,*)',
             'scm-forward',
+            dict(),
             6,
             'covsearch_run21',
         ),
         (
             'COVARIATE?([CL,VC],[AGE,WT],exp,*)',
             'scm-forward',
+            dict(),
             4,
             'covsearch_run10',
         ),
         (
             'LET(CONTINUOUS,[AGE,WT])\n' 'COVARIATE?([CL,VC],@CONTINUOUS,exp,*)',
             'scm-forward',
+            dict(),
             4,
             'covsearch_run10',
         ),
         (
             'COVARIATE?([CL,VC],[AGE,WT],exp,*)',
             'scm-forward-then-backward',
+            dict(),
             4,
             'covsearch_run18',
+        ),
+        (
+            'COVARIATE?([CL,MAT,VC],[AGE,WT],exp,*)',
+            'scm-forward',
+            {
+                'strictness': 'minimization_successful and rse < 0.5',
+                'parameter_uncertainty_method': 'SANDWICH',
+            },
+            6,
+            'covsearch_run21',
         ),
     ],
 )
@@ -39,6 +53,7 @@ def test_covsearch_dummy(
     start_modelres_dummy,
     search_space,
     algorithm,
+    kwargs,
     no_of_effects,
     best_model,
 ):
@@ -49,6 +64,7 @@ def test_covsearch_dummy(
             search_space=search_space,
             algorithm=algorithm,
             esttool='dummy',
+            **kwargs,
         )
         no_of_models = (no_of_effects * (no_of_effects + 1)) / 2
         if algorithm == 'scm-forward-then-backward':

@@ -45,6 +45,7 @@ def create_workflow(
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     scale: Optional[Literal[tuple(SCALES)]] = "UCP",
     prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """
     Run retries tool.
@@ -67,6 +68,9 @@ def create_workflow(
         Which scale to update the initial values on. Either normal scale or UCP scale.
     prefix_name: Optional[str]
         Prefix the candidate model names with given string.
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
@@ -101,7 +105,7 @@ def create_workflow(
     task_gather = Task('Gather', lambda *retries: retries)
     wb.add_task(task_gather, predecessors=[start_task] + candidate_tasks)
 
-    results_task = Task('Results', task_results, strictness)
+    results_task = Task('Results', task_results, strictness, parameter_uncertainty_method)
     wb.add_task(results_task, predecessors=task_gather)
 
     return Workflow(wb)
@@ -201,7 +205,7 @@ def create_new_parameter_inits(model, fraction, scale, rng):
     return new_parameters
 
 
-def task_results(context, strictness, retries):
+def task_results(context, strictness, parameter_uncertainty_method, retries):
     # Note : the input (modelentry) is a part of retries
     retry_runs = []
     for r in retries:
@@ -227,6 +231,7 @@ def task_results(context, strictness, retries):
         rank_type=rank_type,
         alpha=cutoff,
         strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
     )
     summary_tool = add_parent_column(rank_res.summary_tool, results_to_summarize)
     summary_tool = _modify_summary_tool(summary_tool, retry_runs)
@@ -306,7 +311,16 @@ def _modify_summary_tool(summary_tool, retry_runs):
 
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
-def validate_input(model, results, number_of_candidates, fraction, strictness, scale, prefix_name):
+def validate_input(
+    model,
+    results,
+    number_of_candidates,
+    fraction,
+    strictness,
+    scale,
+    prefix_name,
+    parameter_uncertainty_method,
+):
     if not isinstance(model, Model):
         raise ValueError(
             f'Invalid `model` type: got `{type(model)}`, must be one of pharmpy Model object.'
@@ -335,6 +349,16 @@ def validate_input(model, results, number_of_candidates, fraction, strictness, s
 
     if scale not in SCALES:
         raise ValueError(f'Invalid `scale`: got `{scale}`, must be one of {sorted(SCALES)}.')
+
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
+        if model.execution_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
+            )
 
 
 @dataclass(frozen=True)

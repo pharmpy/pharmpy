@@ -360,6 +360,12 @@ def test_create_best_model_no_best(load_model_for_test, testdata, model_entry_fa
             ValueError,
             'Invalid `model`: TAD must be a column',
         ),
+        (
+            ('nonmem/ruvsearch/mox3.mod',),
+            dict(strictness='rse'),
+            ValueError,
+            '`parameter_uncertainty_method` not set',
+        ),
     ],
 )
 def test_validate_input_raises(

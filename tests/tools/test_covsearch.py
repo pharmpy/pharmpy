@@ -255,6 +255,12 @@ def test_prepare_mfls(load_model_for_test, testdata, search_space, no_of_covaria
             TypeError,
             'Invalid `model`',
         ),
+        (
+            ('nonmem', 'pheno.mod'),
+            dict(strictness='rse'),
+            ValueError,
+            '`parameter_uncertainty_method` not set',
+        ),
     ],
 )
 def test_validate_input_raises(

@@ -137,6 +137,7 @@ def create_workflow(
     max_eval: bool = False,
     adaptive_scope_reduction: bool = False,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     naming_index_offset: Optional[int] = 0,
     nsamples: int = 10,
     _samba_max_covariates: Optional[int] = 3,
@@ -238,6 +239,7 @@ def create_workflow(
         max_steps,
         naming_index_offset,
         strictness,
+        parameter_uncertainty_method,
         adaptive_scope_reduction,
     )
 
@@ -252,6 +254,7 @@ def create_workflow(
             max_steps,
             naming_index_offset,
             strictness,
+            parameter_uncertainty_method,
         )
 
         wb.add_task(backward_search_task, predecessors=search_output)
@@ -402,6 +405,7 @@ def task_greedy_forward_search(
     max_steps: int,
     naming_index_offset: int,
     strictness: str,
+    parameter_uncertainty_method: Optional[str],
     adaptive_scope_reduction: bool,
     state_and_effect: tuple[SearchState, dict],
 ) -> SearchState:
@@ -436,6 +440,7 @@ def task_greedy_forward_search(
         p_forward,
         max_steps,
         strictness,
+        parameter_uncertainty_method,
         adaptive_scope_reduction,
     )
 
@@ -448,6 +453,7 @@ def task_greedy_backward_search(
     max_steps: int,
     naming_index_offset,
     strictness: str,
+    parameter_uncertainty_method: Optional[str],
     state: SearchState,
 ) -> SearchState:
     context.log_info('Starting backward search')
@@ -503,6 +509,7 @@ def task_greedy_backward_search(
         p_backward,
         min(max_steps, n_removable_effects) if max_steps >= 0 else n_removable_effects,
         strictness,
+        parameter_uncertainty_method,
     )
 
 
@@ -514,6 +521,7 @@ def _greedy_search(
     alpha: float,
     max_steps: int,
     strictness: str,
+    parameter_uncertainty_method: str,
     adaptive_scope_reduction: bool = False,
 ) -> SearchState:
     best_candidate_so_far = state.best_candidate_so_far
@@ -532,6 +540,7 @@ def _greedy_search(
             all_candidates_so_far,
             best_candidate_so_far,
             strictness,
+            parameter_uncertainty_method,
             alpha,
             adaptive_scope_reduction,
         )
@@ -567,6 +576,7 @@ def _greedy_search(
                     all_candidates_so_far,
                     best_candidate_so_far,
                     strictness,
+                    parameter_uncertainty_method,
                     alpha,
                     adaptive_scope_reduction=False,
                     add_adaptive_step=add_adaptive_step,
@@ -591,6 +601,7 @@ def perform_step_procedure(
     all_candidates_so_far,
     best_candidate_so_far,
     strictness,
+    parameter_uncertainty_method,
     alpha,
     adaptive_scope_reduction,
     add_adaptive_step=False,
@@ -629,7 +640,12 @@ def perform_step_procedure(
         assert parent_modelentry.modelfit_results is not None
 
         rank_res_step = rank_model_entries(
-            context, parent_modelentry, new_candidate_modelentries, strictness, alpha
+            context,
+            parent_modelentry,
+            new_candidate_modelentries,
+            strictness,
+            parameter_uncertainty_method,
+            alpha,
         )
         rank_res.append(rank_res_step)
         best_candidate_so_far = get_best_candidate(rank_res_step.final_model, all_candidates_so_far)
@@ -655,7 +671,14 @@ def perform_step_procedure(
     return nonsignificant_effects, all_candidates_so_far, best_candidate_so_far, rank_res
 
 
-def rank_model_entries(context, parent_modelentry, new_candidate_modelentries, strictness, alpha):
+def rank_model_entries(
+    context,
+    parent_modelentry,
+    new_candidate_modelentries,
+    strictness,
+    parameter_uncertainty_method,
+    alpha,
+):
     models = [parent_modelentry.model] + [me.model for me in new_candidate_modelentries]
     results = [parent_modelentry.modelfit_results] + [
         me.modelfit_results for me in new_candidate_modelentries
@@ -669,6 +692,7 @@ def rank_model_entries(context, parent_modelentry, new_candidate_modelentries, s
         rank_type='lrt',
         alpha=alpha,
         strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
     )
     return rank_res
 
@@ -1077,7 +1101,14 @@ def _make_df_steps_row(
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    search_space, p_forward, p_backward, algorithm, model, strictness, naming_index_offset
+    search_space,
+    p_forward,
+    p_backward,
+    algorithm,
+    model,
+    strictness,
+    parameter_uncertainty_method,
+    naming_index_offset,
 ):
     if not 0 < p_forward <= 1:
         raise ValueError(
@@ -1158,10 +1189,15 @@ def validate_input(
                     f' search_space: got `{effect.operation}`,'
                     f' must be in {sorted(allowed_ops)}.'
                 )
-    if "rse" in strictness.lower():
+
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
         if model.execution_steps[-1].parameter_uncertainty_method is None:
             raise ValueError(
-                'parameter_uncertainty_method not set for model, cannot calculate relative standard errors.'
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
             )
     if not isinstance(naming_index_offset, int) or naming_index_offset < 0:
         raise ValueError('naming_index_offset need to be a postive (>=0) integer.')
