@@ -8,7 +8,6 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import (
-    add_parameter_uncertainty_step,
     add_predictions,
     add_residuals,
     create_basic_pk_model,
@@ -46,6 +45,7 @@ from pharmpy.workflows.model_database.local_directory import get_modelfit_result
 from pharmpy.workflows.results import ModelfitResults
 
 from ...internals.fs.path import path_absolute
+from ..covsearch.tool import get_exploratory_covariates
 from .results import AMDResults
 
 ALLOWED_STRATEGY = ["default", "reevaluation", "SIR", "SRI", "RSI"]
@@ -294,9 +294,6 @@ def run_amd_task(
         search_space,
     )
 
-    if parameter_uncertainty_method is not None:
-        model = add_parameter_uncertainty_step(model, parameter_uncertainty_method)
-
     if lloq_method is not None:
         model = transform_blq(
             model,
@@ -408,6 +405,7 @@ def run_amd_task(
                     amd_start_model=model,
                     search_space=covsearch_features,
                     strictness=strictness,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                 )
             if modeltype == 'pkpd':
@@ -419,6 +417,7 @@ def run_amd_task(
                     ec50_init=ec50_init,
                     met_init=met_init,
                     strictness=strictness,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                 )
                 run_subfuncs['structsearch'] = func
@@ -429,12 +428,17 @@ def run_amd_task(
                     strictness=strictness,
                     dv_types=dv_types,
                     orig_dataset=orig_dataset,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                 )
                 run_subfuncs['structsearch'] = func
             else:
                 func = _subfunc_modelsearch(
-                    search_space=modelsearch_features, strictness=strictness, E=_E, ctx=context
+                    search_space=modelsearch_features,
+                    strictness=strictness,
+                    E=_E,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
+                    ctx=context,
                 )
                 run_subfuncs['modelsearch'] = func
             # Perfomed 'after' modelsearch
@@ -442,6 +446,7 @@ def run_amd_task(
                 func = _subfunc_structsearch(
                     type=modeltype,
                     search_space=structsearch_features,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                 )
                 run_subfuncs['structsearch'] = func
@@ -452,6 +457,7 @@ def run_amd_task(
                     iiv_strategy='no_add',
                     strictness=strictness,
                     E=_E,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                     dir_name="rerun_iivsearch",
                 )
@@ -461,13 +467,19 @@ def run_amd_task(
                     iiv_strategy=iiv_strategy,
                     strictness=strictness,
                     E=_E,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                     dir_name="iivsearch",
                 )
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
             func = _subfunc_iov(
-                amd_start_model=model, occasion=occasion, strictness=strictness, E=_E, ctx=context
+                amd_start_model=model,
+                occasion=occasion,
+                strictness=strictness,
+                E=_E,
+                parameter_uncertainty_method=parameter_uncertainty_method,
+                ctx=context,
             )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
@@ -482,6 +494,7 @@ def run_amd_task(
                 func = _subfunc_ruvsearch(
                     dv=1,
                     strictness=strictness,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                     dir_name=f'{run_name}_drug',
                 )
@@ -490,6 +503,7 @@ def run_amd_task(
                 func = _subfunc_ruvsearch(
                     dv=2,
                     strictness=strictness,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                     dir_name=f'{run_name}_metabolite',
                 )
@@ -499,13 +513,18 @@ def run_amd_task(
                     func = _subfunc_ruvsearch(
                         dv=value,
                         strictness=strictness,
+                        parameter_uncertainty_method=parameter_uncertainty_method,
                         ctx=context,
                         dir_name=f'{run_name}_tmdd_{key}',
                     )
                     run_subfuncs[f'ruvsearch_{key}'] = func
             else:
                 func = _subfunc_ruvsearch(
-                    dv=dv, strictness=strictness, ctx=context, dir_name=run_name
+                    dv=dv,
+                    strictness=strictness,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
+                    ctx=context,
+                    dir_name=run_name,
                 )
                 run_subfuncs[f'{run_name}'] = func
         elif section == 'allometry':
@@ -520,6 +539,7 @@ def run_amd_task(
                 search_space=covsearch_features,
                 mechanistic_covariates=mechanistic_covariates,
                 strictness=strictness,
+                parameter_uncertainty_method=parameter_uncertainty_method,
                 ctx=context,
             )
             run_subfuncs['covsearch'] = func
@@ -527,13 +547,21 @@ def run_amd_task(
             raise ValueError(f"Unrecognized section {section} in order.")
         if retries_strategy == 'all_final':
             func = _subfunc_retries(
-                tool=section, strictness=strictness, seed=context.spawn_seed(rng), ctx=context
+                tool=section,
+                strictness=strictness,
+                seed=context.spawn_seed(rng),
+                parameter_uncertainty_method=parameter_uncertainty_method,
+                ctx=context,
             )
             run_subfuncs[f'{section}_retries'] = func
 
     if retries_strategy == 'final':
         func = _subfunc_retries(
-            tool="", strictness=strictness, seed=context.spawn_seed(rng), ctx=context
+            tool="",
+            strictness=strictness,
+            seed=context.spawn_seed(rng),
+            parameter_uncertainty_method=parameter_uncertainty_method,
+            ctx=context,
         )
         run_subfuncs['retries'] = func
 
@@ -590,6 +618,7 @@ def run_amd_task(
                         search_space=covsearch_features,
                         strictness=strictness,
                         mechanistic_covariates=mechanistic_covariates,
+                        parameter_uncertainty_method=parameter_uncertainty_method,
                         ctx=context,
                     )
                     run_subfuncs['covsearch'] = func
@@ -731,7 +760,7 @@ def _run_simulation(model, ctx):
     return res
 
 
-def _subfunc_retries(tool, strictness, seed, ctx):
+def _subfunc_retries(tool, strictness, seed, parameter_uncertainty_method, ctx):
     def _run_retries(model, modelfit_results):
         res = run_subtool(
             'retries',
@@ -743,6 +772,7 @@ def _subfunc_retries(tool, strictness, seed, ctx):
             scale='UCP',
             prefix_name=tool,
             seed=seed,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         return res
@@ -750,7 +780,9 @@ def _subfunc_retries(tool, strictness, seed, ctx):
     return _run_retries
 
 
-def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx) -> SubFunc:
+def _subfunc_modelsearch(
+    search_space: tuple[Statement, ...], strictness, E, parameter_uncertainty_method, ctx
+) -> SubFunc:
     def _run_modelsearch(model, modelfit_results):
         if E and 'modelsearch' in E.keys():
             rank_type = 'mbic'
@@ -770,6 +802,7 @@ def _subfunc_modelsearch(search_space: tuple[Statement, ...], strictness, E, ctx
             strictness=strictness,
             rank_type=rank_type,
             E=e,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         if res.final_model is None:
@@ -798,7 +831,7 @@ def _subfunc_structsearch(ctx, **kwargs) -> SubFunc:
 
 
 def _subfunc_structsearch_tmdd(
-    search_space, type, strictness, dv_types, orig_dataset, ctx
+    search_space, type, strictness, dv_types, orig_dataset, parameter_uncertainty_method, ctx
 ) -> SubFunc:
     def _run_structsearch_tmdd(model, modelfit_results):
         res = run_subtool(
@@ -811,6 +844,7 @@ def _subfunc_structsearch_tmdd(
             algorithm='reduced_stepwise',
             strictness=strictness,
             rank_type='bic',
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
 
         final_model = res.final_model
@@ -891,6 +925,7 @@ def _subfunc_structsearch_tmdd(
             extra_model_results=extra_model_results,
             strictness=strictness,
             dv_types=dv_types,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         return res
@@ -898,7 +933,9 @@ def _subfunc_structsearch_tmdd(
     return _run_structsearch_tmdd
 
 
-def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
+def _subfunc_iiv(
+    iiv_strategy, strictness, E, parameter_uncertainty_method, ctx, dir_name
+) -> SubFunc:
     def _run_iiv(model, modelfit_results):
         if E and 'iivsearch' in E.keys():
             rank_type = 'mbic'
@@ -925,6 +962,7 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
             E_p=e_p,
             E_q=e_q,
             keep=keep,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         return res
@@ -932,7 +970,7 @@ def _subfunc_iiv(iiv_strategy, strictness, E, ctx, dir_name) -> SubFunc:
     return _run_iiv
 
 
-def _subfunc_ruvsearch(dv, strictness, ctx, dir_name) -> SubFunc:
+def _subfunc_ruvsearch(dv, strictness, parameter_uncertainty_method, ctx, dir_name) -> SubFunc:
     def _run_ruvsearch(model, modelfit_results):
         if has_blq_transformation(model):
             skip, max_iter = ['IIV_on_RUV', 'time_varying'], 1
@@ -948,6 +986,7 @@ def _subfunc_ruvsearch(dv, strictness, ctx, dir_name) -> SubFunc:
             max_iter=max_iter,
             dv=dv,
             strictness=strictness,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         return res
@@ -959,6 +998,7 @@ def _subfunc_structural_covariates(
     amd_start_model: Model,
     search_space: ModelFeatures,
     strictness,
+    parameter_uncertainty_method,
     ctx,
 ) -> SubFunc:
     def _run_structural_covariates(model, modelfit_results):
@@ -1010,6 +1050,7 @@ def _subfunc_structural_covariates(
             results=modelfit_results,
             search_space=struct_searchspace,
             strictness=strictness,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         return res
@@ -1022,6 +1063,7 @@ def _subfunc_mechanistic_exploratory_covariates(
     search_space: ModelFeatures,
     mechanistic_covariates,
     strictness,
+    parameter_uncertainty_method,
     ctx,
 ) -> SubFunc:
     covariates = set(extract_covariates(amd_start_model, search_space.mfl_statement_list()))
@@ -1058,6 +1100,11 @@ def _subfunc_mechanistic_exploratory_covariates(
             mechanistic_searchspace, filtered_searchspace = _mechanistic_cov_extraction(
                 search_space, model, mechanistic_covariates
             )
+            if not get_exploratory_covariates(mechanistic_searchspace):
+                ctx.log_warning(
+                    'Skipping COVsearch for mechanistic covariates, no covariates to test'
+                )
+                return None
 
             # FIXME : Move to validation
             if not mechanistic_searchspace:
@@ -1074,6 +1121,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                     results=modelfit_results,
                     search_space=mechanistic_searchspace,
                     strictness=strictness,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
                 )
                 subcontext1 = ctx.get_subcontext('covsearch_mechanistic')
                 covsearch_model_number = [
@@ -1101,6 +1149,10 @@ def _subfunc_mechanistic_exploratory_covariates(
         else:
             filtered_searchspace = search_space
 
+        if not get_exploratory_covariates(filtered_searchspace):
+            ctx.log_warning('Skipping COVsearch for exploratory covariates, no covariates to test')
+            return None
+
         res = run_subtool(
             'covsearch',
             ctx,
@@ -1110,6 +1162,7 @@ def _subfunc_mechanistic_exploratory_covariates(
             search_space=filtered_searchspace,
             strictness=strictness,
             naming_index_offset=index_offset,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         return res
@@ -1177,7 +1230,9 @@ def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubF
     return _run_allometry
 
 
-def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
+def _subfunc_iov(
+    amd_start_model, occasion, strictness, E, parameter_uncertainty_method, ctx
+) -> SubFunc:
     def _run_iov(model, modelfit_results):
         if E and 'iovsearch' in E.keys():
             rank_type = 'mbic'
@@ -1196,6 +1251,7 @@ def _subfunc_iov(amd_start_model, occasion, strictness, E, ctx) -> SubFunc:
             strictness=strictness,
             rank_type=rank_type,
             E=e,
+            parameter_uncertainty_method=parameter_uncertainty_method,
         )
         assert isinstance(res, Results)
         return res
@@ -1477,6 +1533,16 @@ def later_input_validation(
                         f' search_space: got `{covariate}`,'
                         f' must be in {sorted(allowed_covariates)}.'
                     )
+
+    if (
+        strictness is not None
+        and parameter_uncertainty_method is None
+        and "rse" in strictness.lower()
+    ):
+        if model.execution_steps[-1].parameter_uncertainty_method is None:
+            raise ValueError(
+                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
+            )
 
 
 def get_subtool_order(strategy):

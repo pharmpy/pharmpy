@@ -63,6 +63,31 @@ def _model_count(rundir: Path):
                 'simulation',
             },
         ),
+        (
+            {
+                'modeltype': 'basic_pk',
+                'administration': 'iv',
+                'cl_init': 1.0,
+                'vc_init': 10.0,
+                'occasion': 'VISI',
+            },
+            {
+                'strategy': 'default',
+                'retries_strategy': 'skip',
+                'strictness': 'minimization_successful and rse < 0.5',
+                'parameter_uncertainty_method': 'SANDWICH',
+            },
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            {
+                'modelsearch',
+                'iivsearch',
+                'ruvsearch',
+                'iovsearch',
+                'allometry',
+                'covsearch_exploratory',
+                'simulation',
+            },
+        ),
     ],
 )
 def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, subtools):
@@ -70,7 +95,9 @@ def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, s
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.csv', '.')
         shutil.copy2(testdata / 'nonmem' / 'models' / 'moxo_simulated_amd.datainfo', '.')
         input = 'moxo_simulated_amd.csv'
-        res = run_amd(input, **model_kwargs, **run_kwargs, esttool='dummy')
+        res = run_amd(
+            input, **model_kwargs, **run_kwargs, search_space=search_space, esttool='dummy'
+        )
 
         assert len(res.summary_tool) == len(subtools)  # Simulation is not part of the result table
         assert len(res.summary_models) > len(subtools) + 1
