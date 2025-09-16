@@ -1,5 +1,4 @@
 import os
-import signal
 import warnings
 from typing import TypeVar
 
@@ -8,7 +7,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 from ..workflow import Workflow, WorkflowBuilder, insert_context
-from .baseclass import AbortWorkflowException, Dispatcher
+from .baseclass import AbortWorkflowException, Dispatcher, SigHandler
 from .slurm_helpers import get_slurm_nodename, is_running_on_slurm
 
 T = TypeVar('T')
@@ -91,33 +90,14 @@ class LocalDaskDispatcher(Dispatcher):
                                 f"in {context}: {client} at dashboard address {dashboard_address}"
                             )
                             dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
-
-                            def sigint_handler(sig, frame):
-                                context.abort_workflow("Workflow was interrupted by user (SIGINT)")
-
-                            def sigterm_handler(sig, frame):
-                                context.abort_workflow("Workflow was terminated (SIGTERM)")
-
-                            def sighup_handler(sig, frame):
-                                # If the calling shell dies but we are still alive
-                                # we want to block SIGPIPE in case we are writing
-                                # to the now broken stdout. This way we could
-                                # still be able to run the workflow to completion
-                                signal.signal(signal.SIGPIPE, signal.SIG_IGN)
-
-                            signal.signal(signal.SIGINT, sigint_handler)
-                            signal.signal(signal.SIGTERM, sigterm_handler)
-                            if os.name != 'nt':
-                                # Windows doesn't recognize the SIGHUP signal
-                                signal.signal(signal.SIGHUP, sighup_handler)
-
-                            try:
-                                res = client.get(dsk_optimized, 'results')
-                            except (
-                                dask.distributed.client.FutureCancelledError,
-                                AbortWorkflowException,
-                            ):
-                                res = None
+                            with SigHandler(context):
+                                try:
+                                    res = client.get(dsk_optimized, 'results')
+                                except (
+                                    dask.distributed.client.FutureCancelledError,
+                                    AbortWorkflowException,
+                                ):
+                                    res = None
                             context.log_info("End dispatch")
         return res  # pyright: ignore [reportGeneralTypeIssues]
 
