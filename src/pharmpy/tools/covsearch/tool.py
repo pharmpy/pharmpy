@@ -296,12 +296,19 @@ def _init_search_state(
     model = modelentry.model
     effect_funcs, base_model = get_effect_funcs_and_base_model(search_space, model)
 
+    if len(effect_funcs) == 0:
+        context.abort_workflow('No effects to explore')
+
     if base_model != model:
         base_modelentry = ModelEntry.create(model=base_model)
         base_fit_wf = create_fit_workflow(modelentries=[base_modelentry])
         base_modelentry = context.call_workflow(base_fit_wf, 'fit_filtered_model')
     else:
         base_modelentry = modelentry
+
+    if np.isnan(base_modelentry.modelfit_results.ofv):
+        context.abort_workflow('Base model has no OFV, cannot perform LRT')
+
     base_candidate = Candidate(base_modelentry, ())
     search_state_init = SearchState(
         modelentry, base_modelentry, base_candidate, [base_candidate], []

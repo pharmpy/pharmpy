@@ -1,7 +1,9 @@
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.tools import run_covsearch, run_tool
+from pharmpy.workflows import ModelfitResults
 
 
 @pytest.mark.parametrize(
@@ -91,6 +93,29 @@ def test_covsearch_dummy(
         assert (rundir / 'metadata.json').exists()
         assert (rundir / 'models' / 'covsearch_run1' / 'model_results.json').exists()
         assert not (rundir / 'models' / 'covsearch_run1' / 'model.lst').exists()
+
+
+def test_covsearch_abort(tmp_path, start_modelres_dummy):
+    with chdir(tmp_path):
+        search_space = 'COVARIATE(CL,WT,exp)'
+        res = run_covsearch(
+            model=start_modelres_dummy[0],
+            results=start_modelres_dummy[1],
+            search_space=search_space,
+            esttool='dummy',
+        )
+        assert res is None
+
+        search_space = 'COVARIATE?([CL,VC],[AGE,WT],exp,*)'
+        mfr = ModelfitResults(ofv=np.nan)
+        res = run_covsearch(
+            model=start_modelres_dummy[0],
+            results=mfr,
+            search_space=search_space,
+            esttool='dummy',
+            dispatcher='local_serial',
+        )
+        assert res is None
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
