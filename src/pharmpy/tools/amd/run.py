@@ -31,7 +31,7 @@ from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools import retrieve_models
 from pharmpy.tools.allometry.tool import validate_allometric_variable
-from pharmpy.tools.common import table_final_eta_shrinkage
+from pharmpy.tools.common import table_final_eta_shrinkage, update_initial_estimates
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -45,7 +45,7 @@ from pharmpy.workflows.model_database.local_directory import get_modelfit_result
 from pharmpy.workflows.results import ModelfitResults
 
 from ...internals.fs.path import path_absolute
-from ..covsearch.tool import get_exploratory_covariates
+from ..covsearch.tool import get_effect_funcs_and_base_model, get_exploratory_covariates
 from .results import AMDResults
 
 ALLOWED_STRATEGY = ["default", "reevaluation", "SIR", "SRI", "RSI"]
@@ -400,14 +400,6 @@ def run_amd_task(
 
     for section in order:
         if section == 'structural':
-            if modeltype != 'pkpd':
-                run_subfuncs['structural_covariates'] = _subfunc_structural_covariates(
-                    amd_start_model=model,
-                    search_space=covsearch_features,
-                    strictness=strictness,
-                    parameter_uncertainty_method=parameter_uncertainty_method,
-                    ctx=context,
-                )
             if modeltype == 'pkpd':
                 func = _subfunc_structsearch(
                     type=modeltype,
@@ -583,6 +575,13 @@ def run_amd_task(
             context.log_warning('Base model failed strictness')
 
     model_entry = ModelEntry.create(model=model, modelfit_results=results)
+
+    structural_search_space = get_structural_search_space(model, covsearch_features, context)
+    if structural_search_space:
+        model_entry = run_model_with_structural_covariates(
+            model_entry, structural_search_space, context
+        )
+
     next_model_entry = model_entry
     sum_subtools = []
     sum_models = dict()
@@ -698,6 +697,20 @@ def run_amd_task(
         final_model_vpc_plot=final_vpc_plot,
     )
     return res
+
+
+def run_model_with_structural_covariates(model_entry, search_space, ctx):
+    _, model = get_effect_funcs_and_base_model(search_space, model_entry.model)
+    model = update_initial_estimates(model, model_entry.modelfit_results)
+    model = model.replace(name='base_with_structural_cov')
+    model_entry = ModelEntry.create(model)
+    ctx.log_info('Running model with structural covariates')
+    fit_wf = create_fit_workflow(model_entry)
+    model_entry = ctx.call_workflow(fit_wf, 'Run model with structural covariates')
+    results = model_entry.modelfit_results
+    if not is_strictness_fulfilled(model, results, DEFAULT_STRICTNESS):
+        ctx.log_warning('Model with structural covariates failed strictness')
+    return model_entry
 
 
 def _table_final_parameter_estimates(parameter_estimates, ses):
@@ -994,27 +1007,42 @@ def _subfunc_ruvsearch(dv, strictness, parameter_uncertainty_method, ctx, dir_na
     return _run_ruvsearch
 
 
-def _subfunc_structural_covariates(
-    amd_start_model: Model,
-    search_space: ModelFeatures,
-    strictness,
-    parameter_uncertainty_method,
-    ctx,
-) -> SubFunc:
-    def _run_structural_covariates(model, modelfit_results):
-        allowed_parameters = set(get_pk_parameters(model)).union(
-            str(statement.symbol) for statement in model.statements.before_odes
+def get_structural_search_space(model, search_space, ctx):
+    skipped_parameters, struct_searchspace = split_structural_search_space(model, search_space)
+
+    if skipped_parameters:
+        ctx.log_warning(
+            f'{skipped_parameters} missing in start model and structural covariate effect cannot be added'
+            ' Might be added during a later COVsearch step if possible.'
         )
-        # Extract all forced
-        mfl = search_space
-        mfl_covariates = mfl.expand(model).covariate
-        structural_searchspace = []
-        skipped_parameters = set()
-        for cov_statement in mfl_covariates:
-            if not cov_statement.optional.option:
-                filtered_parameters = tuple(
-                    [p for p in cov_statement.parameter if p in allowed_parameters]
-                )
+    if not struct_searchspace:
+        if not skipped_parameters:
+            return None
+        else:
+            ctx.log_warning(
+                'No applicable structural covariates found in search space. Skipping structural_COVsearch'
+            )
+            return None
+
+    return struct_searchspace
+
+
+def split_structural_search_space(model, search_space):
+    allowed_parameters = set(get_pk_parameters(model)).union(
+        str(statement.symbol) for statement in model.statements.before_odes
+    )
+    allowed_parameters = sorted(list(allowed_parameters))
+    # Extract all forced
+    mfl = search_space
+    mfl_covariates = mfl.expand(model).covariate
+    structural_searchspace = []
+    skipped_parameters = set()
+    for cov_statement in mfl_covariates:
+        if not cov_statement.optional.option:
+            filtered_parameters = tuple(
+                [p for p in cov_statement.parameter if p in allowed_parameters]
+            )
+            if filtered_parameters:
                 # Not optional -> Add to all search spaces (was added in structural run)
                 structural_searchspace.append(
                     Covariate(
@@ -1025,37 +1053,16 @@ def _subfunc_structural_covariates(
                         cov_statement.optional,
                     )
                 )
-                skipped_parameters.union(set(cov_statement.parameter) - set(filtered_parameters))
+            skipped_parameters = skipped_parameters.union(
+                set(cov_statement.parameter) - set(filtered_parameters)
+            )
 
-        # Ignore warning?
-        if skipped_parameters:
-            ctx.log_warning(
-                f'{skipped_parameters} missing in start model and structural covariate effect cannot be added'
-                ' Might be added during a later COVsearch step if possible.'
-            )
-        if not structural_searchspace and not skipped_parameters:
-            # Uneccessary to warn (?)
-            return None
-        elif not structural_searchspace:
-            ctx.log_warning(
-                'No applicable structural covariates found in search space. Skipping structural_COVsearch'
-            )
-            return None
+    if structural_searchspace:
         struct_searchspace = mfl.create_from_mfl_statement_list(structural_searchspace)
-        res = run_subtool(
-            'covsearch',
-            ctx,
-            name='covsearch_structural',
-            model=model,
-            results=modelfit_results,
-            search_space=struct_searchspace,
-            strictness=strictness,
-            parameter_uncertainty_method=parameter_uncertainty_method,
-        )
-        assert isinstance(res, Results)
-        return res
+    else:
+        struct_searchspace = None
 
-    return _run_structural_covariates
+    return skipped_parameters, struct_searchspace
 
 
 def _subfunc_mechanistic_exploratory_covariates(

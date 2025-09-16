@@ -6,8 +6,10 @@ from pharmpy.tools.amd.run import (
     _mechanistic_cov_extraction,
     check_skip,
     later_input_validation,
+    split_structural_search_space,
     validate_input,
 )
+from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.workflows.contexts import NullContext
 
@@ -370,3 +372,29 @@ def test_mechanistic_covariate_extraction(
         assert filtered_ss == mfl_parse(expected_filtered_ss, True)
     else:
         assert not filtered_ss.covariate
+
+
+@pytest.mark.parametrize(
+    'search_space, skipped_expected, parameters_expected',
+    [
+        ('COVARIATE(CL,WT,exp);COVARIATE?(VC,AGE,exp)', set(), {'CL'}),
+        ('COVARIATE(QP1,WT,exp);COVARIATE?(VC,AGE,exp)', {'QP1'}, None),
+        ('COVARIATE([CL,VC],WT,exp);COVARIATE?(VC,AGE,exp)', set(), {'CL', 'VC'}),
+        ('COVARIATE([CL,QP1],WT,exp);COVARIATE?(VC,AGE,exp)', {'QP1'}, {'CL'}),
+    ],
+)
+def test_split_structural_search_space(
+    load_model_for_test, testdata, search_space, skipped_expected, parameters_expected
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    ss_mfl = mfl_parse(search_space, True)
+    covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
+
+    skipped, structural = split_structural_search_space(model, covsearch_features)
+
+    assert skipped == skipped_expected
+    if parameters_expected is not None:
+        assert set(structural.covariate[0].parameter) == parameters_expected
+    else:
+        assert structural is None

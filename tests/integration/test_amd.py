@@ -28,6 +28,7 @@ def _model_count(rundir: Path):
                 'cl_init': 1.0,
                 'vc_init': 10.0,
                 'occasion': 'VISI',
+                'allometric_variable': 'WT',
             },
             {'strategy': 'default', 'retries_strategy': 'skip'},
             'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
@@ -78,6 +79,23 @@ def _model_count(rundir: Path):
                 'parameter_uncertainty_method': 'SANDWICH',
             },
             'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            {
+                'modelsearch',
+                'iivsearch',
+                'ruvsearch',
+                'simulation',
+            },
+        ),
+        (
+            {
+                'modeltype': 'basic_pk',
+                'administration': 'iv',
+                'cl_init': 1.0,
+                'vc_init': 10.0,
+                'occasion': 'VISI',
+            },
+            {'strategy': 'default', 'retries_strategy': 'skip'},
+            'ABSORPTION(FO);PERIPHERALS(0..1);COVARIATE(CL,WT,exp);COVARIATE?(VC,AGE,exp)',
             {
                 'modelsearch',
                 'iivsearch',
