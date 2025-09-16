@@ -453,7 +453,10 @@ def post_process(
     )
     summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
     res = RUVSearchResults(cwres_models=res.cwres_models, summary_tool=summary_tool)
-    best_model_entry = next(filter(lambda me: me.model is rank_res.final_model, model_entries))
+    if rank_res.final_model:
+        best_model_entry = next(filter(lambda me: me.model is rank_res.final_model, model_entries))
+    else:
+        best_model_entry = start_model_entry
 
     return res, best_model_entry, selected_model_name
 

@@ -157,6 +157,9 @@ def start(
 
     res = context.call_workflow(wb, 'rank_models')
 
+    if res.final_model is None:
+        context.log_warning('No model was selected')
+
     return res
 
 
@@ -201,16 +204,28 @@ def rank_models(
     summary_selection_criteria = create_table(me_rank_values)
     summary_ranking = create_ranking_table(me_ref, me_rank_values_sorted, rank_type)
 
-    best_me = list(me_rank_values_sorted.keys())[0]
+    best_me = get_best_model_entry(me_rank_values_sorted)
+    if best_me is None:
+        final_model, final_results = None, None
+    else:
+        final_model, final_results = best_me.model, best_me.modelfit_results
 
     res = ModelRankResults(
         summary_tool=summary_ranking,
         summary_strictness=summary_strictness,
         summary_selection_criteria=summary_selection_criteria,
-        final_model=best_me.model,
-        final_results=best_me.modelfit_results,
+        final_model=final_model,
+        final_results=final_results,
     )
     return res
+
+
+def get_best_model_entry(me_rank_values):
+    best_me = list(me_rank_values.keys())[0]
+    if not np.isnan(me_rank_values[best_me]['rank_val']):
+        return best_me
+    else:
+        return None
 
 
 def create_table(me_dict):
@@ -328,7 +343,6 @@ def rank_models_with_uncertainty(
             )
 
     if best_me is None:
-        context.log_warning('All models failed the strictness criteria')
         final_model, final_results = None, None
     else:
         final_model, final_results = best_me.model, best_me.modelfit_results

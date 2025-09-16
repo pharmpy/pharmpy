@@ -28,6 +28,7 @@ from pharmpy.tools.modelrank.strictness import (
 )
 from pharmpy.tools.modelrank.tool import (
     create_candidate_with_uncertainty,
+    get_best_model_entry,
     get_model_entries_to_rank,
     prepare_model_entries,
     rank_models,
@@ -590,6 +591,36 @@ def test_rank_model_entries(
         assert all(val['significant'] is not True for val in ranking.values())
     else:
         assert ranking[me_best]['rank_val'] == min(d['rank_val'] for d in ranking.values())
+
+
+def test_get_best_model_entry(load_model_for_test, testdata, model_entry_factory):
+    model_ref = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_ref = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
+
+    models_cand = _create_candidates(model_ref)
+    mes_cand = model_entry_factory(models_cand, ref_val=res_ref.ofv, parent=model_ref)
+
+    rank_values = get_rank_values(
+        me_ref, mes_cand, 'ofv', None, None, None, mes_to_rank=[me_ref] + mes_cand
+    )
+    ranking = rank_model_entries(rank_values, 'ofv')
+
+    best_model_entry = get_best_model_entry(ranking)
+    assert best_model_entry.model.name == 'model1'
+
+    rank_values = get_rank_values(
+        me_ref,
+        mes_cand,
+        'lrt',
+        0.0000000000000000000000000001,
+        None,
+        None,
+        mes_to_rank=[me_ref] + mes_cand,
+    )
+    ranking = rank_model_entries(rank_values, 'lrt')
+
+    assert get_best_model_entry(ranking) is None
 
 
 def _create_candidates(model_ref):

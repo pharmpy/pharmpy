@@ -655,6 +655,8 @@ def perform_step_procedure(
             alpha,
         )
         rank_res.append(rank_res_step)
+        if rank_res_step.final_model is None:
+            break
         best_candidate_so_far = get_best_candidate(rank_res_step.final_model, all_candidates_so_far)
         if best_candidate_so_far.modelentry is parent_modelentry:
             break
