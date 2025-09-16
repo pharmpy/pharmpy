@@ -11,6 +11,10 @@ T = TypeVar('T')
 DISPATCHERS = ('local_dask', 'local_serial')
 
 
+class AbortWorkflowException(Exception):
+    pass
+
+
 class Dispatcher(ABC):
     @staticmethod
     def canonicalize_dispatcher_name(name: Optional[str]) -> str:

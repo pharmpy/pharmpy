@@ -1,12 +1,11 @@
 import os
-import sys
 from typing import TypeVar
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 from ..workflow import Workflow, WorkflowBuilder, insert_context
-from .baseclass import Dispatcher
+from .baseclass import AbortWorkflowException, Dispatcher
 from .slurm_helpers import get_slurm_nodedict, get_slurm_nodename, is_running_on_slurm
 
 T = TypeVar('T')
@@ -16,7 +15,10 @@ class LocalSerialDispatcher(Dispatcher):
     def run(self, workflow: Workflow[T], context) -> T:
         with TemporaryDirectory() as tempdirname, chdir(tempdirname):
             context.log_info(f"Dispatching workflow with local_serial dispatcher in {context}")
-            res = self._run(workflow)
+            try:
+                res = self._run(workflow)
+            except AbortWorkflowException:
+                res = None
             context.log_info("End dispatch")
         return res  # pyright: ignore [reportGeneralTypeIssues]
 
@@ -50,7 +52,7 @@ class LocalSerialDispatcher(Dispatcher):
         return res
 
     def abort_workflow(self) -> None:
-        sys.exit(1)
+        raise AbortWorkflowException
 
     def get_hosts(self) -> dict[str, int]:
         if is_running_on_slurm():

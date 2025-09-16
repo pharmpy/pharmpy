@@ -8,7 +8,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 
 from ..workflow import Workflow, WorkflowBuilder, insert_context
-from .baseclass import Dispatcher
+from .baseclass import AbortWorkflowException, Dispatcher
 from .slurm_helpers import get_slurm_nodename, is_running_on_slurm
 
 T = TypeVar('T')
@@ -113,7 +113,10 @@ class LocalDaskDispatcher(Dispatcher):
 
                             try:
                                 res = client.get(dsk_optimized, 'results')
-                            except dask.distributed.client.FutureCancelledError:
+                            except (
+                                dask.distributed.client.FutureCancelledError,
+                                AbortWorkflowException,
+                            ):
                                 res = None
                             context.log_info("End dispatch")
         return res  # pyright: ignore [reportGeneralTypeIssues]
@@ -159,6 +162,8 @@ class LocalDaskDispatcher(Dispatcher):
         client = get_client()
         _turn_off_dask_logging()
         client.close()
+        # This needs to be raised in order to terminate correctly, otherwise queued tasks can run.
+        raise AbortWorkflowException
 
     def get_hosts(self) -> dict[str, int]:
         hosts = {'localhost': os.cpu_count()}
