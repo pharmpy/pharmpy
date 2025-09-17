@@ -24,7 +24,7 @@ def _model_count(rundir: Path):
         (
             {
                 'modeltype': 'basic_pk',
-                'administration': 'iv',
+                'administration': 'oral',
                 'cl_init': 1.0,
                 'vc_init': 10.0,
                 'occasion': 'VISI',
@@ -45,7 +45,7 @@ def _model_count(rundir: Path):
         (
             {
                 'modeltype': 'basic_pk',
-                'administration': 'iv',
+                'administration': 'oral',
                 'cl_init': 1.0,
                 'vc_init': 10.0,
                 'occasion': 'VISI',
@@ -67,7 +67,7 @@ def _model_count(rundir: Path):
         (
             {
                 'modeltype': 'basic_pk',
-                'administration': 'iv',
+                'administration': 'oral',
                 'cl_init': 1.0,
                 'vc_init': 10.0,
                 'occasion': 'VISI',
@@ -92,7 +92,7 @@ def _model_count(rundir: Path):
         (
             {
                 'modeltype': 'basic_pk',
-                'administration': 'iv',
+                'administration': 'oral',
                 'cl_init': 1.0,
                 'vc_init': 10.0,
                 'occasion': 'VISI',
