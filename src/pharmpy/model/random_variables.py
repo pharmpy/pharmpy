@@ -347,14 +347,16 @@ class RandomVariables(CollectionsSequence, Immutable):
                 raise ValueError(
                     "Level of added distribution is not available in any variability hierarchy"
                 )
-            return RandomVariables(self._dists + (other,), self._eta_levels, self._epsilon_levels)
+            return RandomVariables.create(
+                self._dists + (other,), self._eta_levels, self._epsilon_levels
+            )
         elif isinstance(other, RandomVariables):
             if (
                 self._eta_levels != other._eta_levels
                 or self._epsilon_levels != other._epsilon_levels
             ):
                 raise ValueError("RandomVariables must have same variability hierarchies")
-            return RandomVariables(
+            return RandomVariables.create(
                 self._dists + other._dists, self._eta_levels, self._epsilon_levels
             )
         else:
@@ -363,7 +365,9 @@ class RandomVariables(CollectionsSequence, Immutable):
             except TypeError:
                 raise TypeError(f'Type {type(other)} cannot be added to RandomVariables')
             else:
-                return RandomVariables(self._dists + dists, self._eta_levels, self._epsilon_levels)
+                return RandomVariables.create(
+                    self._dists + dists, self._eta_levels, self._epsilon_levels
+                )
 
     def __radd__(self, other: Union[Distribution, Sequence[Distribution]]) -> RandomVariables:
         if isinstance(other, Distribution):
@@ -371,14 +375,18 @@ class RandomVariables(CollectionsSequence, Immutable):
                 raise ValueError(
                     f"Level {other.level} of added distribution is not available in any variability hierarchy"
                 )
-            return RandomVariables((other,) + self._dists, self._eta_levels, self._epsilon_levels)
+            return RandomVariables.create(
+                (other,) + self._dists, self._eta_levels, self._epsilon_levels
+            )
         else:
             try:
                 dists = tuple(other)
             except TypeError:
                 raise TypeError(f'Type {type(other)} cannot be added to RandomVariables')
             else:
-                return RandomVariables(dists + self._dists, self._eta_levels, self._epsilon_levels)
+                return RandomVariables.create(
+                    dists + self._dists, self._eta_levels, self._epsilon_levels
+                )
 
     def __len__(self):
         return len(self._dists)
