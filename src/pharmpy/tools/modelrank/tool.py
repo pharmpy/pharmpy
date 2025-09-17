@@ -255,7 +255,9 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
     for i, (me, predicates) in enumerate(me_rank_values.items(), 1):
         model = me.model
         n_params = len(me.model.parameters.nonfixed)
-        rank = i if not np.isnan(predicates['rank_val']) or me.model is me_ref.model else pd.NA
+        rank = i if not np.isnan(predicates['rank_val']) else pd.NA
+        if rank_type == 'lrt' and me.model is me_ref.model:
+            rank = i
         me_dict = {
             'model': model.name,
             'description': model.description,
@@ -355,7 +357,7 @@ def rank_models_with_uncertainty(
     )
     summary_models = concat_summaries([no_cov_models] + cov_models, keys=keys)
 
-    mes_to_rank = get_model_entries_to_rank(me_predicates_reeval, strict=False)
+    mes_to_rank = get_model_entries_to_rank(me_predicates_reeval, strict=True)
     me_rank_values = get_rank_values(
         me_ref, mes_cand, rank_type, alpha, search_space, E, mes_to_rank
     )
