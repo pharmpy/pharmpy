@@ -3,9 +3,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Iterable, Literal, Optional, Sequence, TypeVar, Union
+from typing import Collection, Iterable, Literal, Optional, Sequence, TypeVar, Union
 
-from pharmpy.basic import Expr, TExpr, TSymbol
+from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
@@ -16,7 +16,10 @@ from pharmpy.model import (
     Assignment,
     Compartment,
     CompartmentalSystem,
+    JointNormalDistribution,
     Model,
+    Parameter,
+    Parameters,
     Statement,
     Statements,
     output,
@@ -2024,3 +2027,145 @@ def get_dv_symbol(model: Model, dv: Union[Expr, str, int, None] = None) -> Expr:
     if dv not in model.dependent_variables:
         raise ValueError(f"DV {dv} not defined in model")
     return dv
+
+
+def _create_sd_corr_matrix(dist: JointNormalDistribution) -> Matrix:
+    n = len(dist)
+    A = [[0 for _ in range(n)] for _ in range(n)]
+    for row in range(n):
+        for col in range(n):
+            if row == col:
+                symbol = Expr.symbol(f"SD_{dist.names[row]}")
+            else:
+                symbol = Expr.symbol(f"CORR_{dist.names[row]}_{dist.names[col]}")
+            A[row][col] = symbol
+    return Matrix(A)
+
+
+def _create_new_parameters(model: Model, symbol_matrix: Matrix, inits: Matrix) -> Parameters:
+    n = symbol_matrix.rows
+    params = Parameters()
+    for row in range(n):
+        for col in range(row + 1):
+            name = symbol_matrix[row, col].name
+            if row == col:
+                p = Parameter.create(name, init=inits[row, col], lower=0.0)
+            else:
+                p = Parameter.create(name, init=inits[row, col], lower=-1.0, upper=1.0)
+            params = params + p
+    return params
+
+
+def _update_original_parameters(model: Model, dist: JointNormalDistribution) -> Parameters:
+    all_symbols = dist.variance.free_symbols
+    diag = dist.variance.diagonal()
+    updated_parameters = []
+    for p in model.parameters:
+        if p.symbol in diag:
+            newp = p.replace(init=1.0, fix=True)
+            updated_parameters.append(newp)
+        elif p.symbol in all_symbols:
+            newp = p.replace(init=0.0, fix=True)
+            updated_parameters.append(newp)
+        else:
+            updated_parameters.append(p)
+    params = Parameters.create(updated_parameters)
+    return params
+
+
+def _create_inits(model: Model, dist: JointNormalDistribution) -> Matrix:
+    var = dist.variance
+    n = var.rows
+    d = {}
+    for row in range(n):
+        for col in range(row + 1):
+            name = var[row, col].name
+            init = model.parameters[name].init
+            d[name] = init
+    sdcorr = model.random_variables.parameters_sdcorr(d)
+    A = [[0 for _ in range(n)] for _ in range(n)]
+    for row in range(n):
+        for col in range(row + 1):
+            name = var[row, col].name
+            A[row][col] = sdcorr[name]
+    return Matrix(A)
+
+
+def cholesky_decompose(model: Model, rvs: Optional[Collection[str]] = None) -> Model:
+    """Cholesky decomposition of joint normally distributed random variables
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    rvs : Optional[Collection[str]]
+        Names of random variables to decompose. None means all etas and is the default
+
+    Return
+    ------
+    Model
+        An updated Pharmpy model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = create_joint_distribution(model, ['ETA_CL', 'ETA_VC'])
+    >>> model = cholesky_decompose(model)
+    >>> model.statements
+    """
+
+    if rvs is None:
+        dists = model.random_variables.etas
+    else:
+        dists = model.random_variables[rvs]
+    rv_subs = {}
+    L_assignments = []
+    eta_assignments = []
+    i = 1
+    for dist in dists:
+        if len(dist) > 1:
+            A = _create_sd_corr_matrix(dist)
+            inits = _create_inits(model, dist)
+            params = _create_new_parameters(model, A, inits)
+            updated_params = _update_original_parameters(model, dist)
+            model = model.replace(parameters=updated_params + params)
+            omega = dist.variance
+            d = {}
+            for row in range(len(dist)):
+                for col in range(row + 1):
+                    symbol = A[row, col]
+                    if row == col:
+                        d[omega[row, col]] = symbol**2
+                    else:
+                        d[omega[row, col]] = symbol * A[row, row] * A[col, col]
+
+            etas = Matrix(dist.names)
+            for row in range(len(dist)):
+                eta_expr = 0
+                new_eta = Expr.symbol(f"{etas[row].name}_C")
+                for col in range(row + 1):
+                    symbol = Expr.symbol(f"L{i}_{row + 1}{col + 1}")
+                    eta_expr += etas[col] * symbol
+                    s = 0
+                    for k in range(col):
+                        s += Expr.symbol(f"L{i}_{row + 1}{k + 1}") * Expr.symbol(
+                            f"L{i}_{col + 1}{k + 1}"
+                        )
+                    if row == col:
+                        expr = (omega[row, col] - s).sqrt()
+                    else:
+                        expr = (1 / Expr.symbol(f"L{i}_{col + 1}{col + 1}")) * (omega[row, col] - s)
+                    expr = expr.subs(d)
+                    expr = simplify_expression(model, expr)
+                    L_assignments.append(Assignment(symbol, expr))
+                rv_subs[etas[row]] = new_eta
+                eta_assignments.append(Assignment(new_eta, eta_expr))
+        i += 1
+
+    if L_assignments:
+        model = model.replace(
+            statements=L_assignments + eta_assignments + model.statements.subs(rv_subs)
+        )
+    model = model.update_source()
+    return model

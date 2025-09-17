@@ -112,6 +112,7 @@ from .evaluation import (
 from .expressions import (
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
+    cholesky_decompose,
     cleanup_model,
     create_symbol,
     get_dv_symbol,
@@ -303,6 +304,7 @@ __all__ = [
     'check_dataset',
     'check_high_correlations',
     'check_parameters_near_bounds',
+    'cholesky_decompose',
     'cleanup_model',
     'convert_model',
     'create_basic_pd_model',
