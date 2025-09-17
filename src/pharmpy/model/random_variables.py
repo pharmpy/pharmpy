@@ -48,13 +48,13 @@ class VariabilityLevel(Immutable):
 
     @classmethod
     def create(cls, name: str, reference: bool = False, group: Optional[str] = None):
-        return VariabilityLevel(name, bool(reference), group)
+        return VariabilityLevel(name.upper(), bool(reference), group)
 
     def replace(self, **kwargs) -> VariabilityLevel:
         name = kwargs.get('name', self._name)
         reference = kwargs.get('reference', self._reference)
         group = kwargs.get('group', self._group)
-        return VariabilityLevel(name, bool(reference), group)
+        return VariabilityLevel(name.upper(), bool(reference), group)
 
     def __eq__(self, other: Any):
         if not isinstance(other, VariabilityLevel):
@@ -241,6 +241,9 @@ class RandomVariables(CollectionsSequence, Immutable):
     By default the eta hierarchy has the two levels IIV and IOV and the epsilon
     hierarchy has one single level.
 
+    The order of distributions (blocks) is etas first and then epsilons. Within etas or epsilons
+    the original insertion order is kept.
+
     Parameters
     ----------
     rvs : list
@@ -271,24 +274,6 @@ class RandomVariables(CollectionsSequence, Immutable):
         eta_levels: Optional[VariabilityHierarchy] = None,
         epsilon_levels: Optional[VariabilityHierarchy] = None,
     ):
-        if dists is None:
-            dists = ()
-        elif isinstance(dists, Distribution):
-            dists = (dists,)
-        else:
-            dists = tuple(dists)
-            names = set()
-            for dist in dists:
-                if not isinstance(dist, Distribution):
-                    raise TypeError(f'Can not add variable of type {type(dist)} to RandomVariables')
-                for name in dist.names:
-                    if name in names:
-                        raise ValueError(
-                            f'Names of random variables must be unique. Random Variable "{name}" '
-                            'was added more than once to RandomVariables'
-                        )
-                    names.add(name)
-
         if eta_levels is None:
             iiv_level = VariabilityLevel('IIV', reference=True, group='ID')
             iov_level = VariabilityLevel('IOV', reference=False, group='OCC')
@@ -307,6 +292,34 @@ class RandomVariables(CollectionsSequence, Immutable):
                 raise TypeError(
                     f'Type of epsilon_levels must be a VariabilityHierarchy not a {type(epsilon_levels)}'
                 )
+
+        if dists is None:
+            dists = ()
+        elif isinstance(dists, Distribution):
+            dists = (dists,)
+        else:
+            names = set()
+            eta_level_names = eta_levels.names
+            epsilon_level_names = epsilon_levels.names
+            etas = []
+            epsilons = []
+            for dist in dists:
+                if not isinstance(dist, Distribution):
+                    raise TypeError(f'Can not add variable of type {type(dist)} to RandomVariables')
+                elif dist.level in eta_level_names:
+                    etas.append(dist)
+                elif dist.level in epsilon_level_names:
+                    epsilons.append(dist)
+                else:
+                    raise ValueError(f"Undefined variability level: {dist.level}")
+                for name in dist.names:
+                    if name in names:
+                        raise ValueError(
+                            f'Names of random variables must be unique. Random Variable "{name}" '
+                            'was added more than once to RandomVariables'
+                        )
+                    names.add(name)
+            dists = tuple(etas + epsilons)
 
         return cls(dists, eta_levels, epsilon_levels)
 

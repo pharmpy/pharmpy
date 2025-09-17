@@ -154,7 +154,7 @@ def test_add():
     with pytest.raises(ValueError):
         rvs1 + dist3
 
-    lev1 = VariabilityLevel('center', reference=True, group='CENTER')
+    lev1 = VariabilityLevel('CENTER', reference=True, group='CENTER')
     levs = VariabilityHierarchy([lev1])
     rvs4 = RandomVariables.create([dist3], eta_levels=levs)
     with pytest.raises(ValueError):
@@ -690,7 +690,7 @@ def test_parameters_sdcorr():
     assert params == {'x': 2.0, 'y': 0.0625, 'z': 4.0, 'k': 23}
 
     expr = symbol('x') + symbol('y')
-    dist3 = NormalDistribution('ETA1', 'iiv', 0, expr)
+    dist3 = NormalDistribution('ETA1', 'IIV', 0, expr)
     rvs = RandomVariables.create([dist3])
     with pytest.raises(NotImplementedError):
         rvs.parameters_sdcorr({'x': 4})
