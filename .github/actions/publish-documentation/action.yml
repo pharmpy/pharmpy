@@ -13,12 +13,15 @@ runs:
         path: pharmpy.github.io
         token: ${{inputs.doc_token}}
     - name: Install graphviz
+      shell: bash
       run: sudo apt install graphviz
     - name: Build documentation
+      shell: bash
       run: |
         cd pharmpy
         tox -e docs-build
     - name: Publish documentation
+      shell: bash
       run: |
         cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
         cd pharmpy.github.io
