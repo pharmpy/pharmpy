@@ -79,6 +79,7 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
 
 
 def _test_effect_models(model, expr, variable):
+    resp = S("R")
     e = S("E")
     e0 = S("B")
     emax = S("E_MAX")
@@ -87,50 +88,47 @@ def _test_effect_models(model, expr, variable):
     if expr == 'linear':
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-2] == Assignment.create(
-            e, e0 * (1 + S("SLOPE") * variable)
-        )
+        assert model.statements.after_odes[-3] == Assignment.create(e, 1 + S("SLOPE") * variable)
         assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), e + e * S("epsilon_p")
+            S("Y_2"), resp + resp * S("epsilon_p")
         )
     elif expr == "emax":
         assert model.statements[0] == Assignment.create(ec50, S("POP_EC_50"))
         assert model.statements[2] == Assignment.create(e0, S("POP_B"))
         assert model.statements[1] == Assignment.create(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-2] == Assignment.create(
-            e, e0 * (1 + (emax * variable) / (ec50 + variable))
+        assert model.statements.after_odes[-3] == Assignment.create(
+            e, 1 + (emax * variable) / (ec50 + variable)
         )
         assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), e + e * S("epsilon_p")
+            S("Y_2"), resp + resp * S("epsilon_p")
         )
     elif expr == "sigmoid":
         assert model.statements[0] == Assignment.create(S("N"), S("POP_N"))
         assert model.statements[1] == Assignment.create(ec50, S("POP_EC_50"))
         assert model.statements[3] == Assignment.create(e0, S("POP_B"))
         assert model.statements[2] == Assignment.create(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-2] == Assignment.create(
+        assert model.statements.after_odes[-3] == Assignment.create(
             e,
             Expr.piecewise(
                 (
-                    e0
-                    * (1 + ((emax * variable ** S("N")) / (ec50 ** S("N") + variable ** S("N")))),
+                    1 + ((emax * variable ** S("N")) / (ec50 ** S("N") + variable ** S("N"))),
                     variable > 0,
                 ),
-                (e0, True),
+                (1, True),
             ),
         )
         assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), e + e * S("epsilon_p")
+            S("Y_2"), resp + resp * S("epsilon_p")
         )
         assert model.parameters["POP_N"].init == 1
     elif expr == "step":
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-2] == Assignment.create(
-            e, Expr.piecewise((e0, variable <= 0), (e0 * (1 + emax), True))
+        assert model.statements.after_odes[-3] == Assignment.create(
+            e, Expr.piecewise((1, variable <= 0), (1 + emax, True))
         )
         assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), e + e * S("epsilon_p")
+            S("Y_2"), resp + resp * S("epsilon_p")
         )
     else:  # expr == "loglin"
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))

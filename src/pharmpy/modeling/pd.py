@@ -186,17 +186,19 @@ def _add_effect(model: Model, expr: str, conc):
     if expr == "linear":
         s = Expr.symbol("SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
-        E = Assignment(Expr.symbol('E'), e0 * (1 + (s * conc)))
+        E = Assignment(Expr.symbol('E'), 1 + (s * conc))
     elif expr == "emax":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
-        E = Assignment(Expr.symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
+        E = Assignment(Expr.symbol("E"), 1 + (emax * conc / (ec50 + conc)))
     elif expr == "step":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        E = Assignment(Expr.symbol("E"), Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
+        E = Assignment(
+            Expr.symbol("E"), Expr.piecewise((Expr.integer(1), conc <= 0), (1 + emax, True))
+        )
     elif expr == "sigmoid":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
@@ -208,7 +210,7 @@ def _add_effect(model: Model, expr: str, conc):
         E = Assignment.create(
             Expr.symbol("E"),
             Expr.piecewise(
-                ((e0 * (1 + (emax * conc**n / (ec50**n + conc**n)))), conc > 0), (e0, True)
+                ((1 + (emax * conc**n / (ec50**n + conc**n))), conc > 0), (Expr.integer(1), True)
             ),
         )
     elif expr == "loglin":
@@ -218,11 +220,18 @@ def _add_effect(model: Model, expr: str, conc):
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
+    if expr != "loglin":
+        response = Assignment(Expr.symbol("R"), e0 * E.symbol)
+        variable = response.symbol
+    else:
+        response = tuple()
+        variable = E.symbol
+
     # Add dependent variable Y_2
     y_2 = Expr.symbol('Y_2')
-    y = Assignment.create(y_2, E.symbol)
+    y = Assignment.create(y_2, variable)
     dvs = model.dependent_variables.replace(y_2, 2)
-    model = model.replace(statements=model.statements + E + y, dependent_variables=dvs)
+    model = model.replace(statements=model.statements + E + response + y, dependent_variables=dvs)
 
     # Add error model
     model = set_proportional_error_model(model, dv=2, zero_protection=False)
