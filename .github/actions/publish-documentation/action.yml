@@ -23,12 +23,11 @@ runs:
     - name: Build documentation
       shell: bash
       run: |
-        cd pharmpy
         tox -e docs-build
     - name: Publish documentation
       shell: bash
       run: |
-        cp -RT pharmpy/dist/docs/ pharmpy.github.io/latest/
+        cp -RT dist/docs/ pharmpy.github.io/latest/
         cd pharmpy.github.io
         git config --local user.name "github-actions[bot]"
         git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
