@@ -21,10 +21,9 @@ jobs:
           python-version: "3.11"
           cache: pip
 
-      - name: Install tox
-        shell: bash
-        working-directory: ./pharmpy
-        run: pip install -r pretest-requirements.txt
+      - uses: ./.github/actions/setup-tox
+        with:
+          python-version: "3.11"
 
       - name: Publish documentation
         uses: ./.github/actions/publish-documentation
