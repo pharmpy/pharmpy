@@ -2,6 +2,15 @@
 News
 ====
 
+Pharmpy and pharmr 1.10.0 released
+---------------------------------
+
+*2025-09-18* --- Pharmpy 1.10.0 and pharmr 1.10.0 are now available. The highlights of the release are:
+
+* AMD now supports only estimating parameter uncertainty for selected models
+* Various bug fixes
+
+See :ref:`CHANGELOG<1.10.0>` for details.
 
 Pharmpy and pharmr 1.9.0 released
 ---------------------------------
