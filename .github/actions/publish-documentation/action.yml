@@ -1,10 +1,10 @@
 name: 'Publish documentation'
 description: 'Build and publish the Pharmpy documentation'
+inputs:
+    doc_token:
+      required: true
 runs:
   using: "composite"
-  inputs:
-      doc_token:
-        required: true
   steps:
     - name: Checkout pharmpy/pharmpy.github.io
       uses: actions/checkout@v4
