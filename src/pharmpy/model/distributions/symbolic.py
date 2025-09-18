@@ -68,10 +68,10 @@ class Distribution(Sized, Hashable, Immutable):
         pass
 
     @property
+    @abstractmethod
     def parameter_names(self) -> tuple[str, ...]:
         """List of names of all parameters used in definition"""
-        params = self.mean.free_symbols.union(self.variance.free_symbols)
-        return tuple(sorted(map(str, params)))
+        pass
 
     @abstractmethod
     def subs(self, d: Mapping[TExpr, TExpr]) -> Distribution:
@@ -153,6 +153,11 @@ class NormalDistribution(Distribution):
     @property
     def variance(self) -> Expr:
         return self._variance
+
+    @property
+    def parameter_names(self) -> tuple[str, ...]:
+        """List of names of all parameters used in definition"""
+        return (self._variance.name,)
 
     @property
     def free_symbols(self) -> set[Expr]:
@@ -344,6 +349,16 @@ class JointNormalDistribution(Distribution):
     @property
     def variance(self) -> Matrix:
         return self._variance
+
+    @property
+    def parameter_names(self) -> tuple[str, ...]:
+        """List of names of all parameters used in definition"""
+        n = self._variance.rows
+        params = []
+        for row in range(n):
+            for col in range(row + 1):
+                params.append(self._variance[row, col].name)
+        return tuple(params)
 
     @property
     def free_symbols(self) -> set[Expr]:
@@ -637,6 +652,13 @@ class FiniteDistribution(Distribution):
             x = Expr.integer(n)
             s += (x - mean) ** Expr.integer(2) * expr
         return s
+
+    @property
+    def parameter_names(self) -> tuple[str, ...]:
+        params = set()
+        for expr in self._probabilities.values():
+            params |= expr.free_symbols
+        return tuple(sorted(map(str, params)))
 
     @property
     def free_symbols(self) -> set[Expr]:

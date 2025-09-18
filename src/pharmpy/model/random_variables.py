@@ -534,9 +534,16 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     @property
     def parameter_names(self) -> tuple[str, ...]:
-        """List of parameter names for all random variables"""
-        params = set().union(*(dist.parameter_names for dist in self._dists))
-        return tuple(sorted(map(str, params)))
+        """List of parameter names for all random variables
+
+        The list has a lower triangular canonical order
+        """
+        params = list()
+        for dist in self:
+            for name in dist.parameter_names:
+                if name not in params:
+                    params.append(name)
+        return tuple(params)
 
     @property
     def variance_parameters(self) -> list[str]:

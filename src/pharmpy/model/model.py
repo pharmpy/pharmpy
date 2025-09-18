@@ -123,8 +123,8 @@ class Model(Immutable):
         obs_transformation = Model._canonicalize_observation_transformation(
             observation_transformation, dvs
         )
-        parameters = Model._canonicalize_parameters(parameters)
         random_variables = Model._canonicalize_random_variables(random_variables)
+        parameters = Model._canonicalize_parameters(parameters)
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
         execution_steps = Model._canonicalize_execution_steps(execution_steps)
         value_type = Model._canonicalize_value_type(value_type)
@@ -177,6 +177,10 @@ class Model(Immutable):
             nearest = rvs.nearest_valid_parameters(inits)
             params = params.set_initial_estimates(nearest)
         return params
+
+    @staticmethod
+    def _canonicalize_parameter_order(parameters, random_variables) -> Parameters:
+        return parameters
 
     @staticmethod
     def _canonicalize_random_variables(rvs: Optional[RandomVariables]) -> RandomVariables:
@@ -329,19 +333,25 @@ class Model(Immutable):
         else:
             observation_transformation = self.observation_transformation
 
-        if 'parameters' in kwargs:
-            parameters = Model._canonicalize_parameters(kwargs['parameters'])
-            kwargs.pop('parameters')
-        else:
-            parameters = self.parameters
-
         if 'random_variables' in kwargs:
             random_variables = Model._canonicalize_random_variables(kwargs['random_variables'])
             kwargs.pop('random_variables')
+            updated_rvs = True
         else:
             random_variables = self.random_variables
+            updated_rvs = False
 
-        parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
+        if 'parameters' in kwargs:
+            parameters = Model._canonicalize_parameters(kwargs['parameters'])
+            kwargs.pop('parameters')
+            updated_params = True
+        else:
+            parameters = self.parameters
+            updated_params = False
+
+        if updated_params or updated_rvs:
+            parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
+            parameters = Model._canonicalize_parameter_order(parameters, random_variables)
 
         if 'dataset' in kwargs:
             dataset = kwargs['dataset']

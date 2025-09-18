@@ -883,6 +883,10 @@ def test_levels():
     with pytest.raises(KeyError):
         h['NOTHING']
 
+    dist = NormalDistribution.create('ETA1', 'nonexisting', 0, 'omega')
+    with pytest.raises(ValueError):
+        RandomVariables.create([dist])
+
 
 def test_replace_with_sympy_rvs():
     var1 = symbol('OMEGA(1,1)')
@@ -1013,3 +1017,9 @@ def test_finite_index():
     theta = symbol("THETA1")
     dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
     assert dist[0] == dist
+
+
+def test_finite_parameter_names():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    assert dist.parameter_names == ('THETA1',)
