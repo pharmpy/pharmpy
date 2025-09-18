@@ -1,10 +1,18 @@
-next version
-------------
+.. _1.10.0:
+
+1.10.0 (2025-09-18)
+-------------------
 
 New features
 ============
 
 * Add support for a built in estimation engine in fit and other tools via :code:`esttool='pharmpy'`. It is so far limited to estimating some very basic models.
+* Add support for running parameter uncertainty estimation on only top ranked models in AMD
+
+Changes
+=======
+
+* COVSearch no longer supports running only structural covariates, AMD instead runs model for this
 
 Bugfixes
 ========
@@ -12,6 +20,7 @@ Bugfixes
 * Fix crash when reading in a dataset, which has a column header starting with #, in for example `create_basic_pk_model`
 * Stop AMD from crashing when ext file of some model couldn't be parsed.
 * Fix recent regression in parsing of some NONMEM models with multiple DVs
+* Fix bug in setting initial estimates for :code:`modeling.transform_etas_tdist`
 
 .. _1.9.0:
 
@@ -24,7 +33,6 @@ New features
 * Support additive error model in ruvsearch
 * Automatically set PD in $SIZES for NONMEM models when needed
 * Automatically add a dummy DV column in NONMEM if needed. This will make it possible to do simulations in NONMEM without having a DV in the dataset.
-* Add :code:`modeling.export_model_files`
 * Add :code:`modeling.map_eta_parameters` for creation of mappings between connected individual parameters, etas or omegas.
 * Add :code:`modeling.infer_datatypes` to infer and check if data columns can be converted a simpler datatype (e.g. int32)
 * Add :code:`modeling.set_n_transit_compartments`
