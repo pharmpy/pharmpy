@@ -14,7 +14,9 @@ runs:
         token: ${{inputs.doc_token}}
     - name: Debug print
       shell: bash
-      run: pwd
+      run: |
+        pwd
+        ls
     - name: Install graphviz
       shell: bash
       run: sudo apt install graphviz
