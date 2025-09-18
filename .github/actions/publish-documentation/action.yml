@@ -2,13 +2,16 @@ name: 'Publish documentation'
 description: 'Build and publish the Pharmpy documentation'
 runs:
   using: "composite"
+  inputs:
+      doc_token:
+        required: true
   steps:
     - name: Checkout pharmpy/pharmpy.github.io
       uses: actions/checkout@v4
       with:
         repository: pharmpy/pharmpy.github.io
         path: pharmpy.github.io
-        token: ${{secrets.DOC_TOKEN}}
+        token: ${{inputs.doc_token}}
     - name: Install graphviz
       run: sudo apt install graphviz
     - name: Build documentation
@@ -25,5 +28,5 @@ runs:
         git commit -m "Documentation update"
         git push https://$USERNAME:$REPO_KEY@github.com/pharmpy/pharmpy.github.io.git
       env:
-        REPO_KEY: ${{secrets.DOC_TOKEN}}
+        REPO_KEY: ${{inputs.doc_token}}
         USERNAME: github-actions[bot]
