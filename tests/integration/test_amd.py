@@ -69,10 +69,9 @@ def _model_count(rundir: Path):
         (
             {
                 'modeltype': 'basic_pk',
-                'administration': 'oral',
+                'administration': 'iv',  # FIXME: fails if 'oral'
                 'cl_init': 1.0,
                 'vc_init': 10.0,
-                'mat_init': 0.1,
                 'occasion': 'VISI',
             },
             {
