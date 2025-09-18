@@ -12,7 +12,8 @@ jobs:
 
       - name: Checkout pharmpy/pharmpy
         uses: actions/checkout@v4
-        path: pharmpy
+        with:
+          path: pharmpy
 
       - name: Debug print
         run: pwd
