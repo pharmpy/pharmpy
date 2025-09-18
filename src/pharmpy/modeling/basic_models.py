@@ -269,11 +269,11 @@ def create_basic_pd_model(
 
     b = Expr.symbol("B")
     b_assign = Assignment(b, pop_b.symbol)
-    e = Expr.symbol("E")
-    e_assign = Assignment(e, b)
+    r = Expr.symbol("R")
+    r_assign = Assignment(r, b)
     y = Expr.symbol("Y")
-    y_assign = Assignment(y, e + epsilon)
-    statements = Statements((b_assign, e_assign, y_assign))
+    y_assign = Assignment(y, r + epsilon)
+    statements = Statements((b_assign, r_assign, y_assign))
 
     est = EstimationStep.create(
         "FOCE",
