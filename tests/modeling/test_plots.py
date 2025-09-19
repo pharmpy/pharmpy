@@ -35,7 +35,7 @@ def test_plot_transformed_eta_distributions(load_model_for_test, testdata):
     res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
     pe = res.parameter_estimates
     ie = res.individual_estimates
-    plot = plot_transformed_eta_distributions(model, pe, ie)
+    plot = plot_transformed_eta_distributions(model, pe, ie, pe)
     assert plot
 
 
