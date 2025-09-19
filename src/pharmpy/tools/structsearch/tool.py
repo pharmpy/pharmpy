@@ -61,7 +61,7 @@ def create_workflow(
     results : ModelfitResults
         Results for the start model
     type : str
-        Type of model. Currently only 'drug_metabolite' and 'pkpd'
+        Type of model. Currently only 'drug_metabolite', 'pkpd' and 'tmdd'
     search_space : str
         Search space to test
     b_init: float
