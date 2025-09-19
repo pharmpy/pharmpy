@@ -2113,6 +2113,34 @@ def cholesky_decompose(model: Model, rvs: Optional[Collection[str]] = None) -> M
     >>> model = create_joint_distribution(model, ['ETA_CL', 'ETA_VC'])
     >>> model = cholesky_decompose(model)
     >>> model.statements
+        L₁ ₁₁ = SD_ETA_CL
+            CORR_ETA_VC_ETA_CL⋅SD_ETA_CL⋅SD_ETA_VC
+            ──────────────────────────────────────
+    L₁ ₂₁ =                 L₁ ₁₁
+               _______________________
+              ╱        2            2
+    L₁ ₂₂ = ╲╱  - L₁ ₂₁  + SD_ETA_VC
+    ETA_CL_C = ETA_CL⋅L₁ ₁₁
+    ETA_VC_C = ETA_CL⋅L₁ ₂₁ + ETA_VC⋅L₁ ₂₂
+    TVCL = POP_CL⋅WGT
+    TVV = POP_VC⋅WGT
+          ⎧TVV⋅(COVAPGR + 1)  for APGR < 5
+          ⎨
+    TVV = ⎩       TVV          otherwise
+               ETA_CL_C
+    CL = TVCL⋅ℯ
+              ETA_VC_C
+    VC = TVV⋅ℯ
+    V = VC
+    S₁ = VC
+    Bolus(AMT, admid=1) → CENTRAL
+    ┌───────┐
+    │CENTRAL│──CL/V→
+    └───────┘
+        A_CENTRAL(t)
+        ────────────
+    F =      S₁
+    Y = EPS₁⋅F + F
     """
 
     if rvs is None:
