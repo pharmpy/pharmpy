@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Mapping
 from functools import partial
 from typing import Literal, Optional, Union
 
@@ -127,7 +128,7 @@ def _sample_from_function(
 
 def sample_parameters_uniformly(
     model: Model,
-    parameter_estimates: pd.Series,
+    parameter_estimates: Mapping[str, float],
     fraction: float = 0.1,
     force_posdef_samples: Optional[int] = None,
     n: int = 1,
@@ -204,7 +205,7 @@ def sample_parameters_uniformly(
 
 def sample_parameters_from_covariance_matrix(
     model: Model,
-    parameter_estimates: pd.Series,
+    parameter_estimates: Mapping[str, float],
     covariance_matrix: pd.DataFrame,
     force_posdef_samples: Optional[int] = None,
     force_posdef_covmatrix: bool = False,

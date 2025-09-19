@@ -492,7 +492,8 @@ def calculate_pk_parameters_statistics(
         for name in elimination_system.compartment_names:
             if name != central.name:  # NOTE: Keep central
                 cb = CompartmentalSystemBuilder(elimination_system)
-                cb.remove_compartment(elimination_system.find_compartment(name))
+                comp = elimination_system.find_compartment_or_raise(name)
+                cb.remove_compartment(comp)
                 elimination_system = CompartmentalSystem(cb)
         eq = elimination_system.eqs[0]
         eq = sympy.sympify(eq)
