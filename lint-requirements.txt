@@ -1,5 +1,5 @@
 # Direct dependencies
-black==25.1.0
+black==25.9.0
 check-manifest==0.50
 docutils==0.21.2
 flake8==7.3.0
