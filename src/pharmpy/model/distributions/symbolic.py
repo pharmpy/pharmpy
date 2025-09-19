@@ -193,14 +193,15 @@ class NormalDistribution(Distribution):
     def evalf(self, parameters: dict[TSymbol, float]) -> NumericDistribution:
         mean = self._mean
         variance = self._variance
+        parameters = {str(key): value for key, value in parameters.items()}
         try:
             if mean == 0:
                 mu = 0
             elif mean.is_symbol():
-                mu = float(parameters[mean])
+                mu = float(parameters[str(mean)])
             else:
                 raise NotImplementedError("Non-supported mean for NormalDistribution")
-            sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
+            sigma = 0 if variance == 0 else sqrt(float(parameters[str(variance)]))
             return NumericNormalDistribution(mu, sigma)
         except KeyError as e:
             # NOTE: This handles missing parameter substitutions
