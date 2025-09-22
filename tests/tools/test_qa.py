@@ -1,14 +1,112 @@
 from io import StringIO
 
-import numpy as np
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.modeling import (
+    create_joint_distribution,
+    create_rng,
+    transform_etas_boxcox,
+    transform_etas_tdist,
+)
 from pharmpy.tools import read_modelfit_results
-from pharmpy.tools.qa.results import calculate_results, psn_qa_results
+from pharmpy.tools.qa.results import calc_transformed_etas, calculate_results, psn_qa_results
+from pharmpy.tools.qa.tool import (
+    SECTIONS,
+    categorize_model_entries,
+    create_candidate,
+    create_dofv_table,
+    create_eta_transformation_results,
+    validate_input,
+)
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import read_results
+
+
+@pytest.mark.parametrize(
+    'trans_type, added_etas',
+    [('tdist', 3), ('boxcox', 3), ('fullblock', 3)],
+)
+def test_create_candidate(load_model_for_test, testdata, trans_type, added_etas):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_base = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_base = ModelEntry.create(model_base, modelfit_results=res_base)
+
+    me = create_candidate(me_base, trans_type)
+    assert me.model.name == trans_type
+    assert me.modelfit_results is None
+    assert me.parent == model_base
+
+    assert len(me.model.parameters) - len(model_base.parameters) == added_etas
+
+
+def test_categorize_model_entries(load_model_for_test, testdata, model_entry_factory):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_base = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_base = ModelEntry(model_base, modelfit_results=res_base)
+
+    model1 = transform_etas_tdist(model_base).replace(name='tdist')
+    model2 = transform_etas_boxcox(model_base).replace(name='boxcox')
+    model3 = create_joint_distribution(model_base).replace(name='fullblock')
+
+    me_cands = model_entry_factory(
+        [model1, model2, model3], ref_val=res_base.ofv, parent=model_base
+    )
+
+    base, cands = categorize_model_entries([me_base] + me_cands)
+    assert base.model.name == me_base.model.name
+    assert len(cands) == len(me_cands)
+    assert base not in cands
+
+    with pytest.raises(ValueError):
+        me_invalid = ModelEntry.create(model_base.replace(name='x'))
+        categorize_model_entries([me_base] + me_cands + [me_invalid])
+
+
+def test_create_dofv_table(load_model_for_test, testdata, model_entry_factory):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_base = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_base = ModelEntry(model_base, modelfit_results=res_base)
+
+    model1 = transform_etas_tdist(model_base).replace(name='tdist')
+    model2 = transform_etas_boxcox(model_base).replace(name='boxcox')
+    model3 = create_joint_distribution(model_base).replace(name='fullblock')
+
+    me_cands = model_entry_factory(
+        [model1, model2, model3], ref_val=res_base.ofv, parent=model_base
+    )
+
+    table = create_dofv_table(me_base, me_cands)
+
+    assert len(table) == len(me_cands)
+    for me_base in me_cands:
+        assert table.loc[me_base.model.name]['dofv'] == res_base.ofv - me_base.modelfit_results.ofv
+        assert table.loc[me_base.model.name]['added_params'] == len(me_base.model.parameters) - len(
+            model_base.parameters
+        )
+
+
+def test_create_eta_transformation_results(load_model_for_test, testdata, model_entry_factory):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_base = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    me_base = ModelEntry(model_base, modelfit_results=res_base)
+
+    model1 = transform_etas_tdist(model_base).replace(name='tdist')
+    model2 = transform_etas_boxcox(model_base).replace(name='boxcox')
+
+    me_cands = model_entry_factory([model1, model2], ref_val=res_base.ofv, parent=model_base)
+
+    for me in me_cands:
+        rng = create_rng(1)
+        res_dict = create_eta_transformation_results(me, me_base, rng)
+        table = res_dict[f'{me.model.name}_parameters']
+        param_name = 'lambda' if me.model.name == 'boxcox' else 'df'
+        assert table[param_name].is_unique
+        assert (table['old_sd'] != table['new_sd']).all()
+        plot = res_dict[f'{me.model.name}_plot']
+        assert plot
 
 
 def test_add_etas(load_model_for_test, testdata):
@@ -118,6 +216,40 @@ ETA_2,3.77,0.400863,0.448917
     assert res.dofv['df']['parameter_variability', 'tdist', np.nan] == 2
 
     res = calculate_results(orig_entry, base_entry, tdist_model_entry=None)
+
+
+@pytest.mark.parametrize(
+    'funcs, linearize, trans_type',
+    [
+        ([transform_etas_tdist], False, 'tdist'),
+        ([transform_etas_boxcox], False, 'boxcox'),
+        ([create_joint_distribution, transform_etas_tdist], False, 'tdist'),
+        ([create_joint_distribution, transform_etas_boxcox], False, 'boxcox'),
+    ],
+)
+def test_calc_transformed_etas(
+    load_model_for_test, testdata, funcs, linearize, trans_type, model_entry_factory
+):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_base = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = model_base
+    for func in funcs:
+        model = func(model)
+
+    me_base = ModelEntry.create(model_base, modelfit_results=res_base)
+    me = model_entry_factory([model], ref_val=res_base.ofv)[0]
+
+    param_type = 'lambda' if trans_type == 'boxcox' else 'df'
+    table, _ = calc_transformed_etas(me_base, me, trans_type, param_type)
+
+    assert param_type in table.columns
+    for i, idx in enumerate(table.index):
+        sd_new = table.loc[idx]['new_sd']
+        sd_old = table.loc[idx]['old_sd']
+        assert sd_new != sd_old
+        omega = model.random_variables.variance_parameters[i]
+        omega_est = me.modelfit_results.parameter_estimates[omega]
+        assert omega_est**0.5 == sd_new
 
 
 def test_iov(load_model_for_test, testdata):
@@ -245,3 +377,25 @@ def test_simeval(load_model_for_test, testdata):
     simeval_res = read_results(testdata / 'nonmem' / 'qa' / 'simeval_results.json')
     cdd_res = read_results(testdata / 'nonmem' / 'qa' / 'cdd_results.json')
     calculate_results(orig_entry, base_entry, simeval_results=simeval_res, cdd_results=cdd_res)
+
+
+@pytest.mark.parametrize(
+    ('kwargs', 'match'),
+    [
+        (
+            {'skip': list(SECTIONS)},
+            'Invalid `skip`',
+        ),
+    ],
+)
+def test_validate_input_raises(
+    load_model_for_test,
+    testdata,
+    kwargs,
+    match,
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    with pytest.raises(ValueError, match=match):
+        validate_input(model, res, **kwargs)

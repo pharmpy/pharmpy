@@ -6,6 +6,7 @@ import yaml
 
 import pharmpy.tools.psn_helpers as psn_helpers
 from pharmpy.basic import Expr
+from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
@@ -27,6 +28,8 @@ class QAResults(Results):
     univariate_sum: Optional[Any] = None
     residual_error: Optional[Any] = None
     structural_bias: Optional[Any] = None
+    tdist_plot: Optional[alt.Chart] = None
+    boxcox_plot: Optional[alt.Chart] = None
 
 
 def calculate_results(
@@ -403,11 +406,18 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
     params = [Expr.symbol(p) for p in params]
     boxcox_sds = [newres.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in params]
-    thetas = newres.parameter_estimates_sdcorr[0 : len(params)]
+    theta_names = [
+        p for p in new_model_entry.model.parameters.names if p.startswith(parameter_name)
+    ]
+    if theta_names:
+        thetas = [newres.parameter_estimates_sdcorr[theta] for theta in theta_names]
+    else:
+        # Default to old behavior
+        thetas = newres.parameter_estimates_sdcorr[0 : len(params)].values
     eta_names = new_model_entry.model.random_variables.etas.names
 
     table = pd.DataFrame(
-        {parameter_name: thetas.values, 'new_sd': boxcox_sds, 'old_sd': orig_sds}, index=eta_names
+        {parameter_name: thetas, 'new_sd': boxcox_sds, 'old_sd': orig_sds}, index=eta_names
     )
 
     dofv = origres.ofv - newres.ofv
