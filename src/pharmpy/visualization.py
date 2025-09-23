@@ -158,9 +158,16 @@ def histogram(values, title=""):
         base.transform_joinaggregate(total='count(*)')
         .transform_calculate(pct='1 / datum.total')
         .mark_bar()
-        .encode(alt.X(f'{values.name}:Q', bin=True), alt.Y('sum(pct):Q', axis=alt.Axis(format='%')))
+        .encode(
+            alt.X(f'{values.name}:Q', bin=alt.Bin(maxbins=50)),
+            alt.Y('sum(pct):Q', axis=alt.Axis(format='%')),
+        )
         .add_params(selection)
-        .properties(title=title)
+        .properties(
+            title=title,
+            width=800,
+            height=300,
+        )
     )
 
     rule = base.mark_rule(color='red').encode(x=f'mean({values.name}):Q', size=alt.value(5))
