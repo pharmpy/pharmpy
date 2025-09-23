@@ -11,11 +11,13 @@ Changes
 
 * Make the OFV distribution plot wider in the bootstrap results and report
 * Make tables in reports have 50 rows per page
+* Let :code:`append_estimation_step_options` operate on the final estimation step by default
 
 Bugfixes
 ========
 
 * Fix regression having iivsearch crash if the input model is selected before the end
+* Fix so that idx=-1 does not duplicate estimation steps for :code:`append_estimation_step_options`
 
 .. _1.10.0:
 

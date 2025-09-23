@@ -293,7 +293,7 @@ def remove_estimation_step(model: Model, idx: int):
     return model.update_source()
 
 
-def append_estimation_step_options(model: Model, tool_options: Mapping[str, Any], idx: int):
+def append_estimation_step_options(model: Model, tool_options: Mapping[str, Any], idx: int = -1):
     """Append estimation step options
 
     Appends options to an existing estimation step.
@@ -305,7 +305,7 @@ def append_estimation_step_options(model: Model, tool_options: Mapping[str, Any]
     tool_options : dict
         any additional tool specific options
     idx : int
-        index of estimation step (starting from 0)
+        index of estimation step (starting from 0). Default is the last step
 
     Returns
     -------
@@ -338,9 +338,14 @@ def append_estimation_step_options(model: Model, tool_options: Mapping[str, Any]
         raise TypeError(f'Index must be integer: {idx}')
 
     steps = model.execution_steps
+    if len(steps) == 0:
+        raise ValueError("No execution steps in the model")
     toolopts = dict(steps[idx].tool_options)
     toolopts.update(tool_options)
     newstep = steps[idx].replace(tool_options=toolopts)
+    if idx == -1:
+        # Special case so that the tail doesn't become steps[0:]
+        idx = idx + len(steps)
     newsteps = steps[0:idx] + newstep + steps[idx + 1 :]
     model = model.replace(execution_steps=newsteps)
     return model.update_source()
