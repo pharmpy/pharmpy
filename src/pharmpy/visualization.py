@@ -226,4 +226,5 @@ def display_table(df, format=None, remove_nan_columns=True):
         buttons=["copyHtml5", "csvHtml5"],
         style='width: fit-content; float: left',
         allow_html=True,
+        pageLength=50,
     )
