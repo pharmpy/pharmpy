@@ -647,6 +647,8 @@ def run_amd_task(
     sim_res = _run_simulation(sim_model, context)
     simulation_data = sim_res.table
 
+    _run_qa(final_model, final_results, context)
+
     if final_results.predictions is not None:
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
         dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions, dvid_name)
@@ -770,6 +772,13 @@ def noop_subfunc(_: Model):
 
 def _run_simulation(model, ctx):
     res = run_subtool('simulation', ctx, name='simulation', model=model)
+    return res
+
+
+def _run_qa(model, results, ctx):
+    res = run_subtool(
+        'qa', ctx, name='qa', model=model, results=results, linearize=False, skip=['fullblock']
+    )
     return res
 
 
