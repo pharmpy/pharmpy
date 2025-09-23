@@ -1,8 +1,7 @@
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   results
+.. contents::
+   :local:
+   :depth: 2
+   :backlinks: none
 
 
 Bootstrap Results
