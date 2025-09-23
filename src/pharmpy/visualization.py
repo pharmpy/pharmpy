@@ -76,9 +76,9 @@ def scatter_matrix(df):
     plot = (
         alt.layer(
             base.mark_circle(),
-            base.transform_regression('value_y', 'value_x', method='poly', order=4).mark_line(
-                color='red'
-            ),
+            # base.transform_regression('value_y', 'value_x', method='poly', order=4).mark_line(
+            #     color='red'
+            # ),
         )
         .facet(
             column=alt.Column('key_x:N', sort=list(df.columns), title=None),

@@ -186,8 +186,7 @@ def calculate_results(
     return replace(
         res,
         ofv_plot=plot_ofv(res),
-        # FIXME: Plot broken
-        # parameter_estimates_correlation_plot = plot_parameter_estimates_correlation(res)
+        parameter_estimates_correlation_plot=plot_parameter_estimates_correlation(res),
         dofv_quantiles_plot=plot_dofv_quantiles(res),
         parameter_estimates_histogram=plot_parameter_estimates_histogram(res),
     )

@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Add parameter scatter matrix plot to bootstrap
+
 Changes
 =======
 
