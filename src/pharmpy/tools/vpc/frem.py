@@ -1,7 +1,7 @@
 from pharmpy.basic import Expr
 from pharmpy.model import Assignment, Model
 from pharmpy.modeling import (
-    cholesky_transform,
+    cholesky_decompose,
     remove_unused_parameters_and_rvs,
     set_evaluation_step,
 )
@@ -40,6 +40,6 @@ def _prepare_frem_model(model: Model) -> Model:
     model = model.replace(statements=kept_statements, random_variables=kept_rvs)
     model = remove_unused_parameters_and_rvs(model)
     frem_etas = model.random_variables[-1].names
-    model = cholesky_transform(model, frem_etas)
+    model = cholesky_decompose(model, frem_etas)
 
     return model
