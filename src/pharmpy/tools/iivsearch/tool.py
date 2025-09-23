@@ -524,7 +524,7 @@ def start(
     context.store_final_model_entry(final_final_model)
 
     keys = list(range(1, len(applied_algorithms) + 1))
-    keys_summary_tool = keys
+    keys_summary_tool = keys.copy()
     if input_step:
         keys_summary_tool += [len(keys) + 1]  # Include step comparing input to final
     keys_summary_models = [0] + keys  # Include input model
