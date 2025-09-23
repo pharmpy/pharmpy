@@ -1304,6 +1304,38 @@ def test_transform_etas_john_draper(load_model_for_test, pheno_path, etas, etad,
 
 
 @pytest.mark.parametrize(
+    'transformation, eta_pattern',
+    [
+        (
+            transform_etas_boxcox,
+            'ETAB',
+        ),
+        (
+            transform_etas_tdist,
+            'ETAT',
+        ),
+        (
+            transform_etas_john_draper,
+            'ETAD',
+        ),
+    ],
+)
+def test_transform_etas_iov(load_model_for_test, testdata, transformation, eta_pattern):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = add_iov(model, 'VISI', list_of_parameters=['CL'])
+    model = transformation(model)
+
+    etas = model.random_variables.etas.symbols
+    etat_symbs = [
+        s.symbol for s in model.statements.before_odes if s.symbol.name.startswith(eta_pattern)
+    ]
+    assert len(etat_symbs) == len(etas)
+    for etat in etat_symbs:
+        s = model.statements.find_assignment(etat)
+        assert s.expression.free_symbols.union(etas)
+
+
+@pytest.mark.parametrize(
     'eta_trans,symbol,expression',
     [
         (
