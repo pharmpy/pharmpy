@@ -5,6 +5,7 @@ from pharmpy.tools.amd.run import (
     _create_model_summary,
     _mechanistic_cov_extraction,
     check_skip,
+    get_subtool_order,
     later_input_validation,
     split_structural_search_space,
     validate_input,
@@ -74,11 +75,13 @@ def test_skip_most(load_model_for_test, testdata):
         mat_init=1.0,
     )
 
+    order = get_subtool_order('default')
+
     to_be_skipped = check_skip(
         NullContext(),
         model,
         occasion=None,
-        order=['modelsearch', 'iivsearch', 'ruvsearch', 'iovsearch', 'allometry', 'covsearch'],
+        order=order,
         allometric_variable=None,
         ignore_datainfo_fallback=False,
         search_space=None,
@@ -90,7 +93,7 @@ def test_skip_most(load_model_for_test, testdata):
         NullContext(),
         model,
         occasion=None,
-        order=['modelsearch', 'iivsearch', 'ruvsearch', 'iovsearch', 'allometry', 'covsearch'],
+        order=order,
         allometric_variable=None,
         ignore_datainfo_fallback=True,
         search_space=None,
@@ -162,11 +165,13 @@ def test_skip_covsearch(load_model_for_test, testdata):
         ignore_datainfo_fallback=True,
     )
 
+    order = get_subtool_order('default')
+
     to_be_skipped = check_skip(
         NullContext(),
         model,
         occasion='VISI',
-        order=['modelsearch', 'iivsearch', 'ruvsearch', 'allometry', 'covsearch'],
+        order=order,
         allometric_variable='WT',
         ignore_datainfo_fallback=True,
         search_space=None,
@@ -194,12 +199,14 @@ def test_skip_iovsearch_one_occasion(load_model_for_test, testdata):
         mat_init=1.0,
     )
 
+    order = get_subtool_order('default')
+
     to_be_skipped = check_skip(
         NullContext(),
         model,
         occasion='XAT2',
         allometric_variable=None,
-        order=['modelsearch', 'iivsearch', 'ruvsearch', 'iovsearch', 'allometry', 'covsearch'],
+        order=order,
         ignore_datainfo_fallback=False,
         search_space=None,
     )
@@ -252,7 +259,7 @@ def test_ignore_datainfo_fallback(load_model_for_test, testdata):
         model,
         occasion=None,
         allometric_variable=None,
-        order=['modelsearch', 'iivsearch', 'ruvsearch', 'iovsearch', 'allometry', 'covsearch'],
+        order=['modelsearch', 'iivsearch', 'ruvsearch', 'iovsearch', 'allometry', 'covariates'],
         ignore_datainfo_fallback=True,
         search_space=None,
     )

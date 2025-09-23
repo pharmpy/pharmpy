@@ -604,7 +604,9 @@ def run_amd_task(
             )
             context.store_model_entry(final_model_entry)
             if (mfl_allometry is not None and tool_name == 'modelsearch') or (
-                tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]
+                tool_name == "allometry"
+                and 'covariates' in order
+                and 'allometry' in order[: order.index('covariates')]
             ):
                 cov_before = ModelFeatures.create_from_mfl_string(get_model_features(next_model))
                 cov_after = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
@@ -1319,7 +1321,7 @@ def check_skip(
                 )
                 to_be_skipped.append("allometry")
 
-    if 'covsearch' in order:
+    if 'covariates' in order:
         if search_space is not None:
             ss_mfl = mfl_parse(search_space, True)
             covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
