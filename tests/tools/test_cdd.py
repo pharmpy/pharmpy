@@ -4,6 +4,7 @@ from pytest import approx
 import pharmpy.tools.cdd.results as cdd
 from pharmpy.deps import pandas as pd
 from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external import parse_modelfit_results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
 
@@ -243,11 +244,17 @@ def test_cdd_calculate_results(load_model_for_test, testdata):
     # Replace three estimated cdd_models with fake models without estimates
     # and recompute results to verify handling of missing output
     cdd_models[0] = load_model_for_test(path / 'm1' / 'rem_1.mod')
-    cdd_model_results[0] = read_modelfit_results(path / 'm1' / 'rem_1.mod')
+    cdd_model_results[0] = parse_modelfit_results(
+        cdd_models[0], path / 'm1' / 'rem_1.mod', 'nonmem', strict=False
+    )
     cdd_models[1] = load_model_for_test(path / 'm1' / 'rem_2.mod')
-    cdd_model_results[1] = read_modelfit_results(path / 'm1' / 'rem_2.mod')
+    cdd_model_results[1] = parse_modelfit_results(
+        cdd_models[1], path / 'm1' / 'rem_2.mod', 'nonmem', strict=False
+    )
     cdd_models[3] = load_model_for_test(path / 'm1' / 'rem_4.mod')
-    cdd_model_results[3] = read_modelfit_results(path / 'm1' / 'rem_4.mod')
+    cdd_model_results[3] = parse_modelfit_results(
+        cdd_models[3], path / 'm1' / 'rem_4.mod', 'nonmem', strict=False
+    )
 
     res = cdd.calculate_results(
         base_model, base_model_results, cdd_models, cdd_model_results, 'ID', skipped_individuals

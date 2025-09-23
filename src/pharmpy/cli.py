@@ -347,7 +347,7 @@ def data_write(args):
         from pharmpy.modeling import write_dataset
 
         # If no output_file supplied will use name of df
-        path = write_dataset(args.model[0], path=args.output_file, force=args.force)
+        path = write_dataset(args.model, path=args.output_file, force=args.force)
         print(f'Dataset written to {path}')
     except OSError as e:
         error(e)
@@ -485,7 +485,7 @@ def data_reference(args):
     from pharmpy.modeling import set_reference_values
 
     d = key_vals(args.colrefs)
-    model, _ = args.model
+    model = args.model
     model = set_reference_values(model, d)
     write_model_or_dataset(model, model.dataset, args.output_file, args.force)
 
@@ -739,6 +739,21 @@ def input_model(path):
     return model, res
 
 
+def input_model_nores(path):
+    """Returns :class:`~pharmpy.model.Model` from *path*.
+
+    Raises if not found or is dir, without tracebacks (see :func:`error_exit`).
+
+    Does not read in a modelfit results as input_model
+    """
+    path = check_input_path(path)
+    from pharmpy.model import Model
+
+    model = Model.parse_model(path)
+
+    return model
+
+
 def input_model_or_dataset(path):
     """Returns :class:`~pharmpy.model.Model` or pd.DataFrame from *path*"""
     path = check_input_path(path)
@@ -792,6 +807,13 @@ group_input.add_argument(
 args_model_input = argparse.ArgumentParser(add_help=False)
 group_model_input = args_model_input.add_argument_group(title='model')
 group_model_input.add_argument('model', metavar='FILE', type=input_model, help='input model file')
+
+# for commands taking one model with no results necessary as input
+args_model_nores_input = argparse.ArgumentParser(add_help=False)
+group_model_nores_input = args_model_nores_input.add_argument_group(title='model_nores')
+group_model_nores_input.add_argument(
+    'model', metavar='FILE', type=input_model_nores, help='input model file'
+)
 
 # for commands with model file or dataset input
 args_model_or_data_input = argparse.ArgumentParser(add_help=False)
@@ -1513,7 +1535,7 @@ parser_definition = [
                 {
                     'write': {
                         'help': 'Write dataset',
-                        'parents': [args_model_input, args_output],
+                        'parents': [args_model_nores_input, args_output],
                         'func': data_write,
                         'description': 'Write a dataset from model as the model sees '
                         'it. For NM-TRAN models this means to filter all IGNORE and '
@@ -1638,7 +1660,7 @@ parser_definition = [
                     'reference': {
                         'help': 'Set reference values in dataset',
                         'description': 'Set values in specific columns to provided reference values',
-                        'parents': [args_model_input, args_output],
+                        'parents': [args_model_nores_input, args_output],
                         'func': data_reference,
                         'args': [
                             {
