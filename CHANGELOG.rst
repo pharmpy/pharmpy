@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix regression having iivsearch crash if the input model is selected before the end
+
 .. _1.10.0:
 
 1.10.0 (2025-09-18)

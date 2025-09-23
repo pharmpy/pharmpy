@@ -479,7 +479,9 @@ def start(
 
     # NOTE: Compute final final model
     final_final_model = last_res.final_model
-    if input_res and final_res:
+    input_step = False
+    if input_model != final_model and input_res and final_res:
+        input_step = True
         context.log_info('Comparing final model to input model')
         rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
         E = (E_p, E_q) if E_p is not None or E_q is not None else None
@@ -522,10 +524,12 @@ def start(
     context.store_final_model_entry(final_final_model)
 
     keys = list(range(1, len(applied_algorithms) + 1))
-    keys_summary_tool = keys + [len(keys) + 1]  # Include step comparing input to final
+    keys_summary_tool = keys
+    if input_step:
+        keys_summary_tool += [len(keys) + 1]  # Include step comparing input to final
     keys_summary_models = [0] + keys  # Include input model
     if linearize:
-        keys_summary_tool += [len(keys) + 2]
+        keys_summary_tool += [len(keys_summary_tool) + 1]
         keys_summary_models += [len(keys) + 1]
 
     final_results = IIVSearchResults(
