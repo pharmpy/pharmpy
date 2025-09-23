@@ -1,10 +1,13 @@
+from functools import partial
 from io import StringIO
 
 import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.model import NormalDistribution
 from pharmpy.modeling import (
+    add_iov,
     create_joint_distribution,
     create_rng,
     transform_etas_boxcox,
@@ -219,25 +222,38 @@ ETA_2,3.77,0.400863,0.448917
 
 
 @pytest.mark.parametrize(
-    'funcs, linearize, trans_type',
+    'funcs_base, funcs_candidate, linearize, trans_type',
     [
-        ([transform_etas_tdist], False, 'tdist'),
-        ([transform_etas_boxcox], False, 'boxcox'),
-        ([create_joint_distribution, transform_etas_tdist], False, 'tdist'),
-        ([create_joint_distribution, transform_etas_boxcox], False, 'boxcox'),
+        ([], [transform_etas_tdist], False, 'tdist'),
+        ([], [transform_etas_boxcox], False, 'boxcox'),
+        ([], [create_joint_distribution, transform_etas_tdist], False, 'tdist'),
+        ([], [create_joint_distribution, transform_etas_boxcox], False, 'boxcox'),
+        (
+            [partial(add_iov, occ='VISI', list_of_parameters=['CL'])],
+            [transform_etas_boxcox],
+            False,
+            'boxcox',
+        ),
     ],
 )
 def test_calc_transformed_etas(
-    load_model_for_test, testdata, funcs, linearize, trans_type, model_entry_factory
+    load_model_for_test,
+    testdata,
+    model_entry_factory,
+    funcs_base,
+    funcs_candidate,
+    linearize,
+    trans_type,
 ):
     model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_base = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs_base:
+        model_base = func(model_base)
     model = model_base
-    for func in funcs:
+    for func in funcs_candidate:
         model = func(model)
 
-    me_base = ModelEntry.create(model_base, modelfit_results=res_base)
-    me = model_entry_factory([model], ref_val=res_base.ofv)[0]
+    mes = model_entry_factory([model_base, model])
+    me_base, me = mes[0], mes[1]
 
     param_type = 'lambda' if trans_type == 'boxcox' else 'df'
     table, _ = calc_transformed_etas(me_base, me, trans_type, param_type)
@@ -247,8 +263,13 @@ def test_calc_transformed_etas(
         sd_new = table.loc[idx]['new_sd']
         sd_old = table.loc[idx]['old_sd']
         assert sd_new != sd_old
-        omega = model.random_variables.variance_parameters[i]
-        omega_est = me.modelfit_results.parameter_estimates[omega]
+        if idx in model.random_variables.iov.names:
+            eta = model.random_variables[idx]
+            assert isinstance(eta, NormalDistribution)
+            omega_est = me.modelfit_results.parameter_estimates[eta.variance.name]
+        else:
+            omega = model.random_variables.variance_parameters[i]
+            omega_est = me.modelfit_results.parameter_estimates[omega]
         assert omega_est**0.5 == sd_new
 
 

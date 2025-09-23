@@ -9,7 +9,7 @@ from pharmpy.basic import Expr
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model
+from pharmpy.model import JointNormalDistribution, Model, NormalDistribution
 from pharmpy.tools import read_modelfit_results
 from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import Results, read_results
@@ -402,8 +402,16 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
     newres = new_model_entry.modelfit_results
     if newres is None:
         return None, dofv_tab
-    params = new_model_entry.model.random_variables.etas.variance_parameters
-    params = [Expr.symbol(p) for p in params]
+    params = []
+    for dist in new_model_entry.model.random_variables.etas:
+        if isinstance(dist, NormalDistribution):
+            p = dist.variance
+            params.append(p)
+        else:
+            assert isinstance(dist, JointNormalDistribution)
+            for p in dist.variance.diagonal():
+                params.append(p)
+
     boxcox_sds = [newres.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in params]
     theta_names = [
@@ -412,7 +420,7 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
     if theta_names:
         thetas = [newres.parameter_estimates_sdcorr[theta] for theta in theta_names]
     else:
-        # Default to old behavior
+        # Fall back to old behavior
         thetas = newres.parameter_estimates_sdcorr[0 : len(params)].values
     eta_names = new_model_entry.model.random_variables.etas.names
 
