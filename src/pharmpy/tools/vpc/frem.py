@@ -14,7 +14,7 @@ def prepare_evaluation_model(me: ModelEntry) -> ModelEntry:
     model = me.model
     df = model.dataset
     df = df[df['FREMTYPE'] == 0]
-    df = df.reset_index()
+    df = df.reset_index(drop=True)
     model = model.replace(dataset=df)
     model = set_evaluation_step(model)
     model = remove_parameter_uncertainty_step(model)
@@ -45,7 +45,6 @@ def _remove_frem_epsilon(model):
 def prepare_frem_model(me: ModelEntry) -> ModelEntry:
     model = me.model
     kept_statements = _remove_frem_code(model)
-    print(kept_statements)
     kept_rvs = _remove_frem_epsilon(model)
 
     model = model.replace(statements=kept_statements, random_variables=kept_rvs)

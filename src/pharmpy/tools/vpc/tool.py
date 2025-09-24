@@ -68,7 +68,7 @@ def create_workflow(
     simulation_task = Task('simulation', simulation, samples)
     wb.add_task(simulation_task, predecessors=wb.output_tasks)
 
-    task_result = Task('results', post_process_results, model, stratify)
+    task_result = Task('results', post_process_results, stratify)
     wb.add_task(task_result, predecessors=wb.output_tasks)
 
     return Workflow(wb)
@@ -89,10 +89,11 @@ def simulation(context, samples, input_me):
         sim_model = set_initial_estimates(sim_model, input_me.modelfit_results.parameter_estimates)
     sim_res = run_subtool('simulation', context, name='simulation', model=sim_model)
     simulation_data = sim_res.table
-    return simulation_data
+    return input_me.model, simulation_data
 
 
-def post_process_results(context, input_model, stratify, simulation_data):
+def post_process_results(context, stratify, piped):
+    input_model, simulation_data = piped
     res = calculate_results(input_model, simulation_data, stratify=stratify)
     context.log_info("Finishing tool vpc")
     return res
