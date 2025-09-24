@@ -17,6 +17,11 @@ def triangular_root(x):
     return math.floor(math.sqrt(2 * x))
 
 
+def symmetric_to_flattened(A):
+    """Flatten a symmetric matrix into a vector using the lower triangle"""
+    return np.concatenate([A[i, : i + 1] for i in range(len(A))])
+
+
 def flattened_to_symmetric(x):
     """Convert a vector containing the elements of a lower triangular matrix into a full symmetric
     matrix

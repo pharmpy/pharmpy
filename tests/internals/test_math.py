@@ -25,6 +25,7 @@ from pharmpy.internals.math import (
     round_and_keep_sum,
     round_to_n_sigdig,
     se_delta_method,
+    symmetric_to_flattened,
     triangular,
     triangular_root,
 )
@@ -50,6 +51,17 @@ def test_flattened_to_symmetric():
     assert_array_equal(flattened_to_symmetric([1.0, 1.5, 2.0]), np.array([[1.0, 1.5], [1.5, 2.0]]))
     A = flattened_to_symmetric([1.0, 1.5, 2.0, -1.0, 3.0, 5.5])
     assert_array_equal(A, np.array([[1.0, 1.5, -1.0], [1.5, 2.0, 3.0], [-1.0, 3.0, 5.5]]))
+
+
+def test_symmetric_to_flattened():
+    assert_array_equal(np.array([1.0]), symmetric_to_flattened(np.array([[1.0]])))
+    assert_array_equal(
+        np.array([1.0, 1.5, 2.0]), symmetric_to_flattened(np.array([[1.0, 1.5], [1.5, 2.0]]))
+    )
+    A = np.array([1.0, 1.5, 2.0, -1.0, 3.0, 5.5])
+    assert_array_equal(
+        A, symmetric_to_flattened(np.array([[1.0, 1.5, -1.0], [1.5, 2.0, 3.0], [-1.0, 3.0, 5.5]]))
+    )
 
 
 def test_round_to_n_sigdig():
