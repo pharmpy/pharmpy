@@ -1,5 +1,4 @@
 import builtins
-from typing import Iterable
 
 from .model_feature import ModelFeature
 
@@ -66,31 +65,27 @@ class Peripherals(ModelFeature):
             return type_rank[self.type] < type_rank[other.type]
         return self.number < other.number
 
-
-def repr_many(features):
-    if not features:
-        return ''
-    if not isinstance(features, Iterable):
-        raise TypeError(f'Type of `features` must be an iterable: got {builtins.type(features)}')
-    if any(isinstance(feat, Peripherals) is False for feat in features):
-        raise TypeError('Incorrect types in `features`')
-    numbers_by_type = dict()
-    features = sorted(features)
-    for feat in features:
-        if feat.type not in numbers_by_type:
-            numbers_by_type[feat.type] = [feat.number]
-        else:
-            numbers_by_type[feat.type].append(feat.number)
-    peripherals_repr = []
-    for type, numbers in numbers_by_type.items():
-        numbers_sorted = sorted(numbers)
-        if len(numbers_sorted) == 1:
-            inner = f'{numbers_sorted[0]}'
-        elif all(b - a == 1 for a, b in zip(numbers_sorted, numbers_sorted[1:])):
-            inner = f'{numbers[0]}..{numbers[-1]}'
-        else:
-            inner = f"[{','.join(str(n) for n in numbers_sorted)}]"
-        if type != 'DRUG':
-            inner += f',{type}'
-        peripherals_repr.append(f'PERIPHERALS({inner})')
-    return ';'.join(peripherals_repr)
+    @staticmethod
+    def repr_many(features):
+        if len(features) == 1:
+            return repr(features[0])
+        numbers_by_type = dict()
+        features = sorted(features)
+        for feat in features:
+            if feat.type not in numbers_by_type:
+                numbers_by_type[feat.type] = [feat.number]
+            else:
+                numbers_by_type[feat.type].append(feat.number)
+        peripherals_repr = []
+        for type, numbers in numbers_by_type.items():
+            numbers_sorted = sorted(numbers)
+            if len(numbers_sorted) == 1:
+                inner = f'{numbers_sorted[0]}'
+            elif all(b - a == 1 for a, b in zip(numbers_sorted, numbers_sorted[1:])):
+                inner = f'{numbers[0]}..{numbers[-1]}'
+            else:
+                inner = f"[{','.join(str(n) for n in numbers_sorted)}]"
+            if type != 'DRUG':
+                inner += f',{type}'
+            peripherals_repr.append(f'PERIPHERALS({inner})')
+        return ';'.join(peripherals_repr)

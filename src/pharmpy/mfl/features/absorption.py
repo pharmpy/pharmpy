@@ -1,5 +1,4 @@
 import builtins
-from typing import Iterable
 
 from .model_feature import ModelFeature
 
@@ -55,12 +54,8 @@ class Absorption(ModelFeature):
 
         return _get_complexity(self) < _get_complexity(other)
 
-
-def repr_many(features):
-    if not features:
-        return ''
-    if not isinstance(features, Iterable):
-        raise TypeError(f'Type of `features` must be an iterable: got {type(features)}')
-    if any(isinstance(feat, Absorption) is False for feat in features):
-        raise TypeError('Incorrect types in `features`')
-    return f"ABSORPTION([{','.join(feat.type for feat in features)}])"
+    @staticmethod
+    def repr_many(features):
+        if len(features) == 1:
+            return repr(features[0])
+        return f"ABSORPTION([{','.join(feat.type for feat in features)}])"

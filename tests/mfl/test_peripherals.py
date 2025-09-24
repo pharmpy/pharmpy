@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.features.peripherals import Peripherals, repr_many
+from pharmpy.mfl.features.peripherals import Peripherals
 
 
 def test_init():
@@ -83,17 +83,12 @@ def test_lt():
 
 def test_repr_many():
     p_drug = [Peripherals.create(i) for i in range(3)]
-    assert repr_many(p_drug) == 'PERIPHERALS(0..2)'
+    assert Peripherals.repr_many(p_drug) == 'PERIPHERALS(0..2)'
     p_met = [Peripherals.create(i, 'MET') for i in range(1, 3)]
-    assert repr_many(p_met) == 'PERIPHERALS(1..2,MET)'
-    assert repr_many(p_drug + p_met) == 'PERIPHERALS(0..2);PERIPHERALS(1..2,MET)'
+    assert Peripherals.repr_many(p_met) == 'PERIPHERALS(1..2,MET)'
+    assert Peripherals.repr_many(p_drug + p_met) == 'PERIPHERALS(0..2);PERIPHERALS(1..2,MET)'
     p_non_consec = [Peripherals.create(i) for i in [0, 2, 5]]
-    assert repr_many(p_non_consec) == 'PERIPHERALS([0,2,5])'
-    assert repr_many([]) == ''
+    assert Peripherals.repr_many(p_non_consec) == 'PERIPHERALS([0,2,5])'
+    assert Peripherals.repr_many([]) == ''
     p_one = Peripherals.create(0)
-    assert repr_many([p_one]) == 'PERIPHERALS(0)'
-    with pytest.raises(TypeError):
-        repr_many(1)
-
-    with pytest.raises(TypeError):
-        repr_many([p_drug[0], 1])
+    assert Peripherals.repr_many([p_one]) == 'PERIPHERALS(0)'

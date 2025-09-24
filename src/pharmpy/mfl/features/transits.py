@@ -1,5 +1,4 @@
 import builtins
-from typing import Iterable
 
 from .model_feature import ModelFeature
 
@@ -64,31 +63,27 @@ class Transits(ModelFeature):
             return self.with_depot > other.with_depot
         return self.number < other.number
 
-
-def repr_many(features):
-    if not features:
-        return ''
-    if not isinstance(features, Iterable):
-        raise TypeError(f'Type of `features` must be an iterable: got {builtins.type(features)}')
-    if any(isinstance(feat, Transits) is False for feat in features):
-        raise TypeError('Incorrect types in `features`')
-    numbers_by_type = dict()
-    features = sorted(features)
-    for feat in features:
-        if feat.with_depot not in numbers_by_type:
-            numbers_by_type[feat.with_depot] = [feat.number]
-        else:
-            numbers_by_type[feat.with_depot].append(feat.number)
-    transits_repr = []
-    for with_depot, numbers in numbers_by_type.items():
-        numbers_sorted = sorted(numbers)
-        if len(numbers_sorted) == 1:
-            inner = f'{numbers_sorted[0]}'
-        else:
-            inner = f"[{','.join(str(n) for n in numbers_sorted)}]"
-        if with_depot:
-            inner += ',DEPOT'
-        else:
-            inner += ',NODEPOT'
-        transits_repr.append(f'TRANSITS({inner})')
-    return ';'.join(transits_repr)
+    @staticmethod
+    def repr_many(features):
+        if len(features) == 1:
+            return repr(features[0])
+        numbers_by_type = dict()
+        features = sorted(features)
+        for feat in features:
+            if feat.with_depot not in numbers_by_type:
+                numbers_by_type[feat.with_depot] = [feat.number]
+            else:
+                numbers_by_type[feat.with_depot].append(feat.number)
+        transits_repr = []
+        for with_depot, numbers in numbers_by_type.items():
+            numbers_sorted = sorted(numbers)
+            if len(numbers_sorted) == 1:
+                inner = f'{numbers_sorted[0]}'
+            else:
+                inner = f"[{','.join(str(n) for n in numbers_sorted)}]"
+            if with_depot:
+                inner += ',DEPOT'
+            else:
+                inner += ',NODEPOT'
+            transits_repr.append(f'TRANSITS({inner})')
+        return ';'.join(transits_repr)

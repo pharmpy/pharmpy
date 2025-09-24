@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.features.lagtime import LagTime, repr_many
+from pharmpy.mfl.features.lagtime import LagTime
 
 
 def test_init():
@@ -61,12 +61,5 @@ def test_lt():
 def test_repr_many():
     l1 = LagTime.create(on=True)
     l2 = LagTime.create(on=False)
-    assert repr_many([l1, l2]) == 'LAGTIME([OFF,ON])'
-    assert repr_many([l1]) == 'LAGTIME(ON)'
-    assert repr_many([]) == ''
-
-    with pytest.raises(TypeError):
-        repr_many(1)
-
-    with pytest.raises(TypeError):
-        repr_many([l1, 1])
+    assert LagTime.repr_many([l1, l2]) == 'LAGTIME([OFF,ON])'
+    assert LagTime.repr_many([l1]) == 'LAGTIME(ON)'

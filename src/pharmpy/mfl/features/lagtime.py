@@ -1,5 +1,3 @@
-from typing import Iterable
-
 from .model_feature import ModelFeature
 
 
@@ -46,17 +44,11 @@ class LagTime(ModelFeature):
             return False
         return self.on < other.on
 
-
-def repr_many(features):
-    if not features:
-        return ''
-    if not isinstance(features, Iterable):
-        raise TypeError(f'Type of `features` must be an iterable: got {type(features)}')
-    if any(isinstance(feat, LagTime) is False for feat in features):
-        raise TypeError('Incorrect types in `features`')
-    features = sorted(features)
-    if len(features) == 1:
-        return repr(features[0])
-    else:
-        inner = f"[{','.join('ON' if feat.on else 'OFF' for feat in features)}]"
-    return f'LAGTIME({inner})'
+    @staticmethod
+    def repr_many(features):
+        features = sorted(features)
+        if len(features) == 1:
+            return repr(features[0])
+        else:
+            inner = f"[{','.join('ON' if feat.on else 'OFF' for feat in features)}]"
+        return f'LAGTIME({inner})'

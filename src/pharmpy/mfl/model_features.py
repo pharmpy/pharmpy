@@ -5,10 +5,6 @@ from typing import Iterable, Sequence, Union
 from pharmpy.internals.immutable import Immutable
 
 from .features import Absorption, LagTime, ModelFeature, Peripherals, Transits
-from .features.absorption import repr_many as absorption_repr_many
-from .features.lagtime import repr_many as lagtime_repr_many
-from .features.peripherals import repr_many as peripherals_repr_many
-from .features.transits import repr_many as transits_repr_many
 
 
 class ModelFeatures(Immutable):
@@ -103,16 +99,16 @@ class ModelFeatures(Immutable):
     def __repr__(self):
         feature_repr = []
         if self.absorption:
-            absorption_repr = absorption_repr_many(self.absorption.features)
+            absorption_repr = Absorption.repr_many(self.absorption.features)
             feature_repr.append(absorption_repr)
         if self.transits:
-            transits_repr = transits_repr_many(self.transits.features)
+            transits_repr = Transits.repr_many(self.transits.features)
             feature_repr.append(transits_repr)
         if self.lagtime:
-            lagtime_repr = lagtime_repr_many(self.lagtime.features)
+            lagtime_repr = LagTime.repr_many(self.lagtime.features)
             feature_repr.append(lagtime_repr)
         if self.peripherals:
-            peripherals_repr = peripherals_repr_many(self.peripherals.features)
+            peripherals_repr = Peripherals.repr_many(self.peripherals.features)
             feature_repr.append(peripherals_repr)
         return ';'.join(feature_repr)
 

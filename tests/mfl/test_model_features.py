@@ -12,6 +12,9 @@ class ModelFeatureX(ModelFeature):
     def expand(self, model):
         return self
 
+    def repr_many(self):
+        return ''
+
 
 def test_init():
     mf1 = ModelFeatures(tuple())

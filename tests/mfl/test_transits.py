@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.features.transits import Transits, repr_many
+from pharmpy.mfl.features.transits import Transits
 
 
 def test_init():
@@ -80,15 +80,12 @@ def test_lt():
 
 def test_repr_many():
     t_depot = [Transits.create(i) for i in range(3)]
-    assert repr_many(t_depot) == 'TRANSITS([0,1,2],DEPOT)'
+    assert Transits.repr_many(t_depot) == 'TRANSITS([0,1,2],DEPOT)'
     t_nodepot = [Transits.create(i, False) for i in range(1, 3)]
-    assert repr_many(t_nodepot) == 'TRANSITS([1,2],NODEPOT)'
-    assert repr_many(t_depot + t_nodepot) == 'TRANSITS([0,1,2],DEPOT);TRANSITS([1,2],NODEPOT)'
-    assert repr_many([]) == ''
+    assert Transits.repr_many(t_nodepot) == 'TRANSITS([1,2],NODEPOT)'
+    assert (
+        Transits.repr_many(t_depot + t_nodepot) == 'TRANSITS([0,1,2],DEPOT);TRANSITS([1,2],NODEPOT)'
+    )
     t_one = Transits.create(0)
-    assert repr_many([t_one]) == 'TRANSITS(0,DEPOT)'
-    with pytest.raises(TypeError):
-        repr_many(1)
-
-    with pytest.raises(TypeError):
-        repr_many([t_depot[0], 1])
+    assert Transits.repr_many([t_one]) == 'TRANSITS(0,DEPOT)'
+    assert Transits.repr_many([t_one] + t_nodepot) == 'TRANSITS(0,DEPOT);TRANSITS([1,2],NODEPOT)'

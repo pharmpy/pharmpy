@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.features.absorption import ABSORPTION_TYPES, Absorption, repr_many
+from pharmpy.mfl.features.absorption import ABSORPTION_TYPES, Absorption
 
 
 def test_init():
@@ -74,11 +74,5 @@ def test_repr_many():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
     a3 = Absorption.create('SEQ-ZO-FO')
-    assert repr_many([a1, a2, a3]) == 'ABSORPTION([FO,ZO,SEQ-ZO-FO])'
-    assert repr_many([]) == ''
-
-    with pytest.raises(TypeError):
-        repr_many(1)
-
-    with pytest.raises(TypeError):
-        repr_many([a1, 1])
+    assert Absorption.repr_many([a1, a2, a3]) == 'ABSORPTION([FO,ZO,SEQ-ZO-FO])'
+    assert Absorption.repr_many([a1]) == 'ABSORPTION(FO)'
