@@ -75,6 +75,7 @@ def repr_many(features):
     if any(isinstance(feat, Peripherals) is False for feat in features):
         raise TypeError('Incorrect types in `features`')
     numbers_by_type = dict()
+    features = sorted(features)
     for feat in features:
         if feat.type not in numbers_by_type:
             numbers_by_type[feat.type] = [feat.number]

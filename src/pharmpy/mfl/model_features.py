@@ -4,9 +4,10 @@ from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
 
-from .features import Absorption, ModelFeature, Peripherals
+from .features import Absorption, ModelFeature, Peripherals, Transits
 from .features.absorption import repr_many as absorption_repr_many
 from .features.peripherals import repr_many as peripherals_repr_many
+from .features.transits import repr_many as transits_repr_many
 
 
 class ModelFeatures(Immutable):
@@ -21,8 +22,8 @@ class ModelFeatures(Immutable):
         if other_types:
             raise TypeError(f'Incorrect types in `features`: got {sorted(other_types)}')
 
-        type_to_group = {Absorption: 'absorption', Peripherals: 'peripherals'}
-        grouped_features = {'absorption': [], 'peripherals': []}
+        type_to_group = {Absorption: 'absorption', Transits: 'transits', Peripherals: 'peripherals'}
+        grouped_features = {group: [] for group in type_to_group.values()}
         for feature in features:
             group = type_to_group.get(type(feature))
             if group is None:
@@ -43,19 +44,25 @@ class ModelFeatures(Immutable):
 
     @property
     def absorption(self):
-        absorption_features = []
-        for feature in self.features:
-            if isinstance(feature, Absorption):
-                absorption_features.append(feature)
-        return ModelFeatures.create(absorption_features)
+        features = self._filter_by_type(Absorption)
+        return ModelFeatures.create(features)
+
+    @property
+    def transits(self):
+        features = self._filter_by_type(Transits)
+        return ModelFeatures.create(features)
 
     @property
     def peripherals(self):
-        peripheral_features = []
+        features = self._filter_by_type(Peripherals)
+        return ModelFeatures.create(features)
+
+    def _filter_by_type(self, type):
+        features = []
         for feature in self.features:
-            if isinstance(feature, Peripherals):
-                peripheral_features.append(feature)
-        return ModelFeatures.create(peripheral_features)
+            if isinstance(feature, type):
+                features.append(feature)
+        return features
 
     def __add__(self, other: Union[ModelFeature, ModelFeatures]):
         if isinstance(other, ModelFeature):
@@ -87,6 +94,9 @@ class ModelFeatures(Immutable):
         if self.absorption:
             absorption_repr = absorption_repr_many(self.absorption.features)
             feature_repr.append(absorption_repr)
+        if self.transits:
+            transits_repr = transits_repr_many(self.transits.features)
+            feature_repr.append(transits_repr)
         if self.peripherals:
             peripherals_repr = peripherals_repr_many(self.peripherals.features)
             feature_repr.append(peripherals_repr)
