@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.peripherals import Peripherals, repr_many
+from pharmpy.mfl.features.peripherals import Peripherals, repr_many
 
 
 def test_init():

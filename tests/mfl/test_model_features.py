@@ -1,9 +1,7 @@
 import pytest
 
-from pharmpy.mfl.absorption import Absorption
-from pharmpy.mfl.model_feature import ModelFeature
+from pharmpy.mfl.features import Absorption, ModelFeature, Peripherals
 from pharmpy.mfl.model_features import ModelFeatures
-from pharmpy.mfl.peripherals import Peripherals
 
 
 class ModelFeatureX(ModelFeature):

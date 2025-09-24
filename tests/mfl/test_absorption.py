@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.absorption import ABSORPTION_TYPES, Absorption, repr_many
+from pharmpy.mfl.features.absorption import ABSORPTION_TYPES, Absorption, repr_many
 
 
 def test_init():

@@ -4,11 +4,9 @@ from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
 
-from .absorption import Absorption
-from .absorption import repr_many as absorption_repr_many
-from .model_feature import ModelFeature
-from .peripherals import Peripherals
-from .peripherals import repr_many as peripherals_repr_many
+from .features import Absorption, ModelFeature, Peripherals
+from .features.absorption import repr_many as absorption_repr_many
+from .features.peripherals import repr_many as peripherals_repr_many
 
 
 class ModelFeatures(Immutable):
