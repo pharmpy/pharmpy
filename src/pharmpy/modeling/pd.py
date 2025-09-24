@@ -153,7 +153,7 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
         SLOPE⋅A_CENTRAL(t)
-        ────────────────── + 1
+        ──────────────────
     E =         VC
 
     """
