@@ -189,19 +189,17 @@ def _add_drug_effect(model: Model, expr: str, conc):
     if expr == "linear":
         s = Expr.symbol("SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
-        E = Assignment(Expr.symbol('E'), 1 + (s * conc))
+        E = Assignment(Expr.symbol('E'), s * conc)
     elif expr == "emax":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
-        E = Assignment(Expr.symbol("E"), 1 + (emax * conc / (ec50 + conc)))
+        E = Assignment(Expr.symbol("E"), emax * conc / (ec50 + conc))
     elif expr == "step":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        E = Assignment(
-            Expr.symbol("E"), Expr.piecewise((Expr.integer(1), conc <= 0), (1 + emax, True))
-        )
+        E = Assignment(Expr.symbol("E"), Expr.piecewise((Expr.integer(0), conc <= 0), (emax, True)))
     elif expr == "sigmoid":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
@@ -213,7 +211,7 @@ def _add_drug_effect(model: Model, expr: str, conc):
         E = Assignment.create(
             Expr.symbol("E"),
             Expr.piecewise(
-                ((1 + (emax * conc**n / (ec50**n + conc**n))), conc > 0), (Expr.integer(1), True)
+                ((emax * conc**n / (ec50**n + conc**n)), conc > 0), (Expr.integer(0), True)
             ),
         )
     elif expr == "loglin":
@@ -245,12 +243,12 @@ def _add_response(model: Model, expr: str):
         if r_index is not None:
             assignment = model.statements[r_index]
             assert isinstance(assignment, Assignment)
-            expression = assignment.expression * Expr.symbol("E")
+            expression = assignment.expression * (Expr.integer(1) + Expr.symbol("E"))
             assignment = Assignment(Expr.symbol("R"), expression)
             statements = model.statements[0:r_index] + assignment + model.statements[r_index + 1 :]
         else:
             b = Expr.symbol("B")
-            assignment = Assignment(Expr.symbol("R"), b * Expr.symbol("E"))
+            assignment = Assignment(Expr.symbol("R"), b * (Expr.integer(1) + Expr.symbol("E")))
             statements = model.statements + assignment
         model = model.replace(statements=statements)
     return model

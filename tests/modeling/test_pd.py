@@ -88,7 +88,7 @@ def _test_effect_models(model, expr, variable):
     if expr == 'linear':
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-3] == Assignment.create(e, 1 + S("SLOPE") * variable)
+        assert model.statements.after_odes[-3] == Assignment.create(e, S("SLOPE") * variable)
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), resp + resp * S("epsilon_p")
         )
@@ -97,7 +97,7 @@ def _test_effect_models(model, expr, variable):
         assert model.statements[2] == Assignment.create(e0, S("POP_B"))
         assert model.statements[1] == Assignment.create(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-3] == Assignment.create(
-            e, 1 + (emax * variable) / (ec50 + variable)
+            e, (emax * variable) / (ec50 + variable)
         )
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), resp + resp * S("epsilon_p")
@@ -111,10 +111,10 @@ def _test_effect_models(model, expr, variable):
             e,
             Expr.piecewise(
                 (
-                    1 + ((emax * variable ** S("N")) / (ec50 ** S("N") + variable ** S("N"))),
+                    (emax * variable ** S("N")) / (ec50 ** S("N") + variable ** S("N")),
                     variable > 0,
                 ),
-                (1, True),
+                (0, True),
             ),
         )
         assert model.statements.after_odes[-1] == Assignment.create(
@@ -125,7 +125,7 @@ def _test_effect_models(model, expr, variable):
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(emax, S("POP_E_MAX"))
         assert model.statements.after_odes[-3] == Assignment.create(
-            e, Expr.piecewise((1, variable <= 0), (1 + emax, True))
+            e, Expr.piecewise((0, variable <= 0), (emax, True))
         )
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), resp + resp * S("epsilon_p")
