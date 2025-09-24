@@ -25,8 +25,17 @@ from pharmpy.internals.math import (
     round_and_keep_sum,
     round_to_n_sigdig,
     se_delta_method,
+    triangular,
     triangular_root,
 )
+
+
+def test_triangular():
+    assert triangular(1) == 1
+    assert triangular(2) == 3
+    assert triangular(3) == 6
+    assert triangular(4) == 10
+    assert triangular(5) == 15
 
 
 def test_triangular_root():
