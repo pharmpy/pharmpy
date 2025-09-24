@@ -12,9 +12,10 @@ from pharmpy.modeling import (
     calculate_individual_shrinkage,
     calculate_pk_parameters_statistics,
     check_parameters_near_bounds,
+    insert_ebes_into_dataset,
     set_iiv_on_ruv,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools import load_example_modelfit_results, read_modelfit_results
 
 
 def test_calculate_eta_shrinkage(load_model_for_test, testdata):
@@ -186,3 +187,28 @@ def test_check_parameters_near_bounds(load_model_for_test, testdata):
         check_parameters_near_bounds(nearbound, res.parameter_estimates),
         correct,
     )
+
+
+def test_insert_ebes_into_dataset(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    results = load_example_modelfit_results("pheno")
+    ebes = results.individual_estimates
+    etcs = results.individual_estimates_covariance
+    model2 = insert_ebes_into_dataset(model, ebes, etcs)
+    names = [
+        'ID',
+        'TIME',
+        'AMT',
+        'WGT',
+        'APGR',
+        'DV',
+        'FA1',
+        'FA2',
+        'ET_1',
+        'ET_2',
+        'ETC_1_1',
+        'ETC_2_1',
+        'ETC_2_2',
+    ]
+    assert model2.datainfo.names == names
+    assert list(model2.dataset.columns) == names

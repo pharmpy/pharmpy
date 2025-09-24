@@ -250,6 +250,7 @@ from .results import (
     calculate_pk_parameters_statistics,
     check_high_correlations,
     check_parameters_near_bounds,
+    insert_ebes_into_dataset,
 )
 from .tmdd import set_tmdd
 from .units import get_unit_of
@@ -391,6 +392,7 @@ __all__ = [
     'has_zero_order_absorption',
     'has_zero_order_elimination',
     'infer_datatypes',
+    'insert_ebes_into_dataset',
     'is_linearized',
     'is_real',
     'is_simulation_model',

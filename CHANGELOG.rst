@@ -5,6 +5,7 @@ New features
 ============
 
 * Add parameter scatter matrix plot to bootstrap
+* Add :code:`modeling.insert_ebes_into_dataset`
 
 Changes
 =======
