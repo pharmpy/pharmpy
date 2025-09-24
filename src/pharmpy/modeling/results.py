@@ -813,12 +813,10 @@ def insert_ebes_into_dataset(
     ----------
     model : Model
         Pharmpy model
-    values : pd.Series
-        Series of values with index a subset of parameter names.
-    zero_limit : float
-        maximum distance to 0 bounds
-    significant_digits : int
-        maximum distance to non-zero bounds in number of significant digits
+    individual_estimates : pd.DataFrame
+        Individual eta estimates (EBEs). Could be taken directly from ModelfitResults.
+    individual_estimates_covariance : pd.DataFrame
+        Uncertainties of individual estimates (ETCs). Could be taken directly from ModelfitResults.
 
     Returns
     -------
