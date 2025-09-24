@@ -7,10 +7,13 @@ from pharmpy.modeling import (
     set_initial_estimates,
     set_simulation,
 )
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool
 from pharmpy.tools.vpc.results import calculate_results
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
+
+from .frem import prepare_evaluation_model, prepare_frem_model
 
 
 def create_workflow(
@@ -18,6 +21,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     samples: int = 20,
     stratify: Optional[str] = None,
+    frem: bool = False,
 ):
     """Run VPC
 
@@ -31,6 +35,8 @@ def create_workflow(
         Number of samples
     stratify : str
         Column to stratify on
+    frem : bool
+        Should we run the special vpc procedure a FREM model?
 
     Returns
     -------
@@ -50,6 +56,14 @@ def create_workflow(
 
     start_task = Task('start', start, model, results)
     wb.add_task(start_task)
+
+    if frem:
+        frem_prep_eval_task = Task('prepare_frem_evaluation', prepare_evaluation_model)
+        wb.add_task(frem_prep_eval_task, predecessors=[start_task])
+        eval_wfl = create_fit_workflow(n=1)
+        wb.insert_workflow(eval_wfl, predecessors=[frem_prep_eval_task])
+        frem_prep_task = Task('prepare_frem_model', prepare_frem_model)
+        wb.add_task(frem_prep_task, predecessors=wb.output_tasks)
 
     simulation_task = Task('simulation', simulation, samples)
     wb.add_task(simulation_task, predecessors=wb.output_tasks)
