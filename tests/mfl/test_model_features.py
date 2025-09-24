@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.features import Absorption, ModelFeature, Peripherals, Transits
+from pharmpy.mfl.features import Absorption, LagTime, ModelFeature, Peripherals, Transits
 from pharmpy.mfl.model_features import ModelFeatures
 
 
@@ -43,6 +43,11 @@ def test_create():
     t1 = Transits.create(0)
     mf5 = ModelFeatures.create([a1, p1, t1, a2])
     assert mf5.features == (a1, a2, t1, p1)
+
+    l1 = LagTime.create(on=False)
+    l2 = LagTime.create(on=True)
+    mf6 = ModelFeatures.create([a1, l1, p1, l2, a2])
+    assert mf6.features == (a1, a2, l1, l2, p1)
 
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)
@@ -99,6 +104,16 @@ def test_transits():
     mf = ModelFeatures.create([a1, t2, a2, t1])
     assert mf.features == (a1, a2, t1, t2)
     assert mf.transits.features == (t1, t2)
+
+
+def test_lagtime():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    l1 = LagTime.create(on=False)
+    l2 = LagTime.create(on=True)
+    mf = ModelFeatures.create([a1, l2, a2, l1])
+    assert mf.features == (a1, a2, l1, l2)
+    assert mf.lagtime.features == (l1, l2)
 
 
 def test_peripherals():
@@ -192,6 +207,15 @@ def test_eq():
                 Transits.create(3, False),
             ],
             'TRANSITS([0,1,3],DEPOT);TRANSITS([0,1,3],NODEPOT);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
+        ),
+        (
+            [
+                Absorption.create('FO'),
+                Absorption.create('ZO'),
+                LagTime.create(on=False),
+                LagTime.create(on=True),
+            ],
+            'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
         ),
     ),
 )

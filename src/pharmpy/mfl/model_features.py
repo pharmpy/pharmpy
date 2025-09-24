@@ -4,8 +4,9 @@ from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
 
-from .features import Absorption, ModelFeature, Peripherals, Transits
+from .features import Absorption, LagTime, ModelFeature, Peripherals, Transits
 from .features.absorption import repr_many as absorption_repr_many
+from .features.lagtime import repr_many as lagtime_repr_many
 from .features.peripherals import repr_many as peripherals_repr_many
 from .features.transits import repr_many as transits_repr_many
 
@@ -22,7 +23,12 @@ class ModelFeatures(Immutable):
         if other_types:
             raise TypeError(f'Incorrect types in `features`: got {sorted(other_types)}')
 
-        type_to_group = {Absorption: 'absorption', Transits: 'transits', Peripherals: 'peripherals'}
+        type_to_group = {
+            Absorption: 'absorption',
+            Transits: 'transits',
+            LagTime: 'lagtime',
+            Peripherals: 'peripherals',
+        }
         grouped_features = {group: [] for group in type_to_group.values()}
         for feature in features:
             group = type_to_group.get(type(feature))
@@ -50,6 +56,11 @@ class ModelFeatures(Immutable):
     @property
     def transits(self):
         features = self._filter_by_type(Transits)
+        return ModelFeatures.create(features)
+
+    @property
+    def lagtime(self):
+        features = self._filter_by_type(LagTime)
         return ModelFeatures.create(features)
 
     @property
@@ -97,6 +108,9 @@ class ModelFeatures(Immutable):
         if self.transits:
             transits_repr = transits_repr_many(self.transits.features)
             feature_repr.append(transits_repr)
+        if self.lagtime:
+            lagtime_repr = lagtime_repr_many(self.lagtime.features)
+            feature_repr.append(lagtime_repr)
         if self.peripherals:
             peripherals_repr = peripherals_repr_many(self.peripherals.features)
             feature_repr.append(peripherals_repr)
