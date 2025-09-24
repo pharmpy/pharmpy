@@ -7,6 +7,8 @@ from pharmpy.internals.immutable import Immutable
 from .absorption import Absorption
 from .absorption import repr_many as absorption_repr_many
 from .model_feature import ModelFeature
+from .peripherals import Peripherals
+from .peripherals import repr_many as peripherals_repr_many
 
 
 class ModelFeatures(Immutable):
@@ -21,15 +23,16 @@ class ModelFeatures(Immutable):
         if other_types:
             raise TypeError(f'Incorrect types in `features`: got {sorted(other_types)}')
 
-        feature_map = {'absorption': []}
-        for feat in features:
-            if isinstance(feat, Absorption):
-                if feat not in feature_map['absorption']:
-                    feature_map['absorption'].append(feat)
-            else:
+        type_to_group = {Absorption: 'absorption', Peripherals: 'peripherals'}
+        grouped_features = {'absorption': [], 'peripherals': []}
+        for feature in features:
+            group = type_to_group.get(type(feature))
+            if group is None:
                 raise NotImplementedError
+            if feature not in grouped_features[group]:
+                grouped_features[group].append(feature)
 
-        features = _flatten([sorted(value) for value in feature_map.values()])
+        features = _flatten([sorted(value) for value in grouped_features.values()])
         return cls(features=tuple(features))
 
     def replace(self, **kwargs) -> ModelFeatures:
@@ -47,6 +50,14 @@ class ModelFeatures(Immutable):
             if isinstance(feature, Absorption):
                 absorption_features.append(feature)
         return ModelFeatures.create(absorption_features)
+
+    @property
+    def peripherals(self):
+        peripheral_features = []
+        for feature in self.features:
+            if isinstance(feature, Peripherals):
+                peripheral_features.append(feature)
+        return ModelFeatures.create(peripheral_features)
 
     def __add__(self, other: Union[ModelFeature, ModelFeatures]):
         if isinstance(other, ModelFeature):
@@ -74,8 +85,13 @@ class ModelFeatures(Immutable):
         return all(feat1 == feat2 for feat1, feat2 in zip(self.features, other.features))
 
     def __repr__(self):
-        absorption_repr = absorption_repr_many(self.absorption.features)
-        feature_repr = [absorption_repr]
+        feature_repr = []
+        if self.absorption:
+            absorption_repr = absorption_repr_many(self.absorption.features)
+            feature_repr.append(absorption_repr)
+        if self.peripherals:
+            peripherals_repr = peripherals_repr_many(self.peripherals.features)
+            feature_repr.append(peripherals_repr)
         return ';'.join(feature_repr)
 
 

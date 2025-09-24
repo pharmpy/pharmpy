@@ -3,6 +3,7 @@ import pytest
 from pharmpy.mfl.absorption import Absorption
 from pharmpy.mfl.model_feature import ModelFeature
 from pharmpy.mfl.model_features import ModelFeatures
+from pharmpy.mfl.peripherals import Peripherals
 
 
 class ModelFeatureX(ModelFeature):
@@ -36,6 +37,10 @@ def test_create():
     mf3 = ModelFeatures.create([a1, a2, a1])
     assert mf3.features == (a1, a2)
     assert len(mf3) == 2
+
+    p1 = Peripherals.create(0)
+    mf4 = ModelFeatures.create([a1, p1, a2])
+    assert mf4.features == (a1, a2, p1)
 
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)
@@ -84,6 +89,16 @@ def test_absorption():
     assert mf2.absorption.features == (a1, a2)
 
 
+def test_peripherals():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    p1 = Peripherals.create(0)
+    p2 = Peripherals.create(0, 'MET')
+    mf = ModelFeatures.create([a1, p2, a2, p1])
+    assert mf.features == (a1, a2, p1, p2)
+    assert mf.peripherals.features == (p1, p2)
+
+
 def test_add():
     a1 = Absorption.create('FO')
     mf1 = ModelFeatures.create([a1])
@@ -125,9 +140,35 @@ def test_eq():
     assert mf1 != 1
 
 
-def test_repr():
-    a1 = Absorption.create('FO')
-    a2 = Absorption.create('SEQ-ZO-FO')
-    a3 = Absorption.create('ZO')
-    mf = ModelFeatures.create([a1, a2, a3])
-    assert repr(mf) == 'ABSORPTION([FO,ZO,SEQ-ZO-FO])'
+@pytest.mark.parametrize(
+    'features, expected',
+    (
+        (
+            [Absorption.create('FO'), Absorption.create('SEQ-ZO-FO'), Absorption.create('ZO')],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO])',
+        ),
+        (
+            [
+                Absorption.create('FO'),
+                Peripherals.create(0),
+                Peripherals.create(1),
+                Peripherals.create(2),
+                Absorption.create('ZO'),
+            ],
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+        ),
+        (
+            [
+                Absorption.create('FO'),
+                Peripherals.create(0),
+                Peripherals.create(1),
+                Peripherals.create(0, 'MET'),
+                Absorption.create('ZO'),
+            ],
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
+        ),
+    ),
+)
+def test_repr(features, expected):
+    mf = ModelFeatures.create(features)
+    assert repr(mf) == expected
