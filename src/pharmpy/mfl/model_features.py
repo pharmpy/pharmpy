@@ -4,7 +4,7 @@ from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
 
-from .features import Absorption, LagTime, ModelFeature, Peripherals, Transits
+from .features import Absorption, Covariate, LagTime, ModelFeature, Peripherals, Transits
 
 
 class ModelFeatures(Immutable):
@@ -19,16 +19,16 @@ class ModelFeatures(Immutable):
         if other_types:
             raise TypeError(f'Incorrect types in `features`: got {sorted(other_types)}')
 
-        type_to_group = {
-            Absorption: 'absorption',
-            Transits: 'transits',
-            LagTime: 'lagtime',
-            Peripherals: 'peripherals',
+        grouped_features = {
+            Absorption: [],
+            Transits: [],
+            LagTime: [],
+            Peripherals: [],
+            Covariate: [],
         }
-        grouped_features = {group: [] for group in type_to_group.values()}
         for feature in features:
-            group = type_to_group.get(type(feature))
-            if group is None:
+            group = type(feature)
+            if group not in grouped_features.keys():
                 raise NotImplementedError
             if feature not in grouped_features[group]:
                 grouped_features[group].append(feature)
@@ -64,6 +64,11 @@ class ModelFeatures(Immutable):
         features = self._filter_by_type(Peripherals)
         return ModelFeatures.create(features)
 
+    @property
+    def covariates(self):
+        features = self._filter_by_type(Covariate)
+        return ModelFeatures.create(features)
+
     def _filter_by_type(self, type):
         features = []
         for feature in self.features:
@@ -82,6 +87,7 @@ class ModelFeatures(Immutable):
             return NotImplemented
 
     def __radd__(self, other: Union[ModelFeature, ModelFeatures]):
+        # ModelFeatures.create has a canonical order
         return self + other
 
     def __len__(self):
@@ -110,6 +116,9 @@ class ModelFeatures(Immutable):
         if self.peripherals:
             peripherals_repr = Peripherals.repr_many(self.peripherals.features)
             feature_repr.append(peripherals_repr)
+        if self.covariates:
+            covariates_repr = Covariate.repr_many(self.covariates.features)
+            feature_repr.append(covariates_repr)
         return ';'.join(feature_repr)
 
 

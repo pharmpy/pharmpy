@@ -4,8 +4,8 @@ from pharmpy.mfl.features.peripherals import Peripherals
 
 
 def test_init():
-    absorption = Peripherals(0, 'DRUG')
-    assert absorption.args == (0, 'DRUG')
+    p1 = Peripherals(0, 'DRUG')
+    assert p1.args == (0, 'DRUG')
 
 
 def test_create():

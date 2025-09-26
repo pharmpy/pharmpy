@@ -15,5 +15,5 @@ class ModelFeature(Immutable):
 
     @staticmethod
     @abstractmethod
-    def repr_many():
+    def repr_many(features):
         pass

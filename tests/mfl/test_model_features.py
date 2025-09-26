@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.mfl.features import Absorption, LagTime, ModelFeature, Peripherals, Transits
+from pharmpy.mfl.features import Absorption, Covariate, LagTime, ModelFeature, Peripherals, Transits
 from pharmpy.mfl.model_features import ModelFeatures
 
 
@@ -51,6 +51,10 @@ def test_create():
     l2 = LagTime.create(on=True)
     mf6 = ModelFeatures.create([a1, l1, p1, l2, a2])
     assert mf6.features == (a1, a2, l1, l2, p1)
+
+    c1 = Covariate.create(parameter='CL', covariate='WGT', fp='exp')
+    mf7 = ModelFeatures.create([a1, l1, p1, c1, a2])
+    assert mf7.features == (a1, a2, l1, p1, c1)
 
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)
@@ -127,6 +131,16 @@ def test_peripherals():
     mf = ModelFeatures.create([a1, p2, a2, p1])
     assert mf.features == (a1, a2, p1, p2)
     assert mf.peripherals.features == (p1, p2)
+
+
+def test_covariates():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    c1 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
+    c2 = Covariate.create(parameter='VC', covariate='WGT', fp='EXP')
+    mf = ModelFeatures.create([a1, c2, a2, c1])
+    assert mf.features == (a1, a2, c1, c2)
+    assert mf.covariates.features == (c1, c2)
 
 
 def test_add():
@@ -219,6 +233,15 @@ def test_eq():
                 LagTime.create(on=True),
             ],
             'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
+        ),
+        (
+            [
+                Absorption.create('FO'),
+                Absorption.create('ZO'),
+                Covariate.create(parameter='CL', covariate='WGT', fp='EXP'),
+                Covariate.create(parameter='VC', covariate='WGT', fp='EXP'),
+            ],
+            'ABSORPTION([FO,ZO]);COVARIATE([CL,VC],WGT,EXP,*)',
         ),
     ),
 )
