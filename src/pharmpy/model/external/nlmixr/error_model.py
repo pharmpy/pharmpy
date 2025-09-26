@@ -1,5 +1,3 @@
-from typing import Union
-
 import pharmpy.model
 from pharmpy.basic.expr import Expr
 from pharmpy.deps import sympy
@@ -271,9 +269,7 @@ def find_aliases(symbol: str, model: Model, aliases: set = None) -> list:
     return aliases
 
 
-def convert_eps_to_sigma(
-    expr: Union[sympy.Symbol, sympy.Mul], model: pharmpy.model.Model
-) -> Union[sympy.Symbol, sympy.Mul]:
+def convert_eps_to_sigma(expr: Expr, model: pharmpy.model.Model) -> Expr:
     """
     Change the use of epsilon names to sigma names instead. Mostly used for
     converting NONMEM format to nlmxir2
