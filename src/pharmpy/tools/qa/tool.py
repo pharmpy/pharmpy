@@ -1,5 +1,6 @@
 from typing import Literal, Optional
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -135,6 +136,9 @@ def create_results(context, *mes):
     res_dict['dofv'] = dofv_table
 
     for i, me in enumerate(me_cands):
+        if np.isnan(me.modelfit_results.ofv):
+            context.log_warning(f'Model {me.model.name} has no OFV, skipping results')
+            continue
         if 'boxcox' in me.model.name or 'tdist' in me.model.name:
             rng = context.create_rng(i)
             res_trans = create_eta_transformation_results(me, me_base, rng)
