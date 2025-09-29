@@ -4,7 +4,15 @@ from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
 
-from .features import Absorption, Covariate, LagTime, ModelFeature, Peripherals, Transits
+from .features import (
+    Absorption,
+    Covariate,
+    Elimination,
+    LagTime,
+    ModelFeature,
+    Peripherals,
+    Transits,
+)
 
 
 class ModelFeatures(Immutable):
@@ -23,6 +31,7 @@ class ModelFeatures(Immutable):
             Absorption: [],
             Transits: [],
             LagTime: [],
+            Elimination: [],
             Peripherals: [],
             Covariate: [],
         }
@@ -57,6 +66,11 @@ class ModelFeatures(Immutable):
     @property
     def lagtime(self):
         features = self._filter_by_type(LagTime)
+        return ModelFeatures.create(features)
+
+    @property
+    def elimination(self):
+        features = self._filter_by_type(Elimination)
         return ModelFeatures.create(features)
 
     @property
@@ -113,6 +127,9 @@ class ModelFeatures(Immutable):
         if self.lagtime:
             lagtime_repr = LagTime.repr_many(self.lagtime.features)
             feature_repr.append(lagtime_repr)
+        if self.elimination:
+            elimination_repr = Elimination.repr_many(self.elimination.features)
+            feature_repr.append(elimination_repr)
         if self.peripherals:
             peripherals_repr = Peripherals.repr_many(self.peripherals.features)
             feature_repr.append(peripherals_repr)

@@ -1,6 +1,14 @@
 import pytest
 
-from pharmpy.mfl.features import Absorption, Covariate, LagTime, ModelFeature, Peripherals, Transits
+from pharmpy.mfl.features import (
+    Absorption,
+    Covariate,
+    Elimination,
+    LagTime,
+    ModelFeature,
+    Peripherals,
+    Transits,
+)
 from pharmpy.mfl.model_features import ModelFeatures
 
 
@@ -55,6 +63,10 @@ def test_create():
     c1 = Covariate.create(parameter='CL', covariate='WGT', fp='exp')
     mf7 = ModelFeatures.create([a1, l1, p1, c1, a2])
     assert mf7.features == (a1, a2, l1, p1, c1)
+
+    e1 = Elimination.create(type='MM')
+    mf8 = ModelFeatures.create([e1, a2, a1])
+    assert mf8.features == (a1, a2, e1)
 
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)
@@ -121,6 +133,16 @@ def test_lagtime():
     mf = ModelFeatures.create([a1, l2, a2, l1])
     assert mf.features == (a1, a2, l1, l2)
     assert mf.lagtime.features == (l1, l2)
+
+
+def test_elimination():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    e1 = Elimination.create('FO')
+    e2 = Elimination.create('MM')
+    mf = ModelFeatures.create([a1, e2, a2, e1])
+    assert mf.features == (a1, a2, e1, e2)
+    assert mf.elimination.features == (e1, e2)
 
 
 def test_peripherals():
@@ -242,6 +264,15 @@ def test_eq():
                 Covariate.create(parameter='VC', covariate='WGT', fp='EXP'),
             ],
             'ABSORPTION([FO,ZO]);COVARIATE([CL,VC],WGT,EXP,*)',
+        ),
+        (
+            [
+                Elimination.create('MM'),
+                Elimination.create('FO'),
+                Absorption.create('FO'),
+                Absorption.create('ZO'),
+            ],
+            'ABSORPTION([FO,ZO]);ELIMINATION([FO,MM])',
         ),
     ),
 )
