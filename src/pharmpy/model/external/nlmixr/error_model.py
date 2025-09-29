@@ -23,7 +23,7 @@ class res_error_term:
         if self.res is not None:
             res_alias = set()
             for s in self.res.free_symbols:
-                all_a = find_aliases(s, self.model)
+                all_a = find_aliases(s, self.model)  # pyright: ignore [reportArgumentType]
                 for a in all_a:
                     if a not in res_alias:
                         res_alias.add(a)
@@ -62,7 +62,7 @@ class res_error_term:
                         sigma = convert_eps_to_sigma(symbol, self.model)
                         if self.model.parameters[str(sigma)].init == 1.0:
                             if self.model.parameters[str(sigma)].fix:
-                                term = term.subs(factor, 1)
+                                term = term.subs(factor._sympy_(), 1)
                         if factor != symbol:
                             sigma_alias = factor
 
@@ -100,7 +100,7 @@ class res_error_term:
                         # Remove the resulting symbol from the error term
                         term = convert_eps_to_sigma(term, self.model)
                         if sympy.sympify(ali) in term.free_symbols:
-                            term = term.subs(sympy.sympify(ali), 1)
+                            term = term.subs({sympy.sympify(ali): 1})
                             ali_removed = True
             if prop is True:
                 if not ali_removed:
@@ -186,7 +186,7 @@ class error:
                         self.dependencies.add(Expr(symbol))
 
 
-def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
+def is_number(symbol: Expr, model: pharmpy.model.Model) -> bool:
     alias = find_aliases(symbol, model)
     for a in alias:
         if a not in model.random_variables.free_symbols:
@@ -197,7 +197,7 @@ def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
     return False
 
 
-def find_aliases(symbol: str, model: Model, aliases: set = None) -> list:
+def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
     """
     Returns a list of all variable names that are the same as the inputed symbol
 
