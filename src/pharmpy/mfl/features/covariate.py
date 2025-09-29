@@ -74,9 +74,6 @@ class Covariate(ModelFeature):
     def args(self):
         return self.parameter, self.covariate, self.fp, self.op, self.optional
 
-    def expand(self, model):
-        return self
-
     def __repr__(self):
         optional = '?' if self.optional else ''
         inner = f'{self.parameter},{self.covariate},{self.fp},{self.op}'

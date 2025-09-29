@@ -35,9 +35,6 @@ class Transits(ModelFeature):
     def args(self):
         return self.number, self.with_depot
 
-    def expand(self, model):
-        return self
-
     def __repr__(self):
         inner = f'{self.number}'
         if self.with_depot:

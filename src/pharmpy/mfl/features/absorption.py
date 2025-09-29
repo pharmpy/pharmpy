@@ -13,6 +13,7 @@ class Absorption(ModelFeature):
     def create(cls, type):
         if not isinstance(type, str):
             raise TypeError(f'Type of `type` must be a string: got {builtins.type(type)}')
+        type = type.upper()
         if type not in ABSORPTION_TYPES:
             raise ValueError(f'Unknown `type`: got {type}')
         return cls(type=type)
@@ -28,9 +29,6 @@ class Absorption(ModelFeature):
     @property
     def args(self):
         return (self.type,)
-
-    def expand(self, model):
-        return self
 
     def __repr__(self):
         return f'ABSORPTION({self.type})'

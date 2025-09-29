@@ -39,9 +39,6 @@ class Peripherals(ModelFeature):
     def args(self):
         return self.number, self.type
 
-    def expand(self, model):
-        return self
-
     def __repr__(self):
         inner = f'{self.number}'
         if self.type != 'DRUG':

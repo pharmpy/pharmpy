@@ -9,10 +9,6 @@ class ModelFeature(Immutable):
     def args(self):
         pass
 
-    @abstractmethod
-    def expand(self, model):
-        pass
-
     @staticmethod
     @abstractmethod
     def repr_many(features):

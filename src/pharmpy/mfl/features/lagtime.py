@@ -23,9 +23,6 @@ class LagTime(ModelFeature):
     def args(self):
         return (self.on,)
 
-    def expand(self, model):
-        return self
-
     def __repr__(self):
         inner = 'ON' if self.on else 'OFF'
         return f'LAGTIME({inner})'

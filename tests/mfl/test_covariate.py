@@ -51,11 +51,6 @@ def test_replace():
         c1.replace(parameter=1)
 
 
-def test_expand():
-    c1 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
-    assert c1.expand(None) == c1
-
-
 def test_repr():
     c1 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
     assert repr(c1) == 'COVARIATE(CL,WGT,EXP,*)'

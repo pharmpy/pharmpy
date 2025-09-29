@@ -40,11 +40,6 @@ def test_replace():
         t1.replace(number='x')
 
 
-def test_expand():
-    t1 = Transits.create(0)
-    assert t1.expand(None) == t1
-
-
 def test_repr():
     t1 = Transits.create(0, True)
     assert repr(t1) == 'TRANSITS(0,DEPOT)'

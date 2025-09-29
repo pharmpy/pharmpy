@@ -43,11 +43,6 @@ def test_replace():
         p1.replace(number='x')
 
 
-def test_expand():
-    p1 = Peripherals.create(0)
-    assert p1.expand(None) == p1
-
-
 def test_repr():
     p1 = Peripherals.create(0, 'DRUG')
     assert repr(p1) == 'PERIPHERALS(0)'

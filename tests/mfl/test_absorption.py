@@ -1,6 +1,7 @@
 import pytest
 
-from pharmpy.mfl.features.absorption import ABSORPTION_TYPES, Absorption
+from pharmpy.mfl.features import Absorption
+from pharmpy.mfl.features.absorption import ABSORPTION_TYPES
 
 
 def test_init():
@@ -9,8 +10,8 @@ def test_init():
 
 
 def test_create():
-    absorption = Absorption.create('FO')
-    assert absorption.args == ('FO',)
+    a1 = Absorption.create('FO')
+    assert a1.args == ('FO',)
 
     with pytest.raises(TypeError):
         Absorption.create(1)
@@ -30,11 +31,6 @@ def test_replace():
 
     with pytest.raises(ValueError):
         absorption.replace(type='x')
-
-
-def test_expand():
-    absorption = Absorption.create('FO')
-    assert absorption.expand(None) == absorption
 
 
 def test_repr():

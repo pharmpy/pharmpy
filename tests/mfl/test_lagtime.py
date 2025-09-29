@@ -26,11 +26,6 @@ def test_replace():
         l1.replace(on=1)
 
 
-def test_expand():
-    l1 = LagTime.create(on=True)
-    assert l1.expand(None) == l1
-
-
 def test_repr():
     l1 = LagTime.create(on=True)
     assert repr(l1) == 'LAGTIME(ON)'
