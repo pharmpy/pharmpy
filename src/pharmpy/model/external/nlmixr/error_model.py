@@ -1,7 +1,6 @@
 import pharmpy.model
 from pharmpy.basic.expr import Expr
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model
 from pharmpy.modeling import get_thetas
 
@@ -53,10 +52,10 @@ class res_error_term:
         sigma = None
         sigma_alias = None
         for term in terms:
-            full_term = full_expression(term, self.model)
+            full_term = self.model.statements.error.full_expression(Expr(term))
             for factor in sympy.Mul.make_args(term):
                 factor = Expr(factor)
-                full_factor = full_expression(factor, self.model)
+                full_factor = self.model.statements.error.full_expression(factor)
                 all_symbols = full_factor.free_symbols.union(factor.free_symbols)
                 for symbol in all_symbols:
                     if str(symbol) in self.model.random_variables.epsilons.names:
@@ -196,33 +195,6 @@ def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
             if a_assign.expression.is_number():
                 return True
     return False
-
-
-def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy.Expr:
-    """
-    Return the full expression of an expression (used for model statements)
-
-    Parameters
-    ----------
-    expression : sympy.Expr
-        Expression to be expanded.
-    model : pharmpy.model.Model
-        A pharmpy mode object with the expression as a statement.
-
-    Returns
-    -------
-    expression : sympy.Expr
-        The fully expanded expression
-
-    """
-    if len(model.statements.after_odes) == 0:
-        statements = model.statements
-    else:
-        statements = model.statements.after_odes
-
-    for statement in reversed(statements):
-        expression = subs(expression, {statement.symbol: statement.expression}, simultaneous=True)
-    return expression
 
 
 def find_aliases(symbol: str, model: Model, aliases: set = None) -> list:
