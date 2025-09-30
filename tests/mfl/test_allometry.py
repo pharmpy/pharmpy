@@ -1,25 +1,23 @@
 import pytest
 
 from pharmpy.mfl.features import Allometry
+from pharmpy.mfl.model_features import ModelFeatures
 
 
 def test_init():
     a = Allometry(covariate='WT', reference=70.0)
     assert a.args == ('WT', 70.0)
-    assert a.covariate == 'WT'
-    assert a.reference == 70.0
+    assert a.args == (a.covariate, a.reference)
 
 
 def test_create():
     a1 = Allometry.create(covariate='wt')
     assert a1.args == ('WT', 70.0)
-    assert a1.covariate == 'WT'
-    assert a1.reference == 70.0
+    assert a1.args == (a1.covariate, a1.reference)
 
     a2 = Allometry.create(covariate='wt', reference=80)
     assert a2.args == ('WT', 80.0)
-    assert a2.covariate == 'WT'
-    assert a2.reference == 80.0
+    assert a2.args == (a2.covariate, a2.reference)
 
     with pytest.raises(TypeError):
         Allometry.create(1)
@@ -63,4 +61,5 @@ def test_eq():
 
 def test_repr_many():
     a = Allometry.create(covariate='WT')
-    assert Allometry.repr_many([a]) == repr(a)
+    mfl = ModelFeatures.create([a])
+    assert Allometry.repr_many(mfl) == repr(a)

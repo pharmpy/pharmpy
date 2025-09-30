@@ -60,11 +60,11 @@ class Peripherals(ModelFeature):
         return self.number < other.number
 
     @staticmethod
-    def repr_many(features):
+    def repr_many(mfl):
+        features = sorted(mfl.features)
         if len(features) == 1:
             return repr(features[0])
         numbers_by_type = dict()
-        features = sorted(features)
         for feat in features:
             if feat.type not in numbers_by_type:
                 numbers_by_type[feat.type] = [feat.number]

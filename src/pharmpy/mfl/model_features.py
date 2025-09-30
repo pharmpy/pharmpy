@@ -67,65 +67,54 @@ class ModelFeatures(Immutable):
 
     @property
     def absorption(self):
-        features = self._filter_by_type(Absorption)
-        return ModelFeatures.create(features)
+        return self._get_feature_type(Absorption)
 
     @property
     def transits(self):
-        features = self._filter_by_type(Transits)
-        return ModelFeatures.create(features)
+        return self._get_feature_type(Transits)
 
     @property
     def lagtime(self):
-        features = self._filter_by_type(LagTime)
-        return ModelFeatures.create(features)
+        return self._get_feature_type(LagTime)
 
     @property
     def elimination(self):
-        features = self._filter_by_type(Elimination)
-        return ModelFeatures.create(features)
+        return self._get_feature_type(Elimination)
 
     @property
     def peripherals(self):
-        features = self._filter_by_type(Peripherals)
-        return ModelFeatures.create(features)
+        return self._get_feature_type(Peripherals)
 
     @property
     def covariates(self):
-        features = self._filter_by_type(Covariate)
-        return ModelFeatures.create(features)
+        return self._get_feature_type(Covariate)
 
     @property
     def allometry(self):
-        features = self._filter_by_type(Allometry)
-        return ModelFeatures.create(features)
+        return self._get_feature_type(Allometry)
 
     @property
-    def direct_effect(self):
-        features = self._filter_by_type(DirectEffect)
-        return ModelFeatures.create(features)
+    def direct_effects(self):
+        return self._get_feature_type(DirectEffect)
 
     @property
-    def indirect_effect(self):
-        features = self._filter_by_type(IndirectEffect)
-        return ModelFeatures.create(features)
+    def indirect_effects(self):
+        return self._get_feature_type(IndirectEffect)
 
     @property
-    def effect_comp(self):
-        features = self._filter_by_type(EffectComp)
-        return ModelFeatures.create(features)
+    def effect_compartments(self):
+        return self._get_feature_type(EffectComp)
 
     @property
-    def metabolite(self):
-        features = self._filter_by_type(Metabolite)
-        return ModelFeatures.create(features)
+    def metabolites(self):
+        return self._get_feature_type(Metabolite)
 
-    def _filter_by_type(self, type):
+    def _get_feature_type(self, type):
         features = []
         for feature in self.features:
             if isinstance(feature, type):
                 features.append(feature)
-        return features
+        return ModelFeatures.create(features)
 
     def __add__(self, other: Union[ModelFeature, ModelFeatures]):
         if isinstance(other, ModelFeature):
@@ -156,37 +145,37 @@ class ModelFeatures(Immutable):
     def __repr__(self):
         feature_repr = []
         if self.absorption:
-            absorption_repr = Absorption.repr_many(self.absorption.features)
+            absorption_repr = Absorption.repr_many(self.absorption)
             feature_repr.append(absorption_repr)
         if self.transits:
-            transits_repr = Transits.repr_many(self.transits.features)
+            transits_repr = Transits.repr_many(self.transits)
             feature_repr.append(transits_repr)
         if self.lagtime:
-            lagtime_repr = LagTime.repr_many(self.lagtime.features)
+            lagtime_repr = LagTime.repr_many(self.lagtime)
             feature_repr.append(lagtime_repr)
         if self.elimination:
-            elimination_repr = Elimination.repr_many(self.elimination.features)
+            elimination_repr = Elimination.repr_many(self.elimination)
             feature_repr.append(elimination_repr)
         if self.peripherals:
-            peripherals_repr = Peripherals.repr_many(self.peripherals.features)
+            peripherals_repr = Peripherals.repr_many(self.peripherals)
             feature_repr.append(peripherals_repr)
         if self.covariates:
-            covariates_repr = Covariate.repr_many(self.covariates.features)
+            covariates_repr = Covariate.repr_many(self.covariates)
             feature_repr.append(covariates_repr)
         if self.allometry:
-            allometry_repr = Allometry.repr_many(self.allometry.features)
+            allometry_repr = Allometry.repr_many(self.allometry)
             feature_repr.append(allometry_repr)
-        if self.direct_effect:
-            direct_effect_repr = DirectEffect.repr_many(self.direct_effect.features)
+        if self.direct_effects:
+            direct_effect_repr = DirectEffect.repr_many(self.direct_effects)
             feature_repr.append(direct_effect_repr)
-        if self.indirect_effect:
-            indirect_effect_repr = IndirectEffect.repr_many(self.indirect_effect.features)
+        if self.indirect_effects:
+            indirect_effect_repr = IndirectEffect.repr_many(self.indirect_effects)
             feature_repr.append(indirect_effect_repr)
-        if self.effect_comp:
-            effect_comp_repr = EffectComp.repr_many(self.effect_comp.features)
+        if self.effect_compartments:
+            effect_comp_repr = EffectComp.repr_many(self.effect_compartments)
             feature_repr.append(effect_comp_repr)
-        if self.metabolite:
-            metabolite_repr = Metabolite.repr_many(self.metabolite.features)
+        if self.metabolites:
+            metabolite_repr = Metabolite.repr_many(self.metabolites)
             feature_repr.append(metabolite_repr)
 
         return ';'.join(feature_repr)

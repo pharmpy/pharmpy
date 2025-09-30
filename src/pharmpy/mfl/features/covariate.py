@@ -102,8 +102,8 @@ class Covariate(ModelFeature):
         return self.op < other.op
 
     @staticmethod
-    def repr_many(features):
-        features = sorted(features)
+    def repr_many(mfl):
+        features = sorted(mfl.features)
         if len(features) == 1:
             return repr(features[0])
 

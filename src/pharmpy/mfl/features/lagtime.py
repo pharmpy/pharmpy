@@ -42,8 +42,8 @@ class LagTime(ModelFeature):
         return self.on < other.on
 
     @staticmethod
-    def repr_many(features):
-        features = sorted(features)
+    def repr_many(mfl):
+        features = sorted(mfl.features)
         if len(features) == 1:
             return repr(features[0])
         else:

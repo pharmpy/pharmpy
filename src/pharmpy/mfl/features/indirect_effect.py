@@ -57,8 +57,8 @@ class IndirectEffect(ModelFeature):
         return type_rank[self.type] < type_rank[other.type]
 
     @staticmethod
-    def repr_many(features):
-        features = sorted(features)
+    def repr_many(mfl):
+        features = sorted(mfl.features)
         no_of_args = len(features[0].args)
 
         args_grouped = group_args([feature.args for feature in features], i=no_of_args)

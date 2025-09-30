@@ -3,11 +3,13 @@ import itertools
 import pytest
 
 from pharmpy.mfl.features import Covariate
+from pharmpy.mfl.model_features import ModelFeatures
 
 
 def test_init():
     c1 = Covariate('CL', 'VC', 'EXP', '*', False)
     assert c1.args == ('CL', 'VC', 'EXP', '*', False)
+    assert c1.args == (c1.parameter, c1.covariate, c1.fp, c1.op, c1.optional)
 
 
 def test_create():
@@ -17,8 +19,11 @@ def test_create():
     for param, cov in itertools.product(parameters, covariates):
         c1 = Covariate.create(parameter=param, covariate=cov, fp='exp')
         assert c1.args == (param.upper(), cov.upper(), 'EXP', '*', False)
+        assert c1.args == (c1.parameter, c1.covariate, c1.fp, c1.op, c1.optional)
+
         c2 = Covariate.create(parameter=param, covariate=cov, fp='exp', op='+', optional=True)
         assert c2.args == (param.upper(), cov.upper(), 'EXP', '+', True)
+        assert c2.args == (c2.parameter, c2.covariate, c2.fp, c2.op, c2.optional)
 
 
 @pytest.mark.parametrize(
@@ -134,4 +139,5 @@ def test_repr_many(list_of_kwargs, expected):
     for kwargs in list_of_kwargs:
         c = Covariate.create(**kwargs)
         features.append(c)
-    assert Covariate.repr_many(features) == expected
+    mfl = ModelFeatures.create(features)
+    assert Covariate.repr_many(mfl) == expected

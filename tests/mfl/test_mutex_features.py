@@ -6,6 +6,7 @@ from pharmpy.mfl.features.direct_effect import DIRECT_EFFECT_TYPES
 from pharmpy.mfl.features.effect_compartment import EFFECT_COMP_TYPES
 from pharmpy.mfl.features.elimination import ELIMINATION_TYPES
 from pharmpy.mfl.features.metabolite import METABOLITE_TYPES
+from pharmpy.mfl.model_features import ModelFeatures
 
 
 @pytest.mark.parametrize(
@@ -21,6 +22,7 @@ from pharmpy.mfl.features.metabolite import METABOLITE_TYPES
 def test_init(feature_class, type):
     feature = feature_class(type)
     assert feature.args == (type,)
+    assert feature.args == (feature.type,)
 
 
 @pytest.mark.parametrize(
@@ -36,6 +38,7 @@ def test_init(feature_class, type):
 def test_create(feature_class, type):
     feature = feature_class.create(type)
     assert feature.args == (type.upper(),)
+    assert feature.args == (feature.type,)
 
     with pytest.raises(TypeError):
         feature_class.create(1)
@@ -132,6 +135,8 @@ def test_lt(feature_class, order, types):
 )
 def test_repr_many(feature_class, types, expected):
     features = [feature_class.create(type) for type in types]
-    assert feature_class.repr_many(features) == expected
+    mfl1 = ModelFeatures.create(features)
+    assert feature_class.repr_many(mfl1) == expected
+    mfl2 = ModelFeatures.create([features[0]])
     class_name = feature_class.__name__.upper()
-    assert feature_class.repr_many([features[0]]) == f'{class_name}({types[0].upper()})'
+    assert feature_class.repr_many(mfl2) == f'{class_name}({types[0].upper()})'

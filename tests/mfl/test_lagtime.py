@@ -1,16 +1,19 @@
 import pytest
 
 from pharmpy.mfl.features.lagtime import LagTime
+from pharmpy.mfl.model_features import ModelFeatures
 
 
 def test_init():
     l1 = LagTime(on=True)
     assert l1.args == (True,)
+    assert l1.args == (l1.on,)
 
 
 def test_create():
     l1 = LagTime.create(on=True)
     assert l1.args == (True,)
+    assert l1.args == (l1.on,)
 
     with pytest.raises(TypeError):
         LagTime.create(1)
@@ -56,5 +59,7 @@ def test_lt():
 def test_repr_many():
     l1 = LagTime.create(on=True)
     l2 = LagTime.create(on=False)
-    assert LagTime.repr_many([l1, l2]) == 'LAGTIME([OFF,ON])'
-    assert LagTime.repr_many([l1]) == 'LAGTIME(ON)'
+    mfl1 = ModelFeatures.create([l1])
+    assert LagTime.repr_many(mfl1) == 'LAGTIME(ON)'
+    mfl2 = mfl1 + l2
+    assert LagTime.repr_many(mfl2) == 'LAGTIME([OFF,ON])'

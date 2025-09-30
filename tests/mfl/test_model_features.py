@@ -203,44 +203,44 @@ def test_allometry():
     assert mf.allometry.features == (al,)
 
 
-def test_direct_effect():
+def test_direct_effecta():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
     de1 = DirectEffect.create('LINEAR')
     de2 = DirectEffect.create('SIGMOID')
     mf = ModelFeatures.create([a1, de2, a2, de1])
     assert mf.features == (a1, a2, de1, de2)
-    assert mf.direct_effect.features == (de1, de2)
+    assert mf.direct_effects.features == (de1, de2)
 
 
-def test_indirect_effect():
+def test_indirect_effects():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
     ie1 = IndirectEffect.create('LINEAR', 'DEGRADATION')
     ie2 = IndirectEffect.create('LINEAR', 'PRODUCTION')
     mf = ModelFeatures.create([a1, ie2, a2, ie1])
     assert mf.features == (a1, a2, ie1, ie2)
-    assert mf.indirect_effect.features == (ie1, ie2)
+    assert mf.indirect_effects.features == (ie1, ie2)
 
 
-def test_effect_comp():
+def test_effect_compartments():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
     ec1 = EffectComp.create('LINEAR')
     ec2 = EffectComp.create('SIGMOID')
     mf = ModelFeatures.create([a1, ec2, a2, ec1])
     assert mf.features == (a1, a2, ec1, ec2)
-    assert mf.effect_comp.features == (ec1, ec2)
+    assert mf.effect_compartments.features == (ec1, ec2)
 
 
-def test_metabolite():
+def test_metabolites():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
     m1 = Metabolite.create('PSC')
     m2 = Metabolite.create('BASIC')
     mf = ModelFeatures.create([a1, m2, a2, m1])
     assert mf.features == (a1, a2, m1, m2)
-    assert mf.metabolite.features == (m1, m2)
+    assert mf.metabolites.features == (m1, m2)
 
 
 def test_add():

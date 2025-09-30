@@ -43,9 +43,9 @@ class MutexFeature(ModelFeature):
         return f'{self.__class__.__name__.upper()}({self.type})'
 
     @staticmethod
-    def repr_many(features):
+    def repr_many(mfl):
+        features = sorted(mfl.features)
         if len(features) == 1:
             return repr(features[0])
-        features = sorted(features)
         class_name = features[0].__class__.__name__.upper()
         return f"{class_name}([{','.join(feat.type for feat in features)}])"

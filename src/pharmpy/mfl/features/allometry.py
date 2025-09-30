@@ -43,6 +43,7 @@ class Allometry(ModelFeature):
         return self.covariate == other.covariate and self.reference == other.reference
 
     @staticmethod
-    def repr_many(features):
+    def repr_many(mfl):
+        features = mfl.features
         assert len(features) == 1
         return repr(features[0])

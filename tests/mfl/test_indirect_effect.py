@@ -1,16 +1,19 @@
 import pytest
 
 from pharmpy.mfl.features import IndirectEffect
+from pharmpy.mfl.model_features import ModelFeatures
 
 
 def test_init():
     ie = IndirectEffect(type='LINEAR', production_type='DEGRADATION')
     assert ie.args == ('LINEAR', 'DEGRADATION')
+    assert ie.args == (ie.type, ie.production_type)
 
 
 def test_create():
     ie = IndirectEffect.create(type='linear', production_type='production')
     assert ie.args == ('LINEAR', 'PRODUCTION')
+    assert ie.args == (ie.type, ie.production_type)
 
     with pytest.raises(TypeError):
         IndirectEffect.create(1, 'production')
@@ -69,16 +72,19 @@ def test_lt():
 
 def test_repr_many():
     ie1 = IndirectEffect.create(type='linear', production_type='production')
-    assert IndirectEffect.repr_many([ie1]) == 'INDIRECTEFFECT(LINEAR,PRODUCTION)'
+    mfl1 = ModelFeatures.create([ie1])
+    assert IndirectEffect.repr_many(mfl1) == 'INDIRECTEFFECT(LINEAR,PRODUCTION)'
     ie2 = IndirectEffect.create(type='linear', production_type='degradation')
-    assert IndirectEffect.repr_many([ie1, ie2]) == 'INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION])'
+    mfl2 = mfl1 + ie2
+    assert IndirectEffect.repr_many(mfl2) == 'INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION])'
     ie3 = IndirectEffect.create(type='emax', production_type='production')
+    mfl3 = mfl2 + ie3
     assert (
-        IndirectEffect.repr_many([ie3, ie2, ie1])
+        IndirectEffect.repr_many(mfl3)
         == 'INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION]);INDIRECTEFFECT(EMAX,PRODUCTION)'
     )
     ie4 = IndirectEffect.create(type='emax', production_type='degradation')
+    mfl4 = mfl3 + ie4
     assert (
-        IndirectEffect.repr_many([ie3, ie2, ie1, ie4])
-        == 'INDIRECTEFFECT([LINEAR,EMAX],[DEGRADATION,PRODUCTION])'
+        IndirectEffect.repr_many(mfl4) == 'INDIRECTEFFECT([LINEAR,EMAX],[DEGRADATION,PRODUCTION])'
     )

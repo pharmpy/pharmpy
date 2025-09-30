@@ -1,19 +1,23 @@
 import pytest
 
 from pharmpy.mfl.features.transits import Transits
+from pharmpy.mfl.model_features import ModelFeatures
 
 
 def test_init():
     t1 = Transits(0, True)
     assert t1.args == (0, True)
+    assert t1.args == (t1.number, t1.with_depot)
 
 
 def test_create():
     t1 = Transits.create(0)
     assert t1.args == (0, True)
+    assert t1.args == (t1.number, t1.with_depot)
 
     t2 = Transits.create(0, False)
     assert t2.args == (0, False)
+    assert t2.args == (t2.number, t2.with_depot)
 
     with pytest.raises(TypeError):
         Transits.create('x')
@@ -75,12 +79,12 @@ def test_lt():
 
 def test_repr_many():
     t_depot = [Transits.create(i) for i in range(3)]
-    assert Transits.repr_many(t_depot) == 'TRANSITS([0,1,2],DEPOT)'
+    mfl1 = ModelFeatures.create(t_depot)
+    assert Transits.repr_many(mfl1) == 'TRANSITS([0,1,2],DEPOT)'
     t_nodepot = [Transits.create(i, False) for i in range(1, 3)]
-    assert Transits.repr_many(t_nodepot) == 'TRANSITS([1,2],NODEPOT)'
-    assert (
-        Transits.repr_many(t_depot + t_nodepot) == 'TRANSITS([0,1,2],DEPOT);TRANSITS([1,2],NODEPOT)'
-    )
-    t_one = Transits.create(0)
-    assert Transits.repr_many([t_one]) == 'TRANSITS(0,DEPOT)'
-    assert Transits.repr_many([t_one] + t_nodepot) == 'TRANSITS(0,DEPOT);TRANSITS([1,2],NODEPOT)'
+    mfl2 = ModelFeatures.create(t_nodepot)
+    assert Transits.repr_many(mfl2) == 'TRANSITS([1,2],NODEPOT)'
+    assert Transits.repr_many(mfl1 + mfl2) == 'TRANSITS([0,1,2],DEPOT);TRANSITS([1,2],NODEPOT)'
+    mfl3 = ModelFeatures.create([t_depot[0]])
+    assert Transits.repr_many(mfl3) == 'TRANSITS(0,DEPOT)'
+    assert Transits.repr_many(mfl3 + mfl2) == 'TRANSITS(0,DEPOT);TRANSITS([1,2],NODEPOT)'
