@@ -16,11 +16,8 @@ class Peripherals(ModelFeature):
             raise TypeError(f'Type of `number` must be an integer: got {builtins.type(number)}')
         if number < 0:
             raise ValueError(f'Number of peripherals must be positive: got {number}')
-        if not isinstance(type, str):
-            raise TypeError(f'Type of `type` must be a string: got {builtins.type(type)}')
-        if type.upper() not in PERIPHERAL_TYPES:
-            raise ValueError(f'Unknown `type`: got {type}')
-        return cls(number=number, type=type.upper())
+        type = cls._canonicalize_type(type, PERIPHERAL_TYPES)
+        return cls(number=number, type=type)
 
     def replace(self, **kwargs):
         number = kwargs.get('number', self.number)

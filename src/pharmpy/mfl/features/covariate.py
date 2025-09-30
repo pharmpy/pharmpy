@@ -20,21 +20,16 @@ class Covariate(ModelFeature):
             raise TypeError(f'Type of `parameter` must be a string: got {type(parameter)}')
         if not isinstance(covariate, str):
             raise TypeError(f'Type of `covariate` must be a string: got {type(covariate)}')
-        if not isinstance(fp, str):
-            raise TypeError(f'Type of `fp` must be a string: got {type(fp)}')
-        if fp.upper() not in FP_TYPES:
-            raise ValueError(f'Unknown `fp`: got {fp}')
-        if not isinstance(op, str):
-            raise TypeError(f'Type of `op` must be a string: got {type(op)}')
-        if op not in OP_TYPES:
-            raise ValueError(f'Unknown `op`: got {op}')
         if not isinstance(optional, bool):
             raise TypeError(f'Type of `optional` must be a bool: got {type(optional)}')
+
+        fp = cls._canonicalize_type(fp, FP_TYPES, 'fp')
+        op = cls._canonicalize_type(op, OP_TYPES, 'op')
 
         return cls(
             parameter=parameter.upper(),
             covariate=covariate.upper(),
-            fp=fp.upper(),
+            fp=fp,
             op=op,
             optional=optional,
         )

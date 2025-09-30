@@ -4,13 +4,9 @@ ABSORPTION_TYPES = frozenset(('FO', 'ZO', 'SEQ-ZO-FO', 'WEIBULL'))
 
 
 class Absorption(MutexFeature):
-
     @classmethod
     def create(cls, type):
-        super().create(type)
-        type = type.upper()
-        if type not in ABSORPTION_TYPES:
-            raise ValueError(f'Unknown `type`: got {type}')
+        type = cls._canonicalize_type(type, ABSORPTION_TYPES)
         return cls(type=type)
 
     def get_complexity(self):
