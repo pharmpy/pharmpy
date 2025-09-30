@@ -484,10 +484,10 @@ def add_placebo_model(model: Model, expr: Literal['linear']):
     Examples
     --------
     >>> from pharmpy.modeling import *
-    >>> model = load_example_model("pheno")
-    >>> model = add_placebo_effect(model, "linear")
-    >>> model.statements.find_assignment("E")
-    E = SLOPE⋅TIME
+    >>> model = create_basic_pd_model()
+    >>> model = add_placebo_model(model, "linear")
+    >>> model.statements.find_assignment("P")
+    P = SLOPE⋅TIME
 
     """
 
@@ -498,16 +498,19 @@ def add_placebo_model(model: Model, expr: Literal['linear']):
     P = Expr.symbol("P")
 
     p_index = model.statements.find_assignment_index("P")
+
     if p_index is None:
         slope = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, slope.name, lower=-float("inf"))
         idv = model.datainfo.idv_column.name
         passign = Assignment(P, slope * Expr.symbol(idv))
+    else:
+        raise ValueError("P already in the model. Not yet supported")
 
-    r_index = model.statements.find_assignment_index("R")
-    old_rassign = model.statements[r_index]
+    old_rassign = model.statements.get_assignment("R")
     new_rassign = Assignment(old_rassign.symbol, old_rassign.expression + P)
 
+    r_index = model.statements.get_assignment_index("R")
     statements = (
         model.statements[:r_index] + passign + new_rassign + model.statements[r_index + 1 :]
     )
