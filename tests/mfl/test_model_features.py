@@ -3,8 +3,11 @@ import pytest
 from pharmpy.mfl.features import (
     Absorption,
     Covariate,
+    DirectEffect,
+    EffectComp,
     Elimination,
     LagTime,
+    Metabolite,
     ModelFeature,
     Peripherals,
     Transits,
@@ -67,6 +70,18 @@ def test_create():
     e1 = Elimination.create(type='MM')
     mf8 = ModelFeatures.create([e1, a2, a1])
     assert mf8.features == (a1, a2, e1)
+
+    de1 = DirectEffect.create(type='LINEAR')
+    mf9 = ModelFeatures.create([de1, a2, a1])
+    assert mf9.features == (a1, a2, de1)
+
+    ec1 = EffectComp.create(type='LINEAR')
+    mf10 = ModelFeatures.create([ec1, a2, a1])
+    assert mf10.features == (a1, a2, ec1)
+
+    m1 = Metabolite.create(type='PSC')
+    mf11 = ModelFeatures.create([m1, a2, a1])
+    assert mf11.features == (a1, a2, m1)
 
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)
@@ -163,6 +178,36 @@ def test_covariates():
     mf = ModelFeatures.create([a1, c2, a2, c1])
     assert mf.features == (a1, a2, c1, c2)
     assert mf.covariates.features == (c1, c2)
+
+
+def test_direct_effect():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    de1 = DirectEffect.create('LINEAR')
+    de2 = DirectEffect.create('SIGMOID')
+    mf = ModelFeatures.create([a1, de2, a2, de1])
+    assert mf.features == (a1, a2, de1, de2)
+    assert mf.direct_effect.features == (de1, de2)
+
+
+def test_effect_comp():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    ec1 = EffectComp.create('LINEAR')
+    ec2 = EffectComp.create('SIGMOID')
+    mf = ModelFeatures.create([a1, ec2, a2, ec1])
+    assert mf.features == (a1, a2, ec1, ec2)
+    assert mf.effect_comp.features == (ec1, ec2)
+
+
+def test_metabolite():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    m1 = Metabolite.create('PSC')
+    m2 = Metabolite.create('BASIC')
+    mf = ModelFeatures.create([a1, m2, a2, m1])
+    assert mf.features == (a1, a2, m1, m2)
+    assert mf.metabolite.features == (m1, m2)
 
 
 def test_add():
@@ -273,6 +318,23 @@ def test_eq():
                 Absorption.create('ZO'),
             ],
             'ABSORPTION([FO,ZO]);ELIMINATION([FO,MM])',
+        ),
+        (
+            [
+                DirectEffect.create('LINEAR'),
+                DirectEffect.create('SIGMOID'),
+                EffectComp.create('STEP'),
+                EffectComp.create('EMAX'),
+            ],
+            'DIRECTEFFECT([LINEAR,SIGMOID]);EFFECTCOMP([EMAX,STEP])',
+        ),
+        (
+            [
+                Absorption.create('FO'),
+                Absorption.create('ZO'),
+                Metabolite.create('PSC'),
+            ],
+            'ABSORPTION([FO,ZO]);METABOLITE(PSC)',
         ),
     ),
 )

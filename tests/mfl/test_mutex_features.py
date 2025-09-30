@@ -1,8 +1,11 @@
 import pytest
 
-from pharmpy.mfl.features import Absorption, Elimination
+from pharmpy.mfl.features import Absorption, DirectEffect, EffectComp, Elimination, Metabolite
 from pharmpy.mfl.features.absorption import ABSORPTION_TYPES
+from pharmpy.mfl.features.direct_effect import DIRECT_EFFECT_TYPES
+from pharmpy.mfl.features.effect_compartment import EFFECT_COMP_TYPES
 from pharmpy.mfl.features.elimination import ELIMINATION_TYPES
+from pharmpy.mfl.features.metabolite import METABOLITE_TYPES
 
 
 @pytest.mark.parametrize(
@@ -10,6 +13,9 @@ from pharmpy.mfl.features.elimination import ELIMINATION_TYPES
     (
         (Absorption, 'FO'),
         (Elimination, 'FO'),
+        (DirectEffect, 'LINEAR'),
+        (EffectComp, 'LINEAR'),
+        (Metabolite, 'PSC'),
     ),
 )
 def test_init(feature_class, type):
@@ -20,13 +26,16 @@ def test_init(feature_class, type):
 @pytest.mark.parametrize(
     'feature_class, type',
     (
-        (Absorption, 'FO'),
-        (Elimination, 'FO'),
+        (Absorption, 'fo'),
+        (Elimination, 'fo'),
+        (DirectEffect, 'linear'),
+        (EffectComp, 'linear'),
+        (Metabolite, 'psc'),
     ),
 )
 def test_create(feature_class, type):
-    feature = feature_class(type)
-    assert feature.args == (type,)
+    feature = feature_class.create(type)
+    assert feature.args == (type.upper(),)
 
     with pytest.raises(TypeError):
         feature_class.create(1)
@@ -40,6 +49,9 @@ def test_create(feature_class, type):
     (
         (Absorption, 'FO', 'ZO'),
         (Elimination, 'FO', 'MM'),
+        (DirectEffect, 'LINEAR', 'SIGMOID'),
+        (EffectComp, 'LINEAR', 'SIGMOID'),
+        (Metabolite, 'PSC', 'BASIC'),
     ),
 )
 def test_replace(feature_class, type, replace):
@@ -56,10 +68,16 @@ def test_replace(feature_class, type, replace):
 
 
 def test_repr():
-    for abs_type in ABSORPTION_TYPES:
-        assert str(Absorption.create(abs_type)) == f'ABSORPTION({abs_type})'
-    for elim_type in ELIMINATION_TYPES:
-        assert str(Elimination.create(elim_type)) == f'ELIMINATION({elim_type})'
+    for type in ABSORPTION_TYPES:
+        assert str(Absorption.create(type)) == f'ABSORPTION({type})'
+    for type in ELIMINATION_TYPES:
+        assert str(Elimination.create(type)) == f'ELIMINATION({type})'
+    for type in DIRECT_EFFECT_TYPES:
+        assert str(DirectEffect.create(type)) == f'DIRECTEFFECT({type})'
+    for type in EFFECT_COMP_TYPES:
+        assert str(EffectComp.create(type)) == f'EFFECTCOMP({type})'
+    for type in METABOLITE_TYPES:
+        assert str(Metabolite.create(type)) == f'METABOLITE({type})'
 
 
 @pytest.mark.parametrize(
@@ -67,6 +85,9 @@ def test_repr():
     (
         (Absorption, 'FO', 'ZO'),
         (Elimination, 'FO', 'MM'),
+        (DirectEffect, 'LINEAR', 'SIGMOID'),
+        (EffectComp, 'LINEAR', 'SIGMOID'),
+        (Metabolite, 'PSC', 'BASIC'),
     ),
 )
 def test_eq(feature_class, type_a, type_b):
@@ -81,16 +102,17 @@ def test_eq(feature_class, type_a, type_b):
 
 
 @pytest.mark.parametrize(
-    'feature_class, types',
+    'feature_class, order, types',
     (
-        (Absorption, ABSORPTION_TYPES),
-        (Elimination, ELIMINATION_TYPES),
+        (Absorption, ('FO', 'ZO', 'SEQ-ZO-FO', 'WEIBULL'), ABSORPTION_TYPES),
+        (Elimination, ('FO', 'ZO', 'MM', 'MIX-FO-MM'), ELIMINATION_TYPES),
+        (DirectEffect, ('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN'), DIRECT_EFFECT_TYPES),
+        (EffectComp, ('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN'), EFFECT_COMP_TYPES),
+        (Metabolite, ('PSC', 'BASIC'), METABOLITE_TYPES),
     ),
 )
-def test_lt(feature_class, types):
+def test_lt(feature_class, order, types):
     features = [feature_class.create(type) for type in types]
-    order = list(feature_class.order.keys())
-
     features_sorted = sorted(features)
     assert all(order[i] in features_sorted[i].args for i in range(0, len(features_sorted)))
 
@@ -102,10 +124,14 @@ def test_lt(feature_class, types):
     'feature_class, types, expected',
     (
         (Absorption, ['FO', 'SEQ-ZO-FO', 'ZO'], 'ABSORPTION([FO,ZO,SEQ-ZO-FO])'),
-        (Elimination, ['FO', 'MM', 'MIX-FO-MM'], 'ELIMINATION([FO,MM,MIX-FO-MM])'),
+        (Elimination, ['FO', 'mm', 'MIX-FO-MM'], 'ELIMINATION([FO,MM,MIX-FO-MM])'),
+        (DirectEffect, ['STEP', 'sigmoid', 'LINEAR'], 'DIRECTEFFECT([LINEAR,SIGMOID,STEP])'),
+        (EffectComp, ['STEP', 'sigmoid', 'LINEAR'], 'EFFECTCOMP([LINEAR,SIGMOID,STEP])'),
+        (Metabolite, ['basic', 'PSC'], 'METABOLITE([PSC,BASIC])'),
     ),
 )
 def test_repr_many(feature_class, types, expected):
     features = [feature_class.create(type) for type in types]
     assert feature_class.repr_many(features) == expected
-    assert feature_class.repr_many([features[0]]) == f'{feature_class.__name__.upper()}({types[0]})'
+    class_name = feature_class.__name__.upper()
+    assert feature_class.repr_many([features[0]]) == f'{class_name}({types[0].upper()})'

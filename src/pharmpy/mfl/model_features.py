@@ -7,8 +7,11 @@ from pharmpy.internals.immutable import Immutable
 from .features import (
     Absorption,
     Covariate,
+    DirectEffect,
+    EffectComp,
     Elimination,
     LagTime,
+    Metabolite,
     ModelFeature,
     Peripherals,
     Transits,
@@ -34,6 +37,9 @@ class ModelFeatures(Immutable):
             Elimination: [],
             Peripherals: [],
             Covariate: [],
+            DirectEffect: [],
+            EffectComp: [],
+            Metabolite: [],
         }
         for feature in features:
             group = type(feature)
@@ -81,6 +87,21 @@ class ModelFeatures(Immutable):
     @property
     def covariates(self):
         features = self._filter_by_type(Covariate)
+        return ModelFeatures.create(features)
+
+    @property
+    def direct_effect(self):
+        features = self._filter_by_type(DirectEffect)
+        return ModelFeatures.create(features)
+
+    @property
+    def effect_comp(self):
+        features = self._filter_by_type(EffectComp)
+        return ModelFeatures.create(features)
+
+    @property
+    def metabolite(self):
+        features = self._filter_by_type(Metabolite)
         return ModelFeatures.create(features)
 
     def _filter_by_type(self, type):
@@ -136,6 +157,16 @@ class ModelFeatures(Immutable):
         if self.covariates:
             covariates_repr = Covariate.repr_many(self.covariates.features)
             feature_repr.append(covariates_repr)
+        if self.direct_effect:
+            direct_effect_repr = DirectEffect.repr_many(self.direct_effect.features)
+            feature_repr.append(direct_effect_repr)
+        if self.effect_comp:
+            effect_comp_repr = EffectComp.repr_many(self.effect_comp.features)
+            feature_repr.append(effect_comp_repr)
+        if self.metabolite:
+            metabolite_repr = Metabolite.repr_many(self.metabolite.features)
+            feature_repr.append(metabolite_repr)
+
         return ';'.join(feature_repr)
 
 

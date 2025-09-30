@@ -37,12 +37,7 @@ class MutexFeature(ModelFeature):
         if self == other:
             return False
 
-        order = self.__class__.order
-
-        def _get_complexity(obj):
-            return order.get(obj.type)
-
-        return _get_complexity(self) < _get_complexity(other)
+        return self.get_complexity() < other.get_complexity()
 
     def __repr__(self):
         return f'{self.__class__.__name__.upper()}({self.type})'
