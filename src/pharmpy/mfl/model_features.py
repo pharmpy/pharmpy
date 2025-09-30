@@ -10,6 +10,7 @@ from .features import (
     DirectEffect,
     EffectComp,
     Elimination,
+    IndirectEffect,
     LagTime,
     Metabolite,
     ModelFeature,
@@ -38,6 +39,7 @@ class ModelFeatures(Immutable):
             Peripherals: [],
             Covariate: [],
             DirectEffect: [],
+            IndirectEffect: [],
             EffectComp: [],
             Metabolite: [],
         }
@@ -92,6 +94,11 @@ class ModelFeatures(Immutable):
     @property
     def direct_effect(self):
         features = self._filter_by_type(DirectEffect)
+        return ModelFeatures.create(features)
+
+    @property
+    def indirect_effect(self):
+        features = self._filter_by_type(IndirectEffect)
         return ModelFeatures.create(features)
 
     @property
@@ -160,6 +167,9 @@ class ModelFeatures(Immutable):
         if self.direct_effect:
             direct_effect_repr = DirectEffect.repr_many(self.direct_effect.features)
             feature_repr.append(direct_effect_repr)
+        if self.indirect_effect:
+            indirect_effect_repr = IndirectEffect.repr_many(self.indirect_effect.features)
+            feature_repr.append(indirect_effect_repr)
         if self.effect_comp:
             effect_comp_repr = EffectComp.repr_many(self.effect_comp.features)
             feature_repr.append(effect_comp_repr)

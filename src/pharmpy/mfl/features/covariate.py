@@ -1,5 +1,4 @@
-from collections import defaultdict
-
+from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
 
 FP_TYPES = frozenset(('LIN', 'PIECE_LIN', 'EXP', 'POW', 'CAT', 'CAT2'))
@@ -109,50 +108,13 @@ class Covariate(ModelFeature):
             return repr(features[0])
 
         no_of_args = len(features[0].args)
-        args_grouped = _group_args([feature.args for feature in features], i=no_of_args)
+        args_grouped = group_args([feature.args for feature in features], i=no_of_args)
 
         effects = []
         for arg in args_grouped:
             parameter, covariate, fp, op, optional = arg
             optional_repr = '?' if optional else ''
-            inner = f'{_get_repr(parameter)},{_get_repr(covariate)},{_get_repr(fp)},{_get_repr(op)}'
+            inner = f'{get_repr(parameter)},{get_repr(covariate)},{get_repr(fp)},{get_repr(op)}'
             effects.append(f'COVARIATE{optional_repr}({inner})')
 
         return ';'.join(effects)
-
-
-def _group_args(args, i):
-    if i == 0:
-        return args
-
-    groups = defaultdict(list)
-    for a in args:
-        head, tail = a[0:i], a[i:]
-        groups[tail].append(head)
-
-    args_new = []
-    for tail, heads in groups.items():
-        heads_grouped = defaultdict(list)
-        for head in heads:
-            heads_grouped[head[:-1]].append(head[-1])
-
-        # Heads could not be grouped
-        if len(heads_grouped) == len(heads):
-            new = tuple(head + tail for head in heads)
-            args_new.extend(new)
-            continue
-        for head, group in heads_grouped.items():
-            head_new = []
-            if head:
-                head_new.append(head[0] if len(head) == 1 else tuple(head))
-            head_new.append(group[0] if len(group) == 1 else tuple(group))
-            args_new.append(tuple(head_new) + tail)
-
-    return _group_args(tuple(args_new), i - 1)
-
-
-def _get_repr(arg):
-    if isinstance(arg, tuple):
-        return f"[{','.join(arg)}]"
-    else:
-        return arg

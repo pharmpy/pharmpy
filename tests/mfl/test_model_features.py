@@ -6,6 +6,7 @@ from pharmpy.mfl.features import (
     DirectEffect,
     EffectComp,
     Elimination,
+    IndirectEffect,
     LagTime,
     Metabolite,
     ModelFeature,
@@ -75,13 +76,17 @@ def test_create():
     mf9 = ModelFeatures.create([de1, a2, a1])
     assert mf9.features == (a1, a2, de1)
 
+    ie1 = IndirectEffect.create(type='LINEAR', production_type='PRODUCTION')
+    mf10 = ModelFeatures.create([ie1, de1, a2, a1])
+    assert mf10.features == (a1, a2, de1, ie1)
+
     ec1 = EffectComp.create(type='LINEAR')
-    mf10 = ModelFeatures.create([ec1, a2, a1])
-    assert mf10.features == (a1, a2, ec1)
+    mf11 = ModelFeatures.create([ec1, a2, a1])
+    assert mf11.features == (a1, a2, ec1)
 
     m1 = Metabolite.create(type='PSC')
-    mf11 = ModelFeatures.create([m1, a2, a1])
-    assert mf11.features == (a1, a2, m1)
+    mf12 = ModelFeatures.create([m1, a2, a1])
+    assert mf12.features == (a1, a2, m1)
 
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)
@@ -188,6 +193,16 @@ def test_direct_effect():
     mf = ModelFeatures.create([a1, de2, a2, de1])
     assert mf.features == (a1, a2, de1, de2)
     assert mf.direct_effect.features == (de1, de2)
+
+
+def test_indirect_effect():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    ie1 = IndirectEffect.create('LINEAR', 'DEGRADATION')
+    ie2 = IndirectEffect.create('LINEAR', 'PRODUCTION')
+    mf = ModelFeatures.create([a1, ie2, a2, ie1])
+    assert mf.features == (a1, a2, ie1, ie2)
+    assert mf.indirect_effect.features == (ie1, ie2)
 
 
 def test_effect_comp():
@@ -325,8 +340,10 @@ def test_eq():
                 DirectEffect.create('SIGMOID'),
                 EffectComp.create('STEP'),
                 EffectComp.create('EMAX'),
+                IndirectEffect.create('LINEAR', 'PRODUCTION'),
+                IndirectEffect.create('LINEAR', 'DEGRADATION'),
             ],
-            'DIRECTEFFECT([LINEAR,SIGMOID]);EFFECTCOMP([EMAX,STEP])',
+            'DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION]);EFFECTCOMP([EMAX,STEP])',
         ),
         (
             [
