@@ -1,7 +1,7 @@
 from pathlib import Path
 from typing import Union
 
-from pharmpy.modeling import create_basic_pd_model
+from pharmpy.modeling import add_iiv, create_basic_pd_model
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 from .results import calculate_results
@@ -38,6 +38,7 @@ def start_pdsearch(context, dataset):
     context.log_info("Starting pdsearch")
 
     model = create_basic_pd_model(dataset)
+    model = add_iiv(model, ["B"], "exp")
     me = ModelEntry.create(model=model)
     return me
 
