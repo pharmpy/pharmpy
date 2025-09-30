@@ -6,6 +6,7 @@ New features
 
 * Add parameter scatter matrix plot to bootstrap
 * Add :code:`modeling.insert_ebes_into_dataset`
+* Add :code:`modeling.add_placebo_model`
 
 Changes
 =======

@@ -17,7 +17,7 @@ from pharmpy.model import (
     get_and_check_odes,
     output,
 )
-from pharmpy.modeling import get_central_volume_and_clearance, set_initial_condition
+from pharmpy.modeling import create_symbol, get_central_volume_and_clearance, set_initial_condition
 
 from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
@@ -455,4 +455,62 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
     # Add error model
     model = set_proportional_error_model(model, dv=2, zero_protection=False)
 
+    return model
+
+
+def add_placebo_model(model: Model, expr: Literal['linear']):
+    r"""Add a placebo or disease progression effect to a model.
+
+    .. warning:: This function is under development.
+
+    * Linear:
+
+        .. math:: E = B + \text{slope} \cdot \text{TIME}
+
+    :math:`B` is the baseline effect
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    expr : {'linear'}
+        Name of placebo/disease progression effect function.
+
+    Return
+    ------
+    Model
+        Updated Pharmpy model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = add_placebo_effect(model, "linear")
+    >>> model.statements.find_assignment("E")
+    E = SLOPE⋅TIME
+
+    """
+
+    r_index = model.statements.find_assignment_index("R")
+    if r_index is None:
+        raise ValueError("Cannot find response variable R. Is this a PD model?")
+
+    P = Expr.symbol("P")
+
+    p_index = model.statements.find_assignment_index("P")
+    if p_index is None:
+        slope = create_symbol(model, "SLOPE")
+        model = add_individual_parameter(model, slope.name, lower=-float("inf"))
+        idv = model.datainfo.idv_column.name
+        passign = Assignment(P, slope * Expr.symbol(idv))
+
+    r_index = model.statements.find_assignment_index("R")
+    old_rassign = model.statements[r_index]
+    new_rassign = Assignment(old_rassign.symbol, old_rassign.expression + P)
+
+    statements = (
+        model.statements[:r_index] + passign + new_rassign + model.statements[r_index + 1 :]
+    )
+    model = model.replace(statements=statements)
+    model = model.update_source()
     return model

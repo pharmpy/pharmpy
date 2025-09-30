@@ -228,7 +228,13 @@ from .parameters import (
     unfix_parameters,
     unfix_parameters_to,
 )
-from .pd import add_effect_compartment, add_indirect_effect, set_baseline_effect, set_direct_effect
+from .pd import (
+    add_effect_compartment,
+    add_indirect_effect,
+    add_placebo_model,
+    set_baseline_effect,
+    set_direct_effect,
+)
 from .plots import (
     plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
@@ -276,6 +282,7 @@ __all__ = [
     'add_pd_iiv',
     'add_peripheral_compartment',
     'add_pk_iiv',
+    'add_placebo_model',
     'add_population_parameter',
     'add_predictions',
     'add_residuals',

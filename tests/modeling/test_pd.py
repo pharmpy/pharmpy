@@ -11,6 +11,8 @@ from pharmpy.model import (
 from pharmpy.modeling import (
     add_effect_compartment,
     add_indirect_effect,
+    add_placebo_model,
+    create_basic_pd_model,
     set_baseline_effect,
     set_direct_effect,
     set_michaelis_menten_elimination,
@@ -189,3 +191,12 @@ def test_find_central_comp(load_model_for_test, testdata):
     pkpd = add_indirect_effect(model, 'linear', True)
     central = pkpd.statements.ode_system.central_compartment
     assert central.name == 'CENTRAL'
+
+
+def test_add_placebo_model():
+    model = create_basic_pd_model()
+    model = add_placebo_model(model, "linear")
+
+    P, R, B = S('P'), S('R'), S('B')
+    assert model.statements.get_assignment(P) == Assignment.create(P, S("SLOPE") * S("TIME"))
+    assert model.statements.get_assignment(R) == Assignment.create(R, P + B)
