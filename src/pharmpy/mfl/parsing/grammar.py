@@ -51,7 +51,7 @@ PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i | "step"i | "loglin"i
 pdtype_wildcard: WILDCARD
 
 _production_option: production_modes | production_wildcard
-production_modes: PRODUCTION_MODE
+production_modes: PRODUCTION_MODE | "[" [PRODUCTION_MODE ("," PRODUCTION_MODE)*] "]"
 PRODUCTION_MODE: "production"i | "degradation"i
 production_wildcard: WILDCARD
 

@@ -2,10 +2,25 @@ import itertools
 
 from lark.visitors import Interpreter
 
-from pharmpy.mfl.features.peripherals import PERIPHERAL_TYPES
-
-from ..features import Absorption, LagTime, Peripherals, Transits
+from ..features import (
+    Absorption,
+    Allometry,
+    DirectEffect,
+    EffectComp,
+    Elimination,
+    IndirectEffect,
+    LagTime,
+    Metabolite,
+    Peripherals,
+    Transits,
+)
 from ..features.absorption import ABSORPTION_TYPES
+from ..features.direct_effect import DIRECT_EFFECT_TYPES
+from ..features.effect_compartment import EFFECT_COMP_TYPES
+from ..features.elimination import ELIMINATION_TYPES
+from ..features.indirect_effect import INDIRECT_EFFECT_TYPES, PRODUCTION_TYPES
+from ..features.metabolite import METABOLITE_TYPES
+from ..features.peripherals import PERIPHERAL_TYPES
 
 
 class MFLInterpreter(Interpreter):
@@ -23,6 +38,24 @@ class MFLInterpreter(Interpreter):
 
     def lagtime(self, tree):
         return LagTimeInterpreter().interpret(tree)
+
+    def elimination(self, tree):
+        return EliminationInterpreter().interpret(tree)
+
+    def direct_effect(self, tree):
+        return DirectEffectInterpreter().interpret(tree)
+
+    def indirect_effect(self, tree):
+        return IndirectEffectInterpreter().interpret(tree)
+
+    def effect_comp(self, tree):
+        return EffectCompInterpreter().interpret(tree)
+
+    def metabolite(self, tree):
+        return MetaboliteInterpreter().interpret(tree)
+
+    def allometry(self, tree):
+        return AllometryInterpreter().interpret(tree)
 
 
 class AbsorptionInterpreter(Interpreter):
@@ -125,3 +158,111 @@ class LagTimeInterpreter(Interpreter):
 
     def lagtime_wildcard(self, tree):
         return [True, False]
+
+
+class EliminationInterpreter(Interpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        types = children[0]
+        eliminations = [Elimination.create(type=type) for type in types]
+        return sorted(eliminations)
+
+    def elimination_types(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def elimination_wildcard(self, tree):
+        return list(ELIMINATION_TYPES)
+
+
+class DirectEffectInterpreter(Interpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        types = children[0]
+        direct_effects = [DirectEffect.create(type=type) for type in types]
+        return sorted(direct_effects)
+
+    def pdtype_modes(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def pdtype_wildcard(self, tree):
+        return list(DIRECT_EFFECT_TYPES)
+
+
+class IndirectEffectInterpreter(Interpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 2
+        types = children[0]
+        production_types = children[1]
+        indirect_effects = []
+        for type, production_type in itertools.product(types, production_types):
+            indirect_effects.append(
+                IndirectEffect.create(type=type, production_type=production_type)
+            )
+        return sorted(indirect_effects)
+
+    def pdtype_modes(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def production_modes(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def pdtype_wildcard(self, tree):
+        return list(INDIRECT_EFFECT_TYPES)
+
+    def production_wildcard(self, tree):
+        return list(PRODUCTION_TYPES)
+
+
+class EffectCompInterpreter(Interpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        types = children[0]
+        effects_comps = [EffectComp.create(type=type) for type in types]
+        return sorted(effects_comps)
+
+    def pdtype_modes(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def pdtype_wildcard(self, tree):
+        return list(EFFECT_COMP_TYPES)
+
+
+class MetaboliteInterpreter(Interpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        types = children[0]
+        metabolites = [Metabolite.create(type=type) for type in types]
+        return sorted(metabolites)
+
+    def metabolite_modes(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def metabolite_wildcard(self, tree):
+        return list(METABOLITE_TYPES)
+
+
+class AllometryInterpreter(Interpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert 1 <= len(children) <= 2
+        kwargs = {'covariate': children[0]}
+        if len(children) == 2:
+            kwargs['reference'] = children[1]
+        return [Allometry.create(**kwargs)]
+
+    def value(self, tree):
+        return tree.children[0].value
+
+    def decimal(self, tree):
+        return float(tree.children[0].value)

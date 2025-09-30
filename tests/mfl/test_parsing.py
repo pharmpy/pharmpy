@@ -1,6 +1,17 @@
 import pytest
 
-from pharmpy.mfl.features import Absorption, LagTime, Peripherals, Transits
+from pharmpy.mfl.features import (
+    Absorption,
+    Allometry,
+    DirectEffect,
+    EffectComp,
+    Elimination,
+    IndirectEffect,
+    LagTime,
+    Metabolite,
+    Peripherals,
+    Transits,
+)
 from pharmpy.mfl.parsing import parse
 
 
@@ -127,9 +138,110 @@ from pharmpy.mfl.parsing import parse
         ('LAGTIME ( ON )', LagTime, [(True,)]),
         ('LAGTIME(OFF)', LagTime, [(False,)]),
         ('LAGTIME([ON, OFF])', LagTime, [(False,), (True,)]),
+        ('ELIMINATION(FO)', Elimination, [('FO',)]),
+        ('ELIMINATION( *)', Elimination, [('FO',), ('ZO',), ('MM',), ('MIX-FO-MM',)]),
+        ('ELIMINATION([ZO,FO])', Elimination, [('FO',), ('ZO',)]),
+        ('ELIMINATION([ZO,  FO])', Elimination, [('FO',), ('ZO',)]),
+        ('ELIMINATION( [   MIX-FO-MM,  FO   ]  )', Elimination, [('FO',), ('MIX-FO-MM',)]),
+        ('elimination([zo, fo])', Elimination, [('FO',), ('ZO',)]),
+        (
+            'DIRECTEFFECT([LINEAR,SIGMOID,STEP])',
+            DirectEffect,
+            [('LINEAR',), ('SIGMOID',), ('STEP',)],
+        ),
+        ('DIRECTEFFECT(LINEAR)', DirectEffect, [('LINEAR',)]),
+        (
+            'DIRECTEFFECT(*)',
+            DirectEffect,
+            [('LINEAR',), ('EMAX',), ('SIGMOID',), ('STEP',), ('LOGLIN',)],
+        ),
+        ('INDIRECTEFFECT(LINEAR,PRODUCTION)', IndirectEffect, [('LINEAR', 'PRODUCTION')]),
+        (
+            'INDIRECTEFFECT(LINEAR,[PRODUCTION,DEGRADATION])',
+            IndirectEffect,
+            [('LINEAR', 'DEGRADATION'), ('LINEAR', 'PRODUCTION')],
+        ),
+        (
+            'INDIRECTEFFECT(LINEAR,*)',
+            IndirectEffect,
+            [('LINEAR', 'DEGRADATION'), ('LINEAR', 'PRODUCTION')],
+        ),
+        (
+            'INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],PRODUCTION)',
+            IndirectEffect,
+            [('LINEAR', 'PRODUCTION'), ('EMAX', 'PRODUCTION'), ('SIGMOID', 'PRODUCTION')],
+        ),
+        (
+            'INDIRECTEFFECT(*,PRODUCTION)',
+            IndirectEffect,
+            [('LINEAR', 'PRODUCTION'), ('EMAX', 'PRODUCTION'), ('SIGMOID', 'PRODUCTION')],
+        ),
+        (
+            'INDIRECTEFFECT(LINEAR,PRODUCTION);INDIRECTEFFECT(LINEAR,DEGRADATION)',
+            IndirectEffect,
+            [('LINEAR', 'PRODUCTION'), ('LINEAR', 'DEGRADATION')],
+        ),
+        ('EFFECTCOMP([LINEAR,SIGMOID,STEP])', EffectComp, [('LINEAR',), ('SIGMOID',), ('STEP',)]),
+        (
+            'EFFECTCOMP([LINEAR,SIGMOID]);EFFECTCOMP(STEP)',
+            EffectComp,
+            [('LINEAR',), ('SIGMOID',), ('STEP',)],
+        ),
+        ('EFFECTCOMP(LINEAR)', EffectComp, [('LINEAR',)]),
+        (
+            'EFFECTCOMP(*)',
+            EffectComp,
+            [('LINEAR',), ('EMAX',), ('SIGMOID',), ('STEP',), ('LOGLIN',)],
+        ),
+        ('METABOLITE(PSC)', Metabolite, [('PSC',)]),
+        ('METABOLITE([PSC,BASIC])', Metabolite, [('PSC',), ('BASIC',)]),
+        ('METABOLITE(PSC); METABOLITE(BASIC)', Metabolite, [('PSC',), ('BASIC',)]),
+        ('METABOLITE(*)', Metabolite, [('PSC',), ('BASIC',)]),
+        ('ALLOMETRY(WT)', Allometry, [('WT', 70)]),
+        ('ALLOMETRY(WT,70)', Allometry, [('WT', 70)]),
+        ('ALLOMETRY(WT, 70.0)', Allometry, [('WT', 70)]),
     ),
     ids=repr,
 )
 def test_parse_one_type(source, feature_type, options):
     features = parse(source)
     assert features == [feature_type.create(*opt) for opt in options]
+
+
+@pytest.mark.parametrize(
+    'source, no_of_features',
+    (
+        (
+            'ELIMINATION(FO);ABSORPTION(ZO)',
+            2,
+        ),
+        (
+            'ELIMINATION(FO) ;   ABSORPTION(ZO) ',
+            2,
+        ),
+        (
+            'ABSORPTION(FO);ELIMINATION(FO);ABSORPTION(ZO)',
+            3,
+        ),
+        (
+            'ABSORPTION(FO);ELIMINATION(FO);ABSORPTION(FO)',
+            3,
+        ),
+        (
+            'ABSORPTION([FO,ZO]);ELIMINATION(FO)',
+            3,
+        ),
+        (
+            'ABSORPTION(FO);ELIMINATION(FO);PERIPHERALS(0);TRANSITS(0,DEPOT);LAGTIME(OFF)',
+            5,
+        ),
+        (
+            'DIRECTEFFECT(LINEAR);INDIRECTEFFECT(LINEAR,PRODUCTION);EFFECTCOMP(LINEAR);METABOLITE(PSC)',
+            4,
+        ),
+    ),
+    ids=repr,
+)
+def test_parse_multiple_types(source, no_of_features):
+    features = parse(source)
+    assert len(features) == no_of_features
