@@ -1,4 +1,5 @@
 from .absorption import Absorption
+from .allometry import Allometry
 from .covariate import Covariate
 from .direct_effect import DirectEffect
 from .effect_compartment import EffectComp
@@ -12,6 +13,7 @@ from .transits import Transits
 
 __all__ = (
     'Absorption',
+    'Allometry',
     'Covariate',
     'DirectEffect',
     'EffectComp',

@@ -6,6 +6,7 @@ from pharmpy.internals.immutable import Immutable
 
 from .features import (
     Absorption,
+    Allometry,
     Covariate,
     DirectEffect,
     EffectComp,
@@ -38,6 +39,7 @@ class ModelFeatures(Immutable):
             Elimination: [],
             Peripherals: [],
             Covariate: [],
+            Allometry: [],
             DirectEffect: [],
             IndirectEffect: [],
             EffectComp: [],
@@ -48,6 +50,8 @@ class ModelFeatures(Immutable):
             if group not in grouped_features.keys():
                 raise NotImplementedError
             if feature not in grouped_features[group]:
+                if group == Allometry and len(grouped_features[group]) > 0:
+                    raise ValueError('Invalid `features`: Got more than one Allometry feature')
                 grouped_features[group].append(feature)
 
         features = _flatten([sorted(value) for value in grouped_features.values()])
@@ -89,6 +93,11 @@ class ModelFeatures(Immutable):
     @property
     def covariates(self):
         features = self._filter_by_type(Covariate)
+        return ModelFeatures.create(features)
+
+    @property
+    def allometry(self):
+        features = self._filter_by_type(Allometry)
         return ModelFeatures.create(features)
 
     @property
@@ -164,6 +173,9 @@ class ModelFeatures(Immutable):
         if self.covariates:
             covariates_repr = Covariate.repr_many(self.covariates.features)
             feature_repr.append(covariates_repr)
+        if self.allometry:
+            allometry_repr = Allometry.repr_many(self.allometry.features)
+            feature_repr.append(allometry_repr)
         if self.direct_effect:
             direct_effect_repr = DirectEffect.repr_many(self.direct_effect.features)
             feature_repr.append(direct_effect_repr)

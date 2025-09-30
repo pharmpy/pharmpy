@@ -2,6 +2,7 @@ import pytest
 
 from pharmpy.mfl.features import (
     Absorption,
+    Allometry,
     Covariate,
     DirectEffect,
     EffectComp,
@@ -88,6 +89,10 @@ def test_create():
     mf12 = ModelFeatures.create([m1, a2, a1])
     assert mf12.features == (a1, a2, m1)
 
+    al1 = Allometry.create(covariate='WT')
+    mf13 = ModelFeatures.create([al1, c1, a2, a1])
+    assert mf13.features == (a1, a2, c1, al1)
+
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)
 
@@ -101,6 +106,10 @@ def test_create():
 
     with pytest.raises(NotImplementedError):
         ModelFeatures.create(features=[x])
+
+    al2 = Allometry.create('WT', 80)
+    with pytest.raises(ValueError):
+        ModelFeatures.create(features=[al1, al2])
 
 
 def test_replace():
@@ -183,6 +192,15 @@ def test_covariates():
     mf = ModelFeatures.create([a1, c2, a2, c1])
     assert mf.features == (a1, a2, c1, c2)
     assert mf.covariates.features == (c1, c2)
+
+
+def test_allometry():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    al = Allometry.create('WT')
+    mf = ModelFeatures.create([a1, al, a2])
+    assert mf.features == (a1, a2, al)
+    assert mf.allometry.features == (al,)
 
 
 def test_direct_effect():
@@ -320,10 +338,11 @@ def test_eq():
             [
                 Absorption.create('FO'),
                 Absorption.create('ZO'),
+                Allometry.create('WT'),
                 Covariate.create(parameter='CL', covariate='WGT', fp='EXP'),
                 Covariate.create(parameter='VC', covariate='WGT', fp='EXP'),
             ],
-            'ABSORPTION([FO,ZO]);COVARIATE([CL,VC],WGT,EXP,*)',
+            'ABSORPTION([FO,ZO]);COVARIATE([CL,VC],WGT,EXP,*);ALLOMETRY(WT,70)',
         ),
         (
             [
