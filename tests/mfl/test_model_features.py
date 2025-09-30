@@ -323,7 +323,7 @@ def test_eq():
                 Transits.create(1, False),
                 Transits.create(3, False),
             ],
-            'TRANSITS([0,1,3],DEPOT);TRANSITS([0,1,3],NODEPOT);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
+            'TRANSITS([0,1,3]);TRANSITS([0,1,3],NODEPOT);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
         ),
         (
             [

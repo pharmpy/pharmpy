@@ -11,9 +11,16 @@ class Transits(ModelFeature):
     @classmethod
     def create(cls, number, with_depot=True):
         if not isinstance(number, int):
-            raise TypeError(f'Type of `number` must be an integer: got {builtins.type(number)}')
-        if number < 0:
-            raise ValueError(f'Number of peripherals must be positive: got {number}')
+            if isinstance(number, str):
+                number = number.upper()
+                if number != 'N':
+                    raise ValueError(f'Value of `number` must be "N" if string: got {number}')
+            else:
+                raise TypeError(
+                    f'Type of `number` must be an integer or string "N": got {builtins.type(number)}'
+                )
+        elif number < 0:
+            raise ValueError(f'Number of transits must be positive: got {number}')
         if not isinstance(with_depot, bool):
             raise TypeError(f'Type of `with_depot` must be a bool: got {builtins.type(type)}')
         return cls(number=number, with_depot=with_depot)
@@ -37,9 +44,7 @@ class Transits(ModelFeature):
 
     def __repr__(self):
         inner = f'{self.number}'
-        if self.with_depot:
-            inner += ',DEPOT'
-        else:
+        if not self.with_depot:
             inner += ',NODEPOT'
         return f'TRANSITS({inner})'
 
@@ -58,7 +63,14 @@ class Transits(ModelFeature):
         if self.with_depot != other.with_depot:
             # Depot is "less then" no depot, False < True
             return self.with_depot > other.with_depot
-        return self.number < other.number
+
+        def _get_number(number):
+            if number == 'N':
+                return 9999
+            else:
+                return number
+
+        return _get_number(self.number) < _get_number(other.number)
 
     @staticmethod
     def repr_many(mfl):
@@ -73,14 +85,20 @@ class Transits(ModelFeature):
                 numbers_by_type[feat.with_depot].append(feat.number)
         transits_repr = []
         for with_depot, numbers in numbers_by_type.items():
+            if 'N' in numbers:
+                inner = 'N'
+                numbers.remove('N')
+                if not with_depot:
+                    inner += ',NODEPOT'
+                transits_repr.append(f'TRANSITS({inner})')
+            if not numbers:
+                continue
             numbers_sorted = sorted(numbers)
             if len(numbers_sorted) == 1:
                 inner = f'{numbers_sorted[0]}'
             else:
                 inner = f"[{','.join(str(n) for n in numbers_sorted)}]"
-            if with_depot:
-                inner += ',DEPOT'
-            else:
+            if not with_depot:
                 inner += ',NODEPOT'
             transits_repr.append(f'TRANSITS({inner})')
         return ';'.join(transits_repr)

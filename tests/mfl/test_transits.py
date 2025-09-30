@@ -19,8 +19,15 @@ def test_create():
     assert t2.args == (0, False)
     assert t2.args == (t2.number, t2.with_depot)
 
-    with pytest.raises(TypeError):
+    t3 = Transits.create('n', False)
+    assert t3.args == ('N', False)
+    assert t3.args == (t3.number, t3.with_depot)
+
+    with pytest.raises(ValueError):
         Transits.create('x')
+
+    with pytest.raises(TypeError):
+        Transits.create(1.0)
 
     with pytest.raises(ValueError):
         Transits.create(-1)
@@ -40,13 +47,13 @@ def test_replace():
     with pytest.raises(TypeError):
         t1.replace(with_depot=1)
 
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         t1.replace(number='x')
 
 
 def test_repr():
     t1 = Transits.create(0, True)
-    assert repr(t1) == 'TRANSITS(0,DEPOT)'
+    assert repr(t1) == 'TRANSITS(0)'
     t2 = Transits.create(1, False)
     assert repr(t2) == 'TRANSITS(1,NODEPOT)'
 
@@ -72,6 +79,8 @@ def test_lt():
     t3 = Transits.create(1)
     assert t1 < t3
     assert t3 < t2
+    t4 = Transits.create('n')
+    assert t3 < t4
 
     with pytest.raises(TypeError):
         t1 < 1
@@ -80,11 +89,18 @@ def test_lt():
 def test_repr_many():
     t_depot = [Transits.create(i) for i in range(3)]
     mfl1 = ModelFeatures.create(t_depot)
-    assert Transits.repr_many(mfl1) == 'TRANSITS([0,1,2],DEPOT)'
+    assert Transits.repr_many(mfl1) == 'TRANSITS([0,1,2])'
     t_nodepot = [Transits.create(i, False) for i in range(1, 3)]
     mfl2 = ModelFeatures.create(t_nodepot)
     assert Transits.repr_many(mfl2) == 'TRANSITS([1,2],NODEPOT)'
-    assert Transits.repr_many(mfl1 + mfl2) == 'TRANSITS([0,1,2],DEPOT);TRANSITS([1,2],NODEPOT)'
+    assert Transits.repr_many(mfl1 + mfl2) == 'TRANSITS([0,1,2]);TRANSITS([1,2],NODEPOT)'
     mfl3 = ModelFeatures.create([t_depot[0]])
-    assert Transits.repr_many(mfl3) == 'TRANSITS(0,DEPOT)'
-    assert Transits.repr_many(mfl3 + mfl2) == 'TRANSITS(0,DEPOT);TRANSITS([1,2],NODEPOT)'
+    assert Transits.repr_many(mfl3) == 'TRANSITS(0)'
+    assert Transits.repr_many(mfl3 + mfl2) == 'TRANSITS(0);TRANSITS([1,2],NODEPOT)'
+    t_n = Transits.create('n')
+    mfl4 = ModelFeatures.create([t_n])
+    assert Transits.repr_many(mfl4 + mfl2) == 'TRANSITS(N);TRANSITS([1,2],NODEPOT)'
+    assert (
+        Transits.repr_many(mfl1 + mfl4 + mfl2)
+        == 'TRANSITS(N);TRANSITS([0,1,2]);TRANSITS([1,2],NODEPOT)'
+    )

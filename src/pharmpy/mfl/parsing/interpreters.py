@@ -143,6 +143,9 @@ class TransitsInterpreter(CountInterpreter):
     def depot_wildcard(self, tree):
         return [True, False]
 
+    def n(self, tree):
+        return 'N'
+
 
 class LagTimeInterpreter(Interpreter):
     def interpret(self, tree):
