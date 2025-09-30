@@ -57,7 +57,7 @@ networkx==3.5
 numexpr==2.13.0
 numpy==2.3.3
 packaging==25.0
-pandas==2.3.2
+pandas==2.3.3
 pandocfilters==1.5.1
 parso==0.8.5
 partd==1.4.2
