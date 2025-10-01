@@ -33,6 +33,7 @@ def group_args(args, i):
 
 def get_repr(arg):
     if isinstance(arg, tuple) or isinstance(arg, list):
+        arg = [str(a) for a in arg]
         return f"[{','.join(arg)}]"
     else:
         return arg

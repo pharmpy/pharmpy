@@ -3,6 +3,7 @@ import itertools
 import pytest
 
 from pharmpy.mfl.features import Covariate
+from pharmpy.mfl.features.symbols import Ref
 from pharmpy.mfl.model_features import ModelFeatures
 
 
@@ -10,6 +11,10 @@ def test_init():
     c1 = Covariate('CL', 'VC', 'EXP', '*', False)
     assert c1.args == ('CL', 'VC', 'EXP', '*', False)
     assert c1.args == (c1.parameter, c1.covariate, c1.fp, c1.op, c1.optional)
+
+    c2 = Covariate(Ref('IIV'), 'VC', 'EXP', '*', False)
+    assert c2.args == (Ref('IIV'), 'VC', 'EXP', '*', False)
+    assert c2.args == (c2.parameter, c2.covariate, c2.fp, c2.op, c2.optional)
 
 
 def test_create():
@@ -24,6 +29,10 @@ def test_create():
         c2 = Covariate.create(parameter=param, covariate=cov, fp='exp', op='+', optional=True)
         assert c2.args == (param.upper(), cov.upper(), 'EXP', '+', True)
         assert c2.args == (c2.parameter, c2.covariate, c2.fp, c2.op, c2.optional)
+
+    c3 = Covariate(Ref('IIV'), Ref('CONTINUOUS'), 'EXP', '*', False)
+    assert c3.args == (Ref('IIV'), Ref('CONTINUOUS'), 'EXP', '*', False)
+    assert c3.args == (c3.parameter, c3.covariate, c3.fp, c3.op, c3.optional)
 
 
 @pytest.mark.parametrize(
@@ -61,6 +70,8 @@ def test_repr():
     assert repr(c1) == 'COVARIATE(CL,WGT,EXP,*)'
     c2 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP', optional=True)
     assert repr(c2) == 'COVARIATE?(CL,WGT,EXP,*)'
+    c3 = Covariate.create(parameter=Ref('IIV'), covariate='WGT', fp='EXP', optional=True)
+    assert repr(c3) == 'COVARIATE?(@IIV,WGT,EXP,*)'
 
 
 def test_eq():
@@ -70,6 +81,8 @@ def test_eq():
     assert c1 == c2
     c3 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP', optional=True)
     assert c3 != c1
+    c4 = Covariate.create(parameter=Ref('IIV'), covariate='WGT', fp='EXP', optional=True)
+    assert c4 != c1
 
     assert c1 != 1
 
@@ -87,6 +100,8 @@ def test_lt():
     assert c4 < c5
     c6 = Covariate.create(parameter='VC', covariate='AGE', fp='LIN', op='+', optional=True)
     assert c5 < c6
+    c7 = Covariate.create(parameter=Ref('IIV'), covariate='WGT', fp='EXP', optional=True)
+    assert c7 < c6
 
     with pytest.raises(TypeError):
         c1 < 1
@@ -131,6 +146,24 @@ def test_lt():
                 {'parameter': 'VC', 'covariate': 'AGE', 'fp': 'exp', 'optional': True},
             ],
             'COVARIATE(CL,[AGE,WGT],EXP,*);COVARIATE(VC,WGT,EXP,*);COVARIATE?(VC,AGE,EXP,*)',
+        ),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WGT', 'fp': 'exp'},
+                {'parameter': 'VC', 'covariate': 'WGT', 'fp': 'exp'},
+                {'parameter': 'CL', 'covariate': 'AGE', 'fp': 'exp'},
+                {'parameter': 'VC', 'covariate': 'AGE', 'fp': 'exp'},
+                {'parameter': Ref('IIV'), 'covariate': 'WGT', 'fp': 'exp'},
+            ],
+            'COVARIATE(@IIV,WGT,EXP,*);COVARIATE([CL,VC],[AGE,WGT],EXP,*)',
+        ),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WGT', 'fp': 'exp'},
+                {'parameter': 'VC', 'covariate': 'WGT', 'fp': 'exp'},
+                {'parameter': Ref('IIV'), 'covariate': 'WGT', 'fp': 'exp'},
+            ],
+            'COVARIATE([@IIV,CL,VC],WGT,EXP,*)',
         ),
     ],
 )

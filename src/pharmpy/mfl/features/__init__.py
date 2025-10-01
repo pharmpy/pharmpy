@@ -9,6 +9,7 @@ from .lagtime import LagTime
 from .metabolite import Metabolite
 from .model_feature import ModelFeature
 from .peripherals import Peripherals
+from .symbols import Ref
 from .transits import Transits
 
 __all__ = (
@@ -23,5 +24,6 @@ __all__ = (
     'Metabolite',
     'ModelFeature',
     'Peripherals',
+    'Ref',
     'Transits',
 )

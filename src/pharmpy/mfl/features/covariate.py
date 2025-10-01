@@ -1,5 +1,6 @@
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
+from .symbols import Ref
 
 FP_TYPES = frozenset(('LIN', 'PIECE_LIN', 'EXP', 'POW', 'CAT', 'CAT2'))
 OP_TYPES = frozenset(('+', '*'))
@@ -15,19 +16,22 @@ class Covariate(ModelFeature):
 
     @classmethod
     def create(cls, parameter, covariate, fp, op='*', optional=False):
-        if not isinstance(parameter, str):
-            raise TypeError(f'Type of `parameter` must be a string: got {type(parameter)}')
-        if not isinstance(covariate, str):
-            raise TypeError(f'Type of `covariate` must be a string: got {type(covariate)}')
+        if not isinstance(parameter, str) and not isinstance(parameter, Ref):
+            raise TypeError(f'Type of `parameter` must be a string or Ref: got {type(parameter)}')
+        if not isinstance(covariate, str) and not isinstance(covariate, Ref):
+            raise TypeError(f'Type of `covariate` must be a string or Ref: got {type(covariate)}')
         if not isinstance(optional, bool):
             raise TypeError(f'Type of `optional` must be a bool: got {type(optional)}')
+
+        parameter = parameter.upper() if isinstance(parameter, str) else parameter
+        covariate = covariate.upper() if isinstance(covariate, str) else covariate
 
         fp = cls._canonicalize_type(fp, FP_TYPES, 'fp')
         op = cls._canonicalize_type(op, OP_TYPES, 'op')
 
         return cls(
-            parameter=parameter.upper(),
-            covariate=covariate.upper(),
+            parameter=parameter,
+            covariate=covariate,
             fp=fp,
             op=op,
             optional=optional,
@@ -94,9 +98,9 @@ class Covariate(ModelFeature):
         if self.optional != other.optional:
             return self.optional < other.optional
         if self.parameter != other.parameter:
-            return self.parameter < other.parameter
+            return str(self.parameter) < str(other.parameter)
         if self.covariate != other.covariate:
-            return self.covariate < other.covariate
+            return str(self.covariate) < str(other.covariate)
         if self.fp != other.fp:
             return self.fp < other.fp
         return self.op < other.op
