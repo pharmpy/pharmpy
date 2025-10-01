@@ -3,6 +3,7 @@ import pytest
 from pharmpy.mfl.features import (
     Absorption,
     Allometry,
+    Covariate,
     DirectEffect,
     EffectComp,
     Elimination,
@@ -10,6 +11,7 @@ from pharmpy.mfl.features import (
     LagTime,
     Metabolite,
     Peripherals,
+    Ref,
     Transits,
 )
 from pharmpy.mfl.parsing import parse
@@ -203,6 +205,132 @@ from pharmpy.mfl.parsing import parse
         ('ALLOMETRY(WT)', Allometry, [('WT', 70)]),
         ('ALLOMETRY(WT,70)', Allometry, [('WT', 70)]),
         ('ALLOMETRY(WT, 70.0)', Allometry, [('WT', 70)]),
+        (
+            'COVARIATE(CL,WGT,EXP)',
+            Covariate,
+            [('CL', 'WGT', 'EXP', '*', False)],
+        ),
+        (
+            'COVARIATE([CL],WGT,EXP)',
+            Covariate,
+            [('CL', 'WGT', 'EXP', '*', False)],
+        ),
+        (
+            'COVARIATE(CL,[WGT],EXP)',
+            Covariate,
+            [('CL', 'WGT', 'EXP', '*', False)],
+        ),
+        (
+            'COVARIATE(CL,WGT,[EXP])',
+            Covariate,
+            [('CL', 'WGT', 'EXP', '*', False)],
+        ),
+        (
+            'COVARIATE(CL,[WGT,AGE],EXP)',
+            Covariate,
+            [('CL', 'AGE', 'EXP', '*', False), ('CL', 'WGT', 'EXP', '*', False)],
+        ),
+        (
+            'COVARIATE([CL,VC,MAT],[WGT,AGE],[EXP,POW])',
+            Covariate,
+            [
+                ('CL', 'AGE', 'EXP', '*', False),
+                ('CL', 'AGE', 'POW', '*', False),
+                ('CL', 'WGT', 'EXP', '*', False),
+                ('CL', 'WGT', 'POW', '*', False),
+                ('MAT', 'AGE', 'EXP', '*', False),
+                ('MAT', 'AGE', 'POW', '*', False),
+                ('MAT', 'WGT', 'EXP', '*', False),
+                ('MAT', 'WGT', 'POW', '*', False),
+                ('VC', 'AGE', 'EXP', '*', False),
+                ('VC', 'AGE', 'POW', '*', False),
+                ('VC', 'WGT', 'EXP', '*', False),
+                ('VC', 'WGT', 'POW', '*', False),
+            ],
+        ),
+        (
+            'COVARIATE?(CL,WGT,EXP)',
+            Covariate,
+            [('CL', 'WGT', 'EXP', '*', True)],
+        ),
+        (
+            'COVARIATE?(CL,[WGT,AGE],EXP)',
+            Covariate,
+            [('CL', 'AGE', 'EXP', '*', True), ('CL', 'WGT', 'EXP', '*', True)],
+        ),
+        (
+            'COVARIATE?(CL,WGT,EXP);COVARIATE(VC,WGT,EXP)',
+            Covariate,
+            [('CL', 'WGT', 'EXP', '*', True), ('VC', 'WGT', 'EXP', '*', False)],
+        ),
+        ('LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)', Covariate, []),
+        (
+            'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            Covariate,
+            [
+                ('CL', Ref('CONTINUOUS'), 'EXP', '*', False),
+                ('MAT', Ref('CONTINUOUS'), 'EXP', '*', False),
+                ('VC', Ref('CONTINUOUS'), 'EXP', '*', False),
+                ('CL', Ref('CATEGORICAL'), 'CAT', '+', False),
+                ('MAT', Ref('CATEGORICAL'), 'CAT', '+', False),
+                ('VC', Ref('CATEGORICAL'), 'CAT', '+', False),
+            ],
+        ),
+        (
+            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            Covariate,
+            [
+                ('CL', 'AGE', 'EXP', '*', True),
+                ('CL', 'WT', 'EXP', '*', True),
+                ('MAT', 'AGE', 'EXP', '*', True),
+                ('MAT', 'WT', 'EXP', '*', True),
+                ('VC', 'AGE', 'EXP', '*', True),
+                ('VC', 'WT', 'EXP', '*', True),
+                ('CL', 'SEX', 'CAT', '+', True),
+                ('MAT', 'SEX', 'CAT', '+', True),
+                ('VC', 'SEX', 'CAT', '+', True),
+            ],
+        ),
+        (
+            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            Covariate,
+            [
+                ('CL', 'AGE', 'EXP', '*', True),
+                ('CL', 'WT', 'EXP', '*', True),
+                ('MAT', 'AGE', 'EXP', '*', True),
+                ('MAT', 'WT', 'EXP', '*', True),
+                ('VC', 'AGE', 'EXP', '*', True),
+                ('VC', 'WT', 'EXP', '*', True),
+                ('CL', 'SEX', 'CAT', '+', True),
+                ('MAT', 'SEX', 'CAT', '+', True),
+                ('VC', 'SEX', 'CAT', '+', True),
+            ],
+        ),
+        (
+            'COVARIATE?(@IIV, @CONTINUOUS, *)',
+            Covariate,
+            [
+                (Ref('IIV'), Ref('CONTINUOUS'), 'CAT', '*', True),
+                (Ref('IIV'), Ref('CONTINUOUS'), 'CAT2', '*', True),
+                (Ref('IIV'), Ref('CONTINUOUS'), 'EXP', '*', True),
+                (Ref('IIV'), Ref('CONTINUOUS'), 'LIN', '*', True),
+                (Ref('IIV'), Ref('CONTINUOUS'), 'PIECE_LIN', '*', True),
+                (Ref('IIV'), Ref('CONTINUOUS'), 'POW', '*', True),
+            ],
+        ),
+        (
+            'LET(CONTINUOUS,[AGE,WT])\n' 'COVARIATE?(@IIV,@CONTINUOUS,EXP,*)',
+            Covariate,
+            [
+                (Ref('IIV'), 'AGE', 'EXP', '*', True),
+                (Ref('IIV'), 'WT', 'EXP', '*', True),
+            ],
+        ),
     ),
     ids=repr,
 )

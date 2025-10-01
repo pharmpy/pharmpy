@@ -1,7 +1,7 @@
 from lark import Lark
 
 from .grammar import grammar
-from .interpreters import MFLInterpreter
+from .interpreters import DefinitionInterpreter, MFLInterpreter
 
 
 def parse(code: str):
@@ -19,10 +19,25 @@ def parse(code: str):
 
     tree = parser.parse(code)
 
-    features = MFLInterpreter().interpret(tree)
+    definitions = find_definitions(tree)
+    features = MFLInterpreter(definitions).interpret(tree)
     features = _flatten(features)
 
     return features
+
+
+def find_definitions(tree):
+    definition_trees = tree.find_data('definition')
+
+    if not definition_trees:
+        return dict()
+
+    definitions = dict()
+    for subtree in definition_trees:
+        symbol, values = DefinitionInterpreter().interpret(subtree)
+        definitions[symbol] = values
+
+    return definitions
 
 
 def _flatten(lst):

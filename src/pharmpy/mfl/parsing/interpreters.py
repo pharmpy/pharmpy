@@ -5,6 +5,7 @@ from lark.visitors import Interpreter
 from ..features import (
     Absorption,
     Allometry,
+    Covariate,
     DirectEffect,
     EffectComp,
     Elimination,
@@ -12,9 +13,11 @@ from ..features import (
     LagTime,
     Metabolite,
     Peripherals,
+    Ref,
     Transits,
 )
 from ..features.absorption import ABSORPTION_TYPES
+from ..features.covariate import FP_TYPES
 from ..features.direct_effect import DIRECT_EFFECT_TYPES
 from ..features.effect_compartment import EFFECT_COMP_TYPES
 from ..features.elimination import ELIMINATION_TYPES
@@ -24,8 +27,22 @@ from ..features.peripherals import PERIPHERAL_TYPES
 
 
 class MFLInterpreter(Interpreter):
+    def __init__(self, definitions):
+        self.definitions = definitions
+        super().__init__()
+
+    def expand(self, arg):
+        if isinstance(arg[0], Ref):
+            values = self.definitions.get(arg[0].name)
+            if values:
+                return values
+        return arg
+
     def interpret(self, tree):
         return self.visit_children(tree)
+
+    def definition(self, tree):
+        return []
 
     def absorption(self, tree):
         return AbsorptionInterpreter().interpret(tree)
@@ -56,6 +73,9 @@ class MFLInterpreter(Interpreter):
 
     def allometry(self, tree):
         return AllometryInterpreter().interpret(tree)
+
+    def covariate(self, tree):
+        return CovariateInterpreter(self.definitions).interpret(tree)
 
 
 class AbsorptionInterpreter(Interpreter):
@@ -269,3 +289,94 @@ class AllometryInterpreter(Interpreter):
 
     def decimal(self, tree):
         return float(tree.children[0].value)
+
+
+class CovariateInterpreter(MFLInterpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert 3 <= len(children) <= 5
+        if isinstance(children[0], bool):
+            is_optional = True
+            children.pop(0)
+        else:
+            is_optional = False
+        if len(children) == 3:
+            children.append('*')
+
+        covs = self.expand(children[0])
+        params = self.expand(children[1])
+        fps = children[2]
+        ops = children[3]
+
+        effects = []
+        for param, cov, fp, op in itertools.product(covs, params, fps, ops):
+            effect = Covariate.create(
+                parameter=param, covariate=cov, fp=fp, op=op, optional=is_optional
+            )
+            effects.append(effect)
+
+        return sorted(effects)
+
+    def option(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        child = children[0]
+        return child if isinstance(child, list) else [child]
+
+    def parameter_option(self, tree):
+        return self.option(tree)
+
+    def covariate_option(self, tree):
+        return self.option(tree)
+
+    def fp_option(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def optional_cov(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        value = children[0].value
+        assert isinstance(value, str)
+        return True
+
+    def op_option(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        value = children[0].value
+        assert isinstance(value, str)
+        return value
+
+    def value(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        value = children[0].value
+        assert isinstance(value, str)
+        return value.upper()
+
+    def fp_wildcard(self, tree):
+        return list(FP_TYPES)
+
+    def ref(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        name = children[0].value
+        assert isinstance(name, str)
+        return Ref(name)
+
+
+class DefinitionInterpreter(Interpreter):
+
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 2
+        symbol = children[0].value
+        values = children[1]
+        return symbol, values
+
+    def value(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        value = children[0].value
+        assert isinstance(value, str)
+        return value.upper()
