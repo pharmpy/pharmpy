@@ -1,9 +1,11 @@
 from __future__ import annotations
 
+import itertools
 from collections import defaultdict
 from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
+from pharmpy.mfl.features.indirect_effect import PRODUCTION_TYPES
 from pharmpy.mfl.features.mutex_feature import MutexFeature
 
 from .features import (
@@ -63,6 +65,40 @@ class ModelFeatures(Immutable):
     def replace(self, **kwargs) -> ModelFeatures:
         features = kwargs.get('features', self._features)
         return ModelFeatures.create(features=features)
+
+    @classmethod
+    def pk_iv(cls):
+        transits = [Transits.create(0)]
+        lagtime = [LagTime.create(on=False)]
+        elimination = [Elimination.create(type='FO')]
+        peripherals = [Peripherals.create(n) for n in range(0, 3)]
+        features = transits + lagtime + elimination + peripherals
+        return cls.create(features=features)
+
+    @classmethod
+    def pk_oral(cls):
+        absorption = [Absorption.create(type=type) for type in ('FO', 'ZO', 'SEQ-ZO-FO')]
+        transits = [
+            Transits.create(n, with_depot=depot)
+            for n, depot in itertools.product([0, 1, 3, 10], [True, False])
+        ]
+        lagtime = [LagTime.create(on=False), LagTime.create(on=True)]
+        elimination = [Elimination.create(type='FO')]
+        peripherals = [Peripherals.create(n) for n in range(0, 2)]
+        features = absorption + transits + lagtime + elimination + peripherals
+        return cls.create(features=features)
+
+    @classmethod
+    def pd(cls):
+        types = ['LINEAR', 'EMAX', 'SIGMOID']
+        direct_effects = [DirectEffect.create(type=type) for type in types]
+        indirect_effects = [
+            IndirectEffect.create(type=type, production_type=production_type)
+            for type, production_type in itertools.product(types, PRODUCTION_TYPES)
+        ]
+        effect_compartments = [EffectComp.create(type=type) for type in types]
+        features = direct_effects + indirect_effects + effect_compartments
+        return cls.create(features=features)
 
     @property
     def features(self):

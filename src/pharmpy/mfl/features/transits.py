@@ -1,4 +1,5 @@
 import builtins
+from collections import defaultdict
 
 from .model_feature import ModelFeature
 
@@ -74,17 +75,22 @@ class Transits(ModelFeature):
 
     @staticmethod
     def repr_many(mfl):
-        features = sorted(mfl.features)
+        features = mfl.features
         if len(features) == 1:
             return repr(features[0])
-        numbers_by_type = dict()
+        features = sorted(features)
+        numbers_by_type = defaultdict(tuple)
         for feat in features:
-            if feat.with_depot not in numbers_by_type:
-                numbers_by_type[feat.with_depot] = [feat.number]
-            else:
-                numbers_by_type[feat.with_depot].append(feat.number)
+            numbers_by_type[feat.with_depot] += (feat.number,)
+        if len(numbers_by_type) > 1 and len(set(numbers_by_type.values())) == 1:
+            numbers = list(numbers_by_type.values())[0]
+            inner = _format_numbers(numbers)
+            inner += ',*'
+            return f'TRANSITS({inner})'
+
         transits_repr = []
         for with_depot, numbers in numbers_by_type.items():
+            numbers = list(numbers)
             if 'N' in numbers:
                 inner = 'N'
                 numbers.remove('N')
@@ -93,12 +99,17 @@ class Transits(ModelFeature):
                 transits_repr.append(f'TRANSITS({inner})')
             if not numbers:
                 continue
-            numbers_sorted = sorted(numbers)
-            if len(numbers_sorted) == 1:
-                inner = f'{numbers_sorted[0]}'
-            else:
-                inner = f"[{','.join(str(n) for n in numbers_sorted)}]"
+            inner = _format_numbers(numbers)
             if not with_depot:
                 inner += ',NODEPOT'
             transits_repr.append(f'TRANSITS({inner})')
         return ';'.join(transits_repr)
+
+
+def _format_numbers(numbers):
+    numbers_sorted = sorted(numbers)
+    if len(numbers_sorted) == 1:
+        numbers_formatted = f'{numbers_sorted[0]}'
+    else:
+        numbers_formatted = f"[{','.join(str(n) for n in numbers_sorted)}]"
+    return numbers_formatted

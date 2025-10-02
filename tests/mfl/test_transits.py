@@ -86,24 +86,48 @@ def test_lt():
         t1 < 1
 
 
-def test_repr_many():
-    t_depot = [Transits.create(i) for i in range(3)]
-    mfl1 = ModelFeatures.create(t_depot)
-    assert Transits.repr_many(mfl1) == 'TRANSITS([0,1,2])'
-    t_nodepot = [Transits.create(i, False) for i in range(1, 3)]
-    mfl2 = ModelFeatures.create(t_nodepot)
-    assert Transits.repr_many(mfl2) == 'TRANSITS([1,2],NODEPOT)'
-    assert Transits.repr_many(mfl1 + mfl2) == 'TRANSITS([0,1,2]);TRANSITS([1,2],NODEPOT)'
-    mfl3 = ModelFeatures.create([t_depot[0]])
-    assert Transits.repr_many(mfl3) == 'TRANSITS(0)'
-    assert Transits.repr_many(mfl3 + mfl2) == 'TRANSITS(0);TRANSITS([1,2],NODEPOT)'
-    t_n = Transits.create('n')
-    mfl4 = ModelFeatures.create([t_n])
-    assert Transits.repr_many(mfl4 + mfl2) == 'TRANSITS(N);TRANSITS([1,2],NODEPOT)'
-    assert (
-        Transits.repr_many(mfl1 + mfl4 + mfl2)
-        == 'TRANSITS(N);TRANSITS([0,1,2]);TRANSITS([1,2],NODEPOT)'
-    )
-    t_n_nodepot = Transits.create('n', with_depot=False)
-    mfl5 = ModelFeatures.create([t_n_nodepot])
-    assert Transits.repr_many(mfl5 + mfl2) == 'TRANSITS(N,NODEPOT);TRANSITS([1,2],NODEPOT)'
+@pytest.mark.parametrize(
+    'args, expected',
+    (
+        (
+            ((0, True), (1, True), (2, True)),
+            'TRANSITS([0,1,2])',
+        ),
+        (
+            ((0, False), (1, False), (2, False)),
+            'TRANSITS([0,1,2],NODEPOT)',
+        ),
+        (
+            ((0, True), (1, True), (2, True), (0, False), (1, False), (2, False)),
+            'TRANSITS([0,1,2],*)',
+        ),
+        (
+            ((0, True), (1, True), (2, True), (0, False), (1, False)),
+            'TRANSITS([0,1,2]);TRANSITS([0,1],NODEPOT)',
+        ),
+        (
+            ((1, True),),
+            'TRANSITS(1)',
+        ),
+        (
+            ((0, True), (1, True), (2, True), ('N', True)),
+            'TRANSITS(N);TRANSITS([0,1,2])',
+        ),
+        (
+            ((0, False), (1, False), (2, False), ('N', True)),
+            'TRANSITS(N);TRANSITS([0,1,2],NODEPOT)',
+        ),
+        (
+            ((0, True), (1, True), (2, True), ('N', False)),
+            'TRANSITS([0,1,2]);TRANSITS(N,NODEPOT)',
+        ),
+        (
+            ((0, True), (1, True), (2, True), (0, False)),
+            'TRANSITS([0,1,2]);TRANSITS(0,NODEPOT)',
+        ),
+    ),
+)
+def test_repr_many(args, expected):
+    transits = [Transits.create(*arg) for arg in args]
+    mf = ModelFeatures.create(transits)
+    assert Transits.repr_many(mf) == expected

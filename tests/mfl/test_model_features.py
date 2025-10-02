@@ -132,6 +132,31 @@ def test_replace():
         mf1.replace(features=[a1, 1])
 
 
+def test_pk_iv():
+    mf = ModelFeatures.pk_iv()
+    assert len(mf) == 6
+    assert repr(mf) == 'TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0..2)'
+
+
+def test_pk_oral():
+    mf = ModelFeatures.pk_oral()
+    assert len(mf) == 16
+    assert repr(mf) == (
+        'ABSORPTION([FO,ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],*);'
+        'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(0..1)'
+    )
+
+
+def test_pd():
+    mf = ModelFeatures.pd()
+    assert len(mf) == 12
+    assert repr(mf) == (
+        'DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);'
+        'INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],[DEGRADATION,PRODUCTION]);'
+        'EFFECTCOMP([LINEAR,EMAX,SIGMOID])'
+    )
+
+
 def test_absorption():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
@@ -380,7 +405,7 @@ def test_eq():
                 Transits.create(1, False),
                 Transits.create(3, False),
             ],
-            'TRANSITS([0,1,3]);TRANSITS([0,1,3],NODEPOT);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
+            'TRANSITS([0,1,3],*);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
         ),
         (
             [
