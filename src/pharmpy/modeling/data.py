@@ -2503,7 +2503,9 @@ def _get_bin_edges_psn(data, n_bins):
     return bin_ceilings
 
 
-def binarize_dataset(model, columns, keep=False, all_levels=False):
+def binarize_dataset(
+    model: Model, columns: Optional[list[str]], keep: bool = False, all_levels: bool = False
+):
     """Binarize dataset
 
     Will create one column per category if specified, otherwise for all columns
