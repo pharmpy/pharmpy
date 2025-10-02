@@ -119,6 +119,8 @@ def test_lt(feature_class, order, types):
     features_sorted = sorted(features)
     assert all(order[i] in features_sorted[i].args for i in range(0, len(features_sorted)))
 
+    assert not features[0] < features[0]
+
     with pytest.raises(TypeError):
         features_sorted[0] < 1
 

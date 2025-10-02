@@ -45,41 +45,41 @@ indirect_effect: "INDIRECTEFFECT"i "(" _pdtype_option "," _production_option ")"
 
 metabolite: "METABOLITE"i "(" (_metabolite_option) ")"
 
-_pdtype_option: pdtype_modes | WILDCARD
+_pdtype_option: pdtype_modes | wildcard
 pdtype_modes: PDTYPE_MODE | "[" [PDTYPE_MODE ("," PDTYPE_MODE)*] "]"
 PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i | "step"i | "loglin"i
 
-_production_option: production_modes | WILDCARD
+_production_option: production_modes | wildcard
 production_modes: PRODUCTION_MODE | "[" [PRODUCTION_MODE ("," PRODUCTION_MODE)*] "]"
 PRODUCTION_MODE: "production"i | "degradation"i
 
-_metabolite_option: metabolite_modes | WILDCARD
+_metabolite_option: metabolite_modes | wildcard
 metabolite_modes: METABOLITE_MODE | "[" [METABOLITE_MODE ("," METABOLITE_MODE)*] "]"
 METABOLITE_MODE: "basic"i | "psc"i
 
-_absorption_option: absorption_modes | WILDCARD
+_absorption_option: absorption_modes | wildcard
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
 ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i | "INST"i | "WEIBULL"i
 
-_elimination_option: elimination_modes | WILDCARD
+_elimination_option: elimination_modes | wildcard
 elimination_modes: ELIMINATION_MODE | "[" [ELIMINATION_MODE ("," ELIMINATION_MODE)*] "]"
 ELIMINATION_MODE: "FO"i | "ZO"i | "MM"i | "MIX-FO-MM"i
 
-_depot_option: depot_modes | WILDCARD
+_depot_option: depot_modes | wildcard
 depot_modes: DEPOT_MODE | "[" [DEPOT_MODE ("," DEPOT_MODE)*] "]"
 DEPOT_MODE: "DEPOT"i |"NODEPOT"i
 
-_peripheral_comp: peripheral_modes | WILDCARD
+_peripheral_comp: peripheral_modes | wildcard
 peripheral_modes: PERIPHERAL_MODE | "[" [PERIPHERAL_MODE ("," PERIPHERAL_MODE)*] "]"
 PERIPHERAL_MODE: "DRUG"i | "MET"i
 
-_lagtime_option: lagtime_modes | WILDCARD
+_lagtime_option: lagtime_modes | wildcard
 lagtime_modes: LAGTIME_MODE | "[" [LAGTIME_MODE ("," LAGTIME_MODE)*] "]"
 LAGTIME_MODE: "ON"i | "OFF"i
 
-parameter_option: values | ref | WILDCARD
-covariate_option: values | ref | WILDCARD
-_fp_options: fp_option | WILDCARD
+parameter_option: values | ref | wildcard
+covariate_option: values | ref | wildcard
+_fp_options: fp_option | wildcard
 !op_option: "+" | "*"
 optional_cov: OPTIONAL
 
@@ -87,6 +87,7 @@ ref: "@" VARIABLE_NAME
 fp_option: FP_OP  | "[" [FP_OP ("," FP_OP)*] "]"
 FP_OP: "LIN"i | "CAT"i | "CAT2"i | "PIECE_LIN"i | "EXP"i | "POW"i | "CUSTOM"i
 
+wildcard: WILDCARD
 WILDCARD: "*"
 OPTIONAL: "?"
 

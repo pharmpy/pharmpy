@@ -104,3 +104,6 @@ def test_repr_many():
         Transits.repr_many(mfl1 + mfl4 + mfl2)
         == 'TRANSITS(N);TRANSITS([0,1,2]);TRANSITS([1,2],NODEPOT)'
     )
+    t_n_nodepot = Transits.create('n', with_depot=False)
+    mfl5 = ModelFeatures.create([t_n_nodepot])
+    assert Transits.repr_many(mfl5 + mfl2) == 'TRANSITS(N,NODEPOT);TRANSITS([1,2],NODEPOT)'

@@ -37,8 +37,7 @@ class MFLInterpreter(Interpreter):
             if values:
                 return values
         if arg == '*' and types:
-            if types:
-                return list(types)
+            return list(types)
         return arg
 
     def interpret(self, tree):
@@ -92,7 +91,7 @@ class AbsorptionInterpreter(MFLInterpreter):
         absorptions = [Absorption.create(type=type) for type in types]
         return sorted(absorptions)
 
-    def absorption_types(self, tree):
+    def absorption_modes(self, tree):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
@@ -184,7 +183,7 @@ class EliminationInterpreter(MFLInterpreter):
         eliminations = [Elimination.create(type=type) for type in types]
         return sorted(eliminations)
 
-    def elimination_types(self, tree):
+    def elimination_modes(self, tree):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 

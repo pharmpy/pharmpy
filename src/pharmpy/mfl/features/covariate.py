@@ -107,10 +107,11 @@ class Covariate(ModelFeature):
 
     @staticmethod
     def repr_many(mfl):
-        features = sorted(mfl.features)
+        features = mfl.features
         if len(features) == 1:
             return repr(features[0])
 
+        features = sorted(features)
         no_of_args = len(features[0].args)
         args_grouped = group_args([feature.args for feature in features], i=no_of_args)
 

@@ -14,9 +14,3 @@ class Ref(Symbol):
 
     def __repr__(self):
         return f'@{self.name.upper()}'
-
-    def __lt__(self, other):
-        if isinstance(other, str):
-            return True
-        else:
-            return self.name < other.name

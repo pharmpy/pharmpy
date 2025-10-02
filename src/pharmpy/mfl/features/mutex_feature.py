@@ -1,4 +1,4 @@
-import builtins
+from abc import abstractmethod
 
 from .model_feature import ModelFeature
 
@@ -8,9 +8,9 @@ class MutexFeature(ModelFeature):
         self._type = type
 
     @classmethod
+    @abstractmethod
     def create(cls, type):
-        if not isinstance(type, str):
-            raise TypeError(f'Type of `type` must be a string: got {builtins.type(type)}')
+        pass
 
     def replace(self, **kwargs):
         type = kwargs.get('type', self.type)

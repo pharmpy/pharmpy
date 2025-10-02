@@ -27,7 +27,7 @@ def parse(code: str):
 
 
 def find_definitions(tree):
-    definition_trees = tree.find_data('definition')
+    definition_trees = list(tree.find_data('definition'))
 
     if not definition_trees:
         return dict()

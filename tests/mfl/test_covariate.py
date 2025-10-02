@@ -172,5 +172,7 @@ def test_repr_many(list_of_kwargs, expected):
     for kwargs in list_of_kwargs:
         c = Covariate.create(**kwargs)
         features.append(c)
-    mfl = ModelFeatures.create(features)
-    assert Covariate.repr_many(mfl) == expected
+    mfl1 = ModelFeatures.create(features)
+    assert Covariate.repr_many(mfl1) == expected
+    mfl2 = ModelFeatures.create([features[0]])
+    assert Covariate.repr_many(mfl2) == repr(features[0])
