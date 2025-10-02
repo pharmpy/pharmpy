@@ -61,7 +61,7 @@ class Dispatcher(ABC):
         pass
 
     @abstractmethod
-    def call_workflow(self, wf: Workflow[T], unique_name, context) -> T:
+    def call_workflow(self, wf: Workflow[T], unique_name: str, context) -> T:
         pass
 
     @abstractmethod
