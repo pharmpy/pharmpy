@@ -31,6 +31,8 @@ class Context(ABC):
         A reference (path) to the context
     """
 
+    _model_database: ModelDatabase
+
     def __init__(
         self,
         name: str,
@@ -41,6 +43,8 @@ class Context(ABC):
         # An implementation needs to create the model database here
         # If ref is None an implementation specific default ref will be used
         self._name = name
+        if ref is None:
+            ref = ""
         self._ref = ref
 
     @abstractmethod
@@ -107,7 +111,7 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def store_results(self, res: Results):
+    def store_results(self, res: Results) -> None:
         """Store tool results
 
         Parameters
@@ -129,7 +133,7 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def store_metadata(self, metadata: dict):
+    def store_metadata(self, metadata: dict) -> None:
         """Store tool metadata
 
         Parameters
@@ -145,7 +149,7 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def store_key(self, name: str, key: ModelHash):
+    def store_key(self, name: str, key: ModelHash) -> None:
         """Associate a key with a model name"""
         pass
 
@@ -158,12 +162,12 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def list_all_names(self) -> list(str):
+    def list_all_names(self) -> list[str]:
         """Retrieve a list of all model names in the context"""
         pass
 
     @abstractmethod
-    def list_all_subcontexts(self) -> list(str):
+    def list_all_subcontexts(self) -> list[str]:
         """Retrieve a list of the names of all subcontexts in the context"""
         pass
 
@@ -177,13 +181,13 @@ class Context(ABC):
         """Retrieve an annotation for a model"""
         pass
 
-    def get_ncores_for_execution(self):
+    def get_ncores_for_execution(self) -> int:
         """Get number of cores for execution (using available cores among allocation)"""
         ncores = self.retrieve_dispatching_options()['ncores']
         return self.dispatcher.get_available_cores(ncores)
 
     @abstractmethod
-    def store_message(self, severity, ctxpath: str, date, message: str):
+    def store_message(self, severity, ctxpath: str, date, message: str) -> None:
         pass
 
     def log_message(
@@ -191,7 +195,7 @@ class Context(ABC):
         severity: Literal["critical", "error", "warning", "info", "trace"],
         message: str,
         model: Optional[Model] = None,
-    ):
+    ) -> None:
         """Add a message to the log"""
         date = datetime.now()
         if model is None:
@@ -201,18 +205,18 @@ class Context(ABC):
         self.store_message(severity, ctxpath, date, message)
         self.broadcaster.broadcast_message(severity, ctxpath, date, message)
 
-    def log_info(self, message: str, model: Optional[Model] = None):
+    def log_info(self, message: str, model: Optional[Model] = None) -> None:
         """Add an info message to the log
 
         Currently with echo to stdout. In the future this could be changed or be configurable.
         """
         self.log_message(severity="info", message=message, model=model)
 
-    def log_error(self, message: str, model: Optional[Model] = None):
+    def log_error(self, message: str, model: Optional[Model] = None) -> None:
         """Add an error message to the log"""
         self.log_message(severity="error", message=message, model=model)
 
-    def log_warning(self, message: str, model: Optional[Model] = None):
+    def log_warning(self, message: str, model: Optional[Model] = None) -> None:
         """Add a warning message to the log"""
         self.log_message(severity="warning", message=message, model=model)
 
@@ -254,7 +258,7 @@ class Context(ABC):
         pass
 
     @abstractmethod
-    def finalize(self):
+    def finalize(self) -> None:
         """Called after a tool has finished its run in a context
         can be implemented to do cleanup of the context
         """
@@ -315,12 +319,12 @@ class Context(ABC):
         """Ask the dispatcher to abort the currently running workflow immediately"""
         pass
 
-    def has_started(self):
+    def has_started(self) -> bool:
         """Check if the tool running in the context has started"""
         metadata = self.retrieve_metadata()
         return "stats" in metadata and "start_time" in metadata["stats"]
 
-    def has_completed(self):
+    def has_completed(self) -> bool:
         """Check if the tool running in the context has completed"""
         metadata = self.retrieve_metadata()
         return "stats" in metadata and "end_time" in metadata["stats"]
@@ -332,7 +336,9 @@ class Context(ABC):
         the context path to get a unique sequence.
         """
         ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
-        rng = np.random.default_rng([index, ctxpath_bytes, self.seed])
+        rng = np.random.default_rng(
+            [index, ctxpath_bytes, self.seed]  # pyright: ignore [reportArgumentType]
+        )
         return rng
 
     def spawn_seed(self, rng, n=128) -> int:
