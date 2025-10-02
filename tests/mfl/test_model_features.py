@@ -12,6 +12,7 @@ from pharmpy.mfl.features import (
     Metabolite,
     ModelFeature,
     Peripherals,
+    Ref,
     Transits,
 )
 from pharmpy.mfl.model_features import ModelFeatures
@@ -241,6 +242,62 @@ def test_metabolites():
     mf = ModelFeatures.create([a1, m2, a2, m1])
     assert mf.features == (a1, a2, m1, m2)
     assert mf.metabolites.features == (m1, m2)
+
+
+def test_is_expanded():
+    features = [Absorption.create('FO'), Absorption.create('SEQ-ZO-FO')]
+    mf1 = ModelFeatures.create(features)
+    assert mf1.is_expanded()
+    features.append(Covariate.create(Ref('IIV'), 'WGT', 'exp'))
+    mf2 = ModelFeatures.create(features)
+    assert not mf2.is_expanded()
+
+
+@pytest.mark.parametrize(
+    'features, expected',
+    (
+        (
+            [Absorption.create('FO'), Elimination.create('FO')],
+            True,
+        ),
+        (
+            [Absorption.create('FO'), Absorption.create('ZO')],
+            False,
+        ),
+        (
+            [Peripherals.create(0), Peripherals.create(1, 'MET')],
+            True,
+        ),
+        (
+            [Peripherals.create(0), Peripherals.create(1)],
+            False,
+        ),
+        (
+            [Peripherals.create(0), Peripherals.create(0, 'MET'), Peripherals.create(1, 'MET')],
+            False,
+        ),
+        (
+            [Covariate.create('CL', 'WGT', 'exp'), Covariate.create('VC', 'WGT', 'exp')],
+            True,
+        ),
+        (
+            [
+                Covariate.create('CL', 'WGT', 'exp', optional=True),
+                Covariate.create('VC', 'WGT', 'exp'),
+            ],
+            False,
+        ),
+    ),
+)
+def test_is_single_model(features, expected):
+    mf = ModelFeatures.create(features)
+    assert mf.is_single_model() == expected
+
+
+def test_is_single_model_raises():
+    mf = ModelFeatures([ModelFeatureX()])
+    with pytest.raises(NotImplementedError):
+        mf.is_single_model()
 
 
 def test_add():

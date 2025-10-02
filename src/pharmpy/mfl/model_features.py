@@ -1,8 +1,10 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
+from pharmpy.mfl.features.mutex_feature import MutexFeature
 
 from .features import (
     Absorption,
@@ -16,6 +18,7 @@ from .features import (
     Metabolite,
     ModelFeature,
     Peripherals,
+    Ref,
     Transits,
 )
 
@@ -115,6 +118,34 @@ class ModelFeatures(Immutable):
             if isinstance(feature, type):
                 features.append(feature)
         return ModelFeatures.create(features)
+
+    def is_expanded(self):
+        for feature in self.features:
+            arg_types = (type(arg) for arg in feature.args)
+            if Ref in arg_types:
+                return False
+        return True
+
+    def is_single_model(self):
+        feature_map = defaultdict(list)
+        for feature in self.features:
+            features = feature_map[type(feature)]
+            if isinstance(feature, (MutexFeature, IndirectEffect, Transits)):
+                if len(features) > 0:
+                    return False
+            elif isinstance(feature, Peripherals):
+                if len(features) == 1 and feature.type == features[0].type:
+                    return False
+                if len(features) > 1:
+                    return False
+                print(features)
+            elif isinstance(feature, Covariate):
+                if feature.optional:
+                    return False
+            else:
+                raise NotImplementedError
+            feature_map[type(feature)].append(feature)
+        return True
 
     def __add__(self, other: Union[ModelFeature, ModelFeatures]):
         if isinstance(other, ModelFeature):
