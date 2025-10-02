@@ -4,7 +4,7 @@ check-manifest==0.50
 docutils==0.21.2
 flake8==7.3.0
 flake8-black==0.4.0
-isort==6.0.1
+isort==6.1.0
 pyright==1.1.405
 readme-renderer==44.0
 twine==6.2.0 
