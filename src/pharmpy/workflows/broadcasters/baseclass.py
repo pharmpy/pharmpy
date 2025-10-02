@@ -1,12 +1,15 @@
 from __future__ import annotations
 
-from abc import ABC, abstractmethod
-from typing import Optional
+from abc import abstractmethod
+from datetime import datetime
+from typing import Literal, Optional
+
+from pharmpy.internals.immutable import Immutable
 
 BROADCASTERS = ('terminal', 'null')
 
 
-class Broadcaster(ABC):
+class Broadcaster(Immutable):
     @staticmethod
     def canonicalize_broadcaster_name(name: Optional[str]) -> str:
         if name is None:
@@ -34,5 +37,11 @@ class Broadcaster(ABC):
         return broadcaster
 
     @abstractmethod
-    def broadcast_message(self, severity, ctxpath, date, message) -> None:
+    def broadcast_message(
+        self,
+        severity: Literal["critical", "error", "warning", "info", "trace"],
+        ctxpath: str,
+        date: datetime,
+        message: str,
+    ) -> None:
         pass
