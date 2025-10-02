@@ -61,7 +61,9 @@ def execute_subtool(workflow: Workflow[T], context):
     assert context is not None
 
     res_name = context.context_path.replace('/', '_')
-    res = context.dispatcher.call_workflow(workflow, unique_name=f'{res_name}_results', ctx=context)
+    res = context.dispatcher.call_workflow(
+        workflow, unique_name=f'{res_name}_results', context=context
+    )
     if isinstance(res, Results) and not isinstance(res, ModelfitResults):
         handle_results(res, context)
 

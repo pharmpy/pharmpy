@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import signal
 from abc import ABC, abstractmethod
-from typing import Optional, TypeVar
+from typing import NoReturn, Optional, TypeVar
 
 from ..workflow import Workflow
 from .slurm_helpers import is_running_on_slurm
@@ -57,7 +57,7 @@ class Dispatcher(ABC):
         return dispatcher
 
     @abstractmethod
-    def run(self, workflow: Workflow[T], context) -> T:
+    def run(self, workflow: Workflow[T], context) -> Optional[T]:
         pass
 
     @abstractmethod
@@ -65,10 +65,10 @@ class Dispatcher(ABC):
         pass
 
     @abstractmethod
-    def abort_workflow(self) -> None:
+    def abort_workflow(self) -> NoReturn:
         # It is not safe to call this more than once per dispatched workflow
         # This is the responsibility of the Context
-        pass
+        raise AbortWorkflowException
 
     @abstractmethod
     def get_hosts(self) -> dict[str, int]:

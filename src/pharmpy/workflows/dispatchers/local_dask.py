@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import TypeVar
+from typing import NoReturn, Optional, TypeVar
 
 import pharmpy.workflows.dispatchers
 from pharmpy.internals.fs.cwd import chdir
@@ -14,7 +14,7 @@ T = TypeVar('T')
 
 
 class LocalDaskDispatcher(Dispatcher):
-    def run(self, workflow: Workflow[T], context) -> T:
+    def run(self, workflow: Workflow[T], context) -> Optional[T]:
         # NOTE: We change to a new temporary directory so that all files generated
         # by the workflow end-up in the same root directory. Each task of a
         # workflow has the responsibility to avoid collisions on the file system
@@ -37,7 +37,7 @@ class LocalDaskDispatcher(Dispatcher):
             if dask_dispatcher == 'threaded':
                 from dask.threaded import get
 
-                res = get(dsk, 'results')
+                res: Optional[T] = get(dsk, 'results')  # pyright: ignore [reportAssignmentType]
             else:
                 import dask
                 from dask.distributed import Client, LocalCluster
@@ -91,17 +91,21 @@ class LocalDaskDispatcher(Dispatcher):
                             )
                             dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
                             with SigHandler(context):
+                                import dask.distributed
+
                                 try:
-                                    res = client.get(dsk_optimized, 'results')
+                                    res: Optional[T] = client.get(
+                                        dsk_optimized, 'results'
+                                    )  # pyright: ignore [reportAssignmentType]
                                 except (
                                     dask.distributed.client.FutureCancelledError,
                                     AbortWorkflowException,
                                 ):
                                     res = None
                             context.log_info("End dispatch")
-        return res  # pyright: ignore [reportGeneralTypeIssues]
+        return res
 
-    def call_workflow(self, wf: Workflow[T], unique_name, ctx) -> T:
+    def call_workflow(self, wf: Workflow[T], unique_name: str, context) -> Optional[T]:
         """Dynamically call a workflow from another workflow.
 
         Currently only supports dask distributed
@@ -112,7 +116,7 @@ class LocalDaskDispatcher(Dispatcher):
             A workflow object
         unique_name : str
             A name of the results node that is unique between parent and dynamically created workflows
-        ctx : Context
+        context : Context
             Context to pass to new workflow
 
         Returns
@@ -123,7 +127,7 @@ class LocalDaskDispatcher(Dispatcher):
         from dask.distributed import get_client, rejoin, secede
 
         wb = WorkflowBuilder(wf)
-        insert_context(wb, ctx)
+        insert_context(wb, context)
         wf = Workflow(wb)
 
         client = get_client()
@@ -132,11 +136,11 @@ class LocalDaskDispatcher(Dispatcher):
         dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
         futures = client.get(dsk_optimized, unique_name, sync=False)
         secede()
-        res: T = client.gather(futures)  # pyright: ignore [reportGeneralTypeIssues]
+        res: Optional[T] = client.gather(futures)  # pyright: ignore [reportAssignmentType]
         rejoin()
         return res
 
-    def abort_workflow(self):
+    def abort_workflow(self) -> NoReturn:
         from dask.distributed import get_client
 
         client = get_client()
@@ -146,7 +150,7 @@ class LocalDaskDispatcher(Dispatcher):
         raise AbortWorkflowException
 
     def get_hosts(self) -> dict[str, int]:
-        hosts = {'localhost': os.cpu_count()}
+        hosts = {'localhost': os.cpu_count() or 1}
         return hosts
 
     def get_hostname(self) -> str:
@@ -155,7 +159,7 @@ class LocalDaskDispatcher(Dispatcher):
         else:
             return 'localhost'
 
-    def get_available_cores(self, allocation: int):
+    def get_available_cores(self, allocation: int) -> int:
         return 1
 
 

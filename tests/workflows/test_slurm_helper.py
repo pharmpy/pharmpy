@@ -19,7 +19,8 @@ def test_is_running_on_slurm():
 
 def test_get_slurm_nodename():
     os.environ.pop('SLURMD_NODENAME', None)
-    assert not get_slurm_nodename()
+    with pytest.raises(AssertionError):
+        get_slurm_nodename()
     os.environ['SLURMD_NODENAME'] = 'nodename'
     assert get_slurm_nodename() == 'nodename'
 
