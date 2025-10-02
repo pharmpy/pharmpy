@@ -45,40 +45,40 @@ def _index_to_json(index: Union[pd.Index, pd.MultiIndex]) -> dict[str, Any]:
 
 
 class ResultsJSONEncoder(json.JSONEncoder):
-    def default(self, obj) -> Union[dict[str, Any], None]:
+    def default(self, o) -> Union[dict[str, Any], None]:
         # NOTE: This function is called when the base JSONEncoder does not know
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
         # instance, or any custom class.
         from pharmpy.workflows import Log
 
-        if isinstance(obj, Results):
-            d = obj.to_dict()
-            d['__module__'] = obj.__class__.__module__
-            d['__class__'] = obj.__class__.__qualname__
+        if isinstance(o, Results):
+            d = o.to_dict()
+            d['__module__'] = o.__class__.__module__
+            d['__class__'] = o.__class__.__qualname__
             return d
-        elif isinstance(obj, pd.DataFrame):
-            d = _df_to_json(obj)
+        elif isinstance(o, pd.DataFrame):
+            d = _df_to_json(o)
             d['__class__'] = 'DataFrame'
             return d
-        elif isinstance(obj, pd.Series):
-            if obj.size >= 1 and isinstance(obj.iloc[0], pd.DataFrame):
+        elif isinstance(o, pd.Series):
+            if o.size >= 1 and isinstance(o.iloc[0], pd.DataFrame):
                 # NOTE: Hack special case for Series of DataFrame objects
                 return {
-                    'data': [{'__class__': 'DataFrame', **_df_to_json(df)} for df in obj.values],
-                    'index': _index_to_json(obj.index),
-                    'name': obj.name,
-                    'dtype': str(obj.dtype),
+                    'data': [{'__class__': 'DataFrame', **_df_to_json(df)} for df in o.values],
+                    'index': _index_to_json(o.index),
+                    'name': o.name,
+                    'dtype': str(o.dtype),
                     '__class__': 'Series[DataFrame]',
                 }
 
             # NOTE: Hack to work around poor support of to_json/read_json of
             # pd.Series with MultiIndex
-            df = obj.to_frame()
+            df = o.to_frame()
             d = _df_to_json(df)
             d['__class__'] = 'Series'
             return d
-        elif obj.__class__.__module__.startswith('altair.'):
+        elif o.__class__.__module__.startswith('altair.'):
             with warnings.catch_warnings():
                 # FIXME: Remove filter once altair stops relying on deprecated APIs
                 warnings.filterwarnings(
@@ -92,28 +92,28 @@ class ResultsJSONEncoder(json.JSONEncoder):
                     message=".*the convert_dtype parameter is deprecated",
                     category=FutureWarning,
                 )
-                d = obj.to_dict()
-            d['__module__'] = obj.__class__.__module__
-            d['__class__'] = obj.__class__.__qualname__
+                d = o.to_dict()
+            d['__module__'] = o.__class__.__module__
+            d['__class__'] = o.__class__.__qualname__
             return d
-        elif isinstance(obj, Model):
-            d = obj.to_dict()
-            d['__module__'] = obj.__class__.__module__
-            d['__class__'] = obj.__class__.__qualname__
+        elif isinstance(o, Model):
+            d = o.to_dict()
+            d['__module__'] = o.__class__.__module__
+            d['__class__'] = o.__class__.__qualname__
             from .hashing import ModelHash
 
-            d['__hash__'] = str(ModelHash(obj))
+            d['__hash__'] = str(ModelHash(o))
             return d
-        elif isinstance(obj, Log):
-            d: dict[Any, Any] = obj.to_dict()
-            d['__class__'] = obj.__class__.__qualname__
+        elif isinstance(o, Log):
+            d: dict[Any, Any] = o.to_dict()
+            d['__class__'] = o.__class__.__qualname__
             return d
-        elif isinstance(obj, Path):
-            d = {'path': str(obj), '__class__': 'PosixPath'}
+        elif isinstance(o, Path):
+            d = {'path': str(o), '__class__': 'PosixPath'}
             return d
         else:
             # NOTE: This will raise a proper TypeError
-            return super().default(obj)
+            return super().default(o)
 
 
 def _df_read_json(obj) -> pd.DataFrame:
@@ -134,13 +134,14 @@ def _multi_index_read_json(obj) -> pd.MultiIndex:
 class ResultsJSONDecoder(json.JSONDecoder):
     def __init__(self, model_deserialization_func=None, *args, **kwargs):
         self._model_deserialization_func = model_deserialization_func
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, object_hook=self.obj_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
+    def obj_hook(self, obj):
         # NOTE: This hook will be called for every dict produced by the
         # base JSONDecoder. It will not be called on int, float, str, or list.
         module = None
         cls = None
+        key = None
 
         if '__module__' in obj:
             module = obj['__module__']
@@ -301,18 +302,6 @@ class Results(Immutable):
                     fh.write(bytes(s, 'utf-8'))
         else:
             return s
-
-    def get_and_reset_index(self, attr: str, **kwargs) -> pd.DataFrame:
-        """Wrapper to reset index of attribute or result from method.
-
-        Used to facilitate importing multiindex dataframes into R
-        """
-        val = getattr(self, attr)
-        if callable(val):
-            df = val(**kwargs)
-        else:
-            df = val
-        return df.reset_index()
 
     def to_dict(self) -> dict[str, Any]:
         """Convert results object to a dictionary"""
@@ -479,9 +468,9 @@ class ModelfitResults(Results):
     log_likelihood: Optional[float] = None
     log: Optional['Log'] = None
     evaluation: Optional[pd.Series] = None
-    covstep_successful: Optional[bool, None] = None
+    covstep_successful: Optional[bool] = None
     gradients: Optional[pd.Series] = None
-    gradients_iterations: Optional[pd.DataFrame] = (None,)
+    gradients_iterations: Optional[pd.DataFrame] = None
     warnings: Optional[list[str]] = None
     individual_eta_samples: Optional[pd.DataFrame] = None
 
