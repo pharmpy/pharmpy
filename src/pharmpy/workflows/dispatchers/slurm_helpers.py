@@ -7,8 +7,9 @@ def is_running_on_slurm() -> bool:
     return jobid is not None
 
 
-def get_slurm_nodename():
+def get_slurm_nodename() -> str:
     nodename = os.getenv("SLURMD_NODENAME")
+    assert nodename is not None
     return nodename
 
 

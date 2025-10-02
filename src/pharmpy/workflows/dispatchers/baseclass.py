@@ -74,7 +74,8 @@ class Dispatcher(ABC):
     def get_hosts(self) -> dict[str, int]:
         pass
 
-    def get_available_cores(self, allocation: int):
+    @abstractmethod
+    def get_available_cores(self, allocation: int) -> int:
         pass
 
     @abstractmethod

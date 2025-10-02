@@ -1,5 +1,5 @@
 import os
-from typing import TypeVar
+from typing import NoReturn, Optional, TypeVar
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
@@ -12,7 +12,7 @@ T = TypeVar('T')
 
 
 class LocalSerialDispatcher(Dispatcher):
-    def run(self, workflow: Workflow[T], context) -> T:
+    def run(self, workflow: Workflow[T], context) -> Optional[T]:
         with TemporaryDirectory() as tempdirname, chdir(tempdirname):
             context.log_info(f"Dispatching workflow with local_serial dispatcher in {context}")
             with SigHandler(context):
@@ -21,10 +21,10 @@ class LocalSerialDispatcher(Dispatcher):
                 except AbortWorkflowException:
                     res = None
             context.log_info("End dispatch")
-        return res  # pyright: ignore [reportGeneralTypeIssues]
+        return res
 
     @staticmethod
-    def _run(workflow):
+    def _run(workflow: Workflow[T]) -> T:
         res_cache = dict()
         unvisited_children = {task: len(workflow.get_successors(task)) for task in workflow.tasks}
         for task in workflow.sort('topological'):
@@ -43,23 +43,23 @@ class LocalSerialDispatcher(Dispatcher):
 
         return res
 
-    def call_workflow(self, wf: Workflow[T], unique_name, ctx) -> T:
+    def call_workflow(self, wf: Workflow[T], unique_name: str, context) -> T:
         wb = WorkflowBuilder(wf)
-        insert_context(wb, ctx)
+        insert_context(wb, context)
         wf = Workflow(wb)
 
         res = self._run(wf)
 
         return res
 
-    def abort_workflow(self) -> None:
+    def abort_workflow(self) -> NoReturn:
         raise AbortWorkflowException
 
     def get_hosts(self) -> dict[str, int]:
         if is_running_on_slurm():
             return get_slurm_nodedict()
         else:
-            return {'localhost': os.cpu_count()}
+            return {'localhost': os.cpu_count() or 1}
 
     def get_hostname(self) -> str:
         if is_running_on_slurm():
@@ -67,5 +67,5 @@ class LocalSerialDispatcher(Dispatcher):
         else:
             return 'localhost'
 
-    def get_available_cores(self, allocation: int):
+    def get_available_cores(self, allocation: int) -> int:
         return allocation
