@@ -45,58 +45,47 @@ indirect_effect: "INDIRECTEFFECT"i "(" _pdtype_option "," _production_option ")"
 
 metabolite: "METABOLITE"i "(" (_metabolite_option) ")"
 
-_pdtype_option: pdtype_modes | pdtype_wildcard
+_pdtype_option: pdtype_modes | WILDCARD
 pdtype_modes: PDTYPE_MODE | "[" [PDTYPE_MODE ("," PDTYPE_MODE)*] "]"
 PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i | "step"i | "loglin"i
-pdtype_wildcard: WILDCARD
 
-_production_option: production_modes | production_wildcard
+_production_option: production_modes | WILDCARD
 production_modes: PRODUCTION_MODE | "[" [PRODUCTION_MODE ("," PRODUCTION_MODE)*] "]"
 PRODUCTION_MODE: "production"i | "degradation"i
-production_wildcard: WILDCARD
 
-_metabolite_option: metabolite_modes | metabolite_wildcard
+_metabolite_option: metabolite_modes | WILDCARD
 metabolite_modes: METABOLITE_MODE | "[" [METABOLITE_MODE ("," METABOLITE_MODE)*] "]"
 METABOLITE_MODE: "basic"i | "psc"i
-metabolite_wildcard: WILDCARD
 
-_absorption_option: absorption_modes | absorption_wildcard
+_absorption_option: absorption_modes | WILDCARD
 absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
-absorption_wildcard: WILDCARD
 ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i | "INST"i | "WEIBULL"i
 
-_elimination_option: elimination_modes | elimination_wildcard
+_elimination_option: elimination_modes | WILDCARD
 elimination_modes: ELIMINATION_MODE | "[" [ELIMINATION_MODE ("," ELIMINATION_MODE)*] "]"
-elimination_wildcard: WILDCARD
 ELIMINATION_MODE: "FO"i | "ZO"i | "MM"i | "MIX-FO-MM"i
 
-_depot_option: depot_modes | depot_wildcard
+_depot_option: depot_modes | WILDCARD
 depot_modes: DEPOT_MODE | "[" [DEPOT_MODE ("," DEPOT_MODE)*] "]"
 DEPOT_MODE: "DEPOT"i |"NODEPOT"i
-depot_wildcard: WILDCARD
 
-_peripheral_comp: peripheral_modes | peripheral_wildcard
+_peripheral_comp: peripheral_modes | WILDCARD
 peripheral_modes: PERIPHERAL_MODE | "[" [PERIPHERAL_MODE ("," PERIPHERAL_MODE)*] "]"
 PERIPHERAL_MODE: "DRUG"i | "MET"i
-peripheral_wildcard: WILDCARD
 
-_lagtime_option: lagtime_modes | lagtime_wildcard
+_lagtime_option: lagtime_modes | WILDCARD
 lagtime_modes: LAGTIME_MODE | "[" [LAGTIME_MODE ("," LAGTIME_MODE)*] "]"
-lagtime_wildcard: WILDCARD
 LAGTIME_MODE: "ON"i | "OFF"i
 
-parameter_option: values | ref | parameter_wildcard
-covariate_option: values | ref | covariate_wildcard
-_fp_options: fp_option | fp_wildcard
+parameter_option: values | ref | WILDCARD
+covariate_option: values | ref | WILDCARD
+_fp_options: fp_option | WILDCARD
 !op_option: "+" | "*"
 optional_cov: OPTIONAL
 
 ref: "@" VARIABLE_NAME
-parameter_wildcard: WILDCARD
-covariate_wildcard: WILDCARD
 fp_option: FP_OP  | "[" [FP_OP ("," FP_OP)*] "]"
 FP_OP: "LIN"i | "CAT"i | "CAT2"i | "PIECE_LIN"i | "EXP"i | "POW"i | "CUSTOM"i
-fp_wildcard: WILDCARD
 
 WILDCARD: "*"
 OPTIONAL: "?"

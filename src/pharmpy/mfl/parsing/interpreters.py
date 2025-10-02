@@ -27,15 +27,18 @@ from ..features.peripherals import PERIPHERAL_TYPES
 
 
 class MFLInterpreter(Interpreter):
-    def __init__(self, definitions):
+    def __init__(self, definitions=None):
         self.definitions = definitions
         super().__init__()
 
-    def expand(self, arg):
+    def expand(self, arg, types=None):
         if isinstance(arg[0], Ref):
             values = self.definitions.get(arg[0].name)
             if values:
                 return values
+        if arg == '*' and types:
+            if types:
+                return list(types)
         return arg
 
     def interpret(self, tree):
@@ -77,12 +80,15 @@ class MFLInterpreter(Interpreter):
     def covariate(self, tree):
         return CovariateInterpreter(self.definitions).interpret(tree)
 
+    def wildcard(self, tree):
+        return '*'
 
-class AbsorptionInterpreter(Interpreter):
+
+class AbsorptionInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = children[0]
+        types = self.expand(children[0], ABSORPTION_TYPES)
         absorptions = [Absorption.create(type=type) for type in types]
         return sorted(absorptions)
 
@@ -90,11 +96,8 @@ class AbsorptionInterpreter(Interpreter):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
-    def absorption_wildcard(self, tree):
-        return list(ABSORPTION_TYPES)
 
-
-class CountInterpreter(Interpreter):
+class CountInterpreter(MFLInterpreter):
     def count(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
@@ -125,7 +128,7 @@ class PeripheralsInterpreter(CountInterpreter):
         if len(children) == 1:
             peripherals = [Peripherals.create(number=n) for n in numbers]
             return sorted(peripherals)
-        types = children[1]
+        types = self.expand(children[1], PERIPHERAL_TYPES)
         peripherals = []
         for number, type in itertools.product(numbers, types):
             p = Peripherals.create(number=number, type=type)
@@ -136,9 +139,6 @@ class PeripheralsInterpreter(CountInterpreter):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
-    def peripheral_wildcard(self, tree):
-        return list(PERIPHERAL_TYPES)
-
 
 class TransitsInterpreter(CountInterpreter):
     def interpret(self, tree):
@@ -148,8 +148,7 @@ class TransitsInterpreter(CountInterpreter):
         if len(children) == 1:
             transits = [Transits.create(number=n) for n in numbers]
             return sorted(transits)
-
-        depot_settings = children[1]
+        depot_settings = self.expand(children[1], [True, False])
         transits = []
         for number, with_depot in itertools.product(numbers, depot_settings):
             t = Transits.create(number=number, with_depot=with_depot)
@@ -160,18 +159,15 @@ class TransitsInterpreter(CountInterpreter):
         children = self.visit_children(tree)
         return list(True if child.value.upper() == 'DEPOT' else False for child in children)
 
-    def depot_wildcard(self, tree):
-        return [True, False]
-
     def n(self, tree):
         return 'N'
 
 
-class LagTimeInterpreter(Interpreter):
+class LagTimeInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        on_off = children[0]
+        on_off = self.expand(children[0], [True, False])
         lagtimes = [LagTime.create(on=type) for type in on_off]
         return sorted(lagtimes)
 
@@ -179,15 +175,12 @@ class LagTimeInterpreter(Interpreter):
         children = self.visit_children(tree)
         return list(True if child.value.upper() == 'ON' else False for child in children)
 
-    def lagtime_wildcard(self, tree):
-        return [True, False]
 
-
-class EliminationInterpreter(Interpreter):
+class EliminationInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = children[0]
+        types = self.expand(children[0], ELIMINATION_TYPES)
         eliminations = [Elimination.create(type=type) for type in types]
         return sorted(eliminations)
 
@@ -195,15 +188,12 @@ class EliminationInterpreter(Interpreter):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
-    def elimination_wildcard(self, tree):
-        return list(ELIMINATION_TYPES)
 
-
-class DirectEffectInterpreter(Interpreter):
+class DirectEffectInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = children[0]
+        types = self.expand(children[0], DIRECT_EFFECT_TYPES)
         direct_effects = [DirectEffect.create(type=type) for type in types]
         return sorted(direct_effects)
 
@@ -211,16 +201,13 @@ class DirectEffectInterpreter(Interpreter):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
-    def pdtype_wildcard(self, tree):
-        return list(DIRECT_EFFECT_TYPES)
 
-
-class IndirectEffectInterpreter(Interpreter):
+class IndirectEffectInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 2
-        types = children[0]
-        production_types = children[1]
+        types = self.expand(children[0], INDIRECT_EFFECT_TYPES)
+        production_types = self.expand(children[1], PRODUCTION_TYPES)
         indirect_effects = []
         for type, production_type in itertools.product(types, production_types):
             indirect_effects.append(
@@ -236,18 +223,12 @@ class IndirectEffectInterpreter(Interpreter):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
-    def pdtype_wildcard(self, tree):
-        return list(INDIRECT_EFFECT_TYPES)
 
-    def production_wildcard(self, tree):
-        return list(PRODUCTION_TYPES)
-
-
-class EffectCompInterpreter(Interpreter):
+class EffectCompInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = children[0]
+        types = self.expand(children[0], EFFECT_COMP_TYPES)
         effects_comps = [EffectComp.create(type=type) for type in types]
         return sorted(effects_comps)
 
@@ -255,24 +236,18 @@ class EffectCompInterpreter(Interpreter):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
-    def pdtype_wildcard(self, tree):
-        return list(EFFECT_COMP_TYPES)
 
-
-class MetaboliteInterpreter(Interpreter):
+class MetaboliteInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = children[0]
+        types = self.expand(children[0], METABOLITE_TYPES)
         metabolites = [Metabolite.create(type=type) for type in types]
         return sorted(metabolites)
 
     def metabolite_modes(self, tree):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
-
-    def metabolite_wildcard(self, tree):
-        return list(METABOLITE_TYPES)
 
 
 class AllometryInterpreter(Interpreter):
@@ -305,7 +280,7 @@ class CovariateInterpreter(MFLInterpreter):
 
         covs = self.expand(children[0])
         params = self.expand(children[1])
-        fps = children[2]
+        fps = self.expand(children[2], FP_TYPES)
         ops = children[3]
 
         effects = []
@@ -353,9 +328,6 @@ class CovariateInterpreter(MFLInterpreter):
         value = children[0].value
         assert isinstance(value, str)
         return value.upper()
-
-    def fp_wildcard(self, tree):
-        return list(FP_TYPES)
 
     def ref(self, tree):
         children = self.visit_children(tree)
