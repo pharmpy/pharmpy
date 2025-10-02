@@ -1,12 +1,16 @@
-import numpy as np
+from itertools import combinations
+
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     add_time_after_dose,
     add_time_of_last_dose,
     bin_observations,
+    binarize_dataset,
     check_dataset,
+    create_basic_pk_model,
     deidentify_data,
     drop_columns,
     drop_dropped_columns,
@@ -610,3 +614,94 @@ def test_infer_datatypes(load_example_model_for_test):
     assert m2.datainfo['FA1'].datatype == 'int32'
     assert m2.dataset['APGR'].dtype == np.int32
     assert m2.dataset['FA1'].dtype == np.int32
+
+
+@pytest.mark.parametrize(
+    'keep, all_levels, columns, annotate_columns, cols',
+    [
+        (False, False, ['X'], False, {'X_1', 'X_2'}),
+        (
+            True,
+            False,
+            ['X'],
+            False,
+            {'X_1', 'X_2'},
+        ),
+        (
+            False,
+            True,
+            ['X'],
+            False,
+            {'X_1', 'X_2', 'X_3'},
+        ),
+        (
+            True,
+            True,
+            ['X'],
+            False,
+            {'X_1', 'X_2', 'X_3'},
+        ),
+        (False, False, ['Z'], False, {'Z_cat1'}),
+        (False, False, ['X', 'Z'], False, {'X_1', 'X_2', 'Z_cat1'}),
+        (False, False, None, True, {'X_1', 'X_2'}),
+    ],
+)
+def test_binarize_dataset(keep, all_levels, columns, annotate_columns, cols):
+    d = {
+        'ID': [1, 1, 2, 2, 3, 3],
+        'TIME': [0.0, 1.0] * 3,
+        'AMT': [5.0, 0.0] * 3,
+        'X': [1.0, 3.0, 2.0, 2.0, 1.0, 3.0],
+        'Z': ['cat1', 'cat2', 'cat1', 'cat2', 'cat1', 'cat2'],
+        'DV': [1.1, 3.1, 2.5, 2.7, 2.1, 6.0],
+    }
+    dataset = pd.DataFrame(d)
+    model = create_basic_pk_model('iv')
+    assert model.dataset == binarize_dataset(model, None).dataset
+    model = set_dataset(model, dataset, datatype='nonmem')
+    if annotate_columns:
+        ci = model.datainfo['X']
+        ci = ci.replace(type='covariate', scale='ordinal', continuous=False)
+        di = model.datainfo.set_column(ci)
+        print(di)
+        model = model.replace(datainfo=di)
+
+    df_before = model.dataset
+    model = binarize_dataset(model, columns=columns, keep=keep, all_levels=all_levels)
+    df = model.dataset
+    assert not df.equals(df_before)
+    assert set(df.columns.values) - set(df_before.columns.values) == cols
+
+    if columns:
+        assert all(col in df.columns.values for col in columns) == keep
+        if 'X' in columns:
+            assert df['X_1'].tolist() == [1, 0, 0, 0, 1, 0]
+            assert all(df[col].tolist() != df['X_1'].tolist() for col in cols if col != 'X_1')
+        if 'Z' in columns:
+            assert df['Z_cat1'].tolist() == [1, 0, 1, 0, 1, 0]
+            assert all(df[col].tolist() != df['Z_cat1'].tolist() for col in cols if col != 'Z_cat1')
+
+    assert all(df[col1].equals(df[col2]) is False for col1, col2 in combinations(cols, 2))
+
+    di = model.datainfo
+    assert all(di[col].is_categorical() for col in cols)
+    assert all(di[col].type == 'covariate' for col in cols)
+
+
+def test_binarize_dataset_raises():
+    d = {
+        'ID': [1, 1, 2, 2, 3, 3],
+        'TIME': [0.0, 1.0] * 3,
+        'AMT': [5.0, 0.0] * 3,
+        'X': [1, 3, 2, 2, 1, 3],
+        'DV': [1.1, 3.1, 2.5, 2.7, 2.1, 6.0],
+    }
+    dataset = pd.DataFrame(d)
+    model = create_basic_pk_model('iv')
+    model = set_dataset(model, dataset, datatype='nonmem')
+
+    with pytest.raises(ValueError):
+        binarize_dataset(model, columns=None)
+
+    with pytest.raises(ValueError):
+        binarize_dataset(model, columns=['DV'])
