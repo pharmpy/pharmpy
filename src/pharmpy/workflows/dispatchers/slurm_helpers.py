@@ -24,6 +24,7 @@ def get_slurm_nodelist() -> list[str]:
     # Get the SLURM_JOB_NODELIST environment variable and expand into
     # list of hostnames
     s = os.getenv("SLURM_JOB_NODELIST")
+    assert s is not None
     res = _expand_slurm_nodelist(s)
     return res
 
