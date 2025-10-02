@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import inspect
 import uuid
-from typing import Generic, Optional, TypeVar, Union
+from collections.abc import Iterable
+from typing import Generic, Literal, Optional, TypeVar, Union
 
 from pharmpy.deps import networkx as nx
 from pharmpy.internals.immutable import Immutable
@@ -78,8 +79,9 @@ class WorkflowBase:
         """
         return list(self._g.successors(task))
 
-    def traverse(self, algorithm, source=None):
-        supported_algorithms = ['dfs', 'bfs']
+    def traverse(
+        self, algorithm: Literal['dfs', 'bfs'], source: Optional[Task] = None
+    ) -> Iterable[Task]:
         if algorithm == 'dfs':
             return nx.dfs_tree(self._g, source)
         elif algorithm == 'bfs':
@@ -87,23 +89,29 @@ class WorkflowBase:
                 raise ValueError('Source node needed for bfs traversal')
             return nx.bfs_tree(self._g, source)
         else:
+            supported_algorithms = ('dfs', 'bfs')
             raise ValueError(f'Unknown algorithm `{algorithm}`: must be in {supported_algorithms}')
 
-    def sort(self, algorithm='topological'):
-        supported_algorithms = ['topological']
+    def sort(self, algorithm: Literal['topological'] = 'topological') -> Iterable[Task]:
         if algorithm == 'topological':
             return nx.topological_sort(self._g)
         else:
+            supported_algorithms = ('topological',)
             raise ValueError(f'Unknown algorithm `{algorithm}`: must be in {supported_algorithms}')
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self._g.nodes)
 
 
 class WorkflowBuilder(WorkflowBase):
     """Builder class for Workflow"""
 
-    def __init__(self, workflow=None, tasks=None, name=None):
+    def __init__(
+        self,
+        workflow: Optional[Workflow] = None,
+        tasks: Optional[Iterable[Task]] = None,
+        name: Optional[str] = None,
+    ):
         if workflow:
             self._g = workflow._g.copy()
             self.name = workflow.name
@@ -114,7 +122,9 @@ class WorkflowBuilder(WorkflowBase):
             for task in tasks:
                 self.add_task(task)
 
-    def add_task(self, task: Task, predecessors: Optional[Union[Task, list[Task]]] = None):
+    def add_task(
+        self, task: Task, predecessors: Optional[Union[Task, Iterable[Task]]] = None
+    ) -> None:
         """Add a task to the workflow
 
         Predecessors will be connected if given.
@@ -134,7 +144,7 @@ class WorkflowBuilder(WorkflowBase):
                 for pred in predecessors:
                     self._g.add_edge(pred, task)
 
-    def replace_task(self, task: Task, new_task: Task):
+    def replace_task(self, task: Task, new_task: Task) -> None:
         """Replace a task with a new task
 
         Parameters
@@ -148,8 +158,8 @@ class WorkflowBuilder(WorkflowBase):
         nx.relabel_nodes(self._g, mapping, copy=False)
 
     def insert_workflow(
-        self, other: Workflow, predecessors: Optional[Union[Task, list[Task]]] = None
-    ):
+        self, other: Workflow, predecessors: Optional[Union[Task, Iterable[Task]]] = None
+    ) -> None:
         """Insert other workflow
 
         Parameters
@@ -182,7 +192,7 @@ class WorkflowBuilder(WorkflowBase):
         else:
             raise ValueError('Having N:M connections between workflows is currently not supported')
 
-    def __add__(self, other: Workflow):
+    def __add__(self, other: Workflow) -> WorkflowBuilder:
         wb_new = WorkflowBuilder()
         wb_new._g = nx.compose(self._g, other._g)
         wb_new.name = self.name
@@ -201,7 +211,9 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
         List of tasks for initialization
     """
 
-    def __init__(self, builder=None, graph=None, name: Optional[str] = None):
+    def __init__(
+        self, builder: Optional[WorkflowBuilder] = None, graph=None, name: Optional[str] = None
+    ):
         if builder is not None:
             self._g = nx.freeze(builder._g.copy())
             self._name = builder.name
@@ -210,10 +222,12 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
             self._name = name
 
     @classmethod
-    def create(cls, builder=None, graph=None, name=None):
+    def create(
+        cls, builder: Optional[WorkflowBuilder] = None, graph=None, name: Optional[str] = None
+    ) -> Workflow:
         return cls(builder=builder, graph=graph, name=name)
 
-    def replace(self, **kwargs):
+    def replace(self, **kwargs) -> Workflow:
         builder = kwargs.get('builder', None)
         if builder is None:
             g = kwargs.get('graph', self._g)
@@ -223,7 +237,7 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
             name = None
         return Workflow.create(builder=builder, graph=g, name=name)
 
-    def as_dask_dict(self):
+    def as_dask_dict(self) -> dict:
         """Create a dask workflow dictionary
 
         Returns
@@ -256,11 +270,11 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
         return ids
 
     @property
-    def name(self):
+    def name(self) -> Optional[str]:
         """Name of Workflow"""
         return self._name
 
-    def plot_dask(self, filename: str):
+    def plot_dask(self, filename: str) -> None:
         """Save a visualization of workflow to file
 
         Parameters
@@ -272,16 +286,16 @@ class Workflow(WorkflowBase, Generic[T], Immutable):
 
         visualize(self.as_dask_dict(), filename=filename, collapse_outputs=True)
 
-    def __str__(self):
+    def __str__(self) -> str:
         return '\n'.join([str(task) for task in self._g])
 
-    def __add__(self, other: Workflow):
+    def __add__(self, other: Workflow) -> Workflow:
         g = nx.compose(self._g, other._g)
         wf_new = Workflow(graph=g)
         return wf_new
 
 
-def insert_context(wb: WorkflowBuilder, context):
+def insert_context(wb: WorkflowBuilder, context) -> None:
     """Insert context for all tasks in a workflow needing it
 
     having context as first argument of function
