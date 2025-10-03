@@ -34,14 +34,8 @@ def create_workflow(
     wb.insert_workflow(fitbase, predecessors=[start_task])
     base_output = wb.output_tasks
 
-    placebo_task1 = Task('create_placebo_model1', create_placebo_model, "linear")
-    wb.add_task(placebo_task1, predecessors=base_output)
-
-    placebo_task2 = Task('create_placebo_model2', create_placebo_model, "exp")
-    wb.add_task(placebo_task2, predecessors=base_output)
-
-    fitplacebo = create_fit_workflow(n=2)
-    wb.insert_workflow(fitplacebo, predecessors=wb.output_tasks)
+    placebo_task = Task('run_placebo_models', run_placebo_models)
+    wb.add_task(placebo_task, predecessors=base_output)
 
     postprocess_task = Task('postprocess', postprocess)
     wb.add_task(postprocess_task, predecessors=wb.output_tasks)
@@ -56,6 +50,25 @@ def start_pdsearch(context, dataset):
     model = add_iiv(model, ["B"], "exp")
     me = ModelEntry.create(model=model)
     return me
+
+
+def run_placebo_models(context, baseme):
+    exprs = ("linear", "exp")
+    wb = WorkflowBuilder()
+    for expr in exprs:
+        create_task = Task(f'create_placebo_{expr}', create_placebo_model, expr, baseme)
+        wb.add_task(create_task)
+        fit_wf = create_fit_workflow(n=1)
+        wb.insert_workflow(fit_wf, [create_task])
+
+    def gather(*mes):
+        return mes
+
+    gather_task = Task('gather', gather)
+    wb.add_task(gather_task, predecessors=wb.output_tasks)
+
+    mes = context.call_workflow(Workflow(wb), "fit-placebo")
+    return mes
 
 
 def create_placebo_model(expr, baseme):
