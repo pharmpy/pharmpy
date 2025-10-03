@@ -458,14 +458,18 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
     return model
 
 
-def add_placebo_model(model: Model, expr: Literal['linear']):
+def add_placebo_model(model: Model, expr: Literal['linear', 'exp']):
     r"""Add a placebo or disease progression effect to a model.
 
     .. warning:: This function is under development.
 
-    * Linear:
+    * linear
 
         .. math:: E = B + \text{slope} \cdot \text{TIME}
+
+    * exp
+
+        .. math:: E = B \cdot e^{\frac{-TIME}{TD}}
 
     :math:`B` is the baseline effect
 
@@ -473,7 +477,7 @@ def add_placebo_model(model: Model, expr: Literal['linear']):
     ----------
     model : Model
         Pharmpy model
-    expr : {'linear'}
+    expr : str
         Name of placebo/disease progression effect function.
 
     Return
@@ -498,17 +502,27 @@ def add_placebo_model(model: Model, expr: Literal['linear']):
     P = Expr.symbol("P")
 
     p_index = model.statements.find_assignment_index("P")
-
-    if p_index is None:
-        slope = create_symbol(model, "SLOPE")
-        model = add_individual_parameter(model, slope.name, lower=-float("inf"))
-        idv = model.datainfo.idv_column.name
-        passign = Assignment(P, slope * Expr.symbol(idv))
-    else:
+    if p_index is not None:
         raise ValueError("P already in the model. Not yet supported")
 
+    idv = Expr.symbol(model.datainfo.idv_column.name)
     old_rassign = model.statements.get_assignment("R")
-    new_rassign = Assignment(old_rassign.symbol, old_rassign.expression + P)
+
+    if expr == 'linear':
+        slope = create_symbol(model, "SLOPE")
+        model = add_individual_parameter(model, slope.name, lower=-float("inf"))
+        passign_expr = slope * idv
+        rassign_expr = old_rassign.expression + P
+    elif expr == 'exp':
+        td = create_symbol(model, "TD")
+        model = add_individual_parameter(model, td.name)
+        passign_expr = (-idv / td).exp()
+        rassign_expr = old_rassign.expression * P
+    else:
+        raise ValueError(f"Unknown placebo model {expr}")
+
+    passign = Assignment(P, passign_expr)
+    new_rassign = Assignment(old_rassign.symbol, rassign_expr)
 
     r_index = model.statements.get_assignment_index("R")
     statements = (
