@@ -32,11 +32,15 @@ def create_workflow(
 
     fitbase = create_fit_workflow(n=1)
     wb.insert_workflow(fitbase, predecessors=[start_task])
+    base_output = wb.output_tasks
 
-    placebo_task = Task('create_placebo_models', create_placebo_models)
-    wb.add_task(placebo_task, predecessors=wb.output_tasks)
+    placebo_task1 = Task('create_placebo_model1', create_placebo_model, "linear")
+    wb.add_task(placebo_task1, predecessors=base_output)
 
-    fitplacebo = create_fit_workflow(n=1)
+    placebo_task2 = Task('create_placebo_model2', create_placebo_model, "exp")
+    wb.add_task(placebo_task2, predecessors=base_output)
+
+    fitplacebo = create_fit_workflow(n=2)
     wb.insert_workflow(fitplacebo, predecessors=wb.output_tasks)
 
     postprocess_task = Task('postprocess', postprocess)
@@ -54,15 +58,15 @@ def start_pdsearch(context, dataset):
     return me
 
 
-def create_placebo_models(baseme):
+def create_placebo_model(expr, baseme):
     base_model = baseme.model
-    linear = add_placebo_model(base_model, "linear")
-    linear = set_name(linear, "placebo_linear")
-    linear_me = ModelEntry.create(model=linear)
-    return linear_me
+    model = add_placebo_model(base_model, expr)
+    model = set_name(model, f"placebo_{expr}")
+    me = ModelEntry.create(model=model, parent=base_model)
+    return me
 
 
-def postprocess(context, me):
+def postprocess(context, *mes):
     res = calculate_results()
 
     context.log_info("Finishing pdsearch")
