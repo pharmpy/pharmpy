@@ -4,6 +4,8 @@ import itertools
 from collections import defaultdict
 from typing import Iterable, Sequence, Union
 
+from lark import UnexpectedInput
+
 from pharmpy.internals.immutable import Immutable
 from pharmpy.mfl.features.mutex_feature import MutexFeature
 
@@ -22,6 +24,7 @@ from .features import (
     Ref,
     Transits,
 )
+from .parsing import parse
 
 
 class ModelFeatures(Immutable):
@@ -29,7 +32,12 @@ class ModelFeatures(Immutable):
         self._features = features
 
     @classmethod
-    def create(cls, features: Iterable[ModelFeature]):
+    def create(cls, features: Iterable[ModelFeature] | str):
+        if isinstance(features, str):
+            try:
+                features = parse(features)
+            except UnexpectedInput:
+                raise ValueError(f'Could not parse string `features`: got {features}')
         if not isinstance(features, Iterable):
             raise TypeError(f'Type of `feature` must be an iterable: got {type(features)}')
         other_types = {type(f) for f in features if not isinstance(f, ModelFeature)}
