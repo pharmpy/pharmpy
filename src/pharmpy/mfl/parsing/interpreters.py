@@ -31,13 +31,15 @@ class MFLInterpreter(Interpreter):
         self.definitions = definitions
         super().__init__()
 
-    def expand(self, arg, types=None):
+    def expand(self, arg, fallback=None):
         if isinstance(arg[0], Ref):
             values = self.definitions.get(arg[0].name)
             if values:
                 return values
-        if arg == '*' and types:
-            return list(types)
+        if arg[0] == '*' and fallback:
+            if isinstance(fallback, Ref):
+                return [fallback]
+            return list(fallback)
         return arg
 
     def interpret(self, tree):
@@ -277,8 +279,8 @@ class CovariateInterpreter(MFLInterpreter):
         if len(children) == 3:
             children.append('*')
 
-        covs = self.expand(children[0])
-        params = self.expand(children[1])
+        covs = self.expand(children[0], fallback=Ref('covariates'))
+        params = self.expand(children[1], fallback=Ref('pop_params'))
         fps = self.expand(children[2], FP_TYPES)
         ops = children[3]
 

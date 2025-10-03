@@ -331,6 +331,20 @@ from pharmpy.mfl.parsing import parse
                 (Ref('IIV'), 'WT', 'EXP', '*', True),
             ],
         ),
+        (
+            'COVARIATE?(*,@CONTINUOUS,EXP,*)',
+            Covariate,
+            [
+                (Ref('COVARIATES'), Ref('CONTINUOUS'), 'EXP', '*', True),
+            ],
+        ),
+        (
+            'COVARIATE?(*,*,EXP,*)',
+            Covariate,
+            [
+                (Ref('COVARIATES'), Ref('POP_PARAMS'), 'EXP', '*', True),
+            ],
+        ),
     ),
     ids=repr,
 )
