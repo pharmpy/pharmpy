@@ -85,6 +85,7 @@ def resample_model(name, input_results, input_model):
         input_model, input_model.datainfo.id_column.name, resamples=1, replace=True, name=name
     )
     model, groups = next(resample)
+    assert isinstance(model, Model)
     if input_results is not None:
         model = set_initial_estimates(model, input_results.parameter_estimates)
     model_entry = ModelEntry.create(model=model, parent=input_model)
