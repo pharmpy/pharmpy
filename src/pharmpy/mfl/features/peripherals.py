@@ -1,5 +1,6 @@
 import builtins
 
+from .help_functions import format_numbers
 from .model_feature import ModelFeature
 
 PERIPHERAL_TYPES = frozenset(('DRUG', 'MET'))
@@ -72,13 +73,7 @@ class Peripherals(ModelFeature):
                 numbers_by_type[feat.type].append(feat.number)
         peripherals_repr = []
         for type, numbers in numbers_by_type.items():
-            numbers_sorted = sorted(numbers)
-            if len(numbers_sorted) == 1:
-                inner = f'{numbers_sorted[0]}'
-            elif all(b - a == 1 for a, b in zip(numbers_sorted, numbers_sorted[1:])):
-                inner = f'{numbers[0]}..{numbers[-1]}'
-            else:
-                inner = f"[{','.join(str(n) for n in numbers_sorted)}]"
+            inner = format_numbers(numbers, as_range=True)
             if type != 'DRUG':
                 inner += f',{type}'
             peripherals_repr.append(f'PERIPHERALS({inner})')

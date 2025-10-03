@@ -5,7 +5,6 @@ from collections import defaultdict
 from typing import Iterable, Sequence, Union
 
 from pharmpy.internals.immutable import Immutable
-from pharmpy.mfl.features.indirect_effect import PRODUCTION_TYPES
 from pharmpy.mfl.features.mutex_feature import MutexFeature
 
 from .features import (
@@ -94,7 +93,7 @@ class ModelFeatures(Immutable):
         direct_effects = [DirectEffect.create(type=type) for type in types]
         indirect_effects = [
             IndirectEffect.create(type=type, production_type=production_type)
-            for type, production_type in itertools.product(types, PRODUCTION_TYPES)
+            for type, production_type in itertools.product(types, ['PRODUCTION', 'DEGRADATION'])
         ]
         effect_compartments = [EffectComp.create(type=type) for type in types]
         features = direct_effects + indirect_effects + effect_compartments

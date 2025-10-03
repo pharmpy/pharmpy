@@ -1,6 +1,8 @@
 import builtins
 from collections import defaultdict
 
+from pharmpy.mfl.features.help_functions import format_numbers
+
 from .model_feature import ModelFeature
 
 
@@ -84,32 +86,30 @@ class Transits(ModelFeature):
             numbers_by_type[feat.with_depot] += (feat.number,)
         if len(numbers_by_type) > 1 and len(set(numbers_by_type.values())) == 1:
             numbers = list(numbers_by_type.values())[0]
-            inner = _format_numbers(numbers)
-            inner += ',*'
+            inner = _get_inner(numbers, [True, False])
             return f'TRANSITS({inner})'
 
         transits_repr = []
         for with_depot, numbers in numbers_by_type.items():
             numbers = list(numbers)
             if 'N' in numbers:
-                inner = 'N'
                 numbers.remove('N')
-                if not with_depot:
-                    inner += ',NODEPOT'
+                inner = _get_inner('N', with_depot)
                 transits_repr.append(f'TRANSITS({inner})')
             if not numbers:
                 continue
-            inner = _format_numbers(numbers)
-            if not with_depot:
-                inner += ',NODEPOT'
+            inner = _get_inner(numbers, with_depot)
             transits_repr.append(f'TRANSITS({inner})')
         return ';'.join(transits_repr)
 
 
-def _format_numbers(numbers):
-    numbers_sorted = sorted(numbers)
-    if len(numbers_sorted) == 1:
-        numbers_formatted = f'{numbers_sorted[0]}'
+def _get_inner(numbers, with_depot):
+    if isinstance(numbers, str):
+        inner = f'{numbers}'
     else:
-        numbers_formatted = f"[{','.join(str(n) for n in numbers_sorted)}]"
-    return numbers_formatted
+        inner = format_numbers(numbers)
+    if isinstance(with_depot, list):
+        inner += ',[DEPOT,NODEPOT]'
+    elif not with_depot:
+        inner += ',NODEPOT'
+    return inner

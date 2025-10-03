@@ -37,3 +37,15 @@ def get_repr(arg):
         return f"[{','.join(arg)}]"
     else:
         return arg
+
+
+def format_numbers(numbers, as_range=False):
+    if len(numbers) == 1:
+        return f'{numbers[0]}'
+
+    numbers_sorted = sorted(numbers)
+    if as_range and all(b - a == 1 for a, b in zip(numbers_sorted, numbers_sorted[1:])):
+        numbers_formatted = f'{numbers[0]}..{numbers[-1]}'
+    else:
+        numbers_formatted = f"[{','.join(str(n) for n in numbers_sorted)}]"
+    return numbers_formatted

@@ -142,7 +142,7 @@ def test_pk_oral():
     mf = ModelFeatures.pk_oral()
     assert len(mf) == 16
     assert repr(mf) == (
-        'ABSORPTION([FO,ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],*);'
+        'ABSORPTION([FO,ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
         'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(0..1)'
     )
 
@@ -405,7 +405,7 @@ def test_eq():
                 Transits.create(1, False),
                 Transits.create(3, False),
             ],
-            'TRANSITS([0,1,3],*);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
+            'TRANSITS([0,1,3],[DEPOT,NODEPOT]);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
         ),
         (
             [

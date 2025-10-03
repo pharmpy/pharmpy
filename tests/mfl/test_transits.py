@@ -99,7 +99,7 @@ def test_lt():
         ),
         (
             ((0, True), (1, True), (2, True), (0, False), (1, False), (2, False)),
-            'TRANSITS([0,1,2],*)',
+            'TRANSITS([0,1,2],[DEPOT,NODEPOT])',
         ),
         (
             ((0, True), (1, True), (2, True), (0, False), (1, False)),
