@@ -663,7 +663,6 @@ def test_binarize_dataset(keep, all_levels, columns, annotate_columns, cols):
         ci = model.datainfo['X']
         ci = ci.replace(type='covariate', scale='ordinal', continuous=False)
         di = model.datainfo.set_column(ci)
-        print(di)
         model = model.replace(datainfo=di)
 
     df_before = model.dataset
@@ -702,6 +701,3 @@ def test_binarize_dataset_raises():
 
     with pytest.raises(ValueError):
         binarize_dataset(model, columns=None)
-
-    with pytest.raises(ValueError):
-        binarize_dataset(model, columns=['DV'])

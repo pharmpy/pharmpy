@@ -1799,7 +1799,7 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
     changed = False
 
     for col in columns:
-        if df[col].dtype != np.int32:
+        if pd.api.types.is_float_dtype(df[col]):
             asint = df[col].astype('int32')
             if all(asint == df[col]):
                 changed = True
@@ -2550,10 +2550,11 @@ def binarize_dataset(
     <BLANKLINE>
     [744 rows x 16 columns]
     """
-    df = model.dataset
-    if df is None:
+    if model.dataset is None:
         return model
 
+    model = infer_datatypes(model, columns)
+    df = model.dataset
     di = model.datainfo
     if columns is None:
         try:
@@ -2564,7 +2565,6 @@ def binarize_dataset(
         if not columns:
             return model
 
-    di = model.datainfo
     changed = False
 
     for col in columns:
@@ -2574,11 +2574,8 @@ def binarize_dataset(
 
         level_map = dict()
         for level in levels:
-            if isinstance(level, float):
-                if level.is_integer():
-                    level = int(level)
-                else:
-                    raise ValueError(f'Could not convert level, invalid name: {level}')
+            if '.' in str(level):
+                level = str(level).replace('.', '_')
             col_name = f'{col}_{level}'
             col_values = np.where(df[col] == level, 1, 0)
             level_map[col_name] = col_values
