@@ -156,7 +156,7 @@ jobs:
     needs: [get-nonmem]
     strategy:
       matrix:
-        platform: [macos-13, macos-14]
+        platform: [macos-15]
     
     runs-on: ${{ matrix.platform }}
 
