@@ -335,14 +335,14 @@ from pharmpy.mfl.parsing import parse
             'COVARIATE?(*,@CONTINUOUS,EXP,*)',
             Covariate,
             [
-                (Ref('COVARIATES'), Ref('CONTINUOUS'), 'EXP', '*', True),
+                (Ref('POP_PARAMS'), Ref('CONTINUOUS'), 'EXP', '*', True),
             ],
         ),
         (
             'COVARIATE?(*,*,EXP,*)',
             Covariate,
             [
-                (Ref('COVARIATES'), Ref('POP_PARAMS'), 'EXP', '*', True),
+                (Ref('POP_PARAMS'), Ref('COVARIATES'), 'EXP', '*', True),
             ],
         ),
     ),

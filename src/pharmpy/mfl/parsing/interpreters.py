@@ -1,4 +1,5 @@
 import itertools
+from typing import Iterable, TypeVar, overload
 
 from lark.visitors import Interpreter
 
@@ -25,21 +26,32 @@ from ..features.indirect_effect import INDIRECT_EFFECT_TYPES, PRODUCTION_TYPES
 from ..features.metabolite import METABOLITE_TYPES
 from ..features.peripherals import PERIPHERAL_TYPES
 
+T = TypeVar('T')
+
 
 class MFLInterpreter(Interpreter):
     def __init__(self, definitions=None):
         self.definitions = definitions
         super().__init__()
 
-    def expand(self, arg, fallback=None):
-        if isinstance(arg[0], Ref):
+    @overload
+    def expand(self, arg: list[T], expand_to: None) -> list[T]: ...
+
+    @overload
+    def expand(self, arg: list[T], expand_to: Ref) -> list[Ref]: ...
+
+    @overload
+    def expand(self, arg: list[T], expand_to: Iterable[T]) -> list[T]: ...
+
+    def expand(self, arg, expand_to=None):
+        if isinstance(arg[0], Ref) and self.definitions is not None:
             values = self.definitions.get(arg[0].name)
             if values:
                 return values
-        if arg[0] == '*' and fallback:
-            if isinstance(fallback, Ref):
-                return [fallback]
-            return list(fallback)
+        if arg[0] == '*' and expand_to is not None:
+            if isinstance(expand_to, Ref):
+                return [expand_to]
+            return list(expand_to)
         return arg
 
     def interpret(self, tree):
@@ -271,21 +283,20 @@ class CovariateInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert 3 <= len(children) <= 5
-        if isinstance(children[0], bool):
-            is_optional = True
-            children.pop(0)
-        else:
-            is_optional = False
-        if len(children) == 3:
+        if not isinstance(children[0], bool):
+            children.insert(0, False)
+        if len(children) == 4:
             children.append('*')
+        assert len(children) == 5
 
-        covs = self.expand(children[0], fallback=Ref('covariates'))
-        params = self.expand(children[1], fallback=Ref('pop_params'))
-        fps = self.expand(children[2], FP_TYPES)
-        ops = children[3]
+        is_optional = children[0]
+        params = self.expand(children[1], expand_to=Ref('pop_params'))
+        covs = self.expand(children[2], expand_to=Ref('covariates'))
+        fps = self.expand(children[3], FP_TYPES)
+        ops = children[4]
 
         effects = []
-        for param, cov, fp, op in itertools.product(covs, params, fps, ops):
+        for param, cov, fp, op in itertools.product(params, covs, fps, ops):
             effect = Covariate.create(
                 parameter=param, covariate=cov, fp=fp, op=op, optional=is_optional
             )
