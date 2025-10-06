@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections import defaultdict
-from typing import Iterable, Sequence, Union
+from typing import Iterable, Sequence, Type, TypeVar, Union
 
 from lark import UnexpectedInput
 
@@ -26,13 +26,15 @@ from .features import (
 )
 from .parsing import parse
 
+T = TypeVar("T", bound=ModelFeature)
+
 
 class ModelFeatures(Immutable):
     def __init__(self, features: tuple[ModelFeature, ...]):
         self._features = features
 
     @classmethod
-    def create(cls, features: Iterable[ModelFeature] | str):
+    def create(cls, features: Iterable[ModelFeature] | str) -> ModelFeatures:
         if isinstance(features, str):
             try:
                 features = parse(features)
@@ -40,7 +42,7 @@ class ModelFeatures(Immutable):
                 raise ValueError(f'Could not parse string `features`: got {features}')
         if not isinstance(features, Iterable):
             raise TypeError(f'Type of `feature` must be an iterable: got {type(features)}')
-        other_types = {type(f) for f in features if not isinstance(f, ModelFeature)}
+        other_types = {str(type(f)) for f in features if not isinstance(f, ModelFeature)}
         if other_types:
             raise TypeError(f'Incorrect types in `features`: got {sorted(other_types)}')
 
@@ -74,7 +76,7 @@ class ModelFeatures(Immutable):
         return ModelFeatures.create(features=features)
 
     @classmethod
-    def pk_iv(cls):
+    def pk_iv(cls) -> ModelFeatures:
         transits = [Transits.create(0)]
         lagtime = [LagTime.create(on=False)]
         elimination = [Elimination.create(type='FO')]
@@ -83,7 +85,7 @@ class ModelFeatures(Immutable):
         return cls.create(features=features)
 
     @classmethod
-    def pk_oral(cls):
+    def pk_oral(cls) -> ModelFeatures:
         absorption = [Absorption.create(type=type) for type in ('FO', 'ZO', 'SEQ-ZO-FO')]
         transits = [
             Transits.create(n, with_depot=depot)
@@ -96,7 +98,7 @@ class ModelFeatures(Immutable):
         return cls.create(features=features)
 
     @classmethod
-    def pd(cls):
+    def pd(cls) -> ModelFeatures:
         types = ['LINEAR', 'EMAX', 'SIGMOID']
         direct_effects = [DirectEffect.create(type=type) for type in types]
         indirect_effects = [
@@ -108,68 +110,68 @@ class ModelFeatures(Immutable):
         return cls.create(features=features)
 
     @property
-    def features(self):
+    def features(self) -> tuple[ModelFeature, ...]:
         return self._features
 
     @property
-    def absorption(self):
+    def absorption(self) -> ModelFeatures:
         return self._get_feature_type(Absorption)
 
     @property
-    def transits(self):
+    def transits(self) -> ModelFeatures:
         return self._get_feature_type(Transits)
 
     @property
-    def lagtime(self):
+    def lagtime(self) -> ModelFeatures:
         return self._get_feature_type(LagTime)
 
     @property
-    def elimination(self):
+    def elimination(self) -> ModelFeatures:
         return self._get_feature_type(Elimination)
 
     @property
-    def peripherals(self):
+    def peripherals(self) -> ModelFeatures:
         return self._get_feature_type(Peripherals)
 
     @property
-    def covariates(self):
+    def covariates(self) -> ModelFeatures:
         return self._get_feature_type(Covariate)
 
     @property
-    def allometry(self):
+    def allometry(self) -> ModelFeatures:
         return self._get_feature_type(Allometry)
 
     @property
-    def direct_effects(self):
+    def direct_effects(self) -> ModelFeatures:
         return self._get_feature_type(DirectEffect)
 
     @property
-    def indirect_effects(self):
+    def indirect_effects(self) -> ModelFeatures:
         return self._get_feature_type(IndirectEffect)
 
     @property
-    def effect_compartments(self):
+    def effect_compartments(self) -> ModelFeatures:
         return self._get_feature_type(EffectComp)
 
     @property
-    def metabolites(self):
+    def metabolites(self) -> ModelFeatures:
         return self._get_feature_type(Metabolite)
 
-    def _get_feature_type(self, type):
+    def _get_feature_type(self, type: Type[T]) -> ModelFeatures:
         features = []
         for feature in self.features:
             if isinstance(feature, type):
                 features.append(feature)
         return ModelFeatures.create(features)
 
-    def is_expanded(self):
+    def is_expanded(self) -> bool:
         for feature in self.features:
             arg_types = (type(arg) for arg in feature.args)
             if Ref in arg_types:
                 return False
         return True
 
-    def is_single_model(self):
+    def is_single_model(self) -> bool:
         feature_map = defaultdict(list)
         for feature in self.features:
             features = feature_map[type(feature)]
@@ -190,7 +192,9 @@ class ModelFeatures(Immutable):
             feature_map[type(feature)].append(feature)
         return True
 
-    def __add__(self, other: Union[ModelFeature, ModelFeatures]):
+    def __add__(
+        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+    ) -> ModelFeatures:
         if isinstance(other, ModelFeature):
             return ModelFeatures.create(features=self.features + (other,))
         elif isinstance(other, ModelFeatures):
@@ -200,14 +204,16 @@ class ModelFeatures(Immutable):
         else:
             return NotImplemented
 
-    def __radd__(self, other: Union[ModelFeature, ModelFeatures]):
+    def __radd__(
+        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+    ) -> ModelFeatures:
         # ModelFeatures.create has a canonical order
         return self + other
 
-    def __len__(self):
+    def __len__(self) -> int:
         return len(self.features)
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if self is other:
             return True
         if not isinstance(other, ModelFeatures):
@@ -216,7 +222,7 @@ class ModelFeatures(Immutable):
             return False
         return all(feat1 == feat2 for feat1, feat2 in zip(self.features, other.features))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         feature_repr = []
         if self.absorption:
             absorption_repr = Absorption.repr_many(self.absorption)
