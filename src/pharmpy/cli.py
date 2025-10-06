@@ -731,10 +731,10 @@ def input_model(path):
     """
     path = check_input_path(path)
     from pharmpy.model import Model
-    from pharmpy.tools import read_modelfit_results
+    from pharmpy.tools.external.results import parse_modelfit_results
 
     model = Model.parse_model(path)
-    res = read_modelfit_results(path)
+    res = parse_modelfit_results(model, path)
 
     return model, res
 
