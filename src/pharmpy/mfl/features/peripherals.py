@@ -1,18 +1,24 @@
+from __future__ import annotations
+
 import builtins
+from typing import TYPE_CHECKING
 
 from .help_functions import format_numbers
 from .model_feature import ModelFeature
+
+if TYPE_CHECKING:
+    from ..model_features import ModelFeatures
 
 PERIPHERAL_TYPES = frozenset(('DRUG', 'MET'))
 
 
 class Peripherals(ModelFeature):
-    def __init__(self, number, type):
+    def __init__(self, number: int, type: str):
         self._number = number
         self._type = type
 
     @classmethod
-    def create(cls, number, type='DRUG'):
+    def create(cls, number: int, type: str = 'DRUG') -> Peripherals:
         if not isinstance(number, int):
             raise TypeError(f'Type of `number` must be an integer: got {builtins.type(number)}')
         if number < 0:
@@ -26,31 +32,31 @@ class Peripherals(ModelFeature):
         return Peripherals.create(number=number, type=type)
 
     @property
-    def number(self):
+    def number(self) -> int:
         return self._number
 
     @property
-    def type(self):
+    def type(self) -> str:
         return self._type
 
     @property
-    def args(self):
+    def args(self) -> tuple[int, str]:
         return self.number, self.type
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         inner = f'{self.number}'
         if self.type != 'DRUG':
             inner += f',{self.type}'
         return f'PERIPHERALS({inner})'
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if self is other:
             return True
         if not isinstance(other, Peripherals):
             return False
         return self.number == other.number and self.type == other.type
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         if not isinstance(other, Peripherals):
             return NotImplemented
         if self == other:
@@ -61,8 +67,10 @@ class Peripherals(ModelFeature):
         return self.number < other.number
 
     @staticmethod
-    def repr_many(mfl):
-        features = sorted(mfl.features)
+    def repr_many(mf: ModelFeatures):
+        features = tuple(feat for feat in mf.features if isinstance(feat, Peripherals))
+        assert len(features) == len(mf.features)
+
         if len(features) == 1:
             return repr(features[0])
         numbers_by_type = dict()

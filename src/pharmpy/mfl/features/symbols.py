@@ -10,16 +10,16 @@ class Symbol(Immutable):
 
 
 class Ref(Symbol):
-    def __init__(self, name):
+    def __init__(self, name: str):
         self.name = name.upper()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'@{self.name}'
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if not isinstance(other, Ref):
             return NotImplemented
         return self.name == other.name
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self.name)

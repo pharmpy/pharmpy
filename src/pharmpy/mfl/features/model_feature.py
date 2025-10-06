@@ -1,22 +1,28 @@
+from __future__ import annotations
+
 import builtins
 from abc import abstractmethod
+from typing import TYPE_CHECKING, Any, Iterable, Optional
 
 from pharmpy.internals.immutable import Immutable
+
+if TYPE_CHECKING:
+    from ..model_features import ModelFeatures
 
 
 class ModelFeature(Immutable):
     @property
     @abstractmethod
-    def args(self):
+    def args(self) -> tuple[Any, ...]:
         pass
 
     @staticmethod
     @abstractmethod
-    def repr_many(features):
+    def repr_many(mf: ModelFeatures) -> str:
         pass
 
     @staticmethod
-    def _canonicalize_type(type, types, name=None):
+    def _canonicalize_type(type: str, types: Iterable[str], name: Optional[str] = None) -> str:
         if not name:
             name = 'type'
         if not isinstance(type, str):

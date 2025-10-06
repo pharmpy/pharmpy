@@ -1,17 +1,24 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
+
+if TYPE_CHECKING:
+    from ..model_features import ModelFeatures
 
 INDIRECT_EFFECT_TYPES = frozenset(('LINEAR', 'EMAX', 'SIGMOID'))
 PRODUCTION_TYPES = frozenset(('DEGRADATION', 'PRODUCTION'))
 
 
 class IndirectEffect(ModelFeature):
-    def __init__(self, type, production_type):
+    def __init__(self, type: str, production_type: str):
         self._type = type
         self._production_type = production_type
 
     @classmethod
-    def create(cls, type, production_type):
+    def create(cls, type: str, production_type: str) -> IndirectEffect:
         type = cls._canonicalize_type(type, INDIRECT_EFFECT_TYPES)
         production_type = cls._canonicalize_type(
             production_type, PRODUCTION_TYPES, 'production_type'
@@ -24,28 +31,28 @@ class IndirectEffect(ModelFeature):
         return IndirectEffect.create(type=type, production_type=production_type)
 
     @property
-    def type(self):
+    def type(self) -> str:
         return self._type
 
     @property
-    def production_type(self):
+    def production_type(self) -> str:
         return self._production_type
 
     @property
-    def args(self):
+    def args(self) -> tuple[str, str]:
         return self.type, self.production_type
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'INDIRECTEFFECT({self.type},{self.production_type})'
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if self is other:
             return True
         if not isinstance(other, IndirectEffect):
             return False
         return self.type == other.type and self.production_type == other.production_type
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         if not isinstance(other, IndirectEffect):
             return NotImplemented
         if self == other:
@@ -57,10 +64,11 @@ class IndirectEffect(ModelFeature):
         return type_rank[self.type] < type_rank[other.type]
 
     @staticmethod
-    def repr_many(mfl):
-        features = sorted(mfl.features)
-        no_of_args = len(features[0].args)
+    def repr_many(mf: ModelFeatures) -> str:
+        features = tuple(feat for feat in mf.features if isinstance(feat, IndirectEffect))
+        assert len(features) == len(mf.features)
 
+        no_of_args = len(features[0].args)
         args_grouped = group_args([feature.args for feature in features], i=no_of_args)
 
         indirect_effect_repr = []

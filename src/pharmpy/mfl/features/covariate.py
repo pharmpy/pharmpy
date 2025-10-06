@@ -1,13 +1,28 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Union
+
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
 from .symbols import Ref
+
+if TYPE_CHECKING:
+    from ..model_features import ModelFeatures
+
 
 FP_TYPES = frozenset(('LIN', 'PIECE_LIN', 'EXP', 'POW', 'CAT', 'CAT2'))
 OP_TYPES = frozenset(('+', '*'))
 
 
 class Covariate(ModelFeature):
-    def __init__(self, parameter, covariate, fp, op, optional):
+    def __init__(
+        self,
+        parameter: Union[str, Ref],
+        covariate: Union[str, Ref],
+        fp: str,
+        op: str,
+        optional: bool,
+    ):
         self._parameter = parameter
         self._covariate = covariate
         self._fp = fp
@@ -15,7 +30,14 @@ class Covariate(ModelFeature):
         self._optional = optional
 
     @classmethod
-    def create(cls, parameter, covariate, fp, op='*', optional=False):
+    def create(
+        cls,
+        parameter: Union[str, Ref],
+        covariate: Union[str, Ref],
+        fp: str,
+        op: str = '*',
+        optional: bool = False,
+    ) -> Covariate:
         if not isinstance(parameter, str) and not isinstance(parameter, Ref):
             raise TypeError(f'Type of `parameter` must be a string or Ref: got {type(parameter)}')
         if not isinstance(covariate, str) and not isinstance(covariate, Ref):
@@ -49,35 +71,35 @@ class Covariate(ModelFeature):
         )
 
     @property
-    def parameter(self):
+    def parameter(self) -> Union[str, Ref]:
         return self._parameter
 
     @property
-    def covariate(self):
+    def covariate(self) -> Union[str, Ref]:
         return self._covariate
 
     @property
-    def fp(self):
+    def fp(self) -> str:
         return self._fp
 
     @property
-    def op(self):
+    def op(self) -> str:
         return self._op
 
     @property
-    def optional(self):
+    def optional(self) -> bool:
         return self._optional
 
     @property
-    def args(self):
+    def args(self) -> tuple[Union[str, Ref], Union[str, Ref], str, str, bool]:
         return self.parameter, self.covariate, self.fp, self.op, self.optional
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         optional = '?' if self.optional else ''
         inner = f'{self.parameter},{self.covariate},{self.fp},{self.op}'
         return f'COVARIATE{optional}({inner})'
 
-    def __eq__(self, other):
+    def __eq__(self, other) -> bool:
         if self is other:
             return True
         if not isinstance(other, Covariate):
@@ -90,7 +112,7 @@ class Covariate(ModelFeature):
             and self.optional == other.optional
         )
 
-    def __lt__(self, other):
+    def __lt__(self, other) -> bool:
         if not isinstance(other, Covariate):
             return NotImplemented
         if self == other:
@@ -106,12 +128,13 @@ class Covariate(ModelFeature):
         return self.op < other.op
 
     @staticmethod
-    def repr_many(mfl):
-        features = mfl.features
+    def repr_many(mf: ModelFeatures) -> str:
+        features = tuple(feat for feat in mf.features if isinstance(feat, Covariate))
+        assert len(features) == len(mf.features)
+
         if len(features) == 1:
             return repr(features[0])
 
-        features = sorted(features)
         no_of_args = len(features[0].args)
         args_grouped = group_args([feature.args for feature in features], i=no_of_args)
 
