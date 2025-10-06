@@ -61,62 +61,34 @@ class NMTRANReader:
         self._lines: Iterator[bytes] = map(str.encode, NMTRANStreamIterator(stream, sep, ignore))
         self._buffer: deque[bytes] = deque()
         self._n: int = 0
-        self.closed: bool = False
 
     def read(self, n: int = -1) -> bytes:
-        if n == 0:
-            return b""
+        assert n >= 1
 
-        if n < 0:
-            rest = b"".join(self._buffer) + b"".join(self._lines)
-            self._buffer.clear()
-            self._n = 0
-            return rest
+        lines = self._lines
+        buffer = self._buffer
 
         while self._n < n:
             try:
-                chunk = next(self._lines)
+                chunk = next(lines)
             except StopIteration:
                 break
 
-            self._buffer.append(chunk)
+            buffer.append(chunk)
             self._n += len(chunk)
 
         if self._n == 0:
             return b""
 
-        last = self._buffer.pop()
+        last = buffer.pop()
         remainder = max(0, self._n - n)
-        value = b"".join(self._buffer) + last[: len(last) - remainder]
+        value = b"".join(buffer) + last[: len(last) - remainder]
         assert len(value) == n or remainder == 0
-        self._buffer.clear()
+        buffer.clear()
         if remainder != 0:
-            self._buffer.append(last[len(last) - remainder :])
+            buffer.append(last[len(last) - remainder :])
         self._n = remainder
         return value
-
-    def readline(self, n: int = -1) -> bytes:
-        if n == 0:
-            return b""
-
-        if self._n:
-            line = self._buffer.popleft()
-            self._n -= len(line)
-        else:
-            try:
-                line = next(self._lines)
-            except StopIteration:
-                line = b""
-
-        if n < 0 or len(line) <= n:
-            return line
-
-        self._buffer.appendleft(line[n:])
-        self._n += len(line) - n
-        return line[:n]
-
-    def __iter__(self):
-        return self._lines
 
 
 def open_NMTRAN(path: Union[str, Path]):
