@@ -5,10 +5,10 @@ import pytest
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
 from pharmpy.model.external.nonmem.dataset import (
-    NMTRANDataIO,
     convert_fortran_number,
     read_nonmem_dataset,
 )
+from pharmpy.model.external.nonmem.nmtran_data import SEP_INPUT, NMTRANDataIO
 
 
 def test_read_nonmem_dataset(testdata):
@@ -38,14 +38,22 @@ def test_read_nonmem_dataset(testdata):
     pd.testing.assert_series_equal(df_drop['FA2'], df['FA2'])
 
 
-def test_data_io(testdata):
+def test_data_io_alpha(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
-    data_io = NMTRANDataIO(path, '@')
-    assert data_io.read(7) == '      1'
-    data_io = NMTRANDataIO(path, 'I')
-    assert data_io.read(13) == '      1    0.'
-    data_io = NMTRANDataIO(path, 'Q')
-    assert data_io.read(5) == 'ID TI'
+    with NMTRANDataIO(path, SEP_INPUT, '@') as data_io:
+        assert data_io.read(7) == b'1\t0.\t25'
+
+
+def test_data_io_i(testdata):
+    path = testdata / 'nonmem' / 'pheno.dta'
+    with NMTRANDataIO(path, SEP_INPUT, 'I') as data_io:
+        assert data_io.read(13) == b'1\t0.\t25.0\t1.4'
+
+
+def test_data_io_q(testdata):
+    path = testdata / 'nonmem' / 'pheno.dta'
+    with NMTRANDataIO(path, SEP_INPUT, 'Q') as data_io:
+        assert data_io.read(5) == b'ID\tTI'
 
 
 @pytest.mark.parametrize(
