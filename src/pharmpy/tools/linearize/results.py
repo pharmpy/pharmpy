@@ -63,16 +63,16 @@ def psn_linearize_results(path):
     :param path: Path to PsN linearize run directory
     :return: A :class:`QAResults` object
     """
-    from pharmpy.tools import read_modelfit_results
+    from pharmpy.tools.external.results import parse_modelfit_results
 
     path = Path(path)
 
     base_model_path = path / 'scm_dir1' / 'derivatives.mod'
     base_model = Model.parse_model(base_model_path)
-    base_model_results = read_modelfit_results(base_model_path)
+    base_model_results = parse_modelfit_results(base_model, base_model_path)
     lin_path = list(path.glob('*_linbase.mod'))[0]
     lin_model = Model.parse_model(lin_path)
-    lin_model_results = read_modelfit_results(lin_path)
+    lin_model_results = parse_modelfit_results(lin_model, lin_path)
 
     res = calculate_results(base_model, base_model_results, lin_model, lin_model_results)
     return res
