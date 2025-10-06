@@ -557,3 +557,4 @@ def test_eq():
 def test_repr(features, expected):
     mf = ModelFeatures.create(features)
     assert repr(mf) == expected
+    assert ModelFeatures.create(expected) == mf
