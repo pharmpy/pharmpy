@@ -12,18 +12,21 @@ from pharmpy.modeling import (
     plot_transformed_eta_distributions,
     plot_vpc,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 
 
-def test_plot_iofv_vs_iofv(testdata):
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+def test_plot_iofv_vs_iofv(load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     iofv = res.individual_ofv
     assert plot_iofv_vs_iofv(iofv, iofv, "run1", "run1")
 
 
 def test_plot_individual_predictions(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     plot = plot_individual_predictions(model, res.predictions)
     assert plot
     plot = plot_individual_predictions(model, res.predictions[['PRED']], individuals=[1, 2, 5])
@@ -31,8 +34,9 @@ def test_plot_individual_predictions(load_model_for_test, testdata):
 
 
 def test_plot_transformed_eta_distributions(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
+    path = testdata / 'nonmem' / 'qa' / 'boxcox.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     pe = res.parameter_estimates
     ie = res.individual_estimates
     plot = plot_transformed_eta_distributions(model, pe, ie, pe)
@@ -40,9 +44,10 @@ def test_plot_transformed_eta_distributions(load_model_for_test, testdata):
 
 
 def test_plot_eta_distributions(tmp_path, load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     with chdir(tmp_path):
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-        res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
         ie = res.individual_estimates
         plot = plot_eta_distributions(model, ie)
         plot.save('Plot.html')
@@ -50,16 +55,18 @@ def test_plot_eta_distributions(tmp_path, load_model_for_test, testdata):
 
 
 def test_plot_dv_vs_ipred(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     plot = plot_dv_vs_ipred(model, res.predictions)
     assert plot
 
 
 def test_plot_dv_vs_ipred_stratify(tmp_path, load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno_pd.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     with chdir(tmp_path):
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-        res = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
         plot = plot_dv_vs_ipred(model, res.predictions, stratify_on='DVID')
         plot.save('chart.html')
         assert plot
@@ -68,15 +75,17 @@ def test_plot_dv_vs_ipred_stratify(tmp_path, load_model_for_test, testdata):
 
 
 def test_plot_dv_vs_pred(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     plot = plot_dv_vs_pred(model, res.predictions)
     assert plot
 
 
 def test_plot_cwres_vs_idv(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     plot = plot_cwres_vs_idv(model, res.residuals, 'WGT', bins=4)
     assert plot
     with pytest.raises(ValueError, match='DVoID column does not exist in dataset.'):
@@ -84,10 +93,10 @@ def test_plot_cwres_vs_idv(load_model_for_test, testdata):
 
 
 def test_plot_abs_cwres_vs_ipred(tmp_path, load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     with chdir(tmp_path):
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-        res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
         plot = plot_abs_cwres_vs_ipred(model, res.predictions, res.residuals, 'WGT', bins=4)
         plot.save('plot.html')
         assert plot

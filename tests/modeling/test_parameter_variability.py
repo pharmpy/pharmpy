@@ -38,7 +38,7 @@ from pharmpy.modeling.parameter_variability import (
     _transform_etas,
     get_occasion_levels,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 
 
 def S(x):
@@ -1746,7 +1746,7 @@ def test_create_joint_distribution_incorrect_params(
 
 def test_create_joint_distribution_choose_param_init(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
     params = (model.parameters['IVCL'], model.parameters['IVV'])
     rvs = model.random_variables.etas
     init = _choose_cov_param_init(model, res.individual_estimates, rvs, *params)
@@ -1859,7 +1859,7 @@ def test_update_initial_individual_estimates(
             f.write(etas_file)
 
         model = load_model_for_test('run1.mod')
-        res = read_modelfit_results('run1.mod')
+        res = parse_modelfit_results(model, 'run1.mod')
         model = update_initial_individual_estimates(model, res.individual_estimates, force=force)
         model = model.write_files()
 
@@ -1869,7 +1869,7 @@ def test_update_initial_individual_estimates(
 
 def test_nested_iiv_transformations(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
 
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
 

@@ -12,7 +12,7 @@ from pharmpy.modeling import (
     set_description,
     set_name,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
 from pharmpy.tools.structsearch.pkpd import create_pkpd_models
 from pharmpy.tools.structsearch.tmdd import (
@@ -134,9 +134,9 @@ def test_pkpd(load_model_for_test, testdata):
         "EFFECTCOMP([LINEAR,EMAX,SIGMOID]);"
         "INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],*)"
     )
-    res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
-    ests = res.parameter_estimates
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
+    res = parse_modelfit_results(model, testdata / "nonmem" / "pheno.mod")
+    ests = res.parameter_estimates
     pkpd_models = create_pkpd_models(
         model, search_space, b_init=5.75, ests=ests, emax_init=2.0, ec50_init=1.0, met_init=0.5
     )
@@ -161,7 +161,7 @@ def test_pkpd(load_model_for_test, testdata):
 
 def test_drug_metabolite(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+    res = parse_modelfit_results(model, testdata / "nonmem" / "pheno.mod")
     search_space = "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)"
     wb, candidate_tasks, base_model_description = create_drug_metabolite_models(
         model, res, search_space
@@ -186,7 +186,7 @@ def test_categorize_drug_metabolite_model_entries(
     load_model_for_test, testdata, model_entry_factory
 ):
     model_start = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
-    res_start = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+    res_start = parse_modelfit_results(model_start, testdata / "nonmem" / "pheno.mod")
     me_start = ModelEntry(model_start, modelfit_results=res_start)
 
     base_description = 'base'
@@ -228,19 +228,19 @@ def test_categorize_drug_metabolite_model_entries(
 
 def test_create_workflow_pkpd(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno_pd.mod')
     assert isinstance(create_workflow(model=model, results=results, type='pkpd'), Workflow)
 
 
 def test_create_workflow_tmdd(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno_pd.mod')
     assert isinstance(create_workflow(model=model, results=results, type='tmdd'), Workflow)
 
 
 def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno_pd.mod')
     assert isinstance(
         create_workflow(model=model, results=results, type='drug_metabolite'), Workflow
     )
@@ -248,7 +248,7 @@ def test_create_workflow_drug_metabolite(load_model_for_test, testdata):
 
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'pheno.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     qss_models = create_qss_models(model_start, res_start.parameter_estimates, None)
@@ -353,7 +353,7 @@ def test_validation(tmp_path, load_model_for_test, testdata, arguments, exceptio
     if "extra_model" in kwargs.keys():
         kwargs["extra_model"] = model
     if "extra_model_results" in kwargs.keys():
-        res = read_modelfit_results(testdata / "nonmem" / "pheno.mod")
+        res = parse_modelfit_results(model, testdata / "nonmem" / "pheno.mod")
         kwargs["extra_model_results"] = res
 
     if exception is not None:

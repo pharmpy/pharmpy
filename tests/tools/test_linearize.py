@@ -4,7 +4,7 @@ import pytest
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DataInfo
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
 from pharmpy.tools.linearize.tool import (
@@ -19,9 +19,9 @@ from pharmpy.workflows.contexts import NullContext
 
 def test_ofv(load_model_for_test, testdata):
     base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    baseres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    baseres = parse_modelfit_results(base, testdata / 'nonmem' / 'pheno.mod')
     lin = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    linres = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    linres = parse_modelfit_results(lin, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, baseres, lin, linres)
     correct = """,OFV
 base,730.894727
@@ -34,9 +34,9 @@ lin_estimated,730.847272
 
 def test_iofv(load_model_for_test, testdata):
     base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    baseres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    baseres = parse_modelfit_results(base, testdata / 'nonmem' / 'pheno.mod')
     lin = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    linres = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    linres = parse_modelfit_results(lin, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     res = calculate_results(base, baseres, lin, linres)
     correct = """,base,linear,delta
 1,7.742852,7.722670,-0.020182
@@ -157,12 +157,11 @@ $ESTIMATION METHOD=COND INTER MAXEVAL=0\n'''
 
 def test_create_linearized_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
-    derivative_model = load_model_for_test(
+    derivative_model_path = (
         testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
     )
-    modelres = read_modelfit_results(
-        testdata / "nonmem" / "linearize" / "linearize_dir1" / "scm_dir1" / "derivatives.mod"
-    )
+    derivative_model = load_model_for_test(derivative_model_path)
+    modelres = parse_modelfit_results(derivative_model, derivative_model_path)
 
     derivative_modelentry = ModelEntry.create(model=derivative_model, modelfit_results=modelres)
 

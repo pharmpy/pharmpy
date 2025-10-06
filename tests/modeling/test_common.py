@@ -36,7 +36,7 @@ from pharmpy.modeling import (
     split_joint_distribution,
     write_model,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 
 
 def test_get_config_path():
@@ -102,22 +102,29 @@ def test_generate_model_code(testdata, load_model_for_test):
     assert get_model_code(model).split('\n')[7] == '$THETA 0.1 FIX'
 
 
-def test_load_example_model():
+def test_load_example_model_pheno():
     model = load_example_model("pheno")
     assert len(model.parameters) == 6
 
+
+def test_load_example_model_moxo():
     model = load_example_model("moxo")
     assert len(model.parameters) == 11
 
+
+def test_load_example_model_error():
     with pytest.raises(ValueError):
         load_example_model("grekztalb23=")
 
 
-def test_get_model_covariates(pheno, testdata, load_model_for_test):
+def test_get_model_covariates_pheno(pheno):
     assert set(get_model_covariates(pheno)) == {
         Expr.symbol('APGR'),
         Expr.symbol('WGT'),
     }
+
+
+def test_get_model_covariates_minimal(testdata, load_model_for_test):
     minimal = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
     assert set(get_model_covariates(minimal)) == set()
 
@@ -132,7 +139,7 @@ def test_set_description(pheno):
     assert model.description == "run1"
 
 
-def test_convert_model():
+def test_convert_model_nonmem_nlmixr():
     model = load_example_model("pheno")
 
     run1 = convert_model(model, "nlmixr")
@@ -144,6 +151,8 @@ def test_convert_model():
     assert isinstance(run1, nlmixrModel)
     assert isinstance(run2, NMModel)
 
+
+def test_convert_model_base_nonmem():
     base = create_basic_pk_model('iv')
 
     assert isinstance(base, BaseModel)
@@ -158,7 +167,7 @@ def test_convert_model():
 
 def test_remove_unused_parameters_and_rvs(load_model_for_test, pheno_path):
     pheno = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
+    res = parse_modelfit_results(pheno, pheno_path)
     model = remove_unused_parameters_and_rvs(pheno)
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     statements = model.statements
@@ -177,8 +186,8 @@ def test_filter_dataset(load_model_for_test, testdata):
         filter_dataset(model, 'dummy_col == 1')
 
 
-def test_dvid_column(testdata):
-    model = read_model(testdata / 'nonmem' / 'pheno_pd.mod')
+def test_dvid_column(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
     assert model.datainfo.typeix['dvid'][0].name == 'DVID'
 
     pkpd_model = set_direct_effect(model, 'linear')

@@ -10,7 +10,6 @@ from pharmpy.modeling import (
     has_combined_error_model,
     has_proportional_error_model,
     has_weighted_error_model,
-    read_model,
     read_model_from_string,
     remove_error_model,
     set_additive_error_model,
@@ -415,8 +414,8 @@ $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
     assert has_proportional_error_model(model, 2)
 
 
-def test_has_proportional_error_model_zero_protection(testdata):
-    model = read_model(testdata / 'nonmem' / 'pheno.mod')
+def test_has_proportional_error_model_zero_protection(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     assert has_proportional_error_model(model)
     model = remove_error_model(model)
     model = set_proportional_error_model(model, zero_protection=True)

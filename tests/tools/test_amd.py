@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.tools import read_modelfit_results, read_results
+from pharmpy.tools import read_results
 from pharmpy.tools.amd.run import (
     _create_model_summary,
     _mechanistic_cov_extraction,
@@ -10,6 +10,7 @@ from pharmpy.tools.amd.run import (
     split_structural_search_space,
     validate_input,
 )
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.workflows.contexts import NullContext
@@ -39,7 +40,7 @@ def test_create_model_summary(testdata):
 )
 def test_invalid_search_space_raises(load_model_for_test, testdata, search_space, error):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     with pytest.raises(ValueError, match=error):
         validate_input(
@@ -58,7 +59,7 @@ def test_invalid_search_space_raises(load_model_for_test, testdata, search_space
 )
 def test_skip_most(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     # If no
     model = model.replace(datainfo=model.datainfo.set_types('unknown'))
@@ -107,7 +108,7 @@ def test_skip_most(load_model_for_test, testdata):
 )
 def test_raise_allometry(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     with pytest.raises(ValueError, match='Invalid `allometric_variable`'):
         later_input_validation(
@@ -128,7 +129,7 @@ def test_raise_allometry(load_model_for_test, testdata):
 )
 def test_raise_empty_search_space(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     with pytest.raises(ValueError, match='`search_space` evaluated to be empty :'):
         validate_input(
@@ -149,7 +150,7 @@ def test_raise_empty_search_space(load_model_for_test, testdata):
 )
 def test_skip_covsearch(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     validate_input(
         model,
@@ -185,7 +186,7 @@ def test_skip_covsearch(load_model_for_test, testdata):
 )
 def test_skip_iovsearch_one_occasion(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     validate_input(
         model,
@@ -219,7 +220,7 @@ def test_skip_iovsearch_one_occasion(load_model_for_test, testdata):
 )
 def test_skip_iovsearch_missing_occasion_raises(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     with pytest.raises(ValueError, match='Invalid `occasion`'):
         later_input_validation(
@@ -240,7 +241,7 @@ def test_skip_iovsearch_missing_occasion_raises(load_model_for_test, testdata):
 )
 def test_ignore_datainfo_fallback(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     validate_input(
         model,
@@ -313,7 +314,7 @@ def test_ignore_datainfo_fallback(load_model_for_test, testdata):
 )
 def test_mechanistic_covariate_option(load_model_for_test, testdata, mechanistic_covariates, error):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     if error != "PASS":
         with pytest.raises(ValueError, match=error):
