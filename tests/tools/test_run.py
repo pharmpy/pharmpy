@@ -25,6 +25,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     split_joint_distribution,
 )
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.run import (
     _create_metadata_tool,
@@ -37,7 +38,6 @@ from pharmpy.tools.run import (
     parse_search_space_rvs,
     rank_models,
     rank_models_from_entries,
-    read_modelfit_results,
     summarize_errors_from_entries,
     summarize_modelfit_results_from_entries,
 )
@@ -57,7 +57,7 @@ def test_create_metadata_tool(tmp_path, testdata, load_model_for_test, kwargs):
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
         model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-        results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+        results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
         search_space = 'ABSORPTION(ZO)'
 
         metadata = _create_metadata_tool(
@@ -86,7 +86,7 @@ def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
         model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-        results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+        results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
 
         models = [set_initial_estimates(model, {'TVCL': float(i)}) for i in range(5)]
 
@@ -122,9 +122,9 @@ def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_
 
 
 def test_create_metadata_tool_not_raises(tmp_path, testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
     with chdir(tmp_path):
-        model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-        results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
         tool_name = 'modelsearch'
         database = LocalDirectoryContext(tool_name)
         tool = import_tool(tool_name)
@@ -142,26 +142,28 @@ def test_create_metadata_tool_not_raises(tmp_path, testdata, load_model_for_test
 
 
 def test_summarize_errors(load_model_for_test, testdata, tmp_path, pheno_path):
-    with chdir(tmp_path):
-        model = read_model(pheno_path)
-        res = read_modelfit_results(pheno_path)
-        me1 = ModelEntry(model=model, modelfit_results=res)
-        shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
+    model = load_model_for_test(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
+    me1 = ModelEntry(model=model, modelfit_results=res)
+    shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
+    with chdir(tmp_path):
         error_path = testdata / 'nonmem' / 'errors'
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = read_model('pheno_no_header.mod')
-        res_no_header = read_modelfit_results('pheno_no_header.mod')
+        res_no_header = parse_modelfit_results(model_no_header, 'pheno_no_header.mod')
         me2 = ModelEntry(model=model_no_header, modelfit_results=res_no_header)
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = read_model('pheno_rounding_error.mod')
-        res_rounding_error = read_modelfit_results('pheno_rounding_error.mod')
+        res_rounding_error = parse_modelfit_results(
+            model_rounding_error, 'pheno_rounding_error.mod'
+        )
         me3 = ModelEntry(model=model_rounding_error, modelfit_results=res_rounding_error)
 
         entries = [me1, me2, me3]
@@ -318,19 +320,17 @@ def test_rank_models_raises(base_model_and_res, candidate_models_and_res):
 
 def test_rank_models_bic(load_model_for_test, testdata):
     model_base = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    res = parse_modelfit_results(model_base, testdata / 'nonmem' / 'pheno.mod')
     model_iiv = add_iiv(model_base, ['S1'], 'exp')
     model_iiv = model_iiv.replace(name='pheno_iiv')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
     df = rank_models(model_base, res, [model_iiv], [res], rank_type='bic', bic_type='mixed')
     assert df.iloc[0].name == 'pheno'
     assert df.loc['pheno', 'bic'] != df.loc['pheno_iiv', 'bic']
 
 
-def test_summarize_modelfit_results(
-    load_model_for_test, create_model_for_test, testdata, pheno_path
-):
-    pheno = read_model(pheno_path)
-    pheno_res = read_modelfit_results(pheno_path)
+def test_summarize_modelfit_results(testdata, pheno_path, load_model_for_test):
+    pheno = load_model_for_test(pheno_path)
+    pheno_res = parse_modelfit_results(pheno, pheno_path)
     pheno_me = ModelEntry(model=pheno, modelfit_results=pheno_res)
 
     summary_single = summarize_modelfit_results_from_entries([pheno_me])
@@ -340,8 +340,8 @@ def test_summarize_modelfit_results(
 
     assert len(summary_single.index) == 1
 
-    mox = read_model(testdata / 'nonmem' / 'models' / 'mox1.mod')
-    mox_res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
+    mox_res = parse_modelfit_results(mox, testdata / 'nonmem' / 'models' / 'mox1.mod')
     mox_me = ModelEntry(model=mox, modelfit_results=mox_res)
 
     summary_multiple = summarize_modelfit_results_from_entries([pheno_me, mox_me])
@@ -366,8 +366,8 @@ def test_summarize_modelfit_results(
         / 'noSIM'
         / 'pheno_multEST.mod'
     )
-    pheno_multest = read_model(multest_path)
-    pheno_multest_res = read_modelfit_results(multest_path)
+    pheno_multest = load_model_for_test(multest_path)
+    pheno_multest_res = parse_modelfit_results(pheno_multest, multest_path)
     pheno_multest_me = ModelEntry(model=pheno_multest, modelfit_results=pheno_multest_res)
 
     summary_multest = summarize_modelfit_results_from_entries([pheno_multest_me, mox_me])
@@ -401,26 +401,28 @@ def test_summarize_modelfit_results(
 
 
 def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_path, pheno_path):
-    with chdir(tmp_path):
-        model = read_model(pheno_path)
-        res = read_modelfit_results(pheno_path)
-        me1 = ModelEntry(model=model, modelfit_results=res)
-        shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
+    model = load_model_for_test(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
+    me1 = ModelEntry(model=model, modelfit_results=res)
+    shutil.copy2(testdata / 'pheno_data.csv', tmp_path)
 
+    with chdir(tmp_path):
         error_path = testdata / 'nonmem' / 'errors'
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_no_header.mod')
         shutil.copy2(error_path / 'no_header_error.lst', tmp_path / 'pheno_no_header.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_no_header.ext')
         model_no_header = read_model('pheno_no_header.mod')
-        model_no_header_res = read_modelfit_results('pheno_no_header.mod')
+        model_no_header_res = parse_modelfit_results(model_no_header, 'pheno_no_header.mod')
         me2 = ModelEntry(model=model_no_header, modelfit_results=model_no_header_res)
 
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.mod', tmp_path / 'pheno_rounding_error.mod')
         shutil.copy2(error_path / 'rounding_error.lst', tmp_path / 'pheno_rounding_error.lst')
         shutil.copy2(testdata / 'nonmem' / 'pheno_real.ext', tmp_path / 'pheno_rounding_error.ext')
         model_rounding_error = read_model('pheno_rounding_error.mod')
-        model_rounding_error_res = read_modelfit_results('pheno_rounding_error.mod')
+        model_rounding_error_res = parse_modelfit_results(
+            model_rounding_error, 'pheno_rounding_error.mod'
+        )
         me3 = ModelEntry(model=model_rounding_error, modelfit_results=model_rounding_error_res)
 
         entries = [
@@ -438,8 +440,10 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
 
 
-def test_read_modelfit_results(testdata):
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+def test_parse_modelfit_results_pheno_real(testdata, load_model_for_test):
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     assert res.ofv == 586.27605628188053
     expected_rse = {
         'PTVCL': 0.04473086219931638,
@@ -451,7 +455,11 @@ def test_read_modelfit_results(testdata):
     }
     assert res.relative_standard_errors.to_dict() == expected_rse
 
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_design.mod')
+
+def test_parse_modelfit_results_pheno_design(testdata, load_model_for_test):
+    path = testdata / 'nonmem' / 'pheno_design.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     assert res.ofv == 730.96990602857545127
     expected_rse = {
         'TVCL': 0.07540090004436839,
@@ -523,15 +531,16 @@ def test_load_example_modelfit_results():
         ),
     ],
 )
-def test_strictness(testdata, path, statement, expected):
-    res = read_modelfit_results(testdata / path)
-    model = read_model(testdata / path)
+def test_strictness(testdata, load_model_for_test, path, statement, expected):
+    model = load_model_for_test(testdata / path)
+    res = parse_modelfit_results(model, testdata / path)
     assert is_strictness_fulfilled(model, res, statement) == expected
 
 
-def test_strictness_unallowed_operators(testdata):
-    res = read_modelfit_results(testdata / 'nonmem/pheno.mod')
-    model = read_model(testdata / 'nonmem/pheno.mod')
+def test_strictness_unallowed_operators(testdata, load_model_for_test):
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     with pytest.raises(ValueError, match=r"Unallowed operators found: &"):
         is_strictness_fulfilled(model, res, 'minimization_successful & rounding_errors')
     with pytest.raises(ValueError, match=r"Unallowed operators found: &, |"):
@@ -540,7 +549,7 @@ def test_strictness_unallowed_operators(testdata):
         )
 
 
-def test_strictness_parameters(testdata):
+def test_strictness_parameters(testdata, load_model_for_test):
     res = load_example_modelfit_results('pheno')
     model = load_example_model("pheno")
     assert not is_strictness_fulfilled(model, res, 'rse_theta < 0.3')
@@ -549,8 +558,9 @@ def test_strictness_parameters(testdata):
     assert is_strictness_fulfilled(model, res, 'rse_omega < 0.5')
     assert is_strictness_fulfilled(model, res, 'rse_sigma < 0.2')
 
-    res = read_modelfit_results(testdata / 'nonmem/pheno.mod')
-    model = read_model(testdata / 'nonmem/pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     assert not is_strictness_fulfilled(model, res, 'estimate_near_boundary_theta')
     model = set_lower_bounds(model, {'TVCL': 0.0058})
     assert is_strictness_fulfilled(model, res, 'estimate_near_boundary_theta')

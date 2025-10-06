@@ -13,7 +13,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     transform_blq,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.ruvsearch.results import calculate_results, psn_resmod_results
 from pharmpy.tools.ruvsearch.tool import (
     _change_proportional_model,
@@ -32,8 +32,9 @@ from pharmpy.workflows import ModelEntry, Workflow
 
 
 def test_filter_dataset(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem/pheno_pd.mod')
-    res = read_modelfit_results(testdata / 'nonmem/pheno_pd.mod')
+    path = testdata / 'nonmem' / 'pheno_pd.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     indices = model.dataset.index[model.dataset['DVID'] == 2].tolist()
     model_entry = ModelEntry.create(model, modelfit_results=res)
     df = _create_dataset(model_entry, dv=2)
@@ -84,22 +85,25 @@ def test_resmod_results_dvid(testdata):
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    results = parse_modelfit_results(model, path)
     remove_parameter_uncertainty_step(model)
     assert isinstance(create_workflow(model=model, results=results), Workflow)
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model = remove_parameter_uncertainty_step(model)
     validate_input(model=model, results=res)
 
 
 def test_create_dataset(load_model_for_test, testdata, tmp_path):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model_entry = ModelEntry.create(model, modelfit_results=res)
     df = _create_dataset(model_entry, dv=None)
 
@@ -120,7 +124,7 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
             f.write(mytab_new)
 
         model = load_model_for_test('mox3.mod')
-        res = read_modelfit_results('mox3.mod')
+        res = parse_modelfit_results(model, 'mox3.mod')
 
         model = transform_blq(model, method='m3', lloq=0.05)
         model_entry = ModelEntry.create(model, modelfit_results=res)
@@ -132,8 +136,9 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
 
 
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     model_1 = set_combined_error_model(model_start)
@@ -192,8 +197,9 @@ def test_change_proportional_model(load_model_for_test, testdata):
     ],
 )
 def test_create_models(load_model_for_test, testdata, func, kwargs, description, y_str):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     me_base = _create_base_model(me_start, current_iteration=1, dv=None)
@@ -244,8 +250,9 @@ def test_create_models(load_model_for_test, testdata, func, kwargs, description,
 def test_create_best_model(
     load_model_for_test, testdata, model_entry_factory, func, kwargs, best_model_name_ref, y_str
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     model_base = _create_base_model(me_start, current_iteration=1, dv=None).model
@@ -267,8 +274,9 @@ def test_create_best_model(
 
 
 def test_create_best_model_no_best(load_model_for_test, testdata, model_entry_factory):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     model_base = _create_base_model(me_start, current_iteration=1, dv=None).model
@@ -380,7 +388,7 @@ def test_validate_input_raises(
         model_path = ('nonmem/ruvsearch/mox3.mod',)
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
-    res = read_modelfit_results(path)
+    res = parse_modelfit_results(model, path)
     kwargs = {'model': model, 'results': res, **arguments}
 
     with pytest.raises(exception, match=match):
@@ -388,8 +396,9 @@ def test_validate_input_raises(
 
 
 def test_validate_input_raises_cwres(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, residuals=res.residuals.drop(columns=['CWRES']))
 
@@ -398,8 +407,9 @@ def test_validate_input_raises_cwres(load_model_for_test, testdata):
 
 
 def test_validate_input_raises_cipredi(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, predictions=res.predictions.drop(columns=['CIPREDI']))
 
@@ -408,8 +418,9 @@ def test_validate_input_raises_cipredi(load_model_for_test, testdata):
 
 
 def test_validate_input_raises_ipred(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model = remove_parameter_uncertainty_step(model)
     modelfit_results = replace(res, predictions=res.predictions.drop(columns=['IPRED']))
 
@@ -418,8 +429,9 @@ def test_validate_input_raises_ipred(load_model_for_test, testdata):
 
 
 def test_validate_input_raises_blq(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model = transform_blq(model, method='m4', lloq=1.0)
 
     with pytest.raises(ValueError, match="BLQ"):
@@ -427,8 +439,9 @@ def test_validate_input_raises_blq(load_model_for_test, testdata):
 
 
 def test_validate_input_raises_dv(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod')
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
 
     with pytest.raises(ValueError, match="No DVID column"):
         validate_input(model=model, results=res, dv=1)

@@ -13,7 +13,7 @@ from pharmpy.modeling import (
     remove_iiv,
     remove_iov,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.iovsearch.tool import (
     _get_iiv_etas_with_corresponding_iov,
     _get_nonfixed_iivs,
@@ -86,8 +86,9 @@ def test_create_iov_base_model_entry(
     no_of_iov_omegas,
     desc_ref,
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     if func:
         model_start = func(model_start)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
@@ -116,8 +117,9 @@ def test_create_candidate_model_entry(
     no_of_iov,
     desc_ref,
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     model_start = add_iov(model_start, 'VISI', distribution='same-as-iiv')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
     me_cand = create_candidate_model_entry(func, me_start, etas, 1)
@@ -180,14 +182,16 @@ def test_iovsearch_github_issues_976(load_model_for_test, testdata):
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    results = parse_modelfit_results(model, path)
     assert isinstance(create_workflow(model=model, results=results, column='APGR'), Workflow)
 
 
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     model_1 = add_iov(model_start, occ='VISI', list_of_parameters=['ETA_1'])
@@ -236,14 +240,16 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    results = parse_modelfit_results(model, path)
     validate_input(model=model, results=results, column='APGR')
 
 
 def test_validate_input_with_model_and_list_of_parameters(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    results = parse_modelfit_results(model, path)
     validate_input(model=model, results=results, column='APGR', list_of_parameters=['CL', 'V'])
     validate_input(model=model, results=results, column='APGR', list_of_parameters=[['V'], ['CL']])
 
@@ -299,7 +305,7 @@ def test_validate_input_raises(
         model_path = ('nonmem/pheno.mod',)
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
-    results = read_modelfit_results(path)
+    results = parse_modelfit_results(model, path)
 
     kwargs = {'model': model, 'results': results, **arguments}
     if 'column' not in arguments.keys():

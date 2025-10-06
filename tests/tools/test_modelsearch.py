@@ -15,7 +15,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.mfl.helpers import funcs, modelsearch_features
 from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -269,7 +269,7 @@ def test_is_allowed():
 )
 def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_added_etas):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
     model_entry = ModelEntry.create(model, modelfit_results=res)
     no_of_etas_start = len(model.random_variables)
     for func in transform_funcs:
@@ -280,7 +280,7 @@ def test_add_iiv_to_func(load_model_for_test, testdata, transform_funcs, no_of_a
 
 def test_get_best_model(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     model_candidate = model_start.replace(name='cand')
@@ -297,7 +297,7 @@ def test_get_best_model(load_model_for_test, testdata, model_entry_factory):
 
 def test_create_base_model(load_model_for_test, testdata):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
     search_space = mfl_parse('ABSORPTION([SEQ-ZO-FO])', mfl_class=True)
     assert has_first_order_absorption(model_start)
@@ -314,7 +314,7 @@ def test_create_base_model(load_model_for_test, testdata):
 
 def test_clear_description(load_model_for_test, testdata):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'pheno.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
     model_no_desc = clear_description(me_start).model
     assert model_start.description != ''
@@ -335,7 +335,7 @@ def test_clear_description(load_model_for_test, testdata):
 )
 def test_create_candidate(load_model_for_test, testdata, iiv_strategy, allometry, params_added):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     search_space_exhaustive = 'ABSORPTION(ZO);PERIPHERALS(1)'
@@ -390,7 +390,7 @@ def test_create_candidate(load_model_for_test, testdata, iiv_strategy, allometry
 )
 def test_filter_mfl_statements(load_model_for_test, testdata, funcs, search_space, mfl_funcs):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model_start = func(model_start)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
@@ -400,7 +400,7 @@ def test_filter_mfl_statements(load_model_for_test, testdata, funcs, search_spac
 
 def test_categorize_model_entries(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
     model_base = set_zero_order_absorption(model_start).replace(name='base')
     me_base = ModelEntry.create(model_base)
@@ -423,7 +423,7 @@ def test_categorize_model_entries(load_model_for_test, testdata, model_entry_fac
 
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'pheno.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     funcs = [set_zero_order_absorption, add_peripheral_compartment, set_zero_order_elimination]
@@ -442,7 +442,7 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
     assert isinstance(
         create_workflow(model, results, MINIMAL_VALID_MFL_STRING, 'exhaustive'), Workflow
     )
@@ -450,7 +450,7 @@ def test_create_workflow_with_model(load_model_for_test, testdata):
 
 def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
     validate_input(model, results, MINIMAL_VALID_MFL_STRING, 'exhaustive')
 
 
@@ -558,7 +558,7 @@ def test_validate_input_raises(
         model_path = ('nonmem/pheno.mod',)
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
-    results = read_modelfit_results(path)
+    results = parse_modelfit_results(model, path)
 
     harmless_arguments = dict(
         search_space=MINIMAL_VALID_MFL_STRING,

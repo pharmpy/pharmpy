@@ -1,8 +1,5 @@
-from pharmpy.modeling import read_model
-
-
 def test_dataset(load_model_for_test, testdata):
-    model = read_model(testdata / 'nonmem' / 'fcon' / 'FCON')
+    model = load_model_for_test(testdata / 'nonmem' / 'fcon' / 'FCON')
     assert model.internals.code.startswith('FILE')
 
     df = model.dataset

@@ -5,7 +5,7 @@ from numpy import nan
 
 import pharmpy.model.external.nonmem.table as table
 import pharmpy.tools.external.nonmem.results_file as rf
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows.log import Log
 
 
@@ -435,10 +435,10 @@ def test_warnings(testdata, file_name, ref, idx):
     assert message == ref
 
 
-def test_covariance_status(testdata):
-    res = read_modelfit_results(
-        testdata / 'nonmem' / 'modelfit_results' / 'covariance' / 'pheno_nocovariance.mod'
-    )
+def test_covariance_status(load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'modelfit_results' / 'covariance' / 'pheno_nocovariance.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     assert all(res.standard_errors.isna())
     assert res.covariance_matrix is None
     assert res.correlation_matrix is None

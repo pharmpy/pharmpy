@@ -38,7 +38,7 @@ from pharmpy.modeling import (
     set_zero_order_input,
     write_dataset,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 
 
 def S(x):
@@ -57,27 +57,27 @@ def test_convert_nonmem_model(testdata):
     assert model.observation_transformation == {S('Y'): S('Y'), S('Y_2'): S('Y_2')}
 
 
-def test_parse_nonmem_model(testdata):
-    model = read_model(testdata / 'nonmem/pheno_pd.mod')
+def test_parse_nonmem_model(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
     assert model.dependent_variables == {S('Y'): 1}
     assert model.observation_transformation == {S('Y'): S('Y')}
 
-    model = read_model(testdata / 'nonmem/models/pheno_dvid.mod')
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
     assert model.dependent_variables == {S('Y_1'): 1, S('Y_2'): 2}
     assert model.observation_transformation == {S('Y_1'): S('Y_1'), S('Y_2'): S('Y_2')}
 
 
 def test_set_initial_estimates(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
     model = set_initial_estimates(model, res.parameter_estimates)
 
 
-def test_empty_ext_file(testdata):
+def test_empty_ext_file(load_model_for_test, testdata):
     # Assert existing but empty ext-file does not give modelfit_results
-    res = read_modelfit_results(
-        testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
-    )
+    path = testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'noESTwithSIM' / 'onlysim.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     assert res is None
 
 
@@ -107,7 +107,7 @@ def test_parameters(pheno):
 
 def test_set_parameters(pheno_path, load_model_for_test):
     pheno = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
+    res = parse_modelfit_results(pheno, pheno_path)
     params = {
         'PTVCL': 0.75,
         'PTVV': 0.5,
@@ -1354,7 +1354,7 @@ def test_des_assignments(load_model_for_test, testdata):
     assert stats[4] == Assignment.create("EXTRA", "2 * A_CENTRAL(t)")
 
 
-def test_missing_data(load_model_for_test, testdata, tmp_path):
+def test_missing_data_999(testdata, tmp_path):
     model = read_model(
         testdata / "nonmem" / "models" / "minimal_missing.mod", missing_data_token="-999"
     )
@@ -1367,5 +1367,7 @@ def test_missing_data(load_model_for_test, testdata, tmp_path):
     df = pd.read_csv(tmp_path / 'data.csv')
     assert list(df['WGT']) == [55.0, 55.0, -999.0, -999.0]
 
+
+def test_missing_data_default(testdata):
     model = read_model(testdata / "nonmem" / "models" / "minimal_missing.mod")
     assert list(model.dataset['WGT']) == [55.0, 55.0, -999.0, -999.0]

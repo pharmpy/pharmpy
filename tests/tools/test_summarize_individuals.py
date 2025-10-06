@@ -5,8 +5,7 @@ import packaging
 import pytest
 
 from pharmpy.deps import pandas as pd
-from pharmpy.modeling import read_model
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.funcs import summarize_individuals, summarize_individuals_count_table
 from pharmpy.tools.funcs.summarize_individuals import dofv
 from pharmpy.workflows import ModelEntry
@@ -46,10 +45,9 @@ tflite_condition = (
 
 
 @pytest.mark.skipif(tflite_condition, reason="Skipping tests requiring tflite for Python 3.12")
-def test_tflite_not_installed(pheno_path, monkeypatch):
-    model = read_model(pheno_path)
-    results = read_modelfit_results(pheno_path)
-    me = ModelEntry(model=model, modelfit_results=results)
+def test_tflite_not_installed(pheno, pheno_path, monkeypatch):
+    results = parse_modelfit_results(pheno, pheno_path)
+    me = ModelEntry(model=pheno, modelfit_results=results)
 
     df = summarize_individuals([me])
     assert not df['predicted_dofv'].isnull().any().any()
@@ -59,19 +57,19 @@ def test_tflite_not_installed(pheno_path, monkeypatch):
     assert df['predicted_dofv'].isnull().all().all()
 
 
-def test_dofv_parent_model_is_none(pheno_path):
-    res = read_modelfit_results(pheno_path)
+def test_dofv_parent_model_is_none(pheno, pheno_path):
+    res = parse_modelfit_results(pheno, pheno_path)
     res = dofv(None, res)
     assert np.isnan(res)
 
 
-def test_dofv_modelfit_results_is_none(pheno_path):
-    parent_res = read_modelfit_results(pheno_path)
+def test_dofv_modelfit_results_is_none(pheno, pheno_path):
+    parent_res = parse_modelfit_results(pheno, pheno_path)
     res = dofv(parent_res, None)
     assert res.isna().all()
 
 
-def test_dofv_individual_ofv_is_none(pheno_path):
-    parent_res = read_modelfit_results(pheno_path)
+def test_dofv_individual_ofv_is_none(pheno, pheno_path):
+    parent_res = parse_modelfit_results(pheno, pheno_path)
     res = dofv(parent_res, ModelfitResults())
     assert res.isna().all()

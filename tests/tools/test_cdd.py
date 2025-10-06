@@ -3,7 +3,6 @@ from pytest import approx
 
 import pharmpy.tools.cdd.results as cdd
 from pharmpy.deps import pandas as pd
-from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.external import parse_modelfit_results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 
@@ -29,11 +28,14 @@ def test_psn_options():
 
 
 def test_cdd_psn(load_model_for_test, testdata):
+    base_model_path = testdata / 'nonmem' / 'cdd' / 'pheno_real.mod'
+    base_model = load_model_for_test(base_model_path)
+    base_model_results = parse_modelfit_results(base_model, base_model_path)
+
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
-    base_model = load_model_for_test(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
-    base_model_results = read_modelfit_results(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
-    cdd_models = [load_model_for_test(p) for p in model_paths(path, 'cdd_*.mod')]
-    cdd_model_results = [read_modelfit_results(p) for p in model_paths(path, 'cdd_*.mod')]
+    cdd_paths = model_paths(path, 'cdd_*.mod')
+    cdd_models = list(map(load_model_for_test, cdd_paths))
+    cdd_model_results = list(map(parse_modelfit_results, cdd_models, cdd_paths))
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
 
     cdd_bin_id = cdd.calculate_results(
@@ -132,14 +134,15 @@ def test_cdd_psn(load_model_for_test, testdata):
 
 
 def test_cdd_calculate_results(load_model_for_test, testdata):
+    base_model_path = testdata / 'nonmem' / 'cdd' / 'pheno_real.mod'
+    base_model = load_model_for_test(base_model_path)
+    base_model_results = parse_modelfit_results(base_model, base_model_path)
+
     path = testdata / 'nonmem' / 'cdd' / 'pheno_real_bin10'
     skipped_individuals = cdd.psn_cdd_skipped_individuals(path)
-    base_model = load_model_for_test(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
-    base_model_results = read_modelfit_results(testdata / 'nonmem' / 'cdd' / 'pheno_real.mod')
     cdd_model_paths = model_paths(path, 'cdd_*.mod')
-
-    cdd_models = [load_model_for_test(p) for p in cdd_model_paths]
-    cdd_model_results = [read_modelfit_results(p) for p in cdd_model_paths]
+    cdd_models = list(map(load_model_for_test, cdd_model_paths))
+    cdd_model_results = list(map(parse_modelfit_results, cdd_models, cdd_model_paths))
 
     # Results for plain PsN run
     delta_ofv = cdd.compute_delta_ofv(base_model_results, cdd_model_results, skipped_individuals)

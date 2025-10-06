@@ -8,7 +8,7 @@ from pytest import approx
 
 import pharmpy.tools as tools
 from pharmpy.deps import pandas as pd
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b
 from pharmpy.tools.frem.results import (
     calculate_results,
@@ -47,8 +47,9 @@ def test_check_covariates_mult_warns(load_model_for_test, testdata):
 
 
 def test_parcov_inits(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    path = testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     params = calculate_parcov_inits(model, res.individual_estimates, 2)
     assert params == approx(
         {
@@ -62,7 +63,9 @@ def test_parcov_inits(load_model_for_test, testdata):
 
 def test_create_model3b(load_model_for_test, testdata):
     model3 = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
-    model3_res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod')
+    model3_res = parse_modelfit_results(
+        model3, testdata / 'nonmem' / 'frem' / 'pheno' / 'model_3.mod'
+    )
     model1b = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_1b.mod')
     model3b = create_model3b(model1b, model3, model3_res, 2)
     pset = model3b.parameters
@@ -72,8 +75,9 @@ def test_create_model3b(load_model_for_test, testdata):
 
 
 def test_bipp_covariance(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    path = testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     res = calculate_results_using_bipp(
         model, res, continuous=['APGR', 'WGT'], categorical=[], seed=9532
     )
@@ -81,8 +85,9 @@ def test_bipp_covariance(load_model_for_test, testdata):
 
 
 def test_frem_results_pheno(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod')
+    path = testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     rng = np.random.default_rng(39)
     res = calculate_results(
         model, res, continuous=['APGR', 'WGT'], categorical=[], samples=10, seed=rng
@@ -258,8 +263,9 @@ V,all,0.14574143997630676,0.11964944422449278,0.16136355952455325
 
 
 def test_frem_results_pheno_categorical(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod')
+    path = testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     rng = np.random.default_rng(8978)
     res = calculate_results(
         model, res, continuous=['WGT'], categorical=['APGRX'], samples=10, seed=rng

@@ -8,7 +8,7 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import add_time_after_dose
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows import (
     LocalDirectoryDatabase,
     LocalModelDirectoryDatabase,
@@ -107,7 +107,7 @@ def test_store_and_retrieve_model_entry(tmp_path, load_model_for_test, testdata)
             shutil.copy2(path, tmp_path)
         shutil.copy(datadir / 'pheno.dta', 'pheno.dta')
         model = load_model_for_test("pheno_real.mod")
-        modelfit_results = read_modelfit_results("pheno_real.mod")
+        modelfit_results = parse_modelfit_results(model, "pheno_real.mod")
         model_entry = ModelEntry(
             model=model,
             modelfit_results=modelfit_results,
