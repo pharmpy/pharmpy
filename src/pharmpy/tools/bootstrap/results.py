@@ -9,6 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
 from pharmpy.model import Model
 from pharmpy.tools import is_strictness_fulfilled, read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.psn_helpers import cmd_line_model_path, model_paths
 from pharmpy.tools.run import summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry
@@ -232,11 +233,8 @@ def psn_bootstrap_results(path):
     paths = list(model_paths(path, 'bs_pr1_*.mod'))
     models = [Model.parse_model(p) for p in paths]
     # Read the results already now to give an appropriate error if no results exists
-    results = []
-    for p in paths:
-        res = read_modelfit_results(p)
-        if res is not None:
-            results.append(res)
+    results = map(parse_modelfit_results, models, paths)
+    results = [res for res in results if res is not None]
     if not results:
         raise FileNotFoundError("No model results available in m1")
     try:
