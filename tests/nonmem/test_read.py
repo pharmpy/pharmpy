@@ -65,44 +65,66 @@ def test_convert_fortran_number(s, expected):
     assert convert_fortran_number(s) == expected
 
 
-def test_read_small_nonmem_datasets():
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    (
+        ("1,2,3", [1, 2, 3]),
+        ("1, 2   , 3", [1, 2, 3]),
+        ("1,,3", [1, 0, 3]),
+        ("1,,", [1, 0, 0]),
+        (",2,4", [0, 2, 4]),
+        ("1\t2\t3", [1, 2, 3]),
+        ("3 4 6", [3, 4, 6]),
+        ("3   28   , 341", [3, 28, 341]),
+        ("  1  2  3  ", [1, 2, 3]),
+        ("1,2,3,6", [1, 2, 3]),
+    ),
+)
+def test_read_nonmem_dataset_line(line, expected):
     abc = ['A', 'B', 'C']
-    df = read_nonmem_dataset(StringIO("1,2,3"), colnames=abc)
-    assert list(df.iloc[0]) == [1, 2, 3]
+    df = read_nonmem_dataset(StringIO(line), colnames=abc)
     assert list(df.columns) == ['A', 'B', 'C']
-    df = read_nonmem_dataset(StringIO("1, 2   , 3"), colnames=abc)
-    assert list(df.iloc[0]) == [1, 2, 3]
-    df = read_nonmem_dataset(StringIO("1,,3"), colnames=abc)
-    assert list(df.iloc[0]) == [1, 0, 3]
-    df = read_nonmem_dataset(StringIO("1,,"), colnames=abc)
-    assert list(df.iloc[0]) == [1, 0, 0]
-    df = read_nonmem_dataset(StringIO(",2,4"), colnames=abc)
-    assert list(df.iloc[0]) == [0, 2, 4]
-    df = read_nonmem_dataset(StringIO("1\t2\t3"), colnames=abc)
-    assert list(df.iloc[0]) == [1, 2, 3]
-    with pytest.warns(UserWarning):
-        df = read_nonmem_dataset(StringIO("1\t2\t"), colnames=abc)
-    assert list(df.iloc[0]) == [1, 2, 0]
-    df = read_nonmem_dataset(StringIO("3 4 6"), colnames=abc)
-    assert list(df.iloc[0]) == [3, 4, 6]
-    df = read_nonmem_dataset(StringIO("3   28   , 341"), colnames=abc)
-    assert list(df.iloc[0]) == [3, 28, 341]
-    df = read_nonmem_dataset(StringIO("  1  2  3  "), colnames=abc)
-    assert list(df.iloc[0]) == [1, 2, 3]
-    with pytest.raises(DatasetError):
-        df = read_nonmem_dataset(StringIO("  1  2  3  \n\n"), colnames=abc)
-    with pytest.raises(DatasetError):
-        df = read_nonmem_dataset(StringIO("1\t2 \t3"), colnames=abc)
+    assert list(df.iloc[0]) == expected
 
+
+@pytest.mark.parametrize(
+    ("line", "expected"),
+    (
+        ("1\t2\t", [1, 2, 0]),
+        ("1\t2\n", [1, 2, 0]),
+        ("1\t2", [1, 2, 0]),
+    ),
+)
+def test_read_nonmem_dataset_too_many_columns_in_input(line: str, expected: list[int]):
+    abc = ['A', 'B', 'C']
+    with pytest.warns(UserWarning):
+        df = read_nonmem_dataset(StringIO(line), colnames=abc)
+    assert list(df.iloc[0]) == expected
+
+
+def test_read_nonmem_dataset_empty_line():
+    abc = ['A', 'B', 'C']
+    with pytest.raises(DatasetError):
+        read_nonmem_dataset(StringIO("  1  2  3  \n\n"), colnames=abc)
+
+
+def test_read_nonmem_dataset_tab_preceded_by_space():
+    abc = ['A', 'B', 'C']
+    with pytest.raises(DatasetError):
+        read_nonmem_dataset(StringIO("1\t2 \t3"), colnames=abc)
+
+
+def test_read_nonmem_dataset_header_too_long():
+    abc = ['A', 'B', 'C']
     # Mismatch length of column_names and data frame
     with pytest.warns(UserWarning):
         df = read_nonmem_dataset(StringIO("1,2,3"), colnames=abc + ['D'])
     assert list(df.iloc[0]) == [1, 2, 3, 0]
     assert list(df.columns) == ['A', 'B', 'C', 'D']
-    df = read_nonmem_dataset(StringIO("1,2,3,6"), colnames=abc)
-    assert list(df.iloc[0]) == [1, 2, 3]
-    assert list(df.columns) == ['A', 'B', 'C']
 
+
+def test_read_nonmem_dataset_null_value():
+    abc = ['A', 'B', 'C']
     # Test null_value
     df = read_nonmem_dataset(StringIO("1,2,"), colnames=abc, null_value=9)
     assert list(df.iloc[0]) == [1, 2, 9]
@@ -116,7 +138,7 @@ def test_nonmem_dataset_with_nonunique_ids():
     assert list(df['DV']) == [2, 3, 4, 5]
 
 
-def test_nonmem_dataset_with_ignore_accept():
+def test_nonmem_dataset_with_ignore_accept_case_1():
     colnames = ['ID', 'DV']
     df = read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, ignore=['DV.EQN.2'])
     assert len(df) == 3
@@ -124,6 +146,10 @@ def test_nonmem_dataset_with_ignore_accept():
     assert list(df.iloc[0]) == [1, 3]
     assert list(df.iloc[1]) == [2, 4]
     assert list(df.iloc[2]) == [2, 5]
+
+
+def test_nonmem_dataset_with_ignore_accept_case_2():
+    colnames = ['ID', 'DV']
     df = read_nonmem_dataset(
         StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQ.a', 'DV.EQN.2']
     )
@@ -131,10 +157,18 @@ def test_nonmem_dataset_with_ignore_accept():
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [1, 3]
     assert list(df.iloc[1]) == [2, 4]
+
+
+def test_nonmem_dataset_with_ignore_accept_case_3():
+    colnames = ['ID', 'DV']
     with pytest.raises(DatasetError):
-        df = read_nonmem_dataset(
+        read_nonmem_dataset(
             StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQN.2', 'DV.EQ.a']
         )
+
+
+def test_nonmem_dataset_with_ignore_accept_case_4():
+    colnames = ['ID', 'DV']
     df = read_nonmem_dataset(
         StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQ."a"']
     )
@@ -143,10 +177,18 @@ def test_nonmem_dataset_with_ignore_accept():
     assert list(df.iloc[0]) == [1, 2]
     assert list(df.iloc[1]) == [1, 3]
     assert list(df.iloc[2]) == [2, 4]
+
+
+def test_nonmem_dataset_with_ignore_accept_case_5():
+    colnames = ['ID', 'DV']
     df = read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, accept=['DV.EQN.2'])
     assert len(df) == 1
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [1, 2]
+
+
+def test_nonmem_dataset_with_ignore_accept_case_6():
+    colnames = ['ID', 'DV']
     df = read_nonmem_dataset(StringIO("1,2\n1,3\n2,4\n2,5"), colnames=colnames, ignore=['ID 2'])
     assert len(df) == 2
     assert list(df.iloc[0]) == [1, 2]
