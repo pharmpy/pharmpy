@@ -423,6 +423,23 @@ def test_is_single_model_raises():
         mf.is_single_model()
 
 
+def test_expand():
+    mf = ModelFeatures.pk_iv()
+    expand_to = {Ref('IIV'): ['CL', 'VC', 'MAT']}
+    assert mf.is_expanded()
+    assert mf.expand(expand_to) == mf
+    mf += Covariate.create(parameter=Ref('IIV'), covariate='WGT', fp='EXP')
+    assert not mf.is_expanded()
+    mf_expanded = mf.expand(expand_to)
+    assert len(mf_expanded) == len(mf) + 2
+    assert mf_expanded.is_expanded()
+
+    a = Absorption(type=Ref('x'))
+    mf_incorrect = ModelFeatures(mf.features + (a,))
+    with pytest.raises(NotImplementedError):
+        mf_incorrect.expand(expand_to)
+
+
 def test_add():
     a1 = Absorption.create('FO')
     mf1 = ModelFeatures.create([a1])

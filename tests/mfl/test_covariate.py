@@ -65,6 +65,36 @@ def test_replace():
         c1.replace(parameter=1)
 
 
+def test_expand():
+    expand_to = {Ref('IIV'): ['CL', 'VC', 'MAT'], Ref('CONTINUOUS'): ['WGT', 'AGE']}
+
+    c1 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
+    c1_expanded = c1.expand(expand_to)
+    assert c1_expanded == (c1,)
+
+    c2 = Covariate.create(parameter=Ref('IIV'), covariate='WGT', fp='EXP')
+    c2_expanded = c2.expand(expand_to)
+    assert len(c2_expanded) == 3
+    assert c2_expanded[0].parameter == 'CL'
+
+    c3 = Covariate.create(parameter='CL', covariate=Ref('CONTINUOUS'), fp='EXP')
+    c3_expanded = c3.expand(expand_to)
+    assert len(c3_expanded) == 2
+    assert c3_expanded[0].covariate == 'AGE'
+
+    c4 = Covariate.create(parameter=Ref('IIV'), covariate=Ref('CONTINUOUS'), fp='EXP')
+    c4_expanded = c4.expand(expand_to)
+    assert len(c4_expanded) == 6
+    assert c4_expanded[0].parameter == 'CL'
+    assert c4_expanded[0].covariate == 'AGE'
+
+    with pytest.raises(ValueError):
+        c4.expand({Ref('IIV'): ['CL', 'VC', 'MAT']})
+
+    with pytest.raises(ValueError):
+        c4.expand({Ref('CONTINUOUS'): ['WGT', 'AGE']})
+
+
 def test_repr():
     c1 = Covariate.create(parameter='CL', covariate='WGT', fp='EXP')
     assert repr(c1) == 'COVARIATE(CL,WGT,EXP,*)'

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+import itertools
+from typing import TYPE_CHECKING, Iterable, Optional, Union
 
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
@@ -93,6 +94,35 @@ class Covariate(ModelFeature):
     @property
     def args(self) -> tuple[Union[str, Ref], Union[str, Ref], str, str, bool]:
         return self.parameter, self.covariate, self.fp, self.op, self.optional
+
+    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> tuple[Covariate, ...]:
+        if self.is_expanded():
+            return (self,)
+
+        def _expanded(attr) -> Optional[Iterable[str]]:
+            if isinstance(attr, Ref):
+                values = expand_to.get(attr)
+                if not values:
+                    raise ValueError(f'Ref not found in `expand_to`: {attr}')
+                else:
+                    return values
+            return None
+
+        parameters = _expanded(self.parameter)
+        covariates = _expanded(self.covariate)
+
+        if covariates and parameters:
+            effects = [
+                self.replace(parameter=p, covariate=c)
+                for p, c in itertools.product(parameters, covariates)
+            ]
+        elif parameters:
+            effects = [self.replace(parameter=p) for p in parameters]
+        else:
+            assert covariates
+            effects = [self.replace(covariate=c) for c in covariates]
+
+        return tuple(sorted(effects))
 
     def __repr__(self) -> str:
         optional = '?' if self.optional else ''

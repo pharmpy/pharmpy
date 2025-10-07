@@ -6,6 +6,8 @@ from typing import TYPE_CHECKING, Any, Iterable, Optional
 
 from pharmpy.internals.immutable import Immutable
 
+from .symbols import Ref
+
 if TYPE_CHECKING:
     from ..model_features import ModelFeatures
 
@@ -20,6 +22,16 @@ class ModelFeature(Immutable):
     @abstractmethod
     def repr_many(mf: ModelFeatures) -> str:
         pass
+
+    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> tuple[ModelFeature, ...]:
+        raise NotImplementedError
+
+    def is_expanded(self):
+        arg_types = (type(arg) for arg in self.args)
+        if Ref in arg_types:
+            return False
+        else:
+            return True
 
     @staticmethod
     def _canonicalize_type(type: str, types: Iterable[str], name: Optional[str] = None) -> str:

@@ -166,8 +166,7 @@ class ModelFeatures(Immutable):
 
     def is_expanded(self) -> bool:
         for feature in self.features:
-            arg_types = (type(arg) for arg in feature.args)
-            if Ref in arg_types:
+            if not feature.is_expanded():
                 return False
         return True
 
@@ -191,6 +190,19 @@ class ModelFeatures(Immutable):
                 raise NotImplementedError
             feature_map[type(feature)].append(feature)
         return True
+
+    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> ModelFeatures:
+        if self.is_expanded():
+            return self
+
+        features_new = []
+        for feature in self.features:
+            if feature.is_expanded():
+                features_new.append(feature)
+            else:
+                features_new.extend(feature.expand(expand_to))
+
+        return self.create(features=features_new)
 
     def __add__(
         self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
