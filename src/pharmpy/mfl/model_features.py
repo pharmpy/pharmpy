@@ -164,6 +164,11 @@ class ModelFeatures(Immutable):
                 features.append(feature)
         return ModelFeatures.create(features)
 
+    @property
+    def refs(self) -> tuple[Ref, ...]:
+        refs = [arg for feature in self.features for arg in feature.args if isinstance(arg, Ref)]
+        return tuple(sorted(set(refs)))
+
     def is_expanded(self) -> bool:
         for feature in self.features:
             if not feature.is_expanded():
@@ -182,7 +187,6 @@ class ModelFeatures(Immutable):
                     return False
                 if len(features) > 1:
                     return False
-                print(features)
             elif isinstance(feature, Covariate):
                 if feature.optional:
                     return False

@@ -367,6 +367,18 @@ def test_metabolites():
     assert mf.metabolites.features == (m1, m2)
 
 
+def test_refs():
+    mf = ModelFeatures.pk_oral()
+    assert mf.refs == tuple()
+    mf += Covariate.create(Ref('IIV'), 'WGT', 'exp')
+    assert mf.refs == (Ref('IIV'),)
+    mf += Covariate.create(Ref('ABSORPTION'), 'AGE', 'exp')
+    assert mf.refs == (
+        Ref('ABSORPTION'),
+        Ref('IIV'),
+    )
+
+
 def test_is_expanded():
     features = [Absorption.create('FO'), Absorption.create('SEQ-ZO-FO')]
     mf1 = ModelFeatures.create(features)
