@@ -26,8 +26,9 @@ def convert_fortran_number(number_string):
         pass
 
     if number_string == '+' or number_string == '-':
-        return 0.0
+        return float(number_string + "0.0")  # Converts "-" into -0.0
 
+    # Handles formats like "1+1" = 1.0e1
     m = re.match(r'([+\-]?)([^+\-dD]*)([+-])([^+\-dD]*)', number_string)
     if m:
         mantissa_sign = '-' if m.group(1) == '-' else ''
@@ -36,6 +37,7 @@ def convert_fortran_number(number_string):
         exponent = m.group(4)
         return np.float64(mantissa_sign + mantissa + "E" + exponent_sign + exponent)
 
+    # Handles normal cases of using D or d instead of E or e
     if "D" in number_string or "d" in number_string:
         clean_number = number_string.replace("D", "e").replace("d", "e")
         try:
