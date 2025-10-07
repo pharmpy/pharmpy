@@ -171,7 +171,7 @@ def calculate_results(
             'covariance_ratio': covratios,
             'skipped_individuals': skipped_individuals,
         },
-        index=cdd_model_names,
+        index=pd.Index(cdd_model_names),
     )
 
     case_results.index = pd.RangeIndex(start=1, stop=len(case_results) + 1)

@@ -1,6 +1,6 @@
 from pharmpy.basic import Expr
 from pharmpy.internals.math import triangular
-from pharmpy.model import Assignment, Model, Statements
+from pharmpy.model import Assignment, Model, Statements, get_and_check_dataset
 from pharmpy.modeling import (
     cholesky_decompose,
     get_thetas,
@@ -15,7 +15,7 @@ from pharmpy.workflows import ModelEntry
 
 def prepare_evaluation_model(me: ModelEntry) -> ModelEntry:
     model = me.model
-    df = model.dataset
+    df = get_and_check_dataset(model)
     df = df[df['FREMTYPE'] == 0]
     df = df.reset_index(drop=True)
     model = model.replace(dataset=df)
