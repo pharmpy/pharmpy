@@ -99,19 +99,26 @@ class Covariate(ModelFeature):
         if self.is_expanded():
             return (self,)
 
-        def _expanded(attr) -> Optional[Iterable[str]]:
+        def _expanded(attr) -> Optional[tuple[str, ...]]:
             if isinstance(attr, Ref):
                 values = expand_to.get(attr)
-                if not values:
+                if values is None:
                     raise ValueError(f'Ref not found in `expand_to`: {attr}')
                 else:
-                    return values
+                    return tuple(values)
             return None
 
         parameters = _expanded(self.parameter)
         covariates = _expanded(self.covariate)
 
-        if covariates and parameters:
+        if (
+            parameters is not None
+            and len(parameters) == 0
+            or covariates is not None
+            and len(covariates) == 0
+        ):
+            return tuple()
+        elif covariates and parameters:
             effects = [
                 self.replace(parameter=p, covariate=c)
                 for p, c in itertools.product(parameters, covariates)

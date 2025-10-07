@@ -24,7 +24,10 @@ def group_args(args, i):
         for head, group in heads_grouped.items():
             head_new = []
             if head:
-                head_new.append(head[0] if len(head) == 1 else tuple(head))
+                if len(head) == 1:
+                    head_new.append(head[0])
+                else:
+                    head_new.extend(head)
             head_new.append(group[0] if len(group) == 1 else tuple(group))
             args_new.append(tuple(head_new) + tail)
 

@@ -88,6 +88,9 @@ def test_expand():
     assert c4_expanded[0].parameter == 'CL'
     assert c4_expanded[0].covariate == 'AGE'
 
+    assert c2.expand({Ref('IIV'): tuple()}) == tuple()
+    assert c4.expand({Ref('IIV'): tuple(), Ref('CONTINUOUS'): ['WGT', 'AGE']}) == tuple()
+
     with pytest.raises(ValueError):
         c4.expand({Ref('IIV'): ['CL', 'VC', 'MAT']})
 
@@ -195,9 +198,21 @@ def test_lt():
             ],
             'COVARIATE([@IIV,CL,VC],WGT,EXP,*)',
         ),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WGT', 'fp': 'EXP', 'op': '+'},
+                {'parameter': 'VC', 'covariate': 'WGT', 'fp': 'EXP', 'op': '+'},
+                {'parameter': 'MAT', 'covariate': 'WGT', 'fp': 'EXP', 'op': '+'},
+                {'parameter': 'CL', 'covariate': 'WGT', 'fp': 'LIN', 'op': '+'},
+                {'parameter': 'VC', 'covariate': 'WGT', 'fp': 'LIN', 'op': '+'},
+                {'parameter': 'MAT', 'covariate': 'WGT', 'fp': 'LIN', 'op': '+'},
+            ],
+            'COVARIATE([CL,MAT,VC],WGT,[EXP,LIN],+)',
+        ),
     ],
 )
 def test_repr_many(list_of_kwargs, expected):
+    print('------------------------')
     features = []
     for kwargs in list_of_kwargs:
         c = Covariate.create(**kwargs)
