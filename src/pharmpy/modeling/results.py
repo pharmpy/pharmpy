@@ -374,7 +374,9 @@ def calculate_individual_parameter_statistics(
     i = 0
 
     for name, full_expr in full_exprs:
-        df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
+        df = pd.DataFrame(
+            index=pd.Index(list(cases.keys())), columns=pd.Index(('mean', 'variance', 'stderr'))
+        )
         parameter_estimates_expr = subs(full_expr, parameter_estimates, simultaneous=True)
 
         for case, cov_values in cases.items():
@@ -850,7 +852,9 @@ def insert_ebes_into_dataset(
     etc_names = [
         f"ETC_{row+1}_{col+1}" for row in range(len(ebes.columns)) for col in range(row + 1)
     ]
-    etcs = pd.DataFrame(etcs, index=individual_estimates_covariance.index, columns=etc_names)
+    etcs = pd.DataFrame(
+        etcs, index=individual_estimates_covariance.index, columns=pd.Index(etc_names)
+    )
 
     joined = joined.merge(etcs, left_on="ID", right_index=True, how="left")
 
