@@ -1,7 +1,6 @@
 # Read dataset from file
 import re
 import warnings
-from io import StringIO
 
 from lark import Lark
 
@@ -10,43 +9,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
 
-
-class NMTRANDataIO(StringIO):
-    """An IO class that is a prefilter for pandas.read_table.
-    Things that must be done before using pandas will be done here.
-    Currently it takes care of filtering out ignored rows and handles special delimiter cases
-    """
-
-    def __init__(self, filename_or_io, ignore_character='#'):
-        """filename_or_io is a string with a path, a path object or any IO object, i.e. StringIO"""
-        if not ignore_character:
-            ignore_character = '#'
-        if hasattr(filename_or_io, 'read'):
-            contents = filename_or_io.read()
-        else:
-            with open(str(filename_or_io), 'r', encoding='latin-1') as datafile:
-                contents = datafile.read()  # All variations of newlines are converted into \n
-
-        if ignore_character == '@':
-            # FIXME: Does this really handle the final line with no new line?
-            comment_regexp = re.compile(r'^[ \t]*[A-Za-z#@].*\n', re.MULTILINE)
-        else:
-            comment_regexp = re.compile('^[' + ignore_character + '].*\n', re.MULTILINE)
-        contents = re.sub(comment_regexp, '', contents)
-
-        if re.search(r' \t', contents):  # Space before TAB not allowed (see documentation)
-            raise DatasetError(
-                "The dataset contains a TAB preceeded by a space, "
-                "which is not allowed by NM-TRAN"
-            )
-
-        if re.search(r'^[ \t]*\n$', contents, re.MULTILINE):  # Blank lines
-            raise DatasetError(
-                "The dataset contains one or more blank lines. This is not "
-                "allowed by NM-TRAN without the BLANKOK option"
-            )
-
-        super().__init__(contents)
+from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 
 
 def convert_fortran_number(number_string):
@@ -266,17 +229,9 @@ def read_nonmem_dataset(
     if len(non_dropped) > len(set(non_dropped)):
         raise KeyError('Column names are not unique')
 
-    file_io = NMTRANDataIO(path_or_io, ignore_character)
-    df = pd.read_table(
-        file_io,
-        sep=r' *, *| *[\t] *| +',
-        na_filter=False,
-        header=None,
-        engine='python',
-        quoting=3,
-        dtype=object,
-        index_col=False,
-    )
+    with NMTRANDataIO(path_or_io, SEP_INPUT, ignore_character) as io:
+        df = read_NMTRAN_data(io, header=None)
+
     assert isinstance(df, pd.DataFrame)
 
     diff_cols = len(df.columns) - len(colnames)
