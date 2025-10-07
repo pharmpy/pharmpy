@@ -179,7 +179,7 @@ class ModelFeatures(Immutable):
         feature_map = defaultdict(list)
         for feature in self.features:
             features = feature_map[type(feature)]
-            if isinstance(feature, (MutexFeature, IndirectEffect, Transits)):
+            if isinstance(feature, (MutexFeature, IndirectEffect, Transits, LagTime)):
                 if len(features) > 0:
                     return False
             elif isinstance(feature, Peripherals):

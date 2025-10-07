@@ -3,8 +3,22 @@ from functools import partial
 import pytest
 
 from pharmpy.mfl import ModelFeatures
-from pharmpy.modeling import add_bioavailability, add_iiv, set_direct_effect
-from pharmpy.modeling.mfl import expand_model_features
+from pharmpy.modeling import (
+    add_bioavailability,
+    add_covariate_effect,
+    add_iiv,
+    add_peripheral_compartment,
+    set_direct_effect,
+    set_instantaneous_absorption,
+    set_michaelis_menten_elimination,
+    set_mixed_mm_fo_elimination,
+    set_seq_zo_fo_absorption,
+    set_transit_compartments,
+    set_weibull_absorption,
+    set_zero_order_absorption,
+    set_zero_order_elimination,
+)
+from pharmpy.modeling.mfl import expand_model_features, get_model_features
 
 
 @pytest.mark.parametrize(
@@ -95,3 +109,100 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     with pytest.raises(ValueError):
         expand_model_features(model, mf)
+
+
+@pytest.mark.parametrize(
+    'funcs, type, expected',
+    (
+        ([], None, 'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)'),
+        (
+            [set_zero_order_absorption],
+            None,
+            'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        (
+            [set_seq_zo_fo_absorption],
+            None,
+            'ABSORPTION(SEQ-ZO-FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        (
+            [set_weibull_absorption],
+            None,
+            'ABSORPTION(WEIBULL);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        ([set_instantaneous_absorption], None, 'ELIMINATION(FO);PERIPHERALS(0)'),
+        (
+            [set_mixed_mm_fo_elimination],
+            None,
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(MIX-FO-MM);PERIPHERALS(0)',
+        ),
+        (
+            [set_zero_order_elimination],
+            None,
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(ZO);PERIPHERALS(0)',
+        ),
+        (
+            [set_michaelis_menten_elimination],
+            None,
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(MM);PERIPHERALS(0)',
+        ),
+        (
+            [partial(set_transit_compartments, n=2)],
+            None,
+            'ABSORPTION(FO);TRANSITS(2);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        (
+            [partial(set_transit_compartments, n=2, keep_depot=False)],
+            None,
+            'ABSORPTION(FO);TRANSITS(2,NODEPOT);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        (
+            [add_peripheral_compartment],
+            None,
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(1)',
+        ),
+        (
+            [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
+            None,
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);COVARIATE(CL,WT,EXP,*)',
+        ),
+        (
+            [
+                partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp'),
+                partial(add_covariate_effect, parameter='VC', covariate='WT', effect='exp'),
+            ],
+            None,
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);COVARIATE([CL,VC],WT,EXP,*)',
+        ),
+        (
+            [
+                partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp'),
+                partial(add_covariate_effect, parameter='VC', covariate='WT', effect='exp'),
+            ],
+            'pk',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        (
+            [
+                partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp'),
+                partial(add_covariate_effect, parameter='VC', covariate='WT', effect='exp'),
+            ],
+            'covariates',
+            'COVARIATE([CL,VC],WT,EXP,*)',
+        ),
+    ),
+)
+def test_get_model_features(load_model_for_test, testdata, funcs, type, expected):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+    mf = get_model_features(model, type)
+    assert repr(mf) == expected
+    assert mf.is_single_model()
+
+
+def test_get_model_features_raises(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    with pytest.raises(ValueError):
+        get_model_features(model, type='x')
