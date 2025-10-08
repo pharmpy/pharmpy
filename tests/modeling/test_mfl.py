@@ -7,6 +7,7 @@ from pharmpy.modeling import (
     add_bioavailability,
     add_covariate_effect,
     add_iiv,
+    add_metabolite,
     add_peripheral_compartment,
     set_direct_effect,
     set_instantaneous_absorption,
@@ -18,7 +19,7 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.modeling.mfl import expand_model_features, get_model_features
+from pharmpy.modeling.mfl import expand_model_features, generate_transformations, get_model_features
 
 
 @pytest.mark.parametrize(
@@ -206,3 +207,47 @@ def test_get_model_features_raises(load_model_for_test, testdata):
 
     with pytest.raises(ValueError):
         get_model_features(model, type='x')
+
+
+@pytest.mark.parametrize(
+    'source, expected',
+    (
+        ('ABSORPTION(FO)', 1),
+        ('ABSORPTION([FO,ZO])', 2),
+        ('ABSORPTION(*)', 4),
+        ('PERIPHERALS(0..2)', 3),
+        ('TRANSITS(N)', 1),
+        ('TRANSITS([0,1,3,10],*)', 7),
+        ('TRANSITS([0,1,3,10],*);TRANSITS(N)', 8),
+        ('LAGTIME([OFF,ON])', 2),
+        ('ELIMINATION(*)', 4),
+        ('DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT([LINEAR,SIGMOID],*);EFFECTCOMP(EMAX)', 7),
+        ('METABOLITE(*)', 2),
+        ('ALLOMETRY(WT)', 1),
+        ('COVARIATE(CL,WT,EXP)', 1),
+        ('COVARIATE([CL,VC,MAT],[WT,AGE],EXP)', 6),
+        ('COVARIATE?([CL,MAT,VC],[AGE,WT],EXP,*)', 12),
+        (ModelFeatures.pk_iv(), 6),
+        (ModelFeatures.pk_oral(), 15),
+    ),
+)
+def test_generate_transformations(load_model_for_test, testdata, source, expected):
+    if isinstance(source, str):
+        mf = ModelFeatures.create(source)
+    else:
+        mf = source
+    transformations = generate_transformations(mf)
+    assert len(transformations) == expected
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in transformations:
+        func(model_start)
+
+
+def test_generate_transformations_metabolite(load_model_for_test, testdata):
+    mf = ModelFeatures.create('PERIPHERALS(0..2);PERIPHERALS(0..2,MET)')
+    transformations = generate_transformations(mf)
+    assert len(transformations) == 6
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_start = add_metabolite(model_start)
+    for func in transformations:
+        func(model_start)

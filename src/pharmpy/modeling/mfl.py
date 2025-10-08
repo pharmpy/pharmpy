@@ -1,9 +1,29 @@
-from typing import Literal, Optional
+from functools import partial
+from typing import Callable, Literal, Optional, Union
 
 from pharmpy.mfl import ModelFeatures
-from pharmpy.mfl.features import Absorption, Covariate, Elimination, LagTime, Peripherals, Transits
+from pharmpy.mfl.features import (
+    Absorption,
+    Allometry,
+    Covariate,
+    DirectEffect,
+    EffectComp,
+    Elimination,
+    IndirectEffect,
+    LagTime,
+    Metabolite,
+    ModelFeature,
+    Peripherals,
+    Transits,
+)
 from pharmpy.model import Model
 from pharmpy.modeling import (
+    add_allometry,
+    add_covariate_effect,
+    add_effect_compartment,
+    add_indirect_effect,
+    add_lag_time,
+    add_metabolite,
     get_bioavailability,
     get_covariate_effects,
     get_individual_parameters,
@@ -20,6 +40,20 @@ from pharmpy.modeling import (
     has_weibull_absorption,
     has_zero_order_absorption,
     has_zero_order_elimination,
+    remove_covariate_effect,
+    remove_lag_time,
+    set_direct_effect,
+    set_first_order_absorption,
+    set_first_order_elimination,
+    set_michaelis_menten_elimination,
+    set_mixed_mm_fo_elimination,
+    set_n_transit_compartments,
+    set_peripheral_compartments,
+    set_seq_zo_fo_absorption,
+    set_transit_compartments,
+    set_weibull_absorption,
+    set_zero_order_absorption,
+    set_zero_order_elimination,
 )
 from pharmpy.modeling.odes import has_lag_time
 
@@ -176,3 +210,132 @@ def _get_transits(model):
     else:
         with_depot = False
     return Transits.create(transits, with_depot)
+
+
+def generate_transformations(model_features: ModelFeatures) -> list[Callable]:
+    if not model_features.is_expanded():
+        raise ValueError
+
+    transformations = []
+    for feature in model_features:
+        funcs = _get_funcs(feature)
+        transformations.extend(funcs)
+
+    return transformations
+
+
+def _get_funcs(feature: ModelFeature) -> list[Callable]:
+    if isinstance(feature, (Absorption, Elimination)):
+        return _get_absorption_elimination_func(feature)
+    elif isinstance(feature, Transits):
+        return _get_transit_func(feature)
+    elif isinstance(feature, LagTime):
+        return _get_lag_time_func(feature)
+    elif isinstance(feature, Peripherals):
+        return _get_peripherals_func(feature)
+    elif isinstance(feature, (DirectEffect, IndirectEffect, EffectComp)):
+        return _get_pd_func(feature)
+    elif isinstance(feature, Metabolite):
+        return _get_metabolite_func(feature)
+    elif isinstance(feature, Covariate):
+        return _get_covariate_funcs(feature)
+    elif isinstance(feature, Allometry):
+        return _get_allometry_func(feature)
+    else:
+        raise NotImplementedError
+
+
+def _get_absorption_elimination_func(feature: Union[Absorption, Elimination]):
+    assert type(feature) in FUNC_MAPPING.keys()
+    func = FUNC_MAPPING[type(feature)].get(feature.type)
+    if func is None:
+        raise ValueError
+    return [func]
+
+
+def _get_transit_func(feature: Transits):
+    if feature.number == 'N':
+        func = partial(set_n_transit_compartments, keep_depot=feature.with_depot)
+    else:
+        n = feature.number
+        if not feature.with_depot:
+            if n == 0:
+                return []
+            n += 1
+        func = partial(set_transit_compartments, n=n, keep_depot=feature.with_depot)
+    return [func]
+
+
+def _get_lag_time_func(feature: LagTime):
+    if feature.on:
+        func = add_lag_time
+    else:
+        func = remove_lag_time
+    return [func]
+
+
+def _get_peripherals_func(feature: Peripherals):
+    if feature.type == 'MET':
+        name = 'METABOLITE'
+    else:
+        name = None
+    func = partial(set_peripheral_compartments, n=feature.number, name=name)
+    return [func]
+
+
+def _get_pd_func(feature: Union[DirectEffect, IndirectEffect, EffectComp]):
+    kwargs = {'expr': feature.type.lower()}
+    if isinstance(feature, IndirectEffect):
+        kwargs['prod'] = True if feature.production_type == 'PRODUCTION' else False
+    assert type(feature) in FUNC_MAPPING.keys()
+    func = partial(FUNC_MAPPING[type(feature)], **kwargs)
+    return [func]
+
+
+def _get_metabolite_func(feature: Metabolite):
+    presystemic = True if feature.type == 'PSC' else False
+    func = partial(add_metabolite, presystemic=presystemic)
+    return [func]
+
+
+def _get_covariate_funcs(feature: Covariate):
+    kwargs_add = {
+        'parameter': feature.parameter,
+        'covariate': feature.covariate,
+        'effect': feature.fp.lower(),
+        'operation': feature.op,
+        'allow_nested': True,
+    }
+    func_add = partial(add_covariate_effect, **kwargs_add)
+    funcs = [func_add]
+    if feature.optional:
+        kwargs_remove = {'parameter': feature.parameter, 'covariate': feature.covariate}
+        func_remove = partial(remove_covariate_effect, **kwargs_remove)
+        funcs.append(func_remove)
+    return funcs
+
+
+def _get_allometry_func(feature: Allometry):
+    func = partial(
+        add_allometry, allometric_variable=feature.covariate, reference_value=feature.reference
+    )
+    return [func]
+
+
+FUNC_MAPPING = {
+    Absorption: {
+        'FO': set_first_order_absorption,
+        'ZO': set_zero_order_absorption,
+        'SEQ-ZO-FO': set_seq_zo_fo_absorption,
+        'WEIBULL': set_weibull_absorption,
+    },
+    Elimination: {
+        'FO': set_first_order_elimination,
+        'ZO': set_zero_order_elimination,
+        'MIX-FO-MM': set_mixed_mm_fo_elimination,
+        'MM': set_michaelis_menten_elimination,
+    },
+    DirectEffect: set_direct_effect,
+    IndirectEffect: add_indirect_effect,
+    EffectComp: add_effect_compartment,
+}
