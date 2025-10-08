@@ -159,25 +159,25 @@ class ModelFeatures(Immutable):
 
     def _get_feature_type(self, type: Type[T]) -> ModelFeatures:
         features = []
-        for feature in self.features:
+        for feature in self:
             if isinstance(feature, type):
                 features.append(feature)
         return ModelFeatures.create(features)
 
     @property
     def refs(self) -> tuple[Ref, ...]:
-        refs = [arg for feature in self.features for arg in feature.args if isinstance(arg, Ref)]
+        refs = [arg for feature in self for arg in feature.args if isinstance(arg, Ref)]
         return tuple(sorted(set(refs)))
 
     def is_expanded(self) -> bool:
-        for feature in self.features:
+        for feature in self:
             if not feature.is_expanded():
                 return False
         return True
 
     def is_single_model(self) -> bool:
         feature_map = defaultdict(list)
-        for feature in self.features:
+        for feature in self:
             features = feature_map[type(feature)]
             if isinstance(feature, (MutexFeature, IndirectEffect, Transits, LagTime)):
                 if len(features) > 0:
@@ -200,7 +200,7 @@ class ModelFeatures(Immutable):
             return self
 
         features_new = []
-        for feature in self.features:
+        for feature in self:
             if feature.is_expanded():
                 features_new.append(feature)
             else:
@@ -225,6 +225,9 @@ class ModelFeatures(Immutable):
     ) -> ModelFeatures:
         # ModelFeatures.create has a canonical order
         return self + other
+
+    def __iter__(self):
+        return iter(self.features)
 
     def __len__(self) -> int:
         return len(self.features)
