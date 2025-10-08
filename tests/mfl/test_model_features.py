@@ -452,6 +452,27 @@ def test_expand():
         mf_incorrect.expand(expand_to)
 
 
+def test_contains():
+    mf1 = ModelFeatures.pk_oral()
+
+    a = Absorption.create('FO')
+    e = Elimination.create('FO')
+    mf2 = ModelFeatures.create([a, e])
+
+    assert mf2 in mf1
+    assert mf1 not in mf2
+    assert a in mf1 and a in mf2
+    assert [a, e] in mf1
+
+    c = Covariate.create('CL', 'WGT', 'exp')
+    assert [c] not in mf1
+
+    mf3 = ModelFeatures.create([a, e, c])
+    assert mf3 not in mf1
+
+    assert 1 not in mf1
+
+
 def test_add():
     a1 = Absorption.create('FO')
     mf1 = ModelFeatures.create([a1])
@@ -472,6 +493,38 @@ def test_add():
 
     with pytest.raises(TypeError):
         mf1 + 1
+
+
+def test_sub():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    mf1 = ModelFeatures.create([a1, a2])
+
+    mf2 = mf1 - a1
+    assert mf1.features == (a1, a2)
+    assert mf2.features == (a2,)
+
+    mf3 = mf1 - [a1]
+    assert mf3 == mf2
+
+    mf4 = mf1 - ModelFeatures.create([a1])
+    assert mf4 == mf2
+
+    a3 = Absorption.create('SEQ-ZO-FO')
+    mf5 = mf1 - a3
+    assert mf1 == mf5
+
+    mf6 = a1 - mf1
+    assert mf6.features == tuple()
+
+    mf7 = [a1] - mf1
+    assert mf7 == mf6
+
+    with pytest.raises(TypeError):
+        mf1 - 1
+
+    with pytest.raises(TypeError):
+        1 - mf1
 
 
 def test_eq():

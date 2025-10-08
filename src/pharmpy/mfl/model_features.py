@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections import defaultdict
-from typing import Iterable, Sequence, Type, TypeVar, Union
+from typing import Iterable, Iterator, Sequence, Type, TypeVar, Union
 
 from lark import UnexpectedInput
 
@@ -226,11 +226,51 @@ class ModelFeatures(Immutable):
         # ModelFeatures.create has a canonical order
         return self + other
 
-    def __iter__(self):
+    def __sub__(
+        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+    ) -> ModelFeatures:
+        if isinstance(other, ModelFeature):
+            return ModelFeatures(features=tuple(feature for feature in self if feature != other))
+        elif isinstance(other, (ModelFeatures, Sequence)):
+            return ModelFeatures(
+                features=tuple(feature for feature in self if feature not in other)
+            )
+        else:
+            return NotImplemented
+
+    def __rsub__(
+        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+    ) -> ModelFeatures:
+        if isinstance(other, ModelFeature):
+            return ModelFeatures(tuple()) if other in self else ModelFeatures((other,))
+        elif isinstance(other, Sequence):
+            return ModelFeatures(
+                features=tuple(feature for feature in other if feature not in self)
+            )
+        else:
+            return NotImplemented
+
+    def __iter__(self) -> Iterator[ModelFeature]:
         return iter(self.features)
 
     def __len__(self) -> int:
         return len(self.features)
+
+    def __contains__(
+        self, item: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+    ) -> bool:
+        if isinstance(item, ModelFeature):
+            if item in self.features:
+                return True
+        elif isinstance(item, ModelFeatures):
+            if all(feature in self.features for feature in item):
+                return True
+        elif isinstance(item, Iterable):
+            if all(isinstance(x, ModelFeature) and x in self.features for x in item):
+                return True
+        else:
+            return False
+        return False
 
     def __eq__(self, other) -> bool:
         if self is other:
