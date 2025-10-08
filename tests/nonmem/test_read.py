@@ -169,10 +169,13 @@ def test_nonmem_dataset_with_ignore_accept_case_2():
 
 def test_nonmem_dataset_with_ignore_accept_case_3():
     colnames = ['ID', 'DV']
-    with pytest.raises(DatasetError):
-        read_nonmem_dataset(
-            StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQN.2', 'DV.EQ.a']
-        )
+    df = read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a"), colnames=colnames, ignore=['DV.EQN.2', 'DV.EQ.a']
+    )
+    assert len(df) == 2
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [1, 3]
+    assert list(df.iloc[1]) == [2, 4]
 
 
 def test_nonmem_dataset_with_ignore_accept_case_4():
