@@ -41,7 +41,7 @@ requests-toolbelt==1.0.0
 rfc3986==2.0.0
 rich==14.1.0
 SecretStorage==3.4.0
-tomli==2.2.1
+tomli==2.3.0
 typing-extensions==4.15.0
 urllib3==2.5.0
 zipp==3.23.0
