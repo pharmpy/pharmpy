@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Callable, Literal, Optional, Union
+from typing import Callable, Iterable, Literal, Optional, Union
 
 from pharmpy.mfl import ModelFeatures
 from pharmpy.mfl.features import (
@@ -212,7 +212,9 @@ def _get_transits(model):
     return Transits.create(transits, with_depot)
 
 
-def generate_transformations(model_features: ModelFeatures) -> list[Callable]:
+def generate_transformations(
+    model_features: Union[ModelFeatures, Iterable[ModelFeature]],
+) -> list[Callable]:
     if not model_features.is_expanded():
         raise ValueError
 
@@ -339,3 +341,18 @@ FUNC_MAPPING = {
     IndirectEffect: add_indirect_effect,
     EffectComp: add_effect_compartment,
 }
+
+
+def transform_into_search_space(model: Model, search_space: ModelFeatures) -> Model:
+    model_features = get_model_features(model)
+    if model_features in search_space:
+        return model
+    diff = search_space - model_features
+    transformations = generate_transformations(diff)
+    model_transformed = model
+    for func in transformations:
+        try:
+            model_transformed = func(model_transformed)
+        except Exception:
+            raise ValueError(f'Could not transform model: {func}')
+    return model_transformed

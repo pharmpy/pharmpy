@@ -19,7 +19,12 @@ from pharmpy.modeling import (
     set_zero_order_absorption,
     set_zero_order_elimination,
 )
-from pharmpy.modeling.mfl import expand_model_features, generate_transformations, get_model_features
+from pharmpy.modeling.mfl import (
+    expand_model_features,
+    generate_transformations,
+    get_model_features,
+    transform_into_search_space,
+)
 
 
 @pytest.mark.parametrize(
@@ -251,3 +256,28 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
     model_start = add_metabolite(model_start)
     for func in transformations:
         func(model_start)
+
+
+@pytest.mark.parametrize(
+    'funcs, source, expected',
+    (
+        (
+            [],
+            'ABSORPTION(ZO)',
+            'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        (
+            [set_zero_order_absorption],
+            'ABSORPTION(FO)',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+    ),
+)
+def test_transform_into_search_space(load_model_for_test, testdata, funcs, source, expected):
+    mf = ModelFeatures.create(source)
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+    model_transformed = transform_into_search_space(model, mf)
+    assert model_transformed != model
+    assert repr(get_model_features(model_transformed)) == expected
