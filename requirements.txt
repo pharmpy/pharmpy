@@ -63,7 +63,7 @@ parso==0.8.5
 partd==1.4.2
 patsy==1.0.1
 pexpect==4.9.0
-platformdirs==4.4.0
+platformdirs==4.5.0
 prompt-toolkit==3.0.52
 psutil==7.1.0
 ptyprocess==0.7.0
