@@ -11,5 +11,5 @@ packaging==25.0
 platformdirs==4.4.0
 pluggy==1.6.0
 pyproject-api==1.9.1
-tomli==2.2.1
+tomli==2.3.0
 virtualenv==20.35.0
