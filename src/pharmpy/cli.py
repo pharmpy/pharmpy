@@ -158,6 +158,11 @@ def run_vpc(args):
     )
 
 
+def run_qa(args):
+    model, res = args.model
+    run_tool_wrapper('qa', args, model=model, results=res, linearize=args.linearize, skip=args.skip)
+
+
 def run_execute(args):
     from pharmpy.tools import fit
 
@@ -931,6 +936,32 @@ parser_definition = [
                                 'name': '--stratify',
                                 'type': str,
                                 'help': 'Column to stratify on',
+                            },
+                            {
+                                'name': '--path',
+                                'type': Path,
+                                'help': 'Path to output directory',
+                            },
+                        ],
+                    }
+                },
+                {
+                    'qa': {
+                        'help': 'Run QA on a model',
+                        'func': run_qa,
+                        'parents': [args_model_input, args_random, args_tools],
+                        'args': [
+                            {
+                                'name': '--linearize',
+                                'action': 'store_true',
+                                'help': 'Whether or not use linearization when running the tool',
+                                'default': False,
+                            },
+                            {
+                                'name': '--skip',
+                                'type': comma_list,
+                                'help': 'List of models to not test',
+                                'default': None,
                             },
                             {
                                 'name': '--path',
