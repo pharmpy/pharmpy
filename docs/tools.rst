@@ -43,3 +43,4 @@ Tools in Pharmpy
    VPC - Visual predictive check <vpc>
    ModelRank - rank models <modelrank>
    Bootstrap <bootstrap>
+   QA - Quality assurance of a model <qa>
