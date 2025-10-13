@@ -521,6 +521,12 @@ def _parse_tables(
     found = set()
     df = pd.DataFrame()
     for table_rec, colnames in zip(table_recs, colnames_list):
+        if (
+            table_rec.has_option("FIRSTONLY")
+            or table_rec.has_option("LASTONLY")
+            or table_rec.has_option("FIRSTLASTONLY")
+        ):
+            continue
         columns_in_table = []
         colnames_in_table = []
         for i, name in enumerate(colnames):
