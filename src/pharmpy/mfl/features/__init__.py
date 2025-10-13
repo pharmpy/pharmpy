@@ -4,6 +4,7 @@ from .covariate import Covariate
 from .direct_effect import DirectEffect
 from .effect_compartment import EffectComp
 from .elimination import Elimination
+from .iiv import IIV
 from .indirect_effect import IndirectEffect
 from .lagtime import LagTime
 from .metabolite import Metabolite
@@ -19,6 +20,7 @@ __all__ = (
     'DirectEffect',
     'EffectComp',
     'Elimination',
+    'IIV',
     'IndirectEffect',
     'LagTime',
     'Metabolite',

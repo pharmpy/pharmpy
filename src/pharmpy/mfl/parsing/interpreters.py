@@ -4,6 +4,7 @@ from typing import Iterable, TypeVar, overload
 from lark.visitors import Interpreter
 
 from ..features import (
+    IIV,
     Absorption,
     Allometry,
     Covariate,
@@ -18,10 +19,11 @@ from ..features import (
     Transits,
 )
 from ..features.absorption import ABSORPTION_TYPES
-from ..features.covariate import FP_TYPES
+from ..features.covariate import FP_TYPES as COV_FP_TYPES
 from ..features.direct_effect import DIRECT_EFFECT_TYPES
 from ..features.effect_compartment import EFFECT_COMP_TYPES
 from ..features.elimination import ELIMINATION_TYPES
+from ..features.iiv import FP_TYPES as IIV_FP_TYPES
 from ..features.indirect_effect import INDIRECT_EFFECT_TYPES, PRODUCTION_TYPES
 from ..features.metabolite import METABOLITE_TYPES
 from ..features.peripherals import PERIPHERAL_TYPES
@@ -93,8 +95,31 @@ class MFLInterpreter(Interpreter):
     def covariate(self, tree):
         return CovariateInterpreter(self.definitions).interpret(tree)
 
+    def iiv(self, tree):
+        return IIVInterpreter(self.definitions).interpret(tree)
+
+    def option(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        child = children[0]
+        return child if isinstance(child, list) else [child]
+
     def wildcard(self, tree):
         return '*'
+
+    def optional(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        value = children[0].value
+        assert isinstance(value, str)
+        return True
+
+    def ref(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        name = children[0].value
+        assert isinstance(name, str)
+        return Ref(name)
 
 
 class AbsorptionInterpreter(MFLInterpreter):
@@ -292,7 +317,7 @@ class CovariateInterpreter(MFLInterpreter):
         is_optional = children[0]
         params = self.expand(children[1], expand_to=Ref('pop_params'))
         covs = self.expand(children[2], expand_to=Ref('covariates'))
-        fps = self.expand(children[3], FP_TYPES)
+        fps = self.expand(children[3], COV_FP_TYPES)
         ops = children[4]
 
         effects = []
@@ -304,12 +329,6 @@ class CovariateInterpreter(MFLInterpreter):
 
         return sorted(effects)
 
-    def option(self, tree):
-        children = self.visit_children(tree)
-        assert len(children) == 1
-        child = children[0]
-        return child if isinstance(child, list) else [child]
-
     def parameter_option(self, tree):
         return self.option(tree)
 
@@ -319,13 +338,6 @@ class CovariateInterpreter(MFLInterpreter):
     def fp_option(self, tree):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
-
-    def optional_cov(self, tree):
-        children = self.visit_children(tree)
-        assert len(children) == 1
-        value = children[0].value
-        assert isinstance(value, str)
-        return True
 
     def op_option(self, tree):
         children = self.visit_children(tree)
@@ -341,12 +353,39 @@ class CovariateInterpreter(MFLInterpreter):
         assert isinstance(value, str)
         return value.upper()
 
-    def ref(self, tree):
+
+class IIVInterpreter(MFLInterpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert 2 <= len(children) <= 3
+        if not isinstance(children[0], bool):
+            children.insert(0, False)
+        assert len(children) == 3
+
+        is_optional = children[0]
+        params = self.expand(children[1], expand_to=Ref('pop_params'))
+        fps = self.expand(children[2], IIV_FP_TYPES)
+
+        effects = []
+        for param, fp in itertools.product(params, fps):
+            effect = IIV.create(parameter=param, fp=fp, optional=is_optional)
+            effects.append(effect)
+
+        return sorted(effects)
+
+    def parameter_option(self, tree):
+        return self.option(tree)
+
+    def fp_iiv_option(self, tree):
+        children = self.visit_children(tree)
+        return list(child.value.upper() for child in children)
+
+    def value(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        name = children[0].value
-        assert isinstance(name, str)
-        return Ref(name)
+        value = children[0].value
+        assert isinstance(value, str)
+        return value.upper()
 
 
 class DefinitionInterpreter(Interpreter):

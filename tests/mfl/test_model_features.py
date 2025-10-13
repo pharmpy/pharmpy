@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy.mfl.features import (
+    IIV,
     Absorption,
     Allometry,
     Covariate,
@@ -174,6 +175,19 @@ def test_init():
                 Absorption.create('FO'),
                 Covariate.create(parameter='CL', covariate='WGT', fp='exp'),
                 Allometry.create(covariate='WGT'),
+            ],
+        ),
+        (
+            [
+                IIV.create(parameter='CL', fp='exp'),
+                Absorption.create('FO'),
+                Peripherals.create(0),
+            ],
+            'IIV(CL,EXP);ABSORPTION(FO);PERIPHERALS(0)',
+            [
+                Absorption.create('FO'),
+                Peripherals.create(0),
+                IIV.create(parameter='CL', fp='exp'),
             ],
         ),
     ),
@@ -633,6 +647,17 @@ def test_eq():
                 Metabolite.create('PSC'),
             ],
             'ABSORPTION([FO,ZO]);METABOLITE(PSC)',
+        ),
+        (
+            [
+                IIV.create('VC', 'EXP', True),
+                Absorption.create('FO'),
+                Absorption.create('SEQ-ZO-FO'),
+                Absorption.create('ZO'),
+                IIV.create('CL', 'EXP', True),
+                IIV.create('MAT', 'EXP', True),
+            ],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);IIV?([CL,MAT,VC],EXP)',
         ),
     ),
 )

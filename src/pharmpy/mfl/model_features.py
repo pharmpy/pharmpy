@@ -10,6 +10,7 @@ from pharmpy.internals.immutable import Immutable
 from pharmpy.mfl.features.mutex_feature import MutexFeature
 
 from .features import (
+    IIV,
     Absorption,
     Allometry,
     Covariate,
@@ -58,6 +59,7 @@ class ModelFeatures(Immutable):
             IndirectEffect: [],
             EffectComp: [],
             Metabolite: [],
+            IIV: [],
         }
         for feature in features:
             group = type(feature)
@@ -157,6 +159,10 @@ class ModelFeatures(Immutable):
     def metabolites(self) -> ModelFeatures:
         return self._get_feature_type(Metabolite)
 
+    @property
+    def iiv(self) -> ModelFeatures:
+        return self._get_feature_type(IIV)
+
     def _get_feature_type(self, type: Type[T]) -> ModelFeatures:
         features = []
         for feature in self:
@@ -187,7 +193,7 @@ class ModelFeatures(Immutable):
                     return False
                 if len(features) > 1:
                     return False
-            elif isinstance(feature, Covariate):
+            elif isinstance(feature, (Covariate, IIV)):
                 if feature.optional:
                     return False
             else:
@@ -316,6 +322,9 @@ class ModelFeatures(Immutable):
         if self.metabolites:
             metabolite_repr = Metabolite.repr_many(self.metabolites)
             feature_repr.append(metabolite_repr)
+        if self.iiv:
+            iiv_repr = IIV.repr_many(self.iiv)
+            feature_repr.append(iiv_repr)
 
         return ';'.join(feature_repr)
 

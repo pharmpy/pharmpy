@@ -212,7 +212,6 @@ def test_lt():
     ],
 )
 def test_repr_many(list_of_kwargs, expected):
-    print('------------------------')
     features = []
     for kwargs in list_of_kwargs:
         c = Covariate.create(**kwargs)

@@ -1,6 +1,7 @@
 import pytest
 
 from pharmpy.mfl.features import (
+    IIV,
     Absorption,
     Allometry,
     Covariate,
@@ -343,6 +344,75 @@ from pharmpy.mfl.parsing import parse
             Covariate,
             [
                 (Ref('POP_PARAMS'), Ref('COVARIATES'), 'EXP', '*', True),
+            ],
+        ),
+        (
+            'IIV(CL,EXP)',
+            IIV,
+            [
+                ('CL', 'EXP', False),
+            ],
+        ),
+        (
+            'IIV([CL,VC],EXP)',
+            IIV,
+            [
+                ('CL', 'EXP', False),
+                ('VC', 'EXP', False),
+            ],
+        ),
+        (
+            'IIV?([CL,VC],EXP)',
+            IIV,
+            [
+                ('CL', 'EXP', True),
+                ('VC', 'EXP', True),
+            ],
+        ),
+        (
+            'IIV?([CL,VC],EXP);IIV(MAT,ADD)',
+            IIV,
+            [
+                ('CL', 'EXP', True),
+                ('VC', 'EXP', True),
+                ('MAT', 'ADD', False),
+            ],
+        ),
+        (
+            'IIV?([CL,VC],[EXP,ADD])',
+            IIV,
+            [
+                ('CL', 'ADD', True),
+                ('CL', 'EXP', True),
+                ('VC', 'ADD', True),
+                ('VC', 'EXP', True),
+            ],
+        ),
+        (
+            'IIV(CL,*)',
+            IIV,
+            [
+                ('CL', 'ADD', False),
+                ('CL', 'EXP', False),
+                ('CL', 'LOG', False),
+                ('CL', 'PROP', False),
+                ('CL', 'RE_LOG', False),
+            ],
+        ),
+        (
+            'IIV?(@PK,[EXP,ADD])',
+            IIV,
+            [
+                (Ref('PK'), 'ADD', True),
+                (Ref('PK'), 'EXP', True),
+            ],
+        ),
+        (
+            'IIV?(*,[EXP,ADD])',
+            IIV,
+            [
+                (Ref('POP_PARAMS'), 'ADD', True),
+                (Ref('POP_PARAMS'), 'EXP', True),
             ],
         ),
     ),
