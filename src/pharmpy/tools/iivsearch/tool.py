@@ -164,7 +164,7 @@ def create_step_workflow(
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
     wb.add_task(start_task)
 
-    if wf_algorithm.name == 'td_exhaustive_no_of_etas' and iiv_strategy != 'no_add':
+    if base_model_entry.modelfit_results is None:
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
         base_model_task = [wf_fit.output_tasks[0]]
