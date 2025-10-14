@@ -1,8 +1,7 @@
 from functools import partial
 from typing import Callable, Iterable, Literal, Optional, Union
 
-from pharmpy.mfl import ModelFeatures
-from pharmpy.mfl.features import (
+from pharmpy.mfl import (
     Absorption,
     Allometry,
     Covariate,
@@ -13,6 +12,7 @@ from pharmpy.mfl.features import (
     LagTime,
     Metabolite,
     ModelFeature,
+    ModelFeatures,
     Peripherals,
     Transits,
 )
