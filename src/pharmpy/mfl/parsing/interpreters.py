@@ -26,7 +26,6 @@ from ..features.effect_compartment import EFFECT_COMP_TYPES
 from ..features.elimination import ELIMINATION_TYPES
 from ..features.indirect_effect import INDIRECT_EFFECT_TYPES
 from ..features.metabolite import METABOLITE_TYPES
-from ..features.peripherals import PERIPHERAL_TYPES
 from ..features.variability import FP_TYPES as VAR_FP_TYPES
 
 T = TypeVar('T')
@@ -170,16 +169,16 @@ class PeripheralsInterpreter(CountInterpreter):
         if len(children) == 1:
             peripherals = [Peripherals.create(number=n) for n in numbers]
             return sorted(peripherals)
-        types = self.expand(children[1], PERIPHERAL_TYPES)
+        types = self.expand(children[1], [True, False])
         peripherals = []
-        for number, type in itertools.product(numbers, types):
-            p = Peripherals.create(number=number, type=type)
+        for number, metabolite in itertools.product(numbers, types):
+            p = Peripherals.create(number=number, metabolite=metabolite)
             peripherals.append(p)
         return sorted(peripherals)
 
     def peripheral_modes(self, tree):
         children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+        return list(True if child.value.upper() == 'MET' else False for child in children)
 
 
 class TransitsInterpreter(CountInterpreter):

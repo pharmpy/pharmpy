@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import builtins
+from collections import defaultdict
 from typing import TYPE_CHECKING
 
 from .help_functions import format_numbers
@@ -9,44 +10,44 @@ from .model_feature import ModelFeature
 if TYPE_CHECKING:
     from ..model_features import ModelFeatures
 
-PERIPHERAL_TYPES = frozenset(('DRUG', 'MET'))
-
 
 class Peripherals(ModelFeature):
-    def __init__(self, number: int, type: str):
+    def __init__(self, number: int, metabolite: bool):
         self._number = number
-        self._type = type
+        self._metabolite = metabolite
 
     @classmethod
-    def create(cls, number: int, type: str = 'DRUG') -> Peripherals:
+    def create(cls, number: int, metabolite: bool = False) -> Peripherals:
         if not isinstance(number, int):
             raise TypeError(f'Type of `number` must be an integer: got {builtins.type(number)}')
         if number < 0:
             raise ValueError(f'Number of peripherals must be positive: got {number}')
-        type = cls._canonicalize_type(type, PERIPHERAL_TYPES)
-        return cls(number=number, type=type)
+        if not isinstance(metabolite, bool):
+            raise TypeError(f'Type of `metabolite` must be a bool: got {builtins.type(type)}')
+
+        return cls(number=number, metabolite=metabolite)
 
     def replace(self, **kwargs):
         number = kwargs.get('number', self.number)
-        type = kwargs.get('type', self.type)
-        return Peripherals.create(number=number, type=type)
+        metabolite = kwargs.get('metabolite', self.metabolite)
+        return Peripherals.create(number=number, metabolite=metabolite)
 
     @property
     def number(self) -> int:
         return self._number
 
     @property
-    def type(self) -> str:
-        return self._type
+    def metabolite(self) -> bool:
+        return self._metabolite
 
     @property
-    def args(self) -> tuple[int, str]:
-        return self.number, self.type
+    def args(self) -> tuple[int, bool]:
+        return self.number, self.metabolite
 
     def __repr__(self) -> str:
         inner = f'{self.number}'
-        if self.type != 'DRUG':
-            inner += f',{self.type}'
+        if self.metabolite:
+            inner += ',MET'
         return f'PERIPHERALS({inner})'
 
     def __eq__(self, other) -> bool:
@@ -54,16 +55,15 @@ class Peripherals(ModelFeature):
             return True
         if not isinstance(other, Peripherals):
             return False
-        return self.number == other.number and self.type == other.type
+        return self.number == other.number and self.metabolite == other.metabolite
 
     def __lt__(self, other) -> bool:
         if not isinstance(other, Peripherals):
             return NotImplemented
         if self == other:
             return False
-        if self.type != other.type:
-            type_rank = {'DRUG': 0, 'MET': 1}
-            return type_rank[self.type] < type_rank[other.type]
+        if self.metabolite != other.metabolite:
+            return self.metabolite < other.metabolite
         return self.number < other.number
 
     @staticmethod
@@ -73,16 +73,15 @@ class Peripherals(ModelFeature):
 
         if len(features) == 1:
             return repr(features[0])
-        numbers_by_type = dict()
+
+        numbers_by_type = defaultdict(list)
         for feat in features:
-            if feat.type not in numbers_by_type:
-                numbers_by_type[feat.type] = [feat.number]
-            else:
-                numbers_by_type[feat.type].append(feat.number)
+            numbers_by_type[feat.metabolite].append(feat.number)
+
         peripherals_repr = []
-        for type, numbers in numbers_by_type.items():
+        for metabolite, numbers in numbers_by_type.items():
             inner = format_numbers(numbers, as_range=True)
-            if type != 'DRUG':
-                inner += f',{type}'
+            if metabolite:
+                inner += ',MET'
             peripherals_repr.append(f'PERIPHERALS({inner})')
         return ';'.join(peripherals_repr)

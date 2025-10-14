@@ -195,7 +195,7 @@ class ModelFeatures(Immutable):
                 if len(features) > 0:
                     return False
             elif isinstance(feature, Peripherals):
-                if len(features) == 1 and feature.type == features[0].type:
+                if len(features) == 1 and feature.metabolite == features[0].metabolite:
                     return False
                 if len(features) > 1:
                     return False

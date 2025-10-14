@@ -416,7 +416,7 @@ def test_peripherals():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
     p1 = Peripherals.create(0)
-    p2 = Peripherals.create(0, 'MET')
+    p2 = Peripherals.create(0, True)
     mf = ModelFeatures.create([a1, p2, a2, p1])
     assert mf.features == (a1, a2, p1, p2)
     assert mf.peripherals.features == (p1, p2)
@@ -534,7 +534,7 @@ def test_is_expanded():
             False,
         ),
         (
-            [Peripherals.create(0), Peripherals.create(1, 'MET')],
+            [Peripherals.create(0), Peripherals.create(1, True)],
             True,
         ),
         (
@@ -542,7 +542,7 @@ def test_is_expanded():
             False,
         ),
         (
-            [Peripherals.create(0), Peripherals.create(0, 'MET'), Peripherals.create(1, 'MET')],
+            [Peripherals.create(0), Peripherals.create(0, True), Peripherals.create(1, True)],
             False,
         ),
         (
@@ -702,7 +702,7 @@ def test_eq():
                 Absorption.create('FO'),
                 Peripherals.create(0),
                 Peripherals.create(1),
-                Peripherals.create(0, 'MET'),
+                Peripherals.create(0, True),
                 Absorption.create('ZO'),
             ],
             'ABSORPTION([FO,ZO]);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
@@ -711,7 +711,7 @@ def test_eq():
             [
                 Peripherals.create(0),
                 Peripherals.create(1),
-                Peripherals.create(0, 'MET'),
+                Peripherals.create(0, True),
                 Transits.create(0),
                 Transits.create(1),
                 Transits.create(3),

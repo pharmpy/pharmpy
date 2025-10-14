@@ -91,22 +91,22 @@ from pharmpy.mfl.parsing import parse
         (
             'PERIPHERALS(0..1,MET)',
             Peripherals,
-            [(0, 'MET'), (1, 'MET')],
+            [(0, True), (1, True)],
         ),
         (
             'PERIPHERALS(0..1);PERIPHERALS(0..1,MET)',
             Peripherals,
-            [(0, 'DRUG'), (1, 'DRUG'), (0, 'MET'), (1, 'MET')],
+            [(0, False), (1, False), (0, True), (1, True)],
         ),
         (
             'PERIPHERALS(0..1,*)',
             Peripherals,
-            [(0, 'DRUG'), (1, 'DRUG'), (0, 'MET'), (1, 'MET')],
+            [(0, False), (1, False), (0, True), (1, True)],
         ),
         (
             'PERIPHERALS(0..1,[DRUG,MET])',
             Peripherals,
-            [(0, 'DRUG'), (1, 'DRUG'), (0, 'MET'), (1, 'MET')],
+            [(0, False), (1, False), (0, True), (1, True)],
         ),
         ('TRANSITS(0)', Transits, [(0, True)]),
         ('TRANSITS(1)', Transits, [(1, True)]),

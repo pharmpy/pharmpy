@@ -277,7 +277,7 @@ def _get_lag_time_func(feature: LagTime):
 
 
 def _get_peripherals_func(feature: Peripherals):
-    if feature.type == 'MET':
+    if feature.metabolite:
         name = 'METABOLITE'
     else:
         name = None
