@@ -1,7 +1,13 @@
 from pathlib import Path
 from typing import Union
 
-from pharmpy.modeling import add_iiv, add_placebo_model, create_basic_pd_model, set_name
+from pharmpy.modeling import (
+    add_iiv,
+    add_placebo_model,
+    create_basic_pd_model,
+    set_name,
+    set_proportional_error_model,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
@@ -47,6 +53,7 @@ def start_pdsearch(context, dataset):
     context.log_info("Starting pdsearch")
 
     model = create_basic_pd_model(dataset)
+    model = set_proportional_error_model(model, zero_protection=False)
     model = add_iiv(model, ["B"], "exp")
     me = ModelEntry.create(model=model)
     return me
