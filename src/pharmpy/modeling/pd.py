@@ -490,8 +490,8 @@ def add_placebo_model(model: Model, expr: Literal['linear', 'exp']):
     >>> from pharmpy.modeling import *
     >>> model = create_basic_pd_model()
     >>> model = add_placebo_model(model, "linear")
-    >>> model.statements.find_assignment("P")
-    P = SLOPE⋅TIME
+    >>> model.statements.find_assignment("PDP")
+    PDP = SLOPE⋅TIME
 
     """
 
@@ -499,11 +499,11 @@ def add_placebo_model(model: Model, expr: Literal['linear', 'exp']):
     if r_index is None:
         raise ValueError("Cannot find response variable R. Is this a PD model?")
 
-    P = Expr.symbol("P")
+    P = Expr.symbol("PDP")
 
-    p_index = model.statements.find_assignment_index("P")
+    p_index = model.statements.find_assignment_index("PDP")
     if p_index is not None:
-        raise ValueError("P already in the model. Not yet supported")
+        raise ValueError("PDP already in the model. Not yet supported")
 
     idv = Expr.symbol(model.datainfo.idv_column.name)
     old_rassign = model.statements.get_assignment("R")
