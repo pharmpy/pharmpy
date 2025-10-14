@@ -82,6 +82,8 @@ def create_placebo_model(expr, baseme):
     base_model = baseme.model
     model = add_placebo_model(base_model, expr)
     model = set_name(model, f"placebo_{expr}")
+    if expr == 'linear':
+        model = add_iiv(model, 'SLOPE', 'prop')
     me = ModelEntry.create(model=model, parent=base_model)
     return me
 
