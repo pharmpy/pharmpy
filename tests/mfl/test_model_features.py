@@ -285,6 +285,15 @@ def test_create(features, expected):
                 IIV.create(parameter='CL', fp='exp'),
             ],
         ),
+        (
+            'IIV(CL,EXP);IOV(CL,EXP);PERIPHERALS(0);ABSORPTION(FO)',
+            [
+                Absorption.create('FO'),
+                Peripherals.create(0),
+                IIV.create(parameter='CL', fp='exp'),
+                IOV.create(parameter='CL', fp='exp'),
+            ],
+        ),
     ),
 )
 def test_create_from_mfl(mfl, expected):
@@ -791,6 +800,7 @@ def test_repr(features, expected):
         'ABSORPTION([FO,ZO]);ELIMINATION([FO,MM])',
         'DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION]);EFFECTCOMP([EMAX,STEP])',
         'ABSORPTION([FO,ZO]);METABOLITE(PSC)',
+        'IIV([CL,MAT,VC],EXP);IOV([CL,MAT,VC],EXP)',
     ),
 )
 def test_parse_repr_roundtrip(source):

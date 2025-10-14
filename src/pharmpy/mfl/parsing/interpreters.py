@@ -5,6 +5,7 @@ from lark.visitors import Interpreter
 
 from ..features import (
     IIV,
+    IOV,
     Absorption,
     Allometry,
     Covariate,
@@ -26,7 +27,7 @@ from ..features.elimination import ELIMINATION_TYPES
 from ..features.indirect_effect import INDIRECT_EFFECT_TYPES, PRODUCTION_TYPES
 from ..features.metabolite import METABOLITE_TYPES
 from ..features.peripherals import PERIPHERAL_TYPES
-from ..features.variability import FP_TYPES as IIV_FP_TYPES
+from ..features.variability import FP_TYPES as VAR_FP_TYPES
 
 T = TypeVar('T')
 
@@ -97,6 +98,9 @@ class MFLInterpreter(Interpreter):
 
     def iiv(self, tree):
         return IIVInterpreter(self.definitions).interpret(tree)
+
+    def iov(self, tree):
+        return IOVInterpreter(self.definitions).interpret(tree)
 
     def option(self, tree):
         children = self.visit_children(tree)
@@ -354,29 +358,11 @@ class CovariateInterpreter(MFLInterpreter):
         return value.upper()
 
 
-class IIVInterpreter(MFLInterpreter):
-    def interpret(self, tree):
-        children = self.visit_children(tree)
-        assert 2 <= len(children) <= 3
-        if not isinstance(children[0], bool):
-            children.insert(0, False)
-        assert len(children) == 3
-
-        is_optional = children[0]
-        params = self.expand(children[1], expand_to=Ref('pop_params'))
-        fps = self.expand(children[2], IIV_FP_TYPES)
-
-        effects = []
-        for param, fp in itertools.product(params, fps):
-            effect = IIV.create(parameter=param, fp=fp, optional=is_optional)
-            effects.append(effect)
-
-        return sorted(effects)
-
+class VariabilityInterpreter(MFLInterpreter):
     def parameter_option(self, tree):
         return self.option(tree)
 
-    def fp_iiv_option(self, tree):
+    def fp_var_option(self, tree):
         children = self.visit_children(tree)
         return list(child.value.upper() for child in children)
 
@@ -386,6 +372,46 @@ class IIVInterpreter(MFLInterpreter):
         value = children[0].value
         assert isinstance(value, str)
         return value.upper()
+
+
+class IIVInterpreter(VariabilityInterpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert 2 <= len(children) <= 3
+        if not isinstance(children[0], bool):
+            children.insert(0, False)
+        assert len(children) == 3
+
+        is_optional = children[0]
+        params = self.expand(children[1], expand_to=Ref('pop_params'))
+        fps = self.expand(children[2], VAR_FP_TYPES)
+
+        effects = []
+        for param, fp in itertools.product(params, fps):
+            effect = IIV.create(parameter=param, fp=fp, optional=is_optional)
+            effects.append(effect)
+
+        return sorted(effects)
+
+
+class IOVInterpreter(VariabilityInterpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert 2 <= len(children) <= 3
+        if not isinstance(children[0], bool):
+            children.insert(0, False)
+        assert len(children) == 3
+
+        is_optional = children[0]
+        params = self.expand(children[1], expand_to=Ref('pop_params'))
+        fps = self.expand(children[2], VAR_FP_TYPES)
+
+        effects = []
+        for param, fp in itertools.product(params, fps):
+            effect = IOV.create(parameter=param, fp=fp, optional=is_optional)
+            effects.append(effect)
+
+        return sorted(effects)
 
 
 class DefinitionInterpreter(Interpreter):

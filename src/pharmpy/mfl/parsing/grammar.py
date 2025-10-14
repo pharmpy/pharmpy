@@ -29,7 +29,7 @@ definition: "LET"i "(" VARIABLE_NAME "," values ")"
 
 _feature: absorption | elimination | peripherals | transits | lagtime
             | covariate | allometry | direct_effect | effect_comp | indirect_effect
-            | metabolite | iiv
+            | metabolite | iiv | iov
 
 absorption: "ABSORPTION"i "(" (_absorption_option) ")"
 elimination: "ELIMINATION"i "(" (_elimination_option) ")"
@@ -38,7 +38,8 @@ transits: "TRANSITS"i "(" (n | (_counts ["," _depot_option])) ")"
 lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
 covariate: "COVARIATE"i [optional] "(" parameter_option "," covariate_option "," (_fp_options) ["," op_option] ")"
 allometry: "ALLOMETRY"i "(" value ["," decimal] ")"
-iiv: "IIV"i [optional] "(" parameter_option "," (_fp_iiv_options) ")"
+iiv: "IIV"i [optional] "(" parameter_option "," (_fp_var_options) ")"
+iov: "IOV"i [optional] "(" parameter_option "," (_fp_var_options) ")"
 
 direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
 effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
@@ -86,9 +87,9 @@ _fp_options: fp_option | wildcard
 fp_option: FP_OP  | "[" [FP_OP ("," FP_OP)*] "]"
 FP_OP: "LIN"i | "CAT"i | "CAT2"i | "PIECE_LIN"i | "EXP"i | "POW"i | "CUSTOM"i
 
-_fp_iiv_options: fp_iiv_option | wildcard
-fp_iiv_option: FP_IIV_OP  | "[" [FP_IIV_OP ("," FP_IIV_OP)*] "]"
-FP_IIV_OP: "EXP"i | "ADD"i | "PROP"i | "LOG"i | "RE_LOG"i
+_fp_var_options: fp_var_option | wildcard
+fp_var_option: FP_VAR_OP  | "[" [FP_VAR_OP ("," FP_VAR_OP)*] "]"
+FP_VAR_OP: "EXP"i | "ADD"i | "PROP"i | "LOG"i | "RE_LOG"i
 
 ref: "@" VARIABLE_NAME
 optional: OPTIONAL

@@ -2,6 +2,7 @@ import pytest
 
 from pharmpy.mfl.features import (
     IIV,
+    IOV,
     Absorption,
     Allometry,
     Covariate,
@@ -415,6 +416,75 @@ from pharmpy.mfl.parsing import parse
                 (Ref('POP_PARAMS'), 'EXP', True),
             ],
         ),
+        (
+            'IOV(CL,EXP)',
+            IOV,
+            [
+                ('CL', 'EXP', False),
+            ],
+        ),
+        (
+            'IOV([CL,VC],EXP)',
+            IOV,
+            [
+                ('CL', 'EXP', False),
+                ('VC', 'EXP', False),
+            ],
+        ),
+        (
+            'IOV?([CL,VC],EXP)',
+            IOV,
+            [
+                ('CL', 'EXP', True),
+                ('VC', 'EXP', True),
+            ],
+        ),
+        (
+            'IOV?([CL,VC],EXP);IOV(MAT,ADD)',
+            IOV,
+            [
+                ('CL', 'EXP', True),
+                ('VC', 'EXP', True),
+                ('MAT', 'ADD', False),
+            ],
+        ),
+        (
+            'IOV?([CL,VC],[EXP,ADD])',
+            IOV,
+            [
+                ('CL', 'ADD', True),
+                ('CL', 'EXP', True),
+                ('VC', 'ADD', True),
+                ('VC', 'EXP', True),
+            ],
+        ),
+        (
+            'IOV(CL,*)',
+            IOV,
+            [
+                ('CL', 'ADD', False),
+                ('CL', 'EXP', False),
+                ('CL', 'LOG', False),
+                ('CL', 'PROP', False),
+                ('CL', 'RE_LOG', False),
+            ],
+        ),
+        (
+            'IOV?(@PK,[EXP,ADD])',
+            IOV,
+            [
+                (Ref('PK'), 'ADD', True),
+                (Ref('PK'), 'EXP', True),
+            ],
+        ),
+        (
+            'IOV?(*,[EXP,ADD])',
+            IOV,
+            [
+                (Ref('POP_PARAMS'), 'ADD', True),
+                (Ref('POP_PARAMS'), 'EXP', True),
+            ],
+        ),
     ),
     ids=repr,
 )
@@ -454,9 +524,15 @@ def test_parse_one_type(source, feature_type, options):
             'DIRECTEFFECT(LINEAR);INDIRECTEFFECT(LINEAR,PRODUCTION);EFFECTCOMP(LINEAR);METABOLITE(PSC)',
             4,
         ),
+        (
+            'IIV([CL,MAT,VC],EXP);IOV([CL,MAT,VC],EXP)',
+            6,
+        ),
     ),
     ids=repr,
 )
 def test_parse_multiple_types(source, no_of_features):
     features = parse(source)
     assert len(features) == no_of_features
+    types = {type(feature) for feature in features}
+    assert len(types) > 1
