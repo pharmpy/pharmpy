@@ -2,6 +2,7 @@ import pytest
 
 from pharmpy.mfl.features import (
     IIV,
+    IOV,
     Absorption,
     Allometry,
     Covariate,
@@ -40,31 +41,26 @@ def test_init():
 
 
 @pytest.mark.parametrize(
-    'features, mfl, expected',
+    'features, expected',
     (
         (
             [Absorption.create('FO')],
-            'ABSORPTION(FO)',
             [Absorption.create('FO')],
         ),
         (
             [Absorption.create('ZO'), Absorption.create('FO')],
-            'ABSORPTION([ZO,FO])',
             [Absorption.create('FO'), Absorption.create('ZO')],
         ),
         (
             [Absorption.create('ZO'), Absorption.create('ZO'), Absorption.create('FO')],
-            'ABSORPTION([ZO,ZO,FO])',
             [Absorption.create('FO'), Absorption.create('ZO')],
         ),
         (
             [Peripherals.create(1), Absorption.create('FO'), Peripherals.create(0)],
-            'PERIPHERALS(0);ABSORPTION(FO);PERIPHERALS(1)',
             [Absorption.create('FO'), Peripherals.create(0), Peripherals.create(1)],
         ),
         (
             [Peripherals.create(1), Absorption.create('FO'), Peripherals.create(0)],
-            'PERIPHERALS(0..1);ABSORPTION(FO)',
             [Absorption.create('FO'), Peripherals.create(0), Peripherals.create(1)],
         ),
         (
@@ -74,6 +70,147 @@ def test_init():
                 Peripherals.create(1),
                 Absorption.create('FO'),
             ],
+            [
+                Absorption.create('FO'),
+                Transits.create(0),
+                Transits.create(1),
+                Peripherals.create(1),
+            ],
+        ),
+        (
+            [
+                LagTime.create(True),
+                LagTime.create(False),
+                Absorption.create('FO'),
+                Transits.create(0),
+            ],
+            [
+                Absorption.create('FO'),
+                Transits.create(0),
+                LagTime.create(False),
+                LagTime.create(True),
+            ],
+        ),
+        (
+            [
+                Covariate.create(parameter='CL', covariate='WGT', fp='exp'),
+                Absorption.create('FO'),
+                Peripherals.create(0),
+            ],
+            [
+                Absorption.create('FO'),
+                Peripherals.create(0),
+                Covariate.create(parameter='CL', covariate='WGT', fp='exp'),
+            ],
+        ),
+        (
+            [
+                Elimination.create(type='MM'),
+                Absorption.create('ZO'),
+                Elimination.create(type='FO'),
+                Absorption.create('FO'),
+            ],
+            [
+                Absorption.create('FO'),
+                Absorption.create('ZO'),
+                Elimination.create(type='FO'),
+                Elimination.create(type='MM'),
+            ],
+        ),
+        (
+            [
+                DirectEffect.create(type='LINEAR'),
+                IndirectEffect.create(type='LINEAR', production_type='PRODUCTION'),
+                DirectEffect.create(type='EMAX'),
+            ],
+            [
+                DirectEffect.create(type='LINEAR'),
+                DirectEffect.create(type='EMAX'),
+                IndirectEffect.create(type='LINEAR', production_type='PRODUCTION'),
+            ],
+        ),
+        (
+            [
+                EffectComp.create(type='LINEAR'),
+                DirectEffect.create(type='LINEAR'),
+                Absorption.create('FO'),
+            ],
+            [
+                Absorption.create('FO'),
+                DirectEffect.create(type='LINEAR'),
+                EffectComp.create(type='LINEAR'),
+            ],
+        ),
+        (
+            [
+                Metabolite.create(type='BASIC'),
+                DirectEffect.create(type='LINEAR'),
+                Metabolite.create(type='PSC'),
+            ],
+            [
+                DirectEffect.create(type='LINEAR'),
+                Metabolite.create(type='PSC'),
+                Metabolite.create(type='BASIC'),
+            ],
+        ),
+        (
+            [
+                Covariate.create(parameter='CL', covariate='WGT', fp='exp'),
+                Absorption.create('FO'),
+                Allometry.create(covariate='WGT'),
+            ],
+            [
+                Absorption.create('FO'),
+                Covariate.create(parameter='CL', covariate='WGT', fp='exp'),
+                Allometry.create(covariate='WGT'),
+            ],
+        ),
+        (
+            [
+                IOV.create(parameter='CL', fp='exp'),
+                IIV.create(parameter='CL', fp='exp'),
+                Absorption.create('FO'),
+                Peripherals.create(0),
+            ],
+            [
+                Absorption.create('FO'),
+                Peripherals.create(0),
+                IIV.create(parameter='CL', fp='exp'),
+                IOV.create(parameter='CL', fp='exp'),
+            ],
+        ),
+    ),
+)
+def test_create(features, expected):
+    mf = ModelFeatures.create(features)
+    assert mf.features == tuple(expected)
+    assert len(mf) == len(expected)
+
+
+@pytest.mark.parametrize(
+    'mfl, expected',
+    (
+        (
+            'ABSORPTION(FO)',
+            [Absorption.create('FO')],
+        ),
+        (
+            'ABSORPTION([ZO,FO])',
+            [Absorption.create('FO'), Absorption.create('ZO')],
+        ),
+        (
+            'ABSORPTION([ZO,ZO,FO])',
+            [Absorption.create('FO'), Absorption.create('ZO')],
+        ),
+        (
+            'PERIPHERALS(0);ABSORPTION(FO);PERIPHERALS(1)',
+            [Absorption.create('FO'), Peripherals.create(0), Peripherals.create(1)],
+        ),
+        (
+            'PERIPHERALS(0..1);ABSORPTION(FO)',
+            [Absorption.create('FO'), Peripherals.create(0), Peripherals.create(1)],
+        ),
+        (
             'TRANSITS([1,0]);PERIPHERALS(1);ABSORPTION(FO)',
             [
                 Absorption.create('FO'),
@@ -83,12 +220,6 @@ def test_init():
             ],
         ),
         (
-            [
-                LagTime.create(True),
-                LagTime.create(False),
-                Absorption.create('FO'),
-                Transits.create(0),
-            ],
             'LAGTIME([ON,OFF]);ABSORPTION(FO);TRANSITS(0)',
             [
                 Absorption.create('FO'),
@@ -98,11 +229,6 @@ def test_init():
             ],
         ),
         (
-            [
-                Covariate.create(parameter='CL', covariate='WGT', fp='exp'),
-                Absorption.create('FO'),
-                Peripherals.create(0),
-            ],
             'COVARIATE(CL,WGT,EXP);ABSORPTION(FO);PERIPHERALS(0)',
             [
                 Absorption.create('FO'),
@@ -111,12 +237,6 @@ def test_init():
             ],
         ),
         (
-            [
-                Elimination.create(type='MM'),
-                Absorption.create('ZO'),
-                Elimination.create(type='FO'),
-                Absorption.create('FO'),
-            ],
             'ELIMINATION([MM,FO]);ABSORPTION([ZO,FO])',
             [
                 Absorption.create('FO'),
@@ -126,11 +246,6 @@ def test_init():
             ],
         ),
         (
-            [
-                DirectEffect.create(type='LINEAR'),
-                IndirectEffect.create(type='LINEAR', production_type='PRODUCTION'),
-                DirectEffect.create(type='EMAX'),
-            ],
             'DIRECTEFFECT([LINEAR,EMAX]);INDIRECTEFFECT(LINEAR,PRODUCTION)',
             [
                 DirectEffect.create(type='LINEAR'),
@@ -139,11 +254,6 @@ def test_init():
             ],
         ),
         (
-            [
-                EffectComp.create(type='LINEAR'),
-                DirectEffect.create(type='LINEAR'),
-                Absorption.create('FO'),
-            ],
             'EFFECTCOMP(LINEAR);DIRECTEFFECT(LINEAR);ABSORPTION(FO)',
             [
                 Absorption.create('FO'),
@@ -152,11 +262,6 @@ def test_init():
             ],
         ),
         (
-            [
-                Metabolite.create(type='BASIC'),
-                DirectEffect.create(type='LINEAR'),
-                Metabolite.create(type='PSC'),
-            ],
             'METABOLITE(BASIC);DIRECTEFFECT(LINEAR);METABOLITE(PSC)',
             [
                 DirectEffect.create(type='LINEAR'),
@@ -165,11 +270,6 @@ def test_init():
             ],
         ),
         (
-            [
-                Covariate.create(parameter='CL', covariate='WGT', fp='exp'),
-                Absorption.create('FO'),
-                Allometry.create(covariate='WGT'),
-            ],
             'ABSORPTION(FO);COVARIATE(CL,WGT,EXP);ALLOMETRY(WGT,70)',
             [
                 Absorption.create('FO'),
@@ -178,11 +278,6 @@ def test_init():
             ],
         ),
         (
-            [
-                IIV.create(parameter='CL', fp='exp'),
-                Absorption.create('FO'),
-                Peripherals.create(0),
-            ],
             'IIV(CL,EXP);ABSORPTION(FO);PERIPHERALS(0)',
             [
                 Absorption.create('FO'),
@@ -192,13 +287,9 @@ def test_init():
         ),
     ),
 )
-def test_create(features, mfl, expected):
-    mf = ModelFeatures.create(features)
+def test_create_from_mfl(mfl, expected):
+    mf = ModelFeatures.create(mfl)
     assert mf.features == tuple(expected)
-    assert len(mf) == len(expected)
-
-    mf_from_mfl = ModelFeatures.create(mfl)
-    assert mf == mf_from_mfl
 
 
 def test_create_raises():
@@ -379,6 +470,26 @@ def test_metabolites():
     mf = ModelFeatures.create([a1, m2, a2, m1])
     assert mf.features == (a1, a2, m1, m2)
     assert mf.metabolites.features == (m1, m2)
+
+
+def test_iiv():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    iiv1 = IIV.create('CL', 'EXP')
+    iiv2 = IIV.create('MAT', 'EXP')
+    mf = ModelFeatures.create([a1, iiv2, a2, iiv1])
+    assert mf.features == (a1, a2, iiv1, iiv2)
+    assert mf.iiv.features == (iiv1, iiv2)
+
+
+def test_iov():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    iov = IOV.create('CL', 'EXP')
+    iiv = IIV.create('MAT', 'EXP')
+    mf = ModelFeatures.create([a1, iov, a2, iiv])
+    assert mf.features == (a1, a2, iiv, iov)
+    assert mf.iov.features == (iov,)
 
 
 def test_refs():
@@ -654,14 +765,34 @@ def test_eq():
                 Absorption.create('FO'),
                 Absorption.create('SEQ-ZO-FO'),
                 Absorption.create('ZO'),
+                IOV.create('CL', 'EXP', True),
+                IOV.create('VC', 'EXP', True),
                 IIV.create('CL', 'EXP', True),
                 IIV.create('MAT', 'EXP', True),
             ],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);IIV?([CL,MAT,VC],EXP)',
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);IIV?([CL,MAT,VC],EXP);IOV?([CL,VC],EXP)',
         ),
     ),
 )
 def test_repr(features, expected):
     mf = ModelFeatures.create(features)
     assert repr(mf) == expected
-    assert ModelFeatures.create(expected) == mf
+
+
+@pytest.mark.parametrize(
+    'source',
+    (
+        'ABSORPTION([FO,ZO,SEQ-ZO-FO])',
+        'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+        'ABSORPTION([FO,ZO]);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
+        'TRANSITS([0,1,3],[DEPOT,NODEPOT]);PERIPHERALS(0..1);PERIPHERALS(0,MET)',
+        'ABSORPTION([FO,ZO]);LAGTIME([OFF,ON])',
+        'ABSORPTION([FO,ZO]);COVARIATE([CL,VC],WGT,EXP,*);ALLOMETRY(WT,70)',
+        'ABSORPTION([FO,ZO]);ELIMINATION([FO,MM])',
+        'DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION]);EFFECTCOMP([EMAX,STEP])',
+        'ABSORPTION([FO,ZO]);METABOLITE(PSC)',
+    ),
+)
+def test_parse_repr_roundtrip(source):
+    mf = ModelFeatures.create(source)
+    assert repr(mf) == source

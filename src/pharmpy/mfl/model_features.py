@@ -11,6 +11,7 @@ from pharmpy.mfl.features.mutex_feature import MutexFeature
 
 from .features import (
     IIV,
+    IOV,
     Absorption,
     Allometry,
     Covariate,
@@ -60,6 +61,7 @@ class ModelFeatures(Immutable):
             EffectComp: [],
             Metabolite: [],
             IIV: [],
+            IOV: [],
         }
         for feature in features:
             group = type(feature)
@@ -163,6 +165,10 @@ class ModelFeatures(Immutable):
     def iiv(self) -> ModelFeatures:
         return self._get_feature_type(IIV)
 
+    @property
+    def iov(self) -> ModelFeatures:
+        return self._get_feature_type(IOV)
+
     def _get_feature_type(self, type: Type[T]) -> ModelFeatures:
         features = []
         for feature in self:
@@ -193,7 +199,7 @@ class ModelFeatures(Immutable):
                     return False
                 if len(features) > 1:
                     return False
-            elif isinstance(feature, (Covariate, IIV)):
+            elif isinstance(feature, (Covariate, IIV, IOV)):
                 if feature.optional:
                     return False
             else:
@@ -325,6 +331,9 @@ class ModelFeatures(Immutable):
         if self.iiv:
             iiv_repr = IIV.repr_many(self.iiv)
             feature_repr.append(iiv_repr)
+        if self.iov:
+            iov_repr = IOV.repr_many(self.iov)
+            feature_repr.append(iov_repr)
 
         return ';'.join(feature_repr)
 

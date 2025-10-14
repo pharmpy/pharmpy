@@ -23,10 +23,10 @@ from ..features.covariate import FP_TYPES as COV_FP_TYPES
 from ..features.direct_effect import DIRECT_EFFECT_TYPES
 from ..features.effect_compartment import EFFECT_COMP_TYPES
 from ..features.elimination import ELIMINATION_TYPES
-from ..features.iiv import FP_TYPES as IIV_FP_TYPES
 from ..features.indirect_effect import INDIRECT_EFFECT_TYPES, PRODUCTION_TYPES
 from ..features.metabolite import METABOLITE_TYPES
 from ..features.peripherals import PERIPHERAL_TYPES
+from ..features.variability import FP_TYPES as IIV_FP_TYPES
 
 T = TypeVar('T')
 

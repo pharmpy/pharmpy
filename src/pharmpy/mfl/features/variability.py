@@ -13,14 +13,16 @@ if TYPE_CHECKING:
 FP_TYPES = frozenset(('EXP', 'ADD', 'PROP', 'LOG', 'RE_LOG'))
 
 
-class IIV(ModelFeature):
+class Variability(ModelFeature):
     def __init__(self, parameter: Union[str, Ref], fp: str, optional: bool):
         self._parameter = parameter
         self._fp = fp
         self._optional = optional
 
     @classmethod
-    def create(cls, parameter: Union[str, Ref], fp: str = 'EXP', optional: bool = False) -> IIV:
+    def create(
+        cls, parameter: Union[str, Ref], fp: str = 'EXP', optional: bool = False
+    ) -> Variability:
         if not isinstance(parameter, str) and not isinstance(parameter, Ref):
             raise TypeError(f'Type of `parameter` must be a string or Ref: got {type(parameter)}')
         if not isinstance(optional, bool):
@@ -28,13 +30,13 @@ class IIV(ModelFeature):
 
         parameter = parameter.upper() if isinstance(parameter, str) else parameter
         fp = cls._canonicalize_type(fp, FP_TYPES, 'fp')
-        return IIV(parameter, fp, optional)
+        return cls(parameter, fp, optional)
 
     def replace(self, **kwargs):
         parameter = kwargs.get('parameter', self.parameter)
         fp = kwargs.get('fp', self.fp)
         optional = kwargs.get('optional', self.optional)
-        return IIV.create(parameter=parameter, fp=fp, optional=optional)
+        return self.__class__.create(parameter=parameter, fp=fp, optional=optional)
 
     @property
     def parameter(self) -> Union[str, Ref]:
@@ -52,7 +54,7 @@ class IIV(ModelFeature):
     def args(self) -> tuple[Union[str, Ref], str, bool]:
         return self.parameter, self.fp, self.optional
 
-    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> tuple[IIV, ...]:
+    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> tuple[Variability, ...]:
         if self.is_expanded():
             return (self,)
 
@@ -70,12 +72,13 @@ class IIV(ModelFeature):
 
     def __repr__(self) -> str:
         optional = '?' if self.optional else ''
-        return f'IIV{optional}({self.parameter},{self.fp})'
+        class_name = self.__class__.__name__.upper()
+        return f'{class_name}{optional}({self.parameter},{self.fp})'
 
     def __eq__(self, other) -> bool:
         if self is other:
             return True
-        if not isinstance(other, IIV):
+        if not isinstance(other, self.__class__):
             return False
         return (
             self.parameter == other.parameter
@@ -84,7 +87,7 @@ class IIV(ModelFeature):
         )
 
     def __lt__(self, other) -> bool:
-        if not isinstance(other, IIV):
+        if not isinstance(other, self.__class__):
             return NotImplemented
         if self == other:
             return False
@@ -96,7 +99,7 @@ class IIV(ModelFeature):
 
     @staticmethod
     def repr_many(mf: ModelFeatures) -> str:
-        features = tuple(feat for feat in mf.features if isinstance(feat, IIV))
+        features = tuple(feat for feat in mf.features if isinstance(feat, Variability))
 
         assert len(features) == len(mf.features)
 
@@ -106,11 +109,21 @@ class IIV(ModelFeature):
         no_of_args = len(features[0].args)
         args_grouped = group_args([feature.args for feature in features], i=no_of_args)
 
+        class_name = features[0].__class__.__name__.upper()
+
         effects = []
         for arg in args_grouped:
             parameter, fp, optional = arg
             optional_repr = '?' if optional else ''
             inner = f'{get_repr(parameter)},{get_repr(fp)}'
-            effects.append(f'IIV{optional_repr}({inner})')
+            effects.append(f'{class_name}{optional_repr}({inner})')
 
         return ';'.join(effects)
+
+
+class IIV(Variability):
+    pass
+
+
+class IOV(Variability):
+    pass
