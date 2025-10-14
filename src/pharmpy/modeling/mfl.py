@@ -257,14 +257,14 @@ def _get_absorption_elimination_func(feature: Union[Absorption, Elimination]):
 
 def _get_transit_func(feature: Transits):
     if feature.number == 'N':
-        func = partial(set_n_transit_compartments, keep_depot=feature.with_depot)
+        func = partial(set_n_transit_compartments, keep_depot=feature.depot)
     else:
         n = feature.number
-        if not feature.with_depot:
+        if not feature.depot:
             if n == 0:
                 return []
             n += 1
-        func = partial(set_transit_compartments, n=n, keep_depot=feature.with_depot)
+        func = partial(set_transit_compartments, n=n, keep_depot=feature.depot)
     return [func]
 
 

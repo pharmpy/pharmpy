@@ -7,21 +7,21 @@ from pharmpy.mfl.model_features import ModelFeatures
 def test_init():
     t1 = Transits(0, True)
     assert t1.args == (0, True)
-    assert t1.args == (t1.number, t1.with_depot)
+    assert t1.args == (t1.number, t1.depot)
 
 
 def test_create():
     t1 = Transits.create(0)
     assert t1.args == (0, True)
-    assert t1.args == (t1.number, t1.with_depot)
+    assert t1.args == (t1.number, t1.depot)
 
     t2 = Transits.create(0, False)
     assert t2.args == (0, False)
-    assert t2.args == (t2.number, t2.with_depot)
+    assert t2.args == (t2.number, t2.depot)
 
     t3 = Transits.create('n', False)
     assert t3.args == ('N', False)
-    assert t3.args == (t3.number, t3.with_depot)
+    assert t3.args == (t3.number, t3.depot)
 
     with pytest.raises(ValueError):
         Transits.create('x')
@@ -39,13 +39,13 @@ def test_create():
 def test_replace():
     t1 = Transits.create(0)
     assert t1.args == (0, True)
-    t2 = t1.replace(with_depot=False)
+    t2 = t1.replace(depot=False)
     assert t2.args == (0, False)
     t3 = t2.replace(number=1)
     assert t3.args == (1, False)
 
     with pytest.raises(TypeError):
-        t1.replace(with_depot=1)
+        t1.replace(depot=1)
 
     with pytest.raises(ValueError):
         t1.replace(number='x')

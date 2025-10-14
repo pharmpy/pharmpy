@@ -92,7 +92,7 @@ class ModelFeatures(Immutable):
     def pk_oral(cls) -> ModelFeatures:
         absorption = [Absorption.create(type=type) for type in ('FO', 'ZO', 'SEQ-ZO-FO')]
         transits = [
-            Transits.create(n, with_depot=depot)
+            Transits.create(n, depot=depot)
             for n, depot in itertools.product([0, 1, 3, 10], [True, False])
         ]
         lagtime = [LagTime.create(on=False), LagTime.create(on=True)]

@@ -192,7 +192,7 @@ class TransitsInterpreter(CountInterpreter):
         depot_settings = self.expand(children[1], [True, False])
         transits = []
         for number, with_depot in itertools.product(numbers, depot_settings):
-            t = Transits.create(number=number, with_depot=with_depot)
+            t = Transits.create(number=number, depot=with_depot)
             transits.append(t)
         return sorted(transits)
 

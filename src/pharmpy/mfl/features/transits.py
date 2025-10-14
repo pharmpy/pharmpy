@@ -13,12 +13,12 @@ if TYPE_CHECKING:
 
 
 class Transits(ModelFeature):
-    def __init__(self, number: Union[int, str], with_depot: bool):
+    def __init__(self, number: Union[int, str], depot: bool):
         self._number = number
-        self._with_depot = with_depot
+        self._depot = depot
 
     @classmethod
-    def create(cls, number: Union[int, Literal['N']], with_depot: bool = True) -> Transits:
+    def create(cls, number: Union[int, Literal['N']], depot: bool = True) -> Transits:
         if isinstance(number, int):
             if number < 0:
                 raise ValueError(f'Number of transits must be positive: got {number}')
@@ -32,30 +32,30 @@ class Transits(ModelFeature):
             raise TypeError(
                 f'Type of `number` must be an integer or string "N": got {builtins.type(number)}'
             )
-        if not isinstance(with_depot, bool):
-            raise TypeError(f'Type of `with_depot` must be a bool: got {builtins.type(type)}')
-        return cls(number=number, with_depot=with_depot)
+        if not isinstance(depot, bool):
+            raise TypeError(f'Type of `depot` must be a bool: got {builtins.type(type)}')
+        return cls(number=number, depot=depot)
 
     def replace(self, **kwargs):
         number = kwargs.get('number', self.number)
-        with_depot = kwargs.get('with_depot', self.with_depot)
-        return Transits.create(number=number, with_depot=with_depot)
+        depot = kwargs.get('depot', self.depot)
+        return Transits.create(number=number, depot=depot)
 
     @property
     def number(self) -> Union[int, str]:
         return self._number
 
     @property
-    def with_depot(self) -> bool:
-        return self._with_depot
+    def depot(self) -> bool:
+        return self._depot
 
     @property
     def args(self) -> tuple[Union[int, str], bool]:
-        return self.number, self.with_depot
+        return self.number, self.depot
 
     def __repr__(self) -> str:
         inner = f'{self.number}'
-        if not self.with_depot:
+        if not self.depot:
             inner += ',NODEPOT'
         return f'TRANSITS({inner})'
 
@@ -64,16 +64,16 @@ class Transits(ModelFeature):
             return True
         if not isinstance(other, Transits):
             return False
-        return self.number == other.number and self.with_depot == other.with_depot
+        return self.number == other.number and self.depot == other.depot
 
     def __lt__(self, other) -> bool:
         if not isinstance(other, Transits):
             return NotImplemented
         if self == other:
             return False
-        if self.with_depot != other.with_depot:
+        if self.depot != other.depot:
             # Depot is "less then" no depot, False < True
-            return self.with_depot > other.with_depot
+            return self.depot > other.depot
 
         def _get_number(number) -> int:
             if number == 'N':
@@ -93,7 +93,7 @@ class Transits(ModelFeature):
         features = sorted(features)
         numbers_by_type = defaultdict(tuple)
         for feat in features:
-            numbers_by_type[feat.with_depot] += (feat.number,)
+            numbers_by_type[feat.depot] += (feat.number,)
         if len(numbers_by_type) > 1 and len(set(numbers_by_type.values())) == 1:
             numbers = list(numbers_by_type.values())[0]
             inner = _get_inner(numbers, [True, False])
