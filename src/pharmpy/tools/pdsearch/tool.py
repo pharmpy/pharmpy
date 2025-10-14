@@ -5,6 +5,7 @@ from pharmpy.modeling import (
     add_iiv,
     add_placebo_model,
     create_basic_pd_model,
+    set_description,
     set_name,
     set_proportional_error_model,
 )
@@ -82,6 +83,7 @@ def create_placebo_model(expr, baseme):
     base_model = baseme.model
     model = add_placebo_model(base_model, expr)
     model = set_name(model, f"placebo_{expr}")
+    model = set_description(model, f"PLACEBO {expr.upper()}")
     if expr == 'linear':
         model = add_iiv(model, 'SLOPE', 'prop')
     me = ModelEntry.create(model=model, parent=base_model)
