@@ -205,7 +205,7 @@ def test_execute_workflow_results_with_tool_database(tmp_path):
         Path('results') / 'modelsearch_results.json',
     ],
 )
-@pytest.mark.xdist_group(name="workflow")
+@pytest.mark.xdist_group(name="workflow_report")
 def test_execute_workflow_results_with_report(testdata, tmp_path, path):
     mfr = read_results(testdata / path)
 
