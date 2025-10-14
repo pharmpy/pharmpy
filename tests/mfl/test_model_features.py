@@ -120,13 +120,13 @@ def test_init():
         (
             [
                 DirectEffect.create(type='LINEAR'),
-                IndirectEffect.create(type='LINEAR', production_type='PRODUCTION'),
+                IndirectEffect.create(type='LINEAR', production=True),
                 DirectEffect.create(type='EMAX'),
             ],
             [
                 DirectEffect.create(type='LINEAR'),
                 DirectEffect.create(type='EMAX'),
-                IndirectEffect.create(type='LINEAR', production_type='PRODUCTION'),
+                IndirectEffect.create(type='LINEAR', production=True),
             ],
         ),
         (
@@ -250,7 +250,7 @@ def test_create(features, expected):
             [
                 DirectEffect.create(type='LINEAR'),
                 DirectEffect.create(type='EMAX'),
-                IndirectEffect.create(type='LINEAR', production_type='PRODUCTION'),
+                IndirectEffect.create(type='LINEAR', production=True),
             ],
         ),
         (
@@ -454,8 +454,8 @@ def test_direct_effecta():
 def test_indirect_effects():
     a1 = Absorption.create('FO')
     a2 = Absorption.create('ZO')
-    ie1 = IndirectEffect.create('LINEAR', 'DEGRADATION')
-    ie2 = IndirectEffect.create('LINEAR', 'PRODUCTION')
+    ie1 = IndirectEffect.create('LINEAR', production=False)
+    ie2 = IndirectEffect.create('LINEAR', production=True)
     mf = ModelFeatures.create([a1, ie2, a2, ie1])
     assert mf.features == (a1, a2, ie1, ie2)
     assert mf.indirect_effects.features == (ie1, ie2)
@@ -755,8 +755,8 @@ def test_eq():
                 DirectEffect.create('SIGMOID'),
                 EffectComp.create('STEP'),
                 EffectComp.create('EMAX'),
-                IndirectEffect.create('LINEAR', 'PRODUCTION'),
-                IndirectEffect.create('LINEAR', 'DEGRADATION'),
+                IndirectEffect.create('LINEAR', production=True),
+                IndirectEffect.create('LINEAR', production=False),
             ],
             'DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION]);EFFECTCOMP([EMAX,STEP])',
         ),

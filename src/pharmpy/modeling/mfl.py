@@ -288,7 +288,7 @@ def _get_peripherals_func(feature: Peripherals):
 def _get_pd_func(feature: Union[DirectEffect, IndirectEffect, EffectComp]):
     kwargs = {'expr': feature.type.lower()}
     if isinstance(feature, IndirectEffect):
-        kwargs['prod'] = True if feature.production_type == 'PRODUCTION' else False
+        kwargs['prod'] = feature.production
     assert type(feature) in FUNC_MAPPING.keys()
     func = partial(FUNC_MAPPING[type(feature)], **kwargs)
     return [func]

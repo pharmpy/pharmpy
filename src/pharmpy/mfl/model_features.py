@@ -106,8 +106,8 @@ class ModelFeatures(Immutable):
         types = ['LINEAR', 'EMAX', 'SIGMOID']
         direct_effects = [DirectEffect.create(type=type) for type in types]
         indirect_effects = [
-            IndirectEffect.create(type=type, production_type=production_type)
-            for type, production_type in itertools.product(types, ['PRODUCTION', 'DEGRADATION'])
+            IndirectEffect.create(type=type, production=production)
+            for type, production in itertools.product(types, [True, False])
         ]
         effect_compartments = [EffectComp.create(type=type) for type in types]
         features = direct_effects + indirect_effects + effect_compartments

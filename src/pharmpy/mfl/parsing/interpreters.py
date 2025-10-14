@@ -24,7 +24,7 @@ from ..features.covariate import FP_TYPES as COV_FP_TYPES
 from ..features.direct_effect import DIRECT_EFFECT_TYPES
 from ..features.effect_compartment import EFFECT_COMP_TYPES
 from ..features.elimination import ELIMINATION_TYPES
-from ..features.indirect_effect import INDIRECT_EFFECT_TYPES, PRODUCTION_TYPES
+from ..features.indirect_effect import INDIRECT_EFFECT_TYPES
 from ..features.metabolite import METABOLITE_TYPES
 from ..features.peripherals import PERIPHERAL_TYPES
 from ..features.variability import FP_TYPES as VAR_FP_TYPES
@@ -249,12 +249,10 @@ class IndirectEffectInterpreter(MFLInterpreter):
         children = self.visit_children(tree)
         assert len(children) == 2
         types = self.expand(children[0], INDIRECT_EFFECT_TYPES)
-        production_types = self.expand(children[1], PRODUCTION_TYPES)
+        production_types = self.expand(children[1], [True, False])
         indirect_effects = []
-        for type, production_type in itertools.product(types, production_types):
-            indirect_effects.append(
-                IndirectEffect.create(type=type, production_type=production_type)
-            )
+        for type, production in itertools.product(types, production_types):
+            indirect_effects.append(IndirectEffect.create(type=type, production=production))
         return sorted(indirect_effects)
 
     def pdtype_modes(self, tree):
@@ -263,7 +261,7 @@ class IndirectEffectInterpreter(MFLInterpreter):
 
     def production_modes(self, tree):
         children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+        return list(True if child.value.upper() == 'PRODUCTION' else False for child in children)
 
 
 class EffectCompInterpreter(MFLInterpreter):

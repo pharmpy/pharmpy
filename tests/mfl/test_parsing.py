@@ -162,31 +162,31 @@ from pharmpy.mfl.parsing import parse
             DirectEffect,
             [('LINEAR',), ('EMAX',), ('SIGMOID',), ('STEP',), ('LOGLIN',)],
         ),
-        ('INDIRECTEFFECT(LINEAR,PRODUCTION)', IndirectEffect, [('LINEAR', 'PRODUCTION')]),
+        ('INDIRECTEFFECT(LINEAR,PRODUCTION)', IndirectEffect, [('LINEAR', True)]),
         (
             'INDIRECTEFFECT(LINEAR,[PRODUCTION,DEGRADATION])',
             IndirectEffect,
-            [('LINEAR', 'DEGRADATION'), ('LINEAR', 'PRODUCTION')],
+            [('LINEAR', False), ('LINEAR', True)],
         ),
         (
             'INDIRECTEFFECT(LINEAR,*)',
             IndirectEffect,
-            [('LINEAR', 'DEGRADATION'), ('LINEAR', 'PRODUCTION')],
+            [('LINEAR', False), ('LINEAR', True)],
         ),
         (
             'INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],PRODUCTION)',
             IndirectEffect,
-            [('LINEAR', 'PRODUCTION'), ('EMAX', 'PRODUCTION'), ('SIGMOID', 'PRODUCTION')],
+            [('LINEAR', True), ('EMAX', True), ('SIGMOID', True)],
         ),
         (
             'INDIRECTEFFECT(*,PRODUCTION)',
             IndirectEffect,
-            [('LINEAR', 'PRODUCTION'), ('EMAX', 'PRODUCTION'), ('SIGMOID', 'PRODUCTION')],
+            [('LINEAR', True), ('EMAX', True), ('SIGMOID', True)],
         ),
         (
             'INDIRECTEFFECT(LINEAR,PRODUCTION);INDIRECTEFFECT(LINEAR,DEGRADATION)',
             IndirectEffect,
-            [('LINEAR', 'PRODUCTION'), ('LINEAR', 'DEGRADATION')],
+            [('LINEAR', True), ('LINEAR', False)],
         ),
         ('EFFECTCOMP([LINEAR,SIGMOID,STEP])', EffectComp, [('LINEAR',), ('SIGMOID',), ('STEP',)]),
         (
