@@ -164,12 +164,12 @@ def create_step_workflow(
     start_task = Task(f'start_{wf_algorithm.name}', _start_algorithm, base_model_entry)
     wb.add_task(start_task)
 
-    if base_model_entry.modelfit_results is None:
+    if wf_algorithm.name == 'bu_stepwise_no_of_etas':
+        base_model_task = []
+    elif base_model_entry.modelfit_results is None:
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
         base_model_task = [wf_fit.output_tasks[0]]
-    elif wf_algorithm.name == 'bu_stepwise_no_of_etas':
-        base_model_task = []
     else:
         base_model_task = [start_task]
 
