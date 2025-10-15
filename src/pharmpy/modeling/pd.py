@@ -459,7 +459,9 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
 
 
 def add_placebo_model(
-    model: Model, expr: Literal['linear', 'exp'], operator: Literal['*', '+', 'prop'] = '*'
+    model: Model,
+    expr: Literal['linear', 'exp', 'hyperbolic'],
+    operator: Literal['*', '+', 'prop'] = '*',
 ):
     r"""Add a placebo or disease progression effect to a model.
 
@@ -467,11 +469,15 @@ def add_placebo_model(
 
     * linear
 
-        .. math:: E = B + \text{slope} \cdot \text{TIME}
+        .. math:: R = B + \text{slope} \cdot \text{TIME}
 
     * exp
 
-        .. math:: E = B \cdot e^{\frac{-TIME}{TD}}
+        .. math:: R = B \cdot e^{\frac{-t}{t_D}}
+
+    * hyperbolic
+
+        .. math:: R = B \cdot \frac{t_{50}}{t + t_{50}}
 
     :math:`B` is the baseline effect
 
@@ -534,6 +540,11 @@ def add_placebo_model(
         model = add_individual_parameter(model, td.name)
         passign_expr = (-idv / td).exp()
         rassign_expr = old_rassign.expression * P
+    elif expr == 'hyperbolic':
+        t50 = create_symbol(model, "T50")
+        model = add_individual_parameter(model, t50.name)
+        passign_expr = t50 / (idv + t50)
+        rassign_expr = operate(old_rassign.expression, P, operator)
     else:
         raise ValueError(f"Unknown placebo model {expr}")
 

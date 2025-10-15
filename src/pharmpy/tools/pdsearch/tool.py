@@ -61,7 +61,13 @@ def start_pdsearch(context, dataset):
 
 
 def run_placebo_models(context, baseme):
-    exprs = (("linear", "*"), ("linear", "+"), ("exp", "*"))
+    exprs = (
+        ("linear", "*"),
+        ("linear", "+"),
+        ("exp", "*"),
+        ("hyperbolic", "*"),
+        ("hyperbolic", "+"),
+    )
     wb = WorkflowBuilder()
     for expr, op in exprs:
         create_task = Task(f'create_placebo_{expr}_{op}', create_placebo_model, expr, op, baseme)
