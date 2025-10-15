@@ -196,7 +196,7 @@ def test_find_central_comp(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     'expr,Pexpr,Rexpr',
     [
-        ("linear", S("SLOPE") * S("TIME"), S('B') + S('PDP')),
+        ("linear", S("SLOPE") * S("TIME"), S('B') * S('PDP')),
         ("exp", (-S('TIME') / S('TD')).exp(), S('B') * S('PDP')),
     ],
 )

@@ -61,10 +61,10 @@ def start_pdsearch(context, dataset):
 
 
 def run_placebo_models(context, baseme):
-    exprs = ("linear", "exp")
+    exprs = (("linear", "*"), ("linear", "+"), ("exp", "*"))
     wb = WorkflowBuilder()
-    for expr in exprs:
-        create_task = Task(f'create_placebo_{expr}', create_placebo_model, expr, baseme)
+    for expr, op in exprs:
+        create_task = Task(f'create_placebo_{expr}_{op}', create_placebo_model, expr, op, baseme)
         wb.add_task(create_task)
         fit_wf = create_fit_workflow(n=1)
         wb.insert_workflow(fit_wf, [create_task])
@@ -79,11 +79,18 @@ def run_placebo_models(context, baseme):
     return mes
 
 
-def create_placebo_model(expr, baseme):
+def create_placebo_model(expr, op, baseme):
     base_model = baseme.model
-    model = add_placebo_model(base_model, expr)
-    model = set_name(model, f"placebo_{expr}")
-    model = set_description(model, f"PLACEBO {expr.upper()}")
+    model = add_placebo_model(base_model, expr, op)
+    if op == '*':
+        txtop = 'mult'
+    elif op == '+':
+        txtop = 'add'
+    else:
+        txtop = op
+
+    model = set_name(model, f"placebo_{expr}_{txtop}")
+    model = set_description(model, f"PLACEBO {expr.upper()} {txtop}")
     if expr == 'linear':
         model = add_iiv(model, 'SLOPE', 'prop')
     me = ModelEntry.create(model=model, parent=base_model)

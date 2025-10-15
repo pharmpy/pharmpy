@@ -458,7 +458,9 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
     return model
 
 
-def add_placebo_model(model: Model, expr: Literal['linear', 'exp']):
+def add_placebo_model(
+    model: Model, expr: Literal['linear', 'exp'], operator: Literal['*', '+', 'prop'] = '*'
+):
     r"""Add a placebo or disease progression effect to a model.
 
     .. warning:: This function is under development.
@@ -479,6 +481,8 @@ def add_placebo_model(model: Model, expr: Literal['linear', 'exp']):
         Pharmpy model
     expr : str
         Name of placebo/disease progression effect function.
+    operator : str
+        Operator to use for combining the baseline with the placebo/disease progression
 
     Return
     ------
@@ -508,12 +512,24 @@ def add_placebo_model(model: Model, expr: Literal['linear', 'exp']):
     idv = Expr.symbol(model.datainfo.idv_column.name)
     old_rassign = model.statements.get_assignment("R")
 
+    def operate(lhs, rhs, operator):
+        if operator == '*':
+            return lhs * rhs
+        elif operator == '+':
+            return lhs + rhs
+        elif operator == 'prop':
+            return lhs * (1 + rhs)
+        else:
+            raise ValueError(f"Unknown operator {operator}")
+
     if expr == 'linear':
         slope = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, slope.name, lower=-float("inf"))
         passign_expr = slope * idv
-        rassign_expr = old_rassign.expression + P
+        rassign_expr = operate(old_rassign.expression, P, operator)
     elif expr == 'exp':
+        if operator != '*':
+            raise ValueError('Only * is supported for exp')
         td = create_symbol(model, "TD")
         model = add_individual_parameter(model, td.name)
         passign_expr = (-idv / td).exp()
