@@ -1,4 +1,4 @@
-from lark import Lark
+from lark import Lark, UnexpectedToken
 
 from .grammar import grammar
 from .interpreters import DefinitionInterpreter, MFLInterpreter
@@ -17,7 +17,10 @@ def parse(code: str):
         cache=True,
     )
 
-    tree = parser.parse(code)
+    try:
+        tree = parser.parse(code)
+    except UnexpectedToken as e:
+        raise ValueError(f'Error in parsing: token {e.token} at line {e.line} col {e.column}')
 
     definitions = find_definitions(tree)
     features = MFLInterpreter(definitions).interpret(tree)

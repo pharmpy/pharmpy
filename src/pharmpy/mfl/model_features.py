@@ -4,8 +4,6 @@ import itertools
 from collections import defaultdict
 from typing import Iterable, Iterator, Sequence, Type, TypeVar, Union
 
-from lark import UnexpectedInput
-
 from pharmpy.internals.immutable import Immutable
 from pharmpy.mfl.features.mutex_feature import MutexFeature
 
@@ -38,10 +36,7 @@ class ModelFeatures(Immutable):
     @classmethod
     def create(cls, features: Iterable[ModelFeature] | str) -> ModelFeatures:
         if isinstance(features, str):
-            try:
-                features = parse(features)
-            except UnexpectedInput:
-                raise ValueError(f'Could not parse string `features`: got {features}')
+            features = parse(features)
         if not isinstance(features, Iterable):
             raise TypeError(f'Type of `feature` must be an iterable: got {type(features)}')
         other_types = {str(type(f)) for f in features if not isinstance(f, ModelFeature)}

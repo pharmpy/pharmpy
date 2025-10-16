@@ -31,65 +31,26 @@ _feature: absorption | elimination | peripherals | transits | lagtime
             | covariate | allometry | direct_effect | effect_comp | indirect_effect
             | metabolite | iiv | iov
 
-absorption: "ABSORPTION"i "(" (_absorption_option) ")"
-elimination: "ELIMINATION"i "(" (_elimination_option) ")"
-peripherals: "PERIPHERALS"i "(" (_counts) ["," _peripheral_comp] ")"
-transits: "TRANSITS"i "(" (n | (_counts ["," _depot_option])) ")"
-lagtime: "LAGTIME"i "(" (_lagtime_option) ")"
-covariate: "COVARIATE"i [optional] "(" parameter_option "," covariate_option "," (_fp_options) ["," op_option] ")"
+absorption: "ABSORPTION"i "(" (_values_or_wildcard) ")"
+elimination: "ELIMINATION"i "(" (_values_or_wildcard) ")"
+peripherals: "PERIPHERALS"i "(" (_counts) ["," _values_or_wildcard] ")"
+transits: "TRANSITS"i "(" (n | (_counts ["," _values_or_wildcard])) ")"
+lagtime: "LAGTIME"i "(" (_values_or_wildcard) ")"
+covariate: "COVARIATE"i [optional] "(" _values_or_ref_or_wildcard "," _values_or_ref_or_wildcard "," (_values_or_wildcard) ["," op_option] ")"  # noqa: E501
 allometry: "ALLOMETRY"i "(" value ["," decimal] ")"
-iiv: "IIV"i [optional] "(" parameter_option "," (_fp_var_options) ")"
-iov: "IOV"i [optional] "(" parameter_option "," (_fp_var_options) ")"
+iiv: "IIV"i [optional] "(" _values_or_ref_or_wildcard "," (_values_or_wildcard) ")"
+iov: "IOV"i [optional] "(" _values_or_ref_or_wildcard "," (_values_or_wildcard) ")"
 
-direct_effect: "DIRECTEFFECT"i "(" (_pdtype_option) ")"
-effect_comp: "EFFECTCOMP"i "(" (_pdtype_option) ")"
-indirect_effect: "INDIRECTEFFECT"i "(" _pdtype_option "," _production_option ")"
+direct_effect: "DIRECTEFFECT"i "(" (_values_or_wildcard) ")"
+effect_comp: "EFFECTCOMP"i "(" (_values_or_wildcard) ")"
+indirect_effect: "INDIRECTEFFECT"i "(" _values_or_wildcard "," _values_or_wildcard ")"
 
-metabolite: "METABOLITE"i "(" (_metabolite_option) ")"
+metabolite: "METABOLITE"i "(" (_values_or_wildcard) ")"
 
-_pdtype_option: pdtype_modes | wildcard
-pdtype_modes: PDTYPE_MODE | "[" [PDTYPE_MODE ("," PDTYPE_MODE)*] "]"
-PDTYPE_MODE: "linear"i | "Emax"i | "sigmoid"i | "step"i | "loglin"i
+_values_or_wildcard: values | wildcard
+_values_or_ref_or_wildcard: values | ref | wildcard
 
-_production_option: production_modes | wildcard
-production_modes: PRODUCTION_MODE | "[" [PRODUCTION_MODE ("," PRODUCTION_MODE)*] "]"
-PRODUCTION_MODE: "production"i | "degradation"i
-
-_metabolite_option: metabolite_modes | wildcard
-metabolite_modes: METABOLITE_MODE | "[" [METABOLITE_MODE ("," METABOLITE_MODE)*] "]"
-METABOLITE_MODE: "basic"i | "psc"i
-
-_absorption_option: absorption_modes | wildcard
-absorption_modes: ABSORPTION_MODE | "[" [ABSORPTION_MODE ("," ABSORPTION_MODE)*] "]"
-ABSORPTION_MODE: "FO"i | "ZO"i | "SEQ-ZO-FO"i | "INST"i | "WEIBULL"i
-
-_elimination_option: elimination_modes | wildcard
-elimination_modes: ELIMINATION_MODE | "[" [ELIMINATION_MODE ("," ELIMINATION_MODE)*] "]"
-ELIMINATION_MODE: "FO"i | "ZO"i | "MM"i | "MIX-FO-MM"i
-
-_depot_option: depot_modes | wildcard
-depot_modes: DEPOT_MODE | "[" [DEPOT_MODE ("," DEPOT_MODE)*] "]"
-DEPOT_MODE: "DEPOT"i |"NODEPOT"i
-
-_peripheral_comp: peripheral_modes | wildcard
-peripheral_modes: PERIPHERAL_MODE | "[" [PERIPHERAL_MODE ("," PERIPHERAL_MODE)*] "]"
-PERIPHERAL_MODE: "DRUG"i | "MET"i
-
-_lagtime_option: lagtime_modes | wildcard
-lagtime_modes: LAGTIME_MODE | "[" [LAGTIME_MODE ("," LAGTIME_MODE)*] "]"
-LAGTIME_MODE: "ON"i | "OFF"i
-
-parameter_option: values | ref | wildcard
-covariate_option: values | ref | wildcard
-_fp_options: fp_option | wildcard
 !op_option: "+" | "*"
-
-fp_option: FP_OP  | "[" [FP_OP ("," FP_OP)*] "]"
-FP_OP: "LIN"i | "CAT"i | "CAT2"i | "PIECE_LIN"i | "EXP"i | "POW"i | "CUSTOM"i
-
-_fp_var_options: fp_var_option | wildcard
-fp_var_option: FP_VAR_OP  | "[" [FP_VAR_OP ("," FP_VAR_OP)*] "]"
-FP_VAR_OP: "EXP"i | "ADD"i | "PROP"i | "LOG"i | "RE_LOG"i
 
 ref: "@" VARIABLE_NAME
 optional: OPTIONAL

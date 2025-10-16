@@ -1,3 +1,5 @@
+import re
+
 import pytest
 
 from pharmpy.mfl.features import (
@@ -145,6 +147,7 @@ from pharmpy.mfl.parsing import parse
         ('LAGTIME ( ON )', LagTime, [(True,)]),
         ('LAGTIME(OFF)', LagTime, [(False,)]),
         ('LAGTIME([ON, OFF])', LagTime, [(False,), (True,)]),
+        ('LAGTIME(*)', LagTime, [(False,), (True,)]),
         ('ELIMINATION(FO)', Elimination, [('FO',)]),
         ('ELIMINATION( *)', Elimination, [('FO',), ('ZO',), ('MM',), ('MIX-FO-MM',)]),
         ('ELIMINATION([ZO,FO])', Elimination, [('FO',), ('ZO',)]),
@@ -536,3 +539,32 @@ def test_parse_multiple_types(source, no_of_features):
     assert len(features) == no_of_features
     types = {type(feature) for feature in features}
     assert len(types) > 1
+
+
+@pytest.mark.parametrize(
+    'source, error_type, match',
+    (
+        ('ABSORPTION(X)', ValueError, "Invalid values in ABSORPTION: ['X']"),
+        ('ABSORPTION([X,Y])', ValueError, "Invalid values in ABSORPTION: ['X', 'Y']"),
+        ('PERIPHERALS(X)', ValueError, "Error in parsing: token X at line 1 col 13"),
+        ('PERIPHERALS(1,X)', ValueError, "Invalid values in PERIPHERALS: ['X']"),
+        ('TRANSITS(X)', ValueError, "Error in parsing: token X at line 1 col 10"),
+        ('TRANSITS(1,X)', ValueError, "Invalid values in TRANSITS: ['X']"),
+        ('LAGTIME(X)', ValueError, "Invalid values in LAGTIME: ['X']"),
+        ('ELIMINATION(X)', ValueError, "Invalid values in ELIMINATION: ['X']"),
+        ('DIRECTEFFECT(X)', ValueError, "Invalid values in DIRECTEFFECT: ['X']"),
+        ('INDIRECTEFFECT(X,PRODUCTION)', ValueError, "Invalid values in INDIRECTEFFECT: ['X']"),
+        ('INDIRECTEFFECT(EMAX,X)', ValueError, "Invalid values in INDIRECTEFFECT: ['X']"),
+        ('EFFECTCOMP(X)', ValueError, "Invalid values in EFFECTCOMP: ['X']"),
+        ('METABOLITE(X)', ValueError, "Invalid values in METABOLITE: ['X']"),
+        ('ALLOMETRY(WT,X)', ValueError, "Error in parsing: token X at line 1 col 14"),
+        ('COVARIATE(CL,WT,X,*)', ValueError, "Invalid values in COVARIATE: ['X']"),
+        ('IIV(CL,X)', ValueError, "Invalid values in IIV: ['X']"),
+        ('IOV(CL,X)', ValueError, "Invalid values in IOV: ['X']"),
+        ('X', ValueError, "Error in parsing: token X at line 1 col 1"),
+    ),
+    ids=repr,
+)
+def test_parse_raises(source, error_type, match):
+    with pytest.raises(error_type, match=re.escape(match)):
+        parse(source)

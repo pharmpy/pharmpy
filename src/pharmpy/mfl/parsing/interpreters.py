@@ -1,5 +1,5 @@
 import itertools
-from typing import Iterable, TypeVar, overload
+from typing import Union
 
 from lark.visitors import Interpreter
 
@@ -28,33 +28,17 @@ from ..features.indirect_effect import INDIRECT_EFFECT_TYPES
 from ..features.metabolite import METABOLITE_TYPES
 from ..features.variability import FP_TYPES as VAR_FP_TYPES
 
-T = TypeVar('T')
-
 
 class MFLInterpreter(Interpreter):
     def __init__(self, definitions=None):
-        self.definitions = definitions
+        self.definitions = definitions if definitions is not None else dict()
         super().__init__()
 
-    @overload
-    def expand(self, arg: list[T], expand_to: None) -> list[T]: ...
-
-    @overload
-    def expand(self, arg: list[T], expand_to: Ref) -> list[Ref]: ...
-
-    @overload
-    def expand(self, arg: list[T], expand_to: Iterable[T]) -> list[T]: ...
-
-    def expand(self, arg, expand_to=None):
-        if isinstance(arg[0], Ref) and self.definitions is not None:
-            values = self.definitions.get(arg[0].name)
-            if values:
-                return values
-        if arg[0] == '*' and expand_to is not None:
-            if isinstance(expand_to, Ref):
-                return [expand_to]
-            return list(expand_to)
-        return arg
+    def expand_ref(self, arg):
+        values = self.definitions.get(arg.name)
+        if values:
+            return values
+        return [arg]
 
     def interpret(self, tree):
         return self.visit_children(tree)
@@ -101,14 +85,15 @@ class MFLInterpreter(Interpreter):
     def iov(self, tree):
         return IOVInterpreter(self.definitions).interpret(tree)
 
-    def option(self, tree):
+    def value(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        child = children[0]
-        return child if isinstance(child, list) else [child]
+        value = children[0].value
+        assert isinstance(value, str)
+        return value.upper()
 
     def wildcard(self, tree):
-        return '*'
+        return ['*']
 
     def optional(self, tree):
         children = self.visit_children(tree)
@@ -129,13 +114,13 @@ class AbsorptionInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = self.expand(children[0], ABSORPTION_TYPES)
+        types = children[0]
+        validate_values(types, ABSORPTION_TYPES, 'ABSORPTION')
         absorptions = [Absorption.create(type=type) for type in types]
         return sorted(absorptions)
 
-    def absorption_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+    def wildcard(self, tree) -> list[str]:
+        return sorted(ABSORPTION_TYPES)
 
 
 class CountInterpreter(MFLInterpreter):
@@ -169,16 +154,19 @@ class PeripheralsInterpreter(CountInterpreter):
         if len(children) == 1:
             peripherals = [Peripherals.create(number=n) for n in numbers]
             return sorted(peripherals)
-        types = self.expand(children[1], [True, False])
+
+        types = children[1]
+        validate_values(types, ['MET', 'DRUG'], 'PERIPHERALS')
+
         peripherals = []
-        for number, metabolite in itertools.product(numbers, types):
+        for number, type in itertools.product(numbers, types):
+            metabolite = True if type.upper() == 'MET' else False
             p = Peripherals.create(number=number, metabolite=metabolite)
             peripherals.append(p)
         return sorted(peripherals)
 
-    def peripheral_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(True if child.value.upper() == 'MET' else False for child in children)
+    def wildcard(self, tree) -> list[str]:
+        return ['MET', 'DRUG']
 
 
 class TransitsInterpreter(CountInterpreter):
@@ -189,104 +177,121 @@ class TransitsInterpreter(CountInterpreter):
         if len(children) == 1:
             transits = [Transits.create(number=n) for n in numbers]
             return sorted(transits)
-        depot_settings = self.expand(children[1], [True, False])
+
+        depot_settings = children[1]
+        validate_values(depot_settings, ['DEPOT', 'NODEPOT'], 'TRANSITS')
+
         transits = []
-        for number, with_depot in itertools.product(numbers, depot_settings):
-            t = Transits.create(number=number, depot=with_depot)
+        for number, depot in itertools.product(numbers, depot_settings):
+            depot = True if depot.upper() == 'DEPOT' else False
+            t = Transits.create(number=number, depot=depot)
             transits.append(t)
         return sorted(transits)
 
-    def depot_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(True if child.value.upper() == 'DEPOT' else False for child in children)
-
-    def n(self, tree):
+    def n(self, tree) -> str:
         return 'N'
+
+    def wildcard(self, tree) -> list[str]:
+        return ['DEPOT', 'NODEPOT']
 
 
 class LagTimeInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        on_off = self.expand(children[0], [True, False])
+
+        validate_values(children[0], ['ON', 'OFF'], 'LAGTIME')
+        on_off = [True if val.upper() == 'ON' else False for val in children[0]]
+
         lagtimes = [LagTime.create(on=type) for type in on_off]
         return sorted(lagtimes)
 
-    def lagtime_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(True if child.value.upper() == 'ON' else False for child in children)
+    def wildcard(self, tree) -> list[str]:
+        return ['ON', 'OFF']
 
 
 class EliminationInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = self.expand(children[0], ELIMINATION_TYPES)
+        types = children[0]
+        validate_values(types, ELIMINATION_TYPES, 'ELIMINATION')
         eliminations = [Elimination.create(type=type) for type in types]
         return sorted(eliminations)
 
-    def elimination_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+    def wildcard(self, tree) -> list[str]:
+        return sorted(ELIMINATION_TYPES)
 
 
 class DirectEffectInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = self.expand(children[0], DIRECT_EFFECT_TYPES)
+        types = children[0]
+        validate_values(types, DIRECT_EFFECT_TYPES, 'DIRECTEFFECT')
         direct_effects = [DirectEffect.create(type=type) for type in types]
         return sorted(direct_effects)
 
-    def pdtype_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+    def wildcard(self, tree) -> list[str]:
+        return sorted(DIRECT_EFFECT_TYPES)
 
 
 class IndirectEffectInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 2
-        types = self.expand(children[0], INDIRECT_EFFECT_TYPES)
-        production_types = self.expand(children[1], [True, False])
+
+        types = self.expand_indirect(children[0])
+        validate_values(types, INDIRECT_EFFECT_TYPES, 'INDIRECTEFFECT')
+
+        production_types = self.expand_production(children[1])
+        validate_values(production_types, ['PRODUCTION', 'DEGRADATION'], 'INDIRECTEFFECT')
+
         indirect_effects = []
-        for type, production in itertools.product(types, production_types):
+        for type, production_type in itertools.product(types, production_types):
+            production = True if production_type.upper() == 'PRODUCTION' else False
             indirect_effects.append(IndirectEffect.create(type=type, production=production))
         return sorted(indirect_effects)
 
-    def pdtype_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+    @staticmethod
+    def expand_indirect(arg: list[str]) -> list[str]:
+        if arg == ['*']:
+            return sorted(INDIRECT_EFFECT_TYPES)
+        else:
+            return arg
 
-    def production_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(True if child.value.upper() == 'PRODUCTION' else False for child in children)
+    @staticmethod
+    def expand_production(arg: list[str]) -> list[str]:
+        if arg == ['*']:
+            return ['PRODUCTION', 'DEGRADATION']
+        else:
+            return arg
 
 
 class EffectCompInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = self.expand(children[0], EFFECT_COMP_TYPES)
+        types = children[0]
+        validate_values(types, EFFECT_COMP_TYPES, 'EFFECTCOMP')
         effects_comps = [EffectComp.create(type=type) for type in types]
         return sorted(effects_comps)
 
-    def pdtype_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+    def wildcard(self, tree) -> list[str]:
+        return sorted(EFFECT_COMP_TYPES)
 
 
 class MetaboliteInterpreter(MFLInterpreter):
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
-        types = self.expand(children[0], METABOLITE_TYPES)
+        types = children[0]
+        validate_values(types, METABOLITE_TYPES, 'METABOLITE')
         metabolites = [Metabolite.create(type=type) for type in types]
         return sorted(metabolites)
 
-    def metabolite_modes(self, tree):
-        children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+    def wildcard(self, tree) -> list[str]:
+        return sorted(METABOLITE_TYPES)
 
 
 class AllometryInterpreter(Interpreter):
@@ -298,10 +303,10 @@ class AllometryInterpreter(Interpreter):
             kwargs['reference'] = children[1]
         return [Allometry.create(**kwargs)]
 
-    def value(self, tree):
+    def value(self, tree) -> str:
         return tree.children[0].value
 
-    def decimal(self, tree):
+    def decimal(self, tree) -> Union[float, int]:
         return float(tree.children[0].value)
 
 
@@ -316,9 +321,10 @@ class CovariateInterpreter(MFLInterpreter):
         assert len(children) == 5
 
         is_optional = children[0]
-        params = self.expand(children[1], expand_to=Ref('pop_params'))
-        covs = self.expand(children[2], expand_to=Ref('covariates'))
-        fps = self.expand(children[3], COV_FP_TYPES)
+        params = self.expand(children[1], wildcard=[Ref('pop_params')])
+        covs = self.expand(children[2], wildcard=[Ref('covariates')])
+        fps = self.expand(children[3], wildcard=sorted(COV_FP_TYPES))
+        validate_values(fps, COV_FP_TYPES, 'COVARIATE')
         ops = children[4]
 
         effects = []
@@ -330,16 +336,6 @@ class CovariateInterpreter(MFLInterpreter):
 
         return sorted(effects)
 
-    def parameter_option(self, tree):
-        return self.option(tree)
-
-    def covariate_option(self, tree):
-        return self.option(tree)
-
-    def fp_option(self, tree):
-        children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
-
     def op_option(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 1
@@ -347,21 +343,41 @@ class CovariateInterpreter(MFLInterpreter):
         assert isinstance(value, str)
         return value
 
-    def value(self, tree):
-        children = self.visit_children(tree)
-        assert len(children) == 1
-        value = children[0].value
-        assert isinstance(value, str)
-        return value.upper()
+    def expand(self, arg, wildcard):
+        if arg == ['*']:
+            return wildcard
+        elif isinstance(arg, Ref):
+            return self.expand_ref(arg)
+        return arg
 
 
 class VariabilityInterpreter(MFLInterpreter):
-    def parameter_option(self, tree):
-        return self.option(tree)
-
-    def fp_var_option(self, tree):
+    def interpret(self, tree):
         children = self.visit_children(tree)
-        return list(child.value.upper() for child in children)
+        assert 2 <= len(children) <= 3
+        if not isinstance(children[0], bool):
+            children.insert(0, False)
+        assert len(children) == 3
+
+        is_optional = children[0]
+        params = self.expand(children[1], wildcard=[Ref('pop_params')])
+        fps = self.expand(children[2], wildcard=sorted(VAR_FP_TYPES))
+
+        if isinstance(self, IIVInterpreter):
+            type = 'IIV'
+            func = IIV.create
+        else:
+            type = 'IOV'
+            func = IOV.create
+
+        validate_values(fps, VAR_FP_TYPES, type)
+
+        effects = []
+        for param, fp in itertools.product(params, fps):
+            effect = func(parameter=param, fp=fp, optional=is_optional)
+            effects.append(effect)
+
+        return sorted(effects)
 
     def value(self, tree):
         children = self.visit_children(tree)
@@ -370,45 +386,20 @@ class VariabilityInterpreter(MFLInterpreter):
         assert isinstance(value, str)
         return value.upper()
 
+    def expand(self, arg, wildcard):
+        if arg == ['*']:
+            return wildcard
+        elif isinstance(arg, Ref):
+            return self.expand_ref(arg)
+        return arg
+
 
 class IIVInterpreter(VariabilityInterpreter):
-    def interpret(self, tree):
-        children = self.visit_children(tree)
-        assert 2 <= len(children) <= 3
-        if not isinstance(children[0], bool):
-            children.insert(0, False)
-        assert len(children) == 3
-
-        is_optional = children[0]
-        params = self.expand(children[1], expand_to=Ref('pop_params'))
-        fps = self.expand(children[2], VAR_FP_TYPES)
-
-        effects = []
-        for param, fp in itertools.product(params, fps):
-            effect = IIV.create(parameter=param, fp=fp, optional=is_optional)
-            effects.append(effect)
-
-        return sorted(effects)
+    pass
 
 
 class IOVInterpreter(VariabilityInterpreter):
-    def interpret(self, tree):
-        children = self.visit_children(tree)
-        assert 2 <= len(children) <= 3
-        if not isinstance(children[0], bool):
-            children.insert(0, False)
-        assert len(children) == 3
-
-        is_optional = children[0]
-        params = self.expand(children[1], expand_to=Ref('pop_params'))
-        fps = self.expand(children[2], VAR_FP_TYPES)
-
-        effects = []
-        for param, fp in itertools.product(params, fps):
-            effect = IOV.create(parameter=param, fp=fp, optional=is_optional)
-            effects.append(effect)
-
-        return sorted(effects)
+    pass
 
 
 class DefinitionInterpreter(Interpreter):
@@ -426,3 +417,12 @@ class DefinitionInterpreter(Interpreter):
         value = children[0].value
         assert isinstance(value, str)
         return value.upper()
+
+
+def validate_values(values, allowed_values, feature_name=''):
+    allowed_values = list(allowed_values)
+    not_valid = {val for val in values if val not in allowed_values}
+    if not_valid:
+        raise ValueError(
+            f'Invalid values in {feature_name}: {sorted(not_valid)} (must be one of {allowed_values})'
+        )
