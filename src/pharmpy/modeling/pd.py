@@ -187,7 +187,7 @@ def _add_baseline_effect(model: Model):
 
 def _add_drug_effect(model: Model, expr: str, conc):
     if expr == "linear":
-        s = Expr.symbol("SLOPE")
+        s = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
         E = Assignment(Expr.symbol('E'), s * conc)
     elif expr == "emax":
