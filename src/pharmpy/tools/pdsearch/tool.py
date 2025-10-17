@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Union
+from typing import Literal, Optional, Union
 
 from pharmpy.modeling import (
     add_iiv,
@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     set_proportional_error_model,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 from .results import calculate_results
@@ -17,6 +18,8 @@ from .results import calculate_results
 
 def create_workflow(
     dataset: Union[Path, str],
+    strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """
     Build a PD model
@@ -41,7 +44,9 @@ def create_workflow(
     wb.insert_workflow(fitbase, predecessors=[start_task])
     base_output = wb.output_tasks
 
-    placebo_task = Task('run_placebo_models', run_placebo_models)
+    placebo_task = Task(
+        'run_placebo_models', run_placebo_models, strictness, parameter_uncertainty_method
+    )
     wb.add_task(placebo_task, predecessors=base_output)
 
     postprocess_task = Task('postprocess', postprocess)
@@ -60,7 +65,7 @@ def start_pdsearch(context, dataset):
     return me
 
 
-def run_placebo_models(context, baseme):
+def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme):
     exprs = (
         ("linear", "*"),
         ("linear", "+"),
@@ -82,7 +87,19 @@ def run_placebo_models(context, baseme):
     wb.add_task(gather_task, predecessors=wb.output_tasks)
 
     mes = context.call_workflow(Workflow(wb), "fit-placebo")
-    return mes
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=[me.model for me in mes] + [baseme.model],
+        results=[me.modelfit_results for me in mes] + [baseme.modelfit_results],
+        ref_model=baseme.model,
+        rank_type='bic_mixed',
+        strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        exclude_reference_model=True,
+    )
+
+    return rank_res
 
 
 def create_placebo_model(expr, op, baseme):
