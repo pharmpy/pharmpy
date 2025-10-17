@@ -8,6 +8,7 @@ New features
 * Add :code:`modeling.insert_ebes_into_dataset`
 * Add :code:`modeling.add_placebo_model`
 * Add :code:`modeling.binarize_dataset`
+* Add option :code:`exclude_reference_model` to the ModelRank tool
 
 Changes
 =======
