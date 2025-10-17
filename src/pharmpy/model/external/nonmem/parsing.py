@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import Optional
+from typing import Iterable, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -834,7 +834,7 @@ def parse_dataset(
     di: DataInfo,
     control_stream: NMTranControlStream,
     raw: bool = False,
-    parse_columns: tuple[str, ...] = (),
+    parse_columns: Optional[Iterable[str]] = None,
 ):
     data_records = control_stream.get_records('DATA')
     if not data_records:
