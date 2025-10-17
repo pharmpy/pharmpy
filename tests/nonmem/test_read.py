@@ -275,3 +275,29 @@ def test_nonmem_dataset_with_interleaved_numeric_accept_filter():
             colnames=colnames,
             accept=['ID.GT.1', 'DV.NEN.9', 'ID.GT.2'],
         )
+
+
+def test_nonmem_dataset_with_interleaved_numeric_ignore_filter_and_final_string_filter():
+    colnames = ['ID', 'DV']
+
+    with pytest.raises(DatasetError):
+        # NOTE: This does not work because DV.GE.9 is before ID.EQ.2 which
+        # would exclude the character data in DV.
+        read_nonmem_dataset(
+            StringIO("1,2\n1,3\n2,4\n2,a\n7,9"),
+            colnames=colnames,
+            ignore=['ID.LE.1', 'DV.GE.9', 'ID.EQ.2'],
+        )
+
+
+def test_nonmem_dataset_with_interleaved_numeric_accept_filter_and_final_string_filter():
+    colnames = ['ID', 'DV']
+
+    with pytest.raises(DatasetError):
+        # NOTE: This does not work because DV.LT.9 is before ID.NE.2 which
+        # would exclude the character data in DV.
+        read_nonmem_dataset(
+            StringIO("1,2\n1,3\n2,4\n2,a\n7,9"),
+            colnames=colnames,
+            accept=['ID.GT.1', 'DV.LT.9', 'ID.NE.2'],
+        )
