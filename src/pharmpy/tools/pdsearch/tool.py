@@ -28,6 +28,11 @@ def create_workflow(
     ----------
     dataset : Union[Path, str]
         A PD dataset
+    strictness : str
+        Strictness criteria
+    parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
+        Parameter uncertainty method. Will be used in ranking models if strictness includes
+        parameter uncertainty
 
     Returns
     -------
