@@ -201,3 +201,77 @@ def test_nonmem_dataset_with_ignore_accept_case_6():
     assert len(df) == 2
     assert list(df.iloc[0]) == [1, 2]
     assert list(df.iloc[1]) == [1, 3]
+
+
+def test_nonmem_dataset_with_numeric_ignore_filter_excluding_character_data():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a\n7,9"), colnames=colnames, ignore=['ID.EQN.2', 'DV.EQN.2']
+    )
+    # NOTE: This works because ID.EQN.2 excludes the row that contains character data in DV.
+    assert len(df) == 2
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [1, 3]
+    assert list(df.iloc[1]) == [7, 9]
+
+
+def test_nonmem_dataset_with_numeric_accept_filter_excluding_character_data():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a\n7,9"), colnames=colnames, accept=['ID.NEN.2', 'DV.NEN.2']
+    )
+    # NOTE: This works because ID.NEN.2 excludes the row that contains character data in DV.
+    assert len(df) == 2
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [1, 3]
+    assert list(df.iloc[1]) == [7, 9]
+
+
+def test_nonmem_dataset_with_interleaved_string_ignore_filter():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a\n7,9"),
+        colnames=colnames,
+        ignore=['ID.LE.1', 'DV.EQ.9', 'ID.LE.2'],
+    )
+    # NOTE: This works because DV.EQ.9 does not require conversion of the DV column.
+    assert len(df) == 0
+    assert list(df.columns) == colnames
+
+
+def test_nonmem_dataset_with_interleaved_string_accept_filter():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a\n7,9"),
+        colnames=colnames,
+        accept=['ID.GT.1', 'DV.NE.9', 'ID.GT.2'],
+    )
+    # NOTE: This works because DV.NE.9 does not require conversion of the DV column.
+    assert len(df) == 0
+    assert list(df.columns) == colnames
+
+
+def test_nonmem_dataset_with_interleaved_numeric_ignore_filter():
+    colnames = ['ID', 'DV']
+
+    with pytest.raises(DatasetError):
+        # NOTE: This does not work because DV.EQN.9 is before ID.LE.2 which
+        # would exclude the character data in DV.
+        read_nonmem_dataset(
+            StringIO("1,2\n1,3\n2,4\n2,a\n7,9"),
+            colnames=colnames,
+            ignore=['ID.LE.1', 'DV.EQN.9', 'ID.LE.2'],
+        )
+
+
+def test_nonmem_dataset_with_interleaved_numeric_accept_filter():
+    colnames = ['ID', 'DV']
+
+    with pytest.raises(DatasetError):
+        # NOTE: This does not work because DV.NEN.9 is before ID.GT.2 which
+        # would exclude the character data in DV.
+        read_nonmem_dataset(
+            StringIO("1,2\n1,3\n2,4\n2,a\n7,9"),
+            colnames=colnames,
+            accept=['ID.GT.1', 'DV.NEN.9', 'ID.GT.2'],
+        )
