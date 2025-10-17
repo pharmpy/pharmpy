@@ -10,9 +10,9 @@ from pharmpy.model import DatasetError, DatasetWarning
 
 from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 from .nmtran_filter import (
-    Filter,
     filter_column,
     filter_dataset,
+    filter_update_in_place,
     operator_type,
     parse_filter_statements,
 )
@@ -95,18 +95,6 @@ def _idcol(df: pd.DataFrame):
     return next(filter(df.columns.__contains__, ("ID", "L1")), None)
 
 
-def _filters_original(filters: Iterable[Filter]):
-    for f in filters:
-        if operator_type(f.operator) is str:
-            yield f
-
-
-def _filters_parsed(filters: Iterable[Filter]):
-    for f in filters:
-        if operator_type(f.operator) is not str:
-            yield f
-
-
 def read_nonmem_dataset(
     path_or_io,
     raw=False,
@@ -186,21 +174,19 @@ def read_nonmem_dataset(
     original = df
     parsed = original.copy()
     _parsed_for_filters = set()
-    if filters:
+
+    for filter in filters:
         negate = statements is ignore
+        df = original if operator_type(filter.operator) is str else parsed
 
-        filters_original = list(_filters_original(filters))
-        if filters_original:
-            filter_dataset(original, parsed, filters_original, negate)
+        if df is parsed:
+            if (column := filter_column(filter)) not in _parsed_for_filters:
+                parsed[[column]] = convert(parsed[[column]], str(null_value), missing_data_token)
+                _parsed_for_filters.add(column)
 
-        filters_parsed = list(_filters_parsed(filters))
-        if filters_parsed:
-            _parsed_for_filters = set(map(filter_column, filters_parsed))
-            if _parsed_for_filters:
-                _cols = list(_parsed_for_filters)
-                parsed[_cols] = convert(parsed[_cols], str(null_value), missing_data_token)
-
-            filter_dataset(original, parsed, filters_parsed, negate)
+        res = filter_dataset(df, [filter], negate)
+        filter_update_in_place(original, res)
+        filter_update_in_place(parsed, res)
 
     _parse_columns = (
         set(parse_columns)
