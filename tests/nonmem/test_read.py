@@ -41,19 +41,19 @@ def test_read_nonmem_dataset(testdata):
 def test_data_io_alpha(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
     with NMTRANDataIO(path, SEP_INPUT, '@') as data_io:
-        assert data_io.read(7) == b'1\t0.\t25'
+        assert data_io.read(7) == b'1,0.,25'
 
 
 def test_data_io_i(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
     with NMTRANDataIO(path, SEP_INPUT, 'I') as data_io:
-        assert data_io.read(13) == b'1\t0.\t25.0\t1.4'
+        assert data_io.read(13) == b'1,0.,25.0,1.4'
 
 
 def test_data_io_q(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
     with NMTRANDataIO(path, SEP_INPUT, 'Q') as data_io:
-        assert data_io.read(5) == b'ID\tTI'
+        assert data_io.read(5) == b'ID,TI'
 
 
 @pytest.mark.parametrize(

@@ -14,7 +14,7 @@ SEP_INPUT = re.compile(r"[,\t] *|  *(?:(?=[^,\t ])|, *)")
 SEP_OUTPUT = re.compile(r"[ \t]+")
 
 PAD = " "
-SEP = "\t"
+SEP = ","
 
 
 def _ignore(ignore_character: str) -> re.Pattern[str]:
@@ -25,6 +25,8 @@ def _ignore(ignore_character: str) -> re.Pattern[str]:
 
 
 def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Pattern[str]):
+    assert SEP == ','
+
     for line in stream:
         if ignore.match(line) or _ignore_heading.match(line):
             continue
@@ -46,7 +48,11 @@ def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Patter
                 "allowed by NM-TRAN without the BLANKOK option"
             )
 
-        yield SEP.join(sep.split(_line)) + '\n'
+        if ' ' in _line or '\t' in _line:
+            yield SEP.join(sep.split(_line)) + '\n'
+        else:
+            # NOTE: ~6x speedup for large CSVish files.
+            yield _line + '\n'
 
         try:
             line = next(stream)
