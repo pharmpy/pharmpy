@@ -14,7 +14,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
-from .results import calculate_results
+from .results import PDSearchResults
 
 
 def create_workflow(
@@ -156,11 +156,7 @@ def run_drug_effect_models(context, strictness, parameter_uncertainty_method, ba
     if final_model is None:
         context.abort_workflow("No drug effect model selected")
 
-    final_me = ModelEntry.create(
-        model=rank_res.final_model, modelfit_results=rank_res.final_results
-    )
-
-    return final_me
+    return rank_res
 
 
 def create_placebo_model(expr, op, baseme):
@@ -190,8 +186,12 @@ def create_drug_effect_model(expr, baseme):
     return me
 
 
-def postprocess(context, *mes):
-    res = calculate_results()
+def postprocess(context, rank_res):
+    res = PDSearchResults(
+        summary_tool=rank_res.summary_tool,
+        final_model=rank_res.final_model,
+        final_model_results=rank_res.final_results,
+    )
 
     context.log_info("Finishing pdsearch")
     return res
