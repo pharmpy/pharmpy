@@ -11,7 +11,6 @@ _ignore_alpha = re.compile(r"[ \t]*[A-Za-z#@]")
 _ignore_heading = re.compile(r"TABLE[ \t]NO[.][ \t]")
 
 SEP_INPUT = re.compile(r"[,\t] *|  *(?:(?=[^,\t ])|, *)")
-SEP_OUTPUT = re.compile(r"[ \t]+")
 
 PAD = " "
 SEP = ","
@@ -48,8 +47,11 @@ def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Patter
                 "allowed by NM-TRAN without the BLANKOK option"
             )
 
-        if ' ' in _line or '\t' in _line:
+        if ' ' in _line:
             yield SEP.join(sep.split(_line)) + '\n'
+        elif '\t' in line:
+            # NOTE: ~6x speedup for large TSVish files.
+            yield _line.replace('\t', SEP) + '\n'
         else:
             # NOTE: ~6x speedup for large CSVish files.
             yield _line + '\n'
