@@ -301,3 +301,30 @@ def test_nonmem_dataset_with_interleaved_numeric_accept_filter_and_final_string_
             colnames=colnames,
             accept=['ID.GT.1', 'DV.LT.9', 'ID.NE.2'],
         )
+
+
+def test_nonmem_dataset_with_blocks():
+    colnames = ['ID', 'DV']
+
+    df = read_nonmem_dataset(
+        StringIO(
+            """0 a
+               1 b
+               2 c
+               3 d
+               4 e
+               5 987
+               6 -123
+               7 h
+               8 i
+               9 j
+              10 k
+              11 l"""
+        ),
+        colnames=colnames,
+        accept=['DV.NE."e"', 'DV.NE.h', 'ID.GE.4', 'ID.LE.7', 'DV.LT.0'],
+    )
+
+    assert len(df) == 1
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == [6, -123]
