@@ -326,7 +326,7 @@ def rank_models_with_uncertainty(
     while mes_to_run:
         me = mes_to_run.pop(0)
         strictness_fulfilled = me_predicates[me]['strictness_fulfilled']
-        if np.isnan(me_rank_values[me]):
+        if np.isnan(me_rank_values[me]['rank_val']):
             continue
         elif strictness_fulfilled is True:
             context.log_info('Parameter uncertainty was not evaluated for the selected model')
