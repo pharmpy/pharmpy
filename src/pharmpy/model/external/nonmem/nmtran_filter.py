@@ -171,28 +171,7 @@ def disjunction(expressions: Iterable[str]):
     return " | ".join(expressions)
 
 
-def mask_in_place(df: pd.DataFrame, mask: pd.Series):
-    # NOTE: This is copied directly from `pd.Dataframe#query`
-    # which we cannot use directly because we want to be able
-    # to inspect the resulting mask.
-    # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/frame.py#L4836-L4845  # noqa: E501
-    view = df.loc[mask]
-    # NOTE: Using `pd.NDFrame#_update_inplace` directly is much faster than
-    # df.drop(index=df.loc[~mask].index, inplace=True)
-    # NOTE: This is mainly due to the fact that `pd.NDFrame#drop` calls
-    # _drop_axis on top of _update_inplace
-    # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/generic.py#L4808-L4814  # noqa: E501
-    df._update_inplace(view)
-
-
-def drop_in_place(df: pd.DataFrame, mask: pd.Series):
-    # NOTE: Using `pd.NDFrame#_update_inplace` directly is much faster than
-    # df.drop(index=df.loc[mask].index, inplace=True)
-    view = df.loc[~mask]
-    df._update_inplace(view)
-
-
-def query(
+def mask_in_place(
     df: pd.DataFrame,
     filters: Iterable[Filter],
     _map: Callable[[str], str],
@@ -203,25 +182,21 @@ def query(
 
     expr = _reduce(expressions)
 
-    return cast(
-        pd.Series,
-        df.eval(
-            expr,
-            parser="pandas",  # NOTE: Default, but it is better to be explicit.
-            engine="numexpr",  # NOTE: This is not guaranteed, but it is better to be explicit.
-            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L341-L358  # noqa: E501
-            local_dict={},  # NOTE: We do not allow access to locals.
-            # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L172  # noqa: E501
-            global_dict={},  # NOTE: We do not allow access to globals.
-            # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L177  # noqa: E501
-            # NOTE: Some default "globals" are included anyway.
-            # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L91-L100  # noqa: E501
-            target=None,  # NOTE: We do not allow assigning to df.
-            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L376  # noqa: E501
-            inplace=False,  # NOTE: Default, but it is better to be explicit.
-            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L420-L421  # noqa: E501
-            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L377  # noqa: E501
-        ),
+    df.query(
+        expr,
+        parser="pandas",  # NOTE: Default, but it is better to be explicit.
+        engine="numexpr",  # NOTE: This is not guaranteed, but it is better to be explicit.
+        # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L341-L358  # noqa: E501
+        local_dict={},  # NOTE: We do not allow access to locals.
+        # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L172  # noqa: E501
+        global_dict={},  # NOTE: We do not allow access to globals.
+        # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L177  # noqa: E501
+        # NOTE: Some default "globals" are included anyway.
+        # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L91-L100  # noqa: E501
+        target=None,  # NOTE: We do not allow assigning to df. Default, but it is better to be explicit.
+        # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/frame.py#L4833  # noqa: E501
+        inplace=True,  # NOTE: We update the input dataframe in place.
+        # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/frame.py#L4843-L4845  # noqa: E501
     )
 
 

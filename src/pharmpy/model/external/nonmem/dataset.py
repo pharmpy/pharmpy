@@ -17,7 +17,6 @@ from .nmtran_filter import (
     negation,
     numeric,
     parse_filter_statements,
-    query,
 )
 
 
@@ -192,10 +191,9 @@ def read_nonmem_dataset(
                 tmp[list(map(character, block.convert))], str(null_value), missing_data_token
             )
 
-        mask = query(
+        mask_in_place(
             tmp, block.filters, negation if statements is ignore else lambda x: x, conjunction
         )
-        mask_in_place(tmp, mask)
 
     convert_todo = (
         set(parse_columns)
