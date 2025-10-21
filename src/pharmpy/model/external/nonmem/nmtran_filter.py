@@ -153,4 +153,23 @@ def filter_dataset(
 
     expr = _conjunction(expressions)
 
-    return cast(pd.Series, df.eval(expr))
+    return cast(
+        pd.Series,
+        df.eval(
+            expr,
+            parser="pandas",  # NOTE: Default, but it is better to be explicit.
+            engine="numexpr",  # NOTE: This is not guaranteed, but it is better to be explicit.
+            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L341-L358  # noqa: E501
+            local_dict={},  # NOTE: We do not allow access to locals.
+            # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L172  # noqa: E501
+            global_dict={},  # NOTE: We do not allow access to globals.
+            # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L177  # noqa: E501
+            # NOTE: Some default "globals" are included anyway.
+            # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L91-L100  # noqa: E501
+            target=None,  # NOTE: We do not allow assigning to df.
+            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L376  # noqa: E501
+            inplace=False,  # NOTE: Default, but it is better to be explicit.
+            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L420-L421  # noqa: E501
+            # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L377  # noqa: E501
+        ),
+    )
