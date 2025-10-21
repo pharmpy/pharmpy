@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable, Iterable, Literal, Type, Union, cast
+from typing import Callable, Iterable, Literal, Union, cast
 
 from lark import Lark, Token
 
@@ -202,7 +202,6 @@ def mask_in_place(
 
 @dataclass(frozen=True)
 class Block:
-    operator_type: Type[str] | Type[float]
     filters: list[Filter]
     convert: list[str]
 
@@ -217,15 +216,14 @@ def filter_schedule(filters: Iterable[Filter]):
     _parsed_for_filters = set()
 
     def _flush():
-        yield Block(operator_type=_operator_type, filters=_filters, convert=_convert)
+        yield Block(filters=_filters, convert=_convert)
 
     while True:
         # NOTE: Initialize block.
-        _operator_type = operator_type(filter.operator)
         _filters = [filter]
         _column = filter_column(filter)
         _convert = []
-        if _operator_type is not str and _column not in _parsed_for_filters:
+        if operator_type(filter.operator) is not str and _column not in _parsed_for_filters:
             # NOTE: Only the first filter in a numeric block can introduce a new parsed columns.
             _convert.append(_column)
             _parsed_for_filters.add(_column)
@@ -239,8 +237,8 @@ def filter_schedule(filters: Iterable[Filter]):
                 return
 
             if (
-                operator_type(filter.operator) is not _operator_type
-                or filter_column(filter) not in _parsed_for_filters
+                operator_type(filter.operator) is not str
+                and filter_column(filter) not in _parsed_for_filters
             ):
                 yield from _flush()
                 break
