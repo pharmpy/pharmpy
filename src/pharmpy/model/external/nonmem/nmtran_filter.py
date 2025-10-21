@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterable, Literal, Union, cast
+from typing import Iterable, Literal, Type, Union, cast
 
 from lark import Lark, Token
 
@@ -173,3 +173,51 @@ def filter_dataset(
             # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/computation/eval.py#L377  # noqa: E501
         ),
     )
+
+
+@dataclass(frozen=True)
+class Block:
+    operator_type: Type[str] | Type[float]
+    filters: list[Filter]
+    convert: list[str]
+
+
+def filter_schedule(filters: Iterable[Filter]):
+    it = iter(filters)
+    try:
+        filter = next(it)
+    except StopIteration:
+        return
+
+    _parsed_for_filters = set()
+
+    def _flush():
+        yield Block(operator_type=_operator_type, filters=_filters, convert=_convert)
+
+    while True:
+        # NOTE: Initialize block.
+        _operator_type = operator_type(filter.operator)
+        _filters = [filter]
+        _column = filter_column(filter)
+        _convert = []
+        if _operator_type is not str and _column not in _parsed_for_filters:
+            # NOTE: Only the first filter in a numeric block can introduce a new parsed columns.
+            _convert.append(_column)
+            _parsed_for_filters.add(_column)
+
+        # NOTE: Extend block.
+        while True:
+            try:
+                filter = next(it)
+            except StopIteration:
+                yield from _flush()
+                return
+
+            if (
+                operator_type(filter.operator) is not _operator_type
+                or filter_column(filter) not in _parsed_for_filters
+            ):
+                yield from _flush()
+                break
+
+            _filters.append(filter)

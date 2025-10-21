@@ -1,8 +1,7 @@
 # Read dataset from file
 import re
 import warnings
-from dataclasses import dataclass
-from typing import Iterable, Type
+from typing import Iterable
 
 from pharmpy import conf
 from pharmpy.deps import numpy as np
@@ -11,11 +10,9 @@ from pharmpy.model import DatasetError, DatasetWarning
 
 from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 from .nmtran_filter import (
-    Filter,
-    filter_column,
     filter_dataset,
+    filter_schedule,
     filter_update_in_place,
-    operator_type,
     parse_filter_statements,
 )
 
@@ -103,54 +100,6 @@ def _idcol(df: pd.DataFrame):
         return None
 
 
-@dataclass(frozen=True)
-class Block:
-    operator_type: Type[str] | Type[float]
-    filters: list[Filter]
-    convert: list[str]
-
-
-def _schedule(filters: Iterable[Filter]):
-    it = iter(filters)
-    try:
-        filter = next(it)
-    except StopIteration:
-        return
-
-    _parsed_for_filters = set()
-
-    def _flush():
-        yield Block(operator_type=_operator_type, filters=_filters, convert=_convert)
-
-    while True:
-        # NOTE: Initialize block.
-        _operator_type = operator_type(filter.operator)
-        _filters = [filter]
-        _column = filter_column(filter)
-        _convert = []
-        if _operator_type is not str and _column not in _parsed_for_filters:
-            # NOTE: Only the first filter in a numeric block can introduce a new parsed columns.
-            _convert.append(_column)
-            _parsed_for_filters.add(_column)
-
-        # NOTE: Extend block.
-        while True:
-            try:
-                filter = next(it)
-            except StopIteration:
-                yield from _flush()
-                return
-
-            if (
-                operator_type(filter.operator) is not _operator_type
-                or filter_column(filter) not in _parsed_for_filters
-            ):
-                yield from _flush()
-                break
-
-            _filters.append(filter)
-
-
 def read_nonmem_dataset(
     path_or_io,
     raw=False,
@@ -231,7 +180,7 @@ def read_nonmem_dataset(
     parsed = None
     _parsed_for_filters = set()
 
-    for block in _schedule(filters):
+    for block in filter_schedule(filters):
         negate = statements is ignore
 
         if block.operator_type is str:
