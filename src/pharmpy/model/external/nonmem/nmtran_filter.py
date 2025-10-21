@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Iterable, Literal, Type, Union, cast
+from typing import Callable, Iterable, Literal, Type, Union, cast
 
 from lark import Lark, Token
 
@@ -128,30 +128,49 @@ def _filter_to_expr(filter: Filter):
         return f"({filter.column} {_operator} {filter.expr})"
 
 
-def _negation(expression: str):
+def negation(expression: str):
     return "not" + expression
 
 
-def _conjunction(expressions: Iterable[str]):
+def conjunction(expressions: Iterable[str]):
     return " & ".join(expressions)
 
 
-def filter_update_in_place(df: pd.DataFrame, res: pd.Series):
-    view = df.loc[res]
+def disjunction(expressions: Iterable[str]):
+    return " | ".join(expressions)
+
+
+def mask_in_place(df: pd.DataFrame, mask: pd.Series):
+    # NOTE: This is copied directly from `pd.Dataframe#query`
+    # which we cannot use directly because we want to be able
+    # to inspect the resulting mask.
+    # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/frame.py#L4836-L4845  # noqa: E501
+    view = df.loc[mask]
+    # NOTE: Using `pd.NDFrame#_update_inplace` directly is much faster than
+    # df.drop(index=df.loc[~mask].index, inplace=True)
+    # NOTE: This is mainly due to the fact that `pd.NDFrame#drop` calls
+    # _drop_axis on top of _update_inplace
+    # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/generic.py#L4808-L4814  # noqa: E501
     df._update_inplace(view)
 
 
-def filter_dataset(
+def drop_in_place(df: pd.DataFrame, mask: pd.Series):
+    # NOTE: Using `pd.NDFrame#_update_inplace` directly is much faster than
+    # df.drop(index=df.loc[mask].index, inplace=True)
+    view = df.loc[~mask]
+    df._update_inplace(view)
+
+
+def query(
     df: pd.DataFrame,
     filters: Iterable[Filter],
-    negate: bool,
+    _map: Callable[[str], str],
+    _reduce: Callable[[Iterable[str]], str],
 ):
     expressions = map(_filter_to_expr, filters)
+    expressions = map(_map, expressions)
 
-    if negate:
-        expressions = map(_negation, expressions)
-
-    expr = _conjunction(expressions)
+    expr = _reduce(expressions)
 
     return cast(
         pd.Series,

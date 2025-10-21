@@ -10,10 +10,12 @@ from pharmpy.model import DatasetError, DatasetWarning
 
 from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 from .nmtran_filter import (
-    filter_dataset,
+    conjunction,
     filter_schedule,
-    filter_update_in_place,
+    mask_in_place,
+    negation,
     parse_filter_statements,
+    query,
 )
 
 
@@ -181,8 +183,6 @@ def read_nonmem_dataset(
     _parsed_for_filters = set()
 
     for block in filter_schedule(filters):
-        negate = statements is ignore
-
         if block.operator_type is str:
             df = original
         else:
@@ -197,10 +197,12 @@ def read_nonmem_dataset(
             )
             _parsed_for_filters.update(block.convert)
 
-        res = filter_dataset(df, block.filters, negate)
-        filter_update_in_place(original, res)
+        mask = query(
+            df, block.filters, negation if statements is ignore else lambda x: x, conjunction
+        )
+        mask_in_place(original, mask)
         if parsed is not None:
-            filter_update_in_place(parsed, res)
+            mask_in_place(parsed, mask)
 
     _parse_columns = (
         set(parse_columns)
