@@ -183,43 +183,44 @@ def read_nonmem_dataset(
     columns = df.columns
     df.columns = list(map(character, columns))
     tmp = df
-    _parsed_for_filters = set()
+    blocks = list(filter_schedule(filters))
 
-    for block in filter_schedule(filters):
+    for block in blocks:
 
         if block.convert:
             tmp[list(map(numeric, block.convert))] = convert(
                 tmp[list(map(character, block.convert))], str(null_value), missing_data_token
             )
-            _parsed_for_filters.update(block.convert)
 
         mask = query(
             tmp, block.filters, negation if statements is ignore else lambda x: x, conjunction
         )
         mask_in_place(tmp, mask)
 
-    _parse_columns = (
+    convert_todo = (
         set(parse_columns)
         if parse_columns is not None
         else (set() if raw else set(col for col, dropped in zip(columns, drop) if not dropped))
     )
 
     if not raw:
-        _parse_columns.difference_update(("TIME", "DATE", "DAT1", "DAT2", "DAT3"))
+        convert_todo.difference_update(("TIME", "DATE", "DAT1", "DAT2", "DAT3"))
 
-    _parsed_done = _parsed_for_filters.intersection(_parse_columns)
-    _init = [numeric(column) if column in _parsed_done else character(column) for column in columns]
+    convert_done = set().union(*(block.convert for block in blocks)).intersection(convert_todo)
+    convert_init = [
+        numeric(column) if column in convert_done else character(column) for column in columns
+    ]
 
-    df = cast(pd.DataFrame, tmp[_init].copy())
+    df = cast(pd.DataFrame, tmp[convert_init].copy())
     del tmp
     df.columns = columns
 
-    _parsed_remaining = list(_parse_columns.difference(_parsed_done))
-    if _parsed_remaining:
-        df[_parsed_remaining] = convert(df[_parsed_remaining], str(null_value), missing_data_token)
+    convert_remaining = list(convert_todo.difference(convert_done))
+    if convert_remaining:
+        df[convert_remaining] = convert(df[convert_remaining], str(null_value), missing_data_token)
 
     if idcol is not None:
-        _make_ids_unique(idcol, df, _parse_columns)
+        _make_ids_unique(idcol, df, convert_todo)
 
         if not raw and all(df[idcol].astype('int32') == df[idcol]):
             df[idcol] = df[idcol].astype('int32')
