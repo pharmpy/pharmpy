@@ -1,7 +1,8 @@
 # Read dataset from file
 import re
 import warnings
-from typing import Iterable
+from dataclasses import dataclass
+from typing import Iterable, Type
 
 from pharmpy import conf
 from pharmpy.deps import numpy as np
@@ -10,6 +11,7 @@ from pharmpy.model import DatasetError, DatasetWarning
 
 from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 from .nmtran_filter import (
+    Filter,
     filter_column,
     filter_dataset,
     filter_update_in_place,
@@ -101,6 +103,54 @@ def _idcol(df: pd.DataFrame):
         return None
 
 
+@dataclass(frozen=True)
+class Block:
+    operator_type: Type[str] | Type[float]
+    filters: list[Filter]
+    convert: list[str]
+
+
+def _schedule(filters: Iterable[Filter]):
+    it = iter(filters)
+    try:
+        filter = next(it)
+    except StopIteration:
+        return
+
+    _parsed_for_filters = set()
+
+    def _flush():
+        yield Block(operator_type=_operator_type, filters=_filters, convert=_convert)
+
+    while True:
+        # NOTE: Initialize block.
+        _operator_type = operator_type(filter.operator)
+        _filters = [filter]
+        _column = filter_column(filter)
+        _convert = []
+        if _operator_type is not str and _column not in _parsed_for_filters:
+            # NOTE: Only the first filter in a numeric block can introduce a new parsed columns.
+            _convert.append(_column)
+            _parsed_for_filters.add(_column)
+
+        # NOTE: Extend block.
+        while True:
+            try:
+                filter = next(it)
+            except StopIteration:
+                yield from _flush()
+                return
+
+            if (
+                operator_type(filter.operator) is not _operator_type
+                or filter_column(filter) not in _parsed_for_filters
+            ):
+                yield from _flush()
+                break
+
+            _filters.append(filter)
+
+
 def read_nonmem_dataset(
     path_or_io,
     raw=False,
@@ -181,15 +231,17 @@ def read_nonmem_dataset(
     parsed = original.copy()
     _parsed_for_filters = set()
 
-    for filter in filters:
+    for block in _schedule(filters):
         negate = statements is ignore
-        df = original if operator_type(filter.operator) is str else parsed
+        df = original if block.operator_type is str else parsed
 
-        if df is parsed and (column := filter_column(filter)) not in _parsed_for_filters:
-            parsed[[column]] = convert(parsed[[column]], str(null_value), missing_data_token)
-            _parsed_for_filters.add(column)
+        if block.convert:
+            parsed[block.convert] = convert(
+                parsed[block.convert], str(null_value), missing_data_token
+            )
+            _parsed_for_filters.update(block.convert)
 
-        res = filter_dataset(df, [filter], negate)
+        res = filter_dataset(df, block.filters, negate)
         filter_update_in_place(original, res)
         filter_update_in_place(parsed, res)
 
