@@ -228,14 +228,21 @@ def read_nonmem_dataset(
         filters = list(parse_filter_statements(statements))
 
     original = df
-    parsed = original.copy()
+    parsed = None
     _parsed_for_filters = set()
 
     for block in _schedule(filters):
         negate = statements is ignore
-        df = original if block.operator_type is str else parsed
+
+        if block.operator_type is str:
+            df = original
+        else:
+            if parsed is None:
+                parsed = original.copy()
+            df = parsed
 
         if block.convert:
+            assert parsed is not None
             parsed[block.convert] = convert(
                 parsed[block.convert], str(null_value), missing_data_token
             )
@@ -243,7 +250,8 @@ def read_nonmem_dataset(
 
         res = filter_dataset(df, block.filters, negate)
         filter_update_in_place(original, res)
-        filter_update_in_place(parsed, res)
+        if parsed is not None:
+            filter_update_in_place(parsed, res)
 
     _parse_columns = (
         set(parse_columns)
@@ -256,6 +264,8 @@ def read_nonmem_dataset(
 
     _parsed_remaining = list(_parse_columns.difference(_parsed_for_filters))
     if _parsed_remaining:
+        if parsed is None:
+            parsed = original.copy()
         parsed[_parsed_remaining] = convert(
             parsed[_parsed_remaining], str(null_value), missing_data_token
         )
@@ -263,11 +273,15 @@ def read_nonmem_dataset(
     _unparse = _parsed_for_filters.difference(_parse_columns)
 
     if _unparse:
+        assert parsed is not None
         _cols = list(_unparse)
         parsed[_cols] = original[_cols]
 
-    del original
-    df = parsed
+    if parsed is None:
+        df = original
+    else:
+        del original
+        df = parsed
 
     if idcol is not None:
         _make_ids_unique(idcol, df, _parse_columns)
