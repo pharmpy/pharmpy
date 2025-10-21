@@ -92,7 +92,13 @@ def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
 
 
 def _idcol(df: pd.DataFrame):
-    return next(filter(df.columns.__contains__, ("ID", "L1")), None)
+    columns = df.columns
+    if 'ID' in columns:
+        return 'ID'
+    elif 'L1' in columns:
+        return 'L1'
+    else:
+        return None
 
 
 def read_nonmem_dataset(
