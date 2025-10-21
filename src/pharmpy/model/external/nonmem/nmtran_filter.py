@@ -118,14 +118,45 @@ def parse_filter_statements(statements: Iterable[str]):
         yield _parse_filter_statement(p, s)
 
 
+def character(column: str):
+    return '@' + column
+
+
+def numeric(column: str):
+    return '%' + column
+
+
+def _escape(column: str):
+    # TODO: Handle more cases.
+    # SEE: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.query.html#pandas.DataFrame.query  # noqa: 501
+    if '`' in column:
+        raise NotImplementedError(f'Cannot handle backtick (`) in column name: {column}')
+    if '#' in column:
+        raise NotImplementedError(f'Cannot handle sharp (#) in column name: {column}')
+    if column.count('"') % 2 != 0:
+        raise NotImplementedError(
+            f'Cannot handle odd number of double quotes (") in column name: {column}'
+        )
+    if column.count("'") % 2 != 0:
+        raise NotImplementedError(
+            f"Cannot handle odd number of single quotes (') in column name: {column}"
+        )
+
+    return '`' + column + '`'
+
+
+def _quote_string(value: str):
+    return '"' + value.replace('"', '\\"') + '"'
+
+
 def _filter_to_expr(filter: Filter):
     _operator_type = operator_type(filter.operator)
     _operator = operator_symbol(filter.operator)
 
     if _operator_type is str:
-        return f'({filter.column} {_operator} "{filter.expr}")'
+        return f'({_escape(character(filter.column))} {_operator} {_quote_string(filter.expr)})'
     else:
-        return f"({filter.column} {_operator} {filter.expr})"
+        return f"({_escape(numeric(filter.column))} {_operator} {filter.expr})"
 
 
 def negation(expression: str):

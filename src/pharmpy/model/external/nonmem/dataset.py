@@ -1,7 +1,7 @@
 # Read dataset from file
 import re
 import warnings
-from typing import Iterable
+from typing import Iterable, cast
 
 from pharmpy import conf
 from pharmpy.deps import numpy as np
@@ -10,10 +10,12 @@ from pharmpy.model import DatasetError, DatasetWarning
 
 from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 from .nmtran_filter import (
+    character,
     conjunction,
     filter_schedule,
     mask_in_place,
     negation,
+    numeric,
     parse_filter_statements,
     query,
 )
@@ -178,61 +180,43 @@ def read_nonmem_dataset(
     else:
         filters = list(parse_filter_statements(statements))
 
-    original = df
-    parsed = None
+    columns = df.columns
+    df.columns = list(map(character, columns))
+    tmp = df
     _parsed_for_filters = set()
 
     for block in filter_schedule(filters):
-        if block.operator_type is str:
-            df = original
-        else:
-            if parsed is None:
-                parsed = original.copy()
-            df = parsed
 
         if block.convert:
-            assert parsed is not None
-            parsed[block.convert] = convert(
-                parsed[block.convert], str(null_value), missing_data_token
+            tmp[list(map(numeric, block.convert))] = convert(
+                tmp[list(map(character, block.convert))], str(null_value), missing_data_token
             )
             _parsed_for_filters.update(block.convert)
 
         mask = query(
-            df, block.filters, negation if statements is ignore else lambda x: x, conjunction
+            tmp, block.filters, negation if statements is ignore else lambda x: x, conjunction
         )
-        mask_in_place(original, mask)
-        if parsed is not None:
-            mask_in_place(parsed, mask)
+        mask_in_place(tmp, mask)
 
     _parse_columns = (
         set(parse_columns)
         if parse_columns is not None
-        else (set() if raw else set(col for col, dropped in zip(df.columns, drop) if not dropped))
+        else (set() if raw else set(col for col, dropped in zip(columns, drop) if not dropped))
     )
 
     if not raw:
         _parse_columns.difference_update(("TIME", "DATE", "DAT1", "DAT2", "DAT3"))
 
-    _parsed_remaining = list(_parse_columns.difference(_parsed_for_filters))
+    _parsed_done = _parsed_for_filters.intersection(_parse_columns)
+    _init = [numeric(column) if column in _parsed_done else character(column) for column in columns]
+
+    df = cast(pd.DataFrame, tmp[_init].copy())
+    del tmp
+    df.columns = columns
+
+    _parsed_remaining = list(_parse_columns.difference(_parsed_done))
     if _parsed_remaining:
-        if parsed is None:
-            parsed = original.copy()
-        parsed[_parsed_remaining] = convert(
-            parsed[_parsed_remaining], str(null_value), missing_data_token
-        )
-
-    _unparse = _parsed_for_filters.difference(_parse_columns)
-
-    if _unparse:
-        assert parsed is not None
-        _cols = list(_unparse)
-        parsed[_cols] = original[_cols]
-
-    if parsed is None:
-        df = original
-    else:
-        del original
-        df = parsed
+        df[_parsed_remaining] = convert(df[_parsed_remaining], str(null_value), missing_data_token)
 
     if idcol is not None:
         _make_ids_unique(idcol, df, _parse_columns)
