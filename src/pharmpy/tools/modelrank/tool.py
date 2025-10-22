@@ -485,7 +485,7 @@ def validate_input(
             df = len(ref_model.parameters.nonfixed) - len(model.parameters.nonfixed)
             if df == 0:
                 raise ValueError(
-                    'Cannot perform LRT: at least one model candidate has 0'
+                    'Cannot perform LRT: at least one model candidate has 0 '
                     'degrees of freedom compared to reference model'
                 )
 
