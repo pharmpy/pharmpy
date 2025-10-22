@@ -703,10 +703,10 @@ def add_population_parameter(
     POP_CL   0.004693   0.0     ∞  False
     POP_VC   1.009160   0.0     ∞  False
     COVAPGR  0.100000 -0.99     ∞  False
+    POP_KA   2.000000    -∞     ∞  False
     IIV_CL   0.030963   0.0     ∞  False
     IIV_VC   0.031128   0.0     ∞  False
     SIGMA    0.013086   0.0     ∞  False
-    POP_KA   2.000000    -∞     ∞  False
     """
 
     param = Parameter.create(name, init, lower=lower, upper=upper, fix=fix)

@@ -52,6 +52,7 @@ def create_workflow(
     search_space: Optional[Union[str, ModelFeatures]] = None,
     E: Optional[Union[float, str, tuple[float | str, float | str]]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    exclude_reference_model: bool = False,
 ):
     """Run ModelRank tool.
 
@@ -79,6 +80,8 @@ def create_workflow(
     parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method. Will be used in ranking models if strictness includes
         parameter uncertainty
+    exclude_reference_model : bool
+        Should it be possible to select the reference model? Default is True.
 
     Returns
     -------
@@ -99,6 +102,7 @@ def create_workflow(
         search_space,
         E,
         parameter_uncertainty_method,
+        exclude_reference_model,
     )
     wb.add_task(start_task)
     task_results = Task('results', _results)
@@ -118,6 +122,7 @@ def start(
     search_space: Optional[str],
     E: Union[float, tuple[float]],
     parameter_uncertainty_method: Optional[str],
+    exclude_reference_model: bool = False,
 ):
     context.log_info("Starting tool modelrank")
 
@@ -140,6 +145,7 @@ def start(
             search_space,
             E,
             parameter_uncertainty_method,
+            exclude_reference_model,
         )
     else:
         rank_task = Task(
@@ -152,6 +158,7 @@ def start(
             alpha,
             search_space,
             E,
+            exclude_reference_model,
         )
     wb.add_task(rank_task)
 
@@ -190,13 +197,21 @@ def rank_models(
     alpha: Optional[float],
     search_space: Optional[str],
     E: Union[float, tuple[float]],
+    exclude_reference_model: bool = False,
 ):
     expr = get_strictness_expr(strictness)
     me_predicates = get_strictness_predicates([me_ref] + mes_cand, expr)
     mes_to_rank = get_model_entries_to_rank(me_predicates, strict=True)
 
     me_rank_values = get_rank_values(
-        me_ref, mes_cand, rank_type, alpha, search_space, E, mes_to_rank
+        me_ref,
+        mes_cand,
+        rank_type,
+        alpha,
+        search_space,
+        E,
+        mes_to_rank,
+        exclude_reference_model,
     )
     me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
 
@@ -256,8 +271,6 @@ def create_ranking_table(me_ref, me_rank_values, rank_type):
         model = me.model
         n_params = len(me.model.parameters.nonfixed)
         rank = i if not np.isnan(predicates['rank_val']) else pd.NA
-        if rank_type == 'lrt' and me.model is me_ref.model:
-            rank = i
         me_dict = {
             'model': model.name,
             'description': model.description,
@@ -284,12 +297,20 @@ def rank_models_with_uncertainty(
     search_space: Optional[str],
     E: Union[float, tuple[float]],
     parameter_uncertainty_method: Optional[str],
+    exclude_reference_model: bool = False,
 ):
     expr = get_strictness_expr(strictness)
     me_predicates = get_strictness_predicates([me_ref] + mes_cand, expr)
     mes_to_rank = get_model_entries_to_rank(me_predicates, strict=False)
     me_rank_values = get_rank_values(
-        me_ref, mes_cand, rank_type, alpha, search_space, E, mes_to_rank
+        me_ref,
+        mes_cand,
+        rank_type,
+        alpha,
+        search_space,
+        E,
+        mes_to_rank,
+        exclude_reference_model,
     )
     me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
 
@@ -305,8 +326,10 @@ def rank_models_with_uncertainty(
     while mes_to_run:
         me = mes_to_run.pop(0)
         strictness_fulfilled = me_predicates[me]['strictness_fulfilled']
-        if strictness_fulfilled:
-            context.log_info(f'Model {me.model.name} already fulfilled strictness')
+        if np.isnan(me_rank_values[me]['rank_val']):
+            continue
+        elif strictness_fulfilled is True:
+            context.log_info('Parameter uncertainty was not evaluated for the selected model')
             best_me = me
             break
         elif strictness_fulfilled is False:
@@ -359,7 +382,14 @@ def rank_models_with_uncertainty(
 
     mes_to_rank = get_model_entries_to_rank(me_predicates_reeval, strict=True)
     me_rank_values = get_rank_values(
-        me_ref, mes_cand, rank_type, alpha, search_space, E, mes_to_rank
+        me_ref,
+        mes_cand,
+        rank_type,
+        alpha,
+        search_space,
+        E,
+        mes_to_rank,
+        exclude_reference_model,
     )
     me_rank_values_sorted = rank_model_entries(me_rank_values, rank_type)
     summary_ranking = create_ranking_table(me_ref, me_rank_values_sorted, rank_type)

@@ -1,6 +1,5 @@
 import pytest
 
-from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.allometry.tool import (
     add_allometry_on_model,
     create_result_tables,
@@ -8,13 +7,14 @@ from pharmpy.tools.allometry.tool import (
     get_best_model,
     validate_input,
 )
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows import ModelEntry, Workflow
 from pharmpy.workflows.contexts import NullContext
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
     assert isinstance(
         create_workflow(model=model, results=results, allometric_variable='WGT'), Workflow
     )
@@ -22,7 +22,7 @@ def test_create_workflow_with_model(load_model_for_test, testdata):
 
 def test_add_allometry_on_model(load_model_for_test, testdata):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'pheno.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
     me_cand = add_allometry_on_model(
         me_start,
@@ -43,7 +43,7 @@ def test_add_allometry_on_model(load_model_for_test, testdata):
 def test_get_best_model(load_model_for_test, testdata):
     ctx = NullContext()
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'pheno.mod')
     model_allometry = model_start.replace(description='allometry')
 
     me_start = ModelEntry(model_start, modelfit_results=res_start)
@@ -60,7 +60,7 @@ def test_get_best_model(load_model_for_test, testdata):
 
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'pheno.mod')
     model_allometry = model_start.replace(name='allometry', description='allometry')
 
     me_start = ModelEntry(model_start, modelfit_results=res_start)
@@ -71,13 +71,13 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
 def test_validate_input_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
     validate_input(model=model, results=results, allometric_variable='WGT')
 
 
 def test_validate_input_with_model_and_parameters(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
     validate_input(model=model, results=results, allometric_variable='WGT', parameters=['CL', 'V'])
 
 
@@ -128,7 +128,7 @@ def test_validate_input_raises(
         model_path = ('nonmem/pheno.mod',)
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
-    results = read_modelfit_results(path)
+    results = parse_modelfit_results(model, path)
 
     kwargs = {'model': model, 'results': results, **arguments}
 

@@ -26,7 +26,7 @@ from pharmpy.modeling import (
     unfix_parameters,
     unfix_parameters_to,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 
 
 def test_get_thetas(pheno):
@@ -158,7 +158,7 @@ def test_add_population_parameter(load_model_for_test, testdata):
 
 def test_set_initial_estimates_move_est(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
 
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     model = add_iiv(model, 'S1', 'add')
@@ -204,9 +204,9 @@ def test_set_initial_estimates_move_est(load_model_for_test, pheno_path):
 
 def test_set_initial_estimates_zero_fix(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
     d = {name: 0 for name in model.random_variables.iiv.parameter_names}
     model = fix_parameters_to(model, d)
-    res = read_modelfit_results(pheno_path)
     param_est = res.parameter_estimates.drop(index=['IVCL'])
     model = set_initial_estimates(model, param_est)
     assert model.parameters['IVCL'].init == 0
@@ -230,7 +230,7 @@ def test_set_initial_estimates_no_res(load_model_for_test, testdata, tmp_path):
         shutil.copy(testdata / 'nonmem/pheno.lst', tmp_path / 'run1.lst')
 
         model = load_model_for_test('run1.mod')
-        res = read_modelfit_results('run1.mod')
+        res = parse_modelfit_results(model, 'run1.mod')
 
         modelfit_results = replace(
             res,
@@ -245,7 +245,7 @@ def test_set_initial_estimates_no_res(load_model_for_test, testdata, tmp_path):
 
 def test_set_initial_estimates_subset_parameters_w_correlation(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
+    res = parse_modelfit_results(model, pheno_path)
 
     model = create_joint_distribution(model, individual_estimates=res.individual_estimates)
     model = add_iiv(model, 'S1', 'add')

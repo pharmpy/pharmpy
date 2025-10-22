@@ -17,7 +17,7 @@ from pharmpy.model import (
     get_and_check_odes,
     output,
 )
-from pharmpy.modeling import get_central_volume_and_clearance, set_initial_condition
+from pharmpy.modeling import create_symbol, get_central_volume_and_clearance, set_initial_condition
 
 from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
@@ -152,9 +152,9 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
     >>> model = load_example_model("pheno")
     >>> model = set_direct_effect(model, "linear")
     >>> model.statements.find_assignment("E")
-          ⎛SLOPE⋅A_CENTRAL(t)    ⎞
-        B⋅⎜────────────────── + 1⎟
-    E =   ⎝        VC            ⎠
+        SLOPE⋅A_CENTRAL(t)
+        ──────────────────
+    E =         VC
 
     """
     if variable is None:
@@ -178,25 +178,28 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
     return model
 
 
-def _add_effect(model: Model, expr: str, conc):
-    e0 = Expr.symbol("B")
-    model = add_individual_parameter(model, e0.name)
+def _add_baseline_effect(model: Model):
+    b = model.statements.find_assignment("B")
+    if b is None:
+        model = add_individual_parameter(model, "B")
+    return model
 
-    # Add effect E
+
+def _add_drug_effect(model: Model, expr: str, conc):
     if expr == "linear":
-        s = Expr.symbol("SLOPE")
+        s = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
-        E = Assignment(Expr.symbol('E'), e0 * (1 + (s * conc)))
+        E = Assignment(Expr.symbol('E'), s * conc)
     elif expr == "emax":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
-        E = Assignment(Expr.symbol("E"), e0 * (1 + (emax * conc / (ec50 + conc))))
+        E = Assignment(Expr.symbol("E"), emax * conc / (ec50 + conc))
     elif expr == "step":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        E = Assignment(Expr.symbol("E"), Expr.piecewise((e0, conc <= 0), (e0 * (1 + emax), True)))
+        E = Assignment(Expr.symbol("E"), Expr.piecewise((Expr.integer(0), conc <= 0), (emax, True)))
     elif expr == "sigmoid":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
@@ -208,25 +211,74 @@ def _add_effect(model: Model, expr: str, conc):
         E = Assignment.create(
             Expr.symbol("E"),
             Expr.piecewise(
-                ((e0 * (1 + (emax * conc**n / (ec50**n + conc**n)))), conc > 0), (e0, True)
+                ((emax * conc**n / (ec50**n + conc**n)), conc > 0), (Expr.integer(0), True)
             ),
         )
     elif expr == "loglin":
         s = Expr.symbol("SLOPE")
+        e0 = Expr.symbol("B")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
         E = Assignment(Expr.symbol("E"), s * (conc + (e0 / s).exp()).log())
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
-    # Add dependent variable Y_2
-    y_2 = Expr.symbol('Y_2')
-    y = Assignment.create(y_2, E.symbol)
-    dvs = model.dependent_variables.replace(y_2, 2)
-    model = model.replace(statements=model.statements + E + y, dependent_variables=dvs)
+    e_index = model.statements.find_assignment_index("E")
+    if e_index is None:
+        r_index = model.statements.find_assignment_index("R")
+        if r_index is None:
+            model = model.replace(statements=model.statements + E)
+        else:
+            statements = model.statements[0:r_index] + E + model.statements[r_index:]
+            model = model.replace(statements=statements)
+    else:
+        statements = model.statements[0:e_index] + E + model.statements[e_index + 1 :]
+        model = model.replace(statements=statements)
 
-    # Add error model
-    model = set_proportional_error_model(model, dv=2, zero_protection=False)
+    return model
 
+
+def _add_response(model: Model, expr: str):
+    r_index = model.statements.find_assignment_index("R")
+    if expr != "loglin":
+        if r_index is not None:
+            assignment = model.statements[r_index]
+            assert isinstance(assignment, Assignment)
+            expression = assignment.expression * (Expr.integer(1) + Expr.symbol("E"))
+            assignment = Assignment(Expr.symbol("R"), expression)
+            statements = model.statements[0:r_index] + assignment + model.statements[r_index + 1 :]
+        else:
+            b = Expr.symbol("B")
+            assignment = Assignment(Expr.symbol("R"), b * (Expr.integer(1) + Expr.symbol("E")))
+            statements = model.statements + assignment
+        model = model.replace(statements=statements)
+    return model
+
+
+def _add_dependent_variable(model: Model, expr: str):
+    dv, *_ = model.dependent_variables
+
+    a = model.statements.get_assignment(dv)
+    R = Expr.symbol("R")
+    if R not in a.expression.free_symbols:
+        # Add dependent variable Y_2
+        y_2 = Expr.symbol('Y_2')
+        if expr != 'loglin':
+            y = Assignment.create(y_2, R)
+        else:
+            y = Assignment.create(y_2, Expr.symbol("E"))
+        dvs = model.dependent_variables.replace(y_2, 2)
+        model = model.replace(statements=model.statements + y, dependent_variables=dvs)
+
+        # Add error model
+        model = set_proportional_error_model(model, dv=2, zero_protection=False)
+    return model
+
+
+def _add_effect(model: Model, expr: str, conc):
+    model = _add_baseline_effect(model)
+    model = _add_drug_effect(model, expr, conc)
+    model = _add_response(model, expr)
+    model = _add_dependent_variable(model, expr)
     return model
 
 
@@ -403,4 +455,106 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
     # Add error model
     model = set_proportional_error_model(model, dv=2, zero_protection=False)
 
+    return model
+
+
+def add_placebo_model(
+    model: Model,
+    expr: Literal['linear', 'exp', 'hyperbolic'],
+    operator: Literal['*', '+', 'prop'] = '*',
+):
+    r"""Add a placebo or disease progression effect to a model.
+
+    .. warning:: This function is under development.
+
+    * linear
+
+        .. math:: R = B + \text{slope} \cdot \text{TIME}
+
+    * exp
+
+        .. math:: R = B \cdot e^{\frac{-t}{t_D}}
+
+    * hyperbolic
+
+        .. math:: R = B \cdot \frac{t_{50}}{t + t_{50}}
+
+    :math:`B` is the baseline effect
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    expr : str
+        Name of placebo/disease progression effect function.
+    operator : str
+        Operator to use for combining the baseline with the placebo/disease progression
+
+    Return
+    ------
+    Model
+        Updated Pharmpy model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = create_basic_pd_model()
+    >>> model = add_placebo_model(model, "linear")
+    >>> model.statements.find_assignment("PDP")
+    PDP = SLOPE⋅TIME
+
+    """
+
+    r_index = model.statements.find_assignment_index("R")
+    if r_index is None:
+        raise ValueError("Cannot find response variable R. Is this a PD model?")
+
+    P = Expr.symbol("PDP")
+
+    p_index = model.statements.find_assignment_index("PDP")
+    if p_index is not None:
+        raise ValueError("PDP already in the model. Not yet supported")
+
+    idv = Expr.symbol(model.datainfo.idv_column.name)
+    old_rassign = model.statements.get_assignment("R")
+
+    def operate(lhs, rhs, operator):
+        if operator == '*':
+            return lhs * rhs
+        elif operator == '+':
+            return lhs + rhs
+        elif operator == 'prop':
+            return lhs * (1 + rhs)
+        else:
+            raise ValueError(f"Unknown operator {operator}")
+
+    if expr == 'linear':
+        slope = create_symbol(model, "SLOPE")
+        model = add_individual_parameter(model, slope.name, lower=-float("inf"))
+        passign_expr = slope * idv
+        rassign_expr = operate(old_rassign.expression, P, operator)
+    elif expr == 'exp':
+        if operator != '*':
+            raise ValueError('Only * is supported for exp')
+        td = create_symbol(model, "TD")
+        model = add_individual_parameter(model, td.name)
+        passign_expr = (-idv / td).exp()
+        rassign_expr = old_rassign.expression * P
+    elif expr == 'hyperbolic':
+        t50 = create_symbol(model, "T50")
+        model = add_individual_parameter(model, t50.name)
+        passign_expr = t50 / (idv + t50)
+        rassign_expr = operate(old_rassign.expression, P, operator)
+    else:
+        raise ValueError(f"Unknown placebo model {expr}")
+
+    passign = Assignment(P, passign_expr)
+    new_rassign = Assignment(old_rassign.symbol, rassign_expr)
+
+    r_index = model.statements.get_assignment_index("R")
+    statements = (
+        model.statements[:r_index] + passign + new_rassign + model.statements[r_index + 1 :]
+    )
+    model = model.replace(statements=statements)
+    model = model.update_source()
     return model

@@ -123,6 +123,12 @@ def create_dummy_modelfit_results(model, ref=None):
 
     params = list(map(lambda x: _get_param_init(x), list(model.parameters)))
     params = pd.Series(Parameters.create(params).inits)
+    sdcorr = model.random_variables.parameters_sdcorr(params)
+    sdcorr = {
+        key: value if key in model.random_variables.etas.parameter_names else params[key]
+        for key, value in sdcorr.items()
+    }
+    pes = pd.Series(sdcorr, index=params.index, name="sdcorr")
 
     if any(
         step.parameter_uncertainty_method is not None
@@ -138,14 +144,11 @@ def create_dummy_modelfit_results(model, ref=None):
         se.name = 'SE'
 
         param_names = model.parameters.names
-        pes = pd.Series(_rand_array(1, len(param_names), rng), name='estimates')
-        pes.index = param_names
         ses = pd.Series(_rand_array(1, len(param_names), rng), name='SE_sdcorr')
         ses.index = param_names
     else:
         rse = pd.Series(np.nan, index=params.index, name="RSE")
         se = pd.Series(np.nan, index=params.index, name="SE")
-        pes = pd.Series(np.nan, index=params.index, name="SE_sdcorr")
         ses = pd.Series(np.nan, index=params.index, name="RSE_sdcorr")
 
     if obs is None:

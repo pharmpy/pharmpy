@@ -154,7 +154,7 @@ def test_add():
     with pytest.raises(ValueError):
         rvs1 + dist3
 
-    lev1 = VariabilityLevel('center', reference=True, group='CENTER')
+    lev1 = VariabilityLevel('CENTER', reference=True, group='CENTER')
     levs = VariabilityHierarchy([lev1])
     rvs4 = RandomVariables.create([dist3], eta_levels=levs)
     with pytest.raises(ValueError):
@@ -540,6 +540,14 @@ def test_sample():
     with pytest.raises(ValueError):
         rvs.sample(symbol('ETA3'), parameters=params)
 
+    dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, symbol('a'))
+    dist2 = NormalDistribution.create('ETA(2)', 'iiv', 0, symbol('b'))
+    rvs = RandomVariables.create([dist1, dist2])
+
+    rv1, rv2 = list(map(symbol, ['ETA(1)', 'ETA(2)']))
+    samples = rvs.sample(rv1 + rv2, parameters=params, samples=2, rng=9532)
+    assert list(samples) == pytest.approx([1.134656629283449, -0.5600697309962032])
+
 
 def test_variance_parameters():
     dist1 = JointNormalDistribution.create(
@@ -690,7 +698,7 @@ def test_parameters_sdcorr():
     assert params == {'x': 2.0, 'y': 0.0625, 'z': 4.0, 'k': 23}
 
     expr = symbol('x') + symbol('y')
-    dist3 = NormalDistribution('ETA1', 'iiv', 0, expr)
+    dist3 = NormalDistribution('ETA1', 'IIV', 0, expr)
     rvs = RandomVariables.create([dist3])
     with pytest.raises(NotImplementedError):
         rvs.parameters_sdcorr({'x': 4})
@@ -883,6 +891,10 @@ def test_levels():
     with pytest.raises(KeyError):
         h['NOTHING']
 
+    dist = NormalDistribution.create('ETA1', 'nonexisting', 0, 'omega')
+    with pytest.raises(ValueError):
+        RandomVariables.create([dist])
+
 
 def test_replace_with_sympy_rvs():
     var1 = symbol('OMEGA(1,1)')
@@ -1013,3 +1025,9 @@ def test_finite_index():
     theta = symbol("THETA1")
     dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
     assert dist[0] == dist
+
+
+def test_finite_parameter_names():
+    theta = symbol("THETA1")
+    dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
+    assert dist.parameter_names == ('THETA1',)

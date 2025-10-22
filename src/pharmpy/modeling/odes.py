@@ -1591,8 +1591,6 @@ def has_weibull_absorption(model: Model) -> bool:
     rate = rate.replace(forward, lambda x, y: sympy.Integer(0))
     ka = (beta / alpha) * (t / alpha) ** (beta - 1)
     match = rate.match(ka)
-    print(match)
-    print(rate)
     return match is not None and len(match) == 3
 
 

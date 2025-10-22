@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows import ModelEntry
 
 
@@ -12,8 +12,9 @@ def test_model_entry_init(load_model_for_test, testdata):
 
 
 def test_model_entry_create(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
 
     model_entry = ModelEntry.create(model)
     assert model_entry.model.name == model.name
@@ -30,8 +31,9 @@ def test_model_entry_create(load_model_for_test, testdata):
 
 
 def test_attach_results(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
 
     model_entry = ModelEntry(model)
     assert model_entry.model.name == model.name

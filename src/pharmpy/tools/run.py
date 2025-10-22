@@ -1467,7 +1467,7 @@ def read_modelfit_results(path: Union[str, Path], esttool: str = None) -> Modelf
     """
     path = normalize_user_given_path(path)
     model = read_model(path)
-    res = parse_modelfit_results(model, path, esttool)
+    res = parse_modelfit_results(model, path, esttool, strict=True)
     return res
 
 

@@ -22,8 +22,10 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
+    cholesky_decompose,
     cleanup_model,
     create_basic_pk_model,
+    create_joint_distribution,
     display_odes,
     get_dv_symbol,
     get_individual_parameters,
@@ -906,3 +908,12 @@ def test_get_dv_symbol(testdata, load_model_for_test):
         get_dv_symbol(model, Expr.symbol("SPANNER"))
     with pytest.raises(ValueError):
         get_dv_symbol(model, 3.4)
+
+
+def test_cholesky_decompose(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = create_joint_distribution(model, ('ETA_CL', 'ETA_VC'))
+    model = cholesky_decompose(model)
+    assert model.statements[0] == Assignment.create("L1_11", "SD_ETA_CL")
+    assert model.statements[3] == Assignment.create("ETA_CL_C", "ETA_CL*L1_11")
+    assert model.parameters['IIV_CL'] == Parameter.create("IIV_CL", lower=0.0, init=1.0, fix=True)

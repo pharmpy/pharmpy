@@ -68,10 +68,10 @@ class Distribution(Sized, Hashable, Immutable):
         pass
 
     @property
+    @abstractmethod
     def parameter_names(self) -> tuple[str, ...]:
         """List of names of all parameters used in definition"""
-        params = self.mean.free_symbols.union(self.variance.free_symbols)
-        return tuple(sorted(map(str, params)))
+        pass
 
     @abstractmethod
     def subs(self, d: Mapping[TExpr, TExpr]) -> Distribution:
@@ -155,6 +155,11 @@ class NormalDistribution(Distribution):
         return self._variance
 
     @property
+    def parameter_names(self) -> tuple[str, ...]:
+        """List of names of all parameters used in definition"""
+        return (self._variance.name,)
+
+    @property
     def free_symbols(self) -> set[Expr]:
         """Free symbols including random variable itself"""
         fs = self._mean.free_symbols.union(self._variance.free_symbols)
@@ -188,14 +193,15 @@ class NormalDistribution(Distribution):
     def evalf(self, parameters: dict[TSymbol, float]) -> NumericDistribution:
         mean = self._mean
         variance = self._variance
+        parameters = {str(key): value for key, value in parameters.items()}
         try:
             if mean == 0:
                 mu = 0
             elif mean.is_symbol():
-                mu = float(parameters[mean])
+                mu = float(parameters[str(mean)])
             else:
                 raise NotImplementedError("Non-supported mean for NormalDistribution")
-            sigma = 0 if variance == 0 else sqrt(float(parameters[variance]))
+            sigma = 0 if variance == 0 else sqrt(float(parameters[str(variance)]))
             return NumericNormalDistribution(mu, sigma)
         except KeyError as e:
             # NOTE: This handles missing parameter substitutions
@@ -344,6 +350,16 @@ class JointNormalDistribution(Distribution):
     @property
     def variance(self) -> Matrix:
         return self._variance
+
+    @property
+    def parameter_names(self) -> tuple[str, ...]:
+        """List of names of all parameters used in definition"""
+        n = self._variance.rows
+        params = []
+        for row in range(n):
+            for col in range(row + 1):
+                params.append(self._variance[row, col].name)
+        return tuple(params)
 
     @property
     def free_symbols(self) -> set[Expr]:
@@ -637,6 +653,13 @@ class FiniteDistribution(Distribution):
             x = Expr.integer(n)
             s += (x - mean) ** Expr.integer(2) * expr
         return s
+
+    @property
+    def parameter_names(self) -> tuple[str, ...]:
+        params = set()
+        for expr in self._probabilities.values():
+            params |= expr.free_symbols
+        return tuple(sorted(map(str, params)))
 
     @property
     def free_symbols(self) -> set[Expr]:

@@ -157,6 +157,9 @@ class Matrix:
     def cholesky(self) -> Matrix:
         return Matrix(self._m.cholesky())
 
+    def inv(self) -> Matrix:
+        return Matrix(self._m.inv())
+
     def __getstate__(self):
         state = self.__dict__.copy()
         state['_m'] = sympy.Matrix(self._m)

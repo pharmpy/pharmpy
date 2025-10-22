@@ -1799,7 +1799,7 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
     changed = False
 
     for col in columns:
-        if df[col].dtype != np.int32:
+        if pd.api.types.is_float_dtype(df[col]):
             asint = df[col].astype('int32')
             if all(asint == df[col]):
                 changed = True
@@ -2501,3 +2501,103 @@ def _get_bin_edges_psn(data, n_bins):
         bin_ceilings[1] += 0.00000001
 
     return bin_ceilings
+
+
+def binarize_dataset(
+    model: Model, columns: Optional[list[str]], keep: bool = False, all_levels: bool = False
+):
+    """Binarize dataset
+
+    Will create one column per category if specified, otherwise for all columns
+    except for the last one. Will also update datainfo so that new columns have
+    type covariate and is categorical.
+
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    columns : list[str]
+        The columns to binarize or None for all marked as categorical
+    keep : bool
+        Keep the original column in dataset (default is False)
+    all_levels : bool
+        Create one column per level, otherwise skip last value (default is False)
+
+    Returns
+    -------
+    Model
+        Updated Pharmpy model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = binarize_dataset(model, ['APGR'])
+    >>> model.dataset
+         ID   TIME   AMT  WGT    DV  FA1  FA2  APGR_1  APGR_2  APGR_3  APGR_4  APGR_5  APGR_6  APGR_7  APGR_8  APGR_9
+    0     1    0.0  25.0  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    1     1    2.0   0.0  1.4  17.3  0.0  0.0       0       0       0       0       0       0       1       0       0
+    2     1   12.5   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    3     1   24.5   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    4     1   37.0   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    ..   ..    ...   ...  ...   ...  ...  ...     ...     ...     ...     ...     ...     ...     ...     ...     ...
+    739  59  108.3   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    740  59  120.5   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    741  59  132.3   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    742  59  144.8   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    743  59  146.8   0.0  1.1  40.2  0.0  0.0       0       0       0       0       0       1       0       0       0
+    <BLANKLINE>
+    [744 rows x 16 columns]
+    """
+    if model.dataset is None:
+        return model
+
+    model = infer_datatypes(model, columns)
+    df = model.dataset
+    di = model.datainfo
+    if columns is None:
+        try:
+            covariates = di.typeix['covariate']
+        except IndexError:
+            raise ValueError(f'No covariates for `columns` found: {columns}')
+        columns = [cov.name for cov in covariates if cov.is_categorical()]
+        if not columns:
+            return model
+
+    changed = False
+
+    for col in columns:
+        levels = sorted(set(df[col].values))
+        if not all_levels:
+            levels = levels[0:-1]
+
+        level_map = dict()
+        for level in levels:
+            if '.' in str(level):
+                level = str(level).replace('.', '_')
+            col_name = f'{col}_{level}'
+            col_values = np.where(df[col] == level, 1, 0)
+            level_map[col_name] = col_values
+
+        if len(level_map) == 0:
+            continue
+
+        df = df.assign(**level_map)
+        if not keep:
+            df = df.drop(columns=[col])
+
+        di = update_datainfo(di, df)
+        for col_name in level_map.keys():
+            ci = di[col_name]
+            ci_new = ci.replace(
+                type='covariate', continuous=False, scale='nominal', categories=(0, 1)
+            )
+            di = di.set_column(ci_new)
+
+        changed = True
+
+    if changed:
+        model = model.replace(dataset=df, datainfo=di)
+
+    return model

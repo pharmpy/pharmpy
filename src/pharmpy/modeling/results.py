@@ -11,7 +11,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
-from pharmpy.internals.math import round_to_n_sigdig
+from pharmpy.internals.math import round_to_n_sigdig, symmetric_to_flattened, triangular
 from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -374,7 +374,9 @@ def calculate_individual_parameter_statistics(
     i = 0
 
     for name, full_expr in full_exprs:
-        df = pd.DataFrame(index=list(cases.keys()), columns=['mean', 'variance', 'stderr'])
+        df = pd.DataFrame(
+            index=pd.Index(list(cases.keys())), columns=pd.Index(('mean', 'variance', 'stderr'))
+        )
         parameter_estimates_expr = subs(full_expr, parameter_estimates, simultaneous=True)
 
         for case, cov_values in cases.items():
@@ -492,7 +494,8 @@ def calculate_pk_parameters_statistics(
         for name in elimination_system.compartment_names:
             if name != central.name:  # NOTE: Keep central
                 cb = CompartmentalSystemBuilder(elimination_system)
-                cb.remove_compartment(elimination_system.find_compartment(name))
+                comp = elimination_system.find_compartment_or_raise(name)
+                cb.remove_compartment(comp)
                 elimination_system = CompartmentalSystem(cb)
         eq = elimination_system.eqs[0]
         eq = sympy.sympify(eq)
@@ -801,3 +804,60 @@ def _is_near_target(x, target, zero_limit, significant_digits):
         return round_to_n_sigdig(x, n=significant_digits) == round_to_n_sigdig(
             target, n=significant_digits
         )
+
+
+def insert_ebes_into_dataset(
+    model: Model, individual_estimates: pd.DataFrame, individual_estimates_covariance: pd.DataFrame
+) -> Model:
+    """Insert EBEs and ETCs from results into the dataset of a model
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    individual_estimates : pd.DataFrame
+        Individual eta estimates (EBEs). Could be taken directly from ModelfitResults.
+    individual_estimates_covariance : pd.DataFrame
+        Uncertainties of individual estimates (ETCs). Could be taken directly from ModelfitResults.
+
+    Returns
+    -------
+    Model
+        Updated Pharmpy model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import insert_ebes_into_dataset, load_example_model
+    >>> from pharmpy.tools import load_example_modelfit_results
+    >>> model = load_example_model("pheno")
+    >>> results = load_example_modelfit_results("pheno")
+    >>> ebes = results.individual_estimates
+    >>> etcs = results.individual_estimates_covariance
+    >>> model2 = insert_ebes_into_dataset(model, ebes, etcs)
+    >>> model2.datainfo.names    # doctest: +ELLIPSIS
+    ['ID', 'TIME', 'AMT', 'WGT', ..., 'ET_1', 'ET_2', 'ETC_1_1', 'ETC_2_1', 'ETC_2_2']
+
+    """
+
+    eta_map = {name: f'ET_{i + 1}' for i, name in enumerate(model.random_variables.etas.names)}
+    df = model.dataset
+    ebes = individual_estimates.rename(columns=lambda c: eta_map[c])
+    joined = df.merge(ebes, left_on="ID", right_index=True, how="left")
+
+    etcs = np.empty((len(individual_estimates_covariance), triangular(len(ebes.columns))))
+    for i in range(len(individual_estimates_covariance)):
+        flattened = symmetric_to_flattened(individual_estimates_covariance.iloc[i].values)
+        etcs[i] = flattened
+
+    etc_names = [
+        f"ETC_{row+1}_{col+1}" for row in range(len(ebes.columns)) for col in range(row + 1)
+    ]
+    etcs = pd.DataFrame(
+        etcs, index=individual_estimates_covariance.index, columns=pd.Index(etc_names)
+    )
+
+    joined = joined.merge(etcs, left_on="ID", right_index=True, how="left")
+
+    model = model.replace(dataset=joined)
+    model = model.update_source()
+    return model

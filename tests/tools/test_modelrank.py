@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     set_initial_estimates,
     set_name,
 )
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.modelrank.ranking import (
     get_aic,
     get_bic,
@@ -34,13 +35,12 @@ from pharmpy.tools.modelrank.tool import (
     rank_models,
     validate_input,
 )
-from pharmpy.tools.run import read_modelfit_results
 from pharmpy.workflows import ModelEntry
 
 
 def test_prepare_model_entries(load_model_for_test, pheno_path):
     model_ref = load_model_for_test(pheno_path)
-    res_ref = read_modelfit_results(pheno_path)
+    res_ref = parse_modelfit_results(model_ref, pheno_path)
     models_cand = []
     for i in range(5):
         model = set_initial_estimates(model_ref, {'PTVCL': float(i)})
@@ -82,7 +82,7 @@ def test_rank_models(
     load_model_for_test, pheno_path, model_entry_factory, strictness, rank_type, alpha
 ):
     model_ref = load_model_for_test(pheno_path)
-    res_ref = read_modelfit_results(pheno_path)
+    res_ref = parse_modelfit_results(model_ref, pheno_path)
     me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
     models_cand = [set_name(model, f'model{i}') for i, model in enumerate([model_ref] * 5)]
     mes_cand = model_entry_factory(models_cand, parent=model_ref)
@@ -243,7 +243,7 @@ def test_get_strictness_predicates(
     testdata, load_model_for_test, strictness, model_path, ref_predicates
 ):
     model_start = load_model_for_test(testdata / 'nonmem' / model_path)
-    res_start = read_modelfit_results(testdata / 'nonmem' / model_path)
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / model_path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     expr = get_strictness_expr(strictness)
@@ -298,7 +298,7 @@ def test_evaluate_strictness(
     testdata, load_model_for_test, strictness, model_path, strictness_fulfilled
 ):
     model_start = load_model_for_test(testdata / 'nonmem' / model_path)
-    res_start = read_modelfit_results(testdata / 'nonmem' / model_path)
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / model_path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     expr = get_strictness_expr(strictness)
@@ -411,8 +411,8 @@ def test_evaluate_strictness(
 )
 def test_get_rank_values(testdata, load_model_for_test, rank_func, kwargs, ref_dict):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     model_start = create_joint_distribution(model_start, rvs=['ETA_1', 'ETA_2'])
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     rank_dict = rank_func(me_start, **kwargs)
@@ -510,7 +510,7 @@ class DummyResults:
 )
 def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, alpha, ref_dict):
     model_parent = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_parent = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_parent = parse_modelfit_results(model_parent, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_parent = ModelEntry.create(model_parent, modelfit_results=res_parent)
 
     model_child = set_name(model_parent, 'cand')
@@ -555,7 +555,7 @@ def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, alpha, ref_dict)
             },
             'model1',
         ),
-        ('lrt', {'alpha': 0.05, 'search_space': None, 'E': None}, 'model1'),
+        ('lrt', {'alpha': 0.05, 'search_space': None, 'E': None}, 'model0'),
         (
             'lrt',
             {'alpha': 0.0000000000000000000000000001, 'search_space': None, 'E': None},
@@ -567,7 +567,7 @@ def test_rank_model_entries(
     load_model_for_test, testdata, model_entry_factory, rank_type, rank_kwargs, final_model
 ):
     model_ref = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_ref = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_ref = parse_modelfit_results(model_ref, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
 
     models_cand = _create_candidates(model_ref)
@@ -595,7 +595,7 @@ def test_rank_model_entries(
 
 def test_get_best_model_entry(load_model_for_test, testdata, model_entry_factory):
     model_ref = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_ref = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_ref = parse_modelfit_results(model_ref, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
 
     models_cand = _create_candidates(model_ref)
@@ -657,7 +657,7 @@ def test_get_model_entries_to_rank(
     no_of_mes_strict,
 ):
     model_ref = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_ref = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_ref = parse_modelfit_results(model_ref, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_ref = ModelEntry.create(model_ref, modelfit_results=res_ref)
 
     models_cand = _create_candidates(model_ref)
@@ -728,8 +728,8 @@ def test_validate_input_raises(
     load_model_for_test, pheno_path, no_of_res, kwargs, exception, match
 ):
     model_ref = load_model_for_test(pheno_path)
+    res_ref = parse_modelfit_results(model_ref, pheno_path)
     model_ref = remove_parameter_uncertainty_step(model_ref)
-    res_ref = read_modelfit_results(pheno_path)
     models_cand = [model_ref] * 5
     res_cand = [res_ref] * no_of_res
 
@@ -744,7 +744,7 @@ def test_validate_input_raises(
 
 def test_validate_input_raises_ref_model(load_model_for_test, pheno_path):
     model_ref = load_model_for_test(pheno_path)
-    res_ref = read_modelfit_results(pheno_path)
+    res_ref = parse_modelfit_results(model_ref, pheno_path)
 
     models_cand = []
     for i in range(5):

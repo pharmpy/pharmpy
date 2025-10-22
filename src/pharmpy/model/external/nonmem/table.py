@@ -9,6 +9,8 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import flattened_to_symmetric
 
+OBJ = re.compile(r"[A-Z]*OBJ")
+
 
 class NONMEMTableFile:
     """A NONMEM table file that can contain multiple tables"""
@@ -61,8 +63,8 @@ class NONMEMTableFile:
 
         table_line = None if notitle else content.pop(0)
 
+        content[0] = OBJ.sub("OBJ", content[0])
         content_str = ''.join(content)
-        content_str = re.sub(r"[A-Z]*OBJ", "OBJ", content_str)
         if suffix == '.ext':
             table = ExtTable(content_str)
         elif suffix == '.phi':
