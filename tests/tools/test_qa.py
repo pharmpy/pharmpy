@@ -1,25 +1,132 @@
+from functools import partial
 from io import StringIO
 
-import numpy as np
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.tools import read_modelfit_results
-from pharmpy.tools.qa.results import calculate_results, psn_qa_results
+from pharmpy.model import NormalDistribution
+from pharmpy.modeling import (
+    add_iov,
+    create_joint_distribution,
+    create_rng,
+    transform_etas_boxcox,
+    transform_etas_tdist,
+)
+from pharmpy.tools.external.results import parse_modelfit_results
+from pharmpy.tools.qa.results import calc_transformed_etas, calculate_results, psn_qa_results
+from pharmpy.tools.qa.tool import (
+    SECTIONS,
+    categorize_model_entries,
+    create_candidate,
+    create_dofv_table,
+    create_eta_transformation_results,
+    validate_input,
+)
 from pharmpy.tools.ruvsearch.results import psn_resmod_results
 from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import read_results
 
 
+@pytest.mark.parametrize(
+    'trans_type, added_etas',
+    [('tdist', 3), ('boxcox', 3), ('fullblock', 3)],
+)
+def test_create_candidate(load_model_for_test, testdata, trans_type, added_etas):
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_base = load_model_for_test(path)
+    res_base = parse_modelfit_results(model_base, path)
+    me_base = ModelEntry.create(model_base, modelfit_results=res_base)
+
+    me = create_candidate(me_base, trans_type)
+    assert me.model.name == trans_type
+    assert me.modelfit_results is None
+    assert me.parent == model_base
+
+    assert len(me.model.parameters) - len(model_base.parameters) == added_etas
+
+
+def test_categorize_model_entries(load_model_for_test, testdata, model_entry_factory):
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_base = load_model_for_test(path)
+    res_base = parse_modelfit_results(model_base, path)
+    me_base = ModelEntry(model_base, modelfit_results=res_base)
+
+    model1 = transform_etas_tdist(model_base).replace(name='tdist')
+    model2 = transform_etas_boxcox(model_base).replace(name='boxcox')
+    model3 = create_joint_distribution(model_base).replace(name='fullblock')
+
+    me_cands = model_entry_factory(
+        [model1, model2, model3], ref_val=res_base.ofv, parent=model_base
+    )
+
+    base, cands = categorize_model_entries([me_base] + me_cands)
+    assert base.model.name == me_base.model.name
+    assert len(cands) == len(me_cands)
+    assert base not in cands
+
+    with pytest.raises(ValueError):
+        me_invalid = ModelEntry.create(model_base.replace(name='x'))
+        categorize_model_entries([me_base] + me_cands + [me_invalid])
+
+
+def test_create_dofv_table(load_model_for_test, testdata, model_entry_factory):
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_base = load_model_for_test(path)
+    res_base = parse_modelfit_results(model_base, path)
+    me_base = ModelEntry(model_base, modelfit_results=res_base)
+
+    model1 = transform_etas_tdist(model_base).replace(name='tdist')
+    model2 = transform_etas_boxcox(model_base).replace(name='boxcox')
+    model3 = create_joint_distribution(model_base).replace(name='fullblock')
+
+    me_cands = model_entry_factory(
+        [model1, model2, model3], ref_val=res_base.ofv, parent=model_base
+    )
+
+    table = create_dofv_table(me_base, me_cands)
+
+    assert len(table) == len(me_cands)
+    for me_base in me_cands:
+        assert table.loc[me_base.model.name]['dofv'] == res_base.ofv - me_base.modelfit_results.ofv
+        assert table.loc[me_base.model.name]['added_params'] == len(me_base.model.parameters) - len(
+            model_base.parameters
+        )
+
+
+def test_create_eta_transformation_results(load_model_for_test, testdata, model_entry_factory):
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_base = load_model_for_test(path)
+    res_base = parse_modelfit_results(model_base, path)
+    me_base = ModelEntry(model_base, modelfit_results=res_base)
+
+    model1 = transform_etas_tdist(model_base).replace(name='tdist')
+    model2 = transform_etas_boxcox(model_base).replace(name='boxcox')
+
+    me_cands = model_entry_factory([model1, model2], ref_val=res_base.ofv, parent=model_base)
+
+    for me in me_cands:
+        rng = create_rng(1)
+        res_dict = create_eta_transformation_results(me, me_base, rng)
+        table = res_dict[f'{me.model.name}_parameters']
+        param_name = 'lambda' if me.model.name == 'boxcox' else 'df'
+        assert table[param_name].is_unique
+        assert (table['old_sd'] != table['new_sd']).all()
+        plot = res_dict[f'{me.model.name}_plot']
+        assert plot
+
+
 def test_add_etas(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     add_etas = load_model_for_test(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
-    add_etas_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod')
+    add_etas_res = parse_modelfit_results(
+        add_etas, testdata / 'nonmem' / 'qa' / 'add_etas_linbase.mod'
+    )
     add_etas_entry = ModelEntry.create(model=add_etas, modelfit_results=add_etas_res)
     res = calculate_results(
         orig_entry, base_entry, add_etas_model_entry=add_etas_entry, etas_added_to=['CL', 'V']
@@ -41,13 +148,13 @@ V,False,0.010000,NaN
 
 def test_fullblock(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     fb = load_model_for_test(testdata / 'nonmem' / 'qa' / 'fullblock.mod')
-    fb_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'fullblock.mod')
+    fb_res = parse_modelfit_results(fb, testdata / 'nonmem' / 'qa' / 'fullblock.mod')
     fb_entry = ModelEntry.create(model=fb, modelfit_results=fb_res)
     res = calculate_results(orig_entry, base_entry, fullblock_model_entry=fb_entry)
     correct = """,new,old
@@ -69,13 +176,13 @@ def test_fullblock(load_model_for_test, testdata):
 
 def test_boxcox(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     bc = load_model_for_test(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
-    bc_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'boxcox.mod')
+    bc_res = parse_modelfit_results(bc, testdata / 'nonmem' / 'qa' / 'boxcox.mod')
     bc_entry = ModelEntry.create(model=bc, modelfit_results=bc_res)
     res = calculate_results(orig_entry, base_entry, boxcox_model_entry=bc_entry)
     correct = """lambda,new_sd,old_sd
@@ -96,13 +203,13 @@ ETA_2,0.645817,0.429369,0.448917
 
 def test_tdist(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     td = load_model_for_test(testdata / 'nonmem' / 'qa' / 'tdist.mod')
-    td_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'tdist.mod')
+    td_res = parse_modelfit_results(td, testdata / 'nonmem' / 'qa' / 'tdist.mod')
     td_entry = ModelEntry.create(model=td, modelfit_results=td_res)
     res = calculate_results(orig_entry, base_entry, tdist_model_entry=td_entry)
     correct = """df,new_sd,old_sd
@@ -120,15 +227,67 @@ ETA_2,3.77,0.400863,0.448917
     res = calculate_results(orig_entry, base_entry, tdist_model_entry=None)
 
 
+@pytest.mark.parametrize(
+    'funcs_base, funcs_candidate, linearize, trans_type',
+    [
+        ([], [transform_etas_tdist], False, 'tdist'),
+        ([], [transform_etas_boxcox], False, 'boxcox'),
+        ([], [create_joint_distribution, transform_etas_tdist], False, 'tdist'),
+        ([], [create_joint_distribution, transform_etas_boxcox], False, 'boxcox'),
+        (
+            [partial(add_iov, occ='VISI', list_of_parameters=['CL'])],
+            [transform_etas_boxcox],
+            False,
+            'boxcox',
+        ),
+    ],
+)
+def test_calc_transformed_etas(
+    load_model_for_test,
+    testdata,
+    model_entry_factory,
+    funcs_base,
+    funcs_candidate,
+    linearize,
+    trans_type,
+):
+    model_base = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs_base:
+        model_base = func(model_base)
+    model = model_base
+    for func in funcs_candidate:
+        model = func(model)
+
+    mes = model_entry_factory([model_base, model])
+    me_base, me = mes[0], mes[1]
+
+    param_type = 'lambda' if trans_type == 'boxcox' else 'df'
+    table, _ = calc_transformed_etas(me_base, me, trans_type, param_type)
+
+    assert param_type in table.columns
+    for i, idx in enumerate(table.index):
+        sd_new = table.loc[idx]['new_sd']
+        sd_old = table.loc[idx]['old_sd']
+        assert sd_new != sd_old
+        if idx in model.random_variables.iov.names:
+            eta = model.random_variables[idx]
+            assert isinstance(eta, NormalDistribution)
+            omega_est = me.modelfit_results.parameter_estimates[eta.variance.name]
+        else:
+            omega = model.random_variables.variance_parameters[i]
+            omega_est = me.modelfit_results.parameter_estimates[omega]
+        assert omega_est**0.5 == sd_new
+
+
 def test_iov(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     iov = load_model_for_test(testdata / 'nonmem' / 'qa' / 'iov.mod')
-    iov_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'iov.mod')
+    iov_res = parse_modelfit_results(iov, testdata / 'nonmem' / 'qa' / 'iov.mod')
     iov_entry = ModelEntry.create(model=iov, modelfit_results=iov_res)
     res = calculate_results(orig_entry, base_entry, iov_model_entry=iov_entry)
     correct = """new_iiv_sd,orig_iiv_sd,iov_sd
@@ -144,10 +303,10 @@ ETA_2,0.071481,0.448917,0.400451
 
 def test_scm(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     scm_res = read_results(testdata / 'nonmem' / 'qa' / 'scm_results.json')
     res = calculate_results(orig_entry, base_entry, scm_results=scm_res)
@@ -166,10 +325,10 @@ ETA(2),WGT,0.00887,-0.003273
 
 def test_resmod(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     resmod_res = read_results(testdata / 'nonmem' / 'qa' / 'resmod_results.json')
     res = calculate_results(orig_entry, base_entry, resmod_idv_results=resmod_res)
@@ -188,10 +347,10 @@ def test_resmod(load_model_for_test, testdata):
 
 def test_resmod_dvid(load_model_for_test, testdata):
     orig = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    orig_res = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    orig_res = parse_modelfit_results(orig, testdata / 'nonmem' / 'pheno.mod')
     orig_entry = ModelEntry.create(model=orig, modelfit_results=orig_res)
     base = load_model_for_test(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
-    base_res = read_modelfit_results(testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
+    base_res = parse_modelfit_results(base, testdata / 'nonmem' / 'qa' / 'pheno_linbase.mod')
     base_entry = ModelEntry.create(model=base, modelfit_results=base_res)
     resmod_res = psn_resmod_results(testdata / 'psn' / 'resmod_dir2')
     res = calculate_results(orig_entry, base_entry, resmod_idv_results=resmod_res)
@@ -245,3 +404,25 @@ def test_simeval(load_model_for_test, testdata):
     simeval_res = read_results(testdata / 'nonmem' / 'qa' / 'simeval_results.json')
     cdd_res = read_results(testdata / 'nonmem' / 'qa' / 'cdd_results.json')
     calculate_results(orig_entry, base_entry, simeval_results=simeval_res, cdd_results=cdd_res)
+
+
+@pytest.mark.parametrize(
+    ('kwargs', 'match'),
+    [
+        (
+            {'skip': list(SECTIONS)},
+            'Invalid `skip`',
+        ),
+    ],
+)
+def test_validate_input_raises(
+    load_model_for_test,
+    testdata,
+    kwargs,
+    match,
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    with pytest.raises(ValueError, match=match):
+        validate_input(model, res, **kwargs)

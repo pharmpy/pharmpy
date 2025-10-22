@@ -18,6 +18,7 @@ def get_rank_values(
     search_space: Optional[str],
     E: Optional[float],
     mes_to_rank: list[ModelEntry],
+    exclude_reference_model: bool = False,
 ) -> dict[ModelEntry, dict[str, float]]:
 
     if rank_type == 'lrt':
@@ -46,6 +47,10 @@ def get_rank_values(
         if me in mes_to_rank:
             if rank_type == 'lrt' and not values['significant']:
                 values['rank_val'] = np.nan
+            elif exclude_reference_model and me.model == me_ref.model:
+                values['rank_val'] = np.nan
+            elif not exclude_reference_model and rank_type == 'lrt':
+                values['rank_val'] = 0.0
             else:
                 values['rank_val'] = values[rank_val]
         else:

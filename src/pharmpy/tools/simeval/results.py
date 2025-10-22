@@ -7,7 +7,7 @@ from typing import Any, Optional
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import plot_individual_predictions
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.simfit.results import psn_simfit_results
 from pharmpy.workflows import Results
 
@@ -72,7 +72,7 @@ def psn_simeval_results(path):
     simfit_paths = (path / 'm1').glob('sim-*.mod')
     simfit_results = psn_simfit_results(simfit_paths)
     original = Model.parse_model(path / 'm1' / 'original.mod')
-    original_results = read_modelfit_results(path / 'm1' / 'original.mod')
+    original_results = parse_modelfit_results(original, path / 'm1' / 'original.mod')
     res = calculate_results(original, original_results, simfit_results)
 
     # Add CWRES outliers as 2 in data_flag

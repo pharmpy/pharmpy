@@ -41,6 +41,7 @@ def _model_count(rundir: Path):
                 'allometry',
                 'covsearch_exploratory',
                 'simulation',
+                'qa',
             },
         ),
         (
@@ -64,6 +65,7 @@ def _model_count(rundir: Path):
                 'rerun_iivsearch',
                 'rerun_ruvsearch',
                 'simulation',
+                'qa',
             },
         ),
         (
@@ -89,6 +91,7 @@ def _model_count(rundir: Path):
                 'allometry',
                 'covsearch_exploratory',
                 'simulation',
+                'qa',
             },
         ),
         (
@@ -110,6 +113,7 @@ def _model_count(rundir: Path):
                 'allometry',
                 'covsearch_exploratory',
                 'simulation',
+                'qa',
             },
         ),
     ],
@@ -123,7 +127,9 @@ def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, s
             input, **model_kwargs, **run_kwargs, search_space=search_space, esttool='dummy'
         )
 
-        assert len(res.summary_tool) == len(subtools)  # Simulation is not part of the result table
+        assert (
+            len(res.summary_tool) == len(subtools) - 1
+        )  # Simulation and QA is not part of the result table
         assert len(res.summary_models) > len(subtools) + 1
 
         rundir = tmp_path / 'amd1'

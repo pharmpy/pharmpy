@@ -1,8 +1,7 @@
-.. toctree::
-   :maxdepth: 2
-   :caption: Contents:
-
-   results
+.. contents::
+   :local:
+   :depth: 2
+   :backlinks: none
 
 
 Bootstrap Results
@@ -18,6 +17,14 @@ Distribution of parameter estimates
 
     res = read_results('results.json')
     res.parameter_estimates_histogram
+
+Parameter estimates correlation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. jupyter-execute::
+    :hide-code:
+
+    res.parameter_estimates_correlation_plot
 
 OFV distribution
 ~~~~~~~~~~~~~~~~

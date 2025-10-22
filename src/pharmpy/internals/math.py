@@ -7,9 +7,19 @@ from pharmpy.internals.expr.subs import subs
 # This module could probably be made private.
 
 
+def triangular(n: int):
+    """The n:th triangular number"""
+    return n * (n + 1) // 2
+
+
 def triangular_root(x):
     """Calculate the triangular root of x. I.e. if x is a triangular number T_n what is n?"""
     return math.floor(math.sqrt(2 * x))
+
+
+def symmetric_to_flattened(A):
+    """Flatten a symmetric matrix into a vector using the lower triangle"""
+    return np.concatenate([A[i, : i + 1] for i in range(len(A))])
 
 
 def flattened_to_symmetric(x):

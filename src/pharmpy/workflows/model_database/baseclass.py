@@ -365,64 +365,64 @@ class ModelDatabase(ABC):
 
 class NonTransactionalModelDatabase(ModelDatabase):
     @contextmanager
-    def snapshot(self, model_name: str):
-        yield DummySnapshot(self, model_name)
+    def snapshot(self, model: Union[Model, ModelHash]):
+        yield DummySnapshot(self, model)
 
     @contextmanager
-    def transaction(self, model_or_model_entry: Union[Model, ModelEntry]):
-        yield DummyTransaction(self, model_or_model_entry)
+    def transaction(self, obj: Union[Model, ModelEntry, ModelHash]):
+        yield DummyTransaction(self, obj)
 
 
 class DummyTransaction(ModelTransaction):
-    def __init__(self, database: ModelDatabase, model_or_model_entry: Union[Model, ModelEntry]):
-        self.db = database
-        if isinstance(model_or_model_entry, ModelEntry):
-            self.model_entry = model_or_model_entry
-        elif isinstance(model_or_model_entry, Model):
-            self.model_entry = ModelEntry.create(model_or_model_entry)
+    def __init__(self, database: ModelDatabase, obj: Union[Model, ModelEntry, ModelHash]):
+        self.database = database
+        if isinstance(obj, ModelEntry):
+            self.model_entry = obj
+        elif isinstance(obj, Model):
+            self.model_entry = ModelEntry.create(obj)
         else:
             raise ValueError(
-                f'Invalid type `model_or_model_entry`: got {type(model_or_model_entry)}, expected Model or ModelEntry'
+                f'Invalid type `obj`: got {type(obj)}, expected Model, ModelEntry ' 'or ModelHash'
             )
 
     def store_model(self) -> None:
-        return self.db.store_model(self.model_entry.model)
+        return self.database.store_model(self.model_entry.model)
 
     def store_local_file(self, path: Path, new_filename: Union[str, None] = None) -> None:
-        return self.db.store_local_file(self.model_entry.model, path, new_filename)
+        return self.database.store_local_file(self.model_entry.model, path, new_filename)
 
     def store_metadata(self, metadata: dict) -> None:
-        return self.db.store_metadata(self.model_entry.model, metadata)
+        return self.database.store_metadata(self.model_entry.model, metadata)
 
     def store_modelfit_results(self) -> None:
-        return self.db.store_modelfit_results(self.model_entry.model)
+        return self.database.store_modelfit_results(self.model_entry.model)
 
     def store_model_entry(self) -> None:
-        return self.db.store_model_entry(self.model_entry)
+        return self.database.store_model_entry(self.model_entry)
 
 
 class DummySnapshot(ModelSnapshot):
-    def __init__(self, database: ModelDatabase, model_name: str):
-        self.db = database
-        self.name = model_name
+    def __init__(self, database: ModelDatabase, model: Union[Model, ModelHash]):
+        self.database = database
+        self.key = ModelHash(model)
 
     def list_all_files(self) -> list[str]:
-        return self.db.list_all_files(self.name)
+        return self.database.list_all_files(self.key)
 
     def retrieve_file(self, filename: str, destination_path: Path, force: bool = False) -> None:
-        self.db.retrieve_file(self.name, filename, destination_path, force)
+        self.database.retrieve_file(self.key, filename, destination_path, force)
 
     def retrieve_all_files(self, destination_path: Path, force: bool = False) -> None:
-        self.db.retrieve_all_files(self.name, destination_path, force)
+        self.database.retrieve_all_files(self.key, destination_path, force)
 
     def retrieve_model(self) -> Model:
-        return self.db.retrieve_model(self.name)
+        return self.database.retrieve_model(self.key)
 
     def retrieve_modelfit_results(self) -> Results:
-        return self.db.retrieve_modelfit_results(self.name)
+        return self.database.retrieve_modelfit_results(self.key)
 
     def retrieve_model_entry(self) -> ModelEntry:
-        return self.db.retrieve_model_entry(self.name)
+        return self.database.retrieve_model_entry(self.key)
 
 
 class TransactionalModelDatabase(ModelDatabase):

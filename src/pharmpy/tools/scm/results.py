@@ -9,7 +9,7 @@ from typing import Any, Optional
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.psn_helpers import (
     arguments_from_command,
     options_from_command,
@@ -673,7 +673,7 @@ def _add_covariate_effects_to_steps(steps, path):
         if not model_path.is_file():
             return np.nan
         model = Model.parse_model(model_path)
-        results = read_modelfit_results(model_path)
+        results = parse_modelfit_results(model, model_path)
         varpars = model.random_variables.free_symbols
         all_thetas = [param for param in model.parameters if param.symbol not in varpars]
         new_thetas = all_thetas[-degrees:]

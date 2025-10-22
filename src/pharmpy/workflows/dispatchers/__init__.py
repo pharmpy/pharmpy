@@ -14,4 +14,4 @@ class DispatcherConfiguration(config.Configuration):
 
 conf = DispatcherConfiguration()
 
-__all__ = ['Dispatcher']
+__all__ = ('Dispatcher',)

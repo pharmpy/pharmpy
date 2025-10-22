@@ -7,13 +7,14 @@ from pathlib import Path
 from typing import Collection, Literal, Mapping, Optional, Union
 
 import pharmpy.visualization
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import scipy, sympy, sympy_stats
 from pharmpy.model import Assignment, Model, get_and_check_dataset
-from pharmpy.modeling import bin_observations, infer_datatypes
+from pharmpy.modeling import bin_observations, create_rng, infer_datatypes
 
 from .data import get_observations
 
@@ -133,6 +134,8 @@ def plot_transformed_eta_distributions(
     model: Model,
     parameter_estimates: Union[pd.Series, Mapping[str, float]],
     individual_estimates: pd.DataFrame,
+    parameter_estimates_untransformed: Union[pd.Series, Mapping[str, float]],
+    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
 ):
     """Plot transformed eta distributions for all transformed etas
 
@@ -144,6 +147,11 @@ def plot_transformed_eta_distributions(
         Parameter estimates of model fit
     individual_estimates : pd.DataFrame
         Individual estimates for etas
+    parameter_estimates_untransformed : pd.DataFrame
+        Parameter estimates of untransformed model fit
+    seed : int or rng
+        Random number generator or seed
+
 
     Returns
     -------
@@ -151,7 +159,12 @@ def plot_transformed_eta_distributions(
         Plot
     """
     pe = {Expr.symbol(str(key)): Expr.float(value) for key, value in parameter_estimates.items()}
+    pe_untransformed = {
+        Expr.symbol(str(key)): Expr.float(value)
+        for key, value in parameter_estimates_untransformed.items()
+    }
     eta_symbols = {Expr.symbol(name) for name in model.random_variables.etas.names}
+    rng = create_rng(seed)
 
     transformations = []
     for s in model.statements.before_odes:
@@ -163,21 +176,29 @@ def plot_transformed_eta_distributions(
                 if len(inter) == 1:
                     transformations.append((inter.pop(), s.expression))
 
-    x = np.linspace(-2.0, 2.0, 1000)
     i = 1
-
     df = pd.DataFrame()
 
     for eta, expr in transformations:
-        var = model.random_variables.etas.get_covariance(eta.name, eta.name).subs(pe)
-        subdf = pd.DataFrame({'x': x, 'original': norm.pdf(x, scale=float(var) ** 0.5)})
-        rv = sympy_stats.Normal('eta', 0, sympy.sqrt(var))
-        expr = sympy.sympify(expr).subs(pe).subs({eta: rv})
-        curdens = sympy_stats.density(expr)
-        densfn = sympy.lambdify(curdens.variables[0], curdens.expr)
+        var = model.random_variables.etas.get_covariance(eta.name, eta.name).subs(pe_untransformed)
+        std = float(var) ** 0.5
+        x = np.linspace(-4 * std, 4 * std, 1000)
+        subdf = pd.DataFrame({'x': x, 'untransformed': norm.pdf(x, scale=std)})
+        rv = sympy_stats.Normal('eta', 0, std)
+        expr = sympy.sympify(expr).subs(pe)
+        try:
+            sympy_expr = expr.subs({eta: rv})
+            curdens = sympy_stats.density(sympy_expr)
+            densfn = sympy.lambdify(curdens.variables[0], curdens.expr)
+        except ValueError:
+            samples = model.random_variables.sample(
+                expr, parameter_estimates, samples=1000, rng=rng
+            )
+            densfn = scipy.stats.gaussian_kde(samples)
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            subdf['boxcox'] = densfn(x)
+            subdf['transformed'] = densfn(x)
         subdf = pd.melt(subdf, id_vars=['x'], value_name='density')
         eta_name = f'ETA_{i}'
         ebes = pd.DataFrame(
@@ -194,8 +215,12 @@ def plot_transformed_eta_distributions(
         .mark_area(opacity=0.3)
         .encode(
             x=alt.X('x', axis=alt.Axis(labels=False, ticks=False, title=None)),
-            y='density',
-            color=alt.Color('variable:N', scale=alt.Scale(domain=['original', 'boxcox'])),
+            y=alt.Y('density:Q', stack=None),
+            color=alt.Color(
+                'variable:N',
+                scale=alt.Scale(domain=['untransformed', 'transformed']),
+                title='Distribution',
+            ),
         )
     )
     ticks = (
@@ -209,7 +234,7 @@ def plot_transformed_eta_distributions(
     )
     layer = alt.layer(single, ticks, data=df)
 
-    facet = layer.facet(facet='eta:N', columns=3)
+    facet = layer.facet(facet='eta:N', columns=3).interactive()
     return facet
 
 

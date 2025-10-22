@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Optional
 
 from pharmpy.internals.immutable import Immutable
@@ -49,12 +51,9 @@ class ModelEntry(Immutable):
         modelfit_results: Optional[ModelfitResults] = None,
         simulation_results: Optional[SimulationResults] = None,
         log: Optional[Log] = None,
-    ):
+    ) -> ModelEntry:
         if parent:
             ModelEntry._canonicalize_parent(model, parent)
-        # FIXME: Should we require the same name?
-        # if modelfit_results:
-        #     ModelEntry._canonicalize_modelfit_results(model, modelfit_results)
         return cls(
             model=model,
             parent=parent,
@@ -64,24 +63,10 @@ class ModelEntry(Immutable):
         )
 
     @staticmethod
-    def _canonicalize_parent(model, parent):
+    def _canonicalize_parent(model: Model, parent: Model) -> None:
         if model.name == parent.name:
             raise ValueError(
                 f'Name of `model` and `parent` are the same: `{model.name}`, `{parent.name}`'
-            )
-
-    @staticmethod
-    def _canonicalize_modelfit_results(model, modelfit_results):
-        if model.name != modelfit_results.name:
-            raise ValueError(
-                f'Name of `model` and `modelfit_results` do not match: `{model.name}`, `{modelfit_results.name}`'
-            )
-
-    @staticmethod
-    def _canonicalize_simulation_results(model, simulation_results):
-        if model.name != simulation_results.name:
-            raise ValueError(
-                f'Name of `model` and `simulation_results` do not match: `{model.name}`, `{simulation_results.name}`'
             )
 
     def attach_results(
@@ -89,7 +74,7 @@ class ModelEntry(Immutable):
         modelfit_results: ModelfitResults,
         simulation_results: Optional[SimulationResults] = None,
         log: Optional[Log] = None,
-    ):
+    ) -> ModelEntry:
         """Attaches modelfit results and possible log to ModelEntry objects"""
         if self._modelfit_results:
             raise ValueError('ModelEntry `modelfit_results` attribute already set')
@@ -107,22 +92,22 @@ class ModelEntry(Immutable):
         )
 
     @property
-    def model(self):
+    def model(self) -> Model:
         """Model object"""
         return self._model
 
     @property
-    def parent(self):
+    def parent(self) -> Optional[Model]:
         """Parent model of main model"""
         return self._parent
 
     @property
-    def modelfit_results(self):
+    def modelfit_results(self) -> Optional[ModelfitResults]:
         """Modelfit results of main model"""
         return self._modelfit_results
 
     @property
-    def simulation_results(self):
+    def simulation_results(self) -> Optional[SimulationResults]:
         """Simulation results of main model"""
         return self._simulation_results
 
@@ -131,5 +116,5 @@ class ModelEntry(Immutable):
         """Log of main model"""
         return self._log
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f'<Pharmpy model entry object {self.model.name}>'

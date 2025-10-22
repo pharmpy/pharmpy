@@ -7,10 +7,13 @@ from pharmpy.modeling import (
     set_initial_estimates,
     set_simulation,
 )
+from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool
 from pharmpy.tools.vpc.results import calculate_results
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
+
+from .frem import prepare_evaluation_model, prepare_frem_model
 
 
 def create_workflow(
@@ -18,6 +21,7 @@ def create_workflow(
     results: Optional[ModelfitResults] = None,
     samples: int = 20,
     stratify: Optional[str] = None,
+    frem: bool = False,
 ):
     """Run VPC
 
@@ -31,6 +35,8 @@ def create_workflow(
         Number of samples
     stratify : str
         Column to stratify on
+    frem : bool
+        Should we run the special vpc procedure a FREM model?
 
     Returns
     -------
@@ -51,10 +57,18 @@ def create_workflow(
     start_task = Task('start', start, model, results)
     wb.add_task(start_task)
 
+    if frem:
+        frem_prep_eval_task = Task('prepare_frem_evaluation', prepare_evaluation_model)
+        wb.add_task(frem_prep_eval_task, predecessors=[start_task])
+        eval_wfl = create_fit_workflow(n=1)
+        wb.insert_workflow(eval_wfl, predecessors=[frem_prep_eval_task])
+        frem_prep_task = Task('prepare_frem_model', prepare_frem_model)
+        wb.add_task(frem_prep_task, predecessors=wb.output_tasks)
+
     simulation_task = Task('simulation', simulation, samples)
     wb.add_task(simulation_task, predecessors=wb.output_tasks)
 
-    task_result = Task('results', post_process_results, model, stratify)
+    task_result = Task('results', post_process_results, stratify)
     wb.add_task(task_result, predecessors=wb.output_tasks)
 
     return Workflow(wb)
@@ -75,10 +89,11 @@ def simulation(context, samples, input_me):
         sim_model = set_initial_estimates(sim_model, input_me.modelfit_results.parameter_estimates)
     sim_res = run_subtool('simulation', context, name='simulation', model=sim_model)
     simulation_data = sim_res.table
-    return simulation_data
+    return input_me.model, simulation_data
 
 
-def post_process_results(context, input_model, stratify, simulation_data):
+def post_process_results(context, stratify, piped):
+    input_model, simulation_data = piped
     res = calculate_results(input_model, simulation_data, stratify=stratify)
     context.log_info("Finishing tool vpc")
     return res

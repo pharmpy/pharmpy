@@ -32,6 +32,11 @@ T = TypeVar('T')
 U = TypeVar('U')
 
 
+def raise_if_odes(model):
+    if model.statements.ode_system is not None:
+        raise ValueError("Model having an ODE system is not supported")
+
+
 def get_observation_expression(model: Model):
     """Get the full symbolic expression for the observation according to the model
 
@@ -55,6 +60,7 @@ def get_observation_expression(model: Model):
     >>> print(expr.unicode())
     D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
     """  # noqa E501
+    raise_if_odes(model)
     stats = model.statements
     # FIXME: Handle other DVs
     dv = list(model.dependent_variables.keys())[0]
@@ -99,6 +105,7 @@ def get_individual_prediction_expression(model: Model):
     --------
     get_population_prediction_expression : Get full symbolic epression for the population prediction
     """
+    raise_if_odes(model)
     return get_observation_expression(model).subs(
         {Expr.symbol(eps): 0 for eps in model.random_variables.epsilons.names}
     )
@@ -130,6 +137,7 @@ def get_population_prediction_expression(model: Model):
     --------
     get_individual_prediction_expression : Get full symbolic epression for the individual prediction
     """
+    raise_if_odes(model)
 
     return get_individual_prediction_expression(model).subs(
         {Expr.symbol(eta): 0 for eta in model.random_variables.etas.names}
@@ -162,6 +170,7 @@ def calculate_eta_gradient_expression(model: Model):
     --------
     calculate_epsilon_gradient_expression : Epsilon gradient
     """
+    raise_if_odes(model)
     y = get_individual_prediction_expression(model)
     d = [y.diff(Expr.symbol(x)) for x in model.random_variables.etas.names]
     return d
@@ -194,6 +203,7 @@ def calculate_epsilon_gradient_expression(model: Model):
     calculate_eta_gradient_expression : Eta gradient
     """
 
+    raise_if_odes(model)
     y = get_observation_expression(model)
     d = [y.diff(Expr.symbol(x)) for x in model.random_variables.epsilons.names]
     return d

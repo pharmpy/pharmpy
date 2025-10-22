@@ -10,7 +10,6 @@ from pharmpy.modeling import (
     remove_covariate_effect,
     set_name,
 )
-from pharmpy.tools import read_modelfit_results
 from pharmpy.tools.covsearch.tool import (
     Candidate,
     Effect,
@@ -27,6 +26,7 @@ from pharmpy.tools.covsearch.tool import (
     prepare_mfls,
     validate_input,
 )
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.workflows import ModelEntry, Workflow
 
@@ -37,7 +37,7 @@ LARGE_VALID_MFL_STRING = 'COVARIATE?(@IIV, @CONTINUOUS, *);COVARIATE?(@IIV, @CAT
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    results = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
     assert isinstance(
         create_workflow(model=model, results=results, search_space=MINIMAL_VALID_MFL_STRING),
         Workflow,
@@ -50,7 +50,7 @@ def test_create_workflow_with_model(load_model_for_test, testdata):
 def test_validate_input_with_model(load_model_for_test, testdata, model_path):
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
-    results = read_modelfit_results(path)
+    results = parse_modelfit_results(model, path)
     validate_input(model=model, results=results, search_space=LARGE_VALID_MFL_STRING)
 
 
@@ -130,7 +130,7 @@ def test_extract_nonsignificant_effects(
     load_model_for_test, testdata, model_entry_factory, p_value, no_of_nonsignificant_effects
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
     parent_modelentry = ModelEntry(model, modelfit_results=modelres)
 
     search_space = 'COVARIATE?([CL,VC],[WT, AGE],EXP)'
@@ -275,7 +275,7 @@ def test_validate_input_raises(
         model_path = ('nonmem/pheno.mod',)
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
-    results = read_modelfit_results(path)
+    results = parse_modelfit_results(model, path)
 
     harmless_arguments = dict(
         search_space=MINIMAL_VALID_MFL_STRING,
@@ -323,7 +323,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
 
 def test_max_eval(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    modelres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    modelres = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
 
     no_max_eval_model_entry = _start(model, modelres, max_eval=False)
     assert no_max_eval_model_entry.model == model
@@ -398,7 +398,7 @@ def _mock_fit(effect, parent, adaptive_step):
 #         ]
 #
 #     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-#     modelres = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+#     modelres = parse_modelfit_results(model, testdata / 'nonmem' / 'pheno.mod')
 #
 #     candidate_effect_funcs, start = get_effect_funcs_and_base_model(search_space, model)
 #     start = _start(start, modelres, False)
@@ -453,7 +453,7 @@ def _create_candidates(model_entry_factory, funcs, parent_cand, i, p_value):
 
 def test_get_best_candidate(load_model_for_test, testdata, model_entry_factory):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
     parent_model_entry = ModelEntry(model, modelfit_results=modelres)
     parent_cand = Candidate(parent_model_entry, steps=tuple())
 
@@ -487,7 +487,7 @@ def test_get_best_candidate(load_model_for_test, testdata, model_entry_factory):
 
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    modelres = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    modelres = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
     parent_model_entry = ModelEntry(model, modelfit_results=modelres)
     parent_cand = Candidate(parent_model_entry, steps=tuple())
 

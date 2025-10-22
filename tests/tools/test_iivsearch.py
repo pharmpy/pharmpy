@@ -15,7 +15,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     set_name,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
     _create_param_dict,
     _extract_clearance_parameter,
@@ -47,8 +47,9 @@ from pharmpy.workflows import ModelEntry, Workflow
 
 
 def test_prepare_input_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model_input, me_input = prepare_input_model(model, res)
 
     assert model_input.description == '[CL]+[VC]+[MAT]'
@@ -67,8 +68,9 @@ def test_prepare_input_model(load_model_for_test, testdata):
 def test_prepare_base_model(
     load_model_for_test, testdata, iiv_strategy, linearize, no_of_params_added, description, has_mfr
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_input = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_start = load_model_for_test(path)
+    res_input = parse_modelfit_results(model_start, path)
     model_input = add_peripheral_compartment(model_start)
     me_input = ModelEntry.create(model_input, modelfit_results=res_input)
     model_base, me_base = prepare_base_model(me_input, iiv_strategy, linearize)
@@ -99,9 +101,10 @@ def test_prepare_base_model(
 def test_update_linearized_base_model(
     load_model_for_test, testdata, iiv_strategy, param_mapping, description
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     model_start = remove_iiv(model_start, ['ETA_3'])
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     if iiv_strategy != 'no_add':
         model_base = iivsearch_add_iiv(iiv_strategy, model_start, res_start, linearize=True)
@@ -142,8 +145,9 @@ def test_prepare_algorithms(algorithm, correlation_algorithm, list_of_algorithms
 
 
 def test_create_param_mapping(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     me_input = ModelEntry.create(model, modelfit_results=res)
 
     param_mapping = create_param_mapping(me_input, linearize=False)
@@ -165,12 +169,14 @@ def test_create_param_mapping(load_model_for_test, testdata):
 )
 def test_add_iiv(load_model_for_test, testdata, iiv_strategy, linearize, no_of_added_params):
     if not iiv_strategy.startswith('pd'):
-        model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-        res_input = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+        path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+        model_start = load_model_for_test(path)
+        res_input = parse_modelfit_results(model_start, path)
         model_input = add_peripheral_compartment(model_start)
     else:
-        model_start = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
-        res_input = read_modelfit_results(testdata / 'nonmem' / 'pheno_pd.mod')
+        path = testdata / 'nonmem' / 'pheno_pd.mod'
+        model_start = load_model_for_test(path)
+        res_input = parse_modelfit_results(model_start, path)
         model_start = fix_parameters(model_start, model_start.parameters.names)
         model_input = set_direct_effect(model_start, expr='linear')
 
@@ -191,8 +197,9 @@ def test_add_iiv(load_model_for_test, testdata, iiv_strategy, linearize, no_of_a
 def test_categorize_model_entries(
     load_model_for_test, testdata, model_entry_factory, algorithm, base_model_name
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     model_start = add_peripheral_compartment(model_start)
     model_start = add_pk_iiv(model_start)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
@@ -212,8 +219,9 @@ def test_categorize_model_entries(
 
 
 def test_update_input_model_description(load_model_for_test, testdata):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     model_start = add_peripheral_compartment(model_start)
     model_start = add_pk_iiv(model_start)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
@@ -232,8 +240,9 @@ def test_update_input_model_description(load_model_for_test, testdata):
 def test_create_no_of_etas_candidate_entry(
     load_model_for_test, testdata, to_remove, no_of_etas, description
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     me_candidate = create_no_of_etas_candidate_entry(
@@ -285,8 +294,9 @@ def test_create_no_of_etas_candidate_entry(
 def test_create_block_structure_candidate_entry(
     load_model_for_test, testdata, block_structure, no_of_dists, description
 ):
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     me_candidate = create_block_structure_candidate_entry(
@@ -431,8 +441,9 @@ def test_extract_base_parameter(load_model_for_test, testdata):
 def test_brute_force_block_structure(
     load_model_for_test, testdata, list_of_parameters, block_structure, no_of_models
 ):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     model = add_peripheral_compartment(model)
     model = add_iiv(model, list_of_parameters, 'add')
     if block_structure:
@@ -483,10 +494,9 @@ def test_rv_block_structures_5_etas(load_model_for_test, pheno_path):
     assert block_structures_integer_partitions.count((1, 1, 1, 1, 1)) == 1
 
 
-def test_is_rv_block_structure(load_model_for_test, pheno_path):
-    model = load_model_for_test(pheno_path)
-    res = read_modelfit_results(pheno_path)
-    model = add_iiv(model, ['TAD', 'S1'], 'exp')
+def test_is_rv_block_structure(pheno, pheno_path):
+    res = parse_modelfit_results(pheno, pheno_path)
+    model = add_iiv(pheno, ['TAD', 'S1'], 'exp')
 
     etas_block_structure = (('ETA_1', 'ETA_2'), ('ETA_TAD',), ('ETA_S1',))
     model = create_joint_distribution(
@@ -510,8 +520,9 @@ def test_is_rv_block_structure(load_model_for_test, pheno_path):
 
 
 def test_create_joint_dist(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
 
     model = add_peripheral_compartment(model)
     model = add_pk_iiv(model)
@@ -620,16 +631,18 @@ def test_get_eta_names(load_model_for_test, testdata, funcs, keep, param_mapping
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    results = parse_modelfit_results(model, path)
     assert isinstance(
         create_workflow(model=model, results=results, algorithm='top_down_exhaustive'), Workflow
     )
 
 
 def test_validate_input_with_model(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    results = read_modelfit_results(testdata / 'nonmem' / 'pheno.mod')
+    path = testdata / 'nonmem' / 'pheno.mod'
+    model = load_model_for_test(path)
+    results = parse_modelfit_results(model, path)
     validate_input(model=model, results=results, algorithm='top_down_exhaustive')
 
 
@@ -734,7 +747,7 @@ def test_validate_input_raises(
         model_path = ('nonmem/pheno.mod',)
     path = testdata.joinpath(*model_path)
     model = load_model_for_test(path)
-    results = read_modelfit_results(path)
+    results = parse_modelfit_results(model, path)
 
     harmless_arguments = dict(
         algorithm='top_down_exhaustive',

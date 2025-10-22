@@ -6,10 +6,11 @@ import yaml
 
 import pharmpy.tools.psn_helpers as psn_helpers
 from pharmpy.basic import Expr
+from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import Model
-from pharmpy.tools import read_modelfit_results
+from pharmpy.model import JointNormalDistribution, Model, NormalDistribution
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import Results, read_results
 
@@ -27,6 +28,8 @@ class QAResults(Results):
     univariate_sum: Optional[Any] = None
     residual_error: Optional[Any] = None
     structural_bias: Optional[Any] = None
+    tdist_plot: Optional[alt.Chart] = None
+    boxcox_plot: Optional[alt.Chart] = None
 
 
 def calculate_results(
@@ -399,15 +402,30 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
     newres = new_model_entry.modelfit_results
     if newres is None:
         return None, dofv_tab
-    params = new_model_entry.model.random_variables.etas.variance_parameters
-    params = [Expr.symbol(p) for p in params]
+    params = []
+    for dist in new_model_entry.model.random_variables.etas:
+        if isinstance(dist, NormalDistribution):
+            p = dist.variance
+            params.append(p)
+        else:
+            assert isinstance(dist, JointNormalDistribution)
+            for p in dist.variance.diagonal():
+                params.append(p)
+
     boxcox_sds = [newres.parameter_estimates_sdcorr[p.name] for p in params]
     orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in params]
-    thetas = newres.parameter_estimates_sdcorr[0 : len(params)]
+    theta_names = [
+        p for p in new_model_entry.model.parameters.names if p.startswith(parameter_name)
+    ]
+    if theta_names:
+        thetas = [newres.parameter_estimates_sdcorr[theta] for theta in theta_names]
+    else:
+        # Fall back to old behavior
+        thetas = newres.parameter_estimates_sdcorr[0 : len(params)].values
     eta_names = new_model_entry.model.random_variables.etas.names
 
     table = pd.DataFrame(
-        {parameter_name: thetas.values, 'new_sd': boxcox_sds, 'old_sd': orig_sds}, index=eta_names
+        {parameter_name: thetas, 'new_sd': boxcox_sds, 'old_sd': orig_sds}, index=eta_names
     )
 
     dofv = origres.ofv - newres.ofv
@@ -504,19 +522,20 @@ def psn_qa_results(path):
     """
     path = Path(path)
 
-    original_model = Model.parse_model(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
-    orig_res = read_modelfit_results(path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod')
+    original_path = path / 'linearize_run' / 'scm_dir1' / 'derivatives.mod'
+    original_model = Model.parse_model(original_path)
+    orig_res = parse_modelfit_results(original_model, original_path)
     original_model_entry = ModelEntry.create(model=original_model, modelfit_results=orig_res)
 
     base_path = list(path.glob('*_linbase.mod'))[0]
     base_model = Model.parse_model(base_path)
-    base_res = read_modelfit_results(base_path)
+    base_res = parse_modelfit_results(base_model, base_path)
     base_model_entry = ModelEntry.create(model=base_model, modelfit_results=base_res)
 
     fullblock_path = path / 'modelfit_run' / 'fullblock.mod'
     if fullblock_path.is_file():
         fullblock_model = Model.parse_model(fullblock_path)
-        fb_res = read_modelfit_results(fullblock_path)
+        fb_res = parse_modelfit_results(fullblock_model, fullblock_path)
         fullblock_model_entry = ModelEntry.create(model=fullblock_model, modelfit_results=fb_res)
     else:
         fullblock_model_entry = None
@@ -524,7 +543,7 @@ def psn_qa_results(path):
     boxcox_path = path / 'modelfit_run' / 'boxcox.mod'
     if boxcox_path.is_file():
         boxcox_model = Model.parse_model(boxcox_path)
-        bc_res = read_modelfit_results(boxcox_path)
+        bc_res = parse_modelfit_results(boxcox_model, boxcox_path)
         boxcox_model_entry = ModelEntry.create(model=boxcox_model, modelfit_results=bc_res)
     else:
         boxcox_model_entry = None
@@ -532,7 +551,7 @@ def psn_qa_results(path):
     tdist_path = path / 'modelfit_run' / 'tdist.mod'
     if tdist_path.is_file():
         tdist_model = Model.parse_model(tdist_path)
-        td_res = read_modelfit_results(tdist_path)
+        td_res = parse_modelfit_results(tdist_model, tdist_path)
         tdist_model_entry = ModelEntry.create(model=tdist_model, modelfit_results=td_res)
     else:
         tdist_model_entry = None
@@ -540,7 +559,7 @@ def psn_qa_results(path):
     addetas_path = path / 'add_etas_run' / 'add_etas_linbase.mod'
     if addetas_path.is_file():
         addetas_model = Model.parse_model(addetas_path)
-        ae_res = read_modelfit_results(addetas_path)
+        ae_res = parse_modelfit_results(addetas_model, addetas_path)
         addetas_model_entry = ModelEntry.create(model=addetas_model, modelfit_results=ae_res)
     else:
         addetas_model_entry = None
@@ -548,7 +567,7 @@ def psn_qa_results(path):
     iov_path = path / 'modelfit_run' / 'iov.mod'
     if iov_path.is_file():
         iov_model = Model.parse_model(iov_path)
-        iov_res = read_modelfit_results(iov_path)
+        iov_res = parse_modelfit_results(iov_model, iov_path)
         iov_model_entry = ModelEntry.create(model=iov_model, modelfit_results=iov_res)
     else:
         iov_model_entry = None

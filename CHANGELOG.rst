@@ -1,3 +1,28 @@
+next version
+------------
+
+New features
+============
+
+* Add parameter scatter matrix plot to bootstrap
+* Add :code:`modeling.insert_ebes_into_dataset`
+* Add :code:`modeling.add_placebo_model`
+* Add :code:`modeling.binarize_dataset`
+* Add option :code:`exclude_reference_model` to the ModelRank tool
+
+Changes
+=======
+
+* Make the OFV distribution plot wider in the bootstrap results and report
+* Make tables in reports have 50 rows per page
+* Let :code:`append_estimation_step_options` operate on the final estimation step by default
+
+Bugfixes
+========
+
+* Fix regression having iivsearch crash if the input model is selected before the end
+* Fix so that idx=-1 does not duplicate estimation steps for :code:`append_estimation_step_options`
+
 .. _1.10.0:
 
 1.10.0 (2025-09-18)

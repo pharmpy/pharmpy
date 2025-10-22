@@ -76,9 +76,9 @@ def scatter_matrix(df):
     plot = (
         alt.layer(
             base.mark_circle(),
-            base.transform_regression('value_y', 'value_x', method='poly', order=4).mark_line(
-                color='red'
-            ),
+            # base.transform_regression('value_y', 'value_x', method='poly', order=4).mark_line(
+            #     color='red'
+            # ),
         )
         .facet(
             column=alt.Column('key_x:N', sort=list(df.columns), title=None),
@@ -158,9 +158,16 @@ def histogram(values, title=""):
         base.transform_joinaggregate(total='count(*)')
         .transform_calculate(pct='1 / datum.total')
         .mark_bar()
-        .encode(alt.X(f'{values.name}:Q', bin=True), alt.Y('sum(pct):Q', axis=alt.Axis(format='%')))
+        .encode(
+            alt.X(f'{values.name}:Q', bin=alt.Bin(maxbins=50)),
+            alt.Y('sum(pct):Q', axis=alt.Axis(format='%')),
+        )
         .add_params(selection)
-        .properties(title=title)
+        .properties(
+            title=title,
+            width=800,
+            height=300,
+        )
     )
 
     rule = base.mark_rule(color='red').encode(x=f'mean({values.name}):Q', size=alt.value(5))
@@ -219,4 +226,5 @@ def display_table(df, format=None, remove_nan_columns=True):
         buttons=["copyHtml5", "csvHtml5"],
         style='width: fit-content; float: left',
         allow_html=True,
+        pageLength=50,
     )

@@ -604,7 +604,9 @@ def run_amd_task(
             )
             context.store_model_entry(final_model_entry)
             if (mfl_allometry is not None and tool_name == 'modelsearch') or (
-                tool_name == "allometry" and 'allometry' in order[: order.index('covariates')]
+                tool_name == "allometry"
+                and 'covariates' in order
+                and 'allometry' in order[: order.index('covariates')]
             ):
                 cov_before = ModelFeatures.create_from_mfl_string(get_model_features(next_model))
                 cov_after = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
@@ -646,6 +648,8 @@ def run_amd_task(
     sim_model = set_simulation(final_model, n=300, seed=context.spawn_seed(rng, n=31))
     sim_res = _run_simulation(sim_model, context)
     simulation_data = sim_res.table
+
+    _run_qa(final_model, final_results, context)
 
     if final_results.predictions is not None:
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
@@ -770,6 +774,13 @@ def noop_subfunc(_: Model):
 
 def _run_simulation(model, ctx):
     res = run_subtool('simulation', ctx, name='simulation', model=model)
+    return res
+
+
+def _run_qa(model, results, ctx):
+    res = run_subtool(
+        'qa', ctx, name='qa', model=model, results=results, linearize=False, skip=['fullblock']
+    )
     return res
 
 
@@ -1310,7 +1321,7 @@ def check_skip(
                 )
                 to_be_skipped.append("allometry")
 
-    if 'covsearch' in order:
+    if 'covariates' in order:
         if search_space is not None:
             ss_mfl = mfl_parse(search_space, True)
             covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)

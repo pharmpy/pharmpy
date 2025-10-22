@@ -8,7 +8,7 @@ from pharmpy.modeling import (
     sample_parameters_from_covariance_matrix,
     sample_parameters_uniformly,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 
 
 def test_create_rng():
@@ -20,16 +20,18 @@ def test_create_rng():
 
 
 def test_sample_parameters_uniformly(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     rng = create_rng(23)
     df = sample_parameters_uniformly(model, res.parameter_estimates, n=3, seed=rng)
     assert df['PTVCL'][0] == 0.004877674495376137
 
 
 def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     rng = np.random.default_rng(318)
     pe = res.parameter_estimates
     cm = res.covariance_matrix
@@ -65,8 +67,9 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
 
 
 def test_sample_individual_estimates(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
     rng = np.random.default_rng(86)
     ie = res.individual_estimates
     iec = res.individual_estimates_covariance

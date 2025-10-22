@@ -1,9 +1,6 @@
-from typing import Union
-
 import pharmpy.model
 from pharmpy.basic.expr import Expr
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.subs import subs
 from pharmpy.model import Assignment, Model
 from pharmpy.modeling import get_thetas
 
@@ -26,7 +23,7 @@ class res_error_term:
         if self.res is not None:
             res_alias = set()
             for s in self.res.free_symbols:
-                all_a = find_aliases(s, self.model)
+                all_a = find_aliases(s, self.model)  # pyright: ignore [reportArgumentType]
                 for a in all_a:
                     if a not in res_alias:
                         res_alias.add(a)
@@ -55,17 +52,17 @@ class res_error_term:
         sigma = None
         sigma_alias = None
         for term in terms:
-            full_term = full_expression(term, self.model)
+            full_term = self.model.statements.error.full_expression(Expr(term))
             for factor in sympy.Mul.make_args(term):
                 factor = Expr(factor)
-                full_factor = full_expression(factor, self.model)
+                full_factor = self.model.statements.error.full_expression(factor)
                 all_symbols = full_factor.free_symbols.union(factor.free_symbols)
                 for symbol in all_symbols:
                     if str(symbol) in self.model.random_variables.epsilons.names:
                         sigma = convert_eps_to_sigma(symbol, self.model)
                         if self.model.parameters[str(sigma)].init == 1.0:
                             if self.model.parameters[str(sigma)].fix:
-                                term = term.subs(factor, 1)
+                                term = term.subs(factor._sympy_(), 1)
                         if factor != symbol:
                             sigma_alias = factor
 
@@ -103,7 +100,7 @@ class res_error_term:
                         # Remove the resulting symbol from the error term
                         term = convert_eps_to_sigma(term, self.model)
                         if sympy.sympify(ali) in term.free_symbols:
-                            term = term.subs(sympy.sympify(ali), 1)
+                            term = term.subs({sympy.sympify(ali): 1})
                             ali_removed = True
             if prop is True:
                 if not ali_removed:
@@ -189,7 +186,7 @@ class error:
                         self.dependencies.add(Expr(symbol))
 
 
-def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
+def is_number(symbol: Expr, model: pharmpy.model.Model) -> bool:
     alias = find_aliases(symbol, model)
     for a in alias:
         if a not in model.random_variables.free_symbols:
@@ -200,34 +197,7 @@ def is_number(symbol: sympy.Expr, model: pharmpy.model.Model) -> bool:
     return False
 
 
-def full_expression(expression: sympy.Expr, model: pharmpy.model.Model) -> sympy.Expr:
-    """
-    Return the full expression of an expression (used for model statements)
-
-    Parameters
-    ----------
-    expression : sympy.Expr
-        Expression to be expanded.
-    model : pharmpy.model.Model
-        A pharmpy mode object with the expression as a statement.
-
-    Returns
-    -------
-    expression : sympy.Expr
-        The fully expanded expression
-
-    """
-    if len(model.statements.after_odes) == 0:
-        statements = model.statements
-    else:
-        statements = model.statements.after_odes
-
-    for statement in reversed(statements):
-        expression = subs(expression, {statement.symbol: statement.expression}, simultaneous=True)
-    return expression
-
-
-def find_aliases(symbol: str, model: Model, aliases: set = None) -> list:
+def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
     """
     Returns a list of all variable names that are the same as the inputed symbol
 
@@ -271,9 +241,7 @@ def find_aliases(symbol: str, model: Model, aliases: set = None) -> list:
     return aliases
 
 
-def convert_eps_to_sigma(
-    expr: Union[sympy.Symbol, sympy.Mul], model: pharmpy.model.Model
-) -> Union[sympy.Symbol, sympy.Mul]:
+def convert_eps_to_sigma(expr: Expr, model: pharmpy.model.Model) -> Expr:
     """
     Change the use of epsilon names to sigma names instead. Mostly used for
     converting NONMEM format to nlmxir2

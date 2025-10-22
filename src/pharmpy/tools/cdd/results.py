@@ -9,7 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import linalg
 from pharmpy.model import Model
 from pharmpy.modeling import plot_individual_predictions
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.psn_helpers import model_paths, options_from_command
 from pharmpy.workflows import Results
 
@@ -171,7 +171,7 @@ def calculate_results(
             'covariance_ratio': covratios,
             'skipped_individuals': skipped_individuals,
         },
-        index=cdd_model_names,
+        index=pd.Index(cdd_model_names),
     )
 
     case_results.index = pd.RangeIndex(start=1, stop=len(case_results) + 1)
@@ -234,11 +234,11 @@ def psn_cdd_results(path: Union[str, Path], base_model_path=None):
     if base_model_path is None:
         base_model_path = Path(options['model_path'])
     base_model = Model.parse_model(base_model_path)
-    base_model_results = read_modelfit_results(base_model_path)
+    base_model_results = parse_modelfit_results(base_model, base_model_path)
 
     paths = model_paths(path, 'cdd_*.mod')
     cdd_models = list(map(Model.parse_model, paths))
-    cdd_results = list(map(read_modelfit_results, paths))
+    cdd_results = list(map(parse_modelfit_results, cdd_models, paths))
     skipped_individuals = psn_cdd_skipped_individuals(path)
 
     res = calculate_results(

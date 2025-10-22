@@ -1,10 +1,19 @@
+from datetime import datetime
+from typing import Literal
+
 from pharmpy.deps import rich
 
 from .baseclass import Broadcaster
 
 
 class TerminalBroadcaster(Broadcaster):
-    def broadcast_message(self, severity, ctxpath, date, message):
+    def broadcast_message(
+        self,
+        severity: Literal["critical", "error", "warning", "info", "trace"],
+        ctxpath: str,
+        date: datetime,
+        message: str,
+    ) -> None:
         grid = rich.table.Table.grid(expand=True)
         grid.add_column(ratio=3, overflow="fold")
         grid.add_column(ratio=2)

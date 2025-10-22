@@ -117,8 +117,10 @@ class LocalDirectoryContext(Context):
     @staticmethod
     def exists(name: str, ref: Optional[str] = None):
         if ref is None:
-            ref = Path.cwd()
-        path = Path(ref) / name
+            path = Path.cwd()
+        else:
+            path = Path(ref)
+        path = path / name
         return (
             path.is_dir() and (path / 'subcontexts').is_dir() and (path / 'annotations').is_file()
         )
@@ -169,6 +171,7 @@ class LocalDirectoryContext(Context):
     def store_key(self, name: str, key: ModelHash):
         from_path = self._models_path / name
         if not from_path.exists():
+            assert isinstance(self.model_database, LocalModelDirectoryDatabase)
             absolute_to_path = self.model_database.path / str(key)
             if absolute_to_path.exists():
                 if os.name != 'nt':
@@ -188,10 +191,10 @@ class LocalDirectoryContext(Context):
             key = txn.key
         return key
 
-    def list_all_names(self) -> list(str):
+    def list_all_names(self) -> list[str]:
         return sort_alphanum([f.name for f in Path(self._models_path).iterdir()])
 
-    def list_all_subcontexts(self) -> list(str):
+    def list_all_subcontexts(self) -> list[str]:
         path = self.path / 'subcontexts'
         return sort_alphanum([f.name for f in path.iterdir()])
 
@@ -283,11 +286,11 @@ class LocalDirectoryContext(Context):
         if self.path == self._top_path:
             raise ValueError("Already at the top level context")
         parent_path = self.path.parent.parent
-        parent = LocalDirectoryContext(name=parent_path.name, ref=parent_path.parent)
+        parent = LocalDirectoryContext(name=parent_path.name, ref=str(parent_path.parent))
         return parent
 
     def get_top_level_context(self) -> LocalDirectoryContext:
-        ctx_top = LocalDirectoryContext(name=self._top_path.name, ref=self._top_path.parent)
+        ctx_top = LocalDirectoryContext(name=self._top_path.name, ref=str(self._top_path.parent))
         return ctx_top
 
     def get_subcontext(self, name: str) -> LocalDirectoryContext:
@@ -297,7 +300,7 @@ class LocalDirectoryContext(Context):
         else:
             path = self.path / name
         if path.is_dir():
-            return LocalDirectoryContext(name=name, ref=path.parent)
+            return LocalDirectoryContext(name=name, ref=str(path.parent))
         else:
             raise ValueError(f'No subcontext with the name "{name}"')
 
@@ -307,7 +310,7 @@ class LocalDirectoryContext(Context):
             path = subcontexts_path
         else:
             path = self.path
-        ctx = LocalDirectoryContext(name=name, ref=path)
+        ctx = LocalDirectoryContext(name=name, ref=str(path))
         return ctx
 
     def finalize(self):
@@ -332,25 +335,25 @@ class LocalDirectoryContext(Context):
 
 
 class MetadataJSONEncoder(json.JSONEncoder):
-    def default(self, obj):
-        if isinstance(obj, Model):
+    def default(self, o):
+        if isinstance(o, Model):
             # NOTE: This is only used by modelfit at the moment since we encode
             # models for other tools upstream.
-            return obj.name
-        elif isinstance(obj, ModelfitResults):
-            return obj.to_json()
-        elif isinstance(obj, ModelFeatures):
-            return str(obj)
-        elif isinstance(obj, Path):
-            return str(obj)
-        return super().default(obj)
+            return o.name
+        elif isinstance(o, ModelfitResults):
+            return o.to_json()
+        elif isinstance(o, ModelFeatures):
+            return str(o)
+        elif isinstance(o, Path):
+            return str(o)
+        return super().default(o)
 
 
 class MetadataJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.object_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, object_hook=self.obj_hook, *args, **kwargs)
 
-    def object_hook(self, obj):
+    def obj_hook(self, obj):
         return obj
 
 

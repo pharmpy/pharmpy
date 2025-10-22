@@ -2,6 +2,7 @@ graft docs
 graft src
 graft tests
 
+prune .devcontainer
 prune docs/.doctrees
 prune docs/api
 

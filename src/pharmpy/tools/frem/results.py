@@ -25,7 +25,7 @@ from pharmpy.modeling import (
     sample_parameters_from_covariance_matrix,
     set_covariates,
 )
-from pharmpy.tools import read_modelfit_results
+from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.psn_helpers import get_psn_option
 from pharmpy.workflows import Results
 
@@ -1016,7 +1016,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     if not model_4_path.is_file():
         raise IOError(f'Could not find FREM model 4: {str(model_4_path)}')
     model_4 = Model.parse_model(model_4_path, missing_data_token=missing_data_token)
-    model_4_results = read_modelfit_results(model_4_path)
+    model_4_results = parse_modelfit_results(model_4, model_4_path)
     if model_4_results is None:
         raise ValueError('Model 4 has no results')
     cov_model_results = None
@@ -1026,7 +1026,8 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         except Exception:
             model_4b_path = path / 'final_models' / 'model_4b.mod'
             try:
-                model_4b_results = read_modelfit_results(model_4b_path)
+                model_4b = Model.parse_model(model_4b_path, missing_data_token=missing_data_token)
+                model_4b_results = parse_modelfit_results(model_4b, model_4b_path)
             except FileNotFoundError:
                 pass
             else:
@@ -1073,7 +1074,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         if intmod_path.is_file():
             intmod = Model.parse_model(intmod_path, missing_data_token=missing_data_token)
             intmods.append(intmod)
-            res = read_modelfit_results(intmod_path)
+            res = parse_modelfit_results(intmod, intmod_path)
             intmodres.append(res)
 
     model1b = Model.parse_model(path / 'm1' / 'model_1b.mod', missing_data_token=missing_data_token)

@@ -3,7 +3,7 @@ News
 ====
 
 Pharmpy and pharmr 1.10.0 released
----------------------------------
+----------------------------------
 
 *2025-09-18* --- Pharmpy 1.10.0 and pharmr 1.10.0 are now available. The highlights of the release are:
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 from pathlib import Path
-from typing import TypeVar
+from typing import Optional, TypeVar
 
 from .dispatchers import Dispatcher
 from .results import ModelfitResults, Results
@@ -13,7 +13,7 @@ T = TypeVar('T')
 
 def execute_workflow(
     workflow: Workflow[T], dispatcher=None, context=None, path=None, resume=False
-) -> T:
+) -> Optional[T]:
     """Execute workflow
 
     Parameters
@@ -50,25 +50,27 @@ def execute_workflow(
     insert_context(wb, context)
     workflow = Workflow(wb)
 
-    res: T = dispatcher.run(workflow, context)
+    res = dispatcher.run(workflow, context)
     if isinstance(res, Results):
         handle_results(res, context)
 
-    return res
+    return res  # pyright: ignore [reportReturnType]
 
 
 def execute_subtool(workflow: Workflow[T], context):
     assert context is not None
 
     res_name = context.context_path.replace('/', '_')
-    res = context.dispatcher.call_workflow(workflow, unique_name=f'{res_name}_results', ctx=context)
+    res = context.dispatcher.call_workflow(
+        workflow, unique_name=f'{res_name}_results', context=context
+    )
     if isinstance(res, Results) and not isinstance(res, ModelfitResults):
         handle_results(res, context)
 
     return res
 
 
-def handle_results(res, context):
+def handle_results(res: Results, context) -> None:
     context.store_results(res)
     from pharmpy.tools.reporting import report_available
 

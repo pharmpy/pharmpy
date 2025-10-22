@@ -34,6 +34,7 @@ from .data import (
     add_time_after_dose,
     add_time_of_last_dose,
     bin_observations,
+    binarize_dataset,
     check_dataset,
     deidentify_data,
     drop_columns,
@@ -228,7 +229,13 @@ from .parameters import (
     unfix_parameters,
     unfix_parameters_to,
 )
-from .pd import add_effect_compartment, add_indirect_effect, set_baseline_effect, set_direct_effect
+from .pd import (
+    add_effect_compartment,
+    add_indirect_effect,
+    add_placebo_model,
+    set_baseline_effect,
+    set_direct_effect,
+)
 from .plots import (
     plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
@@ -250,6 +257,7 @@ from .results import (
     calculate_pk_parameters_statistics,
     check_high_correlations,
     check_parameters_near_bounds,
+    insert_ebes_into_dataset,
 )
 from .tmdd import set_tmdd
 from .units import get_unit_of
@@ -275,6 +283,7 @@ __all__ = [
     'add_pd_iiv',
     'add_peripheral_compartment',
     'add_pk_iiv',
+    'add_placebo_model',
     'add_population_parameter',
     'add_predictions',
     'add_residuals',
@@ -282,6 +291,7 @@ __all__ = [
     'add_time_of_last_dose',
     'append_estimation_step_options',
     'bin_observations',
+    'binarize_dataset',
     'bump_model_number',
     'calculate_aic',
     'calculate_bic',
@@ -391,6 +401,7 @@ __all__ = [
     'has_zero_order_absorption',
     'has_zero_order_elimination',
     'infer_datatypes',
+    'insert_ebes_into_dataset',
     'is_linearized',
     'is_real',
     'is_simulation_model',

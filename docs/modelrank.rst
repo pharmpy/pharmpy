@@ -86,6 +86,8 @@ Optional
 | ``parameter_uncertainty_method``                | Parameter uncertainty method to use if necessary for strictness  |
 |                                                 | check                                                            |
 +-------------------------------------------------+------------------------------------------------------------------+
+| ``exclude_reference_model``                     | Set to True to exclude the reference model from the ranking      |
++-------------------------------------------------+------------------------------------------------------------------+
 
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~

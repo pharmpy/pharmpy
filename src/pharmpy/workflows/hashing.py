@@ -3,6 +3,7 @@ from __future__ import annotations
 import base64
 import hashlib
 import json
+from abc import ABC
 from typing import Union
 
 from pharmpy.deps import pandas as pd
@@ -21,7 +22,7 @@ def _encode(obj):
 
 
 def _update_hash_with_dataset(df, h):
-    hash_series = pd.util.hash_pandas_object(
+    hash_series = pd.util.hash_pandas_object(  # pyright: ignore [reportAttributeAccessIssue]
         df, index=False, encoding='utf8', hash_key='0123456789123456', categorize=True
     )
     for val in hash_series:
@@ -41,13 +42,15 @@ def _hash_to_string(h):
     return b64.replace('=', '')  # Remove padding characters
 
 
-class Hash:
-    def __str__(self):
+class Hash(ABC):
+    _hash: str
+
+    def __str__(self) -> str:
         return self._hash
 
 
 class DatasetHash(Hash):
-    def __init__(self, df):
+    def __init__(self, df: pd.DataFrame):
         h = hashlib.sha256()
         _update_hash_with_dataset(df, h)
         self._hash = _hash_to_string(h)

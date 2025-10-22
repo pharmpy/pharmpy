@@ -939,7 +939,7 @@ def set_power_on_ruv(
     list_of_eps: Optional[Union[str, list]] = None,
     dv: Union[Expr, int, None] = None,
     lower_limit: Optional[float] = 0.01,
-    ipred: Optional[Expr] = None,
+    ipred: Optional[str | Expr] = None,
     zero_protection: bool = False,
 ):
     """Applies a power effect to provided epsilons. If a dependent variable

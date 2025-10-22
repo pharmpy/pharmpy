@@ -1,6 +1,6 @@
 import os
 from collections.abc import Mapping
-from typing import Any
+from typing import Any, Optional
 
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
@@ -12,7 +12,9 @@ class InputValidationError(Exception):
     pass
 
 
-def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, Mapping[str, Any]]:
+def split_common_options(
+    d,
+) -> tuple[Mapping[str, Any], Mapping[str, Any], Optional[int], Mapping[str, Any]]:
     """Split the dict into dispatching options, common options, seed and tool options
 
     Dispatching options will be handled before the tool is run to setup the context and dispatching
@@ -32,7 +34,7 @@ def split_common_options(d) -> tuple[Mapping[str, Any], Mapping[str, Any], int, 
     all_common_options = 'esttool'
     # The defaults below will be overwritten by the user given options
     dispatching_options = get_default_dispatching_options()
-    common_options = {'esttool': 'nonmem'}
+    common_options: dict[str, Any] = {'esttool': 'nonmem'}
     seed = None
     other_options = {}
     for key, value in d.items():

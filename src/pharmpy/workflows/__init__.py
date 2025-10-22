@@ -69,7 +69,7 @@ class DispatchingError(Exception):
     pass
 
 
-__all__ = [
+__all__ = (
     'default_model_database',
     'default_context',
     'execute_subtool',
@@ -90,4 +90,4 @@ __all__ = [
     'Context',
     'Workflow',
     'WorkflowBuilder',
-]
+)

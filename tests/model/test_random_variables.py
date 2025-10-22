@@ -540,6 +540,14 @@ def test_sample():
     with pytest.raises(ValueError):
         rvs.sample(symbol('ETA3'), parameters=params)
 
+    dist1 = NormalDistribution.create('ETA(1)', 'iiv', 0, symbol('a'))
+    dist2 = NormalDistribution.create('ETA(2)', 'iiv', 0, symbol('b'))
+    rvs = RandomVariables.create([dist1, dist2])
+
+    rv1, rv2 = list(map(symbol, ['ETA(1)', 'ETA(2)']))
+    samples = rvs.sample(rv1 + rv2, parameters=params, samples=2, rng=9532)
+    assert list(samples) == pytest.approx([1.134656629283449, -0.5600697309962032])
+
 
 def test_variance_parameters():
     dist1 = JointNormalDistribution.create(

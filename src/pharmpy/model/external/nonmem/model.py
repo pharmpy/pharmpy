@@ -357,7 +357,8 @@ def parse_model(
         di = di.replace(missing_data_token=missing_data_token)
 
     try:
-        dataset = parse_dataset(di, control_stream, raw=False)
+        if di.path is not None:
+            dataset = parse_dataset(di, control_stream, raw=False)
     except FileNotFoundError:
         pass
 
