@@ -891,10 +891,11 @@ def filter_observations(df: pd.DataFrame, di: DataInfo):
                 # No event or dose information in dataset
                 return df
 
-    df_obs = df.astype({label: 'float'}).query(f'{label} == 0')
-    have_obs = df_obs['ID'].drop_duplicates()
-    mask = df['ID'].isin(have_obs)
-    return cast(pd.DataFrame, df[mask])
+    rows_with_observations = df[label].astype('float') == 0
+    ids = df['ID']
+    ids_with_observations = cast(pd.Series, ids[rows_with_observations])
+    rows_whose_ids_have_observations = ids.isin(ids_with_observations)
+    return cast(pd.DataFrame, df[rows_whose_ids_have_observations])
 
 
 def parse_table_columns(control_stream, netas, problem_no=0):
