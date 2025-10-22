@@ -9,6 +9,7 @@ New features
 * Add :code:`modeling.add_placebo_model`
 * Add :code:`modeling.binarize_dataset`
 * Add option :code:`exclude_reference_model` to the ModelRank tool
+* Added support for Python 3.14
 
 Changes
 =======
