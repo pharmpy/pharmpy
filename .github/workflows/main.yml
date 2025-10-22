@@ -39,9 +39,9 @@ jobs:
           - platform: 'windows-2025'
             python-version: '3.13'
             tox-env: 'unit'
-#          - platform: 'windows-2025'
-#            python-version: '3.14.0-rc.2'
-#            tox-env: 'unit'
+          - platform: 'windows-2025'
+            python-version: '3.14.0'
+            tox-env: 'unit'
           - platform: 'ubuntu-24.04-arm'
             python-version: '3.13'
             tox-env: 'unit'
@@ -57,9 +57,9 @@ jobs:
           - platform: 'macos-15'
             python-version: '3.13'
             tox-env: 'unit'
-#          - platform: 'macos-15'
-#            python-version: '3.14.0-rc.2'
-#            tox-env: 'unit'
+          - platform: 'macos-15'
+            python-version: '3.14.0'
+            tox-env: 'unit'
 
     runs-on: ${{ matrix.platform }}
 
