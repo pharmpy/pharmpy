@@ -127,33 +127,16 @@ def read_nonmem_dataset(
     if statements is None:
         convert_remaining = list(convert_todo)
     else:
-        filters = parse_filter_statements(statements)
-
-        df.columns = list(map(character, columns))
-        tmp = df
-        blocks = list(filter_schedule(filters))
-
-        for block in blocks:
-
-            if block.convert:
-                tmp[list(map(numeric, block.convert))] = convert(
-                    tmp[list(map(character, block.convert))], str(null_value), missing_data_token
-                )
-
-            mask_in_place(
-                tmp, block.filters, negation if statements is ignore else lambda x: x, conjunction
-            )
-
-        convert_done = set().union(*(block.convert for block in blocks)).intersection(convert_todo)
-
-        convert_init = [
-            numeric(column) if column in convert_done else character(column) for column in columns
-        ]
-
-        df = cast(pd.DataFrame, tmp[convert_init].copy())
-        del tmp
-        df.columns = columns
-
+        df, convert_done = _filter_in_place(
+            df,
+            columns,
+            statements,
+            convert_todo,
+            negation if statements is ignore else lambda x: x,
+            conjunction,
+            null_value,
+            missing_data_token,
+        )
         convert_remaining = list(convert_todo.difference(convert_done))
 
     if convert_remaining:
@@ -184,3 +167,34 @@ def read_nonmem_dataset(
             df = df.astype(_dtype)
 
     return df
+
+
+def _filter_in_place(
+    df, columns, statements, convert_todo, _map, _reduce, null_value, missing_data_token
+):
+    filters = parse_filter_statements(statements)
+
+    df.columns = list(map(character, columns))
+    tmp = df
+    blocks = list(filter_schedule(filters))
+
+    for block in blocks:
+
+        if block.convert:
+            tmp[list(map(numeric, block.convert))] = convert(
+                tmp[list(map(character, block.convert))], str(null_value), missing_data_token
+            )
+
+        mask_in_place(tmp, block.filters, _map, _reduce)
+
+    convert_done = set().union(*(block.convert for block in blocks)).intersection(convert_todo)
+
+    convert_init = [
+        numeric(column) if column in convert_done else character(column) for column in columns
+    ]
+
+    df = cast(pd.DataFrame, tmp[convert_init]).copy(deep=False)
+    del tmp
+    df.columns = columns
+
+    return df, convert_done
