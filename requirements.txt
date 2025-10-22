@@ -1,5 +1,6 @@
 alabaster==1.0.0
-altair==5.5.0
+altair==5.5.0 ; python_version != '3.14'
+altair @ git+https://github.com/vega/altair@05c83fd ; python_version == '3.14'
 appdirs==1.4.4
 asttokens==3.0.0
 attrs==25.4.0
@@ -69,7 +70,6 @@ psutil==7.1.1
 ptyprocess==0.7.0
 pure-eval==0.2.3
 Pygments==2.19.2
-pyreadr==0.5.3
 python-dateutil==2.9.0.post0
 pytz==2025.2
 pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
