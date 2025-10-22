@@ -10,7 +10,7 @@ from .symbols import Ref
 if TYPE_CHECKING:
     from ..model_features import ModelFeatures
 
-FP_TYPES = frozenset(('EXP', 'ADD', 'PROP', 'LOG', 'RE_LOG'))
+VARIABILITY_FP_TYPES = frozenset(('EXP', 'ADD', 'PROP', 'LOG', 'RE_LOG'))
 
 
 class Variability(ModelFeature):
@@ -29,7 +29,7 @@ class Variability(ModelFeature):
             raise TypeError(f'Type of `optional` must be a bool: got {type(optional)}')
 
         parameter = parameter.upper() if isinstance(parameter, str) else parameter
-        fp = cls._canonicalize_type(fp, FP_TYPES, 'fp')
+        fp = cls._canonicalize_type(fp, VARIABILITY_FP_TYPES, 'fp')
         return cls(parameter, fp, optional)
 
     def replace(self, **kwargs):

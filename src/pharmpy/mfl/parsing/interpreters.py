@@ -4,8 +4,18 @@ from typing import Union
 from lark.visitors import Interpreter
 
 from ..features import (
+    ABSORPTION_TYPES,
+    COVARIANCE_TYPES,
+    COVARIATE_FP_TYPES,
+    COVARIATE_OP_TYPES,
+    DIRECT_EFFECT_TYPES,
+    EFFECT_COMP_TYPES,
+    ELIMINATION_TYPES,
     IIV,
+    INDIRECT_EFFECT_TYPES,
     IOV,
+    METABOLITE_TYPES,
+    VARIABILITY_FP_TYPES,
     Absorption,
     Allometry,
     Covariance,
@@ -20,15 +30,6 @@ from ..features import (
     Ref,
     Transits,
 )
-from ..features.absorption import ABSORPTION_TYPES
-from ..features.covariance import COV_TYPES
-from ..features.covariate import FP_TYPES as COV_FP_TYPES
-from ..features.direct_effect import DIRECT_EFFECT_TYPES
-from ..features.effect_compartment import EFFECT_COMP_TYPES
-from ..features.elimination import ELIMINATION_TYPES
-from ..features.indirect_effect import INDIRECT_EFFECT_TYPES
-from ..features.metabolite import METABOLITE_TYPES
-from ..features.variability import FP_TYPES as VAR_FP_TYPES
 
 
 class MFLInterpreter(Interpreter):
@@ -328,9 +329,10 @@ class CovariateInterpreter(MFLInterpreter):
         is_optional = children[0]
         params = self.expand(children[1], wildcard=[Ref('pop_params')])
         covs = self.expand(children[2], wildcard=[Ref('covariates')])
-        fps = self.expand(children[3], wildcard=sorted(COV_FP_TYPES))
-        validate_values(fps, COV_FP_TYPES, 'COVARIATE')
+        fps = self.expand(children[3], wildcard=sorted(COVARIATE_FP_TYPES))
+        validate_values(fps, COVARIATE_FP_TYPES, 'COVARIATE')
         ops = children[4]
+        validate_values(ops, COVARIATE_OP_TYPES, 'COVARIATE')
 
         effects = []
         for param, cov, fp, op in itertools.product(params, covs, fps, ops):
@@ -366,7 +368,7 @@ class VariabilityInterpreter(MFLInterpreter):
 
         is_optional = children[0]
         params = self.expand(children[1], wildcard=[Ref('pop_params')])
-        fps = self.expand(children[2], wildcard=sorted(VAR_FP_TYPES))
+        fps = self.expand(children[2], wildcard=sorted(VARIABILITY_FP_TYPES))
 
         if isinstance(self, IIVInterpreter):
             type = 'IIV'
@@ -375,7 +377,7 @@ class VariabilityInterpreter(MFLInterpreter):
             type = 'IOV'
             func = IOV.create
 
-        validate_values(fps, VAR_FP_TYPES, type)
+        validate_values(fps, VARIABILITY_FP_TYPES, type)
 
         effects = []
         for param, fp in itertools.product(params, fps):
@@ -416,8 +418,8 @@ class CovarianceInterpreter(MFLInterpreter):
         assert len(children) == 3
 
         is_optional = children[0]
-        types = self.expand(children[1], wildcard=sorted(COV_TYPES))
-        validate_values(types, COV_TYPES, 'COVARIANCE')
+        types = self.expand(children[1], wildcard=sorted(COVARIANCE_TYPES))
+        validate_values(types, COVARIANCE_TYPES, 'COVARIANCE')
         params = self.expand(children[2], wildcard=[Ref('IIV')])
         param_pairs = self.get_pairwise_parameters(params)
 

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ..model_features import ModelFeatures
 
 
-COV_TYPES = frozenset(('IIV', 'IOV'))
+COVARIANCE_TYPES = frozenset(('IIV', 'IOV'))
 
 
 class Covariance(ModelFeature):
@@ -25,7 +25,7 @@ class Covariance(ModelFeature):
     def create(
         cls, type: str, parameters: Union[Sequence[str], Ref], optional: bool = False
     ) -> Covariance:
-        type = cls._canonicalize_type(type, COV_TYPES)
+        type = cls._canonicalize_type(type, COVARIANCE_TYPES)
         if not isinstance(parameters, Sequence) and not isinstance(parameters, Ref):
             raise TypeError(
                 f'Type of `parameters` must be a list or Ref: got {builtins.type(parameters)}'
@@ -123,7 +123,7 @@ class Covariance(ModelFeature):
         if len(features) == 1:
             return repr(features[0])
 
-        types = sorted(COV_TYPES)
+        types = sorted(COVARIANCE_TYPES)
         optional = (True, False)
         groups = {
             (t, o): [f for f in features if f.type == t and f.optional == o]

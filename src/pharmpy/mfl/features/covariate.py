@@ -11,8 +11,8 @@ if TYPE_CHECKING:
     from ..model_features import ModelFeatures
 
 
-FP_TYPES = frozenset(('LIN', 'PIECE_LIN', 'EXP', 'POW', 'CAT', 'CAT2'))
-OP_TYPES = frozenset(('+', '*'))
+COVARIATE_FP_TYPES = frozenset(('LIN', 'PIECE_LIN', 'EXP', 'POW', 'CAT', 'CAT2'))
+COVARIATE_OP_TYPES = frozenset(('+', '*'))
 
 
 class Covariate(ModelFeature):
@@ -49,8 +49,8 @@ class Covariate(ModelFeature):
         parameter = parameter.upper() if isinstance(parameter, str) else parameter
         covariate = covariate.upper() if isinstance(covariate, str) else covariate
 
-        fp = cls._canonicalize_type(fp, FP_TYPES, 'fp')
-        op = cls._canonicalize_type(op, OP_TYPES, 'op')
+        fp = cls._canonicalize_type(fp, COVARIATE_FP_TYPES, 'fp')
+        op = cls._canonicalize_type(op, COVARIATE_OP_TYPES, 'op')
 
         return cls(
             parameter=parameter,
