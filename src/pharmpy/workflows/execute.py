@@ -78,15 +78,4 @@ def handle_results(res: Results, context) -> None:
     if report_available(res):
         from pharmpy.tools.reporting import create_report
 
-        if os.name == 'nt':
-            # Workaround for issue with dask versions >= 2023.7.0 on Windows
-            import asyncio
-
-            with warnings.catch_warnings():
-                warnings.filterwarnings(
-                    "ignore",
-                    category=DeprecationWarning,
-                )
-                asyncio.set_event_loop_policy(asyncio.WindowsSelectorEventLoopPolicy())
-
         create_report(res, context.path)
