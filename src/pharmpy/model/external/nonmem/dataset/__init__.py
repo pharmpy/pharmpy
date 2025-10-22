@@ -1,6 +1,6 @@
 # Read dataset from file
 import warnings
-from typing import Iterable, cast
+from typing import Container, Iterable, cast
 
 from pharmpy import conf
 from pharmpy.deps import pandas as pd
@@ -34,8 +34,7 @@ def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
         df[idcol] = id_change.cumsum()
 
 
-def _idcol(df: pd.DataFrame) -> str | None:
-    columns = df.columns
+def _idcol(columns: Container[str]) -> str | None:
     if 'ID' in columns:
         return 'ID'
     elif 'L1' in columns:
@@ -109,32 +108,11 @@ def read_nonmem_dataset(
     else:
         df.columns = colnames
 
-    idcol = _idcol(df)
+    columns = df.columns
+    idcol = _idcol(columns)
 
     if ignore and accept:
         raise ValueError("Cannot have both IGNORE and ACCEPT")
-
-    statements = ignore or accept
-    if statements is None:
-        filters = []
-    else:
-        filters = list(parse_filter_statements(statements))
-
-    columns = df.columns
-    df.columns = list(map(character, columns))
-    tmp = df
-    blocks = list(filter_schedule(filters))
-
-    for block in blocks:
-
-        if block.convert:
-            tmp[list(map(numeric, block.convert))] = convert(
-                tmp[list(map(character, block.convert))], str(null_value), missing_data_token
-            )
-
-        mask_in_place(
-            tmp, block.filters, negation if statements is ignore else lambda x: x, conjunction
-        )
 
     convert_todo = (
         set(parse_columns)
@@ -145,16 +123,39 @@ def read_nonmem_dataset(
     if not raw:
         convert_todo.difference_update(("TIME", "DATE", "DAT1", "DAT2", "DAT3"))
 
-    convert_done = set().union(*(block.convert for block in blocks)).intersection(convert_todo)
-    convert_init = [
-        numeric(column) if column in convert_done else character(column) for column in columns
-    ]
+    statements = ignore or accept
+    if statements is None:
+        convert_remaining = list(convert_todo)
+    else:
+        filters = parse_filter_statements(statements)
 
-    df = cast(pd.DataFrame, tmp[convert_init].copy())
-    del tmp
-    df.columns = columns
+        df.columns = list(map(character, columns))
+        tmp = df
+        blocks = list(filter_schedule(filters))
 
-    convert_remaining = list(convert_todo.difference(convert_done))
+        for block in blocks:
+
+            if block.convert:
+                tmp[list(map(numeric, block.convert))] = convert(
+                    tmp[list(map(character, block.convert))], str(null_value), missing_data_token
+                )
+
+            mask_in_place(
+                tmp, block.filters, negation if statements is ignore else lambda x: x, conjunction
+            )
+
+        convert_done = set().union(*(block.convert for block in blocks)).intersection(convert_todo)
+
+        convert_init = [
+            numeric(column) if column in convert_done else character(column) for column in columns
+        ]
+
+        df = cast(pd.DataFrame, tmp[convert_init].copy())
+        del tmp
+        df.columns = columns
+
+        convert_remaining = list(convert_todo.difference(convert_done))
+
     if convert_remaining:
         convert_in_place(df, convert_remaining, str(null_value), missing_data_token)
 
@@ -166,8 +167,8 @@ def read_nonmem_dataset(
 
     if not raw:
         # Parse TIME if possible
-        if 'TIME' in df.columns and not any(
-            item in df.columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3']
+        if 'TIME' in columns and not any(
+            item in columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3']
         ):
             try:
                 convert_in_place(df, ["TIME"], str(null_value), missing_data_token)
@@ -177,8 +178,8 @@ def read_nonmem_dataset(
                 pass
 
     if dtype:
-        cols = set(df.columns)
-        _dtype = {k: v for k, v in dtype.items() if k in cols}
+        _columns = set(columns)
+        _dtype = {k: v for k, v in dtype.items() if k in _columns}
         if _dtype:
             df = df.astype(_dtype)
 
