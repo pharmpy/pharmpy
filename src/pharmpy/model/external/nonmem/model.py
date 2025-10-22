@@ -339,10 +339,6 @@ def parse_model(
     **_,
 ):
     parser = NMTranParser()
-    if path is None:
-        name = 'run1'
-    else:
-        name = path.stem
 
     control_stream = parser.parse(code)
     di = parse_datainfo(control_stream, path)
@@ -361,6 +357,21 @@ def parse_model(
             dataset = parse_dataset(di, control_stream, raw=False)
     except FileNotFoundError:
         pass
+
+    return make_model(control_stream, di, old_datainfo, path, dataset)
+
+
+def make_model(
+    control_stream: NMTranControlStream,
+    di: DataInfo,
+    old_datainfo: DataInfo,
+    path: Optional[Path],
+    dataset: Optional[pd.DataFrame],
+):
+    if path is None:
+        name = 'run1'
+    else:
+        name = path.stem
 
     statements, comp_map = parse_statements(di, dataset, control_stream)
     try:

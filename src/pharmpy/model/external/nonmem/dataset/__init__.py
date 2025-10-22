@@ -1,6 +1,6 @@
 # Read dataset from file
 import warnings
-from typing import Container, Iterable, cast
+from typing import Any, Container, Iterable, Optional, cast
 
 from pharmpy import conf
 from pharmpy.deps import pandas as pd
@@ -75,6 +75,36 @@ def read_nonmem_dataset(
      5. Pad with null_token columns if $INPUT has more columns than the dataset
      6. Strip away superfluous columns from the dataset
     """
+
+    with NMTRANDataIO(path_or_io, SEP_INPUT, ignore_character) as io:
+        df = read_NMTRAN_data(io, header=None)
+
+    return filter_and_convert_nonmem_dataset_in_place(
+        df,
+        raw=raw,
+        colnames=colnames,
+        drop=drop,
+        null_value=null_value,
+        parse_columns=parse_columns,
+        ignore=ignore,
+        accept=accept,
+        dtype=dtype,
+        missing_data_token=missing_data_token,
+    )
+
+
+def filter_and_convert_nonmem_dataset_in_place(
+    df: pd.DataFrame,
+    raw: bool = False,
+    colnames=(),
+    drop: Optional[list[bool]] = None,
+    null_value: str = '0',
+    parse_columns: Optional[Iterable[str]] = None,
+    ignore: Optional[list[str]] = None,
+    accept: Optional[list[str]] = None,
+    dtype: Optional[dict[str, Any]] = None,
+    missing_data_token: Optional[str] = None,
+):
     if drop is None:
         drop = [False] * len(colnames)
 
@@ -85,9 +115,6 @@ def read_nonmem_dataset(
     non_dropped = [name for name, dropped in zip(colnames, drop) if not dropped]
     if len(non_dropped) > len(set(non_dropped)):
         raise KeyError('Column names are not unique')
-
-    with NMTRANDataIO(path_or_io, SEP_INPUT, ignore_character) as io:
-        df = read_NMTRAN_data(io, header=None)
 
     assert isinstance(df, pd.DataFrame)
 

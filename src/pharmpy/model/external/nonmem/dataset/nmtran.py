@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any, Iterator, Optional, TextIO, Union
 
 from pharmpy.deps import pandas as pd
-from pharmpy.model.external.nonmem.dataset import DatasetError
+from pharmpy.model import DatasetError
 
 _ignore_alpha = re.compile(r"[ \t]*[A-Za-z#@]")
 _ignore_heading = re.compile(r"TABLE[ \t]NO[.][ \t]")
