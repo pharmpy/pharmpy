@@ -45,12 +45,12 @@ def get_rank_values(
 
     for me, values in rank_values.items():
         if me in mes_to_rank:
-            if rank_type == 'lrt' and not values['significant']:
+            if rank_type == 'lrt' and values['significant'] is False:
                 values['rank_val'] = np.nan
             elif exclude_reference_model and me.model == me_ref.model:
                 values['rank_val'] = np.nan
             elif not exclude_reference_model and rank_type == 'lrt' and me.model == me_ref.model:
-                values['rank_val'] = 0.0
+                values['rank_val'] = 1.0
             else:
                 values['rank_val'] = values[rank_val]
         else:

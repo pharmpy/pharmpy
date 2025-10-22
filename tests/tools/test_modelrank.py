@@ -617,10 +617,25 @@ def test_get_best_model_entry(load_model_for_test, testdata, model_entry_factory
         None,
         None,
         mes_to_rank=[me_ref] + mes_cand,
+        exclude_reference_model=True,
     )
     ranking = rank_model_entries(rank_values, 'lrt')
 
     assert get_best_model_entry(ranking) is None
+
+    rank_values = get_rank_values(
+        me_ref,
+        mes_cand,
+        'lrt',
+        0.0000000000000000000000000001,
+        None,
+        None,
+        mes_to_rank=[me_ref] + mes_cand,
+    )
+    ranking = rank_model_entries(rank_values, 'lrt')
+
+    best_model_entry = get_best_model_entry(ranking)
+    assert best_model_entry.model.name == 'mox2'
 
 
 def _create_candidates(model_ref):
