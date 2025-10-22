@@ -326,3 +326,21 @@ def test_nonmem_dataset_with_blocks():
     assert len(df) == 1
     assert list(df.columns) == colnames
     assert list(df.iloc[0]) == [6, -123]
+
+
+def test_nonmem_dataset_filter_no_convert():
+    colnames = ['ID', 'DV']
+
+    df = read_nonmem_dataset(
+        StringIO("1,2\n1,3\n2,4\n2,a\n7,9"),
+        colnames=colnames,
+        accept=['ID.GT.1'],
+        raw=False,
+        parse_columns=(),
+    )
+
+    assert len(df) == 3
+    assert list(df.columns) == colnames
+    assert list(df.iloc[0]) == ["2", "4"]
+    assert list(df.iloc[1]) == ["2", "a"]
+    assert list(df.iloc[2]) == ["7", "9"]
