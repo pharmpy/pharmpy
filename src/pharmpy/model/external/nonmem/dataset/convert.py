@@ -6,6 +6,10 @@ from pharmpy.deps import numpy as np
 from pharmpy.model.data import DatasetError
 
 
+def convert_in_place(df, columns: list[str], null_value: str, missing_data_token: str):
+    df[columns] = convert(df[columns], null_value, missing_data_token)
+
+
 def convert(df, null_value: str, missing_data_token: str):
     return df.apply(_convert_data_item(convert_fortran_number(null_value), missing_data_token))
 

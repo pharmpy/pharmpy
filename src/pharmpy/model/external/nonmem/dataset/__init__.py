@@ -6,9 +6,8 @@ from pharmpy import conf
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
 
-from .nmtran_convert import convert
-from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
-from .nmtran_filter import (
+from .convert import convert, convert_in_place
+from .filter import (
     character,
     conjunction,
     filter_schedule,
@@ -17,6 +16,7 @@ from .nmtran_filter import (
     numeric,
     parse_filter_statements,
 )
+from .nmtran import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 
 
 def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
@@ -34,7 +34,7 @@ def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
         df[idcol] = id_change.cumsum()
 
 
-def _idcol(df: pd.DataFrame):
+def _idcol(df: pd.DataFrame) -> str | None:
     columns = df.columns
     if 'ID' in columns:
         return 'ID'
@@ -156,7 +156,7 @@ def read_nonmem_dataset(
 
     convert_remaining = list(convert_todo.difference(convert_done))
     if convert_remaining:
-        df[convert_remaining] = convert(df[convert_remaining], str(null_value), missing_data_token)
+        convert_in_place(df, convert_remaining, str(null_value), missing_data_token)
 
     if idcol is not None:
         _make_ids_unique(idcol, df, convert_todo)
@@ -170,7 +170,7 @@ def read_nonmem_dataset(
             item in df.columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3']
         ):
             try:
-                df[["TIME"]] = convert(df[["TIME"]], str(null_value), missing_data_token)
+                convert_in_place(df, ["TIME"], str(null_value), missing_data_token)
             except DatasetError:
                 if dtype and 'TIME' in dtype:
                     dtype['TIME'] = 'str'
