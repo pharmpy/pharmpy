@@ -1,5 +1,6 @@
 from .absorption import Absorption
 from .allometry import Allometry
+from .covariance import Covariance
 from .covariate import Covariate
 from .direct_effect import DirectEffect
 from .effect_compartment import EffectComp
@@ -17,6 +18,7 @@ __all__ = (
     'Absorption',
     'Allometry',
     'Covariate',
+    'Covariance',
     'DirectEffect',
     'EffectComp',
     'Elimination',

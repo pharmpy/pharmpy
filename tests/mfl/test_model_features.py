@@ -5,6 +5,7 @@ from pharmpy.mfl.features import (
     IOV,
     Absorption,
     Allometry,
+    Covariance,
     Covariate,
     DirectEffect,
     EffectComp,
@@ -179,6 +180,20 @@ def test_init():
                 IOV.create(parameter='CL', fp='exp'),
             ],
         ),
+        (
+            [
+                IOV.create(parameter='CL', fp='exp'),
+                IIV.create(parameter='CL', fp='exp'),
+                Covariance.create(type='IIV', parameters=['CL', 'VC']),
+                Absorption.create('FO'),
+            ],
+            [
+                Absorption.create('FO'),
+                IIV.create(parameter='CL', fp='exp'),
+                IOV.create(parameter='CL', fp='exp'),
+                Covariance.create(type='IIV', parameters=['CL', 'VC']),
+            ],
+        ),
     ),
 )
 def test_create(features, expected):
@@ -292,6 +307,15 @@ def test_create(features, expected):
                 Peripherals.create(0),
                 IIV.create(parameter='CL', fp='exp'),
                 IOV.create(parameter='CL', fp='exp'),
+            ],
+        ),
+        (
+            'IIV(CL,EXP);IOV(CL,EXP);COVARIANCE(IIV,[CL,VC]);ABSORPTION(FO)',
+            [
+                Absorption.create('FO'),
+                IIV.create(parameter='CL', fp='exp'),
+                IOV.create(parameter='CL', fp='exp'),
+                Covariance.create(type='IIV', parameters=['CL', 'VC']),
             ],
         ),
     ),
@@ -501,6 +525,16 @@ def test_iov():
     assert mf.iov.features == (iov,)
 
 
+def test_covariance():
+    a1 = Absorption.create('FO')
+    a2 = Absorption.create('ZO')
+    cov1 = Covariance.create('IIV', ['CL', 'VC'])
+    cov2 = Covariance.create('IOV', ['CL', 'VC'])
+    mf = ModelFeatures.create([a1, cov2, a2, cov1])
+    assert mf.features == (a1, a2, cov1, cov2)
+    assert mf.covariance.features == (cov1, cov2)
+
+
 def test_refs():
     mf = ModelFeatures.pk_oral()
     assert mf.refs == tuple()
@@ -553,6 +587,42 @@ def test_is_expanded():
             [
                 Covariate.create('CL', 'WGT', 'exp', optional=True),
                 Covariate.create('VC', 'WGT', 'exp'),
+            ],
+            False,
+        ),
+        (
+            [IIV.create('CL', 'exp', optional=False), IIV.create('VC', 'exp', optional=False)],
+            True,
+        ),
+        (
+            [
+                IIV.create('CL', 'exp', optional=True),
+                IIV.create('CL', 'exp', optional=False),
+            ],
+            False,
+        ),
+        (
+            [IOV.create('CL', 'exp', optional=False), IOV.create('VC', 'exp', optional=False)],
+            True,
+        ),
+        (
+            [
+                IOV.create('CL', 'exp', optional=True),
+                IOV.create('CL', 'exp', optional=False),
+            ],
+            False,
+        ),
+        (
+            [
+                Covariance.create('IIV', ['CL', 'VC'], optional=False),
+                Covariance.create('IIV', ['CL', 'MAT'], optional=False),
+            ],
+            True,
+        ),
+        (
+            [
+                Covariance.create('IIV', ['CL', 'VC'], optional=True),
+                Covariance.create('IIV', ['CL', 'VC'], optional=False),
             ],
             False,
         ),
@@ -771,15 +841,15 @@ def test_eq():
         (
             [
                 IIV.create('VC', 'EXP', True),
-                Absorption.create('FO'),
-                Absorption.create('SEQ-ZO-FO'),
-                Absorption.create('ZO'),
+                Covariance.create('IIV', ['MAT', 'VC'], True),
+                Covariance.create('IIV', ['CL', 'VC'], True),
                 IOV.create('CL', 'EXP', True),
                 IOV.create('VC', 'EXP', True),
+                Covariance.create('IIV', ['MAT', 'CL'], True),
                 IIV.create('CL', 'EXP', True),
                 IIV.create('MAT', 'EXP', True),
             ],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);IIV?([CL,MAT,VC],EXP);IOV?([CL,VC],EXP)',
+            'IIV?([CL,MAT,VC],EXP);IOV?([CL,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
         ),
     ),
 )
@@ -801,6 +871,7 @@ def test_repr(features, expected):
         'DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT(LINEAR,[DEGRADATION,PRODUCTION]);EFFECTCOMP([EMAX,STEP])',
         'ABSORPTION([FO,ZO]);METABOLITE(PSC)',
         'IIV([CL,MAT,VC],EXP);IOV([CL,MAT,VC],EXP)',
+        'COVARIANCE(IIV,[CL,MAT,VC])',
     ),
 )
 def test_parse_repr_roundtrip(source):

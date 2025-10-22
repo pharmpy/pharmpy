@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Iterable, Optional
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence
 
 from pharmpy.internals.immutable import Immutable
 
@@ -23,7 +23,7 @@ class ModelFeature(Immutable):
     def repr_many(mf: ModelFeatures) -> str:
         pass
 
-    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> tuple[ModelFeature, ...]:
+    def expand(self, expand_to: dict[Ref, Sequence[str]]) -> tuple[ModelFeature, ...]:
         raise NotImplementedError
 
     def is_expanded(self):

@@ -7,6 +7,7 @@ from pharmpy.mfl.features import (
     IOV,
     Absorption,
     Allometry,
+    Covariance,
     Covariate,
     DirectEffect,
     EffectComp,
@@ -488,6 +489,102 @@ from pharmpy.mfl.parsing import parse
                 (Ref('POP_PARAMS'), 'EXP', True),
             ],
         ),
+        (
+            'COVARIANCE(IIV,[CL,VC])',
+            Covariance,
+            [
+                ('IIV', ['CL', 'VC'], False),
+            ],
+        ),
+        (
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+            Covariance,
+            [
+                ('IIV', ['CL', 'MAT'], False),
+                ('IIV', ['CL', 'VC'], False),
+                ('IIV', ['VC', 'MAT'], False),
+            ],
+        ),
+        (
+            'COVARIANCE?(IIV,[CL,MAT,VC])',
+            Covariance,
+            [
+                ('IIV', ['CL', 'MAT'], True),
+                ('IIV', ['CL', 'VC'], True),
+                ('IIV', ['VC', 'MAT'], True),
+            ],
+        ),
+        (
+            'COVARIANCE?(IIV,[CL,MAT,MDT,VC])',
+            Covariance,
+            [
+                ('IIV', ['CL', 'MAT'], True),
+                ('IIV', ['CL', 'MDT'], True),
+                ('IIV', ['CL', 'VC'], True),
+                ('IIV', ['MAT', 'MDT'], True),
+                ('IIV', ['MAT', 'VC'], True),
+                ('IIV', ['MDT', 'VC'], True),
+            ],
+        ),
+        (
+            'COVARIANCE(IOV,[CL,MAT,VC])',
+            Covariance,
+            [
+                ('IOV', ['CL', 'MAT'], False),
+                ('IOV', ['CL', 'VC'], False),
+                ('IOV', ['VC', 'MAT'], False),
+            ],
+        ),
+        (
+            'COVARIANCE(IOV,[CL,MAT,VC]);COVARIANCE(IIV,[CL,VC])',
+            Covariance,
+            [
+                ('IOV', ['CL', 'MAT'], False),
+                ('IOV', ['CL', 'VC'], False),
+                ('IOV', ['VC', 'MAT'], False),
+                ('IIV', ['CL', 'VC'], False),
+            ],
+        ),
+        (
+            'COVARIANCE([IIV,IOV],[CL,MAT,VC])',
+            Covariance,
+            [
+                ('IIV', ['CL', 'MAT'], False),
+                ('IIV', ['CL', 'VC'], False),
+                ('IIV', ['VC', 'MAT'], False),
+                ('IOV', ['CL', 'MAT'], False),
+                ('IOV', ['CL', 'VC'], False),
+                ('IOV', ['VC', 'MAT'], False),
+            ],
+        ),
+        (
+            'COVARIANCE(*,[CL,MAT,VC])',
+            Covariance,
+            [
+                ('IIV', ['CL', 'MAT'], False),
+                ('IIV', ['CL', 'VC'], False),
+                ('IIV', ['VC', 'MAT'], False),
+                ('IOV', ['CL', 'MAT'], False),
+                ('IOV', ['CL', 'VC'], False),
+                ('IOV', ['VC', 'MAT'], False),
+            ],
+        ),
+        (
+            'COVARIANCE?(IIV,@IIV)',
+            Covariance,
+            [
+                ('IIV', Ref('IIV'), True),
+            ],
+        ),
+        (
+            'LET(IIV,[CL,VC,MAT]);COVARIANCE?(IIV,@IIV)',
+            Covariance,
+            [
+                ('IIV', ['CL', 'MAT'], True),
+                ('IIV', ['CL', 'VC'], True),
+                ('IIV', ['VC', 'MAT'], True),
+            ],
+        ),
     ),
     ids=repr,
 )
@@ -561,6 +658,7 @@ def test_parse_multiple_types(source, no_of_features):
         ('COVARIATE(CL,WT,X,*)', ValueError, "Invalid values in COVARIATE: ['X']"),
         ('IIV(CL,X)', ValueError, "Invalid values in IIV: ['X']"),
         ('IOV(CL,X)', ValueError, "Invalid values in IOV: ['X']"),
+        ('COVARIANCE(X,[CL,VC])', ValueError, "Invalid values in COVARIANCE: ['X']"),
         ('X', ValueError, "Error in parsing: token X at line 1 col 1"),
     ),
     ids=repr,

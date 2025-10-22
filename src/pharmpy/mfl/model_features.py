@@ -12,6 +12,7 @@ from .features import (
     IOV,
     Absorption,
     Allometry,
+    Covariance,
     Covariate,
     DirectEffect,
     EffectComp,
@@ -57,6 +58,7 @@ class ModelFeatures(Immutable):
             Metabolite: [],
             IIV: [],
             IOV: [],
+            Covariance: [],
         }
         for feature in features:
             group = type(feature)
@@ -164,6 +166,10 @@ class ModelFeatures(Immutable):
     def iov(self) -> ModelFeatures:
         return self._get_feature_type(IOV)
 
+    @property
+    def covariance(self) -> ModelFeatures:
+        return self._get_feature_type(Covariance)
+
     def _get_feature_type(self, type: Type[T]) -> ModelFeatures:
         features = []
         for feature in self:
@@ -194,7 +200,7 @@ class ModelFeatures(Immutable):
                     return False
                 if len(features) > 1:
                     return False
-            elif isinstance(feature, (Covariate, IIV, IOV)):
+            elif isinstance(feature, (Covariate, IIV, IOV, Covariance)):
                 if feature.optional:
                     return False
             else:
@@ -202,7 +208,7 @@ class ModelFeatures(Immutable):
             feature_map[type(feature)].append(feature)
         return True
 
-    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> ModelFeatures:
+    def expand(self, expand_to: dict[Ref, Sequence[str]]) -> ModelFeatures:
         if self.is_expanded():
             return self
 
@@ -329,6 +335,9 @@ class ModelFeatures(Immutable):
         if self.iov:
             iov_repr = IOV.repr_many(self.iov)
             feature_repr.append(iov_repr)
+        if self.covariance:
+            covariance_repr = Covariance.repr_many(self.covariance)
+            feature_repr.append(covariance_repr)
 
         return ';'.join(feature_repr)
 

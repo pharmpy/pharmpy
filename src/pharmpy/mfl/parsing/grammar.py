@@ -29,7 +29,7 @@ definition: "LET"i "(" VARIABLE_NAME "," values ")"
 
 _feature: absorption | elimination | peripherals | transits | lagtime
             | covariate | allometry | direct_effect | effect_comp | indirect_effect
-            | metabolite | iiv | iov
+            | metabolite | iiv | iov | covariance
 
 absorption: "ABSORPTION"i "(" (_values_or_wildcard) ")"
 elimination: "ELIMINATION"i "(" (_values_or_wildcard) ")"
@@ -40,6 +40,7 @@ covariate: "COVARIATE"i [optional] "(" _values_or_ref_or_wildcard "," _values_or
 allometry: "ALLOMETRY"i "(" value ["," decimal] ")"
 iiv: "IIV"i [optional] "(" _values_or_ref_or_wildcard "," (_values_or_wildcard) ")"
 iov: "IOV"i [optional] "(" _values_or_ref_or_wildcard "," (_values_or_wildcard) ")"
+covariance: "COVARIANCE"i [optional] "(" _values_or_wildcard "," (_values_or_ref_or_wildcard) ")"
 
 direct_effect: "DIRECTEFFECT"i "(" (_values_or_wildcard) ")"
 effect_comp: "EFFECTCOMP"i "(" (_values_or_wildcard) ")"

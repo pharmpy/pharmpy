@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Iterable, Optional, Union
+from typing import TYPE_CHECKING, Optional, Sequence, Union
 
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
@@ -95,7 +95,7 @@ class Covariate(ModelFeature):
     def args(self) -> tuple[Union[str, Ref], Union[str, Ref], str, str, bool]:
         return self.parameter, self.covariate, self.fp, self.op, self.optional
 
-    def expand(self, expand_to: dict[Ref, Iterable[str]]) -> tuple[Covariate, ...]:
+    def expand(self, expand_to: dict[Ref, Sequence[str]]) -> tuple[Covariate, ...]:
         if self.is_expanded():
             return (self,)
 

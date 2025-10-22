@@ -8,6 +8,7 @@ from ..features import (
     IOV,
     Absorption,
     Allometry,
+    Covariance,
     Covariate,
     DirectEffect,
     EffectComp,
@@ -20,6 +21,7 @@ from ..features import (
     Transits,
 )
 from ..features.absorption import ABSORPTION_TYPES
+from ..features.covariance import COV_TYPES
 from ..features.covariate import FP_TYPES as COV_FP_TYPES
 from ..features.direct_effect import DIRECT_EFFECT_TYPES
 from ..features.effect_compartment import EFFECT_COMP_TYPES
@@ -36,7 +38,7 @@ class MFLInterpreter(Interpreter):
 
     def expand_ref(self, arg):
         values = self.definitions.get(arg.name)
-        if values:
+        if values is not None:
             return values
         return [arg]
 
@@ -84,6 +86,9 @@ class MFLInterpreter(Interpreter):
 
     def iov(self, tree):
         return IOVInterpreter(self.definitions).interpret(tree)
+
+    def covariance(self, tree):
+        return CovarianceInterpreter(self.definitions).interpret(tree)
 
     def value(self, tree):
         children = self.visit_children(tree)
@@ -400,6 +405,50 @@ class IIVInterpreter(VariabilityInterpreter):
 
 class IOVInterpreter(VariabilityInterpreter):
     pass
+
+
+class CovarianceInterpreter(MFLInterpreter):
+    def interpret(self, tree):
+        children = self.visit_children(tree)
+        assert 2 <= len(children) <= 3
+        if not isinstance(children[0], bool):
+            children.insert(0, False)
+        assert len(children) == 3
+
+        is_optional = children[0]
+        types = self.expand(children[1], wildcard=sorted(COV_TYPES))
+        validate_values(types, COV_TYPES, 'COVARIANCE')
+        params = self.expand(children[2], wildcard=[Ref('IIV')])
+        param_pairs = self.get_pairwise_parameters(params)
+
+        covariances = []
+        for type, parameters in itertools.product(types, param_pairs):
+            effect = Covariance.create(type=type, parameters=parameters, optional=is_optional)
+            covariances.append(effect)
+
+        return sorted(covariances)
+
+    def value(self, tree):
+        children = self.visit_children(tree)
+        assert len(children) == 1
+        value = children[0].value
+        assert isinstance(value, str)
+        return value.upper()
+
+    def expand(self, arg, wildcard):
+        if arg == ['*']:
+            return wildcard
+        elif isinstance(arg, Ref):
+            return self.expand_ref(arg)
+        return arg
+
+    @staticmethod
+    def get_pairwise_parameters(parameters):
+        assert isinstance(parameters, list)
+        if isinstance(parameters[0], Ref):
+            return parameters
+        else:
+            return list(itertools.combinations(parameters, 2))
 
 
 class DefinitionInterpreter(Interpreter):
