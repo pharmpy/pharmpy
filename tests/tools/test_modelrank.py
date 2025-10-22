@@ -555,7 +555,7 @@ def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, alpha, ref_dict)
             },
             'model1',
         ),
-        ('lrt', {'alpha': 0.05, 'search_space': None, 'E': None}, 'model0'),
+        ('lrt', {'alpha': 0.05, 'search_space': None, 'E': None}, 'model1'),
         (
             'lrt',
             {'alpha': 0.0000000000000000000000000001, 'search_space': None, 'E': None},
