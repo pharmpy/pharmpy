@@ -4,10 +4,8 @@ import pytest
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
-from pharmpy.model.external.nonmem.dataset import (
-    convert_fortran_number,
-    read_nonmem_dataset,
-)
+from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
+from pharmpy.model.external.nonmem.nmtran_convert import convert_fortran_number
 from pharmpy.model.external.nonmem.nmtran_data import SEP_INPUT, NMTRANDataIO
 
 
