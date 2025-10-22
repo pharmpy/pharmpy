@@ -1,8 +1,7 @@
 # Read dataset from file
 import re
 import warnings
-
-from lark import Lark
+from typing import Iterable, cast
 
 from pharmpy import conf
 from pharmpy.deps import numpy as np
@@ -10,6 +9,15 @@ from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
 
 from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
+from .nmtran_filter import (
+    character,
+    conjunction,
+    filter_schedule,
+    mask_in_place,
+    negation,
+    numeric,
+    parse_filter_statements,
+)
 
 
 def convert_fortran_number(number_string):
@@ -63,129 +71,36 @@ def _convert_data_item(x, null_value, missing_data_token):
     return converted
 
 
-def _make_ids_unique(df, columns):
+_convert_data_item_vectorized = np.vectorize(_convert_data_item)
+
+
+def convert(df, null_value: str, missing_data_token: str):
+    return df.apply(_convert_data_item_vectorized, args=(null_value, missing_data_token))
+
+
+def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
     """Check if id numbers are reused and make renumber. If not simply pass through the dataset."""
-    if 'ID' in df.columns:
-        id_label = 'ID'
-    elif 'L1' in df.columns:
-        id_label = 'L1'
+    if idcol not in columns:
+        return
+
+    id_series = df[idcol]
+    id_change = id_series.diff(1) != 0
+    if len(id_series[id_change]) != len(id_series.unique()):
+        warnings.warn(
+            "Dataset contains non-unique id numbers. Renumbering starting from 1",
+            DatasetWarning,
+        )
+        df[idcol] = id_change.cumsum()
+
+
+def _idcol(df: pd.DataFrame):
+    columns = df.columns
+    if 'ID' in columns:
+        return 'ID'
+    elif 'L1' in columns:
+        return 'L1'
     else:
-        return df
-    if id_label in columns:
-        id_series = df[id_label]
-        id_change = id_series.diff(1) != 0
-        if len(id_series[id_change]) != len(id_series.unique()):
-            warnings.warn(
-                "Dataset contains non-unique id numbers. Renumbering starting from 1",
-                DatasetWarning,
-            )
-            df[id_label] = id_change.cumsum()
-    return df
-
-
-def _filter_ignore_accept(df, ignore, accept, null_value, missing_data_token):
-    if ignore and accept:
-        raise ValueError("Cannot have both IGNORE and ACCEPT")
-
-    if not ignore and not accept:
-        return df
-
-    statements = ignore if ignore else accept
-
-    grammar = r'''
-        start: column skip1? (operator skip2?)? expr
-        column: COLNAME
-        COLNAME: /\w+/
-        skip1: WS
-        skip2: WS
-        WS: /\s+/
-        operator: OP_EQ | OP_STR_EQ | OP_NE | OP_STR_NE | OP_LT | OP_GT | OP_LT_EQ | OP_GT_EQ
-        OP_EQ    : ".EQN."
-        OP_STR_EQ: ".EQ." | "==" | "="
-        OP_NE    : ".NEN."
-        OP_STR_NE: ".NE." | "/="
-        OP_LT    : ".LT." | "<"
-        OP_GT    : ".GT." | ">"
-        OP_LT_EQ : ".LE." | "<="
-        OP_GT_EQ : ".GE." | ">="
-        expr: EXPR | QEXPR
-        EXPR  : /[^"',;()=<>\/.\s][^"',;()=\s]*/
-        QEXPR : /"[^"]*"/
-              | /'[^']*'/
-    '''
-    parser = Lark(
-        grammar,
-        start='start',
-        parser='lalr',
-        lexer='contextual',
-        propagate_positions=False,
-        maybe_placeholders=False,
-        debug=False,
-        cache=True,
-    )
-    for s in statements:
-        tree = parser.parse(s)
-        column = ''
-        expr = ''
-        operator = '=='
-        operator_type = str
-        for st in tree.iter_subtrees():
-            if st.data == 'column':
-                column = str(st.children[0])
-            elif st.data == 'expr':
-                expr = str(st.children[0])
-            elif st.data == 'operator':
-                operator_token = st.children[0]
-                tp = operator_token.type  # pyright: ignore [reportAttributeAccessIssue]
-                if tp == 'OP_EQ':
-                    operator = '=='
-                    operator_type = float
-                elif tp == 'OP_NE':
-                    operator = '!='
-                    operator_type = float
-                elif tp == 'OP_LT':
-                    operator = '<'
-                    operator_type = float
-                elif tp == 'OP_GT':
-                    operator = '>'
-                    operator_type = float
-                elif tp == 'OP_LT_EQ':
-                    operator = '<='
-                    operator_type = float
-                elif tp == 'OP_GT_EQ':
-                    operator = '>='
-                    operator_type = float
-                elif tp == 'OP_STR_EQ':
-                    operator = '=='
-                    operator_type = str
-                elif tp == 'OP_STR_NE':
-                    operator = '!='
-                    operator_type = str
-        if len(expr) >= 3 and (
-            (expr.startswith("'") and expr.endswith("'"))
-            or (expr.startswith('"') and expr.endswith('"'))
-        ):
-            expr = expr[1:-1]
-
-        if operator_type == str:
-            expression = f'{column} {operator} "{expr}"'
-            if ignore:
-                expression = 'not(' + expression + ')'
-            df.query(expression, inplace=True)
-        else:
-            # Need to temporary convert column. Refer to NONMEM fileformat documentation
-            # for further information.
-            # Using a name with spaces since this cannot collide with other NONMEM names
-            magic_colname = 'a a'
-            df[magic_colname] = df[column].apply(
-                _convert_data_item, args=(str(null_value), missing_data_token)
-            )
-            expression = f'`{magic_colname}` {operator} {expr}'
-            if ignore:
-                expression = 'not(' + expression + ')'
-            df.query(expression, inplace=True)
-            df.drop(labels=magic_colname, axis=1, inplace=True)
-    return df
+        return None
 
 
 def read_nonmem_dataset(
@@ -195,7 +110,7 @@ def read_nonmem_dataset(
     colnames=(),
     drop=None,
     null_value='0',
-    parse_columns=(),
+    parse_columns=None,
     ignore=None,
     accept=None,
     dtype=None,
@@ -253,47 +168,77 @@ def read_nonmem_dataset(
     else:
         df.columns = colnames
 
-    df = _filter_ignore_accept(df, ignore, accept, null_value, missing_data_token)
+    idcol = _idcol(df)
 
-    if not raw:
-        parse_columns = [col for col, dropped in zip(df.columns, drop) if not dropped]
-        parse_columns = [
-            x for x in parse_columns if x not in ['TIME', 'DATE', 'DAT1', 'DAT2', 'DAT3']
-        ]
-    for column in parse_columns:
-        df[column] = df[column].apply(
-            _convert_data_item, args=(str(null_value), missing_data_token)
+    if ignore and accept:
+        raise ValueError("Cannot have both IGNORE and ACCEPT")
+
+    statements = ignore or accept
+    if statements is None:
+        filters = []
+    else:
+        filters = list(parse_filter_statements(statements))
+
+    columns = df.columns
+    df.columns = list(map(character, columns))
+    tmp = df
+    blocks = list(filter_schedule(filters))
+
+    for block in blocks:
+
+        if block.convert:
+            tmp[list(map(numeric, block.convert))] = convert(
+                tmp[list(map(character, block.convert))], str(null_value), missing_data_token
+            )
+
+        mask_in_place(
+            tmp, block.filters, negation if statements is ignore else lambda x: x, conjunction
         )
-    df = _make_ids_unique(df, parse_columns)
+
+    convert_todo = (
+        set(parse_columns)
+        if parse_columns is not None
+        else (set() if raw else set(col for col, dropped in zip(columns, drop) if not dropped))
+    )
 
     if not raw:
-        # Make ID int if possible
-        if 'ID' in df.columns:
-            idcol = 'ID'
-        elif 'L1' in df.columns:
-            idcol = 'L1'
-        else:
-            idcol = None
-        if idcol:
-            if all(df[idcol].astype('int32') == df[idcol]):
-                df[idcol] = df[idcol].astype('int32')
+        convert_todo.difference_update(("TIME", "DATE", "DAT1", "DAT2", "DAT3"))
 
+    convert_done = set().union(*(block.convert for block in blocks)).intersection(convert_todo)
+    convert_init = [
+        numeric(column) if column in convert_done else character(column) for column in columns
+    ]
+
+    df = cast(pd.DataFrame, tmp[convert_init].copy())
+    del tmp
+    df.columns = columns
+
+    convert_remaining = list(convert_todo.difference(convert_done))
+    if convert_remaining:
+        df[convert_remaining] = convert(df[convert_remaining], str(null_value), missing_data_token)
+
+    if idcol is not None:
+        _make_ids_unique(idcol, df, convert_todo)
+
+        if not raw and all(df[idcol].astype('int32') == df[idcol]):
+            df[idcol] = df[idcol].astype('int32')
+
+    if not raw:
         # Parse TIME if possible
         if 'TIME' in df.columns and not any(
             item in df.columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3']
         ):
             try:
-                df['TIME'] = df['TIME'].apply(
-                    _convert_data_item, args=(str(null_value), missing_data_token)
-                )
+                df[["TIME"]] = convert(df[["TIME"]], str(null_value), missing_data_token)
             except DatasetError:
                 if dtype and 'TIME' in dtype:
                     dtype['TIME'] = 'str'
                 pass
 
     if dtype:
-        for column in df.columns:
-            if column in dtype:
-                df[column] = df[column].astype(dtype[column])
+        cols = set(df.columns)
+        _dtype = {k: v for k, v in dtype.items() if k in cols}
+        if _dtype:
+            df = df.astype(_dtype)
 
     return df
