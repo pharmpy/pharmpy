@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, Optional, cast
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -878,7 +878,7 @@ def parse_dataset(
     return df
 
 
-def filter_observations(df, di):
+def filter_observations(df: pd.DataFrame, di: DataInfo):
     try:
         label = di.typeix['mdv'][0].name
     except IndexError:
@@ -892,10 +892,9 @@ def filter_observations(df, di):
                 return df
 
     df_obs = df.astype({label: 'float'}).query(f'{label} == 0')
-    have_obs = set(df_obs['ID'].unique())
-    all_ids = set(df['ID'].unique())
-    ids_to_remove = all_ids - have_obs
-    return df[~df['ID'].isin(ids_to_remove)]
+    have_obs = df_obs['ID'].drop_duplicates()
+    mask = df['ID'].isin(have_obs)
+    return cast(pd.DataFrame, df[mask])
 
 
 def parse_table_columns(control_stream, netas, problem_no=0):
