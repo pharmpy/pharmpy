@@ -1,13 +1,12 @@
 # Read dataset from file
-import re
 import warnings
 from typing import Iterable, cast
 
 from pharmpy import conf
-from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
 
+from .nmtran_convert import convert
 from .nmtran_data import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 from .nmtran_filter import (
     character,
@@ -18,64 +17,6 @@ from .nmtran_filter import (
     numeric,
     parse_filter_statements,
 )
-
-
-def convert_fortran_number(number_string):
-    """This function will try to convert the number_string from the general fortran exponential format
-    into an np.float64. It covers "1d1", "1D1", "a+b", "a-b", "+" and "-". All other cases will
-    return None to signal that the number_string is not of the special form.
-
-    Move somewhere else. Will be used in output parsing as well
-    """
-    try:
-        y = np.float64(number_string)
-        return y
-    except (TypeError, ValueError):
-        pass
-
-    if number_string == '+' or number_string == '-':
-        return float(number_string + "0.0")  # Converts "-" into -0.0
-
-    # Handles formats like "1+1" = 1.0e1
-    m = re.match(r'([+\-]?)([^+\-dD]*)([+-])([^+\-dD]*)', number_string)
-    if m:
-        mantissa_sign = '-' if m.group(1) == '-' else ''
-        mantissa = m.group(2)
-        exponent_sign = m.group(3)
-        exponent = m.group(4)
-        return np.float64(mantissa_sign + mantissa + "E" + exponent_sign + exponent)
-
-    # Handles normal cases of using D or d instead of E or e
-    if "D" in number_string or "d" in number_string:
-        clean_number = number_string.replace("D", "e").replace("d", "e")
-        try:
-            y = np.float64(clean_number)
-            return y
-        except (TypeError, ValueError):
-            pass
-
-    raise ValueError(f"Could not convert the fortran number {number_string} to float")
-
-
-def _convert_data_item(x, null_value, missing_data_token):
-    if x is None or x == '.' or x == '':
-        x = null_value
-    if len(x) > 24:
-        raise DatasetError("The dataset contains an item that is longer than 24 characters")
-    if x == missing_data_token:
-        return np.nan
-    try:
-        converted = convert_fortran_number(x)
-    except ValueError as e:
-        raise DatasetError(str(e)) from e
-    return converted
-
-
-_convert_data_item_vectorized = np.vectorize(_convert_data_item)
-
-
-def convert(df, null_value: str, missing_data_token: str):
-    return df.apply(_convert_data_item_vectorized, args=(null_value, missing_data_token))
 
 
 def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
