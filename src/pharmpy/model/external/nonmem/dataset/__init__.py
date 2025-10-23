@@ -161,8 +161,8 @@ def read_nonmem_dataset(
     if idcol is not None:
         _make_ids_unique(idcol, df, convert_todo)
 
-        if not raw and all(df[idcol].astype('int32') == df[idcol]):
-            df[idcol] = df[idcol].astype('int32')
+        if not raw and all((_ids := df[idcol].astype('int32')) == df[idcol]):
+            df[idcol] = _ids
 
     if not raw:
         # Parse TIME if possible
