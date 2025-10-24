@@ -1,6 +1,7 @@
 from pathlib import Path
 from typing import Literal, Optional, Union
 
+from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     add_iiv,
     add_placebo_model,
@@ -58,10 +59,12 @@ def create_workflow(
     de_task = Task(
         'run_drug_effect_models', run_drug_effect_models, strictness, parameter_uncertainty_method
     )
-    wb.add_task(de_task, predecessors=wb.output_tasks)
+    wb.add_task(de_task)
 
     postprocess_task = Task('postprocess', postprocess)
-    wb.add_task(postprocess_task, predecessors=wb.output_tasks)
+    wb.add_task(postprocess_task, predecessors=de_task)
+
+    wb.scatter(placebo_task, (de_task, postprocess_task))
 
     return Workflow(wb)
 
@@ -115,7 +118,7 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
         model=rank_res.final_model, modelfit_results=rank_res.final_results
     )
 
-    return final_me
+    return final_me, rank_res
 
 
 def run_drug_effect_models(context, strictness, parameter_uncertainty_method, baseme):
@@ -178,11 +181,12 @@ def create_drug_effect_model(expr, baseme):
     return me
 
 
-def postprocess(context, rank_res):
+def postprocess(context, rank_res, rank_res2):
+    summary_tool = pd.concat((rank_res.summary_tool, rank_res2.summary_tool))
     res = PDSearchResults(
-        summary_tool=rank_res.summary_tool,
-        final_model=rank_res.final_model,
-        final_model_results=rank_res.final_results,
+        summary_tool=summary_tool,
+        final_model=rank_res2.final_model,
+        final_model_results=rank_res2.final_results,
     )
 
     context.log_info("Finishing pdsearch")
