@@ -195,3 +195,21 @@ def test_sort():
 
     with pytest.raises(ValueError):
         wf.traverse('x')
+
+
+def test_gather(tasks):
+    t1, t2, t3, t4 = tasks
+    wb = WorkflowBuilder(tasks=[t1, t2, t3, t4])
+    wb.gather([t1, t2, t3], t4)
+    wf = Workflow(wb)
+    assert len(wf.input_tasks) == 3
+    assert len(wf.output_tasks) == 1
+
+
+def test_scatter(tasks):
+    t1, t2, t3, t4 = tasks
+    wb = WorkflowBuilder(tasks=[t1, t2, t3, t4])
+    wb.scatter(t1, [t1, t2, t3])
+    wf = Workflow(wb)
+    assert len(wf.input_tasks) == 1
+    assert len(wf.output_tasks) == 3

@@ -144,6 +144,53 @@ class WorkflowBuilder(WorkflowBase):
                 for pred in predecessors:
                     self._g.add_edge(pred, task)
 
+    def scatter(self, source: Task, destinations: Iterable[Task]) -> None:
+        """Scatter output from one task to multiple previously added tasks
+
+        The predecessor should return one value per successor task
+
+        Parameters
+        ----------
+        source : Task
+            The predecessor task
+        destinations : Iterable[Task]
+            Tasks to scatter to
+        """
+
+        def scatter_func(i, x):
+            return x[i]
+
+        for i, task in enumerate(destinations):
+            scatter_task = Task(f"scatter_{i}", scatter_func, i)
+            self.add_task(scatter_task)
+            self._g.add_edge(source, scatter_task)
+            self._g.add_edge(scatter_task, task)
+
+    def gather(self, sources: Iterable[Task], destination: Optional[Task] = None) -> None:
+        """Gather output from multiple tasks to one task
+
+        The destination Task could be left out to keep the gathered output unconnected
+
+        Parameters
+        ----------
+        sources : Iterable[Task]
+            Tasks to gather from
+        destination : Optional[Task]
+            The destination task
+        """
+
+        def gather_func(*x):
+            return x
+
+        gather_task = Task("gather", gather_func)
+        self.add_task(gather_task)
+
+        for i, task in enumerate(sources):
+            self._g.add_edge(task, gather_task)
+
+        if destination is not None:
+            self._g.add_edge(gather_task, destination)
+
     def replace_task(self, task: Task, new_task: Task) -> None:
         """Replace a task with a new task
 
