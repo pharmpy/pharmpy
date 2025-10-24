@@ -92,11 +92,7 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
         fit_wf = create_fit_workflow(n=1)
         wb.insert_workflow(fit_wf, [create_task])
 
-    def gather(*mes):
-        return mes
-
-    gather_task = Task('gather', gather)
-    wb.add_task(gather_task, predecessors=wb.output_tasks)
+    wb.gather(wb.output_tasks)
 
     mes = context.call_workflow(Workflow(wb), "fit-placebo")
     rank_res = run_subtool(
@@ -133,11 +129,7 @@ def run_drug_effect_models(context, strictness, parameter_uncertainty_method, ba
         fit_wf = create_fit_workflow(n=1)
         wb.insert_workflow(fit_wf, [create_task])
 
-    def gather(*mes):
-        return mes
-
-    gather_task = Task('gather_de', gather)
-    wb.add_task(gather_task, predecessors=wb.output_tasks)
+    wb.gather(wb.output_tasks)
 
     mes = context.call_workflow(Workflow(wb), "fit-drug_effect")
     rank_res = run_subtool(
