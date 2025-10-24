@@ -13,14 +13,16 @@ from pharmpy.workflows import ModelfitResults, Results
 
 @dataclass(frozen=True)
 class LinearizeResults(Results):
-    ofv: Optional[float] = None
+    ofv: Optional[pd.Series] = None
     iofv: Optional[Any] = None
     iofv_plot: Optional[Any] = None
     final_model: Optional[Model] = None
     final_model_results: Optional[ModelfitResults] = None
 
 
-def calculate_results(base_model, base_model_results, linear_model, linear_model_results):
+def calculate_results(
+    base_model, base_model_results, linear_model, linear_model_results
+) -> LinearizeResults:
     base_iofv = base_model_results.individual_ofv
     linear_iofv = linear_model_results.individual_ofv
     if base_iofv is not None and linear_iofv is not None:

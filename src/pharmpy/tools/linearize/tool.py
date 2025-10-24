@@ -89,16 +89,16 @@ def start_linearize(context, model, results):
 
 
 def postprocess(context, model_name, *modelentries):
-    for me in modelentries:
-        if me.model.name == model_name:
-            linbase = me
-        else:
-            base = me
+    base = modelentries[0]
+    linbase = modelentries[1]
+    if base.mode.name == model_name:
+        base, linbase = linbase, base
 
     res = calculate_results(
         base.model, base.modelfit_results, linbase.model, linbase.modelfit_results
     )
 
+    assert res.ofv is not None
     context.log_info(f"OFV of input model:                {res.ofv['base']:.3f}")
     context.log_info(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
     context.log_info(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
@@ -173,7 +173,7 @@ def _create_linearized_model(context, model_name, description, model, derivative
 
 def _create_linearized_model_statements(linbase, model):
     ms = []
-    base_terms_sum = 0
+    base_terms_sum = Expr.integer(0)
     for i, eta in enumerate(model.random_variables.etas.names, start=1):
         deta = Expr.symbol(f"D_ETA_{i}")
         oeta = Expr.symbol(f"OETA_{i}")
@@ -187,7 +187,7 @@ def _create_linearized_model_statements(linbase, model):
     ms.append(ipred)
 
     i = 1
-    err_terms_sum = 0
+    err_terms_sum = Expr.integer(0)
     for epsno, eps in enumerate(model.random_variables.epsilons, start=1):
         err = Assignment(
             Expr.symbol(f'ERR{epsno}'), Expr.symbol(eps.names[0]) * Expr.symbol(f'D_EPS_{epsno}')
