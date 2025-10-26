@@ -166,6 +166,7 @@ def read_nonmem_dataset(
         if _dtype:
             df = df.astype(_dtype)
 
+    df.reset_index(drop=True, inplace=True)
     return df
 
 
