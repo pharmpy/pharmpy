@@ -231,7 +231,7 @@ class Expr:
         return isinstance(self._expr, symengine.Piecewise)
 
     def is_nonnegative(self) -> bool | None:
-        return sympy.ask(sympy.Q.nonnegative(self._expr))
+        return self._expr.is_nonnegative
 
     def is_real(self) -> bool | None:
         sympy_expr = self._sympy_()
