@@ -2230,14 +2230,14 @@ class Statements(Sequence, Immutable):
     ) -> tuple[Optional[int], Optional[Assignment]]:
         if isinstance(symbol, str):
             symbol = Expr.symbol(symbol)
-        ind = None
-        assignment = None
-        for i, statement in enumerate(self):
+
+        for i in reversed(range(len(self))):
+            statement = self[i]
             if isinstance(statement, Assignment):
                 if statement.symbol == symbol:
-                    ind = i
-                    assignment = statement
-        return ind, assignment
+                    return i, statement
+
+        return None, None
 
     def find_assignment(self, symbol: TSymbol) -> Optional[Assignment]:
         """Returns last assignment of symbol
