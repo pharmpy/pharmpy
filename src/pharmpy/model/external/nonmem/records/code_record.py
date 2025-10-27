@@ -6,6 +6,7 @@ Generic NONMEM code record class.
 from __future__ import annotations
 
 import re
+from functools import lru_cache
 from operator import neg, pos, sub, truediv
 from typing import Iterator, Literal, Sequence
 
@@ -671,6 +672,7 @@ def create_dvs_node(dvs, dvid_name):
     return node
 
 
+@lru_cache(4096)
 def _parse_tree(tree: AttrTree):
     s = []
     new_index = []
