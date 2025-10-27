@@ -56,7 +56,8 @@ def _subs_atoms_simultaneously(
     subs_new_args: Callable[[sympy.Expr, list[sympy.Expr]], sympy.Expr], expr: sympy.Expr
 ):
     stack = [expr]
-    output = [[], []]
+    # NOTE: Bypass substitution of atom arguments
+    output = [[], expr.args if isinstance(expr, sympy.Atom) else []]
 
     while stack:
         e = stack[-1]
@@ -72,23 +73,32 @@ def _subs_atoms_simultaneously(
             output.pop()
             output[-1].append(subs_new_args(e, new_args))
         else:
+            old_arg = old_args[i]
             # NOTE: Push the next argument on the stack
-            stack.append(old_args[i])  # pyright: ignore [reportArgumentType]
-            output.append([])
+            stack.append(old_arg)  # pyright: ignore [reportArgumentType]
+            if isinstance(old_arg, sympy.Atom):
+                # NOTE: Bypass substitution of atom arguments
+                output.append(old_arg.args)
+            else:
+                output.append([])
 
     return output[0][0]
 
 
 def _subs_atom(mapping: dict[sympy.Expr, sympy.Expr]):
     def _subs(expr: sympy.Expr, args: list[sympy.Expr]):
-        return replace_root_children(expr, args) if args else mapping.get(expr, expr)
+        return (
+            mapping.get(expr, expr)
+            if isinstance(expr, sympy.Atom)
+            else replace_root_children(expr, args)
+        )
 
     return _subs
 
 
 def _subs_atom_or_func(mapping: dict[Any, Any]):
     def _subs(expr: sympy.Expr, args: list[Any]):
-        if not args:
+        if isinstance(expr, sympy.Atom):
             return mapping.get(expr, expr)
 
         fn = expr.func
