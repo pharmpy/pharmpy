@@ -2008,7 +2008,7 @@ def update_verbatim(cs, random_variables, to_add: dict = {}, to_remove: dict = {
             if to_add:
                 new_children = _add_verbatim_derivative(new_children, to_add)
             else:
-                if (
+                if len(new_children) > 0 and (
                     new_children[-1]
                     .children[0]
                     .value  # pyright: ignore [reportAttributeAccessIssue]

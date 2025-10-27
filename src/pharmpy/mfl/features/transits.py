@@ -91,9 +91,10 @@ class Transits(ModelFeature):
         if len(features) == 1:
             return repr(features[0])
         features = sorted(features)
-        numbers_by_type = defaultdict(tuple)
+        numbers_by_type = defaultdict(list)
         for feat in features:
-            numbers_by_type[feat.depot] += (feat.number,)
+            numbers_by_type[feat.depot] += [feat.number]
+        numbers_by_type = {key: tuple(value) for key, value in numbers_by_type.items()}
         if len(numbers_by_type) > 1 and len(set(numbers_by_type.values())) == 1:
             numbers = list(numbers_by_type.values())[0]
             inner = _get_inner(numbers, [True, False])
