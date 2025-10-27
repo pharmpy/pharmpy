@@ -69,7 +69,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     unit_eqs = []
     # FIXME: Using private _expr in some places. sympify doesn't work for some reason.
     a = di[di.dv_column.name].unit._expr
-    unit_eqs.append(y - a)  # pyright: ignore [reportOperatorIssue]
+    unit_eqs.append(y - a)
     d = {}
 
     for s in model.statements:
@@ -99,17 +99,11 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
                 e = sympy.sympify(e)
                 if e.is_Add:
                     for term in e.args:
-                        unit_eqs.append(
-                            amt_unit / time_unit  # pyright: ignore [reportOperatorIssue]
-                            - _extract_minus(term)
-                        )
+                        unit_eqs.append(amt_unit / time_unit - _extract_minus(term))
                 elif e == 0:
                     pass
                 else:
-                    unit_eqs.append(
-                        amt_unit / time_unit  # pyright: ignore [reportOperatorIssue]
-                        - _extract_minus(e)
-                    )
+                    unit_eqs.append(amt_unit / time_unit - _extract_minus(e))
             for a in s.amounts:
                 sy = sympy.Symbol(a.name)
                 d[a] = sy
