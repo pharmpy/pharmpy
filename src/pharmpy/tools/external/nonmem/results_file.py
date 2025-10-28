@@ -285,6 +285,9 @@ class NONMEMResultsFile:
             return datetime.combine(date, time)
 
     def log_items(self, lines):
+        if self.log is None:
+            return
+
         fulltext = '\n'.join(lines)
 
         warnings = []
@@ -351,11 +354,10 @@ class NONMEMResultsFile:
                 message_trimmed = '\n'.join([m.strip() for m in message_split])
                 errors.append(message_trimmed.strip())
 
-        if self.log is not None:
-            for message in warnings:
-                self.log = self.log.log_warning(message)
-            for message in errors:
-                self.log = self.log.log_error(message)
+        for message in warnings:
+            self.log = self.log.log_warning(message)
+        for message in errors:
+            self.log = self.log.log_error(message)
 
     def tag_items(self, path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
