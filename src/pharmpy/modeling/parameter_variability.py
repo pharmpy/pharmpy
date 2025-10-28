@@ -7,6 +7,7 @@ from __future__ import annotations
 import re
 import warnings
 from collections import Counter, defaultdict
+from collections.abc import Sequence
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
@@ -1105,7 +1106,7 @@ def create_joint_distribution(
     return model
 
 
-def split_joint_distribution(model: Model, rvs: Optional[Union[list[str], str]] = None):
+def split_joint_distribution(model: Model, rvs: Optional[Union[Sequence[str], str]] = None):
     """
     Splits etas following a joint distribution into separate distributions.
 
