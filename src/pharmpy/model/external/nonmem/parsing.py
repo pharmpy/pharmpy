@@ -28,7 +28,8 @@ from pharmpy.model import (
 )
 
 from .advan import _compartmental_model, des_assign_statements
-from .dataset import read_nonmem_dataset
+from .dataset import filter_and_convert_nonmem_dataset_in_place
+from .dataset.nmtran import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
 from .nmtran_parser import NMTranControlStream
 from .records.code_record import CodeRecord
 from .table import NONMEMTableFile, PhiTable
@@ -836,10 +837,31 @@ def parse_dataset(
     raw: bool = False,
     parse_columns: Optional[Iterable[str]] = None,
 ):
+    assert di.path is not None
+
     data_records = control_stream.get_records('DATA')
     if not data_records:
         return None
     ignore_character = data_records[0].ignore_character
+
+    with NMTRANDataIO(di.path, SEP_INPUT, ignore_character) as io:
+        df = read_NMTRAN_data(io, header=None)
+
+    assert isinstance(df, pd.DataFrame)
+
+    return filter_and_convert_dataset_in_place(df, di, control_stream, raw, parse_columns)
+
+
+def filter_and_convert_dataset_in_place(
+    df: pd.DataFrame,
+    di: DataInfo,
+    control_stream: NMTranControlStream,
+    raw: bool = False,
+    parse_columns: Optional[Iterable[str]] = None,
+):
+    data_records = control_stream.get_records('DATA')
+    if not data_records:
+        return None
     null_value = data_records[0].null_value
     (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
@@ -857,10 +879,9 @@ def parse_dataset(
         else:
             accept = replace_synonym_in_filters(accept, replacements)
 
-    df = read_nonmem_dataset(
-        di.path,
+    df = filter_and_convert_nonmem_dataset_in_place(
+        df,
         raw,
-        ignore_character,
         colnames,
         drop,
         null_value=null_value,
