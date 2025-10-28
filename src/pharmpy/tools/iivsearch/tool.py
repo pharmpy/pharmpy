@@ -6,6 +6,7 @@ from typing import Iterable, Literal, Optional, Union, cast
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_pd_iiv,
@@ -16,6 +17,11 @@ from pharmpy.modeling import (
     get_individual_parameters,
     has_random_effect,
     unfix_parameters,
+)
+from pharmpy.modeling.mfl import (
+    expand_model_features,
+    get_model_features,
+    transform_into_search_space,
 )
 from pharmpy.tools.common import (
     RANK_TYPES,
@@ -72,6 +78,7 @@ def create_workflow(
     E_p: Optional[Union[float, str]] = None,
     E_q: Optional[Union[float, str]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    _search_space: Optional[str] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -108,6 +115,8 @@ def create_workflow(
     parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method. Will be used in ranking models if strictness includes
         parameter uncertainty
+    _search_space : str
+        EXPERIMENTAL FEATURE. Search space to test
 
     Returns
     -------
@@ -123,28 +132,42 @@ def create_workflow(
     >>> run_iivsearch(model=model, results=results, algorithm='td_brute_force')   # doctest: +SKIP
     """
 
-    wb = WorkflowBuilder(name='iivsearch')
-    start_task = Task(
-        'start_iiv',
-        start,
-        model,
-        results,
-        algorithm,
-        correlation_algorithm,
-        iiv_strategy,
-        rank_type,
-        E_p,
-        E_q,
-        linearize,
-        cutoff,
-        keep,
-        strictness,
-        parameter_uncertainty_method,
-    )
-    wb.add_task(start_task)
-    task_results = Task('results', _results)
-    wb.add_task(task_results, predecessors=[start_task])
-    return Workflow(wb)
+    if not _search_space:
+        wb = WorkflowBuilder(name='iivsearch')
+        start_task = Task(
+            'start_iiv',
+            start,
+            model,
+            results,
+            algorithm,
+            correlation_algorithm,
+            iiv_strategy,
+            rank_type,
+            E_p,
+            E_q,
+            linearize,
+            cutoff,
+            keep,
+            strictness,
+            parameter_uncertainty_method,
+        )
+        wb.add_task(start_task)
+        task_results = Task('results', _results)
+        wb.add_task(task_results, predecessors=[start_task])
+        return Workflow(wb)
+    else:
+        wf = create_workflow_mfl(
+            model,
+            results,
+            algorithm,
+            correlation_algorithm,
+            _search_space,
+            rank_type,
+            cutoff,
+            strictness,
+            parameter_uncertainty_method,
+        )
+        return wf
 
 
 def create_step_workflow(
@@ -812,3 +835,237 @@ def validate_input(
 @dataclass(frozen=True)
 class IIVSearchResults(ToolResults):
     pass
+
+
+def create_workflow_mfl(
+    model,
+    results,
+    algorithm,
+    correlation_algorithm,
+    search_space,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+):
+    wb = WorkflowBuilder(name='iivsearch')
+
+    start_task = Task.create('start', start_with_search_space, model, results)
+    wb.add_task(start_task)
+
+    mfl = prepare_mfl(model, search_space)
+
+    if get_model_features(model) not in mfl:
+        create_base_task = Task.create('base_model', create_base_model, mfl)
+        wb.add_task(create_base_task, predecessors=[start_task])
+        wf_fit = create_fit_workflow(n=1)
+        wb.insert_workflow(wf_fit)
+        base_task = wf_fit.output_tasks[0]
+    else:
+        base_task = start_task
+
+    steps_to_run = prepare_algorithms(algorithm, correlation_algorithm)
+    search_task = Task.create(
+        'run_search',
+        run_search,
+        steps_to_run,
+        mfl,
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
+    )
+    wb.add_task(search_task, predecessors=[base_task])
+
+    post_process_task = Task.create(
+        'postprocess',
+        postprocess,
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
+    )
+    wb.add_task(post_process_task, predecessors=[start_task, search_task])
+
+    return Workflow(wb)
+
+
+def start_with_search_space(context, input_model, input_res):
+    context.log_info("Starting tool iivsearch")
+    _, input_model_entry = prepare_input_model(input_model, input_res)
+    context.store_input_model_entry(input_model_entry)
+    context.log_info(f"Input model OFV: {input_res.ofv:.3f}")
+    return input_model_entry
+
+
+def create_base_model(mfl, input_model_entry):
+    if get_model_features(input_model_entry.model, type='iiv') in mfl:
+        return input_model_entry
+    base_model = update_initial_estimates(
+        input_model_entry.model,
+        input_model_entry.modelfit_results,
+        move_est_close_to_bounds=True,
+    )
+    base_model = transform_into_search_space(base_model, mfl, force_optional=True)
+    base_model = base_model.replace(name='base')
+    base_model_entry = ModelEntry.create(model=base_model, parent=input_model_entry.model)
+    return base_model_entry
+
+
+def prepare_mfl(model, search_space):
+    mfl = ModelFeatures.create(search_space)
+    mfl = expand_model_features(model, mfl)
+    return mfl
+
+
+def run_search(
+    context,
+    steps_to_run,
+    mfl,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+    base_model_entry,
+):
+    tool_summaries, model_summaries, error_summaries = [], [], []
+    index_offset = 0
+    best_model_entry = base_model_entry
+    for step in steps_to_run:
+        algorithm_func = getattr(algorithms, f'{step}_mfl')
+        if not algorithm_func:
+            raise NotImplementedError
+        wf_step = algorithm_func(base_model_entry, mfl, index_offset)
+        mes = context.call_workflow(wf_step, 'run_candidates')
+
+        rank_res = rank_models(
+            context,
+            rank_type,
+            cutoff,
+            strictness,
+            parameter_uncertainty_method,
+            best_model_entry,
+            mes,
+        )
+        model_entries = [best_model_entry] + list(mes)
+
+        summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
+        summary_models = summarize_modelfit_results_from_entries(mes)
+        summary_errors = summarize_errors_from_entries(mes)
+
+        tool_summaries.append(summary_tool)
+        model_summaries.append(summary_models)
+        error_summaries.append(summary_errors)
+
+        best_model_entry = get_best_model_entry(model_entries, rank_res.final_model)
+        index_offset += len(mes)
+
+    return best_model_entry, (tool_summaries, model_summaries, error_summaries)
+
+
+def rank_models(
+    context,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+    base_model_entry,
+    model_entries,
+):
+    models = [base_model_entry.model] + [me.model for me in model_entries]
+    results = [base_model_entry.modelfit_results] + [me.modelfit_results for me in model_entries]
+
+    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=base_model_entry.model,
+        rank_type=rank_type,
+        alpha=cutoff,
+        strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+    )
+
+    return rank_res
+
+
+def get_best_model_entry(model_entries, final_model):
+    best_model_entry = [me for me in model_entries if me.model == final_model]
+    assert len(best_model_entry) == 1
+    return best_model_entry[0]
+
+
+def postprocess(
+    context,
+    rank_type,
+    cutoff,
+    strictness,
+    parameter_uncertainty_method,
+    input_model_entry,
+    best_model_entry_and_summaries,
+):
+    best_model_entry, (tool_summaries, model_summaries, error_summaries) = (
+        best_model_entry_and_summaries
+    )
+
+    summary_models_input = summarize_modelfit_results_from_entries([input_model_entry])
+    summary_errors_input = summarize_errors_from_entries([input_model_entry])
+    model_summaries.insert(0, summary_models_input)
+    error_summaries.insert(0, summary_errors_input)
+
+    input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
+    best_model, best_res = best_model_entry.model, best_model_entry.modelfit_results
+    if input_model != best_model and input_res and best_res:
+        rank_res = rank_models(
+            context,
+            rank_type,
+            cutoff,
+            strictness,
+            parameter_uncertainty_method,
+            input_model_entry,
+            [best_model_entry],
+        )
+        summary_final_step = add_parent_column(
+            rank_res.summary_tool, [input_model_entry, best_model_entry]
+        )
+        tool_summaries += [summary_final_step]
+        if rank_res.final_model == input_model:
+            context.log_warning(
+                f'Worse {rank_type} in final model {best_model.name} '
+                f'than {input_model.name}, selecting input model'
+            )
+            final_model_entry = input_model_entry
+        else:
+            final_model_entry = best_model_entry
+    else:
+        final_model_entry = best_model_entry
+
+    context.store_final_model_entry(final_model_entry)
+
+    plots = create_plots(final_model_entry.model, final_model_entry.modelfit_results)
+    eta_shrinkage_table = table_final_eta_shrinkage(
+        final_model_entry.model, final_model_entry.modelfit_results
+    )
+
+    res = IIVSearchResults(
+        summary_tool=combine_summaries(tool_summaries, idx_start=1),
+        summary_models=combine_summaries(model_summaries, idx_start=0),
+        summary_errors=combine_summaries(error_summaries, idx_start=0),
+        final_model=final_model_entry.model,
+        final_results=final_model_entry.modelfit_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage_table,
+    )
+
+    return res
+
+
+def combine_summaries(summaries, idx_start):
+    keys = list(range(idx_start, idx_start + len(summaries)))
+    return concat_summaries(summaries, keys=keys)

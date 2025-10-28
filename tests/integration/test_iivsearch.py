@@ -56,6 +56,15 @@ from pharmpy.workflows import LocalDirectoryContext
             2,
             'iivsearch_run2',
         ),
+        ('top_down_exhaustive', 'skip', {'_search_space': 'IIV?(@PK,exp)'}, 7, 3, 'iivsearch_run1'),
+        (
+            'top_down_exhaustive',
+            'skip',
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
+            3,
+            2,
+            'iivsearch_run1',
+        ),
     ],
 )
 def test_iivsearch_dummy(
@@ -140,6 +149,7 @@ def test_no_of_etas_linearization(
             algorithm=algorithm,
             correlation_algorithm=correlation_algorithm,
             iiv_strategy=strategy,
+            linearize=True,
         )
 
         assert res

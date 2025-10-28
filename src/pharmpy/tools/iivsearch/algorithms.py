@@ -14,11 +14,49 @@ from pharmpy.modeling import (
     split_joint_distribution,
 )
 from pharmpy.modeling.expressions import get_rv_parameters
+from pharmpy.modeling.mfl import generate_transformations
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
+
+
+def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
+    wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
+
+    mfl_optional = mfl.filter(filter_on='optional')
+
+    for i, features in enumerate(non_empty_subsets(mfl_optional), 1):
+        model_name = f'iivsearch_run{i + index_offset}'
+        task_candidate_entry = Task(
+            f'create_{model_name}', create_candidate, model_name, features, base_model_entry
+        )
+        wb.add_task(task_candidate_entry)
+
+    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
+    wb.insert_workflow(wf_fit)
+    wb.gather(wb.output_tasks)
+
+    wf = Workflow(wb)
+
+    return wf
+
+
+def create_candidate(name, features, base_model_entry):
+    candidate_model = update_initial_estimates(
+        base_model_entry.model, base_model_entry.modelfit_results
+    )
+    candidate_model = candidate_model.replace(name=name)
+
+    funcs = generate_transformations(features)
+    funcs = [f for f in funcs if f.func == remove_iiv]
+
+    for func in funcs:
+        candidate_model = func(candidate_model)
+    candidate_model = candidate_model.replace(description=create_description(candidate_model))
+
+    return ModelEntry.create(model=candidate_model, parent=base_model_entry.model)
 
 
 def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mapping=None):
