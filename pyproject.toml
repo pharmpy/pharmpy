@@ -12,6 +12,4 @@ multi_line_output = 3
 include_trailing_comma = true
 
 [tool.pyright]
-venvPath = ".tox"
-venv = "py312-type-check"
 reportUnnecessaryTypeIgnoreComment = true
