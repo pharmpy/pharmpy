@@ -22,6 +22,9 @@ from pharmpy.mfl.model_features import ModelFeatures
 
 
 class ModelFeatureX(ModelFeature):
+    def replace(self, **kwargs):
+        return self
+
     @property
     def args(self):
         return tuple()
@@ -192,6 +195,32 @@ def test_init():
                 IIV.create(parameter='CL', fp='exp'),
                 IOV.create(parameter='CL', fp='exp'),
                 Covariance.create(type='IIV', parameters=['CL', 'VC']),
+            ],
+        ),
+        (
+            [
+                IIV.create(parameter='VC', fp='exp', optional=True),
+                IIV.create(parameter='CL', fp='exp', optional=True),
+                IIV.create(parameter='CL', fp='exp'),
+                IIV.create(parameter='MAT', fp='exp', optional=True),
+            ],
+            [
+                IIV.create(parameter='CL', fp='exp'),
+                IIV.create(parameter='MAT', fp='exp', optional=True),
+                IIV.create(parameter='VC', fp='exp', optional=True),
+            ],
+        ),
+        (
+            [
+                IIV.create(parameter='CL', fp='exp'),
+                IIV.create(parameter='VC', fp='exp', optional=True),
+                IIV.create(parameter='CL', fp='exp', optional=True),
+                IIV.create(parameter='MAT', fp='exp', optional=True),
+            ],
+            [
+                IIV.create(parameter='CL', fp='exp'),
+                IIV.create(parameter='MAT', fp='exp', optional=True),
+                IIV.create(parameter='VC', fp='exp', optional=True),
             ],
         ),
     ),
@@ -597,7 +626,7 @@ def test_is_expanded():
         (
             [
                 IIV.create('CL', 'exp', optional=True),
-                IIV.create('CL', 'exp', optional=False),
+                IIV.create('VC', 'exp', optional=False),
             ],
             False,
         ),
@@ -608,7 +637,7 @@ def test_is_expanded():
         (
             [
                 IOV.create('CL', 'exp', optional=True),
-                IOV.create('CL', 'exp', optional=False),
+                IOV.create('VC', 'exp', optional=False),
             ],
             False,
         ),
@@ -622,7 +651,7 @@ def test_is_expanded():
         (
             [
                 Covariance.create('IIV', ['CL', 'VC'], optional=True),
-                Covariance.create('IIV', ['CL', 'VC'], optional=False),
+                Covariance.create('IIV', ['CL', 'MAT'], optional=False),
             ],
             False,
         ),
@@ -656,6 +685,19 @@ def test_expand():
         mf_incorrect.expand(expand_to)
 
 
+def test_filter():
+    iiv1 = IIV.create(parameter='CL', fp='exp', optional=False)
+    iiv2 = IIV.create(parameter='MAT', fp='exp', optional=True)
+    iiv3 = IIV.create(parameter='VC', fp='exp', optional=True)
+
+    mf = ModelFeatures.create([iiv1, iiv2, iiv3])
+
+    assert mf.filter(filter_on='optional').features == (iiv2, iiv3)
+
+    with pytest.raises(NotImplementedError):
+        mf.filter(filter_on='x')
+
+
 def test_contains():
     mf1 = ModelFeatures.pk_oral()
 
@@ -675,6 +717,11 @@ def test_contains():
     assert mf3 not in mf1
 
     assert 1 not in mf1
+
+    c_optional = c.replace(optional=True)
+    mf4 = ModelFeatures.create([a, e, c_optional])
+    assert c in mf4
+    assert c_optional not in mf3
 
 
 def test_add():

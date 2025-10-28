@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections import defaultdict
-from typing import Iterable, Iterator, Sequence, Type, TypeVar, Union
+from typing import Iterable, Iterator, Literal, Sequence, Type, TypeVar, Union
 
 from pharmpy.internals.immutable import Immutable
 from pharmpy.mfl.features.mutex_feature import MutexFeature
@@ -67,6 +67,14 @@ class ModelFeatures(Immutable):
             if feature not in grouped_features[group]:
                 if group == Allometry and len(grouped_features[group]) > 0:
                     raise ValueError('Invalid `features`: Got more than one Allometry feature')
+                if isinstance(feature, (Covariate, IIV, IOV, Covariance)):
+                    if feature.optional:
+                        if feature.replace(optional=False) in grouped_features[group]:
+                            continue
+                    else:
+                        feature_optional = feature.replace(optional=True)
+                        if feature_optional in grouped_features[group]:
+                            grouped_features[group].remove(feature_optional)
                 grouped_features[group].append(feature)
 
         features = _flatten([sorted(value) for value in grouped_features.values()])
@@ -116,61 +124,61 @@ class ModelFeatures(Immutable):
 
     @property
     def absorption(self) -> ModelFeatures:
-        return self._get_feature_type(Absorption)
+        return self.get_feature_type(Absorption)
 
     @property
     def transits(self) -> ModelFeatures:
-        return self._get_feature_type(Transits)
+        return self.get_feature_type(Transits)
 
     @property
     def lagtime(self) -> ModelFeatures:
-        return self._get_feature_type(LagTime)
+        return self.get_feature_type(LagTime)
 
     @property
     def elimination(self) -> ModelFeatures:
-        return self._get_feature_type(Elimination)
+        return self.get_feature_type(Elimination)
 
     @property
     def peripherals(self) -> ModelFeatures:
-        return self._get_feature_type(Peripherals)
+        return self.get_feature_type(Peripherals)
 
     @property
     def covariates(self) -> ModelFeatures:
-        return self._get_feature_type(Covariate)
+        return self.get_feature_type(Covariate)
 
     @property
     def allometry(self) -> ModelFeatures:
-        return self._get_feature_type(Allometry)
+        return self.get_feature_type(Allometry)
 
     @property
     def direct_effects(self) -> ModelFeatures:
-        return self._get_feature_type(DirectEffect)
+        return self.get_feature_type(DirectEffect)
 
     @property
     def indirect_effects(self) -> ModelFeatures:
-        return self._get_feature_type(IndirectEffect)
+        return self.get_feature_type(IndirectEffect)
 
     @property
     def effect_compartments(self) -> ModelFeatures:
-        return self._get_feature_type(EffectComp)
+        return self.get_feature_type(EffectComp)
 
     @property
     def metabolites(self) -> ModelFeatures:
-        return self._get_feature_type(Metabolite)
+        return self.get_feature_type(Metabolite)
 
     @property
     def iiv(self) -> ModelFeatures:
-        return self._get_feature_type(IIV)
+        return self.get_feature_type(IIV)
 
     @property
     def iov(self) -> ModelFeatures:
-        return self._get_feature_type(IOV)
+        return self.get_feature_type(IOV)
 
     @property
     def covariance(self) -> ModelFeatures:
-        return self._get_feature_type(Covariance)
+        return self.get_feature_type(Covariance)
 
-    def _get_feature_type(self, type: Type[T]) -> ModelFeatures:
+    def get_feature_type(self, type: Type[T]) -> ModelFeatures:
         features = []
         for feature in self:
             if isinstance(feature, type):
@@ -220,6 +228,13 @@ class ModelFeatures(Immutable):
                 features_new.extend(feature.expand(expand_to))
 
         return self.create(features=features_new)
+
+    def filter(self, filter_on: Literal['optional']):
+        if filter_on == 'optional':
+            features = [feature for feature in self if getattr(feature, 'optional', False)]
+        else:
+            raise NotImplementedError
+        return ModelFeatures.create(features)
 
     def __add__(
         self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
@@ -273,17 +288,22 @@ class ModelFeatures(Immutable):
         self, item: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
     ) -> bool:
         if isinstance(item, ModelFeature):
-            if item in self.features:
-                return True
+            return self._contains(item)
         elif isinstance(item, ModelFeatures):
-            if all(feature in self.features for feature in item):
+            if all(self._contains(feature) for feature in item):
                 return True
         elif isinstance(item, Iterable):
-            if all(isinstance(x, ModelFeature) and x in self.features for x in item):
+            if all(isinstance(x, ModelFeature) and self._contains(x) for x in item):
                 return True
-        else:
-            return False
         return False
+
+    def _contains(self, item: ModelFeature):
+        if item in self.features:
+            return True
+        if not isinstance(item, (Covariate, IIV, IOV, Covariance)):
+            return False
+        item_optional = item.replace(optional=True)
+        return item_optional in self.features
 
     def __eq__(self, other) -> bool:
         if self is other:

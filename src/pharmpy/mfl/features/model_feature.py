@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Iterable, Optional, Sequence
+from typing import TYPE_CHECKING, Any, Iterable, Optional, Self, Sequence
 
 from pharmpy.internals.immutable import Immutable
 
@@ -13,6 +13,10 @@ if TYPE_CHECKING:
 
 
 class ModelFeature(Immutable):
+    @abstractmethod
+    def replace(self, **kwargs) -> Self:
+        pass
+
     @property
     @abstractmethod
     def args(self) -> tuple[Any, ...]:
