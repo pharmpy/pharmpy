@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Iterable, Literal, Optional, Union
+from typing import Iterable, Literal, Optional, Union, cast
 
 import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -31,6 +31,7 @@ from pharmpy.tools.common import (
 from pharmpy.tools.iivsearch.algorithms import _get_fixed_etas, get_eta_names
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.run import (
     run_subtool,
     summarize_errors_from_entries,
@@ -580,8 +581,6 @@ def _start_algorithm(model_entry):
 
 
 def add_iiv(iiv_strategy, model, modelfit_results, linearize=False):
-    assert iiv_strategy in ('add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
-
     if linearize:
         init = 0.000001
     else:
@@ -591,6 +590,9 @@ def add_iiv(iiv_strategy, model, modelfit_results, linearize=False):
         new = add_pk_iiv(model, initial_estimate=init)
     elif iiv_strategy in ('pd_add_diagonal', 'pd_fullblock'):
         new = add_pd_iiv(model, initial_estimate=init)
+    else:
+        raise ValueError(f"Unknown iiv-strategy: {iiv_strategy}")
+
     if linearize:
         added_params = new.parameters - model.parameters
         new = fix_parameters(new, added_params.names)
@@ -600,6 +602,7 @@ def add_iiv(iiv_strategy, model, modelfit_results, linearize=False):
         new = create_joint_distribution(
             new, eta_names, individual_estimates=modelfit_results.individual_estimates
         )
+
     return new
 
 
@@ -653,6 +656,7 @@ def post_process(
         E=E,
         parameter_uncertainty_method=parameter_uncertainty_method,
     )
+    rank_res = cast(ModelRankResults, rank_res)
 
     summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
     assert summary_tool is not None

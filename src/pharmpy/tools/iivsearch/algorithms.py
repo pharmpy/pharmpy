@@ -1,5 +1,6 @@
 from collections import defaultdict
-from typing import Optional
+from collections.abc import Sequence
+from typing import Optional, cast
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
@@ -14,6 +15,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.expressions import get_rv_parameters
 from pharmpy.tools.common import update_initial_estimates
+from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import mfr
@@ -284,6 +286,7 @@ def select_model_entry(context, base_model_entry, model_entries, modelrank_opts)
         E=modelrank_opts['E'],
         parameter_uncertainty_method=modelrank_opts['parameter_uncertainty_method'],
     )
+    rank_res = cast(ModelRankResults, rank_res)
     if rank_res.final_model and rank_res.final_model != base_model_entry.model:
         mes_best = [me for me in model_entries if me.model == rank_res.final_model]
         assert len(mes_best) == 1
@@ -460,7 +463,7 @@ def create_eta_blocks(partition: tuple[tuple[str, ...], ...], model: Model, res:
     return model
 
 
-def _get_eta_from_parameter(model: Model, parameters: list[str]) -> set[str]:
+def _get_eta_from_parameter(model: Model, parameters: Sequence[str]) -> set[str]:
     # returns list of eta names from parameter names
     # ETA names in parameters are allowed and will be returned as is
     iiv_set = set()
