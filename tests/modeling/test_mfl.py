@@ -4,15 +4,26 @@ import pytest
 
 from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
+    add_allometry,
     add_bioavailability,
     add_covariate_effect,
+    add_effect_compartment,
     add_iiv,
+    add_indirect_effect,
+    add_lag_time,
     add_metabolite,
     add_peripheral_compartment,
+    remove_covariate_effect,
+    remove_iiv,
+    remove_lag_time,
     set_direct_effect,
+    set_first_order_absorption,
+    set_first_order_elimination,
     set_instantaneous_absorption,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
+    set_n_transit_compartments,
+    set_peripheral_compartments,
     set_seq_zo_fo_absorption,
     set_transit_compartments,
     set_weibull_absorption,
@@ -99,6 +110,11 @@ from pharmpy.modeling.mfl import (
             'COVARIATE(@PD_IIV,WT,EXP)',
             'COVARIATE(B,WT,EXP,*)',
         ),
+        (
+            [],
+            'IIV(@PK,EXP)',
+            'IIV([CL,MAT,VC],EXP)',
+        ),
     ),
 )
 def test_expand_model_features(load_model_for_test, testdata, funcs, source, expected):
@@ -120,57 +136,62 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     'funcs, type, expected',
     (
-        ([], None, 'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)'),
+        (
+            [],
+            None,
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,MAT,VC],EXP)',
+        ),
         (
             [set_zero_order_absorption],
             None,
-            'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+            'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,D1,VC],EXP)',
         ),
         (
             [set_seq_zo_fo_absorption],
             None,
-            'ABSORPTION(SEQ-ZO-FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+            'ABSORPTION(SEQ-ZO-FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,MAT,VC],EXP)',
         ),
         (
             [set_weibull_absorption],
             None,
-            'ABSORPTION(WEIBULL);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+            'ABSORPTION(WEIBULL);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,VC],EXP)',
         ),
-        ([set_instantaneous_absorption], None, 'ELIMINATION(FO);PERIPHERALS(0)'),
+        ([set_instantaneous_absorption], None, 'ELIMINATION(FO);PERIPHERALS(0);IIV([CL,VC],EXP)'),
         (
             [set_mixed_mm_fo_elimination],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(MIX-FO-MM);PERIPHERALS(0)',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(MIX-FO-MM);PERIPHERALS(0);IIV([CL,MAT,VC],EXP)',
         ),
         (
             [set_zero_order_elimination],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(ZO);PERIPHERALS(0)',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(ZO);PERIPHERALS(0);IIV([CLMM,MAT,VC],EXP)',
         ),
         (
             [set_michaelis_menten_elimination],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(MM);PERIPHERALS(0)',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(MM);PERIPHERALS(0);IIV([CLMM,MAT,VC],EXP)',
         ),
         (
             [partial(set_transit_compartments, n=2)],
             None,
-            'ABSORPTION(FO);TRANSITS(2);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+            'ABSORPTION(FO);TRANSITS(2);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,MAT,VC],EXP)',
         ),
         (
             [partial(set_transit_compartments, n=2, keep_depot=False)],
             None,
-            'ABSORPTION(FO);TRANSITS(2,NODEPOT);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+            'ABSORPTION(FO);TRANSITS(2,NODEPOT);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,MDT,VC],EXP)',
         ),
         (
             [add_peripheral_compartment],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(1)',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(1);IIV([CL,MAT,VC],EXP)',
         ),
         (
             [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);COVARIATE(CL,WT,EXP,*)',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);'
+            'COVARIATE(CL,WT,EXP,*);IIV([CL,MAT,VC],EXP)',
         ),
         (
             [
@@ -178,7 +199,8 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
                 partial(add_covariate_effect, parameter='VC', covariate='WT', effect='exp'),
             ],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);COVARIATE([CL,VC],WT,EXP,*)',
+            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);'
+            'COVARIATE([CL,VC],WT,EXP,*);IIV([CL,MAT,VC],EXP)',
         ),
         (
             [
@@ -195,6 +217,11 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
             ],
             'covariates',
             'COVARIATE([CL,VC],WT,EXP,*)',
+        ),
+        (
+            [],
+            'iiv',
+            'IIV([CL,MAT,VC],EXP)',
         ),
     ),
 )
@@ -215,37 +242,87 @@ def test_get_model_features_raises(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'source, expected',
+    'source, expected, allowed_functions',
     (
-        ('ABSORPTION(FO)', 1),
-        ('ABSORPTION([FO,ZO])', 2),
-        ('ABSORPTION(*)', 4),
-        ('PERIPHERALS(0..2)', 3),
-        ('TRANSITS(N)', 1),
-        ('TRANSITS([0,1,3,10],*)', 7),
-        ('TRANSITS([0,1,3,10],*);TRANSITS(N)', 8),
-        ('LAGTIME([OFF,ON])', 2),
-        ('ELIMINATION(*)', 4),
-        ('DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT([LINEAR,SIGMOID],*);EFFECTCOMP(EMAX)', 7),
-        ('METABOLITE(*)', 2),
-        ('ALLOMETRY(WT)', 1),
-        ('COVARIATE(CL,WT,EXP)', 1),
-        ('COVARIATE([CL,VC,MAT],[WT,AGE],EXP)', 6),
-        ('COVARIATE?([CL,MAT,VC],[AGE,WT],EXP,*)', 12),
-        (ModelFeatures.pk_iv(), 6),
-        (ModelFeatures.pk_oral(), 15),
+        ('ABSORPTION(FO)', 1, (set_first_order_absorption,)),
+        ('ABSORPTION([FO,ZO])', 2, (set_first_order_absorption, set_zero_order_absorption)),
+        (
+            'ABSORPTION(*)',
+            4,
+            (
+                set_first_order_absorption,
+                set_zero_order_absorption,
+                set_seq_zo_fo_absorption,
+                set_weibull_absorption,
+            ),
+        ),
+        ('PERIPHERALS(0..2)', 3, (set_peripheral_compartments,)),
+        ('TRANSITS(N)', 1, (set_n_transit_compartments,)),
+        ('TRANSITS([0,1,3,10],*)', 7, (set_transit_compartments,)),
+        (
+            'TRANSITS([0,1,3,10],*);TRANSITS(N)',
+            8,
+            (
+                set_transit_compartments,
+                set_n_transit_compartments,
+            ),
+        ),
+        (
+            'LAGTIME([OFF,ON])',
+            2,
+            (
+                remove_lag_time,
+                add_lag_time,
+            ),
+        ),
+        (
+            'ELIMINATION(*)',
+            4,
+            (
+                set_first_order_elimination,
+                set_zero_order_elimination,
+                set_mixed_mm_fo_elimination,
+                set_michaelis_menten_elimination,
+            ),
+        ),
+        (
+            'DIRECTEFFECT([LINEAR,SIGMOID]);INDIRECTEFFECT([LINEAR,SIGMOID],*);EFFECTCOMP(EMAX)',
+            7,
+            (set_direct_effect, add_indirect_effect, add_effect_compartment),
+        ),
+        ('METABOLITE(*)', 2, (add_metabolite,)),
+        ('ALLOMETRY(WT)', 1, (add_allometry,)),
+        ('COVARIATE(CL,WT,EXP)', 1, (add_covariate_effect,)),
+        ('COVARIATE([CL,VC,MAT],[WT,AGE],EXP)', 6, (add_covariate_effect,)),
+        (
+            'COVARIATE?([CL,MAT,VC],[AGE,WT],EXP,*)',
+            12,
+            (add_covariate_effect, remove_covariate_effect),
+        ),
+        ('IIV([CL,MAT,VC],EXP)', 3, (add_iiv,)),
+        (
+            'IIV?([CL,MAT,VC],EXP)',
+            6,
+            (
+                add_iiv,
+                remove_iiv,
+            ),
+        ),
     ),
 )
-def test_generate_transformations(load_model_for_test, testdata, source, expected):
+def test_generate_transformations(
+    load_model_for_test, testdata, source, expected, allowed_functions
+):
     if isinstance(source, str):
         mf = ModelFeatures.create(source)
     else:
         mf = source
     transformations = generate_transformations(mf)
     assert len(transformations) == expected
-    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    for func in transformations:
-        func(model_start)
+    assert all(
+        f.func in allowed_functions if hasattr(f, 'func') else f in allowed_functions
+        for f in transformations
+    )
 
 
 def test_generate_transformations_metabolite(load_model_for_test, testdata):
@@ -259,25 +336,66 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'funcs, source, expected',
+    'funcs, source, kwargs, type, expected',
     (
         (
             [],
             'ABSORPTION(ZO)',
+            dict(),
+            'pk',
             'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
         ),
         (
             [set_zero_order_absorption],
             'ABSORPTION(FO)',
+            dict(),
+            'pk',
             'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
+        ),
+        (
+            [],
+            'ABSORPTION([ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
+            'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(1)',
+            dict(),
+            'pk',
+            'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(1)',
+        ),
+        (
+            [],
+            'IIV?([CL,MAT,VC],EXP)',
+            dict(),
+            'iiv',
+            'IIV([CL,MAT,VC],EXP)',
+        ),
+        (
+            [partial(remove_iiv, to_remove='CL')],
+            'IIV?([CL,MAT,VC],EXP)',
+            dict(),
+            'iiv',
+            'IIV([MAT,VC],EXP)',
+        ),
+        (
+            [partial(remove_iiv, to_remove='CL')],
+            'IIV([CL,MAT,VC],EXP)',
+            dict(),
+            'iiv',
+            'IIV([CL,MAT,VC],EXP)',
+        ),
+        (
+            [partial(remove_iiv, to_remove='CL')],
+            'IIV?([CL,MAT,VC],EXP)',
+            {'force_optional': True},
+            'iiv',
+            'IIV([CL,MAT,VC],EXP)',
         ),
     ),
 )
-def test_transform_into_search_space(load_model_for_test, testdata, funcs, source, expected):
+def test_transform_into_search_space(
+    load_model_for_test, testdata, funcs, source, kwargs, type, expected
+):
     mf = ModelFeatures.create(source)
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model = func(model)
-    model_transformed = transform_into_search_space(model, mf)
-    assert model_transformed != model
-    assert repr(get_model_features(model_transformed)) == expected
+    model_transformed = transform_into_search_space(model, mf, **kwargs)
+    assert repr(get_model_features(model_transformed, type=type)) == expected
