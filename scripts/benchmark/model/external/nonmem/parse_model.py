@@ -1,11 +1,13 @@
+from abc import ABC
 import re
 import sys
+import time
 
 from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from pathlib import Path, PurePath
-from typing import Iterable, Literal, Optional, Union, cast
+from typing import Callable, Iterable, Literal, Optional, Union, cast
 
 from pharmpy.deps import pandas as pd
 
@@ -47,31 +49,41 @@ def parse_columns_required(di: DataInfo):
 def debug(*args, **kwargs):
     print(*args, **kwargs, file = sys.stderr)
 
+@contextmanager
+def stop_watch(now: Callable[[], float]):
+    interval = TimeInterval(now, now())
+    try:
+        yield interval
+    finally:
+        interval.end = now()
+
+
 @dataclass
 class TimeInterval:
-    begin: datetime
-    end: Optional[datetime] = None
+    now: Callable[[], float]
+    begin: float
+    end: Optional[float] = None
 
     def snapshot(self):
         return TimeInterval(
+            now = self.now,
             begin=self.begin,
-            end=datetime.now()
+            end=self.now()
         ) if self.end is None else self
 
     @property
     def elapsed(self):
         if self.end is None:
             return self.snapshot().elapsed
-        return self.end - self.begin
+        return timedelta(seconds = self.end - self.begin)
 
 
-@contextmanager
-def elapsed():
-    interval = TimeInterval(begin=datetime.now())
-    try:
-        yield interval
-    finally:
-        interval.end = datetime.now()
+def wall_time():
+    return stop_watch(time.perf_counter)
+
+def cpu_time():
+    return stop_watch(time.process_time)
+
 
 FailureReason = Union[
     Literal['cs'],
@@ -84,15 +96,17 @@ FailureReason = Union[
 class Failure:
     model_path: Path
     data_path: Optional[Path]
+    wall_time: TimeInterval
+    cpu_time: TimeInterval
     reason: FailureReason
     error: Exception
-    duration: Optional[TimeInterval] = None
 
 @dataclass(frozen=True)
 class Success:
     model_path: Path
     data_path: Optional[Path]
-    duration: TimeInterval
+    wall_time: TimeInterval
+    cpu_time: TimeInterval
     model: Model
     results: Optional[ModelfitResults]
 
@@ -103,17 +117,17 @@ def process(path: Path, convert: bool, ofv: bool, results: bool):
     with open(path, encoding="latin-1") as fp:
         code = fp.read()
 
-    with elapsed() as interval:
+    with wall_time() as wt, cpu_time() as ct:
 
         try:
             cs = NMTranParser().parse(code)
         except Exception as e:
-            return Failure(path, None, 'cs', e, interval.snapshot())
+            return Failure(path, None, wt.snapshot(), ct.snapshot(), 'cs', e)
 
         try:
             di = parse_datainfo(cs, path)
         except Exception as e:
-            return Failure(path, None, 'di', e, interval.snapshot())
+            return Failure(path, None, wt.snapshot(), ct.snapshot(), 'di', e)
 
         _di = di if convert else di.replace(
             columns = map(lambda column: column.replace(datatype='str'), di)
@@ -129,7 +143,7 @@ def process(path: Path, convert: bool, ofv: bool, results: bool):
             data = parse_dataset(di, cs, raw=False, parse_columns=parse_columns)
         except Exception as e:
             if isinstance(e, FileNotFoundError):
-                return Failure(path, di.path, 'dataset', e, interval.snapshot())
+                return Failure(path, di.path, wt.snapshot(), ct.snapshot(), 'dataset', e)
             raise e
 
         model = make_model(cs, di, di, path, data)
@@ -138,7 +152,8 @@ def process(path: Path, convert: bool, ofv: bool, results: bool):
     return Success(
         path,
         di.path,
-        interval,
+        wt,
+        ct,
         model,
         None if _results is None else ModelfitResults(
             ofv = _results.ofv if ofv else None,
@@ -216,7 +231,7 @@ def main(argv: list[str]):
                 results
             )
         ),
-        key = lambda success: success.duration.elapsed,
+        key = lambda success: success.wall_time.elapsed,
         reverse = True
     )
 
@@ -229,10 +244,11 @@ def main(argv: list[str]):
 
     for i, result in enumerate(successes, start=1):
         assert result.data_path is not None
-        print(f'{i} {result.model_path} {result.data_path.relative_to(Path.cwd())} {result.duration.elapsed}')
+        print(f'{i} {result.model_path} {result.data_path.relative_to(Path.cwd())} {result.wall_time.elapsed} ({result.cpu_time.elapsed})')
 
-    total = sum(map(lambda result: result.duration.elapsed, successes), start = timedelta(0))
-    print(f'total: {total}')
+    total_wt = sum(map(lambda result: result.wall_time.elapsed, successes), start = timedelta(0))
+    total_ct = sum(map(lambda result: result.cpu_time.elapsed, successes), start = timedelta(0))
+    print(f'total: {total_wt} ({total_ct})')
 
 
 if __name__ == "__main__":
