@@ -1032,9 +1032,13 @@ def get_cmt(model: Model):
         # No admid found --> Assume dose/non-dose
         odes = model.statements.ode_system
         if isinstance(odes, CompartmentalSystem):
-            dosing = odes.dosing_compartments[0]
-            names = odes.compartment_names
-            dose_cmt = names.index(dosing.name) + 1
+            try:
+                dosing = odes.dosing_compartments[0]
+            except ValueError:  # No dosing
+                dose_cmt = 1
+            else:
+                names = odes.compartment_names
+                dose_cmt = names.index(dosing.name) + 1
         else:
             dose_cmt = 1
         cmt = get_evid(model)
