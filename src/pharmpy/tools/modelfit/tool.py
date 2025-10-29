@@ -45,7 +45,7 @@ def create_workflow(
         post_process_results = post_process_results_one
     else:
         post_process_results = post_process_results_many
-    task_result: Task[Union[Model, tuple[Model, ...]]] = Task('results', post_process_results)
+    task_result: Task = Task('results', post_process_results)
     wb = WorkflowBuilder(wf)
     wb.add_task(task_result, predecessors=wf.output_tasks)
     wf = Workflow(wb)
