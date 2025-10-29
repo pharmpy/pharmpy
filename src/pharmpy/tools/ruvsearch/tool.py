@@ -1,6 +1,6 @@
 import re
 from functools import partial
-from typing import Literal, Optional
+from typing import Literal, Optional, cast
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -43,6 +43,7 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.run import (
     run_subtool,
     summarize_errors_from_entries,
@@ -61,7 +62,7 @@ def create_workflow(
     results: ModelfitResults,
     groups: int = 4,
     p_value: float = 0.001,
-    skip: Optional[list[Literal[tuple(SKIP)]]] = None,
+    skip: Optional[list[Literal['IIV_on_RUV', 'power', 'combined', 'time_varying']]] = None,
     max_iter: int = 3,
     dv: Optional[int] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
@@ -264,6 +265,7 @@ def start(
         selected_model_entries = [model_entry]
 
     cwres_models, summary_steps = [], []
+
     for current_iteration in range(1, max_iter + 1):
         context.log_info(f"Starting iteration {current_iteration}")
         wf = create_iteration_workflow(
@@ -290,7 +292,9 @@ def start(
             selected_model_entries.append(best_model_entry)
 
         model_entry = best_model_entry
-        context.log_info(f"Best model after iteration OFV: {model_entry.modelfit_results.ofv:.3f}")
+        best_results = model_entry.modelfit_results
+        assert best_results is not None
+        context.log_info(f"Best model after iteration OFV: {best_results.ofv:.3f}")
 
         if selected_model_name.startswith('base'):
             break
@@ -300,7 +304,9 @@ def start(
             skip.append(selected_model_name)
 
     # Check that there actually occured an improvement from the initial model.
-    delta_ofv = input_model_entry.modelfit_results.ofv - model_entry.modelfit_results.ofv
+    input_results = input_model_entry.modelfit_results
+    assert input_results is not None
+    delta_ofv = input_results.ofv - best_results.ofv
     if delta_ofv < cutoff:
         model_entry = input_model_entry
         changing = "input"
@@ -451,6 +457,7 @@ def post_process(
     rank_res = rank_models(
         context, model_entries, ref_model, p_value, strictness, parameter_uncertainty_method
     )
+    rank_res = cast(ModelRankResults, rank_res)
     summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
     res = RUVSearchResults(cwres_models=res.cwres_models, summary_tool=summary_tool)
     if rank_res.final_model:
@@ -611,7 +618,7 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
     else:
         raise ValueError("Need CIPREDI or IPRED")
     if dv is not None:
-        indices = input_model.dataset.index[input_model.dataset['DVID'] == dv].tolist()
+        indices = input_dataset.index[input_dataset['DVID'] == dv].tolist()
         predictions = predictions.iloc[indices]
     ipred = predictions[ipredcol].reset_index(drop=True)
 

@@ -108,7 +108,7 @@ def psn_resmod_results(path):
         d = {}
         for i in range(4, len(row)):
             if row[i] is not None and row[i] is not np.nan:
-                a = row[i].split('=')
+                a = row[i].split('=')  # pyright: ignore [reportAttributeAccessIssue]
                 d[a[0]] = float(a[1])
         parameters[rowind] = d
     parameters.index = df2.index
