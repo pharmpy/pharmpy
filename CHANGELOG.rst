@@ -23,6 +23,7 @@ Bugfixes
 
 * Fix regression having iivsearch crash if the input model is selected before the end
 * Fix so that idx=-1 does not duplicate estimation steps for :code:`append_estimation_step_options`
+* Fix crash in :code:`get_model_covariates` for models with no dosing
 
 .. _1.10.0:
 

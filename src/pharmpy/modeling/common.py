@@ -452,12 +452,16 @@ def get_model_covariates(model: Model, strings: bool = False) -> Union[list[str]
 
     # Consider statements that are dependencies of the ode system and y
     if odes:
-        dose_comp = odes.dosing_compartments[0]
-        cb = CompartmentalSystemBuilder(odes)
-        cb.set_dose(dose_comp, None)
-        cs = CompartmentalSystem(cb)
-        statements = model.statements.before_odes + cs + model.statements.after_odes
-        ode_deps = statements.dependencies(cs)
+        try:
+            dose_comp = odes.dosing_compartments[0]
+        except ValueError:  # If no dosing compartment
+            ode_deps = model.statements.dependencies(odes)
+        else:
+            cb = CompartmentalSystemBuilder(odes)
+            cb.set_dose(dose_comp, None)
+            cs = CompartmentalSystem(cb)
+            statements = model.statements.before_odes + cs + model.statements.after_odes
+            ode_deps = statements.dependencies(cs)
     else:
         ode_deps = set()
 
