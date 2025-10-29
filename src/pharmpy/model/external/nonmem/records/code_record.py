@@ -535,16 +535,17 @@ class CodeRecord(Record):
             self._index = []
         else:
             self._index = index
-        if statements is not None:
+        if statements is None:
+            index, statements = _parse_tree(content)
+            self._index = index
+            self._statements = statements
+        else:
             self._statements = statements
         super().__init__(name, raw_name, content)
 
     @property
     def statements(self):
-        index, statements = _parse_tree(self.root)
-        self._index = index
-        self._statements = statements
-        return statements
+        return self._statements
 
     def update_statements(self, new: Sequence[Statement], rvs=None, trans=None):
         try:
