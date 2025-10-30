@@ -64,6 +64,13 @@ def test_expand():
 
     assert c2.expand({Ref('PK'): tuple()}) == tuple()
 
+    expand_to = {Ref('PK'): ('CL', 'VC', 'MAT')}
+
+    c3 = Covariance.create(type='IIV', parameters=Ref('PK'))
+    c3_expanded = c3.expand(expand_to)
+    assert len(c3_expanded) == 3
+    assert c3_expanded[0].parameters == ('CL', 'MAT')
+
     with pytest.raises(ValueError):
         c2.expand(dict())
 
@@ -145,6 +152,51 @@ def test_lt(kwargs1, kwargs2, expected):
 
     with pytest.raises(TypeError):
         c1 < 1
+
+
+@pytest.mark.parametrize(
+    'parameters, expected',
+    [
+        (
+            (('CL', 'VC'),),
+            (('CL', 'VC'),),
+        ),
+        (
+            (('CL', 'VC'), ('CL', 'MAT'), ('MAT', 'VC')),
+            (('CL', 'MAT', 'VC'),),
+        ),
+        (
+            (('CL', 'VC'), ('CL', 'MAT'), ('MAT', 'VC'), ('QP1', 'VP1')),
+            (('CL', 'MAT', 'VC'), ('QP1', 'VP1')),
+        ),
+        (
+            (
+                ('CL', 'VC'),
+                ('CL', 'MAT'),
+                ('MAT', 'VC'),
+                ('QP1', 'VP1'),
+                ('QP1', 'VP2'),
+                ('VP1', 'VP2'),
+            ),
+            (('CL', 'MAT', 'VC'), ('QP1', 'VP1', 'VP2')),
+        ),
+        (
+            (('CL', 'VC'), ('CL', 'MAT'), ('MAT', 'VC'), Ref('PD')),
+            (
+                (Ref('PD')),
+                ('CL', 'MAT', 'VC'),
+            ),
+        ),
+    ],
+)
+def test_get_covariance_blocks(parameters, expected):
+    features = [Covariance.create('IIV', pair) for pair in parameters]
+    mf = ModelFeatures.create(features)
+    assert Covariance.get_covariance_blocks(mf) == expected
+
+    with pytest.raises(ValueError):
+        mf += Covariance.create('IOV', parameters[0])
+        Covariance.get_covariance_blocks(mf)
 
 
 @pytest.mark.parametrize(

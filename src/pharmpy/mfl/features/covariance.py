@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import builtins
 import itertools
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, Mapping, Sequence, Union
 
+from pharmpy.internals.set.subsets import subsets
 from pharmpy.mfl.features.help_functions import get_repr
 
 from .model_feature import ModelFeature, Ref
@@ -66,7 +67,9 @@ class Covariance(ModelFeature):
     def args(self) -> tuple[str, Union[tuple[str, str], Ref], bool]:
         return self.type, self.parameters, self.optional
 
-    def expand(self, expand_to: dict[Ref, Sequence[str]]) -> tuple[Covariance, ...]:
+    def expand(
+        self, expand_to: Mapping[Ref, Sequence[Union[str, Sequence[str]]]]
+    ) -> tuple[Covariance, ...]:
         if self.is_expanded():
             return (self,)
 
@@ -78,6 +81,8 @@ class Covariance(ModelFeature):
             raise ValueError(f'Ref not found in `expand_to`: {self.parameters}')
 
         if parameters:
+            if isinstance(parameters[0], str):
+                parameters = tuple(itertools.combinations(parameters, r=2))
             effects = [self.replace(parameters=pair) for pair in parameters]
             return tuple(sorted(effects))
         else:
@@ -134,24 +139,65 @@ class Covariance(ModelFeature):
         for (type, optional), features in groups.items():
             if not features:
                 continue
-            parameters = [feature.parameters for feature in features]
-            # FIXME: make more general
-            cartesian_product = get_cartesian_product(parameters)
-            if cartesian_product is not None:
+            blocks = Covariance.get_covariance_blocks(features)
+            for block in blocks:
                 optional_str = '?' if optional else ''
-                covariances.append(
-                    f'COVARIANCE{optional_str}({type},{get_repr(cartesian_product)})'
-                )
-            else:
-                covariances.append(';'.join(repr(feature) for feature in features))
+                covariances.append(f'COVARIANCE{optional_str}({type},{get_repr(block)})')
 
         return ';'.join(covariances)
 
+    @staticmethod
+    def get_covariance_blocks(mf: Union[ModelFeatures, Sequence[Covariance]]):
+        features = tuple(feat for feat in mf if isinstance(feat, Covariance))
+        assert len(features) == len(mf)
 
-def get_cartesian_product(L):
-    values = sorted(set(x for sub in L for x in sub))
-    combinations = list(itertools.combinations(values, 2))
-    if combinations == L:
-        return values
-    else:
-        return None
+        if any(feature.type != features[0].type for feature in features):
+            raise ValueError('All features must have the same `type`')
+
+        if len(features) == 1:
+            return (features[0].parameters,)
+
+        parameter_pairs = [
+            feature.parameters for feature in features if not isinstance(feature.parameters, Ref)
+        ]
+        unique_parameters = sorted(set(x for sub in parameter_pairs for x in sub))
+
+        # Blocks of size 2 is trivial since each Covariance object represents this
+        possible_subsets = list(subsets(unique_parameters, min_size=3))
+        # Sort by size, biggest first
+        possible_subsets.sort(key=lambda x: len(x), reverse=True)
+
+        found_subsets = []
+        params_in_block = []
+        while possible_subsets:
+            if len(params_in_block) == len(unique_parameters):
+                break
+
+            current_subset = possible_subsets.pop(0)
+            if set(current_subset).intersection(params_in_block):
+                continue
+
+            relevant_pairs = {
+                tuple(sorted(p)) for p in parameter_pairs if set(p).intersection(current_subset)
+            }
+            relevant_params = {x for sub in relevant_pairs for x in sub}
+            pairs_in_subset = {
+                tuple(sorted(p)) for p in itertools.combinations(relevant_params, r=2)
+            }
+
+            if relevant_pairs == pairs_in_subset:
+                for pair in relevant_pairs:
+                    a, b = pair
+                    parameter_pairs.remove((a, b))
+                found_subsets.append(current_subset)
+                params_in_block.extend(current_subset)
+
+        parameter_pairs_ref = [
+            feature.parameters for feature in features if isinstance(feature.parameters, Ref)
+        ]
+        if parameter_pairs_ref:
+            blocks = tuple(parameter_pairs_ref) + tuple(found_subsets) + tuple(parameter_pairs)
+        else:
+            blocks = tuple(found_subsets) + tuple(parameter_pairs)
+
+        return blocks

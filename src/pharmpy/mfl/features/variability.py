@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Sequence, Union
+from typing import TYPE_CHECKING, Mapping, Sequence, Union
 
 from pharmpy.mfl.features.help_functions import get_repr, group_args
 
@@ -54,7 +54,7 @@ class Variability(ModelFeature):
     def args(self) -> tuple[Union[str, Ref], str, bool]:
         return self.parameter, self.fp, self.optional
 
-    def expand(self, expand_to: dict[Ref, Sequence[str]]) -> tuple[Variability, ...]:
+    def expand(self, expand_to: Mapping[Ref, Sequence[str]]) -> tuple[Variability, ...]:
         if self.is_expanded():
             return (self,)
 
