@@ -9,8 +9,8 @@ import pharmpy.internals.unicode as unicode
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import symengine, sympy
-from pharmpy.internals.expr.assumptions import assume_all
-from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
+from pharmpy.internals.expr.assumptions import posify
+from pharmpy.internals.expr.leaves import free_images
 from pharmpy.internals.expr.ode import canonical_ode_rhs
 from pharmpy.internals.immutable import Immutable, cache_method
 
@@ -528,12 +528,7 @@ class CompartmentalSystemBuilder:
 
 
 def _is_positive(expr: sympy.Expr) -> bool:
-    return (
-        sympy.ask(
-            sympy.Q.positive(expr), assume_all(sympy.Q.positive, free_images_and_symbols(expr))
-        )
-        is True
-    )
+    return posify(expr).is_positive is True
 
 
 def _comps(graph):
