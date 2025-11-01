@@ -232,6 +232,17 @@ def test_loggamma():
     assert str(expr) == 'loggamma(x)'
 
 
+def test_erfc():
+    expr = Expr('x').erfc()
+    assert str(expr) == 'erfc(x)'
+
+
+def test_phi():
+    expr = Expr(0).phi()
+    assert expr == Expr(1) / Expr(2)
+    assert Expr(float("inf")).phi()._sympy_() == Expr(1)
+
+
 def test_series():
     x = Expr.symbol('x')
     y = x.exp()

@@ -179,6 +179,13 @@ class Expr:
     def sqrt(self) -> Expr:
         return Expr(symengine.sqrt(self._expr))
 
+    def erfc(self) -> Expr:
+        return Expr(symengine.erfc(self._expr))
+
+    def phi(self) -> Expr:
+        two = symengine.Integer(2)
+        return Expr(symengine.erfc(-self._expr / symengine.sqrt(two)) / two)
+
     def loggamma(self) -> Expr:
         return Expr(symengine.loggamma(self._expr))
 
