@@ -106,7 +106,7 @@ tzdata==2025.2
 urllib3==2.5.0
 wcwidth==0.2.14
 webencodings==0.5.1
-widgetsnbextension==4.0.14
+widgetsnbextension==4.0.15
 zict==3.0.0
 zipp==3.23.0
 tflite_runtime @ https://github.com/pharmpy/tflite-runtime-wheels/releases/download/v2.15.0-pre/tflite_runtime-2.15.0-cp310-cp310-linux_x86_64.whl ; sys_platform == 'linux' and platform_machine != 'aarch64' and python_version == '3.10'
