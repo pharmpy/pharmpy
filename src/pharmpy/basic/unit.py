@@ -4,6 +4,7 @@ import re
 from typing import Union
 
 from pharmpy.deps import sympy, sympy_printing
+from pharmpy.internals.expr.subs import subs
 from pharmpy.internals.unicode import int_to_superscript
 
 
@@ -11,8 +12,14 @@ class Unit:
     def __init__(self, source: Union[Unit, str]):
         if isinstance(source, Unit):
             self._expr = source._expr
+        elif source == "1":
+            self._expr = sympy.core.numbers.One()  # pyright: ignore [reportCallIssue]
         else:
-            self._expr = sympy.sympify(source).subs(_unit_subs())
+            self._expr = subs(
+                sympy.sympify(source),  # pyright: ignore [reportArgumentType]
+                _unit_subs(),
+                simultaneous=True,
+            )
 
     def unicode(self) -> str:
         printer = UnitPrinter()
