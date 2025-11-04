@@ -29,7 +29,13 @@ from pharmpy.model import (
 )
 
 from .common import remove_unused_parameters_and_rvs
-from .expressions import create_symbol, get_pd_parameters, get_pk_parameters, has_random_effect
+from .expressions import (
+    create_symbol,
+    get_parameter_rv,
+    get_pd_parameters,
+    get_pk_parameters,
+    has_random_effect,
+)
 from .help_functions import _format_input_list, _format_options, _get_etas
 
 ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'))
@@ -1036,7 +1042,7 @@ def create_joint_distribution(
     model : Model
         Pharmpy model
     rvs : list
-        Sequence of etas or names of etas to combine. If None, all etas that are IIVs and
+        Sequence of etas or individual parameters. If None, all etas that are IIVs and
         non-fixed will be used (full block). None is default.
     individual_estimates : pd.DataFrame
         Optional individual estimates to use for calculation of initial estimates
@@ -1074,11 +1080,22 @@ def create_joint_distribution(
             else:
                 rvs.extend(rv.names)
     else:
+        rvs_new = []
         for name in rvs:
             if name in all_rvs and all_rvs[name].level == 'IOV':
                 raise ValueError(
                     f'{name} describes IOV: Joining IOV random variables is currently not supported'
                 )
+            if name not in all_rvs.names:
+                try:
+                    rv = get_parameter_rv(model, name, var_type='iiv')
+                except ValueError:
+                    raise ValueError(f'Could not find rv or parameter: {name}')
+                assert len(rv) == 1
+                rvs_new.append(rv[0])
+            else:
+                rvs_new.append(name)
+        rvs = rvs_new
     if len(rvs) == 1:
         raise ValueError('At least two random variables are needed')
 

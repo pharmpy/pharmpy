@@ -1497,6 +1497,22 @@ def test_custom_eta_transformation(load_model_for_test, pheno_path):
             '0.0005\n'
             '0.031128\n',
         ),
+        (
+            ['CL', 'V'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\t; IVCL\n'
+            '0.0031045\t; IIV_CL_IIV_V\n'
+            '0.031128\t; IVV\n'
+            '$OMEGA 0.1\n'
+            '$OMEGA BLOCK(2)\n'
+            '0.0309626\n'
+            '0.0005 0.031128\n',
+        ),
     ],
 )
 def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, abbr_ref, omega_ref):
@@ -1728,7 +1744,7 @@ def test_split_joint_distribution(load_model_for_test, testdata, etas, abbr_ref,
 @pytest.mark.parametrize(
     'rvs, exception_msg',
     [
-        (['ETA_3', 'NON_EXISTENT_RV'], r'.*non-existing.*'),
+        (['ETA_3', 'NON_EXISTENT_RV'], 'Could not find rv or parameter'),
         (['ETA_3', 'ETA_6'], r'.*ETA_6.*'),
         (['ETA_1'], 'At least two random variables are needed'),
     ],
