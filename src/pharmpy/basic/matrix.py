@@ -149,24 +149,13 @@ class Matrix:
 
     def is_positive_semidefinite(self) -> bool | None:
         if self.is_symmetric() is True and self._each_entry_is_a_symbol():
-            return self._each_diagonal_entry_is_nonnegative()
+            return None
 
         isp = sympy.Matrix(self._m).is_positive_semidefinite
         return isp
 
     def _each_entry_is_a_symbol(self) -> bool:
         return all(map(lambda s: isinstance(s, symengine.Symbol), self._m))
-
-    def _each_diagonal_entry_is_nonnegative(self) -> bool | None:
-        predicates = set(self[i, i].is_nonnegative() for i in range(self.rows))
-
-        if False in predicates:
-            return False
-
-        if None in predicates:
-            return None
-
-        return True
 
     def eigenvals(self) -> dict[Expr, Expr]:
         d = sympy.Matrix(self._m).eigenvals()
