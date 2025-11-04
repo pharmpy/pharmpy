@@ -209,7 +209,7 @@ def has_covariate_effect(model: Model, parameter: str, covariate: str):
     return depends_on(model, parameter, covariate)
 
 
-def remove_covariate_effect(model: Model, parameter: str, covariate: str, keep_fixed=False):
+def remove_covariate_effect(model: Model, parameter: str, covariate: str, keep_fixed: bool = False):
     """Remove a covariate effect from an instance of :class:`pharmpy.model`.
 
     Parameters
