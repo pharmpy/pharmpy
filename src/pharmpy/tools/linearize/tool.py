@@ -91,7 +91,7 @@ def start_linearize(context, model, results):
 def postprocess(context, model_name, *modelentries):
     base = modelentries[0]
     linbase = modelentries[1]
-    if base.mode.name == model_name:
+    if base.model.name == model_name:
         base, linbase = linbase, base
 
     res = calculate_results(
