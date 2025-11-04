@@ -4,8 +4,10 @@ from typing import Optional, cast
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
+from pharmpy.mfl import Covariance, ModelFeatures
 from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import (
     create_joint_distribution,
@@ -14,7 +16,7 @@ from pharmpy.modeling import (
     split_joint_distribution,
 )
 from pharmpy.modeling.expressions import get_rv_parameters
-from pharmpy.modeling.mfl import generate_transformations
+from pharmpy.modeling.mfl import get_model_features, transform_into_search_space
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.run import run_subtool
@@ -25,12 +27,23 @@ from pharmpy.workflows.results import mfr
 def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
     wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
 
-    mfl_optional = mfl.filter(filter_on='optional')
+    base_features = get_model_features(base_model_entry.model, type='iiv')
+    mfl_optional = mfl.iiv.filter(filter_on='optional')
+    mfl_forced = mfl - mfl_optional
 
-    for i, features in enumerate(non_empty_subsets(mfl_optional), 1):
-        model_name = f'iivsearch_run{i + index_offset}'
+    if mfl_forced:
+        combinations = tuple(non_empty_subsets(mfl_optional))
+    else:
+        combinations = ((),) + tuple(non_empty_subsets(mfl_optional))
+
+    for i, features in enumerate(combinations, 1):
+        mf = ModelFeatures.create(features)
+        if base_features in mf:
+            continue
+
+        model_name = f'iivsearch_run{index_offset + i}'
         task_candidate_entry = Task(
-            f'create_{model_name}', create_candidate, model_name, features, base_model_entry
+            f'create_{model_name}', create_candidate, model_name, mf, 'iiv', base_model_entry
         )
         wb.add_task(task_candidate_entry)
 
@@ -43,17 +56,70 @@ def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
     return wf
 
 
-def create_candidate(name, features, base_model_entry):
+def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
+    wb = WorkflowBuilder(name='td_exhaustive_block_structure')
+
+    base_model = base_model_entry.model
+    base_model = base_model.replace(description=create_description(base_model))
+
+    base_features = get_model_features(base_model, type='covariance')
+    mfl_optional = mfl.covariance.filter(filter_on='optional')
+
+    combinations = [
+        subset
+        for subset in non_empty_subsets(mfl_optional)
+        if subset != base_features and _is_valid_block_combination(subset)
+    ]
+
+    for i, features in enumerate(combinations, 1):
+        model_name = f'iivsearch_run{index_offset + i}'
+        task_candidate_entry = Task(
+            f'create_{model_name}',
+            create_candidate,
+            model_name,
+            features,
+            'covariance',
+            base_model_entry,
+        )
+        wb.add_task(task_candidate_entry)
+
+    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
+    wb.insert_workflow(wf_fit)
+    wb.gather(wb.output_tasks)
+
+    return Workflow(wb)
+
+
+def _is_valid_block_combination(features: Sequence[Covariance]):
+    # FIXME: make more general
+    params = sorted({p for f in features for p in f.parameters})
+
+    idx = {p: i for i, p in enumerate(params)}
+    adj = np.zeros((len(params), len(params)), dtype=bool)
+
+    for feature in features:
+        p1, p2 = feature.parameters
+        i, j = idx[p1], idx[p2]
+        adj[i, j] = True
+        adj[j, i] = True
+        adj[i, i] = True
+        adj[j, j] = True
+
+    if (~adj).any():
+        return False
+    else:
+        return True
+
+
+def create_candidate(name, mfl, type, base_model_entry):
     candidate_model = update_initial_estimates(
         base_model_entry.model, base_model_entry.modelfit_results
     )
     candidate_model = candidate_model.replace(name=name)
-
-    funcs = generate_transformations(features)
-    funcs = [f for f in funcs if f.func == remove_iiv]
-
-    for func in funcs:
-        candidate_model = func(candidate_model)
+    ies = base_model_entry.modelfit_results.individual_estimates
+    candidate_model = transform_into_search_space(
+        candidate_model, mfl, type=type, force_optional=True, individual_estimates=ies
+    )
     candidate_model = candidate_model.replace(description=create_description(candidate_model))
 
     return ModelEntry.create(model=candidate_model, parent=base_model_entry.model)

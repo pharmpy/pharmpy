@@ -65,6 +65,14 @@ from pharmpy.workflows import LocalDirectoryContext
             2,
             'iivsearch_run1',
         ),
+        (
+            'skip',
+            'top_down_exhaustive',
+            {'_search_space': 'IIV(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+            4,
+            3,
+            'iivsearch_run1',
+        ),
     ],
 )
 def test_iivsearch_dummy(
@@ -98,6 +106,7 @@ def test_iivsearch_dummy(
             esttool='dummy',
             **kwargs
         )
+        print(res.summary_tool.to_string())
 
         algorithms = list(filter(lambda x: x != 'skip', [algorithm, correlation_algorithm]))
         assert len(res.summary_tool.index.get_level_values('step').unique()) == len(algorithms) + 1
