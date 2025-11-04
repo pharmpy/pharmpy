@@ -847,8 +847,6 @@ def parse_dataset(
     with NMTRANDataIO(di.path, SEP_INPUT, ignore_character) as io:
         df = read_NMTRAN_data(io, header=None)
 
-    assert isinstance(df, pd.DataFrame)
-
     return filter_and_convert_dataset_in_place(df, di, control_stream, raw, parse_columns)
 
 

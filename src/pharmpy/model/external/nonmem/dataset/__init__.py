@@ -116,8 +116,6 @@ def filter_and_convert_nonmem_dataset_in_place(
     if len(non_dropped) > len(set(non_dropped)):
         raise KeyError('Column names are not unique')
 
-    assert isinstance(df, pd.DataFrame)
-
     diff_cols = len(df.columns) - len(colnames)
     if diff_cols > 0:
         df.columns = list(colnames) + [None] * diff_cols

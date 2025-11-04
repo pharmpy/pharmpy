@@ -123,7 +123,7 @@ def NMTRANDataIO(
 
 
 def read_NMTRAN_data(io: NMTRANReader, **kwargs: Any) -> pd.DataFrame:
-    return pd.read_table(  # type: ignore
+    df = pd.read_table(
         io,  # type: ignore
         **kwargs,
         sep=SEP,
@@ -133,3 +133,7 @@ def read_NMTRAN_data(io: NMTRANReader, **kwargs: Any) -> pd.DataFrame:
         dtype=object,
         index_col=False,
     )
+
+    assert isinstance(df, pd.DataFrame)
+
+    return df
