@@ -1,10 +1,14 @@
+import builtins
+import itertools
 from functools import partial
 from typing import Callable, Literal, Optional, Sequence, Union
 
+from pharmpy.deps import pandas as pd
 from pharmpy.mfl import (
     IIV,
     Absorption,
     Allometry,
+    Covariance,
     Covariate,
     DirectEffect,
     EffectComp,
@@ -26,6 +30,7 @@ from pharmpy.modeling import (
     add_indirect_effect,
     add_lag_time,
     add_metabolite,
+    create_joint_distribution,
     get_bioavailability,
     get_covariate_effects,
     get_individual_parameters,
@@ -34,6 +39,7 @@ from pharmpy.modeling import (
     get_parameter_rv,
     get_pd_parameters,
     get_pk_parameters,
+    get_rv_parameters,
     has_first_order_absorption,
     has_first_order_elimination,
     has_michaelis_menten_elimination,
@@ -139,9 +145,9 @@ def _get_bioaval_parameters(model):
 
 
 def get_model_features(
-    model: Model, type: Optional[Literal['pk', 'covariates', 'iiv']] = None
+    model: Model, type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None
 ) -> ModelFeatures:
-    if type is not None and type not in ['pk', 'covariates', 'iiv']:
+    if type is not None and type not in ['pk', 'covariates', 'iiv', 'covariance']:
         raise ValueError(f'Invalid `type`: {type}')
     features = []
 
@@ -173,9 +179,17 @@ def get_model_features(
                 features.append(Covariate.create(parameter=param, covariate=cov.name, fp=fp, op=op))
 
     if type is None or type == 'iiv':
-        iivs = get_individual_parameters(model, 'iiv')
-        if len(iivs) > 0:
-            features.extend([IIV.create(param, 'exp') for param in iivs])
+        individual_params = get_individual_parameters(model, 'iiv')
+        if len(individual_params) > 0:
+            features.extend([IIV.create(param, 'exp') for param in individual_params])
+
+    if type is None or type == 'covariance':
+        iivs = model.random_variables.iiv
+        for iiv1, iiv2 in itertools.combinations(iivs.names, 2):
+            if iivs.get_covariance(iiv1, iiv2) != 0:
+                param1 = get_rv_parameters(model, iiv1)[0]
+                param2 = get_rv_parameters(model, iiv2)[0]
+                features.append(Covariance.create('IIV', (param1, param2)))
 
     return ModelFeatures.create(features)
 
@@ -222,22 +236,32 @@ def _get_transits(model):
 
 
 def generate_transformations(
-    model_features: Union[ModelFeatures, Sequence[ModelFeature]], include_remove: bool = True
+    model_features: Union[ModelFeatures, Sequence[ModelFeature]],
+    include_add: bool = True,
+    include_remove: bool = True,
+    individual_estimates: Optional[pd.DataFrame] = None,
 ) -> list[Callable]:
-    if isinstance(model_features, ModelFeatures) and not model_features.is_expanded():
-        raise ValueError
-    elif any(feature.is_expanded() is False for feature in model_features):
+    if isinstance(model_features, Sequence):
+        model_features = ModelFeatures.create(model_features)
+    if not model_features.is_expanded():
         raise ValueError
 
     transformations = []
+    covariances = model_features.covariance
     for feature in model_features:
-        funcs = _get_funcs(feature, include_remove)
+        if feature in covariances:
+            continue
+        funcs = _get_funcs(feature, include_add, include_remove)
         transformations.extend(funcs)
+
+    if covariances:
+        covariance_blocks = Covariance.get_covariance_blocks(covariances)
+        transformations.extend(_get_covariance_func(covariance_blocks, individual_estimates))
 
     return transformations
 
 
-def _get_funcs(feature: ModelFeature, include_remove: bool) -> list[Callable]:
+def _get_funcs(feature: ModelFeature, include_add: bool, include_remove: bool) -> list[Callable]:
     if isinstance(feature, (Absorption, Elimination)):
         return _get_absorption_elimination_func(feature)
     elif isinstance(feature, Transits):
@@ -251,11 +275,11 @@ def _get_funcs(feature: ModelFeature, include_remove: bool) -> list[Callable]:
     elif isinstance(feature, Metabolite):
         return _get_metabolite_func(feature)
     elif isinstance(feature, Covariate):
-        return _get_covariate_func(feature, include_remove)
+        return _get_covariate_func(feature, include_add, include_remove)
     elif isinstance(feature, Allometry):
         return _get_allometry_func(feature)
     elif isinstance(feature, IIV):
-        return _get_iiv_func(feature, include_remove)
+        return _get_iiv_func(feature, include_add, include_remove)
     else:
         raise NotImplementedError
 
@@ -313,16 +337,18 @@ def _get_metabolite_func(feature: Metabolite):
     return [func]
 
 
-def _get_covariate_func(feature: Covariate, include_remove: bool):
-    kwargs_add = {
-        'parameter': feature.parameter,
-        'covariate': feature.covariate,
-        'effect': feature.fp.lower(),
-        'operation': feature.op,
-        'allow_nested': True,
-    }
-    func_add = partial(add_covariate_effect, **kwargs_add)
-    funcs = [func_add]
+def _get_covariate_func(feature: Covariate, include_add: bool, include_remove: bool):
+    funcs = []
+    if include_add:
+        kwargs_add = {
+            'parameter': feature.parameter,
+            'covariate': feature.covariate,
+            'effect': feature.fp.lower(),
+            'operation': feature.op,
+            'allow_nested': True,
+        }
+        func_add = partial(add_covariate_effect, **kwargs_add)
+        funcs.append(func_add)
     if feature.optional and include_remove:
         kwargs_remove = {'parameter': feature.parameter, 'covariate': feature.covariate}
         func_remove = partial(remove_covariate_effect, **kwargs_remove)
@@ -337,12 +363,28 @@ def _get_allometry_func(feature: Allometry):
     return [func]
 
 
-def _get_iiv_func(feature: IIV, include_remove: bool):
-    func_add = partial(add_iiv, list_of_parameters=feature.parameter, expression=feature.fp.lower())
-    funcs = [func_add]
-    if feature.optional and include_remove:
+def _get_iiv_func(feature: IIV, include_add: bool, include_remove: bool):
+    funcs = []
+    if include_add:
+        func_add = partial(
+            add_iiv, list_of_parameters=feature.parameter, expression=feature.fp.lower()
+        )
+        funcs.append(func_add)
+    if include_remove:
         func_remove = partial(remove_iiv, to_remove=feature.parameter)
         funcs.append(func_remove)
+    return funcs
+
+
+def _get_covariance_func(covariance_blocks, ies: Optional[pd.DataFrame]):
+    funcs = []
+    for block in covariance_blocks:
+        func_join = partial(
+            create_joint_distribution,
+            rvs=block,
+            individual_estimates=ies,
+        )
+        funcs.append(func_join)
     return funcs
 
 
@@ -366,18 +408,29 @@ FUNC_MAPPING = {
 
 
 def transform_into_search_space(
-    model: Model, search_space: ModelFeatures, force_optional: bool = False
+    model: Model,
+    search_space: Union[ModelFeatures, Sequence[ModelFeature]],
+    force_optional: bool = False,
+    type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
+    individual_estimates: Optional[pd.DataFrame] = None,
 ) -> Model:
-    model_features = get_model_features(model)
-    if model_features in search_space:
+    if isinstance(search_space, Sequence):
+        search_space = ModelFeatures.create(search_space)
+    model_features = get_model_features(model, type=type)
+
+    if model_features == search_space:
         return model
 
     features_not_in_search_space = model_features - search_space
     features_to_add = []
+    features_to_remove = []
     for feature in features_not_in_search_space:
-        types = search_space.get_feature_type(type(feature))
-        if types:
-            features_to_add.append(min(types))
+        if isinstance(feature, (Covariate, IIV, Covariance)):
+            features_to_remove.append(feature)
+        else:
+            types = search_space.get_feature_type(builtins.type(feature))
+            if types:
+                features_to_add.append(min(types))
 
     features_not_in_model = search_space - model_features
     for feature in features_not_in_model:
@@ -387,7 +440,12 @@ def transform_into_search_space(
                 if feature_forced not in model_features:
                     features_to_add.append(feature_forced)
 
-    transformations = generate_transformations(features_to_add, include_remove=not force_optional)
+    transformations = generate_transformations(
+        features_to_add, include_remove=False, individual_estimates=individual_estimates
+    )
+    transformations += generate_transformations(
+        features_to_remove, include_add=False, individual_estimates=individual_estimates
+    )
     model_transformed = model
     for func in transformations:
         try:

@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     add_lag_time,
     add_metabolite,
     add_peripheral_compartment,
+    create_joint_distribution,
     remove_covariate_effect,
     remove_iiv,
     remove_lag_time,
@@ -115,6 +116,7 @@ from pharmpy.modeling.mfl import (
             'IIV(@PK,EXP)',
             'IIV([CL,MAT,VC],EXP)',
         ),
+        ([], 'COVARIANCE(IIV,@IIV)', 'COVARIANCE(IIV,[CL,MAT,VC])'),
     ),
 )
 def test_expand_model_features(load_model_for_test, testdata, funcs, source, expected):
@@ -223,6 +225,11 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
             'iiv',
             'IIV([CL,MAT,VC],EXP)',
         ),
+        (
+            [create_joint_distribution],
+            'covariance',
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
     ),
 )
 def test_get_model_features(load_model_for_test, testdata, funcs, type, expected):
@@ -299,7 +306,7 @@ def test_get_model_features_raises(load_model_for_test, testdata):
             12,
             (add_covariate_effect, remove_covariate_effect),
         ),
-        ('IIV([CL,MAT,VC],EXP)', 3, (add_iiv,)),
+        ('IIV([CL,MAT,VC],EXP)', 6, (add_iiv, remove_iiv)),
         (
             'IIV?([CL,MAT,VC],EXP)',
             6,
@@ -307,6 +314,11 @@ def test_get_model_features_raises(load_model_for_test, testdata):
                 add_iiv,
                 remove_iiv,
             ),
+        ),
+        (
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+            1,
+            (create_joint_distribution,),
         ),
     ),
 )
@@ -388,6 +400,34 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
             'iiv',
             'IIV([CL,MAT,VC],EXP)',
         ),
+        (
+            [],
+            'IIV([MAT,VC],EXP)',
+            dict(),
+            'iiv',
+            'IIV([MAT,VC],EXP)',
+        ),
+        (
+            [],
+            'IIV([MAT,VC],EXP)',
+            dict(),
+            'iiv',
+            'IIV([MAT,VC],EXP)',
+        ),
+        (
+            [],
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+            dict(),
+            'covariance',
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
+        (
+            [],
+            [],
+            dict(),
+            'iiv',
+            '',
+        ),
     ),
 )
 def test_transform_into_search_space(
@@ -397,5 +437,5 @@ def test_transform_into_search_space(
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model = func(model)
-    model_transformed = transform_into_search_space(model, mf, **kwargs)
+    model_transformed = transform_into_search_space(model, mf, type=type, **kwargs)
     assert repr(get_model_features(model_transformed, type=type)) == expected
