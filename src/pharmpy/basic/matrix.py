@@ -148,7 +148,10 @@ class Matrix:
         return self._m.is_symmetric
 
     def is_positive_semidefinite(self) -> bool | None:
-        if self.is_symmetric() is True and self._each_entry_is_a_symbol():
+        if (is_symmetric := self.is_symmetric()) is False:
+            return False
+
+        if is_symmetric and self._each_entry_is_a_symbol():
             return None
 
         isp = sympy.Matrix(self._m).is_positive_semidefinite
