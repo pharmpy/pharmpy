@@ -10,7 +10,7 @@ bleach==6.3.0
 certifi==2025.10.5
 charset-normalizer==3.4.4
 click==8.3.0
-cloudpickle==3.1.1
+cloudpickle==3.1.2
 comm==0.2.3
 csscompressor==0.9.5
 dask==2025.10.0
