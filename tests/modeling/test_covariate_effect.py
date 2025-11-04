@@ -4,7 +4,7 @@ import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
-from pharmpy.modeling import add_iov
+from pharmpy.modeling import add_allometry, add_iov, fix_parameters
 from pharmpy.modeling.covariate_effect import (
     CovariateEffect,
     _calculate_mean,
@@ -1031,6 +1031,131 @@ def test_remove_covariate_effect_with_effect(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model_removed = remove_covariate_effect(model, 'CL', 'WGT')
     assert model == model_removed
+
+
+@pytest.mark.parametrize(
+    'effects, with_allometry',
+    [
+        ([{'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'}], False),
+        ([{'parameter': 'VC', 'covariate': 'AGE', 'effect': 'exp'}], False),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'},
+                {'parameter': 'VC', 'covariate': 'AGE', 'effect': 'exp'},
+            ],
+            False,
+        ),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'},
+                {'parameter': 'CL', 'covariate': 'AGE', 'effect': 'exp'},
+            ],
+            False,
+        ),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'},
+                {'parameter': 'VC', 'covariate': 'AGE', 'effect': 'exp'},
+            ],
+            True,
+        ),
+        ([{'parameter': 'CL', 'covariate': 'WT', 'effect': 'piece_lin'}], False),
+        ([{'parameter': 'CL', 'covariate': 'WT', 'effect': 'piece_lin'}], True),
+    ],
+)
+def test_remove_covariate_effect2(load_model_for_test, testdata, effects, with_allometry):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    if with_allometry:
+        model = add_allometry(model, parameters=['CL'])
+
+    for effect in effects:
+        model = add_covariate_effect(model, **effect, allow_nested=True)
+        param, cov = effect['parameter'], effect['covariate']
+        assert has_covariate_effect(model, param, cov)
+        effect_name = f'{param}{cov}'
+        assert Expr.symbol(effect_name) in model.statements.lhs_symbols
+
+    for effect in effects:
+        param, cov = effect['parameter'], effect['covariate']
+        model = remove_covariate_effect(model, param, cov)
+        assert not has_covariate_effect(model, param, cov)
+        effect_name = f'{param}{cov}'
+        assert Expr.symbol(effect_name) not in model.statements.lhs_symbols
+
+
+@pytest.mark.parametrize(
+    'effects, with_allometry, fixed',
+    [
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'},
+                {'parameter': 'VC', 'covariate': 'AGE', 'effect': 'exp'},
+            ],
+            False,
+            [],
+        ),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'},
+                {'parameter': 'VC', 'covariate': 'AGE', 'effect': 'exp'},
+            ],
+            False,
+            ['POP_CLWT'],
+        ),
+        ([{'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'}], True, []),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WT', 'effect': 'exp'},
+                {'parameter': 'VC', 'covariate': 'AGE', 'effect': 'exp'},
+            ],
+            True,
+            [],
+        ),
+        (
+            [
+                {'parameter': 'CL', 'covariate': 'WT', 'effect': 'piece_lin'},
+                {'parameter': 'VC', 'covariate': 'AGE', 'effect': 'exp'},
+            ],
+            False,
+            ['POP_CLWT_1', 'POP_CLWT_2'],
+        ),
+    ],
+)
+def test_remove_covariate_effect_fixed(
+    load_model_for_test, testdata, effects, with_allometry, fixed
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    if with_allometry:
+        model = add_allometry(model, parameters=['CL'])
+
+    for effect in effects:
+        model = add_covariate_effect(model, **effect, allow_nested=True)
+        param, cov = effect['parameter'], effect['covariate']
+        assert has_covariate_effect(model, param, cov)
+        effect_name = f'{param}{cov}'
+        assert Expr.symbol(effect_name) in model.statements.lhs_symbols
+
+    model = fix_parameters(model, fixed)
+
+    for effect in effects:
+        param, cov = effect['parameter'], effect['covariate']
+        effect_name = f'{param}{cov}'
+        param_name = f'POP_{effect_name}'
+        params = [p for p in model.parameters.names if p.startswith(param_name)]
+        if set(params).intersection(fixed):
+            assert has_covariate_effect(model, param, cov)
+        else:
+            model = remove_covariate_effect(model, param, cov, keep_fixed=True)
+            if with_allometry and param in ('CL', 'VC') and cov == 'WT':
+                assert has_covariate_effect(model, param, cov)
+            else:
+                assert not has_covariate_effect(model, param, cov)
+            assert Expr.symbol(effect_name) not in model.statements.lhs_symbols
+
+    if with_allometry:
+        assert 'ALLO_CL' in model.parameters.names
 
 
 @pytest.mark.parametrize(

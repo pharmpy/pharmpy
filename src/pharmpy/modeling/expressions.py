@@ -1314,11 +1314,16 @@ def _make_assignments_graph(statements: Statements) -> dict[sympy.Symbol, Assign
 
 
 def remove_covariate_effect_from_statements(
-    model: Model, before_odes: Statements, parameter: str, covariate: str
+    model: Model, before_odes: Statements, parameter: str, covariate: str, keep_fixed: bool
 ) -> Iterable[Statement]:
     assignments = _make_assignments_graph(before_odes)
-    thetas = {sympy.sympify(symb) for symb in _theta_symbols(model)}
+    thetas = _theta_symbols(model)
+    if keep_fixed:
+        fixed_thetas = thetas.intersection(model.parameters.fixed.symbols)
+    else:
+        fixed_thetas = set()
 
+    thetas = {sympy.sympify(symb) for symb in thetas}
     new_before_odes = list(before_odes)
 
     symbol = sympy.Symbol(parameter)
@@ -1326,11 +1331,13 @@ def remove_covariate_effect_from_statements(
 
     tree_node = _remove_covariate_effect_from_statements_recursive(
         thetas,
+        fixed_thetas,
         graph_node.previous,
         new_before_odes,
         symbol,
         graph_node.expression,
         sympy.Symbol(covariate),
+        None,
         None,
     )
 
@@ -1425,25 +1432,31 @@ def _full_expression(assignments: dict[sympy.Symbol, AssignmentGraphNode], expr:
 
 def _remove_covariate_effect_from_statements_recursive(
     thetas: set[Expr],
+    fixed_thetas: set[Expr],
     assignments: dict[Expr, AssignmentGraphNode],
     statements: list[Assignment],
     symbol: Expr,
     expression: Expr,
     covariate: Expr,
     parent: Union[None, Expr],
+    current_theta_expression: Optional[Expr] = None,
 ) -> ExpressionTreeNode:
+    if expression.free_symbols.intersection(thetas):
+        current_theta_expression = expression
     if not expression.args:
         if expression in assignments:
             # NOTE: expression is a symbol and is defined in a previous assignment
             graph_node = assignments[expression]
             tree_node = _remove_covariate_effect_from_statements_recursive(
                 thetas,
+                fixed_thetas,
                 graph_node.previous,
                 statements,
                 expression,
                 graph_node.expression,
                 covariate,
                 parent,
+                current_theta_expression,
             )
             if tree_node.changed:
                 statements[graph_node.index] = Assignment.create(expression, tree_node.expression)
@@ -1452,7 +1465,13 @@ def _remove_covariate_effect_from_statements_recursive(
                 expression, tree_node.changed, tree_node.constant, tree_node.contains_theta
             )
 
-        if expression == covariate:
+        if current_theta_expression:
+            symbols_current = {Expr(symb) for symb in current_theta_expression.free_symbols}
+            in_fixed_expression = fixed_thetas.intersection(symbols_current)
+        else:
+            in_fixed_expression = False
+
+        if expression == covariate and not in_fixed_expression:
             # NOTE: expression is the covariate symbol for which we want to
             # remove all effects
             return ExpressionTreeNode(_neutral(parent), True, True, False)
@@ -1480,7 +1499,15 @@ def _remove_covariate_effect_from_statements_recursive(
                     key=sympy.count_ops,
                 )
                 tree_node = _remove_covariate_effect_from_statements_recursive(
-                    thetas, assignments, statements, symbol, expr, covariate, parent
+                    thetas,
+                    fixed_thetas,
+                    assignments,
+                    statements,
+                    symbol,
+                    expr,
+                    covariate,
+                    parent,
+                    current_theta_expression,
                 )
                 return ExpressionTreeNode(
                     tree_node.expression, True, tree_node.constant, tree_node.contains_theta
@@ -1493,7 +1520,15 @@ def _remove_covariate_effect_from_statements_recursive(
     children = list(
         map(
             lambda expr: _remove_covariate_effect_from_statements_recursive(
-                thetas, assignments, statements, symbol, expr, covariate, expression
+                thetas,
+                fixed_thetas,
+                assignments,
+                statements,
+                symbol,
+                expr,
+                covariate,
+                expression,
+                current_theta_expression,
             ),
             expression.args,
         )
@@ -1501,7 +1536,12 @@ def _remove_covariate_effect_from_statements_recursive(
 
     # TODO: Take THETA limits into account. Currently we assume any
     # offset/factor can be compensated but this is not true in general.
-    can_be_scaled_or_offset = any(map(lambda n: not n.changed and n.contains_theta, children))
+    can_be_scaled_or_offset = any(
+        map(
+            lambda n: (not n.changed or not n.constant) and n.contains_theta,
+            children,
+        )
+    )
 
     changed = any(map(lambda n: n.changed, children))
     is_constant = all(map(lambda n: n.constant, children))
@@ -1510,7 +1550,8 @@ def _remove_covariate_effect_from_statements_recursive(
     if not changed:
         return ExpressionTreeNode(expression, False, is_constant, contains_theta)
 
-    if not can_be_scaled_or_offset:
+    # FIXME: second part of check is not general
+    if not can_be_scaled_or_offset or isinstance(expression, sympy.Piecewise):
         return ExpressionTreeNode(
             expression.func(*map(lambda n: n.expression, children)),
             True,
