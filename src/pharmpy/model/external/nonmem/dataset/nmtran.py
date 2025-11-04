@@ -1,8 +1,7 @@
 import re
-from collections import deque
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Optional, TextIO, Union
+from typing import Any, Iterable, Optional, TextIO, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError
@@ -13,7 +12,6 @@ _ignore_heading = re.compile(r"TABLE[ \t]NO[.][ \t]")
 SEP_INPUT = re.compile(r"[,\t] *|  *(?:(?=[^,\t ])|, *)")
 
 PAD = " "
-SEP = ","
 
 
 def _ignore(ignore_character: str) -> re.Pattern[str]:
@@ -24,8 +22,6 @@ def _ignore(ignore_character: str) -> re.Pattern[str]:
 
 
 def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Pattern[str]):
-    assert SEP == ','
-
     for line in stream:
         if ignore.match(line) or _ignore_heading.match(line):
             continue
@@ -48,13 +44,13 @@ def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Patter
             )
 
         if ' ' in _line:
-            yield SEP.join(sep.split(_line)) + '\n'
+            yield sep.split(_line)
         elif '\t' in line:
             # NOTE: ~6x speedup for large TSVish files.
-            yield _line.replace('\t', SEP) + '\n'
+            yield _line.replace('\t', ',').split(',')
         else:
             # NOTE: ~6x speedup for large CSVish files.
-            yield _line + '\n'
+            yield _line.split(',')
 
         try:
             line = next(stream)
@@ -62,41 +58,6 @@ def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Patter
                 line = next(stream)
         except StopIteration:
             return
-
-
-class NMTRANReader:
-    def __init__(self, stream: TextIO, sep: re.Pattern[str], ignore: re.Pattern[str]):
-        self._lines: Iterator[bytes] = map(str.encode, NMTRANStreamIterator(stream, sep, ignore))
-        self._buffer: deque[bytes] = deque()
-        self._n: int = 0
-
-    def read(self, n: int = -1) -> bytes:
-        assert n >= 1
-
-        lines = self._lines
-        buffer = self._buffer
-
-        while self._n < n:
-            try:
-                chunk = next(lines)
-            except StopIteration:
-                break
-
-            buffer.append(chunk)
-            self._n += len(chunk)
-
-        if self._n == 0:
-            return b""
-
-        last = buffer.pop()
-        remainder = max(0, self._n - n)
-        value = b"".join(buffer) + last[: len(last) - remainder]
-        assert len(value) == n or remainder == 0
-        buffer.clear()
-        if remainder != 0:
-            buffer.append(last[len(last) - remainder :])
-        self._n = remainder
-        return value
 
 
 def open_NMTRAN(path: Union[str, Path]):
@@ -116,24 +77,15 @@ def NMTRANDataIO(
 
     if isinstance(path_or_io, (str, Path)):
         with open_NMTRAN(path_or_io) as stream:
-            yield NMTRANReader(stream, sep, ignore)
+            yield NMTRANStreamIterator(stream, sep, ignore)
 
     else:
-        yield NMTRANReader(path_or_io, sep, ignore)
+        yield NMTRANStreamIterator(path_or_io, sep, ignore)
 
 
-def read_NMTRAN_data(io: NMTRANReader, **kwargs: Any) -> pd.DataFrame:
-    df = pd.read_table(
-        io,  # type: ignore
-        **kwargs,
-        sep=SEP,
-        na_filter=False,
-        engine="c",
-        quoting=3,
-        dtype=object,
-        index_col=False,
-    )
+def read_NMTRAN_data(io: Iterable[list[str]], **kwargs: Any) -> pd.DataFrame:
+    assert 'header' in kwargs
+    assert kwargs['header'] is None
+    assert len(kwargs) == 1
 
-    assert isinstance(df, pd.DataFrame)
-
-    return df
+    return pd.DataFrame(io)
