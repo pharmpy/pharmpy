@@ -4,6 +4,6 @@ pydata-sphinx-theme==0.16.1
 sphinxcontrib-autoprogram==0.1.9
 sphinxcontrib.bibtex==2.6.5
 sphinx-automodapi==0.20.0
-markdown==3.9
+markdown==3.10
 #indirect
 accessible-pygments==0.0.5
