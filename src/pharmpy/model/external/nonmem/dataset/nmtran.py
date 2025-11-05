@@ -111,7 +111,7 @@ def _stream_NMTRAN(path_or_io: Union[str, Path, TextIO]):
 
 
 @contextmanager
-def NMTRANDataIO(
+def NMTRANDataLines(
     path_or_io: Union[str, Path, TextIO],
     sep: re.Pattern[str],
     ignore_character: Optional[str] = None,
@@ -122,7 +122,7 @@ def NMTRANDataIO(
     ignore = _ignore(ignore_character)
 
     with _stream_NMTRAN(path_or_io) as stream:
-        yield IOFromChunks(map(str.encode, NMTRANStreamIterator(stream, sep, ignore)))
+        yield NMTRANStreamIterator(stream, sep, ignore)
 
 
 def read_NMTRAN_data(io: IOFromChunks, **kwargs: Any) -> pd.DataFrame:

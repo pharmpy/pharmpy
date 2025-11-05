@@ -1,6 +1,8 @@
 # Read dataset from file
 import warnings
-from typing import Any, Container, Iterable, Optional, cast
+from itertools import chain
+from pathlib import Path
+from typing import Any, Container, Iterable, Optional, TextIO, cast
 
 from pharmpy import conf
 from pharmpy.deps import pandas as pd
@@ -16,10 +18,10 @@ from .filter import (
     numeric,
     parse_filter_statements,
 )
-from .nmtran import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
+from .nmtran import SEP, SEP_INPUT, IOFromChunks, NMTRANDataLines, read_NMTRAN_data
 
 
-def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
+def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str | None]):
     """Check if id numbers are reused and make renumber. If not simply pass through the dataset."""
     if idcol not in columns:
         return
@@ -34,13 +36,42 @@ def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str]):
         df[idcol] = id_change.cumsum()
 
 
-def _idcol(columns: Container[str]) -> str | None:
+def _idcol(columns: Container[str | None]) -> str | None:
     if 'ID' in columns:
         return 'ID'
     elif 'L1' in columns:
         return 'L1'
     else:
         return None
+
+
+def read_nonmem_df(
+    path_or_io: str | Path | TextIO,
+    raw: bool,
+    ignore_character: str,
+    colnames: Iterable[str],
+):
+    with NMTRANDataLines(path_or_io, SEP_INPUT, ignore_character) as lines:
+        first_line = next(lines)
+        first_line_column_count = first_line.count(SEP) + 1
+        columns = list(colnames)
+
+        if raw:
+            if len(columns) > first_line_column_count:
+                columns = columns[:first_line_column_count]
+            else:
+                columns += [''] * (first_line_column_count - len(columns))
+
+        elif len(columns) > first_line_column_count:
+            warnings.warn("There are more columns in $INPUT than in the dataset")
+
+        header_line = SEP.join(columns) + '\n'
+
+        io = IOFromChunks(map(str.encode, chain([header_line, first_line], lines)))
+        usecols = list(range(len(columns)))
+        df = read_NMTRAN_data(io, header=0, usecols=usecols)
+
+    return df
 
 
 def read_nonmem_dataset(
@@ -76,13 +107,11 @@ def read_nonmem_dataset(
      6. Strip away superfluous columns from the dataset
     """
 
-    with NMTRANDataIO(path_or_io, SEP_INPUT, ignore_character) as io:
-        df = read_NMTRAN_data(io, header=None)
+    df = read_nonmem_df(path_or_io, raw, ignore_character, colnames)
 
     return filter_and_convert_nonmem_dataset_in_place(
         df,
         raw=raw,
-        colnames=colnames,
         drop=drop,
         null_value=null_value,
         parse_columns=parse_columns,
@@ -96,7 +125,6 @@ def read_nonmem_dataset(
 def filter_and_convert_nonmem_dataset_in_place(
     df: pd.DataFrame,
     raw: bool = False,
-    colnames=(),
     drop: Optional[list[bool]] = None,
     null_value: str = '0',
     parse_columns: Optional[Iterable[str]] = None,
@@ -105,36 +133,19 @@ def filter_and_convert_nonmem_dataset_in_place(
     dtype: Optional[dict[str, Any]] = None,
     missing_data_token: Optional[str] = None,
 ):
+    columns = df.columns
+    idcol = _idcol(columns)
+
     if drop is None:
-        drop = [False] * len(colnames)
+        drop = [False] * len(columns)
+
+    non_dropped = [name for name, dropped in zip(columns, drop) if not dropped]
+    if len(non_dropped) > len(set(non_dropped)):
+        raise KeyError('Column names are not unique')
 
     missing_data_token = (
         missing_data_token if missing_data_token is not None else conf.missing_data_token
     )
-
-    non_dropped = [name for name, dropped in zip(colnames, drop) if not dropped]
-    if len(non_dropped) > len(set(non_dropped)):
-        raise KeyError('Column names are not unique')
-
-    diff_cols = len(df.columns) - len(colnames)
-    if diff_cols > 0:
-        df.columns = list(colnames) + [None] * diff_cols
-        if not raw:
-            # Remove unnamed columns
-            df.drop(columns=[None], inplace=True)
-    elif diff_cols < 0:
-        if raw:
-            df.columns = colnames[0 : len(df.columns)]
-        else:
-            warnings.warn("There are more columns in $INPUT than in the dataset")
-            for i in range(abs(diff_cols)):  # Create empty columns.
-                df[f'__{i}]'] = str(null_value)  # FIXME assure no name collisions here
-            df.columns = colnames
-    else:
-        df.columns = colnames
-
-    columns = df.columns
-    idcol = _idcol(columns)
 
     if ignore and accept:
         raise ValueError("Cannot have both IGNORE and ACCEPT")

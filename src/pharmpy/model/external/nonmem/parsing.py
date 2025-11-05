@@ -26,10 +26,10 @@ from pharmpy.model import (
     RandomVariables,
     Statements,
 )
+from pharmpy.model.external.nonmem.records.data_record import DataRecord
 
 from .advan import _compartmental_model, des_assign_statements
-from .dataset import filter_and_convert_nonmem_dataset_in_place
-from .dataset.nmtran import SEP_INPUT, NMTRANDataIO, read_NMTRAN_data
+from .dataset import filter_and_convert_nonmem_dataset_in_place, read_nonmem_df
 from .nmtran_parser import NMTranControlStream
 from .records.code_record import CodeRecord
 from .table import NONMEMTableFile, PhiTable
@@ -842,35 +842,48 @@ def parse_dataset(
     data_records = control_stream.get_records('DATA')
     if not data_records:
         return None
-    ignore_character = data_records[0].ignore_character
 
-    with NMTRANDataIO(di.path, SEP_INPUT, ignore_character) as io:
-        df = read_NMTRAN_data(io, header=None)
+    data_record = data_records[0]
+    ignore_character = data_record.ignore_character
+    (colnames, drop, replacements, _) = parse_column_info(control_stream)
 
-    return filter_and_convert_dataset_in_place(df, di, control_stream, raw, parse_columns)
+    df = read_nonmem_df(di.path, raw, ignore_character, colnames)
+
+    null_value = data_record.null_value
+    have_pk = bool(control_stream.get_pk_record())
+
+    return filter_and_convert_dataset_in_place(
+        df,
+        di,
+        data_record,
+        drop,
+        null_value,
+        replacements,
+        have_pk,
+        raw=raw,
+        parse_columns=parse_columns,
+    )
 
 
 def filter_and_convert_dataset_in_place(
     df: pd.DataFrame,
     di: DataInfo,
-    control_stream: NMTranControlStream,
+    data_record: DataRecord,
+    drop: list[bool],
+    null_value: str,
+    replacements: dict[str, str],
+    have_pk: bool,
     raw: bool = False,
     parse_columns: Optional[Iterable[str]] = None,
 ):
-    data_records = control_stream.get_records('DATA')
-    if not data_records:
-        return None
-    null_value = data_records[0].null_value
-    (colnames, drop, replacements, _) = parse_column_info(control_stream)
-
     if raw:
         ignore = None
         accept = None
     else:
         # FIXME: All direct handling of control stream spanning
         # over one or more records should move
-        ignore = data_records[0].ignore
-        accept = data_records[0].accept
+        ignore = data_record.ignore
+        accept = data_record.accept
         # FIXME: This should really only be done if setting the dataset
         if ignore:
             ignore = replace_synonym_in_filters(ignore, replacements)
@@ -880,8 +893,7 @@ def filter_and_convert_dataset_in_place(
     df = filter_and_convert_nonmem_dataset_in_place(
         df,
         raw,
-        colnames,
-        drop,
+        drop=drop,
         null_value=null_value,
         parse_columns=parse_columns,
         ignore=ignore,
@@ -891,7 +903,6 @@ def filter_and_convert_dataset_in_place(
     )
     # Let TIME be the idv in both $PK and $PRED models
     # Remove individuals without observations
-    have_pk = control_stream.get_pk_record()
     if have_pk:
         df = filter_observations(df, di)
     return df
