@@ -2203,7 +2203,7 @@ def update_name_of_tables(control_stream: NMTranControlStream, new_name: str):
 def update_sizes(control_stream, model: Model):
     """Update $SIZES if needed"""
     all_sizes = control_stream.get_records('SIZES')
-    sizes = all_sizes[0] if all_sizes else create_record('$SIZES ')
+    sizes = all_sizes[0] if all_sizes else create_record('$SIZES\n')
     assert isinstance(sizes, SizesRecord)
 
     n_compartments = get_needed_PC(model)

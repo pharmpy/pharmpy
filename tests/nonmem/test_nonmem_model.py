@@ -1371,3 +1371,13 @@ def test_missing_data_999(testdata, tmp_path):
 def test_missing_data_default(testdata):
     model = read_model(testdata / "nonmem" / "models" / "minimal_missing.mod")
     assert list(model.dataset['WGT']) == [55.0, 55.0, -999.0, -999.0]
+
+
+def test_sizes(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    dataset = model.dataset
+    for i in range(1, 51):
+        dataset[f"DUM{i}"] = 1
+    model = model.update_source()
+    sizes = model.internals.control_stream.get_records("SIZES")[0]
+    assert str(sizes) == f'$SIZES PD={len(model.dataset.columns)}\n'
