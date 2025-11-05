@@ -278,7 +278,6 @@ def create_basic_pd_model(
     est = EstimationStep.create(
         "FOCE",
         interaction=True,
-        laplace=True,
         maximum_evaluations=99999,
         predictions=('PRED', 'CIPREDI'),
         residuals=('CWRES',),
