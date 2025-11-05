@@ -24,6 +24,7 @@ from .results import PDSearchResults
 
 def create_workflow(
     dataset: Union[Path, str],
+    treatment_variable: str,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
@@ -34,6 +35,8 @@ def create_workflow(
     ----------
     dataset : Union[Path, str]
         A PD dataset
+    treatment_variable : str
+        Name of the variable representing the treatment, e.g. TRT, DOSE or AUC
     strictness : str
         Strictness criteria
     parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
@@ -61,7 +64,11 @@ def create_workflow(
     wb.add_task(placebo_task, predecessors=base_output)
 
     de_task = Task(
-        'run_drug_effect_models', run_drug_effect_models, strictness, parameter_uncertainty_method
+        'run_drug_effect_models',
+        run_drug_effect_models,
+        treatment_variable,
+        strictness,
+        parameter_uncertainty_method,
     )
     wb.add_task(de_task)
 
@@ -125,13 +132,17 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
     return final_me, rank_res
 
 
-def run_drug_effect_models(context, strictness, parameter_uncertainty_method, baseme):
+def run_drug_effect_models(
+    context, treatment_variable, strictness, parameter_uncertainty_method, baseme
+):
     exprs = ("linear", "step")
     context.log_info(f"Running {len(exprs)} drug_effect models.")
 
     wb = WorkflowBuilder()
     for expr in exprs:
-        create_task = Task(f'create_drug_effect_{expr}', create_drug_effect_model, expr, baseme)
+        create_task = Task(
+            f'create_drug_effect_{expr}', create_drug_effect_model, treatment_variable, expr, baseme
+        )
         wb.add_task(create_task)
         fit_wf = create_fit_workflow(n=1)
         wb.insert_workflow(fit_wf, [create_task])
@@ -176,9 +187,9 @@ def create_placebo_model(expr, op, baseme):
     return me
 
 
-def create_drug_effect_model(expr, baseme):
+def create_drug_effect_model(treatment_variable, expr, baseme):
     base_model = baseme.model
-    model = set_direct_effect(base_model, expr, variable="TIME")
+    model = set_direct_effect(base_model, expr, variable=treatment_variable)
     model = set_name(model, f"drug_{expr}")
     model = set_description(model, f"DRUG {expr.upper()}")
     me = ModelEntry.create(model=model, parent=base_model)
