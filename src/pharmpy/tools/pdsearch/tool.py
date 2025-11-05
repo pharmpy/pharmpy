@@ -180,7 +180,7 @@ def create_placebo_model(expr, op, baseme):
         txtop = op
 
     model = set_name(model, f"placebo_{expr}_{txtop}")
-    model = set_description(model, f"PLACEBO {expr.upper()} {txtop}")
+    model = set_description(model, f"PLACEBO({expr.upper()} {txtop})")
     if expr == 'linear':
         model = add_iiv(model, 'SLOPE', 'prop')
     me = ModelEntry.create(model=model, parent=base_model)
@@ -191,7 +191,7 @@ def create_drug_effect_model(treatment_variable, expr, baseme):
     base_model = baseme.model
     model = set_direct_effect(base_model, expr, variable=treatment_variable)
     model = set_name(model, f"drug_{expr}")
-    model = set_description(model, f"DRUG {expr.upper()}")
+    model = set_description(model, model.description + f"; DIRECTEFFECT({expr.upper()})")
     me = ModelEntry.create(model=model, parent=base_model)
     return me
 
