@@ -64,21 +64,21 @@ def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Patter
             return
 
 
-class NMTRANReader:
-    def __init__(self, stream: TextIO, sep: re.Pattern[str], ignore: re.Pattern[str]):
-        self._lines: Iterator[bytes] = map(str.encode, NMTRANStreamIterator(stream, sep, ignore))
+class IOFromChunks:
+    def __init__(self, chunks: Iterator[bytes]):
+        self._chunks: Iterator[bytes] = chunks
         self._buffer: deque[bytes] = deque()
         self._n: int = 0
 
     def read(self, n: int = -1) -> bytes:
         assert n >= 1
 
-        lines = self._lines
+        chunks = self._chunks
         buffer = self._buffer
 
         while self._n < n:
             try:
-                chunk = next(lines)
+                chunk = next(chunks)
             except StopIteration:
                 break
 
@@ -122,10 +122,10 @@ def NMTRANDataIO(
     ignore = _ignore(ignore_character)
 
     with _stream_NMTRAN(path_or_io) as stream:
-        yield NMTRANReader(stream, sep, ignore)
+        yield IOFromChunks(map(str.encode, NMTRANStreamIterator(stream, sep, ignore)))
 
 
-def read_NMTRAN_data(io: NMTRANReader, **kwargs: Any) -> pd.DataFrame:
+def read_NMTRAN_data(io: IOFromChunks, **kwargs: Any) -> pd.DataFrame:
     df = pd.read_table(
         io,  # type: ignore
         **kwargs,
