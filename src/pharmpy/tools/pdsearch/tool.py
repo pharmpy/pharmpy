@@ -11,6 +11,10 @@ from pharmpy.modeling import (
     set_name,
     set_proportional_error_model,
 )
+from pharmpy.tools.common import (
+    create_plots,
+    table_final_eta_shrinkage,
+)
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -183,10 +187,22 @@ def create_drug_effect_model(expr, baseme):
 
 def postprocess(context, rank_res, rank_res2):
     summary_tool = pd.concat((rank_res.summary_tool, rank_res2.summary_tool))
+
+    summary_models = summary_tool  # FIXME
+    plots = create_plots(rank_res2.final_model, rank_res2.final_results)
+    eta_shrinkage = table_final_eta_shrinkage(rank_res2.final_model, rank_res2.final_results)
+
     res = PDSearchResults(
         summary_tool=summary_tool,
+        summary_models=summary_models,
         final_model=rank_res2.final_model,
-        final_model_results=rank_res2.final_results,
+        final_results=rank_res2.final_results,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred'],
+        final_model_eta_distribution_plot=plots['eta_distribution'],
+        final_model_eta_shrinkage=eta_shrinkage,
     )
 
     context.log_info("Finishing pdsearch")
