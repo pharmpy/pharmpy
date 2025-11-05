@@ -6,7 +6,6 @@ from typing import Iterable
 
 from pharmpy.deps import sympy
 
-from .leaves import free_images_and_symbols
 from .subs import subs
 
 
@@ -15,14 +14,42 @@ def assume_all(predicate: sympy.assumptions.Predicate, expressions: Iterable[sym
     return reduce(__and__, map(predicate, expressions), tautology)
 
 
-def posify(expr: sympy.Expr):
-    if expr.is_positive is not None:
-        return expr
-
+def _free_image_or_symbol_with_assumptions(expr: sympy.Basic, assumptions: dict[str, bool]):
     if isinstance(expr, sympy.Symbol):
-        return sympy.Symbol(expr.name, positive=True, **expr.assumptions0)
+        return sympy.Symbol(expr.name, **assumptions, **expr.assumptions0)
 
     if isinstance(expr.func, sympy.core.function.UndefinedFunction):
-        return sympy.core.function.UndefinedFunction(expr.func.name, positive=True)(*expr.args)
+        return sympy.core.function.UndefinedFunction(
+            expr.func.name, **assumptions, **expr.assumptions0
+        )(*expr.args)
 
-    return subs(expr, {x: posify(x) for x in free_images_and_symbols(expr)}, simultaneous=True)
+    raise NotImplementedError(f'{expr}')
+
+
+def _free_images_and_symbols_assumptions_mapping(assumptions: sympy.logic.boolalg.Boolean):
+    if isinstance(assumptions, sympy.And):
+        for term in assumptions.args:
+            yield from _free_images_and_symbols_assumptions_mapping(term)
+        return
+
+    if isinstance(assumptions, sympy.AppliedPredicate):
+        predicate, *args = assumptions.args
+        if predicate == sympy.Q.positive:
+            assert len(args) == 1
+            expr = args[0]
+            yield [expr, _free_image_or_symbol_with_assumptions(expr, {'positive': True})]
+            return
+
+        if predicate == sympy.Q.is_true:
+            assert len(args) == 1
+            assert args[0]
+            return
+
+    raise NotImplementedError(f'{assumptions}')
+
+
+def with_free_images_and_symbols_assumptions(
+    expr: sympy.Expr, assumptions: sympy.logic.boolalg.Boolean
+):
+    mapping = dict(_free_images_and_symbols_assumptions_mapping(assumptions))
+    return subs(expr, mapping, simultaneous=True)
