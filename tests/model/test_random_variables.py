@@ -36,6 +36,16 @@ def test_joint_normal_rv():
     assert dist.level == 'IIV'
     dist = dist.replace(names=['NEW', 'ETA2'])
     assert dist.names == ('NEW', 'ETA2')
+
+
+def test_joint_normal_rv_non_symmetric():
+    with pytest.raises(ValueError):
+        JointNormalDistribution.create(
+            ['eta1', 'eta2', 'eta3'], 'iiv', [1, 2, 3], [[9, 2, 3], [4, 8, 6], [1, 2, 9]]
+        )
+
+
+def test_joint_normal_rv_non_psd():
     with pytest.raises(ValueError):
         JointNormalDistribution.create(['ETA1', 'ETA2'], 'iiv', [0, 0], [[-1, 0.1], [0.1, 2]])
 
@@ -623,7 +633,7 @@ def test_get_covariance():
 
 def test_unjoin():
     dist1 = JointNormalDistribution.create(
-        ['eta1', 'eta2', 'eta3'], 'iiv', [1, 2, 3], [[9, 2, 3], [4, 8, 6], [1, 2, 9]]
+        ['eta1', 'eta2', 'eta3'], 'iiv', [1, 2, 3], [[9, 2, 3], [2, 8, 6], [3, 6, 9]]
     )
     rvs = RandomVariables.create([dist1])
     new = rvs.unjoin('eta1')

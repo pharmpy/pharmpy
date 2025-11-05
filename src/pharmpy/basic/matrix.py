@@ -144,9 +144,21 @@ class Matrix:
     def deserialize(cls, s) -> Matrix:
         return cls(sympy.parse_expr(s))
 
+    def is_symmetric(self) -> bool | None:
+        return self._m.is_symmetric
+
     def is_positive_semidefinite(self) -> bool | None:
+        if (is_symmetric := self.is_symmetric()) is False:
+            return False
+
+        if is_symmetric and self._each_entry_is_a_symbol():
+            return None
+
         isp = sympy.Matrix(self._m).is_positive_semidefinite
         return isp
+
+    def _each_entry_is_a_symbol(self) -> bool:
+        return all(map(lambda s: isinstance(s, symengine.Symbol), self._m))
 
     def eigenvals(self) -> dict[Expr, Expr]:
         d = sympy.Matrix(self._m).eigenvals()
