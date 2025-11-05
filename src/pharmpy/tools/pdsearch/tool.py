@@ -8,6 +8,7 @@ from pharmpy.modeling import (
     create_basic_pd_model,
     set_description,
     set_direct_effect,
+    set_initial_estimates,
     set_name,
     set_proportional_error_model,
 )
@@ -171,7 +172,8 @@ def run_drug_effect_models(
 
 def create_placebo_model(expr, op, baseme):
     base_model = baseme.model
-    model = add_placebo_model(base_model, expr, op)
+    model = set_initial_estimates(base_model, baseme.modelfit_results.parameter_estimates)
+    model = add_placebo_model(model, expr, op)
     if op == '*':
         txtop = 'mult'
     elif op == '+':
@@ -189,7 +191,8 @@ def create_placebo_model(expr, op, baseme):
 
 def create_drug_effect_model(treatment_variable, expr, baseme):
     base_model = baseme.model
-    model = set_direct_effect(base_model, expr, variable=treatment_variable)
+    model = set_initial_estimates(base_model, baseme.modelfit_results.parameter_estimates)
+    model = set_direct_effect(model, expr, variable=treatment_variable)
     model = set_name(model, f"drug_{expr}")
     model = set_description(model, model.description + f"; DIRECTEFFECT({expr.upper()})")
     me = ModelEntry.create(model=model, parent=base_model)
