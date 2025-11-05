@@ -103,6 +103,13 @@ def open_NMTRAN(path: Union[str, Path]):
     return open(str(path), "r", encoding="latin-1")
 
 
+def _stream_NMTRAN(path_or_io: Union[str, Path, TextIO]):
+    if isinstance(path_or_io, (str, Path)):
+        return open_NMTRAN(path_or_io)
+    else:
+        return path_or_io
+
+
 @contextmanager
 def NMTRANDataIO(
     path_or_io: Union[str, Path, TextIO],
@@ -114,12 +121,8 @@ def NMTRANDataIO(
 
     ignore = _ignore(ignore_character)
 
-    if isinstance(path_or_io, (str, Path)):
-        with open_NMTRAN(path_or_io) as stream:
-            yield NMTRANReader(stream, sep, ignore)
-
-    else:
-        yield NMTRANReader(path_or_io, sep, ignore)
+    with _stream_NMTRAN(path_or_io) as stream:
+        yield NMTRANReader(stream, sep, ignore)
 
 
 def read_NMTRAN_data(io: NMTRANReader, **kwargs: Any) -> pd.DataFrame:
