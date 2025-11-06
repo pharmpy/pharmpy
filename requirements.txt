@@ -26,7 +26,7 @@ idna==3.11
 imagesize==1.4.1
 importlib_metadata==8.7.0
 ipykernel==7.1.0
-ipython==9.6.0
+ipython==9.7.0
 ipython_pygments_lexers==1.1.1
 ipywidgets==8.1.8
 itables==2.5.2
