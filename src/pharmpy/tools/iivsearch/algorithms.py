@@ -7,7 +7,7 @@ from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
-from pharmpy.mfl import Covariance, ModelFeatures
+from pharmpy.mfl import Covariance
 from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import (
     create_joint_distribution,
@@ -30,22 +30,27 @@ def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
     base_features = get_model_features(base_model_entry.model, type='iiv')
     mfl_optional = mfl.iiv.filter(filter_on='optional')
     mfl_forced = mfl - mfl_optional
+    params_forced = {feature.parameter for feature in mfl_forced}
 
-    if mfl_forced:
-        combinations = tuple(non_empty_subsets(mfl_optional))
-    else:
-        combinations = ((),) + tuple(non_empty_subsets(mfl_optional))
+    combinations = ((),) + tuple(non_empty_subsets(mfl_optional))
 
-    for i, features in enumerate(combinations, 1):
-        mf = ModelFeatures.create(features)
-        if base_features in mf:
+    model_index = index_offset + 1
+    for features in combinations:
+        if params_forced.intersection(feature.parameter for feature in features):
             continue
 
-        model_name = f'iivsearch_run{index_offset + i}'
+        mf = mfl_forced + features
+        if not mf.force_optional().is_single_model():
+            continue
+        if mf.force_optional() == base_features:
+            continue
+
+        model_name = f'iivsearch_run{model_index}'
         task_candidate_entry = Task(
             f'create_{model_name}', create_candidate, model_name, mf, 'iiv', base_model_entry
         )
         wb.add_task(task_candidate_entry)
+        model_index += 1
 
     wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
     wb.insert_workflow(wf_fit)
@@ -120,7 +125,8 @@ def create_candidate(name, mfl, type, base_model_entry):
     candidate_model = transform_into_search_space(
         candidate_model, mfl, type=type, force_optional=True, individual_estimates=ies
     )
-    candidate_model = candidate_model.replace(description=create_description(candidate_model))
+    description = str(get_model_features(candidate_model, type=type))
+    candidate_model = candidate_model.replace(description=description)
 
     return ModelEntry.create(model=candidate_model, parent=base_model_entry.model)
 
