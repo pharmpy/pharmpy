@@ -631,6 +631,13 @@ def test_is_expanded():
             False,
         ),
         (
+            [
+                IIV.create('CL', 'exp', optional=False),
+                IIV.create('CL', 'add', optional=False),
+            ],
+            False,
+        ),
+        (
             [IOV.create('CL', 'exp', optional=False), IOV.create('VC', 'exp', optional=False)],
             True,
         ),
@@ -696,6 +703,19 @@ def test_filter():
 
     with pytest.raises(NotImplementedError):
         mf.filter(filter_on='x')
+
+
+def test_force_optional():
+    iiv1 = IIV.create(parameter='CL', fp='exp', optional=False)
+    iiv2 = IIV.create(parameter='MAT', fp='exp', optional=False)
+    mf1 = ModelFeatures.create([iiv1, iiv2])
+    assert mf1 == mf1.force_optional()
+
+    iiv3 = IIV.create(parameter='VC', fp='exp', optional=True)
+    mf2 = mf1 + iiv3
+    mf2_forced = mf2.force_optional()
+    assert mf2_forced != mf2
+    assert all(feature.optional is False for feature in mf2_forced)
 
 
 def test_contains():

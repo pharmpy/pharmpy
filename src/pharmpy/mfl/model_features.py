@@ -211,6 +211,11 @@ class ModelFeatures(Immutable):
             elif isinstance(feature, (Covariate, IIV, IOV, Covariance)):
                 if feature.optional:
                     return False
+                if isinstance(feature, (IIV, IOV)):
+                    if any(
+                        f.parameter == feature.parameter and f.fp != feature.fp for f in features
+                    ):
+                        return False
             else:
                 raise NotImplementedError
             feature_map[type(feature)].append(feature)
@@ -229,11 +234,18 @@ class ModelFeatures(Immutable):
 
         return self.create(features=features_new)
 
-    def filter(self, filter_on: Literal['optional']):
+    def filter(self, filter_on: Literal['optional']) -> ModelFeatures:
         if filter_on == 'optional':
             features = [feature for feature in self if getattr(feature, 'optional', False)]
         else:
             raise NotImplementedError
+        return ModelFeatures.create(features)
+
+    def force_optional(self) -> ModelFeatures:
+        features = [
+            feature.replace(optional=False) if hasattr(feature, 'optional') else feature
+            for feature in self
+        ]
         return ModelFeatures.create(features)
 
     def __add__(
