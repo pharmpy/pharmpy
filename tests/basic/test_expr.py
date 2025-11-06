@@ -107,6 +107,10 @@ def test_init_boolean_expr():
             (Expr.symbol("TIME") <= 0) & (Expr.symbol("TRT") <= 0),
             BooleanExpr('(TIME <= 0) & (TRT <= 0)'),
         ),
+        (
+            (Expr.symbol("TIME") <= 0) | (Expr.symbol("TRT") <= 0),
+            BooleanExpr('(TIME <= 0) | (TRT <= 0)'),
+        ),
     ],
 )
 def test_boolean_operators(expr, alternative):
