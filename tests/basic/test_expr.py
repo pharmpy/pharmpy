@@ -99,6 +99,20 @@ def test_init_boolean_expr():
     assert expr4 == BooleanExpr(expr4)
 
 
+@pytest.mark.parametrize(
+    'expr,alternative',
+    [
+        (Expr.symbol("CL") <= 1, BooleanExpr('CL <= 1')),
+        (
+            (Expr.symbol("TIME") <= 0) & (Expr.symbol("TRT") <= 0),
+            BooleanExpr('(TIME <= 0) & (TRT <= 0)'),
+        ),
+    ],
+)
+def test_boolean_operators(expr, alternative):
+    assert expr == alternative
+
+
 def test_true():
     expr = BooleanExpr.true()
     assert expr._sympy_() == sympy.true
