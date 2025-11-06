@@ -1,5 +1,6 @@
 import builtins
 import itertools
+from collections import defaultdict
 from functools import partial
 from typing import Callable, Literal, Optional, Sequence, Union
 
@@ -179,9 +180,7 @@ def get_model_features(
                 features.append(Covariate.create(parameter=param, covariate=cov.name, fp=fp, op=op))
 
     if type is None or type == 'iiv':
-        individual_params = get_individual_parameters(model, 'iiv')
-        if len(individual_params) > 0:
-            features.extend([IIV.create(param, 'exp') for param in individual_params])
+        features.extend(_get_iiv(model))
 
     if type is None or type == 'covariance':
         iivs = model.random_variables.iiv
@@ -233,6 +232,34 @@ def _get_transits(model):
     else:
         with_depot = False
     return Transits.create(transits, with_depot)
+
+
+def _get_iiv(model):
+    features = []
+    individual_params = get_individual_parameters(model, 'iiv')
+    rvs = model.random_variables.iiv
+    for param in individual_params:
+        param_statement = model.statements.before_odes.full_expression(param)
+        args = param_statement.args
+        fp = None
+        for arg in args:
+            if not arg.free_symbols.intersection(rvs.symbols):
+                continue
+            if fp:
+                raise NotImplementedError(
+                    f'Could not determine eta distribution: {param_statement}'
+                )
+            if param_statement.is_add():
+                if arg in rvs.symbols:
+                    fp = 'add'
+            elif param_statement.is_mul():
+                if arg.is_exp():
+                    fp = 'exp'
+        if not fp:
+            raise NotImplementedError(f'Could not determine eta distribution: {param_statement}')
+        iiv = IIV.create(param, fp=fp, optional=False)
+        features.append(iiv)
+    return features
 
 
 def generate_transformations(
@@ -421,9 +448,17 @@ def transform_into_search_space(
     if model_features == search_space:
         return model
 
-    features_not_in_search_space = model_features - search_space
     features_to_add = []
     features_to_remove = []
+
+    if type is None or type == 'iiv':
+        iiv_dict = defaultdict(list)
+        for feature in search_space.iiv:
+            iiv_dict[feature.parameter].append(feature)
+    else:
+        iiv_dict = dict()
+
+    features_not_in_search_space = model_features - search_space
     for feature in features_not_in_search_space:
         if isinstance(feature, (Covariate, IIV, Covariance)):
             features_to_remove.append(feature)
@@ -434,17 +469,21 @@ def transform_into_search_space(
 
     features_not_in_model = search_space - model_features
     for feature in features_not_in_model:
-        if hasattr(feature, 'optional'):
+        if isinstance(feature, (Covariate, IIV, Covariance)):
+            if isinstance(feature, IIV):
+                other_features = iiv_dict.get(feature.parameter)
+                if any(f in model_features for f in other_features):
+                    continue
             if not feature.optional or force_optional:
                 feature_forced = feature.replace(optional=False)
                 if feature_forced not in model_features:
                     features_to_add.append(feature_forced)
 
     transformations = generate_transformations(
-        features_to_add, include_remove=False, individual_estimates=individual_estimates
+        features_to_remove, include_add=False, individual_estimates=individual_estimates
     )
     transformations += generate_transformations(
-        features_to_remove, include_add=False, individual_estimates=individual_estimates
+        features_to_add, include_remove=False, individual_estimates=individual_estimates
     )
     model_transformed = model
     for func in transformations:

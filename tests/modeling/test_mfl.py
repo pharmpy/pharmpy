@@ -226,6 +226,32 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
             'IIV([CL,MAT,VC],EXP)',
         ),
         (
+            [
+                partial(remove_iiv, to_remove=['CL']),
+                partial(add_iiv, list_of_parameters=['CL'], expression='add'),
+            ],
+            'iiv',
+            'IIV(CL,ADD);IIV([MAT,VC],EXP)',
+        ),
+        (
+            [
+                partial(add_covariate_effect, parameter='CL', covariate='WT', effect='lin'),
+                partial(remove_iiv, to_remove=['CL']),
+                partial(add_iiv, list_of_parameters=['CL'], expression='add'),
+            ],
+            'iiv',
+            'IIV(CL,ADD);IIV([MAT,VC],EXP)',
+        ),
+        (
+            [
+                partial(add_covariate_effect, parameter='VC', covariate='WT', effect='lin'),
+                partial(remove_iiv, to_remove=['CL']),
+                partial(add_iiv, list_of_parameters=['CL'], expression='add'),
+            ],
+            'iiv',
+            'IIV(CL,ADD);IIV([MAT,VC],EXP)',
+        ),
+        (
             [create_joint_distribution],
             'covariance',
             'COVARIANCE(IIV,[CL,MAT,VC])',
@@ -246,6 +272,11 @@ def test_get_model_features_raises(load_model_for_test, testdata):
 
     with pytest.raises(ValueError):
         get_model_features(model, type='x')
+
+    model = remove_iiv(model, 'CL')
+    model = add_iiv(model, 'CL', 'log')
+    with pytest.raises(NotImplementedError):
+        get_model_features(model, type='iiv')
 
 
 @pytest.mark.parametrize(
@@ -413,6 +444,20 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
             dict(),
             'iiv',
             'IIV([MAT,VC],EXP)',
+        ),
+        (
+            [],
+            'IIV(CL,ADD);IIV([MAT,VC],EXP)',
+            dict(),
+            'iiv',
+            'IIV(CL,ADD);IIV([MAT,VC],EXP)',
+        ),
+        (
+            [],
+            'IIV(CL,ADD);IIV([MAT,VC],[ADD,EXP])',
+            dict(),
+            'iiv',
+            'IIV(CL,ADD);IIV([MAT,VC],EXP)',
         ),
         (
             [],
