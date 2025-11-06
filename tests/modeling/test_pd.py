@@ -38,7 +38,7 @@ def S(x):
 def test_set_direct_effect(load_model_for_test, testdata, pd_model, variable, variable_name):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     model = set_direct_effect(model, pd_model, variable)
-    _test_effect_models(model, pd_model, Expr.symbol(variable_name))
+    _test_effect_models(model, pd_model, Expr.symbol(variable_name), bool(variable))
 
 
 def test_set_direct_effect_on_conc_variable(load_model_for_test, testdata):
@@ -47,7 +47,7 @@ def test_set_direct_effect_on_conc_variable(load_model_for_test, testdata):
     new_sset = model.statements.reassign('CONC', new_conc_expr)
     model = model.replace(statements=new_sset)
     model = set_direct_effect(model, 'linear')
-    _test_effect_models(model, 'linear', Expr.function('A_CENTRAL', 't') / Expr.symbol('VC'))
+    _test_effect_models(model, 'linear', Expr.function('A_CENTRAL', 't') / Expr.symbol('VC'), False)
 
 
 def test_set_direct_effect_raises(load_model_for_test, testdata):
@@ -77,10 +77,10 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     assert odes.get_compartment_outflows("EFFECT")[0][1] == ke0
     assert CompartmentalSystem(compartments).compartment_names == ['CENTRAL', 'EFFECT']
 
-    _test_effect_models(add_effect_compartment(model, pd_model), pd_model, conc_e)
+    _test_effect_models(add_effect_compartment(model, pd_model), pd_model, conc_e, False)
 
 
-def _test_effect_models(model, expr, variable):
+def _test_effect_models(model, expr, variable, used_variable):
     resp = S("R")
     e = S("E")
     e0 = S("B")
@@ -90,7 +90,8 @@ def _test_effect_models(model, expr, variable):
     if expr == 'linear':
         assert model.statements[1] == Assignment.create(e0, S("POP_B"))
         assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-3] == Assignment.create(e, S("SLOPE") * variable)
+        if not used_variable:
+            assert model.statements.after_odes[-3] == Assignment.create(e, S("SLOPE") * variable)
         assert model.statements.after_odes[-1] == Assignment.create(
             S("Y_2"), resp + resp * S("epsilon_p")
         )

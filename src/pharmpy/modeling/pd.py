@@ -166,6 +166,7 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
             if s.expression == conc_expr:
                 variable_symb = s.symbol
                 break
+        concentration = True
     else:
         variable_symb = Expr.symbol(variable)
         if (
@@ -173,7 +174,8 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
             and variable_symb not in model.statements.free_symbols
         ):
             raise ValueError(f'Variable {variable} could not be found')
-    model = _add_effect(model, expr, variable_symb)
+        concentration = False
+    model = _add_effect(model, expr, variable_symb, concentration)
 
     return model
 
@@ -185,21 +187,38 @@ def _add_baseline_effect(model: Model):
     return model
 
 
-def _add_drug_effect(model: Model, expr: str, conc):
+def _handle_zero(model: Model, expr: Expr):
+    idv = model.datainfo.idv_column.symbol
+    if expr.is_piecewise():
+        condition = (idv <= 0) | expr.piecewise_args[0][1]
+        expr = expr.piecewise_args[1][0]
+        expr = Expr.piecewise((Expr.integer(0), condition), (expr, True))
+    else:
+        expr = Expr.piecewise((Expr.integer(0), idv <= 0), (expr, True))
+    return expr
+
+
+def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
     if expr == "linear":
         s = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
-        E = Assignment(Expr.symbol('E'), s * conc)
+        effect = s * conc
+        if not zero_handled:
+            effect = _handle_zero(model, effect)
     elif expr == "emax":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
-        E = Assignment(Expr.symbol("E"), emax * conc / (ec50 + conc))
+        effect = emax * conc / (ec50 + conc)
+        if not zero_handled:
+            effect = _handle_zero(model, effect)
     elif expr == "step":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        E = Assignment(Expr.symbol("E"), Expr.piecewise((Expr.integer(0), conc <= 0), (emax, True)))
+        effect = Expr.piecewise((Expr.integer(0), conc <= 0), (emax, True))
+        if not zero_handled:
+            effect = _handle_zero(model, effect)
     elif expr == "sigmoid":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
@@ -208,20 +227,22 @@ def _add_drug_effect(model: Model, expr: str, conc):
         n = Expr.symbol("N")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_N": 1})
-        E = Assignment.create(
-            Expr.symbol("E"),
-            Expr.piecewise(
-                ((emax * conc**n / (ec50**n + conc**n)), conc > 0), (Expr.integer(0), True)
-            ),
+        effect = Expr.piecewise(
+            ((emax * conc**n / (ec50**n + conc**n)), conc > 0), (Expr.integer(0), True)
         )
+        if not zero_handled:
+            effect = _handle_zero(model, effect)
     elif expr == "loglin":
         s = Expr.symbol("SLOPE")
         e0 = Expr.symbol("B")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
-        E = Assignment(Expr.symbol("E"), s * (conc + (e0 / s).exp()).log())
+        effect = s * (conc + (e0 / s).exp()).log()
+        if not zero_handled:
+            effect = _handle_zero(model, effect)
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
+    E = Assignment(Expr.symbol("E"), effect)
     e_index = model.statements.find_assignment_index("E")
     if e_index is None:
         r_index = model.statements.find_assignment_index("R")
@@ -274,9 +295,9 @@ def _add_dependent_variable(model: Model, expr: str):
     return model
 
 
-def _add_effect(model: Model, expr: str, conc):
+def _add_effect(model: Model, expr: str, conc, zero_handled=True):
     model = _add_baseline_effect(model)
-    model = _add_drug_effect(model, expr, conc)
+    model = _add_drug_effect(model, expr, conc, zero_handled)
     model = _add_response(model, expr)
     model = _add_dependent_variable(model, expr)
     return model
