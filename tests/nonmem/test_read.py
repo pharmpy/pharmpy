@@ -2,11 +2,12 @@ from io import StringIO
 
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError, DatasetWarning
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.model.external.nonmem.dataset.convert import convert_fortran_number
-from pharmpy.model.external.nonmem.dataset.nmtran import SEP_INPUT, NMTRANDataIO
+from pharmpy.model.external.nonmem.dataset.nmtran import SEP_INPUT, IOFromChunks, NMTRANDataLines
 
 
 def test_read_nonmem_dataset(testdata):
@@ -38,19 +39,22 @@ def test_read_nonmem_dataset(testdata):
 
 def test_data_io_alpha(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
-    with NMTRANDataIO(path, SEP_INPUT, '@') as data_io:
+    with NMTRANDataLines(path, SEP_INPUT, '@') as lines:
+        data_io = IOFromChunks(map(str.encode, lines))
         assert data_io.read(7) == b'1,0.,25'
 
 
 def test_data_io_i(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
-    with NMTRANDataIO(path, SEP_INPUT, 'I') as data_io:
+    with NMTRANDataLines(path, SEP_INPUT, 'I') as lines:
+        data_io = IOFromChunks(map(str.encode, lines))
         assert data_io.read(13) == b'1,0.,25.0,1.4'
 
 
 def test_data_io_q(testdata):
     path = testdata / 'nonmem' / 'pheno.dta'
-    with NMTRANDataIO(path, SEP_INPUT, 'Q') as data_io:
+    with NMTRANDataLines(path, SEP_INPUT, 'Q') as lines:
+        data_io = IOFromChunks(map(str.encode, lines))
         assert data_io.read(5) == b'ID,TI'
 
 
@@ -125,8 +129,249 @@ def test_read_nonmem_dataset_header_too_long():
     # Mismatch length of column_names and data frame
     with pytest.warns(UserWarning):
         df = read_nonmem_dataset(StringIO("1,2,3"), colnames=abc + ['D'])
+    assert len(df) == 1
     assert list(df.iloc[0]) == [1, 2, 3, 0]
     assert list(df.columns) == ['A', 'B', 'C', 'D']
+    assert list(df.dtypes) == [
+        np.dtype('float64'),
+        np.dtype('float64'),
+        np.dtype('float64'),
+        np.dtype('float64'),
+    ]
+
+
+def test_read_nonmem_dataset_header_too_long_raw():
+    abc = ['A', 'B', 'C']
+    df = read_nonmem_dataset(StringIO("1,2,3\n4,5,6\n7 8 9"), raw=True, colnames=abc + ['D', 'E'])
+    assert len(df) == 3
+    assert list(df.iloc[0]) == ['1', '2', '3']
+    assert list(df.iloc[1]) == ['4', '5', '6']
+    assert list(df.iloc[2]) == ['7', '8', '9']
+    assert list(df.columns) == ['A', 'B', 'C']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
+
+
+def test_read_nonmem_dataset_header_too_short():
+    abc = ['A', 'B', 'C']
+    df = read_nonmem_dataset(StringIO("1,2,3"), colnames=abc[:-1])
+    assert len(df) == 1
+    assert list(df.iloc[0]) == [1.0, 2.0]
+    assert list(df.columns) == ['A', 'B']
+    assert list(df.dtypes) == [
+        np.dtype('float64'),
+        np.dtype('float64'),
+    ]
+
+
+def test_read_nonmem_dataset_header_too_short_raw():
+    abc = ['A', 'B', 'C']
+    df = read_nonmem_dataset(StringIO("1 2 3\n4\t5\n6 7 8"), raw=True, colnames=abc[:-2])
+    assert len(df) == 3
+    assert list(df.iloc[0]) == ['1', '2', '3']
+    assert list(df.iloc[1]) == ['4', '5', '']
+    assert list(df.iloc[2]) == ['6', '7', '8']
+    assert list(df.columns) == ['A', 'Unnamed: 1', 'Unnamed: 2']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_long_then_short():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(StringIO("1,2,3\n4\t5\n6\n7 8,9"), colnames=colnames)
+    assert len(df) == 4
+    assert list(df.iloc[0]) == [1, 2.0]
+    assert list(df.iloc[1]) == [4, 5.0]
+    assert list(df.iloc[2]) == [6, 0.0]
+    assert list(df.iloc[3]) == [7, 8.0]
+    assert list(df.columns) == ['ID', 'DV']
+    assert list(df.dtypes) == [
+        np.dtype('int32'),
+        np.dtype('float64'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_long_then_short_raw():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(StringIO("1,2,3\n4,5\n6\n7,8,9"), colnames=colnames, raw=True)
+    assert len(df) == 4
+    assert list(df.iloc[0]) == ['1', '2', '3']
+    assert list(df.iloc[1]) == ['4', '5', '']
+    assert list(df.iloc[2]) == ['6', '', '']
+    assert list(df.iloc[3]) == ['7', '8', '9']
+    assert list(df.columns) == ['ID', 'DV', 'Unnamed: 2']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_1():
+    colnames = ['ID', 'DV']
+    with pytest.warns(UserWarning):
+        df = read_nonmem_dataset(StringIO("1\n2,3,DATE TIME\n5,6\n7,8,9"), colnames=colnames)
+    assert len(df) == 4
+    assert list(df.iloc[0]) == [1, 0.0]
+    assert list(df.iloc[1]) == [2, 3.0]
+    assert list(df.iloc[2]) == [5, 6.0]
+    assert list(df.iloc[3]) == [7, 8.0]
+    assert list(df.columns) == ['ID', 'DV']
+    assert list(df.dtypes) == [
+        np.dtype('int32'),
+        np.dtype('float64'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_2():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(StringIO("1,2,3\n4,5,6 7\n8"), colnames=colnames)
+    assert len(df) == 3
+    assert list(df.iloc[0]) == [1, 2.0]
+    assert list(df.iloc[1]) == [4, 5.0]
+    assert list(df.iloc[2]) == [8, 0.0]
+    assert list(df.columns) == ['ID', 'DV']
+    assert list(df.dtypes) == [
+        np.dtype('int32'),
+        np.dtype('float64'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_3():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(StringIO("1,2,3\n4\t5\n6\n7 8,9 #! @"), colnames=colnames)
+    assert len(df) == 4
+    assert list(df.iloc[0]) == [1, 2.0]
+    assert list(df.iloc[1]) == [4, 5.0]
+    assert list(df.iloc[2]) == [6, 0.0]
+    assert list(df.iloc[3]) == [7, 8.0]
+    assert list(df.columns) == ['ID', 'DV']
+    assert list(df.dtypes) == [
+        np.dtype('int32'),
+        np.dtype('float64'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_raw_1():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(StringIO("2,3,4\n5,6\t7 8,9"), colnames=colnames, raw=True)
+    assert len(df) == 2
+    assert list(df.iloc[0]) == ['2', '3', '4']
+    assert list(df.iloc[1]) == ['5', '6', '7']
+    assert list(df.columns) == ['ID', 'DV', 'Unnamed: 2']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_raw_2():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(StringIO("1 2 3\n4\t5\n6 7 8 9 @ @"), colnames=colnames, raw=True)
+    assert len(df) == 3
+    assert list(df.iloc[0]) == ['1', '2', '3']
+    assert list(df.iloc[1]) == ['4', '5', '']
+    assert list(df.iloc[2]) == ['6', '7', '8']
+    assert list(df.columns) == ['ID', 'DV', 'Unnamed: 2']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_raw_3():
+    colnames = ['ID', 'DV']
+    df = read_nonmem_dataset(StringIO("1,2,3\n4,5\n6\n7,8,9,@"), colnames=colnames, raw=True)
+    assert len(df) == 4
+    assert list(df.iloc[0]) == ['1', '2', '3']
+    assert list(df.iloc[1]) == ['4', '5', '']
+    assert list(df.iloc[2]) == ['6', '', '']
+    assert list(df.iloc[3]) == ['7', '8', '9']
+    assert list(df.columns) == ['ID', 'DV', 'Unnamed: 2']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_long_then_short_drop():
+    colnames = ['ID', 'DV', 'WT']
+    df = read_nonmem_dataset(
+        StringIO("1,2,3,@\n4,5\n6\n7,8,9"), colnames=colnames, drop=[False, True, False]
+    )
+    assert len(df) == 4
+    assert list(df.iloc[0]) == [1, '2', 3.0]
+    assert list(df.iloc[1]) == [4, '5', 0.0]
+    assert list(df.iloc[2]) == [6, '', 0.0]
+    assert list(df.iloc[3]) == [7, '8', 9.0]
+    assert list(df.columns) == ['ID', 'DV', 'WT']
+    assert list(df.dtypes) == [
+        np.dtype('int32'),
+        np.dtype('O'),
+        np.dtype('float64'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_long_then_short_drop_raw():
+    colnames = ['ID', 'DV', 'WT']
+    df = read_nonmem_dataset(
+        StringIO("1,2,3\n4,5\n6\n7,8,9"), colnames=colnames, raw=True, drop=[False, True, False]
+    )
+    assert len(df) == 4
+    assert list(df.iloc[0]) == ['1', '2', '3']
+    assert list(df.iloc[1]) == ['4', '5', '']
+    assert list(df.iloc[2]) == ['6', '', '']
+    assert list(df.iloc[3]) == ['7', '8', '9']
+    assert list(df.columns) == ['ID', 'DV', 'WT']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_drop():
+    colnames = ['ID', 'DV', 'WT']
+    with pytest.warns(UserWarning):
+        df = read_nonmem_dataset(
+            StringIO("1\n2,3,4\n5,6\n7,8,9"), colnames=colnames, drop=[False, True, False]
+        )
+    assert len(df) == 4
+    assert list(df.iloc[0]) == [1, '', 0.0]
+    assert list(df.iloc[1]) == [2, '3', 4.0]
+    assert list(df.iloc[2]) == [5, '6', 0.0]
+    assert list(df.iloc[3]) == [7, '8', 9.0]
+    assert list(df.columns) == ['ID', 'DV', 'WT']
+    assert list(df.dtypes) == [
+        np.dtype('int32'),
+        np.dtype('O'),
+        np.dtype('float64'),
+    ]
+
+
+def test_nonmem_dataset_variable_width_short_then_long_drop_raw():
+    colnames = ['ID', 'DV', 'WT']
+    df = read_nonmem_dataset(
+        StringIO("2,3,4\n5,6,7,8,9"), colnames=colnames, raw=True, drop=[False, True, False]
+    )
+    assert len(df) == 2
+    assert list(df.iloc[0]) == ['2', '3', '4']
+    assert list(df.iloc[1]) == ['5', '6', '7']
+    assert list(df.columns) == ['ID', 'DV', 'WT']
+    assert list(df.dtypes) == [
+        np.dtype('O'),
+        np.dtype('O'),
+        np.dtype('O'),
+    ]
 
 
 def test_read_nonmem_dataset_null_value():

@@ -64,21 +64,21 @@ def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Patter
             return
 
 
-class NMTRANReader:
-    def __init__(self, stream: TextIO, sep: re.Pattern[str], ignore: re.Pattern[str]):
-        self._lines: Iterator[bytes] = map(str.encode, NMTRANStreamIterator(stream, sep, ignore))
+class IOFromChunks:
+    def __init__(self, chunks: Iterator[bytes]):
+        self._chunks: Iterator[bytes] = chunks
         self._buffer: deque[bytes] = deque()
         self._n: int = 0
 
     def read(self, n: int = -1) -> bytes:
         assert n >= 1
 
-        lines = self._lines
+        chunks = self._chunks
         buffer = self._buffer
 
         while self._n < n:
             try:
-                chunk = next(lines)
+                chunk = next(chunks)
             except StopIteration:
                 break
 
@@ -103,8 +103,15 @@ def open_NMTRAN(path: Union[str, Path]):
     return open(str(path), "r", encoding="latin-1")
 
 
+def _stream_NMTRAN(path_or_io: Union[str, Path, TextIO]):
+    if isinstance(path_or_io, (str, Path)):
+        return open_NMTRAN(path_or_io)
+    else:
+        return path_or_io
+
+
 @contextmanager
-def NMTRANDataIO(
+def NMTRANDataLines(
     path_or_io: Union[str, Path, TextIO],
     sep: re.Pattern[str],
     ignore_character: Optional[str] = None,
@@ -114,16 +121,12 @@ def NMTRANDataIO(
 
     ignore = _ignore(ignore_character)
 
-    if isinstance(path_or_io, (str, Path)):
-        with open_NMTRAN(path_or_io) as stream:
-            yield NMTRANReader(stream, sep, ignore)
-
-    else:
-        yield NMTRANReader(path_or_io, sep, ignore)
+    with _stream_NMTRAN(path_or_io) as stream:
+        yield NMTRANStreamIterator(stream, sep, ignore)
 
 
-def read_NMTRAN_data(io: NMTRANReader, **kwargs: Any) -> pd.DataFrame:
-    return pd.read_table(  # type: ignore
+def read_NMTRAN_data(io: IOFromChunks, **kwargs: Any) -> pd.DataFrame:
+    df = pd.read_table(
         io,  # type: ignore
         **kwargs,
         sep=SEP,
@@ -133,3 +136,7 @@ def read_NMTRAN_data(io: NMTRANReader, **kwargs: Any) -> pd.DataFrame:
         dtype=object,
         index_col=False,
     )
+
+    assert isinstance(df, pd.DataFrame)
+
+    return df
