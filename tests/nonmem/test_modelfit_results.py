@@ -371,3 +371,12 @@ def test_derivative_results(testdata, load_model_for_test):
     derivative_names = tuple(tuple(map(str, d)) for d in derivatives)
     derivative_names = tuple(";".join(d) for d in derivative_names)
     assert all(d in res.derivatives.columns for d in derivative_names)
+
+
+def test_parse_different_idx_table(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    idx_list = model.dataset.index.tolist()
+    idx_list[-1] = 10000
+    model.dataset.index = idx_list
+    res = parse_modelfit_results(model, pheno_path)
+    assert res.residuals.index.tolist()[-1] == 10000

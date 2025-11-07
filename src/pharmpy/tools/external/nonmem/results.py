@@ -553,7 +553,10 @@ def _parse_tables(
         df['ID'] = df['ID'].convert_dtypes()
     dataset = model.dataset
     if dataset is not None and not df.empty:
-        df = df.iloc[dataset.index]
+        if len(df) == len(dataset):
+            df = df.set_index(dataset.index)
+        else:
+            df = df.iloc[dataset.index]
     return df
 
 
