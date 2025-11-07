@@ -81,6 +81,14 @@ from pharmpy.workflows import LocalDirectoryContext
             2,
             'iivsearch_run1',
         ),
+        (
+            'top_down_exhaustive',
+            None,
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+            4,
+            2,
+            'iivsearch_run1',
+        ),
     ],
 )
 def test_iivsearch_dummy(

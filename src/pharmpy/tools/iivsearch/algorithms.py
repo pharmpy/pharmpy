@@ -16,7 +16,11 @@ from pharmpy.modeling import (
     split_joint_distribution,
 )
 from pharmpy.modeling.expressions import get_rv_parameters
-from pharmpy.modeling.mfl import get_model_features, transform_into_search_space
+from pharmpy.modeling.mfl import (
+    expand_model_features,
+    get_model_features,
+    transform_into_search_space,
+)
 from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.run import run_subtool
@@ -27,12 +31,16 @@ from pharmpy.workflows.results import mfr
 def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
     wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
 
-    base_features = get_model_features(base_model_entry.model, type='iiv')
-    mfl_optional = mfl.iiv.filter(filter_on='optional')
+    base_model = base_model_entry.model
+    base_features = get_model_features(base_model, type='iiv')
+
+    mfl = expand_model_features(base_model, mfl.iiv)
+    mfl_optional = mfl.filter(filter_on='optional')
     mfl_forced = mfl - mfl_optional
     params_forced = {feature.parameter for feature in mfl_forced}
 
     combinations = ((),) + tuple(non_empty_subsets(mfl_optional))
+    combinations = sorted(combinations, key=len, reverse=True)
 
     model_index = index_offset + 1
     for features in combinations:
@@ -52,6 +60,9 @@ def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
         wb.add_task(task_candidate_entry)
         model_index += 1
 
+    if len(wb.output_tasks) == 0:
+        return None
+
     wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
     wb.insert_workflow(wf_fit)
     wb.gather(wb.output_tasks)
@@ -66,9 +77,10 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
 
     base_model = base_model_entry.model
     base_model = base_model.replace(description=create_description(base_model))
-
     base_features = get_model_features(base_model, type='covariance')
-    mfl_optional = mfl.covariance.filter(filter_on='optional')
+
+    mfl = expand_model_features(base_model, mfl.covariance)
+    mfl_optional = mfl.filter(filter_on='optional')
 
     combinations = [
         subset
@@ -87,6 +99,9 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
             base_model_entry,
         )
         wb.add_task(task_candidate_entry)
+
+    if len(wb.output_tasks) == 0:
+        return None
 
     wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
     wb.insert_workflow(wf_fit)

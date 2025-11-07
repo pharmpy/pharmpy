@@ -853,10 +853,13 @@ def create_workflow_mfl(
     start_task = Task.create('start', start_with_search_space, model, results)
     wb.add_task(start_task)
 
-    mfl = prepare_mfl(model, search_space)
-
-    if get_model_features(model) not in mfl:
-        create_base_task = Task.create('base_model', create_base_model, mfl)
+    mfl = ModelFeatures.create(search_space)
+    mfl_expanded = expand_model_features(model, mfl)
+    if not (
+        get_model_features(model, type='iiv') in mfl_expanded
+        and get_model_features(model, type='covariance') in mfl_expanded
+    ):
+        create_base_task = Task.create('base_model', create_base_model, mfl_expanded)
         wb.add_task(create_base_task, predecessors=[start_task])
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
@@ -899,8 +902,6 @@ def start_with_search_space(context, input_model, input_res):
 
 
 def create_base_model(mfl, input_model_entry):
-    if get_model_features(input_model_entry.model, type='iiv') in mfl:
-        return input_model_entry
     base_model = update_initial_estimates(
         input_model_entry.model,
         input_model_entry.modelfit_results,
@@ -910,12 +911,6 @@ def create_base_model(mfl, input_model_entry):
     base_model = base_model.replace(name='base')
     base_model_entry = ModelEntry.create(model=base_model, parent=input_model_entry.model)
     return base_model_entry
-
-
-def prepare_mfl(model, search_space):
-    mfl = ModelFeatures.create(search_space)
-    mfl = expand_model_features(model, mfl)
-    return mfl
 
 
 def run_search(
@@ -935,7 +930,10 @@ def run_search(
         algorithm_func = getattr(algorithms, f'{step}_mfl')
         if not algorithm_func:
             raise NotImplementedError
-        wf_step = algorithm_func(base_model_entry, mfl, index_offset)
+        wf_step = algorithm_func(best_model_entry, mfl, index_offset)
+        if not wf_step:
+            continue
+
         mes = context.call_workflow(wf_step, 'run_candidates')
 
         rank_res = rank_models(
