@@ -15,6 +15,16 @@ from pharmpy.model import ModelSyntaxError
 
 from .record import Record
 
+NAME_IN_COMMENT = re.compile(r';\s*([a-zA-Z_]\w*)')
+
+
+def _find_first_name(nodes):
+    for node in nodes:
+        if node.rule in ('NEWLINE', 'COMMENT'):
+            m = NAME_IN_COMMENT.search(str(node))
+            if m:
+                return m.group(1)
+
 
 class OmegaRecord(Record):
     def parse(self):
@@ -27,6 +37,7 @@ class OmegaRecord(Record):
         bare_block = self.root.find('bare_block')
         same = bool(self.root.find('same'))
         blocks = []
+        _names = dict(self._names_map())
 
         if not (block or bare_block):
             for node in self.root.subtrees('diag_item'):
@@ -48,7 +59,7 @@ class OmegaRecord(Record):
                     )
                 if sd:
                     init = init**2
-                name = self._get_name(node)
+                name = _names.get(id(node))
                 for _ in range(n):
                     block = ([name], [init], fixed, False)
                     blocks.append(block)
@@ -60,7 +71,7 @@ class OmegaRecord(Record):
                 init = cast(float, eval_token(node.subtree('init').leaf('NUMERIC')))
                 n = cast(int, eval_token(node.subtree('n').leaf('INT'))) if node.find('n') else 1
                 inits += [init] * n
-                comment = self._get_name(node)
+                comment = _names.get(id(node))
                 comments.append(comment)
                 if n > 1:
                     comments.extend([None] * (n - 1))
@@ -101,21 +112,23 @@ class OmegaRecord(Record):
             blocks.append(block)
         return blocks
 
-    def _get_name(self, node):
-        name = None
-        found = False
-        for subnode in self.root.tree_walk():
-            if id(subnode) == id(node):
-                found = True
-                continue
-            if found and (subnode.rule == 'omega' or subnode.rule == 'diag_item'):
-                break
-            if found and (subnode.rule == 'NEWLINE' or subnode.rule == 'COMMENT'):
-                m = re.search(r';\s*([a-zA-Z_]\w*)', str(subnode))
-                if m:
-                    name = m.group(1)
-                    break
-        return name
+    def _names_map(self):
+        pending = None
+        for node in self.root.children:
+            if node.rule in ('omega', 'diag_item'):
+                pending = id(node)
+                if (name := _find_first_name(node.tree_walk())) is not None:
+                    yield (pending, name)
+                    pending = None
+            elif pending is not None:
+                if (name := _find_first_name((node,))) is not None:
+                    yield (pending, name)
+                    pending = None
+
+                if isinstance(node, AttrTree):
+                    if (name := _find_first_name(node.tree_walk())) is not None:
+                        yield (pending, name)
+                        pending = None
 
     def _block_flags(self):
         """Get a tuple of all interesting flags for block"""
