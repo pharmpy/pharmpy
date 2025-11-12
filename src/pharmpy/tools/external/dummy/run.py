@@ -117,8 +117,11 @@ def create_dummy_modelfit_results(model, ref=None):
 
     def _get_param_init(param):
         init = param.init + rng.random() * 0.1
-        if init > param.upper or init < param.lower:
-            init = (param.upper - param.lower) / 2
+        range = param.upper - param.lower
+        if init >= param.upper or init <= param.lower:
+            init = param.upper - (range / 2)
+        if init == 0:
+            init = 0.1 * range
         return param.replace(init=init)
 
     params = list(map(lambda x: _get_param_init(x), list(model.parameters)))
