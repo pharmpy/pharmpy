@@ -26,6 +26,7 @@ from pharmpy.internals.math import (
     round_to_n_sigdig,
     se_delta_method,
     symmetric_to_flattened,
+    toeplitz_hermitian_part,
     triangular,
     triangular_root,
 )
@@ -140,13 +141,46 @@ def test_is_posdef():
     assert not is_posdef(B)
 
 
-def test_nearest_posdef():
+def test_is_positive_semidefinite_random_true():
+    for _ in range(5):
+        for j in range(2, 20):
+            A = np.random.randn(j, j)
+            assert is_positive_semidefinite(A.T @ A)
+
+
+def test_is_positive_semidefinite_random_false():
+    for _ in range(5):
+        for j in range(2, 20):
+            A = np.random.randn(j, j)
+            assert not is_positive_semidefinite((A.T @ A) * -np.eye(A.shape[0]))
+
+
+def test_nearest_positive_semidefinite_random():
     for _ in range(5):
         for j in range(2, 20):
             A = np.random.randn(j, j)
             B = nearest_positive_semidefinite(A)
             assert is_positive_semidefinite(B)
 
+
+def test_nearest_positive_semidefinite_random_symmetric():
+    for _ in range(5):
+        for j in range(2, 20):
+            _A = np.random.randn(j, j)
+            A = toeplitz_hermitian_part(_A)
+            B = nearest_positive_semidefinite(A)
+            assert is_positive_semidefinite(B)
+
+
+def test_nearest_positive_semidefinite_random_idempotent():
+    for _ in range(5):
+        for j in range(2, 20):
+            _A = np.random.randn(j, j)
+            A = _A.T @ _A
+            assert (nearest_positive_semidefinite(A) == A).all()
+
+
+def test_nearest_positive_semidefinite_case_1():
     A = np.array(
         [
             [0.020976700046166197, -0.005089899809737999],
@@ -158,6 +192,8 @@ def test_nearest_posdef():
         np.array([[3.46944695e-18, 0.00000000e00], [0.00000000e00, 2.16840434e-19]]),
     )
 
+
+def test_nearest_positive_semidefinite_identity_idempotent():
     A = np.array([[1.0, 0.0], [0.0, 1.0]])
     assert (nearest_positive_definite(A) == A).all()
 
