@@ -359,6 +359,11 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
 
     tool = import_tool(tool_name)
 
+    seed = kwargs.get('seed', None)
+    seed = canonicalize_seed(seed)
+    if 'seed' in kwargs.keys():
+        del kwargs['seed']
+
     if validate_input := getattr(tool, 'validate_input', None):
         validate_input(**kwargs)
 
@@ -368,11 +373,6 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
         res = subctx.retrieve_results()
         subctx.log_info("Retrieving results from previously finished subtool")
         return res
-
-    seed = kwargs.get('seed', None)
-    seed = canonicalize_seed(seed)
-    if 'seed' in kwargs.keys():
-        del kwargs['seed']
 
     create_workflow = tool.create_workflow
     tool_metadata = create_metadata(
