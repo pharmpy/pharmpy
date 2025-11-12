@@ -1,4 +1,6 @@
 import math
+from itertools import count
+from typing import Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
@@ -105,10 +107,17 @@ def se_delta_method(expr, values, cov):
     return se
 
 
-def is_positive_semidefinite(A):
+def is_symmetric(A):
+    return (A == A.T).all().all()
+
+
+def is_positive_semidefinite(A, is_hermitian: Optional[bool] = None):
     """Checks whether a matrix is positive semi-definite"""
-    eigvals, _ = np.linalg.eig(A)
-    return all(eigvals >= 0)
+    if is_hermitian or (is_hermitian is None and is_symmetric(A)):
+        eigvals = np.linalg.eigvalsh
+    else:
+        eigvals = np.linalg.eigvals
+    return all(eigvals(A) >= 0)
 
 
 def is_posdef(A):
@@ -118,6 +127,10 @@ def is_posdef(A):
         return True
     except np.linalg.LinAlgError:
         return False
+
+
+def toeplitz_hermitian_part(A):
+    return (A + A.T) / 2
 
 
 def nearest_positive_semidefinite(A):
@@ -133,35 +146,40 @@ def nearest_positive_semidefinite(A):
     # Check positive semidefinite instead of positive definite since it seems it can happen
     # that a matrix is deemed not positive semidefinite but positive definite, which causes
     # issues when validating and adjusting initial estimates
-    if is_positive_semidefinite(A):
-        return A
+    if is_symmetric(A):
+        if is_positive_semidefinite(A, is_hermitian=True):
+            return A
+        else:
+            B = A
 
-    B = (A + A.T) / 2
+    else:
+        if is_positive_semidefinite(A, is_hermitian=False):
+            return A
+        else:
+            B = toeplitz_hermitian_part(A)
+
     _, s, V = np.linalg.svd(B)
 
     H = np.dot(V.T, np.dot(np.diag(s), V))
     A2 = (B + H) / 2
-    A3 = (A2 + A2.T) / 2
+    A3 = toeplitz_hermitian_part(A2)
 
-    if is_positive_semidefinite(A3):
+    eigvals = np.linalg.eigvalsh(A3)
+    if all(eigvals >= 0):
         return A3
 
-    spacing = np.spacing(np.linalg.norm(A))
-    # The above is different from [1]. It appears that MATLAB's `chol` Cholesky
-    # decomposition will accept matrixes with exactly 0-eigenvalue, whereas
-    # Numpy's will not. So where [1] uses `eps(mineig)` (where `eps` is Matlab
-    # for `np.spacing`), we use the above definition. CAVEAT: our `spacing`
-    # will be much larger than [1]'s `eps(mineig)`, since `mineig` is usually on
-    # the order of 1e-16, and `eps(1e-16)` is on the order of 1e-34, whereas
-    # `spacing` will, for Gaussian random matrixes of small dimension, be on
-    # othe order of 1e-16. In practice, both ways converge, as the unit test
-    # below suggests.
+    spacing = np.spacing(np.linalg.norm(A3))
+    # The above is different from [1] because taking increments of `eps(mineig)`
+    # is too slow.
     Id = np.eye(A.shape[0])
-    k = 1
-    while not is_positive_semidefinite(A3):
-        mineig = np.min(np.real(np.linalg.eigvals(A3)))
+
+    for k in count(1):
+        mineig = np.min(eigvals)
         A3 += Id * (-mineig * k**2 + spacing)
-        k += 1
+
+        eigvals = np.linalg.eigvalsh(A3)
+        if all(eigvals >= 0):
+            break
 
     return A3
 

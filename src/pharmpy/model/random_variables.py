@@ -789,7 +789,8 @@ class RandomVariables(CollectionsSequence, Immutable):
                 sigma = dist.variance
                 sigma = sigma.subs(parameter_values)
                 a = sigma.to_numpy()
-                if not is_positive_semidefinite(a):
+                # NOTE: JointNormalDistribution enforces symmetric covariance matrices.
+                if not is_positive_semidefinite(a, is_hermitian=True):
                     return False
         return True
 
