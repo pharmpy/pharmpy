@@ -554,8 +554,13 @@ def _parse_tables(
     dataset = model.dataset
     if dataset is not None and not df.empty:
         if len(df) == len(dataset):
+            # If dataset have been filtered after parsing and model has then been run by Pharmpy,
+            # we can use the (filtered) index from the dataset to reindex.
             df = df.set_index(dataset.index)
         else:
+            # Needed when rows have been dropped when parsing (e.g. when IDs with no observations
+            # are filtered when parsing the dataset), but IDs still exist in results.
+            # See https://github.com/pharmpy/pharmpy/pull/4106
             df = df.iloc[dataset.index]
     return df
 
