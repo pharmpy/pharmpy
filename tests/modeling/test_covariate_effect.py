@@ -1009,7 +1009,7 @@ def test_remove_covariate_effect(load_model_for_test, testdata, model_path, effe
         assert has_covariate_effect(model, effect[0], effect[1])
 
     for effect in effects:
-        model = remove_covariate_effect(model, *effect)
+        model = remove_covariate_effect(model, *effect, keep_fixed=False)
 
     for effect in effects:
         assert not has_covariate_effect(model, effect[0], effect[1])
@@ -1078,7 +1078,7 @@ def test_remove_covariate_effect2(load_model_for_test, testdata, effects, with_a
 
     for effect in effects:
         param, cov = effect['parameter'], effect['covariate']
-        model = remove_covariate_effect(model, param, cov)
+        model = remove_covariate_effect(model, param, cov, keep_fixed=False)
         assert not has_covariate_effect(model, param, cov)
         effect_name = f'{param}{cov}'
         assert Expr.symbol(effect_name) not in model.statements.lhs_symbols

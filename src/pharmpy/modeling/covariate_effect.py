@@ -209,7 +209,7 @@ def has_covariate_effect(model: Model, parameter: str, covariate: str):
     return depends_on(model, parameter, covariate)
 
 
-def remove_covariate_effect(model: Model, parameter: str, covariate: str, keep_fixed: bool = False):
+def remove_covariate_effect(model: Model, parameter: str, covariate: str, keep_fixed: bool = True):
     """Remove a covariate effect from an instance of :class:`pharmpy.model`.
 
     Parameters
@@ -221,7 +221,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str, keep_f
     covariate : str
         Name of covariate.
     keep_fixed : bool
-        Whether to keep fixed effects (e.g. allometry) or not. Default is False
+        Whether to keep fixed effects (e.g. allometry) or not. Default is True
 
     Return
     ------
@@ -234,7 +234,7 @@ def remove_covariate_effect(model: Model, parameter: str, covariate: str, keep_f
     >>> model = load_example_model("pheno")
     >>> has_covariate_effect(model, "CL", "WGT")
     True
-    >>> model = remove_covariate_effect(model, "CL", "WGT")
+    >>> model = remove_covariate_effect(model, "CL", "WGT", keep_fixed=False)
     >>> has_covariate_effect(model, "CL", "WGT")
     False
 
