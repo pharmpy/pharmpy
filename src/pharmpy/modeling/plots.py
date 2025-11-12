@@ -1074,7 +1074,12 @@ def plot_vpc(
                         stratify_on=stratify_on,
                     )
                 )
-        chart = _concat(charts)
+        with warnings.catch_warnings():
+            warnings.filterwarnings(
+                "ignore",
+                message="Automatically deduplicated selection parameter with identical configuration",
+            )
+            chart = _concat(charts)
     else:
         chart = _vpc_plot(model, simulations, binning=binning, nbins=nbins, qi=qi, ci=ci)
 
