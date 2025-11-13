@@ -104,7 +104,12 @@ def rank_model_entries(me_rank_values, rank_type):
                 else:
                     mes_nan[me] = rank_values
 
-    mes_ranked = dict(sorted(mes_to_rank.items(), key=lambda x: x[1]['rank_val']))
+    # If all candidates are in local minima, e.g. in CovSearch backward step, sorting by rank value
+    # (in this case p-value) will cause the parent model to be selected even if OFV is better
+    if rank_type == 'lrt' and len(set(val['rank_val'] for val in mes_to_rank.values())) == 1:
+        mes_ranked = dict(sorted(mes_to_rank.items(), key=lambda x: x[1][sort_by]))
+    else:
+        mes_ranked = dict(sorted(mes_to_rank.items(), key=lambda x: x[1]['rank_val']))
     mes_sorted = dict(sorted(mes_to_sort.items(), key=lambda x: x[1][sort_by]))
 
     ranking = {**mes_ranked, **me_ref_lrt, **mes_sorted, **mes_nan}
