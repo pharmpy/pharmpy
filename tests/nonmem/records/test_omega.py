@@ -102,6 +102,64 @@ from pharmpy.model import ModelSyntaxError, Parameter, Parameters
                 (['IV1', 'CORR', 'IV2'], [1.0, 2.0, 3.0], False, False),
             ],
         ),
+        (
+            '''$OMEGA  BLOCK(2)
+ 1  ;   BSV_APGR
+ 0.244578970875 1  ;    BSV_WGT''',
+            [
+                (
+                    [
+                        'BSV_APGR',
+                        None,
+                        'BSV_WGT',
+                    ],
+                    [
+                        1.0,
+                        0.244578970875,
+                        1.0,
+                    ],
+                    False,
+                    False,
+                ),
+            ],
+        ),
+        (
+            '''$OMEGA  BLOCK(4)
+ 0.11519520221  ;       IVCL
+ 0.00706603100394 0.209016044783  ;        IVV
+ -0.0105827639698 0.107026827887 1.00000791415  ;   BSV_APGR
+ 0.171529210388 0.404278492857 0.244447864186 1.00217289349  ;    BSV_WGT''',
+            [
+                (
+                    [
+                        'IVCL',
+                        None,
+                        'IVV',
+                        None,
+                        None,
+                        'BSV_APGR',
+                        None,
+                        None,
+                        None,
+                        'BSV_WGT',
+                    ],
+                    [
+                        0.11519520221,
+                        0.00706603100394,
+                        0.209016044783,
+                        -0.0105827639698,
+                        0.107026827887,
+                        1.00000791415,
+                        0.171529210388,
+                        0.404278492857,
+                        0.244447864186,
+                        1.00217289349,
+                    ],
+                    False,
+                    False,
+                ),
+            ],
+        ),
     ],
 )
 def test_parse(parser, buf, results):
