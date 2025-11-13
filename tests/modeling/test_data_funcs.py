@@ -16,6 +16,7 @@ from pharmpy.modeling import (
     drop_dropped_columns,
     expand_additional_doses,
     get_cmt,
+    get_column_name,
     get_concentration_parameters_from_data,
     get_covariate_baselines,
     get_doseid,
@@ -31,6 +32,7 @@ from pharmpy.modeling import (
     list_time_varying_covariates,
     load_dataset,
     remove_loq_data,
+    set_covariates,
     set_dataset,
     set_dvid,
     set_lloq_data,
@@ -701,3 +703,13 @@ def test_binarize_dataset_raises():
 
     with pytest.raises(ValueError):
         binarize_dataset(model, columns=None)
+
+
+def test_get_column_name(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert "AMT" == get_column_name(model, "dose")
+    assert "ID" == get_column_name(model, "id")
+    assert None is get_column_name(model, "blq")
+    model = set_covariates(model, ["FA1", "FA2"])
+    with pytest.raises(IndexError):
+        get_column_name(model, "covariate")

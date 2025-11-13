@@ -2605,3 +2605,38 @@ def binarize_dataset(
         model = model.replace(dataset=df, datainfo=di)
 
     return model
+
+
+def get_column_name(model: Model, type: str) -> Optional[str]:
+    """Retrieve the column with a certain type
+
+    If multiple columns have the same type an exception will be raised.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    type : str
+        Column type. See :py:attr:pharmpy.model.datainfo.ColumnInfo.type
+
+    Returns
+    -------
+    str or None
+        Name of the column. None if no column found
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, get_column_name
+    >>> model = load_example_model("pheno")
+    >>> get_column_name(model, "dose")
+    "AMT"
+    """
+    try:
+        columns = model.datainfo.typeix[type]
+    except IndexError:
+        name = None
+    else:
+        if len(columns) > 1:
+            raise IndexError(f"More than one column of type {type}")
+        name = columns[0].name
+    return name
