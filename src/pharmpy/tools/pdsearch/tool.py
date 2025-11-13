@@ -17,7 +17,7 @@ from pharmpy.tools.common import (
     table_final_eta_shrinkage,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import run_subtool
+from pharmpy.tools.run import run_subtool, summarize_modelfit_results
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 from .results import PDSearchResults
@@ -201,8 +201,8 @@ def create_drug_effect_model(treatment_variable, expr, baseme):
 
 def postprocess(context, rank_res, rank_res2):
     summary_tool = pd.concat((rank_res.summary_tool, rank_res2.summary_tool))
+    summary_models = summarize_modelfit_results(context)
 
-    summary_models = summary_tool  # FIXME
     plots = create_plots(rank_res2.final_model, rank_res2.final_results)
     eta_shrinkage = table_final_eta_shrinkage(rank_res2.final_model, rank_res2.final_results)
 
