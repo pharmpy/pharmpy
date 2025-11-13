@@ -209,17 +209,11 @@ def _scatter_computation(Future, client, computation):
 
 
 def _scatter_value(Future, client, value):
-    import dask
-
     # TODO: We could automatically compute whether object size is above
     # threshold with a slight twist on https://stackoverflow.com/a/30316760
     if isinstance(value, (dict, int, str, float, bool, range, Future)) or callable(value):
         return value
     else:
-        dask_version = tuple(int(i) for i in dask.__version__.split('.'))
-        if dask_version >= (2024, 2, 1):
-            # This is a workaround for https://github.com/dask/distributed/issues/8576
-            future = client.scatter(value, hash=False)
-        else:
-            future = client.scatter(value)
+        # NOTE: hash=False is needed because of https://github.com/dask/distributed/issues/8576
+        future = client.scatter(value, hash=False)
         return future
