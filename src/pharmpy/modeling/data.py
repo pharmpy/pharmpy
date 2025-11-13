@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import Collection, Literal, Optional, Union
+from typing import Collection, Container, Literal, Optional, Union
 
 from pharmpy.basic import Expr, Unit
 from pharmpy.deps import numpy as np
@@ -398,15 +398,15 @@ def get_baselines(model: Model):
     return baselines
 
 
-def set_covariates(model: Model, covariates: list[str]):
+def set_covariates(model: Model, covariates: Container[str]):
     """Set columns in the dataset to be covariates in the datainfo
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    covariates : list
-        List of column names
+    covariates : Container
+        Column names
 
     Returns
     -------
