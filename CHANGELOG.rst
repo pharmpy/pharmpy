@@ -27,6 +27,7 @@ Bugfixes
 * Fix so that idx=-1 does not duplicate estimation steps for :code:`append_estimation_step_options`
 * Fix crash in :code:`get_model_covariates` for models with no dosing
 * Fix crash in :code:`get_cmt` for models with no dosing
+* Handle differences in case between symbol names in $INPUT and symbol names in code records in NONMEM models
 
 .. _1.10.0:
 

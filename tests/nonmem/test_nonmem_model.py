@@ -1381,3 +1381,35 @@ def test_sizes(load_model_for_test, pheno_path):
     model = model.update_source()
     sizes = model.internals.control_stream.get_records("SIZES")[0]
     assert str(sizes) == f'$SIZES PD={len(model.dataset.columns)}\n'
+
+
+def test_symbol_case():
+    code = """$PROBLEM base model
+$INPUT ID DV WGT
+$DATA file.csv IGNORE=@
+$PRED
+X = THETA(1)*wgT
+Y = X + ETA(1) + EPS(1)
+$THETA 0.1  ; TV
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=0
+"""
+    model = Model.parse_model_from_string(code)
+    assert model.datainfo.names == ['ID', 'DV', 'WGT']
+    assert model.statements[0].expression == Expr.symbol("TV") * Expr.symbol("WGT")
+
+    code = """$PROBLEM base model
+$INPUT ID DV wgt
+$DATA file.csv IGNORE=@
+$PRED
+X = THETA(1)*WGT
+Y = X + ETA(1) + EPS(1)
+$THETA 0.1  ; TV
+$OMEGA 0.01
+$SIGMA 1
+$ESTIMATION METHOD=0
+"""
+    model = Model.parse_model_from_string(code)
+    assert model.datainfo.names == ['ID', 'DV', 'WGT']
+    assert model.statements[0].expression == Expr.symbol("TV") * Expr.symbol("WGT")

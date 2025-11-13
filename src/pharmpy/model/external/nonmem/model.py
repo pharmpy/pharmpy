@@ -400,6 +400,8 @@ def make_model(
 
     value_type = parse_value_type(control_stream, statements)
 
+    di, statements = handle_case(di, statements)
+
     internals = NONMEMModelInternals(
         control_stream=control_stream,
         old_name=name,
@@ -431,3 +433,37 @@ def make_model(
         description=description,
         internals=internals,
     )
+
+
+def handle_case(datainfo, statements):
+    # Handle mismatching case in datainfo and statements
+    # Keep case if not mismatch (regardless of case)
+    # Change to uppercase if mismatch
+    used_symbols = statements.rhs_symbols - statements.lhs_symbols
+    data_symbols = {Expr.symbol(name) for name in datainfo.names}
+    statements_subs = {}
+    datainfo_subs = {}
+    for col in data_symbols:
+        uc_col = Expr.symbol(col.name.upper())
+        for used_symb in used_symbols:
+            if used_symb == col:
+                break
+            uc_used_symb = Expr.symbol(used_symb.name.upper())
+            if uc_used_symb == uc_col:
+                if col != uc_col:
+                    datainfo_subs[col] = uc_col
+                if used_symb != uc_used_symb:
+                    statements_subs[used_symb] = uc_used_symb
+    if statements_subs:
+        statements = statements.subs(statements_subs)
+    if datainfo_subs:
+        new_cols = []
+        for column in datainfo:
+            if Expr.symbol(column.name) in datainfo_subs:
+                new_name = datainfo_subs[Expr.symbol(column.name)].name
+                new_column = column.replace(name=new_name)
+                new_cols.append(new_column)
+            else:
+                new_cols.append(column)
+        datainfo = datainfo.replace(columns=new_cols)
+    return datainfo, statements
