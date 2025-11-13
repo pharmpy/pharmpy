@@ -308,7 +308,7 @@ def run_amd_task(
     if to_be_skipped:
         order = [tool for tool in order if tool not in to_be_skipped]
 
-    if modeltype in ['pkpd', 'drug_metabolite']:
+    if modeltype in {'pkpd', 'drug_metabolite'}:
         if modeltype == 'pkpd':
             structsearch_features = ss_mfl.filter("pd")
         else:
@@ -322,7 +322,7 @@ def run_amd_task(
                     True,
                 )
             else:
-                if administration in ['oral', 'ivoral']:
+                if administration in {'oral', 'ivoral'}:
                     structsearch_features = mfl_parse(
                         "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)", True
                     )
@@ -333,7 +333,7 @@ def run_amd_task(
 
     modelsearch_features = ss_mfl.filter("pk")
     if len(modelsearch_features.mfl_statement_list()) == 0:
-        if modeltype in ('basic_pk', 'drug_metabolite') and administration == 'oral':
+        if modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'oral':
             modelsearch_features = mfl_parse(
                 "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
                 "ELIMINATION(FO);"
@@ -342,7 +342,7 @@ def run_amd_task(
                 "PERIPHERALS(0..1)",
                 True,
             )
-        elif modeltype in ('basic_pk', 'drug_metabolite') and administration == 'ivoral':
+        elif modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'ivoral':
             modelsearch_features = mfl_parse(
                 "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
                 "ELIMINATION(FO);"
