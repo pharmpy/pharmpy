@@ -12,7 +12,7 @@ from pharmpy.internals.expr.funcs import PHI
 from pharmpy.internals.fn.type import check_list
 from pharmpy.model import Assignment, ExecutionSteps, JointNormalDistribution, Model
 
-from .data import remove_loq_data, set_lloq_data
+from .data import get_column_name, remove_loq_data, set_lloq_data
 from .expressions import _simplify_expression_from_parameters, create_symbol
 
 SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4', 'm5', 'm6', 'm7'])
@@ -131,7 +131,8 @@ def transform_blq(
     lometh = method.lower()
     check_list("method", lometh, SUPPORTED_METHODS)
 
-    blq_col, lloq_col = _get_blq_and_lloq_columns(model)
+    blq_col = get_column_name(model, 'blq')
+    lloq_col = get_column_name(model, 'lloq')
     indicator, indicator_type, level, level_type = _which_indicator_and_level(
         lloq, lloq_col, blq_col, lometh
     )
@@ -277,22 +278,6 @@ def has_blq_transformation(model: Model):
     return _has_all_expected_symbs(model.statements.error, expected_m3) or _has_all_expected_symbs(
         model.statements.error, expected_m4
     )
-
-
-def _get_blq_and_lloq_columns(model: Model):
-    try:
-        blq_datainfo = model.datainfo.typeix['blq']
-    except IndexError:
-        blq = None
-    else:
-        blq = blq_datainfo[0].name
-    try:
-        lloq_datainfo = model.datainfo.typeix['lloq']
-    except IndexError:
-        lloq = None
-    else:
-        lloq = lloq_datainfo[0].name
-    return blq, lloq
 
 
 def _which_indicator_and_level(lloq, lloq_col, blq_col, method):
