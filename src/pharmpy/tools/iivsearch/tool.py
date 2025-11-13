@@ -79,6 +79,7 @@ def create_workflow(
     E_q: Optional[Union[float, str]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     _search_space: Optional[str] = None,
+    _as_fullblock: bool = False,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 
@@ -117,6 +118,8 @@ def create_workflow(
         parameter uncertainty
     _search_space : str
         EXPERIMENTAL FEATURE. Search space to test
+    _as_fullblock : bool
+        EXPERIMENTAL FEATURE. Whether use a fullblock
 
     Returns
     -------
@@ -162,6 +165,7 @@ def create_workflow(
             algorithm,
             correlation_algorithm,
             _search_space,
+            _as_fullblock,
             rank_type,
             cutoff,
             strictness,
@@ -843,6 +847,7 @@ def create_workflow_mfl(
     algorithm,
     correlation_algorithm,
     search_space,
+    as_fullblock,
     rank_type,
     cutoff,
     strictness,
@@ -855,17 +860,23 @@ def create_workflow_mfl(
 
     mfl = ModelFeatures.create(search_space)
     mfl_expanded = expand_model_features(model, mfl)
-    if not (
-        get_model_features(model, type='iiv') in mfl_expanded
-        and get_model_features(model, type='covariance') in mfl_expanded
+    if (
+        not (
+            get_model_features(model, type='iiv') in mfl_expanded
+            and get_model_features(model, type='covariance') in mfl_expanded
+        )
+        or as_fullblock
     ):
-        create_base_task = Task.create('base_model', create_base_model, mfl_expanded)
+        create_base_task = Task.create('base_model', create_base_model, mfl_expanded, as_fullblock)
         wb.add_task(create_base_task, predecessors=[start_task])
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
         base_task = wf_fit.output_tasks[0]
     else:
         base_task = start_task
+
+    wb.gather([start_task, base_task])
+    start_model_entries_task = wb.output_tasks[0]
 
     steps_to_run = prepare_algorithms(algorithm, correlation_algorithm)
     search_task = Task.create(
@@ -888,28 +899,41 @@ def create_workflow_mfl(
         strictness,
         parameter_uncertainty_method,
     )
-    wb.add_task(post_process_task, predecessors=[start_task, search_task])
+    wb.add_task(post_process_task, predecessors=[start_model_entries_task, search_task])
 
     return Workflow(wb)
 
 
 def start_with_search_space(context, input_model, input_res):
     context.log_info("Starting tool iivsearch")
-    _, input_model_entry = prepare_input_model(input_model, input_res)
+    input_model_entry = prepare_input_model_entry(input_model, input_res)
     context.store_input_model_entry(input_model_entry)
     context.log_info(f"Input model OFV: {input_res.ofv:.3f}")
     return input_model_entry
 
 
-def create_base_model(mfl, input_model_entry):
+def prepare_input_model_entry(input_model, input_res):
+    mfl = get_model_features(input_model)
+    description = algorithms.create_description_mfl(mfl, type='iiv')
+    input_model = input_model.replace(name="input", description=description)
+    input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
+    return input_model_entry
+
+
+def create_base_model(mfl, as_fullblock, input_model_entry):
+    input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     base_model = update_initial_estimates(
-        input_model_entry.model,
-        input_model_entry.modelfit_results,
+        input_model,
+        input_res,
         move_est_close_to_bounds=True,
     )
     base_model = transform_into_search_space(base_model, mfl, force_optional=True)
-    base_model = base_model.replace(name='base')
-    base_model_entry = ModelEntry.create(model=base_model, parent=input_model_entry.model)
+    if as_fullblock:
+        base_model = create_joint_distribution(base_model, individual_estimates=input_res)
+    base_mfl = get_model_features(base_model)
+    description = algorithms.create_description_mfl(base_mfl, type='iiv')
+    base_model = base_model.replace(name='base', description=description)
+    base_model_entry = ModelEntry.create(model=base_model, parent=input_model)
     return base_model_entry
 
 
@@ -1001,17 +1025,28 @@ def postprocess(
     cutoff,
     strictness,
     parameter_uncertainty_method,
-    input_model_entry,
+    start_model_entries,
     best_model_entry_and_summaries,
 ):
     best_model_entry, (tool_summaries, model_summaries, error_summaries) = (
         best_model_entry_and_summaries
     )
 
+    # FIXME: remove once summary_models is created outside of workflow
+    input_model_entry = start_model_entries[0]
     summary_models_input = summarize_modelfit_results_from_entries([input_model_entry])
     summary_errors_input = summarize_errors_from_entries([input_model_entry])
     model_summaries.insert(0, summary_models_input)
     error_summaries.insert(0, summary_errors_input)
+
+    # FIXME: remove once summary_models is created outside of workflow
+    if len(start_model_entries) > 1:
+        assert len(start_model_entries) == 2
+        base_model_entry = start_model_entries[1]
+        summary_models_base = summarize_modelfit_results_from_entries([base_model_entry])
+        summary_errors_base = summarize_errors_from_entries([base_model_entry])
+        model_summaries.insert(1, summary_models_base)
+        error_summaries.insert(1, summary_errors_base)
 
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     best_model, best_res = best_model_entry.model, best_model_entry.modelfit_results

@@ -89,6 +89,14 @@ from pharmpy.workflows import LocalDirectoryContext
             2,
             'iivsearch_run1',
         ),
+        (
+            'top_down_exhaustive',
+            'skip',
+            {'_search_space': 'IIV?(@PK,exp)', '_as_fullblock': True},
+            15,
+            10,
+            'iivsearch_run15',
+        ),
     ],
 )
 def test_iivsearch_dummy(
@@ -104,7 +112,9 @@ def test_iivsearch_dummy(
 ):
     with chdir(tmp_path):
         no_of_models_total = no_of_candidate_models + 1  # Include input
-        has_iiv_strategy = 'iiv_strategy' in kwargs and kwargs['iiv_strategy'] != 'no_add'
+        has_iiv_strategy = ('iiv_strategy' in kwargs and kwargs['iiv_strategy'] != 'no_add') or (
+            '_as_fullblock' in kwargs and kwargs['_as_fullblock']
+        )
         if has_iiv_strategy:
             start_model = add_lag_time(start_modelres_dummy[0])
             start_res = fit(start_model, esttool='dummy')
