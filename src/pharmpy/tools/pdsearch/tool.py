@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 from typing import Literal, Optional, Union
 
@@ -6,6 +7,7 @@ from pharmpy.modeling import (
     add_iiv,
     add_placebo_model,
     create_basic_pd_model,
+    get_observations,
     set_description,
     set_direct_effect,
     set_initial_estimates,
@@ -81,12 +83,24 @@ def create_workflow(
     return Workflow(wb)
 
 
+def _calc_pd_inits_from_data(model):
+    idc = model.datainfo.id_column.name
+    obs = get_observations(model)
+    theta_init = obs.groupby(idc).median().median()
+    variance = (obs.groupby(idc).std() ** 2).mean()
+    mean = obs.groupby(idc).mean().mean()
+    omega_init = math.log((1 + variance / mean**2))
+    return theta_init, omega_init
+
+
 def start_pdsearch(context, dataset):
     context.log_info("Starting pdsearch")
 
     model = create_basic_pd_model(dataset)
     model = set_proportional_error_model(model, zero_protection=False)
     model = add_iiv(model, ["B"], "exp")
+    theta_init, omega_init = _calc_pd_inits_from_data(model)
+    model = set_initial_estimates(model, {"POP_B": theta_init, "IIV_B": omega_init})
     me = ModelEntry.create(model=model)
     return me
 
