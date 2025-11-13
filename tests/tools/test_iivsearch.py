@@ -2,6 +2,7 @@ from functools import partial
 
 import pytest
 
+from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
     add_iiv,
     add_iov,
@@ -23,6 +24,7 @@ from pharmpy.tools.iivsearch.algorithms import (
     _rv_block_structures,
     create_block_structure_candidate_entry,
     create_description,
+    create_description_mfl,
     create_eta_blocks,
     create_no_of_etas_candidate_entry,
     get_eta_names,
@@ -349,6 +351,22 @@ def test_create_description_iov(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model = add_iov(model, 'VISI')
     assert create_description(model, True, None) == '[CL]+[VC]+[MAT]'
+
+
+@pytest.mark.parametrize(
+    'mfl, type, expected',
+    [
+        ('IIV([CL,MAT,VC],EXP)', 'iiv', '[CL]+[MAT]+[VC]'),
+        ('IIV(CL,EXP);IIV([MAT,VC],ADD)', 'iiv', '[CL]+[MAT]+[VC] (ADD:MAT,VC)'),
+        ('IIV(CL,EXP);IIV(MAT,ADD);IIV(VC,LOG)', 'iiv', '[CL]+[MAT]+[VC] (ADD:MAT;LOG:VC)'),
+        ('IIV([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', 'iiv', '[CL,VC]+[MAT]'),
+        ('IIV(CL,EXP);IIV(MAT,ADD);IIV(VC,LOG)', 'covariance', '[CL]+[MAT]+[VC]'),
+        ('IIV([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,MAT,VC])', 'iiv', '[CL,MAT,VC]'),
+    ],
+)
+def test_create_description_mfl(mfl, type, expected):
+    mfl = ModelFeatures.create(mfl)
+    assert create_description_mfl(mfl, type) == expected
 
 
 @pytest.mark.parametrize(

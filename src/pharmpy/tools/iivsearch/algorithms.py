@@ -132,18 +132,40 @@ def _is_valid_block_combination(features: Sequence[Covariance]):
 
 
 def create_candidate(name, mfl, type, base_model_entry):
-    candidate_model = update_initial_estimates(
-        base_model_entry.model, base_model_entry.modelfit_results
-    )
+    base_model, base_res = base_model_entry.model, base_model_entry.modelfit_results
+    candidate_model = update_initial_estimates(base_model, base_res)
     candidate_model = candidate_model.replace(name=name)
-    ies = base_model_entry.modelfit_results.individual_estimates
+    ies = base_res.individual_estimates
     candidate_model = transform_into_search_space(
         candidate_model, mfl, type=type, force_optional=True, individual_estimates=ies
     )
-    description = str(get_model_features(candidate_model, type=type))
+    description = create_description_mfl(get_model_features(candidate_model), type)
     candidate_model = candidate_model.replace(description=description)
 
-    return ModelEntry.create(model=candidate_model, parent=base_model_entry.model)
+    return ModelEntry.create(model=candidate_model, parent=base_model)
+
+
+def create_description_mfl(mfl, type):
+    assert type in ['iiv', 'covariance']
+
+    blocks = Covariance.get_covariance_blocks(mfl.covariance)
+    params_in_blocks = {p for b in blocks for p in b}
+    blocks += tuple((iiv.parameter,) for iiv in mfl.iiv if iiv.parameter not in params_in_blocks)
+
+    description = '+'.join(f"[{','.join(block)}]" for block in blocks)
+
+    if type == 'iiv':
+        fp_groups = defaultdict(list)
+        for iiv in mfl.iiv:
+            if iiv.fp != 'EXP':
+                fp_groups[iiv.fp].append(iiv.parameter)
+
+        if fp_groups:
+            fps = [f"{fp}:{','.join(params)}" for fp, params in fp_groups.items()]
+            fp_description = ';'.join(fps)
+            description += f' ({fp_description})'
+
+    return description
 
 
 def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mapping=None):
