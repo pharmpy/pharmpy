@@ -155,7 +155,12 @@ class Assignment(Statement):
         from sympy.core.function import AppliedUndef
 
         # Allow applied undefined functions
-        funcs = {Expr(f) for f in prefuncs if isinstance(f, AppliedUndef)}
+        funcs = {
+            Expr(f)
+            for f in prefuncs
+            if isinstance(f, AppliedUndef)
+            if f.name not in {'first', 'newind', 'forward', 'PHI'}
+        }
         symbols = self._expression.free_symbols
         return funcs | symbols
 

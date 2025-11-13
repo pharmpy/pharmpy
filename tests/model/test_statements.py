@@ -90,6 +90,8 @@ def test_rhs_symbols(load_example_model_for_test):
         S("t"),
         S("EPS_1"),
     }
+    a = Assignment.create("MY", Expr.forward("TIME", "AMT>0"))
+    assert a.rhs_symbols == {S("TIME"), S("AMT")}
 
 
 def test_find_assignment(load_model_for_test, testdata):
