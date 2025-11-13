@@ -200,7 +200,10 @@ def create_drug_effect_model(treatment_variable, expr, baseme):
 
 
 def postprocess(context, rank_res, rank_res2):
-    summary_tool = pd.concat((rank_res.summary_tool, rank_res2.summary_tool))
+    step1 = rank_res.summary_tool.assign(step=1)
+    step2 = rank_res2.summary_tool.assign(step=2)
+    summary_tool = pd.concat((step1, step2))
+    summary_tool = summary_tool.reset_index().set_index(["model", "step"])
     summary_models = summarize_modelfit_results(context)
 
     plots = create_plots(rank_res2.final_model, rank_res2.final_results)
