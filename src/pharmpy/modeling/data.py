@@ -2629,7 +2629,7 @@ def get_column_name(model: Model, type: str) -> Optional[str]:
     >>> from pharmpy.modeling import load_example_model, get_column_name
     >>> model = load_example_model("pheno")
     >>> get_column_name(model, "dose")
-    "AMT"
+    'AMT'
     """
     try:
         columns = model.datainfo.typeix[type]
