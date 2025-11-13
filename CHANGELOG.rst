@@ -18,6 +18,7 @@ Changes
 * Make the OFV distribution plot wider in the bootstrap results and report
 * Make tables in reports have 50 rows per page
 * Let :code:`append_estimation_step_options` operate on the final estimation step by default
+* Inform user that DV will be used as is when dataset has loq data, but no method has been selected in amd.
 
 Bugfixes
 ========

@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     create_basic_pk_model,
     find_clearance_parameters,
     get_central_volume_and_clearance,
+    get_column_name,
     get_pk_parameters,
     has_mixed_mm_fo_elimination,
     plot_abs_cwres_vs_ipred,
@@ -300,6 +301,14 @@ def run_amd_task(
             method=lloq_method,
             lloq=lloq_limit,
         )
+    else:
+        blq = get_column_name(model, "blq")
+        lloq = get_column_name(model, "lloq")
+        if blq is not None or lloq is not None:
+            context.log_info(
+                'The dataset have blq/lloq columns but lloq_method has not been '
+                'selected. DV will be used as is.'
+            )
 
     if modeltype == 'pkpd' and 'allometry' in order:
         context.log_warning('Skipping allometry since modeltype is "pkpd"')
