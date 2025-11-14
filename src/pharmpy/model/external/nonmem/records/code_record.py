@@ -457,7 +457,7 @@ class ExpressionInterpreter(Interpreter):
         return f'{name}({",".join(subscripts)})'
 
     def name(self, node):
-        return str(node).upper()
+        return str(node)
 
     def index(self, node):
         return str(node)

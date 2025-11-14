@@ -71,7 +71,7 @@ def S(x):
         ('$PRED CL = PEXP(2)', S('CL'), sympy.exp(2)),
         ('$PRED CL = PEXP(101)', S('CL'), sympy.exp(100)),
         ('$PRED CL = exp(2)', S('CL'), sympy.exp(2)),
-        ('$PRED cL = eXp(2)', S('CL'), sympy.exp(2)),
+        ('$PRED cL = eXp(2)', S('cL'), sympy.exp(2)),
         ('$PRED CL = DEXP(ETA(1))', S('CL'), sympy.exp(S('ETA(1)'))),
         (
             '$PRED CL = PDZ(ETA(1))',
@@ -119,7 +119,7 @@ def S(x):
         ),
         ('$PRED CL = INT(-2.2)', S('CL'), -2),
         ('$PRED CL = DINT(-2.2)', S('CL'), -2),
-        ('$PRED cl = int(-2.2)', S('CL'), -2),
+        ('$PRED cl = int(-2.2)', S('cl'), -2),
         ('$PRED CL = INT(0.2)', S('CL'), 0),
         ('$PRED CL = SQRT(X)', S('CL'), sympy.sqrt(S('X'))),
         ('$PRED CL = DSQRT(X)', S('CL'), sympy.sqrt(S('X'))),
@@ -135,7 +135,7 @@ def S(x):
         ('$PRED IF (X.EQ.2) CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
         ('$PRED IF (X.EQ.2)CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
         ('$PRED IF(X.EQ.2)CL=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
-        ('$PRED if (x.EQ.2) Cl=23', S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2)))),
+        ('$PRED if (x.EQ.2) Cl=23', S('Cl'), sympy.Piecewise((23, sympy.Eq(S('x'), 2)))),
         (
             '$PRED IF (X.NE.1.5) CL=THETA(1)',
             S('CL'),
@@ -207,6 +207,7 @@ def S(x):
             ),
         ),
         ('$PRED X=A+B+C', S('X'), S('A') + S('B') + S('C')),
+        ('$PRED X=A+a+C', S('X'), S('A') + S('a') + S('C')),
         ('$PRED X=A+B-C', S('X'), S('A') + S('B') - S('C')),
         ('$PRED X=A+B*C', S('X'), S('A') + S('B') * S('C')),
         ('$PRED X=A*B+C', S('X'), S('A') * S('B') + S('C')),
@@ -320,12 +321,12 @@ def test_single_assignments(parser, buf, sym, expression):
             ],
         ),
         (
-            '$PRED    if (a>=0.5) then   \n  var=1+2 \nELSE if (b.eq.23) then ; C\nVAR=9.25\n'
+            '$PRED    if (a>=0.5) then   \n  var=1+2 \nELSE if (b.eq.23) then ; C\nvar=9.25\n'
             'END IF  \n',
             [
                 (
-                    S('VAR'),
-                    sympy.Piecewise((3, S('A') >= 0.5), (9.25, sympy.Eq(S('B'), 23))),
+                    S('var'),
+                    sympy.Piecewise((3, S('a') >= 0.5), (9.25, sympy.Eq(S('b'), 23))),
                 )
             ],
         ),
