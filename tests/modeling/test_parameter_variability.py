@@ -1719,6 +1719,23 @@ def test_create_joint_distribution_fixed_params(load_example_model_for_test):
             '0.0005\n'
             '0.031128\n',
         ),
+        (
+            ['CL', 'V'],
+            '$ABBR REPLACE ETA_CL=ETA(1)\n'
+            '$ABBR REPLACE ETA_V=ETA(2)\n'
+            '$ABBR REPLACE ETA_S1=ETA(3)\n'
+            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+            '$ABBR REPLACE ETA_Q=ETA(5)\n',
+            '$OMEGA  0.0309626 ; IVCL\n'
+            '$OMEGA  0.031128 ; IVV\n'
+            '$OMEGA BLOCK(3)\n'
+            '0.1\n'
+            '0.0055644\t; IIV_S1_IIV_MAT\n'
+            '0.0309626\n'
+            '0.0055792\t; IIV_S1_IIV_Q\n'
+            '0.0005\n'
+            '0.031128\n',
+        ),
     ],
 )
 def test_split_joint_distribution(load_model_for_test, testdata, etas, abbr_ref, omega_ref):

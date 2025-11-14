@@ -1080,22 +1080,7 @@ def create_joint_distribution(
             else:
                 rvs.extend(rv.names)
     else:
-        rvs_new = []
-        for name in rvs:
-            if name in all_rvs and all_rvs[name].level == 'IOV':
-                raise ValueError(
-                    f'{name} describes IOV: Joining IOV random variables is currently not supported'
-                )
-            if name not in all_rvs.names:
-                try:
-                    rv = get_parameter_rv(model, name, var_type='iiv')
-                except ValueError:
-                    raise ValueError(f'Could not find rv or parameter: {name}')
-                assert len(rv) == 1
-                rvs_new.append(rv[0])
-            else:
-                rvs_new.append(name)
-        rvs = rvs_new
+        rvs = map_parameter_to_rv(model, rvs)
     if len(rvs) == 1:
         raise ValueError('At least two random variables are needed')
 
@@ -1132,7 +1117,7 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[Sequence[str], st
     model : Model
         Pharmpy model
     rvs : str, list
-        Name/names of etas to separate. If None, all etas that are IIVs and
+        Name/names of etas or individual parameters to separate. If None, all etas that are IIVs and
         non-fixed will become single. None is default.
 
     Return
@@ -1159,7 +1144,10 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[Sequence[str], st
     create_joint_distribution : combine etas into a join distribution
     """
     all_rvs = model.random_variables
-    names = _get_etas(model, rvs)
+    try:
+        names = _get_etas(model, rvs)
+    except KeyError:
+        names = map_parameter_to_rv(model, rvs)
 
     new_rvs = all_rvs.unjoin(names)
 
@@ -1172,6 +1160,26 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[Sequence[str], st
     )
     model = model.replace(random_variables=new_rvs, parameters=new_params).update_source()
     return model
+
+
+def map_parameter_to_rv(model, rvs):
+    rvs_new = []
+    all_rvs = model.random_variables
+    for name in rvs:
+        if name in all_rvs and all_rvs[name].level == 'IOV':
+            raise ValueError(
+                f'{name} describes IOV: Joining/splitting IOV random variables is currently not supported'
+            )
+        if name not in all_rvs.names:
+            try:
+                rv = get_parameter_rv(model, name, var_type='iiv')
+            except ValueError:
+                raise ValueError(f'Could not find rv or parameter: {name}')
+            assert len(rv) == 1
+            rvs_new.append(rv[0])
+        else:
+            rvs_new.append(name)
+    return rvs_new
 
 
 def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
