@@ -12,6 +12,7 @@ from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     Assignment,
+    Bolus,
     ColumnInfo,
     Compartment,
     CompartmentalSystem,
@@ -295,5 +296,84 @@ def create_basic_pd_model(
         dataset=df,
         datainfo=di,
     )
+
+    return model
+
+
+def create_basic_kpd_model(dataset_path: Optional[Union[str, Path]] = None) -> Model:
+    """
+    Creates a basic kpd model. The model will be a one compartment model.
+    delay. The elimination rate will be :math:`KE`.
+
+    Parameters
+    ----------
+    dataset_path : str or Path
+        Optional path to a dataset
+
+    Return
+    ------
+    Model
+        Pharmpy model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = create_basic_kpd_model()
+
+    """
+    if dataset_path is not None:
+        dataset_path = normalize_user_given_path(dataset_path)
+        di = create_default_datainfo(dataset_path)
+        df = read_dataset_from_datainfo(di, datatype='nonmem')
+    else:
+        di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
+        di_ci = [ColumnInfo.create(key, type=value) for key, value in di_col_dict.items()]
+        di = DataInfo.create(di_ci)
+        df = None
+
+    pop_ke = Parameter('POP_KE', init=0.1, lower=0)
+    iiv_ke = Parameter('IIV_KE', init=0.1)
+
+    params = Parameters((pop_ke, iiv_ke))
+
+    eta_ke_name = 'ETA_KE'
+    eta_ke = NormalDistribution.create(eta_ke_name, 'iiv', 0, iiv_ke.symbol)
+    rvs = RandomVariables.create([eta_ke])
+
+    KE = Expr.symbol('KE')
+    ke_assign = Assignment(KE, pop_ke.symbol * Expr.symbol(eta_ke_name).exp())
+
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL', doses=[Bolus.create("AMT")])
+    cb.add_compartment(central)
+    cb.add_flow(central, output, KE)
+
+    R = Assignment(Expr.symbol('R'), KE)
+    y_ass = Assignment(Expr.symbol('Y'), R.symbol)
+
+    stats = Statements([ke_assign, CompartmentalSystem(cb), R, y_ass])
+
+    est = EstimationStep.create(
+        "FOCE",
+        interaction=True,
+        maximum_evaluations=99999,
+        predictions=('PRED', 'CIPREDI'),
+        residuals=('CWRES',),
+    )
+    eststeps = ExecutionSteps.create([est])
+
+    model = Model.create(
+        name='start',
+        statements=stats,
+        execution_steps=eststeps,
+        dependent_variables={y_ass.symbol: 1},
+        random_variables=rvs,
+        parameters=params,
+        description='Start model',
+        dataset=df,
+        datainfo=di,
+    )
+
+    model = set_proportional_error_model(model)
 
     return model

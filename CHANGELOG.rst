@@ -11,6 +11,7 @@ New features
 * Add option :code:`exclude_reference_model` to the ModelRank tool
 * Add support for Python 3.14
 * Add :code:`modeling.get_column_name`
+* Add :code:`modeling.create_basic_kpd_model`
 
 Changes
 =======
