@@ -6,6 +6,7 @@ from pharmpy.basic import TSymbol
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
+from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_predictions,
@@ -213,10 +214,22 @@ def run_amd_task(
     if search_space is not None:
         try:
             ss_mfl = mfl_parse(search_space, True)
+            iiv_features = None
         except:  # noqa E722
-            raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+            try:
+                mfl = ModelFeaturesNew.create(search_space)
+                iiv_features = mfl.iiv + mfl.covariance
+                remaining_features = mfl - iiv_features
+                search_space = repr(remaining_features)
+                kwargs['search_space'] = (
+                    search_space  # Replace search space for later input validation
+                )
+                ss_mfl = mfl_parse(search_space, True)
+            except:  # noqa E722
+                raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
     else:
         ss_mfl = ModelFeatures()
+        iiv_features = None
 
     if ss_mfl.allometry is not None:
         # Take it out and put back later
@@ -465,6 +478,7 @@ def run_amd_task(
             else:
                 run_name = 'iivsearch'
                 func = _subfunc_iiv(
+                    search_space=iiv_features,
                     iiv_strategy=iiv_strategy,
                     strictness=strictness,
                     E=_E,
@@ -967,7 +981,7 @@ def _subfunc_structsearch_tmdd(
 
 
 def _subfunc_iiv(
-    iiv_strategy, strictness, E, parameter_uncertainty_method, ctx, dir_name
+    search_space, iiv_strategy, strictness, E, parameter_uncertainty_method, ctx, dir_name
 ) -> SubFunc:
     def _run_iiv(model, modelfit_results):
         if E and 'iivsearch' in E.keys():
@@ -996,6 +1010,8 @@ def _subfunc_iiv(
             E_q=e_q,
             keep=keep,
             parameter_uncertainty_method=parameter_uncertainty_method,
+            _search_space=repr(search_space),
+            _as_fullblock=True,
         )
         assert isinstance(res, Results)
         return res
@@ -1433,19 +1449,24 @@ def validate_input(
         try:
             ss_mfl = mfl_parse(search_space, True)
         except:  # noqa E722
-            raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
-        if len(ss_mfl.mfl_statement_list()) == 0:
-            raise ValueError(f'`search_space` evaluated to be empty : "{search_space}')
+            try:
+                ModelFeaturesNew.create(search_space)
+                ss_mfl = None
+            except:  # noqa E722
+                raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
+        if ss_mfl:
+            if len(ss_mfl.mfl_statement_list()) == 0:
+                raise ValueError(f'`search_space` evaluated to be empty : "{search_space}')
 
-        if (
-            administration == "oral"
-            and ss_mfl.absorption is not None
-            and "INST" in (a.name for a in ss_mfl.absorption.modes)
-        ):
-            raise ValueError(
-                'The given search space have instantaneous absorption (´INST´)'
-                ' which is not allowed with ´oral´ administration.'
-            )
+            if (
+                administration == "oral"
+                and ss_mfl.absorption is not None
+                and "INST" in (a.name for a in ss_mfl.absorption.modes)
+            ):
+                raise ValueError(
+                    'The given search space have instantaneous absorption (´INST´)'
+                    ' which is not allowed with ´oral´ administration.'
+                )
 
     check_list("retries_strategy", retries_strategy, RETRIES_STRATEGIES)
 

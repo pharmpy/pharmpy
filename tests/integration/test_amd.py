@@ -122,6 +122,24 @@ def _model_count(rundir: Path):
                 'qa',
             },
         ),
+        (
+            {
+                'modeltype': 'basic_pk',
+                'administration': 'oral',
+                'cl_init': 1.0,
+                'vc_init': 10.0,
+                'mat_init': 0.1,
+            },
+            {'strategy': 'SIR', 'retries_strategy': 'skip'},
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..1);IIV(CL,EXP);IIV?(@PK,EXP);COVARIANCE?(IIV,@IIV)',
+            {
+                'modelsearch',
+                'iivsearch',
+                'ruvsearch',
+                'simulation',
+                'qa',
+            },
+        ),
     ],
 )
 def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, subtools):
