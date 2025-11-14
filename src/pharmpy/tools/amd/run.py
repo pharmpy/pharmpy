@@ -1010,7 +1010,7 @@ def _subfunc_iiv(
             E_q=e_q,
             keep=keep,
             parameter_uncertainty_method=parameter_uncertainty_method,
-            _search_space=repr(search_space),
+            _search_space=repr(search_space) if search_space else search_space,
             _as_fullblock=True,
         )
         assert isinstance(res, Results)
