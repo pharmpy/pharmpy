@@ -5,6 +5,7 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.modeling import (
     convert_model,
+    create_basic_kpd_model,
     create_basic_pd_model,
     create_basic_pk_model,
     set_zero_order_absorption,
@@ -68,3 +69,12 @@ def test_create_basic_pd_model(testdata):
 
     dataset_path = testdata / 'nonmem/pheno.dta'
     create_basic_pd_model(dataset_path)
+
+
+def test_create_basic_kpd_model(testdata):
+    model = create_basic_kpd_model()
+    assert model.dataset is None
+    assert len(model.parameters) == 3
+
+    dataset_path = testdata / 'nonmem/pheno.dta'
+    create_basic_kpd_model(dataset_path)
