@@ -80,7 +80,7 @@ def convert_model(model):
     if model.statements.ode_system is None:
         code += '$PRED\nY=X\n'
     else:
-        code += '$SUBROUTINES ADVAN1 TRANS2\n'
+        code += '$SUBROUTINES ADVAN1\n'
         code += '$PK\nY=X\n'
         code += '$ERROR\nA=B\n'
     nm_model = parse_model(
