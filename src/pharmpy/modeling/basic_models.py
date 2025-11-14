@@ -344,7 +344,8 @@ def create_basic_kpd_model(dataset_path: Optional[Union[str, Path]] = None) -> M
     ke_assign = Assignment(KE, pop_ke.symbol * Expr.symbol(eta_ke_name).exp())
 
     cb = CompartmentalSystemBuilder()
-    central = Compartment.create('CENTRAL', doses=[Bolus.create("AMT")])
+    dose_name = di.typeix["dose"][0].name
+    central = Compartment.create('CENTRAL', doses=[Bolus.create(dose_name)])
     cb.add_compartment(central)
     cb.add_flow(central, output, KE)
 
