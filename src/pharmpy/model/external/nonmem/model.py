@@ -400,7 +400,7 @@ def make_model(
 
     value_type = parse_value_type(control_stream, statements)
 
-    di, statements = handle_case(di, statements)
+    di, dataset, statements = handle_case(di, dataset, statements)
 
     internals = NONMEMModelInternals(
         control_stream=control_stream,
@@ -435,7 +435,7 @@ def make_model(
     )
 
 
-def handle_case(datainfo, statements):
+def handle_case(datainfo, dataset, statements):
     # Handle mismatching case in datainfo and statements
     # Keep case if not mismatch (regardless of case)
     # Change to uppercase if mismatch
@@ -466,4 +466,6 @@ def handle_case(datainfo, statements):
             else:
                 new_cols.append(column)
         datainfo = datainfo.replace(columns=new_cols)
-    return datainfo, statements
+        if dataset is not None:
+            dataset.columns = datainfo.names
+    return datainfo, dataset, statements
