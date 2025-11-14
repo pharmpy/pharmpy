@@ -64,6 +64,7 @@ from pharmpy.modeling import (
     set_weibull_absorption,
     set_zero_order_absorption,
     set_zero_order_elimination,
+    split_joint_distribution,
 )
 from pharmpy.modeling.odes import has_lag_time
 
@@ -282,8 +283,9 @@ def generate_transformations(
         transformations.extend(funcs)
 
     if covariances:
-        covariance_blocks = Covariance.get_covariance_blocks(covariances)
-        transformations.extend(_get_covariance_func(covariance_blocks, individual_estimates))
+        transformations.extend(
+            _get_covariance_func(covariances, include_add, include_remove, individual_estimates)
+        )
 
     return transformations
 
@@ -403,15 +405,34 @@ def _get_iiv_func(feature: IIV, include_add: bool, include_remove: bool):
     return funcs
 
 
-def _get_covariance_func(covariance_blocks, ies: Optional[pd.DataFrame]):
+def _get_covariance_func(
+    features: Sequence[Covariance], include_add, include_remove, ies: Optional[pd.DataFrame]
+):
     funcs = []
-    for block in covariance_blocks:
-        func_join = partial(
-            create_joint_distribution,
-            rvs=block,
-            individual_estimates=ies,
-        )
-        funcs.append(func_join)
+    if include_add:
+        blocks = Covariance.get_covariance_blocks(features)
+        for block in blocks:
+            if include_add:
+                func_join = partial(
+                    create_joint_distribution,
+                    rvs=block,
+                    individual_estimates=ies,
+                )
+                funcs.append(func_join)
+    if include_remove:
+        groups = defaultdict(list)
+        for feature in features:
+            param_1, param_2 = feature.parameters
+            groups[param_1].append(param_2)
+            groups[param_2].append(param_1)
+
+        for key, values in groups.items():
+            if len(values) == len(groups) - 1:
+                func_split = partial(
+                    split_joint_distribution,
+                    rvs=[key],
+                )
+                funcs.append(func_split)
     return funcs
 
 
@@ -451,13 +472,6 @@ def transform_into_search_space(
     features_to_add = []
     features_to_remove = []
 
-    if type is None or type == 'iiv':
-        iiv_dict = defaultdict(list)
-        for feature in search_space.iiv:
-            iiv_dict[feature.parameter].append(feature)
-    else:
-        iiv_dict = dict()
-
     features_not_in_search_space = model_features - search_space
     for feature in features_not_in_search_space:
         if isinstance(feature, (Covariate, IIV, Covariance)):
@@ -467,11 +481,19 @@ def transform_into_search_space(
             if types:
                 features_to_add.append(min(types))
 
+    if type is None or type == 'iiv':
+        iiv_dict = defaultdict(list)
+        for feature in search_space.iiv:
+            iiv_dict[feature.parameter].append(feature)
+    else:
+        iiv_dict = dict()
+
     features_not_in_model = search_space - model_features
     for feature in features_not_in_model:
         if isinstance(feature, (Covariate, IIV, Covariance)):
             if isinstance(feature, IIV):
                 other_features = iiv_dict.get(feature.parameter)
+                # Handle multiple types of fps for IIVs, e.g. exp cannot be combined with add
                 if any(f in model_features for f in other_features):
                     continue
             if not feature.optional or force_optional:

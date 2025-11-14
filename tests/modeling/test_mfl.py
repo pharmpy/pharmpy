@@ -30,6 +30,7 @@ from pharmpy.modeling import (
     set_weibull_absorption,
     set_zero_order_absorption,
     set_zero_order_elimination,
+    split_joint_distribution,
 )
 from pharmpy.modeling.mfl import (
     expand_model_features,
@@ -348,8 +349,8 @@ def test_get_model_features_raises(load_model_for_test, testdata):
         ),
         (
             'COVARIANCE(IIV,[CL,MAT,VC])',
-            1,
-            (create_joint_distribution,),
+            4,
+            (create_joint_distribution, split_joint_distribution),
         ),
     ),
 )
@@ -471,6 +472,53 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
             [],
             dict(),
             'iiv',
+            '',
+        ),
+        (
+            [],
+            'COVARIANCE(IIV,[CL,MAT])',
+            dict(),
+            'covariance',
+            'COVARIANCE(IIV,[CL,MAT])',
+        ),
+        (
+            [create_joint_distribution],
+            'COVARIANCE(IIV,[CL,MAT])',
+            dict(),
+            'covariance',
+            'COVARIANCE(IIV,[CL,MAT])',
+        ),
+        (
+            [
+                add_peripheral_compartment,
+                partial(add_iiv, list_of_parameters=['QP1', 'VP1'], expression='exp'),
+                create_joint_distribution,
+            ],
+            'COVARIANCE(IIV,[CL,MAT])',
+            dict(),
+            'covariance',
+            'COVARIANCE(IIV,[CL,MAT])',
+        ),
+        (
+            [
+                add_peripheral_compartment,
+                partial(add_iiv, list_of_parameters=['QP1', 'VP1'], expression='exp'),
+                create_joint_distribution,
+            ],
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+            dict(),
+            'covariance',
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
+        (
+            [
+                add_peripheral_compartment,
+                partial(add_iiv, list_of_parameters=['QP1', 'VP1'], expression='exp'),
+                create_joint_distribution,
+            ],
+            [],
+            dict(),
+            'covariance',
             '',
         ),
     ),
