@@ -7,7 +7,7 @@ from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.internals.set.partitions import partitions
 from pharmpy.internals.set.subsets import non_empty_subsets
-from pharmpy.mfl import Covariance
+from pharmpy.mfl import Covariance, ModelFeatures
 from pharmpy.model import Model, RandomVariables
 from pharmpy.modeling import (
     create_joint_distribution,
@@ -82,11 +82,7 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
     mfl = expand_model_features(base_model, mfl.covariance)
     mfl_optional = mfl.filter(filter_on='optional')
 
-    combinations = [
-        subset
-        for subset in non_empty_subsets(mfl_optional)
-        if subset != base_features and _is_valid_block_combination(subset)
-    ]
+    combinations = get_covariance_combinations(mfl_optional, base_features)
 
     for i, features in enumerate(combinations, 1):
         model_name = f'iivsearch_run{index_offset + i}'
@@ -108,6 +104,21 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
     wb.gather(wb.output_tasks)
 
     return Workflow(wb)
+
+
+def get_covariance_combinations(mfl, base_features):
+    combinations = []
+    for subset in non_empty_subsets(mfl):
+        mfl_subset = ModelFeatures.create(subset)
+        if mfl_subset.force_optional() == base_features:
+            continue
+        if not _is_valid_block_combination(mfl_subset):
+            continue
+        combinations.append(mfl_subset)
+    if base_features:
+        return ((),) + tuple(combinations)
+    else:
+        return tuple(combinations)
 
 
 def _is_valid_block_combination(features: Sequence[Covariance]):

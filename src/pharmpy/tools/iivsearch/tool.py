@@ -927,9 +927,13 @@ def create_base_model(mfl, as_fullblock, input_model_entry):
         input_res,
         move_est_close_to_bounds=True,
     )
-    base_model = transform_into_search_space(base_model, mfl, force_optional=True)
+    base_model = transform_into_search_space(base_model, mfl.iiv, type='iiv', force_optional=True)
+    base_model = transform_into_search_space(
+        base_model, mfl.covariance, type='covariance', force_optional=False
+    )
     if as_fullblock:
-        base_model = create_joint_distribution(base_model, individual_estimates=input_res)
+        ies = input_res.individual_estimates
+        base_model = create_joint_distribution(base_model, individual_estimates=ies)
     base_mfl = get_model_features(base_model)
     description = algorithms.create_description_mfl(base_mfl, type='iiv')
     base_model = base_model.replace(name='base', description=description)
