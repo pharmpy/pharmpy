@@ -1789,7 +1789,7 @@ class Compartment(CompartmentBase):
         cls,
         name: str,
         amount: Optional[TExpr] = None,
-        doses: tuple[Dose, ...] = tuple(),
+        doses: Sequence[Dose] = tuple(),
         input: TExpr = Expr.integer(0),
         lag_time: TExpr = Expr.integer(0),
         bioavailability: TExpr = Expr.integer(1),
