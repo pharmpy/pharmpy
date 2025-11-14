@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import re
 import warnings
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 import pharmpy.modeling as modeling
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.immutable import cache_method_no_args
 from pharmpy.internals.math import nearest_positive_semidefinite
 from pharmpy.model import ExecutionSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
@@ -20,6 +22,306 @@ from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults, SimulationResults
 
 from .results_file import NONMEMResultsFile
+
+
+@dataclass(frozen=True)
+class Tables:
+    residuals: pd.DataFrame
+    predictions: pd.DataFrame
+    derivatives: pd.DataFrame
+
+
+@dataclass(frozen=True)
+class Individuals:
+    ofv: Optional[pd.Series]
+    estimates: Optional[pd.DataFrame]
+    estimates_covariance: Optional[pd.Series]
+
+
+@dataclass(frozen=True)
+class Iterations:
+    table_numbers: list[int | None]
+    final_ofv: float
+    ofv: pd.Series
+    final_pe: pd.Series
+    sdcorr: pd.Series
+    pe: pd.DataFrame
+    ses: pd.Series
+    ses_sdcorr: pd.Series
+    cov_abort: bool
+
+
+@dataclass(frozen=True)
+class Status:
+    runtime_total: float | None
+    log_likelihood: float
+    covstatus: bool | None
+    covstatus_table_number: int | None
+    minimization_successful: list[bool]
+    function_evaluations: list[int]
+    significant_digits: list[int]
+    termination_cause: list[Any]
+    estimation_runtime: list[float]
+    estimate_near_boundary: list[bool]
+    log: Log | None
+    est_table_numbers: list[int | None]
+
+
+@dataclass(frozen=True)
+class Gradient:
+    all_iterations: Optional[pd.DataFrame]
+    final_is_zero: Optional[bool]
+    final_iteration: Optional[pd.Series]
+
+
+@dataclass(frozen=True)
+class Covariance:
+    cov: pd.DataFrame
+    cor: pd.DataFrame
+    coi: pd.DataFrame
+    ses: pd.Series
+
+
+@dataclass
+class ModelfitResultsProxy:
+    path: Path
+    control_stream: NMTranControlStream
+    name_map: dict[str, str]
+    model: Model
+    strict: bool = False
+    subproblem: Optional[int] = None
+    log: Optional[Log] = None
+
+    @property
+    @cache_method_no_args
+    def iterations(self):
+        path = self.path
+
+        ext_path = path.with_suffix('.ext')
+
+        try:
+            ext_tables = NONMEMTableFile(ext_path)
+        except FileNotFoundError:
+            msg = f"Couldn't find NONMEM .ext-file at {ext_path}"
+            if self.log is not None:
+                self.log = self.log.log_error(msg)
+            raise FileNotFoundError(msg)
+        except ValueError:
+            if self.log is not None:
+                self.log = self.log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
+            raise
+
+        for table in ext_tables:
+            try:
+                table.data_frame
+            except ValueError:
+                if self.log is not None:
+                    self.log = self.log.log_error(
+                        f"Broken table in ext-file {path.with_suffix('.ext')}, "
+                        f"table no. {table.number}"
+                    )
+
+        control_stream = self.control_stream
+        name_map = self.name_map
+        subproblem = self.subproblem
+        model = self.model
+        parameters = model.parameters
+        return _parse_ext(control_stream, name_map, ext_tables, subproblem, parameters)
+
+    @property
+    @cache_method_no_args
+    def status(self):
+        model = self.model
+        execution_steps = model.execution_steps
+        path = self.path
+        log = self.log
+        status = _parse_lst(len(execution_steps), path, self.iterations.table_numbers, log)
+        self.log = status.log
+        return status
+
+    @property
+    @cache_method_no_args
+    def gradient(self):
+        path = self.path
+        control_stream = self.control_stream
+        name_map = self.name_map
+        model = self.model
+        parameters = model.parameters
+        subproblem = self.subproblem
+
+        return _parse_grd(path, control_stream, name_map, parameters, subproblem)
+
+    @property
+    @cache_method_no_args
+    def last_estimation_index(self):
+        model = self.model
+        execution_steps = model.execution_steps
+        return _get_last_est(execution_steps)
+
+    @property
+    @cache_method_no_args
+    def evaluation(self):
+        model = self.model
+        execution_steps = model.execution_steps
+        return _parse_evaluation(execution_steps)
+
+    @property
+    @cache_method_no_args
+    def relative_standard_errors(self) -> Optional[pd.Series]:
+        return _calculate_relative_standard_errors(self.iterations.final_pe, self.iterations.ses)
+
+    @property
+    @cache_method_no_args
+    def _minimization_successful(self) -> list[bool]:
+        return override_minimization_successful(
+            self.status.minimization_successful, self.iterations.pe
+        )
+
+    @property
+    @cache_method_no_args
+    def minimization_successful(self) -> bool:
+        return self._minimization_successful[self.last_estimation_index]
+
+    @property
+    @cache_method_no_args
+    def estimation_steps(self):
+        if self.status.est_table_numbers:
+            return self.status.est_table_numbers
+        else:
+            model = self.model
+            execution_steps = model.execution_steps
+            return list(range(1, len(execution_steps) + 1))
+
+    @property
+    @cache_method_no_args
+    def minimization_successful_iterations(self) -> pd.Series:
+        return pd.Series(
+            self._minimization_successful,
+            index=self.estimation_steps,
+            name='minimization_successful',
+        )
+
+    @property
+    @cache_method_no_args
+    def estimation_runtime_iterations(self) -> pd.Series:
+        estimation_runtime = self.status.estimation_runtime
+        return pd.Series(estimation_runtime, index=self.estimation_steps, name='estimation_runtime')
+
+    @property
+    @cache_method_no_args
+    def individuals(self):
+        path = self.path
+        control_stream = self.control_stream
+        name_map = self.name_map
+        model = self.model
+        etas = model.random_variables.etas
+        final_pe = self.iterations.final_pe
+        subproblem = self.subproblem
+        return _parse_phi(path, control_stream, name_map, etas, model, final_pe, subproblem)
+
+    @property
+    @cache_method_no_args
+    def tables(self):
+        model = self.model
+        path = self.path
+        control_stream = self.control_stream
+        table_df = _parse_tables(
+            model, path, control_stream, netas=len(model.random_variables.etas.names)
+        )  # $TABLEs
+        residuals = _parse_residuals(table_df)
+        predictions = _parse_predictions(table_df)
+        derivatives = _parse_derivatives(table_df, model)
+        return Tables(residuals=residuals, predictions=predictions, derivatives=derivatives)
+
+    @property
+    @cache_method_no_args
+    def covariance(self):
+        path = self.path
+        control_stream = self.control_stream
+        name_map = self.name_map
+
+        if (
+            self.status.covstatus
+            and self.iterations.ses is not None
+            and not self.iterations.cov_abort
+        ):
+            cov = _parse_matrix(
+                path.with_suffix(".cov"), control_stream, name_map, self.iterations.table_numbers
+            )
+            cor = _parse_matrix(
+                path.with_suffix(".cor"), control_stream, name_map, self.iterations.table_numbers
+            )
+            if cor is not None:
+                np.fill_diagonal(cor.values, 1)
+            coi = _parse_matrix(
+                path.with_suffix(".coi"), control_stream, name_map, self.iterations.table_numbers
+            )
+        else:
+            cov, cor, coi = None, None, None
+
+        cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, self.iterations.ses)
+        if cov is not None:
+            cov = nearest_positive_semidefinite(cov)
+
+        return Covariance(cov, cor, coi, ses)
+
+    @property
+    @cache_method_no_args
+    def termination_cause_iterations(self) -> Optional[pd.Series]:
+        return pd.Series(
+            self.status.termination_cause, index=self.estimation_steps, name='termination_cause'
+        )
+
+    @property
+    @cache_method_no_args
+    def function_evaluations_iterations(self) -> Optional[pd.Series]:
+        return pd.Series(
+            self.status.function_evaluations,
+            index=self.estimation_steps,
+            name='function_evaluations',
+        )
+
+    @property
+    @cache_method_no_args
+    def significant_digits_iterations(self) -> Optional[pd.Series]:
+        return pd.Series(
+            self.status.significant_digits, index=self.estimation_steps, name='significant_digits'
+        )
+
+    @property
+    @cache_method_no_args
+    def covstep_successful(self) -> Optional[bool]:
+        model = self.model
+        if (
+            not model.execution_steps
+            or model.execution_steps[-1].parameter_uncertainty_method is None
+        ):
+            return None
+        elif self.status.covstatus:
+            return True
+        else:
+            return False
+
+    @property
+    @cache_method_no_args
+    def warnings(self) -> Optional[list[str]]:
+        warnings = []
+        if any(self.status.estimate_near_boundary):
+            warnings.append('estimate_near_boundary')
+        if self.gradient.final_is_zero:
+            warnings.append('final_zero_gradient')
+
+        return warnings
+
+    @property
+    @cache_method_no_args
+    def individual_eta_samples(self) -> Optional[pd.DataFrame]:
+        path = self.path
+        model = self.model
+        etas = model.random_variables.etas
+        subproblem = self.subproblem
+
+        return _parse_ets(path, etas, subproblem)
 
 
 def _parse_modelfit_results(
@@ -36,161 +338,67 @@ def _parse_modelfit_results(
 
     path = Path(path)
 
-    execution_steps = model.execution_steps
-    parameters = model.parameters
-    etas = model.random_variables.etas
-
-    log = Log()
-    ext_path = path.with_suffix('.ext')
-    if not ext_path.is_file():
-        msg = f"Couldn't find NONMEM .ext-file at {ext_path}"
-        log = log.log_error(msg)
-        if strict:
-            raise FileNotFoundError(msg)
-        return create_failed_results(model, log)
+    proxy = ModelfitResultsProxy(
+        path=path,
+        control_stream=control_stream,
+        name_map=name_map,
+        model=model,
+        strict=strict,
+        subproblem=subproblem,
+        log=Log(),
+    )
 
     try:
-        try:
-            ext_tables = NONMEMTableFile(ext_path)
-        except ValueError:
-            log = log.log_error(f"Broken ext-file {path.with_suffix('.ext')}")
-            return create_failed_results(model, log)
-
-        for table in ext_tables:
-            try:
-                table.data_frame
-            except ValueError:
-                log = log.log_error(
-                    f"Broken table in ext-file {path.with_suffix('.ext')}, "
-                    f"table no. {table.number}"
-                )
-    except (FileNotFoundError, OSError):
-        # FIXME: Can this still happen?
+        proxy.iterations
+    except FileNotFoundError:
+        if strict:
+            raise
+        else:
+            return create_failed_results(model, proxy.log)
+    except OSError:
         return None
-
-    (
-        table_numbers,
-        final_ofv,
-        ofv_iterations,
-        final_pe,
-        sdcorr,
-        pe_iterations,
-        ses,
-        ses_sdcorr,
-        cov_abort,
-    ) = _parse_ext(control_stream, name_map, ext_tables, subproblem, parameters)
-
-    table_df = _parse_tables(
-        model, path, control_stream, netas=len(model.random_variables.etas.names)
-    )  # $TABLEs
-    residuals = _parse_residuals(table_df)
-    predictions = _parse_predictions(table_df)
-    derivatives = _parse_derivatives(table_df, model)
-    iofv, ie, iec = _parse_phi(path, control_stream, name_map, etas, model, final_pe, subproblem)
-    gradients_iterations, final_zero_gradient, gradients = _parse_grd(
-        path, control_stream, name_map, parameters, subproblem
-    )
-    rse = _calculate_relative_standard_errors(final_pe, ses)
-    (
-        runtime_total,
-        log_likelihood,
-        covstatus,
-        covstatus_table_number,
-        minimization_successful,
-        function_evaluations,
-        significant_digits,
-        termination_cause,
-        estimation_runtime,
-        estimate_near_boundary,
-        log,
-        est_table_numbers,
-    ) = _parse_lst(len(execution_steps), path, table_numbers, log)
-
-    if est_table_numbers:
-        eststeps = est_table_numbers
-    else:
-        eststeps = list(range(1, len(execution_steps) + 1))
-    last_est_ind = _get_last_est(execution_steps)
-
-    minimization_successful = override_minimization_successful(
-        minimization_successful, pe_iterations
-    )
-
-    minsucc_iters = pd.Series(
-        minimization_successful, index=eststeps, name='minimization_successful'
-    )
-    esttime_iters = pd.Series(estimation_runtime, index=eststeps, name='estimation_runtime')
-    funcevals_iters = pd.Series(function_evaluations, index=eststeps, name='function_evaluations')
-    termcause_iters = pd.Series(termination_cause, index=eststeps, name='termination_cause')
-    sigdigs_iters = pd.Series(significant_digits, index=eststeps, name='significant_digits')
-
-    if covstatus and ses is not None and not cov_abort:
-        cov = _parse_matrix(path.with_suffix(".cov"), control_stream, name_map, table_numbers)
-        cor = _parse_matrix(path.with_suffix(".cor"), control_stream, name_map, table_numbers)
-        if cor is not None:
-            np.fill_diagonal(cor.values, 1)
-        coi = _parse_matrix(path.with_suffix(".coi"), control_stream, name_map, table_numbers)
-    else:
-        cov, cor, coi = None, None, None
-
-    cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, ses)
-    if cov is not None:
-        cov = nearest_positive_semidefinite(cov)
-
-    evaluation = _parse_evaluation(execution_steps)
-
-    if not model.execution_steps or model.execution_steps[-1].parameter_uncertainty_method is None:
-        covstep_successful = None
-    elif covstatus:
-        covstep_successful = True
-    else:
-        covstep_successful = False
-
-    warnings = []
-    if any(estimate_near_boundary):
-        warnings.append('estimate_near_boundary')
-    if final_zero_gradient:
-        warnings.append('final_zero_gradient')
-
-    indetas = _parse_ets(path, etas, subproblem)
+    except ValueError:
+        return create_failed_results(model, proxy.log)
 
     res = ModelfitResults(
-        minimization_successful=minimization_successful[last_est_ind],
-        minimization_successful_iterations=minsucc_iters,
-        estimation_runtime=estimation_runtime[last_est_ind],
-        estimation_runtime_iterations=esttime_iters,
-        function_evaluations=function_evaluations[last_est_ind],
-        function_evaluations_iterations=funcevals_iters,
-        termination_cause=termination_cause[last_est_ind],
-        termination_cause_iterations=termcause_iters,
-        significant_digits=significant_digits[-1],
-        significant_digits_iterations=sigdigs_iters,
-        relative_standard_errors=rse,
-        individual_estimates=ie,
-        individual_estimates_covariance=iec,
-        runtime_total=runtime_total,
-        log_likelihood=log_likelihood,
-        covariance_matrix=cov,
-        correlation_matrix=cor,
-        precision_matrix=coi,
-        standard_errors=ses,
-        standard_errors_sdcorr=ses_sdcorr,
-        individual_ofv=iofv,
-        parameter_estimates=final_pe,
-        parameter_estimates_sdcorr=sdcorr,
-        parameter_estimates_iterations=pe_iterations,
-        ofv=final_ofv,
-        ofv_iterations=ofv_iterations,
-        predictions=predictions,
-        residuals=residuals,
-        derivatives=derivatives,
-        evaluation=evaluation,
-        log=log,
-        covstep_successful=covstep_successful,
-        gradients=gradients,
-        gradients_iterations=gradients_iterations,
-        warnings=warnings,
-        individual_eta_samples=indetas,
+        minimization_successful=proxy.minimization_successful,
+        minimization_successful_iterations=proxy.minimization_successful_iterations,
+        estimation_runtime=proxy.status.estimation_runtime[proxy.last_estimation_index],
+        estimation_runtime_iterations=proxy.estimation_runtime_iterations,
+        function_evaluations=proxy.status.function_evaluations[proxy.last_estimation_index],
+        function_evaluations_iterations=proxy.function_evaluations_iterations,
+        termination_cause=proxy.status.termination_cause[proxy.last_estimation_index],
+        termination_cause_iterations=proxy.termination_cause_iterations,
+        significant_digits=proxy.status.significant_digits[-1],
+        significant_digits_iterations=proxy.significant_digits_iterations,
+        relative_standard_errors=proxy.relative_standard_errors,
+        individual_estimates=proxy.individuals.estimates,
+        individual_estimates_covariance=proxy.individuals.estimates_covariance,
+        runtime_total=proxy.status.runtime_total,
+        log_likelihood=proxy.status.log_likelihood,
+        covariance_matrix=proxy.covariance.cov,
+        correlation_matrix=proxy.covariance.cor,
+        precision_matrix=proxy.covariance.coi,
+        standard_errors=proxy.covariance.ses,
+        standard_errors_sdcorr=proxy.iterations.ses_sdcorr,
+        individual_ofv=proxy.individuals.ofv,
+        parameter_estimates=proxy.iterations.final_pe,
+        parameter_estimates_sdcorr=proxy.iterations.sdcorr,
+        parameter_estimates_iterations=proxy.iterations.pe,
+        ofv=proxy.iterations.final_ofv,
+        ofv_iterations=proxy.iterations.ofv,
+        predictions=proxy.tables.predictions,
+        residuals=proxy.tables.residuals,
+        derivatives=proxy.tables.derivatives,
+        evaluation=proxy.evaluation,
+        covstep_successful=proxy.covstep_successful,
+        gradients=proxy.gradient.final_iteration,
+        gradients_iterations=proxy.gradient.all_iterations,
+        warnings=proxy.warnings,
+        individual_eta_samples=proxy.individual_eta_samples,
+        # NOTE: `proxy.log` is extracted last because other
+        #       property extractions can update `proxy.log`.
+        log=proxy.log,
     )
     return res
 
@@ -243,7 +451,7 @@ def _empty_lst_results(n: int, log):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
     none_vec = [None] * n
-    return (
+    return Status(
         None,
         np.nan,
         False,
@@ -259,7 +467,7 @@ def _empty_lst_results(n: int, log):
     )
 
 
-def _parse_lst(n: int, path: Path, table_numbers, log: Log):
+def _parse_lst(n: int, path: Path, table_numbers: list[int | None], log: Log | None):
     try:
         rfile = NONMEMResultsFile(path.with_suffix('.lst'), log=log)
     except OSError:
@@ -277,6 +485,8 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
             if "OPTIMALITY" not in rfile.table[table_number]['METH']:
                 log_likelihood_table_number = table_number
                 break
+        else:
+            log_likelihood_table_number = None
     except (KeyError, FileNotFoundError):
         log_likelihood_table_number = None
 
@@ -286,15 +496,16 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         log_likelihood = np.nan
 
     covstatus = rfile.covariance_status(covstatus_table_number)['covariance_step_ok']
+    assert covstatus is None or isinstance(covstatus, bool)
 
     if log_likelihood_table_number is not None:
-        est_table_numbers = [
+        est_table_numbers: list[int | None] = [
             table_number
             for table_number in table_numbers
             if table_number <= log_likelihood_table_number
         ]
     else:
-        est_table_numbers = [table_number for table_number in table_numbers]
+        est_table_numbers: list[int | None] = [table_number for table_number in table_numbers]
 
     (
         minimization_successful,
@@ -305,7 +516,7 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
         estimate_near_boundary,
     ) = parse_estimation_status(rfile, est_table_numbers)
 
-    return (
+    return Status(
         runtime_total,
         log_likelihood,
         covstatus,
@@ -321,7 +532,7 @@ def _parse_lst(n: int, path: Path, table_numbers, log: Log):
     )
 
 
-def parse_estimation_status(results_file, table_numbers):
+def parse_estimation_status(results_file: NONMEMResultsFile, table_numbers: list[int | None]):
     minimization_successful = []
     function_evaluations = []
     significant_digits = []
@@ -329,10 +540,7 @@ def parse_estimation_status(results_file, table_numbers):
     estimation_runtime = []
     estimate_near_boundary = []
     for tabno in table_numbers:
-        if results_file is not None:
-            estimation_status = results_file.estimation_status(tabno)
-        else:
-            estimation_status = NONMEMResultsFile.unknown_termination()
+        estimation_status = results_file.estimation_status(tabno)
         minimization_successful.append(estimation_status['minimization_successful'])
         function_evaluations.append(estimation_status['function_evaluations'])
         significant_digits.append(estimation_status['significant_digits'])
@@ -382,7 +590,7 @@ def _parse_phi(
     try:
         phi_tables = NONMEMTableFile(path.with_suffix('.phi'))
     except FileNotFoundError:
-        return None, None, None
+        return Individuals(None, None, None)
     if subproblem is None:
         table = None
 
@@ -394,7 +602,7 @@ def _parse_phi(
         table = phi_tables.tables[subproblem - 1]
 
     if table is None:
-        return None, None, None
+        return Individuals(None, None, None)
 
     assert isinstance(table, PhiTable)
 
@@ -412,9 +620,9 @@ def _parse_phi(
             for matrix in matrix_array
         ]
         covs = pd.Series(etc_frames, index=ids, dtype='object')
-        return individual_ofv, individual_estimates, covs
+        return Individuals(individual_ofv, individual_estimates, covs)
     except KeyError:
-        return None, None, None
+        return Individuals(None, None, None)
 
 
 def _parse_individual_estimates(model, pe, table, rv_names):
@@ -453,25 +661,28 @@ def _parse_grd(
     try:
         grd_tables = NONMEMTableFile(path.with_suffix('.grd'))
     except FileNotFoundError:
-        return None, None, None
+        return Gradient(None, None, None)
     if subproblem is None:
         table = grd_tables.tables[-1]
     else:
         table = grd_tables.tables[subproblem - 1]
 
     if table is None:
-        return None, None, None
+        return Gradient(None, None, None)
 
     gradients_table = table.data_frame
     old_col_names = table.data_frame.columns.to_list()[1::]
     param_names = [name for name in list(name_map.values()) if name in parameters.names]
     new_col_names = {old_col_names[i]: param_names[i] for i in range(len(old_col_names))}
     gradients_table = gradients_table.rename(columns=new_col_names)
-    last_row = gradients_table.tail(1)
-    last_row = last_row.drop(columns=['ITERATION'])
-    last_row = last_row.squeeze(axis=0).rename('gradients')
+    _last_row = gradients_table.tail(1)
+    _last_row = _last_row.drop(columns=['ITERATION'])
+    last_row = _last_row.squeeze(axis=0)
+    assert isinstance(last_row, pd.Series)
+    last_row = last_row.rename('gradients')
     final_zero_gradient = (last_row == 0).any() or last_row.isnull().any()
-    return gradients_table, final_zero_gradient, last_row
+    assert isinstance(final_zero_gradient, np.bool)
+    return Gradient(gradients_table, final_zero_gradient, last_row)
 
 
 def _parse_ets(path, etas, subproblem):
@@ -566,6 +777,8 @@ def _parse_tables(
             # are filtered when parsing the dataset), but IDs still exist in results.
             # See https://github.com/pharmpy/pharmpy/pull/4106
             df = df.iloc[dataset.index]
+
+    assert isinstance(df, pd.DataFrame)
     return df
 
 
@@ -662,7 +875,7 @@ def _parse_ext(
     ses, ses_sdcorr, cov_abort = _parse_standard_errors(
         control_stream, name_map, ext_tables, parameters, final_pe
     )
-    return (
+    return Iterations(
         table_numbers,
         final_ofv,
         ofv_iterations,
@@ -676,7 +889,7 @@ def _parse_ext(
 
 
 def _parse_table_numbers(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
-    table_numbers = []
+    table_numbers: list[int | None] = []
     for table in ext_tables.tables:
         if subproblem and table.subproblem != subproblem:
             continue
