@@ -12,6 +12,10 @@ New features
 * Add support for Python 3.14
 * Add :code:`modeling.get_column_name`
 * Add :code:`modeling.create_basic_kpd_model`
+* Experimental support of MFL for IIVSearch and in AMD
+* Add option :code:`keep_fixed` to :code:`modeling.remove_covariate_effect`
+* Support using parameter names as input to :code:`modeling.create_joint_distribution` and :code:`modeling.split_joint_distribution`
+* Add QA tool
 
 Changes
 =======
@@ -29,6 +33,8 @@ Bugfixes
 * Fix crash in :code:`get_model_covariates` for models with no dosing
 * Fix crash in :code:`get_cmt` for models with no dosing
 * Handle differences in case between symbol names in $INPUT and symbol names in code records in NONMEM models
+* Fix bug when removing covariate effects on parameters with allometry
+* Add missing carriage return to $SIZES in NONMEM models
 
 .. _1.10.0:
 
