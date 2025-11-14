@@ -1263,25 +1263,25 @@ def new_advan_trans(model: Model):
     elif oldtrans == 'TRANS1':
         trans = oldtrans
     elif oldtrans == 'TRANS2':
-        if advan in ['ADVAN1', 'ADVAN2']:
+        if advan in {'ADVAN1', 'ADVAN2'}:
             trans = oldtrans
-        elif advan in ['ADVAN3', 'ADVAN4', 'ADVAN11', 'ADVAN12']:
+        elif advan in {'ADVAN3', 'ADVAN4', 'ADVAN11', 'ADVAN12'}:
             trans = 'TRANS4'
         else:
             trans = 'TRANS1'
     elif oldtrans == 'TRANS3':
-        if advan in ['ADVAN3', 'ADVAN4']:
+        if advan in {'ADVAN3', 'ADVAN4'}:
             trans = oldtrans
-        elif advan in ['ADVAN11', 'ADVAN12']:
+        elif advan in {'ADVAN11', 'ADVAN12'}:
             trans = 'TRANS4'
-        elif advan in ['ADVAN1', 'ADVAN2']:
+        elif advan in {'ADVAN1', 'ADVAN2'}:
             trans = 'TRANS2'
         else:
             trans = 'TRANS1'
     elif oldtrans == 'TRANS4':
-        if advan in ['ADVAN3', 'ADVAN4', 'ADVAN11', 'ADVAN12']:
+        if advan in {'ADVAN3', 'ADVAN4', 'ADVAN11', 'ADVAN12'}:
             trans = oldtrans
-        elif advan in ['ADVAN1', 'ADVAN2']:
+        elif advan in {'ADVAN1', 'ADVAN2'}:
             trans = 'TRANS2'
         else:
             trans = 'TRANS1'
@@ -1290,7 +1290,7 @@ def new_advan_trans(model: Model):
         elimination_rate = odes.get_flow(central, output)
         num, den = elimination_rate.as_numer_denom()
         if num.is_symbol() and den.is_symbol():
-            if advan in ['ADVAN1', 'ADVAN2']:
+            if advan in {'ADVAN1', 'ADVAN2'}:
                 trans = 'TRANS2'
             else:
                 trans = 'TRANS4'
