@@ -478,13 +478,13 @@ def run_amd_task(
             else:
                 run_name = 'iivsearch'
                 func = _subfunc_iiv(
-                    search_space=iiv_features,
                     iiv_strategy=iiv_strategy,
                     strictness=strictness,
                     E=_E,
                     parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                     dir_name="iivsearch",
+                    search_space=iiv_features,
                 )
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
@@ -981,7 +981,7 @@ def _subfunc_structsearch_tmdd(
 
 
 def _subfunc_iiv(
-    search_space, iiv_strategy, strictness, E, parameter_uncertainty_method, ctx, dir_name
+    iiv_strategy, strictness, E, parameter_uncertainty_method, ctx, dir_name, search_space=None
 ) -> SubFunc:
     def _run_iiv(model, modelfit_results):
         if E and 'iivsearch' in E.keys():
