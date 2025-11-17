@@ -2,6 +2,16 @@
 News
 ====
 
+Pharmpy and pharmr 1.11.0 released
+----------------------------------
+
+*2025-11-17* --- Pharmpy 1.11.0 and pharmr 1.11.0 are now available. The highlights of the release are:
+
+* Support for Python 3.14
+* Multiple new modeling functions
+* QA tool as a partial port from PsN
+* New experimental and incomplete tool "pdsearch" for building pure PD-models
+ 
 Pharmpy and pharmr 1.10.0 released
 ----------------------------------
 
