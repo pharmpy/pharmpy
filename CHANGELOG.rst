@@ -1,13 +1,15 @@
-next version
-------------
+1.11.0 (2025-11-17)
+-------------------
 
 New features
 ============
 
 * Add parameter scatter matrix plot to bootstrap
+* Add :code:`modeling.cholesky_decompose`
 * Add :code:`modeling.insert_ebes_into_dataset`
 * Add :code:`modeling.add_placebo_model`
 * Add :code:`modeling.binarize_dataset`
+* Add experimental :code:`modeling.create_basic_kpd_model`
 * Add option :code:`exclude_reference_model` to the ModelRank tool
 * Add support for Python 3.14
 * Add :code:`modeling.get_column_name`
@@ -15,7 +17,11 @@ New features
 * Experimental support of MFL for IIVSearch and in AMD
 * Add option :code:`keep_fixed` to :code:`modeling.remove_covariate_effect`
 * Support using parameter names as input to :code:`modeling.create_joint_distribution` and :code:`modeling.split_joint_distribution`
-* Add QA tool
+* Add QA tool (parts of the parametric variability section from qa in PsN)
+* Experimental vpc for FREM models added
+* Add experimental tool "pdsearch"
+* NONMEM model and dataset parsing optimizations
+* Better handling of differences in case in $INPUT and $PK for NONMEM models
 
 Changes
 =======
@@ -35,6 +41,7 @@ Bugfixes
 * Handle differences in case between symbol names in $INPUT and symbol names in code records in NONMEM models
 * Fix bug when removing covariate effects on parameters with allometry
 * Add missing carriage return to $SIZES in NONMEM models
+* Fix crash when reading NONMEM models with FIRSTONLY in $TABLE
 
 .. _1.10.0:
 
