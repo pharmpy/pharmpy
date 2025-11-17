@@ -29,6 +29,7 @@ from pharmpy.tools.iivsearch.algorithms import (
     create_no_of_etas_candidate_entry,
     get_covariance_combinations,
     get_eta_names,
+    get_iiv_combinations,
     td_exhaustive_block_structure,
     td_exhaustive_no_of_etas,
 )
@@ -373,16 +374,34 @@ def test_create_description_mfl(mfl, type, expected):
 @pytest.mark.parametrize(
     'mfl, base_features, expected',
     [
-        ('COVARIANCE(IIV,[CL,MAT,VC])', 'COVARIANCE(IIV,[CL,MAT,VC])', 4),
-        ('COVARIANCE(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC,MDT])', 11),
-        ('COVARIANCE(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC])', 11),
+        ('IIV(CL,EXP);IIV?([MAT,VC],EXP)', 'IIV([CL,MAT,VC],EXP)', 3),
+        ('IIV?([CL,MAT,VC],EXP)', 'IIV([CL,MAT,VC],EXP)', 7),
+        ('IIV?([CL,MAT,VC],EXP)', [], 7),
+        ('IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', 'IIV([CL,MAT,VC],EXP)', 8),
+    ],
+)
+def test_get_iiv_combinations(mfl, base_features, expected):
+    mfl = ModelFeatures.create(mfl)
+    mfl_base = ModelFeatures.create(base_features)
+    combinations = get_iiv_combinations(mfl, mfl_base)
+    assert len(combinations) == expected
+    assert mfl_base not in combinations
+
+
+@pytest.mark.parametrize(
+    'mfl, base_features, expected',
+    [
+        ('COVARIANCE?(IIV,[CL,MAT,VC])', 'COVARIANCE(IIV,[CL,MAT,VC])', 4),
+        ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC,MDT])', 11),
+        ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC])', 11),
+        ('COVARIANCE?(IIV,[CL,MAT,VC])', [], 4),
     ],
 )
 def test_get_covariance_combinations(mfl, base_features, expected):
     mfl = ModelFeatures.create(mfl)
     mfl_base = ModelFeatures.create(base_features)
     combinations = get_covariance_combinations(mfl, mfl_base)
-    assert tuple() in combinations
+    assert tuple() in combinations if base_features else tuple() not in combinations
     assert len(combinations) == expected
     assert mfl_base not in combinations
 

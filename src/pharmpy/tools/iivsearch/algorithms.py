@@ -31,34 +31,16 @@ from pharmpy.workflows.results import mfr
 def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
     wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
 
-    base_model = base_model_entry.model
-    base_features = get_model_features(base_model, type='iiv')
+    base_features = get_model_features(base_model_entry.model, type='iiv')
+    mfl = expand_model_features(base_model_entry.model, mfl.iiv)
+    combinations = get_iiv_combinations(mfl, base_features)
 
-    mfl = expand_model_features(base_model, mfl.iiv)
-    mfl_optional = mfl.filter(filter_on='optional')
-    mfl_forced = mfl - mfl_optional
-    params_forced = {feature.parameter for feature in mfl_forced}
-
-    combinations = ((),) + tuple(non_empty_subsets(mfl_optional))
-    combinations = sorted(combinations, key=len, reverse=True)
-
-    model_index = index_offset + 1
-    for features in combinations:
-        if params_forced.intersection(feature.parameter for feature in features):
-            continue
-
-        mf = mfl_forced + features
-        if not mf.force_optional().is_single_model():
-            continue
-        if mf.force_optional() == base_features:
-            continue
-
-        model_name = f'iivsearch_run{model_index}'
+    for i, features in enumerate(combinations, 1):
+        model_name = f'iivsearch_run{index_offset + i}'
         task_candidate_entry = Task(
-            f'create_{model_name}', create_candidate, model_name, mf, 'iiv', base_model_entry
+            f'create_{model_name}', create_candidate, model_name, features, 'iiv', base_model_entry
         )
         wb.add_task(task_candidate_entry)
-        model_index += 1
 
     if len(wb.output_tasks) == 0:
         return None
@@ -78,11 +60,8 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
     base_model = base_model_entry.model
     base_model = base_model.replace(description=create_description(base_model))
     base_features = get_model_features(base_model, type='covariance')
-
     mfl = expand_model_features(base_model, mfl.covariance)
-    mfl_optional = mfl.filter(filter_on='optional')
-
-    combinations = get_covariance_combinations(mfl_optional, base_features)
+    combinations = get_covariance_combinations(mfl, base_features)
 
     for i, features in enumerate(combinations, 1):
         model_name = f'iivsearch_run{index_offset + i}'
@@ -106,7 +85,37 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
     return Workflow(wb)
 
 
+def get_iiv_combinations(mfl, base_features):
+    assert mfl.is_expanded()
+
+    mfl_optional = mfl.filter(filter_on='optional')
+    mfl_forced = mfl - mfl_optional
+    params_forced = {feature.parameter for feature in mfl_forced}
+
+    combinations = []
+    for subset in ((),) + tuple(non_empty_subsets(mfl_optional)):
+        mfl_subset = ModelFeatures.create(subset)
+        mfl_all = mfl_forced + mfl_subset
+
+        if params_forced.intersection(feature.parameter for feature in mfl_subset):
+            continue
+        if not mfl_all.force_optional().is_single_model():
+            continue
+        if mfl_all.force_optional() == base_features:
+            continue
+
+        combinations.append(mfl_all)
+
+    combinations = tuple(sorted(combinations, key=len, reverse=True))
+
+    return combinations
+
+
 def get_covariance_combinations(mfl, base_features):
+    assert mfl.is_expanded()
+
+    mfl = mfl.filter(filter_on='optional')
+
     combinations = []
     for subset in non_empty_subsets(mfl):
         mfl_subset = ModelFeatures.create(subset)
