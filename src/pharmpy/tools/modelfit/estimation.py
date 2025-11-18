@@ -4,6 +4,7 @@ from functools import partial
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine
+from pharmpy.deps.scipy import linalg
 from pharmpy.modeling import cleanup_model, get_thetas
 from pharmpy.tools.modelfit.evaluation import SymengineSubsEvaluator
 from pharmpy.tools.modelfit.input import check_input_model
@@ -161,6 +162,7 @@ def ofv_func(
     evaluator = SymengineSubsEvaluator()
     all_PRED = []
     all_RES = []
+    all_Ci_inv = []
 
     for curid in ids:
         curdf = df[df[idcol] == curid]
@@ -207,6 +209,7 @@ def ofv_func(
 
         all_PRED.append(PREDi)
         all_RES.append(RESi)
+        all_Ci_inv.append(Ci_inv)
 
     grad_scale = calculate_gradient_scale(
         theta_ucp,
@@ -227,6 +230,7 @@ def ofv_func(
         state.final_ofv = OFVsum
         state.final_PREDs = all_PRED
         state.final_RESs = all_RES
+        state.final_Ci_inv = all_Ci_inv
 
     return OFVsum, grad
 
@@ -261,9 +265,24 @@ def get_predictions(state, model):
 
 def get_residuals(state, model):
     requested_residuals = model.execution_steps[-1].residuals
+    d = {}
     if "RES" in requested_residuals:
         RES_array = np.concatenate(state.final_RESs)
-        residuals = pd.DataFrame({"RES": RES_array}, index=model.dataset.index)
+        d["RES"] = RES_array
+    if "WRES" in requested_residuals:
+        idcol = model.datainfo.id_column.name
+        dvcol = model.datainfo.dv_column.name
+        df = model.dataset
+        ids = df[idcol].unique()
+        # WRESi = Ci^-(1/2) * (DVi - PREDi)
+        final_WRESs = [
+            linalg.sqrtm(Ci_inv) @ (np.array(df[df[idcol] == curid][dvcol]) - PREDi)
+            for Ci_inv, PREDi, curid in zip(state.final_Ci_inv, state.final_PREDs, ids)
+        ]
+        WRES_array = np.concatenate(final_WRESs)
+        d['WRES'] = WRES_array
+    if d:
+        residuals = pd.DataFrame(d, index=model.dataset.index)
     else:
         residuals = None
     return residuals
