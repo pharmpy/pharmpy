@@ -69,13 +69,13 @@ jobs:
           cp dist/*.whl dist/*.tar.gz upload
 
       - name: Wait for main checks workflow to succeed
-        uses: ArcticLampyrid/action-wait-for-workflow@v1.0.1
+        uses: ArcticLampyrid/action-wait-for-workflow@v1.3.0
         with:
           workflow: main.yml
           sha: ${{ github.sha }}
 
       - name: Wait for integration tests workflow to succeed
-        uses: ArcticLampyrid/action-wait-for-workflow@v1.0.1
+        uses: ArcticLampyrid/action-wait-for-workflow@v1.3.0
         with:
           workflow: integration.yml
           sha: ${{ github.sha }}
