@@ -137,7 +137,7 @@ def test_evaluate_model(load_example_model_for_test):
 
 def test_minimal_model_estimation(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
-    model = set_estimation_step(model, 'FO', maximum_evaluations=99999)
+    model = set_estimation_step(model, 'FO', maximum_evaluations=99999, predictions=['PRED'])
     res = estimate(model)
     assert res.ofv == pytest.approx(2.5012262201375157)
     pe = res.parameter_estimates
@@ -145,3 +145,5 @@ def test_minimal_model_estimation(load_model_for_test, testdata):
     assert pe['OMEGA_1_1'] == pytest.approx(3.760446e-09)
     assert pe['SIGMA_1_1'] == pytest.approx(6.875007e-01)
     assert res.function_evaluations > 20
+
+    assert list(res.predictions['PRED']) == [1.749999754356455] * 4
