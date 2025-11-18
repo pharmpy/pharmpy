@@ -96,6 +96,7 @@ def init(model):
 
     state = EstimationState()
     state.parameter_symbols = parameter_symbols
+    state.final_ofv = float("inf")
 
     func = partial(
         ofv_func,
@@ -148,12 +149,6 @@ def ofv_func(
     theta = descale_thetas(theta_ucp, theta_scale)
     omega = descale_matrix(omega_ucp, omega_scale)
     sigma = descale_matrix(sigma_ucp, sigma_scale)
-
-    state.theta = theta
-    state.omega = omega
-    state.sigma = sigma
-
-    # print(theta, omega, sigma)
 
     theta_subs = {parameter_symbols[i]: value for i, value in enumerate(theta)}
     subs_eta_gradient = [deta.subs(theta_subs) for deta in symbolic_eta_gradient]
@@ -220,7 +215,12 @@ def ofv_func(
     )
     grad = gradsum * grad_scale
 
-    # print("OFV", OFVsum)
+    if OFVsum < state.final_ofv:
+        state.theta = theta
+        state.omega = omega
+        state.sigma = sigma
+        state.final_ofv = OFVsum
+
     return OFVsum, grad
 
 
