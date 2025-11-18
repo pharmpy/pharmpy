@@ -98,7 +98,7 @@ jobs:
         with:
           user: __token__
           password: ${{ secrets.PYPI_API_TOKEN }}
-          packages_dir: pharmpy/upload/
+          packages-dir: pharmpy/upload/
 
 
   trigger-pharmr-release:
