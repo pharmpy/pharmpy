@@ -160,6 +160,7 @@ def ofv_func(
 
     evaluator = SymengineSubsEvaluator()
     all_PRED = []
+    all_RES = []
 
     for curid in ids:
         curdf = df[df[idcol] == curid]
@@ -205,6 +206,7 @@ def ofv_func(
             gradsum[i] += grad_i
 
         all_PRED.append(PREDi)
+        all_RES.append(RESi)
 
     grad_scale = calculate_gradient_scale(
         theta_ucp,
@@ -224,6 +226,7 @@ def ofv_func(
         state.sigma = sigma
         state.final_ofv = OFVsum
         state.final_PREDs = all_PRED
+        state.final_RESs = all_RES
 
     return OFVsum, grad
 
@@ -256,6 +259,16 @@ def get_predictions(state, model):
     return predictions
 
 
+def get_residuals(state, model):
+    requested_residuals = model.execution_steps[-1].residuals
+    if "RES" in requested_residuals:
+        RES_array = np.concatenate(state.final_RESs)
+        residuals = pd.DataFrame({"RES": RES_array}, index=model.dataset.index)
+    else:
+        residuals = None
+    return residuals
+
+
 def extract_parameter_estimates_from_matrix(numeric, symbolic):
     values = []
     for row in range(symbolic.rows):
@@ -276,7 +289,6 @@ def estimate(model):
     end_time = time.time()
 
     parameter_estimates = get_parameter_estimates(state, model)
-    predictions = get_predictions(state, model)
 
     res = ModelfitResults(
         estimation_runtime=end_time - start_time,
@@ -284,7 +296,8 @@ def estimate(model):
         minimization_successful=optres.success,
         ofv=float(optres.fun),
         parameter_estimates=parameter_estimates,
-        predictions=predictions,
+        predictions=get_predictions(state, model),
+        residuals=get_residuals(state, model),
     )
     return res
 
