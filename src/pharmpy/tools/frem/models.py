@@ -49,7 +49,7 @@ def create_model3b(model1b, model3, model3_res, ncovs):
     model3b = set_initial_estimates(
         model3b, model3b.random_variables.nearest_valid_parameters(model3b.parameters.inits)
     )
-    model3b = fix_or_unfix_parameters(model3b, model1b.parameters.fix)
+    model3b = fix_or_unfix_parameters(model3b, model1b.parameters.fix, strict=False)
 
     if model3.initial_individual_estimates is not None:
         model3b = model3b.replace(initial_individual_estimates=ie)
