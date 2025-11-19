@@ -245,6 +245,13 @@ def test_forward():
     assert isinstance(expr.args[1], BooleanExpr)
 
 
+def test_count_if():
+    expr = Expr.count_if(Expr.symbol("AMT") > 0, Expr.symbol("ID"))
+    assert expr == Expr.function("count_if", ('AMT > 0', 'ID'))
+    assert isinstance(expr.args[0], BooleanExpr)
+    assert isinstance(expr.args[1], Expr)
+
+
 def test_loggamma():
     expr = Expr('x').loggamma()
     assert str(expr) == 'loggamma(x)'

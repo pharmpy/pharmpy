@@ -53,8 +53,13 @@ class Expr:
     @property
     def args(self) -> tuple[Expr | BooleanExpr, ...]:
         x = self._expr.args
-        if isinstance(self._expr, symengine.Function) and self.name == 'forward':
-            args = (Expr(x[0]), BooleanExpr(x[1]))
+        if isinstance(self._expr, symengine.Function):
+            if self.name == 'forward':
+                args = (Expr(x[0]), BooleanExpr(x[1]))
+            elif self.name == 'count_if':
+                args = (BooleanExpr(x[0]), Expr(x[1]))
+            else:
+                args = tuple(Expr(a) for a in x)
         else:
             args = tuple(Expr(a) for a in x)
         return args
@@ -311,6 +316,11 @@ class Expr:
     def forward(cls, value, condition):
         """Function to carry forward value at a certain condition"""
         return cls.function("forward", (value, condition))
+
+    @classmethod
+    def count_if(cls, condition, group):
+        """Function to increase and give count if condition is true"""
+        return cls.function("count_if", (condition, group))
 
     def __gt__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Gt(self._expr, other))
