@@ -148,7 +148,7 @@ def test_minimal_model_estimation(load_model_for_test, testdata):
     assert pe['SIGMA_1_1'] == pytest.approx(6.875007e-01)
     assert res.function_evaluations > 20
 
-    assert list(res.predictions['PRED']) == [1.749999754356455] * 4
+    assert list(res.predictions['PRED']) == pytest.approx([1.749999754356455] * 4)
     assert list(res.residuals['RES']) == pytest.approx(
         [
             -0.7499997543564549,
