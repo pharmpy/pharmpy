@@ -11,6 +11,8 @@ from .tree import replace_root_children
 
 def subs(expr: sympy.Expr, mapping: Mapping[Any, Any], simultaneous: bool = False) -> sympy.Expr:
     _mapping = xreplace_dict(mapping)
+    if not _mapping:
+        return expr
     if (simultaneous or _mapping_is_not_recursive(_mapping)) and all(
         map(_old_does_not_need_generic_subs, _mapping.keys())
     ):
