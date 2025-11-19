@@ -150,7 +150,7 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
 def run_drug_effect_models(
     context, treatment_variable, strictness, parameter_uncertainty_method, baseme
 ):
-    exprs = ("linear", "step")
+    exprs = ("linear", "step", "emax", "sigmoid")
     context.log_info(f"Running {len(exprs)} drug_effect models.")
 
     wb = WorkflowBuilder()
