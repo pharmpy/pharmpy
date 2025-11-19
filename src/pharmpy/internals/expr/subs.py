@@ -23,7 +23,7 @@ def subs(expr: sympy.Expr, mapping: Mapping[Any, Any], simultaneous: bool = Fals
     return expr.subs(_mapping, simultaneous=simultaneous)
 
 
-def xreplace_dict(dictlike) -> dict[Any, Any]:
+def xreplace_dict(dictlike: Mapping[Any, Any]) -> dict[Any, Any]:
     return {_sympify_old(key): _sympify_new(value) for key, value in dictlike.items()}
 
 
