@@ -149,15 +149,19 @@ def test_minimal_model_estimation(load_model_for_test, testdata):
     assert res.function_evaluations > 20
 
     assert list(res.predictions['PRED']) == [1.749999754356455] * 4
-    assert list(res.residuals['RES']) == [
-        -0.7499997543564549,
-        0.25000024564354506,
-        1.250000245643545,
-        -0.7499997543564549,
-    ]
-    assert list(res.residuals['WRES']) == [
-        -0.9045333004676049,
-        0.30151149736427413,
-        1.5075562918977805,
-        -0.9045333037659776,
-    ]
+    assert list(res.residuals['RES']) == pytest.approx(
+        [
+            -0.7499997543564549,
+            0.25000024564354506,
+            1.250000245643545,
+            -0.7499997543564549,
+        ]
+    )
+    assert list(res.residuals['WRES']) == pytest.approx(
+        [
+            -0.9045333004676049,
+            0.30151149736427413,
+            1.5075562918977805,
+            -0.9045333037659776,
+        ]
+    )
