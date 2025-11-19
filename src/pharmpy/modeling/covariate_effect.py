@@ -91,16 +91,17 @@ def _get_covariate_effect(model: Model, symbol, covariate):
         free_symbols = arg.free_symbols
         if any(eta in free_symbols for eta in etas):
             if Expr(arg).is_exp() and covariate in free_symbols:
-                skip = False
                 expression = arg
                 exp_terms = arg.args[0]
-                for a in exp_terms.args:
-                    if covariate not in a.free_symbols:
-                        expression = expression.subs(a, 0)
-                    else:
-                        # If both covariate and ETA in same term -> SKIP
-                        if any(eta in a.free_symbols for eta in etas):
-                            skip = True
+                assert isinstance(expression, sympy.Expr)
+                expression = subs(
+                    expression, {a: 0 for a in exp_terms.args if covariate not in a.free_symbols}
+                )
+                # If both covariate and ETA in same term -> SKIP
+                skip = any(
+                    covariate in a.free_symbols and any(eta in a.free_symbols for eta in etas)
+                    for a in exp_terms.args
+                )
                 if not skip:
                     check_covariate = True
         else:
@@ -124,9 +125,10 @@ def _get_covariate_effect(model: Model, symbol, covariate):
                 template.free_symbols,
                 key=lambda x: x.name,  # pyright: ignore [reportAttributeAccessIssue]
             )
-            for s in template_symbs:
-                wild_symbol = sympy.Wild(str(s))
-                template = template.subs({s: wild_symbol})
+            wild_symbols = {s: sympy.Wild(str(s)) for s in template_symbs}
+            assert isinstance(template, sympy.Expr)
+            template = subs(template, wild_symbols)
+            for s, wild_symbol in wild_symbols.items():
                 if str(s).startswith("theta"):
                     wild_dict["theta"].append(wild_symbol)
                 elif str(s).startswith("cov"):
