@@ -175,10 +175,12 @@ def expression_to_nmtran(expr, rvs=None, trans=None):
     return expr_str
 
 
-def nmtran_assignment_string(assignment: Assignment, defined_symbols: set[Expr], rvs, trans):
+def nmtran_assignment_string(
+    assignment: Assignment, defined_symbols: set[Expr], rvs, trans, record_name
+):
     expr = assignment.expression
     if expr.is_piecewise():
-        s = _translate_sympy_piecewise(assignment, defined_symbols, rvs, trans)
+        s = _translate_sympy_piecewise(assignment, defined_symbols, rvs, trans, record_name)
     elif re.search('sign', str(expr)):  # FIXME: Don't use re here
         s = _translate_sympy_sign(assignment)
     elif expr.is_function() and expr.name == 'forward':
@@ -234,19 +236,23 @@ def _translate_count_if(assignment, defined_symbols, rvs, trans):
     return s
 
 
-def _translate_sympy_piecewise(statement: Assignment, defined_symbols: set[Expr], rvs, trans):
+def _translate_sympy_piecewise(
+    statement: Assignment, defined_symbols: set[Expr], rvs, trans, record_name=None
+):
     expression = statement.expression._sympy_().args
     symbol = statement.symbol
-    # Did we (possibly) add the default in the piecewise with 0 or symbol?
-    has_added_else = expression[-1][1] is sympy.true and (  # pyright: ignore [reportIndexIssue]
-        expression[-1][0] == symbol  # pyright: ignore [reportIndexIssue]
-        or (
-            expression[-1][0] == 0  # pyright: ignore [reportIndexIssue]
-            and symbol not in defined_symbols
+    if record_name != "DES":
+        # In $DES we always want the 0 default
+        # Did we (possibly) add the default in the piecewise with 0 or symbol?
+        has_added_else = expression[-1][1] is sympy.true and (  # pyright: ignore [reportIndexIssue]
+            expression[-1][0] == symbol  # pyright: ignore [reportIndexIssue]
+            or (
+                expression[-1][0] == 0  # pyright: ignore [reportIndexIssue]
+                and symbol not in defined_symbols
+            )
         )
-    )
-    if has_added_else:
-        expression = expression[0:-1]
+        if has_added_else:
+            expression = expression[0:-1]
     has_else = expression[-1][1] is sympy.true  # pyright: ignore [reportIndexIssue]
 
     expressions, _ = zip(*expression)
@@ -637,7 +643,7 @@ class CodeRecord(Record):
         return CodeRecord(self.name, self.raw_name, new_root, index=new_index, statements=new)
 
     def _statement_to_nodes(self, defined_symbols: set, s: Assignment, rvs, trans):
-        statement_str = nmtran_assignment_string(s, defined_symbols, rvs, trans) + '\n'
+        statement_str = nmtran_assignment_string(s, defined_symbols, rvs, trans, self.name) + '\n'
         node_tree = CodeRecordParser(statement_str).root
         assert node_tree is not None
         statement_nodes = list(node_tree.subtrees('statement'))
