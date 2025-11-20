@@ -2390,6 +2390,7 @@ class Statements(Sequence, Immutable):
         """Create a graph of dependencies between statements"""
         graph = nx.DiGraph()
         for i in range(len(self) - 1, -1, -1):
+            graph.add_node(i)
             rhs = self[i].rhs_symbols
             for j in range(i - 1, -1, -1):
                 statement = self[j]
