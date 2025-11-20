@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     add_effect_compartment,
     add_indirect_effect,
     add_placebo_model,
+    create_basic_kpd_model,
     create_basic_pd_model,
     set_baseline_effect,
     set_direct_effect,
@@ -50,6 +51,26 @@ def test_set_direct_effect_on_conc_variable(load_model_for_test, testdata):
     _test_effect_models(model, 'linear', Expr.function('A_CENTRAL', 't') / Expr.symbol('VC'), False)
 
 
+@pytest.mark.parametrize(
+    'kpd_driver, pd_model',
+    [
+        ('ir', 'linear'),
+        ('ir', 'emax'),
+        ('ir', 'step'),
+    ],
+)
+def test_set_direct_effect_kpd(testdata, kpd_driver, pd_model):
+    dataset_path = testdata / 'nonmem' / 'pheno_pd.csv'
+    model = create_basic_kpd_model(dataset_path, driver=kpd_driver)
+    model = set_direct_effect(model, pd_model, variable='KPD')
+    if kpd_driver == 'ir':
+        x50_name = 'EDK_50'
+    else:
+        x50_name = 'A_50'
+
+    _test_effect_models(model, pd_model, Expr.symbol('KPD'), True, x50_name=x50_name, pkpd=False)
+
+
 def test_set_direct_effect_raises(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     with pytest.raises(ValueError):
@@ -80,68 +101,61 @@ def test_add_effect_compartment(load_model_for_test, pd_model, testdata):
     _test_effect_models(add_effect_compartment(model, pd_model), pd_model, conc_e, False)
 
 
-def _test_effect_models(model, expr, variable, used_variable):
+def _test_effect_models(model, expr, variable, e_zero_protect, x50_name="EC_50", pkpd=True):
     resp = S("R")
     e = S("E")
     e0 = S("B")
     emax = S("E_MAX")
-    ec50 = S("EC_50")
+    ec50 = S(x50_name)
+    slope = S("SLOPE")
+    y_2 = S("Y_2")
+
+    sset = model.statements
+    e_assign = sset.find_assignment(e)
+    if expr == 'sigmoid':
+        e_expr = e_assign.expression.piecewise_args[0][0]
+    elif e_zero_protect or expr == 'step':
+        e_expr = e_assign.expression.piecewise_args[1][0]
+    else:
+        e_expr = e_assign.expression
 
     if expr == 'linear':
-        assert model.statements[1] == Assignment.create(e0, S("POP_B"))
-        assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
-        if not used_variable:
-            assert model.statements.after_odes[-3] == Assignment.create(e, S("SLOPE") * variable)
-        assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), resp + resp * S("epsilon_p")
-        )
+        assert sset.find_assignment(e0) == Assignment.create(e0, S("POP_B"))
+        assert sset.find_assignment(slope) == Assignment.create(slope, S("POP_SLOPE"))
+        assert e_expr == slope * variable
+        if pkpd:
+            assert sset.find_assignment(y_2) == Assignment.create(y_2, resp + resp * S("epsilon_p"))
     elif expr == "emax":
-        assert model.statements[0] == Assignment.create(ec50, S("POP_EC_50"))
-        assert model.statements[2] == Assignment.create(e0, S("POP_B"))
-        assert model.statements[1] == Assignment.create(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-3] == Assignment.create(
-            e, (emax * variable) / (ec50 + variable)
-        )
-        assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), resp + resp * S("epsilon_p")
-        )
+        assert sset.find_assignment(ec50) == Assignment.create(ec50, S(f"POP_{x50_name}"))
+        assert sset.find_assignment(e0) == Assignment.create(e0, S("POP_B"))
+        assert sset.find_assignment(emax) == Assignment.create(emax, S("POP_E_MAX"))
+        assert e_expr == (emax * variable) / (ec50 + variable)
+        if pkpd:
+            assert sset.find_assignment(y_2) == Assignment.create(y_2, resp + resp * S("epsilon_p"))
     elif expr == "sigmoid":
-        assert model.statements[0] == Assignment.create(S("N"), S("POP_N"))
-        assert model.statements[1] == Assignment.create(ec50, S("POP_EC_50"))
-        assert model.statements[3] == Assignment.create(e0, S("POP_B"))
-        assert model.statements[2] == Assignment.create(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-3] == Assignment.create(
-            e,
-            Expr.piecewise(
-                (
-                    (emax * variable ** S("N")) / (ec50 ** S("N") + variable ** S("N")),
-                    variable > 0,
-                ),
-                (0, True),
-            ),
-        )
-        assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), resp + resp * S("epsilon_p")
-        )
+        n = S("N")
+        assert sset.find_assignment(n) == Assignment.create(n, S("POP_N"))
+        assert sset.find_assignment(ec50) == Assignment.create(ec50, S(f"POP_{x50_name}"))
+        assert sset.find_assignment(e0) == Assignment.create(e0, S("POP_B"))
+        assert sset.find_assignment(emax) == Assignment.create(emax, S("POP_E_MAX"))
+        assert e_expr == (emax * variable**n) / (ec50**n + variable**n)
+        if pkpd:
+            assert sset.find_assignment(y_2) == Assignment.create(y_2, resp + resp * S("epsilon_p"))
         assert model.parameters["POP_N"].init == 1
     elif expr == "step":
-        assert model.statements[1] == Assignment.create(e0, S("POP_B"))
-        assert model.statements[0] == Assignment.create(emax, S("POP_E_MAX"))
-        assert model.statements.after_odes[-3] == Assignment.create(
-            e, Expr.piecewise((0, variable <= 0), (emax, True))
-        )
-        assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), resp + resp * S("epsilon_p")
-        )
+        assert sset.find_assignment(e0) == Assignment.create(e0, S("POP_B"))
+        assert sset.find_assignment(emax) == Assignment.create(emax, S("POP_E_MAX"))
+        assert e_expr == emax
+        if pkpd:
+            assert sset.find_assignment(y_2) == Assignment.create(y_2, resp + resp * S("epsilon_p"))
     else:  # expr == "loglin"
-        assert model.statements[1] == Assignment.create(e0, S("POP_B"))
-        assert model.statements[0] == Assignment.create(S("SLOPE"), S("POP_SLOPE"))
-        assert model.statements.after_odes[-2] == Assignment.create(
-            e, S("SLOPE") * (variable + (e0 / S("SLOPE")).exp()).log()
+        assert sset.find_assignment(e0) == Assignment.create(e0, S("POP_B"))
+        assert sset.find_assignment(slope) == Assignment.create(slope, S("POP_SLOPE"))
+        assert sset.find_assignment(e) == Assignment.create(
+            e, slope * (variable + (e0 / slope).exp()).log()
         )
-        assert model.statements.after_odes[-1] == Assignment.create(
-            S("Y_2"), e + e * S("epsilon_p")
-        )
+        if pkpd:
+            assert sset.find_assignment(y_2) == Assignment.create(y_2, e + e * S("epsilon_p"))
 
 
 @pytest.mark.parametrize(

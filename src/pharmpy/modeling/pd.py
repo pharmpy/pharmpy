@@ -208,9 +208,9 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
     elif expr == "emax":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        ec50 = Expr.symbol("EC_50")
-        model = add_individual_parameter(model, ec50.name)
-        effect = emax * conc / (ec50 + conc)
+        x50 = _get_x50(model, conc)
+        model = add_individual_parameter(model, x50.name)
+        effect = emax * conc / (x50 + conc)
         if not zero_handled:
             effect = _handle_zero(model, effect)
     elif expr == "step":
@@ -222,13 +222,13 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
     elif expr == "sigmoid":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        ec50 = Expr.symbol("EC_50")
-        model = add_individual_parameter(model, ec50.name)
+        x50 = _get_x50(model, conc)
+        model = add_individual_parameter(model, x50.name)
         n = Expr.symbol("N")  # Hill coefficient
         model = add_individual_parameter(model, n.name)
         model = set_initial_estimates(model, {"POP_N": 1})
         effect = Expr.piecewise(
-            ((emax * conc**n / (ec50**n + conc**n)), conc > 0), (Expr.integer(0), True)
+            ((emax * conc**n / (x50**n + conc**n)), conc > 0), (Expr.integer(0), True)
         )
         if not zero_handled:
             effect = _handle_zero(model, effect)
@@ -256,6 +256,22 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
         model = model.replace(statements=statements)
 
     return model
+
+
+def _get_x50(model, conc):
+    x50_name = "EC_50"
+    conc_assign = model.statements.find_assignment(conc)
+    if conc_assign:
+        central = model.statements.ode_system.central_compartment
+        elimination_rate = model.statements.ode_system.get_flow(central, output)
+        amount = central.amount
+        if conc_assign.expression == amount * elimination_rate:
+            x50_name = "EDK_50"
+        elif conc_assign.expression == amount:
+            x50_name = "A_50"
+        else:
+            x50_name = "EC_50"
+    return Expr.symbol(x50_name)
 
 
 def _add_response(model: Model, expr: str):
