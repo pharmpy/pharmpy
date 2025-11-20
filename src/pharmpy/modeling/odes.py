@@ -30,7 +30,7 @@ from pharmpy.model import (
 from pharmpy.modeling.help_functions import _as_integer
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols
-from .data import add_time_of_last_dose, get_observations
+from .data import add_time_of_last_dose, get_doseid, get_observations
 from .expressions import create_symbol, is_real
 from .parameters import (
     add_population_parameter,
@@ -864,9 +864,30 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     dosing_comp = cb.set_input(dosing_comp, expr)
     cb.set_bioavailability(dosing_comp, 0)
 
+    idv = Expr.symbol(model.datainfo.idv_column.name)
+    idsymb = Expr.symbol(model.datainfo.id_column.name)
+    ndoses = max(get_doseid(model))
+    new_statements = []
+    if ndoses > 1:
+        doseid = Expr.symbol("DOSEID")
+        doseno = Assignment(doseid, Expr.count_if(amt > Expr.integer(0), Expr.symbol("ID")))
+        new_statements.append(doseno)
+        for i in range(1, ndoses + 1):
+            ti = Assignment(
+                Expr.symbol(f"T{i}"),
+                Expr.forward(idv, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
+            )
+            dosei = Assignment(
+                Expr.symbol(f"DOSE{i}"),
+                Expr.forward(amt, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
+            )
+            new_statements.append(ti)
+            new_statements.append(dosei)
+
     new_odes = CompartmentalSystem(cb)
     new_statements = (
-        model.statements.before_odes
+        new_statements
+        + model.statements.before_odes
         + ktr_assignment
         + podo_assignment
         + new_odes
