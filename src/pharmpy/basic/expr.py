@@ -55,7 +55,10 @@ class Expr:
         x = self._expr.args
         if isinstance(self._expr, symengine.Function):
             if self.name == 'forward':
-                args = (Expr(x[0]), BooleanExpr(x[1]))
+                if len(x) == 2:
+                    args = (Expr(x[0]), BooleanExpr(x[1]))
+                else:
+                    args = (Expr(x[0]), BooleanExpr(x[1]), Expr(x[1]))
             elif self.name == 'count_if':
                 args = (BooleanExpr(x[0]), Expr(x[1]))
             else:
@@ -313,9 +316,13 @@ class Expr:
         return cls.function("newind", ())
 
     @classmethod
-    def forward(cls, value, condition):
+    def forward(cls, value, condition, group=None):
         """Function to carry forward value at a certain condition"""
-        return cls.function("forward", (value, condition))
+        if group is None:
+            func = cls.function("forward", (value, condition))
+        else:
+            func = cls.function("forward", (value, condition, group))
+        return func
 
     @classmethod
     def count_if(cls, condition, group):

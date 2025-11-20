@@ -244,6 +244,12 @@ def test_forward():
     assert isinstance(expr.args[0], Expr)
     assert isinstance(expr.args[1], BooleanExpr)
 
+    expr = Expr.forward(Expr.symbol('TIME'), Expr.symbol('AMT') > 0, Expr.symbol('ID'))
+    assert expr == Expr.function("forward", ('TIME', 'AMT > 0', 'ID'))
+    assert isinstance(expr.args[0], Expr)
+    assert isinstance(expr.args[1], BooleanExpr)
+    assert isinstance(expr.args[2], Expr)
+
 
 def test_count_if():
     expr = Expr.count_if(Expr.symbol("AMT") > 0, Expr.symbol("ID"))
