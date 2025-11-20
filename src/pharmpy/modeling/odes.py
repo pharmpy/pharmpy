@@ -9,7 +9,7 @@ from collections.abc import Iterable, Mapping
 from typing import Literal, Optional, Union
 
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr
-from pharmpy.deps import symengine, sympy
+from pharmpy.deps import sympy
 from pharmpy.internals.unicode import bracket
 from pharmpy.model import (
     Assignment,
@@ -841,27 +841,20 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     model, n_symb = _add_parameter(model, 'N', init=2.0)
 
     amt = Expr.symbol(model.datainfo.typeix['dose'][0].name)
-    podo = Expr.symbol("PODO")
-    podo_assignment = Assignment.create(podo, Expr.forward(amt, amt > 0))
 
     ktr = Expr.symbol("KTR")
-    ktr_assignment = Assignment.create(ktr, n_symb / mdt_symb)
+    ktr_assignment = Assignment(ktr, n_symb / mdt_symb)
 
     # Expression logged to avoid numerical issues with large values from the gamma and power
     # EXP( LOG(BIO*PODO) + LOG(KTR) + N*LOG(KTR*T) − KTR*T − LNFAC) − KA*A(1)
-    # FIXME: UnevaluatedExpr is an ugly trick. It stops symengine from automatically extract
-    #        log(ktr) from inside the exp to ktr*exp(..)
-    expr = (
-        Expr(symengine.UnevaluatedExpr(podo.log()))
-        + n_symb * (ktr * t).log()
-        + symengine.UnevaluatedExpr(ktr.log())
-        - ktr * t
-        - (n_symb + 1).loggamma()
-    ).exp()
+    kinpt = Expr.symbol("KINPT")
+    kinpt_assign = Assignment(kinpt, (n_symb + 1) * ktr.log() - (n_symb + 1).loggamma())
+
+    inpt = Expr.symbol("INPT")
 
     dosing_comp = odes.dosing_compartments[0]
     cb = CompartmentalSystemBuilder(odes)
-    dosing_comp = cb.set_input(dosing_comp, expr)
+    dosing_comp = cb.set_input(dosing_comp, inpt)
     cb.set_bioavailability(dosing_comp, 0)
 
     idv = Expr.symbol(model.datainfo.idv_column.name)
@@ -870,42 +863,45 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     pre_statements = []
     input_statements = []
     input_sum = Expr.integer(0)
-    if ndoses > 1:
-        doseid = Expr.symbol("DOSEID")
-        doseno = Assignment(doseid, Expr.count_if(amt > Expr.integer(0), Expr.symbol("ID")))
-        pre_statements.append(doseno)
-        for i in range(1, ndoses + 1):
-            ti = Expr.symbol(f"T{i}")
-            ti_assign = Assignment(
-                ti,
-                Expr.forward(idv, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
-            )
-            pre_statements.append(ti_assign)
-            dosei = Expr.symbol(f"DOSE{i}")
-            dosei_assign = Assignment(
-                dosei,
-                Expr.forward(amt, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
-            )
-            pre_statements.append(dosei_assign)
-            inputi = Expr.symbol(f"INPT{i}")
-            inputi_assign = Assignment(
-                inputi,
-                Expr.piecewise(
-                    (dosei * (t - ti) ** n_symb * (-ktr * (t - ti)).exp(), (t >= ti) & (dosei > 0)),
-                    (Expr.integer(0), BooleanExpr.true()),
+
+    doseid = Expr.symbol("DOSEID")
+    doseno = Assignment(doseid, Expr.count_if(amt > Expr.integer(0), Expr.symbol("ID")))
+    pre_statements.append(doseno)
+    for i in range(1, ndoses + 1):
+        ti = Expr.symbol(f"T{i}")
+        ti_assign = Assignment(
+            ti,
+            Expr.forward(idv, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
+        )
+        pre_statements.append(ti_assign)
+        dosei = Expr.symbol(f"DOSE{i}")
+        dosei_assign = Assignment(
+            dosei,
+            Expr.forward(amt, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
+        )
+        pre_statements.append(dosei_assign)
+        inputi = Expr.symbol(f"INPT{i}")
+        inputi_assign = Assignment(
+            inputi,
+            Expr.piecewise(
+                (
+                    dosei.log() + n_symb * (t - ti).log() - ktr * (t - ti),
+                    (t >= ti) & (dosei > 0),
                 ),
-            )
-            input_statements.append(inputi_assign)
-            input_sum += inputi
-        input_sum_assign = Assignment(Expr.symbol("INPT"), input_sum)
-        input_statements.append(input_sum_assign)
+                (Expr.integer(0), BooleanExpr.true()),
+            ),
+        )
+        input_statements.append(inputi_assign)
+        input_sum += (kinpt + inputi).exp()
+    input_sum_assign = Assignment(inpt, input_sum)
+    input_statements.append(input_sum_assign)
 
     new_odes = CompartmentalSystem(cb)
     new_statements = (
         pre_statements
         + model.statements.before_odes
         + ktr_assignment
-        + podo_assignment
+        + kinpt_assign
         + input_statements
         + new_odes
         + model.statements.after_odes
