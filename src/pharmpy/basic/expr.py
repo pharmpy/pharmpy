@@ -58,7 +58,7 @@ class Expr:
                 if len(x) == 2:
                     args = (Expr(x[0]), BooleanExpr(x[1]))
                 else:
-                    args = (Expr(x[0]), BooleanExpr(x[1]), Expr(x[1]))
+                    args = (Expr(x[0]), BooleanExpr(x[1]), Expr(x[2]))
             elif self.name == 'count_if':
                 args = (BooleanExpr(x[0]), Expr(x[1]))
             else:

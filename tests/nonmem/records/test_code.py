@@ -1,7 +1,7 @@
 import pytest
 import sympy
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.expr.funcs import PHI
 from pharmpy.model import Assignment
 from pharmpy.model.external.nonmem.records.code_record import CodeRecord
@@ -736,6 +736,17 @@ IF (AMT.GT.0) THEN
 ELSE
     DOSENO = 0
 END IF
+""",
+        ),
+        (
+            S('DOSE2'),
+            Expr.forward(
+                Expr.symbol("AMT"),
+                BooleanExpr.eq(Expr.symbol("DOSEID"), Expr.integer(2)),
+                Expr.symbol("ID"),
+            ),
+            """IF (NEWIND.LT.2) DOSE2 = 0
+IF (DOSEID.EQ.2) DOSE2 = AMT
 """,
         ),
         # (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))), 'IF (X.EQ.2) CL = 23\n'),

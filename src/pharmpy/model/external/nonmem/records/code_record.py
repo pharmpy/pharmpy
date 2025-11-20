@@ -193,11 +193,21 @@ def nmtran_assignment_string(assignment: Assignment, defined_symbols: set[Expr],
 def _translate_forward(assignment, defined_symbols, rvs, trans):
     symbol = assignment.symbol
     expr = assignment.expression
+    if len(expr.args) == 3:
+        group = expr.args[2]
+        if group.name != "ID":
+            raise NotImplementedError("forward with group other than ID not supported for NONMEM")
+        reset_expr = Expr.piecewise((Expr.integer(0), Expr.symbol("NEWIND") < Expr.integer(2)))
+        reset_assignment = Assignment(symbol, reset_expr)
+        s = _translate_sympy_piecewise(reset_assignment, defined_symbols, rvs, trans) + "\n"
+    else:
+        s = ""
+
     value = expr.args[0]
     cond = expr.args[1]
     piecewise_expr = Expr.piecewise((value, cond))
     piecewise_assignment = Assignment.create(symbol, piecewise_expr)
-    s = _translate_sympy_piecewise(piecewise_assignment, defined_symbols, rvs, trans)
+    s += _translate_sympy_piecewise(piecewise_assignment, defined_symbols, rvs, trans)
     return s
 
 
