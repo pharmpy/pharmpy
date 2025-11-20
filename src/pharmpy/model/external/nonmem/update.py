@@ -753,8 +753,9 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
     main_statements = update_ics(main_statements, new_odes)
     if model.statements.ode_system is not None:
         keep = []
+        t = model.statements.ode_system.t
         for s in main_statements:
-            if model.statements.ode_system.t not in s.free_symbols:
+            if t not in main_statements.dependencies(s):
                 keep.append(s)
         main_statements = Statements(tuple(keep))
 
