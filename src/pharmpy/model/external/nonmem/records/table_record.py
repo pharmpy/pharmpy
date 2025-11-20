@@ -3,6 +3,8 @@ from pathlib import Path
 
 from .option_record import EnumOpt, IntOpt, MxOpt, OptionRecord, Opts, SimpleOpt, StrOpt, WildOpt
 
+DEFAULT_TABLE_RECORD_FORMAT = 's1PE11.4'
+
 table_options = Opts(
     MxOpt('PRINT', 'print', default=True),
     MxOpt('NOPRINT', 'print'),
@@ -19,7 +21,7 @@ table_options = Opts(
     MxOpt('FORWARD', 'forward'),
     MxOpt('APPEND', 'append', default=True),
     MxOpt('NOAPPEND', 'append'),
-    StrOpt('FORMAT', default='s1PE11.4'),
+    StrOpt('FORMAT', default=DEFAULT_TABLE_RECORD_FORMAT),
     StrOpt('LFORMAT'),
     StrOpt('RFORMAT'),
     StrOpt('IDFORMAT'),
