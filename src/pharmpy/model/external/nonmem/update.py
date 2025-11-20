@@ -633,6 +633,15 @@ def from_des(model, advan):
     return model
 
 
+def find_pk_statements_depending_on_t(model: Model) -> list:
+    to_odes = []
+    t = get_odes(model).t
+    for s in model.statements.before_odes:
+        if t in model.statements.dependencies(s):
+            to_odes.append(s)
+    return to_odes
+
+
 def to_des(model: Model, new: CompartmentalSystem):
     cs = model.internals.control_stream
     old_des = cs.get_records('DES')
@@ -657,10 +666,7 @@ def to_des(model: Model, new: CompartmentalSystem):
     cs = cs.insert_record(des)
     assert isinstance(des, CodeRecord)
 
-    to_odes = []
-    for s in model.statements.before_odes:
-        if get_odes(model).t in s.free_symbols:
-            to_odes.append(s)
+    to_odes = find_pk_statements_depending_on_t(model)
 
     newdes = des.from_odes(new, to_odes)
     cs = cs.replace_records([des], [newdes])
