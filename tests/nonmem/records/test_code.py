@@ -277,6 +277,7 @@ ENDIF''',
                 (S('NINDR') * (S('IREP') - 1) + 1, sympy.Eq(sympy.Function('newind')(), 0))
             ),
         ),
+        ('$PK\n Y = 10\nDO WHILE (Y > 0)\n" VERBATIME "!"\n Y = Y - 1 \nEND DO', S('Y'), 10),
     ],
 )
 def test_single_assignments(parser, buf, sym, expression):
