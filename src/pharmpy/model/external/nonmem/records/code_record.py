@@ -183,6 +183,8 @@ def nmtran_assignment_string(assignment: Assignment, defined_symbols: set[Expr],
         s = _translate_sympy_sign(assignment)
     elif expr.is_function() and expr.name == 'forward':
         s = _translate_forward(assignment, defined_symbols, rvs, trans)
+    elif expr.is_function() and expr.name == 'count_if':
+        s = _translate_count_if(assignment, defined_symbols, rvs, trans)
     else:
         s = f'{str(assignment.symbol).upper()} = {expression_to_nmtran(expr, rvs, trans)}'
     return s
@@ -196,6 +198,29 @@ def _translate_forward(assignment, defined_symbols, rvs, trans):
     piecewise_expr = Expr.piecewise((value, cond))
     piecewise_assignment = Assignment.create(symbol, piecewise_expr)
     s = _translate_sympy_piecewise(piecewise_assignment, defined_symbols, rvs, trans)
+    return s
+
+
+def _translate_count_if(assignment, defined_symbols, rvs, trans):
+    symbol = assignment.symbol
+    expr = assignment.expression
+    cond = expr.args[0]
+    group = expr.args[1]
+    if group.name != "ID":
+        raise NotImplementedError("count_if with group other than ID not supported for NONMEM")
+
+    counter_symbol = Expr.symbol(symbol.name + "_CNT")
+
+    reset_expr = Expr.piecewise((Expr.integer(0), Expr.symbol("NEWIND") < Expr.integer(2)))
+    reset_assignment = Assignment(counter_symbol, reset_expr)
+    s = _translate_sympy_piecewise(reset_assignment, defined_symbols, rvs, trans) + "\n"
+
+    inc_expr = Expr.piecewise((counter_symbol + 1, cond))
+    inc_assignment = Assignment.create(counter_symbol, inc_expr)
+    s += _translate_sympy_piecewise(inc_assignment, defined_symbols, rvs, trans) + "\n"
+
+    set_expr = Expr.piecewise((counter_symbol, cond), (0, BooleanExpr.true()))
+    s += _translate_sympy_block(symbol, set_expr._sympy_().args, rvs, trans)
     return s
 
 

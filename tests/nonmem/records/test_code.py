@@ -726,6 +726,18 @@ def test_nested_block_if(parser):
             sympy.Piecewise((S('TIME'), sympy.Gt(S('AMT'), 0))),
             'IF (AMT.GT.0) BTIME = TIME\n',
         ),
+        (
+            S('DOSENO'),
+            Expr.count_if(Expr.symbol("AMT") > 0, Expr.symbol("ID")),
+            """IF (NEWIND.LT.2) DOSENO_CNT = 0
+IF (AMT.GT.0) DOSENO_CNT = DOSENO_CNT + 1
+IF (AMT.GT.0) THEN
+    DOSENO = DOSENO_CNT
+ELSE
+    DOSENO = 0
+END IF
+""",
+        ),
         # (S('CL'), sympy.Piecewise((23, sympy.Eq(S('X'), 2))), 'IF (X.EQ.2) CL = 23\n'),
         # (
         #     S('CLWGT'),
