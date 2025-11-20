@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.deps import sympy
@@ -300,7 +300,9 @@ def create_basic_pd_model(
     return model
 
 
-def create_basic_kpd_model(dataset_path: Optional[Union[str, Path]] = None) -> Model:
+def create_basic_kpd_model(
+    dataset_path: Optional[Union[str, Path]] = None, driver: Literal['ir', 'amount'] = 'ir'
+) -> Model:
     """
     Creates a basic kpd model. The model will be a one compartment model.
     delay. The elimination rate will be :math:`KE`.
@@ -309,6 +311,9 @@ def create_basic_kpd_model(dataset_path: Optional[Union[str, Path]] = None) -> M
     ----------
     dataset_path : str or Path
         Optional path to a dataset
+    driver : str
+        Driver variable of the KPD model. Can either be 'ir' (virtual infusion
+        rate) or 'amount'.
 
     Return
     ------
@@ -321,6 +326,11 @@ def create_basic_kpd_model(dataset_path: Optional[Union[str, Path]] = None) -> M
     >>> model = create_basic_kpd_model()
 
     """
+    if driver not in ('ir', 'amount'):
+        raise ValueError(
+            f'Invalid input for option `driver`: got `{driver}` (must be "ir" or "amount")'
+        )
+
     if dataset_path is not None:
         dataset_path = normalize_user_given_path(dataset_path)
         di = create_default_datainfo(dataset_path)
@@ -349,10 +359,17 @@ def create_basic_kpd_model(dataset_path: Optional[Union[str, Path]] = None) -> M
     cb.add_compartment(central)
     cb.add_flow(central, output, KE)
 
+    kpd = Expr.symbol('KPD')
+    if driver == 'ir':
+        kpd_expr = KE * central.amount
+    else:
+        kpd_expr = central.amount
+    kpd_assign = Assignment(kpd, kpd_expr)
+
     R = Assignment(Expr.symbol('R'), KE)
     y_ass = Assignment(Expr.symbol('Y'), R.symbol)
 
-    stats = Statements([ke_assign, CompartmentalSystem(cb), R, y_ass])
+    stats = Statements([ke_assign, CompartmentalSystem(cb), kpd_assign, R, y_ass])
 
     est = EstimationStep.create(
         "FOCE",
