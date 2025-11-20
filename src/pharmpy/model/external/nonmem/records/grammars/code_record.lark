@@ -45,12 +45,12 @@ _sep: ","
 
 _condition: _lpar bool_expr _rpar
 
-while: DOWHILE _condition _empty_lines _statements? ENDDO
+while: DOWHILE _condition _empty_lines _statements_and_verbatims? ENDDO
 
 block_if: block_if_start (block_if_elseif)* (block_if_else)? block_if_end
-block_if_start: IF _condition THEN _empty_lines _statements?
-block_if_elseif: ELSEIF _condition THEN _empty_lines _statements?
-block_if_else: ELSE _empty_lines _statements?
+block_if_start: IF _condition THEN _empty_lines _statements_and_verbatims?
+block_if_elseif: ELSEIF _condition THEN _empty_lines _statements_and_verbatims?
+block_if_else: ELSE _empty_lines _statements_and_verbatims?
 block_if_end: ENDIF
 
 EXIT.9   : "EXIT"i
