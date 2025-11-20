@@ -2511,13 +2511,9 @@ class Statements(Sequence, Immutable):
             if isinstance(stat, Assignment) and stat.symbol in symbols_set:
                 candidates.add(i)
         for i in candidates.copy():
-            if i in graph:
-                candidates |= set(nx.dfs_preorder_nodes(graph, i))
+            candidates |= set(nx.dfs_preorder_nodes(graph, i))
         # All statements needed for removed_ind
-        if removed_ind in graph:
-            keep = {down for _, down in nx.dfs_edges(graph, removed_ind)}
-        else:
-            keep = set()
+        keep = {down for _, down in nx.dfs_edges(graph, removed_ind)}
         candidates -= keep
         # Other dependencies after removed_ind
         additional = {down for up, down in graph.edges if up > removed_ind and down in candidates}
