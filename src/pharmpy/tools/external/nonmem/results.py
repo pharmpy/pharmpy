@@ -13,6 +13,7 @@ from pharmpy.internals.math import nearest_positive_semidefinite
 from pharmpy.model import ExecutionSteps, Model, Parameters, RandomVariables
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranControlStream
 from pharmpy.model.external.nonmem.parsing import extract_verbatim_derivatives, parse_table_columns
+from pharmpy.model.external.nonmem.records.table_record import DEFAULT_TABLE_RECORD_FORMAT
 from pharmpy.model.external.nonmem.table import ExtTable, NONMEMTableFile, PhiTable
 from pharmpy.model.external.nonmem.update import create_name_map
 from pharmpy.workflows.log import Log
@@ -540,9 +541,12 @@ def _parse_tables(
         noheader = table_rec.has_option("NOHEADER")
         notitle = table_rec.has_option("NOTITLE") or noheader
         nolabel = table_rec.has_option("NOLABEL") or noheader
+        format = table_rec.get_option("FORMAT") or DEFAULT_TABLE_RECORD_FORMAT
         table_path = path.parent / table_rec.path
         try:
-            table_file = NONMEMTableFile(table_path, notitle=notitle, nolabel=nolabel)
+            table_file = NONMEMTableFile(
+                table_path, notitle=notitle, nolabel=nolabel, format=format
+            )
         except IOError:
             continue
         table = table_file.tables[0]

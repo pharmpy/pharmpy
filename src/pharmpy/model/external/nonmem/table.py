@@ -1,15 +1,54 @@
 from __future__ import annotations
 
+import csv
 import re
 from io import StringIO
 from pathlib import Path
-from typing import Optional, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import flattened_to_symmetric
+from pharmpy.workflows.results import dataclass
+
+from .records.table_record import DEFAULT_TABLE_RECORD_FORMAT
 
 OBJ = re.compile(r"[A-Z]*OBJ")
+DEFAULT_NONMEM_TABLE_FILE_FORMAT = DEFAULT_TABLE_RECORD_FORMAT
+
+
+def parse_format(format: str):
+    assert len(format) >= 1
+    if format == "QCSV":
+        return NONMEMTableFileFormat(format, ",", quoted=True)
+    elif format == "CSV":
+        return NONMEMTableFileFormat(format, ",")
+    elif format[0] == "s":
+        return NONMEMTableFileFormat(format, r"\s+")
+    elif format[0] == "t":
+        return NONMEMTableFileFormat(format, "\t")
+    elif format[0] == ",":
+        return NONMEMTableFileFormat(format, ",")
+    elif format[0] == "c":
+        return NONMEMTableFileFormat(format, ",")
+    elif format[0] == "q":
+        return NONMEMTableFileFormat(format, ",", quoted=True)
+    else:
+        raise NotImplementedError(format)
+
+
+NONMEMTableFileSeparator = Union[
+    Literal[r"\s+"],
+    Literal["\t"],
+    Literal[","],
+]
+
+
+@dataclass(frozen=True)
+class NONMEMTableFileFormat:
+    source: str
+    separator: NONMEMTableFileSeparator
+    quoted: bool = False
 
 
 class NONMEMTableFile:
@@ -21,6 +60,7 @@ class NONMEMTableFile:
         tables: Optional[list[NONMEMTable]] = None,
         notitle: bool = False,
         nolabel: bool = False,
+        format: str = DEFAULT_NONMEM_TABLE_FILE_FORMAT,
     ):
         if path is not None:
             path = Path(path)
@@ -31,7 +71,10 @@ class NONMEMTableFile:
             with open(str(path), 'r') as tablefile:
                 if notitle:
                     table = self._parse_table(
-                        tablefile.read().splitlines(keepends=True), notitle=notitle, nolabel=nolabel
+                        tablefile.read().splitlines(keepends=True),
+                        notitle=notitle,
+                        nolabel=nolabel,
+                        format=format,
                     )
                     tables.append(table)
                 else:
@@ -39,12 +82,12 @@ class NONMEMTableFile:
                     for line in tablefile:
                         if line.startswith("TABLE NO."):
                             if current:
-                                table = self._parse_table(current, suffix)
+                                table = self._parse_table(current, suffix, format=format)
                                 tables.append(table)
                             current = [line]
                         else:
                             current.append(line)
-                    table = self._parse_table(current, suffix)
+                    table = self._parse_table(current, suffix, format=format)
                     tables.append(table)
             self.tables = tables
         elif tables is not None:
@@ -58,6 +101,7 @@ class NONMEMTableFile:
         suffix: Optional[str] = None,
         notitle: bool = False,
         nolabel: bool = False,
+        format: str = DEFAULT_NONMEM_TABLE_FILE_FORMAT,
     ) -> NONMEMTable:
         # NOTE: Content lines must contain endlines!
 
@@ -66,15 +110,17 @@ class NONMEMTableFile:
         content[0] = OBJ.sub("OBJ", content[0])
         content_str = ''.join(content)
         if suffix == '.ext':
-            table = ExtTable(content_str)
+            table = ExtTable(content_str, format=format)
         elif suffix == '.phi':
-            table = PhiTable(content_str)
+            table = PhiTable(content_str, format=format)
         elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
-            table = CovTable(content_str)
+            table = CovTable(content_str, format=format)
         else:
             # Remove repeated header lines, but not the first
             content[1:] = [line for line in content[1:] if not re.match(r'\s[A-Za-z_]', line)]
-            table = NONMEMTable(''.join(content))  # Fallback to non-specific table type
+            table = NONMEMTable(
+                ''.join(content), format=format
+            )  # Fallback to non-specific table type
 
         if table_line is not None:
             m = re.match(r'TABLE NO.\s+(\d+)', table_line)
@@ -156,10 +202,22 @@ class NONMEMTable:
     superproblem2: Optional[int] = None
     iteration2: Optional[int] = None
 
-    def __init__(self, content=None, df: Optional[pd.DataFrame] = None):
+    def __init__(
+        self,
+        content=None,
+        df: Optional[pd.DataFrame] = None,
+        format=DEFAULT_NONMEM_TABLE_FILE_FORMAT,
+    ):
         if content is not None:
+            _format = parse_format(format)
             read_df = pd.read_table(
-                StringIO(content), sep=r'\s+', engine='c', float_precision="round_trip"
+                StringIO(content),
+                sep=_format.separator,
+                skipinitialspace=_format.separator != r"\s+",
+                quotechar='"',
+                quoting=csv.QUOTE_MINIMAL if _format.quoted else csv.QUOTE_NONE,
+                engine='c',
+                float_precision="round_trip",
             )
             assert isinstance(read_df, pd.DataFrame)
             self._df = read_df

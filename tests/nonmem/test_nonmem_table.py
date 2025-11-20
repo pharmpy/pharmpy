@@ -1,5 +1,6 @@
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model.external.nonmem.table import CovTable, ExtTable, NONMEMTableFile, PhiTable
@@ -120,3 +121,110 @@ def test_nonmemtablefile_notitle_github_issues_1251(tmp_path):
 
         assert tuple(df.columns) == ('ID', 'TIME', 'CWRES', 'CIPREDI', 'VC')
         assert len(df) == 2
+        assert list(df.dtypes) == [
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+        ]
+
+
+def test_nonmemtablefile_format_qcsv(tmp_path):
+    filename = 'tab'
+    with chdir(tmp_path):
+        with open(filename, 'w') as fd:
+            fd.write(
+                'ID,TIME,CWRES,CIPREDI,VC\n'
+                '1.1000E+02,0.0000E+00,0.0000E+00,0.0000E+00,9.5921E+01\n'
+                '1.1000E+02,0.0000E+00,0.0000E+00,0.0000E+00,9.5921E+01\n'
+            )
+
+        table_file = NONMEMTableFile(filename, notitle=True, format="QCSV")
+        table = table_file[0]
+        df = table.data_frame
+
+        assert tuple(df.columns) == ('ID', 'TIME', 'CWRES', 'CIPREDI', 'VC')
+        assert len(df) == 2
+        assert list(df.dtypes) == [
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+        ]
+
+
+def test_nonmemtablefile_format_csv(tmp_path):
+    filename = 'tab'
+    with chdir(tmp_path):
+        with open(filename, 'w') as fd:
+            fd.write(
+                'ID,TIME,CWRES,CIPREDI,VC\n'
+                '1.1000E+02,0.0000E+00,0.0000E+00,0.0000E+00,9.5921E+01\n'
+                '1.1000E+02,0.0000E+00,0.0000E+00,0.0000E+00,9.5921E+01\n'
+            )
+
+        table_file = NONMEMTableFile(filename, notitle=True, format="CSV")
+        table = table_file[0]
+        df = table.data_frame
+
+        assert tuple(df.columns) == ('ID', 'TIME', 'CWRES', 'CIPREDI', 'VC')
+        assert len(df) == 2
+        assert list(df.dtypes) == [
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+        ]
+
+
+def test_nonmemtablefile_format_tabs(tmp_path):
+    filename = 'tab'
+    with chdir(tmp_path):
+        with open(filename, 'w') as fd:
+            fd.write(
+                '        ID\t      TIME\t     CWRES\t   CIPREDI\t        VC\n'
+                '1.1000E+02\t0.0000E+00\t0.0000E+00\t0.0000E+00\t9.5921E+01\n'
+                '1.1000E+02\t0.0000E+00\t0.0000E+00\t0.0000E+00\t9.5921E+01\n'
+            )
+
+        table_file = NONMEMTableFile(filename, notitle=True, format="t10PEw11dEe")
+        table = table_file[0]
+        df = table.data_frame
+
+        assert tuple(df.columns) == ('ID', 'TIME', 'CWRES', 'CIPREDI', 'VC')
+        assert len(df) == 2
+        assert list(df.dtypes) == [
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+        ]
+
+
+def test_nonmemtablefile_format_commas(tmp_path):
+    filename = 'tab'
+    with chdir(tmp_path):
+        with open(filename, 'w') as fd:
+            fd.write(
+                '        ID,      TIME,     CWRES,   CIPREDI,        VC\n'
+                '1.1000E+02,0.0000E+00,0.0000E+00,0.0000E+00,9.5921E+01\n'
+                '1.1000E+02,0.0000E+00,0.0000E+00,0.0000E+00,9.5921E+01\n'
+            )
+
+        table_file = NONMEMTableFile(filename, notitle=True, format=",Fw3d")
+        table = table_file[0]
+        df = table.data_frame
+
+        assert tuple(df.columns) == ('ID', 'TIME', 'CWRES', 'CIPREDI', 'VC')
+        assert len(df) == 2
+        assert list(df.dtypes) == [
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+            np.dtype('float64'),
+        ]
