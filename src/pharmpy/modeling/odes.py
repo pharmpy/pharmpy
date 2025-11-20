@@ -891,7 +891,7 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
             inputi_assign = Assignment(
                 inputi,
                 Expr.piecewise(
-                    (dosei * (t - ti) ** n_symb * (-ktr * (t - ti)), t >= ti),
+                    (dosei * (t - ti) ** n_symb * (-ktr * (t - ti)).exp(), (t >= ti) & (dosei > 0)),
                     (Expr.integer(0), BooleanExpr.true()),
                 ),
             )
