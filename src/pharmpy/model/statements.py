@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from functools import cached_property
+from functools import cache
 from typing import Any, Optional, Self, Union, overload
 
 import pharmpy.internals.unicode as unicode
@@ -719,7 +719,8 @@ class CompartmentalSystem(Statement):
         """Independent variable of CompartmentalSystem"""
         return self._t
 
-    @cached_property
+    @property
+    @cache
     def eqs(self) -> tuple[BooleanExpr, ...]:
         """Tuple of equations"""
         amount_funcs = Matrix(list(self.amounts))
