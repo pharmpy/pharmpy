@@ -867,29 +867,46 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     idv = Expr.symbol(model.datainfo.idv_column.name)
     idsymb = Expr.symbol(model.datainfo.id_column.name)
     ndoses = max(get_doseid(model))
-    new_statements = []
+    pre_statements = []
+    input_statements = []
+    input_sum = Expr.integer(0)
     if ndoses > 1:
         doseid = Expr.symbol("DOSEID")
         doseno = Assignment(doseid, Expr.count_if(amt > Expr.integer(0), Expr.symbol("ID")))
-        new_statements.append(doseno)
+        pre_statements.append(doseno)
         for i in range(1, ndoses + 1):
-            ti = Assignment(
-                Expr.symbol(f"T{i}"),
+            ti = Expr.symbol(f"T{i}")
+            ti_assign = Assignment(
+                ti,
                 Expr.forward(idv, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
             )
-            dosei = Assignment(
-                Expr.symbol(f"DOSE{i}"),
+            pre_statements.append(ti_assign)
+            dosei = Expr.symbol(f"DOSE{i}")
+            dosei_assign = Assignment(
+                dosei,
                 Expr.forward(amt, BooleanExpr.eq(doseid, Expr.integer(i)), idsymb),
             )
-            new_statements.append(ti)
-            new_statements.append(dosei)
+            pre_statements.append(dosei_assign)
+            inputi = Expr.symbol(f"INPT{i}")
+            inputi_assign = Assignment(
+                inputi,
+                Expr.piecewise(
+                    (dosei * (t - ti) ** n_symb * (-ktr * (t - ti)), t >= ti),
+                    (Expr.integer(0), BooleanExpr.true()),
+                ),
+            )
+            input_statements.append(inputi_assign)
+            input_sum += inputi
+        input_sum_assign = Assignment(Expr.symbol("INPT"), input_sum)
+        input_statements.append(input_sum_assign)
 
     new_odes = CompartmentalSystem(cb)
     new_statements = (
-        new_statements
+        pre_statements
         + model.statements.before_odes
         + ktr_assignment
         + podo_assignment
+        + input_statements
         + new_odes
         + model.statements.after_odes
     )
