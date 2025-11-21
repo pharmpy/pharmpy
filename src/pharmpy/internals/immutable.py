@@ -1,22 +1,52 @@
 from abc import ABC
 from collections.abc import Mapping
+from functools import wraps
 from typing import Iterator, TypeVar
+from weakref import WeakKeyDictionary, WeakValueDictionary
 
 
-def cache_method(func):
-    if func.__name__ == '__hash__':
+def cache_method_no_args(method):
+    # NOTE: This is needed because, as suprising as it sounds, no "official" solution exists.
+    # SEE: https://bugs.python.org/issue45588.
+    # NOTE: Adapted from https://stackoverflow.com/a/77097026.
+    # NOTE: Do not try to iterate over those as it will cause issues.
+    # SEE: https://stackoverflow.com/a/77100606.
+    _instances = WeakValueDictionary()
+    _cache = WeakKeyDictionary()
 
-        def wrapper(self):
-            if hasattr(self, '_hash'):
-                return self._hash
-            else:
-                h = func(self)
-                self._hash = h
-                return h
+    @wraps(method)
+    def wrapped(self):
+        key = IdKey(self)
+        try:
+            return _cache[key]
+        except KeyError:
+            # NOTE: This prevents `key` from being GCed until `self` is GCed.
+            _instances[key] = self
 
-        return wrapper
-    else:
-        return func
+            # NOTE: This entry can be GCed as soon as `self` is GCed.
+            value = method(self)
+            _cache[key] = value
+            return value
+
+    return wrapped
+
+
+class IdKey:
+    # NOTE: This is needed because, as suprising as it sounds, no "official" solution exists.
+    # SEE: https://bugs.python.org/issue44140.
+    # SEE: https://github.com/python/cpython/issues/88306.
+
+    def __init__(self, value):
+        self._id = id(value)
+
+    def __hash__(self):
+        return self._id
+
+    def __eq__(self, other):
+        return self._id == other._id
+
+    def __repr__(self):
+        return f"<IdKey(_id={self._id})>"
 
 
 class Immutable(ABC):
