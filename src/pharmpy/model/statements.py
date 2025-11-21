@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from functools import cache
 from typing import Any, Optional, Self, Union, overload
 
 import pharmpy.internals.unicode as unicode
@@ -13,7 +12,7 @@ from pharmpy.deps import symengine, sympy
 from pharmpy.internals.expr.assumptions import assume_all, with_free_images_and_symbols_assumptions
 from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs
-from pharmpy.internals.immutable import Immutable, cache_method
+from pharmpy.internals.immutable import Immutable, cache_method_no_args
 
 
 class Statement(Immutable):
@@ -172,7 +171,7 @@ class Assignment(Statement):
             return False
         return self.symbol == other.symbol and self.expression == other.expression
 
-    @cache_method
+    @cache_method_no_args
     def __hash__(self):
         return hash((self._symbol, self._expression))
 
@@ -720,7 +719,7 @@ class CompartmentalSystem(Statement):
         return self._t
 
     @property
-    @cache
+    @cache_method_no_args
     def eqs(self) -> tuple[BooleanExpr, ...]:
         """Tuple of equations"""
         amount_funcs = Matrix(list(self.amounts))

@@ -24,7 +24,7 @@ import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import hash_df_runtime
-from pharmpy.internals.immutable import Immutable, cache_method, frozenmapping
+from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 from pharmpy.model.external import detect_model
 
 from .datainfo import ColumnInfo, DataInfo
@@ -486,7 +486,7 @@ class Model(Immutable):
 
         return True
 
-    @cache_method
+    @cache_method_no_args
     def __hash__(self):
         dataset_hash = hash_df_runtime(self._dataset) if self._dataset is not None else None
         return hash(
