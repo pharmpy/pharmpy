@@ -6,6 +6,8 @@ import dateutil.parser
 from packaging import version
 
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
+from pharmpy.model.external.nonmem.dataset.nmtran import IOFromChunks
 
 
 class NONMEMResultsFile:
@@ -75,7 +77,7 @@ class NONMEMResultsFile:
         return {'covariance_step_ok': None}
 
     @staticmethod
-    def unknown_termination() -> dict[str, Optional[Union[bool, float]]]:
+    def unknown_termination() -> dict[str, Optional[Union[bool, float, pd.DataFrame]]]:
         return {
             'minimization_successful': None,
             'estimate_near_boundary': None,
@@ -84,6 +86,9 @@ class NONMEMResultsFile:
             'significant_digits': np.nan,
             'function_evaluations': np.nan,
             'warning': None,
+            'eta_shrinkage': None,
+            'ebv_shrinkage': None,
+            'eps_shrinkage': None,
         }
 
     @staticmethod
@@ -168,6 +173,9 @@ class NONMEMResultsFile:
         )  # Only classical est
         feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # Only classical est
         ofv_with_constant = re.compile(r' OBJECTIVE FUNCTION VALUE WITH CONSTANT:\s*(\S+)')
+        eta_shrinkage = re.compile(r'^ ETASHRINK(?:SD|VR)\(%\)  ')
+        ebv_shrinkage = re.compile(r'^ EBVSHRINK(?:SD|VR)\(%\)  ')
+        eps_shrinkage = re.compile(r'^ EPSSHRINK(?:SD|VR)\(%\)  ')
 
         maybe_success = False
         for row in rows:
@@ -207,6 +215,42 @@ class NONMEMResultsFile:
                 if p.match(row):
                     result[name] = True
                     break
+
+        try:
+            result['eta_shrinkage'] = pd.read_table(
+                IOFromChunks(map(lambda row: str.encode(row + '\n'), filter(eta_shrinkage.match, rows))),  # type: ignore
+                header=None,
+                index_col = 0,
+                sep=r'\s+',
+                engine='c',
+                float_precision="round_trip",
+            )
+        except pd.errors.EmptyDataError:
+            pass
+
+        try:
+            result['ebv_shrinkage'] = pd.read_table(
+                IOFromChunks(map(lambda row: str.encode(row + '\n'), filter(ebv_shrinkage.match, rows))),  # type: ignore
+                header=None,
+                index_col = 0,
+                sep=r'\s+',
+                engine='c',
+                float_precision="round_trip",
+            )
+        except pd.errors.EmptyDataError:
+            pass
+
+        try:
+            result['eps_shrinkage'] = pd.read_table(
+                IOFromChunks(map(lambda row: str.encode(row + '\n'), filter(eps_shrinkage.match, rows))),  # type: ignore
+                header=None,
+                index_col = 0,
+                sep=r'\s+',
+                engine='c',
+                float_precision="round_trip",
+            )
+        except pd.errors.EmptyDataError:
+            pass
         return result
 
     @staticmethod
