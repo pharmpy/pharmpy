@@ -11,7 +11,7 @@ activate () {
 activate
 pip install setuptools --upgrade
 cd ..
-python3 setup.py install
+pip install .
 pip install pipdeptree
 pipdeptree -fl
 
