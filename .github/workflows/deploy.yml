@@ -48,8 +48,9 @@ jobs:
           cd pharmpy
           tox -e docs-build
 
-      - name: Install wheel
+      - name: Install setuptools and wheel
         run: |
+          pip install setuptools
           pip install wheel
 
       - name: Build wheel
