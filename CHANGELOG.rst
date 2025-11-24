@@ -1,3 +1,18 @@
+Next release
+------------
+
+New features
+============
+
+* Further optimization of NONMEM model parsing
+
+Bugfixes
+========
+
+* Fix memory leak for model objects
+* Fix crash when creating model3b in FREM (regression)
+* Fix issue with assignment indirectly depending on t ('T') not being put in $DES for NONMEM models
+
 1.11.0 (2025-11-17)
 -------------------
 
