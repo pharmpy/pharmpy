@@ -272,7 +272,7 @@ def generate_transformations(
     if isinstance(model_features, Sequence):
         model_features = ModelFeatures.create(model_features)
     if not model_features.is_expanded():
-        raise ValueError
+        raise ValueError('Incorrect option `model_features`: must be expanded')
 
     transformations = []
     covariances = model_features.covariance
@@ -458,48 +458,18 @@ FUNC_MAPPING = {
 def transform_into_search_space(
     model: Model,
     search_space: Union[ModelFeatures, Sequence[ModelFeature]],
-    force_optional: bool = False,
     type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
     individual_estimates: Optional[pd.DataFrame] = None,
 ) -> Model:
     if isinstance(search_space, Sequence):
         search_space = ModelFeatures.create(search_space)
+    search_space = _get_mfl_from_type(search_space, type)
     model_features = get_model_features(model, type=type)
 
     if model_features == search_space:
         return model
 
-    features_to_add = []
-    features_to_remove = []
-
-    features_not_in_search_space = model_features - search_space
-    for feature in features_not_in_search_space:
-        if isinstance(feature, (Covariate, IIV, Covariance)):
-            features_to_remove.append(feature)
-        else:
-            types = search_space.get_feature_type(builtins.type(feature))
-            if types:
-                features_to_add.append(min(types))
-
-    if type is None or type == 'iiv':
-        iiv_dict = defaultdict(list)
-        for feature in search_space.iiv:
-            iiv_dict[feature.parameter].append(feature)
-    else:
-        iiv_dict = dict()
-
-    features_not_in_model = search_space - model_features
-    for feature in features_not_in_model:
-        if isinstance(feature, (Covariate, IIV, Covariance)):
-            if isinstance(feature, IIV):
-                other_features = iiv_dict.get(feature.parameter)
-                # Handle multiple types of fps for IIVs, e.g. exp cannot be combined with add
-                if any(f in model_features for f in other_features):
-                    continue
-            if not feature.optional or force_optional:
-                feature_forced = feature.replace(optional=False)
-                if feature_forced not in model_features:
-                    features_to_add.append(feature_forced)
+    features_to_add, features_to_remove = _get_feature_diffs(search_space, model_features, type)
 
     transformations = generate_transformations(
         features_to_remove, include_add=False, individual_estimates=individual_estimates
@@ -514,3 +484,82 @@ def transform_into_search_space(
         except Exception:
             raise ValueError(f'Could not transform model: {func}')
     return model_transformed
+
+
+def _get_mfl_from_type(mfl, type):
+    if type == 'pk':
+        return mfl.filter(filter_on='pk')
+    elif type == 'covariates':
+        return mfl.covariates
+    elif type == 'iiv':
+        return mfl.iiv
+    elif type == 'covariance':
+        return mfl.covariance
+    else:
+        return mfl
+
+
+def _get_feature_diffs(search_space, model_features, type):
+    features_to_add = []
+    features_to_remove = []
+
+    # None of these are optional since all are in model_features
+    features_not_in_search_space = model_features - search_space
+    for feature in features_not_in_search_space:
+        if isinstance(feature, (Covariate, IIV, Covariance)):
+            features_to_remove.append(feature)
+        else:
+            types = search_space.get_feature_type(builtins.type(feature))
+            if types:
+                features_to_add.append(min(types))
+
+    if type is None or type == 'iiv':
+        mutex_dict = defaultdict(list)
+        for feature in search_space.iiv:
+            feature = feature.replace(optional=False)
+            mutex_dict[feature.parameter].append(feature)
+    else:
+        mutex_dict = dict()
+
+    features_not_in_model = search_space - model_features
+    features_not_in_model = features_not_in_model.filter(filter_on='forced')
+    for feature in features_not_in_model:
+        # Will have been handled in features_not_in_search_space
+        if not hasattr(feature, 'optional'):
+            continue
+
+        if (type is None or type == 'iiv') and isinstance(feature, IIV):
+            other_features = mutex_dict.get(feature.parameter)
+            # Handle multiple types of fps for IIVs, e.g. exp cannot be combined with add
+            if any(f in model_features for f in other_features):
+                continue
+            min_feature = sorted(other_features, reverse=True)[0]
+            if feature != min_feature:
+                continue
+        if feature not in model_features:
+            features_to_add.append(feature)
+
+    return features_to_add, features_to_remove
+
+
+def is_in_search_space(
+    model: Model,
+    search_space: Union[ModelFeatures, Sequence[ModelFeature]],
+    type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
+):
+    if isinstance(search_space, Sequence):
+        search_space = ModelFeatures.create(search_space)
+    search_space = _get_mfl_from_type(search_space, type)
+    model_features = get_model_features(model, type=type)
+
+    if model_features == search_space:
+        return True
+    if model_features not in search_space:
+        return False
+
+    features_to_add, features_to_remove = _get_feature_diffs(search_space, model_features, type)
+
+    if features_to_add or features_to_remove:
+        return False
+    else:
+        return True

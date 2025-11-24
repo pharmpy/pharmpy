@@ -36,6 +36,7 @@ from pharmpy.modeling.mfl import (
     expand_model_features,
     generate_transformations,
     get_model_features,
+    is_in_search_space,
     transform_into_search_space,
 )
 
@@ -118,6 +119,7 @@ from pharmpy.modeling.mfl import (
             'IIV([CL,MAT,VC],EXP)',
         ),
         ([], 'COVARIANCE(IIV,@IIV)', 'COVARIANCE(IIV,[CL,MAT,VC])'),
+        ([], 'IIV(CL,EXP);IIV?(@PK,[ADD,EXP])', 'IIV(CL,EXP);IIV?([MAT,VC],[ADD,EXP])'),
     ),
 )
 def test_expand_model_features(load_model_for_test, testdata, funcs, source, expected):
@@ -380,19 +382,17 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'funcs, source, kwargs, type, expected',
+    'funcs, source, type, expected',
     (
         (
             [],
             'ABSORPTION(ZO)',
-            dict(),
             'pk',
             'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
         ),
         (
             [set_zero_order_absorption],
             'ABSORPTION(FO)',
-            dict(),
             'pk',
             'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0)',
         ),
@@ -400,91 +400,78 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
             [],
             'ABSORPTION([ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
             'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(1)',
-            dict(),
             'pk',
             'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(1)',
         ),
         (
             [],
-            'IIV?([CL,MAT,VC],EXP)',
-            dict(),
+            'IIV([CL,MAT,VC],EXP)',
             'iiv',
             'IIV([CL,MAT,VC],EXP)',
         ),
         (
             [partial(remove_iiv, to_remove='CL')],
             'IIV?([CL,MAT,VC],EXP)',
-            dict(),
             'iiv',
             'IIV([MAT,VC],EXP)',
         ),
         (
-            [partial(remove_iiv, to_remove='CL')],
-            'IIV([CL,MAT,VC],EXP)',
-            dict(),
+            [add_lag_time],
+            'IIV([CL,MAT,MDT,VC],[EXP,ADD])',
             'iiv',
-            'IIV([CL,MAT,VC],EXP)',
-        ),
-        (
-            [partial(remove_iiv, to_remove='CL')],
-            'IIV?([CL,MAT,VC],EXP)',
-            {'force_optional': True},
-            'iiv',
-            'IIV([CL,MAT,VC],EXP)',
+            'IIV([CL,MAT,MDT,VC],EXP)',
         ),
         (
             [],
             'IIV([MAT,VC],EXP)',
-            dict(),
             'iiv',
             'IIV([MAT,VC],EXP)',
         ),
         (
             [],
             'IIV([MAT,VC],EXP)',
-            dict(),
             'iiv',
             'IIV([MAT,VC],EXP)',
         ),
         (
             [],
             'IIV(CL,ADD);IIV([MAT,VC],EXP)',
-            dict(),
             'iiv',
             'IIV(CL,ADD);IIV([MAT,VC],EXP)',
         ),
         (
             [],
             'IIV(CL,ADD);IIV([MAT,VC],[ADD,EXP])',
-            dict(),
             'iiv',
             'IIV(CL,ADD);IIV([MAT,VC],EXP)',
         ),
         (
             [],
             'COVARIANCE(IIV,[CL,MAT,VC])',
-            dict(),
             'covariance',
             'COVARIANCE(IIV,[CL,MAT,VC])',
         ),
         (
             [],
+            'IIV(CL,EXP);IIV([MAT,VC],[EXP,ADD])',
+            'iiv',
+            'IIV([CL,MAT,VC],EXP)',
+        ),
+        (
             [],
-            dict(),
+            [],
             'iiv',
             '',
         ),
         (
             [],
             'COVARIANCE(IIV,[CL,MAT])',
-            dict(),
             'covariance',
             'COVARIANCE(IIV,[CL,MAT])',
         ),
         (
             [create_joint_distribution],
             'COVARIANCE(IIV,[CL,MAT])',
-            dict(),
             'covariance',
             'COVARIANCE(IIV,[CL,MAT])',
         ),
@@ -495,7 +482,6 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
                 create_joint_distribution,
             ],
             'COVARIANCE(IIV,[CL,MAT])',
-            dict(),
             'covariance',
             'COVARIANCE(IIV,[CL,MAT])',
         ),
@@ -506,7 +492,6 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
                 create_joint_distribution,
             ],
             'COVARIANCE(IIV,[CL,MAT,VC])',
-            dict(),
             'covariance',
             'COVARIANCE(IIV,[CL,MAT,VC])',
         ),
@@ -517,18 +502,104 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
                 create_joint_distribution,
             ],
             [],
-            dict(),
             'covariance',
             '',
         ),
     ),
 )
-def test_transform_into_search_space(
-    load_model_for_test, testdata, funcs, source, kwargs, type, expected
-):
+def test_transform_into_search_space(load_model_for_test, testdata, funcs, source, type, expected):
     mf = ModelFeatures.create(source)
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model = func(model)
-    model_transformed = transform_into_search_space(model, mf, type=type, **kwargs)
+    model_transformed = transform_into_search_space(model, mf, type=type)
     assert repr(get_model_features(model_transformed, type=type)) == expected
+
+
+@pytest.mark.parametrize(
+    'funcs, source, type, expected',
+    (
+        ([], 'ABSORPTION(ZO)', 'pk', False),
+        ([set_zero_order_absorption], 'ABSORPTION(FO)', 'pk', False),
+        (
+            [],
+            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
+            'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(0..1)',
+            'pk',
+            True,
+        ),
+        (
+            [],
+            'ABSORPTION([ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
+            'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(1)',
+            'pk',
+            False,
+        ),
+        (
+            [],
+            'IIV([CL,MAT,VC],EXP)',
+            'iiv',
+            True,
+        ),
+        (
+            [partial(remove_iiv, to_remove='CL')],
+            'IIV?([CL,MAT,VC],EXP)',
+            'iiv',
+            True,
+        ),
+        (
+            [add_lag_time],
+            'IIV?([CL,MAT,MDT,VC],[EXP,ADD])',
+            'iiv',
+            True,
+        ),
+        (
+            [add_lag_time],
+            'IIV([CL,MAT,MDT,VC],[EXP,ADD])',
+            'iiv',
+            False,
+        ),
+        (
+            [],
+            'IIV(CL,ADD);IIV([MAT,VC],[ADD,EXP])',
+            'iiv',
+            False,
+        ),
+        (
+            [],
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+            'covariance',
+            False,
+        ),
+        (
+            [],
+            'IIV(CL,EXP);IIV([MAT,VC],[EXP,ADD])',
+            'iiv',
+            True,
+        ),
+        (
+            [],
+            [],
+            'iiv',
+            False,
+        ),
+        (
+            [],
+            'COVARIANCE(IIV,[CL,MAT])',
+            'covariance',
+            False,
+        ),
+        (
+            [create_joint_distribution],
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+            'covariance',
+            True,
+        ),
+    ),
+)
+def test_is_in_search_space(load_model_for_test, testdata, funcs, source, type, expected):
+    mf = ModelFeatures.create(source)
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+    assert is_in_search_space(model, mf, type=type) == expected
