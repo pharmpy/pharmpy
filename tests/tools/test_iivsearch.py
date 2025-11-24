@@ -16,6 +16,7 @@ from pharmpy.modeling import (
     set_iiv_on_ruv,
     set_name,
 )
+from pharmpy.modeling.mfl import get_model_features
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
     _create_param_dict,
@@ -36,10 +37,12 @@ from pharmpy.tools.iivsearch.algorithms import (
 from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     categorize_model_entries,
+    create_base_model,
     create_param_mapping,
     create_workflow,
     get_mbic_search_space,
     get_ref_model,
+    is_model_in_search_space,
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
@@ -47,6 +50,7 @@ from pharmpy.tools.iivsearch.tool import (
     update_linearized_base_model,
     validate_input,
 )
+from pharmpy.tools.run import read_modelfit_results
 from pharmpy.workflows import ModelEntry, Workflow
 
 
@@ -401,9 +405,80 @@ def test_get_covariance_combinations(mfl, base_features, expected):
     mfl = ModelFeatures.create(mfl)
     mfl_base = ModelFeatures.create(base_features)
     combinations = get_covariance_combinations(mfl, mfl_base)
-    assert tuple() in combinations if base_features else tuple() not in combinations
+    mf_empty = ModelFeatures(tuple())
+    assert mf_empty in combinations if base_features else mf_empty not in combinations
     assert len(combinations) == expected
     assert mfl_base not in combinations
+
+
+@pytest.mark.parametrize(
+    'funcs, mfl, as_fullblock, expected',
+    [
+        ([], 'IIV([CL,MAT,VC],EXP)', False, True),
+        ([], 'IIV?([CL,MAT,VC],EXP)', False, True),
+        ([], 'IIV?([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', False, False),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC],EXP)', False, True),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC,QP1],EXP)', False, True),
+        (
+            [
+                add_peripheral_compartment,
+                partial(add_iiv, list_of_parameters=['QP1'], expression='exp'),
+            ],
+            'IIV?([CL,MAT,VC,QP1],EXP)',
+            False,
+            True,
+        ),
+        ([], 'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,VC])', False, True),
+        ([], 'IIV([CL,MAT,VC],EXP)', True, False),
+        ([create_joint_distribution], 'IIV([CL,MAT,VC],EXP)', True, True),
+        ([], 'IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', False, True),
+    ],
+)
+def test_is_model_in_search_space(
+    load_model_for_test, testdata, funcs, mfl, as_fullblock, expected
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    for func in funcs:
+        model = func(model)
+
+    mfl = ModelFeatures.create(mfl)
+    assert is_model_in_search_space(model, mfl, as_fullblock) == expected
+
+
+@pytest.mark.parametrize(
+    'mfl, as_fullblock, iiv_expected, cov_expected',
+    [
+        ('IIV?([CL,MAT,VC],EXP)', False, 'IIV([CL,MAT,VC],EXP)', ''),
+        ('IIV?([CL,MAT,VC],EXP)', True, 'IIV([CL,MAT,VC],EXP)', 'COVARIANCE(IIV,[CL,MAT,VC])'),
+        (
+            'IIV(CL,EXP);IIV?([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
+            False,
+            'IIV([CL,MAT,VC],EXP)',
+            '',
+        ),
+        ('IIV(CL,EXP);IIV?([MAT,VC],ADD)', False, 'IIV(CL,EXP);IIV([MAT,VC],ADD)', ''),
+        ('IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD])', False, 'IIV([CL,MAT,VC],EXP)', ''),
+        (
+            'IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD]);COVARIANCE?(IIV,[CL,MAT,VC])',
+            True,
+            'IIV([CL,MAT,VC],EXP)',
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
+    ],
+)
+def test_create_base_model(
+    load_model_for_test, testdata, mfl, as_fullblock, iiv_expected, cov_expected
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_entry = ModelEntry.create(model=model, modelfit_results=res)
+    mfl = ModelFeatures.create(mfl)
+    base_model_entry = create_base_model(mfl, as_fullblock, model_entry)
+    base_model = base_model_entry.model
+    assert repr(get_model_features(base_model, type='iiv')) == iiv_expected
+    assert repr(get_model_features(base_model, type='covariance')) == cov_expected
+    assert base_model_entry.modelfit_results is None
+    assert base_model_entry.parent == model
 
 
 @pytest.mark.parametrize(

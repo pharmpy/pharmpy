@@ -28,7 +28,7 @@ from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, Workf
 from pharmpy.workflows.results import mfr
 
 
-def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
+def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset, as_fullblock):
     wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
 
     base_features = get_model_features(base_model_entry.model, type='iiv')
@@ -38,7 +38,13 @@ def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
     for i, features in enumerate(combinations, 1):
         model_name = f'iivsearch_run{index_offset + i}'
         task_candidate_entry = Task(
-            f'create_{model_name}', create_candidate, model_name, features, 'iiv', base_model_entry
+            f'create_{model_name}',
+            create_candidate,
+            model_name,
+            features,
+            'iiv',
+            as_fullblock,
+            base_model_entry,
         )
         wb.add_task(task_candidate_entry)
 
@@ -54,7 +60,7 @@ def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset):
     return wf
 
 
-def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
+def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset, as_fullblock):
     wb = WorkflowBuilder(name='td_exhaustive_block_structure')
 
     base_model = base_model_entry.model
@@ -71,6 +77,7 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset):
             model_name,
             features,
             'covariance',
+            False,
             base_model_entry,
         )
         wb.add_task(task_candidate_entry)
@@ -125,7 +132,8 @@ def get_covariance_combinations(mfl, base_features):
             continue
         combinations.append(mfl_subset)
     if base_features:
-        return ((),) + tuple(combinations)
+        empty_subset = ModelFeatures.create([])
+        return (empty_subset,) + tuple(combinations)
     else:
         return tuple(combinations)
 
@@ -151,14 +159,16 @@ def _is_valid_block_combination(features: Sequence[Covariance]):
         return True
 
 
-def create_candidate(name, mfl, type, base_model_entry):
+def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
     base_model, base_res = base_model_entry.model, base_model_entry.modelfit_results
     candidate_model = update_initial_estimates(base_model, base_res)
     candidate_model = candidate_model.replace(name=name)
     ies = base_res.individual_estimates
     candidate_model = transform_into_search_space(
-        candidate_model, mfl, type=type, force_optional=True, individual_estimates=ies
+        candidate_model, mfl.force_optional(), type=type, individual_estimates=ies
     )
+    if as_fullblock and len(mfl.iiv) > 1:
+        candidate_model = create_joint_distribution(candidate_model, individual_estimates=ies)
     description = create_description_mfl(get_model_features(candidate_model), type)
     candidate_model = candidate_model.replace(description=description)
 

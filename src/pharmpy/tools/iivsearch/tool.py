@@ -21,6 +21,7 @@ from pharmpy.modeling import (
 from pharmpy.modeling.mfl import (
     expand_model_features,
     get_model_features,
+    is_in_search_space,
     transform_into_search_space,
 )
 from pharmpy.tools.common import (
@@ -41,6 +42,7 @@ from pharmpy.tools.modelrank import ModelRankResults
 from pharmpy.tools.run import (
     run_subtool,
     summarize_errors_from_entries,
+    summarize_modelfit_results,
     summarize_modelfit_results_from_entries,
 )
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -860,13 +862,8 @@ def create_workflow_mfl(
 
     mfl = ModelFeatures.create(search_space)
     mfl_expanded = expand_model_features(model, mfl)
-    if (
-        not (
-            get_model_features(model, type='iiv') in mfl_expanded
-            and get_model_features(model, type='covariance') in mfl_expanded
-        )
-        or as_fullblock
-    ):
+
+    if not is_model_in_search_space(model, mfl_expanded, as_fullblock):
         create_base_task = Task.create('base_model', create_base_model, mfl_expanded, as_fullblock)
         wb.add_task(create_base_task, predecessors=[start_task])
         wf_fit = create_fit_workflow(n=1)
@@ -875,14 +872,12 @@ def create_workflow_mfl(
     else:
         base_task = start_task
 
-    wb.gather([start_task, base_task])
-    start_model_entries_task = wb.output_tasks[0]
-
     steps_to_run = prepare_algorithms(algorithm, correlation_algorithm)
     search_task = Task.create(
         'run_search',
         run_search,
         steps_to_run,
+        as_fullblock,
         mfl,
         rank_type,
         cutoff,
@@ -891,17 +886,29 @@ def create_workflow_mfl(
     )
     wb.add_task(search_task, predecessors=[base_task])
 
-    post_process_task = Task.create(
-        'postprocess',
-        postprocess,
+    compare_task = Task.create(
+        'compare_to_input',
+        compare_to_input_model,
         rank_type,
         cutoff,
         strictness,
         parameter_uncertainty_method,
     )
-    wb.add_task(post_process_task, predecessors=[start_model_entries_task, search_task])
+    wb.add_task(compare_task, predecessors=[start_task, search_task])
+
+    post_process_task = Task.create('postprocess', postprocess, rank_type)
+    wb.add_task(post_process_task, predecessors=[start_task, search_task, compare_task])
 
     return Workflow(wb)
+
+
+def is_model_in_search_space(model, mfl, as_fullblock):
+    if as_fullblock and len(model.random_variables.iiv) != 1:
+        return False
+    is_in_iiv_search_space = is_in_search_space(model, mfl, type='iiv')
+    if mfl.covariance:
+        return is_in_iiv_search_space and is_in_search_space(model, mfl, type='covariance')
+    return is_in_iiv_search_space
 
 
 def start_with_search_space(context, input_model, input_res):
@@ -927,10 +934,8 @@ def create_base_model(mfl, as_fullblock, input_model_entry):
         input_res,
         move_est_close_to_bounds=True,
     )
-    base_model = transform_into_search_space(base_model, mfl.iiv, type='iiv', force_optional=True)
-    base_model = transform_into_search_space(
-        base_model, mfl.covariance, type='covariance', force_optional=False
-    )
+    base_model = transform_into_search_space(base_model, mfl.iiv.force_optional(), type='iiv')
+    base_model = transform_into_search_space(base_model, mfl.covariance, type='covariance')
     if as_fullblock:
         ies = input_res.individual_estimates
         base_model = create_joint_distribution(base_model, individual_estimates=ies)
@@ -944,6 +949,7 @@ def create_base_model(mfl, as_fullblock, input_model_entry):
 def run_search(
     context,
     steps_to_run,
+    as_fullblock,
     mfl,
     rank_type,
     cutoff,
@@ -951,14 +957,15 @@ def run_search(
     parameter_uncertainty_method,
     base_model_entry,
 ):
-    tool_summaries, model_summaries, error_summaries = [], [], []
+    rank_results = []
+    model_entries = [base_model_entry]
     index_offset = 0
     best_model_entry = base_model_entry
     for step in steps_to_run:
         algorithm_func = getattr(algorithms, f'{step}_mfl')
         if not algorithm_func:
             raise NotImplementedError
-        wf_step = algorithm_func(best_model_entry, mfl, index_offset)
+        wf_step = algorithm_func(best_model_entry, mfl, index_offset, as_fullblock)
         if not wf_step:
             continue
 
@@ -973,20 +980,13 @@ def run_search(
             best_model_entry,
             mes,
         )
-        model_entries = [best_model_entry] + list(mes)
-
-        summary_tool = add_parent_column(rank_res.summary_tool, model_entries)
-        summary_models = summarize_modelfit_results_from_entries(mes)
-        summary_errors = summarize_errors_from_entries(mes)
-
-        tool_summaries.append(summary_tool)
-        model_summaries.append(summary_models)
-        error_summaries.append(summary_errors)
+        model_entries += list(mes)
+        rank_results.append(rank_res)
 
         best_model_entry = get_best_model_entry(model_entries, rank_res.final_model)
         index_offset += len(mes)
 
-    return best_model_entry, (tool_summaries, model_summaries, error_summaries)
+    return rank_results, model_entries
 
 
 def rank_models(
@@ -1023,38 +1023,22 @@ def get_best_model_entry(model_entries, final_model):
     return best_model_entry[0]
 
 
-def postprocess(
+def compare_to_input_model(
     context,
     rank_type,
     cutoff,
     strictness,
     parameter_uncertainty_method,
-    start_model_entries,
-    best_model_entry_and_summaries,
+    input_model_entry,
+    rank_results_and_model_entries,
 ):
-    best_model_entry, (tool_summaries, model_summaries, error_summaries) = (
-        best_model_entry_and_summaries
-    )
-
-    # FIXME: remove once summary_models is created outside of workflow
-    input_model_entry = start_model_entries[0]
-    summary_models_input = summarize_modelfit_results_from_entries([input_model_entry])
-    summary_errors_input = summarize_errors_from_entries([input_model_entry])
-    model_summaries.insert(0, summary_models_input)
-    error_summaries.insert(0, summary_errors_input)
-
-    # FIXME: remove once summary_models is created outside of workflow
-    if len(start_model_entries) > 1:
-        assert len(start_model_entries) == 2
-        base_model_entry = start_model_entries[1]
-        summary_models_base = summarize_modelfit_results_from_entries([base_model_entry])
-        summary_errors_base = summarize_errors_from_entries([base_model_entry])
-        model_summaries.insert(1, summary_models_base)
-        error_summaries.insert(1, summary_errors_base)
+    rank_results, model_entries = rank_results_and_model_entries
 
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
-    best_model, best_res = best_model_entry.model, best_model_entry.modelfit_results
+    best_model, best_res = rank_results[-1].final_model, rank_results[-1].final_results
+    best_model_entry = get_best_model_entry(model_entries, best_model)
     if input_model != best_model and input_res and best_res:
+        context.log_info('Comparing final model to input model')
         rank_res = rank_models(
             context,
             rank_type,
@@ -1064,34 +1048,49 @@ def postprocess(
             input_model_entry,
             [best_model_entry],
         )
-        summary_final_step = add_parent_column(
-            rank_res.summary_tool, [input_model_entry, best_model_entry]
-        )
-        tool_summaries += [summary_final_step]
-        if rank_res.final_model == input_model:
-            context.log_warning(
-                f'Worse {rank_type} in final model {best_model.name} '
-                f'than {input_model.name}, selecting input model'
-            )
-            final_model_entry = input_model_entry
-        else:
-            final_model_entry = best_model_entry
+        return rank_res
     else:
-        final_model_entry = best_model_entry
+        return None
 
-    context.store_final_model_entry(final_model_entry)
 
-    plots = create_plots(final_model_entry.model, final_model_entry.modelfit_results)
-    eta_shrinkage_table = table_final_eta_shrinkage(
-        final_model_entry.model, final_model_entry.modelfit_results
-    )
+def postprocess(
+    context,
+    rank_type,
+    input_model_entry,
+    rank_results_and_model_entries,
+    comparison_results,
+):
+    rank_results, model_entries = rank_results_and_model_entries
+    model_entries.append(input_model_entry)
+
+    summary_models = summarize_modelfit_results(context)
+
+    input_model = input_model_entry.model
+    best_model, best_res = rank_results[-1].final_model, rank_results[-1].final_results
+    best_model_entry = get_best_model_entry(model_entries, best_model)
+
+    if comparison_results:
+        context.log_warning(
+            f'Worse {rank_type} in final model {best_model.name} '
+            f'than {input_model.name}, selecting input model'
+        )
+        rank_results.append(comparison_results)
+
+    tool_summaries = []
+    for rank_res in rank_results:
+        summary_step = add_parent_column(rank_res.summary_tool, model_entries)
+        tool_summaries.append(summary_step)
+
+    context.store_final_model_entry(best_model_entry)
+
+    plots = create_plots(best_model, best_res)
+    eta_shrinkage_table = table_final_eta_shrinkage(best_model, best_res)
 
     res = IIVSearchResults(
         summary_tool=combine_summaries(tool_summaries, idx_start=1),
-        summary_models=combine_summaries(model_summaries, idx_start=0),
-        summary_errors=combine_summaries(error_summaries, idx_start=0),
-        final_model=final_model_entry.model,
-        final_results=final_model_entry.modelfit_results,
+        summary_models=summary_models,
+        final_model=best_model,
+        final_results=best_res,
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
         final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],

@@ -98,12 +98,15 @@ from pharmpy.workflows import LocalDirectoryContext
             'iivsearch_run15',
         ),
         (
-            'skip',
             'top_down_exhaustive',
-            {'_search_space': 'IIV(@PK,exp);COVARIANCE?(IIV,@IIV)', '_as_fullblock': True},
-            11,
-            6,
-            'iivsearch_run1',
+            None,
+            {
+                '_search_space': 'IIV(CL,exp);IIV?(@PK,[exp,add]);COVARIANCE?(IIV,@IIV)',
+                '_as_fullblock': True,
+            },
+            27,
+            9,
+            'iivsearch_run27',
         ),
     ],
 )
