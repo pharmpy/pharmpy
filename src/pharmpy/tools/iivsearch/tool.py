@@ -896,7 +896,7 @@ def create_workflow_mfl(
     )
     wb.add_task(compare_task, predecessors=[start_task, search_task])
 
-    post_process_task = Task.create('postprocess', postprocess, rank_type)
+    post_process_task = Task.create('postprocess', postprocess)
     wb.add_task(post_process_task, predecessors=[start_task, search_task, compare_task])
 
     return Workflow(wb)
@@ -1048,6 +1048,11 @@ def compare_to_input_model(
             input_model_entry,
             [best_model_entry],
         )
+        if rank_res.final_model == input_model:
+            context.log_warning(
+                f'Worse {rank_type} in final model {best_model.name} '
+                f'than {input_model.name}, selecting input model'
+            )
         return rank_res
     else:
         return None
@@ -1055,7 +1060,6 @@ def compare_to_input_model(
 
 def postprocess(
     context,
-    rank_type,
     input_model_entry,
     rank_results_and_model_entries,
     comparison_results,
@@ -1065,15 +1069,10 @@ def postprocess(
 
     summary_models = summarize_modelfit_results(context)
 
-    input_model = input_model_entry.model
     best_model, best_res = rank_results[-1].final_model, rank_results[-1].final_results
     best_model_entry = get_best_model_entry(model_entries, best_model)
 
     if comparison_results:
-        context.log_warning(
-            f'Worse {rank_type} in final model {best_model.name} '
-            f'than {input_model.name}, selecting input model'
-        )
         rank_results.append(comparison_results)
 
     tool_summaries = []
