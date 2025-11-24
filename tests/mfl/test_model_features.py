@@ -686,6 +686,12 @@ def test_expand():
     assert len(mf_expanded) == len(mf) + 2
     assert mf_expanded.is_expanded()
 
+    mf = ModelFeatures.create('IIV(CL,EXP);IIV?(@IIV,[ADD,EXP])')
+    assert not mf.is_expanded()
+    mf_expanded = mf.expand(expand_to)
+    assert len(mf_expanded) == len(mf) + 2
+    assert mf_expanded.is_expanded()
+
     a = Absorption(type=Ref('x'))
     mf_incorrect = ModelFeatures(mf.features + (a,))
     with pytest.raises(NotImplementedError):
@@ -700,6 +706,11 @@ def test_filter():
     mf = ModelFeatures.create([iiv1, iiv2, iiv3])
 
     assert mf.filter(filter_on='optional').features == (iiv2, iiv3)
+    assert mf.filter(filter_on='forced').features == (iiv1,)
+
+    mf2 = ModelFeatures.pk_oral()
+    mf2_iiv = mf2 + iiv1
+    assert mf2_iiv.filter(filter_on='pk') == mf2
 
     with pytest.raises(NotImplementedError):
         mf.filter(filter_on='x')
@@ -718,30 +729,77 @@ def test_force_optional():
     assert all(feature.optional is False for feature in mf2_forced)
 
 
-def test_contains():
-    mf1 = ModelFeatures.pk_oral()
+@pytest.mark.parametrize(
+    'features1, features2, expected',
+    [
+        (
+            [Absorption.create('FO'), Elimination.create('FO')],
+            [Absorption.create('FO'), Elimination.create('FO'), Elimination.create('ZO')],
+            True,
+        ),
+        (
+            [
+                Absorption.create('FO'),
+                Elimination.create('FO'),
+                Covariate.create('CL', 'WGT', 'exp', optional=False),
+            ],
+            [Absorption.create('FO'), Elimination.create('FO'), Elimination.create('ZO')],
+            False,
+        ),
+        (
+            [
+                Absorption.create('FO'),
+                Elimination.create('FO'),
+                Covariate.create('CL', 'WGT', 'exp', optional=True),
+            ],
+            [Absorption.create('FO'), Elimination.create('FO'), Elimination.create('ZO')],
+            False,
+        ),
+        (
+            [Absorption.create('FO'), Elimination.create('FO')],
+            [
+                Absorption.create('FO'),
+                Elimination.create('FO'),
+                Elimination.create('ZO'),
+                Covariate.create('CL', 'WGT', 'exp', optional=True),
+            ],
+            True,
+        ),
+    ],
+)
+def test_contains(features1, features2, expected):
+    mf1 = ModelFeatures.create(features1)
+    mf2 = ModelFeatures.create(features2)
 
-    a = Absorption.create('FO')
-    e = Elimination.create('FO')
-    mf2 = ModelFeatures.create([a, e])
-
-    assert mf2 in mf1
-    assert mf1 not in mf2
-    assert a in mf1 and a in mf2
-    assert [a, e] in mf1
-
-    c = Covariate.create('CL', 'WGT', 'exp')
-    assert [c] not in mf1
-
-    mf3 = ModelFeatures.create([a, e, c])
-    assert mf3 not in mf1
-
+    assert (mf1 in mf2) == expected
+    assert (features1 in mf2) == expected
+    assert all(f in mf2 for f in features1) == expected
     assert 1 not in mf1
+    assert [1] not in mf1
 
-    c_optional = c.replace(optional=True)
-    mf4 = ModelFeatures.create([a, e, c_optional])
-    assert c in mf4
-    assert c_optional not in mf3
+    # mf1 = ModelFeatures.pk_oral()
+    #
+    # a = Absorption.create('FO')
+    # e = Elimination.create('FO')
+    # mf2 = ModelFeatures.create([a, e])
+    #
+    # assert mf2 in mf1
+    # assert mf1 not in mf2
+    # assert a in mf1 and a in mf2
+    # assert [a, e] in mf1
+    #
+    # c = Covariate.create('CL', 'WGT', 'exp')
+    # assert [c] not in mf1
+    #
+    # mf3 = ModelFeatures.create([a, e, c])
+    # assert mf3 not in mf1
+    #
+    # assert 1 not in mf1
+    #
+    # c_optional = c.replace(optional=True)
+    # mf4 = ModelFeatures.create([a, e, c_optional])
+    # assert c in mf4
+    # assert c_optional not in mf3
 
 
 def test_add():

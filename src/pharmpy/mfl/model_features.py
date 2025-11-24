@@ -226,17 +226,35 @@ class ModelFeatures(Immutable):
             return self
 
         features_new = []
+        params_with_variability = set()
         for feature in self:
             if feature.is_expanded():
                 features_new.append(feature)
+                if isinstance(feature, (IIV, IOV)):
+                    params_with_variability.add(feature.parameter)
             else:
-                features_new.extend(feature.expand(expand_to))
+                expanded = feature.expand(expand_to)
+                if isinstance(feature, (IIV, IOV)):
+                    expanded_new = [
+                        var
+                        for var in expanded
+                        if (param := getattr(var, 'parameter', None))
+                        and param not in params_with_variability
+                    ]
+                    expanded = expanded_new
+                features_new.extend(expanded)
 
         return self.create(features=features_new)
 
-    def filter(self, filter_on: Literal['optional']) -> ModelFeatures:
+    def filter(self, filter_on: Literal['optional', 'forced', 'pk']) -> ModelFeatures:
         if filter_on == 'optional':
             features = [feature for feature in self if getattr(feature, 'optional', False)]
+        elif filter_on == 'forced':
+            features = [feature for feature in self if not getattr(feature, 'optional', True)]
+        elif filter_on == 'pk':
+            features = (
+                self.absorption + self.transits + self.lagtime + self.peripherals + self.elimination
+            )
         else:
             raise NotImplementedError
         return ModelFeatures.create(features)
