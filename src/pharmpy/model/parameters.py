@@ -7,7 +7,7 @@ from typing import Any, Optional, Sequence, Union, overload
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.internals.immutable import Immutable, cache_method
+from pharmpy.internals.immutable import Immutable, cache_method_no_args
 
 
 class Parameter(Immutable):
@@ -120,7 +120,7 @@ class Parameter(Immutable):
         """Initial parameter estimate or value"""
         return self._init
 
-    @cache_method
+    @cache_method_no_args
     def __hash__(self):
         return hash((self.name, self.init, self.lower, self.upper, self.fix))
 
@@ -430,7 +430,7 @@ class Parameters(CollectionsSequence, Immutable):
                 return False  # pragma: no cover
         return True
 
-    @cache_method
+    @cache_method_no_args
     def __hash__(self):
         return hash(self._params)
 
