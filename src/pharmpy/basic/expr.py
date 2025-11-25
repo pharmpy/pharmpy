@@ -397,6 +397,9 @@ class BooleanExpr:
     def __or__(self, other: BooleanExpr) -> BooleanExpr:
         return BooleanExpr(sympy.Or(self._expr, other._expr))
 
+    def __invert__(self):
+        return BooleanExpr(sympy.Not(self._expr))
+
     @classmethod
     def eq(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
         return cls(sympy.Eq(lhs, rhs))
