@@ -1,3 +1,82 @@
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pharmpy-core"
+version = "1.11.1"
+description = "Pharmacometric modeling"
+license = "LGPL-3.0-or-later"
+license-files = ["LICENSE", "LICENSE.LESSER"]
+authors = [
+    {name='Rikard Nordgren', email='rikard.nordgren@uu.se'}
+]
+readme = { file = "README.rst", content-type = "text/x-rst" }
+requires-python = '>=3.11'
+keywords = ["pharmacometrics"]
+dependencies = [
+    'lark>=1.1.7',
+    'sympy>=1.9',
+    'symengine>=0.13.0',
+    'pandas>=1.4, !=2.1.0',
+    'numexpr>=2.7.0',
+    'altair>=6.0.0',
+    'itables>=2.4.0',
+    'jsonschema>=3.1.0',
+    'sphinx>=2.2.0',
+    'csscompressor>=0.9.5',
+    'beautifulsoup4>=4.13.0',
+    'lxml>=4.4.0',
+    'numpy>=1.17',
+    'scipy>=1.4.0',
+    'dask>=2024.2.1',
+    'distributed>=2024.2.1',
+    'networkx>=2.3',
+    'appdirs>=1.4.4',
+    'rich>=4.2.0',
+    'jupyter-sphinx>=0.2.0',
+    'ipykernel>=5.4.0',
+    'statsmodels>=0.14.5',
+]
+classifiers = [
+    'Development Status :: 5 - Production/Stable',
+    'Intended Audience :: Science/Research',
+    'Intended Audience :: Developers',
+    'Operating System :: POSIX',
+    'Operating System :: MacOS',
+    'Operating System :: Unix',
+    'Operating System :: Microsoft :: Windows',
+    'Programming Language :: Python',
+    'Programming Language :: Python :: 3 :: Only',
+    'Programming Language :: Python :: 3.11',
+    'Programming Language :: Python :: 3.12',
+    'Programming Language :: Python :: 3.13',
+    'Programming Language :: Python :: 3.14',
+    'Programming Language :: Python :: Implementation :: CPython',
+    'Topic :: Scientific/Engineering',
+]
+
+[project.urls]
+Homepage = "https://pharmpy.github.io"
+Documentation = "https://pharmpy.github.io"
+Issues = "https://github.com/pharmpy/pharmpy/issues"
+Repository = "https://github.com/pharmpy/pharmpy"
+Changelog = "https://pharmpy.github.io/latest/changelog.html"
+
+[project.optional-dependencies]
+nlmixr = ["pyreadr>=0.5.3"]
+
+[project.scripts]
+pharmpy = "pharmpy.__main__:run"
+psn-pharmpy-wrapper = "pharmpy.tools.psn_helpers:pharmpy_wrapper"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools]
+zip-safe = false
+include-package-data = true
+
 [tool.black]
 line-length = 100
 skip-string-normalization = 1

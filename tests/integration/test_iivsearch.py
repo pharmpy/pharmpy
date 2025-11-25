@@ -141,7 +141,7 @@ def test_iivsearch_dummy(
             algorithm=algorithm,
             correlation_algorithm=correlation_algorithm,
             esttool='dummy',
-            **kwargs
+            **kwargs,
         )
 
         algorithms = list(filter(lambda x: x != 'skip', [algorithm, correlation_algorithm]))
