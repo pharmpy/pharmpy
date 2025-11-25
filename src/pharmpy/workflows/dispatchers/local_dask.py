@@ -64,10 +64,11 @@ class LocalDaskDispatcher(Dispatcher):
                 #   - https://github.com/dask/distributed/blob/5dc591bbdd4427fe49fe90338a34fc85ee35f2c9/distributed/diskutils.py#L23-L29  # noqa: E501
                 #   - https://github.com/dask/distributed/commit/7ed517c47de90a68abd537d29df9740a2c20b638
                 is_windows = os.name == 'nt'
-                with TemporaryDirectory(
-                    ignore_cleanup_errors=is_windows
-                ) as dasktempdir, dask.config.set(  # pyright: ignore [reportPrivateImportUsage]
-                    {'temporary_directory': dasktempdir}
+                with (
+                    TemporaryDirectory(ignore_cleanup_errors=is_windows) as dasktempdir,
+                    dask.config.set(  # pyright: ignore [reportPrivateImportUsage]
+                        {'temporary_directory': dasktempdir}
+                    ),
                 ):
                     with warnings.catch_warnings():
                         # NOTE: Catch deprecation warning from python 3.10 via tornado.
@@ -80,11 +81,14 @@ class LocalDaskDispatcher(Dispatcher):
                         # When processes=False the number of workers is 1. Use threads per worker option to parallelize
                         ncores = context.retrieve_dispatching_options()['ncores']
                         dashboard_address = '31058'
-                        with LocalCluster(
-                            processes=False,
-                            dashboard_address=f':{dashboard_address}',
-                            threads_per_worker=ncores,
-                        ) as cluster, Client(cluster) as client:
+                        with (
+                            LocalCluster(
+                                processes=False,
+                                dashboard_address=f':{dashboard_address}',
+                                threads_per_worker=ncores,
+                            ) as cluster,
+                            Client(cluster) as client,
+                        ):
                             context.log_info(
                                 "Dispatching workflow with local_dask dispatcher "
                                 f"in {context}: {client} at dashboard address {dashboard_address}"
