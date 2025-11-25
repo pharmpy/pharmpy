@@ -210,3 +210,22 @@ def test_table_parsing(parser, buf, netas, correct):
     res = parser.parse(buf).records[0].parse_options(nonoptions=set(), netas=netas)
     names = [col[1] for col in res]
     assert names == correct
+
+
+@pytest.mark.usefixtures('parser')
+@pytest.mark.parametrize(
+    ("buf", "expected"),
+    (
+        ('$TABLE', None),
+        ('$TABLE FORMAT=QCSV', "QCSV"),
+        ('$TABLE NOTITLE FORMAT=CSV', "CSV"),
+        ('$TABLE FORMAT=s1PEw2d NOLABEL', "s1PEw2d"),
+        ('$TABLE CLOCKSEED=0 FORMAT=t10PEw11dEe NOPRINT', "t10PEw11dEe"),
+        ('$TABLE NOSUB=1 CONDITIONAL FORMAT=,Fw3d', ",Fw3d"),
+        ('$TABLE FORMAT=c1PGw2d NOHEADER OMITTED', "c1PGw2d"),
+        ('$TABLE FORMAT=q10PGw11d', "q10PGw11d"),
+    ),
+)
+def test_table_format(parser, buf, expected):
+    rec = parser.parse(buf).records[0]
+    assert rec.get_option("FORMAT") == expected
