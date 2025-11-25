@@ -48,20 +48,14 @@ jobs:
           cd pharmpy
           tox -e docs-build
 
-      - name: Install setuptools and wheel
+      - name: Install build dependencies
         run: |
-          pip install setuptools
-          pip install wheel
+          pip install setuptools wheel build
 
-      - name: Build wheel
+      - name: Build wheel and source package
         run: |
           cd pharmpy
-          python setup.py bdist_wheel
-
-      - name: Build source package
-        run: |
-          cd pharmpy
-          python setup.py sdist --formats=gztar
+          python -m build
 
       - name: Prepare upload files
         run: |
