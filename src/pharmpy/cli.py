@@ -13,30 +13,6 @@ Example argument lines (only preceded by ``pharmpy`` or ``python3 -m pharmpy``):
     # filter data (as model prescribes) and output to file 'output.csv'
     pharmpy data write run1.mod -o output.csv
 
-Entrypoints and Subcommands
----------------------------
-
-Standard practice of packaging is to define "entrypoints" in the setuptools ``setup.py``. Currently:
-
-.. code-block:: python
-
-  entry_points={
-      'console_scripts': [
-          'pharmpy           = pharmpy.cli:main',
-      ]
-  },
-
-Main entrypoint is ``pharmpy`` (which maps :func:`main`), but each subcommand could be given a
-shortcutting entrypoint (e.g. :func:`sumo`). This would be accomplished via invoking:
-
-Installing Pharmpy Wheel-build should install all of these to PATH. Then, these are clean targets
-for post-install hooks to symlink. Either to pollute the PATH namespace with traditional PsN-styled
-"binscripts", as::
-
-    /usr/bin/execute               ->  /usr/bin/pharmpy execute
-
-Or, to keep multiple versions when upgrading Pharmpy.
-
 On Logging
 ----------
 
