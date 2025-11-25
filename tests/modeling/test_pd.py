@@ -56,7 +56,14 @@ def test_set_direct_effect_on_conc_variable(load_model_for_test, testdata):
     [
         ('ir', 'linear'),
         ('ir', 'emax'),
+        ('ir', 'sigmoid'),
         ('ir', 'step'),
+        ('ir', 'loglin'),
+        ('amount', 'linear'),
+        ('amount', 'emax'),
+        ('amount', 'sigmoid'),
+        ('amount', 'step'),
+        ('amount', 'loglin'),
     ],
 )
 def test_set_direct_effect_kpd(testdata, kpd_driver, pd_model):
@@ -112,10 +119,10 @@ def _test_effect_models(model, expr, variable, e_zero_protect, x50_name="EC_50",
 
     sset = model.statements
     e_assign = sset.find_assignment(e)
-    if expr == 'sigmoid':
-        e_expr = e_assign.expression.piecewise_args[0][0]
-    elif e_zero_protect or expr == 'step':
+    if e_zero_protect or expr == 'step':
         e_expr = e_assign.expression.piecewise_args[1][0]
+    elif expr == 'sigmoid':
+        e_expr = e_assign.expression.piecewise_args[0][0]
     else:
         e_expr = e_assign.expression
 
@@ -151,9 +158,7 @@ def _test_effect_models(model, expr, variable, e_zero_protect, x50_name="EC_50",
     else:  # expr == "loglin"
         assert sset.find_assignment(e0) == Assignment.create(e0, S("POP_B"))
         assert sset.find_assignment(slope) == Assignment.create(slope, S("POP_SLOPE"))
-        assert sset.find_assignment(e) == Assignment.create(
-            e, slope * (variable + (e0 / slope).exp()).log()
-        )
+        assert e_expr == slope * (variable + (e0 / slope).exp()).log()
         if pkpd:
             assert sset.find_assignment(y_2) == Assignment.create(y_2, e + e * S("epsilon_p"))
 

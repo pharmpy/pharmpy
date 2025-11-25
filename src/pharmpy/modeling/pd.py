@@ -190,8 +190,10 @@ def _add_baseline_effect(model: Model):
 def _handle_zero(model: Model, expr: Expr):
     idv = model.datainfo.idv_column.symbol
     if expr.is_piecewise():
-        condition = (idv <= 0) | expr.piecewise_args[0][1]
-        expr = expr.piecewise_args[1][0]
+        args = expr.piecewise_args
+        non_zero_arg = args[0] if args[0][0] != 0 else args[1]
+        condition = (idv <= 0) | (~non_zero_arg[1])
+        expr = non_zero_arg[0]
         expr = Expr.piecewise((Expr.integer(0), condition), (expr, True))
     else:
         expr = Expr.piecewise((Expr.integer(0), idv <= 0), (expr, True))
