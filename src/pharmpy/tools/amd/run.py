@@ -252,41 +252,20 @@ def run_amd_task(
     if isinstance(input, str):
         input = Path(input)
 
-    if isinstance(input, Path):
-        model = create_basic_pk_model(
-            administration,
-            dataset_path=input,
-            cl_init=cl_init,
-            vc_init=vc_init,
-            mat_init=mat_init,
-        )
-        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
-    elif isinstance(input, pd.DataFrame):
-        model = create_basic_pk_model(
-            administration,
-            cl_init=cl_init,
-            vc_init=vc_init,
-            mat_init=mat_init,
-        )
-        model = set_dataset(model, input, datatype='nonmem')
-        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
-    elif isinstance(input, nonmem.model.Model):
+    if isinstance(input, nonmem.model.Model):
         model = input
         model = model.replace(name='start')
         context.store_input_model_entry(model)
     else:
-        # Redundant with validation
-        raise TypeError(
-            f'Invalid input: got `{input}` of type {type(input)},'
-            f' only NONMEM model or standalone dataset are supported currently.'
+        model = create_start_model(
+            input,
+            administration=administration,
+            cl_init=cl_init,
+            vc_init=vc_init,
+            mat_init=mat_init,
         )
 
-    if 'dvid' in model.datainfo.types:
-        dvid_name = model.datainfo.typeix['dvid'][0].name
-    elif 'DVID' in model.datainfo.names:
-        dvid_name = 'DVID'
-    else:
-        dvid_name = None
+    dvid_name = get_dvid_name(model)
 
     model = add_predictions(model, ['PRED', 'CIPREDI'])
     model = add_residuals(model, ['CWRES'])
@@ -330,87 +309,18 @@ def run_amd_task(
     if to_be_skipped:
         order = [tool for tool in order if tool not in to_be_skipped]
 
-    if modeltype in {'pkpd', 'drug_metabolite'}:
-        if modeltype == 'pkpd':
-            structsearch_features = ss_mfl.filter("pd")
-        else:
-            structsearch_features = ss_mfl.filter("metabolite")
-        if len(structsearch_features.mfl_statement_list()) == 0:
-            if modeltype == 'pkpd':
-                structsearch_features = mfl_parse(
-                    "DIRECTEFFECT([LINEAR, EMAX, SIGMOID]);"
-                    "EFFECTCOMP([LINEAR, EMAX, SIGMOID]);"
-                    "INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)",
-                    True,
-                )
-            else:
-                if administration in {'oral', 'ivoral'}:
-                    structsearch_features = mfl_parse(
-                        "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)", True
-                    )
-                else:
-                    structsearch_features = mfl_parse(
-                        "METABOLITE([BASIC]);PERIPHERALS([0,1], MET)", True
-                    )
+    if modeltype == 'pkpd':
+        structsearch_features = get_search_space_pkpd(ss_mfl)
+    elif modeltype == 'drug_metabolite':
+        structsearch_features = get_search_space_drug_metabolite(ss_mfl, administration)
+    else:
+        structsearch_features = None
 
-    modelsearch_features = ss_mfl.filter("pk")
-    if len(modelsearch_features.mfl_statement_list()) == 0:
-        if modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'oral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION(FO);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..1)",
-                True,
-            )
-        elif modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'ivoral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION(FO);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..2)",
-                True,
-            )
-        elif modeltype == 'tmdd' and administration == 'oral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION([MM, MIX-FO-MM]);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..1)",
-                True,
-            )
-        elif modeltype == 'tmdd' and administration == 'ivoral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION([MM, MIX-FO-MM]);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..2)",
-                True,
-            )
-        else:
-            modelsearch_features = mfl_parse("ELIMINATION(FO);" "PERIPHERALS(0..2)", True)
+    modelsearch_features = get_search_space_modelsearch(ss_mfl, modeltype, administration)
     if mfl_allometry is not None:
         modelsearch_features = modelsearch_features.replace(allometry=mfl_allometry)
 
-    covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
-    if not covsearch_features.covariate:
-        if modeltype != 'pkpd':
-            cov_ss = mfl_parse(
-                "COVARIATE?(@IIV, @CONTINUOUS, EXP);" "COVARIATE?(@IIV,@CATEGORICAL, CAT)", True
-            )
-        else:
-            cov_ss = mfl_parse(
-                "COVARIATE?(@PD_IIV, @CONTINUOUS, EXP);" "COVARIATE?(@PD_IIV,@CATEGORICAL, CAT)",
-                True,
-            )
-        covsearch_features = covsearch_features.replace(covariate=cov_ss.covariate)
-        if modeltype == 'basic_pk' and administration == 'ivoral':
-            # FIXME : Allow addition between search space with reference values in COVARITATE statement
-            covsearch_features = mfl_parse(str(cov_ss) + ";COVARIATE?(RUV,ADMID,CAT)", True)
+    covsearch_features = get_search_space_covsearch(ss_mfl, modeltype, administration)
 
     if modeltype == "tmdd":
         orig_dataset = model.dataset
@@ -726,10 +636,46 @@ def run_amd_task(
     return res
 
 
-def run_model_with_structural_covariates(model_entry, search_space, ctx):
-    _, model = get_effect_funcs_and_base_model(search_space, model_entry.model)
-    model = update_initial_estimates(model, model_entry.modelfit_results)
-    model = model.replace(name='base_with_structural_cov')
+def create_start_model(input, administration, cl_init, vc_init, mat_init):
+    if isinstance(input, Path):
+        model = create_basic_pk_model(
+            administration,
+            dataset_path=input,
+            cl_init=cl_init,
+            vc_init=vc_init,
+            mat_init=mat_init,
+        )
+        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+    elif isinstance(input, pd.DataFrame):
+        model = create_basic_pk_model(
+            administration,
+            cl_init=cl_init,
+            vc_init=vc_init,
+            mat_init=mat_init,
+        )
+        model = set_dataset(model, input, datatype='nonmem')
+        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+    else:
+        # Redundant with validation
+        raise TypeError(
+            f'Invalid input: got `{input}` of type {type(input)},'
+            f' only NONMEM model or standalone dataset are supported currently.'
+        )
+
+    return model
+
+
+def get_dvid_name(model):
+    if 'dvid' in model.datainfo.types:
+        return model.datainfo.typeix['dvid'][0].name
+    elif 'DVID' in model.datainfo.names:
+        return 'DVID'
+    else:
+        return None
+
+
+def run_model_with_structural_covariates(input_model_entry, search_space, ctx):
+    model = create_structural_covariates_model(search_space, input_model_entry)
     model_entry = ModelEntry.create(model)
     ctx.log_info('Running model with structural covariates')
     fit_wf = create_fit_workflow(model_entry)
@@ -738,6 +684,100 @@ def run_model_with_structural_covariates(model_entry, search_space, ctx):
     if not is_strictness_fulfilled(model, results, DEFAULT_STRICTNESS):
         ctx.log_warning('Model with structural covariates failed strictness')
     return model_entry
+
+
+def create_structural_covariates_model(search_space, model_entry):
+    _, model = get_effect_funcs_and_base_model(search_space, model_entry.model)
+    model = update_initial_estimates(model, model_entry.modelfit_results)
+    model = model.replace(name='base_with_structural_cov')
+    return model
+
+
+def get_search_space_pkpd(ss_mfl):
+    structsearch_features = ss_mfl.filter("pd")
+    if len(structsearch_features.mfl_statement_list()) == 0:
+        structsearch_features = mfl_parse(
+            "DIRECTEFFECT([LINEAR, EMAX, SIGMOID]);"
+            "EFFECTCOMP([LINEAR, EMAX, SIGMOID]);"
+            "INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)",
+            True,
+        )
+    return structsearch_features
+
+
+def get_search_space_drug_metabolite(ss_mfl, administration):
+    structsearch_features = ss_mfl.filter("metabolite")
+    if len(structsearch_features.mfl_statement_list()) == 0:
+        if administration in {'oral', 'ivoral'}:
+            structsearch_features = mfl_parse(
+                "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)", True
+            )
+        else:
+            structsearch_features = mfl_parse("METABOLITE([BASIC]);PERIPHERALS([0,1], MET)", True)
+    return structsearch_features
+
+
+def get_search_space_modelsearch(ss_mfl, modeltype, administration):
+    modelsearch_features = ss_mfl.filter("pk")
+    if len(modelsearch_features.mfl_statement_list()) == 0:
+        if modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'oral':
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION(FO);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..1)",
+                True,
+            )
+        elif modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'ivoral':
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION(FO);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..2)",
+                True,
+            )
+        elif modeltype == 'tmdd' and administration == 'oral':
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION([MM, MIX-FO-MM]);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..1)",
+                True,
+            )
+        elif modeltype == 'tmdd' and administration == 'ivoral':
+            modelsearch_features = mfl_parse(
+                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                "ELIMINATION([MM, MIX-FO-MM]);"
+                "LAGTIME([OFF,ON]);"
+                "TRANSITS([0,1,3,10],*);"
+                "PERIPHERALS(0..2)",
+                True,
+            )
+        else:
+            modelsearch_features = mfl_parse("ELIMINATION(FO);" "PERIPHERALS(0..2)", True)
+    return modelsearch_features
+
+
+def get_search_space_covsearch(ss_mfl, modeltype, administration):
+    covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
+    if not covsearch_features.covariate:
+        if modeltype != 'pkpd':
+            cov_ss = mfl_parse(
+                "COVARIATE?(@IIV, @CONTINUOUS, EXP);" "COVARIATE?(@IIV,@CATEGORICAL, CAT)", True
+            )
+        else:
+            cov_ss = mfl_parse(
+                "COVARIATE?(@PD_IIV, @CONTINUOUS, EXP);" "COVARIATE?(@PD_IIV,@CATEGORICAL, CAT)",
+                True,
+            )
+        covsearch_features = covsearch_features.replace(covariate=cov_ss.covariate)
+        if modeltype == 'basic_pk' and administration == 'ivoral':
+            # FIXME : Allow addition between search space with reference values in COVARITATE statement
+            covsearch_features = mfl_parse(str(cov_ss) + ";COVARIATE?(RUV,ADMID,CAT)", True)
+    return covsearch_features
 
 
 def _table_final_parameter_estimates(parameter_estimates, ses):
