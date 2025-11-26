@@ -834,6 +834,8 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     """
 
     model = set_transit_compartments(model, 0)
+    model = remove_lag_time(model)
+
     odes = get_and_check_odes(model)
     t = odes.t
 
