@@ -19,13 +19,15 @@ class NONMEMResultsFile:
         self.log = log
         self.table = {}
         self.nonmem_version = None
-        self.runtime_total = None
+        self.runtime_total: Optional[float] = None
         if path is not None:
             for name, content in self.table_blocks(path):
                 if name == 'INIT':
                     self.nonmem_version = content.pop('nonmem_version', None)
                 elif name == 'runtime':
-                    self.runtime_total = content.pop('total', None)
+                    runtime_total = content.pop('total', None)
+                    assert isinstance(runtime_total, float)
+                    self.runtime_total = runtime_total
                 else:
                     self.table[name] = content
 

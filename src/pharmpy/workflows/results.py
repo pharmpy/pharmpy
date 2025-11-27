@@ -449,12 +449,12 @@ class ModelfitResults(Results):
     standard_errors_sdcorr: Optional[pd.Series] = None
     relative_standard_errors: Optional[pd.Series] = None
     minimization_successful: Optional[bool] = None
-    minimization_successful_iterations: Optional[pd.DataFrame] = None
+    minimization_successful_iterations: Optional[pd.Series] = None
     estimation_runtime: Optional[float] = None
-    estimation_runtime_iterations: Optional[pd.DataFrame] = None
+    estimation_runtime_iterations: Optional[pd.Series] = None
     individual_ofv: Optional[pd.Series] = None
     individual_estimates: Optional[pd.DataFrame] = None
-    individual_estimates_covariance: Optional[pd.DataFrame] = None
+    individual_estimates_covariance: Optional[pd.Series] = None
     residuals: Optional[pd.DataFrame] = None
     predictions: Optional[pd.DataFrame] = None
     derivatives: Optional[pd.DataFrame] = None
