@@ -693,55 +693,57 @@ def get_search_space_drug_metabolite(ss_mfl, administration):
     structsearch_features = ss_mfl.filter("metabolite")
     if len(structsearch_features.mfl_statement_list()) == 0:
         if administration in {'oral', 'ivoral'}:
-            structsearch_features = mfl_parse(
-                "METABOLITE([PSC, BASIC]);PERIPHERALS([0,1], MET)", True
-            )
+            mfl = "METABOLITE([PSC,BASIC]);PERIPHERALS([0,1],MET)"
         else:
-            structsearch_features = mfl_parse("METABOLITE([BASIC]);PERIPHERALS([0,1], MET)", True)
+            mfl = "METABOLITE([BASIC]);PERIPHERALS([0,1],MET)"
+        structsearch_features = mfl_parse(mfl, mfl_class=True)
     return structsearch_features
 
 
 def get_search_space_modelsearch(ss_mfl, modeltype, administration):
     modelsearch_features = ss_mfl.filter("pk")
     if len(modelsearch_features.mfl_statement_list()) == 0:
-        if modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'oral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION(FO);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..1)",
-                True,
-            )
-        elif modeltype in {'basic_pk', 'drug_metabolite'} and administration == 'ivoral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION(FO);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..2)",
-                True,
-            )
-        elif modeltype == 'tmdd' and administration == 'oral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION([MM, MIX-FO-MM]);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..1)",
-                True,
-            )
-        elif modeltype == 'tmdd' and administration == 'ivoral':
-            modelsearch_features = mfl_parse(
-                "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
-                "ELIMINATION([MM, MIX-FO-MM]);"
-                "LAGTIME([OFF,ON]);"
-                "TRANSITS([0,1,3,10],*);"
-                "PERIPHERALS(0..2)",
-                True,
-            )
+        if modeltype in ('basic_pk', 'drug_metabolite'):
+            if administration == 'oral':
+                mfl = (
+                    "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                    "ELIMINATION(FO);"
+                    "LAGTIME([OFF,ON]);"
+                    "TRANSITS([0,1,3,10],*);"
+                    "PERIPHERALS(0..1)"
+                )
+            elif administration == 'ivoral':
+                mfl = (
+                    "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                    "ELIMINATION(FO);"
+                    "LAGTIME([OFF,ON]);"
+                    "TRANSITS([0,1,3,10],*);"
+                    "PERIPHERALS(0..2)"
+                )
+            else:
+                mfl = "ELIMINATION(FO);PERIPHERALS(0..2)"
+        elif modeltype == 'tmdd':
+            if administration == 'oral':
+                mfl = (
+                    "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                    "ELIMINATION([MM,MIX-FO-MM]);"
+                    "LAGTIME([OFF,ON]);"
+                    "TRANSITS([0,1,3,10],*);"
+                    "PERIPHERALS(0..1)"
+                )
+            elif administration == 'ivoral':
+                mfl = (
+                    "ABSORPTION([FO,ZO,SEQ-ZO-FO]);"
+                    "ELIMINATION([MM,MIX-FO-MM]);"
+                    "LAGTIME([OFF,ON]);"
+                    "TRANSITS([0,1,3,10],*);"
+                    "PERIPHERALS(0..2)"
+                )
+            else:
+                mfl = "ELIMINATION(FO);PERIPHERALS(0..2)"
         else:
-            modelsearch_features = mfl_parse("ELIMINATION(FO);" "PERIPHERALS(0..2)", True)
+            mfl = "ELIMINATION(FO);PERIPHERALS(0..2)"
+        modelsearch_features = mfl_parse(mfl, mfl_class=True)
     return modelsearch_features
 
 
@@ -749,14 +751,10 @@ def get_search_space_covsearch(ss_mfl, modeltype, administration):
     covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
     if not covsearch_features.covariate:
         if modeltype != 'pkpd':
-            cov_ss = mfl_parse(
-                "COVARIATE?(@IIV, @CONTINUOUS, EXP);" "COVARIATE?(@IIV,@CATEGORICAL, CAT)", True
-            )
+            mfl = "COVARIATE?(@IIV,@CONTINUOUS,EXP);COVARIATE?(@IIV,@CATEGORICAL,CAT)"
         else:
-            cov_ss = mfl_parse(
-                "COVARIATE?(@PD_IIV, @CONTINUOUS, EXP);" "COVARIATE?(@PD_IIV,@CATEGORICAL, CAT)",
-                True,
-            )
+            mfl = "COVARIATE?(@PD_IIV,@CONTINUOUS,EXP);COVARIATE?(@PD_IIV,@CATEGORICAL,CAT)"
+        cov_ss = mfl_parse(mfl, True)
         covsearch_features = covsearch_features.replace(covariate=cov_ss.covariate)
         if modeltype == 'basic_pk' and administration == 'ivoral':
             # FIXME : Allow addition between search space with reference values in COVARITATE statement
