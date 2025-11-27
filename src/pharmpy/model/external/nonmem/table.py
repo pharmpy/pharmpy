@@ -3,14 +3,16 @@ from __future__ import annotations
 import csv
 import re
 from io import StringIO
+from itertools import chain
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Iterable, Iterator, Literal, Optional, Protocol, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import flattened_to_symmetric
 from pharmpy.workflows.results import dataclass
 
+from .dataset.nmtran import IOFromChunks
 from .records.table_record import DEFAULT_TABLE_RECORD_FORMAT
 
 OBJ = re.compile(r"[A-Z]*OBJ")
@@ -51,6 +53,49 @@ class NONMEMTableFileFormat:
     quoted: bool = False
 
 
+class TableTape:
+    def __init__(self, title: str, lines: Iterable[str]):
+        self._title = title
+        self._lines = lines
+        self._next_title = None
+
+    def __iter__(self):
+        self._next_title = yield from self._iter_table()
+
+    def _iter_table(self):
+        yield self._title
+
+        for line in self._lines:
+            if line.startswith("TABLE NO."):
+                return line
+
+            yield line
+
+
+def _iter_tables(lines: Iterator[str]):
+    first_line = next(lines, None)
+
+    while first_line is not None:
+        tape = TableTape(first_line, lines)
+        it = iter(tape)
+        yield it
+        for _ in it:
+            pass
+        first_line = tape._next_title
+
+
+def _replace_obj_in_header(lines: Iterator[str]):
+    return chain([OBJ.sub("OBJ", next(lines))], lines)
+
+
+def _remove_repeated_header_lines(lines: Iterator[str]):
+    yield next(lines)
+
+    for line in lines:
+        if not re.match(r'\s[A-Za-z_]', line):
+            yield line
+
+
 class NONMEMTableFile:
     """A NONMEM table file that can contain multiple tables"""
 
@@ -71,24 +116,16 @@ class NONMEMTableFile:
             with open(str(path), 'r') as tablefile:
                 if notitle:
                     table = self._parse_table(
-                        tablefile.read().splitlines(keepends=True),
+                        tablefile,
                         notitle=notitle,
                         nolabel=nolabel,
                         format=format,
                     )
                     tables.append(table)
                 else:
-                    current = []
-                    for line in tablefile:
-                        if line.startswith("TABLE NO."):
-                            if current:
-                                table = self._parse_table(current, suffix, format=format)
-                                tables.append(table)
-                            current = [line]
-                        else:
-                            current.append(line)
-                    table = self._parse_table(current, suffix, format=format)
-                    tables.append(table)
+                    for lines in _iter_tables(tablefile):
+                        table = self._parse_table(lines, suffix, format=format)
+                        tables.append(table)
             self.tables = tables
         elif tables is not None:
             self.tables = tables
@@ -97,7 +134,7 @@ class NONMEMTableFile:
 
     def _parse_table(
         self,
-        content: list[str],
+        content: Iterable[str],
         suffix: Optional[str] = None,
         notitle: bool = False,
         nolabel: bool = False,
@@ -105,21 +142,22 @@ class NONMEMTableFile:
     ) -> NONMEMTable:
         # NOTE: Content lines must contain endlines!
 
-        table_line = None if notitle else content.pop(0)
+        it = iter(content)
+        table_line = None if notitle else next(it)
 
-        content[0] = OBJ.sub("OBJ", content[0])
-        content_str = ''.join(content)
+        it = _replace_obj_in_header(it)
+
         if suffix == '.ext':
-            table = ExtTable(content_str, format=format)
+            table = ExtTable(IOFromChunks(map(str.encode, it)), format=format)
         elif suffix == '.phi':
-            table = PhiTable(content_str, format=format)
+            table = PhiTable(IOFromChunks(map(str.encode, it)), format=format)
         elif suffix == '.cov' or suffix == '.cor' or suffix == '.coi':
-            table = CovTable(content_str, format=format)
+            table = CovTable(IOFromChunks(map(str.encode, it)), format=format)
         else:
-            # Remove repeated header lines, but not the first
-            content[1:] = [line for line in content[1:] if not re.match(r'\s[A-Za-z_]', line)]
+            it = _remove_repeated_header_lines(it)
             table = NONMEMTable(
-                ''.join(content), format=format
+                IOFromChunks(map(str.encode, it)),
+                format=format,
             )  # Fallback to non-specific table type
 
         if table_line is not None:
@@ -187,6 +225,10 @@ class NONMEMTableFile:
                 print(table.content, file=df, end='')
 
 
+class Readable(Protocol):
+    def read(self, n: int = -1) -> bytes: ...
+
+
 class NONMEMTable:
     """A NONMEM output table."""
 
@@ -204,14 +246,14 @@ class NONMEMTable:
 
     def __init__(
         self,
-        content=None,
+        content: Optional[Readable] = None,
         df: Optional[pd.DataFrame] = None,
         format=DEFAULT_NONMEM_TABLE_FILE_FORMAT,
     ):
         if content is not None:
             _format = parse_format(format)
             read_df = pd.read_table(
-                StringIO(content),
+                content,  # type: ignore
                 sep=_format.separator,
                 skipinitialspace=_format.separator != r"\s+",
                 quotechar='"',
