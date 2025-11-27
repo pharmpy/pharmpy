@@ -6,6 +6,7 @@ from pharmpy.modeling import (
     has_covariate_effect,
     has_first_order_absorption,
     has_instantaneous_absorption,
+    remove_parameter_uncertainty_step,
 )
 from pharmpy.tools import read_results
 from pharmpy.tools.amd.run import (
@@ -124,19 +125,14 @@ def test_skip_most(load_model_for_test, testdata):
 )
 def test_raise_allometry(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     with pytest.raises(ValueError, match='Invalid `allometric_variable`'):
         later_input_validation(
             model,
-            results=res,
-            modeltype='basic_pk',
-            administration='oral',
+            search_space=None,
             allometric_variable='SJDLKSDJ',
-            retries_strategy="skip",
-            cl_init=1.0,
-            vc_init=10.0,
-            mat_init=1.0,
+            occasion=None,
+            mechanistic_covariates=None,
         )
 
 
@@ -236,19 +232,14 @@ def test_skip_iovsearch_one_occasion(load_model_for_test, testdata):
 )
 def test_skip_iovsearch_missing_occasion_raises(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     with pytest.raises(ValueError, match='Invalid `occasion`'):
         later_input_validation(
             model,
-            results=res,
-            modeltype='basic_pk',
-            administration='oral',
+            search_space=None,
+            allometric_variable=None,
             occasion='XYZ',
-            retries_strategy="skip",
-            cl_init=1.0,
-            vc_init=10.0,
-            mat_init=1.0,
+            mechanistic_covariates=None,
         )
 
 
@@ -330,33 +321,24 @@ def test_ignore_datainfo_fallback(load_model_for_test, testdata):
 )
 def test_mechanistic_covariate_option(load_model_for_test, testdata, mechanistic_covariates, error):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
 
     if error != "PASS":
         with pytest.raises(ValueError, match=error):
             later_input_validation(
                 model,
-                results=res,
-                modeltype='basic_pk',
-                administration='oral',
-                retries_strategy="skip",
+                search_space=None,
+                allometric_variable=None,
+                occasion=None,
                 mechanistic_covariates=mechanistic_covariates,
-                cl_init=1.0,
-                vc_init=10.0,
-                mat_init=1.0,
             )
     else:
         # Should not raise any errors
         later_input_validation(
             model,
-            results=res,
-            modeltype='basic_pk',
-            administration='oral',
-            retries_strategy="skip",
+            search_space=None,
+            allometric_variable=None,
+            occasion=None,
             mechanistic_covariates=mechanistic_covariates,
-            cl_init=1.0,
-            vc_init=10.0,
-            mat_init=1.0,
         )
 
 
@@ -700,3 +682,199 @@ def test_get_search_space_covsearch(mfl, modeltype, administration, expected):
     search_space_covsearch = get_search_space_covsearch(search_space, modeltype, administration)
     expected = mfl_parse(expected, mfl_class=True)
     assert str(search_space_covsearch) == str(expected)
+
+
+@pytest.mark.parametrize(
+    'kwargs',
+    [
+        {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0},
+        {'modeltype': 'pkpd', 'b_init': 1.0, 'emax_init': 1.0, 'ec50_init': 1.0, 'met_init': 1.0},
+        {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, 'search_space': 'ABSORPTION(FO)'},
+        {
+            'cl_init': 1.0,
+            'vc_init': 1.0,
+            'mat_init': 1.0,
+            'search_space': 'ABSORPTION(FO);IIV(CL,exp)',
+        },
+        {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, 'strictness': 'rse < 0.5'},
+        {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, '_E': {'E_p': 0.5}},
+    ],
+)
+def test_validate_input(load_example_model_for_test, kwargs):
+    model = load_example_model_for_test('pheno')
+    validate_input(model, **kwargs)
+
+
+@pytest.mark.parametrize(
+    'kwargs, exception, match',
+    [
+        (
+            {'modeltype': 'x'},
+            ValueError,
+            'Invalid `modeltype`',
+        ),
+        (
+            {'administration': 'x'},
+            ValueError,
+            'Invalid `administration`',
+        ),
+        (
+            {'strategy': 'x'},
+            ValueError,
+            'Invalid `strategy`',
+        ),
+        (
+            {'retries_strategy': 'x'},
+            ValueError,
+            'Invalid `retries_strategy`',
+        ),
+        (
+            {'modeltype': 'pkpd', 'cl_init': 1.0},
+            ValueError,
+            'Cannot provide pk parameter',
+        ),
+        (
+            {
+                'modeltype': 'pkpd',
+                'b_init': None,
+                'emax_init': 1.0,
+                'ec50_init': 1.0,
+                'met_init': 1.0,
+            },
+            ValueError,
+            'Initial estimate for baseline',
+        ),
+        (
+            {
+                'modeltype': 'pkpd',
+                'b_init': 1.0,
+                'emax_init': None,
+                'ec50_init': 1.0,
+                'met_init': 1.0,
+            },
+            ValueError,
+            'Initial estimate for E_max',
+        ),
+        (
+            {
+                'modeltype': 'pkpd',
+                'b_init': 1.0,
+                'emax_init': 1.0,
+                'ec50_init': None,
+                'met_init': 1.0,
+            },
+            ValueError,
+            'Initial estimate for EC_50',
+        ),
+        (
+            {
+                'modeltype': 'pkpd',
+                'b_init': 1.0,
+                'emax_init': 1.0,
+                'ec50_init': 1.0,
+                'met_init': None,
+            },
+            ValueError,
+            'Initial estimate for MET',
+        ),
+        (
+            {'cl_init': None, 'vc_init': 1.0},
+            ValueError,
+            'Initial estimate for CL',
+        ),
+        (
+            {'cl_init': 1.0, 'vc_init': None},
+            ValueError,
+            'Initial estimate for VC',
+        ),
+        (
+            {'administration': 'oral', 'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': None},
+            ValueError,
+            'Initial estimate for MAT',
+        ),
+        (
+            {
+                'cl_init': 1.0,
+                'vc_init': 1.0,
+                'mat_init': 1.0,
+                'parameter_uncertainty_method': None,
+                'strictness': 'rse < 0.5',
+            },
+            ValueError,
+            'Invalid `input` model',
+        ),
+        (
+            {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, '_E': {'E_p': 0.0}},
+            ValueError,
+            'E-values in `_E`',
+        ),
+    ],
+)
+def test_validate_input_raises(load_example_model_for_test, kwargs, exception, match):
+    model = load_example_model_for_test('pheno')
+    model = remove_parameter_uncertainty_step(model)
+    with pytest.raises(exception, match=match):
+        validate_input(model, **kwargs)
+
+
+def test_validate_input_raises_rse_dataset(testdata):
+    dataset_path = testdata / 'nonmem' / 'pheno.dta'
+    with pytest.raises(ValueError, match='`parameter_uncertainty_method` not set'):
+        validate_input(
+            dataset_path,
+            cl_init=1.0,
+            vc_init=1.0,
+            mat_init=1.0,
+            parameter_uncertainty_method=None,
+            strictness='rse < 0.5',
+        )
+
+
+@pytest.mark.parametrize(
+    'mfl',
+    [
+        'COVARIATE(CL,WGT,exp)',
+        'COVARIATE(@IIV,WGT,exp)',
+        'COVARIATE(@ABSORPTION,WGT,exp)',
+    ],
+)
+def test_later_input_validation_search_space(load_example_model_for_test, mfl):
+    model = load_example_model_for_test('pheno')
+    later_input_validation(
+        model,
+        search_space=mfl,
+        allometric_variable=None,
+        occasion=None,
+        mechanistic_covariates=None,
+    )
+
+
+@pytest.mark.parametrize(
+    'mfl, exception, match',
+    [
+        ('COVARIATE(@IIV,WT,exp)', ValueError, 'Invalid `search_space`'),
+    ],
+)
+def test_later_input_validation_search_space_raises(
+    load_example_model_for_test, mfl, exception, match
+):
+    model = load_example_model_for_test('pheno')
+    with pytest.raises(exception, match=match):
+        later_input_validation(
+            model,
+            search_space=mfl,
+            allometric_variable=None,
+            occasion=None,
+            mechanistic_covariates=None,
+        )
+
+
+def test_later_input_validation_empty(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    later_input_validation(
+        model,
+        search_space=None,
+        allometric_variable=None,
+        occasion=None,
+        mechanistic_covariates=None,
+    )

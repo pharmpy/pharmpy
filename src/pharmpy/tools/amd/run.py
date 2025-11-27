@@ -3,7 +3,6 @@ from pathlib import Path
 from typing import Callable, Literal, Optional, Sequence, Union
 
 from pharmpy.basic import TSymbol
-from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
@@ -204,8 +203,6 @@ def run_amd_task(
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str]]] = None,
 ):
-    kwargs = locals()
-
     context.log_info("Starting tool amd")
     rng = context.create_rng(0)
 
@@ -221,9 +218,6 @@ def run_amd_task(
                 iiv_features = mfl.iiv + mfl.covariance
                 remaining_features = mfl - iiv_features
                 search_space = repr(remaining_features)
-                kwargs['search_space'] = (
-                    search_space  # Replace search space for later input validation
-                )
                 ss_mfl = mfl_parse(search_space, True)
             except:  # noqa E722
                 raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
@@ -272,9 +266,9 @@ def run_amd_task(
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
-    kwargs['input'] = model
-    del kwargs['context']
-    later_input_validation(**kwargs)
+    later_input_validation(
+        model, search_space, allometric_variable, occasion, mechanistic_covariates
+    )
 
     order = get_subtool_order(strategy)
     to_be_skipped = check_skip(
@@ -1512,6 +1506,18 @@ def validate_input(
 
     check_list("retries_strategy", retries_strategy, RETRIES_STRATEGIES)
 
+    if strictness and parameter_uncertainty_method is None and "rse" in strictness.lower():
+        if isinstance(input, Model):
+            if input.execution_steps[-1].parameter_uncertainty_method is None:
+                raise ValueError(
+                    'Invalid `input` model: `parameter_uncertainty_method` must be provided or set on model.'
+                )
+        else:
+            raise ValueError(
+                '`parameter_uncertainty_method` not set while rse is in `strictness`: cannot calculate '
+                'relative standard errors.'
+            )
+
     if _E:
         if any(value in (0.0, '0%') for value in _E.values()):
             raise ValueError('E-values in `_E` cannot be 0')
@@ -1519,32 +1525,10 @@ def validate_input(
 
 def later_input_validation(
     input: Model,
-    results: Optional[ModelfitResults] = None,
-    modeltype: str = 'basic_pk',
-    administration: str = 'oral',
-    strategy: str = "default",
-    cl_init: Optional[float] = None,
-    vc_init: Optional[float] = None,
-    mat_init: Optional[float] = None,
-    b_init: Optional[float] = None,
-    emax_init: Optional[float] = None,
-    ec50_init: Optional[float] = None,
-    met_init: Optional[float] = None,
-    search_space: Optional[str] = None,
-    lloq_method: Optional[str] = None,
-    lloq_limit: Optional[float] = None,
-    allometric_variable: Optional[TSymbol] = None,
-    occasion: Optional[str] = None,
-    path: Optional[Union[str, Path]] = None,
-    resume: bool = False,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[list[Union[str, tuple]]] = None,
-    retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    seed: Optional[Union[np.random.Generator, int]] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
-    ignore_datainfo_fallback: bool = False,
-    _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
+    search_space: Optional[str],
+    allometric_variable: Optional[TSymbol],
+    occasion: Optional[str],
+    mechanistic_covariates: Optional[list[Union[str, tuple]]],
 ):
     # FIXME: This function should be removed and refactored into validate_inputs
     # and optionally give warnings/errors during the run
@@ -1565,7 +1549,7 @@ def later_input_validation(
     # COVSEARCH
     if mechanistic_covariates:
         allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
-        allowed_parameters = allowed_parameters = set(get_pk_parameters(model)).union(
+        allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes
         )
         for c in mechanistic_covariates:
@@ -1623,16 +1607,6 @@ def later_input_validation(
                         f' search_space: got `{covariate}`,'
                         f' must be in {sorted(allowed_covariates)}.'
                     )
-
-    if (
-        strictness is not None
-        and parameter_uncertainty_method is None
-        and "rse" in strictness.lower()
-    ):
-        if model.execution_steps[-1].parameter_uncertainty_method is None:
-            raise ValueError(
-                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
-            )
 
 
 def get_subtool_order(strategy):
