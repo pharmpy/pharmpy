@@ -2,7 +2,9 @@ from pathlib import Path
 
 import pytest
 
+from pharmpy.deps import numpy as np
 from pharmpy.modeling import (
+    create_basic_pk_model,
     has_covariate_effect,
     has_first_order_absorption,
     has_instantaneous_absorption,
@@ -15,6 +17,8 @@ from pharmpy.tools.amd.run import (
     check_skip,
     create_start_model,
     create_structural_covariates_model,
+    filter_drug_metabolite_dataset,
+    filter_tmdd_dataset,
     get_dvid_name,
     get_search_space_covsearch,
     get_search_space_drug_metabolite,
@@ -22,6 +26,9 @@ from pharmpy.tools.amd.run import (
     get_search_space_pkpd,
     get_subtool_order,
     later_input_validation,
+    modify_search_space_allometry,
+    parse_search_space,
+    parse_search_space_new,
     split_structural_search_space,
     validate_input,
 )
@@ -407,6 +414,61 @@ def test_split_structural_search_space(
 
 
 @pytest.mark.parametrize(
+    'mfl, expected',
+    [
+        (
+            'ABSORPTION(ZO)',
+            'ABSORPTION(ZO);ELIMINATION(FO);TRANSITS(0);PERIPHERALS(0);LAGTIME(OFF)',
+        ),
+        (None, ModelFeatures()),
+        ('', ModelFeatures()),
+    ],
+)
+def test_parse_search_space(mfl, expected):
+    if mfl:
+        assert repr(parse_search_space(mfl)) == expected
+    else:
+        assert parse_search_space(mfl) == expected
+
+
+@pytest.mark.parametrize(
+    'mfl, expected_search_space, expected_iiv',
+    [
+        ('ABSORPTION(ZO);IIV(CL,EXP)', 'ABSORPTION(ZO)', 'IIV(CL,EXP)'),
+        (
+            'ABSORPTION(ZO);IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])',
+            'ABSORPTION(ZO)',
+            'IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])',
+        ),
+        ('IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])', '', 'IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])'),
+    ],
+)
+def test_parse_search_space_new(mfl, expected_search_space, expected_iiv):
+    search_space, iiv_features = parse_search_space_new(mfl)
+    assert search_space == expected_search_space
+    assert repr(iiv_features) == expected_iiv
+
+
+@pytest.mark.parametrize(
+    'mfl, expected_search_space, expected_allometry',
+    [
+        (
+            'ABSORPTION(ZO);ALLOMETRY(WGT,70)',
+            'ABSORPTION(ZO);ELIMINATION(FO);TRANSITS(0);PERIPHERALS(0);LAGTIME(OFF)',
+            'ALLOMETRY(WGT,70)',
+        ),
+    ],
+)
+def test_modify_search_space_allometry(mfl, expected_search_space, expected_allometry):
+    ss_mfl = mfl_parse(mfl, mfl_class=True)
+    assert ss_mfl.allometry
+    ss_mfl, mfl_allometry = modify_search_space_allometry(ss_mfl)
+    assert not ss_mfl.allometry
+    assert repr(ss_mfl) == expected_search_space
+    assert mfl_allometry == mfl_parse(expected_allometry, mfl_class=True).allometry
+
+
+@pytest.mark.parametrize(
     'administration, has_absorption_type',
     [
         ('iv', has_instantaneous_absorption),
@@ -462,6 +524,34 @@ def test_create_structural_covariates_model(load_model_for_test, pheno_path):
         assert has_covariate_effect(model_with_struct, param, covariate)
 
     assert model_with_struct.parameters['PTVCL'].init == res.parameter_estimates['PTVCL']
+
+
+def test_filter_tmdd_dataset(testdata):
+    dataset_path = testdata / 'nonmem' / 'pheno.dta'
+    model = create_basic_pk_model('iv', dataset_path)
+    df = model.dataset
+    dvid_col = (np.arange(len(df)) % 3) + 1
+    df = model.dataset.assign(DVID=dvid_col)
+    model = model.replace(dataset=df)
+    assert set(model.dataset['DVID'].values) == {1, 2, 3}
+    model_filtered, orig_dataset = filter_tmdd_dataset(model)
+    assert set(model.dataset['DVID'].values) == {1, 2, 3}
+    assert set(model_filtered.dataset['DVID'].values) == {1}
+    assert set(orig_dataset['DVID'].values) == {1, 2, 3}
+
+
+def test_filter_drug_metabolite_dataset(testdata):
+    dataset_path = testdata / 'nonmem' / 'pheno.dta'
+    model = create_basic_pk_model('iv', dataset_path)
+    df = model.dataset
+    dvid_col = (np.arange(len(df)) % 3) + 1
+    df = model.dataset.assign(DVID=dvid_col)
+    model = model.replace(dataset=df)
+    assert set(model.dataset['DVID'].values) == {1, 2, 3}
+    model_filtered, orig_dataset = filter_drug_metabolite_dataset(model)
+    assert set(model.dataset['DVID'].values) == {1, 2, 3}
+    assert set(model_filtered.dataset['DVID'].values) == {1, 3}
+    assert set(orig_dataset['DVID'].values) == {1, 2, 3}
 
 
 @pytest.mark.parametrize(
@@ -807,6 +897,17 @@ def test_validate_input(load_example_model_for_test, kwargs):
             {'cl_init': 1.0, 'vc_init': 1.0, 'mat_init': 1.0, '_E': {'E_p': 0.0}},
             ValueError,
             'E-values in `_E`',
+        ),
+        (
+            {
+                'cl_init': 1.0,
+                'vc_init': 1.0,
+                'mat_init': 1.0,
+                'search_space': 'ABSORPTION(FO);ALLOMETRY(WGT,70)',
+                'allometric_variable': 'WGT',
+            },
+            ValueError,
+            'Having both allometric_variable and ALLOMETRY',
         ),
     ],
 )

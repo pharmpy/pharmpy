@@ -206,33 +206,16 @@ def run_amd_task(
     context.log_info("Starting tool amd")
     rng = context.create_rng(0)
 
-    from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
-
-    if search_space is not None:
-        try:
-            ss_mfl = mfl_parse(search_space, True)
-            iiv_features = None
-        except:  # noqa E722
-            try:
-                mfl = ModelFeaturesNew.create(search_space)
-                iiv_features = mfl.iiv + mfl.covariance
-                remaining_features = mfl - iiv_features
-                search_space = repr(remaining_features)
-                ss_mfl = mfl_parse(search_space, True)
-            except:  # noqa E722
-                raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
-    else:
-        ss_mfl = ModelFeatures()
+    try:
+        ss_mfl = parse_search_space(search_space)
         iiv_features = None
+    except:  # noqa E722
+        # FIXME: Workaround until new ModelFeatures is used everywhere
+        search_space, iiv_features = parse_search_space_new(search_space)
+        ss_mfl = parse_search_space(search_space)
 
     if ss_mfl.allometry is not None:
-        # Take it out and put back later
-        if allometric_variable is not None:
-            raise ValueError(
-                "Having both allometric_variable and ALLOMETRY in the mfl is not allowed"
-            )
-        mfl_allometry = ss_mfl.allometry
-        ss_mfl = ss_mfl.replace(allometry=None)
+        ss_mfl, mfl_allometry = modify_search_space_allometry(ss_mfl)
     else:
         mfl_allometry = None
 
@@ -245,6 +228,8 @@ def run_amd_task(
 
     if isinstance(input, str):
         input = Path(input)
+
+    from pharmpy.model.external import nonmem  # FIXME: We should not depend on NONMEM
 
     if isinstance(input, nonmem.model.Model):
         model = input
@@ -259,27 +244,19 @@ def run_amd_task(
             mat_init=mat_init,
         )
 
-    dvid_name = get_dvid_name(model)
-
-    model = add_predictions(model, ['PRED', 'CIPREDI'])
-    model = add_residuals(model, ['CWRES'])
-
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
     later_input_validation(
         model, search_space, allometric_variable, occasion, mechanistic_covariates
     )
 
-    order = get_subtool_order(strategy)
-    to_be_skipped = check_skip(
-        context,
-        model,
-        occasion,
-        allometric_variable,
-        order,
-        ignore_datainfo_fallback,
-        search_space,
-    )
+    model = add_predictions(model, ['PRED', 'CIPREDI'])
+    model = add_residuals(model, ['CWRES'])
+
+    if modeltype == "tmdd":
+        model, orig_dataset = filter_tmdd_dataset(model)
+    elif modeltype == "drug_metabolite":
+        model, orig_dataset = filter_drug_metabolite_dataset(model)
 
     if lloq_method is not None:
         model = transform_blq(
@@ -295,6 +272,17 @@ def run_amd_task(
                 'The dataset have blq/lloq columns but lloq_method has not been '
                 'selected. DV will be used as is.'
             )
+
+    order = get_subtool_order(strategy)
+    to_be_skipped = check_skip(
+        context,
+        model,
+        occasion,
+        allometric_variable,
+        order,
+        ignore_datainfo_fallback,
+        search_space,
+    )
 
     if modeltype == 'pkpd' and 'allometry' in order:
         context.log_warning('Skipping allometry since modeltype is "pkpd"')
@@ -315,12 +303,6 @@ def run_amd_task(
         modelsearch_features = modelsearch_features.replace(allometry=mfl_allometry)
 
     covsearch_features = get_search_space_covsearch(ss_mfl, modeltype, administration)
-
-    if modeltype == "tmdd":
-        orig_dataset = model.dataset
-        if dv_types is not None:
-            model = filter_dataset(model, f'{dvid_name} < 2')
-            model = model.replace(dataset=model.dataset.reset_index())
 
     run_subfuncs = {}
 
@@ -484,13 +466,6 @@ def run_amd_task(
         )
         run_subfuncs['retries'] = func
 
-    # Filter data to only contain dvid=1
-    if modeltype == "drug_metabolite":
-        orig_dataset = model.dataset
-        # FIXME : remove
-        model = filter_dataset(model, f'{dvid_name} != 2')
-        model = model.replace(dataset=model.dataset.reset_index())
-
     if results is None:
         context.log_info('Running base model')
         model = model.replace(name='base')
@@ -578,6 +553,7 @@ def run_amd_task(
 
     _run_qa(final_model, final_results, context)
 
+    dvid_name = get_dvid_name(model)
     if final_results.predictions is not None:
         dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
         dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions, dvid_name)
@@ -630,6 +606,29 @@ def run_amd_task(
     return res
 
 
+def parse_search_space_new(search_space):
+    mfl = ModelFeaturesNew.create(search_space)
+    iiv_features = mfl.iiv + mfl.covariance
+    remaining_features = mfl - iiv_features
+    search_space = repr(remaining_features)
+    return search_space, iiv_features
+
+
+def parse_search_space(search_space):
+    if search_space:
+        ss_mfl = mfl_parse(search_space, True)
+    else:
+        ss_mfl = ModelFeatures()
+    return ss_mfl
+
+
+def modify_search_space_allometry(ss_mfl):
+    # Take it out and put back later
+    mfl_allometry = ss_mfl.allometry
+    ss_mfl = ss_mfl.replace(allometry=None)
+    return ss_mfl, mfl_allometry
+
+
 def create_start_model(input, administration, cl_init, vc_init, mat_init):
     if isinstance(input, Path):
         model = create_basic_pk_model(
@@ -657,6 +656,22 @@ def create_start_model(input, administration, cl_init, vc_init, mat_init):
         )
 
     return model
+
+
+def filter_tmdd_dataset(model):
+    dvid_name = get_dvid_name(model)
+    orig_dataset = model.dataset
+    model = filter_dataset(model, f'{dvid_name} < 2')
+    model = model.replace(dataset=model.dataset.reset_index())
+    return model, orig_dataset
+
+
+def filter_drug_metabolite_dataset(model):
+    dvid_name = get_dvid_name(model)
+    orig_dataset = model.dataset
+    model = filter_dataset(model, f'{dvid_name} != 2')
+    model = model.replace(dataset=model.dataset.reset_index())
+    return model, orig_dataset
 
 
 def get_dvid_name(model):
@@ -1502,6 +1517,11 @@ def validate_input(
                 raise ValueError(
                     'The given search space have instantaneous absorption (´INST´)'
                     ' which is not allowed with ´oral´ administration.'
+                )
+
+            if ss_mfl.allometry is not None and allometric_variable is not None:
+                raise ValueError(
+                    "Having both allometric_variable and ALLOMETRY in the mfl is not allowed"
                 )
 
     check_list("retries_strategy", retries_strategy, RETRIES_STRATEGIES)
