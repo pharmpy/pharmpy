@@ -222,10 +222,10 @@ class Model(Immutable):
             if not symbs.issubset(symbs_all):
                 # E.g. after solve_ode_system
                 if statement.symbol.is_function():
-                    symbs_all.add(Expr.symbol(statement.symbol.name))
-                    for arg in statement.symbol.args:
-                        if arg.is_symbol():
-                            symbs_all.add(arg)
+                    symbs_all = symbs_all.union(
+                        (Expr.symbol(statement.symbol.name),),
+                        (arg for arg in statement.symbol.args if arg.is_symbol()),
+                    )
 
                 for symb in symbs:
                     if symb in symbs_all:

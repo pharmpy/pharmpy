@@ -11,11 +11,13 @@ from .expr import Expr
 
 
 class Matrix:
-    def __init__(self, source: Union[sympy.Matrix, symengine.Matrix, Matrix, Iterable] = ()):
+    def __init__(
+        self, source: Union[sympy.ImmutableMatrix, symengine.ImmutableMatrix, Matrix, Iterable] = ()
+    ):
         if isinstance(source, Matrix):
             self._m = source._m
         else:
-            self._m = symengine.Matrix(source)
+            self._m = symengine.ImmutableMatrix(source)
 
     @overload
     def __getitem__(self, ind: tuple[int, int]) -> Expr: ...
@@ -39,7 +41,7 @@ class Matrix:
 
     def __getitem__(self, ind) -> Union[Expr, Matrix]:
         a = self._m[ind]
-        if isinstance(a, symengine.DenseMatrix):
+        if isinstance(a, symengine.ImmutableDenseMatrix):
             return Matrix(a)
         else:
             return Expr(a)
@@ -95,7 +97,7 @@ class Matrix:
         return len(self._m)
 
     def __hash__(self):
-        return hash(sympy.ImmutableMatrix(self._m))
+        return hash(self._m)
 
     def __add__(self, other) -> Matrix:
         other = self._convert_input(other)
@@ -154,14 +156,14 @@ class Matrix:
         if is_symmetric and self._each_entry_is_a_symbol():
             return None
 
-        isp = sympy.Matrix(self._m).is_positive_semidefinite
+        isp = sympy.ImmutableMatrix(self._m).is_positive_semidefinite
         return isp
 
     def _each_entry_is_a_symbol(self) -> bool:
         return all(map(lambda s: isinstance(s, symengine.Symbol), self._m))
 
     def eigenvals(self) -> dict[Expr, Expr]:
-        d = sympy.Matrix(self._m).eigenvals()
+        d = sympy.ImmutableMatrix(self._m).eigenvals()
         assert isinstance(d, dict)
         ud = {Expr(key): Expr(val) for key, val in d.items()}
         return ud
@@ -174,11 +176,11 @@ class Matrix:
 
     def __getstate__(self):
         state = self.__dict__.copy()
-        state['_m'] = sympy.Matrix(self._m)
+        state['_m'] = sympy.ImmutableMatrix(self._m)
         return state
 
     def __setstate__(self, state):
-        state['_m'] = symengine.Matrix(state['_m'])
+        state['_m'] = symengine.ImmutableMatrix(state['_m'])
         self.__dict__.update(state)
 
     def to_numpy(self) -> np.ndarray:
