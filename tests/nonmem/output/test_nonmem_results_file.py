@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pandas as pd
 import pytest
 from numpy import nan
 
@@ -28,7 +29,10 @@ def test_data_io(pheno_lst):
             'phenocorr.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -42,7 +46,10 @@ def test_data_io(pheno_lst):
             'hessian_error.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': False,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': None,
                 'rounding_errors': None,
                 'maxevals_exceeded': None,
@@ -56,7 +63,10 @@ def test_data_io(pheno_lst):
             'large_s_matrix_cov_fail.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -70,7 +80,10 @@ def test_data_io(pheno_lst):
             'nm710_fail_negV.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': None,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': None,
                 'rounding_errors': None,
                 'maxevals_exceeded': None,
@@ -84,7 +97,10 @@ def test_data_io(pheno_lst):
             'sparse_matrix_with_msfi.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -98,7 +114,10 @@ def test_data_io(pheno_lst):
             'warfarin_ddmore.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -112,7 +131,10 @@ def test_data_io(pheno_lst):
             'mox_fail_nonp.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': False,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -126,7 +148,10 @@ def test_data_io(pheno_lst):
             'mox_nocov_nonp.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': False,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -140,7 +165,10 @@ def test_data_io(pheno_lst):
             'pheno_nonp.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -154,7 +182,10 @@ def test_data_io(pheno_lst):
             'theo.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -168,7 +199,10 @@ def test_data_io(pheno_lst):
             'theo_nonp.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': False,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': True,
                 'rounding_errors': True,
                 'maxevals_exceeded': False,
@@ -182,7 +216,10 @@ def test_data_io(pheno_lst):
             'theo_withcov.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -196,7 +233,10 @@ def test_data_io(pheno_lst):
             'UseCase7.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -210,7 +250,10 @@ def test_data_io(pheno_lst):
             'example6b_V7_30_beta.lst',
             1,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -224,7 +267,24 @@ def test_data_io(pheno_lst):
             'maxeval3.lst',
             1,
             {
+                'ebv_shrinkage': pd.DataFrame(
+                    data={
+                        0: ["EBVSHRINKSD(%)", "EBVSHRINKVR(%)"],
+                        1: [8.0993, 15.5430],
+                        2: [1.8003, 3.5683],
+                    },
+                ).set_index(0),
+                'eps_shrinkage': pd.DataFrame(
+                    data={0: ["EPSSHRINKSD(%)", "EPSSHRINKVR(%)"], 1: [1.000000e-10, 1.000000e-10]},
+                ).set_index(0),
                 'minimization_successful': False,
+                'eta_shrinkage': pd.DataFrame(
+                    data={
+                        0: ["ETASHRINKSD(%)", "ETASHRINKVR(%)"],
+                        1: [1.000000e-10, 1.000000e-10],
+                        2: [14.424, 26.768],
+                    },
+                ).set_index(0),
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': True,
@@ -240,7 +300,16 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM')
     log = Log()
     rfile = rf.NONMEMResultsFile(p / file, log=log)
-    assert rfile.estimation_status(table_number) == expected
+    actual = rfile.estimation_status(table_number)
+    assert actual.keys() == expected.keys()
+    for key in expected.keys():
+        assert type(actual[key]) is type(expected[key])
+        if isinstance(expected[key], pd.DataFrame):
+            assert str(expected[key]) == str(actual[key])
+        elif expected[key] is nan:
+            assert actual[key] is nan
+        else:
+            assert actual[key] == expected[key]
     if covariance_step_ok is None:
         assert rfile.covariance_status(table_number)['covariance_step_ok'] is None
     else:
@@ -254,7 +323,10 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
             'anneal2_V7_30_beta.lst',
             2,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -268,7 +340,10 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
             'superid2_6_V7_30_beta.lst',
             2,
             {
+                'ebv_shrinkage': None,
+                'eps_shrinkage': None,
                 'minimization_successful': True,
+                'eta_shrinkage': None,
                 'estimate_near_boundary': False,
                 'rounding_errors': False,
                 'maxevals_exceeded': False,
@@ -298,7 +373,10 @@ def test_estimation_status_withsim(testdata):
     rfile = rf.NONMEMResultsFile(p / 'control3boot.res', log=Log())
 
     assert rfile.estimation_status(45) == {
+        'ebv_shrinkage': None,
+        'eps_shrinkage': None,
         'minimization_successful': True,
+        'eta_shrinkage': None,
         'estimate_near_boundary': False,
         'rounding_errors': False,
         'maxevals_exceeded': False,
@@ -309,7 +387,10 @@ def test_estimation_status_withsim(testdata):
     assert rfile.covariance_status(45)['covariance_step_ok'] is False
 
     assert rfile.estimation_status(70) == {
+        'ebv_shrinkage': None,
+        'eps_shrinkage': None,
         'minimization_successful': True,
+        'eta_shrinkage': None,
         'estimate_near_boundary': True,
         'rounding_errors': False,
         'maxevals_exceeded': False,
@@ -320,7 +401,10 @@ def test_estimation_status_withsim(testdata):
     assert rfile.covariance_status(70)['covariance_step_ok'] is False
 
     assert rfile.estimation_status(100) == {
+        'ebv_shrinkage': None,
+        'eps_shrinkage': None,
         'minimization_successful': True,
+        'eta_shrinkage': None,
         'estimate_near_boundary': False,
         'rounding_errors': False,
         'maxevals_exceeded': False,
@@ -336,7 +420,10 @@ def test_ofv_table_gap(testdata):
     rfile = rf.NONMEMResultsFile(p / 'multprobmix_nm730.lst', log=Log())
 
     assert rfile.estimation_status(2) == {
+        'ebv_shrinkage': None,
+        'eps_shrinkage': None,
         'minimization_successful': False,
+        'eta_shrinkage': None,
         'estimate_near_boundary': False,
         'rounding_errors': False,
         'maxevals_exceeded': True,
