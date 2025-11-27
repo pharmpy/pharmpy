@@ -233,7 +233,7 @@ def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry
     model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
     model_funcs = model_mfl.convert_to_funcs()
     res = {k: ss_funcs[k] for k in set(ss_funcs) - set(model_funcs)}
-    return {k: v for k, v in sorted(res.items(), key=lambda x: (x[0][0], x[0][1]))}
+    return {k: v for k, v in sorted(res.items(), key=lambda x: (x[0][0], str(x[0][1])))}
 
 
 def create_base_model(ss, allometry, model_or_model_entry):
