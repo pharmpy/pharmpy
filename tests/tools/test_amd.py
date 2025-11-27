@@ -15,6 +15,7 @@ from pharmpy.tools.amd.run import (
     _create_model_summary,
     _mechanistic_cov_extraction,
     check_skip,
+    create_plots,
     create_start_model,
     create_structural_covariates_model,
     filter_drug_metabolite_dataset,
@@ -36,7 +37,7 @@ from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.run import read_modelfit_results
-from pharmpy.workflows import ModelEntry
+from pharmpy.workflows import ModelEntry, ModelfitResults
 from pharmpy.workflows.contexts import NullContext
 
 
@@ -772,6 +773,40 @@ def test_get_search_space_covsearch(mfl, modeltype, administration, expected):
     search_space_covsearch = get_search_space_covsearch(search_space, modeltype, administration)
     expected = mfl_parse(expected, mfl_class=True)
     assert str(search_space_covsearch) == str(expected)
+
+
+@pytest.mark.parametrize(
+    'results_to_remove, expected_empty_plots',
+    [
+        (
+            None,
+            [],
+        ),
+        (
+            'predictions',
+            [
+                'final_model_dv_vs_ipred_plot',
+                'final_model_dv_vs_pred_plot',
+                'final_model_abs_cwres_vs_ipred_plot',
+            ],
+        ),
+        ('residuals', ['final_model_cwres_vs_idv_plot', 'final_model_abs_cwres_vs_ipred_plot']),
+        ('individual_estimates', ['final_model_eta_distribution_plot']),
+    ],
+)
+def test_create_plots(load_model_for_test, pheno_path, results_to_remove, expected_empty_plots):
+    model = load_model_for_test(pheno_path)
+    res = read_modelfit_results(pheno_path)
+    if results_to_remove:
+        res_dict = res.to_dict()
+        res_dict[results_to_remove] = None
+        res = ModelfitResults.from_dict(res_dict)
+    plots = create_plots(model, res, model)
+    for plot_name, plot in plots.items():
+        if plot_name in expected_empty_plots:
+            assert not plot
+        else:
+            assert plot
 
 
 @pytest.mark.parametrize(

@@ -553,35 +553,10 @@ def run_amd_task(
 
     _run_qa(final_model, final_results, context)
 
-    dvid_name = get_dvid_name(model)
-    if final_results.predictions is not None:
-        dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
-        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions, dvid_name)
-    else:
-        dv_vs_pred_plot = None
-        dv_vs_ipred_plot = None
-    if final_results.residuals is not None:
-        cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals, dvid_name)
-    else:
-        cwres_vs_idv_plot = None
-    if final_results.predictions is not None and final_results.residuals is not None:
-        abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
-            model,
-            predictions=final_results.predictions,
-            residuals=final_results.residuals,
-            stratify_on=dvid_name,
-        )
-    else:
-        abs_cwres_vs_ipred_plot = None
-    if final_results.individual_estimates is not None:
-        eta_distribution_plot = plot_eta_distributions(
-            final_model, final_results.individual_estimates
-        )
-    else:
-        eta_distribution_plot = None
+    plots = create_plots(final_model, final_results, model)
 
     if not simulation_data.empty:
-        final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=dvid_name)
+        final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=get_dvid_name(model))
     else:
         context.log_warning("No vpc could be generated. Did the simulation fail?")
         final_vpc_plot = None
@@ -595,11 +570,11 @@ def run_amd_task(
         final_model_parameter_estimates=_table_final_parameter_estimates(
             final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
         ),
-        final_model_dv_vs_ipred_plot=dv_vs_ipred_plot,
-        final_model_dv_vs_pred_plot=dv_vs_pred_plot,
-        final_model_cwres_vs_idv_plot=cwres_vs_idv_plot,
-        final_model_abs_cwres_vs_ipred_plot=abs_cwres_vs_ipred_plot,
-        final_model_eta_distribution_plot=eta_distribution_plot,
+        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred_plot'],
+        final_model_dv_vs_pred_plot=plots['dv_vs_pred_plot'],
+        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv_plot'],
+        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred_plot'],
+        final_model_eta_distribution_plot=plots['eta_distribution_plot'],
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_model, final_results),
         final_model_vpc_plot=final_vpc_plot,
     )
@@ -837,6 +812,43 @@ def _create_tool_summary(rows):
     columns = ['tool', 'selected_model', 'description', 'ofv', 'dofv', 'n_params', 'd_params']
     df = pd.DataFrame.from_records(rows_updated, columns=columns).set_index(['tool'])
     return df
+
+
+def create_plots(final_model, final_results, model):
+    dvid_name = get_dvid_name(model)
+    if final_results.predictions is not None:
+        dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
+        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions, dvid_name)
+    else:
+        dv_vs_pred_plot = None
+        dv_vs_ipred_plot = None
+    if final_results.residuals is not None:
+        cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals, dvid_name)
+    else:
+        cwres_vs_idv_plot = None
+    if final_results.predictions is not None and final_results.residuals is not None:
+        abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
+            model,
+            predictions=final_results.predictions,
+            residuals=final_results.residuals,
+            stratify_on=dvid_name,
+        )
+    else:
+        abs_cwres_vs_ipred_plot = None
+    if final_results.individual_estimates is not None:
+        eta_distribution_plot = plot_eta_distributions(
+            final_model, final_results.individual_estimates
+        )
+    else:
+        eta_distribution_plot = None
+
+    return {
+        'final_model_dv_vs_ipred_plot': dv_vs_ipred_plot,
+        'final_model_dv_vs_pred_plot': dv_vs_pred_plot,
+        'final_model_cwres_vs_idv_plot': cwres_vs_idv_plot,
+        'final_model_abs_cwres_vs_ipred_plot': abs_cwres_vs_ipred_plot,
+        'final_model_eta_distribution_plot': eta_distribution_plot,
+    }
 
 
 SubFunc = Callable[[Model], Optional[Results]]
