@@ -168,6 +168,8 @@ def ofv_func(
     for curid in ids:
         curdf = df[df[idcol] == curid]
         DVi = np.array(curdf[dvcol])
+        # FIXME: Remove ID, DV from curdf. Better to know beforehand
+        curdf = curdf[list(set(curdf.columns) - {idcol, dvcol})]
         Gi = evaluator.evaluate_vector(subs_eta_gradient, curdf)
         Hi = evaluator.evaluate_vector(subs_eps_gradient, curdf)
         PREDi = evaluator.evaluate_scalar(subs_y_norvs, curdf)
