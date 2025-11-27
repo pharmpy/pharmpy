@@ -79,7 +79,6 @@ class Covariance:
     cov: pd.DataFrame
     cor: pd.DataFrame
     coi: pd.DataFrame
-    ses: pd.Series
 
 
 @dataclass
@@ -259,11 +258,24 @@ class ModelfitResultsProxy:
         else:
             cov, cor, coi = None, None, None
 
-        cov, cor, coi, ses = calculate_cov_cor_coi_ses(cov, cor, coi, self.iterations.ses)
+        cov, cor, coi = calculate_cov_cor_coi(cov, cor, coi, self.iterations.ses)
         if cov is not None:
             cov = nearest_positive_semidefinite(cov)
 
-        return Covariance(cov, cor, coi, ses)
+        return Covariance(cov, cor, coi)
+
+    @property
+    @cache_method_no_args
+    def standard_errors(self) -> Optional[pd.Series]:
+        ses = self.iterations.ses
+
+        if ses is None:
+            if self.covariance.cov is not None:
+                ses = modeling.calculate_se_from_cov(self.covariance.cov)
+            elif self.covariance.coi is not None:
+                ses = modeling.calculate_se_from_prec(self.covariance.coi)
+
+        return ses
 
     @property
     @cache_method_no_args
@@ -513,7 +525,7 @@ class LazyModelfitResults:
 
     @property
     def standard_errors(self):
-        return self._proxy.covariance.ses
+        return self._proxy.standard_errors
 
     @property
     def standard_errors_sdcorr(self):
@@ -584,7 +596,7 @@ class LazyModelfitResults:
         return self._proxy.log
 
 
-def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
+def calculate_cov_cor_coi(cov, cor, coi, ses):
     if cov is None:
         if cor is not None:
             cov = modeling.calculate_cov_from_corrse(cor, ses)
@@ -600,12 +612,7 @@ def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
             coi = modeling.calculate_prec_from_cov(cov)
         elif cor is not None:
             coi = modeling.calculate_prec_from_corrse(cor, ses)
-    if ses is None:
-        if cov is not None:
-            ses = modeling.calculate_se_from_cov(cov)
-        elif coi is not None:
-            ses = modeling.calculate_se_from_prec(coi)
-    return cov, cor, coi, ses
+    return cov, cor, coi
 
 
 def _parse_matrix(
