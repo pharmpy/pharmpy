@@ -5,7 +5,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine
 from pharmpy.deps.scipy import linalg
-from pharmpy.modeling import cleanup_model, get_thetas
+from pharmpy.modeling import cleanup_model, drop_dropped_columns, get_thetas
 from pharmpy.tools.modelfit.evaluation import SymengineSubsEvaluator
 from pharmpy.tools.modelfit.input import check_input_model
 from pharmpy.tools.modelfit.ucp import (
@@ -59,6 +59,7 @@ def build_parameter_symbolic_gradients(nthetas, omega_coords, sigma_coords):
 
 def init(model):
     model = cleanup_model(model)
+    model = drop_dropped_columns(model)
     dv = next(iter(model.dependent_variables))  # Assuming only one DV
     y = symengine.sympify(
         model.statements.full_expression(dv)
