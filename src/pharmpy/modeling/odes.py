@@ -833,6 +833,10 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
 
     """
 
+    # FIXME: Crude way of detecting if already have n-transits
+    if Expr.symbol("KTR") in model.statements.before_odes.lhs_symbols:
+        return model
+
     model = set_transit_compartments(model, 0)
     model = remove_lag_time(model)
 
