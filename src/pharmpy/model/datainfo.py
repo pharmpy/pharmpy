@@ -666,7 +666,7 @@ class DataInfo(Sequence, Immutable):
     def __len__(self):
         return len(self._columns)
 
-    def _getindex(self, i: Union[int, str]) -> int:
+    def _getindex(self, i: Any) -> int:
         if isinstance(i, str):
             for n, col in enumerate(self._columns):
                 if col.name == i:
@@ -678,24 +678,25 @@ class DataInfo(Sequence, Immutable):
             raise TypeError(f"Cannot index DataInfo by {type(i)}")
 
     @overload
-    def __getitem__(self, index: Union[list, slice]) -> DataInfo: ...
-
-    @overload
     def __getitem__(self, index: Union[int, str]) -> ColumnInfo: ...
 
-    def __getitem__(  # pyright: ignore [reportIncompatibleMethodOverride]
-        self, index: Union[list, slice, int, str]
-    ) -> Union[DataInfo, ColumnInfo]:
-        if isinstance(index, list):
+    @overload
+    def __getitem__(self, index: Union[Sequence, slice]) -> DataInfo: ...
+
+    def __getitem__(self, index: Union[Sequence, slice, int, str]) -> Union[DataInfo, ColumnInfo]:
+        if isinstance(index, (int, str)):
+            return self._columns[self._getindex(index)]
+        elif isinstance(index, Sequence):
             cols = []
             for ind in index:
                 i = self._getindex(ind)
                 cols.append(self._columns[i])
             return DataInfo.create(columns=cols)
-        if isinstance(index, slice):
+        elif isinstance(index, slice):
             return DataInfo.create(self._columns[index], path=self._path, separator=self._separator)
-
-        return self._columns[self._getindex(index)]
+        else:
+            # NOTE: To trigger the exception
+            return self._columns[self._getindex(index)]
 
     def __contains__(self, value: Any) -> bool:
         for col in self:
