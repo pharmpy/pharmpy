@@ -2452,8 +2452,9 @@ class Statements(Sequence, Immutable):
         --------
         >>> from pharmpy.modeling import load_example_model
         >>> model = load_example_model("pheno")
-        >>> model.statements.dependencies("CL")   # doctest: +SKIP
-        {ETA(1), THETA(1), WGT}
+        >>> deps = model.statements.dependencies("CL")
+        >>> sorted(deps)
+        [ETA_CL, POP_CL, WGT]
         """
         if isinstance(symbol_or_statement, Statement):
             i = self.index(symbol_or_statement)
