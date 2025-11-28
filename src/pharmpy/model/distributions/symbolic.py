@@ -7,7 +7,7 @@ from typing import Any, Union
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
-from pharmpy.internals.immutable import Immutable, frozenmapping
+from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 
 from .numeric import FiniteDistribution as NumericFiniteDistribution
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
@@ -160,6 +160,7 @@ class NormalDistribution(Distribution):
         return (self._variance.name,)
 
     @property
+    @cache_method_no_args
     def free_symbols(self) -> set[Expr]:
         """Free symbols including random variable itself"""
         fs = self._mean.free_symbols.union(self._variance.free_symbols)
@@ -352,6 +353,7 @@ class JointNormalDistribution(Distribution):
         return self._variance
 
     @property
+    @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
         """List of names of all parameters used in definition"""
         n = self._variance.rows
@@ -362,6 +364,7 @@ class JointNormalDistribution(Distribution):
         return tuple(params)
 
     @property
+    @cache_method_no_args
     def free_symbols(self) -> set[Expr]:
         """Free symbols including random variable itself"""
         return self._mean.free_symbols.union(
@@ -639,6 +642,7 @@ class FiniteDistribution(Distribution):
         return self._probabilities
 
     @property
+    @cache_method_no_args
     def mean(self) -> Expr:
         s = Expr.integer(0)
         for n, expr in self._probabilities.items():
@@ -646,6 +650,7 @@ class FiniteDistribution(Distribution):
         return s
 
     @property
+    @cache_method_no_args
     def variance(self) -> Expr:
         mean = self.mean
         s = Expr.integer(0)
@@ -655,6 +660,7 @@ class FiniteDistribution(Distribution):
         return s
 
     @property
+    @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
         params = set()
         for expr in self._probabilities.values():
@@ -662,6 +668,7 @@ class FiniteDistribution(Distribution):
         return tuple(sorted(map(str, params)))
 
     @property
+    @cache_method_no_args
     def free_symbols(self) -> set[Expr]:
         """Free symbols including random variable itself"""
         symbs = {Expr.symbol(self._name)}
