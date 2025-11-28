@@ -5,6 +5,7 @@ from typing import Literal, Optional, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
     add_placebo_model,
@@ -23,16 +24,17 @@ from pharmpy.tools.common import (
 )
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool, summarize_modelfit_results
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 
 from .results import PDSearchResults
 
 
 def create_workflow(
-    dataset: Union[Path, str],
+    input: Union[Path, str, Model],
     type: Literal['pd', 'kpd'],
     treatment_variable: Optional[str] = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',
+    results: Optional[ModelfitResults] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
@@ -41,14 +43,16 @@ def create_workflow(
 
     Parameters
     ----------
-    dataset : Union[Path, str]
-        A PD dataset
+    input : Union[Path, str, Model]
+        A PD/KPD dataset or PD/KPD model
     type : str
         Type of PD model to build ('pd' or 'kpd')
     treatment_variable : str
         Name of the variable representing the treatment, e.g. TRT, DOSE or AUC. Do not use if `type` is 'kpd'
     kpd_driver : str
         Driver for KPD model (virtual infusion rate 'ir' or 'amount')
+    results : ModelfitResults (optional)
+        Results to input model
     strictness : str
         Strictness criteria
     parameter_uncertainty_method : {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
@@ -63,12 +67,15 @@ def create_workflow(
     """
     wb = WorkflowBuilder(name="pdsearch")
 
-    start_task = Task('start_pdsearch', start_pdsearch, dataset, type, kpd_driver)
+    start_task = Task('start_pdsearch', start_pdsearch, input, type, kpd_driver, results)
     wb.add_task(start_task)
 
-    fitbase = create_fit_workflow(n=1)
-    wb.insert_workflow(fitbase, predecessors=[start_task])
-    base_output = wb.output_tasks
+    if isinstance(input, Model):
+        base_output = [start_task]
+    else:
+        fitbase = create_fit_workflow(n=1)
+        wb.insert_workflow(fitbase, predecessors=[start_task])
+        base_output = wb.output_tasks
 
     placebo_task = Task(
         'run_placebo_models', run_placebo_models, strictness, parameter_uncertainty_method
@@ -102,8 +109,13 @@ def _calc_pd_inits_from_data(model):
     return theta_init, omega_init
 
 
-def start_pdsearch(context, dataset, type, kpd_driver):
+def start_pdsearch(context, input, type, kpd_driver, results):
     context.log_info("Starting pdsearch")
+    if isinstance(input, Model):
+        me = ModelEntry.create(input, modelfit_results=results)
+        context.store_input_model_entry(me)
+        return me
+    dataset = input
     if type == 'pd':
         model = create_basic_pd_model(dataset)
         model = set_proportional_error_model(model, zero_protection=False)
@@ -256,10 +268,11 @@ def postprocess(context, rank_res, rank_res2):
 @with_runtime_arguments_type_check
 @with_same_arguments_as(create_workflow)
 def validate_input(
-    dataset,
+    input,
     type,
     treatment_variable,
     kpd_driver,
+    results,
     strictness,
     parameter_uncertainty_method,
 ):
