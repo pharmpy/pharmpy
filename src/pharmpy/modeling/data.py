@@ -1428,7 +1428,7 @@ def remove_unused_columns(model: Model) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = remove_unused_columns(model)
     >>> list(model.dataset.columns)
-    ['ID', 'TIME', 'AMT', 'DV']
+    ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
 
     See also
     --------
