@@ -1404,6 +1404,76 @@ def undrop_columns(model: Model, column_names: Union[list[str], str]):
     return model.update_source()
 
 
+def remove_unused_columns(model: Model) -> Model:
+    """Remove all columns in the dataset that are not used by the model including dropped columns
+
+    Warnings
+    --------
+    Currently columns not needed to give a prediction, but used by other expressions in the
+    model are kept. This will change in the future.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Updated Pharmpy model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model = remove_unused_columns(model)
+    >>> list(model.dataset.columns)
+    ['ID', 'TIME', 'AMT', 'DV']
+
+    See also
+    --------
+    drop_columns : Drop columns from the dataset
+    """
+    model = drop_dropped_columns(model)
+    deps = _all_dependent_symbols(model)
+    keep = [name for name in model.datainfo.names if name in deps]
+    di = model.datainfo[keep]
+    df = model.dataset[keep]
+    model = model.replace(dataset=df, datainfo=di)
+    return model.update_source()
+
+
+def _all_dependent_symbols(model: Model) -> set[str]:
+    dvs = model.dependent_variables.keys()
+    deps = set()
+    for dv in dvs:
+        deps |= {str(symb) for symb in model.statements.dependencies(dv)}
+    essential_column_types = ('id', 'dv', 'dvid')
+    essential_columns = {
+        a for tp in essential_column_types if (a := get_column_name(model, tp)) is not None
+    }
+    deps |= essential_columns
+
+    if model.statements.ode_system is not None:
+        ode_column_types = (
+            'idv',
+            'dose',
+            'rate',
+            'additional',
+            'ii',
+            'ss',
+            'event',
+            'mdv',
+            'compartment',
+            'admid',
+        )
+        essential_ode_columns = {
+            a for tp in ode_column_types if (a := get_column_name(model, tp)) is not None
+        }
+        deps |= essential_ode_columns
+    return deps
+
+
 def _translate_nonmem_time_value(time):
     if ':' in time:
         components = time.split(':')

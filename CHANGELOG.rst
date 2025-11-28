@@ -1,3 +1,12 @@
+next version
+------------
+
+New features
+============
+
+* Add :code:`modeling.remove_unused_columns`
+
+
 1.11.1 (2025-11-24)
 -------------------
 

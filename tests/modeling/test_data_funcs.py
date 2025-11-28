@@ -32,6 +32,7 @@ from pharmpy.modeling import (
     list_time_varying_covariates,
     load_dataset,
     remove_loq_data,
+    remove_unused_columns,
     set_covariates,
     set_dataset,
     set_dvid,
@@ -713,3 +714,9 @@ def test_get_column_name(load_example_model_for_test):
     model = set_covariates(model, ["FA1", "FA2"])
     with pytest.raises(IndexError):
         get_column_name(model, "covariate")
+
+
+def test_remove_unused_columns(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    model = remove_unused_columns(model)
+    assert model.datainfo.names == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
