@@ -377,6 +377,8 @@ def test_parse_different_idx_table(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     idx_list = model.dataset.index.tolist()
     idx_list[-1] = 10000
-    model.dataset.index = idx_list
+    df = model.dataset.copy()
+    df.index = idx_list
+    model = model.replace(dataset=df)
     res = parse_modelfit_results(model, pheno_path)
     assert res.residuals.index.tolist()[-1] == 10000
