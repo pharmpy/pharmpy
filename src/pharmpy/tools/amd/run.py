@@ -570,11 +570,11 @@ def run_amd_task(
         final_model_parameter_estimates=_table_final_parameter_estimates(
             final_results.parameter_estimates_sdcorr, final_results.standard_errors_sdcorr
         ),
-        final_model_dv_vs_ipred_plot=plots['dv_vs_ipred_plot'],
-        final_model_dv_vs_pred_plot=plots['dv_vs_pred_plot'],
-        final_model_cwres_vs_idv_plot=plots['cwres_vs_idv_plot'],
-        final_model_abs_cwres_vs_ipred_plot=plots['abs_cwres_vs_ipred_plot'],
-        final_model_eta_distribution_plot=plots['eta_distribution_plot'],
+        final_model_dv_vs_ipred_plot=plots['final_model_dv_vs_ipred_plot'],
+        final_model_dv_vs_pred_plot=plots['final_model_dv_vs_pred_plot'],
+        final_model_cwres_vs_idv_plot=plots['final_model_cwres_vs_idv_plot'],
+        final_model_abs_cwres_vs_ipred_plot=plots['final_model_abs_cwres_vs_ipred_plot'],
+        final_model_eta_distribution_plot=plots['final_model_eta_distribution_plot'],
         final_model_eta_shrinkage=table_final_eta_shrinkage(final_model, final_results),
         final_model_vpc_plot=final_vpc_plot,
     )
