@@ -766,7 +766,7 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
             )
         elif colname == 'DV' or colname == replacements.get('DV', None):
             info = ColumnInfo.create(colname, drop=coldrop, type='dv')
-        elif colname == 'TIME' or colname == replacements.get('TIME', None):
+        elif (colname == 'TIME' or colname == replacements.get('TIME', None)) and have_pk:
             if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
                 datatype = 'nmtran-time'
             else:
@@ -774,7 +774,7 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
             info = ColumnInfo.create(
                 colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype
             )
-        elif colname in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
+        elif colname in {'DATE', 'DAT1', 'DAT2', 'DAT3'} and have_pk:
             # Always DROP in mod-file, but actually always used
             info = ColumnInfo.create(colname, drop=False, scale='interval', datatype='nmtran-date')
         elif colname == 'EVID' and have_pk:

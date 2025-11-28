@@ -1865,7 +1865,13 @@ def update_estimation(control_stream, model):
             filename = "mytabb"
         else:
             filename = "mytab"
-        s = f'$TABLE {model.datainfo.id_column.name} {model.datainfo.idv_column.name} '
+        try:
+            idvname = model.datainfo.idv_column.name
+        except IndexError:
+            idvname = ""
+        else:
+            idvname = f" {idvname}"
+        s = f'$TABLE {model.datainfo.id_column.name}{idvname} '
         s += f'{model.datainfo.dv_column.name} '
         s += f'{" ".join(cols)} FILE={filename} ONEHEADER NOAPPEND NOPRINT'
         if model.dataset is not None and any(id_val > 99999 for id_val in get_ids(model)):
