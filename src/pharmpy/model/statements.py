@@ -2028,12 +2028,12 @@ class Statements(Sequence, Immutable):
         return cls(statements)
 
     @overload
-    def __getitem__(self, ind: slice) -> Statements: ...
-
-    @overload
     def __getitem__(self, ind: int) -> Statement: ...
 
-    def __getitem__(self, ind):  # pyright: ignore
+    @overload
+    def __getitem__(self, ind: slice) -> Statements: ...
+
+    def __getitem__(self, ind: Union[int, slice]) -> Union[Statement, Statements]:
         if isinstance(ind, slice):
             return Statements(self._statements[ind])
         else:
