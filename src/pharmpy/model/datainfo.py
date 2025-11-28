@@ -858,6 +858,19 @@ class DataInfo(Sequence, Immutable):
         return [col.name for col in self._columns]
 
     @property
+    def symbols(self) -> list[Expr]:
+        """Symbols for all columns
+
+        Examples
+        --------
+        >>> from pharmpy.modeling import load_example_model
+        >>> model = load_example_model("pheno")
+        >>> model.datainfo.symbols
+        [ID, TIME, AMT, WGT, APGR, DV, FA1, FA2]
+        """
+        return [col.symbol for col in self._columns]
+
+    @property
     def types(self) -> list[str]:
         """All column types"""
         return [col.type for col in self._columns]

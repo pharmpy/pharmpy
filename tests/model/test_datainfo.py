@@ -401,3 +401,13 @@ def test_find_single_column_name():
     di2 = di1 + [col4]
     with pytest.raises(ValueError):
         di2.find_single_column_name('covariate')
+
+
+def test_names_and_symbols():
+    col1 = ColumnInfo.create("ID", type='id', datatype='int32')
+    col2 = ColumnInfo.create("DV", type='dv', datatype='float64')
+    col3 = ColumnInfo.create("WGT", type='unknown')
+    di = DataInfo.create([col1, col2, col3])
+    names = ["ID", "DV", "WGT"]
+    assert di.names == names
+    assert di.symbols == list(map(Expr.symbol, names))
