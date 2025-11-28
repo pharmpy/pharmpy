@@ -147,7 +147,17 @@ def process(path: Path, convert: bool, ofv: bool, results: bool):
             raise e
 
         model = make_model(cs, di, di, path, data)
-        _results = parse_modelfit_results(model, path)
+        lazy_results = parse_modelfit_results(model, path, with_log=False, lazy=True)
+        _results = None if lazy_results is None else ModelfitResults(
+            ofv = lazy_results.ofv if ofv else None,
+            parameter_estimates = lazy_results.parameter_estimates if results else None,
+            individual_estimates = lazy_results.individual_estimates if results else None,
+            standard_errors = lazy_results.standard_errors if results else None,
+            relative_standard_errors = lazy_results.relative_standard_errors if results else None,
+            minimization_successful = lazy_results.minimization_successful if results else None,
+            covariance_matrix = lazy_results.covariance_matrix if results else None,
+            correlation_matrix = lazy_results.correlation_matrix if results else None,
+        )
 
     return Success(
         path,
@@ -155,16 +165,7 @@ def process(path: Path, convert: bool, ofv: bool, results: bool):
         wt,
         ct,
         model,
-        None if _results is None else ModelfitResults(
-            ofv = _results.ofv if ofv else None,
-            parameter_estimates = _results.parameter_estimates if results else None,
-            individual_estimates = _results.individual_estimates if results else None,
-            standard_errors = _results.standard_errors if results else None,
-            relative_standard_errors = _results.relative_standard_errors if results else None,
-            minimization_successful = _results.minimization_successful if results else None,
-            covariance_matrix = _results.covariance_matrix if results else None,
-            correlation_matrix = _results.correlation_matrix if results else None,
-        )
+        _results
     )
 
 

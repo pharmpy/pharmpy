@@ -4,7 +4,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Literal, Optional, Union, overload
 
 import pharmpy.modeling as modeling
 from pharmpy.basic import Expr
@@ -324,6 +324,32 @@ class ModelfitResultsProxy:
         return _parse_ets(path, etas, subproblem)
 
 
+@overload
+def _parse_modelfit_results(
+    path: Optional[Union[str, Path]],
+    control_stream: NMTranControlStream,
+    name_map,
+    model: Model,
+    strict: bool,
+    subproblem: Optional[int],
+    with_log: bool,
+    lazy: Literal[False],
+) -> ModelfitResults | None: ...
+
+
+@overload
+def _parse_modelfit_results(
+    path: Optional[Union[str, Path]],
+    control_stream: NMTranControlStream,
+    name_map,
+    model: Model,
+    strict: bool,
+    subproblem: Optional[int],
+    with_log: bool,
+    lazy: Literal[True],
+) -> LazyModelfitResults | None: ...
+
+
 def _parse_modelfit_results(
     path: Optional[Union[str, Path]],
     control_stream: NMTranControlStream,
@@ -331,6 +357,8 @@ def _parse_modelfit_results(
     model: Model,
     strict: bool = False,
     subproblem: Optional[int] = None,
+    with_log: bool = True,
+    lazy: bool = False,
 ):
     # Path to model file or results file
     if path is None:
@@ -345,7 +373,7 @@ def _parse_modelfit_results(
         model=model,
         strict=strict,
         subproblem=subproblem,
-        log=Log(),
+        log=Log() if with_log else None,
     )
 
     try:
@@ -359,6 +387,9 @@ def _parse_modelfit_results(
         return None
     except ValueError:
         return create_failed_results(model, proxy.log)
+
+    if lazy:
+        return LazyModelfitResults(proxy)
 
     res = ModelfitResults(
         minimization_successful=proxy.minimization_successful,
@@ -401,6 +432,155 @@ def _parse_modelfit_results(
         log=proxy.log,
     )
     return res
+
+
+@dataclass(frozen=True)
+class LazyModelfitResults:
+    _proxy: ModelfitResultsProxy
+
+    @property
+    def minimization_successful(self):
+        return self._proxy.minimization_successful
+
+    @property
+    def minimization_successful_iterations(self):
+        return self._proxy.minimization_successful_iterations
+
+    @property
+    def estimation_runtime(self):
+        return self._proxy.status.estimation_runtime[self._proxy.last_estimation_index]
+
+    @property
+    def estimation_runtime_iterations(self):
+        return self._proxy.estimation_runtime_iterations
+
+    @property
+    def function_evaluations(self):
+        return self._proxy.status.function_evaluations[self._proxy.last_estimation_index]
+
+    @property
+    def function_evaluations_iterations(self):
+        return self._proxy.function_evaluations_iterations
+
+    @property
+    def termination_cause(self):
+        return self._proxy.status.termination_cause[self._proxy.last_estimation_index]
+
+    @property
+    def termination_cause_iterations(self):
+        return self._proxy.termination_cause_iterations
+
+    @property
+    def significant_digits(self):
+        return self._proxy.status.significant_digits[-1]
+
+    @property
+    def significant_digits_iterations(self):
+        return self._proxy.significant_digits_iterations
+
+    @property
+    def relative_standard_errors(self):
+        return self._proxy.relative_standard_errors
+
+    @property
+    def individual_estimates(self):
+        return self._proxy.individuals.estimates
+
+    @property
+    def individual_estimates_covariance(self):
+        return self._proxy.individuals.estimates_covariance
+
+    @property
+    def runtime_total(self):
+        return self._proxy.status.runtime_total
+
+    @property
+    def log_likelihood(self):
+        return self._proxy.status.log_likelihood
+
+    @property
+    def covariance_matrix(self):
+        return self._proxy.covariance.cov
+
+    @property
+    def correlation_matrix(self):
+        return self._proxy.covariance.cor
+
+    @property
+    def precision_matrix(self):
+        return self._proxy.covariance.coi
+
+    @property
+    def standard_errors(self):
+        return self._proxy.covariance.ses
+
+    @property
+    def standard_errors_sdcorr(self):
+        return self._proxy.iterations.ses_sdcorr
+
+    @property
+    def individual_ofv(self):
+        return self._proxy.individuals.ofv
+
+    @property
+    def parameter_estimates(self):
+        return self._proxy.iterations.final_pe
+
+    @property
+    def parameter_estimates_sdcorr(self):
+        return self._proxy.iterations.sdcorr
+
+    @property
+    def parameter_estimates_iterations(self):
+        return self._proxy.iterations.pe
+
+    @property
+    def ofv(self) -> float | None:
+        return self._proxy.iterations.final_ofv
+
+    @property
+    def ofv_iterations(self):
+        return self._proxy.iterations.ofv
+
+    @property
+    def predictions(self):
+        return self._proxy.tables.predictions
+
+    @property
+    def residuals(self):
+        return self._proxy.tables.residuals
+
+    @property
+    def derivatives(self):
+        return self._proxy.tables.derivatives
+
+    @property
+    def evaluation(self):
+        return self._proxy.evaluation
+
+    @property
+    def covstep_successful(self):
+        return self._proxy.covstep_successful
+
+    @property
+    def gradients(self):
+        return self._proxy.gradient.final_iteration
+
+    @property
+    def gradients_iterations(self):
+        return self._proxy.gradient.all_iterations
+
+    @property
+    def warnings(self):
+        return self._proxy.warnings
+
+    @property
+    def individual_eta_samples(self):
+        return self._proxy.individual_eta_samples
+
+    @property
+    def log(self):
+        return self._proxy.log
 
 
 def calculate_cov_cor_coi_ses(cov, cor, coi, ses):
@@ -1090,7 +1270,12 @@ def simfit_results(model, model_path):
 
 
 def parse_modelfit_results(
-    model, path: Optional[Union[str, Path]], strict=False, subproblem: Optional[int] = None
+    model,
+    path: Optional[Union[str, Path]],
+    strict=False,
+    subproblem: Optional[int] = None,
+    with_log: bool = True,
+    lazy: bool = False,
 ):
     name_map = create_name_map(model)
     name_map = {value: key for key, value in name_map.items()}
@@ -1101,6 +1286,8 @@ def parse_modelfit_results(
         model,
         strict=strict,
         subproblem=subproblem,
+        with_log=with_log,
+        lazy=lazy,
     )
     return res
 
