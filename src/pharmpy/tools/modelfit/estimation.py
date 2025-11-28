@@ -5,7 +5,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import symengine
 from pharmpy.deps.scipy import linalg
-from pharmpy.modeling import cleanup_model, drop_dropped_columns, get_thetas
+from pharmpy.modeling import cleanup_model, get_thetas, remove_unused_columns
 from pharmpy.tools.modelfit.evaluation import SymengineSubsEvaluator
 from pharmpy.tools.modelfit.input import check_input_model
 from pharmpy.tools.modelfit.ucp import (
@@ -59,7 +59,7 @@ def build_parameter_symbolic_gradients(nthetas, omega_coords, sigma_coords):
 
 def init(model):
     model = cleanup_model(model)
-    model = drop_dropped_columns(model)
+    model = remove_unused_columns(model)
     dv = next(iter(model.dependent_variables))  # Assuming only one DV
     y = symengine.sympify(
         model.statements.full_expression(dv)
@@ -169,7 +169,8 @@ def ofv_func(
         curdf = df[df[idcol] == curid]
         DVi = np.array(curdf[dvcol])
         # FIXME: Remove ID, DV from curdf. Better to know beforehand
-        curdf = curdf[list(set(curdf.columns) - {idcol, dvcol})]
+        # FIXME: Could give empty dataset
+        # curdf = curdf[list(set(curdf.columns) - {idcol, dvcol})]
         Gi = evaluator.evaluate_vector(subs_eta_gradient, curdf)
         Hi = evaluator.evaluate_vector(subs_eps_gradient, curdf)
         PREDi = evaluator.evaluate_scalar(subs_y_norvs, curdf)
