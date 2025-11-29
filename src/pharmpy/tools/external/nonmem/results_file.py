@@ -1,5 +1,6 @@
 import re
 from datetime import datetime
+from itertools import tee
 from typing import Iterable, Optional, Union
 
 import dateutil.parser
@@ -8,6 +9,23 @@ from packaging import version
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model.external.nonmem.dataset.nmtran import IOFromChunks
+
+
+def _decode_lst(line: bytes):
+    # Since lst-files sometimes can have mixed encodings:
+    # Allow for separate encodings of date strings and the rest of the content
+    # Always try utf-8 first and fallback to latin-1 separately for each section
+    try:
+        return line.decode('utf-8')
+    except UnicodeDecodeError:
+        return line.decode('latin-1', errors='ignore')
+
+
+def lookahead(tee_iterator, n: int):
+    # NOTE: Adapted from https://docs.python.org/3/library/itertools.html#itertools.tee
+    [forked_iterator] = tee(tee_iterator, 1)
+    for _ in range(n):
+        yield next(forked_iterator, None)
 
 
 class NONMEMResultsFile:
@@ -245,6 +263,7 @@ class NONMEMResultsFile:
 
     @staticmethod
     def parse_runtime(row, row_next=None):
+        row = row.replace('\n', '')
         # TODO: Support AM/PM
         weekday_month_en = re.compile(
             r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
@@ -315,14 +334,14 @@ class NONMEMResultsFile:
             if row_next is None:
                 return date
 
-            time = dateutil.parser.parse(row_next).time()
+            time = dateutil.parser.parse(row_next.replace('\n', '')).time()
             return datetime.combine(date, time)
 
     def log_items(self, lines):
         if self.log is None:
             return
 
-        fulltext = '\n'.join(lines)
+        fulltext = ''.join(lines)
 
         warnings = []
         errors = []
@@ -395,98 +414,81 @@ class NONMEMResultsFile:
 
     def tag_items(self, path):
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
-        tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
+        tag = re.compile(r' #([A-Z]{4}):\s*(.*)')
         end_TERE = re.compile(
             r'(0|1)'
         )  # The part we need after #TERE: will precede the next ^1 or ^0
         cleanup = re.compile(r'\*+\s*')
-        TERM = []
-        TERE = []
+        TERM: list[str] = []
+        TERE: list[str] = []
         found_TERM = False
         found_TERE = False
         runtime = None
-        endtime_index = None
-
-        with open(path, 'rb') as fp:
-            binary = fp.readlines()
-            # Since lst-files sometimes can have mixed encodings:
-            # Allow for separate encodings of date strings and the rest of the content
-            # Always try utf-8 first and fallback to latin-1 separately for each section
-            try:
-                line1 = binary[0].decode('utf-8')
-            except UnicodeDecodeError:
-                line1 = binary[0].decode('latin-1', errors='ignore')
-
-            try:
-                last_line = binary[-1].decode('utf-8')
-            except UnicodeDecodeError:
-                last_line = binary[-1].decode('latin-1', errors='ignore')
-
-            chunk = b''.join(binary[1:-1])
-            try:
-                decoded_chunk = chunk.decode('utf-8')
-            except UnicodeDecodeError:
-                decoded_chunk = chunk.decode('latin-1', errors='ignore')
-
-            lines = [line1]
-            lines += decoded_chunk.replace('\r', '').split('\n')
-            lines[-1] = last_line  # Replace since lst-files always end with \n
+        hessian = None
 
         version_number = None
-        starttime = NONMEMResultsFile.parse_runtime(lines[0], lines[1])
-        for row in lines:
-            m = nmversion.match(row)
-            if m:
-                version_number = NONMEMResultsFile.cleanup_version(m.group(1))
-                yield ('nonmem_version', version_number)
-                break  # We will stay at current file position
 
-        self.log_items(lines)
+        with open(path, 'rb') as fp:
+            lines = map(_decode_lst, fp)
+            if self.log is not None:
+                lines, _lines = tee(lines, 2)
+                self.log_items(_lines)
 
-        if NONMEMResultsFile.supported_version(version_number):
-            for i, row in enumerate(lines):
-                row = row.rstrip()
-                m = tag.match(row)
+            it = lines
+            starttime = NONMEMResultsFile.parse_runtime(next(it), next(it))
+
+            for row in it:
+                m = nmversion.match(row)
                 if m:
-                    if m.group(1) == 'TERM':
-                        if found_TERM:
-                            raise NotImplementedError('Two TERM tags without TERE in between')
-                        found_TERM = True
-                        TERM = []
-                        # This termination error is not in the TERM block
-                        hessian = '0HESSIAN OF POSTERIOR DENSITY'
-                        if lines[i - 2].startswith(hessian):
-                            TERM.append(lines[i - 2])
-                    elif m.group(1) == 'TERE':
-                        if not found_TERM:
-                            raise NotImplementedError('TERE tag without TERM tag')
-                        found_TERE = True
-                        yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
-                        found_TERM = False
-                        TERM = []
-                    elif found_TERE:
-                        found_TERE = False
-                        # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
-                    else:
-                        v = cleanup.sub('', m.group(2))
-                        yield (m.group(1), v.strip())
-                elif found_TERE:
-                    if end_TERE.match(row):
-                        yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
-                        found_TERE = False
-                        TERE = []
-                    else:
-                        TERE.append(row)
-                elif found_TERM:
-                    TERM.append(row)
-                if row == 'Stop Time:':
-                    endtime_index = i + 1
+                    version_number = NONMEMResultsFile.cleanup_version(m.group(1))
+                    yield ('nonmem_version', version_number)
+                    break  # We will stay at current file position
 
-            if endtime_index is not None:
-                second_line = lines[i] if (i := endtime_index + 1) < len(lines) else None
-                endtime = NONMEMResultsFile.parse_runtime(lines[endtime_index], second_line)
-                if starttime and endtime:
-                    runtime = (endtime - starttime).total_seconds()
+            if NONMEMResultsFile.supported_version(version_number):
+                for row in it:
+                    lead = row[:2]
+                    if lead == ' #' and (m := tag.match(row)):
+                        if m.group(1) == 'TERM':
+                            if found_TERM:
+                                raise NotImplementedError('Two TERM tags without TERE in between')
+                            found_TERM = True
+                            # The hessian termination error is not in the TERM block
+                            TERM = [hessian] if hessian is not None else []
+                            hessian = None
+                        elif m.group(1) == 'TERE':
+                            if not found_TERM:
+                                raise NotImplementedError('TERE tag without TERM tag')
+                            found_TERE = True
+                            yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
+                            found_TERM = False
+                            TERM = []
+                        elif found_TERE:
+                            found_TERE = False
+                            # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
+                        else:
+                            v = cleanup.sub('', m.group(2))
+                            yield (m.group(1), v.strip())
+                    elif found_TERE:
+                        if end_TERE.match(row.rstrip()):
+                            yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
+                            found_TERE = False
+                            TERE = []
+                        else:
+                            TERE.append(row.rstrip())
+                    elif found_TERM:
+                        TERM.append(row.rstrip())
+                    elif lead == 'St' and row == 'Stop Time:\n':
+                        endtime = NONMEMResultsFile.parse_runtime(*lookahead(it, 2))
+                        if starttime and endtime:
+                            runtime = (endtime - starttime).total_seconds()
+                    elif lead == '0H' and row.startswith('0HESSIAN OF POSTERIOR DENSITY'):
+                        _, maybe_term = lookahead(it, 2)
+                        if (
+                            maybe_term is not None
+                            and (m := tag.match(maybe_term))
+                            and m.group(1) == 'TERM'
+                        ):
+                            hessian = row
 
             if found_TERM:
                 yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
