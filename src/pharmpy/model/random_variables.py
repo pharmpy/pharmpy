@@ -13,7 +13,7 @@ from pharmpy.deps import sympy, sympy_stats
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, cache_method_no_args
 from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_positive_semidefinite
 
 from .distributions.numeric import NumericDistribution
@@ -201,10 +201,12 @@ class VariabilityHierarchy(Immutable):
             raise ValueError(f"Cannot add {other} to VariabilityLevel")
 
     @property
+    @cache_method_no_args
     def names(self) -> list[str]:
         """Names of all variability levels"""
         return [varlev.name for varlev in self._levels]
 
+    @cache_method_no_args
     def _find_reference(self) -> int:
         # Find numerical level of first level
         # No error checking since having a reference level is an invariant
@@ -213,6 +215,7 @@ class VariabilityHierarchy(Immutable):
         )
 
     @property
+    @cache_method_no_args
     def levels(self) -> dict[str, int]:
         """Dictionary of variability level name to numerical level"""
         ind = self._find_reference()
@@ -392,6 +395,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return len(self._dists)
 
     @property
+    @cache_method_no_args
     def nrvs(self) -> int:
         n = 0
         for dist in self._dists:
@@ -482,16 +486,19 @@ class RandomVariables(CollectionsSequence, Immutable):
             return False
 
     @property
+    @cache_method_no_args
     def names(self) -> list[str]:
         """List of the names of all random variables"""
         return list(chain.from_iterable(dist.names for dist in self._dists))
 
     @property
+    @cache_method_no_args
     def symbols(self) -> list[Expr]:
         """List with symbols for all random variables"""
         return [Expr.symbol(name) for name in self.names]
 
     @property
+    @cache_method_no_args
     def epsilons(self) -> RandomVariables:
         """Get only the epsilons"""
         return RandomVariables(
@@ -501,6 +508,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
+    @cache_method_no_args
     def etas(self) -> RandomVariables:
         """Get only the etas"""
         return RandomVariables(
@@ -510,6 +518,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
+    @cache_method_no_args
     def iiv(self) -> RandomVariables:
         """Get only the iiv etas, i.e. etas with variability level 0"""
         return RandomVariables(
@@ -519,6 +528,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
+    @cache_method_no_args
     def iov(self) -> RandomVariables:
         """Get only the iov etas, i.e. etas with variability level 1"""
         return RandomVariables(
@@ -528,11 +538,13 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
+    @cache_method_no_args
     def free_symbols(self) -> set[Expr]:
         """Set of free symbols for all random variables"""
         return set().union(*(dist.free_symbols for dist in self._dists))
 
     @property
+    @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
         """List of parameter names for all random variables
 
@@ -546,6 +558,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return tuple(params)
 
     @property
+    @cache_method_no_args
     def variance_parameters(self) -> list[str]:
         """List of all parameters representing variance for all random variables"""
         parameters = []
@@ -816,6 +829,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             _create_rng(rng),
         )
 
+    @cache_method_no_args
     def _calc_covariance_matrix(self) -> tuple[list[Expr], sympy.Matrix, list[str]]:
         means = []
         names = []
