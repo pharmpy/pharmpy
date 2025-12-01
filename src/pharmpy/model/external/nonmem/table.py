@@ -21,19 +21,16 @@ DEFAULT_NONMEM_TABLE_FILE_FORMAT = DEFAULT_TABLE_RECORD_FORMAT
 
 def parse_format(format: str):
     assert len(format) >= 1
-    if format == "QCSV":
-        return NONMEMTableFileFormat(format, ",", quoted=True)
-    elif format == "CSV":
-        return NONMEMTableFileFormat(format, ",")
-    elif format[0] == "s":
+    sep = format[0].lower()
+    if sep == "s":
         return NONMEMTableFileFormat(format, r"\s+")
-    elif format[0] == "t":
+    elif sep == "t":
         return NONMEMTableFileFormat(format, "\t")
-    elif format[0] == ",":
+    elif sep == ",":
         return NONMEMTableFileFormat(format, ",")
-    elif format[0] == "c":
+    elif sep == "c":
         return NONMEMTableFileFormat(format, ",")
-    elif format[0] == "q":
+    elif sep == "q":
         return NONMEMTableFileFormat(format, ",", quoted=True)
     else:
         raise NotImplementedError(format)
