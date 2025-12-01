@@ -196,7 +196,7 @@ def test_pset_names():
     p2 = Parameter.create('X', 3)
     p3 = Parameter.create('Z', 1)
     pset = Parameters((p1, p2, p3))
-    assert pset.names == ['Y', 'X', 'Z']
+    assert pset.names == ('Y', 'X', 'Z')
     assert pset.symbols == [symbol('Y'), symbol('X'), symbol('Z')]
 
 

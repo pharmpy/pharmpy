@@ -298,9 +298,9 @@ class Parameters(CollectionsSequence, Immutable):
         )
 
     @property
-    def names(self) -> list[str]:
-        """List of all parameter names"""
-        return [p.name for p in self._params]
+    def names(self) -> tuple[str, ...]:
+        """All parameter names"""
+        return tuple(p.name for p in self._params)
 
     @property
     def symbols(self) -> list[Expr]:

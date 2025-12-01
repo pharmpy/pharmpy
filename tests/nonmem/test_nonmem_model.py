@@ -476,7 +476,7 @@ $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = Model.parse_model_from_string(code)
-    assert model.parameters.names == ['THETA_1', 'OMEGA_1_1', 'SIGMA_1_1']
+    assert model.parameters.names == ('THETA_1', 'OMEGA_1_1', 'SIGMA_1_1')
 
 
 def test_symbol_names_in_abbr(load_model_for_test, testdata):
@@ -489,7 +489,7 @@ def test_symbol_names_in_abbr(load_model_for_test, testdata):
 
 def test_clashing_parameter_names(load_model_for_test, datadir):
     model = load_model_for_test(datadir / 'pheno_clashing_symbols.mod')
-    assert model.parameters.names == ['THETA_1', 'TVV', 'IVCL', 'OMEGA_2_2', 'SIGMA_1_1']
+    assert model.parameters.names == ('THETA_1', 'TVV', 'IVCL', 'OMEGA_2_2', 'SIGMA_1_1')
 
     code = """$PROBLEM base model
 $INPUT ID DV TIME
@@ -504,7 +504,7 @@ $SIGMA 1 ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = Model.parse_model_from_string(code)
-    assert model.parameters.names == ['TV', 'OMEGA_1_1', 'SIGMA_1_1']
+    assert model.parameters.names == ('TV', 'OMEGA_1_1', 'SIGMA_1_1')
 
     code = """$PROBLEM base model
 $INPUT ID DV TIME
@@ -518,7 +518,7 @@ $THETA 0.1  ; TV
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
 """
     model = Model.parse_model_from_string(code)
-    assert model.parameters.names == ['TV', 'THETA_2']
+    assert model.parameters.names == ('TV', 'THETA_2')
 
     code = """$PROBLEM base model
 $INPUT ID TIME WGT DROP DV
@@ -531,7 +531,7 @@ $SIGMA 1 ; SI
 $ESTIMATION METHOD=1 INTER
 """
     model = Model.parse_model_from_string(code)
-    assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+    assert model.parameters.names == ('THETA_1', 'OM', 'SI')
 
     code = """$PROBLEM base model
 $INPUT ID TIME DROP DROP DV
@@ -545,7 +545,7 @@ $SIGMA 1 ; SI
 $ESTIMATION METHOD=1 INTER
 """
     model = Model.parse_model_from_string(code)
-    assert model.parameters.names == ['THETA_1', 'OM', 'SI']
+    assert model.parameters.names == ('THETA_1', 'OM', 'SI')
 
 
 def test_abbr_write(load_model_for_test, pheno_path):

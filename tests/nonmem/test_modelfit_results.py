@@ -82,7 +82,7 @@ def test_gradients(testdata, load_model_for_test):
     gradients_iterations = res.gradients_iterations
     assert len(gradients) == 5
     assert not gradients_iterations.empty
-    assert gradients_iterations.columns.to_list()[1::] == model.parameters.names
+    assert tuple(gradients_iterations.columns.to_list()[1::]) == model.parameters.names
     assert res.covstep_successful is None
 
     # test correct order of parameters
@@ -95,7 +95,7 @@ def test_gradients(testdata, load_model_for_test):
     params_before = model.parameters.names
     model = model.replace(parameters=params)
     res = parse_modelfit_results(model, path=testdata / 'nonmem/pheno.mod')
-    assert res.gradients_iterations.columns.to_list()[1::] == params_before
+    assert tuple(res.gradients_iterations.columns.to_list()[1::]) == params_before
 
 
 def test_information(pheno, pheno_path):
