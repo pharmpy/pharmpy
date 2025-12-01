@@ -1096,6 +1096,7 @@ class CompartmentalSystem(Statement):
                 for node in self._g.nodes:
                     if isinstance(node, Compartment):
                         return node
+                assert False  # pragma: no cover
 
             central = list(self._g.predecessors(output))[-1]
             if central.name in ["METABOLITE", "EFFECT", "COMPLEX", "RESPONSE"]:
