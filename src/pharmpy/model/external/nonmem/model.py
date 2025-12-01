@@ -383,6 +383,14 @@ def make_model(
     parameters, rvs, name_map = parse_parameters(control_stream, statements, di)
 
     subs_map = {Expr.symbol(key): Expr.symbol(val) for key, val in name_map.items()}
+    # FIXME: Special case for DV synonym in $INPUT
+    try:
+        dv_name = di.dv_column.symbol
+    except IndexError:
+        pass
+    else:
+        if dv_name != "DV":
+            subs_map["DV"] = dv_name
     statements = statements.subs(subs_map)
 
     # FIXME: Handle by creation of new model object
