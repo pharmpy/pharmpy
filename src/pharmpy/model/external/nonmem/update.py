@@ -2422,13 +2422,13 @@ def abbr_translation(model: Model, rv_trans):
     return model, abbr_trans
 
 
-def create_name_map(model):
+def create_name_map(model: Model):
     trans = {}
     thetas = [p for p in model._parameters if p.symbol not in model.random_variables.free_symbols]
     for i, theta in enumerate(thetas):
         trans[theta.name] = f'THETA({i + 1})'
 
-    def add_rv_params(rvs, param_name):
+    def add_rv_params(rvs: RandomVariables, param_name: str):
         cov = rvs.covariance_matrix
         for row in range(0, cov.rows):
             for col in range(0, row + 1):
