@@ -1879,9 +1879,13 @@ def has_instantaneous_absorption(model: Model):
     central = odes.central_compartment
     if dosing != central:
         return False
-    if isinstance(dosing.doses[0], Bolus):
-        return True
-    return False
+    for dose in dosing.doses:
+        if not (
+            isinstance(dose, Bolus)
+            or (isinstance(dose, Infusion) and dose.rate in model.datainfo.symbols)
+        ):
+            return False
+    return True
 
 
 def has_seq_zo_fo_absorption(model: Model):
