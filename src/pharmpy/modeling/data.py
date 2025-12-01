@@ -2238,6 +2238,8 @@ def create_default_datainfo(path_or_df):
                 info = ColumnInfo.create(colname, type='event', scale='nominal', datatype='int32')
         elif colname == 'AMT':
             info = ColumnInfo.create(colname, type='dose', scale='ratio')
+        elif colname == 'RATE':
+            info = ColumnInfo.create(colname, type='rate', scale='ratio')
         elif colname == 'BLQ':
             info = ColumnInfo.create(colname, type='blq', scale='nominal', datatype='int32')
         elif colname == 'LLOQ':
