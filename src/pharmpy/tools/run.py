@@ -302,7 +302,7 @@ def run_tool_with_name(
         if results:
             if esttool != model_type:
                 if not (esttool is None and model_type == "nonmem"):
-                    warnings.warn(
+                    ctx.log_warning(
                         f"Not recommended to run tools with different estimation tool ({esttool})"
                         f" than that of the input model ({model_type})"
                     )
