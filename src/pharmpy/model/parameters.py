@@ -141,8 +141,8 @@ class Parameter(Immutable):
         """Two parameters are equal if they have the same name, init and constraints"""
         if not isinstance(other, Parameter):
             return NotImplemented
-        if hash(self) != hash(other):
-            return False
+        if id(self) == id(other):
+            return True
         return (
             self._init == other._init  # pragma: no cover
             and self._lower == other._lower  # pragma: no cover
