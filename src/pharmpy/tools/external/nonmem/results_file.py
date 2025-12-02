@@ -177,12 +177,6 @@ class NONMEMResultsFile:
             if lead == ' #' and TAG.match(preread):
                 # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
                 return read
-            elif lead == 'St' and preread == 'Stop Time:\n':
-                # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
-                return read
-            elif lead == '0H' and preread.startswith('0HESSIAN OF POSTERIOR DENSITY'):
-                # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
-                return read
             elif END_TERE.match(preread.rstrip()):
                 return read
             else:
@@ -541,10 +535,6 @@ class NONMEMResultsFile:
                                 TERE = NONMEMResultsFile.read_tere(it, lookahead)
                                 yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
                             break
-                        elif lead == 'St' and preread == 'Stop Time:\n':
-                            break
-                        elif lead == '0H' and preread.startswith('0HESSIAN OF POSTERIOR DENSITY'):
-                            break
                         else:
                             row = next(it)
                             assert row == preread
@@ -556,12 +546,31 @@ class NONMEMResultsFile:
                 else:
                     v = CLEANUP.sub('', m.group(2))
                     yield (m.group(1), v.strip())
-            elif lead == 'St' and row == 'Stop Time:\n':
-                endtime = NONMEMResultsFile.parse_runtime(*lookahead(2))
-            elif lead == '0H' and row.startswith('0HESSIAN OF POSTERIOR DENSITY'):
-                _, maybe_term = lookahead(2)
-                if maybe_term is not None and (m := TAG.match(maybe_term)) and m.group(1) == 'TERM':
-                    hessian = row
+
+                    if m.group(1) == 'CPUT':
+                        _header, date, time = lookahead(3)
+                        assert _header is not None and _header.startswith('Stop Time:')
+                        endtime = NONMEMResultsFile.parse_runtime(date, time)
+
+                    elif m.group(1) == 'METH':
+                        while True:
+                            preread = next(lookahead(1))
+                            if preread is None:
+                                break
+                            lead = preread[:2]
+                            if lead == ' #' and (m := TAG.match(preread)):
+                                break
+                            elif lead == '0H' and row.startswith('0HESSIAN OF POSTERIOR DENSITY'):
+                                next(it)
+                                _, maybe_term = lookahead(2)
+                                if (
+                                    maybe_term is not None
+                                    and (m := TAG.match(maybe_term))
+                                    and m.group(1) == 'TERM'
+                                ):
+                                    hessian = row
+                            else:
+                                next(it)
 
         return endtime
 
