@@ -2,12 +2,13 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from collections.abc import Collection, Hashable, Mapping, Sequence, Sized
+from itertools import chain
 from math import sqrt
 from typing import Any, Union
 
 import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
-from pharmpy.internals.immutable import Immutable, frozenmapping
+from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 
 from .numeric import FiniteDistribution as NumericFiniteDistribution
 from .numeric import MultivariateNormalDistribution as NumericMultivariateNormalDistribution
@@ -64,7 +65,7 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def free_symbols(self) -> set[Expr]:
+    def free_symbols(self) -> frozenset[Expr]:
         pass
 
     @property
@@ -160,11 +161,14 @@ class NormalDistribution(Distribution):
         return (self._variance.name,)
 
     @property
-    def free_symbols(self) -> set[Expr]:
+    @cache_method_no_args
+    def free_symbols(self) -> frozenset[Expr]:
         """Free symbols including random variable itself"""
-        fs = self._mean.free_symbols.union(self._variance.free_symbols)
-        fs.add(Expr.symbol(self._name))
-        return fs
+        return frozenset().union(
+            self._mean.free_symbols,
+            self._variance.free_symbols,
+            (Expr.symbol(self._name),),
+        )
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> NormalDistribution:
         """Substitute expressions
@@ -352,6 +356,7 @@ class JointNormalDistribution(Distribution):
         return self._variance
 
     @property
+    @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
         """List of names of all parameters used in definition"""
         n = self._variance.rows
@@ -362,10 +367,13 @@ class JointNormalDistribution(Distribution):
         return tuple(params)
 
     @property
-    def free_symbols(self) -> set[Expr]:
+    @cache_method_no_args
+    def free_symbols(self) -> frozenset[Expr]:
         """Free symbols including random variable itself"""
-        return self._mean.free_symbols.union(
-            self._variance.free_symbols, (Expr.symbol(name) for name in self._names)
+        return frozenset().union(
+            self._mean.free_symbols,
+            self._variance.free_symbols,
+            (Expr.symbol(name) for name in self._names),
         )
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> JointNormalDistribution:
@@ -639,6 +647,7 @@ class FiniteDistribution(Distribution):
         return self._probabilities
 
     @property
+    @cache_method_no_args
     def mean(self) -> Expr:
         s = Expr.integer(0)
         for n, expr in self._probabilities.items():
@@ -646,6 +655,7 @@ class FiniteDistribution(Distribution):
         return s
 
     @property
+    @cache_method_no_args
     def variance(self) -> Expr:
         mean = self.mean
         s = Expr.integer(0)
@@ -655,6 +665,7 @@ class FiniteDistribution(Distribution):
         return s
 
     @property
+    @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
         params = set()
         for expr in self._probabilities.values():
@@ -662,12 +673,13 @@ class FiniteDistribution(Distribution):
         return tuple(sorted(map(str, params)))
 
     @property
-    def free_symbols(self) -> set[Expr]:
+    @cache_method_no_args
+    def free_symbols(self) -> frozenset[Expr]:
         """Free symbols including random variable itself"""
-        symbs = {Expr.symbol(self._name)}
-        for _, expr in self._probabilities.items():
-            symbs |= expr.free_symbols
-        return symbs
+        return frozenset().union(
+            (Expr.symbol(self._name),),
+            chain.from_iterable(expr.free_symbols for expr in self._probabilities.values()),
+        )
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> FiniteDistribution:
         """Substitute expressions
