@@ -807,7 +807,9 @@ def _is_near_target(x, target, zero_limit, significant_digits):
 
 
 def insert_ebes_into_dataset(
-    model: Model, individual_estimates: pd.DataFrame, individual_estimates_covariance: pd.DataFrame
+    model: Model,
+    individual_estimates: pd.DataFrame,
+    individual_estimates_covariance: Optional[pd.DataFrame] = None,
 ) -> Model:
     """Insert EBEs and ETCs from results into the dataset of a model
 
@@ -844,19 +846,20 @@ def insert_ebes_into_dataset(
     ebes = individual_estimates.rename(columns=lambda c: eta_map[c])
     joined = df.merge(ebes, left_on="ID", right_index=True, how="left")
 
-    etcs = np.empty((len(individual_estimates_covariance), triangular(len(ebes.columns))))
-    for i in range(len(individual_estimates_covariance)):
-        flattened = symmetric_to_flattened(individual_estimates_covariance.iloc[i].values)
-        etcs[i] = flattened
+    if individual_estimates_covariance is not None:
+        etcs = np.empty((len(individual_estimates_covariance), triangular(len(ebes.columns))))
+        for i in range(len(individual_estimates_covariance)):
+            flattened = symmetric_to_flattened(individual_estimates_covariance.iloc[i].values)
+            etcs[i] = flattened
 
-    etc_names = [
-        f"ETC_{row+1}_{col+1}" for row in range(len(ebes.columns)) for col in range(row + 1)
-    ]
-    etcs = pd.DataFrame(
-        etcs, index=individual_estimates_covariance.index, columns=pd.Index(etc_names)
-    )
+        etc_names = [
+            f"ETC_{row+1}_{col+1}" for row in range(len(ebes.columns)) for col in range(row + 1)
+        ]
+        etcs = pd.DataFrame(
+            etcs, index=individual_estimates_covariance.index, columns=pd.Index(etc_names)
+        )
 
-    joined = joined.merge(etcs, left_on="ID", right_index=True, how="left")
+        joined = joined.merge(etcs, left_on="ID", right_index=True, how="left")
 
     model = model.replace(dataset=joined)
     model = model.update_source()
