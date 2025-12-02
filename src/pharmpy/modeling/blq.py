@@ -54,7 +54,7 @@ def transform_blq(
     rows with BLQ = 1 are counted as BLQ observations. If instead an lloq value is specified then all rows with
     dv values below the lloq value are counted as BLQ observations.
     If no lloq is specified and no BLQ column exists in the dataset then all rows with dv values below the value
-    specified in the DV column are counted as BLQ observations.
+    specified in the LLOQ column are counted as BLQ observations.
 
 
     M1 method:
