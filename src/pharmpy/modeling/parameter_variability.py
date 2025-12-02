@@ -864,7 +864,7 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[list[str], s
 
 
 def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[list[str], str]] = None):
-    """Applies a John Draper transformation [1]_ to spelected etas
+    """Applies a John Draper transformation [1]_ to selected etas
 
     Initial estimate for lambda is 0.1 with bounds (-3, 3).
 
