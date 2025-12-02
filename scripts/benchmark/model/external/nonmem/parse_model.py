@@ -1,4 +1,5 @@
 import re
+import os
 import sys
 import time
 import traceback
@@ -173,7 +174,7 @@ def _models(roots: Iterable[PurePath], pattern: re.Pattern[str]):
         if path.is_file():
             yield path
         else:
-            for dirpath, _, filenames in path.walk():
+            for dirpath, _, filenames in os.walk(path):
                 for filename in filenames:
                     if pattern.search(filename):
                         yield Path(dirpath, filename)
