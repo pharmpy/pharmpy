@@ -282,7 +282,7 @@ def calc_add_etas(original_model_entry, add_etas_model_entry, etas_added_to):
         return None, dofv_tab
     origres = original_model_entry.modelfit_results
     original_etas = original_model_entry.model.random_variables.etas.names
-    all_etas = original_etas + etas_added_to
+    all_etas = [*original_etas, *etas_added_to]
     added = [True] * len(original_etas) + [False] * len(etas_added_to)
     params = add_etas_model_entry.model.random_variables.etas.variance_parameters
     params = [Expr.symbol(p) for p in params]

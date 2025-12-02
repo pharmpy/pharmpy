@@ -13,7 +13,7 @@ from pharmpy.deps import sympy, sympy_stats
 from pharmpy.internals.expr.eval import eval_expr
 from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
-from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_positive_semidefinite
 
 from .distributions.numeric import NumericDistribution
@@ -201,10 +201,12 @@ class VariabilityHierarchy(Immutable):
             raise ValueError(f"Cannot add {other} to VariabilityLevel")
 
     @property
-    def names(self) -> list[str]:
+    @cache_method_no_args
+    def names(self) -> tuple[str, ...]:
         """Names of all variability levels"""
-        return [varlev.name for varlev in self._levels]
+        return tuple(varlev.name for varlev in self._levels)
 
+    @cache_method_no_args
     def _find_reference(self) -> int:
         # Find numerical level of first level
         # No error checking since having a reference level is an invariant
@@ -213,14 +215,15 @@ class VariabilityHierarchy(Immutable):
         )
 
     @property
-    def levels(self) -> dict[str, int]:
+    @cache_method_no_args
+    def levels(self) -> frozenmapping[str, int]:
         """Dictionary of variability level name to numerical level"""
         ind = self._find_reference()
         d = {}
         for level in self._levels:
             d[level.name] = ind
             ind += 1
-        return d
+        return frozenmapping(d)
 
     def __len__(self):
         return len(self._levels)
@@ -392,6 +395,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return len(self._dists)
 
     @property
+    @cache_method_no_args
     def nrvs(self) -> int:
         n = 0
         for dist in self._dists:
@@ -482,16 +486,19 @@ class RandomVariables(CollectionsSequence, Immutable):
             return False
 
     @property
-    def names(self) -> list[str]:
+    @cache_method_no_args
+    def names(self) -> tuple[str, ...]:
         """List of the names of all random variables"""
-        return list(chain.from_iterable(dist.names for dist in self._dists))
+        return tuple(chain.from_iterable(dist.names for dist in self._dists))
 
     @property
-    def symbols(self) -> list[Expr]:
+    @cache_method_no_args
+    def symbols(self) -> tuple[Expr, ...]:
         """List with symbols for all random variables"""
-        return [Expr.symbol(name) for name in self.names]
+        return tuple(Expr.symbol(name) for name in self.names)
 
     @property
+    @cache_method_no_args
     def epsilons(self) -> RandomVariables:
         """Get only the epsilons"""
         return RandomVariables(
@@ -501,6 +508,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
+    @cache_method_no_args
     def etas(self) -> RandomVariables:
         """Get only the etas"""
         return RandomVariables(
@@ -510,6 +518,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
+    @cache_method_no_args
     def iiv(self) -> RandomVariables:
         """Get only the iiv etas, i.e. etas with variability level 0"""
         return RandomVariables(
@@ -519,6 +528,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
+    @cache_method_no_args
     def iov(self) -> RandomVariables:
         """Get only the iov etas, i.e. etas with variability level 1"""
         return RandomVariables(
@@ -528,11 +538,13 @@ class RandomVariables(CollectionsSequence, Immutable):
         )
 
     @property
-    def free_symbols(self) -> set[Expr]:
+    @cache_method_no_args
+    def free_symbols(self) -> frozenset[Expr]:
         """Set of free symbols for all random variables"""
-        return set().union(*(dist.free_symbols for dist in self._dists))
+        return frozenset().union(*(dist.free_symbols for dist in self._dists))
 
     @property
+    @cache_method_no_args
     def parameter_names(self) -> tuple[str, ...]:
         """List of parameter names for all random variables
 
@@ -546,7 +558,8 @@ class RandomVariables(CollectionsSequence, Immutable):
         return tuple(params)
 
     @property
-    def variance_parameters(self) -> list[str]:
+    @cache_method_no_args
+    def variance_parameters(self) -> tuple[str, ...]:
         """List of all parameters representing variance for all random variables"""
         parameters = []
         for dist in self._dists:
@@ -559,7 +572,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                 for p in dist.variance.diagonal():
                     if p not in parameters:
                         parameters.append(p)
-        return [p.name for p in parameters]
+        return tuple(p.name for p in parameters)
 
     def get_covariance(self, rv1: TSymbol, rv2: TSymbol) -> Expr:
         """Get covariance between two random variables"""
@@ -723,7 +736,8 @@ class RandomVariables(CollectionsSequence, Immutable):
             raise KeyError("Cannot join non-existing random variable")
         joined_rvs = self[inds]
         assert isinstance(joined_rvs, RandomVariables)
-        means, M, names = joined_rvs._calc_covariance_matrix()
+        means, _M, names = joined_rvs._calc_covariance_matrix()
+        M = sympy.Matrix(_M)
         cov_to_params = {}
         if fill != 0:
             for row, col in product(range(M.rows), range(M.cols)):
@@ -816,7 +830,10 @@ class RandomVariables(CollectionsSequence, Immutable):
             _create_rng(rng),
         )
 
-    def _calc_covariance_matrix(self) -> tuple[list[Expr], sympy.Matrix, list[str]]:
+    @cache_method_no_args
+    def _calc_covariance_matrix(
+        self,
+    ) -> tuple[tuple[Expr, ...], sympy.ImmutableMatrix, tuple[str, ...]]:
         means = []
         names = []
         n = 0
@@ -827,7 +844,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         M = sympy.zeros(n)
 
         if not names:
-            return means, M, names
+            return (), sympy.ImmutableMatrix(M), ()
 
         row = 0
         col = 0
@@ -846,7 +863,8 @@ class RandomVariables(CollectionsSequence, Immutable):
                         M[row + i, col + j] = var[i, j]
                 row += var.rows
                 col += var.cols
-        return means, M, names
+
+        return tuple(means), sympy.ImmutableMatrix(M), tuple(names)
 
     @property
     def covariance_matrix(self) -> Matrix:

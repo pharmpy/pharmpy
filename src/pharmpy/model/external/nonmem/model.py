@@ -180,7 +180,7 @@ class Model(BaseModel):
                     rv_trans[name] = f'ETA({i})'
                 i += 1
 
-        if model._random_variables.etas.names != ['eta_dummy']:
+        if model._random_variables.etas.names != ('eta_dummy',):
             model, abbr_map = abbr_translation(model, rv_trans)
             trans = {key: value for key, value in trans.items() if key not in abbr_map.values()}
 

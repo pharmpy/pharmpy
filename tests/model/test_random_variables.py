@@ -281,7 +281,7 @@ def test_names():
     dist1 = NormalDistribution.create('ETA1', 'iiv', 0, 1)
     dist2 = NormalDistribution.create('ETA2', 'iiv', 0, 0.1)
     rvs = RandomVariables.create([dist1, dist2])
-    assert rvs.names == ['ETA1', 'ETA2']
+    assert rvs.names == ('ETA1', 'ETA2')
 
 
 def test_epsilons():
@@ -290,7 +290,7 @@ def test_epsilons():
     dist3 = NormalDistribution.create('EPS', 'ruv', 0, 0.1)
     rvs = RandomVariables.create([dist1, dist2, dist3])
     assert rvs.epsilons == RandomVariables.create([dist3])
-    assert rvs.epsilons.names == ['EPS']
+    assert rvs.epsilons.names == ('EPS',)
 
 
 def test_etas():
@@ -299,7 +299,7 @@ def test_etas():
     dist3 = NormalDistribution.create('EPS', 'ruv', 0, 0.1)
     rvs = RandomVariables.create([dist1, dist2, dist3])
     assert rvs.etas == RandomVariables.create([dist1, dist2])
-    assert rvs.etas.names == ['ETA', 'ETA2']
+    assert rvs.etas.names == ('ETA', 'ETA2')
 
 
 def test_iiv_iov():
@@ -308,9 +308,9 @@ def test_iiv_iov():
     dist3 = NormalDistribution.create('EPS', 'ruv', 0, 0.1)
     rvs = RandomVariables.create([dist1, dist2, dist3])
     assert rvs.iiv == RandomVariables.create([dist1])
-    assert rvs.iiv.names == ['ETA']
+    assert rvs.iiv.names == ('ETA',)
     assert rvs.iov == RandomVariables.create([dist2])
-    assert rvs.iov.names == ['ETA2']
+    assert rvs.iov.names == ('ETA2',)
 
 
 def test_subs():
@@ -336,7 +336,7 @@ def test_subs():
         [[symbol('x'), symbol('OMEGA21')], [symbol('OMEGA21'), symbol('OMEGA22')]]
     )
     assert rvs['ETA3'].variance == symbol('y')
-    assert rvs.names == ['ETA1', 'w', 'ETA3']
+    assert rvs.names == ('ETA1', 'w', 'ETA3')
     dist3 = dist2.subs({'ETA3': 'X'})
     assert dist3.names == ('X',)
 
@@ -571,12 +571,12 @@ def test_variance_parameters():
     )
     dist2 = NormalDistribution.create('ETA(3)', 'iiv', 0, symbol('OMEGA(3,3)'))
     rvs = RandomVariables.create([dist1, dist2])
-    assert rvs.variance_parameters == ['OMEGA(1,1)', 'OMEGA(2,2)', 'OMEGA(3,3)']
+    assert rvs.variance_parameters == ('OMEGA(1,1)', 'OMEGA(2,2)', 'OMEGA(3,3)')
 
     dist1 = NormalDistribution.create('x', 'iiv', 0, symbol('omega'))
     dist2 = NormalDistribution.create('y', 'iiv', 0, symbol('omega'))
     rvs = RandomVariables.create([dist1, dist2])
-    assert rvs.variance_parameters == ['omega']
+    assert rvs.variance_parameters == ('omega',)
 
     dist3 = JointNormalDistribution.create(
         ['ETA(1)', 'ETA(2)'],
@@ -588,7 +588,7 @@ def test_variance_parameters():
         ],
     )
     rvs = RandomVariables.create([dist3])
-    assert rvs.variance_parameters == ['OMEGA(1,1)']
+    assert rvs.variance_parameters == ('OMEGA(1,1)',)
 
 
 def test_get_variance():

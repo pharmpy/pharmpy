@@ -249,12 +249,12 @@ def create_symbol(model: Model, stem: str, force_numbering: bool = False):
 
 
 def _create_symbol(statements, parameters, random_variables, datainfo, stem, force_numbering):
-    symbols = [str(symbol) for symbol in statements.free_symbols]
-    params = [param.name for param in parameters]
+    symbols = (str(symbol) for symbol in statements.free_symbols)
+    params = (param.name for param in parameters)
     rvs = random_variables.names
     dataset_col = datainfo.names
 
-    all_names = symbols + params + rvs + dataset_col
+    all_names = {*symbols, *params, *rvs, *dataset_col}
 
     if str(stem) not in all_names and not force_numbering:
         return Expr(str(stem))

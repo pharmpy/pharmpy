@@ -1267,7 +1267,7 @@ $OMEGA 0.01
 $SIGMA 1
 '''
     model = Model.parse_model_from_string(code)
-    assert model.random_variables.etas.names == ['ETA_MY']
+    assert model.random_variables.etas.names == ('ETA_MY',)
 
     model = add_iiv(model, ['Y'], 'exp', '+', eta_names=['ETA_DUMMY'])
     model = remove_iiv(model, ['ETA_MY'])
