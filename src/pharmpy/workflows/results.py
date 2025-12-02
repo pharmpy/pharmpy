@@ -473,6 +473,7 @@ class ModelfitResults(Results):
     gradients_iterations: Optional[pd.DataFrame] = None
     warnings: Optional[list[str]] = None
     individual_eta_samples: Optional[pd.DataFrame] = None
+    condition_number: Optional[float] = None
 
     def __eq__(self, other):
         sd = self.__dict__

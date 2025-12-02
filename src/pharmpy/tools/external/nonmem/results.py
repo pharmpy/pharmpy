@@ -49,6 +49,7 @@ class Iterations:
     ses: pd.Series
     ses_sdcorr: pd.Series
     cov_abort: bool
+    condition_number: float
 
 
 @dataclass(frozen=True)
@@ -440,6 +441,7 @@ def _parse_modelfit_results(
         gradients_iterations=_lazy.gradients_iterations,
         warnings=_lazy.warnings,
         individual_eta_samples=_lazy.individual_eta_samples,
+        condition_number=_lazy.condition_number,
         # NOTE: `proxy.log` is extracted last because other
         #       property extractions can update `proxy.log`.
         log=_lazy.log,
@@ -590,6 +592,10 @@ class LazyModelfitResults:
     @property
     def individual_eta_samples(self):
         return self._proxy.individual_eta_samples
+
+    @property
+    def condition_number(self):
+        return self._proxy.iterations.condition_number
 
     @property
     def log(self):
@@ -1057,6 +1063,7 @@ def _parse_ext(
     table_numbers = _parse_table_numbers(ext_tables, subproblem)
 
     final_ofv, ofv_iterations = _parse_ofv(ext_tables, subproblem)
+    condition_number = _parse_condition_number(ext_tables, subproblem)
     final_pe, sdcorr, pe_iterations = _parse_parameter_estimates(
         control_stream, name_map, ext_tables, subproblem, parameters
     )
@@ -1073,6 +1080,7 @@ def _parse_ext(
         ses,
         ses_sdcorr,
         cov_abort,
+        condition_number,
     )
 
 
@@ -1083,6 +1091,21 @@ def _parse_table_numbers(ext_tables: NONMEMTableFile, subproblem: Optional[int])
             continue
         table_numbers.append(table.number)
     return table_numbers
+
+
+def _parse_condition_number(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
+    final_table = None
+    for table in ext_tables.tables:
+        if (subproblem and table.subproblem != subproblem) or table.design_optimality is not None:
+            continue
+
+        final_table = table
+
+    assert isinstance(final_table, ExtTable)
+    try:
+        return final_table.condition_number
+    except KeyError:
+        return None
 
 
 def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
