@@ -94,6 +94,10 @@ def generate_report(rst_path, results_path, target_path):
                         "ignore",
                         "Parsing dates involving a day of month without",
                     )
+                    # From jupyter-sphinx and Sphinx 9.0.1
+                    warnings.filterwarnings(
+                        "ignore", "'sphinx.environment.BuildEnvironment.app' is deprecated."
+                    )
 
                     with SpoofExecutable():
                         app = Sphinx(
