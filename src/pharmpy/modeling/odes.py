@@ -854,7 +854,7 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     # Expression logged to avoid numerical issues with large values from the gamma and power
     # EXP( LOG(BIO*PODO) + LOG(KTR) + N*LOG(KTR*T) − KTR*T − LNFAC) − KA*A(1)
     kinpt = Expr.symbol("KINPT")
-    kinpt_assign = Assignment(kinpt, (n_symb + 1) * ktr.log() - (n_symb + 1).loggamma())
+    kinpt_assign = Assignment(kinpt, n_symb * ktr.log() - n_symb.loggamma())
 
     inpt = Expr.symbol("INPT")
 
@@ -891,7 +891,7 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
             inputi,
             Expr.piecewise(
                 (
-                    dosei.log() + n_symb * (t - ti).log() - ktr * (t - ti),
+                    dosei.log() + (n_symb - 1) * (t - ti).log() - ktr * (t - ti),
                     (t >= ti) & (dosei > 0),
                 ),
                 (Expr.integer(0), BooleanExpr.true()),
