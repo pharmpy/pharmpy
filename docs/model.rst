@@ -283,7 +283,7 @@ or in a pure numerical setting in NumPy
 
    import numpy as np
 
-   a = np.array(omega_est).astype(np.float64)
+   a = omega_est.to_numpy()
    a
 
 .. pharmpy-execute::
