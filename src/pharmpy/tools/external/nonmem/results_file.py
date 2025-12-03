@@ -2,7 +2,7 @@ import re
 import sys
 from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime
-from itertools import tee
+from itertools import islice, tee
 from typing import Callable, Generator, Iterable, Iterator, Optional, TypeVar, Union
 
 import dateutil.parser
@@ -68,8 +68,7 @@ def make_peekable(iterator: Iterator[T]):
         # NOTE: Extra copy required for Python 3.11
         # SEE: https://github.com/python/cpython/issues/137597#issuecomment-3186240062
         (forked_iterator,) = _tee(tee_iterator, 1)
-        for _ in range(n):
-            yield next(forked_iterator, None)
+        return islice(forked_iterator, n)
 
     return tee_iterator, lookahead
 
@@ -231,12 +230,11 @@ class NONMEMResultsFile:
         return v
 
     @staticmethod
-    def read_tere(
-        rows: Iterator[str], lookahead: Callable[[int], Generator[str | None, None, None]]
-    ):
+    def read_tere(rows: Iterator[bytes], lookahead: Callable[[int], Iterator[bytes]]):
         while True:
-            preread = next(lookahead(1))
-            if preread is None:
+            try:
+                preread = _decode_lst(next(lookahead(1)))
+            except StopIteration:
                 break
             lead = preread[:2]
             if lead == ' #' and TAG.match(preread):
@@ -245,7 +243,7 @@ class NONMEMResultsFile:
             elif END_TERE.match(preread):
                 break
             else:
-                row = next(rows)
+                row = _decode_lst(next(rows))
                 assert row == preread
                 yield row
 
@@ -582,23 +580,23 @@ class NONMEMResultsFile:
             self.log = self.log.log_error(message)
 
     def tag_items(self, path) -> Generator[TaggedSection, None, None]:
-        with open(path, 'rb') as fp:
-            lines = map(_decode_lst, fp)
-            it = lines
-            yield StartTimeSection((next(it), next(it)))
-            yield from NONMEMResultsFile.parse_rows(it)
+        with open(path, 'rb') as lines:
+            yield from NONMEMResultsFile.parse_rows(lines)
 
     @staticmethod
-    def parse_rows(it: Iterator[str]) -> Generator[TaggedSection, None, None]:
+    def parse_rows(it: Iterator[bytes]) -> Generator[TaggedSection, None, None]:
         hessian = None
 
         it, lookahead = make_peekable(it)
 
-        EXEC = []
+        yield StartTimeSection(tuple(map(_decode_lst, lookahead(2))))
+
+        EXEC: list[str] = []
 
         while True:
-            preread = next(lookahead(1))
-            if preread is None:
+            try:
+                preread = _decode_lst(next(lookahead(1)))
+            except StopIteration:
                 yield ExecSection(tuple(EXEC))
                 return
 
@@ -606,7 +604,7 @@ class NONMEMResultsFile:
             if lead == ' #':
                 break
 
-            row = next(it)
+            row = _decode_lst(next(it))
             assert row == preread
             EXEC.append(row)
 
@@ -622,9 +620,12 @@ class NONMEMResultsFile:
 
         yield ExecSection(tuple(EXEC))
 
-        for row in it:
-            lead = row[:2]
-            if lead == ' #' and (m := TAG.match(row)):
+        for _row in it:
+            lead = _row[:2]
+            if lead == b' #':
+                row = _decode_lst(_row)
+                if not (m := TAG.match(row)):
+                    continue
                 if m.group(1) == 'TERM':
                     # The hessian termination error is not in the TERM block
                     TERM = [] if hessian is None else [hessian]
@@ -632,8 +633,9 @@ class NONMEMResultsFile:
                     hessian = None
 
                     while True:
-                        preread = next(lookahead(1))
-                        if preread is None:
+                        try:
+                            preread = _decode_lst(next(lookahead(1)))
+                        except StopIteration:
                             break
                         lead = preread[:2]
                         if lead == ' #' and (m := TAG.match(preread)):
@@ -647,7 +649,7 @@ class NONMEMResultsFile:
                         elif lead == '0P' and preread == "0PROGRAM TERMINATED BY OBJ\n":
                             break
                         else:
-                            row = next(it)
+                            row = _decode_lst(next(it))
                             assert row == preread
                             TERM.append(row)
 
@@ -659,19 +661,16 @@ class NONMEMResultsFile:
                     yield KeyValueSection((row,), m.group(1), v.strip())
 
                     if m.group(1) == 'CPUT':
-                        header, date, time = lookahead(3)
-                        assert header is not None
+                        header, *datetime = map(_decode_lst, lookahead(3))
                         assert header.startswith('Stop Time:')
-                        assert date is not None
-                        yield EndTimeSection(
-                            (row, header, date) + (() if time is None else (time,))
-                        )
+                        yield EndTimeSection((row, header, *datetime))
 
                     elif m.group(1) == 'METH':
                         METH = [row]
                         while True:
-                            preread = next(lookahead(1))
-                            if preread is None:
+                            try:
+                                preread = _decode_lst(next(lookahead(1)))
+                            except StopIteration:
                                 break
                             lead = preread[:2]
                             if lead == ' #' and (m := TAG.match(preread)):
@@ -679,12 +678,12 @@ class NONMEMResultsFile:
                             elif lead == '0P' and preread == "0PROGRAM TERMINATED BY OBJ\n":
                                 break
                             else:
-                                row = next(it)
+                                row = _decode_lst(next(it))
                                 assert row == preread
                                 METH.append(row)
 
                                 if lead == '0H' and row.startswith('0HESSIAN OF POSTERIOR DENSITY'):
-                                    _, maybe_term = lookahead(2)
+                                    _, maybe_term = map(_decode_lst, lookahead(2))
                                     if (
                                         maybe_term is not None
                                         and (m := TAG.match(maybe_term))
@@ -693,19 +692,24 @@ class NONMEMResultsFile:
                                         hessian = row
 
                         yield MethSection(tuple(METH))
-            elif lead == '0P' and row == "0PROGRAM TERMINATED BY OBJ\n":
+            elif lead == b'0P':
+                row = _decode_lst(_row)
+                if row != "0PROGRAM TERMINATED BY OBJ\n":
+                    continue
                 PROG = [row]
                 while True:
-                    preread = next(lookahead(1))
+                    try:
+                        preread = _decode_lst(next(lookahead(1)))
+                    except StopIteration:
+                        break
                     if (
-                        preread is None
-                        or preread.startswith("0")
+                        preread.startswith("0")
                         or preread.startswith("1")
                         or preread.startswith(" #")
                     ):
                         break
                     else:
-                        row = next(it)
+                        row = _decode_lst(next(it))
                         assert row == preread
                         PROG.append(row)
                 yield ProgramTerminatedByObjSection(tuple(PROG))
