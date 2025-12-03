@@ -320,7 +320,7 @@ def add_covariate_effect(
             .. math::
 
                 \\text{coveff} = \\text{theta}
-    cov_effect = None
+
         - Init: 0.001
         - Upper: 6
         - Lower: 0
