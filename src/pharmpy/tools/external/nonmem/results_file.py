@@ -1,8 +1,9 @@
 import re
 import sys
+from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime
 from itertools import tee
-from typing import Callable, Generator, Iterable, Iterator, Optional, TypeVar, Union
+from typing import Callable, Generator, Iterable, Iterator, Literal, Optional, TypeVar, Union
 
 import dateutil.parser
 from packaging import version
@@ -73,6 +74,36 @@ def make_peekable(iterator: Iterator[T]):
     return tee_iterator, lookahead
 
 
+@dataclass(frozen=True)
+class TermSection:
+    minimization_successful: Optional[bool] = None
+    estimate_near_boundary: Optional[bool] = None
+    rounding_errors: Optional[bool] = None
+    maxevals_exceeded: Optional[bool] = None
+    significant_digits: float = np.nan
+    function_evaluations: float = np.nan
+    ofv_with_constant: Optional[float] = None
+    warning: Optional[bool] = None
+    eta_shrinkage: Optional[pd.DataFrame] = None
+    ebv_shrinkage: Optional[pd.DataFrame] = None
+    eps_shrinkage: Optional[pd.DataFrame] = None
+
+
+@dataclass(frozen=True)
+class TereSection:
+    covariance_step_ok: Optional[bool] = None
+    estimation_runtime: Optional[float] = None
+
+
+TaggedSection = Union[
+    tuple[Literal['nonmem_version'], str],
+    tuple[Literal['runtime'], float],
+    tuple[Literal['TERE'], TereSection],
+    tuple[Literal['TERM'], TermSection],
+    tuple[str, str],
+]
+
+
 class NONMEMResultsFile:
     """Representing and parsing a NONMEM results file (aka lst-file)
     This is not a generic output object and will be combined by other classes
@@ -101,23 +132,29 @@ class NONMEMResultsFile:
         return NONMEMResultsFile.supported_version(self.nonmem_version)
 
     def estimation_status(self, table_number):
-        result = NONMEMResultsFile.unknown_termination()
+        result = TermSection()
         if self._supported_nonmem_version:
-            if table_number in self.table.keys():
-                for key in result.keys():
-                    result[key] = self.table[table_number].get(key)
+            _fields = set(map(lambda x: x.name, fields(TermSection)))
+            table = self.table.get(table_number)
+            if table is not None:
+                result = replace(
+                    result, **{key: value for key, value in table.items() if key in _fields}
+                )
             else:
-                result['minimization_successful'] = False
+                result = replace(result, minimization_successful=False)
         return result
 
     def covariance_status(self, table_number):
-        result = NONMEMResultsFile.unknown_covariance()
+        result = TereSection()
         if self._supported_nonmem_version:
-            if table_number in self.table.keys():
-                for key in result.keys():
-                    result[key] = self.table[table_number].get(key)
+            _fields = set(map(lambda x: x.name, fields(TereSection)))
+            table = self.table.get(table_number)
+            if table is not None:
+                result = replace(
+                    result, **{key: value for key, value in table.items() if key in _fields}
+                )
             else:
-                result['covariance_step_ok'] = False
+                result = replace(result, covariance_step_ok=False)
         return result
 
     def ofv(self, table_number):
@@ -138,26 +175,7 @@ class NONMEMResultsFile:
         )
 
     @staticmethod
-    def unknown_covariance() -> dict[str, Optional[Union[bool, float]]]:
-        return {'covariance_step_ok': None}
-
-    @staticmethod
-    def unknown_termination() -> dict[str, Optional[Union[bool, float, pd.DataFrame]]]:
-        return {
-            'minimization_successful': None,
-            'estimate_near_boundary': None,
-            'rounding_errors': None,
-            'maxevals_exceeded': None,
-            'significant_digits': np.nan,
-            'function_evaluations': np.nan,
-            'warning': None,
-            'eta_shrinkage': None,
-            'ebv_shrinkage': None,
-            'eps_shrinkage': None,
-        }
-
-    @staticmethod
-    def cleanup_version(v):
+    def cleanup_version(v: str):
         if v == 'V':
             v = '5.0'
         elif v == 'VI':
@@ -188,9 +206,8 @@ class NONMEMResultsFile:
 
     @staticmethod
     def parse_tere(rows):
-        result = NONMEMResultsFile.unknown_covariance()
-        result['covariance_step_ok'] = False
-        result['estimation_runtime'] = np.nan
+        result = TereSection(covariance_step_ok=False, estimation_runtime=np.nan)
+
         if len(rows) < 1:
             return result
 
@@ -204,26 +221,30 @@ class NONMEMResultsFile:
 
         for row in rows:
             if cov_not_ok.match(row):
-                result['covariance_step_ok'] = False
+                result = replace(result, covariance_step_ok=False)
                 break
             if cov_ok.match(row):
-                result['covariance_step_ok'] = True
+                result = replace(result, covariance_step_ok=True)
                 break
             m = est_time.match(row)
             if m:
-                result['estimation_runtime'] = float(m.group(1))
+                result = replace(result, estimation_runtime=float(m.group(1)))
         return result
 
     @staticmethod
     def parse_termination(rows):
-        result = NONMEMResultsFile.unknown_termination()
+        result = TermSection()
+
         if len(rows) < 1:  # Will happen if e.g. TERMINATED BY OBJ during estimation
-            result['minimization_successful'] = False
-            return result
-        result['estimate_near_boundary'] = False
-        result['rounding_errors'] = False
-        result['maxevals_exceeded'] = False
-        result['warning'] = False
+            return replace(result, minimization_successful=False)
+
+        result = replace(
+            result,
+            estimate_near_boundary=False,
+            rounding_errors=False,
+            maxevals_exceeded=False,
+            warning=False,
+        )
 
         success = [
             re.compile(r'0MINIMIZATION SUCCESSFUL'),
@@ -267,50 +288,49 @@ class NONMEMResultsFile:
         maybe_success = False
         for row in rows:
             if maybe_success:
-                result['minimization_successful'] = bool(re.search(r'USER INTERRUPT', row))
+                result = replace(
+                    result, minimization_successful=bool(re.search(r'USER INTERRUPT', row))
+                )
                 break
             for p in success:
                 if p.match(row):
-                    result['minimization_successful'] = True
+                    result = replace(result, minimization_successful=True)
                     break
-            if result['minimization_successful'] is not None:
+            if result.minimization_successful is not None:
                 break
             for p in failure:
                 if p.match(row):
-                    result['minimization_successful'] = False
+                    result = replace(result, minimization_successful=False)
                     break
-            if result['minimization_successful'] is not None:
+            if result.minimization_successful is not None:
                 break
             maybe_success = bool(maybe.match(row))
         for row in rows:
             m = sig_digits.match(row)
             if m:
-                result['significant_digits'] = float(m.group(1))
+                result = replace(result, significant_digits=float(m.group(1)))
                 continue
             m = sig_digits_unreport.match(row)
             if m:
-                result['significant_digits'] = np.nan
+                result = replace(result, significant_digits=np.nan)
             m = ofv_with_constant.match(row)
             if m:
-                result['ofv_with_constant'] = float(m.group(1))
+                result = replace(result, ofv_with_constant=float(m.group(1)))
                 continue
             m = feval.match(row)
             if m:
-                result['function_evaluations'] = int(m.group(1))
+                result = replace(result, function_evaluations=int(m.group(1)))
                 continue
             for name, p in misc.items():
                 if p.match(row):
-                    result[name] = True
+                    result = replace(result, **{name: True})
                     break
 
-        result['eta_shrinkage'] = NONMEMResultsFile.parse_shrinkage(
-            filter(eta_shrinkage.match, rows)
-        )
-        result['ebv_shrinkage'] = NONMEMResultsFile.parse_shrinkage(
-            filter(ebv_shrinkage.match, rows)
-        )
-        result['eps_shrinkage'] = NONMEMResultsFile.parse_shrinkage(
-            filter(eps_shrinkage.match, rows)
+        result = replace(
+            result,
+            eta_shrinkage=NONMEMResultsFile.parse_shrinkage(filter(eta_shrinkage.match, rows)),
+            ebv_shrinkage=NONMEMResultsFile.parse_shrinkage(filter(ebv_shrinkage.match, rows)),
+            eps_shrinkage=NONMEMResultsFile.parse_shrinkage(filter(eps_shrinkage.match, rows)),
         )
         return result
 
@@ -478,7 +498,7 @@ class NONMEMResultsFile:
         for message in errors:
             self.log = self.log.log_error(message)
 
-    def tag_items(self, path):
+    def tag_items(self, path) -> Generator[TaggedSection, None, None]:
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
 
         version_number = None
@@ -579,16 +599,20 @@ class NONMEMResultsFile:
         table_number = 'INIT'
         for name, content in self.tag_items(path):
             if name == 'TERM' or name == 'TERE':
-                for k, v in content.items():
+                assert isinstance(content, (TermSection, TereSection))
+                for k, v in asdict(content).items():
                     block[k] = v
             elif name == 'TBLN':
+                assert isinstance(content, str)
                 if bool(block):
                     yield (table_number, block)
                 block = {}
                 table_number = int(content)
             elif name == 'runtime':
+                assert isinstance(content, float)
                 yield ('runtime', {'total': content})
             else:
+                assert isinstance(content, str)
                 # If already set then it means TBLN was missing, probably $SIM, skip
                 if name not in block.keys():
                     block[name] = content

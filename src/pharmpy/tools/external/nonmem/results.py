@@ -689,7 +689,7 @@ def _parse_lst(n: int, path: Path, table_numbers: list[int | None], log: Log | N
     except (KeyError, FileNotFoundError):
         log_likelihood = np.nan
 
-    covstatus = rfile.covariance_status(covstatus_table_number)['covariance_step_ok']
+    covstatus = rfile.covariance_status(covstatus_table_number).covariance_step_ok
     assert covstatus is None or isinstance(covstatus, bool)
 
     if log_likelihood_table_number is not None:
@@ -735,13 +735,13 @@ def parse_estimation_status(results_file: NONMEMResultsFile, table_numbers: list
     estimate_near_boundary = []
     for tabno in table_numbers:
         estimation_status = results_file.estimation_status(tabno)
-        minimization_successful.append(estimation_status['minimization_successful'])
-        function_evaluations.append(estimation_status['function_evaluations'])
-        significant_digits.append(estimation_status['significant_digits'])
-        estimate_near_boundary.append(estimation_status['estimate_near_boundary'])
-        if estimation_status['maxevals_exceeded'] is True:
+        minimization_successful.append(estimation_status.minimization_successful)
+        function_evaluations.append(estimation_status.function_evaluations)
+        significant_digits.append(estimation_status.significant_digits)
+        estimate_near_boundary.append(estimation_status.estimate_near_boundary)
+        if estimation_status.maxevals_exceeded is True:
             tc = 'maxevals_exceeded'
-        elif estimation_status['rounding_errors'] is True:
+        elif estimation_status.rounding_errors is True:
             tc = 'rounding_errors'
         else:
             tc = None
