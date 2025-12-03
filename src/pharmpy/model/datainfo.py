@@ -39,7 +39,7 @@ class ColumnInfo(Immutable):
         Descriptor (kind) of data
     """
 
-    _all_types = (
+    _all_types = {
         'id',
         'dv',
         'dvid',
@@ -57,7 +57,7 @@ class ColumnInfo(Immutable):
         'admid',
         'lloq',
         'blq',
-    )
+    }
     _all_scales = ('nominal', 'ordinal', 'interval', 'ratio')
     _all_dtypes = (
         'int8',
@@ -76,7 +76,7 @@ class ColumnInfo(Immutable):
         'nmtran-date',
         'str',
     )
-    _all_descriptors = (
+    _all_descriptors = {
         None,
         'age',
         'body height',
@@ -90,7 +90,7 @@ class ColumnInfo(Immutable):
         'observation identifier',
         'pk measurement',
         'pd measurement',
-    )
+    }
 
     @staticmethod
     def convert_pd_dtype_to_datatype(dtype) -> str:
