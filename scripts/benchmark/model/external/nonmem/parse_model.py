@@ -1,7 +1,8 @@
-from abc import ABC
 import re
+import os
 import sys
 import time
+import traceback
 
 from contextlib import contextmanager
 from dataclasses import dataclass
@@ -142,9 +143,7 @@ def process(path: Path, convert: bool, ofv: bool, results: bool):
         try:
             data = parse_dataset(di, cs, raw=False, parse_columns=parse_columns)
         except Exception as e:
-            if isinstance(e, FileNotFoundError):
-                return Failure(path, di.path, wt.snapshot(), ct.snapshot(), 'dataset', e)
-            raise e
+            return Failure(path, di.path, wt.snapshot(), ct.snapshot(), 'dataset', e)
 
         model = make_model(cs, di, di, path, data)
         lazy_results = parse_modelfit_results(model, path, with_log=False, lazy=True)
@@ -175,7 +174,7 @@ def _models(roots: Iterable[PurePath], pattern: re.Pattern[str]):
         if path.is_file():
             yield path
         else:
-            for dirpath, _, filenames in path.walk():
+            for dirpath, _, filenames in os.walk(path):
                 for filename in filenames:
                     if pattern.search(filename):
                         yield Path(dirpath, filename)
@@ -187,6 +186,7 @@ def parse_args(argv: list[str]):
     parser.add_argument("roots", type=PurePath, nargs='+')
     parser.add_argument("-p", "--profile", type=PurePath)
     parser.add_argument("-c", "--convert", action='store_true')
+    parser.add_argument("-d", "--debug", action='store_true')
     parser.add_argument("-o", "--ofv", action='store_true')
     parser.add_argument("-r", "--results", action='store_true')
     parser.add_argument("-f", "--filter", type=re.compile, default=r'\.mod$|\.ctl$')
@@ -236,13 +236,6 @@ def main(argv: list[str]):
         reverse = True
     )
 
-    failures = list(
-        filter(
-            lambda result: isinstance(result, Failure),
-            results
-        )
-    )
-
     for i, result in enumerate(successes, start=1):
         assert result.data_path is not None
         print(f'{i} {result.model_path} {result.data_path.relative_to(Path.cwd())} {result.wall_time.elapsed} ({result.cpu_time.elapsed})')
@@ -251,6 +244,19 @@ def main(argv: list[str]):
     total_ct = sum(map(lambda result: result.cpu_time.elapsed, successes), start = timedelta(0))
     print(f'total: {total_wt} ({total_ct})')
 
+    if args.debug:
+
+        failures = cast(
+            Iterable[Failure],
+            filter(
+                lambda result: isinstance(result, Failure),
+                results
+            )
+        )
+
+        for failure in failures:
+            debug(f'{failure.model_path} {failure.data_path} {failure.wall_time.elapsed} ({failure.cpu_time.elapsed})')
+            traceback.print_exception(failure.error, file=sys.stderr)
 
 if __name__ == "__main__":
     main(sys.argv[1:])
