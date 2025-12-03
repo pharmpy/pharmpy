@@ -798,7 +798,7 @@ def _get_mm_inits(model: Model, rate_numer, combined):
 
 
 def set_n_transit_compartments(model: Model, keep_depot: bool = True):
-    """Set the n-transit compartments model
+    """Set the n-transit compartments model [1]_ [2]_
 
     This is the absorption delay model where the number of transit compartments is a parameter
     to be estimated. Initial estimate for absorption rate is
@@ -807,6 +807,18 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
 
     Currently only handles a single oral route of administration.
     Assumes complete absorption between doses
+
+    .. [1] Savic, R.M., Jonker, D.M., Kerbusch, T. et al.
+       Implementation of a transit compartment model for describing drug absorption
+       in pharmacokinetic studies.
+       J Pharmacokinet Pharmacodyn 34, 711–726 (2007).
+       https://doi.org/10.1007/s10928-007-9066-0
+
+    .. [2] Shen, J., Boeckmann, A. & Vick, A.
+       Implementation of dose superimposition to introduce multiple doses for a
+       mathematical absorption model (transit compartment model).
+       J Pharmacokinet Pharmacodyn 39, 251–262 (2012).
+       https://doi.org/10.1007/s10928-012-9247-3
 
     Parameters
     ----------
