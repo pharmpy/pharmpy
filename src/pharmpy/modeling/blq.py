@@ -90,6 +90,8 @@ def transform_blq(
     * Does not support covariance between epsilons
     * Supports additive, proportional, combined, and power error model
 
+    .. _ref_article:
+
     .. [1] Beal SL. Ways to fit a PK model with some data below the quantification
        limit. J Pharmacokinet Pharmacodyn. 2001 Oct;28(5):481-504. doi: 10.1023/a:1012299115260.
        Erratum in: J Pharmacokinet Pharmacodyn 2002 Jun;29(3):309. PMID: 11768292.
