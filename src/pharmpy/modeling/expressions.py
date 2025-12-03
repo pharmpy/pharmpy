@@ -1384,6 +1384,7 @@ def _is_univariate(thetas: set[sympy.Symbol], expr: sympy.Expr, variable: sympy.
 def simplify_model(
     model: Model, old_statements: Iterable[Statement], statements: Iterable[Statement]
 ):
+    after_odes = model.statements.after_odes
     odes = model.statements.ode_system
     fs = odes.free_symbols if odes is not None else set()
     old_fs = fs.copy()
@@ -1397,8 +1398,12 @@ def simplify_model(
 
         assert isinstance(old_statement, Assignment)
 
-        if (old_statement == statement and statement.symbol not in old_fs) or (
-            statement.symbol in fs and statement.symbol != statement.expression
+        is_redef = statement.symbol == statement.expression
+        if not is_redef and (
+            old_statement == statement
+            and statement.symbol not in old_fs
+            or statement.symbol in fs
+            or statement.symbol in after_odes.free_symbols
         ):
             kept_statements_reversed.append(statement)
             fs.discard(statement.symbol)

@@ -4,7 +4,13 @@ import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
-from pharmpy.modeling import add_allometry, add_iov, fix_parameters
+from pharmpy.modeling import (
+    add_allometry,
+    add_iov,
+    create_basic_pk_model,
+    fix_parameters,
+    set_direct_effect,
+)
 from pharmpy.modeling.covariate_effect import (
     CovariateEffect,
     _calculate_mean,
@@ -1156,6 +1162,18 @@ def test_remove_covariate_effect_fixed(
 
     if with_allometry:
         assert 'ALLO_CL' in model.parameters.names
+
+
+def test_remove_covariate_effect_pd(load_model_for_test, testdata):
+    dataset_path = testdata / 'nonmem' / 'pheno_pd.csv'
+    model = create_basic_pk_model('iv', dataset_path)
+    model = set_direct_effect(model, 'emax', 'TIME')
+
+    param, cov = 'E_MAX', 'WGT'
+    model = add_covariate_effect(model, param, cov, 'exp')
+    assert has_covariate_effect(model, param, cov)
+    model = remove_covariate_effect(model, param, cov)
+    assert not has_covariate_effect(model, param, cov)
 
 
 @pytest.mark.parametrize(
