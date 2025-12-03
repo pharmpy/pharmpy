@@ -99,7 +99,7 @@ def add_effect_compartment(model: Model, expr: PDTypes):
     )
 
     model = _add_effect(model, expr, effect.amount)
-    return model
+    return model.update_source()
 
 
 def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = None):
@@ -177,7 +177,7 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
         concentration = False
     model = _add_effect(model, expr, variable_symb, concentration)
 
-    return model
+    return model.update_source()
 
 
 def _add_baseline_effect(model: Model):

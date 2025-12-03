@@ -318,7 +318,7 @@ def set_description(model: Model, new_description: str) -> Model:
 
     """
     model = model.replace(description=new_description)
-    return model
+    return model.update_source()
 
 
 def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None) -> Model:
