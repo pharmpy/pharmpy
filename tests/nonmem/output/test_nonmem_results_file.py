@@ -340,7 +340,7 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
         (
             'anneal2_V7_30_beta.lst',
             2,
-            rf.TermSection(
+            rf.TermInfo(
                 minimization_successful=True,
                 estimate_near_boundary=False,
                 rounding_errors=False,
@@ -354,7 +354,7 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
         (
             'superid2_6_V7_30_beta.lst',
             2,
-            rf.TermSection(
+            rf.TermInfo(
                 minimization_successful=True,
                 estimate_near_boundary=False,
                 rounding_errors=False,
@@ -377,7 +377,7 @@ def test_estimation_status_multest(testdata, file, table_number, expected, covar
 def test_estimation_status_empty():
     rfile = rf.NONMEMResultsFile()
     assert rfile._supported_nonmem_version is False
-    assert rfile.estimation_status(1) == rf.TermSection(
+    assert rfile.estimation_status(1) == rf.TermInfo(
         significant_digits=anan,
         function_evaluations=anan,
     )
@@ -387,7 +387,7 @@ def test_estimation_status_withsim(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'withSIM')
     rfile = rf.NONMEMResultsFile(p / 'control3boot.res', log=Log())
 
-    assert rfile.estimation_status(45) == rf.TermSection(
+    assert rfile.estimation_status(45) == rf.TermInfo(
         minimization_successful=True,
         estimate_near_boundary=False,
         rounding_errors=False,
@@ -398,7 +398,7 @@ def test_estimation_status_withsim(testdata):
     )
     assert rfile.covariance_status(45).covariance_step_ok is False
 
-    assert rfile.estimation_status(70) == rf.TermSection(
+    assert rfile.estimation_status(70) == rf.TermInfo(
         minimization_successful=True,
         estimate_near_boundary=True,
         rounding_errors=False,
@@ -409,7 +409,7 @@ def test_estimation_status_withsim(testdata):
     )
     assert rfile.covariance_status(70).covariance_step_ok is False
 
-    assert rfile.estimation_status(100) == rf.TermSection(
+    assert rfile.estimation_status(100) == rf.TermInfo(
         minimization_successful=True,
         estimate_near_boundary=False,
         rounding_errors=False,
@@ -425,7 +425,7 @@ def test_ofv_table_gap(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'multPROB' / 'multEST' / 'withSIM')
     rfile = rf.NONMEMResultsFile(p / 'multprobmix_nm730.lst', log=Log())
 
-    assert rfile.estimation_status(2) == rf.TermSection(
+    assert rfile.estimation_status(2) == rf.TermInfo(
         minimization_successful=False,
         estimate_near_boundary=False,
         rounding_errors=False,
