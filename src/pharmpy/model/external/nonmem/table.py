@@ -374,10 +374,15 @@ class ExtTable(NONMEMTable):
         row = df.loc[df['ITERATION'] == iteration]
         if row.empty:
             raise KeyError(f'Row {iteration} not available in ext-file')
-        del row['ITERATION']
-        del row['OBJ']
+
+        keep_cols = set(row.columns)
+        keep_cols.difference_update(('ITERATION', 'OBJ'))
+
         if not include_thetas:
-            row = row[row.columns.drop(list(row.filter(regex='THETA')))]
+            theta_cols = row.filter(regex='THETA', axis=1).columns
+            keep_cols.difference_update(theta_cols)
+
+        row = row[[column for column in row.columns if column in keep_cols]]
         return row.squeeze()
 
     def _get_ofv(self, iteration):
