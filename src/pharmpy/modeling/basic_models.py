@@ -341,10 +341,11 @@ def create_basic_kpd_model(
         di = DataInfo.create(di_ci)
         df = None
 
+    pop_b = Parameter.create('POP_B', init=0.1)
     pop_ke = Parameter('POP_KE', init=0.1, lower=0)
     iiv_ke = Parameter('IIV_KE', init=0.1)
 
-    params = Parameters((pop_ke, iiv_ke))
+    params = Parameters((pop_b, pop_ke, iiv_ke))
 
     eta_ke_name = 'ETA_KE'
     eta_ke = NormalDistribution.create(eta_ke_name, 'iiv', 0, iiv_ke.symbol)
@@ -366,10 +367,13 @@ def create_basic_kpd_model(
         kpd_expr = central.amount
     kpd_assign = Assignment(kpd, kpd_expr)
 
-    R = Assignment(Expr.symbol('R'), KE)
+    b = Expr.symbol("B")
+    b_assign = Assignment(b, pop_b.symbol)
+    r = Expr.symbol("R")
+    R = Assignment(r, b)
     y_ass = Assignment(Expr.symbol('Y'), R.symbol)
 
-    stats = Statements([ke_assign, CompartmentalSystem(cb), kpd_assign, R, y_ass])
+    stats = Statements([ke_assign, b_assign, CompartmentalSystem(cb), kpd_assign, R, y_ass])
 
     est = EstimationStep.create(
         "FOCE",

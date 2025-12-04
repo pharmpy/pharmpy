@@ -75,18 +75,18 @@ def test_create_basic_pd_model(testdata):
 def test_create_basic_kpd_model(testdata):
     model1 = create_basic_kpd_model()
     assert model1.dataset is None
-    assert len(model1.parameters) == 3
+    assert len(model1.parameters) == 4
 
     dataset_path = testdata / 'nonmem/pheno.dta'
     model2 = create_basic_kpd_model(dataset_path, driver='ir')
     assert model2.dataset is not None
-    assert len(model2.parameters) == 3
+    assert len(model2.parameters) == 4
     kpd_assign = model2.statements.after_odes.find_assignment('KPD')
     assert kpd_assign.expression == Expr.function('A_CENTRAL', Expr.symbol('t')) * Expr.symbol('KE')
 
     model3 = create_basic_kpd_model(dataset_path, driver='amount')
     assert model3.dataset is not None
-    assert len(model3.parameters) == 3
+    assert len(model3.parameters) == 4
     kpd_assign = model3.statements.after_odes.find_assignment('KPD')
     assert kpd_assign.expression == Expr.function('A_CENTRAL', Expr.symbol('t'))
 
