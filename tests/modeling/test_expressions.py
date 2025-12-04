@@ -20,10 +20,13 @@ from pharmpy.modeling import (
     add_indirect_effect,
     add_metabolite,
     add_peripheral_compartment,
+    add_placebo_model,
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cholesky_decompose,
     cleanup_model,
+    create_basic_kpd_model,
+    create_basic_pd_model,
     create_basic_pk_model,
     create_joint_distribution,
     display_odes,
@@ -722,6 +725,40 @@ def test_get_individual_parameters_drug_metabolite_models(func, level, dv, expec
     model = func(basic_pk_model)
     params = get_individual_parameters(model, level=level, dv=dv)
     assert params == expected
+
+
+@pytest.mark.parametrize(
+    ('type', 'pdp_kind', 'pd_kind', 'expected'),
+    (
+        ('pd', None, 'linear', {'B', 'SLOPE'}),
+        ('pd', None, 'emax', {'B', 'EC_50', 'E_MAX'}),
+        ('pd', None, 'sigmoid', {'N', 'B', 'EC_50', 'E_MAX'}),
+        ('pd', 'hyperbolic', 'linear', {'B', 'SLOPE', 'T50'}),
+        ('pd', 'hyperbolic', 'emax', {'B', 'EC_50', 'E_MAX', 'T50'}),
+        ('pd', 'hyperbolic', 'sigmoid', {'N', 'B', 'EC_50', 'E_MAX', 'T50'}),
+        ('kpd', None, 'linear', {'B', 'SLOPE', 'KE'}),
+        ('kpd', None, 'emax', {'B', 'EDK_50', 'E_MAX', 'KE'}),
+        ('kpd', None, 'sigmoid', {'N', 'B', 'EDK_50', 'E_MAX', 'KE'}),
+        ('kpd', 'hyperbolic', 'linear', {'B', 'SLOPE', 'T50', 'KE'}),
+        ('kpd', 'hyperbolic', 'emax', {'B', 'EDK_50', 'E_MAX', 'T50', 'KE'}),
+        ('kpd', 'hyperbolic', 'sigmoid', {'N', 'B', 'EDK_50', 'E_MAX', 'T50', 'KE'}),
+    ),
+    ids=repr,
+)
+def test_get_individual_parameters_pd_models(
+    load_model_for_test, testdata, type, pdp_kind, pd_kind, expected
+):
+    dataset_path = testdata / 'nonmem' / 'pheno.dta'
+    if type == 'pd':
+        model = create_basic_pd_model(dataset_path)
+        variable = 'TIME'
+    else:
+        model = create_basic_kpd_model(dataset_path, driver='ir')
+        variable = 'KPD'
+    if pdp_kind:
+        model = add_placebo_model(model, pdp_kind)
+    model = set_direct_effect(model, pd_kind, variable)
+    assert set(get_individual_parameters(model)) == expected
 
 
 @pytest.mark.parametrize(

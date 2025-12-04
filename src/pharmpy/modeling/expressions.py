@@ -847,6 +847,7 @@ def get_individual_parameters(
     ode_statement = _find_ode_statement(model)
     dv_statements = _find_dv_statements(model)
     time_deps = _find_time_dependents(model, full_graph)
+    pd_statements = _find_pd_statements(model, full_graph)
     all_candidates = (
         all_statements.intersection(theta_eta_deps)
         - eps_deps
@@ -854,6 +855,7 @@ def get_individual_parameters(
         - ode_statement
         - dv_statements
         - time_deps
+        - pd_statements
     )
 
     parameter_symbs = set()
@@ -1125,6 +1127,22 @@ def _find_direct_time_dependents(model):
     if odes is None:
         return set()
     return {i for i, s in enumerate(statements) if odes.t in s.rhs_symbols}
+
+
+def _find_pd_statements(model, g):
+    statements = model.statements
+    R_idx = statements.find_assignment_index('R')
+    if not R_idx:
+        return set()
+    direct = _find_direct_param_dependents(model, g)
+    symbs = statements[R_idx].expression.free_symbols
+    inds = {R_idx}
+    for symb in symbs:
+        idx = model.statements.find_assignment_index(symb)
+        if idx in direct:
+            continue
+        inds.add(idx)
+    return inds
 
 
 def depends_on(model: Model, symbol: str, other: str):
