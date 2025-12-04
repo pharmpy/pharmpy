@@ -63,15 +63,16 @@ MFL support the following model features:
 | ELIMINATION   | :code:`FO, ZO, MM, MIX-FO-MM`  | Elimination rate (first order, zero order, Michaelis-Menten,       |
 |               |                                | mixed first order Michaelis-Menten)                                |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| PERIPHERALS   | `number`, DRUG/MET             | Number of peripheral compartments. If the peripherals compartment  |
-|               |                                | should be added for the drug compartment (default) or to the       |
-|               |                                | metabolite compartment (if any). Only applicable to drug_metabolite|
-|               |                                | models.                                                            |
+| PERIPHERALS   | `number`, :code:`DRUG/MET`     | Number of peripheral compartments. If the peripheral compartment   |
+|               |                                | should be added to the drug compartment (default) and/or the       |
+|               |                                | metabolite compartment (if any). If :code:`DRUG/MET` is omitted,   |
+|               |                                | it will be interpreted as :code:`DRUG`. :code:`MET` is only        |
+|               |                                | applicable to drug-metabolite models                               |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| TRANSITS      | `number`, DEPOT/NODEPOT        | Number of absorption transit compartments and whether to keep      |
-|               |                                | the depot compartment                                              |
+| TRANSITS      | `number`, :code:`DEPOT/        | Number of absorption transit compartments and whether to keep      |
+|               | NODEPOT`                       | the depot compartment                                              |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| LAGTIME       | :code:`OFF, ON`                | Absorption lagtime                                                 |
+| LAGTIME       | :code:`OFF/ON`                 | Absorption lagtime                                                 |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | COVARIATE     | `parameter`, `covariate`,      | Structural covariate effects (will always be added)                |
 |               | `effect`                       |                                                                    |
@@ -79,14 +80,26 @@ MFL support the following model features:
 | COVARIATE?    | `parameter`, `covariate`,      | Exploratory covariate effects (will be tested)                     |
 |               | `effect`                       |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| DIRECTEFFECT  | :code:`LINEAR, EMAX, SIGMOID,  | Direct effect PD models.                                           |
+| DIRECTEFFECT  | :code:`LINEAR, EMAX, SIGMOID,  | Direct effect PD models                                            |
 |               | STEP, LOGLIN`                  |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
-| EFFECTCOMP    | :code:`LINEAR, EMAX, SIGMOID,  | Effect compartment PD models.                                      |
+| EFFECTCOMP    | :code:`LINEAR, EMAX, SIGMOID,  | Effect compartment PD models                                       |
 |               | STEP, LOGLIN`                  |                                                                    |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 | INDIRECTEFFECT| :code:`LINEAR, EMAX, SIGMOID`  | Indirect effect PD models. `option` can be                         |
-|               | , `option`                     | either :code:`PRODUCTION` or :code:`DEGRADATION`.                  |
+|               | , `option`                     | either :code:`PRODUCTION` or :code:`DEGRADATION`                   |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| IIV           | `parameter`, `effect`          | (`experimental`) IIVs on parameters                                |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| IIV?          | `parameter`, `effect`          | (`experimental`) Exploratory IIVs on parameters                    |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| IOV           | `parameter`, `effect`          | (`experimental`) IOVs on parameters                                |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| IOV?          | `parameter`, `effect`          | (`experimental`) Exploratory IOVs on parameters                    |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| COVARIANCE    | :code:`IIV/IOV`, `parameters`  | (`experimental`) Covariance between parameters                     |
++---------------+--------------------------------+--------------------------------------------------------------------+
+| COVARIANCE?   | :code:`IIV/IOV`, `parameters`  | (`experimental`) Exploratory covariances between parameters        |
 +---------------+--------------------------------+--------------------------------------------------------------------+
 
 
@@ -191,6 +204,9 @@ Is equivalent to:
 Examples
 ========
 
+Structural PK model
+-------------------
+
 An example of a search space for PK models with oral data:
 
 .. code::
@@ -222,11 +238,34 @@ Allow all combinations of absorption and elimination rates:
     ABSORPTION(*)
     ELIMINATION(*)
 
-All covariate effects on parameters with IIV:
+Structural PD model
+-------------------
+
+Example for a PD model search space:
 
 .. code::
 
-    COVARIATE(@IIV, @CONTINUOUS, *)
+    DIRECTEFFECT([linear, emax])
+    EFFECTCOMP(*)
+
+Drug-metabolite
+---------------
+
+Trying multiple drug-metabolite models with a peripheral compartment on the metabolite:
+
+.. code::
+
+    METABOLITE([PSC,BASIC]);PERIPHERALS([0,1],MET)
+
+Covariates
+----------
+
+All covariate effects on parameters with IIV (exponential effects on continuous covariates and
+categorical effects on categorical covariates):
+
+.. code::
+
+    COVARIATE(@IIV, @CONTINUOUS, EXP)
     COVARIATE(@IIV, @CATEGORICAL, CAT)
 
 With fixed lists of covariates for which to add effects:
@@ -244,9 +283,30 @@ All continuous covariate effects of WGT on distribution parameters:
 
    COVARIATE(@DISTRIBUTION, WGT, *)
 
-Example for a PD model search space:
+Variability
+-----------
+
+.. note::
+
+    Currently under development and can be used experimentally in IIVSearch.
+
+Specifying IIV on all PK parameters and covariances between them:
 
 .. code::
 
-    DIRECTEFFECT([linear, emax])
-    EFFECTCOMP(*)
+   IIV(@PK,EXP);COVARIANCE(IIV,@IIV)
+
+To specify which parameters explicitly and covariance between CL and VC:
+
+.. code::
+
+   IIV([CL,VC,MAT],EXP);COVARIANCE(IIV,[CL,VC])
+
+Different types of effects can be specified for different parameters in a PKPD model:
+
+.. code::
+
+   IIV(@PK,EXP);IIV(@PD,ADD));COVARIANCE(IIV,@PK_IIV);COVARIANCE(IIV,@PD_IIV)
+
+
+
