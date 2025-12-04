@@ -39,13 +39,14 @@ def execute_workflow(
     if dispatcher is None:
         dispatcher = Dispatcher.select_dispatcher(dispatcher)
     if context is None:
-        from pharmpy.workflows import default_context
+        from pharmpy.workflows import Context
 
         if path is None:
             path = Path.cwd()
         else:
             path = Path(path)
-        context = default_context(workflow.name, ref=path)
+        assert workflow.name is not None
+        context = Context.select_context(None, workflow.name, ref=str(path))
 
     wb = WorkflowBuilder(workflow)
     insert_context(wb, context)

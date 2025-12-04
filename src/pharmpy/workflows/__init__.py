@@ -11,10 +11,6 @@
      - ``pharmpy.workflows.LocalDirectoryDatabase``
      - str
      - Name of default model database class
-   * - ``default_context``
-     - ``pharmpy.workflows.LocalDirectoryContext``
-     - str
-     - Name of default context class
 
 """
 
@@ -43,9 +39,6 @@ class WorkflowConfiguration(config.Configuration):
     default_model_database = config.ConfigItem(
         'pharmpy.workflows.LocalDirectoryDatabase', 'Name of default model database class'
     )
-    default_context = config.ConfigItem(
-        'pharmpy.workflows.LocalDirectoryContext', 'Name of default context class'
-    )
 
 
 conf = WorkflowConfiguration()
@@ -62,7 +55,6 @@ def _importclass(name):
 
 
 default_model_database = _importclass(conf.default_model_database)
-default_context = _importclass(conf.default_context)
 
 
 class DispatchingError(Exception):
@@ -71,7 +63,6 @@ class DispatchingError(Exception):
 
 __all__ = (
     'default_model_database',
-    'default_context',
     'execute_subtool',
     'execute_workflow',
     'split_common_options',

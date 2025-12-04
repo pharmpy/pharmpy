@@ -684,18 +684,18 @@ def _now():
     return datetime.now().astimezone().isoformat()
 
 
-def _get_name(options, default_context, tool_name) -> str:
+def _get_name(options, tool_name) -> str:
     name = options['name']
     if name is None:
-        name = _create_new_context_name(default_context, tool_name)
+        name = _create_new_context_name(tool_name)
     return name
 
 
-def _create_new_context_name(context: type[Context], tool_name: str) -> str:
+def _create_new_context_name(tool_name: str) -> str:
     n = 1
     while True:
         name = f"{tool_name}{n}"
-        if not context.exists(name):
+        if not Context.default_exists(name):
             break
         n += 1
     return name
@@ -714,11 +714,11 @@ def _create_new_subcontext_name(context: Context, tool_name: str) -> str:
 def get_context(dispatching_options, tool_name) -> Context:
     ctx = dispatching_options['context']
     if ctx is None:
-        from pharmpy.workflows import default_context
+        from pharmpy.workflows import Context
 
-        name = _get_name(dispatching_options, default_context, tool_name)
+        name = _get_name(dispatching_options, tool_name)
         ref = dispatching_options['ref']
-        ctx = default_context(name, ref)
+        ctx = Context.select_context(None, name, ref)
     return ctx
 
 
@@ -1474,7 +1474,7 @@ def read_modelfit_results(path: Union[str, Path], esttool: str = None) -> Modelf
 def _get_run_setup_from_metadata(path):
     import pharmpy.workflows as workflows
 
-    context = workflows.default_context(name=path, ref=None)
+    context = workflows.Context.select_context(None, name=path, ref=None)
 
     tool_metadata = context.retrieve_metadata()
     common_options = tool_metadata['common_options']

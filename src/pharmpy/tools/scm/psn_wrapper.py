@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pharmpy.modeling import read_model, write_dataset, write_model
 from pharmpy.tools import read_results
-from pharmpy.workflows import default_context
+from pharmpy.workflows import Context
 
 
 def have_scm():
@@ -38,7 +38,7 @@ def run_scm(model, relations, continuous=None, categorical=None, path=None):
     else:
         path = Path.cwd()
 
-    db = default_context(path=path)
+    db = Context.select_context(None, path=path)
     path = db.path / "psn-wrapper"
     path.mkdir()
 

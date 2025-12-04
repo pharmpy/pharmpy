@@ -52,6 +52,10 @@ class PharmpyConfiguration(config.Configuration):
         'terminal',
         'Name of default broadcaster',
     )
+    context = config.ConfigItem(
+        'local_directory',
+        'Name of default context',
+    )
 
 
 conf = PharmpyConfiguration()
