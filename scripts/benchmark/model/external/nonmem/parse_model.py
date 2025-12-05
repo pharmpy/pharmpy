@@ -29,7 +29,7 @@ class ModelfitResults:
     relative_standard_errors: Optional[pd.Series]
     minimization_successful: Optional[bool]
     covariance_matrix: Optional[pd.DataFrame]
-    correlation_matrix: Optional[pd.DataFrame]
+    condition_number: Optional[float]
 
 def parse_columns_required(di: DataInfo):
     if (idcol := _idcol(di)) is not None:
@@ -155,7 +155,7 @@ def process(path: Path, convert: bool, ofv: bool, results: bool):
             relative_standard_errors = lazy_results.relative_standard_errors if results else None,
             minimization_successful = lazy_results.minimization_successful if results else None,
             covariance_matrix = lazy_results.covariance_matrix if results else None,
-            correlation_matrix = lazy_results.correlation_matrix if results else None,
+            condition_number=lazy_results.condition_number if results else None,
         )
 
     return Success(
