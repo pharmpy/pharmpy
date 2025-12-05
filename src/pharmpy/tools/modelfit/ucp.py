@@ -14,9 +14,6 @@ def scale_matrix(A):
     M2 = np.diag(v1)
     M3 = np.diag(v2)
     S = np.abs(10.0 * (L - M2)) + M3
-    # Convert lower triangle to symmetric
-    irows, icols = np.triu_indices(len(S), 1)
-    S[irows, icols] = S[icols, irows]
     return S
 
 
@@ -29,8 +26,7 @@ def descale_matrix(A, S):
     exp_diag = np.exp(np.diag(A))
     M = A.copy()
     np.fill_diagonal(M, exp_diag)
-    M2 = M * S
-    L = np.tril(M2)
+    L = M * S
     return L @ L.T
 
 
