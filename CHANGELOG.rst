@@ -1,10 +1,23 @@
-next version
-------------
+1.12.0 (2025-12-05)
+-------------------
 
 New features
 ============
 
 * Add :code:`modeling.remove_unused_columns`
+* Support KPD models in pdsearch
+* Parse condition number from NONMEM ext-file
+* Allow lazy parsing of NONMEM results when using the NONMEM API directly
+* Allow not adding ETCs when using :code:`insert_ebes_into_dataset`
+
+Bugfixes
+========
+
+* Fix crash of final report if no final model was found for all amd-tools
+* Various fixes to the n-transit compartments absorption model for multiple dosing and modelsearch
+* Make :code:`modeling.has_instantaneous_absorption` handle infusions
+* Fix crash when outputting the ode-system or doing changes to some NONMEM 1cmt PD-models
+
 
 
 1.11.1 (2025-11-24)
