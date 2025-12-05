@@ -21,7 +21,22 @@ from pharmpy.model.external.nonmem.update import create_name_map
 from pharmpy.workflows.log import Log
 from pharmpy.workflows.results import ModelfitResults, SimulationResults
 
-from .results_file import NONMEMResultsFile
+from .results_file import NONMEMResultsFile, TermInfo
+
+ETA_SHRINKAGE_COLUMNS_RENAMING = {
+    "ETAshrink(%):": "sd",
+    "ETASHRINKSD(%)": "sd",
+    "ETASHRINKVR(%)": "var",
+    "EBVshrink(%):": "ebv_sd",
+    "EBVSHRINKSD(%)": "ebv_sd",
+    "EBVSHRINKVR(%)": "ebv_var",
+}
+
+EPS_SHRINKAGE_COLUMNS_RENAMING = {
+    "EPSshrink(%):": "sd",
+    "EPSSHRINKSD(%)": "sd",
+    "EPSSHRINKVR(%)": "var",
+}
 
 
 @dataclass(frozen=True)
@@ -66,6 +81,8 @@ class Status:
     estimate_near_boundary: list[bool]
     log: Log | None
     est_table_numbers: list[int | None]
+    eta_shrinkage: list[pd.DataFrame | None]
+    eps_shrinkage: list[pd.DataFrame | None]
 
 
 @dataclass(frozen=True)
@@ -338,6 +355,46 @@ class ModelfitResultsProxy:
 
         return _parse_ets(path, etas, subproblem)
 
+    @property
+    @cache_method_no_args
+    def eta_shrinkage(self):
+        subproblem = -1 if self.subproblem is None else self.subproblem
+        try:
+            df = self.status.eta_shrinkage[subproblem]
+            if df is None:
+                return None
+
+            return (
+                (df / 100)
+                .rename(
+                    columns=ETA_SHRINKAGE_COLUMNS_RENAMING,
+                    index=dict(enumerate(self.model.random_variables.etas.names)),
+                )
+                .reindex(columns=('sd', 'var', 'ebv_sd', 'ebv_var'))
+            )
+        except IndexError:
+            return None
+
+    @property
+    @cache_method_no_args
+    def eps_shrinkage(self):
+        subproblem = -1 if self.subproblem is None else self.subproblem
+        try:
+            df = self.status.eps_shrinkage[subproblem]
+            if df is None:
+                return None
+
+            return (
+                (df / 100)
+                .rename(
+                    columns=EPS_SHRINKAGE_COLUMNS_RENAMING,
+                    index=dict(enumerate(self.model.random_variables.epsilons.names)),
+                )
+                .reindex(columns=('sd', 'var'))
+            )
+        except IndexError:
+            return None
+
 
 @overload
 def _parse_modelfit_results(
@@ -444,6 +501,8 @@ def _parse_modelfit_results(
         warnings=_lazy.warnings,
         individual_eta_samples=_lazy.individual_eta_samples,
         condition_number=_lazy.condition_number,
+        eta_shrinkage=_lazy.eta_shrinkage,
+        eps_shrinkage=_lazy.eps_shrinkage,
         # NOTE: `proxy.log` is extracted last because other
         #       property extractions can update `proxy.log`.
         log=_lazy.log,
@@ -600,6 +659,14 @@ class LazyModelfitResults:
         return self._proxy.iterations.condition_number
 
     @property
+    def eta_shrinkage(self):
+        return self._proxy.eta_shrinkage
+
+    @property
+    def eps_shrinkage(self):
+        return self._proxy.eps_shrinkage
+
+    @property
     def log(self):
         return self._proxy.log
 
@@ -646,7 +713,7 @@ def _parse_matrix(
 def _empty_lst_results(n: int, log):
     false_vec = [False] * n
     nan_vec = [np.nan] * n
-    none_vec = [None] * n
+    none_vec: list[Any] = [None] * n
     return Status(
         None,
         np.nan,
@@ -660,7 +727,35 @@ def _empty_lst_results(n: int, log):
         false_vec,
         log,
         nan_vec,
+        none_vec,
+        none_vec,
     )
+
+
+def _parse_eta_shrinkage(info: TermInfo):
+    eta = info.eta_shrinkage
+    ebv = info.ebv_shrinkage
+
+    try:
+        df = pd.concat(filter(lambda x: x is not None, [eta, ebv]), axis=1)
+    except ValueError:
+        return None
+
+    return df
+
+
+def _parse_eps_shrinkage(info: TermInfo):
+    eps = info.eps_shrinkage
+
+    if eps is None:
+        return None
+
+    df = eps
+
+    if df.empty:
+        return None
+
+    return df
 
 
 def _parse_lst(n: int, path: Path, table_numbers: list[int | None], log: Log | None):
@@ -710,6 +805,8 @@ def _parse_lst(n: int, path: Path, table_numbers: list[int | None], log: Log | N
         termination_cause,
         estimation_runtime,
         estimate_near_boundary,
+        eta_shrinkage,
+        eps_shrinkage,
     ) = parse_estimation_status(rfile, est_table_numbers)
 
     return Status(
@@ -725,6 +822,8 @@ def _parse_lst(n: int, path: Path, table_numbers: list[int | None], log: Log | N
         estimate_near_boundary,
         rfile.log,
         est_table_numbers,
+        eta_shrinkage,
+        eps_shrinkage,
     )
 
 
@@ -735,8 +834,12 @@ def parse_estimation_status(results_file: NONMEMResultsFile, table_numbers: list
     termination_cause = []
     estimation_runtime = []
     estimate_near_boundary = []
+    eta_shrinkage = []
+    eps_shrinkage = []
     for tabno in table_numbers:
         estimation_status = results_file.estimation_status(tabno)
+        eta_shrinkage.append(_parse_eta_shrinkage(estimation_status))
+        eps_shrinkage.append(_parse_eps_shrinkage(estimation_status))
         minimization_successful.append(estimation_status.minimization_successful)
         function_evaluations.append(estimation_status.function_evaluations)
         significant_digits.append(estimation_status.significant_digits)
@@ -761,6 +864,8 @@ def parse_estimation_status(results_file: NONMEMResultsFile, table_numbers: list
         termination_cause,
         estimation_runtime,
         estimate_near_boundary,
+        eta_shrinkage,
+        eps_shrinkage,
     )
 
 
