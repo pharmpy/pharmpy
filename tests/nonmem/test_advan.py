@@ -3,8 +3,15 @@ import pytest
 from pharmpy.basic import Expr, Matrix
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import output
+from pharmpy.model.external.nonmem import convert_model
 from pharmpy.model.external.nonmem.advan import compartmental_model
-from pharmpy.modeling import add_admid, get_initial_conditions, write_model
+from pharmpy.modeling import (
+    add_admid,
+    add_placebo_model,
+    create_basic_kpd_model,
+    get_initial_conditions,
+    write_model,
+)
 
 
 def S(x):
@@ -624,3 +631,10 @@ def test_f_statement(load_model_for_test, testdata):
     assert len(expr.piecewise_args) == 1
     assert expr.piecewise_args[0][0] == Expr("A_DEPOT(t)")
     assert str(expr.piecewise_args[0][1]) == "Eq(0.0, AMT) & Eq(1.0, CMT)"
+
+
+def test_k_parameter_kpd_models(testdata):
+    model = create_basic_kpd_model(testdata / 'nonmem' / 'pheno.dta')
+    model = add_placebo_model(model, 'linear')
+    model = convert_model(model)
+    assert model.statements.get_assignment('K').expression == Expr('KE')

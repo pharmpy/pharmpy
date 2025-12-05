@@ -1400,9 +1400,14 @@ def update_needed_pk_parameters(model: Model, advan, trans):
                 )
                 statements = model.statements
                 odes = get_odes(model)
-    if advan in ['ADVAN1', 'ADVAN2'] and trans == 'TRANS2':
-        central = odes.central_compartment
-        model = add_parameters_ratio(model, 'CL', 'V', central, output)
+    if advan in ['ADVAN1', 'ADVAN2']:
+        if trans == 'TRANS1':
+            central = odes.central_compartment
+            elimination_rate = odes.get_flow(central, output)
+            model = add_rate_assignment_if_missing(model, 'K', elimination_rate, central, output)
+        elif trans == 'TRANS2':
+            central = odes.central_compartment
+            model = add_parameters_ratio(model, 'CL', 'V', central, output)
     elif advan == 'ADVAN3' and trans == 'TRANS4':
         central = odes.central_compartment
         peripheral = odes.find_peripheral_compartments()[0]
@@ -1536,6 +1541,9 @@ def define_parameter(model: Model, name: str, value: Expr, synonyms: Optional[li
     output_rate = model.statements.ode_system.get_flow(central, output)
     if output_rate.is_symbol():
         out_ind = model.statements.find_assignment_index(output_rate)
+        # Symbol is used in output rate, needs to be put after
+        if output_rate == value:
+            out_ind = None
     else:
         out_ind = None
     if out_ind:
