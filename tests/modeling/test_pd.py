@@ -119,9 +119,9 @@ def _test_effect_models(model, expr, variable, e_zero_protect, x50_name="EC_50",
 
     sset = model.statements
     e_assign = sset.find_assignment(e)
-    if e_zero_protect or expr == 'step':
+    if e_zero_protect:
         e_expr = e_assign.expression.piecewise_args[1][0]
-    elif expr == 'sigmoid':
+    elif expr in ('sigmoid', 'step'):
         e_expr = e_assign.expression.piecewise_args[0][0]
     else:
         e_expr = e_assign.expression

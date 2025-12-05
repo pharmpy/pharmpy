@@ -119,7 +119,7 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
 
     * Step effect:
 
-        .. math:: E = \Biggl \lbrace {B \quad \text{if C} \leq 0 \atop B \cdot (1+ E_{max}) \quad \text{else}}
+        .. math::  E=\Biggl \lbrace {B \cdot (1+ E_{max}) \quad \text{if C}>0 \atop B \quad \text{else}}
 
     * Sigmoidal:
 
@@ -218,7 +218,7 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
     elif expr == "step":
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        effect = Expr.piecewise((Expr.integer(0), conc <= 0), (emax, True))
+        effect = Expr.piecewise((emax, conc > 0), (Expr.integer(0), True))
         if not zero_handled:
             effect = _handle_zero(model, effect)
     elif expr == "sigmoid":
