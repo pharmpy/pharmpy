@@ -474,6 +474,8 @@ class ModelfitResults(Results):
     warnings: Optional[list[str]] = None
     individual_eta_samples: Optional[pd.DataFrame] = None
     condition_number: Optional[float] = None
+    eta_shrinkage: Optional[pd.DataFrame] = None
+    eps_shrinkage: Optional[pd.DataFrame] = None
 
     def __eq__(self, other):
         sd = self.__dict__

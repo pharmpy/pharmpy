@@ -399,3 +399,49 @@ def test_parse_different_idx_table(load_model_for_test, pheno_path):
     model = model.replace(dataset=df)
     res = parse_modelfit_results(model, pheno_path)
     assert res.residuals.index.tolist()[-1] == 10000
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    (
+        (
+            'nonmem/models/pheno5.mod',
+            pd.DataFrame(
+                {
+                    'sd': [8.2793e-02, 1.0000e-12],
+                    'var': [1.5873e-01, 1.0000e-12],
+                    'ebv_sd': [1.9126e-01, 4.9860e-02],
+                    'ebv_var': [3.4594e-01, 9.7234e-02],
+                },
+                index=('ETA_1', 'ETA_2'),
+            ),
+        ),
+    ),
+)
+def test_eta_shrinkage(testdata, load_model_for_test, path, expected):
+    model = load_model_for_test(testdata / path)
+    res = parse_modelfit_results(model, testdata / path)
+    assert res is not None
+    assert str(res.eta_shrinkage) == str(expected)
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    (
+        (
+            'nonmem/models/pheno5.mod',
+            pd.DataFrame(
+                {
+                    'sd': [3.3146e-01],
+                    'var': [5.5306e-01],
+                },
+                index=('EPS_1',),
+            ),
+        ),
+    ),
+)
+def test_eps_shrinkage(testdata, load_model_for_test, path, expected):
+    model = load_model_for_test(testdata / path)
+    res = parse_modelfit_results(model, testdata / path)
+    assert res is not None
+    assert str(res.eps_shrinkage) == str(expected)
