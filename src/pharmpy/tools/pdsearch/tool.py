@@ -9,6 +9,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
     add_placebo_model,
+    convert_model,
     create_basic_kpd_model,
     create_basic_pd_model,
     get_observations,
@@ -115,17 +116,24 @@ def start_pdsearch(context, input, type, kpd_driver, results):
         me = ModelEntry.create(input, modelfit_results=results)
         context.store_input_model_entry(me)
         return me
-    dataset = input
+    else:
+        model = create_base_model(type, input, kpd_driver)
+        me = ModelEntry.create(model=model)
+        return me
+
+
+def create_base_model(type, dataset, kpd_driver):
     if type == 'pd':
         model = create_basic_pd_model(dataset)
-        model = set_proportional_error_model(model, zero_protection=False)
-        model = add_iiv(model, ["B"], "exp")
-        theta_init, omega_init = _calc_pd_inits_from_data(model)
-        model = set_initial_estimates(model, {"POP_B": theta_init, "IIV_B": omega_init})
     else:
         model = create_basic_kpd_model(dataset, driver=kpd_driver)
-    me = ModelEntry.create(model=model)
-    return me
+    model = set_proportional_error_model(model, zero_protection=False)
+    model = add_iiv(model, ["B"], "exp")
+    if isinstance(dataset, Path):
+        theta_init, omega_init = _calc_pd_inits_from_data(model)
+        model = set_initial_estimates(model, {"POP_B": theta_init, "IIV_B": omega_init})
+    model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+    return model
 
 
 def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme):

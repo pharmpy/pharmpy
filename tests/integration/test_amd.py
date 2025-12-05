@@ -141,6 +141,27 @@ def _model_count(rundir: Path):
                 'qa',
             },
         ),
+        (
+            {
+                'modeltype': 'kpd',
+                'administration': 'iv',
+                'cl_init': 1.0,
+                'vc_init': 10.0,
+                'mat_init': 0.1,
+                'occasion': 'VISI',
+            },
+            {'strategy': 'default', 'retries_strategy': 'skip'},
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            {
+                'pdsearch',
+                'iivsearch',
+                'ruvsearch',
+                'iovsearch',
+                'covsearch_exploratory',
+                'simulation',
+                'qa',
+            },
+        ),
     ],
 )
 def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, subtools):

@@ -106,6 +106,7 @@ def test_skip_most(load_model_for_test, testdata):
     to_be_skipped = check_skip(
         NullContext(),
         model,
+        modeltype='basic_pk',
         occasion=None,
         order=order,
         allometric_variable=None,
@@ -118,6 +119,7 @@ def test_skip_most(load_model_for_test, testdata):
     to_be_skipped = check_skip(
         NullContext(),
         model,
+        modeltype='basic_pk',
         occasion=None,
         order=order,
         allometric_variable=None,
@@ -191,6 +193,7 @@ def test_skip_covsearch(load_model_for_test, testdata):
     to_be_skipped = check_skip(
         NullContext(),
         model,
+        modeltype='basic_pk',
         occasion='VISI',
         order=order,
         allometric_variable='WT',
@@ -225,6 +228,7 @@ def test_skip_iovsearch_one_occasion(load_model_for_test, testdata):
     to_be_skipped = check_skip(
         NullContext(),
         model,
+        modeltype='basic_pk',
         occasion='XAT2',
         allometric_variable=None,
         order=order,
@@ -273,6 +277,7 @@ def test_ignore_datainfo_fallback(load_model_for_test, testdata):
     to_be_skipped = check_skip(
         NullContext(),
         model,
+        modeltype='basic_pk',
         occasion=None,
         allometric_variable=None,
         order=['modelsearch', 'iivsearch', 'ruvsearch', 'iovsearch', 'allometry', 'covariates'],
@@ -470,29 +475,29 @@ def test_modify_search_space_allometry(mfl, expected_search_space, expected_allo
 
 
 @pytest.mark.parametrize(
-    'administration, has_absorption_type',
+    'modeltype, administration, check_func',
     [
-        ('iv', has_instantaneous_absorption),
-        ('oral', has_first_order_absorption),
+        ('basic_pk', 'iv', has_instantaneous_absorption),
+        ('basic_pk', 'oral', has_first_order_absorption),
+        ('kpd', 'iv', lambda m: 'POP_KE' in m.parameters.names),
     ],
 )
-def test_create_start_model(testdata, administration, has_absorption_type):
+def test_create_start_model(testdata, modeltype, administration, check_func):
     dataset_path = Path(testdata / 'nonmem' / 'pheno.dta')
     cl_init, vc_init, mat_init = 1, 1, 1
 
-    model_from_path = create_start_model(dataset_path, administration, cl_init, vc_init, mat_init)
-    assert has_absorption_type(model_from_path)
+    model_from_path = create_start_model(
+        dataset_path, modeltype, administration, cl_init, vc_init, mat_init
+    )
+    assert check_func(model_from_path)
 
     df = model_from_path.dataset
-    model_from_df = create_start_model(df, administration, cl_init, vc_init, mat_init)
-    assert has_absorption_type(model_from_df)
+    model_from_df = create_start_model(df, modeltype, administration, cl_init, vc_init, mat_init)
+    assert check_func(model_from_df)
 
     # Zero protection differs
     assert model_from_path.statements.before_odes == model_from_df.statements.before_odes
     assert model_from_path.statements.ode_system == model_from_df.statements.ode_system
-
-    with pytest.raises(TypeError):
-        create_start_model('x', administration, cl_init, vc_init, mat_init)
 
 
 def test_get_dvid_name(load_model_for_test, testdata):

@@ -8,14 +8,17 @@ from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_ch
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.model import Model
 from pharmpy.modeling import (
+    add_iiv,
     add_predictions,
     add_residuals,
     create_basic_pk_model,
     find_clearance_parameters,
     get_central_volume_and_clearance,
     get_column_name,
+    get_individual_parameters,
     get_pk_parameters,
     has_mixed_mm_fo_elimination,
+    has_random_effect,
     plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
@@ -47,11 +50,12 @@ from pharmpy.workflows.results import ModelfitResults
 
 from ...internals.fs.path import path_absolute
 from ..covsearch.tool import get_effect_funcs_and_base_model, get_exploratory_covariates
+from ..pdsearch.tool import create_base_model as pdsearch_create_base_model
 from .results import AMDResults
 
 ALLOWED_STRATEGY = ["default", "reevaluation", "SIR", "SRI", "RSI"]
 ALLOWED_ADMINISTRATION = ["iv", "oral", "ivoral"]
-ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd']
+ALLOWED_MODELTYPE = ['basic_pk', 'pkpd', 'drug_metabolite', 'tmdd', 'kpd']
 RETRIES_STRATEGIES = ["final", "all_final", "skip"]
 DEFAULT_STRICTNESS = "minimization_successful or (rounding_errors and sigdigs>=0.1)"
 
@@ -222,6 +226,9 @@ def run_amd_task(
     if modeltype == 'pkpd':
         dv = 2
         iiv_strategy = 'pd_fullblock'
+    elif modeltype == 'kpd':
+        dv = None
+        iiv_strategy = 'no_add'
     else:
         dv = None
         iiv_strategy = 'fullblock'
@@ -238,6 +245,7 @@ def run_amd_task(
     else:
         model = create_start_model(
             input,
+            modeltype=modeltype,
             administration=administration,
             cl_init=cl_init,
             vc_init=vc_init,
@@ -277,6 +285,7 @@ def run_amd_task(
     to_be_skipped = check_skip(
         context,
         model,
+        modeltype,
         occasion,
         allometric_variable,
         order,
@@ -332,6 +341,14 @@ def run_amd_task(
                     ctx=context,
                 )
                 run_subfuncs['structsearch'] = func
+            elif modeltype == 'kpd':
+                func = _subfunc_pdsearch(
+                    type='kpd',
+                    strictness=strictness,
+                    parameter_uncertainty_method=parameter_uncertainty_method,
+                    ctx=context,
+                )
+                run_subfuncs['structsearch'] = func
             else:
                 func = _subfunc_modelsearch(
                     search_space=modelsearch_features,
@@ -368,6 +385,7 @@ def run_amd_task(
                     strictness=strictness,
                     E=_E,
                     parameter_uncertainty_method=parameter_uncertainty_method,
+                    modeltype=modeltype,
                     ctx=context,
                     dir_name="iivsearch",
                     search_space=iiv_features,
@@ -604,32 +622,27 @@ def modify_search_space_allometry(ss_mfl):
     return ss_mfl, mfl_allometry
 
 
-def create_start_model(input, administration, cl_init, vc_init, mat_init):
+def create_start_model(input, modeltype, administration, cl_init, vc_init, mat_init):
     if isinstance(input, Path):
-        model = create_basic_pk_model(
-            administration,
-            dataset_path=input,
-            cl_init=cl_init,
-            vc_init=vc_init,
-            mat_init=mat_init,
-        )
-        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
-    elif isinstance(input, pd.DataFrame):
-        model = create_basic_pk_model(
-            administration,
-            cl_init=cl_init,
-            vc_init=vc_init,
-            mat_init=mat_init,
-        )
-        model = set_dataset(model, input, datatype='nonmem')
-        model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
+        dataset_path = input
     else:
-        # Redundant with validation
-        raise TypeError(
-            f'Invalid input: got `{input}` of type {type(input)},'
-            f' only NONMEM model or standalone dataset are supported currently.'
+        dataset_path = None
+
+    if modeltype == 'kpd':
+        model = pdsearch_create_base_model('kpd', dataset=dataset_path, kpd_driver='ir')
+    else:
+        model = create_basic_pk_model(
+            administration,
+            dataset_path=dataset_path,
+            cl_init=cl_init,
+            vc_init=vc_init,
+            mat_init=mat_init,
         )
 
+    if isinstance(input, pd.DataFrame):
+        model = set_dataset(model, input, datatype='nonmem')
+
+    model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
     return model
 
 
@@ -1041,8 +1054,34 @@ def _subfunc_structsearch_tmdd(
     return _run_structsearch_tmdd
 
 
+def _subfunc_pdsearch(ctx, type, strictness, parameter_uncertainty_method, **kwargs) -> SubFunc:
+    def _run_pdsearch(model, modelfit_results):
+        res = run_subtool(
+            'pdsearch',
+            ctx,
+            name='pdsearch',
+            input=model,
+            results=modelfit_results,
+            type=type,
+            strictness=strictness,
+            parameter_uncertainty_method=parameter_uncertainty_method,
+            **kwargs,
+        )
+        assert isinstance(res, Results)
+        return res
+
+    return _run_pdsearch
+
+
 def _subfunc_iiv(
-    iiv_strategy, strictness, E, parameter_uncertainty_method, ctx, dir_name, search_space=None
+    iiv_strategy,
+    strictness,
+    E,
+    parameter_uncertainty_method,
+    ctx,
+    dir_name,
+    modeltype=None,
+    search_space=None,
 ) -> SubFunc:
     def _run_iiv(model, modelfit_results):
         if E and 'iivsearch' in E.keys():
@@ -1052,11 +1091,17 @@ def _subfunc_iiv(
             rank_type = 'bic'
             e_p, e_q = None, None
 
-        keep = [
-            str(symbol)
-            for symbol in get_central_volume_and_clearance(model)
-            if symbol in find_clearance_parameters(model)
-        ]
+        if modeltype == 'kpd':
+            keep = ['KE']
+            model_entry = run_kpd_iivsearch_base_model(model, ctx)
+            model, modelfit_results = model_entry.model, model_entry.modelfit_results
+        else:
+            keep = [
+                str(symbol)
+                for symbol in get_central_volume_and_clearance(model)
+                if symbol in find_clearance_parameters(model)
+            ]
+
         res = run_subtool(
             'iivsearch',
             ctx,
@@ -1078,6 +1123,25 @@ def _subfunc_iiv(
         return res
 
     return _run_iiv
+
+
+def run_kpd_iivsearch_base_model(model, ctx):
+    model = create_kpd_iivsearch_base_model(model)
+    model_entry = ModelEntry.create(model)
+    ctx.log_info('Running KPD base model with IIVs')
+    fit_wf = create_fit_workflow(model_entry)
+    model_entry = ctx.call_workflow(fit_wf, 'kpd_iivsearch_base')
+    return model_entry
+
+
+def create_kpd_iivsearch_base_model(model):
+    individual_parameters = get_individual_parameters(model)
+    params_to_add = [
+        param for param in individual_parameters if not has_random_effect(model, param, level='iiv')
+    ]
+    model = add_iiv(model, params_to_add, expression='exp')
+    model = model.replace(name='kpd_iivsearch_base')
+    return model
 
 
 def _subfunc_ruvsearch(dv, strictness, parameter_uncertainty_method, ctx, dir_name) -> SubFunc:
@@ -1253,7 +1317,7 @@ def _subfunc_mechanistic_exploratory_covariates(
         else:
             filtered_searchspace = search_space
 
-        if not get_exploratory_covariates(filtered_searchspace):
+        if not get_exploratory_covariates(filtered_searchspace.expand(model)):
             ctx.log_warning('Skipping COVsearch for exploratory covariates, no covariates to test')
             return None
 
@@ -1366,6 +1430,7 @@ def _subfunc_iov(
 def check_skip(
     context,
     model: Model,
+    modeltype: str,
     occasion: str,
     allometric_variable: str,
     order: list[str],
@@ -1406,6 +1471,9 @@ def check_skip(
                     ' ignore_datainfo_fallback is True'
                 )
                 to_be_skipped.append("allometry")
+        if modeltype == 'kpd':
+            context.log_info('Allometry is not supported for KPD models')
+            to_be_skipped.append("allometry")
 
     if 'covariates' in order:
         if search_space is not None:
