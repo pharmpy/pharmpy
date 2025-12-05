@@ -6,6 +6,7 @@ New features
 
 * Add :code:`modeling.remove_unused_columns`
 * Support KPD models in pdsearch
+* Support KPD models in AMD-tool
 * Parse condition number from NONMEM ext-file
 * Allow lazy parsing of NONMEM results when using the NONMEM API directly
 * Allow not adding ETCs when using :code:`insert_ebes_into_dataset`
