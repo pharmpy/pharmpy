@@ -1,6 +1,9 @@
 import re
+from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime
-from typing import Iterable, Optional, Union
+from itertools import islice, tee
+from platform import python_version_tuple
+from typing import Any, Callable, Generator, Iterable, Iterator, Optional, TypeVar, Union
 
 import dateutil.parser
 from packaging import version
@@ -8,6 +11,144 @@ from packaging import version
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model.external.nonmem.dataset.nmtran import IOFromChunks
+
+TAG = re.compile(r' #([A-Z]{4}):\s*(.*)')
+END_TERE = re.compile(r'(0|1)')  # The part we need after #TERE: will precede the next ^1 or ^0
+CLEANUP = re.compile(r'\*+\s*')
+
+
+def _decode_lst(line: bytes):
+    # Since lst-files sometimes can have mixed encodings:
+    # Allow for separate encodings of date strings and the rest of the content
+    # Always try utf-8 first and fallback to latin-1 separately for each section
+    try:
+        row = line.decode('utf-8')
+    except UnicodeDecodeError:
+        row = line.decode('latin-1', errors='ignore')
+
+    pos = len(row) - 2
+    if pos >= 0 and row[pos] == '\r':
+        return row[:pos] + '\n'
+    else:
+        return row
+
+
+T = TypeVar('T')
+
+_version = tuple(map(int, python_version_tuple()))
+_minor = _version[:2]
+
+if _minor == (3, 12) and _version >= (3, 12, 8):
+    # SEE: https://github.com/python/cpython/commit/cf2532b39d099e004d1c07b2d0fcc46567b68e75
+    _tee = tee
+
+elif _minor == (3, 13) and _version >= (3, 13, 1):
+    # SEE: https://github.com/python/cpython/commit/7bc99dd49ed4cebe4795cc7914c4231209b2aa4b
+    _tee = tee
+
+elif _minor >= (3, 14):
+    # SEE: https://github.com/python/cpython/pull/124490
+    _tee = tee
+
+else:
+    # SEE: https://github.com/python/cpython/issues/137597#issuecomment-3186240062
+    def _tee(iterable: Iterable[T], n: int = 2, /):
+        if hasattr(iterable, "__copy__"):
+            return tee(iterable, n + 1)[1:]
+        else:
+            return tee(iterable, n)
+
+
+def make_peekable(iterator: Iterator[T]):
+    # NOTE: Adapted from https://docs.python.org/3/library/itertools.html#itertools.tee
+    # NOTE: Extra copy required for Python 3.11
+    (tee_iterator,) = _tee(iterator, 1)
+
+    def lookahead(n: int) -> Iterator[T]:
+        # NOTE: Extra copy required for Python 3.11
+        # SEE: https://github.com/python/cpython/issues/137597#issuecomment-3186240062
+        (forked_iterator,) = _tee(tee_iterator, 1)
+        return islice(forked_iterator, n)
+
+    return tee_iterator, lookahead
+
+
+@dataclass(frozen=True)
+class TermInfo:
+    minimization_successful: Optional[bool] = None
+    estimate_near_boundary: Optional[bool] = None
+    rounding_errors: Optional[bool] = None
+    maxevals_exceeded: Optional[bool] = None
+    significant_digits: float = np.nan
+    function_evaluations: float = np.nan
+    ofv_with_constant: Optional[float] = None
+    warning: Optional[bool] = None
+    eta_shrinkage: Optional[pd.DataFrame] = None
+    ebv_shrinkage: Optional[pd.DataFrame] = None
+    eps_shrinkage: Optional[pd.DataFrame] = None
+
+
+@dataclass(frozen=True)
+class TereInfo:
+    covariance_step_ok: Optional[bool] = None
+    estimation_runtime: Optional[float] = None
+
+
+@dataclass(frozen=True)
+class Section:
+    rows: tuple[str, ...]
+
+
+@dataclass(frozen=True)
+class VersionSection(Section):
+    version: str
+
+
+class StartTimeSection(Section):
+    pass
+
+
+class EndTimeSection(Section):
+    pass
+
+
+class ExecSection(Section):
+    pass
+
+
+class MethSection(Section):
+    pass
+
+
+class TereSection(Section):
+    pass
+
+
+class TermSection(Section):
+    pass
+
+
+class ProgramTerminatedByObjSection(Section):
+    pass
+
+
+@dataclass(frozen=True)
+class KeyValueSection(Section):
+    key: str
+    value: str
+
+
+TaggedSection = Union[
+    VersionSection,
+    StartTimeSection,
+    EndTimeSection,
+    ExecSection,
+    MethSection,
+    TermSection,
+    TereSection,
+    ProgramTerminatedByObjSection,
+    KeyValueSection,
+]
 
 
 class NONMEMResultsFile:
@@ -38,23 +179,29 @@ class NONMEMResultsFile:
         return NONMEMResultsFile.supported_version(self.nonmem_version)
 
     def estimation_status(self, table_number):
-        result = NONMEMResultsFile.unknown_termination()
+        result = TermInfo()
         if self._supported_nonmem_version:
-            if table_number in self.table.keys():
-                for key in result.keys():
-                    result[key] = self.table[table_number].get(key)
+            _fields = set(map(lambda x: x.name, fields(TermInfo)))
+            table = self.table.get(table_number)
+            if table is not None:
+                result = replace(
+                    result, **{key: value for key, value in table.items() if key in _fields}
+                )
             else:
-                result['minimization_successful'] = False
+                result = replace(result, minimization_successful=False)
         return result
 
     def covariance_status(self, table_number):
-        result = NONMEMResultsFile.unknown_covariance()
+        result = TereInfo()
         if self._supported_nonmem_version:
-            if table_number in self.table.keys():
-                for key in result.keys():
-                    result[key] = self.table[table_number].get(key)
+            _fields = set(map(lambda x: x.name, fields(TereInfo)))
+            table = self.table.get(table_number)
+            if table is not None:
+                result = replace(
+                    result, **{key: value for key, value in table.items() if key in _fields}
+                )
             else:
-                result['covariance_step_ok'] = False
+                result = replace(result, covariance_step_ok=False)
         return result
 
     def ofv(self, table_number):
@@ -75,26 +222,7 @@ class NONMEMResultsFile:
         )
 
     @staticmethod
-    def unknown_covariance() -> dict[str, Optional[Union[bool, float]]]:
-        return {'covariance_step_ok': None}
-
-    @staticmethod
-    def unknown_termination() -> dict[str, Optional[Union[bool, float, pd.DataFrame]]]:
-        return {
-            'minimization_successful': None,
-            'estimate_near_boundary': None,
-            'rounding_errors': None,
-            'maxevals_exceeded': None,
-            'significant_digits': np.nan,
-            'function_evaluations': np.nan,
-            'warning': None,
-            'eta_shrinkage': None,
-            'ebv_shrinkage': None,
-            'eps_shrinkage': None,
-        }
-
-    @staticmethod
-    def cleanup_version(v):
+    def cleanup_version(v: str):
         if v == 'V':
             v = '5.0'
         elif v == 'VI':
@@ -102,10 +230,27 @@ class NONMEMResultsFile:
         return v
 
     @staticmethod
-    def parse_tere(rows):
-        result = NONMEMResultsFile.unknown_covariance()
-        result['covariance_step_ok'] = False
-        result['estimation_runtime'] = np.nan
+    def read_tere(rows: Iterator[bytes], lookahead: Callable[[int], Iterator[bytes]]):
+        while True:
+            try:
+                preread = _decode_lst(next(lookahead(1)))
+            except StopIteration:
+                break
+            lead = preread[:2]
+            if lead == ' #' and TAG.match(preread):
+                # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
+                break
+            elif END_TERE.match(preread):
+                break
+            else:
+                row = _decode_lst(next(rows))
+                assert row == preread
+                yield row
+
+    @staticmethod
+    def parse_tere(rows: tuple[str, ...]):
+        result = TereInfo(covariance_step_ok=False, estimation_runtime=np.nan)
+
         if len(rows) < 1:
             return result
 
@@ -119,26 +264,30 @@ class NONMEMResultsFile:
 
         for row in rows:
             if cov_not_ok.match(row):
-                result['covariance_step_ok'] = False
+                result = replace(result, covariance_step_ok=False)
                 break
             if cov_ok.match(row):
-                result['covariance_step_ok'] = True
+                result = replace(result, covariance_step_ok=True)
                 break
             m = est_time.match(row)
             if m:
-                result['estimation_runtime'] = float(m.group(1))
+                result = replace(result, estimation_runtime=float(m.group(1)))
         return result
 
     @staticmethod
-    def parse_termination(rows):
-        result = NONMEMResultsFile.unknown_termination()
+    def parse_termination(rows: tuple[str, ...]):
+        result = TermInfo()
+
         if len(rows) < 1:  # Will happen if e.g. TERMINATED BY OBJ during estimation
-            result['minimization_successful'] = False
-            return result
-        result['estimate_near_boundary'] = False
-        result['rounding_errors'] = False
-        result['maxevals_exceeded'] = False
-        result['warning'] = False
+            return replace(result, minimization_successful=False)
+
+        result = replace(
+            result,
+            estimate_near_boundary=False,
+            rounding_errors=False,
+            maxevals_exceeded=False,
+            warning=False,
+        )
 
         success = [
             re.compile(r'0MINIMIZATION SUCCESSFUL'),
@@ -175,76 +324,117 @@ class NONMEMResultsFile:
         )  # Only classical est
         feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # Only classical est
         ofv_with_constant = re.compile(r' OBJECTIVE FUNCTION VALUE WITH CONSTANT:\s*(\S+)')
-        eta_shrinkage = re.compile(r'^ ETASHRINK(?:SD|VR)\(%\)  ')
-        ebv_shrinkage = re.compile(r'^ EBVSHRINK(?:SD|VR)\(%\)  ')
-        eps_shrinkage = re.compile(r'^ EPSSHRINK(?:SD|VR)\(%\)  ')
+        eta_shrinkage = re.compile(r'^ ETA(?:SHRINK(?:SD|VR)\(%\) |shrink\(%\):  )')
+        ebv_shrinkage = re.compile(r'^ EBV(?:SHRINK(?:SD|VR)\(%\) |shrink\(%\):  )')
+        eps_shrinkage = re.compile(r'^ EPS(?:SHRINK(?:SD|VR)\(%\) |shrink\(%\):  )')
 
         maybe_success = False
         for row in rows:
             if maybe_success:
-                result['minimization_successful'] = bool(re.search(r'USER INTERRUPT', row))
+                result = replace(
+                    result, minimization_successful=bool(re.search(r'USER INTERRUPT', row))
+                )
                 break
             for p in success:
                 if p.match(row):
-                    result['minimization_successful'] = True
+                    result = replace(result, minimization_successful=True)
                     break
-            if result['minimization_successful'] is not None:
+            if result.minimization_successful is not None:
                 break
             for p in failure:
                 if p.match(row):
-                    result['minimization_successful'] = False
+                    result = replace(result, minimization_successful=False)
                     break
-            if result['minimization_successful'] is not None:
+            if result.minimization_successful is not None:
                 break
             maybe_success = bool(maybe.match(row))
         for row in rows:
             m = sig_digits.match(row)
             if m:
-                result['significant_digits'] = float(m.group(1))
+                result = replace(result, significant_digits=float(m.group(1)))
                 continue
             m = sig_digits_unreport.match(row)
             if m:
-                result['significant_digits'] = np.nan
+                result = replace(result, significant_digits=np.nan)
             m = ofv_with_constant.match(row)
             if m:
-                result['ofv_with_constant'] = float(m.group(1))
+                result = replace(result, ofv_with_constant=float(m.group(1)))
                 continue
             m = feval.match(row)
             if m:
-                result['function_evaluations'] = int(m.group(1))
+                result = replace(result, function_evaluations=int(m.group(1)))
                 continue
             for name, p in misc.items():
                 if p.match(row):
-                    result[name] = True
+                    result = replace(result, **{name: True})
                     break
 
-        result['eta_shrinkage'] = NONMEMResultsFile.parse_shrinkage(
-            filter(eta_shrinkage.match, rows)
-        )
-        result['ebv_shrinkage'] = NONMEMResultsFile.parse_shrinkage(
-            filter(ebv_shrinkage.match, rows)
-        )
-        result['eps_shrinkage'] = NONMEMResultsFile.parse_shrinkage(
-            filter(eps_shrinkage.match, rows)
+        result = replace(
+            result,
+            eta_shrinkage=NONMEMResultsFile.parse_shrinkage(
+                NONMEMResultsFile.filter_shrinkage(eta_shrinkage.match, rows)
+            ),
+            ebv_shrinkage=NONMEMResultsFile.parse_shrinkage(
+                NONMEMResultsFile.filter_shrinkage(ebv_shrinkage.match, rows)
+            ),
+            eps_shrinkage=NONMEMResultsFile.parse_shrinkage(
+                NONMEMResultsFile.filter_shrinkage(eps_shrinkage.match, rows)
+            ),
         )
         return result
 
     @staticmethod
-    def parse_shrinkage(rows: Iterable[str]):
+    def filter_shrinkage(is_header: Callable[[str], Any], rows: Iterable[str]):
+        it, lookahead = make_peekable(iter(rows))
+        while True:
+            chunks: list[str] = []
+            for row in it:
+                if is_header(row):
+                    chunks.append(row)
+                    break
+
+            else:
+                break
+
+            while True:
+                try:
+                    preread = next(lookahead(1))
+                except StopIteration:
+                    break
+
+                if not preread.startswith(' ' * 16):
+                    break
+                row = next(it)
+                assert row == preread
+                chunks.append(row)
+
+            yield from map(str.encode, map(str.rstrip, chunks))
+            yield b'\n'
+
+    @staticmethod
+    def parse_shrinkage(chunks: Iterable[bytes]):
         try:
-            return pd.read_table(
-                IOFromChunks(map(lambda row: str.encode(row + '\n'), rows)),  # type: ignore
+            read = pd.read_table(
+                IOFromChunks(chunks),  # type: ignore
                 header=None,
                 index_col=0,
                 sep=r'\s+',
                 engine='c',
                 float_precision="round_trip",
             )
+
+            columns = read.index.values
+            read.reset_index(drop=True, inplace=True)
+
+            df = read.T
+            df.columns = columns
+            df.reset_index(drop=True, inplace=True)
+            return df
         except pd.errors.EmptyDataError:
             return None
 
     @staticmethod
-    def parse_runtime(row, row_next=None):
+    def parse_runtime(row: str, row_next: Optional[str] = None):
         # TODO: Support AM/PM
         weekday_month_en = re.compile(
             r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
@@ -318,22 +508,24 @@ class NONMEMResultsFile:
             time = dateutil.parser.parse(row_next).time()
             return datetime.combine(date, time)
 
-    def log_items(self, lines):
+    def log_items(self, lines_section: str, lines: Iterable[str]):
         if self.log is None:
             return
 
-        fulltext = '\n'.join(lines)
+        fulltext = ''.join(lines)
 
         warnings = []
         errors = []
 
         warning_patterns = [
-            re.compile(r'0WARNING:((\s+.+\n)+)'),
-            re.compile(r'0(PARAMETER ESTIMATE IS NEAR ITS BOUNDARY)'),
-            re.compile(r'0(MINIMIZATION SUCCESSFUL\n\s*HOWEVER.+\n)'),
+            ('exec', re.compile(r'0WARNING:((\s+.+\n)+)')),
+            ('TERM', re.compile(r'0(PARAMETER ESTIMATE IS NEAR ITS BOUNDARY)')),
+            ('TERM', re.compile(r'0(MINIMIZATION SUCCESSFUL\n\s*HOWEVER.+\n)')),
         ]
 
-        for pattern in warning_patterns:
+        for pattern_section, pattern in warning_patterns:
+            if pattern_section != lines_section:
+                continue
             match = pattern.search(fulltext)
             if match:
                 message = match.group(1)
@@ -342,45 +534,81 @@ class NONMEMResultsFile:
                 warnings.append(message_trimmed.strip())
 
         error_patterns = [
-            re.compile(
-                r'(AN ERROR WAS FOUND IN THE CONTROL STATEMENTS\.(.*\n)+'
-                r'.+UPPER OR LOWER BOUNDS\.)'
+            (
+                'exec',
+                re.compile(
+                    r'(AN ERROR WAS FOUND IN THE CONTROL STATEMENTS\.(.*\n)+'
+                    r'.+UPPER OR LOWER BOUNDS\.)'
+                ),
             ),
-            re.compile(
-                r'(INITIAL ESTIMATE OF OMEGA HAS A NONZERO BLOCK WHICH IS NUMERICALLY NOT '
-                r'POSITIVE DEFINITE)'
+            (
+                'exec',
+                re.compile(
+                    r'(INITIAL ESTIMATE OF OMEGA HAS A NONZERO BLOCK WHICH IS NUMERICALLY NOT '
+                    r'POSITIVE DEFINITE)'
+                ),
+            ),  # TODO: Add test.
+            ('exec', re.compile(r'0(UPPER BOUNDS INAPPROPRIATE)')),
+            ('METH', re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+.+MAY BE TOO LARGE\.)')),
+            (
+                'METH',
+                re.compile(
+                    r'0(PRED EXIT CODE = 1\n(.*\n)+\s*'
+                    r'NUMERICAL DIFFICULTIES OBTAINING THE SOLUTION\.)\s*\n'
+                ),
             ),
-            re.compile(r'0(UPPER BOUNDS INAPPROPRIATE)'),
-            re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+.+MAY BE TOO LARGE\.)'),
-            re.compile(
-                r'0(PRED EXIT CODE = 1\n(.*\n)+\s*'
-                r'NUMERICAL DIFFICULTIES OBTAINING THE SOLUTION\.)\s*\n'
+            (
+                'METH',
+                re.compile(
+                    r'0(PRED EXIT CODE = 1\n(.*\n)+\s+.+IS TOO CLOSE TO AN EIGENVALUE\s*)\n'
+                ),
             ),
-            re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+\s+.+IS TOO CLOSE TO AN EIGENVALUE\s*)\n'),
-            re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+\s+.+IS VERY LARGE\.\s*)\n'),
-            re.compile(r'0(PROGRAM TERMINATED BY OBJ\n\s*MESSAGE ISSUED FROM ESTIMATION STEP)'),
-            re.compile(
-                r'0(PROGRAM TERMINATED BY OBJ\n(.*\n)*\s*'
-                r'MESSAGE ISSUED FROM ESTIMATION STEP\n\s*'
-                r'((AT 0TH ITERATION, UPON EVALUATION OF GRADIENT.*)|'
-                r'(AT INITIAL OBJ. FUNCTION EVALUATION)))\n'
+            ('METH', re.compile(r'0(PRED EXIT CODE = 1\n(.*\n)+\s+.+IS VERY LARGE\.\s*)\n')),
+            (
+                '0PROGRAM TERMINATED BY OBJ',
+                re.compile(r'0(PROGRAM TERMINATED BY OBJ\n\s*MESSAGE ISSUED FROM ESTIMATION STEP)'),
             ),
-            re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ROUNDING ERRORS.+)\n'),
-            re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ZERO GRADIENT)\n'),
-            re.compile(
-                r'0(MINIMIZATION TERMINATED\n\s*DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED)\n'
+            (
+                '0PROGRAM TERMINATED BY OBJ',
+                re.compile(
+                    r'0(PROGRAM TERMINATED BY OBJ\n(.*\n)*\s*'
+                    r'MESSAGE ISSUED FROM ESTIMATION STEP\n\s*'
+                    r'((AT 0TH ITERATION, UPON EVALUATION OF GRADIENT.*)|'
+                    r'(AT INITIAL OBJ. FUNCTION EVALUATION)))\n'
+                ),
             ),
-            re.compile(r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*IS NON POSITIVE DEFINITE)\n'),
-            re.compile(
-                r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*SUM OF "SQUARED" WEIGHTED INDIVIDUAL '
-                r'RESIDUALS IS INFINITE)\n'
+            ('TERM', re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ROUNDING ERRORS.+)\n')),
+            ('TERM', re.compile(r'0(MINIMIZATION TERMINATED\n\s*DUE TO ZERO GRADIENT)\n')),
+            (
+                'TERM',
+                re.compile(
+                    r'0(MINIMIZATION TERMINATED\n\s*DUE TO MAX. NO. OF FUNCTION EVALUATIONS EXCEEDED)\n'
+                ),
             ),
-            re.compile(r'\s*(NO. OF SIG. DIGITS UNREPORTABLE)\s*\n'),
+            (
+                'TERM',
+                re.compile(r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*IS NON POSITIVE DEFINITE)\n'),
+            ),
+            (
+                'TERM',
+                re.compile(
+                    r'0(MINIMIZATION TERMINATED\n(.*\n)+\s*SUM OF "SQUARED" WEIGHTED INDIVIDUAL '
+                    r'RESIDUALS IS INFINITE)\n'
+                ),
+            ),
+            ('TERM', re.compile(r'\s*(NO. OF SIG. DIGITS UNREPORTABLE)\s*\n')),
             # This is duplicated in termination
-            re.compile(r'0(HESSIAN OF POSTERIOR DENSITY IS NON-POSITIVE-DEFINITE DURING SEARCH)'),
+            (
+                'METH',
+                re.compile(
+                    r'0(HESSIAN OF POSTERIOR DENSITY IS NON-POSITIVE-DEFINITE DURING SEARCH)'
+                ),
+            ),
         ]
 
-        for pattern in error_patterns:
+        for pattern_section, pattern in error_patterns:
+            if pattern_section != lines_section:
+                continue
             match = pattern.search(fulltext)
             if match:
                 message = match.group(1)
@@ -393,125 +621,194 @@ class NONMEMResultsFile:
         for message in errors:
             self.log = self.log.log_error(message)
 
-    def tag_items(self, path):
+    def tag_items(self, path) -> Generator[TaggedSection, None, None]:
+        with open(path, 'rb') as lines:
+            yield from NONMEMResultsFile.parse_rows(lines)
+
+    @staticmethod
+    def parse_rows(it: Iterator[bytes]) -> Generator[TaggedSection, None, None]:
+        hessian = None
+
+        it, lookahead = make_peekable(it)
+
+        yield StartTimeSection(tuple(map(_decode_lst, lookahead(2))))
+
+        EXEC: list[str] = []
+
+        while True:
+            try:
+                preread = _decode_lst(next(lookahead(1)))
+            except StopIteration:
+                yield ExecSection(tuple(EXEC))
+                return
+
+            lead = preread[:2]
+            if lead == ' #':
+                break
+
+            row = _decode_lst(next(it))
+            assert row == preread
+            EXEC.append(row)
+
         nmversion = re.compile(r'1NONLINEAR MIXED EFFECTS MODEL PROGRAM \(NONMEM\) VERSION\s+(\S+)')
-        tag = re.compile(r'\s*#([A-Z]{4}):\s*(.*)')
-        end_TERE = re.compile(
-            r'(0|1)'
-        )  # The part we need after #TERE: will precede the next ^1 or ^0
-        cleanup = re.compile(r'\*+\s*')
-        TERM = []
-        TERE = []
-        found_TERM = False
-        found_TERE = False
-        runtime = None
-        endtime_index = None
-
-        with open(path, 'rb') as fp:
-            binary = fp.readlines()
-            # Since lst-files sometimes can have mixed encodings:
-            # Allow for separate encodings of date strings and the rest of the content
-            # Always try utf-8 first and fallback to latin-1 separately for each section
-            try:
-                line1 = binary[0].decode('utf-8')
-            except UnicodeDecodeError:
-                line1 = binary[0].decode('latin-1', errors='ignore')
-
-            try:
-                last_line = binary[-1].decode('utf-8')
-            except UnicodeDecodeError:
-                last_line = binary[-1].decode('latin-1', errors='ignore')
-
-            chunk = b''.join(binary[1:-1])
-            try:
-                decoded_chunk = chunk.decode('utf-8')
-            except UnicodeDecodeError:
-                decoded_chunk = chunk.decode('latin-1', errors='ignore')
-
-            lines = [line1]
-            lines += decoded_chunk.replace('\r', '').split('\n')
-            lines[-1] = last_line  # Replace since lst-files always end with \n
 
         version_number = None
-        starttime = NONMEMResultsFile.parse_runtime(lines[0], lines[1])
-        for row in lines:
+
+        for row in EXEC:
             m = nmversion.match(row)
             if m:
                 version_number = NONMEMResultsFile.cleanup_version(m.group(1))
-                yield ('nonmem_version', version_number)
-                break  # We will stay at current file position
+                yield VersionSection((row,), version_number)
 
-        self.log_items(lines)
+        yield ExecSection(tuple(EXEC))
 
-        if NONMEMResultsFile.supported_version(version_number):
-            for i, row in enumerate(lines):
-                row = row.rstrip()
-                m = tag.match(row)
-                if m:
-                    if m.group(1) == 'TERM':
-                        if found_TERM:
-                            raise NotImplementedError('Two TERM tags without TERE in between')
-                        found_TERM = True
-                        TERM = []
-                        # This termination error is not in the TERM block
-                        hessian = '0HESSIAN OF POSTERIOR DENSITY'
-                        if lines[i - 2].startswith(hessian):
-                            TERM.append(lines[i - 2])
-                    elif m.group(1) == 'TERE':
-                        if not found_TERM:
-                            raise NotImplementedError('TERE tag without TERM tag')
-                        found_TERE = True
-                        yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
-                        found_TERM = False
-                        TERM = []
-                    elif found_TERE:
-                        found_TERE = False
-                        # Raise NotImplementedError('TERE tag without ^1 or ^0 before next tag')
+        for _row in it:
+            lead = _row[:2]
+            if lead == b' #':
+                row = _decode_lst(_row)
+                if not (m := TAG.match(row)):
+                    continue
+                if m.group(1) == 'TERM':
+                    # The hessian termination error is not in the TERM block
+                    TERM = [] if hessian is None else [hessian]
+
+                    hessian = None
+
+                    while True:
+                        try:
+                            preread = _decode_lst(next(lookahead(1)))
+                        except StopIteration:
+                            break
+                        lead = preread[:2]
+                        if lead == ' #' and (m := TAG.match(preread)):
+                            if m.group(1) == 'TERM':
+                                raise NotImplementedError('Two TERM tags without TERE in between')
+                            elif m.group(1) == 'TERE':
+                                next(it)
+                                TERE = tuple(NONMEMResultsFile.read_tere(it, lookahead))
+                                yield TereSection(TERE)
+                            break
+                        elif lead == '0P' and preread == "0PROGRAM TERMINATED BY OBJ\n":
+                            break
+                        else:
+                            row = _decode_lst(next(it))
+                            assert row == preread
+                            TERM.append(row)
+
+                    yield TermSection(tuple(TERM))
+                elif m.group(1) == 'TERE':
+                    raise NotImplementedError('TERE tag without TERM tag')
+                else:
+                    v = CLEANUP.sub('', m.group(2))
+                    yield KeyValueSection((row,), m.group(1), v.strip())
+
+                    if m.group(1) == 'CPUT':
+                        header, *datetime = map(_decode_lst, lookahead(3))
+                        assert header.startswith('Stop Time:')
+                        yield EndTimeSection((row, header, *datetime))
+
+                    elif m.group(1) == 'METH':
+                        METH = [row]
+                        while True:
+                            try:
+                                preread = _decode_lst(next(lookahead(1)))
+                            except StopIteration:
+                                break
+                            lead = preread[:2]
+                            if lead == ' #' and (m := TAG.match(preread)):
+                                break
+                            elif lead == '0P' and preread == "0PROGRAM TERMINATED BY OBJ\n":
+                                break
+                            else:
+                                row = _decode_lst(next(it))
+                                assert row == preread
+                                METH.append(row)
+
+                                if lead == '0H' and row.startswith('0HESSIAN OF POSTERIOR DENSITY'):
+                                    _, maybe_term = map(_decode_lst, lookahead(2))
+                                    if (
+                                        maybe_term is not None
+                                        and (m := TAG.match(maybe_term))
+                                        and m.group(1) == 'TERM'
+                                    ):
+                                        hessian = row
+
+                        yield MethSection(tuple(METH))
+            elif lead == b'0P':
+                row = _decode_lst(_row)
+                if row != "0PROGRAM TERMINATED BY OBJ\n":
+                    continue
+                PROG = [row]
+                while True:
+                    try:
+                        preread = _decode_lst(next(lookahead(1)))
+                    except StopIteration:
+                        break
+                    if (
+                        preread.startswith("0")
+                        or preread.startswith("1")
+                        or preread.startswith(" #")
+                    ):
+                        break
                     else:
-                        v = cleanup.sub('', m.group(2))
-                        yield (m.group(1), v.strip())
-                elif found_TERE:
-                    if end_TERE.match(row):
-                        yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
-                        found_TERE = False
-                        TERE = []
-                    else:
-                        TERE.append(row)
-                elif found_TERM:
-                    TERM.append(row)
-                if row == 'Stop Time:':
-                    endtime_index = i + 1
-
-            if endtime_index is not None:
-                second_line = lines[i] if (i := endtime_index + 1) < len(lines) else None
-                endtime = NONMEMResultsFile.parse_runtime(lines[endtime_index], second_line)
-                if starttime and endtime:
-                    runtime = (endtime - starttime).total_seconds()
-
-            if found_TERM:
-                yield ('TERM', NONMEMResultsFile.parse_termination(TERM))
-            if found_TERE:
-                yield ('TERE', NONMEMResultsFile.parse_tere(TERE))
-            if runtime is not None:
-                yield ('runtime', runtime)
+                        row = _decode_lst(next(it))
+                        assert row == preread
+                        PROG.append(row)
+                yield ProgramTerminatedByObjSection(tuple(PROG))
 
     def table_blocks(self, path):
         block = {}
         table_number = 'INIT'
-        for name, content in self.tag_items(path):
-            if name == 'TERM' or name == 'TERE':
-                for k, v in content.items():
-                    block[k] = v
-            elif name == 'TBLN':
-                if bool(block):
-                    yield (table_number, block)
-                block = {}
-                table_number = int(content)
-            elif name == 'runtime':
-                yield ('runtime', {'total': content})
+        starttime = None
+        parse = False
+        for section in self.tag_items(path):
+            if isinstance(section, VersionSection):
+                if 'nonmem_version' not in block.keys():
+                    version_number = section.version
+                    block['nonmem_version'] = section.version
+                    parse = NONMEMResultsFile.supported_version(version_number)
+            elif isinstance(section, StartTimeSection):
+                starttime = section
+            elif isinstance(section, EndTimeSection):
+                if not parse or starttime is None:
+                    continue
+                _starttime = NONMEMResultsFile.parse_runtime(*starttime.rows)
+                if _starttime is None:
+                    continue
+                _endtime = NONMEMResultsFile.parse_runtime(*section.rows[2:])
+                if _endtime is None:
+                    continue
+                runtime = (_endtime - _starttime).total_seconds()
+                yield ('runtime', {'total': runtime})
+            elif isinstance(section, ExecSection):
+                self.log_items('exec', section.rows)
+            elif isinstance(section, MethSection):
+                self.log_items('METH', section.rows)
+            elif isinstance(section, ProgramTerminatedByObjSection):
+                self.log_items('0PROGRAM TERMINATED BY OBJ', section.rows)
+            elif isinstance(section, TermSection):
+                self.log_items('TERM', section.rows)
+                if not parse:
+                    continue
+                content = NONMEMResultsFile.parse_termination(section.rows)
+                block.update(asdict(content))
+            elif isinstance(section, TereSection):
+                if not parse:
+                    continue
+                content = NONMEMResultsFile.parse_tere(section.rows)
+                block.update(asdict(content))
+            elif isinstance(section, KeyValueSection):
+                if not parse:
+                    continue
+                if section.key == 'TBLN':
+                    if bool(block):
+                        yield (table_number, block)
+                    block = {}
+                    table_number = int(section.value)
+                else:
+                    # If already set then it means TBLN was missing, probably $SIM, skip
+                    block.setdefault(section.key, section.value)
             else:
-                # If already set then it means TBLN was missing, probably $SIM, skip
-                if name not in block.keys():
-                    block[name] = content
+                raise NotImplementedError(section)
         if bool(block):
             yield (table_number, block)
