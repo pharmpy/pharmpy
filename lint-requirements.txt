@@ -44,5 +44,5 @@ rich==14.2.0
 SecretStorage==3.5.0
 tomli==2.3.0
 typing-extensions==4.15.0
-urllib3==2.5.0
+urllib3==2.6.0
 zipp==3.23.0
