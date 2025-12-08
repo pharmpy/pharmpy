@@ -1139,9 +1139,8 @@ def _find_pd_statements(model, g):
     inds = {R_idx}
     for symb in symbs:
         idx = model.statements.find_assignment_index(symb)
-        if idx in direct:
-            continue
-        inds.add(idx)
+        if idx not in direct:
+            inds.add(idx)
     return inds
 
 

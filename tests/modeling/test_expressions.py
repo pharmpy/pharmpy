@@ -730,18 +730,18 @@ def test_get_individual_parameters_drug_metabolite_models(func, level, dv, expec
 @pytest.mark.parametrize(
     ('type', 'pdp_kind', 'pd_kind', 'expected'),
     (
-        ('pd', None, 'linear', {'B', 'SLOPE'}),
-        ('pd', None, 'emax', {'B', 'EC_50', 'E_MAX'}),
-        ('pd', None, 'sigmoid', {'N', 'B', 'EC_50', 'E_MAX'}),
-        ('pd', 'hyperbolic', 'linear', {'B', 'SLOPE', 'T50'}),
-        ('pd', 'hyperbolic', 'emax', {'B', 'EC_50', 'E_MAX', 'T50'}),
-        ('pd', 'hyperbolic', 'sigmoid', {'N', 'B', 'EC_50', 'E_MAX', 'T50'}),
-        ('kpd', None, 'linear', {'B', 'SLOPE', 'KE'}),
-        ('kpd', None, 'emax', {'B', 'EDK_50', 'E_MAX', 'KE'}),
-        ('kpd', None, 'sigmoid', {'N', 'B', 'EDK_50', 'E_MAX', 'KE'}),
-        ('kpd', 'hyperbolic', 'linear', {'B', 'SLOPE', 'T50', 'KE'}),
-        ('kpd', 'hyperbolic', 'emax', {'B', 'EDK_50', 'E_MAX', 'T50', 'KE'}),
-        ('kpd', 'hyperbolic', 'sigmoid', {'N', 'B', 'EDK_50', 'E_MAX', 'T50', 'KE'}),
+        ('pd', None, 'linear', ['B', 'SLOPE']),
+        ('pd', None, 'emax', ['B', 'EC_50', 'E_MAX']),
+        ('pd', None, 'sigmoid', ['N', 'B', 'EC_50', 'E_MAX']),
+        ('pd', 'hyperbolic', 'linear', ['B', 'SLOPE', 'T50']),
+        ('pd', 'hyperbolic', 'emax', ['B', 'EC_50', 'E_MAX', 'T50']),
+        ('pd', 'hyperbolic', 'sigmoid', ['N', 'B', 'EC_50', 'E_MAX', 'T50']),
+        ('kpd', None, 'linear', ['B', 'SLOPE', 'KE']),
+        ('kpd', None, 'emax', ['B', 'EDK_50', 'E_MAX', 'KE']),
+        ('kpd', None, 'sigmoid', ['N', 'B', 'EDK_50', 'E_MAX', 'KE']),
+        ('kpd', 'hyperbolic', 'linear', ['B', 'SLOPE', 'T50', 'KE']),
+        ('kpd', 'hyperbolic', 'emax', ['B', 'EDK_50', 'E_MAX', 'T50', 'KE']),
+        ('kpd', 'hyperbolic', 'sigmoid', ['N', 'B', 'EDK_50', 'E_MAX', 'T50', 'KE']),
     ),
     ids=repr,
 )
@@ -758,7 +758,7 @@ def test_get_individual_parameters_pd_models(
     if pdp_kind:
         model = add_placebo_model(model, pdp_kind)
     model = set_direct_effect(model, pd_kind, variable)
-    assert set(get_individual_parameters(model)) == expected
+    assert set(get_individual_parameters(model)) == set(expected)
 
 
 @pytest.mark.parametrize(
