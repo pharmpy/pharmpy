@@ -10,14 +10,13 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Optional, Union, get_args, get_origin, get_type_hints
 
-from lark import UnexpectedToken
-
 import pharmpy
 import pharmpy.tools.modelfit
 import pharmpy.workflows.results
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_aic,
@@ -33,12 +32,7 @@ from pharmpy.modeling import (
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
-from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features, parse
-from pharmpy.tools.mfl.statement.feature.absorption import Absorption
-from pharmpy.tools.mfl.statement.feature.elimination import Elimination
-from pharmpy.tools.mfl.statement.feature.lagtime import LagTime
-from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
-from pharmpy.tools.mfl.statement.feature.transits import Transits
+from pharmpy.modeling.mfl import get_model_features
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import (
     DispatchingError,
@@ -1534,17 +1528,23 @@ def calculate_mbic_penalty(
     if E_p is None and E_q is None:
         raise ValueError('Missing values for `E_p` and `E_q`, either must be specified')
 
+    search_space_mfl, cand_mfl = None, None
     try:
         search_space_mfl, cand_mfl = parse_search_space_modelsearch(candidate_model, search_space)
-        if E_p is None:
-            raise ValueError(
-                'Missing value for `E_p`, must be specified when using structual MFL in `search_space`'
-            )
-        p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
-        q = 0
-        k_q = 0
-    except UnexpectedToken:
+    except ValueError:
         p, k_p, q, k_q = get_penalty_parameters_rvs(candidate_model, search_space)
+
+    if search_space_mfl:
+        if search_space_mfl.iiv or search_space_mfl.iov or search_space_mfl.covariance:
+            p, k_p, q, k_q = get_penalty_parameters_rvs(candidate_model, search_space)
+        else:
+            if E_p is None:
+                raise ValueError(
+                    'Missing value for `E_p`, must be specified when using structural MFL in `search_space`'
+                )
+            p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
+            q = 0
+            k_q = 0
 
     # To avoid domain error
     p = p if k_p != 0 else 1
@@ -1569,86 +1569,101 @@ def _prepare_E_value(e, p, type='p'):
 
 
 def parse_search_space_modelsearch(model, search_space):
-    if isinstance(search_space, str):
-        search_space_mfl = parse(search_space, mfl_class=True)
-    else:
-        search_space_mfl = search_space
-    cand_features = get_model_features(model)
-    cand_mfl = parse(cand_features, mfl_class=True)
-    # FIXME: Workaround to skip covariate effects detected in search space
-    cand_mfl = ModelFeatures.create(
-        absorption=cand_mfl.absorption,
-        elimination=cand_mfl.elimination,
-        transits=cand_mfl.transits,
-        peripherals=cand_mfl.peripherals,
-        lagtime=cand_mfl.lagtime,
-    )
-
+    search_space_mfl = ModelFeatures.create(search_space)
+    cand_mfl = get_model_features(model)
     return search_space_mfl, cand_mfl
 
 
 def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
     p, k_p = 0, 0
-    for attr_name, attr in vars(cand_mfl).items():
-        if not attr:
-            continue
-        attr_search_space = getattr(search_space_mfl, attr_name)
-        if isinstance(attr, tuple):
-            assert len(attr) == 1 and len(attr_search_space) == 1
-            attr, attr_search_space = attr[0], attr_search_space[0]
 
-        if len(attr_search_space) == 1:
-            continue
+    penalty_funcs = [
+        _get_absorption_penalty,
+        _get_transits_penalty,
+        _get_lagtime_penalty,
+        _get_elimination_penalty,
+        _get_peripherals_penalty,
+    ]
+    for func in penalty_funcs:
+        p_func, k_p_func = func(search_space_mfl, cand_mfl)
+        p += p_func
+        k_p += k_p_func
 
-        if isinstance(attr, Absorption):
-            abs_search_space = [mode.name for mode in attr_search_space.modes]
-            if 'SEQ-ZO-FO' in abs_search_space:
-                p_attr = 1
-            else:
-                p_attr = 0
-            abs_type = attr.modes[0].name
-            if abs_type == 'SEQ-ZO-FO':
-                k_p_attr = 1
-            else:
-                k_p_attr = 0
-            if 'INST' in abs_search_space:
-                p_attr += 1
-                if abs_type != 'INST':
-                    k_p_attr += 1
-        elif isinstance(attr, Transits):
+    return p, k_p
 
-            def _has_depot(attr):
-                return 'DEPOT' in [mode.name for mode in attr.depot]
 
-            if _has_depot(attr_search_space.eval):
-                p_attr = len([n for n in attr_search_space.counts if n > 0])
-                if _has_depot(attr):
-                    k_p_attr = 1 if attr.counts[0] > 0 else 0
-                else:
-                    k_p_attr = 0
-            else:
-                p_attr = 0
-                k_p_attr = 0
-        elif isinstance(attr, LagTime):
-            p_attr = 1
-            k_p_attr = 1 if attr.modes[0].name == 'ON' else 0
-        elif isinstance(attr, Elimination):
-            attr_names = [mode.name for mode in attr_search_space.modes]
-            sort_val = {'FO': 0, 'MM': 1, 'MIX-FO-MM': 2}
-            attr_names.sort(key=lambda x: sort_val[x])
-            p_attr = len(attr_names) - 1
-            elim_type = attr.modes[0].name
-            k_p_attr = list(attr_names).index(elim_type)
-        elif isinstance(attr, Peripherals):
-            # FIXME: This will not work with e.g. `PERIPHERALS([0,2])`
-            p_attr = len(attr_search_space) - 1
-            k_p_attr = attr.counts[0]
-        else:
-            raise ValueError(f'MFL attribute of type `{type(attr)}` not supported.')
+def _get_absorption_penalty(mfl_full, mfl_cand):
+    absorption = mfl_full.absorption
+    if len(absorption) <= 1:
+        return 0, 0
+    absorption_types = [abs.type for abs in absorption]
+    if 'SEQ-ZO-FO' in absorption_types:
+        p = 1
+    else:
+        p = 0
+    if mfl_cand.absorption:
+        a = mfl_cand.absorption[0]
+        k_p = 1 if a.type == 'SEQ-ZO-FO' else 0
+    else:
+        k_p = 0
+    return p, k_p
 
-        p += p_attr
-        k_p += k_p_attr
 
+def _get_transits_penalty(mfl_full, mfl_cand):
+    transits = mfl_full.transits
+    if len(transits) <= 1:
+        return 0, 0
+
+    contributing_transits = [
+        transit for transit in transits if transit.depot and transit.number > 0
+    ]
+    p = len(contributing_transits)
+
+    if mfl_cand.transits:
+        t = mfl_cand.transits[0]
+        k_p = 1 if t.depot and t.number > 0 else 0
+    else:
+        k_p = 0
+
+    return p, k_p
+
+
+def _get_lagtime_penalty(mfl_full, mfl_cand):
+    lagtime = mfl_full.lagtime
+    if len(lagtime) <= 1:
+        return 0, 0
+    p = 1
+    if mfl_cand.lagtime:
+        k_p = 1 if mfl_cand.lagtime[0].on else 0
+    else:
+        k_p = 0
+    return p, k_p
+
+
+def _get_elimination_penalty(mfl_full, mfl_cand):
+    elimination = mfl_full.elimination
+    if len(elimination) <= 1:
+        return 0, 0
+    elimination_types = [elim.type for elim in elimination]
+    if 'MIX-FO-MM' in elimination_types:
+        p = 1
+    else:
+        p = 0
+    if mfl_cand.elimination:
+        e = mfl_cand.elimination[0]
+        k_p = 1 if e.type == 'MIX-FO-MM' else 0
+    else:
+        k_p = 0
+    return p, k_p
+
+
+def _get_peripherals_penalty(mfl_full, mfl_cand):
+    peripherals = mfl_full.peripherals
+    if len(peripherals) <= 1:
+        return 0, 0
+    number_of_peripherals = {p.number for p in peripherals if p.number != 0}
+    p = max(number_of_peripherals)
+    k_p = mfl_cand.peripherals[0].number if mfl_cand.peripherals else 0
     return p, k_p
 
 

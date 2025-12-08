@@ -6,6 +6,7 @@ import pytest
 import pharmpy
 from pharmpy.deps import numpy as np
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
     add_iiv,
     add_iov,
@@ -26,7 +27,6 @@ from pharmpy.modeling import (
     split_joint_distribution,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
-from pharmpy.tools.mfl.parse import parse
 from pharmpy.tools.run import (
     _create_metadata_tool,
     calculate_mbic_penalty,
@@ -731,14 +731,14 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 1, 0),
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(ZO)', 1, 0),
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 1, 1),
-        ('ABSORPTION([INST,FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(INST)', 2, 0),
-        ('ABSORPTION([INST,FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 2, 1),
-        ('ABSORPTION([INST,FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 2, 2),
-        ('ELIMINATION([FO,MM])', 'ELIMINATION(FO)', 1, 0),
-        ('ELIMINATION([FO,MM])', 'ELIMINATION(MM)', 1, 1),
-        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(FO)', 2, 0),
-        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MM)', 2, 1),
-        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 2, 2),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', '', 1, 0),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 1, 0),
+        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 1, 1),
+        ('ELIMINATION([FO,MM])', 'ELIMINATION(FO)', 0, 0),
+        ('ELIMINATION([FO,MM])', 'ELIMINATION(MM)', 0, 0),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(FO)', 1, 0),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MM)', 1, 0),
+        ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(MIX-FO-MM)', 1, 1),
         ('PERIPHERALS(0..2)', 'PERIPHERALS(0)', 2, 0),
         ('PERIPHERALS(0..2)', 'PERIPHERALS(1)', 2, 1),
         ('PERIPHERALS(0..2)', 'PERIPHERALS(2)', 2, 2),
@@ -788,28 +788,28 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
         (
             'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
             'PERIPHERALS(1)',
-            3,
+            2,
             1,
         ),
         (
             'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
             'PERIPHERALS(1);ELIMINATION(MM)',
-            3,
             2,
+            1,
         ),
         (
             'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
             'PERIPHERALS(1);ELIMINATION(MIX-FO-MM)',
-            3,
-            3,
+            2,
+            2,
         ),
     ],
 )
 def test_get_mbic_penalty_parameters_mfl(
     search_space, candidate_features, p_expected, k_p_expected
 ):
-    search_space_mfl = parse(search_space, mfl_class=True)
-    cand_mfl = parse(candidate_features, mfl_class=True)
+    search_space_mfl = ModelFeatures.create(search_space)
+    cand_mfl = ModelFeatures.create(candidate_features)
     assert get_penalty_parameters_mfl(search_space_mfl, cand_mfl) == (p_expected, k_p_expected)
 
 
