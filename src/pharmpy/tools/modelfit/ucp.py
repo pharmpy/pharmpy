@@ -10,10 +10,10 @@ def scale_matrix(A):
     # The scale matrix will be used in descaling of ucps
     L = np.linalg.cholesky(A)
     v1 = np.diag(L)
-    v2 = v1 / np.exp(0.1)
+    v2 = v1 * np.exp(-0.1)
     M2 = np.diag(v1)
     M3 = np.diag(v2)
-    S = np.abs(10.0 * (L - M2)) + M3
+    S = 10.0 * (L - M2) + M3
     return S
 
 
