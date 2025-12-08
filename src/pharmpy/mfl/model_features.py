@@ -36,7 +36,11 @@ class ModelFeatures(Immutable):
 
     @classmethod
     def create(cls, features: Iterable[ModelFeature] | str) -> ModelFeatures:
+        if isinstance(features, ModelFeatures):
+            return features
         if isinstance(features, str):
+            if features == '':
+                return ModelFeatures(tuple())
             features = parse(features)
         if not isinstance(features, Iterable):
             raise TypeError(f'Type of `feature` must be an iterable: got {type(features)}')
@@ -326,6 +330,9 @@ class ModelFeatures(Immutable):
             if all(isinstance(x, ModelFeature) and self._contains(x) for x in item):
                 return True
         return False
+
+    def __getitem__(self, item: int) -> ModelFeature:
+        return self.features[item]
 
     def _contains(self, item: ModelFeature):
         if item in self.features:

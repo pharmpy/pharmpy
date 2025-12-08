@@ -229,6 +229,7 @@ def test_create(features, expected):
     mf = ModelFeatures.create(features)
     assert mf.features == tuple(expected)
     assert len(mf) == len(expected)
+    assert ModelFeatures.create(mf) == mf
 
 
 @pytest.mark.parametrize(
@@ -346,6 +347,10 @@ def test_create(features, expected):
                 IOV.create(parameter='CL', fp='exp'),
                 Covariance.create(type='IIV', parameters=['CL', 'VC']),
             ],
+        ),
+        (
+            '',
+            [],
         ),
     ),
 )
@@ -777,30 +782,6 @@ def test_contains(features1, features2, expected):
     assert 1 not in mf1
     assert [1] not in mf1
 
-    # mf1 = ModelFeatures.pk_oral()
-    #
-    # a = Absorption.create('FO')
-    # e = Elimination.create('FO')
-    # mf2 = ModelFeatures.create([a, e])
-    #
-    # assert mf2 in mf1
-    # assert mf1 not in mf2
-    # assert a in mf1 and a in mf2
-    # assert [a, e] in mf1
-    #
-    # c = Covariate.create('CL', 'WGT', 'exp')
-    # assert [c] not in mf1
-    #
-    # mf3 = ModelFeatures.create([a, e, c])
-    # assert mf3 not in mf1
-    #
-    # assert 1 not in mf1
-    #
-    # c_optional = c.replace(optional=True)
-    # mf4 = ModelFeatures.create([a, e, c_optional])
-    # assert c in mf4
-    # assert c_optional not in mf3
-
 
 def test_add():
     a1 = Absorption.create('FO')
@@ -873,6 +854,17 @@ def test_eq():
     assert mf3 == mf4
 
     assert mf1 != 1
+
+
+def test_getitem():
+    a1 = Absorption.create('FO')
+    mf = ModelFeatures.create([a1])
+    assert mf[0] == a1
+
+    a2 = Absorption.create('ZO')
+    mf += a2
+    assert mf[0] == a1
+    assert mf[-1] == a2
 
 
 @pytest.mark.parametrize(
