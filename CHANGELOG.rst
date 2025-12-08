@@ -120,7 +120,7 @@ New features
 * Add :code:`modeling.infer_datatypes` to infer and check if data columns can be converted a simpler datatype (e.g. int32)
 * Add :code:`modeling.set_n_transit_compartments`
 * Add :code:`modeling.create_basic_pd_model`
-* Add :code:`modeling.export_model_files` to export all estimation tool specific files into one directory
+* Add :code:`export_model_files` to export all estimation tool specific files into one directory
 * Add first version of a VPC tool
 * Add tool ModelRank
 
