@@ -12,7 +12,7 @@ authors = [
     {name='Rikard Nordgren', email='rikard.nordgren@uu.se'}
 ]
 readme = { file = "README.rst", content-type = "text/x-rst" }
-requires-python = '>=3.11'
+requires-python = '>=3.11,!=3.14.1'
 keywords = ["pharmacometrics"]
 dependencies = [
     'lark>=1.1.7',
