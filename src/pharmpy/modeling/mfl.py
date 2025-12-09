@@ -7,6 +7,7 @@ from typing import Callable, Literal, Optional, Sequence, Union
 from pharmpy.deps import pandas as pd
 from pharmpy.mfl import (
     IIV,
+    IOV,
     Absorption,
     Allometry,
     Covariance,
@@ -147,9 +148,9 @@ def _get_bioaval_parameters(model):
 
 
 def get_model_features(
-    model: Model, type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None
+    model: Model, type: Optional[Literal['pk', 'covariates', 'iiv', 'iov', 'covariance']] = None
 ) -> ModelFeatures:
-    if type is not None and type not in ['pk', 'covariates', 'iiv', 'covariance']:
+    if type is not None and type not in ['pk', 'covariates', 'iiv', 'iov', 'covariance']:
         raise ValueError(f'Invalid `type`: {type}')
     features = []
 
@@ -181,7 +182,10 @@ def get_model_features(
                 features.append(Covariate.create(parameter=param, covariate=cov.name, fp=fp, op=op))
 
     if type is None or type == 'iiv':
-        features.extend(_get_iiv(model))
+        features.extend(_get_variability(model, 'iiv'))
+
+    if type is None or type == 'iov':
+        features.extend(_get_variability(model, 'iov'))
 
     if type is None or type == 'covariance':
         iivs = model.random_variables.iiv
@@ -235,10 +239,10 @@ def _get_transits(model):
     return Transits.create(transits, with_depot)
 
 
-def _get_iiv(model):
+def _get_variability(model, type):
     features = []
-    individual_params = get_individual_parameters(model, 'iiv')
-    rvs = model.random_variables.iiv
+    individual_params = get_individual_parameters(model, type)
+    rvs = model.random_variables.iiv if type == 'iiv' else model.random_variables.iov
     for param in individual_params:
         param_statement = model.statements.before_odes.full_expression(param)
         args = param_statement.args
@@ -258,8 +262,9 @@ def _get_iiv(model):
                     fp = 'exp'
         if not fp:
             raise NotImplementedError(f'Could not determine eta distribution: {param_statement}')
-        iiv = IIV.create(param, fp=fp, optional=False)
-        features.append(iiv)
+        opts = {'parameter': param, 'fp': fp, 'optional': False}
+        var = IIV.create(**opts) if type == 'iiv' else IOV.create(**opts)
+        features.append(var)
     return features
 
 

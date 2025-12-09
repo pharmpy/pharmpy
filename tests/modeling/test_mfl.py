@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     add_effect_compartment,
     add_iiv,
     add_indirect_effect,
+    add_iov,
     add_lag_time,
     add_metabolite,
     add_peripheral_compartment,
@@ -253,6 +254,21 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
             ],
             'iiv',
             'IIV(CL,ADD);IIV([MAT,VC],EXP)',
+        ),
+        (
+            [],
+            'iov',
+            '',
+        ),
+        (
+            [partial(add_iov, occ='VISI')],
+            'iov',
+            'IOV([CL,MAT,VC],EXP)',
+        ),
+        (
+            [partial(add_iov, occ='VISI', list_of_parameters='CL')],
+            'iov',
+            'IOV(CL,EXP)',
         ),
         (
             [create_joint_distribution],
