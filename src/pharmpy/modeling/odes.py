@@ -798,10 +798,10 @@ def _get_mm_inits(model: Model, rate_numer, combined):
 
 
 def set_n_transit_compartments(model: Model, keep_depot: bool = True):
-    """Set the n-transit compartments model [1]_ [2]_
+    """Set the n-transit compartments model
 
     This is the absorption delay model where the number of transit compartments is a parameter
-    to be estimated. Initial estimate for absorption rate is
+    to be estimated [1]_ [2]_. Initial estimate for absorption rate is
     set the previous rate if available, otherwise it is set to the time of first observation/2.
     Initial estimate for the number of transit compartments is set to 2.
 
