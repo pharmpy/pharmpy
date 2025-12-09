@@ -10,6 +10,12 @@ any contribution is appreciated. See also :ref:`projects` for project suggestion
 Our community aspires to treat everyone equally and to value all contributions. We have a :doc:`Code of Conduct <code_of_conduct>`
 to foster an open and welcoming environment.
 
+.. toctree::
+   :maxdepth: 1
+
+   Code of Conduct <code_of_conduct>
+   Project Suggestions <projects>
+
 Set up the development environment
 ##################################
 
