@@ -2444,23 +2444,8 @@ def set_ode_solver(
 ):
     """Sets ODE solver to use for model
 
-    Recognized solvers and their corresponding NONMEM advans:
-
-    +----------------------------+------------------+
-    | Solver                     | NONMEM ADVAN     |
-    +============================+==================+
-    | CVODES                     | ADVAN14          |
-    +----------------------------+------------------+
-    | DGEAR                      | ADVAN8           |
-    +----------------------------+------------------+
-    | DVERK                      | ADVAN6           |
-    +----------------------------+------------------+
-    | IDA                        | ADVAN15          |
-    +----------------------------+------------------+
-    | LSODA                      | ADVAN13          |
-    +----------------------------+------------------+
-    | LSODI                      | ADVAN9           |
-    +----------------------------+------------------+
+    The recognized solvers are CVODS, DGEAR, DVERK, IDA, LSODA and LSODI.
+    To see the corresponding NONMEM ADVANs see :ref:`ADVANS`.
 
     Parameters
     ----------

@@ -114,3 +114,27 @@ code will be:
    CL=TVCL*EXP(ETA(CL))
    …
    $OMEGA 0.09 ; IIV_CL
+
+
+.. _ADVANS:
+
+ODE solvers and ADVANs
+----------------------
+
+Pharmpy will use the names of the various numerical ODE solvers in tools and functions handling the solvers, such as :func:`pharmpy.modeling.set_ode_solver`. Here is a table of the corresponding NONMEM ADVANs.
+
++----------------------------+------------------+
+| Solver                     | NONMEM ADVAN     |
++============================+==================+
+| CVODES                     | ADVAN14          |
++----------------------------+------------------+
+| DGEAR                      | ADVAN8           |
++----------------------------+------------------+
+| DVERK                      | ADVAN6           |
++----------------------------+------------------+
+| IDA                        | ADVAN15          |
++----------------------------+------------------+
+| LSODA                      | ADVAN13          |
++----------------------------+------------------+
+| LSODI                      | ADVAN9           |
++----------------------------+------------------+

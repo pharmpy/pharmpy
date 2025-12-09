@@ -197,7 +197,7 @@ To test ``FOCE`` with ``LAPLACE``, simply specify ``LAPLACE`` as input argument 
 Solvers
 ~~~~~~~
 
-Supported solvers are: CVODES, DGEAR, DVERK, IDA, LSODA and LSODI.
+For a list of supported solvers see :func:`pharmpy.modeling.set_ode_solver`.
 
 .. _parameter_uncertainty_methods:
 
