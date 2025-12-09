@@ -90,10 +90,10 @@ The search space
 
 The model feature search space is a set of all possible combinations of model features that is allowed for the final model. The supported 
 features cover absorption, absorption delay, elimination, and distribution. The search space is given as a string with a specific 
-grammar, according to the `Model Feature Language` (MFL) (see :ref:`detailed description<mfl>`). If an attribute is not given, the default
-value for that attribute will be used as seen below. If the input model is not part of the given search space, a base model will be created. This is 
-done by performing the least amount of transformations to the input model in order to make the base model a part of the given search 
-space.
+grammar, according to the `Model Feature Language` (MFL) (see :ref:`detailed description<mfl>`). Since the search space describes
+which models are in scope for the tool, if the input model is not part of said search space a base model within the scope
+needs to be created before starting the search algorithm. If a feature in the model is not in the search space, the default
+value for that feature will be used:
 
 +---------------+-------------------------------+
 | Category      | DEFAULT                       |
@@ -105,18 +105,15 @@ space.
 +---------------+-------------------------------+
 | PERIPHERALS   | :code:`0`                     |
 +---------------+-------------------------------+
-| TRANSITS      | :code:`0`, :code:`DEPOT`      |
+| TRANSITS      | :code:`0`                     |
 |               |                               |
 +---------------+-------------------------------+
 | LAGTIME       | :code:`OFF`                   |
 +---------------+-------------------------------+
 
-The logical flow for the creation of the base model can be seen below. In summary, given an input model and a search space, the first step is 
-to examine if the input model is a part of the search space. If so, the model features for the input model is filtered from the search space. 
-As these are already present in the input model, they are not needed in the search space. After filtration, all transformations that are left will 
-be examined. However, if the input model is not part of the search space, the base model is created by which will be part of the search space. 
-Following this, the model features from the base model is filtered from the search space which leaves the transformations left to be examined.
-
+Given an input model and a search space, the first step of the tool is to check whether the input model is part of the search space. If it is, the
+input model will be used for the subsequent steps in the tool. If the model is not part of the search space, a base model fitting in the search
+space is created. The logical flow for the creation of the base model can be seen below.
 
 .. graphviz::
 
@@ -135,7 +132,7 @@ Following this, the model features from the base model is filtered from the sear
       ];
       
       filter_model [
-        label = "Filter model features from search space";
+        label = "Start model for search";
       ];
       
       create_base [
@@ -149,7 +146,7 @@ Following this, the model features from the base model is filtered from the sear
       input_ss -> filter_model [label = "Input model &isin; search space"];
     }
     
-Some examples of this workflow :
+Some examples of input models and which changes would be made:
 
 +---------------------------+------------------+---------------------+--------------------------+
 | Search space              | Input model      | Base model          | Transformations to apply |
@@ -192,34 +189,6 @@ below.
 | ``'reduced_stepwise'``    | Add one feature in each step in all possible orders. After each feature layer, choose  |
 |                           | best model between models with same features                                           |
 +---------------------------+----------------------------------------------------------------------------------------+
-
-Common behaviours between algorithms
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-Feature combination exclusions
-------------------------------
-
-Some combinations of features are excluded in algorithms that are performed stepwise, the following combinations are
-never run:
-
-+-----------------------+-------------------+
-| Feature A             | Feature B         |
-+=======================+===================+
-| ABSORPTION(ZO)        | TRANSITS          |
-+-----------------------+-------------------+
-| ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
-+-----------------------+-------------------+
-| ABSORPTION(SEQ-ZO-FO) | LAGTIME(ON)       |
-+-----------------------+-------------------+
-| ABSORPTION(INST)      | LAGTIME(ON)       |
-+-----------------------+-------------------+
-| ABSORPTION(INST)      | TRANSITS          |
-+-----------------------+-------------------+
-| LAGTIME(ON)           | TRANSITS          |
-+-----------------------+-------------------+
-
-Additionally, peripheral compartments are always run sequentially, i.e. the algorithm will never add more than one
-compartment at a given step. This is done in order to allow for better initial estimates from previous peripherals.
 
 Exhaustive search
 ~~~~~~~~~~~~~~~~~
@@ -343,6 +312,41 @@ added.
         s11 -> s14
         s12 -> s15
     }
+
+
+Common behaviours between algorithms
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Some behaviours are common between the algorithms, such as post-processing and which features cannot be combined.
+
+Feature combination exclusions
+------------------------------
+
+Some combinations of features are excluded. Some of them are excluded due to not being compatible pharmacometrically,
+others due to technical limitations of Pharmpy. The following combinations are excluded:
+
++-----------------------+-------------------+
+| Feature A             | Feature B         |
++=======================+===================+
+| ABSORPTION(ZO)        | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | TRANSITS          |
++-----------------------+-------------------+
+| ABSORPTION(SEQ-ZO-FO) | LAGTIME(ON)       |
++-----------------------+-------------------+
+| ABSORPTION(INST)      | LAGTIME(ON)       |
++-----------------------+-------------------+
+| ABSORPTION(INST)      | TRANSITS          |
++-----------------------+-------------------+
+| LAGTIME(ON)           | TRANSITS          |
++-----------------------+-------------------+
+
+Stepwise addition of peripherals
+--------------------------------
+
+In stepwise algorithms, peripheral compartments are always run sequentially, i.e. the algorithm will never add more
+than one compartment at a given step. This is done in order to allow for better initial estimates from previous
+peripherals.
 
 
 .. _iiv_strategies_modelsearch:
