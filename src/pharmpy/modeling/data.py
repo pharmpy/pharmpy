@@ -2180,7 +2180,7 @@ def read_dataset_from_datainfo(
         )
         # This assumes a PK model
         df = filter_observations(df, datainfo)
-        df = df.reset_index().set_index(['index'])
+        df = df.reset_index(drop=True)
     else:
         df = pd.read_csv(
             datainfo.path,
