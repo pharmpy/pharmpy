@@ -36,7 +36,7 @@ Arguments
 
 The AMD arguments used for TMDD models can be seen below. Some are mandatory for this type of model
 building while others are optional, and some AMD arguments are not used for this model type. If any
-of the mandatory arguments is missing, the program till raise an error.
+of the mandatory arguments is missing, the program will raise an error.
 
 .. note::
    The name of the DVID column must be "DVID".
