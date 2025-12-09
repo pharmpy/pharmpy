@@ -134,13 +134,13 @@ def test_create_candidate_model_entry(
 @pytest.mark.parametrize(
     'funcs, list_of_parameters, search_space',
     [
-        ([], None, 'IIV?([CL,MAT,VC],exp);IOV?([CL,MAT,VC])'),
-        ([], ['ETA_1', 'ETA_2', 'ETA_3'], 'IIV?([CL,MAT,VC],exp);IOV?([CL,MAT,VC])'),
-        ([], ['ETA_1'], 'IIV?([CL],exp);IOV?([CL])'),
+        ([], None, 'IIV?([CL,MAT,VC],EXP);IOV?([CL,MAT,VC],EXP)'),
+        ([], ['ETA_1', 'ETA_2', 'ETA_3'], 'IIV?([CL,MAT,VC],EXP);IOV?([CL,MAT,VC],EXP)'),
+        ([], ['ETA_1'], 'IIV?(CL,EXP);IOV?(CL,EXP)'),
         (
             [add_peripheral_compartment],
             None,
-            'IIV?([CL,MAT,QP1,VC,VP1],exp);IOV?([CL,MAT,QP1,VC,VP1])',
+            'IIV?([CL,MAT,QP1,VC,VP1],EXP);IOV?([CL,MAT,QP1,VC,VP1],EXP)',
         ),
     ],
 )

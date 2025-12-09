@@ -24,10 +24,8 @@ from pharmpy.modeling import (
     check_high_correlations,
     check_parameters_near_bounds,
     get_omegas,
-    get_parameter_rv,
     get_sigmas,
     get_thetas,
-    has_random_effect,
     read_model,
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
@@ -1528,18 +1526,33 @@ def calculate_mbic_penalty(
     if E_p is None and E_q is None:
         raise ValueError('Missing values for `E_p` and `E_q`, either must be specified')
 
-    search_space_mfl, cand_mfl = None, None
     try:
-        search_space_mfl, cand_mfl = parse_search_space_modelsearch(candidate_model, search_space)
+        search_space_mfl = ModelFeatures.create(search_space)
     except ValueError:
-        p, k_p, q, k_q = get_penalty_parameters_rvs(candidate_model, search_space)
+        raise ValueError(f'Could not parse `search_space`: {search_space}')
 
-    if search_space_mfl:
-        if E_p is None:
-            raise ValueError(
-                'Missing value for `E_p`, must be specified when using structural MFL in `search_space`'
-            )
-        p, k_p, q, k_q = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
+    if (
+        search_space_mfl.filter(filter_on='pk') or search_space_mfl.iiv or search_space_mfl.iov
+    ) and E_p is None:
+        raise ValueError(
+            'Missing value for `E_p`, must be specified when using structural or IIV/IOV MFL in `search_space`'
+        )
+    if search_space_mfl.covariance and E_q is None:
+        raise ValueError(
+            'Missing value for `E_q`, must be specified when using covariance MFL in `search_space`'
+        )
+
+    cand_mfl = ModelFeatures.create([])
+    if search_space_mfl.filter(filter_on='pk'):
+        cand_mfl += get_model_features(candidate_model, 'pk')
+    if search_space_mfl.iiv:
+        cand_mfl += get_model_features(candidate_model, 'iiv')
+    if search_space_mfl.iov:
+        cand_mfl += get_model_features(candidate_model, 'iov')
+    if search_space_mfl.covariance:
+        cand_mfl += get_model_features(candidate_model, 'covariance')
+
+    p, k_p, q, k_q = get_mbic_penalty_parameters(search_space_mfl, cand_mfl)
 
     # To avoid domain error
     p = p if k_p != 0 else 1
@@ -1563,13 +1576,7 @@ def _prepare_E_value(e, p, type='p'):
     return e
 
 
-def parse_search_space_modelsearch(model, search_space):
-    search_space_mfl = ModelFeatures.create(search_space)
-    cand_mfl = get_model_features(model)
-    return search_space_mfl, cand_mfl
-
-
-def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
+def get_mbic_penalty_parameters(search_space_mfl, cand_mfl):
     p, k_p = 0, 0
 
     penalty_funcs = [
@@ -1688,52 +1695,3 @@ def _get_covariance_penalty(mfl_full, mfl_cand):
     cov_cand = mfl_cand.covariance - cov_forced
     q, k_q = len(cov_optional), len(cov_cand)
     return q, k_q
-
-
-def get_penalty_parameters_rvs(cand_model, search_space):
-    iiv_params, iov_params, cov_params = parse_search_space_rvs(search_space)
-    p = len(iiv_params) + len(iov_params)
-    k_p = get_k_p(cand_model, iiv_params, 'iiv') + get_k_p(cand_model, iov_params, 'iov')
-    if cov_params:
-        q = int((len(cov_params) * (len(cov_params) - 1)) / 2)
-        k_q = get_k_q(cand_model, cov_params)
-    else:
-        q, k_q = 0, 0
-
-    return p, k_p, q, k_q
-
-
-def parse_search_space_rvs(search_space):
-    iiv_params, iov_params, cov_params = [], [], []
-    for subexpr in search_space.split(';'):
-        assert subexpr.startswith('IIV') or subexpr.startswith('IOV') or subexpr.startswith('COV')
-        if '?' not in subexpr:
-            continue
-        if subexpr.startswith('COV'):
-            pattern = r'COV\?\(\[*([\w,]*)\]*\)'
-            params = re.match(pattern, subexpr).group(1).split(',')
-            cov_params.extend(params)
-        else:
-            if subexpr.startswith('IIV'):
-                pattern = r'IIV\?\(\[*([\w,]*)\]*,\w+\)'
-            else:
-                pattern = r'IOV\?\(\[*([\w,]*)\]*\)'
-            params = re.match(pattern, subexpr).group(1).split(',')
-            if subexpr.startswith('IIV'):
-                iiv_params.extend(params)
-            else:
-                iov_params.extend(params)
-    return iiv_params, iov_params, cov_params
-
-
-def get_k_p(model, params, level):
-    params = [p for p in params if has_random_effect(model, p, level)]
-    return len(params)
-
-
-def get_k_q(model, params):
-    param_rvs = [get_parameter_rv(model, p) for p in params]
-    param_rvs = [item for sublist in param_rvs for item in sublist]
-    rvs = model.random_variables[param_rvs]
-    cov_params = [p for p in rvs.parameter_names if p not in rvs.variance_parameters]
-    return len(cov_params)

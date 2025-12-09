@@ -9,6 +9,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.set.subsets import non_empty_proper_subsets, non_empty_subsets
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Assignment, Model, RandomVariables
 from pharmpy.modeling import (
     add_iov,
@@ -269,11 +270,13 @@ def task_brute_force_search(
 
 
 def get_mbic_search_space(model, list_of_parameters):
+    # FIXME: this function be removed once IOVSearch takes a search space as input
     params = [get_rv_parameters(model, p) for p in list_of_parameters]
     params = _flatten_list(params)
     params_str = ','.join(sorted(params))
-    search_space = f'IIV?([{params_str}],exp);IOV?([{params_str}])'
-    return search_space
+    search_space_str = f'IIV?([{params_str}],exp);IOV?([{params_str}],exp)'
+    search_space = ModelFeatures.create(search_space_str)
+    return repr(search_space)
 
 
 def prepare_list_of_parameters(input_model, list_of_parameters):

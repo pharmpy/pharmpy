@@ -715,24 +715,32 @@ def test_get_ref_model(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     'funcs, kwargs, search_space',
     [
-        ([], {'keep': [], 'E_p': 1, 'E_q': None}, 'IIV?([CL,MAT,VC],exp)'),
-        ([], {'keep': [], 'E_p': 1, 'E_q': 1}, 'IIV?([CL,MAT,VC],exp);COV?([CL,MAT,VC])'),
-        ([], {'keep': [], 'E_p': None, 'E_q': 1}, 'IIV([CL,MAT,VC],exp);COV?([CL,MAT,VC])'),
-        ([], {'keep': ['CL'], 'E_p': 1, 'E_q': None}, 'IIV([CL],exp);IIV?([MAT,VC],exp)'),
+        ([], {'keep': [], 'E_p': 1, 'E_q': None}, 'IIV?([CL,MAT,VC],EXP)'),
+        (
+            [],
+            {'keep': [], 'E_p': 1, 'E_q': 1},
+            'IIV?([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
+        ),
+        (
+            [],
+            {'keep': [], 'E_p': None, 'E_q': 1},
+            'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
+        ),
+        ([], {'keep': ['CL'], 'E_p': 1, 'E_q': None}, 'IIV(CL,EXP);IIV?([MAT,VC],EXP)'),
         (
             [],
             {'keep': ['CL'], 'E_p': 1, 'E_q': 1},
-            'IIV([CL],exp);IIV?([MAT,VC],exp);COV?([CL,MAT,VC])',
+            'IIV(CL,EXP);IIV?([MAT,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
         ),
         (
             [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
             {'keep': [], 'E_p': 1, 'E_q': 1},
-            'IIV?([CL,MAT,QP1,VC,VP1],exp);COV?([CL,MAT,QP1,VC,VP1])',
+            'IIV?([CL,MAT,QP1,VC,VP1],EXP);COVARIANCE?(IIV,[CL,MAT,QP1,VC,VP1])',
         ),
         (
             [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
             {'keep': ['CL'], 'E_p': 1, 'E_q': 1},
-            'IIV([CL],exp);IIV?([MAT,QP1,VC,VP1],exp);COV?([CL,MAT,QP1,VC,VP1])',
+            'IIV(CL,EXP);IIV?([MAT,QP1,VC,VP1],EXP);COVARIANCE?(IIV,[CL,MAT,QP1,VC,VP1])',
         ),
     ],
 )

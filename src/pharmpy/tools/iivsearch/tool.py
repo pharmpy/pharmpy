@@ -14,7 +14,6 @@ from pharmpy.modeling import (
     create_joint_distribution,
     find_clearance_parameters,
     fix_parameters,
-    get_individual_parameters,
     has_random_effect,
     unfix_parameters,
 )
@@ -748,23 +747,20 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno)
 
 
 def get_mbic_search_space(model, keep, E_p, E_q):
-    params = get_individual_parameters(model, 'iiv')
-    if E_p:
-        params_keep = [p for p in params if p in keep]
+    # FIXME: this function be removed once IIVSearch takes a search space as input
+    search_space = get_model_features(model)
+    if E_p is not None:
+        iivs = [
+            iiv.replace(optional=True) if iiv.parameter not in keep else iiv
+            for iiv in search_space.iiv
+        ]
     else:
-        params_keep = params.copy()
-    search_space_str = []
-    if params_keep:
-        search_space_str.append(f'IIV([{",".join(params_keep)}],exp)')
-    if E_p:
-        search_space_str.append(
-            f'IIV?([{",".join(p for p in params if p not in params_keep)}],exp)'
-        )
-    if E_q:
-        search_space_str.append(f'COV?([{",".join(params)}])')
-
-    search_space = ';'.join(search_space_str)
-    return search_space
+        iivs = search_space.iiv
+    mf = ModelFeatures.create(iivs)
+    if E_q is not None:
+        cov_mfl = f'COVARIANCE?(IIV,[{",".join(iiv.parameter for iiv in iivs)}])'
+        mf += ModelFeatures.create(cov_mfl)
+    return repr(mf)
 
 
 def modify_summary_tool(summary_tool, first_model_name):

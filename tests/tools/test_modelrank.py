@@ -396,7 +396,7 @@ def test_evaluate_strictness(
             {
                 'ref_value': None,
                 'rank_type': 'mbic_mixed',
-                'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
+                'search_space': 'IIV?([CL,VC,MAT],exp);COVARIANCE?(IIV,[CL,VC,MAT])',
                 'E': (1.0, 1.0),
             },
             {
@@ -550,7 +550,7 @@ def test_perform_lrt(testdata, load_model_for_test, funcs, ofv, alpha, ref_dict)
             'mbic_iiv',
             {
                 'alpha': None,
-                'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])',
+                'search_space': 'IIV?([CL,VC,MAT],exp);COVARIANCE?(IIV,[CL,VC,MAT])',
                 'E': (1.0, 1.0),
             },
             'model1',

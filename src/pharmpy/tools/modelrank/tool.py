@@ -1,4 +1,3 @@
-import re
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
@@ -6,8 +5,8 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
-from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows import (
     Context,
     ModelEntry,
@@ -20,9 +19,7 @@ from pharmpy.workflows import (
 
 from ...modeling import add_parameter_uncertainty_step, set_description, set_name
 from ..common import concat_summaries
-from ..mfl.parse import parse as mfl_parse
 from ..modelfit import create_fit_workflow
-from ..modelsearch.filter import mfl_filtering
 from ..run import summarize_modelfit_results_from_entries
 from .ranking import get_rank_name, get_rank_values, rank_model_entries
 from .strictness import get_strictness_expr, get_strictness_predicates, get_strictness_predicates_me
@@ -497,34 +494,11 @@ def validate_input(
             )
 
     if search_space:
-        # FIXME: will be less messy once IIV/IOV is implemented in MFL
         if isinstance(search_space, str):
             try:
-                statements = mfl_parse(search_space)
-            except:  # noqa E722
-                pattern_cov = r'COV\?*\(\[([\w,]*)\]*\)'
-                pattern_var = r'(IIV|IOV)\?*\(\[(\w+,*)+\],\w+\)'
-                if not re.match(pattern_cov, search_space) and not re.match(
-                    pattern_var, search_space
-                ):
-                    raise ValueError(
-                        f'Invalid `search_space`, could not be parsed: "{search_space}"'
-                    )
-                else:
-                    statements = None
-        else:
-            statements = search_space.filter("pk").mfl_statement_list()
-
-        if statements:
-            modelsearch_statements = mfl_filtering(statements, 'modelsearch')
-            bad_statements = list(
-                filter(lambda statement: statement not in modelsearch_statements, statements)
-            )
-
-            if bad_statements:
-                raise ValueError(
-                    f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
-                )
+                ModelFeatures.create(search_space)
+            except ValueError:
+                raise ValueError(f'Invalid `search_space`: {search_space}')
 
     if rank_type.startswith('mbic'):
         if search_space is None:

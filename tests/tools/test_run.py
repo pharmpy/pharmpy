@@ -15,7 +15,6 @@ from pharmpy.modeling import (
     add_pk_iiv,
     create_basic_pk_model,
     create_joint_distribution,
-    fix_parameters,
     load_example_model,
     read_model,
     remove_iiv,
@@ -30,12 +29,10 @@ from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.run import (
     _create_metadata_tool,
     calculate_mbic_penalty,
-    get_penalty_parameters_mfl,
-    get_penalty_parameters_rvs,
+    get_mbic_penalty_parameters,
     import_tool,
     is_strictness_fulfilled,
     load_example_modelfit_results,
-    parse_search_space_rvs,
     rank_models,
     rank_models_from_entries,
     summarize_errors_from_entries,
@@ -614,7 +611,7 @@ def test_strictness_parameters(testdata, load_model_for_test):
         ),
         (
             [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
-            'IIV?([CL,VC,MAT,VP1,QP1],exp);COV?([CL,VC,MAT,VP1,QP1])',
+            'IIV?([CL,VC,MAT,VP1,QP1],exp);COVARIANCE?(IIV,[CL,VC,MAT,VP1,QP1])',
             {},
             [
                 partial(remove_iiv, to_remove=['ETA_VP1']),
@@ -634,7 +631,7 @@ def test_strictness_parameters(testdata, load_model_for_test):
         ),
         (
             [partial(add_iov, occ='FA1')],
-            'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])',
+            'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT],exp)',
             {},
             [partial(remove_iov, to_remove='ETA_IOV_1_1'), partial(remove_iiv, to_remove='ETA_CL')],
             [4.39, 4.39],
@@ -706,11 +703,19 @@ def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_func
             '`E_p` cannot be bigger than `p`',
         ),
         (
-            {'search_space': 'COV?([CL,VC,MAT])', 'E_p': None, 'E_q': None},
+            {
+                'search_space': 'IIV?([CL,MAT,VC]);COVARIANCE?(IIV,[CL,VC,MAT])',
+                'E_p': None,
+                'E_q': None,
+            },
             'Missing values for `E_p` and `E_q`',
         ),
         (
-            {'search_space': 'COV?([CL,VC,MAT])', 'E_q': 10},
+            {'search_space': 'COVARIANCE?(IIV,[CL,VC,MAT])', 'E_q': None},
+            'Missing value for `E_q`',
+        ),
+        (
+            {'search_space': 'COVARIANCE?(IIV,[CL,VC,MAT])', 'E_q': 10},
             '`E_q` cannot be bigger than `q`',
         ),
     ],
@@ -921,7 +926,7 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
         ),
     ],
 )
-def test_get_mbic_penalty_parameters_mfl(
+def test_get_mbic_penalty_parameters(
     search_space,
     candidate_features,
     p,
@@ -931,175 +936,4 @@ def test_get_mbic_penalty_parameters_mfl(
 ):
     search_space_mfl = ModelFeatures.create(search_space)
     cand_mfl = ModelFeatures.create(candidate_features)
-    assert get_penalty_parameters_mfl(search_space_mfl, cand_mfl) == (p, k_p, q, k_q)
-
-
-@pytest.mark.parametrize(
-    (
-        'base_funcs',
-        'kwargs',
-        'candidate_funcs',
-        'p_expected',
-        'k_p_expected',
-        'q_expected',
-        'k_q_expected',
-    ),
-    [
-        ([], {'search_space': 'IIV?([CL,VC,MAT],exp)'}, [], 3, 3, 0, 0),
-        (
-            [],
-            {'search_space': 'IIV?([CL,VC,MAT],exp)'},
-            [partial(remove_iiv, to_remove=['ETA_CL'])],
-            3,
-            2,
-            0,
-            0,
-        ),
-        (
-            [split_joint_distribution],
-            {'search_space': 'IIV?([CL,VC,MAT],exp)'},
-            [partial(remove_iiv, to_remove=['ETA_CL'])],
-            3,
-            2,
-            0,
-            0,
-        ),
-        ([], {'search_space': 'IIV([CL],exp);IIV?([VC,MAT],exp)'}, [], 2, 2, 0, 0),
-        (
-            [create_joint_distribution],
-            {'search_space': 'IIV([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
-            [],
-            0,
-            0,
-            3,
-            3,
-        ),
-        (
-            [create_joint_distribution],
-            {'search_space': 'IIV([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
-            [partial(remove_iiv, to_remove=['ETA_CL'])],
-            0,
-            0,
-            3,
-            1,
-        ),
-        (
-            [create_joint_distribution],
-            {'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
-            [],
-            3,
-            3,
-            3,
-            3,
-        ),
-        (
-            [create_joint_distribution],
-            {'search_space': 'IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])'},
-            [partial(remove_iiv, to_remove=['ETA_CL'])],
-            3,
-            2,
-            3,
-            1,
-        ),
-        (
-            [add_peripheral_compartment, add_pk_iiv, create_joint_distribution],
-            {'search_space': 'IIV?([CL,VC,MAT,VP1,QP1],exp);COV?([CL,VC,MAT,VP1,QP1])'},
-            [
-                partial(remove_iiv, to_remove=['ETA_VP1']),
-                partial(remove_iiv, to_remove=['ETA_QP1']),
-            ],
-            5,
-            3,
-            10,
-            3,
-        ),
-        (
-            [add_lag_time, add_pk_iiv, create_joint_distribution],
-            {'search_space': 'IIV([CL],exp);IIV?([VC,MAT,MDT],exp);COV?([CL,VC,MAT,MDT])'},
-            [
-                partial(remove_iiv, to_remove=['ETA_MDT']),
-                partial(split_joint_distribution, rvs=['ETA_MAT']),
-            ],
-            3,
-            2,
-            6,
-            1,
-        ),
-        (
-            [partial(fix_parameters, parameter_names='IIV_MAT')],
-            {'search_space': 'IIV([MAT],exp);IIV?([CL,VC],exp)'},
-            [],
-            2,
-            2,
-            0,
-            0,
-        ),
-        (
-            [partial(add_iov, occ='FA1')],
-            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
-            [],
-            3,
-            3,
-            0,
-            0,
-        ),
-        (
-            [partial(add_iov, occ='FA1')],
-            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
-            [partial(remove_iiv, to_remove=['ETA_CL'])],
-            3,
-            3,
-            0,
-            0,
-        ),
-        (
-            [partial(add_iov, occ='FA1')],
-            {'search_space': 'IIV([CL,VC,MAT],exp);IOV?([CL,VC,MAT])'},
-            [
-                partial(remove_iov, to_remove='ETA_IOV_1_1'),
-            ],
-            3,
-            2,
-            0,
-            0,
-        ),
-    ],
-)
-def test_get_mbic_penalty_parameters_rvs(
-    testdata,
-    base_funcs,
-    kwargs,
-    candidate_funcs,
-    p_expected,
-    k_p_expected,
-    q_expected,
-    k_q_expected,
-):
-    base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
-    for func in base_funcs:
-        base_model = func(base_model)
-    candidate = base_model
-    for func in candidate_funcs:
-        candidate = func(candidate)
-    p, k_p, q, k_q = get_penalty_parameters_rvs(candidate, **kwargs)
-    assert (p, k_p, q, k_q) == (p_expected, k_p_expected, q_expected, k_q_expected)
-
-
-@pytest.mark.parametrize(
-    'search_space, iiv_params, iov_params, cov_params',
-    [
-        ('IIV(CL,exp)', [], [], []),
-        ('IIV?(CL,exp)', ['CL'], [], []),
-        ('IIV?([CL,VC,MAT],exp)', ['CL', 'VC', 'MAT'], [], []),
-        ('IIV(CL,exp);IIV?(VC,exp)', ['VC'], [], []),
-        ('IIV?([CL,VC,MAT],exp)', ['CL', 'VC', 'MAT'], [], []),
-        ('IOV?([CL,VC,MAT])', [], ['CL', 'VC', 'MAT'], []),
-        ('IIV?([CL,VC,MAT],exp);IOV?([CL,VC])', ['CL', 'VC', 'MAT'], ['CL', 'VC'], []),
-        ('IIV?(CL,exp);IIV?(VC,exp)', ['CL', 'VC'], [], []),
-        ('IIV?([CL,VC,MAT],exp);COV?([CL,VC,MAT])', ['CL', 'VC', 'MAT'], [], ['CL', 'VC', 'MAT']),
-        ('IIV?([CL,VC,MAT],exp);COV?([CL,VC])', ['CL', 'VC', 'MAT'], [], ['CL', 'VC']),
-        ('IIV([CL,VC,MAT],exp);COV?([CL,VC,MAT])', [], [], ['CL', 'VC', 'MAT']),
-    ],
-)
-def test_parse_search_space_rvs(search_space, iiv_params, iov_params, cov_params):
-    assert parse_search_space_rvs(search_space) == (iiv_params, iov_params, cov_params)
+    assert get_mbic_penalty_parameters(search_space_mfl, cand_mfl) == (p, k_p, q, k_q)
