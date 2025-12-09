@@ -1535,16 +1535,11 @@ def calculate_mbic_penalty(
         p, k_p, q, k_q = get_penalty_parameters_rvs(candidate_model, search_space)
 
     if search_space_mfl:
-        if search_space_mfl.iiv or search_space_mfl.iov or search_space_mfl.covariance:
-            p, k_p, q, k_q = get_penalty_parameters_rvs(candidate_model, search_space)
-        else:
-            if E_p is None:
-                raise ValueError(
-                    'Missing value for `E_p`, must be specified when using structural MFL in `search_space`'
-                )
-            p, k_p = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
-            q = 0
-            k_q = 0
+        if E_p is None:
+            raise ValueError(
+                'Missing value for `E_p`, must be specified when using structural MFL in `search_space`'
+            )
+        p, k_p, q, k_q = get_penalty_parameters_mfl(search_space_mfl, cand_mfl)
 
     # To avoid domain error
     p = p if k_p != 0 else 1
@@ -1583,13 +1578,19 @@ def get_penalty_parameters_mfl(search_space_mfl, cand_mfl):
         _get_lagtime_penalty,
         _get_elimination_penalty,
         _get_peripherals_penalty,
+        _get_variability_penalty,
     ]
     for func in penalty_funcs:
         p_func, k_p_func = func(search_space_mfl, cand_mfl)
         p += p_func
         k_p += k_p_func
 
-    return p, k_p
+    if search_space_mfl.covariance:
+        q, k_q = _get_covariance_penalty(search_space_mfl, cand_mfl)
+    else:
+        q, k_q = 0, 0
+
+    return p, k_p, q, k_q
 
 
 def _get_absorption_penalty(mfl_full, mfl_cand):
@@ -1665,6 +1666,28 @@ def _get_peripherals_penalty(mfl_full, mfl_cand):
     p = max(number_of_peripherals)
     k_p = mfl_cand.peripherals[0].number if mfl_cand.peripherals else 0
     return p, k_p
+
+
+def _get_variability_penalty(mfl_full, mfl_cand):
+    var = mfl_full.iiv + mfl_full.iov
+    var_optional = var.filter(filter_on='optional')
+    var_forced = var - var_optional
+    if len(var_optional) <= 1:
+        return 0, 0
+    var_cand = (mfl_cand.iiv + mfl_cand.iov) - var_forced
+    p, k_p = len(var_optional), len(var_cand)
+    return p, k_p
+
+
+def _get_covariance_penalty(mfl_full, mfl_cand):
+    cov = mfl_full.covariance
+    cov_optional = cov.filter(filter_on='optional')
+    cov_forced = cov - cov_optional
+    if len(cov_optional) <= 1:
+        return 0, 0
+    cov_cand = mfl_cand.covariance - cov_forced
+    q, k_q = len(cov_optional), len(cov_cand)
+    return q, k_q
 
 
 def get_penalty_parameters_rvs(cand_model, search_space):
