@@ -17,7 +17,6 @@ Tools connected to PsN
    crossval
    frem
    linearize
-   qa
    resmod <psn_resmod>
    scm
    simeval
