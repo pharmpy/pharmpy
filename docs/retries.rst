@@ -36,9 +36,9 @@ The arguments of the retries tool are listed below.
 +-------------------------------------------------+---------------------------------------------------------------------+
 | Argument                                        | Description                                                         |
 +=================================================+=====================================================================+
-| ``model``                                       | Start model to run retries on                                       |
+| ``model``                                       | Model to run retries on                                             |
 +-------------------------------------------------+---------------------------------------------------------------------+
-| ``results``                                     | ModelfitResults of the start model                                  |
+| ``results``                                     | ModelfitResults of the input model                                  |
 +-------------------------------------------------+---------------------------------------------------------------------+
 | ``strictness``                                  | :ref:`Strictness<strictness>` criteria for model selection.         |
 |                                                 | Default is "minimization_successful or                              |
