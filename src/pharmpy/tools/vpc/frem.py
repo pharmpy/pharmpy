@@ -7,6 +7,8 @@ from pharmpy.modeling import (
     get_thetas,
     insert_ebes_into_dataset,
     remove_parameter_uncertainty_step,
+    remove_predictions,
+    remove_residuals,
     remove_unused_parameters_and_rvs,
     set_evaluation_step,
     set_initial_estimates,
@@ -26,6 +28,8 @@ def prepare_evaluation_model(me: ModelEntry) -> ModelEntry:
     results = me.modelfit_results
     model = set_initial_estimates(model, results.parameter_estimates)
     model = set_name(model, "coveval")
+    model = remove_residuals(model)
+    model = remove_predictions(model)
     return ModelEntry.create(model=model)
 
 
