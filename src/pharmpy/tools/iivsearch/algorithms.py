@@ -375,11 +375,24 @@ def stepwise_BU_algorithm(
     # Assert to be sorted in correct order
     step_dict = dict(sorted(step_dict.items()))
 
-    search_space = []
-    if any('no_of_etas' in algorithm for algorithm in list_of_algorithms):
-        search_space.append('iiv_diag')
-    if any('block' in algorithm for algorithm in list_of_algorithms):
-        search_space.append('iiv_block')
+    # FIXME: remove once search space is properly handled
+    from .tool import get_mbic_search_space
+
+    if rank_type == 'mbic':
+        search_space = get_mbic_search_space(base_model, keep, E_p, E_q)
+    else:
+        search_space = None
+    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+
+    E = (E_p, E_q) if E_p is not None or E_q is not None else None
+    modelrank_opts = {
+        'search_space': search_space,
+        'rank_type': rank_type,
+        'alpha': cutoff,
+        'strictness': strictness,
+        'E': E,
+        'parameter_uncertainty_method': parameter_uncertainty_method,
+    }
 
     previous_index = index_offset
     previous_removed = to_be_removed
@@ -413,25 +426,6 @@ def stepwise_BU_algorithm(
         )
         all_modelentries.extend(new_candidate_modelentries)
         old_best_name = best_model_entry.model.name
-
-        rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
-
-        # FIXME: remove once search space is properly handled
-        from .tool import get_mbic_search_space
-
-        E = (E_p, E_q) if E_p is not None or E_q is not None else None
-        if rank_type == 'mbic':
-            search_space = get_mbic_search_space(base_model, keep, E_p, E_q)
-        else:
-            search_space = None
-        modelrank_opts = {
-            'search_space': search_space,
-            'rank_type': rank_type,
-            'alpha': cutoff,
-            'strictness': strictness,
-            'E': E,
-            'parameter_uncertainty_method': parameter_uncertainty_method,
-        }
 
         selected_model_entry = select_model_entry(
             context, best_model_entry, new_candidate_modelentries, modelrank_opts

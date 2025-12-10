@@ -512,13 +512,13 @@ def start(
     if input_model != final_model and input_res and final_res:
         input_step = True
         context.log_info('Comparing final model to input model')
-        rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
-        E = (E_p, E_q) if E_p is not None or E_q is not None else None
         # FIXME: remove once search space is properly handled
         if rank_type == 'mbic':
             search_space = get_mbic_search_space(_get_full_model([base_model]), keep, E_p, E_q)
         else:
             search_space = None
+        rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+        E = (E_p, E_q) if E_p is not None or E_q is not None else None
         rank_res = run_subtool(
             tool_name='modelrank',
             ctx=context,
@@ -670,13 +670,13 @@ def post_process(
         me.modelfit_results for me in res_model_entries
     ]
 
-    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
-    E = (E_p, E_q) if E_p is not None or E_q is not None else None
-    # FIXME: remove once search space is properly handled
     if rank_type == 'mbic':
         search_space = get_mbic_search_space(_get_full_model(models_to_rank), keep, E_p, E_q)
     else:
         search_space = None
+    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+    E = (E_p, E_q) if E_p is not None or E_q is not None else None
+    # FIXME: remove once search space is properly handled
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
