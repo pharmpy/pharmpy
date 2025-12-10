@@ -46,6 +46,7 @@ from pharmpy.tools.iivsearch.tool import (
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
+    prepare_rank_options,
     update_input_model_description,
     update_linearized_base_model,
     validate_input,
@@ -479,6 +480,68 @@ def test_create_base_model(
     assert repr(get_model_features(base_model, type='covariance')) == cov_expected
     assert base_model_entry.modelfit_results is None
     assert base_model_entry.parent == model
+
+
+@pytest.mark.parametrize(
+    'kwargs, expected',
+    [
+        (
+            {
+                'rank_type': 'ofv',
+                'cutoff': 3.84,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E_p': None,
+                'E_q': None,
+            },
+            {
+                'rank_type': 'ofv',
+                'cutoff': 3.84,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E': None,
+            },
+        ),
+        (
+            {
+                'rank_type': 'bic',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E_p': None,
+                'E_q': None,
+            },
+            {
+                'rank_type': 'bic_iiv',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E': None,
+            },
+        ),
+        (
+            {
+                'rank_type': 'mbic',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E_p': 0.5,
+                'E_q': 0.5,
+            },
+            {
+                'rank_type': 'mbic_iiv',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E': (0.5, 0.5),
+            },
+        ),
+    ],
+)
+def test_prepare_rank_options(kwargs, expected):
+    rank_options = prepare_rank_options(**kwargs)
+    for key, value in expected.items():
+        assert getattr(rank_options, key) == value
 
 
 @pytest.mark.parametrize(

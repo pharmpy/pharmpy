@@ -65,6 +65,15 @@ IIV_CORRELATION_ALGORITHMS = frozenset(
 )
 
 
+@dataclass(frozen=True)
+class RankingOptions:
+    rank_type: str
+    cutoff: Optional[float]
+    strictness: str
+    parameter_uncertainty_method: str
+    E: Optional[tuple[Union[float, str], Union[float, str]]]
+
+
 def create_workflow(
     model: Model,
     results: ModelfitResults,
@@ -171,6 +180,8 @@ def create_workflow(
             cutoff,
             strictness,
             parameter_uncertainty_method,
+            E_p,
+            E_q,
         )
         return wf
 
@@ -860,14 +871,20 @@ def create_workflow_mfl(
     cutoff,
     strictness,
     parameter_uncertainty_method,
+    E_p,
+    E_q,
 ):
     wb = WorkflowBuilder(name='iivsearch')
 
-    start_task = Task.create('start', start_with_search_space, model, results)
-    wb.add_task(start_task)
-
     mfl = ModelFeatures.create(search_space)
     mfl_expanded = expand_model_features(model, mfl)
+
+    rank_options = prepare_rank_options(
+        rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q
+    )
+
+    start_task = Task.create('start', start_with_search_space, model, results)
+    wb.add_task(start_task)
 
     if not is_model_in_search_space(model, mfl_expanded, as_fullblock):
         create_base_task = Task.create('base_model', create_base_model, mfl_expanded, as_fullblock)
@@ -885,20 +902,14 @@ def create_workflow_mfl(
         steps_to_run,
         as_fullblock,
         mfl,
-        rank_type,
-        cutoff,
-        strictness,
-        parameter_uncertainty_method,
+        rank_options,
     )
     wb.add_task(search_task, predecessors=[base_task])
 
     compare_task = Task.create(
         'compare_to_input',
         compare_to_input_model,
-        rank_type,
-        cutoff,
-        strictness,
-        parameter_uncertainty_method,
+        rank_options,
     )
     wb.add_task(compare_task, predecessors=[start_task, search_task])
 
@@ -915,6 +926,19 @@ def is_model_in_search_space(model, mfl, as_fullblock):
     if mfl.covariance:
         return is_in_iiv_search_space and is_in_search_space(model, mfl, type='covariance')
     return is_in_iiv_search_space
+
+
+def prepare_rank_options(rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q):
+    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+    E = (E_p, E_q) if E_p is not None or E_q is not None else None
+    rank_options = RankingOptions(
+        rank_type=rank_type,
+        cutoff=cutoff,
+        strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+        E=E,
+    )
+    return rank_options
 
 
 def start_with_search_space(context, input_model, input_res):
@@ -957,10 +981,7 @@ def run_search(
     steps_to_run,
     as_fullblock,
     mfl,
-    rank_type,
-    cutoff,
-    strictness,
-    parameter_uncertainty_method,
+    rank_options,
     base_model_entry,
 ):
     rank_results = []
@@ -979,10 +1000,7 @@ def run_search(
 
         rank_res = rank_models(
             context,
-            rank_type,
-            cutoff,
-            strictness,
-            parameter_uncertainty_method,
+            rank_options,
             best_model_entry,
             mes,
         )
@@ -997,27 +1015,23 @@ def run_search(
 
 def rank_models(
     context,
-    rank_type,
-    cutoff,
-    strictness,
-    parameter_uncertainty_method,
+    rank_options,
     base_model_entry,
     model_entries,
 ):
     models = [base_model_entry.model] + [me.model for me in model_entries]
     results = [base_model_entry.modelfit_results] + [me.modelfit_results for me in model_entries]
 
-    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
         models=models,
         results=results,
         ref_model=base_model_entry.model,
-        rank_type=rank_type,
-        alpha=cutoff,
-        strictness=strictness,
-        parameter_uncertainty_method=parameter_uncertainty_method,
+        rank_type=rank_options.rank_type,
+        alpha=rank_options.cutoff,
+        strictness=rank_options.strictness,
+        parameter_uncertainty_method=rank_options.parameter_uncertainty_method,
     )
 
     return rank_res
@@ -1031,10 +1045,7 @@ def get_best_model_entry(model_entries, final_model):
 
 def compare_to_input_model(
     context,
-    rank_type,
-    cutoff,
-    strictness,
-    parameter_uncertainty_method,
+    rank_options,
     input_model_entry,
     rank_results_and_model_entries,
 ):
@@ -1047,16 +1058,13 @@ def compare_to_input_model(
         context.log_info('Comparing final model to input model')
         rank_res = rank_models(
             context,
-            rank_type,
-            cutoff,
-            strictness,
-            parameter_uncertainty_method,
+            rank_options,
             input_model_entry,
             [best_model_entry],
         )
         if rank_res.final_model == input_model:
             context.log_warning(
-                f'Worse {rank_type} in final model {best_model.name} '
+                f'Worse {rank_options.rank_type} in final model {best_model.name} '
                 f'than {input_model.name}, selecting input model'
             )
         return rank_res
