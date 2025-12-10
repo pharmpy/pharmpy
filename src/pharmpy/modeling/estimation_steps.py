@@ -731,7 +731,7 @@ def add_residuals(model: Model, res: list[str]):
 def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None):
     """Remove predictions and/or residuals
 
-    Remove predictions from estimation step.
+    Remove predictions from estimation step. Default is to remove all predictions.
 
     Parameters
     ----------
@@ -783,7 +783,7 @@ def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None):
 def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None):
     """Remove residuals
 
-    Remove residuals from estimation step.
+    Remove residuals from estimation step. Default is to remove all residuals.
 
     Parameters
     ----------
