@@ -159,7 +159,7 @@ def get_bic(me, ref_value, rank_type, search_space, E=None) -> dict[str, Union[f
     rank_dict['bic_penalty'] = bic - likelihood
     if 'mbic' in rank_type:
         E_kwargs = get_mbic_E_values(E)
-        mbic_penalty = calculate_mbic_penalty(me.model, search_space, **E_kwargs)
+        mbic_penalty = calculate_mbic_penalty(me.model, str(search_space), **E_kwargs)
         bic += mbic_penalty
         rank_dict['mbic_penalty'] = mbic_penalty
     if ref_value:
