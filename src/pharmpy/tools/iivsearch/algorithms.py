@@ -420,8 +420,10 @@ def stepwise_BU_algorithm(
         from .tool import get_mbic_search_space
 
         E = (E_p, E_q) if E_p is not None or E_q is not None else None
-        search_space = get_mbic_search_space(base_model, keep, E_p, E_q)
-
+        if rank_type == 'mbic':
+            search_space = get_mbic_search_space(base_model, keep, E_p, E_q)
+        else:
+            search_space = None
         modelrank_opts = {
             'search_space': search_space,
             'rank_type': rank_type,

@@ -515,7 +515,10 @@ def start(
         rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
         E = (E_p, E_q) if E_p is not None or E_q is not None else None
         # FIXME: remove once search space is properly handled
-        search_space = get_mbic_search_space(_get_full_model([base_model]), keep, E_p, E_q)
+        if rank_type == 'mbic':
+            search_space = get_mbic_search_space(_get_full_model([base_model]), keep, E_p, E_q)
+        else:
+            search_space = None
         rank_res = run_subtool(
             tool_name='modelrank',
             ctx=context,
@@ -670,7 +673,10 @@ def post_process(
     rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
     E = (E_p, E_q) if E_p is not None or E_q is not None else None
     # FIXME: remove once search space is properly handled
-    search_space = get_mbic_search_space(_get_full_model(models_to_rank), keep, E_p, E_q)
+    if rank_type == 'mbic':
+        search_space = get_mbic_search_space(_get_full_model(models_to_rank), keep, E_p, E_q)
+    else:
+        search_space = None
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
@@ -748,7 +754,7 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno)
 
 def get_mbic_search_space(model, keep, E_p, E_q):
     # FIXME: this function be removed once IIVSearch takes a search space as input
-    search_space = get_model_features(model)
+    search_space = get_model_features(model, type='iiv')
     if E_p is not None:
         iivs = [
             iiv.replace(optional=True) if iiv.parameter not in keep else iiv
