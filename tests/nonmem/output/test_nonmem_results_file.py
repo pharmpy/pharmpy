@@ -1,3 +1,4 @@
+from dataclasses import asdict
 from pathlib import Path
 
 import pandas as pd
@@ -8,6 +9,8 @@ import pharmpy.model.external.nonmem.table as table
 import pharmpy.tools.external.nonmem.results_file as rf
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows.log import Log
+
+anan = pytest.approx(nan, nan_ok=True)
 
 
 def test_supported_version():
@@ -39,6 +42,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': 4.9,
                 'function_evaluations': 98,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             True,
         ),
@@ -56,6 +60,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': nan,
                 'warning': None,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -73,6 +78,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': 3.1,
                 'function_evaluations': 62,
                 'warning': True,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -90,6 +96,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': nan,
                 'warning': None,
+                'ofv_with_constant': None,
             },
             None,
         ),
@@ -107,6 +114,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': 3.1,
                 'function_evaluations': 112,
                 'warning': True,
+                'ofv_with_constant': None,
             },
             True,
         ),
@@ -124,6 +132,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': nan,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -141,6 +150,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': 153,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -158,6 +168,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': 153,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -175,6 +186,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': 3.6,
                 'function_evaluations': 107,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             True,
         ),
@@ -192,6 +204,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': 4.2,
                 'function_evaluations': 208,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             True,
         ),
@@ -209,6 +222,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': 735,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -226,6 +240,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': 4.2,
                 'function_evaluations': 208,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             True,
         ),
@@ -243,6 +258,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': nan,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -260,6 +276,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': nan,
                 'warning': False,
+                'ofv_with_constant': None,
             },
             False,
         ),
@@ -291,6 +308,7 @@ def test_data_io(pheno_lst):
                 'significant_digits': nan,
                 'function_evaluations': 5,
                 'warning': False,
+                'ofv_with_constant': 3376.151276351326,
             },
             False,
         ),
@@ -300,7 +318,7 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'noSIM')
     log = Log()
     rfile = rf.NONMEMResultsFile(p / file, log=log)
-    actual = rfile.estimation_status(table_number)
+    actual = asdict(rfile.estimation_status(table_number))
     assert actual.keys() == expected.keys()
     for key in expected.keys():
         assert type(actual[key]) is type(expected[key])
@@ -311,9 +329,9 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
         else:
             assert actual[key] == expected[key]
     if covariance_step_ok is None:
-        assert rfile.covariance_status(table_number)['covariance_step_ok'] is None
+        assert rfile.covariance_status(table_number).covariance_step_ok is None
     else:
-        assert rfile.covariance_status(table_number)['covariance_step_ok'] == covariance_step_ok
+        assert rfile.covariance_status(table_number).covariance_step_ok == covariance_step_ok
 
 
 @pytest.mark.parametrize(
@@ -322,35 +340,29 @@ def test_estimation_status(testdata, file, table_number, expected, covariance_st
         (
             'anneal2_V7_30_beta.lst',
             2,
-            {
-                'ebv_shrinkage': None,
-                'eps_shrinkage': None,
-                'minimization_successful': True,
-                'eta_shrinkage': None,
-                'estimate_near_boundary': False,
-                'rounding_errors': False,
-                'maxevals_exceeded': False,
-                'significant_digits': nan,
-                'function_evaluations': nan,
-                'warning': False,
-            },
+            rf.TermSection(
+                minimization_successful=True,
+                estimate_near_boundary=False,
+                rounding_errors=False,
+                maxevals_exceeded=False,
+                warning=False,
+                significant_digits=anan,
+                function_evaluations=anan,
+            ),
             True,
         ),
         (
             'superid2_6_V7_30_beta.lst',
             2,
-            {
-                'ebv_shrinkage': None,
-                'eps_shrinkage': None,
-                'minimization_successful': True,
-                'eta_shrinkage': None,
-                'estimate_near_boundary': False,
-                'rounding_errors': False,
-                'maxevals_exceeded': False,
-                'significant_digits': nan,
-                'function_evaluations': nan,
-                'warning': False,
-            },
+            rf.TermSection(
+                minimization_successful=True,
+                estimate_near_boundary=False,
+                rounding_errors=False,
+                maxevals_exceeded=False,
+                warning=False,
+                significant_digits=anan,
+                function_evaluations=anan,
+            ),
             True,
         ),
     ],
@@ -359,84 +371,77 @@ def test_estimation_status_multest(testdata, file, table_number, expected, covar
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'multEST' / 'noSIM')
     rfile = rf.NONMEMResultsFile(p / file)
     assert rfile.estimation_status(table_number) == expected
-    assert rfile.covariance_status(table_number)['covariance_step_ok'] == covariance_step_ok
+    assert rfile.covariance_status(table_number).covariance_step_ok == covariance_step_ok
 
 
 def test_estimation_status_empty():
     rfile = rf.NONMEMResultsFile()
     assert rfile._supported_nonmem_version is False
-    assert rfile.estimation_status(1) == rf.NONMEMResultsFile.unknown_termination()
+    assert rfile.estimation_status(1) == rf.TermSection(
+        significant_digits=anan,
+        function_evaluations=anan,
+    )
 
 
 def test_estimation_status_withsim(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'onePROB' / 'oneEST' / 'withSIM')
     rfile = rf.NONMEMResultsFile(p / 'control3boot.res', log=Log())
 
-    assert rfile.estimation_status(45) == {
-        'ebv_shrinkage': None,
-        'eps_shrinkage': None,
-        'minimization_successful': True,
-        'eta_shrinkage': None,
-        'estimate_near_boundary': False,
-        'rounding_errors': False,
-        'maxevals_exceeded': False,
-        'significant_digits': 3.3,
-        'function_evaluations': 192,
-        'warning': False,
-    }
-    assert rfile.covariance_status(45)['covariance_step_ok'] is False
+    assert rfile.estimation_status(45) == rf.TermSection(
+        minimization_successful=True,
+        estimate_near_boundary=False,
+        rounding_errors=False,
+        maxevals_exceeded=False,
+        significant_digits=3.3,
+        function_evaluations=192,
+        warning=False,
+    )
+    assert rfile.covariance_status(45).covariance_step_ok is False
 
-    assert rfile.estimation_status(70) == {
-        'ebv_shrinkage': None,
-        'eps_shrinkage': None,
-        'minimization_successful': True,
-        'eta_shrinkage': None,
-        'estimate_near_boundary': True,
-        'rounding_errors': False,
-        'maxevals_exceeded': False,
-        'significant_digits': 3.6,
-        'function_evaluations': 202,
-        'warning': False,
-    }
-    assert rfile.covariance_status(70)['covariance_step_ok'] is False
+    assert rfile.estimation_status(70) == rf.TermSection(
+        minimization_successful=True,
+        estimate_near_boundary=True,
+        rounding_errors=False,
+        maxevals_exceeded=False,
+        significant_digits=3.6,
+        function_evaluations=202,
+        warning=False,
+    )
+    assert rfile.covariance_status(70).covariance_step_ok is False
 
-    assert rfile.estimation_status(100) == {
-        'ebv_shrinkage': None,
-        'eps_shrinkage': None,
-        'minimization_successful': True,
-        'eta_shrinkage': None,
-        'estimate_near_boundary': False,
-        'rounding_errors': False,
-        'maxevals_exceeded': False,
-        'significant_digits': 5.6,
-        'function_evaluations': 100,
-        'warning': False,
-    }
-    assert rfile.covariance_status(100)['covariance_step_ok'] is True
+    assert rfile.estimation_status(100) == rf.TermSection(
+        minimization_successful=True,
+        estimate_near_boundary=False,
+        rounding_errors=False,
+        maxevals_exceeded=False,
+        significant_digits=5.6,
+        function_evaluations=100,
+        warning=False,
+    )
+    assert rfile.covariance_status(100).covariance_step_ok is True
 
 
 def test_ofv_table_gap(testdata):
     p = Path(testdata / 'nonmem' / 'modelfit_results' / 'multPROB' / 'multEST' / 'withSIM')
     rfile = rf.NONMEMResultsFile(p / 'multprobmix_nm730.lst', log=Log())
 
-    assert rfile.estimation_status(2) == {
-        'ebv_shrinkage': None,
-        'eps_shrinkage': None,
-        'minimization_successful': False,
-        'eta_shrinkage': None,
-        'estimate_near_boundary': False,
-        'rounding_errors': False,
-        'maxevals_exceeded': True,
-        'significant_digits': nan,
-        'function_evaluations': 16,
-        'warning': False,
-    }
+    assert rfile.estimation_status(2) == rf.TermSection(
+        minimization_successful=False,
+        estimate_near_boundary=False,
+        rounding_errors=False,
+        maxevals_exceeded=True,
+        significant_digits=anan,
+        function_evaluations=16,
+        warning=False,
+    )
 
     table_numbers = (1, 2, 3, 4, 6, 8, 10, 11, 12, 13)
     ext_table_file = table.NONMEMTableFile(p / 'multprobmix_nm730.ext')
 
     for n in table_numbers:
-        assert rfile.ofv(n) == pytest.approx(ext_table_file.table_no(n).final_ofv)
+        ext_table = ext_table_file.table_no(n)
+        assert isinstance(ext_table, table.ExtTable)
+        assert rfile.ofv(n) == pytest.approx(ext_table.final_ofv)
 
 
 @pytest.mark.parametrize(
