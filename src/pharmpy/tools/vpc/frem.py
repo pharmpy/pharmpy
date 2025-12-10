@@ -3,12 +3,14 @@ from pharmpy.internals.math import triangular
 from pharmpy.model import Assignment, Model, Statements, get_and_check_dataset
 from pharmpy.modeling import (
     cholesky_decompose,
+    drop_columns,
     get_thetas,
     insert_ebes_into_dataset,
     remove_parameter_uncertainty_step,
     remove_unused_parameters_and_rvs,
     set_evaluation_step,
     set_initial_estimates,
+    set_name,
 )
 from pharmpy.workflows import ModelEntry
 
@@ -16,13 +18,14 @@ from pharmpy.workflows import ModelEntry
 def prepare_evaluation_model(me: ModelEntry) -> ModelEntry:
     model = me.model
     df = get_and_check_dataset(model)
-    df = df[df['FREMTYPE'] == 0]
+    df = df[df['FREMTYPE'] != 0]
     df = df.reset_index(drop=True)
     model = model.replace(dataset=df)
     model = set_evaluation_step(model)
     model = remove_parameter_uncertainty_step(model)
     results = me.modelfit_results
     model = set_initial_estimates(model, results.parameter_estimates)
+    model = set_name(model, "coveval")
     return ModelEntry.create(model=model)
 
 
@@ -45,12 +48,16 @@ def _remove_frem_epsilon(model):
     return rvs
 
 
-def prepare_frem_model(me: ModelEntry) -> ModelEntry:
+def prepare_frem_model(original_model: Model, me: ModelEntry) -> ModelEntry:
     model = me.model
     kept_statements = _remove_frem_code(model)
     kept_rvs = _remove_frem_epsilon(model)
 
-    model = model.replace(statements=kept_statements, random_variables=kept_rvs)
+    df = original_model.dataset
+    df = df[df['FREMTYPE'] == 0]
+    df = df.reset_index(drop=True)
+
+    model = model.replace(dataset=df, statements=kept_statements, random_variables=kept_rvs)
     model = remove_unused_parameters_and_rvs(model)
     frem_etas = list(model.random_variables.etas[-1].names)
     model = cholesky_decompose(model, frem_etas)
@@ -108,5 +115,6 @@ def prepare_frem_model(me: ModelEntry) -> ModelEntry:
     model = model.replace(
         parameters=new_params, statements=Statements.create(assignments + new_statements)
     )
-    model = model.update_source()
+    model = drop_columns(model, "FREMTYPE")
+    model = set_name(model, "fremsim")
     return ModelEntry.create(model=model)

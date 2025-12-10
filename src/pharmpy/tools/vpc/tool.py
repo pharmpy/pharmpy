@@ -62,7 +62,7 @@ def create_workflow(
         wb.add_task(frem_prep_eval_task, predecessors=[start_task])
         eval_wfl = create_fit_workflow(n=1)
         wb.insert_workflow(eval_wfl, predecessors=[frem_prep_eval_task])
-        frem_prep_task = Task('prepare_frem_model', prepare_frem_model)
+        frem_prep_task = Task('prepare_frem_model', prepare_frem_model, model)
         wb.add_task(frem_prep_task, predecessors=wb.output_tasks)
 
     simulation_task = Task('simulation', simulation, samples)
