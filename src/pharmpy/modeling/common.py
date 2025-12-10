@@ -733,12 +733,8 @@ def filter_dataset(model: Model, expr: str) -> Model:
     """
     original_dataset = get_and_check_dataset(model)
     try:
-        new_dataset = original_dataset.query(expr)
-        new_model = model.replace(
-            dataset=new_dataset,
-            description=model.description + ". Filtered dataset.",
-            name=model.name + "_filtered",
-        )
+        new_dataset = original_dataset.query(expr).reset_index(drop=True)
+        new_model = model.replace(dataset=new_dataset)
     except pandas.errors.UndefinedVariableError as e:
         raise ValueError(f'The expression `{expr}` is invalid: {e}')
     return new_model

@@ -1,3 +1,12 @@
+next version
+------------
+
+Changes
+=======
+
+* :code:`modeling.filter_data` will not change the name or the description of the model
+* :code:`modeling.filter_data` will always reset the index of the dataset
+
 1.12.0 (2025-12-05)
 -------------------
 

@@ -650,7 +650,6 @@ def filter_tmdd_dataset(model):
     dvid_name = get_dvid_name(model)
     orig_dataset = model.dataset
     model = filter_dataset(model, f'{dvid_name} < 2')
-    model = model.replace(dataset=model.dataset.reset_index())
     return model, orig_dataset
 
 
@@ -658,7 +657,6 @@ def filter_drug_metabolite_dataset(model):
     dvid_name = get_dvid_name(model)
     orig_dataset = model.dataset
     model = filter_dataset(model, f'{dvid_name} != 2')
-    model = model.replace(dataset=model.dataset.reset_index())
     return model, orig_dataset
 
 
