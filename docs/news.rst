@@ -80,3 +80,9 @@ New news page
 -------------
 
 *2025-05-12* --- Welcome to the new NEWS page. We will post news on releases and other topics that might be of interest, such as courses. 
+
+
+.. toctree::
+   :maxdepth: 1
+
+   CHANGELOG <changelog>
