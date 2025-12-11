@@ -29,18 +29,18 @@ coupling. A model defines multiple mathematical symbols and all are concidered t
 :class:`pharmpy.Parameters`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A ``MutableSequence`` of scalar real optimization parameters. Parameters can be constrained to real intervals, but higher level constraints
+A ``Sequence`` of scalar real optimization parameters. Parameters can be constrained to real intervals, but higher level constraints
 such as positive semidefiniteness of parameters used as elements of covariance matrices does not concern this class.
 
 :class:`pharmpy.RandomVariables`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A ``MutableSequence`` of random variables (etas and epsilons). 
+A ``Sequence`` of random variables (etas and epsilons). 
 
 :class:`pharmpy.Statements`
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-A ``MutableSequence`` of model statements. Statements can be 
+A ``Sequence`` of model statements. Statements can be 
 
 
 The :py:mod:`pharmpy.modeling` module
