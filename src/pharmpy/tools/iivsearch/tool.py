@@ -895,26 +895,49 @@ def create_workflow_mfl(
     else:
         base_task = start_task
 
+    init_search_task = Task.create('init_search', init_search)
+    wb.add_task(init_search_task, predecessors=[base_task])
+
     steps_to_run = prepare_algorithms(algorithm, correlation_algorithm)
-    search_task = Task.create(
-        'run_search',
-        run_search,
-        steps_to_run,
-        as_fullblock,
-        mfl,
-        rank_options,
-    )
-    wb.add_task(search_task, predecessors=[base_task])
+    search_tasks = []
+    for step in steps_to_run:
+        if 'exhaustive' in step:
+            search_task = Task.create(
+                'run_exhaustive_search',
+                run_exhaustive_search,
+                step,
+                as_fullblock,
+                mfl,
+                rank_options,
+            )
+        else:
+            raise NotImplementedError
+        predecessors = [init_search_task] if not search_tasks else None
+        wb.add_task(search_task, predecessors=predecessors)
+        search_tasks.append(search_task)
+
+    end_search_task = Task.create('end_search', end_search)
+    wb.add_task(end_search_task)
+    search_tasks.append(end_search_task)
 
     compare_task = Task.create(
         'compare_to_input',
         compare_to_input_model,
         rank_options,
     )
-    wb.add_task(compare_task, predecessors=[start_task, search_task])
+    wb.add_task(compare_task, predecessors=[start_task, end_search_task])
+
+    collect_task = Task.create('collect', collect_results)
+    wb.add_task(collect_task)
+
+    for i, search_task in enumerate(search_tasks):
+        if i == len(search_tasks) - 1:
+            break
+        dest = (search_tasks[i + 1], collect_task)
+        wb.scatter(search_task, dest)
 
     post_process_task = Task.create('postprocess', postprocess)
-    wb.add_task(post_process_task, predecessors=[start_task, search_task, compare_task])
+    wb.add_task(post_process_task, predecessors=[compare_task, collect_task])
 
     return Workflow(wb)
 
@@ -976,41 +999,40 @@ def create_base_model(mfl, as_fullblock, input_model_entry):
     return base_model_entry
 
 
-def run_search(
+def init_search(base_model_entry):
+    return base_model_entry, 0
+
+
+def run_exhaustive_search(
     context,
-    steps_to_run,
+    step,
     as_fullblock,
     mfl,
     rank_options,
-    base_model_entry,
+    base_model_entry_and_index_offset,
 ):
-    rank_results = []
-    model_entries = [base_model_entry]
-    index_offset = 0
-    best_model_entry = base_model_entry
-    for step in steps_to_run:
-        algorithm_func = getattr(algorithms, f'{step}_mfl')
-        if not algorithm_func:
-            raise NotImplementedError
-        wf_step = algorithm_func(best_model_entry, mfl, index_offset, as_fullblock)
-        if not wf_step:
-            continue
+    base_model_entry, index_offset = base_model_entry_and_index_offset
+    algorithm_func = getattr(algorithms, f'{step}_mfl')
+    if not algorithm_func:
+        raise NotImplementedError
+    wf_step = algorithm_func(base_model_entry, mfl, index_offset, as_fullblock)
+    if not wf_step:
+        return base_model_entry, (None, [])
 
-        mes = context.call_workflow(wf_step, 'run_candidates')
+    mes = context.call_workflow(wf_step, 'run_candidates')
 
-        rank_res = rank_models(
-            context,
-            rank_options,
-            best_model_entry,
-            mes,
-        )
-        model_entries += list(mes)
-        rank_results.append(rank_res)
+    rank_res = rank_models(
+        context,
+        rank_options,
+        base_model_entry,
+        mes,
+    )
 
-        best_model_entry = get_best_model_entry(model_entries, rank_res.final_model)
-        index_offset += len(mes)
+    mes_all = (base_model_entry,) + mes
+    best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+    summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
 
-    return rank_results, model_entries
+    return (best_model_entry, len(mes)), summary_tool
 
 
 def rank_models(
@@ -1043,17 +1065,24 @@ def get_best_model_entry(model_entries, final_model):
     return best_model_entry[0]
 
 
+def end_search(best_model_entry_and_index_offset):
+    best_model_entry, _ = best_model_entry_and_index_offset
+    return best_model_entry
+
+
+def collect_results(*tool_summaries):
+    return list(tool_summaries)
+
+
 def compare_to_input_model(
     context,
     rank_options,
+    best_model_entry,
     input_model_entry,
-    rank_results_and_model_entries,
 ):
-    rank_results, model_entries = rank_results_and_model_entries
-
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
-    best_model, best_res = rank_results[-1].final_model, rank_results[-1].final_results
-    best_model_entry = get_best_model_entry(model_entries, best_model)
+    best_model, best_res = best_model_entry.model, best_model_entry.modelfit_results
+
     if input_model != best_model and input_res and best_res:
         context.log_info('Comparing final model to input model')
         rank_res = rank_models(
@@ -1067,35 +1096,28 @@ def compare_to_input_model(
                 f'Worse {rank_options.rank_type} in final model {best_model.name} '
                 f'than {input_model.name}, selecting input model'
             )
-        return rank_res
+        summary_tool = add_parent_column(
+            rank_res.summary_tool, [input_model_entry, best_model_entry]
+        )
     else:
-        return None
+        summary_tool = None
+
+    return best_model_entry, summary_tool
 
 
 def postprocess(
     context,
-    input_model_entry,
-    rank_results_and_model_entries,
-    comparison_results,
+    tool_summaries,
+    model_entry_and_final_comparison,
 ):
-    rank_results, model_entries = rank_results_and_model_entries
-    model_entries.append(input_model_entry)
+    best_model_entry, final_summary_tool = model_entry_and_final_comparison
+    tool_summaries += [final_summary_tool]
 
     summary_models = summarize_modelfit_results(context)
 
-    best_model, best_res = rank_results[-1].final_model, rank_results[-1].final_results
-    best_model_entry = get_best_model_entry(model_entries, best_model)
-
-    if comparison_results:
-        rank_results.append(comparison_results)
-
-    tool_summaries = []
-    for rank_res in rank_results:
-        summary_step = add_parent_column(rank_res.summary_tool, model_entries)
-        tool_summaries.append(summary_step)
-
     context.store_final_model_entry(best_model_entry)
 
+    best_model, best_res = best_model_entry.model, best_model_entry.modelfit_results
     plots = create_plots(best_model, best_res)
     eta_shrinkage_table = table_final_eta_shrinkage(best_model, best_res)
 
