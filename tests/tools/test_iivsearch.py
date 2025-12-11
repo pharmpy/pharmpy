@@ -42,7 +42,7 @@ from pharmpy.tools.iivsearch.tool import (
     create_workflow,
     get_mbic_search_space,
     get_ref_model,
-    is_model_in_search_space,
+    needs_base_model,
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
@@ -415,11 +415,11 @@ def test_get_covariance_combinations(mfl, base_features, expected):
 @pytest.mark.parametrize(
     'funcs, mfl, as_fullblock, expected',
     [
-        ([], 'IIV([CL,MAT,VC],EXP)', False, True),
-        ([], 'IIV?([CL,MAT,VC],EXP)', False, True),
-        ([], 'IIV?([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', False, False),
-        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC],EXP)', False, True),
-        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC,QP1],EXP)', False, True),
+        ([], 'IIV([CL,MAT,VC],EXP)', False, False),
+        ([], 'IIV?([CL,MAT,VC],EXP)', False, False),
+        ([], 'IIV?([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', False, True),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC],EXP)', False, False),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC,QP1],EXP)', False, False),
         (
             [
                 add_peripheral_compartment,
@@ -427,23 +427,21 @@ def test_get_covariance_combinations(mfl, base_features, expected):
             ],
             'IIV?([CL,MAT,VC,QP1],EXP)',
             False,
-            True,
+            False,
         ),
-        ([], 'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,VC])', False, True),
-        ([], 'IIV([CL,MAT,VC],EXP)', True, False),
-        ([create_joint_distribution], 'IIV([CL,MAT,VC],EXP)', True, True),
-        ([], 'IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', False, True),
+        ([], 'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,VC])', False, False),
+        ([], 'IIV([CL,MAT,VC],EXP)', True, True),
+        ([create_joint_distribution], 'IIV([CL,MAT,VC],EXP)', True, False),
+        ([], 'IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', False, False),
     ],
 )
-def test_is_model_in_search_space(
-    load_model_for_test, testdata, funcs, mfl, as_fullblock, expected
-):
+def test_needs_base_model(load_model_for_test, testdata, funcs, mfl, as_fullblock, expected):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model = func(model)
 
     mfl = ModelFeatures.create(mfl)
-    assert is_model_in_search_space(model, mfl, as_fullblock) == expected
+    assert needs_base_model(model, mfl, as_fullblock) == expected
 
 
 @pytest.mark.parametrize(

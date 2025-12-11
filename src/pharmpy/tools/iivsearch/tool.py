@@ -886,7 +886,7 @@ def create_workflow_mfl(
     start_task = Task.create('start', start_with_search_space, model, results)
     wb.add_task(start_task)
 
-    if not is_model_in_search_space(model, mfl_expanded, as_fullblock):
+    if needs_base_model(model, mfl_expanded, as_fullblock):
         create_base_task = Task.create('base_model', create_base_model, mfl_expanded, as_fullblock)
         wb.add_task(create_base_task, predecessors=[start_task])
         wf_fit = create_fit_workflow(n=1)
@@ -942,13 +942,13 @@ def create_workflow_mfl(
     return Workflow(wb)
 
 
-def is_model_in_search_space(model, mfl, as_fullblock):
+def needs_base_model(model, mfl, as_fullblock):
     if as_fullblock and len(model.random_variables.iiv) != 1:
-        return False
+        return True
     is_in_iiv_search_space = is_in_search_space(model, mfl, type='iiv')
     if mfl.covariance:
-        return is_in_iiv_search_space and is_in_search_space(model, mfl, type='covariance')
-    return is_in_iiv_search_space
+        return not (is_in_iiv_search_space and is_in_search_space(model, mfl, type='covariance'))
+    return not is_in_iiv_search_space
 
 
 def prepare_rank_options(rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q):
