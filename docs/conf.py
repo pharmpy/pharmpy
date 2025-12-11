@@ -92,5 +92,5 @@ pd.set_option('display.width', 1000)
 pd.set_option('display.max_columns', 1000)
 '''
 
-# Page is reachable from browser but gives 403 with GET
-linkcheck_ignore = [r'https://doi.org/10.1002/psp4.12741']
+linkcheck_ignore = [r'https://doi.org/10.1002/psp4.12741', # Page is reachable from browser but gives 403 with GET
+    r'https://doi.org/10.1515/ijb-2019-0082']
