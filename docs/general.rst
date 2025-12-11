@@ -14,4 +14,5 @@ General information about the Pharmpy tools can be found here:
    Options <options>
    Strictness <strictness>
    Selection criteria <selection_criteria>
+   Context <context>
    Dispatching <dispatching>
