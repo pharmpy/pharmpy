@@ -56,58 +56,6 @@ from pharmpy.workflows import LocalDirectoryContext
             2,
             'iivsearch_run2',
         ),
-        ('top_down_exhaustive', 'skip', {'_search_space': 'IIV?(@PK,exp)'}, 7, 3, 'iivsearch_run1'),
-        (
-            'top_down_exhaustive',
-            'skip',
-            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
-            3,
-            2,
-            'iivsearch_run1',
-        ),
-        (
-            'skip',
-            'top_down_exhaustive',
-            {'_search_space': 'IIV(@PK,exp);COVARIANCE?(IIV,@IIV)'},
-            4,
-            3,
-            'iivsearch_run1',
-        ),
-        (
-            'top_down_exhaustive',
-            'skip',
-            {'_search_space': 'IIV(CL,exp);IIV?(@PK,[exp,add])'},
-            8,
-            2,
-            'iivsearch_run1',
-        ),
-        (
-            'top_down_exhaustive',
-            None,
-            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
-            4,
-            2,
-            'iivsearch_run1',
-        ),
-        (
-            'top_down_exhaustive',
-            'skip',
-            {'_search_space': 'IIV?(@PK,exp)', '_as_fullblock': True},
-            15,
-            10,
-            'iivsearch_run15',
-        ),
-        (
-            'top_down_exhaustive',
-            None,
-            {
-                '_search_space': 'IIV(CL,exp);IIV?(@PK,[exp,add]);COVARIANCE?(IIV,@IIV)',
-                '_as_fullblock': True,
-            },
-            27,
-            9,
-            'iivsearch_run27',
-        ),
     ],
 )
 def test_iivsearch_dummy(
@@ -123,9 +71,7 @@ def test_iivsearch_dummy(
 ):
     with chdir(tmp_path):
         no_of_models_total = no_of_candidate_models + 1  # Include input
-        has_iiv_strategy = ('iiv_strategy' in kwargs and kwargs['iiv_strategy'] != 'no_add') or (
-            '_as_fullblock' in kwargs and kwargs['_as_fullblock']
-        )
+        has_iiv_strategy = 'iiv_strategy' in kwargs and kwargs['iiv_strategy'] != 'no_add'
         if has_iiv_strategy:
             start_model = add_lag_time(start_modelres_dummy[0])
             start_res = fit(start_model, esttool='dummy')
@@ -159,6 +105,149 @@ def test_iivsearch_dummy(
         rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()
         assert model_count(rundir) == no_of_models_total + 1  # Include final
+        assert (rundir / 'results.json').exists()
+        assert (rundir / 'results.csv').exists()
+        assert (rundir / 'metadata.json').exists()
+        assert (rundir / 'models' / 'iivsearch_run1' / 'model_results.json').exists()
+        assert not (rundir / 'models' / 'iivsearch_run1' / 'model.lst').exists()
+
+
+@pytest.mark.parametrize(
+    'algorithm, correlation_algorithm, kwargs, no_of_models, no_of_steps, max_diff_params, best_model',
+    [
+        (
+            'top_down_exhaustive',
+            'skip',
+            {'_search_space': 'IIV?(@PK,exp)'},
+            8,
+            2,
+            3,
+            'iivsearch_run1',
+        ),
+        (
+            'top_down_exhaustive',
+            'skip',
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
+            4,
+            2,
+            2,
+            'iivsearch_run1',
+        ),
+        (
+            'skip',
+            'top_down_exhaustive',
+            {'_search_space': 'IIV(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+            5,
+            2,
+            3,
+            'iivsearch_run1',
+        ),
+        (
+            'top_down_exhaustive',
+            'skip',
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,[exp,add])'},
+            9,
+            2,
+            2,
+            'iivsearch_run1',
+        ),
+        (
+            'top_down_exhaustive',
+            None,
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+            5,
+            3,
+            2,
+            'iivsearch_run1',
+        ),
+        (
+            'top_down_exhaustive',
+            'skip',
+            {'_search_space': 'IIV?(@PK,exp)', '_as_fullblock': True},
+            17,
+            2,
+            10,
+            'iivsearch_run15',
+        ),
+        (
+            'top_down_exhaustive',
+            None,
+            {
+                '_search_space': 'IIV(CL,exp);IIV?(@PK,[exp,add]);COVARIANCE?(IIV,@IIV)',
+                '_as_fullblock': True,
+            },
+            29,
+            3,
+            9,
+            'iivsearch_run27',
+        ),
+        (
+            'bottom_up_stepwise',
+            'top_down_exhaustive',
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+            6,
+            4,
+            1,
+            'iivsearch_run1',
+        ),
+        (
+            'bottom_up_stepwise',
+            'top_down_exhaustive',
+            {
+                '_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)',
+                '_as_fullblock': True,
+            },
+            19,
+            5,
+            6,
+            'iivsearch_run7',
+        ),
+    ],
+)
+def test_iivsearch_dummy_mfl(
+    tmp_path,
+    model_count,
+    start_modelres_dummy,
+    algorithm,
+    correlation_algorithm,
+    kwargs,
+    no_of_models,
+    no_of_steps,
+    max_diff_params,
+    best_model,
+):
+    with chdir(tmp_path):
+        has_iiv_strategy = '_as_fullblock' in kwargs and kwargs['_as_fullblock']
+        if has_iiv_strategy:
+            start_model = add_lag_time(start_modelres_dummy[0])
+            start_res = fit(start_model, esttool='dummy')
+        else:
+            start_model = start_modelres_dummy[0]
+            start_res = start_modelres_dummy[1]
+
+        res = run_iivsearch(
+            model=start_model,
+            results=start_res,
+            algorithm=algorithm,
+            correlation_algorithm=correlation_algorithm,
+            esttool='dummy',
+            **kwargs,
+        )
+        print(res.summary_tool.to_string())
+        assert len(res.summary_tool.index.get_level_values('model').unique()) == no_of_models
+        assert len(res.summary_models) == no_of_models
+        assert len(res.summary_tool.index.get_level_values('step').unique()) == no_of_steps
+        assert res.summary_tool['d_params'].abs().max() == max_diff_params
+
+        assert res.final_model.name == best_model
+
+        ctx = LocalDirectoryContext('iivsearch1')
+        cand_model = ctx.retrieve_model_entry('iivsearch_run2').model
+        assert cand_model.random_variables != start_model.random_variables
+
+        rundir = tmp_path / 'iivsearch1'
+        assert rundir.is_dir()
+        assert model_count(rundir) == no_of_models + 1  # Include final
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()

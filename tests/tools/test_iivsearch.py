@@ -37,7 +37,8 @@ from pharmpy.tools.iivsearch.algorithms import (
 from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     categorize_model_entries,
-    create_base_model,
+    create_base_model_bottom_up,
+    create_base_model_top_down,
     create_param_mapping,
     create_workflow,
     get_mbic_search_space,
@@ -413,13 +414,13 @@ def test_get_covariance_combinations(mfl, base_features, expected):
 
 
 @pytest.mark.parametrize(
-    'funcs, mfl, as_fullblock, expected',
+    'funcs, mfl, as_fullblock, algorithm, expected',
     [
-        ([], 'IIV([CL,MAT,VC],EXP)', False, False),
-        ([], 'IIV?([CL,MAT,VC],EXP)', False, False),
-        ([], 'IIV?([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', False, True),
-        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC],EXP)', False, False),
-        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC,QP1],EXP)', False, False),
+        ([], 'IIV([CL,MAT,VC],EXP)', False, 'td', False),
+        ([], 'IIV?([CL,MAT,VC],EXP)', False, 'td', False),
+        ([], 'IIV?([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', False, 'td', True),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC],EXP)', False, 'td', False),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC,QP1],EXP)', False, 'td', False),
         (
             [
                 add_peripheral_compartment,
@@ -427,21 +428,25 @@ def test_get_covariance_combinations(mfl, base_features, expected):
             ],
             'IIV?([CL,MAT,VC,QP1],EXP)',
             False,
+            'td',
             False,
         ),
-        ([], 'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,VC])', False, False),
-        ([], 'IIV([CL,MAT,VC],EXP)', True, True),
-        ([create_joint_distribution], 'IIV([CL,MAT,VC],EXP)', True, False),
-        ([], 'IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', False, False),
+        ([], 'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,VC])', False, 'td', False),
+        ([], 'IIV([CL,MAT,VC],EXP)', True, 'td', True),
+        ([create_joint_distribution], 'IIV([CL,MAT,VC],EXP)', True, 'td', False),
+        ([], 'IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', False, 'td', False),
+        ([], 'IIV([CL,MAT,VC],EXP)', False, 'bu', True),
     ],
 )
-def test_needs_base_model(load_model_for_test, testdata, funcs, mfl, as_fullblock, expected):
+def test_needs_base_model(
+    load_model_for_test, testdata, funcs, mfl, as_fullblock, algorithm, expected
+):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model = func(model)
 
     mfl = ModelFeatures.create(mfl)
-    assert needs_base_model(model, mfl, as_fullblock) == expected
+    assert needs_base_model(model, mfl, as_fullblock, algorithm) == expected
 
 
 @pytest.mark.parametrize(
@@ -465,14 +470,39 @@ def test_needs_base_model(load_model_for_test, testdata, funcs, mfl, as_fullbloc
         ),
     ],
 )
-def test_create_base_model(
+def test_create_base_model_top_down(
     load_model_for_test, testdata, mfl, as_fullblock, iiv_expected, cov_expected
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model_entry = ModelEntry.create(model=model, modelfit_results=res)
     mfl = ModelFeatures.create(mfl)
-    base_model_entry = create_base_model(mfl, as_fullblock, model_entry)
+    base_model_entry = create_base_model_top_down(mfl, as_fullblock, model_entry)
+    base_model = base_model_entry.model
+    assert repr(get_model_features(base_model, type='iiv')) == iiv_expected
+    assert repr(get_model_features(base_model, type='covariance')) == cov_expected
+    assert base_model_entry.modelfit_results is None
+    assert base_model_entry.parent == model
+
+
+@pytest.mark.parametrize(
+    'mfl, as_fullblock, iiv_expected, cov_expected',
+    [
+        ('IIV?([CL,MAT,VC],EXP)', False, '', ''),
+        ('IIV(CL,EXP);IIV?([MAT,VC],EXP)', False, 'IIV(CL,EXP)', ''),
+        ('IIV([CL,MAT],EXP);IIV?(VC,EXP)', False, 'IIV([CL,MAT],EXP)', ''),
+        ('IIV(CL,EXP);IIV?([MAT,VC],EXP)', True, 'IIV(CL,EXP)', ''),
+        ('IIV([CL,MAT],EXP);IIV?(VC,EXP)', True, 'IIV([CL,MAT],EXP)', 'COVARIANCE(IIV,[CL,MAT])'),
+    ],
+)
+def test_create_base_model_bottom_up(
+    load_model_for_test, testdata, mfl, as_fullblock, iiv_expected, cov_expected
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_entry = ModelEntry.create(model=model, modelfit_results=res)
+    mfl = ModelFeatures.create(mfl)
+    base_model_entry = create_base_model_bottom_up(mfl, as_fullblock, model_entry)
     base_model = base_model_entry.model
     assert repr(get_model_features(base_model, type='iiv')) == iiv_expected
     assert repr(get_model_features(base_model, type='covariance')) == cov_expected

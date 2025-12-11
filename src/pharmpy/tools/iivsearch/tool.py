@@ -47,6 +47,8 @@ from pharmpy.tools.run import (
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
+from .algorithms import get_best_model_entry, rank_models
+
 IIV_STRATEGIES = frozenset(
     ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
 )
@@ -883,11 +885,20 @@ def create_workflow_mfl(
         rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q
     )
 
+    steps_to_run = prepare_algorithms(algorithm, correlation_algorithm)
+
     start_task = Task.create('start', start_with_search_space, model, results)
     wb.add_task(start_task)
 
-    if needs_base_model(model, mfl_expanded, as_fullblock):
-        create_base_task = Task.create('base_model', create_base_model, mfl_expanded, as_fullblock)
+    if needs_base_model(model, mfl_expanded, as_fullblock, steps_to_run[0]):
+        if steps_to_run[0].startswith('td'):
+            create_base_task = Task.create(
+                'base_model', create_base_model_top_down, mfl_expanded, as_fullblock
+            )
+        else:
+            create_base_task = Task.create(
+                'base_model', create_base_model_bottom_up, mfl_expanded, as_fullblock
+            )
         wb.add_task(create_base_task, predecessors=[start_task])
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
@@ -898,13 +909,21 @@ def create_workflow_mfl(
     init_search_task = Task.create('init_search', init_search)
     wb.add_task(init_search_task, predecessors=[base_task])
 
-    steps_to_run = prepare_algorithms(algorithm, correlation_algorithm)
     search_tasks = []
     for step in steps_to_run:
         if 'exhaustive' in step:
             search_task = Task.create(
                 'run_exhaustive_search',
                 run_exhaustive_search,
+                step,
+                as_fullblock,
+                mfl,
+                rank_options,
+            )
+        elif 'stepwise' in step:
+            search_task = Task.create(
+                'run_stepwise_search',
+                run_stepwise_search,
                 step,
                 as_fullblock,
                 mfl,
@@ -927,28 +946,34 @@ def create_workflow_mfl(
     )
     wb.add_task(compare_task, predecessors=[start_task, end_search_task])
 
-    collect_task = Task.create('collect', collect_results)
-    wb.add_task(collect_task)
+    unpack_task = Task.create('unpack', unpack_tool_summaries)
+    wb.add_task(unpack_task)
 
     for i, search_task in enumerate(search_tasks):
         if i == len(search_tasks) - 1:
             break
-        dest = (search_tasks[i + 1], collect_task)
+        dest = (search_tasks[i + 1], unpack_task)
         wb.scatter(search_task, dest)
 
     post_process_task = Task.create('postprocess', postprocess)
-    wb.add_task(post_process_task, predecessors=[compare_task, collect_task])
+    wb.add_task(post_process_task, predecessors=[compare_task, unpack_task])
 
     return Workflow(wb)
 
 
-def needs_base_model(model, mfl, as_fullblock):
-    if as_fullblock and len(model.random_variables.iiv) != 1:
+def needs_base_model(model, mfl, as_fullblock, algorithm):
+    if algorithm.startswith('bu'):
         return True
-    is_in_iiv_search_space = is_in_search_space(model, mfl, type='iiv')
+    if (
+        as_fullblock
+        and len(model.random_variables.iiv.names) > 1
+        and len(model.random_variables.iiv) != 1
+    ):
+        return True
+    in_search_space = is_in_search_space(model, mfl, type='iiv')
     if mfl.covariance:
-        return not (is_in_iiv_search_space and is_in_search_space(model, mfl, type='covariance'))
-    return not is_in_iiv_search_space
+        return not (in_search_space and is_in_search_space(model, mfl, type='covariance'))
+    return not in_search_space
 
 
 def prepare_rank_options(rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q):
@@ -980,16 +1005,33 @@ def prepare_input_model_entry(input_model, input_res):
     return input_model_entry
 
 
-def create_base_model(mfl, as_fullblock, input_model_entry):
+def create_base_model_top_down(mfl, as_fullblock, input_model_entry):
+    base_model_entry = _create_base_model(
+        input_model_entry, mfl.iiv.force_optional(), mfl.covariance, as_fullblock
+    )
+    return base_model_entry
+
+
+def create_base_model_bottom_up(mfl, as_fullblock, input_model_entry):
+    iivs = mfl.iiv - mfl.iiv.filter(filter_on='optional')
+    iiv_params = [iiv.parameter for iiv in iivs]
+    covs = ModelFeatures.create(
+        [c for c in mfl.covariance if all(p in iiv_params for p in c.parameters)]
+    )
+    base_model_entry = _create_base_model(input_model_entry, iivs, covs, as_fullblock)
+    return base_model_entry
+
+
+def _create_base_model(input_model_entry, iivs, covariances, as_fullblock):
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     base_model = update_initial_estimates(
         input_model,
         input_res,
         move_est_close_to_bounds=True,
     )
-    base_model = transform_into_search_space(base_model, mfl.iiv.force_optional(), type='iiv')
-    base_model = transform_into_search_space(base_model, mfl.covariance, type='covariance')
-    if as_fullblock:
+    base_model = transform_into_search_space(base_model, iivs, type='iiv')
+    base_model = transform_into_search_space(base_model, covariances, type='covariance')
+    if as_fullblock and len(base_model.random_variables.iiv) > 1:
         ies = input_res.individual_estimates
         base_model = create_joint_distribution(base_model, individual_estimates=ies)
     base_mfl = get_model_features(base_model)
@@ -1013,56 +1055,36 @@ def run_exhaustive_search(
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
     algorithm_func = getattr(algorithms, f'{step}_mfl')
-    if not algorithm_func:
-        raise NotImplementedError
     wf_step = algorithm_func(base_model_entry, mfl, index_offset, as_fullblock)
     if not wf_step:
-        return base_model_entry, (None, [])
-
+        return (base_model_entry, index_offset), []
     mes = context.call_workflow(wf_step, 'run_candidates')
-
     rank_res = rank_models(
         context,
         rank_options,
         base_model_entry,
         mes,
     )
-
     mes_all = (base_model_entry,) + mes
     best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
     summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
+    return (best_model_entry, len(mes)), [summary_tool]
 
-    return (best_model_entry, len(mes)), summary_tool
 
-
-def rank_models(
-    context,
-    rank_options,
-    base_model_entry,
-    model_entries,
+def run_stepwise_search(
+    context, step, as_fullblock, mfl, rank_options, base_model_entry_and_index_offset
 ):
-    models = [base_model_entry.model] + [me.model for me in model_entries]
-    results = [base_model_entry.modelfit_results] + [me.modelfit_results for me in model_entries]
-
-    rank_res = run_subtool(
-        tool_name='modelrank',
-        ctx=context,
-        models=models,
-        results=results,
-        ref_model=base_model_entry.model,
-        rank_type=rank_options.rank_type,
-        alpha=rank_options.cutoff,
-        strictness=rank_options.strictness,
-        parameter_uncertainty_method=rank_options.parameter_uncertainty_method,
+    base_model_entry, index_offset = base_model_entry_and_index_offset
+    algorithm_func = getattr(algorithms, f'{step}_mfl')
+    rank_res, mes = algorithm_func(
+        context, base_model_entry, mfl, index_offset, as_fullblock, rank_options
     )
-
-    return rank_res
-
-
-def get_best_model_entry(model_entries, final_model):
-    best_model_entry = [me for me in model_entries if me.model == final_model]
-    assert len(best_model_entry) == 1
-    return best_model_entry[0]
+    if not rank_res:
+        return (base_model_entry, index_offset), []
+    mes_all = (base_model_entry,) + mes
+    tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
+    best_model_entry = get_best_model_entry(mes_all, rank_res[-1].final_model)
+    return (best_model_entry, len(mes)), tool_summaries
 
 
 def end_search(best_model_entry_and_index_offset):
@@ -1070,8 +1092,8 @@ def end_search(best_model_entry_and_index_offset):
     return best_model_entry
 
 
-def collect_results(*tool_summaries):
-    return list(tool_summaries)
+def unpack_tool_summaries(*tool_summaries):
+    return [tool_summary for step in tool_summaries for tool_summary in step]
 
 
 def compare_to_input_model(

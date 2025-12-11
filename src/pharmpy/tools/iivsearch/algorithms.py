@@ -92,6 +92,59 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset, as_fu
     return Workflow(wb)
 
 
+def bu_stepwise_no_of_etas_mfl(
+    context, base_model_entry, mfl, index_offset, as_fullblock, rank_options
+):
+    mfl = expand_model_features(base_model_entry.model, mfl.iiv)
+    iivs = mfl.iiv.filter(filter_on='optional')
+
+    rank_results = []
+    mes = []
+
+    selected_model_entry = base_model_entry
+    for i in range(len(iivs)):
+        wb_step = WorkflowBuilder(name=f'step{i}')
+        base_features = get_model_features(selected_model_entry.model, type='iiv')
+        iivs_to_test = iivs.force_optional() - base_features.iiv
+        for j, iiv in enumerate(iivs_to_test, 1):
+            candidate_number = index_offset + len(mes) + j
+            model_name = f'iivsearch_run{candidate_number}'
+            task_candidate_entry = Task(
+                f'create_{model_name}',
+                create_candidate,
+                model_name,
+                base_features + iiv,
+                'iiv',
+                as_fullblock,
+                selected_model_entry,
+            )
+            wb_step.add_task(task_candidate_entry)
+            wf_fit = modelfit.create_fit_workflow(n=1)
+            wb_step.insert_workflow(wf_fit, predecessors=[task_candidate_entry])
+
+        wb_step.gather(wb_step.output_tasks)
+        wf_step = Workflow(wb_step)
+        mes_step = context.call_workflow(wf_step, unique_name=f'run_candidates_step{i}')
+
+        rank_res = rank_models(
+            context,
+            rank_options,
+            selected_model_entry,
+            mes_step,
+        )
+
+        rank_results.append(rank_res)
+        mes.extend(mes_step)
+
+        if rank_res.final_model == selected_model_entry.model:
+            break
+
+        mes_all = (selected_model_entry,) + mes_step
+        selected_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+
+    return rank_results, tuple(mes)
+
+
 def get_iiv_combinations(mfl, base_features):
     assert mfl.is_expanded()
 
@@ -196,6 +249,36 @@ def create_description_mfl(mfl, type):
             description += f' ({fp_description})'
 
     return description
+
+
+def rank_models(
+    context,
+    rank_options,
+    base_model_entry,
+    model_entries,
+):
+    models = [base_model_entry.model] + [me.model for me in model_entries]
+    results = [base_model_entry.modelfit_results] + [me.modelfit_results for me in model_entries]
+
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=models,
+        results=results,
+        ref_model=base_model_entry.model,
+        rank_type=rank_options.rank_type,
+        alpha=rank_options.cutoff,
+        strictness=rank_options.strictness,
+        parameter_uncertainty_method=rank_options.parameter_uncertainty_method,
+    )
+
+    return rank_res
+
+
+def get_best_model_entry(model_entries, final_model):
+    best_model_entry = [me for me in model_entries if me.model == final_model]
+    assert len(best_model_entry) == 1
+    return best_model_entry[0]
 
 
 def td_exhaustive_no_of_etas(base_model, index_offset=0, keep=None, param_mapping=None):
