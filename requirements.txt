@@ -3,7 +3,7 @@ altair==6.0.0
 appdirs==1.4.4
 asttokens==3.0.1
 attrs==25.4.0
-Babel==2.17.0
+babel==2.17.0
 beautifulsoup4==4.14.3
 bleach==6.3.0
 certifi==2025.11.12
@@ -23,7 +23,6 @@ fastjsonschema==2.21.2
 fsspec==2025.12.0
 idna==3.11
 imagesize==1.4.1
-importlib_metadata==8.7.0
 ipykernel==7.1.0
 ipython==9.8.0
 ipython_pygments_lexers==1.1.1
@@ -77,7 +76,7 @@ pyzmq==27.1.0
 referencing==0.37.0
 requests==2.32.5
 rich==14.2.0
-roman-numerals-py==3.1.0
+roman-numerals==3.1.0
 rpds-py==0.30.0
 scipy==1.16.3
 six==1.17.0
