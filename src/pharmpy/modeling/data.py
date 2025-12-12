@@ -2750,7 +2750,7 @@ def calculate_summary_statistic(
     >>> calculate_summary_statistic(model, "max", "TIME")
     389.8
     >>> calculate_summary_statistic(model, "median", "log(WGT)")
-    1.2809338454620642
+    0.26236426446749106
     >>> calculate_summary_statistic(model, "median", "TVCL")
     0.0069941881935483875
     """
