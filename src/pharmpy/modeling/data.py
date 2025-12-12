@@ -13,6 +13,7 @@ from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
+from pharmpy.internals.math import replace_nan
 from pharmpy.model import (
     Assignment,
     ColumnInfo,
@@ -24,6 +25,7 @@ from pharmpy.model import (
 )
 from pharmpy.model.model import update_datainfo
 
+from .evaluation import evaluate_expression
 from .expressions import get_dv_symbol
 from .iterators import resample_data
 
@@ -2713,3 +2715,62 @@ def get_column_name(model: Model, type: str) -> Optional[str]:
             raise IndexError(f"More than one column of type {type}")
         name = columns[0].name
     return name
+
+
+def calculate_summary_statistic(
+    model: Model, stat: str, expr: Optional[str], default: Optional[float] = None
+) -> float:
+    """Calculate a summary statistic for an expression over the dataset
+
+    The expression can be a dataset column name, a variable from the model, e.g. a derived
+    covariate or a matematical expression involving dataset columns or model variables.
+    If a calculation involves population parameters, the initial estimates will be used.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    stat : str
+        The summary statistic. Can be "max", "min", "median" or "mean"
+    expr : str
+        A mathematical expression containing column or variable names
+    default : float
+        An optional default value to use in case the statistic couldn't be calculated.
+        For example if the model has no dataset.
+
+    Returns
+    -------
+    float
+        The summary statistic
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, calculate_summary_statistic
+    >>> model = load_example_model("pheno")
+    >>> calculate_summary_statistic(model, "max", "TIME")
+    389.8
+    >>> calculate_summary_statistic(model, "median", "log(WGT)")
+    1.2809338454620642
+    >>> calculate_summary_statistic(model, "median", "TVCL")
+    0.0069941881935483875
+    """
+    if expr is None or model.dataset is None:
+        value = float("NaN")
+    else:
+        try:
+            vec = evaluate_expression(model, expr)
+        except KeyError:
+            value = float("NaN")
+        else:
+            stat = stat.lower()
+            if stat == "max":
+                value = vec.max()
+            elif stat == "min":
+                value = vec.min()
+            elif stat == "mean":
+                value = vec.mean()
+            elif stat == "median":
+                value = vec.median()
+            else:
+                raise ValueError(f"Unsupported statistic {stat}")
+    return replace_nan(float(value), default)

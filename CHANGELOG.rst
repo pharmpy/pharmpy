@@ -1,6 +1,11 @@
 next version
 ------------
 
+New features
+============
+
+* Add :code:`modeling.calculate_summary_statistic`
+
 Changes
 =======
 

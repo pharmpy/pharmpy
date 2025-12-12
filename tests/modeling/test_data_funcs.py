@@ -9,6 +9,7 @@ from pharmpy.modeling import (
     add_time_of_last_dose,
     bin_observations,
     binarize_dataset,
+    calculate_summary_statistic,
     check_dataset,
     create_basic_pk_model,
     deidentify_data,
@@ -720,3 +721,21 @@ def test_remove_unused_columns(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = remove_unused_columns(model)
     assert model.datainfo.names == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+
+
+@pytest.mark.parametrize(
+    "stat,expr,default,correct",
+    [
+        ("mean", "WGT", None, 1.4903225806451612),
+        ("median", "WGT", None, 1.3),
+        ("max", "APGR", None, 10.0),
+        ("min", "APGR", None, 1.0),
+        ("median", "WGT*2", None, 2.6),
+        ("median", "TVCL", None, 0.006100991),
+        ("median", "NOAVAIL", 2.0, 2.0),
+    ],
+)
+def test_calculate_summary_statistic(load_example_model_for_test, stat, expr, default, correct):
+    model = load_example_model_for_test("pheno")
+    res = calculate_summary_statistic(model, stat, expr, default)
+    assert res == correct
