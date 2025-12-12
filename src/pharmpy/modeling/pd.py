@@ -17,7 +17,13 @@ from pharmpy.model import (
     get_and_check_odes,
     output,
 )
-from pharmpy.modeling import create_symbol, get_central_volume_and_clearance, set_initial_condition
+from pharmpy.modeling import (
+    calculate_summary_statistic,
+    create_symbol,
+    get_central_volume_and_clearance,
+    get_column_name,
+    set_initial_condition,
+)
 
 from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
@@ -576,7 +582,10 @@ def add_placebo_model(
         if operator != '*':
             raise ValueError('Only * is supported for exp')
         td = create_symbol(model, "TD")
-        model = add_individual_parameter(model, td.name)
+        td_init = 2.0 * calculate_summary_statistic(
+            model, "max", get_column_name(model, "idv"), default=1.0
+        )
+        model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = (-idv / td).exp()
         rassign_expr = old_rassign.expression * P
     elif expr == 'hyperbolic':
