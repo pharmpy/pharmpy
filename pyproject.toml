@@ -37,6 +37,7 @@ dependencies = [
     'jupyter-sphinx>=0.2.0',
     'ipykernel>=5.4.0',
     'statsmodels>=0.14.5',
+    'pytensor>=2.35.1',
 ]
 classifiers = [
     'Development Status :: 5 - Production/Stable',
