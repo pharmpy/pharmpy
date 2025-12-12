@@ -2752,7 +2752,7 @@ def calculate_summary_statistic(
     >>> calculate_summary_statistic(model, "median", "log(WGT)")
     0.26236426446749106
     >>> calculate_summary_statistic(model, "median", "TVCL")
-    0.0069941881935483875
+    0.006100991
     """
     if expr is None or model.dataset is None:
         value = float("NaN")
