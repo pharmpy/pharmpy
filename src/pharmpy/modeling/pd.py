@@ -21,7 +21,6 @@ from pharmpy.modeling import (
     calculate_summary_statistic,
     create_symbol,
     get_central_volume_and_clearance,
-    get_column_name,
     set_initial_condition,
 )
 
@@ -582,15 +581,14 @@ def add_placebo_model(
         if operator != '*':
             raise ValueError('Only * is supported for exp')
         td = create_symbol(model, "TD")
-        td_init = 2.0 * calculate_summary_statistic(
-            model, "max", get_column_name(model, "idv"), default=1.0
-        )
+        td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
         model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = (-idv / td).exp()
         rassign_expr = old_rassign.expression * P
     elif expr == 'hyperbolic':
         t50 = create_symbol(model, "T50")
-        model = add_individual_parameter(model, t50.name)
+        t50_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
+        model = add_individual_parameter(model, t50.name, init=t50_init)
         passign_expr = t50 / (idv + t50)
         rassign_expr = operate(old_rassign.expression, P, operator)
     else:
