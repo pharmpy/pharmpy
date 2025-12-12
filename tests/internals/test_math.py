@@ -1,3 +1,4 @@
+import math
 import warnings
 
 import numpy as np
@@ -22,6 +23,7 @@ from pharmpy.internals.math import (
     is_positive_semidefinite,
     nearest_positive_definite,
     nearest_positive_semidefinite,
+    replace_nan,
     round_and_keep_sum,
     round_to_n_sigdig,
     se_delta_method,
@@ -242,3 +244,17 @@ def test_conditional_joint_normal_lambda():
 
     assert (mu_1 == mu_2).all()
     assert (sigma_1 == sigma_2).all()
+
+
+@pytest.mark.parametrize(
+    "x,value,correct",
+    [
+        (1.0, 2.0, 1.0),
+        (float("NaN"), 2.0, 2.0),
+        (3.5, None, 3.5),
+        (float("NaN"), None, float("NaN")),
+    ],
+)
+def test_replace_nan(x, value, correct):
+    res = replace_nan(x, value)
+    assert res == correct or math.isnan(res) and math.isnan(correct)

@@ -245,3 +245,12 @@ def round_to_n_sigdig(x, n):
         return x
     else:
         return round(x, -int(math.floor(math.log10(abs(x)))) + (n - 1))
+
+
+def replace_nan(x, val):
+    if val is None:
+        return x
+    elif math.isnan(x):
+        return val
+    else:
+        return x
