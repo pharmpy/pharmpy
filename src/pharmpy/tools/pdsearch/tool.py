@@ -164,7 +164,6 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
         rank_type='bic_mixed',
         strictness=strictness,
         parameter_uncertainty_method=parameter_uncertainty_method,
-        exclude_reference_model=True,
     )
 
     final_model = rank_res.final_model
@@ -205,12 +204,7 @@ def run_drug_effect_models(
         rank_type='bic_mixed',
         strictness=strictness,
         parameter_uncertainty_method=parameter_uncertainty_method,
-        exclude_reference_model=True,
     )
-
-    final_model = rank_res.final_model
-    if final_model is None:
-        context.abort_workflow("No drug effect model selected")
 
     return rank_res
 
