@@ -1,7 +1,7 @@
 # Direct dependencies
 black==25.12.0
 check-manifest==0.51
-docutils==0.21.2
+docutils==0.22.2
 flake8==7.3.0
 flake8-black==0.4.0
 flake8-pyproject==1.2.4
