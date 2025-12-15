@@ -832,6 +832,7 @@ def _parse_tree(tree: AttrTree):
 
 
 def _reorder_block_statements(s):
-    piecewise = [ass for ass in s if isinstance(ass.expression, sympy.Piecewise)]
+    piecewise = [ass for ass in s if ass.expression.is_piecewise()]
     assignments = [ass for ass in s if ass not in piecewise]
+
     return assignments + piecewise
