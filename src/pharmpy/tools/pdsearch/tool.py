@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     create_basic_kpd_model,
     create_basic_pd_model,
     get_observations,
+    is_binary,
     set_description,
     set_direct_effect,
     set_initial_estimates,
@@ -181,7 +182,12 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
 def run_drug_effect_models(
     context, treatment_variable, strictness, parameter_uncertainty_method, baseme
 ):
-    exprs = ("linear", "step", "emax", "sigmoid")
+    exprs = ("step", "emax", "sigmoid")
+    if not is_binary(baseme.model, treatment_variable):
+        # If the driver is binary linear and step are the same model
+        # so add linear if not binary
+        exprs = ("linear",) + exprs
+
     context.log_info(f"Running {len(exprs)} drug_effect models.")
 
     wb = WorkflowBuilder()
