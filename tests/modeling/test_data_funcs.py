@@ -30,6 +30,7 @@ from pharmpy.modeling import (
     get_number_of_observations_per_individual,
     get_observations,
     infer_datatypes,
+    is_binary,
     list_time_varying_covariates,
     load_dataset,
     remove_loq_data,
@@ -739,3 +740,21 @@ def test_calculate_summary_statistic(load_example_model_for_test, stat, expr, de
     model = load_example_model_for_test("pheno")
     res = calculate_summary_statistic(model, stat, expr, default)
     assert res == correct
+
+
+@pytest.mark.parametrize(
+    "expr,correct",
+    [
+        ("WGT", False),
+        ("2*WGT", False),
+        ("FA1", True),
+        ("2*FA1", False),
+        ("A_CENTRAL(t)", False),
+        ("TVCL", False),
+        ("F", False),
+    ],
+)
+def test_is_binary(load_example_model_for_test, expr, correct):
+    model = load_example_model_for_test("pheno")
+    res = is_binary(model, expr)
+    assert res is correct

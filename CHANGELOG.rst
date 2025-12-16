@@ -5,6 +5,7 @@ New features
 ============
 
 * Add :code:`modeling.calculate_summary_statistic`
+* Add :code:`modeling.is_binary`
 
 Changes
 =======

@@ -2648,6 +2648,8 @@ def binarize_dataset(
 
     for col in columns:
         levels = sorted(set(df[col].values))
+        if levels == [0, 1]:
+            continue
         if not all_levels:
             levels = levels[0:-1]
 
@@ -2774,3 +2776,53 @@ def calculate_summary_statistic(
             else:
                 raise ValueError(f"Unsupported statistic {stat}")
     return replace_nan(float(value), default)
+
+
+def is_binary(model: Model, expr: str) -> bool:
+    """Check if an expression defines a binary variable (only having values 0 and 1)
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    expr : str
+        A mathematical expression containing column or variable names
+
+    Returns
+    -------
+    bool
+        True if binary
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, is_binary
+    >>> model = load_example_model("pheno")
+    >>> is_binary(model, "WGT")
+    False
+    >>> is_binary(model, "FA1")
+    True
+    """
+
+    odes = model.statements.ode_system
+    if odes is not None:
+        if odes.t in _get_all_statement_deps(model, Expr(expr)):
+            return False
+
+    vec = evaluate_expression(model, expr)
+    unique = set(vec.unique())
+    return unique == {0, 1}
+
+
+def _get_all_statement_deps(model: Model, expr: Expr) -> set[Expr]:
+    # Dummy because Expr.free_symbols does not count amount functions
+    dummy_assignment = Assignment(Expr.symbol("_DUMMY"), expr)
+    expr_symbs = dummy_assignment.rhs_symbols
+    data_symbs = set(model.datainfo.symbols)
+    lhs_symbs = expr_symbs - data_symbs
+    all_deps = set()
+    for s in lhs_symbs:
+        if s != model.statements.ode_system.t:
+            symbol_deps = model.statements.dependencies(s)
+            all_deps |= symbol_deps
+        all_deps |= {s}
+    return all_deps
