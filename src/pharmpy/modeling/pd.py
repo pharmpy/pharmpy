@@ -515,13 +515,17 @@ def add_placebo_model(
 
         .. math:: R = B + \text{slope} \cdot \text{TIME}
 
-    * exp
+    * exp_decrease
 
         .. math:: R = B \cdot e^{\frac{-t}{t_D}}
 
-    * hyperbolic
+    * exp_increase
 
-        .. math:: R = B \cdot \frac{t_{50}}{t + t_{50}}
+        .. math:: R = B \cdot (1 + e^{\frac{-t}{t_D}})
+
+    * tmax
+
+        .. math:: R = B \cdot \frac{t_{max} \cdot t}{t_{50} + t}
 
     :math:`B` is the baseline effect
 
@@ -577,13 +581,21 @@ def add_placebo_model(
         model = add_individual_parameter(model, slope.name, lower=-float("inf"))
         passign_expr = slope * idv
         rassign_expr = operate(old_rassign.expression, P, operator)
-    elif expr == 'exp':
+    elif expr == 'exp_decrease':
         if operator != '*':
             raise ValueError('Only * is supported for exp')
         td = create_symbol(model, "TD")
         td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
         model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = (-idv / td).exp()
+        rassign_expr = old_rassign.expression * P
+    elif expr == 'exp_increase':
+        if operator != '*':
+            raise ValueError('Only * is supported for exp')
+        td = create_symbol(model, "TD")
+        td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
+        model = add_individual_parameter(model, td.name, init=td_init)
+        passign_expr = 1 - (-idv / td).exp()
         rassign_expr = old_rassign.expression * P
     elif expr == 'tmax':
         t50 = create_symbol(model, "T50")

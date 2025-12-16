@@ -217,7 +217,7 @@ def test_find_central_comp(load_model_for_test, testdata):
     'expr,Pexpr,Rexpr',
     [
         ("linear", S("SLOPE") * S("TIME"), S('B') * S('PDP')),
-        ("exp", (-S('TIME') / S('TD')).exp(), S('B') * S('PDP')),
+        ("exp_decrease", (-S('TIME') / S('TD')).exp(), S('B') * S('PDP')),
     ],
 )
 def test_add_placebo_model(expr, Pexpr, Rexpr):
