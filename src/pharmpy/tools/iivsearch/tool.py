@@ -133,7 +133,7 @@ def create_workflow(
     >>> from pharmpy.tools import run_iivsearch, load_example_modelfit_results
     >>> model = load_example_model("pheno")
     >>> results = load_example_modelfit_results("pheno")
-    >>> run_iivsearch(model=model, results=results, algorithm='td_brute_force')   # doctest: +SKIP
+    >>> run_iivsearch(model=model, results=results, algorithm='top_down_exhaustive')   # doctest: +SKIP
     """
 
     if not _search_space:
