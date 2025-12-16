@@ -585,11 +585,13 @@ def add_placebo_model(
         model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = (-idv / td).exp()
         rassign_expr = old_rassign.expression * P
-    elif expr == 'hyperbolic':
+    elif expr == 'tmax':
         t50 = create_symbol(model, "T50")
         t50_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
         model = add_individual_parameter(model, t50.name, init=t50_init)
-        passign_expr = t50 / (idv + t50)
+        tmax = create_symbol(model, "TMAX")
+        model = add_individual_parameter(model, tmax.name, lower=-1.0)
+        passign_expr = tmax * idv / (t50 + idv)
         rassign_expr = operate(old_rassign.expression, P, operator)
     else:
         raise ValueError(f"Unknown placebo model {expr}")

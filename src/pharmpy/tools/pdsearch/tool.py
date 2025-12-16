@@ -141,8 +141,8 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
         ("linear", "*"),
         ("linear", "+"),
         ("exp", "*"),
-        ("hyperbolic", "*"),
-        ("hyperbolic", "+"),
+        ("tmax", "*"),
+        ("tmax", "+"),
     )
     context.log_info(f"Running {len(exprs)} placebo/disease progression models.")
     wb = WorkflowBuilder()
