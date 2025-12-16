@@ -36,7 +36,10 @@ def test_special_models_bayes(testdata, load_model_for_test):
     path = onePROB / 'multEST' / 'noSIM' / 'withBayes.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
+    assert res is not None
+    assert res.standard_errors is not None
     assert pytest.approx(res.standard_errors['POP_CL'], 1e-13) == 2.51942e00
+    assert res.minimization_successful_iterations is not None
     succ1 = res.minimization_successful_iterations.iloc[0]
     succ2 = res.minimization_successful_iterations.iloc[1]
     assert succ1 is not None and not succ1
@@ -56,12 +59,15 @@ def test_special_models_eval3(testdata, load_model_for_test):
     path = onePROB / 'oneEST' / 'noSIM' / 'maxeval3.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
+    assert res is not None
     assert res.minimization_successful is False
 
 
 def test_covariance_pheno(pheno_path, pheno):
     res = parse_modelfit_results(pheno, pheno_path)
+    assert res is not None
     cov = res.covariance_matrix
+    assert cov is not None
     assert len(cov) == 6
     assert pytest.approx(cov.loc['PTVCL', 'PTVCL'], 1e-13) == 4.41151e-08
     assert pytest.approx(cov.loc['IVV', 'PTVV'], 1e-13) == 7.17184e-05
@@ -71,6 +77,7 @@ def test_covariance_pheno5(testdata, load_model_for_test):
     path = testdata / 'nonmem' / 'models' / 'pheno5.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
+    assert res is not None
     assert res.covstep_successful is True
 
 
@@ -78,8 +85,11 @@ def test_gradients(testdata, load_model_for_test):
     path = testdata / 'nonmem' / 'pheno.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
+    assert res is not None
     gradients = res.gradients
+    assert gradients is not None
     gradients_iterations = res.gradients_iterations
+    assert gradients_iterations is not None
     assert len(gradients) == 5
     assert not gradients_iterations.empty
     assert tuple(gradients_iterations.columns.to_list()[1::]) == model.parameters.names
@@ -100,7 +110,9 @@ def test_gradients(testdata, load_model_for_test):
 
 def test_information(pheno, pheno_path):
     res = parse_modelfit_results(pheno, pheno_path)
+    assert res is not None
     m = res.precision_matrix
+    assert m is not None
     assert len(m) == 6
     assert pytest.approx(m.loc['PTVCL', 'PTVCL'], 1e-13) == 2.99556e07
     assert pytest.approx(m.loc['IVV', 'PTVV'], 1e-13) == -2.80082e03
@@ -108,7 +120,9 @@ def test_information(pheno, pheno_path):
 
 def test_correlation(pheno, pheno_path):
     res = parse_modelfit_results(pheno, pheno_path)
+    assert res is not None
     corr = res.correlation_matrix
+    assert corr is not None
     assert len(corr) == 6
     assert corr.loc['PTVCL', 'PTVV'] == 0.00709865
     assert pytest.approx(corr.loc['IVV', 'PTVV'], 1e-13) == 3.56662e-01
@@ -326,8 +340,11 @@ def test_evaluation(testdata, load_model_for_test):
 
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
+    assert res is not None
 
+    assert res.ofv is not None
     assert round(res.ofv, 3) == 729.955
+    assert res.minimization_successful_iterations is not None
     assert res.minimization_successful_iterations.iloc[-1]
     assert not res.minimization_successful
 
@@ -382,3 +399,49 @@ def test_parse_different_idx_table(load_model_for_test, pheno_path):
     model = model.replace(dataset=df)
     res = parse_modelfit_results(model, pheno_path)
     assert res.residuals.index.tolist()[-1] == 10000
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    (
+        (
+            'nonmem/models/pheno5.mod',
+            pd.DataFrame(
+                {
+                    'sd': [8.2793e-02, 1.0000e-12],
+                    'var': [1.5873e-01, 1.0000e-12],
+                    'ebv_sd': [1.9126e-01, 4.9860e-02],
+                    'ebv_var': [3.4594e-01, 9.7234e-02],
+                },
+                index=('ETA_1', 'ETA_2'),
+            ),
+        ),
+    ),
+)
+def test_eta_shrinkage(testdata, load_model_for_test, path, expected):
+    model = load_model_for_test(testdata / path)
+    res = parse_modelfit_results(model, testdata / path)
+    assert res is not None
+    assert str(res.eta_shrinkage) == str(expected)
+
+
+@pytest.mark.parametrize(
+    ("path", "expected"),
+    (
+        (
+            'nonmem/models/pheno5.mod',
+            pd.DataFrame(
+                {
+                    'sd': [3.3146e-01],
+                    'var': [5.5306e-01],
+                },
+                index=('EPS_1',),
+            ),
+        ),
+    ),
+)
+def test_eps_shrinkage(testdata, load_model_for_test, path, expected):
+    model = load_model_for_test(testdata / path)
+    res = parse_modelfit_results(model, testdata / path)
+    assert res is not None
+    assert str(res.eps_shrinkage) == str(expected)
