@@ -5,5 +5,6 @@ sphinxcontrib-autoprogram==0.1.9
 sphinxcontrib.bibtex==2.6.5
 sphinx-automodapi==0.22.0
 markdown==3.10
+pywrapr @ git+https://github.com/pharmpy/pywrapr@main
 #indirect
 accessible-pygments==0.0.5
