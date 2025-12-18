@@ -877,7 +877,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     def _repr_latex_(self) -> str:
         lines = (dist.latex_string(aligned=True) for dist in self._dists)
-        return '\\begin{align*}\n' + r' \\ '.join(lines) + '\\end{align*}'
+        return '\\begin{aligned}\n' + r' \\ '.join(lines) + '\\end{aligned}'
 
     def parameters_sdcorr(self, values: Mapping[str, float]) -> dict[str, float]:
         """Convert parameter values to sd/corr form

@@ -402,7 +402,7 @@ def test_repr_latex():
     rvs = RandomVariables.create([dist1, dist2])
     assert (
         rvs._repr_latex_()
-        == '\\begin{align*}\nz & \\sim  \\mathcal{N} \\left(0,1\\right) \\\\ \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right] & \\sim \\mathcal{N} \\left(\\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)\\end{align*}'  # noqa E501
+        == '\\begin{aligned}\nz & \\sim  \\mathcal{N} \\left(0,1\\right) \\\\ \\left[\\begin{matrix}x\\\\y\\end{matrix}\\right] & \\sim \\mathcal{N} \\left(\\left[\\begin{matrix}0\\\\0\\end{matrix}\\right],\\left[\\begin{matrix}1 & 0.1\\\\0.1 & 2\\end{matrix}\\right]\\right)\\end{aligned}'  # noqa E501
     )
 
 
