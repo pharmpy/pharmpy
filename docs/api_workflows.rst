@@ -1,1 +1,5 @@
+=========
+Workflows
+=========
+
 .. automodapi:: pharmpy.workflows

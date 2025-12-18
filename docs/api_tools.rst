@@ -1,1 +1,5 @@
+=====
+Tools
+=====
+
 .. automodapi:: pharmpy.tools

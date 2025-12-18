@@ -1,1 +1,5 @@
+=====
+Model
+=====
+
 .. automodapi:: pharmpy.model
