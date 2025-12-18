@@ -12,7 +12,7 @@ the base model class :py:class:`pharmpy.model.Model`. This means that any model 
 Pharmpy via subclasses that implement the same base interface. This makes any operation performed on a model be the
 same regardless of the underlying implementation of the model and it is one of the core design principles of Pharmpy.
 This allows the functions in :py:mod:`pharmpy.modeling` and tools in :py:mod:`pharmpy.tools` to be independent
-on the estimation software: it is only when writing and fitting a model that the implementation is estimation software
+on the estimation software: it is only when writing or fitting a model that the implementation is estimation software
 specific.
 
 .. warning::
@@ -29,19 +29,13 @@ Reading in a model
 Reading a model from a model specification file into a Pharmpy model object can be done by using the
 :py:func:`pharmpy.modeling.read_model` function.
 
-.. pharmpy-execute::
-   :hide-output:
-   :hide-code:
-
-   from pathlib import Path
-   path = Path('tests/testdata/nonmem/')
 
 .. pharmpy-execute::
    :hide-output:
 
    from pharmpy.modeling import read_model
 
-   model = read_model(path / "pheno_real.mod")
+   model = read_model('tests/testdata/nonmem/pheno_real.mod')
 
 
 Internally this will trigger a model type detection to select which model implementation to use, i.e. if it is an
@@ -67,6 +61,19 @@ Optionally a path can be specified:
 
    write_model(model, path='/home/user/mymodel.mod')
 
+
+~~~~~~~~~~~~~~~~~~
+Converting a model
+~~~~~~~~~~~~~~~~~~
+
+A model object can be converted to another format by using the :func:`pharmpy.modeling.convert_model` function.
+This code will convert the previously read NONMEM model into an nlmixr model.
+
+.. pharmpy-code::
+
+    from pharmpy.modeling import convert_model
+    model2 = convert_model(model, "nlmixr")
+    print_model_code(model2)
 
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 Inspecting the model attributes
@@ -98,8 +105,8 @@ model is fit to a dataset. The parameters of a model are thus optimization param
 parameters in statistical distributions or as structural parameters. A parameter is represented by the
 :py:class:`pharmpy.model.Parameter` class.
 
-All parameters in a model are organized by the the :py:class:`pharmpy.model.Parameters` class as an ordered set of
-:py:class:`pharmpy.model.Parameter`. All parameters of a model can be accessed by using the parameters attribute:
+All parameters in a model are organized by the the :py:class:`pharmpy.model.Parameters` class as an sequence of
+:py:class:`pharmpy.model.Parameter`. The order of the parameters will always be theta, omega and sigma. The internal order of omegas and sigmas will be the flattened lower triangular order, e.g. :math:`{\omega_{11}}`, :math:`{\omega_{21}}` and :math:`{\omega_{22}}`. All parameters of a model can be accessed by using the parameters attribute:
 
 .. pharmpy-execute::
 
@@ -131,7 +138,7 @@ Random variables
 ~~~~~~~~~~~~~~~~
 
 The random variables of a model are available through the ``random_variables`` property and are organized using the
-:py:class:`pharmpy.model.RandomVariables` which is an ordered set of distributions of either
+:py:class:`pharmpy.model.RandomVariables` which is a sequence of distributions of either
 :py:class:`pharmpy.model.NormalDistribution` or :py:class:`pharmpy.model.JointNormalDistribution` class. All random
 variables of a model can be accessed by using the random variables attribute:
 
@@ -170,10 +177,6 @@ class :py:class:`pharmpy.model.Assignment` or :py:class:`pharmpy.model.Compartme
 
    statements = model.statements
    statements
-
-Changing the statements of a model can be done by setting the statements property. This way of manipulating a model is
-quite low level and flexible but cumbersome. For higher level model manipulation use the :py:mod:`pharmpy.modeling`
-module.
 
 If the model has a system of ordinary differential equations this will be part of the statements. It can easily be
 retrieved from the statement object
@@ -225,6 +228,10 @@ definition is unimportant. The expressions of the dependent variables are all fo
 Low level manipulations of the model object
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
+It is possible to manipulate the various components of a model directly. This way of manipulating a model is
+quite low level and flexible but cumbersome. This is mostly not something a modeller would like to do. Instead there is a large number of functions for higher level model manipulations in the :py:mod:`pharmpy.modeling`
+module. What follows in this section is information mostly for researchers of methodology or developers.
+
 Creating and adding parameters
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
@@ -244,7 +251,7 @@ Substituting symbolic random variable distribution with numeric
 
    from pharmpy.tools import read_modelfit_results
 
-   frem_path = path / "frem" / "pheno" / "model_4.mod"
+   frem_path = 'tests/testdata/nonmem/frem/pheno/model_4.mod'
    frem_model = read_model(frem_path)
    frem_model_results = read_modelfit_results(frem_path)
 
@@ -271,7 +278,7 @@ or from estimated values
    omega_est = omega.subs(dict(frem_model_results.parameter_estimates))
    omega_est
 
-Operations on this parameter matrix can be done either by using SymPy
+Operations on this parameter matrix can be done directly
 
 .. pharmpy-execute::
 
