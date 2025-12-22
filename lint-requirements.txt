@@ -27,7 +27,7 @@ mdurl==0.1.2
 more-itertools==10.8.0
 mypy-extensions==1.1.0
 nh3==0.3.2
-nodeenv==1.9.1
+nodeenv==1.10.0
 packaging==25.0
 pathspec==0.12.1
 pkginfo==1.12.1.2
