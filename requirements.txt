@@ -64,7 +64,7 @@ patsy==1.0.2
 pexpect==4.9.0
 platformdirs==4.5.1
 prompt-toolkit==3.0.52
-psutil==7.1.3
+psutil==7.2.1
 ptyprocess==0.7.0
 pure-eval==0.2.3
 Pygments==2.19.2
