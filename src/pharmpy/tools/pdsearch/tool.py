@@ -183,7 +183,7 @@ def run_drug_effect_models(
     context, treatment_variable, strictness, parameter_uncertainty_method, baseme
 ):
     exprs = ("step", "emax", "sigmoid")
-    if not is_binary(baseme.model, treatment_variable):
+    if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
         # If the driver is binary linear and step are the same model
         # so add linear if not binary
         exprs = ("linear",) + exprs
