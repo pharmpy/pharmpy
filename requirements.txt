@@ -101,7 +101,7 @@ tornado==6.5.4
 traitlets==5.14.3
 typing-extensions==4.15.0
 tzdata==2025.3
-urllib3==2.6.2
+urllib3==2.6.3
 wcwidth==0.2.14
 webencodings==0.5.1
 widgetsnbextension==4.0.15
