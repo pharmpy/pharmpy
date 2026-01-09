@@ -586,13 +586,6 @@ class JointNormalDistribution(Distribution):
             latex = '$' + latex + '$'
         return latex
 
-    def __getstate__(self):
-        state = self.__dict__.copy()
-        return state
-
-    def __setstate__(self, state):
-        self.__dict__.update(state)
-
 
 class FiniteDistribution(Distribution):
     """A finite discrete distribution
