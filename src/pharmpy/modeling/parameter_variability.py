@@ -1164,15 +1164,15 @@ def split_joint_distribution(model: Model, rvs: Optional[Union[Sequence[str], st
     return model
 
 
-def map_parameter_to_rv(model, rvs):
+def map_parameter_to_rv(model, rvs_names):
     rvs_new = []
-    all_rvs = model.random_variables
-    for name in rvs:
-        if name in all_rvs and all_rvs[name].level == 'IOV':
+    rvs = model.random_variables
+    for name in rvs_names:
+        if name in rvs and rvs[name].level == 'IOV':
             raise ValueError(
                 f'{name} describes IOV: Joining/splitting IOV random variables is currently not supported'
             )
-        if name not in all_rvs.names:
+        if name not in rvs.names:
             try:
                 rv = get_parameter_rv(model, name, var_type='iiv')
             except ValueError:
@@ -1181,7 +1181,8 @@ def map_parameter_to_rv(model, rvs):
             rvs_new.append(rv[0])
         else:
             rvs_new.append(name)
-    return rvs_new
+    rvs_sorted = [rv for rv in rvs.names if rv in rvs_new]  # Keep canonical order
+    return rvs_sorted
 
 
 def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
