@@ -1,15 +1,15 @@
 # Direct dependencies
 pip==25.3
-tox==4.34.0
+tox==4.34.1
 # Indirect dependencies
 cachetools==6.2.4
 chardet==5.2.0
 colorama==0.4.6
 distlib==0.4.0
-filelock==3.20.2
+filelock==3.20.3
 packaging==25.0
 platformdirs==4.5.1
 pluggy==1.6.0
 pyproject-api==1.10.0
 tomli==2.4.0
-virtualenv==20.36.0
+virtualenv==20.36.1
