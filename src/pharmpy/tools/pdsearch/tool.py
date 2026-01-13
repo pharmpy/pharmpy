@@ -2,6 +2,7 @@ import math
 from pathlib import Path
 from typing import Literal, Optional, Union
 
+from build.lib.pharmpy.internals.fs.path import path_absolute
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -28,6 +29,7 @@ from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool, summarize_modelfit_results
 from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder
 
+from ...internals.fs.path import normalize_user_given_path
 from .results import PDSearchResults
 
 
@@ -68,6 +70,11 @@ def create_workflow(
 
     """
     wb = WorkflowBuilder(name="pdsearch")
+
+    # Needs to be done client side
+    if isinstance(input, str):
+        input = normalize_user_given_path(input)
+        input = path_absolute(input)
 
     start_task = Task('start_pdsearch', start_pdsearch, input, type, kpd_driver, results)
     wb.add_task(start_task)
