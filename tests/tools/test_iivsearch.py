@@ -37,9 +37,9 @@ from pharmpy.tools.iivsearch.algorithms import (
 from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     categorize_model_entries,
-    create_base_model_bottom_up,
-    create_base_model_top_down,
+    create_base_model_entry,
     create_param_mapping,
+    create_param_mapping_mfl,
     create_workflow,
     get_mbic_search_space,
     get_ref_model,
@@ -47,9 +47,11 @@ from pharmpy.tools.iivsearch.tool import (
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
+    prepare_input_model_entry,
     prepare_rank_options,
     update_input_model_description,
     update_linearized_base_model,
+    update_linearized_base_model_mfl,
     validate_input,
 )
 from pharmpy.tools.run import read_modelfit_results
@@ -131,6 +133,42 @@ def test_update_linearized_base_model(
     assert len(me_updated.model.parameters.fixed) == 0
 
 
+def test_update_linearized_base_model_mfl(load_model_for_test, testdata, model_entry_factory):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_start = remove_iiv(model_start, ['ETA_3'])
+    me_start = model_entry_factory([model_start])[0]
+
+    param_mapping = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}
+    model_updated = update_linearized_base_model_mfl(False, param_mapping, me_start, me_start)
+    assert len(model_updated.parameters) == len(model_start.parameters)
+    assert model_updated.description == '[CL]+[VC]'
+
+    model_base = add_iiv(model_start, ['MAT'], 'exp')
+    model_base = fix_parameters(model_base, parameter_names=['IIV_MAT'])
+    me_base = model_entry_factory([model_base])[0]
+    model_updated = update_linearized_base_model_mfl(False, param_mapping, me_start, me_base)
+    assert len(model_updated.parameters) > len(model_start.parameters)
+    assert len(model_base.parameters.fixed) > len(model_updated.parameters.fixed)
+    assert len(model_updated.parameters) == len(model_base.parameters)
+    assert model_updated.description == '[CL]+[VC]+[MAT]'
+
+    model_fullblock = update_linearized_base_model_mfl(True, param_mapping, me_start, me_base)
+    assert len(model_fullblock.parameters) > len(model_updated.parameters)
+    assert len(model_fullblock.random_variables.iiv) == 1
+    assert model_fullblock.description == '[CL,VC,MAT]'
+
+
+def test_prepare_input_model_entry(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    me = prepare_input_model_entry(model_start, res_start)
+    assert me.model.name == 'input'
+    assert me.model.description == '[CL]+[MAT]+[VC]'
+    assert me.modelfit_results is not None
+    assert me.parent is None
+
+
 @pytest.mark.parametrize(
     'algorithm, correlation_algorithm, list_of_algorithms',
     [
@@ -164,6 +202,9 @@ def test_create_param_mapping(load_model_for_test, testdata):
     assert param_mapping is None
 
     param_mapping = create_param_mapping(me_input, linearize=True)
+    assert param_mapping == {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
+
+    param_mapping = create_param_mapping_mfl(me_input)
     assert param_mapping == {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
 
 
@@ -450,64 +491,81 @@ def test_needs_base_model(
 
 
 @pytest.mark.parametrize(
-    'mfl, as_fullblock, iiv_expected, cov_expected',
+    'type, mfl, as_fullblock, iiv_expected, cov_expected',
     [
-        ('IIV?([CL,MAT,VC],EXP)', False, 'IIV([CL,MAT,VC],EXP)', ''),
-        ('IIV?([CL,MAT,VC],EXP)', True, 'IIV([CL,MAT,VC],EXP)', 'COVARIANCE(IIV,[CL,MAT,VC])'),
+        ('td', 'IIV?([CL,VC],EXP)', False, 'IIV([CL,VC],EXP)', ''),
+        ('td', 'IIV?([CL,MAT,VC],EXP)', False, 'IIV([CL,MAT,VC],EXP)', ''),
         (
+            'td',
+            'IIV?([CL,MAT,VC],EXP)',
+            True,
+            'IIV([CL,MAT,VC],EXP)',
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
+        (
+            'td',
             'IIV(CL,EXP);IIV?([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
             False,
             'IIV([CL,MAT,VC],EXP)',
             '',
         ),
-        ('IIV(CL,EXP);IIV?([MAT,VC],ADD)', False, 'IIV(CL,EXP);IIV([MAT,VC],ADD)', ''),
-        ('IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD])', False, 'IIV([CL,MAT,VC],EXP)', ''),
+        ('td', 'IIV(CL,EXP);IIV?([MAT,VC],ADD)', False, 'IIV(CL,EXP);IIV([MAT,VC],ADD)', ''),
+        ('td', 'IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD])', False, 'IIV([CL,MAT,VC],EXP)', ''),
         (
+            'td',
             'IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD]);COVARIANCE?(IIV,[CL,MAT,VC])',
             True,
             'IIV([CL,MAT,VC],EXP)',
             'COVARIANCE(IIV,[CL,MAT,VC])',
         ),
+        ('bu', 'IIV?([CL,MAT,VC],EXP)', False, '', ''),
+        ('bu', 'IIV(CL,EXP);IIV?([MAT,VC],EXP)', False, 'IIV(CL,EXP)', ''),
+        ('bu', 'IIV([CL,MAT],EXP);IIV?(VC,EXP)', False, 'IIV([CL,MAT],EXP)', ''),
+        ('bu', 'IIV(CL,EXP);IIV?([MAT,VC],EXP)', True, 'IIV(CL,EXP)', ''),
+        (
+            'bu',
+            'IIV([CL,MAT],EXP);IIV?(VC,EXP)',
+            True,
+            'IIV([CL,MAT],EXP)',
+            'COVARIANCE(IIV,[CL,MAT])',
+        ),
+        ('linearize', 'IIV?([CL,VC],EXP)', False, 'IIV([CL,VC],EXP)', ''),
+        ('linearize', 'IIV?([CL,MAT,VC],EXP)', False, 'IIV([CL,MAT,VC],EXP)', ''),
     ],
 )
-def test_create_base_model_top_down(
-    load_model_for_test, testdata, mfl, as_fullblock, iiv_expected, cov_expected
+def test_create_base_model(
+    load_model_for_test,
+    testdata,
+    model_entry_factory,
+    type,
+    mfl,
+    as_fullblock,
+    iiv_expected,
+    cov_expected,
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    model_entry = ModelEntry.create(model=model, modelfit_results=res)
+    model = remove_iiv(model, to_remove=['ETA_3'])
+    model_entry = model_entry_factory([model])[0]
     mfl = ModelFeatures.create(mfl)
-    base_model_entry = create_base_model_top_down(mfl, as_fullblock, model_entry)
+    base_model_entry = create_base_model_entry(type, mfl, as_fullblock, model_entry)
     base_model = base_model_entry.model
     assert repr(get_model_features(base_model, type='iiv')) == iiv_expected
     assert repr(get_model_features(base_model, type='covariance')) == cov_expected
     assert base_model_entry.modelfit_results is None
     assert base_model_entry.parent == model
 
+    if type == 'linearize':
+        params_new = base_model.parameters - model.parameters
+        assert all(p.init == 0.000001 for p in params_new)
 
-@pytest.mark.parametrize(
-    'mfl, as_fullblock, iiv_expected, cov_expected',
-    [
-        ('IIV?([CL,MAT,VC],EXP)', False, '', ''),
-        ('IIV(CL,EXP);IIV?([MAT,VC],EXP)', False, 'IIV(CL,EXP)', ''),
-        ('IIV([CL,MAT],EXP);IIV?(VC,EXP)', False, 'IIV([CL,MAT],EXP)', ''),
-        ('IIV(CL,EXP);IIV?([MAT,VC],EXP)', True, 'IIV(CL,EXP)', ''),
-        ('IIV([CL,MAT],EXP);IIV?(VC,EXP)', True, 'IIV([CL,MAT],EXP)', 'COVARIANCE(IIV,[CL,MAT])'),
-    ],
-)
-def test_create_base_model_bottom_up(
-    load_model_for_test, testdata, mfl, as_fullblock, iiv_expected, cov_expected
-):
+
+def test_create_base_model_raises(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model_entry = ModelEntry.create(model=model, modelfit_results=res)
-    mfl = ModelFeatures.create(mfl)
-    base_model_entry = create_base_model_bottom_up(mfl, as_fullblock, model_entry)
-    base_model = base_model_entry.model
-    assert repr(get_model_features(base_model, type='iiv')) == iiv_expected
-    assert repr(get_model_features(base_model, type='covariance')) == cov_expected
-    assert base_model_entry.modelfit_results is None
-    assert base_model_entry.parent == model
+    mfl = ModelFeatures.create('')
+    with pytest.raises(ValueError):
+        create_base_model_entry('x', mfl, True, model_entry)
 
 
 @pytest.mark.parametrize(

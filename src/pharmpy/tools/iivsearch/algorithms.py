@@ -105,8 +105,8 @@ def bu_stepwise_no_of_etas_mfl(
     for i in range(len(iivs)):
         wb_step = WorkflowBuilder(name=f'step{i}')
         base_features = get_model_features(selected_model_entry.model, type='iiv')
-        iivs_to_test = iivs.force_optional() - base_features.iiv
-        for j, iiv in enumerate(iivs_to_test, 1):
+        to_test = iivs.force_optional() - base_features.iiv
+        for j, iiv in enumerate(to_test, 1):
             candidate_number = index_offset + len(mes) + j
             model_name = f'iivsearch_run{candidate_number}'
             task_candidate_entry = Task(
@@ -141,6 +141,77 @@ def bu_stepwise_no_of_etas_mfl(
 
         mes_all = (selected_model_entry,) + mes_step
         selected_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+
+    return rank_results, tuple(mes)
+
+
+def bu_stepwise_no_of_etas_linearized_mfl(
+    context, linbase_model_entry, mfl, index_offset, rank_options, param_mapping
+):
+    mfl = expand_model_features(linbase_model_entry.parent, mfl.iiv)
+
+    param_to_eta = {k: v for v, k in param_mapping.items()}
+
+    all_etas = set(linbase_model_entry.model.random_variables.iiv.names)
+    to_test = sorted(param_to_eta[iiv.parameter] for iiv in mfl.iiv.filter(filter_on='optional'))
+
+    base_model_entry = run_base_model_entry_linearized(
+        context, index_offset, to_test, param_mapping, linbase_model_entry
+    )
+
+    rank_results = []
+    mes = [base_model_entry]
+
+    selected_model_entry = base_model_entry
+    selected_etas = set(selected_model_entry.model.random_variables.iiv.names)
+
+    i = 1
+    while True:
+        if not to_test:
+            break
+
+        wb_step = WorkflowBuilder(name=f'step{i}')
+        for j, eta in enumerate(to_test, 1):
+            to_keep = selected_etas | {eta}
+            to_remove = sorted(all_etas - to_keep)
+
+            n = index_offset + len(mes) + j
+            model_name = f'iivsearch_run{n}'
+            task_candidate_entry = Task(
+                f'create_{model_name}',
+                create_candidate_linearized,
+                model_name,
+                to_remove,
+                param_mapping,
+                linbase_model_entry,
+            )
+            wb_step.add_task(task_candidate_entry)
+            wf_fit = modelfit.create_fit_workflow(n=1)
+            wb_step.insert_workflow(wf_fit, predecessors=[task_candidate_entry])
+
+        wb_step.gather(wb_step.output_tasks)
+        wf_step = Workflow(wb_step)
+        mes_step = context.call_workflow(wf_step, unique_name=f'run_candidates_step{i}')
+
+        rank_res = rank_models(
+            context,
+            rank_options,
+            selected_model_entry,
+            mes_step,
+        )
+
+        rank_results.append(rank_res)
+        mes.extend(mes_step)
+
+        if rank_res.final_model == selected_model_entry.model:
+            break
+
+        mes_all = (selected_model_entry,) + mes_step
+        selected_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+        selected_etas = set(selected_model_entry.model.random_variables.iiv.names)
+
+        to_test = sorted(all_etas - selected_etas)
+        i += 1
 
     return rank_results, tuple(mes)
 
@@ -226,6 +297,44 @@ def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
     candidate_model = candidate_model.replace(description=description)
 
     return ModelEntry.create(model=candidate_model, parent=base_model)
+
+
+def create_candidate_linearized(name, to_remove, param_mapping, base_model_entry):
+    base_model, base_res = base_model_entry.model, base_model_entry.modelfit_results
+    candidate_model = base_model.replace(name=name)
+    candidate_model = update_initial_estimates(candidate_model, base_res)
+    for parameter in to_remove:
+        candidate_model = remove_iiv(candidate_model, to_remove=parameter)
+    description = create_description(candidate_model, param_dict=param_mapping)
+    candidate_model = candidate_model.replace(description=description)
+    return ModelEntry.create(model=candidate_model, parent=base_model)
+
+
+def run_base_model_entry_linearized(
+    context, index_offset, to_remove, param_mapping, linbase_model_entry
+):
+    wb = WorkflowBuilder(name='base_model')
+
+    candidate_number = index_offset + 1
+    model_name = f'iivsearch_run{candidate_number}'
+    task_base_entry = Task(
+        f'create_{model_name}',
+        create_candidate_linearized,
+        model_name,
+        to_remove,
+        param_mapping,
+        linbase_model_entry,
+    )
+
+    wb.add_task(task_base_entry)
+    wf_fit = modelfit.create_fit_workflow(n=1)
+    wb.insert_workflow(wf_fit, predecessors=[task_base_entry])
+
+    wb.gather(wb.output_tasks)
+
+    base_model_entry = context.call_workflow(Workflow(wb), unique_name='run_base')[0]
+
+    return base_model_entry
 
 
 def create_description_mfl(mfl, type):

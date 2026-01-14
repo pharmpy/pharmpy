@@ -2,9 +2,11 @@ from typing import Optional
 
 from pharmpy.basic import Expr
 from pharmpy.model import Assignment, EstimationStep, Model, Statements
+from pharmpy.model.external.nonmem.model import Model as NONMEMModel
 from pharmpy.modeling import (
     add_estimation_step,
     add_predictions,
+    convert_model,
     get_observations,
     get_omegas,
     get_sigmas,
@@ -181,6 +183,9 @@ def _create_linearized_model(context, model_name, description, model, derivative
 
     statements = _create_linearized_model_statements(linbase, model)
     linbase = linbase.replace(statements=statements)
+
+    if isinstance(derivative_model, NONMEMModel):
+        linbase = convert_model(linbase, to_format='nonmem')
 
     context.log_info("Running linearized model")
     return ModelEntry.create(model=linbase)

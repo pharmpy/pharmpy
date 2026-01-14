@@ -15,6 +15,7 @@ from pharmpy.modeling import (
     find_clearance_parameters,
     fix_parameters,
     has_random_effect,
+    set_initial_estimates,
     unfix_parameters,
 )
 from pharmpy.modeling.mfl import (
@@ -178,6 +179,7 @@ def create_workflow(
             correlation_algorithm,
             _search_space,
             _as_fullblock,
+            linearize,
             rank_type,
             cutoff,
             strictness,
@@ -305,14 +307,16 @@ def create_param_mapping(me, linearize):
     return param_mapping
 
 
-def run_linearization(context, baseme):
+def run_linearization(context, baseme, results=None):
     from pharmpy.tools.run import run_subtool
 
+    if not results:
+        results = baseme.modelfit_results
     linear_results = run_subtool(
         'linearize',
         context,
         model=baseme.model,
-        results=baseme.modelfit_results,
+        results=results,
         description=algorithms.create_description(baseme.model),
     )
     linbaseme = ModelEntry.create(
@@ -869,6 +873,7 @@ def create_workflow_mfl(
     correlation_algorithm,
     search_space,
     as_fullblock,
+    linearize,
     rank_type,
     cutoff,
     strictness,
@@ -879,7 +884,6 @@ def create_workflow_mfl(
     wb = WorkflowBuilder(name='iivsearch')
 
     mfl = ModelFeatures.create(search_space)
-    mfl_expanded = expand_model_features(model, mfl)
 
     rank_options = prepare_rank_options(
         rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q
@@ -890,24 +894,50 @@ def create_workflow_mfl(
     start_task = Task.create('start', start_with_search_space, model, results)
     wb.add_task(start_task)
 
-    if needs_base_model(model, mfl_expanded, as_fullblock, steps_to_run[0]):
-        if steps_to_run[0].startswith('td'):
-            create_base_task = Task.create(
-                'base_model', create_base_model_top_down, mfl_expanded, as_fullblock
-            )
-        else:
-            create_base_task = Task.create(
-                'base_model', create_base_model_bottom_up, mfl_expanded, as_fullblock
-            )
-        wb.add_task(create_base_task, predecessors=[start_task])
+    if not linearize:
+        wb, search_tasks = add_search_workflow(
+            wb, model, steps_to_run, mfl, as_fullblock, rank_options
+        )
+    else:
+        wb, search_tasks = add_linearized_search_workflow(
+            wb, model, steps_to_run, mfl, as_fullblock, rank_options
+        )
+
+    compare_task = Task.create(
+        'compare_to_input',
+        compare_to_input_model,
+        rank_options,
+    )
+    wb.add_task(compare_task, predecessors=[start_task, search_tasks[-1]])
+
+    unpack_task = Task.create('unpack', unpack_tool_summaries)
+    wb.add_task(unpack_task)
+
+    for i, search_task in enumerate(search_tasks):
+        if i == len(search_tasks) - 1:
+            break
+        dest = (search_tasks[i + 1], unpack_task)
+        wb.scatter(search_task, dest)
+
+    post_process_task = Task.create('postprocess', postprocess)
+    wb.add_task(post_process_task, predecessors=[compare_task, unpack_task])
+
+    return Workflow(wb)
+
+
+def add_search_workflow(wb, model, steps_to_run, mfl, as_fullblock, rank_options):
+    mfl_expanded = expand_model_features(model, mfl)
+    base_type = 'td' if steps_to_run[0].startswith('td') else 'bu'
+    if needs_base_model(model, mfl_expanded, as_fullblock, base_type):
+        create_base_task = Task.create(
+            'base_model', create_base_model_entry, base_type, mfl_expanded, as_fullblock
+        )
+        wb.add_task(create_base_task, predecessors=wb.output_tasks[0])
         wf_fit = create_fit_workflow(n=1)
         wb.insert_workflow(wf_fit)
-        base_task = wf_fit.output_tasks[0]
-    else:
-        base_task = start_task
 
     init_search_task = Task.create('init_search', init_search)
-    wb.add_task(init_search_task, predecessors=[base_task])
+    wb.add_task(init_search_task, predecessors=wb.output_tasks[0])
 
     search_tasks = []
     for step in steps_to_run:
@@ -939,30 +969,59 @@ def create_workflow_mfl(
     wb.add_task(end_search_task)
     search_tasks.append(end_search_task)
 
-    compare_task = Task.create(
-        'compare_to_input',
-        compare_to_input_model,
-        rank_options,
+    return wb, search_tasks
+
+
+def add_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock, rank_options):
+    mfl_expanded = expand_model_features(model, mfl)
+
+    start_task = wb.output_tasks[0]
+
+    create_base_task = Task.create(
+        'create_base_model', create_base_model_entry, 'linearize', mfl_expanded, as_fullblock
     )
-    wb.add_task(compare_task, predecessors=[start_task, end_search_task])
+    wb.add_task(create_base_task, predecessors=[start_task])
 
-    unpack_task = Task.create('unpack', unpack_tool_summaries)
-    wb.add_task(unpack_task)
+    create_param_mapping_task = Task.create('create_param_mapping', create_param_mapping_mfl)
+    wb.add_task(create_param_mapping_task, predecessors=[create_base_task])
 
-    for i, search_task in enumerate(search_tasks):
-        if i == len(search_tasks) - 1:
-            break
-        dest = (search_tasks[i + 1], unpack_task)
-        wb.scatter(search_task, dest)
+    linearize_task = Task.create('create_linearized_model', create_linearized_model, as_fullblock)
+    wb.add_task(
+        linearize_task, predecessors=[start_task, create_base_task, create_param_mapping_task]
+    )
 
-    post_process_task = Task.create('postprocess', postprocess)
-    wb.add_task(post_process_task, predecessors=[compare_task, unpack_task])
+    init_search_task = Task.create('init_search', init_search)
+    wb.add_task(init_search_task, predecessors=[linearize_task])
 
-    return Workflow(wb)
+    search_tasks = []
+    for step in steps_to_run:
+        if 'stepwise' in step:
+            search_task = Task.create(
+                'run_stepwise_search_linearized',
+                run_stepwise_search_linearized,
+                step,
+                mfl,
+                rank_options,
+            )
+        else:
+            raise NotImplementedError
+        predecessors = (
+            [init_search_task, create_param_mapping_task]
+            if not search_tasks
+            else [create_param_mapping_task]
+        )
+        wb.add_task(search_task, predecessors=predecessors)
+        search_tasks.append(search_task)
+
+    end_search_task = Task.create('end_search', end_search)
+    wb.add_task(end_search_task)
+    search_tasks.append(end_search_task)
+
+    return wb, search_tasks
 
 
-def needs_base_model(model, mfl, as_fullblock, algorithm):
-    if algorithm.startswith('bu'):
+def needs_base_model(model, mfl, as_fullblock, base_type):
+    if base_type == 'bu':
         return True
     if (
         as_fullblock
@@ -1005,40 +1064,97 @@ def prepare_input_model_entry(input_model, input_res):
     return input_model_entry
 
 
-def create_base_model_top_down(mfl, as_fullblock, input_model_entry):
-    base_model_entry = _create_base_model(
-        input_model_entry, mfl.iiv.force_optional(), mfl.covariance, as_fullblock
+def create_base_model_entry(type, mfl, as_fullblock, input_model_entry):
+    if type == 'td':
+        base_model = _create_base_model_top_down(mfl, as_fullblock, input_model_entry)
+    elif type == 'bu':
+        base_model = _create_base_model_bottom_up(mfl, as_fullblock, input_model_entry)
+    elif type == 'linearize':
+        base_model = _create_base_model_linearize(mfl, input_model_entry)
+    else:
+        raise ValueError(f'Unknown base model type: {type}')
+    return ModelEntry.create(base_model, parent=input_model_entry.model)
+
+
+def _create_base_model_top_down(mfl, as_fullblock, input_model_entry):
+    base_model = _create_base_model(
+        input_model_entry, mfl.iiv.force_optional() + mfl.covariance, as_fullblock
     )
-    return base_model_entry
+    return base_model
 
 
-def create_base_model_bottom_up(mfl, as_fullblock, input_model_entry):
+def _create_base_model_bottom_up(mfl, as_fullblock, input_model_entry):
     iivs = mfl.iiv - mfl.iiv.filter(filter_on='optional')
     iiv_params = [iiv.parameter for iiv in iivs]
     covs = ModelFeatures.create(
         [c for c in mfl.covariance if all(p in iiv_params for p in c.parameters)]
     )
-    base_model_entry = _create_base_model(input_model_entry, iivs, covs, as_fullblock)
-    return base_model_entry
+    base_model = _create_base_model(input_model_entry, iivs + covs, as_fullblock)
+    return base_model
 
 
-def _create_base_model(input_model_entry, iivs, covariances, as_fullblock):
+def _create_base_model_linearize(mfl, input_model_entry):
+    base_model = _create_base_model(
+        input_model_entry, mfl.iiv.force_optional() + mfl.covariance, False, linearize=True
+    )
+    input_model = input_model_entry.model
+    new_parameters = base_model.parameters - input_model.parameters
+    if new_parameters:
+        base_model = set_initial_estimates(base_model, {p: 0.000001 for p in new_parameters.names})
+        base_model = fix_parameters(base_model, new_parameters.names)
+    return base_model
+
+
+def _create_base_model(input_model_entry, mfl, as_fullblock, linearize=False):
     input_model, input_res = input_model_entry.model, input_model_entry.modelfit_results
     base_model = update_initial_estimates(
         input_model,
         input_res,
-        move_est_close_to_bounds=True,
+        move_est_close_to_bounds=not linearize,
     )
-    base_model = transform_into_search_space(base_model, iivs, type='iiv')
-    base_model = transform_into_search_space(base_model, covariances, type='covariance')
+    base_model = transform_into_search_space(base_model, mfl, type='iiv')
+    base_model = transform_into_search_space(base_model, mfl, type='covariance')
     if as_fullblock and len(base_model.random_variables.iiv) > 1:
         ies = input_res.individual_estimates
         base_model = create_joint_distribution(base_model, individual_estimates=ies)
     base_mfl = get_model_features(base_model)
     description = algorithms.create_description_mfl(base_mfl, type='iiv')
     base_model = base_model.replace(name='base', description=description)
-    base_model_entry = ModelEntry.create(model=base_model, parent=input_model)
-    return base_model_entry
+    return base_model
+
+
+def create_param_mapping_mfl(me):
+    param_mapping = algorithms._create_param_dict(me.model, dists=me.model.random_variables.iiv)
+    return param_mapping
+
+
+def create_linearized_model(
+    context, as_fullblock, base_model_entry, param_mapping, input_model_entry
+):
+    lin_model_entry = run_linearization(
+        context, base_model_entry, input_model_entry.modelfit_results
+    )
+    context.store_model_entry(lin_model_entry)
+    lin_model = update_linearized_base_model_mfl(
+        as_fullblock, param_mapping, input_model_entry, lin_model_entry
+    )
+    lin_model_entry = ModelEntry.create(
+        lin_model, modelfit_results=None, parent=base_model_entry.model
+    )
+    return lin_model_entry
+
+
+def update_linearized_base_model_mfl(as_fullblock, param_mapping, inputme, baseme):
+    added_params = baseme.model.parameters - inputme.model.parameters
+    model = unfix_parameters(baseme.model, added_params.names)
+    model = set_initial_estimates(model, baseme.modelfit_results.parameter_estimates)
+    if as_fullblock:
+        model = create_joint_distribution(
+            model, individual_estimates=baseme.modelfit_results.individual_estimates
+        )
+    descr = algorithms.create_description(model, iov=False, param_dict=param_mapping)
+    model = model.replace(name="lin", description=descr)
+    return model
 
 
 def init_search(base_model_entry):
@@ -1087,6 +1203,22 @@ def run_stepwise_search(
     return (best_model_entry, len(mes)), tool_summaries
 
 
+def run_stepwise_search_linearized(
+    context, step, mfl, rank_options, param_mapping, base_model_entry_and_index_offset
+):
+    base_model_entry, index_offset = base_model_entry_and_index_offset
+    algorithm_func = getattr(algorithms, f'{step}_linearized_mfl')
+    rank_res, mes = algorithm_func(
+        context, base_model_entry, mfl, index_offset, rank_options, param_mapping
+    )
+    if not rank_res:
+        return (base_model_entry, index_offset), []
+    mes_all = (base_model_entry,) + mes
+    tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
+    best_model_entry = get_best_model_entry(mes, rank_res[-1].final_model)
+    return (best_model_entry, len(mes)), tool_summaries
+
+
 def end_search(best_model_entry_and_index_offset):
     best_model_entry, _ = best_model_entry_and_index_offset
     return best_model_entry
@@ -1125,6 +1257,34 @@ def compare_to_input_model(
         summary_tool = None
 
     return best_model_entry, summary_tool
+
+
+def create_delinearized_model_entry(
+    context,
+    rank_options,
+    param_mapping,
+    no_of_models,
+    best_model_entry,
+    input_model_entry,
+):
+    final_linearized_model = best_model_entry.model
+    dl_wf = create_delinearize_workflow(
+        input_model_entry.model, final_linearized_model, param_mapping, no_of_models + 1
+    )
+    context.log_info('Running delinearized model')
+    dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
+
+    rank_res = rank_models(
+        context,
+        rank_options,
+        None,
+        [dlin_model_entry],
+    )
+
+    if not rank_res.final_model:
+        context.abort_workflow('Delinearized model failed strictness criteria')
+
+    return (dlin_model_entry, no_of_models + 1), [rank_res.summary_tool]
 
 
 def postprocess(

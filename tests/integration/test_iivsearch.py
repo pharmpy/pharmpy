@@ -233,7 +233,7 @@ def test_iivsearch_dummy_mfl(
             esttool='dummy',
             **kwargs,
         )
-        print(res.summary_tool.to_string())
+
         assert len(res.summary_tool.index.get_level_values('model').unique()) == no_of_models
         assert len(res.summary_models) == no_of_models
         assert len(res.summary_tool.index.get_level_values('step').unique()) == no_of_steps
@@ -259,12 +259,18 @@ def test_iivsearch_dummy_mfl(
     'ignore::UserWarning',
 )
 @pytest.mark.parametrize(
-    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models', 'strategy'),
+    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models', 'kwargs'),
     (
-        ('top_down_exhaustive', 'skip', 3, 'fullblock'),
-        ('bottom_up_stepwise', 'skip', 4, 'no_add'),
+        ('top_down_exhaustive', 'skip', 3, {'iiv_strategy': 'fullblock'}),
+        ('bottom_up_stepwise', 'skip', 4, {'iiv_strategy': 'no_add'}),
         # ('bottom_up_stepwise', 'skip', 4, 'fullblock'),
-        ('bottom_up_stepwise', 'skip', 4, 'add_diagonal'),
+        ('bottom_up_stepwise', 'skip', 4, {'iiv_strategy': 'add_diagonal'}),
+        (
+            'bottom_up_stepwise',
+            'skip',
+            4,
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+        ),
     ),
 )
 def test_no_of_etas_linearization(
@@ -275,7 +281,7 @@ def test_no_of_etas_linearization(
     algorithm,
     correlation_algorithm,
     no_of_candidate_models,
-    strategy,
+    kwargs,
 ):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
@@ -286,8 +292,8 @@ def test_no_of_etas_linearization(
             results=mfr,
             algorithm=algorithm,
             correlation_algorithm=correlation_algorithm,
-            iiv_strategy=strategy,
             linearize=True,
+            **kwargs,
         )
 
         assert res
