@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.modeling import add_lag_time
+from pharmpy.modeling import add_lag_time, set_estimation_step
 from pharmpy.tools import fit, run_iivsearch
 from pharmpy.workflows import LocalDirectoryContext
 
@@ -180,7 +180,8 @@ def test_iivsearch_dummy(
 )
 def test_no_of_etas_linearization(
     tmp_path,
-    start_modelres,
+    load_model_for_test,
+    testdata,
     model_count,
     algorithm,
     correlation_algorithm,
@@ -188,9 +189,12 @@ def test_no_of_etas_linearization(
     strategy,
 ):
     with chdir(tmp_path):
+        model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+        model = set_estimation_step(model, method='FOCE', interaction=True)
+        mfr = fit(model)
         res = run_iivsearch(
-            model=start_modelres[0],
-            results=start_modelres[1],
+            model=model,
+            results=mfr,
             algorithm=algorithm,
             correlation_algorithm=correlation_algorithm,
             iiv_strategy=strategy,

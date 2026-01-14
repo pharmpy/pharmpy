@@ -252,6 +252,9 @@ def prepare_base_model(input_model_entry, iiv_strategy, linearize):
     else:
         base_model = input_model_entry.model
         mfr = input_model_entry.modelfit_results
+    # FIXME: temporary fix to input to linearize
+    if linearize:
+        mfr = input_model_entry.modelfit_results
     base_model = base_model.replace(description=algorithms.create_description(base_model))
     base_model_entry = ModelEntry.create(base_model, modelfit_results=mfr)
     return base_model, base_model_entry
@@ -296,6 +299,7 @@ def run_linearization(context, baseme):
         'linearize',
         context,
         model=baseme.model,
+        results=baseme.modelfit_results,
         description=algorithms.create_description(baseme.model),
     )
     linbaseme = ModelEntry.create(

@@ -70,7 +70,7 @@ def test_prepare_input_model(load_model_for_test, testdata):
         ('no_add', False, 0, '[CL]+[VC]+[MAT]', True),
         ('add_diagonal', False, 2, '[CL]+[VC]+[MAT]+[QP1]+[VP1]', False),
         ('fullblock', False, 12, '[CL,VC,MAT,QP1,VP1]', False),
-        ('add_diagonal', True, 0, '[CL]+[VC]+[MAT]+[QP1]+[VP1]', False),
+        ('add_diagonal', True, 0, '[CL]+[VC]+[MAT]+[QP1]+[VP1]', True),
     ],
 )
 def test_prepare_base_model(
