@@ -1,7 +1,7 @@
 from typing import Optional
 
 from pharmpy.basic import Expr
-from pharmpy.model import Assignment, Model, Statements
+from pharmpy.model import Assignment, EstimationStep, Model, Statements
 from pharmpy.modeling import (
     add_estimation_step,
     add_predictions,
@@ -32,7 +32,7 @@ def create_workflow(
     Parameters
     ----------
     model : Model
-        Pharmpy model.
+        Pharmpy model. Should use FOCEI or other EM-methods for estimation
     results : ModelfitResults
         Results of estimation of model
     model_name : str, optional
@@ -85,6 +85,21 @@ def start_linearize(context, model, results):
     # Create links to input model
     context.store_input_model_entry(start_model_entry)
 
+    context.log_info(f"OFV of input model:           {results.ofv:.3f}")
+
+    est_step = [
+        step
+        for step in model.execution_steps
+        if isinstance(step, EstimationStep) and not step.evaluation
+    ][-1]
+    est_method = est_step.method
+
+    if est_method == 'FO' or est_method == 'FOCE' and not est_step.interaction:
+        method_msg = est_method if est_method == 'FO' else 'FOCE without interaction'
+        context.log_warning(
+            f"Input model was estimated using {method_msg}, results may be incorrect"
+        )
+
     return start_model_entry
 
 
@@ -99,7 +114,7 @@ def postprocess(context, model_name, *modelentries):
     )
 
     assert res.ofv is not None
-    context.log_info(f"OFV of input model:                {res.ofv['base']:.3f}")
+    context.log_info(f"OFV of derivative model:           {res.ofv['base']:.3f}")
     context.log_info(f"OFV of evaluated linearized model: {res.ofv['lin_evaluated']:.3f}")
     context.log_info(f"OFV of estimated linearized model: {res.ofv['lin_estimated']:.3f}")
 
