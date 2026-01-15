@@ -1170,8 +1170,8 @@ def run_exhaustive_search(
     base_model_entry_and_index_offset,
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
-    algorithm_func = getattr(algorithms, f'{step}_mfl')
-    wf_step = algorithm_func(base_model_entry, mfl, index_offset, as_fullblock)
+    type = 'iiv' if 'no_of_etas' in step else 'covariance'
+    wf_step = algorithms.td_exhaustive(type, base_model_entry, mfl, index_offset, as_fullblock)
     if not wf_step:
         return (base_model_entry, index_offset), []
     mes = context.call_workflow(wf_step, 'run_candidates')

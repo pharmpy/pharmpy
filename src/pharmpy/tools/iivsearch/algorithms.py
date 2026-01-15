@@ -28,46 +28,19 @@ from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, Workf
 from pharmpy.workflows.results import mfr
 
 
-def td_exhaustive_no_of_etas_mfl(base_model_entry, mfl, index_offset, as_fullblock):
-    wb = WorkflowBuilder(name='td_exhaustive_no_of_etas')
-
-    base_features = get_model_features(base_model_entry.model, type='iiv')
-    mfl = expand_model_features(base_model_entry.model, mfl.iiv)
-    combinations = get_iiv_combinations(mfl, base_features)
-
-    for i, features in enumerate(combinations, 1):
-        model_name = f'iivsearch_run{index_offset + i}'
-        task_candidate_entry = Task(
-            f'create_{model_name}',
-            create_candidate,
-            model_name,
-            features,
-            'iiv',
-            as_fullblock,
-            base_model_entry,
-        )
-        wb.add_task(task_candidate_entry)
-
-    if len(wb.output_tasks) == 0:
-        return None
-
-    wf_fit = modelfit.create_fit_workflow(n=len(wb.output_tasks))
-    wb.insert_workflow(wf_fit)
-    wb.gather(wb.output_tasks)
-
-    wf = Workflow(wb)
-
-    return wf
-
-
-def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset, as_fullblock):
-    wb = WorkflowBuilder(name='td_exhaustive_block_structure')
+def td_exhaustive(type, base_model_entry, mfl, index_offset, as_fullblock):
+    wb = WorkflowBuilder(name=f'td_exhaustive_{type}')
 
     base_model = base_model_entry.model
     base_model = base_model.replace(description=create_description(base_model))
-    base_features = get_model_features(base_model, type='covariance')
-    mfl = expand_model_features(base_model, mfl.covariance)
-    combinations = get_covariance_combinations(mfl, base_features)
+    base_features = get_model_features(base_model, type=type)
+
+    if type == 'iiv':
+        mfl = expand_model_features(base_model, mfl.iiv)
+        combinations = get_iiv_combinations(mfl, base_features)
+    else:
+        mfl = expand_model_features(base_model, mfl.covariance)
+        combinations = get_covariance_combinations(mfl, base_features)
 
     for i, features in enumerate(combinations, 1):
         model_name = f'iivsearch_run{index_offset + i}'
@@ -76,8 +49,8 @@ def td_exhaustive_block_structure_mfl(base_model_entry, mfl, index_offset, as_fu
             create_candidate,
             model_name,
             features,
-            'covariance',
-            False,
+            type,
+            as_fullblock,
             base_model_entry,
         )
         wb.add_task(task_candidate_entry)
