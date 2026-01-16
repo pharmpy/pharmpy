@@ -43,7 +43,8 @@ def test_filter_dataset(load_model_for_test, testdata):
     assert df['IPRED'].tolist() == res.predictions['CIPREDI'].iloc[indices].tolist()
     assert df['ID'].tolist() == model.dataset['ID'].iloc[indices].tolist()
 
-    ci_dvid = model.datainfo.typeix['dvid'][0].replace(type='unknown')
+    var = model.datainfo.typeix['dvid'][0].variable.replace(type='unknown')
+    ci_dvid = model.datainfo.typeix['dvid'][0].replace(variable_mapping=var)
     di = model.datainfo.set_column(ci_dvid)
     model = model.replace(datainfo=di)
     model_entry = ModelEntry.create(model, modelfit_results=res)
@@ -447,7 +448,8 @@ def test_validate_input_raises_dv(load_model_for_test, testdata):
         validate_input(model=model, results=res, dv=1)
 
     di = model.datainfo
-    dvid_col = di['IACE'].replace(type='dvid')
+    var = di['IACE'].variable.replace(type='dvid')
+    dvid_col = di['IACE'].replace(variable_mapping=var)
     di = di.set_column(dvid_col)
     model = model.replace(datainfo=di)
     with pytest.raises(ValueError, match="No IACE = 10"):

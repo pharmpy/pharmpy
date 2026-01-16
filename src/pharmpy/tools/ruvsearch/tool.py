@@ -636,7 +636,7 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
         input_id = input_dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
 
     input_model = add_time_after_dose(input_model)
-    tad_label = input_model.datainfo.descriptorix['time after dose'][0].name
+    tad_label = input_model.datainfo.find_column_by_property("descriptor", "time after dose").name
     if dv is not None:
         tad = input_model.dataset[tad_label].iloc[indices].squeeze().reset_index(drop=True)
     else:

@@ -89,13 +89,13 @@ def _interpret_ref(model, symbol):
         return tuple(
             column.name
             for column in model.datainfo
-            if column.type == 'covariate' and not column.continuous
+            if column.type == 'covariate' and column.variable.is_categorical()
         )
     elif symbol.name == 'CONTINUOUS':
         return tuple(
             column.name
             for column in model.datainfo
-            if column.type == 'covariate' and column.continuous
+            if column.type == 'covariate' and not column.variable.is_categorical()
         )
     elif symbol.name == 'IIV':
         return tuple(get_individual_parameters(model, level='iiv'))

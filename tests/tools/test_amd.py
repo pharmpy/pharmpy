@@ -505,7 +505,7 @@ def test_get_dvid_name(load_model_for_test, testdata):
     assert get_dvid_name(model) == 'DVID'
 
     ci = model.datainfo.typeix['dvid'][0]
-    ci = ci.replace(type='unknown')
+    ci = ci.replace(variable_mapping=ci.variable.replace(type='unknown'))
     di = model.datainfo.set_column(ci)
     model = model.replace(datainfo=di)
     assert model.datainfo['DVID'].type == 'unknown'

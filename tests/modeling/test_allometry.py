@@ -60,7 +60,8 @@ def test_allometry(load_model_for_test, testdata):
     with pytest.raises(ValueError):
         add_allometry(model, allometric_variable='WGT', reference_value=70, parameters=[])
 
-    bw_col = model.datainfo.descriptorix["body weight"][0].replace(descriptor=None)
+    bw_col = model.datainfo.find_column_by_property("descriptor", "body weight")
+    bw_col = bw_col.replace(variable_mapping=bw_col.variable.remove_property("descriptor"))
     di = model.datainfo.set_column(bw_col)
     model_2 = model.replace(datainfo=di)
     with pytest.raises(ValueError):

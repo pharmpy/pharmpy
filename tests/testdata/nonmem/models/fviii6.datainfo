@@ -1,21 +1,22 @@
-{"columns":
+{"__version__": 1,
+"columns":
   [
-    { "name": "ID", "type": "id", "scale": "nominal", "datatype": "int32", "descriptor": "subject identifier" },
-    { "name": "DAT2", "type": "unknown", "scale": "ratio", "unit": "h", "drop": true },
-    { "name": "OTIM", "type": "unknown", "scale": "ratio", "unit": "h", "drop": true },
-    { "name": "TIME", "type": "idv", "scale": "ratio", "unit": "h" },
-    { "name": "DV", "type": "dv", "scale": "ratio", "unit": "mg/l", "descriptor": "plasma concentration" },
-    { "name": "AMT", "type": "dose", "scale": "ratio", "unit": "mg" },
-    { "name": "RATE", "type": "unknown", "scale": "ratio", "unit": "mg" },
-    { "name": "AGE", "type": "covariate", "scale": "ratio", "unit": "1", "datatype": "float64" },
-    { "name": "WT", "type": "covariate", "scale": "ratio", "unit": "kg", "datatype": "float64", "descriptor": "body weight" },
-    { "name": "BLGR", "type": "covariate", "scale": "ordinal", "categories": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
-    { "name": "PREP", "type": "covariate", "scale": "nominal", "categories": [1, 2, 3, 4, 5, 6, 7, 8, 9] },
-    { "name": "EVID", "type": "unknown", "scale": "nominal", "categories": [0, 1] },
-    { "name": "OCC", "type": "unknown", "scale": "nominal", "categories": [1, 2, 3, 4, 5, 6, 7, 8] },
-    { "name": "YBIN", "type": "unknown", "scale": "nominal", "categories": [0, 1] },
-    { "name": "OCC2", "type": "unknown", "scale": "nominal", "categories": [0, 1] },
-    { "name": "STUD", "type": "unknown", "scale": "nominal", "categories": [0, 1] }
+    { "name": "ID", "variable_mapping": {"name": "ID", "type": "id", "scale": "nominal", "properties": {"descriptor": "subject identifier"}}, "datatype": "int32" },
+    { "name": "DAT2", "variable_mapping": {"name": "DAT2", "type": "unknown", "scale": "ratio", "properties": {"unit": "h"}}, "drop": true },
+    { "name": "OTIM", "variable_mapping": {"name": "OTIM", "type": "unknown", "scale": "ratio", "properties": {"unit": "h"}}, "drop": true },
+    { "name": "TIME", "variable_mapping": {"name": "TIME", "type": "idv", "scale": "ratio", "properties": {"unit": "h"}} },
+    { "name": "DV", "variable_mapping": {"name": "DV", "type": "dv", "scale": "ratio", "properties": {"unit": "mg/l", "descriptor": "plasma concentration"}} },
+    { "name": "AMT", "variable_mapping": {"name": "AMT", "type": "dose", "scale": "ratio", "properties": {"unit": "mg"}} },
+    { "name": "RATE", "variable_mapping": {"name": "RATE", "type": "unknown", "scale": "ratio", "properties": {"unit": "mg"}} },
+    { "name": "AGE", "variable_mapping": {"name": "AGE", "type": "covariate", "scale": "ratio", "properties": {"unit": "1"}}, "datatype": "float64" },
+    { "name": "WT", "variable_mapping": {"name": "WT", "type": "covariate", "scale": "ratio", "properties": {"unit": "kg", "descriptor": "body weight"}}, "datatype": "float64" },
+    { "name": "BLGR", "variable_mapping": {"name": "BLGR", "type": "covariate", "scale": "ordinal", "properties": {"categories": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}} },
+    { "name": "PREP", "variable_mapping": {"name": "PREP", "type": "covariate", "scale": "nominal", "properties": {"categories": [1, 2, 3, 4, 5, 6, 7, 8, 9]}} },
+    { "name": "EVID", "variable_mapping": {"name": "EVID", "type": "unknown", "scale": "nominal", "properties": {"categories": [0, 1]}} },
+    { "name": "OCC", "variable_mapping": {"name": "OCC", "type": "unknown", "scale": "nominal", "properties": {"categories": [1, 2, 3, 4, 5, 6, 7, 8]}} },
+    { "name": "YBIN", "variable_mapping": {"name": "YBIN", "type": "unknown", "scale": "nominal", "properties": {"categories": [0, 1]}} },
+    { "name": "OCC2", "variable_mapping": {"name": "OCC2", "type": "unknown", "scale": "nominal", "properties": {"categories": [0, 1]}} },
+    { "name": "STUD", "variable_mapping": {"name": "STUD", "type": "unknown", "scale": "nominal", "properties": {"categories": [0, 1]}} }
   ],
   "separator":"\\s+"
 }

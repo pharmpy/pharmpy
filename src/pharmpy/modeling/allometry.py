@@ -87,12 +87,13 @@ def add_allometry(
     from pharmpy.modeling import has_covariate_effect
 
     if allometric_variable is None:
-        try:
-            allometric_variable = model.datainfo.descriptorix["body weight"][0].name
-        except IndexError:
+        col = model.datainfo.find_column_by_property("descriptor", "body weight")
+        if col is None:
             raise ValueError(
                 "No allometric variable could be found. Try setting the allometric_variable argument"
             )
+        else:
+            allometric_variable = col.name
 
     variable = Expr(allometric_variable)
     reference = Expr(reference_value)

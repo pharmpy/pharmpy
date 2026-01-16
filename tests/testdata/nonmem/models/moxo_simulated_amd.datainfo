@@ -1,151 +1,150 @@
 {
+  "__version__": 1,
   "columns": [
     {
       "name": "ID",
-      "type": "id",
-      "unit": "1",
-      "scale": "nominal",
-      "datatype": "int32",
-      "continuous": false
+      "variable_mapping": {
+        "name": "ID",
+        "type": "id",
+        "scale": "nominal"
+      },
+      "datatype": "int32"
     },
     {
       "name": "VISI",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "nominal",
-      "datatype": "int32",
-      "continuous": false
+      "variable_mapping": {
+        "name": "VISI",
+        "scale": "nominal"
+      },
+      "datatype": "int32"
     },
     {
       "name": "AGE",
-      "type": "covariate",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "AGE",
+        "type": "covariate"
+      }
     },
     {
       "name": "SEX",
-      "type": "covariate",
-      "unit": "1",
-      "scale": "nominal",
-      "datatype": "int32",
-      "continuous": false
+      "variable_mapping": {
+        "name": "SEX",
+        "type": "covariate",
+        "scale": "nominal"
+      },
+      "datatype": "int32"
     },
     {
       "name": "WT",
-      "type": "covariate",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64",
-      "descriptor": "body weight"
+      "variable_mapping": {
+        "name": "WT",
+        "type": "covariate",
+        "properties": {
+          "descriptor": "body weight"
+        }
+      }
     },
     {
       "name": "COMP",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "COMP"
+      }
     },
     {
       "name": "IACE",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "IACE"
+      }
     },
     {
       "name": "DIG",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "DIG"
+      }
     },
     {
       "name": "DIU",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "DIU"
+      }
     },
     {
       "name": "TAD",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "TAD"
+      }
     },
     {
       "name": "TIME",
-      "type": "idv",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "TIME",
+        "type": "idv"
+      }
     },
     {
       "name": "CRCL",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "CRCL"
+      }
     },
     {
       "name": "AMT",
-      "type": "dose",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "AMT",
+        "type": "dose"
+      }
     },
     {
       "name": "SS",
-      "type": "ss",
-      "unit": "1",
-      "scale": "nominal",
-      "datatype": "int32",
-      "continuous": false
+      "variable_mapping": {
+        "name": "SS",
+        "type": "ss",
+        "scale": "nominal"
+      },
+      "datatype": "int32"
     },
     {
       "name": "II",
-      "type": "ii",
-      "unit": "1",
-      "scale": "nominal",
-      "datatype": "int32",
-      "continuous": false
+      "variable_mapping": {
+        "name": "II",
+        "type": "ii",
+        "scale": "nominal"
+      },
+      "datatype": "int32"
     },
     {
       "name": "VID1",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "VID1"
+      }
     },
     {
       "name": "DV",
-      "type": "dv",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "DV",
+        "type": "dv"
+      }
     },
     {
       "name": "EVID",
-      "type": "event",
-      "unit": "1",
-      "scale": "nominal",
-      "datatype": "int32",
-      "continuous": false
+      "variable_mapping": { 
+        "name": "EVID",
+        "type": "event",
+        "scale": "nominal"
+      },
+      "datatype": "int32"
     },
     {
       "name": "SHR",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "SHR"
+      }
     },
     {
       "name": "SHR2",
-      "type": "unknown",
-      "unit": "1",
-      "scale": "ratio",
-      "datatype": "float64"
+      "variable_mapping": {
+        "name": "SHR2"
+      }
     }
   ],
 "separator": ","

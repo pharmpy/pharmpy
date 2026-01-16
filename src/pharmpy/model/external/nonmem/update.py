@@ -17,6 +17,7 @@ from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    DataVariable,
     Distribution,
     EstimationStep,
     Infusion,
@@ -447,7 +448,8 @@ def _add_cmt(model):
     dataset = model.dataset
     dataset[cmt_name] = cmt
     di = update_datainfo(model.datainfo, dataset)
-    colinfo = di[cmt_name].replace(type='compartment')
+    var = di[cmt_name].variable.replace(type='compartment')
+    colinfo = di[cmt_name].replace(variable_mapping=var)
     model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
     return model
 
@@ -2284,7 +2286,7 @@ def add_dummy_dv(model: Model) -> Model:
         if model.dataset is not None and 'DV' not in model.dataset.columns:
             df = model.dataset.copy()
             df['DV'] = 0.0
-            colinfo = ColumnInfo(name='DV', type='dv')
+            colinfo = ColumnInfo.create('DV', DataVariable.create('DV', type='dv'))
             di = model.datainfo + colinfo
             model = model.replace(dataset=df, datainfo=di)
     return model

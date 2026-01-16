@@ -21,6 +21,15 @@ from .data import get_observations
 norm = scipy.stats.norm
 
 
+def _get_dv_unit(model):
+    dv_column = model.datainfo.dv_column
+    if len(dv_column) == 1:
+        dv_unit = dv_column.variable.get_property("unit")
+    else:
+        dv_unit = None
+    return dv_unit
+
+
 def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str):
     """Plot individual OFV of two models against each other
 
@@ -482,7 +491,7 @@ def plot_abs_cwres_vs_ipred(
     if stratify_on is not None:
         df = _bin_data(df, model, stratify_on, bins)
 
-    dv_unit = model.datainfo.dv_column.unit
+    dv_unit = _get_dv_unit(model)
 
     chart = _scatter(
         df,
@@ -516,7 +525,7 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on,
     idv = di.idv_column.name
     dvcol = di.dv_column
     dv = dvcol.name
-    dv_unit = dvcol.unit
+    dv_unit = _get_dv_unit(model)
     idname = di.id_column.name
     columns = [idname, idv, dv]
     if stratify_on is not None:
@@ -610,8 +619,8 @@ def plot_cwres_vs_idv(
         raise ValueError("CWRES not available in residuals")
     di = model.datainfo
     idv = di.idv_column.name
-    idv_unit = di.idv_column.unit
-    dv_unit = di.dv_column.unit
+    idv_unit = di.idv_column.variable.get_property("unit")
+    dv_unit = _get_dv_unit(model)
     idname = di.id_column.name
 
     columns = [idname, idv]
@@ -730,7 +739,7 @@ def _bin_data(df, model, stratify_on, bins):
     df = df.sort_values(by=[f'{stratify_on}'])
     if len(list(df[stratify_on].unique())) > bins:
         bins = np.linspace(df[stratify_on].min(), df[stratify_on].max(), bins + 1)
-        unit = model.datainfo[f'{stratify_on}'].unit
+        unit = model.datainfo[f'{stratify_on}'].variable.get_property('unit')
         labels = [_title_with_unit(f'{bins[i]} - {bins[i+1]}', unit) for i in range(len(bins) - 1)]
         df[f'{stratify_on}'] = pd.cut(
             df[f'{stratify_on}'], bins=bins, labels=labels, include_lowest=True

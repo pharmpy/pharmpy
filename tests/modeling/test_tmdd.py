@@ -171,7 +171,8 @@ def test_full_multiple_dvs(pheno_path, load_model_for_test, model_name, dv_types
     assert model_no_di.dependent_variables == expected
     assert len(model_no_di.random_variables.epsilons) > 1
 
-    dvid_col = model.datainfo['DVID'].replace(type='dvid')
+    var = model.datainfo['DVID'].variable.replace(type='dvid')
+    dvid_col = model.datainfo['DVID'].replace(variable_mapping=var)
     di = model.datainfo.set_column(dvid_col)
     model_di = model.replace(datainfo=di)
     model_di = set_tmdd(model_di, model_name, dv_types)
@@ -296,6 +297,7 @@ def _add_random_dvids(model):
     df['DVID'] = np.array([rng.integers(1, 6) for i in range(len(df))])
     model = model.replace(dataset=df)
     di = model.datainfo
-    col = di['DVID'].replace(type='dvid')
+    var = di['DVID'].variable.replace(type='dvid')
+    col = di['DVID'].replace(variable_mapping=var)
     di = di.set_column(col)
     return model.replace(datainfo=di)

@@ -18,6 +18,7 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     DataInfo,
+    DataVariable,
     EstimationStep,
     ExecutionSteps,
     Model,
@@ -79,7 +80,10 @@ def create_basic_pk_model(
         df = read_dataset_from_datainfo(di, datatype='nonmem')
     else:
         di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
-        di_ci = [ColumnInfo.create(key, type=value) for key, value in di_col_dict.items()]
+        di_ci = [
+            ColumnInfo.create(key, DataVariable.create(key, type=value))
+            for key, value in di_col_dict.items()
+        ]
         di = DataInfo.create(di_ci)
         df = None
 
@@ -256,7 +260,10 @@ def create_basic_pd_model(
         df = read_dataset_from_datainfo(di, datatype='nonmem')
     else:
         di_col_dict = {'ID': 'id', 'TIME': 'idv', 'DV': 'dv'}
-        di_ci = [ColumnInfo.create(key, type=value) for key, value in di_col_dict.items()]
+        di_ci = [
+            ColumnInfo.create(key, DataVariable.create(key, type=value))
+            for key, value in di_col_dict.items()
+        ]
         di = DataInfo.create(di_ci)
         df = None
 
@@ -337,7 +344,10 @@ def create_basic_kpd_model(
         df = read_dataset_from_datainfo(di, datatype='nonmem')
     else:
         di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
-        di_ci = [ColumnInfo.create(key, type=value) for key, value in di_col_dict.items()]
+        di_ci = [
+            ColumnInfo.create(key, DataVariable(key, type=value))
+            for key, value in di_col_dict.items()
+        ]
         di = DataInfo.create(di_ci)
         df = None
 

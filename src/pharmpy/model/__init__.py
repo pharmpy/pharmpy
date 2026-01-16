@@ -1,5 +1,5 @@
 from .data import DatasetError, DatasetWarning
-from .datainfo import ColumnInfo, DataInfo
+from .datainfo import ColumnInfo, DataInfo, DataVariable
 from .distributions.symbolic import (
     Distribution,
     FiniteDistribution,
@@ -40,6 +40,7 @@ __all__ = (
     'DataInfo',
     'DatasetError',
     'DatasetWarning',
+    'DataVariable',
     'Distribution',
     'EstimationStep',
     'ExecutionSteps',
