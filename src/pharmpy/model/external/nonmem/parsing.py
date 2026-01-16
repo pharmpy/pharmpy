@@ -16,6 +16,7 @@ from pharmpy.model import (
     ColumnInfo,
     DataInfo,
     DatasetError,
+    DataVariable,
     EstimationStep,
     ExecutionSteps,
     JointNormalDistribution,
@@ -765,50 +766,59 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
         if coldrop and colname not in ['DATE', 'DAT1', 'DAT2', 'DAT3']:
             info = ColumnInfo.create(colname, drop=coldrop, datatype='str')
         elif colname == 'ID' or colname == 'L1':
-            info = ColumnInfo.create(
-                colname, drop=coldrop, datatype='int32', type='id', scale='nominal'
-            )
+            var = DataVariable.create(colname, type='id', scale='nominal')
+            info = ColumnInfo.create(colname, var, drop=coldrop, datatype='int32')
         elif colname == 'DV' or colname == replacements.get('DV', None):
-            info = ColumnInfo.create(colname, drop=coldrop, type='dv')
+            var = DataVariable.create(colname, type='dv')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif (colname == 'TIME' or colname == replacements.get('TIME', None)) and have_pk:
             if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
                 datatype = 'nmtran-time'
             else:
                 datatype = 'float64'
-            info = ColumnInfo.create(
-                colname, drop=coldrop, type='idv', scale='ratio', datatype=datatype
-            )
+            var = DataVariable.create(colname, type='idv', scale='ratio')
+            info = ColumnInfo.create(colname, var, drop=coldrop, datatype=datatype)
         elif colname in {'DATE', 'DAT1', 'DAT2', 'DAT3'} and have_pk:
             # Always DROP in mod-file, but actually always used
-            info = ColumnInfo.create(colname, drop=False, scale='interval', datatype='nmtran-date')
+            var = DataVariable.create(colname, scale='interval')
+            info = ColumnInfo.create(colname, var, drop=False, datatype='nmtran-date')
         elif colname == 'EVID' and have_pk:
-            info = ColumnInfo.create(colname, drop=coldrop, type='event', scale='nominal')
+            var = DataVariable.create(colname, type='event', scale='nominal')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'MDV' and have_pk:
             if 'EVID' in colnames:
                 tp = 'mdv'
             else:
                 tp = 'event'
-            info = ColumnInfo.create(
-                colname, drop=coldrop, type=tp, scale='nominal', datatype='int32'
-            )
+            var = DataVariable.create(colname, type=tp, scale='nominal')
+            info = ColumnInfo.create(colname, var, drop=coldrop, datatype='int32')
         elif colname == 'II' and have_pk:
-            info = ColumnInfo.create(colname, drop=coldrop, type='ii', scale='ratio')
+            var = DataVariable.create(colname, type='ii', scale='ratio')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'SS' and have_pk:
-            info = ColumnInfo.create(colname, drop=coldrop, type='ss', scale='nominal')
+            var = DataVariable.create(colname, type='ss', scale='nominal')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'ADDL' and have_pk:
-            info = ColumnInfo.create(colname, drop=coldrop, type='additional', scale='ordinal')
+            var = DataVariable.create(colname, type='additional', scale='ordinal')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif (colname == 'AMT' or colname == replacements.get('AMT', None)) and have_pk:
-            info = ColumnInfo.create(colname, drop=coldrop, type='dose', scale='ratio')
+            var = DataVariable.create(colname, type='dose', scale='ratio')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'CMT' and have_pk:
-            info = ColumnInfo.create(colname, drop=coldrop, type='compartment', scale='nominal')
+            var = DataVariable.create(colname, type='compartment', scale='nominal')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'RATE' and have_pk:
-            info = ColumnInfo.create(colname, drop=coldrop, type='rate')
+            var = DataVariable.create(colname, type='rate')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'BLQ':
-            info = ColumnInfo.create(colname, drop=coldrop, type='blq', scale='nominal')
+            var = DataVariable.create(colname, type='blq', scale='nominal')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'LLOQ':
-            info = ColumnInfo.create(colname, drop=coldrop, type='lloq')
+            var = DataVariable.create(colname, type='lloq')
+            info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'DVID':
-            info = ColumnInfo.create(colname, drop=coldrop, type='dvid', datatype='int32')
+            var = DataVariable.create(colname, type='dvid')
+            info = ColumnInfo.create(colname, var, datatype='int32')
         else:
             info = ColumnInfo.create(colname, drop=coldrop)
         column_info.append(info)

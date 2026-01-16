@@ -56,11 +56,11 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
 
     di = model.datainfo
     if variable in di.names:
-        return di[variable].unit
+        return di[variable].variable.get_property("unit")
 
     # FIXME: Handle other DVs?
     y = sympy.sympify(list(model.dependent_variables.keys())[0])
-    input_units = {sympy.Symbol(col.name): col.unit._expr for col in di}
+    input_units = {sympy.Symbol(col.name): col.variable.get_property('unit')._expr for col in di}
     pruned_nodes = {sympy.exp}
 
     def pruning_predicate(e: sympy.Basic) -> bool:
@@ -68,7 +68,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
 
     unit_eqs = []
     # FIXME: Using private _expr in some places. sympify doesn't work for some reason.
-    a = di[di.dv_column.name].unit._expr
+    a = di[di.dv_column.name].variable.get_property('unit')._expr
     unit_eqs.append(y - a)
     d = {}
 
@@ -93,8 +93,8 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
             else:
                 unit_eqs.append(sympy.sympify(s.symbol) - _extract_minus(expr))
         elif isinstance(s, CompartmentalSystem):
-            amt_unit = di[di.typeix['dose'][0].name].unit._expr
-            time_unit = di[di.idv_column.name].unit._expr
+            amt_unit = di[di.typeix['dose'][0].name].variable.get_property("unit")._expr
+            time_unit = di[di.idv_column.name].variable.get_property("unit")._expr
             for e in s.compartmental_matrix.diagonal():
                 e = sympy.sympify(e)
                 if e.is_Add:

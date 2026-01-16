@@ -369,6 +369,7 @@ def _add_random_dvids(model):
     df['DVID'] = np.array([rng.integers(1, 6) for i in range(len(df))])
     model = model.replace(dataset=df)
     di = model.datainfo
-    col = di['DVID'].replace(type='dvid')
+    var = di['DVID'].variable.replace(type='dvid')
+    col = di['DVID'].replace(variable_mapping=var)
     di = di.set_column(col)
     return model.replace(datainfo=di)

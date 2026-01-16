@@ -1379,7 +1379,9 @@ def _mechanistic_cov_extraction(search_space, model, mechanistic_covariates):
 
 def _subfunc_allometry(amd_start_model: Model, allometric_variable, ctx) -> SubFunc:
     if allometric_variable is None:  # Somewhat redundant with validation function
-        allometric_variable = amd_start_model.datainfo.descriptorix["body weight"][0].name
+        col = amd_start_model.datainfo.find_column_by_property("descriptor", "body weight")
+        if col is not None:
+            allometric_variable = col.name
 
     def _run_allometry(model, modelfit_results):
         res = run_subtool(
@@ -1455,9 +1457,7 @@ def check_skip(
     if 'allometry' in order:
         if allometric_variable is None:
             if not ignore_datainfo_fallback:
-                try:
-                    model.datainfo.descriptorix["body weight"]
-                except IndexError:
+                if model.datainfo.find_column_by_property("descriptor", "body weight") is None:
                     context.log_warning(
                         'Allometry will be skipped because allometric_variable is None and could'
                         ' not be inferred through .datainfo via "body weight" descriptor.'

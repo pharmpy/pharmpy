@@ -175,7 +175,8 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
     df_blq = model.dataset
     df_blq['BLQ'] = np.random.randint(0, 2, df_blq.shape[0])
     di_blq = update_datainfo(model.datainfo, df_blq)
-    blq_col = di_blq['BLQ'].replace(type='blq')
+    blq_var = di_blq['BLQ'].variable.replace(type='blq')
+    blq_col = di_blq['BLQ'].replace(variable_mapping=blq_var)
     di_blq = di_blq.set_column(blq_col)
     model_blq = model.replace(dataset=df_blq, datainfo=di_blq)
 
@@ -185,7 +186,8 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
     df_lloq = model.dataset
     df_lloq['LLOQ'] = np.random.random(df_lloq.shape[0])
     di_lloq = update_datainfo(model.datainfo, df_lloq)
-    lloq_col = di_lloq['LLOQ'].replace(type='lloq')
+    lloq_var = di_lloq['LLOQ'].variable.replace(type='lloq')
+    lloq_col = di_lloq['LLOQ'].replace(variable_mapping=lloq_var)
     di_lloq = di_lloq.set_column(lloq_col)
     model_lloq = model.replace(dataset=df_lloq, datainfo=di_lloq)
 
