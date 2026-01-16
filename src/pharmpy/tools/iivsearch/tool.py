@@ -752,18 +752,21 @@ def update_input_model_description(input_model_entry):
     return model_entry
 
 
-def create_delinearize_workflow(input_model, final_model, param_mapping, stepno):
+def create_delinearize_workflow(input_model, final_model, param_mapping, stepno=None):
     flm_etas = final_model.random_variables.iiv.names
     final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
     final_delinearized_model = delinearize_model(final_model, input_model, final_param_map)
+    if stepno:
+        name = f'delinearized{stepno}'
+    else:
+        name = 'delinearized'
+
     final_delinearized_model = final_delinearized_model.replace(
-        name=f'delinearized{stepno}',
+        name=name,
         description=algorithms.create_description(final_delinearized_model),
     )
 
-    lin_model_entry = ModelEntry.create(
-        model=final_delinearized_model,
-    )
+    lin_model_entry = ModelEntry.create(model=final_delinearized_model, parent=input_model)
     dl_wf = WorkflowBuilder(name="delinearization_workflow")
     l_start = Task("START", _start_algorithm, lin_model_entry)
     dl_wf.add_task(l_start)
@@ -1021,6 +1024,10 @@ def add_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock, r
         wb.add_task(search_task, predecessors=predecessors)
         search_tasks.append(search_task)
 
+    delinearize_task = Task.create('delinearize', create_delinearized_model_entry, rank_options)
+    wb.add_task(delinearize_task, predecessors=[create_base_task, create_param_mapping_task])
+    search_tasks.append(delinearize_task)
+
     end_search_task = Task.create('end_search', end_search)
     wb.add_task(end_search_task)
     search_tasks.append(end_search_task)
@@ -1167,7 +1174,7 @@ def update_linearized_base_model_mfl(as_fullblock, param_mapping, inputme, basem
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
     descr = algorithms.create_description(model, iov=False, param_dict=param_mapping)
-    model = model.replace(name="lin", description=descr)
+    model = model.replace(name="linbase", description=descr)
     return model
 
 
@@ -1193,8 +1200,8 @@ def run_exhaustive_search(
     rank_res = rank_models(
         context,
         rank_options,
-        base_model_entry,
-        mes,
+        base_model_entry.model,
+        [base_model_entry] + list(mes),
     )
     mes_all = (base_model_entry,) + mes
     best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
@@ -1227,8 +1234,8 @@ def run_exhaustive_search_linearized(
     rank_res = rank_models(
         context,
         rank_options,
-        base_model_entry,
-        mes,
+        base_model_entry.model,
+        [base_model_entry] + list(mes),
     )
     mes_all = (base_model_entry,) + mes
     best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
@@ -1291,8 +1298,8 @@ def compare_to_input_model(
         rank_res = rank_models(
             context,
             rank_options,
-            input_model_entry,
-            [best_model_entry],
+            input_model_entry.model,
+            [input_model_entry, best_model_entry],
         )
         if rank_res.final_model == input_model:
             context.log_warning(
@@ -1311,14 +1318,13 @@ def compare_to_input_model(
 def create_delinearized_model_entry(
     context,
     rank_options,
+    base_model_entry,
     param_mapping,
-    no_of_models,
-    best_model_entry,
-    input_model_entry,
+    best_model_entry_and_index_offset,
 ):
-    final_linearized_model = best_model_entry.model
+    best_model_entry, index_offset = best_model_entry_and_index_offset
     dl_wf = create_delinearize_workflow(
-        input_model_entry.model, final_linearized_model, param_mapping, no_of_models + 1
+        base_model_entry.model, best_model_entry.model, param_mapping
     )
     context.log_info('Running delinearized model')
     dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
@@ -1326,14 +1332,16 @@ def create_delinearized_model_entry(
     rank_res = rank_models(
         context,
         rank_options,
-        None,
+        dlin_model_entry.model,
         [dlin_model_entry],
     )
 
     if not rank_res.final_model:
         context.abort_workflow('Delinearized model failed strictness criteria')
 
-    return (dlin_model_entry, no_of_models + 1), [rank_res.summary_tool]
+    summary_tool = add_parent_column(rank_res.summary_tool, [base_model_entry, dlin_model_entry])
+
+    return (dlin_model_entry, index_offset + 1), [summary_tool]
 
 
 def postprocess(

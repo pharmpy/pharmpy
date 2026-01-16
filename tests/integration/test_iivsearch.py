@@ -259,28 +259,28 @@ def test_iivsearch_dummy_mfl(
     'ignore::UserWarning',
 )
 @pytest.mark.parametrize(
-    ('algorithm', 'correlation_algorithm', 'no_of_candidate_models', 'kwargs'),
+    ('algorithm', 'correlation_algorithm', 'no_of_linearized_models', 'kwargs'),
     (
-        ('top_down_exhaustive', 'skip', 3, {'iiv_strategy': 'no_add'}),
+        ('top_down_exhaustive', 'skip', 4, {'iiv_strategy': 'no_add'}),
         ('bottom_up_stepwise', 'skip', 4, {'iiv_strategy': 'no_add'}),
         # ('bottom_up_stepwise', 'skip', 4, 'fullblock'),
         ('bottom_up_stepwise', 'skip', 4, {'iiv_strategy': 'add_diagonal'}),
         (
             'top_down_exhaustive',
             'skip',
-            3,
+            4,
             {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
         ),
         (
             'top_down_exhaustive',
             None,
-            3,
+            8,
             {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
         ),
         (
             'skip',
             'top_down_exhaustive',
-            3,
+            5,
             {'_search_space': 'IIV(@PK,exp);COVARIANCE?(IIV,@IIV)'},
         ),
         (
@@ -292,19 +292,19 @@ def test_iivsearch_dummy_mfl(
         (
             'top_down_exhaustive',
             None,
-            3,
+            8,
             {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
         ),
     ),
 )
-def test_no_of_etas_linearization(
+def test_iivsearch_linearization(
     tmp_path,
     load_model_for_test,
     testdata,
     model_count,
     algorithm,
     correlation_algorithm,
-    no_of_candidate_models,
+    no_of_linearized_models,
     kwargs,
 ):
     with chdir(tmp_path):
@@ -321,8 +321,9 @@ def test_no_of_etas_linearization(
         )
 
         assert res
-        # assert len(res.summary_tool) == no_of_candidate_models + 4
-        # assert len(res.summary_models) == no_of_candidate_models + 1
+
+        no_of_models = len(res.summary_tool.index.get_level_values('model').unique())
+        assert no_of_models == no_of_linearized_models + 2
 
         rundir = tmp_path / 'iivsearch1'
         assert rundir.is_dir()

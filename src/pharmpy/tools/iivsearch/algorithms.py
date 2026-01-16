@@ -119,8 +119,8 @@ def bu_stepwise_no_of_etas_mfl(
         rank_res = rank_models(
             context,
             rank_options,
-            selected_model_entry,
-            mes_step,
+            selected_model_entry.model,
+            [selected_model_entry] + list(mes_step),
         )
 
         rank_results.append(rank_res)
@@ -182,8 +182,8 @@ def bu_stepwise_no_of_etas_linearized_mfl(
         rank_res = rank_models(
             context,
             rank_options,
-            selected_model_entry,
-            mes_step,
+            selected_model_entry.model,
+            [selected_model_entry] + list(mes_step),
         )
 
         rank_results.append(rank_res)
@@ -394,18 +394,18 @@ def create_description_mfl(mfl, type):
 def rank_models(
     context,
     rank_options,
-    base_model_entry,
+    ref_model,
     model_entries,
 ):
-    models = [base_model_entry.model] + [me.model for me in model_entries]
-    results = [base_model_entry.modelfit_results] + [me.modelfit_results for me in model_entries]
+    models = [me.model for me in model_entries]
+    results = [me.modelfit_results for me in model_entries]
 
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
         models=models,
         results=results,
-        ref_model=base_model_entry.model,
+        ref_model=ref_model,
         rank_type=rank_options.rank_type,
         alpha=rank_options.cutoff,
         strictness=rank_options.strictness,
