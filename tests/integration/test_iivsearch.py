@@ -261,14 +261,38 @@ def test_iivsearch_dummy_mfl(
 @pytest.mark.parametrize(
     ('algorithm', 'correlation_algorithm', 'no_of_candidate_models', 'kwargs'),
     (
-        ('top_down_exhaustive', 'skip', 3, {'iiv_strategy': 'fullblock'}),
+        ('top_down_exhaustive', 'skip', 3, {'iiv_strategy': 'no_add'}),
         ('bottom_up_stepwise', 'skip', 4, {'iiv_strategy': 'no_add'}),
         # ('bottom_up_stepwise', 'skip', 4, 'fullblock'),
         ('bottom_up_stepwise', 'skip', 4, {'iiv_strategy': 'add_diagonal'}),
         (
+            'top_down_exhaustive',
+            'skip',
+            3,
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
+        ),
+        (
+            'top_down_exhaustive',
+            None,
+            3,
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+        ),
+        (
+            'skip',
+            'top_down_exhaustive',
+            3,
+            {'_search_space': 'IIV(@PK,exp);COVARIANCE?(IIV,@IIV)'},
+        ),
+        (
             'bottom_up_stepwise',
             'skip',
             4,
+            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
+        ),
+        (
+            'top_down_exhaustive',
+            None,
+            3,
             {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
         ),
     ),

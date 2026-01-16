@@ -995,7 +995,15 @@ def add_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock, r
 
     search_tasks = []
     for step in steps_to_run:
-        if 'stepwise' in step:
+        if 'exhaustive' in step:
+            search_task = Task.create(
+                'run_exhaustive_search_linearized',
+                run_exhaustive_search_linearized,
+                step,
+                mfl_expanded,
+                rank_options,
+            )
+        elif 'stepwise' in step:
             search_task = Task.create(
                 'run_stepwise_search_linearized',
                 run_stepwise_search_linearized,
@@ -1141,6 +1149,12 @@ def create_linearized_model(
     lin_model_entry = ModelEntry.create(
         lin_model, modelfit_results=None, parent=base_model_entry.model
     )
+
+    wb = WorkflowBuilder(name='run_lin_base_model')
+    wf_fit = create_fit_workflow(lin_model_entry)
+    wb.insert_workflow(wf_fit)
+    lin_model_entry = context.call_workflow(Workflow(wb), unique_name='run_base')
+
     return lin_model_entry
 
 
@@ -1171,7 +1185,42 @@ def run_exhaustive_search(
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
     type = 'iiv' if 'no_of_etas' in step else 'covariance'
+    mfl = expand_model_features(base_model_entry.model, mfl)
     wf_step = algorithms.td_exhaustive(type, base_model_entry, mfl, index_offset, as_fullblock)
+    if not wf_step:
+        return (base_model_entry, index_offset), []
+    mes = context.call_workflow(wf_step, 'run_candidates')
+    rank_res = rank_models(
+        context,
+        rank_options,
+        base_model_entry,
+        mes,
+    )
+    mes_all = (base_model_entry,) + mes
+    best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+    summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
+    return (best_model_entry, len(mes)), [summary_tool]
+
+
+def run_exhaustive_search_linearized(
+    context,
+    step,
+    mfl,
+    rank_options,
+    param_mapping,
+    base_model_entry_and_index_offset,
+):
+    base_model_entry, index_offset = base_model_entry_and_index_offset
+    if 'no_of_etas' in step:
+        type = 'iiv'
+        mfl = mfl.iiv
+    else:
+        type = 'covariance'
+        mfl = mfl.covariance
+    mfl = expand_model_features(base_model_entry.model, mfl)
+    wf_step = algorithms.td_exhaustive(
+        type, base_model_entry, mfl, index_offset, False, param_mapping
+    )
     if not wf_step:
         return (base_model_entry, index_offset), []
     mes = context.call_workflow(wf_step, 'run_candidates')

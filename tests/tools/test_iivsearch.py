@@ -6,6 +6,7 @@ from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
     add_iiv,
     add_iov,
+    add_lag_time,
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
@@ -24,6 +25,7 @@ from pharmpy.tools.iivsearch.algorithms import (
     _is_rv_block_structure,
     _rv_block_structures,
     create_block_structure_candidate_entry,
+    create_candidate_linearized,
     create_description,
     create_description_mfl,
     create_eta_blocks,
@@ -54,6 +56,7 @@ from pharmpy.tools.iivsearch.tool import (
     update_linearized_base_model_mfl,
     validate_input,
 )
+from pharmpy.tools.linearize.tool import create_derivative_model, create_linearized_model
 from pharmpy.tools.run import read_modelfit_results
 from pharmpy.workflows import ModelEntry, Workflow
 
@@ -452,6 +455,61 @@ def test_get_covariance_combinations(mfl, base_features, expected):
     assert mf_empty in combinations if base_features else mf_empty not in combinations
     assert len(combinations) == expected
     assert mfl_base not in combinations
+
+
+@pytest.mark.parametrize(
+    'func, mfl, type, description, no_of_params',
+    [
+        (None, 'IIV([CL,MAT],exp)', 'iiv', '[CL]+[MAT]', 2),
+        (None, 'IIV([CL],exp)', 'iiv', '[CL]', 1),
+        (None, '', 'iiv', '', 1),
+        (add_lag_time, 'IIV([CL,VC,MDT],exp)', 'iiv', '[CL]+[MDT]+[VC]', 3),
+        (None, 'COVARIANCE(IIV,[CL,VC,MAT])', 'covariance', '[CL,MAT,VC]', 6),
+        (None, 'COVARIANCE(IIV,[CL,VC])', 'covariance', '[CL,VC]+[MAT]', 4),
+        (add_lag_time, 'COVARIANCE(IIV,[CL,VC,MAT])', 'covariance', '[CL,MAT,VC]+[MDT]', 7),
+        (
+            add_lag_time,
+            'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
+            'covariance',
+            '[CL,VC]+[MAT,MDT]',
+            6,
+        ),
+    ],
+)
+def test_create_candidate_linearized(
+    load_model_for_test, model_entry_factory, testdata, func, mfl, type, description, no_of_params
+):
+    input_model = load_model_for_test(testdata / "nonmem" / "models" / "mox2.mod")
+    if func:
+        input_model = func(input_model)
+        input_model = add_pk_iiv(input_model)
+    input_model_entry = model_entry_factory([input_model])[0]
+
+    derivative_model_entry = create_derivative_model(input_model_entry)
+    derivative_model_entry = model_entry_factory([derivative_model_entry.model])[0]
+
+    linbase_model_entry = create_linearized_model(
+        "linbase", "", input_model, derivative_model_entry
+    )
+    linbase_model_entry = model_entry_factory([linbase_model_entry.model])[0]
+
+    param_mapping = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT', 'ETA_MDT': 'MDT'}
+
+    mfl = ModelFeatures.create(mfl)
+    candidate_model_entry = create_candidate_linearized(
+        'cand1', mfl, type, param_mapping, linbase_model_entry
+    )
+    assert candidate_model_entry.parent == linbase_model_entry.model
+    assert candidate_model_entry.modelfit_results is None
+
+    candidate_model = candidate_model_entry.model
+    assert candidate_model.description == description
+    assert len(candidate_model.random_variables.iiv.parameter_names) == no_of_params
+    if mfl:
+        assert (
+            candidate_model.parameters.inits['IIV_CL']
+            != linbase_model_entry.model.parameters.inits['IIV_CL']
+        )
 
 
 @pytest.mark.parametrize(
