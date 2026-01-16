@@ -16,7 +16,7 @@ dask==2025.12.0
 debugpy==1.8.19
 decorator==5.2.1
 defusedxml==0.7.1
-distributed==2025.12.0
+distributed==2026.1.1
 docutils==0.21.2
 executing==2.2.1
 fastjsonschema==2.21.2
