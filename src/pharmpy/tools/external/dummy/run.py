@@ -166,6 +166,20 @@ def create_dummy_modelfit_results(model, ref=None):
         pred = pd.Series(_rand_array(1, n, rng), name='PRED')
         predictions = pd.concat([cipredi, ipred, pred], axis=1)
 
+    # FIXME: make more general
+    if deriv := model.execution_steps[-1].derivatives:
+
+        def _get_names(exprs):
+            return [expr.name for expr in exprs]
+
+        col_names = tuple(';'.join(_get_names(rvs)) for rvs in deriv)
+        data = pd.DataFrame(
+            _rand_array(n_id, len(col_names), rng, 'standard_normal'), columns=col_names
+        )
+        derivatives = data.set_index(model.dataset[id_name].unique())
+    else:
+        derivatives = None
+
     eta_names = model.random_variables.etas.names
     data = pd.DataFrame(
         _rand_array(n_id, len(eta_names), rng, 'standard_normal'), columns=eta_names
@@ -199,6 +213,7 @@ def create_dummy_modelfit_results(model, ref=None):
         'log_likelihood': 5,
         'parameter_estimates_sdcorr': pes,
         'standard_errors_sdcorr': ses,
+        'derivatives': derivatives,
     }
     modelfit_results = ModelfitResults(**results_dict)
     return modelfit_results

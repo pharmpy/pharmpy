@@ -2,6 +2,7 @@ import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.modeling import (
+    add_derivative,
     get_number_of_individuals,
     remove_parameter_uncertainty_step,
     set_simulation,
@@ -13,13 +14,17 @@ from pharmpy.tools.external.dummy.run import (
 
 
 @pytest.mark.parametrize(
-    'ref_value, with_uncertainty',
-    [(None, False), (None, True), (-100, False)],
+    'ref_value, with_uncertainty, with_derivatives',
+    [(None, False, False), (None, True, False), (-100, False, False), (None, False, True)],
 )
-def test_create_dummy_modelfit_results(load_example_model_for_test, ref_value, with_uncertainty):
+def test_create_dummy_modelfit_results(
+    load_example_model_for_test, ref_value, with_uncertainty, with_derivatives
+):
     model = load_example_model_for_test('pheno')
     if not with_uncertainty:
         model = remove_parameter_uncertainty_step(model)
+    if with_derivatives:
+        model = add_derivative(model)
     res = create_dummy_modelfit_results(model, ref_value)
     if ref_value:
         assert abs(res.ofv - ref_value) < 50
@@ -31,6 +36,8 @@ def test_create_dummy_modelfit_results(load_example_model_for_test, ref_value, w
     assert len(res.standard_errors) == no_of_params
     if not with_uncertainty:
         assert all(np.isnan(val) for val in res.relative_standard_errors.values)
+    if with_derivatives:
+        assert res.derivatives is not None
     no_of_individuals = get_number_of_individuals(model)
     assert len(res.individual_ofv) == no_of_individuals
     assert len(res.individual_estimates)
