@@ -58,7 +58,7 @@ def create_workflow(
     wb.add_task(start_task)
 
     # No need to run input model before adding derivatives
-    der_task = Task("create_derivative_model", create_derivative_model)
+    der_task = Task("create_derivative_model", _create_derivative_model)
     wb.add_task(der_task, predecessors=wb.output_tasks)
 
     wf_fit_deriv = create_fit_workflow(n=1)
@@ -129,7 +129,13 @@ def postprocess(context, model_name, *modelentries):
     return res
 
 
-def create_derivative_model(context, modelentry):
+def _create_derivative_model(context, modelentry):
+    der_modelentry = create_derivative_model(modelentry)
+    context.log_info("Running derivative model")
+    return der_modelentry
+
+
+def create_derivative_model(modelentry):
     der_model = modelentry.model.replace(name="derivatives")
     if (
         modelentry.modelfit_results is not None
@@ -148,7 +154,6 @@ def create_derivative_model(context, modelentry):
     der_model = add_predictions(der_model, ["CIPREDI"])
     der_model = add_derivative(der_model)
     der_model = set_estimation_step(der_model, "FOCE", 0, evaluation=True)
-    context.log_info("Running derivative model")
     der_model = remove_parameter_uncertainty_step(der_model)
     return ModelEntry.create(model=der_model)
 
@@ -156,6 +161,16 @@ def create_derivative_model(context, modelentry):
 def _create_linearized_model(context, model_name, description, model, derivative_model_entry):
     if derivative_model_entry.modelfit_results is None:
         context.abort_workflow("Error while running the derivative model")
+
+    linbase_model_entry = create_linearized_model(
+        model_name, description, model, derivative_model_entry
+    )
+
+    context.log_info("Running linearized model")
+    return linbase_model_entry
+
+
+def create_linearized_model(model_name, description, model, derivative_model_entry):
     df = cleanup_columns(derivative_model_entry)
 
     derivative_model = derivative_model_entry.model
@@ -187,7 +202,6 @@ def _create_linearized_model(context, model_name, description, model, derivative
     if isinstance(derivative_model, NONMEMModel):
         linbase = convert_model(linbase, to_format='nonmem')
 
-    context.log_info("Running linearized model")
     return ModelEntry.create(model=linbase)
 
 
