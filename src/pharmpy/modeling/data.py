@@ -20,6 +20,7 @@ from pharmpy.model import (
     CompartmentalSystem,
     DataInfo,
     DatasetError,
+    DataVariable,
     Model,
     get_and_check_dataset,
 )
@@ -419,7 +420,8 @@ def set_covariates(model: Model, covariates: Container[str]):
     newcols = []
     for col in di:
         if col.name in covariates:
-            newcol = col.replace(type='covariate')
+            newvar = col.variable.replace(type='covariate')
+            newcol = col.replace(variable_mapping=newvar)
             newcols.append(newcol)
         else:
             newcols.append(col)
@@ -452,17 +454,13 @@ def set_dvid(model: Model, name: str):
     except IndexError:
         pass
     else:
-        curdvid = curdvid.replace(type='unknown')
+        var = curdvid.variable.replace(type='unknown')
+        curdvid = curdvid.replace(variable_mapping=var)
         di = di.set_column(curdvid)
 
-    col = col.replace(
-        type='dvid',
-        unit=1,
-        scale='nominal',
-        continuous=False,
-        drop=False,
-        descriptor='observation identifier',
-    )
+    var = col.variable.set_property('unit', 1).set_property('descriptor', 'observation identifier')
+    var = var.replace(type='dvid', scale='nominal', count=False)
+    col = col.replace(variable_mapping=var, drop=False)
     df = model.dataset
     if not col.is_integer():
         ser = df[name]
@@ -477,7 +475,9 @@ def set_dvid(model: Model, name: str):
     else:
         new_dataset = False
 
-    col = col.replace(categories=sorted(df[name].unique()))
+    categories = sorted(df[name].unique())
+    var = col.variable.set_property('categories', categories)
+    col = col.replace(variable_mapping=var)
 
     di = di.set_column(col)
 
@@ -968,7 +968,8 @@ def add_admid(model: Model):
         dataset = model.dataset
         dataset["ADMID"] = adm
         di = update_datainfo(model.datainfo, dataset)
-        colinfo = di['ADMID'].replace(type='admid')
+        var = di['ADMID'].variable.replace(type='admid')
+        colinfo = di['ADMID'].replace(variable_mapping=var)
         model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
 
     return model.update_source()
@@ -1156,11 +1157,7 @@ def add_time_after_dose(model: Model):
     add_time_of_last_dose : Add time of last dose to model
     """
 
-    try:
-        model.datainfo.descriptorix['time after dose']
-    except IndexError:
-        pass
-    else:
+    if model.datainfo.find_column_by_property('descriptor', 'time after dose'):
         # Already have time after dose
         return model
     temp = translate_nmtran_time(model)
@@ -1176,8 +1173,10 @@ def add_time_after_dose(model: Model):
     else:
         # FIXME: Temp workaround, should be canonicalized in Model.replace
         di = update_datainfo(temp.datainfo, df)
-        new_idvcol = di.idv_column.replace(type='unknown')
-        new_timecol = di['_NEWTIME'].replace(type='idv')
+        new_idvvar = di.idv_column.variable.replace(type='unknown')
+        new_idvcol = di.idv_column.replace(variable_mapping=new_idvvar)
+        new_timevar = di['_NEWTIME'].variable.replace(type='idv')
+        new_timecol = di['_NEWTIME'].replace(variable_mapping=new_timevar)
         di = di.set_column(new_idvcol).set_column(new_timecol)
         temp = temp.replace(datainfo=di, dataset=df)
         temp = expand_additional_doses(temp, flag=True)
@@ -1203,7 +1202,12 @@ def add_time_after_dose(model: Model):
 
     # FIXME: Temp workaround, should be canonicalized in Model.replace
     di = update_datainfo(model.datainfo, df)
-    colinfo = di['TAD'].replace(descriptor='time after dose', unit=di[idv].unit)
+    var = (
+        di['TAD']
+        .variable.set_property('descriptor', 'time after dose')
+        .set_property('unit', di[idv].variable.get_property('unit'))
+    )
+    colinfo = di['TAD'].replace(variable_mapping=var)
     model = model.replace(datainfo=di.set_column(colinfo), dataset=df)
     return model.update_source()
 
@@ -1945,42 +1949,45 @@ class Checker:
             self.violations.append((code, result, violation))
 
     def check_has_unit(self, code, col):
-        has_unit = col.unit is not None
+        # FIXME: This might not be relevant with a default value of unit 1
+        has_unit = col.variable.properties.get("unit", None) is not None
         self.set_result(code, test=has_unit, violation=col.name, warn=True)
         return has_unit
 
     def check_is_unitless(self, code, col):
-        is_unitless = col.unit == Unit.unitless()
+        is_unitless = col.variable.properties.get("unit", None) == Unit.unitless()
         self.set_result(code, test=is_unitless, violation=col.name, warn=True)
 
     def check_dimension(self, code, column, dim):
-        if column.unit is None:
+        unit = column.variable.properties.get("unit", None)
+        if unit is None:
             self.set_result(code, skip=True)
             return False
         else:
             dim2 = sympy.physics.units.Dimension(
-                sympy.physics.units.si.SI.get_dimensional_expr(column.unit._expr)
+                sympy.physics.units.si.SI.get_dimensional_expr(unit._expr)
             )
             self.set_result(
                 code,
                 test=dim == dim2,
-                violation=f"Unit {column.unit} of {column.name} is not a {dim} unit",
+                violation=f"Unit {unit} of {column.name} is not a {dim} unit",
             )
             return dim == dim2
 
     def check_range(self, code, col, lower, upper, unit, lower_included=True, upper_included=True):
+        col_unit = col.variable.properties.get("unit", None)
         name = col.name
         if lower == 0:
             scaled_lower = lower
         else:
             scaled_lower = float(
-                sympy.physics.units.convert_to(lower * unit, col.unit._expr) / col.unit._expr
+                sympy.physics.units.convert_to(lower * unit, col_unit._expr) / col_unit._expr
             )
         if upper == 0:
             scaled_upper = upper
         else:
             scaled_upper = float(
-                sympy.physics.units.convert_to(upper * unit, col.unit._expr) / col.unit._expr
+                sympy.physics.units.convert_to(upper * unit, col_unit._expr) / col_unit._expr
             )
         if lower_included:
             lower_viol = self.dataset[name] < scaled_lower
@@ -2089,31 +2096,32 @@ def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
     checker = Checker(di, df, verbose=verbose)
 
     for col in di:
-        if col.descriptor == "body weight":
+        descriptor = col.variable.properties.get('descriptor', None)
+        if descriptor == "body weight":
             checker.check_has_unit("A1", col)
             samedim = checker.check_dimension("A2", col, sympy.physics.units.mass)
             if samedim:
                 checker.check_range("A3", col, 0, 700, sympy.physics.units.kg, False, False)
 
-        if col.descriptor == "age":
+        if descriptor == "age":
             checker.check_has_unit("A4", col)
             samedim = checker.check_dimension("A5", col, sympy.physics.units.time)
             if samedim:
                 checker.check_range("A6", col, 0, 130, sympy.physics.units.year, True, False)
 
-        if col.descriptor == "lean body mass":
+        if descriptor == "lean body mass":
             checker.check_has_unit("A7", col)
             samedim = checker.check_dimension("A8", col, sympy.physics.units.mass)
             if samedim:
                 checker.check_range("A9", col, 0, 700, sympy.physics.units.kg, False, False)
 
-        if col.descriptor == "fat free mass":
+        if descriptor == "fat free mass":
             checker.check_has_unit("A10", col)
             samedim = checker.check_dimension("A11", col, sympy.physics.units.mass)
             if samedim:
                 checker.check_range("A12", col, 0, 700, sympy.physics.units.kg, False, False)
 
-        if col.descriptor == "time after dose":
+        if descriptor == "time after dose":
             checker.check_has_unit("D1", col)
             samedim = checker.check_dimension("D2", col, sympy.physics.units.time)
             if samedim:
@@ -2121,7 +2129,7 @@ def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
                     "D3", col, 0, float('inf'), sympy.physics.units.second, True, False
                 )
 
-        if col.descriptor == "plasma concentration":
+        if descriptor == "plasma concentration":
             checker.check_has_unit("D4", col)
             samedim = checker.check_dimension(
                 "D5", col, sympy.physics.units.mass / sympy.physics.units.length**3
@@ -2137,7 +2145,7 @@ def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
                     False,
                 )
 
-        if col.descriptor == "subject identifier":
+        if descriptor == "subject identifier":
             checker.check_is_unitless("I1", col)
 
     if dataframe:
@@ -2223,36 +2231,49 @@ def create_default_datainfo(path_or_df):
     for colname in colnames:
         colname = colname.replace('.', '_')  # pandas uses . to name mangle
         if colname == 'ID' or colname == 'L1':
-            info = ColumnInfo.create(colname, type='id', scale='nominal', datatype='int32')
+            var = DataVariable.create(colname, type='id', scale='nominal')
+            info = ColumnInfo.create(colname, var, datatype='int32')
         elif colname == 'DV':
-            info = ColumnInfo.create(colname, type='dv')
+            var = DataVariable.create(colname, type='dv')
+            info = ColumnInfo.create(colname, var)
         elif colname == 'TIME':
             if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
                 datatype = 'nmtran-time'
             else:
                 datatype = 'float64'
-            info = ColumnInfo.create(colname, type='idv', scale='ratio', datatype=datatype)
+            var = DataVariable.create(colname, type='idv', scale='ratio')
+            info = ColumnInfo.create(colname, var, datatype=datatype)
         elif colname == 'EVID':
-            info = ColumnInfo.create(colname, type='event', scale='nominal')
+            var = DataVariable.create(colname, type='event', scale='nominal')
+            info = ColumnInfo.create(colname, var)
         elif colname == 'MDV':
             if 'EVID' in colnames:
-                info = ColumnInfo.create(colname, type='mdv')
+                var = DataVariable.create(colname, type='mdv')
+                info = ColumnInfo.create(colname, var)
             else:
-                info = ColumnInfo.create(colname, type='event', scale='nominal', datatype='int32')
+                var = DataVariable.create(colname, type='event', scale='nominal')
+                info = ColumnInfo.create(colname, var, datatype='int32')
         elif colname == 'AMT':
-            info = ColumnInfo.create(colname, type='dose', scale='ratio')
+            var = DataVariable.create(colname, type='dose', scale='ratio')
+            info = ColumnInfo.create(colname, var)
         elif colname == 'RATE':
-            info = ColumnInfo.create(colname, type='rate', scale='ratio')
+            var = DataVariable.create(colname, type='rate', scale='ratio')
+            info = ColumnInfo.create(colname, var)
         elif colname == 'BLQ':
-            info = ColumnInfo.create(colname, type='blq', scale='nominal', datatype='int32')
+            var = DataVariable.create(colname, type='blq', scale='nominal')
+            info = ColumnInfo.create(colname, var, datatype='int32')
         elif colname == 'LLOQ':
-            info = ColumnInfo.create(colname, type='lloq', scale='ratio')
+            var = DataVariable.create(colname, type='lloq', scale='ratio')
+            info = ColumnInfo.create(colname, var)
         elif colname == 'DVID':
-            info = ColumnInfo.create(colname, type='dvid', scale='nominal', datatype='int32')
+            var = DataVariable.create(colname, type='dvid', scale='nominal')
+            info = ColumnInfo.create(colname, var, datatype='int32')
         elif colname == 'SS':
-            info = ColumnInfo.create(colname, type='ss', scale='nominal', datatype='int32')
+            var = DataVariable.create(colname, type='ss', scale='nominal')
+            info = ColumnInfo.create(colname, var, datatype='int32')
         elif colname == 'II':
-            info = ColumnInfo.create(colname, type='ii', scale='ratio')
+            var = DataVariable.create(colname, type='ii', scale='ratio')
+            info = ColumnInfo.create(colname, var)
         else:
             info = ColumnInfo.create(colname)
         column_info.append(info)
@@ -2640,7 +2661,7 @@ def binarize_dataset(
             covariates = di.typeix['covariate']
         except IndexError:
             raise ValueError(f'No covariates for `columns` found: {columns}')
-        columns = [cov.name for cov in covariates if cov.is_categorical()]
+        columns = [cov.name for cov in covariates if cov.variable.is_categorical()]
         if not columns:
             return model
 
@@ -2671,9 +2692,10 @@ def binarize_dataset(
         di = update_datainfo(di, df)
         for col_name in level_map.keys():
             ci = di[col_name]
-            ci_new = ci.replace(
-                type='covariate', continuous=False, scale='nominal', categories=(0, 1)
+            var = ci.variable.replace(
+                type='covariate', count=False, scale='nominal', properties={"categories": (0, 1)}
             )
+            ci_new = ci.replace(variable_mapping=var)
             di = di.set_column(ci_new)
 
         changed = True

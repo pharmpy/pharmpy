@@ -1,10 +1,14 @@
-{"columns":[
-	{ "name": "ID", "type": "id", "scale": "nominal", "datatype": "int32", "descriptor": "subject identifier" },
-	{ "name": "TIME", "type": "idv", "scale": "ratio", "unit": "h" },
-	{ "name": "AMT", "type": "dose", "scale": "ratio", "unit": "mg" },
-	{ "name": "WGT", "type": "covariate", "scale": "ratio", "unit": "kg", "descriptor": "body weight" },
-	{ "name": "APGR", "type": "covariate", "scale": "ordinal", "categories": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10] },
-	{ "name": "DV", "type": "dv", "scale": "ratio", "unit": "mg/l", "descriptor": "plasma concentration" },
-	{ "name": "FA1", "scale": "nominal" },
-	{ "name": "FA2", "scale": "nominal" }
-	], "separator":"\\s+"}
+{
+"__version__": 1,
+"columns": [
+	{ "name": "ID", "datatype": "int32", "variable_mapping": {"name": "ID", "type": "id", "scale": "nominal", "properties": {"descriptor": "subject identifier" }}},
+	{ "name": "TIME", "variable_mapping": {"name": "TIME", "type": "idv", "scale": "ratio", "properties": {"unit": "h" }}},
+	{ "name": "AMT", "variable_mapping": {"name": "AMT", "type": "dose", "scale": "ratio", "properties": {"unit": "mg"}}},
+	{ "name": "WGT", "variable_mapping": {"name": "WGT", "type": "covariate", "scale": "ratio", "properties": {"unit": "kg", "descriptor": "body weight"}}},
+	{ "name": "APGR", "variable_mapping": {"name": "APGR", "type": "covariate", "scale": "ordinal", "properties": {"categories": [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]}}},
+	{ "name": "DV", "variable_mapping": {"name": "DV", "type": "dv", "scale": "ratio", "properties": {"unit": "mg/l", "descriptor": "plasma concentration"}}},
+	{ "name": "FA1", "variable_mapping": {"name": "FA1", "scale": "nominal"}},
+	{ "name": "FA2", "variable_mapping": {"name": "FA2", "scale": "nominal"}}
+	],
+"separator":"\\s+"
+}

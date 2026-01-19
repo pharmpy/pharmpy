@@ -5,7 +5,7 @@ from pathlib import Path
 import pytest
 
 from pharmpy.basic import Expr
-from pharmpy.model import ColumnInfo
+from pharmpy.model import ColumnInfo, DataVariable
 from pharmpy.model import Model as BaseModel
 from pharmpy.model.external.nlmixr.model import Model as nlmixrModel
 from pharmpy.model.external.nonmem import Model as NMModel
@@ -197,7 +197,7 @@ def test_dvid_column(testdata, load_model_for_test):
     # Replace name of DVID column
     dataset2 = model.dataset.rename({'DVID': 'FLAG'}, axis=1)
     model2 = set_dataset(model, dataset2, 'nonmem')
-    dvid_col = ColumnInfo.create("FLAG", type='dvid')
+    dvid_col = ColumnInfo.create("FLAG", DataVariable.create("FLAG", type='dvid'))
     datainfo2 = model2.datainfo.set_column(dvid_col)
     model2 = model2.replace(datainfo=datainfo2)
     assert model2.datainfo.typeix['dvid'][0].name == 'FLAG'
