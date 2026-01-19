@@ -113,8 +113,7 @@ def generate_report(rst_path, results_path, target_path):
 
         # Write missing altair css
         with open(tmp_path / '_static' / 'altair-plot.css', 'w') as dh:
-            dh.write(
-                """.vega-actions a {
+            dh.write(""".vega-actions a {
     margin-right: 12px;
     color: #757575;
     font-weight: normal;
@@ -126,8 +125,7 @@ def generate_report(rst_path, results_path, target_path):
     margin-top: 20px;
     width: 100%;
 }
-"""
-            )
+""")
         report_path = tmp_path / 'results.html'
         embed_css_and_js(tmp_path / 'results.html', report_path)
         shutil.copy(report_path, target_path)

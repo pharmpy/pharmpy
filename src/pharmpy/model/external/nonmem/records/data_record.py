@@ -73,7 +73,7 @@ class DataRecord(OptionRecord):
                     node = AttrTree.create('filename', {'QFILENAME': f'"{filename}"'})
                 else:
                     raise ValueError('Cannot have both " and \' in filename.')
-            (pre, _, post) = self.root.partition('filename')
+            pre, _, post = self.root.partition('filename')
             root = AttrTree(self.root.rule, pre + (node,) + post)
         return self.replace(root=root)
 

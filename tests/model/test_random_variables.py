@@ -78,12 +78,9 @@ def test_repr_rv():
     dist1 = NormalDistribution.create('ETAA', 'iiv', 0, 1)
     assert repr(dist1) == 'ETAA ~ N(0, 1)'
     dist2 = JointNormalDistribution.create(['ETAA', 'ETAB'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
-    assert (
-        repr(dist2)
-        == """⎡ETAA⎤    ⎧⎡0⎤  ⎡ 1   0.1⎤⎫
+    assert repr(dist2) == """⎡ETAA⎤    ⎧⎡0⎤  ⎡ 1   0.1⎤⎫
 ⎢    ⎥ ~ N⎪⎢ ⎥, ⎢        ⎥⎪
 ⎣ETAB⎦    ⎩⎣0⎦  ⎣0.1   2 ⎦⎭"""
-    )
 
 
 def test_repr_latex_rv():
@@ -386,14 +383,11 @@ ETA(3) ~ N(2, 1)"""
     dist3 = JointNormalDistribution.create(
         ['ETA(1)', 'ETA(2)'], 'iiv', [sympy.sqrt(sympy.Rational(2, 5)), 0], [[1, 0.1], [0.1, 2]]
     )
-    assert (
-        repr(dist3)
-        == '''            ⎧⎡√10⎤            ⎫
+    assert repr(dist3) == '''            ⎧⎡√10⎤            ⎫
 ⎡ETA(1)⎤    ⎪⎢───⎥  ⎡ 1   0.1⎤⎪
 ⎢      ⎥ ~ N⎪⎢ 5 ⎥, ⎢        ⎥⎪
 ⎣ETA(2)⎦    ⎪⎢   ⎥  ⎣0.1   2 ⎦⎪
             ⎩⎣ 0 ⎦            ⎭'''
-    )
 
 
 def test_repr_latex():

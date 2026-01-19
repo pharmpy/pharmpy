@@ -699,7 +699,7 @@ def parse_column_info(control_stream):
                     given_names.append(key)
                     drop.append(True)
                 else:
-                    (reserved_name, synonym) = _synonym(key, value)
+                    reserved_name, synonym = _synonym(key, value)
                     synonym_replacement[reserved_name] = synonym
                     given_names.append(synonym)
                     colnames.append(synonym)
@@ -721,7 +721,7 @@ def parse_column_info(control_stream):
 def parse_datainfo(control_stream, path) -> DataInfo:
     resolved_dataset_path = parse_dataset_path(control_stream, path)
     di_nonmem = create_nonmem_datainfo(control_stream, resolved_dataset_path)
-    (colnames, drop, replacements, _) = parse_column_info(control_stream)
+    colnames, drop, replacements, _ = parse_column_info(control_stream)
 
     if resolved_dataset_path is None:
         return di_nonmem
@@ -758,7 +758,7 @@ def validate_datainfo(di_pharmpy, di_nonmem):
 
 
 def create_nonmem_datainfo(control_stream, resolved_dataset_path):
-    (colnames, drop, replacements, _) = parse_column_info(control_stream)
+    colnames, drop, replacements, _ = parse_column_info(control_stream)
 
     column_info = []
     have_pk = control_stream.get_pk_record()
@@ -859,7 +859,7 @@ def parse_dataset(
 
     data_record = data_records[0]
     ignore_character = data_record.ignore_character
-    (colnames, drop, replacements, _) = parse_column_info(control_stream)
+    colnames, drop, replacements, _ = parse_column_info(control_stream)
 
     df = read_nonmem_df(di.path, raw, ignore_character, colnames)
 
@@ -959,7 +959,7 @@ def parse_table_columns(control_stream, netas, problem_no=0):
         for s in rec.statements:
             symbs.add(s.symbol.name)
 
-    (colnames, _, _, _) = parse_column_info(control_stream)
+    colnames, _, _, _ = parse_column_info(control_stream)
     symbs |= set(colnames) | reserved
 
     for table_record in control_stream.get_records('TABLE', problem_no=problem_no):

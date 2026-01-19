@@ -71,8 +71,7 @@ def test_read_model_expanduser(testdata):
 
 
 def test_read_model_from_string():
-    model = read_model_from_string(
-        """$PROBLEM base model
+    model = read_model_from_string("""$PROBLEM base model
 $INPUT ID DV TIME
 $DATA file.csv IGNORE=@
 
@@ -83,8 +82,7 @@ $THETA 0.1
 $OMEGA 0.01
 $SIGMA 1
 $ESTIMATION METHOD=1 INTER MAXEVALS=9990 PRINT=2 POSTHOC
-"""
-    )
+""")
     assert model.parameters['THETA_1'].init == 0.1
 
 

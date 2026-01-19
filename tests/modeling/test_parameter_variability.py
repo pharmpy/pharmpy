@@ -985,8 +985,7 @@ def test_remove_iov_github_issues_538_and_561_2(load_model_for_test, testdata):
 
 
 def test_remove_iov_diagonal(create_model_for_test):
-    model = create_model_for_test(
-        '''$PROBLEM PHENOBARB SIMPLE MODEL
+    model = create_model_for_test('''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS1
@@ -1007,18 +1006,14 @@ $OMEGA BLOCK(1)
 $OMEGA BLOCK(1) SAME
 $SIGMA 0.013241
 $ESTIMATION METHOD=1 INTERACTION
-'''
-    )
+''')
 
     model = remove_iov(model)
 
-    assert (
-        '''$OMEGA DIAGONAL(2)
+    assert '''$OMEGA DIAGONAL(2)
 0.015
 0.02
-$OMEGA 0.1'''
-        in model.code
-    )
+$OMEGA 0.1''' in model.code
 
 
 @pytest.mark.parametrize(
@@ -1817,8 +1812,7 @@ def test_create_joint_distribution_choose_param_init(load_model_for_test, pheno_
 
 
 def test_create_joint_distribution_choose_param_init_fo(create_model_for_test):
-    model = create_model_for_test(
-        '''$PROBLEM PHENOBARB SIMPLE MODEL
+    model = create_model_for_test('''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN1 TRANS2
@@ -1838,8 +1832,7 @@ $OMEGA 0.1  ; IVV
 $SIGMA 0.013241
 
 $ESTIMATION METHOD=0
-'''
-    )
+''')
     params = (model.parameters['IVCL'], model.parameters['IVV'])
     rvs = model.random_variables.etas
     init = _choose_cov_param_init(model, None, rvs, *params)
@@ -1848,8 +1841,7 @@ $ESTIMATION METHOD=0
 
 
 def test_create_joint_distribution_names(create_model_for_test):
-    model = create_model_for_test(
-        '''$PROBLEM PHENOBARB SIMPLE MODEL
+    model = create_model_for_test('''$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV
 $SUBROUTINE ADVAN1 TRANS2
@@ -1869,8 +1861,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION
-'''
-    )
+''')
     model = create_joint_distribution(model, model.random_variables.names)
     assert 'IIV_CL_V_IIV_S1' in model.parameters.names
 

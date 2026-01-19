@@ -1961,8 +1961,7 @@ def generate_parsers(parsers):
 
 parser = argparse.ArgumentParser(
     prog='pharmpy',
-    description=dedent(
-        """
+    description=dedent("""
     Welcome to the command line interface of Pharmpy!
 
     Functionality is split into various subcommands
@@ -1970,10 +1969,8 @@ parser = argparse.ArgumentParser(
         - all keyword arguments can be abbreviated if unique
 
 
-    """
-    ).strip(),
-    epilog=dedent(
-        """
+    """).strip(),
+    epilog=dedent("""
         Examples:
             # Create 100 bootstrap datasets
             pharmpy data resample pheno_real.mod --resamples=100 --replace
@@ -1983,8 +1980,7 @@ parser = argparse.ArgumentParser(
 
             # version/install information
             pharmpy info
-    """
-    ).strip(),
+    """).strip(),
     formatter_class=formatter,
     allow_abbrev=True,
 )

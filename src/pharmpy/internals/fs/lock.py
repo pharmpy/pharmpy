@@ -382,7 +382,7 @@ class ThreadSafeKeyedRefPool(Generic[T]):
                 self._refs[key] = (obj, 1)
             else:
                 # NOTE: Otherwise we count one ref more
-                (obj, refcount) = entry
+                obj, refcount = entry
                 self._refs[key] = (obj, refcount + 1)
 
         try:
@@ -390,7 +390,7 @@ class ThreadSafeKeyedRefPool(Generic[T]):
 
         finally:
             with self._lock:
-                (_, refcount) = self._refs[key]
+                _, refcount = self._refs[key]
                 if refcount == 1:
                     # NOTE: We remove the object from the pool since nobody
                     # else holds a reference to it.

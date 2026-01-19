@@ -487,9 +487,7 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
     model = remove_derivative(model, (("ETA_1", "EPS_1"), "EPS_1"))
     assert len(model.execution_steps[0].derivatives) == 0
 
-    assert (
-        model.code
-        == """$PROBLEM PHENOBARB SIMPLE MODEL
+    assert model.code == """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
@@ -523,7 +521,6 @@ $ESTIMATION METHOD=COND INTER
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
  NOAPPEND NOPRINT ONEHEADER FILE=sdtab1 RFORMAT="(1PE16.9,300(1PE24.16))"\n"""
-    )
 
 
 def test_is_simulation_model(load_example_model_for_test):

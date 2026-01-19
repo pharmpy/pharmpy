@@ -66,8 +66,7 @@ from sphinx.locale import _
 
 from pharmpy.deps import altair as alt
 
-VGL_TEMPLATE = jinja2.Template(
-    """
+VGL_TEMPLATE = jinja2.Template("""
 <div id="{{ div_id }}">
 <script>
   // embed when document is loaded, to ensure vega library is available
@@ -83,8 +82,7 @@ VGL_TEMPLATE = jinja2.Template(
   });
 </script>
 </div>
-"""
-)
+""")
 
 
 class altair_plot(nodes.General, nodes.Element):
