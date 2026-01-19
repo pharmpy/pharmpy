@@ -260,21 +260,22 @@ def get_iiv_combinations(mfl, base_features):
 def get_covariance_combinations(mfl, base_features):
     assert mfl.is_expanded()
 
-    mfl = mfl.filter(filter_on='optional')
+    mfl_optional = mfl.filter(filter_on='optional')
+    mfl_forced = mfl - mfl_optional
 
     combinations = []
-    for subset in non_empty_subsets(mfl):
+    for subset in ((),) + tuple(non_empty_subsets(mfl_optional)):
         mfl_subset = ModelFeatures.create(subset)
-        if mfl_subset.force_optional() == base_features:
+        mfl_all = mfl_forced + mfl_subset.force_optional()
+
+        if mfl_all == base_features:
             continue
         if not _is_valid_block_combination(mfl_subset):
             continue
-        combinations.append(mfl_subset)
-    if base_features:
-        empty_subset = ModelFeatures.create([])
-        return (empty_subset,) + tuple(combinations)
-    else:
-        return tuple(combinations)
+
+        combinations.append(mfl_all)
+
+    return tuple(combinations)
 
 
 def _is_valid_block_combination(features: Sequence[Covariance]):

@@ -445,16 +445,21 @@ def test_get_iiv_combinations(mfl, base_features, expected):
         ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC,MDT])', 11),
         ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC])', 11),
         ('COVARIANCE?(IIV,[CL,MAT,VC])', [], 4),
+        ('COVARIANCE(IIV,[CL,MAT]);COVARIANCE?(IIV,[VC,MDT])', 'COVARIANCE(IIV,[CL,MAT])', 1),
     ],
 )
 def test_get_covariance_combinations(mfl, base_features, expected):
     mfl = ModelFeatures.create(mfl)
     mfl_base = ModelFeatures.create(base_features)
     combinations = get_covariance_combinations(mfl, mfl_base)
-    mf_empty = ModelFeatures(tuple())
-    assert mf_empty in combinations if base_features else mf_empty not in combinations
     assert len(combinations) == expected
-    assert mfl_base not in combinations
+    mfl_forced = mfl - mfl.filter(filter_on='optional')
+    mf_empty = ModelFeatures(tuple())
+    if mfl_forced:
+        assert mf_empty not in combinations
+    else:
+        assert mfl_base not in combinations
+        assert mf_empty in combinations if base_features else mf_empty not in combinations
 
 
 @pytest.mark.parametrize(
