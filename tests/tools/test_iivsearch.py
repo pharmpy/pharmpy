@@ -6,6 +6,7 @@ from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
     add_iiv,
     add_iov,
+    add_lag_time,
     add_peripheral_compartment,
     add_pk_iiv,
     create_joint_distribution,
@@ -24,6 +25,7 @@ from pharmpy.tools.iivsearch.algorithms import (
     _is_rv_block_structure,
     _rv_block_structures,
     create_block_structure_candidate_entry,
+    create_candidate_linearized,
     create_description,
     create_description_mfl,
     create_eta_blocks,
@@ -37,19 +39,24 @@ from pharmpy.tools.iivsearch.algorithms import (
 from pharmpy.tools.iivsearch.tool import add_iiv as iivsearch_add_iiv
 from pharmpy.tools.iivsearch.tool import (
     categorize_model_entries,
-    create_base_model,
+    create_base_model_entry,
     create_param_mapping,
+    create_param_mapping_mfl,
     create_workflow,
     get_mbic_search_space,
     get_ref_model,
-    is_model_in_search_space,
+    needs_base_model,
     prepare_algorithms,
     prepare_base_model,
     prepare_input_model,
+    prepare_input_model_entry,
+    prepare_rank_options,
     update_input_model_description,
     update_linearized_base_model,
+    update_linearized_base_model_mfl,
     validate_input,
 )
+from pharmpy.tools.linearize.tool import create_derivative_model, create_linearized_model
 from pharmpy.tools.run import read_modelfit_results
 from pharmpy.workflows import ModelEntry, Workflow
 
@@ -129,6 +136,42 @@ def test_update_linearized_base_model(
     assert len(me_updated.model.parameters.fixed) == 0
 
 
+def test_update_linearized_base_model_mfl(load_model_for_test, testdata, model_entry_factory):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_start = remove_iiv(model_start, ['ETA_3'])
+    me_start = model_entry_factory([model_start])[0]
+
+    param_mapping = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}
+    model_updated = update_linearized_base_model_mfl(False, param_mapping, me_start, me_start)
+    assert len(model_updated.parameters) == len(model_start.parameters)
+    assert model_updated.description == '[CL]+[VC]'
+
+    model_base = add_iiv(model_start, ['MAT'], 'exp')
+    model_base = fix_parameters(model_base, parameter_names=['IIV_MAT'])
+    me_base = model_entry_factory([model_base])[0]
+    model_updated = update_linearized_base_model_mfl(False, param_mapping, me_start, me_base)
+    assert len(model_updated.parameters) > len(model_start.parameters)
+    assert len(model_base.parameters.fixed) > len(model_updated.parameters.fixed)
+    assert len(model_updated.parameters) == len(model_base.parameters)
+    assert model_updated.description == '[CL]+[VC]+[MAT]'
+
+    model_fullblock = update_linearized_base_model_mfl(True, param_mapping, me_start, me_base)
+    assert len(model_fullblock.parameters) > len(model_updated.parameters)
+    assert len(model_fullblock.random_variables.iiv) == 1
+    assert model_fullblock.description == '[CL,VC,MAT]'
+
+
+def test_prepare_input_model_entry(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    me = prepare_input_model_entry(model_start, res_start)
+    assert me.model.name == 'input'
+    assert me.model.description == '[CL]+[MAT]+[VC]'
+    assert me.modelfit_results is not None
+    assert me.parent is None
+
+
 @pytest.mark.parametrize(
     'algorithm, correlation_algorithm, list_of_algorithms',
     [
@@ -162,6 +205,9 @@ def test_create_param_mapping(load_model_for_test, testdata):
     assert param_mapping is None
 
     param_mapping = create_param_mapping(me_input, linearize=True)
+    assert param_mapping == {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
+
+    param_mapping = create_param_mapping_mfl(me_input)
     assert param_mapping == {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
 
 
@@ -399,26 +445,86 @@ def test_get_iiv_combinations(mfl, base_features, expected):
         ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC,MDT])', 11),
         ('COVARIANCE?(IIV,[CL,MAT,VC,MDT])', 'COVARIANCE(IIV,[CL,MAT,VC])', 11),
         ('COVARIANCE?(IIV,[CL,MAT,VC])', [], 4),
+        ('COVARIANCE(IIV,[CL,MAT]);COVARIANCE?(IIV,[VC,MDT])', 'COVARIANCE(IIV,[CL,MAT])', 1),
     ],
 )
 def test_get_covariance_combinations(mfl, base_features, expected):
     mfl = ModelFeatures.create(mfl)
     mfl_base = ModelFeatures.create(base_features)
     combinations = get_covariance_combinations(mfl, mfl_base)
-    mf_empty = ModelFeatures(tuple())
-    assert mf_empty in combinations if base_features else mf_empty not in combinations
     assert len(combinations) == expected
-    assert mfl_base not in combinations
+    mfl_forced = mfl - mfl.filter(filter_on='optional')
+    mf_empty = ModelFeatures(tuple())
+    if mfl_forced:
+        assert mf_empty not in combinations
+    else:
+        assert mfl_base not in combinations
+        assert mf_empty in combinations if base_features else mf_empty not in combinations
 
 
 @pytest.mark.parametrize(
-    'funcs, mfl, as_fullblock, expected',
+    'func, mfl, type, description, no_of_params',
     [
-        ([], 'IIV([CL,MAT,VC],EXP)', False, True),
-        ([], 'IIV?([CL,MAT,VC],EXP)', False, True),
-        ([], 'IIV?([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', False, False),
-        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC],EXP)', False, True),
-        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC,QP1],EXP)', False, True),
+        (None, 'IIV([CL,MAT],exp)', 'iiv', '[CL]+[MAT]', 2),
+        (None, 'IIV([CL],exp)', 'iiv', '[CL]', 1),
+        (None, '', 'iiv', '', 1),
+        (add_lag_time, 'IIV([CL,VC,MDT],exp)', 'iiv', '[CL]+[MDT]+[VC]', 3),
+        (None, 'COVARIANCE(IIV,[CL,VC,MAT])', 'covariance', '[CL,MAT,VC]', 6),
+        (None, 'COVARIANCE(IIV,[CL,VC])', 'covariance', '[CL,VC]+[MAT]', 4),
+        (add_lag_time, 'COVARIANCE(IIV,[CL,VC,MAT])', 'covariance', '[CL,MAT,VC]+[MDT]', 7),
+        (
+            add_lag_time,
+            'COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
+            'covariance',
+            '[CL,VC]+[MAT,MDT]',
+            6,
+        ),
+    ],
+)
+def test_create_candidate_linearized(
+    load_model_for_test, model_entry_factory, testdata, func, mfl, type, description, no_of_params
+):
+    input_model = load_model_for_test(testdata / "nonmem" / "models" / "mox2.mod")
+    if func:
+        input_model = func(input_model)
+        input_model = add_pk_iiv(input_model)
+    input_model_entry = model_entry_factory([input_model])[0]
+
+    derivative_model_entry = create_derivative_model(input_model_entry)
+    derivative_model_entry = model_entry_factory([derivative_model_entry.model])[0]
+
+    linbase_model_entry = create_linearized_model(
+        "linbase", "", input_model, derivative_model_entry
+    )
+    linbase_model_entry = model_entry_factory([linbase_model_entry.model])[0]
+
+    param_mapping = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT', 'ETA_MDT': 'MDT'}
+
+    mfl = ModelFeatures.create(mfl)
+    candidate_model_entry = create_candidate_linearized(
+        'cand1', mfl, type, param_mapping, linbase_model_entry
+    )
+    assert candidate_model_entry.parent == linbase_model_entry.model
+    assert candidate_model_entry.modelfit_results is None
+
+    candidate_model = candidate_model_entry.model
+    assert candidate_model.description == description
+    assert len(candidate_model.random_variables.iiv.parameter_names) == no_of_params
+    if mfl:
+        assert (
+            candidate_model.parameters.inits['IIV_CL']
+            != linbase_model_entry.model.parameters.inits['IIV_CL']
+        )
+
+
+@pytest.mark.parametrize(
+    'funcs, mfl, as_fullblock, algorithm, expected',
+    [
+        ([], 'IIV([CL,MAT,VC],EXP)', False, 'td', False),
+        ([], 'IIV?([CL,MAT,VC],EXP)', False, 'td', False),
+        ([], 'IIV?([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])', False, 'td', True),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC],EXP)', False, 'td', False),
+        ([add_peripheral_compartment], 'IIV?([CL,MAT,VC,QP1],EXP)', False, 'td', False),
         (
             [
                 add_peripheral_compartment,
@@ -426,59 +532,165 @@ def test_get_covariance_combinations(mfl, base_features, expected):
             ],
             'IIV?([CL,MAT,VC,QP1],EXP)',
             False,
-            True,
+            'td',
+            False,
         ),
-        ([], 'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,VC])', False, True),
-        ([], 'IIV([CL,MAT,VC],EXP)', True, False),
-        ([create_joint_distribution], 'IIV([CL,MAT,VC],EXP)', True, True),
-        ([], 'IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', False, True),
+        ([], 'IIV([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,VC])', False, 'td', False),
+        ([], 'IIV([CL,MAT,VC],EXP)', True, 'td', True),
+        ([create_joint_distribution], 'IIV([CL,MAT,VC],EXP)', True, 'td', False),
+        ([], 'IIV(CL,EXP);IIV?([MAT,VC],[EXP,ADD])', False, 'td', False),
+        ([], 'IIV([CL,MAT,VC],EXP)', False, 'bu', True),
     ],
 )
-def test_is_model_in_search_space(
-    load_model_for_test, testdata, funcs, mfl, as_fullblock, expected
+def test_needs_base_model(
+    load_model_for_test, testdata, funcs, mfl, as_fullblock, algorithm, expected
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model = func(model)
 
     mfl = ModelFeatures.create(mfl)
-    assert is_model_in_search_space(model, mfl, as_fullblock) == expected
+    assert needs_base_model(model, mfl, as_fullblock, algorithm) == expected
 
 
 @pytest.mark.parametrize(
-    'mfl, as_fullblock, iiv_expected, cov_expected',
+    'type, mfl, as_fullblock, iiv_expected, cov_expected',
     [
-        ('IIV?([CL,MAT,VC],EXP)', False, 'IIV([CL,MAT,VC],EXP)', ''),
-        ('IIV?([CL,MAT,VC],EXP)', True, 'IIV([CL,MAT,VC],EXP)', 'COVARIANCE(IIV,[CL,MAT,VC])'),
+        ('td', 'IIV?([CL,VC],EXP)', False, 'IIV([CL,VC],EXP)', ''),
+        ('td', 'IIV?([CL,MAT,VC],EXP)', False, 'IIV([CL,MAT,VC],EXP)', ''),
         (
+            'td',
+            'IIV?([CL,MAT,VC],EXP)',
+            True,
+            'IIV([CL,MAT,VC],EXP)',
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
+        (
+            'td',
             'IIV(CL,EXP);IIV?([CL,MAT,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
             False,
             'IIV([CL,MAT,VC],EXP)',
             '',
         ),
-        ('IIV(CL,EXP);IIV?([MAT,VC],ADD)', False, 'IIV(CL,EXP);IIV([MAT,VC],ADD)', ''),
-        ('IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD])', False, 'IIV([CL,MAT,VC],EXP)', ''),
+        ('td', 'IIV(CL,EXP);IIV?([MAT,VC],ADD)', False, 'IIV(CL,EXP);IIV([MAT,VC],ADD)', ''),
+        ('td', 'IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD])', False, 'IIV([CL,MAT,VC],EXP)', ''),
         (
+            'td',
             'IIV(CL,[EXP,ADD]);IIV?([MAT,VC],[EXP,ADD]);COVARIANCE?(IIV,[CL,MAT,VC])',
             True,
             'IIV([CL,MAT,VC],EXP)',
             'COVARIANCE(IIV,[CL,MAT,VC])',
         ),
+        ('bu', 'IIV?([CL,MAT,VC],EXP)', False, '', ''),
+        ('bu', 'IIV(CL,EXP);IIV?([MAT,VC],EXP)', False, 'IIV(CL,EXP)', ''),
+        ('bu', 'IIV([CL,MAT],EXP);IIV?(VC,EXP)', False, 'IIV([CL,MAT],EXP)', ''),
+        ('bu', 'IIV(CL,EXP);IIV?([MAT,VC],EXP)', True, 'IIV(CL,EXP)', ''),
+        (
+            'bu',
+            'IIV([CL,MAT],EXP);IIV?(VC,EXP)',
+            True,
+            'IIV([CL,MAT],EXP)',
+            'COVARIANCE(IIV,[CL,MAT])',
+        ),
+        ('linearize', 'IIV?([CL,VC],EXP)', False, 'IIV([CL,VC],EXP)', ''),
+        ('linearize', 'IIV?([CL,MAT,VC],EXP)', False, 'IIV([CL,MAT,VC],EXP)', ''),
     ],
 )
 def test_create_base_model(
-    load_model_for_test, testdata, mfl, as_fullblock, iiv_expected, cov_expected
+    load_model_for_test,
+    testdata,
+    model_entry_factory,
+    type,
+    mfl,
+    as_fullblock,
+    iiv_expected,
+    cov_expected,
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    model_entry = ModelEntry.create(model=model, modelfit_results=res)
+    model = remove_iiv(model, to_remove=['ETA_3'])
+    model_entry = model_entry_factory([model])[0]
     mfl = ModelFeatures.create(mfl)
-    base_model_entry = create_base_model(mfl, as_fullblock, model_entry)
+    base_model_entry = create_base_model_entry(type, mfl, as_fullblock, model_entry)
     base_model = base_model_entry.model
     assert repr(get_model_features(base_model, type='iiv')) == iiv_expected
     assert repr(get_model_features(base_model, type='covariance')) == cov_expected
     assert base_model_entry.modelfit_results is None
     assert base_model_entry.parent == model
+
+    if type == 'linearize':
+        params_new = base_model.parameters - model.parameters
+        assert all(p.init == 0.000001 for p in params_new)
+
+
+def test_create_base_model_raises(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    res = read_modelfit_results(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model_entry = ModelEntry.create(model=model, modelfit_results=res)
+    mfl = ModelFeatures.create('')
+    with pytest.raises(ValueError):
+        create_base_model_entry('x', mfl, True, model_entry)
+
+
+@pytest.mark.parametrize(
+    'kwargs, expected',
+    [
+        (
+            {
+                'rank_type': 'ofv',
+                'cutoff': 3.84,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E_p': None,
+                'E_q': None,
+            },
+            {
+                'rank_type': 'ofv',
+                'cutoff': 3.84,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E': None,
+            },
+        ),
+        (
+            {
+                'rank_type': 'bic',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E_p': None,
+                'E_q': None,
+            },
+            {
+                'rank_type': 'bic_iiv',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E': None,
+            },
+        ),
+        (
+            {
+                'rank_type': 'mbic',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E_p': 0.5,
+                'E_q': 0.5,
+            },
+            {
+                'rank_type': 'mbic_iiv',
+                'cutoff': None,
+                'strictness': 'minimization_successful',
+                'parameter_uncertainty_method': None,
+                'E': (0.5, 0.5),
+            },
+        ),
+    ],
+)
+def test_prepare_rank_options(kwargs, expected):
+    rank_options = prepare_rank_options(**kwargs)
+    for key, value in expected.items():
+        assert getattr(rank_options, key) == value
 
 
 @pytest.mark.parametrize(

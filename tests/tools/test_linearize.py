@@ -8,13 +8,12 @@ from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
 from pharmpy.tools.linearize.tool import (
-    _create_linearized_model,
     _create_linearized_model_statements,
     create_derivative_model,
+    create_linearized_model,
 )
 from pharmpy.tools.psn_helpers import create_results
 from pharmpy.workflows import ModelEntry
-from pharmpy.workflows.contexts import NullContext
 
 
 def test_ofv(load_model_for_test, testdata):
@@ -120,8 +119,7 @@ def test_create_results(testdata):
 
 def test_derivative_model(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
-    ctx = NullContext()
-    modelentry = create_derivative_model(ctx, ModelEntry.create(model=model))
+    modelentry = create_derivative_model(ModelEntry.create(model=model))
     assert len(modelentry.model.execution_steps[0].derivatives) == 5
     assert (
         modelentry.model.code
@@ -165,9 +163,8 @@ def test_create_linearized_model(load_model_for_test, testdata):
 
     derivative_modelentry = ModelEntry.create(model=derivative_model, modelfit_results=modelres)
 
-    ctx = NullContext()
-    linearized_model = _create_linearized_model(
-        ctx, "linbase", "Linearized model", model, derivative_modelentry
+    linearized_model = create_linearized_model(
+        "linbase", "Linearized model", model, derivative_modelentry
     )
     assert len(linearized_model.model.statements) == 9
 
