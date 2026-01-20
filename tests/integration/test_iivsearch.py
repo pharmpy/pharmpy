@@ -346,7 +346,7 @@ def test_iivsearch_pd_dummy(
         (
             'top_down_exhaustive',
             None,
-            8,
+            10,
             {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
         ),
         (
@@ -360,12 +360,6 @@ def test_iivsearch_pd_dummy(
             'skip',
             4,
             {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
-        ),
-        (
-            'top_down_exhaustive',
-            None,
-            8,
-            {'_search_space': 'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)'},
         ),
     ),
 )

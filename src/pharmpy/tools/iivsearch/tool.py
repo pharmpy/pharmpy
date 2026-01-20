@@ -756,10 +756,7 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno=
     flm_etas = final_model.random_variables.iiv.names
     final_param_map = {k: v for k, v in param_mapping.items() if k in flm_etas}
     final_delinearized_model = delinearize_model(final_model, input_model, final_param_map)
-    if stepno:
-        name = f'delinearized{stepno}'
-    else:
-        name = 'delinearized'
+    name = f'delinearized{stepno}'
 
     final_delinearized_model = final_delinearized_model.replace(
         name=name,
@@ -988,21 +985,18 @@ def add_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock, r
     create_param_mapping_task = Task.create('create_param_mapping', create_param_mapping_mfl)
     wb.add_task(create_param_mapping_task, predecessors=[create_base_task])
 
-    linearize_task = Task.create('create_linearized_model', create_linearized_model, as_fullblock)
-    wb.add_task(
-        linearize_task, predecessors=[start_task, create_base_task, create_param_mapping_task]
-    )
-
     init_search_task = Task.create('init_search', init_search)
-    wb.add_task(init_search_task, predecessors=[linearize_task])
+    wb.add_task(init_search_task, predecessors=[create_base_task])
 
     search_tasks = []
-    for step in steps_to_run:
+    for i, step in enumerate(steps_to_run, 1):
         if 'exhaustive' in step:
             search_task = Task.create(
                 'run_exhaustive_search_linearized',
                 run_exhaustive_search_linearized,
                 step,
+                i,
+                as_fullblock,
                 mfl_expanded,
                 rank_options,
             )
@@ -1011,22 +1005,20 @@ def add_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock, r
                 'run_stepwise_search_linearized',
                 run_stepwise_search_linearized,
                 step,
+                i,
+                as_fullblock,
                 mfl,
                 rank_options,
             )
         else:
             raise NotImplementedError
         predecessors = (
-            [init_search_task, create_param_mapping_task]
+            [start_task, init_search_task, create_param_mapping_task]
             if not search_tasks
-            else [create_param_mapping_task]
+            else [start_task, create_param_mapping_task]
         )
         wb.add_task(search_task, predecessors=predecessors)
         search_tasks.append(search_task)
-
-    delinearize_task = Task.create('delinearize', create_delinearized_model_entry, rank_options)
-    wb.add_task(delinearize_task, predecessors=[create_base_task, create_param_mapping_task])
-    search_tasks.append(delinearize_task)
 
     end_search_task = Task.create('end_search', end_search)
     wb.add_task(end_search_task)
@@ -1144,7 +1136,7 @@ def create_param_mapping_mfl(me):
 
 
 def create_linearized_model(
-    context, as_fullblock, base_model_entry, param_mapping, input_model_entry
+    context, as_fullblock, i, base_model_entry, param_mapping, input_model_entry
 ):
     lin_model_entry = run_linearization(
         context, base_model_entry, input_model_entry.modelfit_results
@@ -1153,6 +1145,7 @@ def create_linearized_model(
     lin_model = update_linearized_base_model_mfl(
         as_fullblock, param_mapping, input_model_entry, lin_model_entry
     )
+    lin_model = lin_model.replace(name=f'linbase{i}')
     lin_model_entry = ModelEntry.create(
         lin_model, modelfit_results=None, parent=base_model_entry.model
     )
@@ -1212,12 +1205,18 @@ def run_exhaustive_search(
 def run_exhaustive_search_linearized(
     context,
     step,
+    i,
+    as_fullblock,
     mfl,
     rank_options,
     param_mapping,
     base_model_entry_and_index_offset,
+    input_model_entry,
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
+    linbase_model_entry = create_linearized_model(
+        context, as_fullblock, i, base_model_entry, param_mapping, input_model_entry
+    )
     if 'no_of_etas' in step:
         type = 'iiv'
         mfl = mfl.iiv
@@ -1226,21 +1225,29 @@ def run_exhaustive_search_linearized(
         mfl = mfl.covariance
     mfl = expand_model_features(base_model_entry.model, mfl)
     wf_step = algorithms.td_exhaustive(
-        type, base_model_entry, mfl, index_offset, False, param_mapping
+        type, linbase_model_entry, mfl, index_offset, False, param_mapping
     )
     if not wf_step:
         return (base_model_entry, index_offset), []
     mes = context.call_workflow(wf_step, 'run_candidates')
+
     rank_res = rank_models(
         context,
         rank_options,
-        base_model_entry.model,
-        [base_model_entry] + list(mes),
+        linbase_model_entry.model,
+        [linbase_model_entry] + list(mes),
     )
-    mes_all = (base_model_entry,) + mes
+    mes_all = (linbase_model_entry,) + mes
     best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+
+    delin_model_entry, delin_summary = create_delinearized_model_entry(
+        context, rank_options, i, base_model_entry, param_mapping, best_model_entry
+    )
+
     summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
-    return (best_model_entry, len(mes)), [summary_tool]
+    delin_summary = add_parent_column(delin_summary, [base_model_entry, delin_model_entry])
+
+    return (delin_model_entry, len(mes)), [summary_tool, delin_summary]
 
 
 def run_stepwise_search(
@@ -1260,19 +1267,37 @@ def run_stepwise_search(
 
 
 def run_stepwise_search_linearized(
-    context, step, mfl, rank_options, param_mapping, base_model_entry_and_index_offset
+    context,
+    step,
+    i,
+    as_fullblock,
+    mfl,
+    rank_options,
+    param_mapping,
+    base_model_entry_and_index_offset,
+    input_model_entry,
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
+    linbase_model_entry = create_linearized_model(
+        context, as_fullblock, i, base_model_entry, param_mapping, input_model_entry
+    )
     algorithm_func = getattr(algorithms, f'{step}_linearized_mfl')
     rank_res, mes = algorithm_func(
-        context, base_model_entry, mfl, index_offset, rank_options, param_mapping
+        context, linbase_model_entry, mfl, index_offset, rank_options, param_mapping
     )
     if not rank_res:
         return (base_model_entry, index_offset), []
-    mes_all = (base_model_entry,) + mes
+    mes_all = (linbase_model_entry,) + mes
     tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
     best_model_entry = get_best_model_entry(mes, rank_res[-1].final_model)
-    return (best_model_entry, len(mes)), tool_summaries
+
+    delin_model_entry, delin_summary = create_delinearized_model_entry(
+        context, rank_options, i, base_model_entry, param_mapping, best_model_entry
+    )
+    delin_summary = add_parent_column(delin_summary, [base_model_entry, delin_model_entry])
+    tool_summaries.append(delin_summary)
+
+    return (delin_model_entry, len(mes)), tool_summaries
 
 
 def end_search(best_model_entry_and_index_offset):
@@ -1318,13 +1343,13 @@ def compare_to_input_model(
 def create_delinearized_model_entry(
     context,
     rank_options,
+    step_no,
     base_model_entry,
     param_mapping,
-    best_model_entry_and_index_offset,
+    best_model_entry,
 ):
-    best_model_entry, index_offset = best_model_entry_and_index_offset
     dl_wf = create_delinearize_workflow(
-        base_model_entry.model, best_model_entry.model, param_mapping
+        base_model_entry.model, best_model_entry.model, param_mapping, step_no
     )
     context.log_info('Running delinearized model')
     dlin_model_entry = context.call_workflow(Workflow(dl_wf), "running_delinearization")
@@ -1341,7 +1366,7 @@ def create_delinearized_model_entry(
 
     summary_tool = add_parent_column(rank_res.summary_tool, [base_model_entry, dlin_model_entry])
 
-    return (dlin_model_entry, index_offset + 1), [summary_tool]
+    return dlin_model_entry, summary_tool
 
 
 def postprocess(
