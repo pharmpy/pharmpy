@@ -27,6 +27,13 @@ def test_datavariable_descriptor():
         DataVariable.create("DUMMY2", properties={'descriptor': "notaknowndescriptor"})
 
 
+def test_datavariable_molar_mass():
+    var = DataVariable.create("DUMMY", properties={'molar_mass': 234.5})
+    assert var.get_property("molar_mass") == 234.5
+    with pytest.raises(ValueError):
+        DataVariable.create("DUMMY", properties={'molar_mass': "o"})
+
+
 def test_datavariable_type():
     with pytest.raises(ValueError):
         DataVariable.create("DUMMY", type="notaknowntype")

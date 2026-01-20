@@ -69,7 +69,7 @@ class DataVariable(Immutable):
         'pk measurement',
         'pd measurement',
     }
-    _all_properties = {'unit', 'categories', 'descriptor'}
+    _all_properties = {'unit', 'categories', 'descriptor', 'molar_mass'}
 
     def __init__(
         self,
@@ -96,6 +96,8 @@ class DataVariable(Immutable):
             elif key == 'descriptor':
                 if value not in DataVariable._all_descriptors:
                     raise ValueError(f"unknown descriptor {value}")
+            elif key == 'molar_mass':
+                new[key] = float(value)
             else:
                 raise ValueError(f'Unknown DataVariable property "{key}"')
         return frozenmapping(new)
@@ -279,6 +281,10 @@ class DataVariable(Immutable):
         categories
 
         All possible values of categorical data
+
+        molar_mass
+
+        The molar mass of a substance in g/mol
 
         """
         return self._properties
