@@ -6,6 +6,7 @@ New features
 
 * Add :code:`modeling.calculate_summary_statistic`
 * Add :code:`modeling.is_binary`
+* Add exponential decrease to new steady state PD model
 
 Changes
 =======
