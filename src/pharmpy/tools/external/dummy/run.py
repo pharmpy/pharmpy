@@ -166,8 +166,8 @@ def create_dummy_modelfit_results(model, ref=None):
         pred = pd.Series(_rand_array(1, n, rng), name='PRED')
         predictions = pd.concat([cipredi, ipred, pred], axis=1)
 
-    # FIXME: make more general
-    if deriv := model.execution_steps[-1].derivatives:
+    estimation_steps = [step for step in model.execution_steps if isinstance(step, EstimationStep)]
+    if estimation_steps and (deriv := estimation_steps[-1].derivatives):
 
         def _get_names(exprs):
             return [expr.name for expr in exprs]
