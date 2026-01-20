@@ -589,6 +589,17 @@ def add_placebo_model(
         model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = (-idv / td).exp()
         rassign_expr = old_rassign.expression * P
+    elif expr == 'exp_decrease_to_new_SS':
+        if operator != '+':
+            raise ValueError('Only + is supported for exp_decrease_to_new_SS')
+        td = create_symbol(model, "TD")
+        td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
+        model = add_individual_parameter(model, td.name, init=td_init)
+        pdp_ss = create_symbol(model, "PDP_SS")
+        pdp_ss_init = model.parameters['POP_B'].init / 2.0
+        model = add_individual_parameter(model, pdp_ss.name, init=pdp_ss_init)
+        passign_expr = (pdp_ss - Expr.symbol("B")) * (1 - (-idv / td).exp())
+        rassign_expr = old_rassign.expression + P
     elif expr == 'exp_increase':
         if operator != '*':
             raise ValueError('Only * is supported for exp')

@@ -149,6 +149,7 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
         ("linear", "+"),
         ("exp_decrease", "*"),
         ("exp_increase", "*"),
+        ("exp_decrease_to_new_SS", "+"),
         ("tmax", "*"),
         ("tmax", "+"),
     )

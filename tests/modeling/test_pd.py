@@ -214,15 +214,21 @@ def test_find_central_comp(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'expr,Pexpr,Rexpr',
+    'expr,op,Pexpr,Rexpr',
     [
-        ("linear", S("SLOPE") * S("TIME"), S('B') * S('PDP')),
-        ("exp_decrease", (-S('TIME') / S('TD')).exp(), S('B') * S('PDP')),
+        ("linear", "*", S("SLOPE") * S("TIME"), S('B') * S('PDP')),
+        ("exp_decrease", "*", (-S('TIME') / S('TD')).exp(), S('B') * S('PDP')),
+        (
+            "exp_decrease_to_new_SS",
+            "+",
+            (S('PDP_SS') - S('B')) * (1 - (-S('TIME') / S('TD')).exp()),
+            S('B') + S('PDP'),
+        ),
     ],
 )
-def test_add_placebo_model(expr, Pexpr, Rexpr):
+def test_add_placebo_model(expr, op, Pexpr, Rexpr):
     model = create_basic_pd_model()
-    model = add_placebo_model(model, expr)
+    model = add_placebo_model(model, expr, operator=op)
 
     P, R = S('PDP'), S('R')
     assert model.statements.get_assignment(P) == Assignment.create(P, Pexpr)
