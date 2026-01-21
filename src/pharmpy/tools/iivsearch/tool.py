@@ -11,6 +11,7 @@ from pharmpy.model import Model
 from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters,
+    get_rv_parameters,
     set_initial_estimates,
     unfix_parameters,
 )
@@ -38,7 +39,7 @@ from pharmpy.tools.run import (
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
-from .algorithms import get_best_model_entry, rank_models
+from .algorithms import create_description, get_best_model_entry, rank_models
 
 IIV_STRATEGIES = frozenset(
     ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
@@ -220,7 +221,7 @@ def start(context, input_model, input_res):
 
 def prepare_input_model_entry(input_model, input_res):
     mfl = get_model_features(input_model)
-    description = algorithms.create_description_mfl(mfl, type='iiv')
+    description = create_description(mfl, type='iiv')
     input_model = input_model.replace(name="input", description=description)
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
     return input_model_entry
@@ -367,15 +368,15 @@ def run_exhaustive_search_linearized(
     input_model_entry,
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
-    linbase_model_entry = create_linearized_model_entry(
-        context, as_fullblock, i, base_model_entry, param_mapping, input_model_entry
-    )
     if 'no_of_etas' in step:
         type = 'iiv'
         mfl = mfl.iiv
     else:
         type = 'covariance'
         mfl = mfl.covariance
+    linbase_model_entry = create_linearized_model_entry(
+        context, as_fullblock, i, type, base_model_entry, input_model_entry
+    )
     mfl = expand_model_features(base_model_entry.model, mfl)
     wf_step = algorithms.td_exhaustive(
         type, linbase_model_entry, mfl, index_offset, False, param_mapping
@@ -431,8 +432,9 @@ def run_stepwise_search_linearized(
     input_model_entry,
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
+    type = 'iiv' if 'no_of_etas' in step else 'covariance'
     linbase_model_entry = create_linearized_model_entry(
-        context, as_fullblock, i, base_model_entry, param_mapping, input_model_entry
+        context, as_fullblock, i, type, base_model_entry, input_model_entry
     )
     algorithm_func = getattr(algorithms, f'{step}_linearized')
     rank_res, mes = algorithm_func(
@@ -485,15 +487,13 @@ def compare_to_input_model(
 
 
 def create_linearized_model_entry(
-    context, as_fullblock, i, base_model_entry, param_mapping, input_model_entry
+    context, as_fullblock, i, type, base_model_entry, input_model_entry
 ):
     lin_model_entry = run_linearization(
-        context, base_model_entry, input_model_entry.modelfit_results
+        context, base_model_entry, type, input_model_entry.modelfit_results
     )
     context.store_model_entry(lin_model_entry)
-    lin_model = update_linearized_base_model(
-        as_fullblock, param_mapping, input_model_entry, lin_model_entry
-    )
+    lin_model = update_linearized_base_model(as_fullblock, input_model_entry, lin_model_entry)
     lin_model = lin_model.replace(name=f'linbase{i}')
     lin_model_entry = ModelEntry.create(
         lin_model, modelfit_results=None, parent=base_model_entry.model
@@ -507,15 +507,16 @@ def create_linearized_model_entry(
     return lin_model_entry
 
 
-def run_linearization(context, baseme, results=None):
+def run_linearization(context, baseme, type, results=None):
     if not results:
         results = baseme.modelfit_results
+    description = create_description(baseme.model, type)
     linear_results = run_subtool(
         'linearize',
         context,
         model=baseme.model,
         results=results,
-        description=algorithms.create_description(baseme.model),
+        description=description,
     )
     linbaseme = ModelEntry.create(
         model=linear_results.final_model, modelfit_results=linear_results.final_model_results
@@ -523,7 +524,7 @@ def run_linearization(context, baseme, results=None):
     return linbaseme
 
 
-def update_linearized_base_model(as_fullblock, param_mapping, inputme, baseme):
+def update_linearized_base_model(as_fullblock, inputme, baseme):
     added_params = baseme.model.parameters - inputme.model.parameters
     model = unfix_parameters(baseme.model, added_params.names)
     model = set_initial_estimates(model, baseme.modelfit_results.parameter_estimates)
@@ -531,8 +532,7 @@ def update_linearized_base_model(as_fullblock, param_mapping, inputme, baseme):
         model = create_joint_distribution(
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
-    descr = algorithms.create_description(model, iov=False, param_dict=param_mapping)
-    model = model.replace(name="linbase", description=descr)
+    model = model.replace(name="linbase", description=baseme.model.description)
     return model
 
 
@@ -573,7 +573,7 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno=
 
     final_delinearized_model = final_delinearized_model.replace(
         name=name,
-        description=algorithms.create_description(final_delinearized_model),
+        description=final_model.description,
     )
 
     lin_model_entry = ModelEntry.create(model=final_delinearized_model, parent=input_model)
@@ -655,13 +655,26 @@ def _create_base_model(input_model_entry, mfl, as_fullblock, linearize=False):
         ies = input_res.individual_estimates
         base_model = create_joint_distribution(base_model, individual_estimates=ies)
     base_mfl = get_model_features(base_model)
-    description = algorithms.create_description_mfl(base_mfl, type='iiv')
+    description = create_description(base_mfl, type='iiv')
     base_model = base_model.replace(name='base', description=description)
     return base_model
 
 
 def create_param_mapping(me):
-    param_mapping = algorithms._create_param_dict(me.model, dists=me.model.random_variables.iiv)
+    model = me.model
+    dists = model.random_variables.iiv
+    param_subs = {
+        parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
+    }
+    param_mapping = {}
+    # FIXME: Temporary workaround, should handle IIV on eps
+    symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
+    for eta in dists.names:
+        if dists[eta].get_variance(eta).subs(param_subs) != 0:
+            # Skip etas that are before ODE
+            if eta not in symbs_before_ode:
+                continue
+            param_mapping[eta] = get_rv_parameters(model, eta)[0]
     return param_mapping
 
 

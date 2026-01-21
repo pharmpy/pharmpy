@@ -1,16 +1,14 @@
 import itertools
 from collections import defaultdict
 from collections.abc import Sequence
-from typing import Optional
 
 import pharmpy.tools.modelfit as modelfit
 from pharmpy.deps import numpy as np
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.mfl import IIV, Covariance, ModelFeatures
-from pharmpy.model import Model, RandomVariables
+from pharmpy.model import Model
 from pharmpy.modeling import (
     create_joint_distribution,
-    get_rv_parameters,
     remove_iiv,
     set_description,
 )
@@ -301,7 +299,7 @@ def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
     )
     if as_fullblock and len(mfl.iiv) > 1:
         candidate_model = create_joint_distribution(candidate_model, individual_estimates=ies)
-    description = create_description_mfl(get_model_features(candidate_model), type)
+    description = create_description(get_model_features(candidate_model), type)
     candidate_model = candidate_model.replace(description=description)
 
     return ModelEntry.create(model=candidate_model, parent=base_model)
@@ -328,7 +326,7 @@ def create_candidate_linearized(name, mfl, type, param_mapping, base_model_entry
 
     iivs = get_base_features_linearized('iiv', candidate_model, param_mapping)
     covs = get_base_features_linearized('covariance', candidate_model, param_mapping)
-    description = create_description_mfl(iivs + covs, type)
+    description = create_description(iivs + covs, type)
     candidate_model = set_description(candidate_model, description)
     return ModelEntry.create(model=candidate_model, parent=base_model)
 
@@ -361,8 +359,14 @@ def run_base_model_entry_linearized(
     return base_model_entry
 
 
-def create_description_mfl(mfl, type):
+def create_description(model_or_mfl, type):
     assert type in ['iiv', 'covariance']
+    if isinstance(model_or_mfl, Model):
+        mfl = get_model_features(model_or_mfl, type=type)
+        if type == 'covariance':
+            mfl += get_model_features(model_or_mfl, type='iiv')
+    else:
+        mfl = model_or_mfl
 
     blocks = Covariance.get_covariance_blocks(mfl.covariance)
     params_in_blocks = {p for b in blocks for p in b}
@@ -412,51 +416,3 @@ def get_best_model_entry(model_entries, final_model):
     best_model_entry = [me for me in model_entries if me.model == final_model]
     assert len(best_model_entry) == 1
     return best_model_entry[0]
-
-
-def create_description(
-    model: Model, iov: bool = False, param_dict: Optional[dict[str, str]] = None
-) -> str:
-    if iov:
-        dists = model.random_variables.iov
-    else:
-        dists = model.random_variables.iiv
-
-    if not param_dict:
-        param_dict = _create_param_dict(model, dists)
-    if len(param_dict) == 0:
-        return '[]'
-
-    blocks, same = [], []
-    for dist in dists:
-        rvs_names = dist.names
-        param_names = [
-            param_dict[name] for name in rvs_names if name not in same and name in param_dict.keys()
-        ]
-        if param_names:
-            blocks.append(f'[{",".join(param_names)}]')
-
-        if iov:
-            same_names = []
-            for name in rvs_names:
-                same_names.extend(dists.get_rvs_with_same_dist(name).names)
-            same.extend(same_names)
-
-    description = '+'.join(blocks)
-    return description
-
-
-def _create_param_dict(model: Model, dists: RandomVariables) -> dict[str, str]:
-    param_subs = {
-        parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
-    }
-    param_dict = {}
-    # FIXME: Temporary workaround, should handle IIV on eps
-    symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
-    for eta in dists.names:
-        if dists[eta].get_variance(eta).subs(param_subs) != 0:
-            # Skip etas that are before ODE
-            if eta not in symbs_before_ode:
-                continue
-            param_dict[eta] = get_rv_parameters(model, eta)[0]
-    return param_dict

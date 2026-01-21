@@ -15,9 +15,11 @@ from pharmpy.modeling import (
 )
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.iovsearch.tool import (
+    _create_param_dict,
     _get_iiv_etas_with_corresponding_iov,
     _get_nonfixed_iivs,
     create_candidate_model_entry,
+    create_description,
     create_iov_base_model_entry,
     create_results_tables,
     create_workflow,
@@ -129,6 +131,61 @@ def test_create_candidate_model_entry(
     assert len(rvs_base.iiv.names) == no_of_iiv
     assert len(rvs_base.iov.names) == no_of_iov
     assert model_cand.description == desc_ref
+
+
+@pytest.mark.parametrize(
+    'iivs_to_remove, param_dict, description',
+    [
+        (('ETA_1',), None, '[VC]+[MAT]'),
+        (
+            (
+                'ETA_1',
+                'ETA_2',
+                'ETA_3',
+            ),
+            None,
+            '[]',
+        ),
+        (
+            (
+                'ETA_1',
+                'ETA_2',
+            ),
+            {'ETA_3': 'MAT'},
+            '[MAT]',
+        ),
+    ],
+)
+def test_create_description_iiv(
+    load_model_for_test, testdata, iivs_to_remove, param_dict, description
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = remove_iiv(model, iivs_to_remove)
+    assert create_description(model, False, param_dict) == description
+
+
+def test_create_description_iov(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = add_iov(model, 'VISI')
+    assert create_description(model, True, None) == '[CL]+[VC]+[MAT]'
+
+
+def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+
+    param_dict = _create_param_dict(model, model.random_variables.iiv)
+    param_dict_ref = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
+
+    assert param_dict == param_dict_ref
+
+    model_code = model.code.replace(
+        'CL = THETA(1) * EXP(ETA(1))', 'ETA_1 = ETA(1)\nCL = THETA(1) * EXP(ETA_1)'
+    )
+    model = create_model_for_test(model_code)
+
+    param_dict = _create_param_dict(model, model.random_variables.iiv)
+
+    assert param_dict == param_dict_ref
 
 
 @pytest.mark.parametrize(

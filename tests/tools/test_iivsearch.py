@@ -5,7 +5,6 @@ import pytest
 from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
     add_iiv,
-    add_iov,
     add_lag_time,
     add_peripheral_compartment,
     add_pk_iiv,
@@ -16,10 +15,8 @@ from pharmpy.modeling import (
 from pharmpy.modeling.mfl import get_model_features
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
-    _create_param_dict,
     create_candidate_linearized,
     create_description,
-    create_description_mfl,
     get_covariance_combinations,
     get_iiv_combinations,
 )
@@ -42,26 +39,32 @@ from pharmpy.workflows import ModelEntry, Workflow
 def test_update_linearized_base_model_mfl(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     model_start = remove_iiv(model_start, ['ETA_3'])
+    description = '[CL]+[VC]'
+    model_start = model_start.replace(description=description)
     me_start = model_entry_factory([model_start])[0]
 
-    param_mapping = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_MAT': 'MAT'}
-    model_updated = update_linearized_base_model(False, param_mapping, me_start, me_start)
+    model_updated = update_linearized_base_model(False, me_start, me_start)
     assert len(model_updated.parameters) == len(model_start.parameters)
-    assert model_updated.description == '[CL]+[VC]'
+    assert model_updated.description == description
 
     model_base = add_iiv(model_start, ['MAT'], 'exp')
     model_base = fix_parameters(model_base, parameter_names=['IIV_MAT'])
+    description = '[CL]+[VC]+[MAT]'
+    model_base = model_base.replace(description=description)
     me_base = model_entry_factory([model_base])[0]
-    model_updated = update_linearized_base_model(False, param_mapping, me_start, me_base)
+    model_updated = update_linearized_base_model(False, me_start, me_base)
     assert len(model_updated.parameters) > len(model_start.parameters)
     assert len(model_base.parameters.fixed) > len(model_updated.parameters.fixed)
     assert len(model_updated.parameters) == len(model_base.parameters)
-    assert model_updated.description == '[CL]+[VC]+[MAT]'
+    assert model_updated.description == description
 
-    model_fullblock = update_linearized_base_model(True, param_mapping, me_start, me_base)
+    description = '[CL,VC,MAT]'
+    model_fullblock = model_base.replace(description=description)
+    me_fullblock = model_entry_factory([model_fullblock])[0]
+    model_fullblock = update_linearized_base_model(True, me_start, me_fullblock)
     assert len(model_fullblock.parameters) > len(model_updated.parameters)
     assert len(model_fullblock.random_variables.iiv) == 1
-    assert model_fullblock.description == '[CL,VC,MAT]'
+    assert model_fullblock.description == description
 
 
 def test_prepare_input_model_entry(load_model_for_test, testdata):
@@ -109,41 +112,6 @@ def test_create_param_mapping(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
-    'iivs_to_remove, param_dict, description',
-    [
-        (('ETA_1',), None, '[VC]+[MAT]'),
-        (
-            (
-                'ETA_1',
-                'ETA_2',
-                'ETA_3',
-            ),
-            None,
-            '[]',
-        ),
-        (
-            (
-                'ETA_1',
-                'ETA_2',
-            ),
-            {'ETA_3': 'MAT'},
-            '[MAT]',
-        ),
-    ],
-)
-def test_create_description(load_model_for_test, testdata, iivs_to_remove, param_dict, description):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    model = remove_iiv(model, iivs_to_remove)
-    assert create_description(model, False, param_dict) == description
-
-
-def test_create_description_iov(load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    model = add_iov(model, 'VISI')
-    assert create_description(model, True, None) == '[CL]+[VC]+[MAT]'
-
-
-@pytest.mark.parametrize(
     'mfl, type, expected',
     [
         ('IIV([CL,MAT,VC],EXP)', 'iiv', '[CL]+[MAT]+[VC]'),
@@ -156,7 +124,7 @@ def test_create_description_iov(load_model_for_test, testdata):
 )
 def test_create_description_mfl(mfl, type, expected):
     mfl = ModelFeatures.create(mfl)
-    assert create_description_mfl(mfl, type) == expected
+    assert create_description(mfl, type) == expected
 
 
 @pytest.mark.parametrize(
@@ -429,24 +397,6 @@ def test_prepare_rank_options(kwargs, expected):
     rank_options = prepare_rank_options(**kwargs)
     for key, value in expected.items():
         assert getattr(rank_options, key) == value
-
-
-def test_get_param_names(create_model_for_test, load_model_for_test, testdata):
-    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-
-    param_dict = _create_param_dict(model, model.random_variables.iiv)
-    param_dict_ref = {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
-
-    assert param_dict == param_dict_ref
-
-    model_code = model.code.replace(
-        'CL = THETA(1) * EXP(ETA(1))', 'ETA_1 = ETA(1)\nCL = THETA(1) * EXP(ETA_1)'
-    )
-    model = create_model_for_test(model_code)
-
-    param_dict = _create_param_dict(model, model.random_variables.iiv)
-
-    assert param_dict == param_dict_ref
 
 
 def test_create_workflow_with_model(load_model_for_test, testdata):

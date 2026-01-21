@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Callable, Iterable, Literal, Optional, TypeVar, Union
 
-import pharmpy.tools.iivsearch.algorithms
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -302,9 +301,57 @@ def create_iov_base_model_entry(input_model_entry, occ, list_of_parameters, dist
 
 
 def _create_description(model):
-    iiv_desc = pharmpy.tools.iivsearch.algorithms.create_description(model)
-    iov_desc = pharmpy.tools.iivsearch.algorithms.create_description(model, iov=True)
+    iiv_desc = create_description(model)
+    iov_desc = create_description(model, iov=True)
     return f'IIV({iiv_desc});IOV({iov_desc})'
+
+
+def create_description(
+    model: Model, iov: bool = False, param_dict: Optional[dict[str, str]] = None
+) -> str:
+    if iov:
+        dists = model.random_variables.iov
+    else:
+        dists = model.random_variables.iiv
+
+    if not param_dict:
+        param_dict = _create_param_dict(model, dists)
+    if len(param_dict) == 0:
+        return '[]'
+
+    blocks, same = [], []
+    for dist in dists:
+        rvs_names = dist.names
+        param_names = [
+            param_dict[name] for name in rvs_names if name not in same and name in param_dict.keys()
+        ]
+        if param_names:
+            blocks.append(f'[{",".join(param_names)}]')
+
+        if iov:
+            same_names = []
+            for name in rvs_names:
+                same_names.extend(dists.get_rvs_with_same_dist(name).names)
+            same.extend(same_names)
+
+    description = '+'.join(blocks)
+    return description
+
+
+def _create_param_dict(model: Model, dists: RandomVariables) -> dict[str, str]:
+    param_subs = {
+        parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
+    }
+    param_dict = {}
+    # FIXME: Temporary workaround, should handle IIV on eps
+    symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
+    for eta in dists.names:
+        if dists[eta].get_variance(eta).subs(param_subs) != 0:
+            # Skip etas that are before ODE
+            if eta not in symbs_before_ode:
+                continue
+            param_dict[eta] = get_rv_parameters(model, eta)[0]
+    return param_dict
 
 
 def create_candidate_model_entry(
