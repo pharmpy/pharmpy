@@ -104,10 +104,7 @@ def test_prepare_algorithms(algorithm, correlation_algorithm, list_of_algorithms
 def test_create_param_mapping(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'models' / 'mox2.mod'
     model = load_model_for_test(path)
-    res = parse_modelfit_results(model, path)
-    me_input = ModelEntry.create(model, modelfit_results=res)
-
-    param_mapping = create_param_mapping(me_input)
+    param_mapping = create_param_mapping(model)
     assert param_mapping == {'ETA_1': 'CL', 'ETA_2': 'VC', 'ETA_3': 'MAT'}
 
 

@@ -284,9 +284,6 @@ def insert_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock
     )
     wb.add_task(create_base_task, predecessors=[start_task])
 
-    create_param_mapping_task = Task.create('create_param_mapping', create_param_mapping)
-    wb.add_task(create_param_mapping_task, predecessors=[create_base_task])
-
     init_search_task = Task.create('init_search', init_search)
     wb.add_task(init_search_task, predecessors=[create_base_task])
 
@@ -314,11 +311,7 @@ def insert_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock
             )
         else:
             raise NotImplementedError
-        predecessors = (
-            [start_task, init_search_task, create_param_mapping_task]
-            if not search_tasks
-            else [start_task, create_param_mapping_task]
-        )
+        predecessors = [start_task, init_search_task] if not search_tasks else [start_task]
         wb.add_task(search_task, predecessors=predecessors)
         search_tasks.append(search_task)
 
@@ -363,7 +356,6 @@ def run_exhaustive_search_linearized(
     as_fullblock,
     mfl,
     rank_options,
-    param_mapping,
     base_model_entry_and_index_offset,
     input_model_entry,
 ):
@@ -378,6 +370,7 @@ def run_exhaustive_search_linearized(
         context, as_fullblock, i, type, base_model_entry, input_model_entry
     )
     mfl = expand_model_features(base_model_entry.model, mfl)
+    param_mapping = create_param_mapping(base_model_entry.model)
     wf_step = algorithms.td_exhaustive(
         type, linbase_model_entry, mfl, index_offset, False, param_mapping
     )
@@ -427,7 +420,6 @@ def run_stepwise_search_linearized(
     as_fullblock,
     mfl,
     rank_options,
-    param_mapping,
     base_model_entry_and_index_offset,
     input_model_entry,
 ):
@@ -436,6 +428,7 @@ def run_stepwise_search_linearized(
     linbase_model_entry = create_linearized_model_entry(
         context, as_fullblock, i, type, base_model_entry, input_model_entry
     )
+    param_mapping = create_param_mapping(base_model_entry.model)
     algorithm_func = getattr(algorithms, f'{step}_linearized')
     rank_res, mes = algorithm_func(
         context, linbase_model_entry, mfl, index_offset, rank_options, param_mapping
@@ -660,8 +653,7 @@ def _create_base_model(input_model_entry, mfl, as_fullblock, linearize=False):
     return base_model
 
 
-def create_param_mapping(me):
-    model = me.model
+def create_param_mapping(model):
     dists = model.random_variables.iiv
     param_subs = {
         parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
