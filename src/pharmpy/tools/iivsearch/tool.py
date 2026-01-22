@@ -336,22 +336,23 @@ def run_exhaustive_search(
     base_model_entry, index_offset = base_model_entry_and_index_offset
     type = 'iiv' if 'no_of_etas' in step else 'covariance'
     mfl = expand_model_features(base_model_entry.model, mfl)
+
     _log_start_step(context, step)
-    wf_step = algorithms.td_exhaustive(type, base_model_entry, mfl, index_offset, as_fullblock)
-    if not wf_step:
-        return (base_model_entry, index_offset), []
-    mes = context.call_workflow(wf_step, 'run_candidates')
-    rank_res = rank_models(
+
+    res = _run_exhaustive_search(
         context,
+        type,
+        mfl,
         rank_options,
-        base_model_entry.model,
-        [base_model_entry] + list(mes),
+        base_model_entry,
+        index_offset,
+        {'as_fullblock': as_fullblock},
     )
-    mes_all = (base_model_entry,) + mes
-    best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+    best_model_entry, no_of_models, summary_tool = res
+
     _log_finish_step(context, step, best_model_entry)
-    summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
-    return (best_model_entry, len(mes)), [summary_tool]
+
+    return (best_model_entry, no_of_models), [summary_tool]
 
 
 def run_exhaustive_search_linearized(
@@ -371,55 +372,77 @@ def run_exhaustive_search_linearized(
     else:
         type = 'covariance'
         mfl = mfl.covariance
+    mfl = expand_model_features(base_model_entry.model, mfl)
+
     linbase_model_entry = create_linearized_model_entry(
         context, as_fullblock, i, type, base_model_entry, input_model_entry
     )
-    mfl = expand_model_features(base_model_entry.model, mfl)
     param_mapping = create_param_mapping(base_model_entry.model)
-    _log_start_step(context, step)
-    wf_step = algorithms.td_exhaustive(
-        type, linbase_model_entry, mfl, index_offset, False, param_mapping
-    )
-    if not wf_step:
-        return (base_model_entry, index_offset), []
-    mes = context.call_workflow(wf_step, 'run_candidates')
 
-    rank_res = rank_models(
+    _log_start_step(context, step)
+
+    res = _run_exhaustive_search(
         context,
+        type,
+        mfl,
         rank_options,
-        linbase_model_entry.model,
-        [linbase_model_entry] + list(mes),
+        linbase_model_entry,
+        index_offset,
+        {'param_mapping': param_mapping},
     )
-    mes_all = (linbase_model_entry,) + mes
-    best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+    best_model_entry, no_of_models, summary_tool = res
 
     delin_model_entry, delin_summary = create_delinearized_model_entry(
         context, rank_options, i, base_model_entry, param_mapping, best_model_entry
     )
-    _log_finish_step(context, step, delin_model_entry)
-
-    summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
     delin_summary = add_parent_column(delin_summary, [base_model_entry, delin_model_entry])
 
-    return (delin_model_entry, len(mes)), [summary_tool, delin_summary]
+    _log_finish_step(context, step, delin_model_entry)
+
+    return (delin_model_entry, no_of_models), [summary_tool, delin_summary]
+
+
+def _run_exhaustive_search(
+    context,
+    type,
+    mfl,
+    rank_options,
+    base_model_entry,
+    index_offset,
+    kwargs=None,
+):
+    kwargs = kwargs if kwargs else dict()
+    wf_step = algorithms.td_exhaustive(type, base_model_entry, mfl, index_offset, **kwargs)
+    if not wf_step:
+        return base_model_entry, index_offset, []
+    mes = context.call_workflow(wf_step, 'run_candidates')
+    rank_res = rank_models(
+        context,
+        rank_options,
+        base_model_entry.model,
+        [base_model_entry] + list(mes),
+    )
+    mes_all = (base_model_entry,) + mes
+    best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+    summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
+    return best_model_entry, len(mes), summary_tool
 
 
 def run_stepwise_search(
     context, step, as_fullblock, mfl, rank_options, base_model_entry_and_index_offset
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
-    algorithm_func = getattr(algorithms, f'{step}')
+
     _log_start_step(context, step)
-    rank_res, mes = algorithm_func(
-        context, base_model_entry, mfl, index_offset, as_fullblock, rank_options
+
+    res = _run_stepwise_search(
+        context, step, mfl, rank_options, base_model_entry, index_offset, as_fullblock=as_fullblock
     )
-    if not rank_res:
-        return (base_model_entry, index_offset), []
-    mes_all = (base_model_entry,) + mes
-    tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
-    best_model_entry = get_best_model_entry(mes_all, rank_res[-1].final_model)
+    best_model_entry, no_of_models, tool_summaries = res
+
     _log_finish_step(context, step, best_model_entry)
-    return (best_model_entry, len(mes)), tool_summaries
+
+    return (best_model_entry, no_of_models), tool_summaries
 
 
 def run_stepwise_search_linearized(
@@ -438,25 +461,56 @@ def run_stepwise_search_linearized(
         context, as_fullblock, i, type, base_model_entry, input_model_entry
     )
     param_mapping = create_param_mapping(base_model_entry.model)
-    algorithm_func = getattr(algorithms, f'{step}_linearized')
+
     _log_start_step(context, step)
-    rank_res, mes = algorithm_func(
-        context, linbase_model_entry, mfl, index_offset, rank_options, param_mapping
+
+    res = _run_stepwise_search(
+        context,
+        f'{step}_linearized',
+        mfl,
+        rank_options,
+        linbase_model_entry,
+        index_offset,
+        param_mapping=param_mapping,
     )
-    if not rank_res:
-        return (base_model_entry, index_offset), []
-    mes_all = (linbase_model_entry,) + mes
-    tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
-    best_model_entry = get_best_model_entry(mes, rank_res[-1].final_model)
+    best_model_entry, no_of_models, tool_summaries = res
 
     delin_model_entry, delin_summary = create_delinearized_model_entry(
         context, rank_options, i, base_model_entry, param_mapping, best_model_entry
     )
-    _log_finish_step(context, step, best_model_entry)
     delin_summary = add_parent_column(delin_summary, [base_model_entry, delin_model_entry])
     tool_summaries.append(delin_summary)
 
-    return (delin_model_entry, len(mes)), tool_summaries
+    _log_finish_step(context, step, best_model_entry)
+
+    return (delin_model_entry, no_of_models), tool_summaries
+
+
+def _run_stepwise_search(
+    context,
+    algorithm_name,
+    mfl,
+    rank_options,
+    base_model_entry,
+    index_offset,
+    as_fullblock=False,
+    param_mapping=None,
+):
+    algorithm_func = getattr(algorithms, algorithm_name)
+    if not param_mapping:
+        rank_res, mes = algorithm_func(
+            context, base_model_entry, mfl, index_offset, as_fullblock, rank_options
+        )
+    else:
+        rank_res, mes = algorithm_func(
+            context, base_model_entry, mfl, index_offset, rank_options, param_mapping
+        )
+    if not rank_res:
+        return base_model_entry, index_offset, []
+    mes_all = (base_model_entry,) + mes
+    tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
+    best_model_entry = get_best_model_entry(mes_all, rank_res[-1].final_model)
+    return best_model_entry, len(mes), tool_summaries
 
 
 def compare_to_input_model(
@@ -582,9 +636,7 @@ def create_delinearize_workflow(input_model, final_model, param_mapping, stepno=
 
     lin_model_entry = ModelEntry.create(model=final_delinearized_model, parent=input_model)
     dl_wf = WorkflowBuilder(name="delinearization_workflow")
-    l_start = Task("START", _start_algorithm, lin_model_entry)
-    dl_wf.add_task(l_start)
-    fit_wf = create_fit_workflow(n=1)
+    fit_wf = create_fit_workflow(lin_model_entry)
     dl_wf.insert_workflow(fit_wf)
 
     return dl_wf
@@ -698,10 +750,6 @@ def end_search(best_model_entry_and_index_offset):
 
 def unpack_tool_summaries(*tool_summaries):
     return [tool_summary for step in tool_summaries for tool_summary in step]
-
-
-def _start_algorithm(model_entry):
-    return model_entry
 
 
 def _log_start_step(context, step):

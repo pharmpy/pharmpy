@@ -22,7 +22,9 @@ from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 
-def td_exhaustive(type, base_model_entry, mfl, index_offset, as_fullblock, param_mapping=None):
+def td_exhaustive(
+    type, base_model_entry, mfl, index_offset, as_fullblock=False, param_mapping=None
+):
     assert mfl.is_expanded()
 
     wb = WorkflowBuilder(name=f'td_exhaustive_{type}')
