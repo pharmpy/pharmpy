@@ -821,6 +821,16 @@ def validate_input(
     E_q,
     parameter_uncertainty_method,
 ):
+    try:
+        ModelFeatures.create(search_space)
+    except ValueError as e:
+        raise ValueError(f'Could not parse `search_space`: {search_space}\n\t{e}')
+
+    try:
+        get_model_features(model, type='iiv')
+    except NotImplementedError:
+        raise ValueError('Invalid `model`: could not determine eta distributions')
+
     if (
         strictness is not None
         and parameter_uncertainty_method is None

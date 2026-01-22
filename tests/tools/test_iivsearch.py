@@ -35,6 +35,8 @@ from pharmpy.tools.linearize.tool import create_derivative_model, create_lineari
 from pharmpy.tools.run import read_modelfit_results
 from pharmpy.workflows import ModelEntry, Workflow
 
+MINIMAL_VALID_MFL_STRING = 'IIV(@PK,exp)'
+
 
 def test_update_linearized_base_model_mfl(load_model_for_test, testdata, model_entry_factory):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
@@ -415,12 +417,18 @@ def test_validate_input_with_model(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno.mod'
     model = load_model_for_test(path)
     results = parse_modelfit_results(model, path)
-    validate_input(model=model, results=results, algorithm='top_down_exhaustive')
+    validate_input(
+        model=model,
+        results=results,
+        algorithm='top_down_exhaustive',
+        search_space=MINIMAL_VALID_MFL_STRING,
+    )
 
 
 @pytest.mark.parametrize(
     ('model_path', 'arguments', 'exception', 'match'),
     [
+        (None, dict(search_space='x'), ValueError, 'Could not parse `search_space`'),
         (None, dict(algorithm=1), ValueError, 'Invalid `algorithm`'),
         (None, dict(algorithm='brute_force_no_of_eta'), ValueError, 'Invalid `algorithm`'),
         (None, dict(rank_type=1), ValueError, 'Invalid `rank_type`'),
@@ -497,6 +505,7 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             ValueError,
             'Value `E_q` must be denoted with `%`',
         ),
+        (('nonmem/qa/boxcox.mod',), dict(), ValueError, 'Invalid `model`'),
     ],
 )
 def test_validate_input_raises(
@@ -518,6 +527,9 @@ def test_validate_input_raises(
     )
 
     kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
+
+    if 'search_space' not in kwargs.keys():
+        kwargs['search_space'] = MINIMAL_VALID_MFL_STRING
 
     with pytest.raises(exception, match=match):
         validate_input(**kwargs)
