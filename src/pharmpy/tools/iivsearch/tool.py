@@ -173,6 +173,9 @@ def create_workflow(
     post_process_task = Task.create('postprocess', postprocess)
     wb.add_task(post_process_task, predecessors=[compare_task, unpack_task])
 
+    results_task = Task('results', _results)
+    wb.add_task(results_task, predecessors=[post_process_task])
+
     return Workflow(wb)
 
 
@@ -232,7 +235,7 @@ def insert_search_workflow(wb, model, steps_to_run, mfl, as_fullblock, rank_opti
     base_type = 'td' if steps_to_run[0].startswith('td') else 'bu'
     if needs_base_model(model, mfl_expanded, as_fullblock, base_type):
         create_base_task = Task.create(
-            'base_model', create_base_model_entry, base_type, mfl_expanded, as_fullblock
+            'base_model', _create_base_model_entry, base_type, mfl_expanded, as_fullblock
         )
         wb.add_task(create_base_task, predecessors=wb.output_tasks[0])
         wf_fit = create_fit_workflow(n=1)
@@ -280,7 +283,7 @@ def insert_linearized_search_workflow(wb, model, steps_to_run, mfl, as_fullblock
     start_task = wb.output_tasks[0]
 
     create_base_task = Task.create(
-        'create_base_model', create_base_model_entry, 'linearize', mfl_expanded, as_fullblock
+        'create_base_model', _create_base_model_entry, 'linearize', mfl_expanded, as_fullblock
     )
     wb.add_task(create_base_task, predecessors=[start_task])
 
@@ -333,6 +336,7 @@ def run_exhaustive_search(
     base_model_entry, index_offset = base_model_entry_and_index_offset
     type = 'iiv' if 'no_of_etas' in step else 'covariance'
     mfl = expand_model_features(base_model_entry.model, mfl)
+    _log_start_step(context, step)
     wf_step = algorithms.td_exhaustive(type, base_model_entry, mfl, index_offset, as_fullblock)
     if not wf_step:
         return (base_model_entry, index_offset), []
@@ -345,6 +349,7 @@ def run_exhaustive_search(
     )
     mes_all = (base_model_entry,) + mes
     best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+    _log_finish_step(context, step, best_model_entry)
     summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
     return (best_model_entry, len(mes)), [summary_tool]
 
@@ -371,6 +376,7 @@ def run_exhaustive_search_linearized(
     )
     mfl = expand_model_features(base_model_entry.model, mfl)
     param_mapping = create_param_mapping(base_model_entry.model)
+    _log_start_step(context, step)
     wf_step = algorithms.td_exhaustive(
         type, linbase_model_entry, mfl, index_offset, False, param_mapping
     )
@@ -390,6 +396,7 @@ def run_exhaustive_search_linearized(
     delin_model_entry, delin_summary = create_delinearized_model_entry(
         context, rank_options, i, base_model_entry, param_mapping, best_model_entry
     )
+    _log_finish_step(context, step, delin_model_entry)
 
     summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
     delin_summary = add_parent_column(delin_summary, [base_model_entry, delin_model_entry])
@@ -402,6 +409,7 @@ def run_stepwise_search(
 ):
     base_model_entry, index_offset = base_model_entry_and_index_offset
     algorithm_func = getattr(algorithms, f'{step}')
+    _log_start_step(context, step)
     rank_res, mes = algorithm_func(
         context, base_model_entry, mfl, index_offset, as_fullblock, rank_options
     )
@@ -410,6 +418,7 @@ def run_stepwise_search(
     mes_all = (base_model_entry,) + mes
     tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
     best_model_entry = get_best_model_entry(mes_all, rank_res[-1].final_model)
+    _log_finish_step(context, step, best_model_entry)
     return (best_model_entry, len(mes)), tool_summaries
 
 
@@ -430,6 +439,7 @@ def run_stepwise_search_linearized(
     )
     param_mapping = create_param_mapping(base_model_entry.model)
     algorithm_func = getattr(algorithms, f'{step}_linearized')
+    _log_start_step(context, step)
     rank_res, mes = algorithm_func(
         context, linbase_model_entry, mfl, index_offset, rank_options, param_mapping
     )
@@ -442,6 +452,7 @@ def run_stepwise_search_linearized(
     delin_model_entry, delin_summary = create_delinearized_model_entry(
         context, rank_options, i, base_model_entry, param_mapping, best_model_entry
     )
+    _log_finish_step(context, step, best_model_entry)
     delin_summary = add_parent_column(delin_summary, [base_model_entry, delin_model_entry])
     tool_summaries.append(delin_summary)
 
@@ -594,6 +605,12 @@ def needs_base_model(model, mfl, as_fullblock, base_type):
     return not in_search_space
 
 
+def _create_base_model_entry(context, type, mfl, as_fullblock, input_model_entry):
+    context.log_info("Creating base model")
+    base_model_entry = create_base_model_entry(type, mfl, as_fullblock, input_model_entry)
+    return base_model_entry
+
+
 def create_base_model_entry(type, mfl, as_fullblock, input_model_entry):
     if type == 'td':
         base_model = _create_base_model_top_down(mfl, as_fullblock, input_model_entry)
@@ -687,6 +704,16 @@ def _start_algorithm(model_entry):
     return model_entry
 
 
+def _log_start_step(context, step):
+    context.log_info(f"Starting step '{step}'")
+
+
+def _log_finish_step(context, step, best_model_entry):
+    best_description = best_model_entry.model.description
+    best_ofv = best_model_entry.modelfit_results.ofv
+    context.log_info(f"Finished step '{step}'. Best model: {best_description}, OFV: {best_ofv:.3f}")
+
+
 def postprocess(
     context,
     tool_summaries,
@@ -722,6 +749,11 @@ def postprocess(
 def combine_summaries(summaries, idx_start):
     keys = list(range(idx_start, idx_start + len(summaries)))
     return concat_summaries(summaries, keys=keys)
+
+
+def _results(context, res):
+    context.log_info("Finishing tool iivsearch")
+    return res
 
 
 @with_runtime_arguments_type_check
