@@ -102,7 +102,7 @@ traitlets==5.14.3
 typing-extensions==4.15.0
 tzdata==2025.3
 urllib3==2.6.3
-wcwidth==0.3.0
+wcwidth==0.3.1
 webencodings==0.5.1
 widgetsnbextension==4.0.15
 zict==3.0.0
