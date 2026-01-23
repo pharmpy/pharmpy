@@ -260,6 +260,12 @@ def _get_variability(model, type):
             elif param_statement.is_mul():
                 if arg.is_exp():
                     fp = 'exp'
+                elif arg.is_add() and len(arg.args) == 2:
+                    terms = set(arg.args)
+                    if 1 in terms:
+                        other = (terms - {1}).pop()
+                        if other.free_symbols.intersection(rvs.symbols):
+                            fp = 'prop'
         if not fp:
             raise NotImplementedError(f'Could not determine eta distribution: {param_statement}')
         opts = {'parameter': param, 'fp': fp, 'optional': False}

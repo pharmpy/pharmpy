@@ -239,6 +239,14 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
         ),
         (
             [
+                partial(remove_iiv, to_remove=['CL']),
+                partial(add_iiv, list_of_parameters=['CL'], expression='prop'),
+            ],
+            'iiv',
+            'IIV(CL,PROP);IIV([MAT,VC],EXP)',
+        ),
+        (
+            [
                 partial(add_covariate_effect, parameter='CL', covariate='WT', effect='lin'),
                 partial(remove_iiv, to_remove=['CL']),
                 partial(add_iiv, list_of_parameters=['CL'], expression='add'),
