@@ -1,0 +1,37 @@
+// For format details, see https://aka.ms/devcontainer.json. For config options, see the
+// README at: https://github.com/devcontainers/templates/tree/main/src/python
+{
+	"name": "Python 3",
+	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
+	"image": "mcr.microsoft.com/devcontainers/python:2-3.12-trixie",
+
+	// Features to add to the dev container. More info: https://containers.dev/features.
+	// "features": {},
+
+	// Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	"remoteUser": "vscode",
+
+	"mounts": [
+		"source=${localWorkspaceFolderBasename}-tox,target=${containerWorkspaceFolder}/.tox,type=volume",
+		"source=${localWorkspaceFolderBasename}-htmlcov,target=${containerWorkspaceFolder}/htmlcov,type=volume",
+		"source=${localWorkspaceFolderBasename}-path,target=${containerWorkspaceFolder}/path,type=volume",
+		"source=${localWorkspaceFolderBasename}-prof,target=${containerWorkspaceFolder}/prof,type=volume"
+	],
+
+	// Use 'postCreateCommand' to run commands after the container is created.
+	"postCreateCommand": "sudo chown vscode .tox htmlcov path prof && sudo apt -yq update && sudo apt -yq install graphviz && pip install tox==4.30.2",
+
+	// Configure tool-specific properties.
+	"customizations": {
+		"vscode": {
+			"extensions": [
+				"EditorConfig.EditorConfig",
+				"github.vscode-github-actions",
+				"ms-python.vscode-pylance",
+				"ms-python.python"
+			]
+		}
+	}
+}
