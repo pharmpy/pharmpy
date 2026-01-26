@@ -5,6 +5,7 @@ import pytest
 from pharmpy.deps import numpy as np
 from pharmpy.modeling import (
     create_basic_pk_model,
+    create_joint_distribution,
     has_covariate_effect,
     has_first_order_absorption,
     has_instantaneous_absorption,
@@ -23,6 +24,7 @@ from pharmpy.tools.amd.run import (
     get_dvid_name,
     get_search_space_covsearch,
     get_search_space_drug_metabolite,
+    get_search_space_iivsearch,
     get_search_space_modelsearch,
     get_search_space_pkpd,
     get_subtool_order,
@@ -558,6 +560,37 @@ def test_filter_drug_metabolite_dataset(testdata):
     assert set(model.dataset['DVID'].values) == {1, 2, 3}
     assert set(model_filtered.dataset['DVID'].values) == {1, 3}
     assert set(orig_dataset['DVID'].values) == {1, 2, 3}
+
+
+@pytest.mark.parametrize(
+    'modeltype, reevaluation, expected',
+    [
+        ('pk', False, 'IIV(CL,EXP);IIV?(@PK,EXP);COVARIANCE?(IIV,@IIV)'),
+        (
+            'pkpd',
+            False,
+            'IIV([CL,MAT,VC],EXP);IIV?(@PD,EXP);COVARIANCE?(IIV,@PD_IIV);COVARIANCE(IIV,[CL,VC])',
+        ),
+        ('kpd', False, 'IIV(KE,EXP);IIV?(@PD,EXP);COVARIANCE?(IIV,@IIV)'),
+        ('pk', True, 'IIV(CL,EXP);IIV?(@IIV,EXP);COVARIANCE?(IIV,@IIV)'),
+        (
+            'pkpd',
+            True,
+            'IIV([CL,MAT,VC],EXP);IIV?(@PD_IIV,EXP);COVARIANCE?(IIV,@PD_IIV);COVARIANCE(IIV,[CL,VC])',
+        ),
+        ('kpd', True, 'IIV(KE,EXP);IIV?(@IIV,EXP);COVARIANCE?(IIV,@IIV)'),
+    ],
+)
+def test_get_search_space_iivsearch(
+    load_model_for_test, testdata, modeltype, reevaluation, expected
+):
+    if modeltype == 'pkpd':
+        model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+        model = create_joint_distribution(model, rvs=['CL', 'VC'])
+    else:
+        model = None
+    mfl = get_search_space_iivsearch(modeltype, reevaluation, model)
+    assert repr(mfl) == expected
 
 
 @pytest.mark.parametrize(

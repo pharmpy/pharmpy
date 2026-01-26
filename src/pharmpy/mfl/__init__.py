@@ -13,6 +13,7 @@ from .features import (
     Metabolite,
     ModelFeature,
     Peripherals,
+    Ref,
     Transits,
 )
 from .model_features import ModelFeatures
@@ -34,4 +35,5 @@ __all__ = (
     'ModelFeatures',
     'Peripherals',
     'Transits',
+    'Ref',
 )

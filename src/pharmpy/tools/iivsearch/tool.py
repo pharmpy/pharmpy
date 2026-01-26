@@ -352,7 +352,7 @@ def run_exhaustive_search(
 
     _log_finish_step(context, step, best_model_entry)
 
-    return (best_model_entry, no_of_models), [summary_tool]
+    return (best_model_entry, no_of_models), summary_tool
 
 
 def run_exhaustive_search_linearized(
@@ -396,10 +396,10 @@ def run_exhaustive_search_linearized(
         context, rank_options, i, base_model_entry, param_mapping, best_model_entry
     )
     delin_summary = add_parent_column(delin_summary, [base_model_entry, delin_model_entry])
-
+    tool_summaries = summary_tool + [delin_summary]
     _log_finish_step(context, step, delin_model_entry)
 
-    return (delin_model_entry, no_of_models), [summary_tool, delin_summary]
+    return (delin_model_entry, no_of_models), tool_summaries
 
 
 def _run_exhaustive_search(
@@ -414,6 +414,7 @@ def _run_exhaustive_search(
     kwargs = kwargs if kwargs else dict()
     wf_step = algorithms.td_exhaustive(type, base_model_entry, mfl, index_offset, **kwargs)
     if not wf_step:
+        context.log_info('No models to run, skipping step')
         return base_model_entry, index_offset, []
     mes = context.call_workflow(wf_step, 'run_candidates')
     rank_res = rank_models(
@@ -425,7 +426,7 @@ def _run_exhaustive_search(
     mes_all = (base_model_entry,) + mes
     best_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
     summary_tool = add_parent_column(rank_res.summary_tool, mes_all)
-    return best_model_entry, len(mes), summary_tool
+    return best_model_entry, len(mes), [summary_tool]
 
 
 def run_stepwise_search(
@@ -506,6 +507,7 @@ def _run_stepwise_search(
             context, base_model_entry, mfl, index_offset, rank_options, param_mapping
         )
     if not rank_res:
+        context.log_info('No models to run, skipping step')
         return base_model_entry, index_offset, []
     mes_all = (base_model_entry,) + mes
     tool_summaries = [add_parent_column(res.summary_tool, mes_all) for res in rank_res]
@@ -728,11 +730,9 @@ def create_param_mapping(model):
         parameter.symbol: parameter.init for parameter in model.parameters if parameter.fix
     }
     param_mapping = {}
-    # FIXME: Temporary workaround, should handle IIV on eps
     symbs_before_ode = [symb.name for symb in model.statements.before_odes.free_symbols]
     for eta in dists.names:
         if dists[eta].get_variance(eta).subs(param_subs) != 0:
-            # Skip etas that are before ODE
             if eta not in symbs_before_ode:
                 continue
             param_mapping[eta] = get_rv_parameters(model, eta)[0]
