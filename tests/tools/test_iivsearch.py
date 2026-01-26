@@ -354,6 +354,7 @@ def test_create_base_model_raises(load_model_for_test, testdata):
                 'strictness': 'minimization_successful',
                 'parameter_uncertainty_method': None,
                 'E': None,
+                'search_space': None,
             },
         ),
         (
@@ -371,6 +372,7 @@ def test_create_base_model_raises(load_model_for_test, testdata):
                 'strictness': 'minimization_successful',
                 'parameter_uncertainty_method': None,
                 'E': None,
+                'search_space': None,
             },
         ),
         (
@@ -388,12 +390,16 @@ def test_create_base_model_raises(load_model_for_test, testdata):
                 'strictness': 'minimization_successful',
                 'parameter_uncertainty_method': None,
                 'E': (0.5, 0.5),
+                'search_space': 'IIV(CL,EXP);IIV?([MAT,VC],EXP);COVARIANCE?(IIV,[CL,MAT,VC])',
             },
         ),
     ],
 )
 def test_prepare_rank_options(kwargs, expected):
-    rank_options = prepare_rank_options(**kwargs)
+    search_space = ModelFeatures.create(
+        'IIV(CL,exp);IIV?([VC,MAT],exp);COVARIANCE?(IIV,[CL,VC,MAT])'
+    )
+    rank_options = prepare_rank_options(**kwargs, search_space=search_space)
     for key, value in expected.items():
         assert getattr(rank_options, key) == value
 

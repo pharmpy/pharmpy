@@ -409,6 +409,8 @@ def rank_models(
         alpha=rank_options.cutoff,
         strictness=rank_options.strictness,
         parameter_uncertainty_method=rank_options.parameter_uncertainty_method,
+        search_space=rank_options.search_space,
+        E=rank_options.E,
     )
 
     return rank_res

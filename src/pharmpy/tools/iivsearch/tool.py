@@ -66,6 +66,7 @@ class RankingOptions:
     strictness: str
     parameter_uncertainty_method: str
     E: Optional[tuple[Union[float, str], Union[float, str]]]
+    search_space: Optional[str]
 
 
 def create_workflow(
@@ -137,7 +138,13 @@ def create_workflow(
     mfl = ModelFeatures.create(search_space)
 
     rank_options = prepare_rank_options(
-        rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q
+        rank_type,
+        cutoff,
+        strictness,
+        parameter_uncertainty_method,
+        E_p,
+        E_q,
+        expand_model_features(model, mfl),
     )
 
     steps_to_run = prepare_algorithms(algorithm, correlation_algorithm)
@@ -179,15 +186,23 @@ def create_workflow(
     return Workflow(wb)
 
 
-def prepare_rank_options(rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q):
-    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+def prepare_rank_options(
+    rank_type, cutoff, strictness, parameter_uncertainty_method, E_p, E_q, search_space
+):
+    assert search_space.is_expanded()
+
     E = (E_p, E_q) if E_p is not None or E_q is not None else None
+    search_space = repr(search_space) if rank_type == 'mbic' else None
+
+    rank_type = rank_type + '_iiv' if rank_type in ('bic', 'mbic') else rank_type
+
     rank_options = RankingOptions(
         rank_type=rank_type,
         cutoff=cutoff,
         strictness=strictness,
         parameter_uncertainty_method=parameter_uncertainty_method,
         E=E,
+        search_space=search_space,
     )
     return rank_options
 
