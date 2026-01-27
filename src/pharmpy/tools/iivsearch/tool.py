@@ -41,9 +41,6 @@ from pharmpy.workflows.results import ModelfitResults
 
 from .algorithms import create_description, get_best_model_entry, rank_models
 
-IIV_STRATEGIES = frozenset(
-    ('no_add', 'add_diagonal', 'fullblock', 'pd_add_diagonal', 'pd_fullblock')
-)
 IIV_ALGORITHMS = frozenset(
     (
         'top_down_exhaustive',
@@ -565,26 +562,17 @@ def create_linearized_model_entry(
     context, as_fullblock, i, type, base_model_entry, input_model_entry
 ):
     lin_model_entry = run_linearization(
-        context, base_model_entry, type, input_model_entry.modelfit_results
+        context, base_model_entry, type, i, input_model_entry.modelfit_results
     )
     context.store_model_entry(lin_model_entry)
     lin_model = update_linearized_base_model(as_fullblock, input_model_entry, lin_model_entry)
-    lin_model = lin_model.replace(name=f'linbase{i}')
     lin_model_entry = ModelEntry.create(
-        lin_model, modelfit_results=None, parent=base_model_entry.model
+        lin_model, modelfit_results=lin_model_entry.modelfit_results, parent=base_model_entry.model
     )
-
-    wb = WorkflowBuilder(name='run_lin_base_model')
-    wf_fit = create_fit_workflow(lin_model_entry)
-    wb.insert_workflow(wf_fit)
-    lin_model_entry = context.call_workflow(Workflow(wb), unique_name='run_base')
-
     return lin_model_entry
 
 
-def run_linearization(context, baseme, type, results=None):
-    if not results:
-        results = baseme.modelfit_results
+def run_linearization(context, baseme, type, i, results):
     description = create_description(baseme.model, type)
     linear_results = run_subtool(
         'linearize',
@@ -593,21 +581,21 @@ def run_linearization(context, baseme, type, results=None):
         results=results,
         description=description,
     )
-    linbaseme = ModelEntry.create(
-        model=linear_results.final_model, modelfit_results=linear_results.final_model_results
-    )
+    model = linear_results.final_model.replace(name=f"linbase{i}", description=description)
+    linbaseme = ModelEntry.create(model=model, modelfit_results=linear_results.final_model_results)
     return linbaseme
 
 
 def update_linearized_base_model(as_fullblock, inputme, baseme):
     added_params = baseme.model.parameters - inputme.model.parameters
+    if not added_params:
+        return baseme.model
     model = unfix_parameters(baseme.model, added_params.names)
     model = set_initial_estimates(model, baseme.modelfit_results.parameter_estimates)
     if as_fullblock:
         model = create_joint_distribution(
             model, individual_estimates=baseme.modelfit_results.individual_estimates
         )
-    model = model.replace(name="linbase", description=baseme.model.description)
     return model
 
 
