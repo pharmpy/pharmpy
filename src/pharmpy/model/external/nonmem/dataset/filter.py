@@ -193,8 +193,6 @@ def mask_in_place(
         # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L177  # noqa: E501
         # NOTE: Some default "globals" are included anyway.
         # SEE: https://github.com/pandas-dev/pandas/blob/6e27e26b2f25ff98cea60d536b6d4a53e2f0a17d/pandas/core/computation/scope.py#L91-L100  # noqa: E501
-        target=None,  # NOTE: We do not allow assigning to df. Default, but it is better to be explicit.
-        # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/frame.py#L4833  # noqa: E501
         inplace=True,  # NOTE: We update the input dataframe in place.
         # SEE: https://github.com/pandas-dev/pandas/blob/9c8bc3e55188c8aff37207a74f1dd144980b8874/pandas/core/frame.py#L4843-L4845  # noqa: E501
     )
