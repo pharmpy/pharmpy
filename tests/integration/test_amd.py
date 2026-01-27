@@ -32,7 +32,7 @@ def _model_count(rundir: Path):
                 'allometric_variable': 'WT',
             },
             {'strategy': 'default'},
-            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..1);COVARIATE?(VC,AGE,EXP)',
             {
                 'modelsearch',
                 'structural_retries',
@@ -60,7 +60,7 @@ def _model_count(rundir: Path):
                 'occasion': 'VISI',
             },
             {'strategy': 'reevaluation', 'retries_strategy': 'skip'},
-            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..1);COVARIATE?(VC,AGE,EXP)',
             {
                 'modelsearch',
                 'iivsearch',
@@ -89,7 +89,7 @@ def _model_count(rundir: Path):
                 'strictness': 'minimization_successful and rse < 0.5',
                 'parameter_uncertainty_method': 'SANDWICH',
             },
-            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            'ABSORPTION([FO,ZO]);PERIPHERALS(0..1);COVARIATE?(VC,AGE,EXP)',
             {
                 'modelsearch',
                 'iivsearch',
@@ -151,7 +151,7 @@ def _model_count(rundir: Path):
                 'occasion': 'VISI',
             },
             {'strategy': 'default', 'retries_strategy': 'skip'},
-            'ABSORPTION([FO,ZO]);PERIPHERALS(0..2)',
+            'COVARIATE?(KE,AGE,exp)',
             {
                 'pdsearch',
                 'iivsearch',

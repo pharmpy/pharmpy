@@ -5,15 +5,15 @@ from typing import Callable, Literal, Optional, Sequence, Union
 from pharmpy.basic import TSymbol
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
+from pharmpy.mfl import IIV, Covariance
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
+from pharmpy.mfl import Ref
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
     add_predictions,
     add_residuals,
     create_basic_pk_model,
-    find_clearance_parameters,
-    get_central_volume_and_clearance,
     get_column_name,
     get_individual_parameters,
     get_pk_parameters,
@@ -31,6 +31,7 @@ from pharmpy.modeling import (
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
+from pharmpy.modeling.mfl import get_model_features as get_model_features_new
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools import retrieve_models
@@ -212,7 +213,7 @@ def run_amd_task(
 
     try:
         ss_mfl = parse_search_space(search_space)
-        iiv_features = None
+        iiv_features = get_search_space_iivsearch(modeltype)
     except:  # noqa E722
         # FIXME: Workaround until new ModelFeatures is used everywhere
         search_space, iiv_features = parse_search_space_new(search_space)
@@ -225,13 +226,8 @@ def run_amd_task(
 
     if modeltype == 'pkpd':
         dv = 2
-        iiv_strategy = 'pd_fullblock'
-    elif modeltype == 'kpd':
-        dv = None
-        iiv_strategy = 'no_add'
     else:
         dv = None
-        iiv_strategy = 'fullblock'
 
     if isinstance(input, str):
         input = Path(input)
@@ -369,23 +365,22 @@ def run_amd_task(
                 run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':
             if 'iivsearch' in run_subfuncs.keys():
+                iiv_features = get_search_space_iivsearch(modeltype, reevaluation=True)
                 run_name = 'rerun_iivsearch'
                 func = _subfunc_iiv(
-                    iiv_strategy='no_add',
                     strictness=strictness,
                     E=_E,
                     parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                     dir_name="rerun_iivsearch",
+                    search_space=iiv_features,
                 )
             else:
                 run_name = 'iivsearch'
                 func = _subfunc_iiv(
-                    iiv_strategy=iiv_strategy,
                     strictness=strictness,
                     E=_E,
                     parameter_uncertainty_method=parameter_uncertainty_method,
-                    modeltype=modeltype,
                     ctx=context,
                     dir_name="iivsearch",
                     search_space=iiv_features,
@@ -686,6 +681,29 @@ def create_structural_covariates_model(search_space, model_entry):
     model = update_initial_estimates(model, model_entry.modelfit_results)
     model = model.replace(name='base_with_structural_cov')
     return model
+
+
+def get_search_space_iivsearch(modeltype, reevaluation=False, model=None):
+    features = ModelFeaturesNew.create([])
+    if modeltype == 'pkpd':
+        pk_iiv = get_model_features_new(model, type='iiv')
+        pk_cov = get_model_features_new(model, type='covariance')
+        features += pk_iiv + pk_cov
+        iiv_ref = 'PD_IIV' if reevaluation else 'PD'
+        cov_ref = 'PD_IIV'
+    elif modeltype == 'kpd':
+        features += IIV.create(parameter='KE', fp='exp', optional=False)
+        iiv_ref = 'IIV' if reevaluation else 'PD'
+        cov_ref = 'IIV'
+    else:
+        features += IIV.create(parameter='CL', fp='exp', optional=False)
+        iiv_ref = 'IIV' if reevaluation else 'PK'
+        cov_ref = 'IIV'
+
+    features += IIV.create(parameter=Ref(iiv_ref), fp='exp', optional=True)
+    features += Covariance.create(type='IIV', parameters=Ref(cov_ref), optional=True)
+
+    return ModelFeaturesNew.create(features)
 
 
 def get_search_space_pkpd(ss_mfl):
@@ -1072,13 +1090,11 @@ def _subfunc_pdsearch(ctx, type, strictness, parameter_uncertainty_method, **kwa
 
 
 def _subfunc_iiv(
-    iiv_strategy,
     strictness,
     E,
     parameter_uncertainty_method,
     ctx,
     dir_name,
-    modeltype=None,
     search_space=None,
 ) -> SubFunc:
     def _run_iiv(model, modelfit_results):
@@ -1089,17 +1105,6 @@ def _subfunc_iiv(
             rank_type = 'bic'
             e_p, e_q = None, None
 
-        if modeltype == 'kpd':
-            keep = ['KE']
-            model_entry = run_kpd_iivsearch_base_model(model, ctx)
-            model, modelfit_results = model_entry.model, model_entry.modelfit_results
-        else:
-            keep = [
-                str(symbol)
-                for symbol in get_central_volume_and_clearance(model)
-                if symbol in find_clearance_parameters(model)
-            ]
-
         res = run_subtool(
             'iivsearch',
             ctx,
@@ -1107,15 +1112,13 @@ def _subfunc_iiv(
             model=model,
             results=modelfit_results,
             algorithm='top_down_exhaustive',
-            iiv_strategy=iiv_strategy,
+            search_space=repr(search_space),
             strictness=strictness,
             rank_type=rank_type,
             E_p=e_p,
             E_q=e_q,
-            keep=keep,
             parameter_uncertainty_method=parameter_uncertainty_method,
-            _search_space=repr(search_space) if search_space else search_space,
-            _as_fullblock=True,
+            as_fullblock=True,
         )
         assert isinstance(res, Results)
         return res
