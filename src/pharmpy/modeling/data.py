@@ -2320,7 +2320,7 @@ def deidentify_data(
     for datecol in date_columns:
         if pd.api.types.is_datetime64_any_dtype(df[datecol]):
             pass
-        elif df[datecol].dtype == 'object':
+        elif df[datecol].dtype == 'object' or df[datecol].dtype == 'str':
             # assume string
             df[datecol] = pd.to_datetime(df[datecol])
         else:

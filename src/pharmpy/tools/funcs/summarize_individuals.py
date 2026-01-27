@@ -214,13 +214,15 @@ def summarize_individuals_count_table(
     ofvs = df['ofv']
     parent_ofvs = ofvs.copy()
     for (name, _), parent in parents.items():
-        if parent is None:
+        if not isinstance(parent, str):
             parent_ofvs.loc[name] = np.nan
         else:
             parent_ofvs.loc[name] = list(ofvs.loc[parent])
+    print(df)
 
     for name in df.index.unique(level='model'):
-        if df.loc[name]['parent_model'].iloc[0] is None:
+        val = df.loc[name]['parent_model'].iloc[0]
+        if val is None or np.isnan(val):
             start_name = name
             break
     else:

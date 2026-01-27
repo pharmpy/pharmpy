@@ -29,7 +29,7 @@ class LazyImport(ModuleType):
                 module = import_module(name)
             # To avoid warnings about deprecating silent downcasting
             version = tuple(int(i) for i in module.__version__.split('.'))
-            if version >= (2, 2, 0):
+            if version >= (2, 2, 0) and version < (3, 0, 0):
                 module.set_option('future.no_silent_downcasting', True)
         else:
             module = import_module(name)

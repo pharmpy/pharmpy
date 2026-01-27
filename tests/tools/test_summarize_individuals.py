@@ -1,7 +1,6 @@
 import sys
 
 import numpy as np
-import packaging
 import pytest
 
 from pharmpy.deps import pandas as pd
@@ -40,7 +39,7 @@ tflite_condition = (
     and sys.platform == 'win32'
     or sys.version_info >= (3, 12)
     and sys.platform == 'darwin'
-    or packaging.version.parse(np.__version__) >= packaging.version.parse("2.0.0")
+    or int(np.__version__.split(".")[0]) >= 2
 )
 
 

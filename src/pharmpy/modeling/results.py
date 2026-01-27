@@ -734,7 +734,7 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
     dtype: float64
     """
     high_and_below_diagonal = cor.abs().ge(limit) & np.triu(np.ones(cor.shape), k=1).astype(bool)
-    return cor.where(high_and_below_diagonal).stack()
+    return cor.where(high_and_below_diagonal).stack().dropna()
 
 
 def check_parameters_near_bounds(

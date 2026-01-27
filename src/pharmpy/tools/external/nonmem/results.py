@@ -252,7 +252,9 @@ class ModelfitResultsProxy:
                 path.with_suffix(".cor"), control_stream, name_map, self.iterations.table_numbers
             )
             if cor is not None:
-                np.fill_diagonal(cor.values, 1)
+                A = cor.values.copy()
+                np.fill_diagonal(A, 1)
+                cor[:] = A
             coi = _parse_matrix(
                 path.with_suffix(".coi"), control_stream, name_map, self.iterations.table_numbers
             )

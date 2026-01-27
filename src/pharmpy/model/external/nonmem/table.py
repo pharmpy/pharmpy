@@ -340,8 +340,8 @@ class PhiTable(NONMEMTable):
         etc_frames = [
             pd.DataFrame(
                 matrix,
-                columns=eta_col_names,  # pyright: ignore [reportArgumentType]
-                index=eta_col_names,  # pyright: ignore [reportArgumentType]
+                columns=eta_col_names,
+                index=eta_col_names,
             )
             for matrix in matrix_array
         ]
