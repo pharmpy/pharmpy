@@ -3,7 +3,7 @@ import sys
 from dataclasses import asdict, dataclass, fields, replace
 from datetime import datetime
 from itertools import islice, tee
-from typing import Callable, Generator, Iterable, Iterator, Optional, TypeVar, Union
+from typing import Any, Callable, Generator, Iterable, Iterator, Optional, TypeVar, Union
 
 import dateutil.parser
 from packaging import version
@@ -64,7 +64,7 @@ def make_peekable(iterator: Iterator[T]):
     # NOTE: Extra copy required for Python 3.11
     (tee_iterator,) = _tee(iterator, 1)
 
-    def lookahead(n: int):
+    def lookahead(n: int) -> Iterator[T]:
         # NOTE: Extra copy required for Python 3.11
         # SEE: https://github.com/python/cpython/issues/137597#issuecomment-3186240062
         (forked_iterator,) = _tee(tee_iterator, 1)
@@ -324,9 +324,9 @@ class NONMEMResultsFile:
         )  # Only classical est
         feval = re.compile(r' NO. OF FUNCTION EVALUATIONS USED:\s*(\S+)')  # Only classical est
         ofv_with_constant = re.compile(r' OBJECTIVE FUNCTION VALUE WITH CONSTANT:\s*(\S+)')
-        eta_shrinkage = re.compile(r'^ ETASHRINK(?:SD|VR)\(%\)  ')
-        ebv_shrinkage = re.compile(r'^ EBVSHRINK(?:SD|VR)\(%\)  ')
-        eps_shrinkage = re.compile(r'^ EPSSHRINK(?:SD|VR)\(%\)  ')
+        eta_shrinkage = re.compile(r'^ ETA(?:SHRINK(?:SD|VR)\(%\) |shrink\(%\):  )')
+        ebv_shrinkage = re.compile(r'^ EBV(?:SHRINK(?:SD|VR)\(%\) |shrink\(%\):  )')
+        eps_shrinkage = re.compile(r'^ EPS(?:SHRINK(?:SD|VR)\(%\) |shrink\(%\):  )')
 
         maybe_success = False
         for row in rows:
@@ -371,23 +371,65 @@ class NONMEMResultsFile:
 
         result = replace(
             result,
-            eta_shrinkage=NONMEMResultsFile.parse_shrinkage(filter(eta_shrinkage.match, rows)),
-            ebv_shrinkage=NONMEMResultsFile.parse_shrinkage(filter(ebv_shrinkage.match, rows)),
-            eps_shrinkage=NONMEMResultsFile.parse_shrinkage(filter(eps_shrinkage.match, rows)),
+            eta_shrinkage=NONMEMResultsFile.parse_shrinkage(
+                NONMEMResultsFile.filter_shrinkage(eta_shrinkage.match, rows)
+            ),
+            ebv_shrinkage=NONMEMResultsFile.parse_shrinkage(
+                NONMEMResultsFile.filter_shrinkage(ebv_shrinkage.match, rows)
+            ),
+            eps_shrinkage=NONMEMResultsFile.parse_shrinkage(
+                NONMEMResultsFile.filter_shrinkage(eps_shrinkage.match, rows)
+            ),
         )
         return result
 
     @staticmethod
-    def parse_shrinkage(rows: Iterable[str]):
+    def filter_shrinkage(is_header: Callable[[str], Any], rows: Iterable[str]):
+        it, lookahead = make_peekable(iter(rows))
+        while True:
+            chunks: list[str] = []
+            for row in it:
+                if is_header(row):
+                    chunks.append(row)
+                    break
+
+            else:
+                break
+
+            while True:
+                try:
+                    preread = next(lookahead(1))
+                except StopIteration:
+                    break
+
+                if not preread.startswith(' ' * 16):
+                    break
+                row = next(it)
+                assert row == preread
+                chunks.append(row)
+
+            yield from map(str.encode, map(str.rstrip, chunks))
+            yield b'\n'
+
+    @staticmethod
+    def parse_shrinkage(chunks: Iterable[bytes]):
         try:
-            return pd.read_table(
-                IOFromChunks(map(lambda row: str.encode(row + '\n'), rows)),  # type: ignore
+            read = pd.read_table(
+                IOFromChunks(chunks),  # type: ignore
                 header=None,
                 index_col=0,
                 sep=r'\s+',
                 engine='c',
                 float_precision="round_trip",
             )
+
+            columns = read.index.values
+            read.reset_index(drop=True, inplace=True)
+
+            df = read.T
+            df.columns = columns
+            df.reset_index(drop=True, inplace=True)
+            return df
         except pd.errors.EmptyDataError:
             return None
 
