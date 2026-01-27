@@ -971,6 +971,7 @@ def _subfunc_structsearch_tmdd(
     search_space, type, strictness, dv_types, orig_dataset, parameter_uncertainty_method, ctx
 ) -> SubFunc:
     def _run_structsearch_tmdd(model, modelfit_results):
+        subctx_name = 'modelsearch'
         res = run_subtool(
             'modelsearch',
             ctx,
@@ -985,7 +986,7 @@ def _subfunc_structsearch_tmdd(
         )
 
         final_model = res.final_model
-        subctx1 = ctx.get_subcontext('modelsearch1')
+        subctx1 = ctx.get_subcontext(subctx_name)
         all_models = [
             subctx1.retrieve_model_entry(model_name).model
             for model_name in subctx1.list_all_names()
