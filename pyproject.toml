@@ -19,7 +19,7 @@ dependencies = [
     'lark>=1.1.7',
     'sympy>=1.9',
     'symengine>=0.13.0',
-    'pandas>=1.4, !=2.1.0',
+    'pandas>=1.4, !=2.1.0, <3.0.0',
     'numexpr>=2.7.0',
     'altair>=6.0.0',
     'itables>=2.4.0',
