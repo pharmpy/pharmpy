@@ -8,7 +8,7 @@ from packaging import version
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.internals.iterator.lookahead import make_peekable
+from pharmpy.internals.iterator.lookahead import PeekableIterator
 from pharmpy.model.external.nonmem.dataset.nmtran import IOFromChunks
 
 TAG = re.compile(r' #([A-Z]{4}):\s*(.*)')
@@ -189,10 +189,10 @@ class NONMEMResultsFile:
         return v
 
     @staticmethod
-    def read_tere(rows: Iterator[bytes], lookahead: Callable[[int], Iterator[bytes]]):
+    def read_tere(rows: PeekableIterator[bytes]):
         while True:
             try:
-                preread = _decode_lst(next(lookahead(1)))
+                preread = _decode_lst(rows.peek())
             except StopIteration:
                 break
             lead = preread[:2]
@@ -344,7 +344,7 @@ class NONMEMResultsFile:
 
     @staticmethod
     def filter_shrinkage(is_header: Callable[[str], Any], rows: Iterable[str]):
-        it, lookahead = make_peekable(iter(rows))
+        it = PeekableIterator(iter(rows))
         while True:
             chunks: list[str] = []
             for row in it:
@@ -357,7 +357,7 @@ class NONMEMResultsFile:
 
             while True:
                 try:
-                    preread = next(lookahead(1))
+                    preread = it.peek()
                 except StopIteration:
                     break
 
@@ -585,18 +585,18 @@ class NONMEMResultsFile:
             yield from NONMEMResultsFile.parse_rows(lines)
 
     @staticmethod
-    def parse_rows(it: Iterator[bytes]) -> Generator[TaggedSection, None, None]:
+    def parse_rows(iterator: Iterator[bytes]) -> Generator[TaggedSection, None, None]:
         hessian = None
 
-        it, lookahead = make_peekable(it)
+        it = PeekableIterator(iterator)
 
-        yield StartTimeSection(tuple(map(_decode_lst, lookahead(2))))
+        yield StartTimeSection(tuple(map(_decode_lst, it.lookahead(2))))
 
         EXEC: list[str] = []
 
         while True:
             try:
-                preread = _decode_lst(next(lookahead(1)))
+                preread = _decode_lst(it.peek())
             except StopIteration:
                 yield ExecSection(tuple(EXEC))
                 return
@@ -635,7 +635,7 @@ class NONMEMResultsFile:
 
                     while True:
                         try:
-                            preread = _decode_lst(next(lookahead(1)))
+                            preread = _decode_lst(it.peek())
                         except StopIteration:
                             break
                         lead = preread[:2]
@@ -644,7 +644,7 @@ class NONMEMResultsFile:
                                 raise NotImplementedError('Two TERM tags without TERE in between')
                             elif m.group(1) == 'TERE':
                                 next(it)
-                                TERE = tuple(NONMEMResultsFile.read_tere(it, lookahead))
+                                TERE = tuple(NONMEMResultsFile.read_tere(it))
                                 yield TereSection(TERE)
                             break
                         elif lead == '0P' and preread == "0PROGRAM TERMINATED BY OBJ\n":
@@ -662,7 +662,7 @@ class NONMEMResultsFile:
                     yield KeyValueSection((row,), m.group(1), v.strip())
 
                     if m.group(1) == 'CPUT':
-                        header, *datetime = map(_decode_lst, lookahead(3))
+                        header, *datetime = map(_decode_lst, it.lookahead(3))
                         assert header.startswith('Stop Time:')
                         yield EndTimeSection((row, header, *datetime))
 
@@ -670,7 +670,7 @@ class NONMEMResultsFile:
                         METH = [row]
                         while True:
                             try:
-                                preread = _decode_lst(next(lookahead(1)))
+                                preread = _decode_lst(it.peek())
                             except StopIteration:
                                 break
                             lead = preread[:2]
@@ -684,7 +684,7 @@ class NONMEMResultsFile:
                                 METH.append(row)
 
                                 if lead == '0H' and row.startswith('0HESSIAN OF POSTERIOR DENSITY'):
-                                    _, maybe_term = map(_decode_lst, lookahead(2))
+                                    _, maybe_term = map(_decode_lst, it.lookahead(2))
                                     if (
                                         maybe_term is not None
                                         and (m := TAG.match(maybe_term))
@@ -700,7 +700,7 @@ class NONMEMResultsFile:
                 PROG = [row]
                 while True:
                     try:
-                        preread = _decode_lst(next(lookahead(1)))
+                        preread = _decode_lst(it.peek())
                     except StopIteration:
                         break
                     if (
