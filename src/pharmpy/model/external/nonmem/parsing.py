@@ -721,7 +721,6 @@ def parse_column_info(control_stream):
 def parse_datainfo(control_stream, path) -> DataInfo:
     resolved_dataset_path = parse_dataset_path(control_stream, path)
     di_nonmem = create_nonmem_datainfo(control_stream, resolved_dataset_path)
-    colnames, drop, replacements, _ = parse_column_info(control_stream)
 
     if resolved_dataset_path is None:
         return di_nonmem
