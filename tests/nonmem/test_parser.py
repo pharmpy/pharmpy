@@ -3,7 +3,7 @@ import pytest
 from pharmpy.basic import Expr
 from pharmpy.model import Assignment
 from pharmpy.model.external.nonmem.nmtran_parser import NMTranParser
-from pharmpy.model.external.nonmem.parsing import parse_table_columns
+from pharmpy.model.external.nonmem.parsing import parse_column_info, parse_table_columns
 from pharmpy.modeling import read_model_from_string
 
 
@@ -211,3 +211,30 @@ $SIGMA  0.09 ; sigma"""
         symbol('Y_1'): symbol('Y_1'),
         symbol('Y_2'): symbol('Y_2'),
     }
+
+
+@pytest.mark.parametrize(
+    'code,correct_names,correct_drop',
+    [
+        ("WGT=DROP WGT=DROP", ["WGT", "WGT1"], [True, True]),
+        ("EVID=DROP EVID", ["EVID1", "EVID"], [True, False]),
+        ("EVID EVID", ["EVID", "EVID"], [False, False]),
+        ("EVID EVID=DROP", ["EVID", "EVID"], [False, True]),
+        ("ID WGT=DROP WGT=DROP", ["ID", "WGT", "WGT1"], [False, True, True]),
+        ("ID EVID=DROP EVID", ["ID", "EVID1", "EVID"], [False, True, False]),
+        ("ID EVID EVID", ["ID", "EVID", "EVID"], [False, False, False]),
+        ("ID EVID EVID=DROP", ["ID", "EVID", "EVID"], [False, False, True]),
+        ("EVID=DROP EVID=DROP EVID=DROP", ["EVID", "EVID1", "EVID2"], [True, True, True]),
+        ("EVID=DROP EVID=DROP EVID", ["EVID1", "EVID2", "EVID"], [True, True, False]),
+        ("EVID=DROP EVID EVID", ["EVID1", "EVID", "EVID"], [True, False, False]),
+        ("EVID=DROP EVID EVID=DROP", ["EVID1", "EVID", "EVID"], [True, False, True]),
+        ("EVID EVID EVID", ["EVID", "EVID", "EVID"], [False, False, False]),
+        ("EVID EVID=DROP EVID=DROP", ["EVID", "EVID", "EVID"], [False, True, True]),
+    ],
+)
+def test_parse_column_info(code, correct_names, correct_drop):
+    parser = NMTranParser()
+    cs = parser.parse("$PROBLEM\n$INPUT " + code + "\n")
+    colnames, drop, _, _ = parse_column_info(cs)
+    assert colnames == correct_names
+    assert drop == correct_drop

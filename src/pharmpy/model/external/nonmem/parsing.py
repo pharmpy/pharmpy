@@ -715,7 +715,50 @@ def parse_column_info(control_stream):
                     colnames.append(key)
                     given_names.append(key)
                     drop.append(False)
+    _mangle_all_dropped(colnames, drop)
     return colnames, drop, synonym_replacement, given_names
+
+
+def _get_duplicates(a) -> dict[str, list[int]]:
+    seen = dict()
+    duplicated = dict()
+    for i, e in enumerate(a):
+        if e in seen:
+            if e in duplicated:
+                duplicated[e].append(i)
+            else:
+                duplicated[e] = [seen[e], i]
+        else:
+            seen[e] = i
+    return duplicated
+
+
+def _mangle_colname(name: str, colnames) -> str:
+    # Mangle name so that it no longer exists in colnames
+    i = 1
+    while True:
+        new_name = f"{name}{i}"
+        if new_name not in colnames:
+            return new_name
+        i += 1
+
+
+def _mangle_all_dropped(colnames, drop):
+    # NONMEM allows having the same column names of
+    # multiple columns only if all but potentially one are DROP
+    # and the DROP comes before the non-DROP so we need to mangle those
+    # Update colnames in place
+    duplicates = _get_duplicates(colnames)
+    for name, inds in duplicates.items():
+        first_nodrop = None
+        for i in inds:
+            if not drop[i]:
+                first_nodrop = i
+                break
+        first = inds[0]
+        for i in inds:
+            if first_nodrop is None and i != first or first_nodrop is not None and i < first_nodrop:
+                colnames[i] = _mangle_colname(colnames[i], colnames)
 
 
 def parse_datainfo(control_stream, path) -> DataInfo:
