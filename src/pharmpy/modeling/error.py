@@ -432,8 +432,6 @@ def set_combined_error_model(
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)
 
-    # FIXME: Handle other DVs
-    dv = list(model.dependent_variables.keys())[0]
     f_dummy = Expr.dummy('x')
     if data_trans == dv.log():
         error_expr = f_dummy.log() + ruv_prop + ruv_add / f_dummy
