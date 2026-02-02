@@ -2,7 +2,7 @@
 pip==25.3
 tox==4.34.1
 # Indirect dependencies
-cachetools==6.2.6
+cachetools==7.0.0
 chardet==5.2.0
 colorama==0.4.6
 distlib==0.4.0
