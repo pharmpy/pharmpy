@@ -603,6 +603,10 @@ def validate_input(
             raise ValueError("Initial estimate for EC_50 is needed")
         if met_init is None:
             raise ValueError("Initial estimate for MET is needed")
+        if len(model.dependent_variables) < 2:
+            raise ValueError(
+                "Found less than two dependent variables. Two are needed to build a PKPD model"
+            )
 
     elif type.lower() == 'drug_metabolite':
         if search_space is not None:
