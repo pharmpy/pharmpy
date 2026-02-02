@@ -6,6 +6,7 @@ from typing import Literal, Optional, Union
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
+from pharmpy.modeling import get_column_name
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools.common import (
     RANK_TYPES,
@@ -603,10 +604,12 @@ def validate_input(
             raise ValueError("Initial estimate for EC_50 is needed")
         if met_init is None:
             raise ValueError("Initial estimate for MET is needed")
-        if len(model.dependent_variables) < 2:
-            raise ValueError(
-                "Found less than two dependent variables. Two are needed to build a PKPD model"
-            )
+        dvid = get_column_name(model, "dvid")
+        if dvid is None:
+            raise ValueError("No DVID column found")
+        ndvids = len(model.dataset[dvid].unique())
+        if len(ndvids) < 2:
+            raise ValueError("Less than two DVID values found. Need two for PKPD")
 
     elif type.lower() == 'drug_metabolite':
         if search_space is not None:
