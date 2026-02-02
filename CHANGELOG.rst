@@ -14,6 +14,11 @@ Changes
 * :code:`modeling.filter_data` will not change the name or the description of the model
 * :code:`modeling.filter_data` will always reset the index of the dataset
 
+Bugfixes
+========
+
+* :code:`modeling.set_additive_error_model` would often rename the sigma parameter unnecessarily. (#4303) 
+
 1.12.0 (2025-12-05)
 -------------------
 
