@@ -350,6 +350,7 @@ def _f_link_assignment(
         obscol = _find_observation_column(di)
         df = dataset[dataset[obscol] == 0.0]
         cmtvals = set(df['CMT'].unique())
+        print("QQ", cmtvals)
         if 100.0 in cmtvals or 1000.0 in cmtvals:
             # These are synonymous to output
             cmtvals.add(comp_map['OUTPUT'])
@@ -366,7 +367,7 @@ def _f_link_assignment(
                 cond = BooleanExpr.eq(Expr.symbol(obscol), 0.0) & BooleanExpr.eq(
                     Expr.symbol('CMT'), val
                 )
-                func = Expr.function(f'A_{inv_map[val]}', 't')
+                func = Expr.function(f'A_{inv_map[int(val)]}', 't')
                 s = f'S{int(val)}'
                 if pkrec.statements.find_assignment(s):
                     expr = func / Expr.symbol(s)
