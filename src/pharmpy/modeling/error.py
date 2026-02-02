@@ -146,6 +146,11 @@ def set_additive_error_model(
     if has_additive_error_model(model, dv):
         return model
     original_model = model
+
+    # Starting with a clean error model.
+    # If not create_symbol can create mangled sigma name
+    model = remove_error_model(model)
+
     stats, y, f = _preparations(model, dv)
     ruv = create_symbol(model, 'epsilon_a')
 
