@@ -607,8 +607,8 @@ def validate_input(
         dvid = get_column_name(model, "dvid")
         if dvid is None:
             raise ValueError("No DVID column found")
-        ndvids = len(model.dataset[dvid].unique())
-        if len(ndvids) < 2:
+        dvids = model.dataset[dvid].unique()
+        if len(dvids) < 2:
             raise ValueError("Less than two DVID values found. Need two for PKPD")
 
     elif type.lower() == 'drug_metabolite':
