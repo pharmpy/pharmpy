@@ -40,8 +40,8 @@ def test_filter_dataset(load_model_for_test, testdata):
     df = _create_dataset(model_entry, dv=2)
     expected_cwres = [-1.15490, 0.95703, -0.85365, 0.42327]
     assert df['DV'].tolist() == expected_cwres
-    assert df['IPRED'].tolist() == res.predictions['CIPREDI'].iloc[indices].tolist()
-    assert df['ID'].tolist() == model.dataset['ID'].iloc[indices].tolist()
+    assert df['IPRED'].tolist() == res.predictions['CIPREDI'].loc[indices].tolist()
+    assert df['ID'].tolist() == model.dataset['ID'].loc[indices].tolist()
 
     var = model.datainfo.typeix['dvid'][0].variable.replace(type='unknown')
     ci_dvid = model.datainfo.typeix['dvid'][0].replace(variable_mapping=var)
@@ -51,8 +51,8 @@ def test_filter_dataset(load_model_for_test, testdata):
     df = _create_dataset(model_entry, dv=2)
     expected_cwres = [-1.15490, 0.95703, -0.85365, 0.42327]
     assert df['DV'].tolist() == expected_cwres
-    assert df['IPRED'].tolist() == res.predictions['CIPREDI'].iloc[indices].tolist()
-    assert df['ID'].tolist() == model.dataset['ID'].iloc[indices].tolist()
+    assert df['IPRED'].tolist() == res.predictions['CIPREDI'].loc[indices].tolist()
+    assert df['ID'].tolist() == model.dataset['ID'].loc[indices].tolist()
 
 
 def test_resmod_results(testdata):

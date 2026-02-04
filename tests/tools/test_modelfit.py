@@ -130,9 +130,8 @@ def test_get_functions_to_solve_for(load_example_model_for_test):
 def test_evaluate_model(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     res = evaluate_model(model)
-    print(res)
-    assert res.loc[0, 'Y'] == pytest.approx(17.695056, abs=1e-5)
-    assert res.loc[743, 'Y'] == pytest.approx(34.411508, abs=1e-5)
+    assert res.loc[1, 'Y'] == pytest.approx(17.695056, abs=1e-5)
+    assert res.loc[744, 'Y'] == pytest.approx(34.411508, abs=1e-5)
 
 
 def test_minimal_model_estimation(load_model_for_test, testdata):

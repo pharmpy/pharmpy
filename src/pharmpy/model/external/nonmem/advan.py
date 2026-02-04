@@ -350,7 +350,6 @@ def _f_link_assignment(
         obscol = _find_observation_column(di)
         df = dataset[dataset[obscol] == 0.0]
         cmtvals = set(df['CMT'].unique())
-        print("QQ", cmtvals)
         if 100.0 in cmtvals or 1000.0 in cmtvals:
             # These are synonymous to output
             cmtvals.add(comp_map['OUTPUT'])

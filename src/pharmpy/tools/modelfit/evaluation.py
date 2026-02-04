@@ -155,5 +155,5 @@ class SymbolicSolver(ODESolver):
                 new[i] = amt
             else:
                 new[i] = amt + new[i - 1] * target
-        sol = pd.DataFrame({solvefor.pop(): new})
+        sol = pd.DataFrame({solvefor.pop(): new}, index=data.index)
         return sol

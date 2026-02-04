@@ -1359,10 +1359,10 @@ def test_missing_data_999(testdata, tmp_path):
         testdata / "nonmem" / "models" / "minimal_missing.mod", missing_data_token="-999"
     )
     ser = model.dataset['WGT']
-    assert ser[0] == 55.0
-    assert ser[1] == 55.0
-    assert np.isnan(ser[2])
-    assert np.isnan(ser[3])
+    assert ser.iloc[0] == 55.0
+    assert ser.iloc[1] == 55.0
+    assert np.isnan(ser.iloc[2])
+    assert np.isnan(ser.iloc[3])
     write_dataset(model, tmp_path / 'data.csv')
     df = pd.read_csv(tmp_path / 'data.csv')
     assert list(df['WGT']) == [55.0, 55.0, -999.0, -999.0]

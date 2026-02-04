@@ -72,17 +72,17 @@ def evaluate_expression(
     >>> results = load_example_modelfit_results("pheno")
     >>> pe = results.parameter_estimates
     >>> evaluate_expression(model, "TVCL*1000", parameter_estimates=pe)
-    0      6.573770
     1      6.573770
     2      6.573770
     3      6.573770
     4      6.573770
+    5      6.573770
              ...
-    739    5.165105
     740    5.165105
     741    5.165105
     742    5.165105
     743    5.165105
+    744    5.165105
     Length: 744, dtype: float64
 
     """
@@ -95,7 +95,7 @@ def evaluate_expression(
     df = get_and_check_dataset(model)
 
     array = eval_expr(expr._sympy_(), len(df), DataFrameMapping(df))
-    return pd.Series(array)
+    return pd.Series(array, df.index)
 
 
 def evaluate_population_prediction(
@@ -132,17 +132,17 @@ def evaluate_population_prediction(
     >>> results = load_example_modelfit_results("pheno_linear")
     >>> pe = results.parameter_estimates
     >>> evaluate_population_prediction(model, parameters=dict(pe))
-    0      17.529739
-    1      28.179910
-    2       9.688648
-    3      17.798916
-    4      25.023225
+    1      17.529739
+    2      28.179910
+    3       9.688648
+    4      17.798916
+    5      25.023225
              ...
-    150    22.459036
-    151    29.223295
-    152    20.217288
-    153    28.472888
-    154    34.226455
+    151    22.459036
+    152    29.223295
+    153    20.217288
+    154    28.472888
+    155    34.226455
     Name: PRED, Length: 155, dtype: float64
 
     See also
@@ -156,7 +156,8 @@ def evaluate_population_prediction(
     df = get_and_check_dataset(model) if dataset is None else dataset
 
     pred = eval_expr(sympy.sympify(expr), len(df), DataFrameMapping(df))
-    return pd.Series(pred, name='PRED')
+    pred_series = pd.Series(pred, name='PRED', index=df.index)
+    return pred_series
 
 
 def evaluate_individual_prediction(
@@ -200,17 +201,17 @@ def evaluate_individual_prediction(
     >>> results = load_example_modelfit_results("pheno_linear")
     >>> etas = results.individual_estimates
     >>> evaluate_individual_prediction(model, etas=etas)
-    0      17.771084
-    1      28.881859
-    2      11.441728
-    3      21.113050
-    4      29.783055
+    1      17.771084
+    2      28.881859
+    3      11.441728
+    4      21.113050
+    5      29.783055
              ...
-    150    25.375041
-    151    31.833395
-    152    22.876707
-    153    31.905095
-    154    38.099690
+    151    25.375041
+    152    31.833395
+    153    22.876707
+    154    31.905095
+    155    38.099690
     Name: IPRED, Length: 155, dtype: float64
 
     See also
@@ -239,7 +240,8 @@ def evaluate_individual_prediction(
     _df = df.join(_etas, on=idcol)
 
     ipred = eval_expr(sympy.sympify(y), len(_df), DataFrameMapping(_df))
-    return pd.Series(ipred, name='IPRED')
+    ipred_series = pd.Series(ipred, name='IPRED', index=df.index)
+    return ipred_series
 
 
 def _replace_parameters(model: Model, y: list[sympy.Expr], parameters: Optional[ParameterMap]):
@@ -289,17 +291,17 @@ def evaluate_eta_gradient(
     >>> etas = results.individual_estimates
     >>> evaluate_eta_gradient(model, etas=etas)
          dF/dETA_1  dF/dETA_2
-    0     -0.159537 -17.609116
-    1     -9.325893 -19.562289
-    2     -0.104417 -11.346161
-    3     -4.452951 -16.682310
-    4    -10.838840 -18.981836
+    1     -0.159537 -17.609116
+    2     -9.325893 -19.562289
+    3     -0.104417 -11.346161
+    4     -4.452951 -16.682310
+    5    -10.838840 -18.981836
     ..          ...        ...
-    150   -5.424423 -19.973013
-    151  -14.497185 -17.344797
-    152   -0.198714 -22.697161
-    153   -7.987731 -23.941806
-    154  -15.817067 -22.309945
+    151   -5.424423 -19.973013
+    152  -14.497185 -17.344797
+    153   -0.198714 -22.697161
+    154   -7.987731 -23.941806
+    155  -15.817067 -22.309945
     <BLANKLINE>
     [155 rows x 2 columns]
 
@@ -333,7 +335,8 @@ def evaluate_eta_gradient(
         {
             name: eval_expr(sympy.sympify(expr), len(_df), DataFrameMapping(_df))
             for expr, name in zip(y, derivative_names)
-        }
+        },
+        index=df.index,
     )
 
 
@@ -379,17 +382,17 @@ def evaluate_epsilon_gradient(
     >>> etas = results.individual_estimates
     >>> evaluate_epsilon_gradient(model, etas=etas)
          dY/dEPS_1
-    0     17.771084
-    1     28.881859
-    2     11.441728
-    3     21.113050
-    4     29.783055
+    1     17.771084
+    2     28.881859
+    3     11.441728
+    4     21.113050
+    5     29.783055
     ..          ...
-    150   25.375041
-    151   31.833395
-    152   22.876707
-    153   31.905095
-    154   38.099690
+    151   25.375041
+    152   31.833395
+    153   22.876707
+    154   31.905095
+    155   38.099690
     <BLANKLINE>
     [155 rows x 1 columns]
 
@@ -426,7 +429,8 @@ def evaluate_epsilon_gradient(
         {
             name: eval_expr(sympy.sympify(expr), len(_df), DataFrameMapping(_df))
             for expr, name in zip(y, derivative_names)
-        }
+        },
+        index=df.index,
     )
 
 
@@ -466,17 +470,17 @@ def evaluate_weighted_residuals(
     >>> results = load_example_modelfit_results("pheno_linear")
     >>> parameters = results.parameter_estimates
     >>> evaluate_weighted_residuals(model, parameters=dict(parameters))
-    0     -0.313859
-    1      0.675721
-    2     -1.544240
-    3      1.921720
-    4      1.517677
+    1     -0.313859
+    2      0.675721
+    3     -1.544240
+    4      1.921720
+    5      1.517677
             ...
-    150    1.223935
-    151   -0.053334
-    152   -0.007023
-    153    0.931252
-    154    0.778389
+    151    1.223935
+    152   -0.053334
+    153   -0.007023
+    154    0.931252
+    155    0.778389
     Name: WRES, Length: 155, dtype: float64
     """
 
@@ -512,4 +516,5 @@ def evaluate_weighted_residuals(
         WRESi = linalg.sqrtm(linalg.inv(Ci)) @ (DVi - Fi)
         WRES = np.concatenate((WRES, WRESi))
 
-    return pd.Series(WRES, name='WRES')
+    wres_series = pd.Series(WRES, name='WRES', index=df.index)
+    return wres_series

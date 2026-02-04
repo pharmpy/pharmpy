@@ -619,18 +619,18 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
         raise ValueError("Need CIPREDI or IPRED")
     if dv is not None:
         indices = input_dataset.index[input_dataset['DVID'] == dv].tolist()
-        predictions = predictions.iloc[indices]
+        predictions = predictions.loc[indices]
     ipred = predictions[ipredcol].reset_index(drop=True)
 
     mdv = get_mdv(input_model)
     if dv is not None:
-        mdv = mdv.iloc[indices]
+        mdv = mdv.loc[indices]
     mdv = mdv.reset_index(drop=True)
 
     label_id = input_model.datainfo.id_column.name
     if dv is not None:
         input_id = (
-            input_dataset[label_id].iloc[indices].astype('int64').squeeze().reset_index(drop=True)
+            input_dataset[label_id].loc[indices].astype('int64').squeeze().reset_index(drop=True)
         )
     else:
         input_id = input_dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
@@ -638,7 +638,7 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
     input_model = add_time_after_dose(input_model)
     tad_label = input_model.datainfo.find_column_by_property("descriptor", "time after dose").name
     if dv is not None:
-        tad = input_model.dataset[tad_label].iloc[indices].squeeze().reset_index(drop=True)
+        tad = input_model.dataset[tad_label].loc[indices].squeeze().reset_index(drop=True)
     else:
         tad = input_model.dataset[tad_label].squeeze().reset_index(drop=True)
 

@@ -11,6 +11,7 @@ New features
 Changes
 =======
 
+* Row indices of dataset now starts with 1 instead of 0
 * :code:`modeling.filter_data` will not change the name or the description of the model
 * :code:`modeling.filter_data` will always reset the index of the dataset
 

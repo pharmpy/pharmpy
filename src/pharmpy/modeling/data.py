@@ -759,17 +759,17 @@ def get_doseid(model: Model):
     >>> from pharmpy.modeling import load_example_model, get_doseid
     >>> model = load_example_model("pheno")
     >>> get_doseid(model)  # doctest: +ELLIPSIS
-    0       1
     1       1
-    2       2
-    3       3
-    4       4
+    2       1
+    3       2
+    4       3
+    5       4
            ..
-    739    10
-    740    11
-    741    12
-    742    13
+    740    10
+    741    11
+    742    12
     743    13
+    744    13
     Name: DOSEID, Length: 744, dtype: int...
     """
     try:
@@ -921,8 +921,8 @@ def get_admid(model: Model) -> pd.Series:
     adm.name = "ADMID"
 
     # Replace all observations with the previous admid type
-    current_admin = adm[0]
-    current_subject = model.dataset["ID"][0]
+    current_admin = adm.iloc[0]
+    current_subject = model.dataset["ID"].iloc[0]
     for i, data in enumerate(zip(get_evid(model), adm, model.dataset["ID"])):
         event = data[0]
         admin = data[1]
@@ -1185,15 +1185,13 @@ def add_time_after_dose(model: Model):
     df['_DOSEID'] = get_doseid(temp)
 
     # Sort in case DOSEIDs are non-increasing
-    df = (
-        df.groupby(idlab)[df.columns]
-        .apply(lambda x: x.sort_values(by=['_DOSEID'], kind='stable', ignore_index=True))
-        .reset_index(drop=True)
+    df = df.groupby(idlab)[df.columns].apply(
+        lambda x: x.sort_values(by=['_DOSEID'], kind='stable', ignore_index=True)
     )
+    df.index = range(1, len(df) + 1)
 
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0.0)
     df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()
-
     if addl:
         df = df[~df['EXPANDED']].reset_index(drop=True)
         df.drop(columns=['EXPANDED'], inplace=True)
@@ -1796,17 +1794,17 @@ def set_reference_values(model: Model, refs: dict[str, Union[int, float]]):
     >>> model = set_reference_values(model, {'WGT': 0.5, 'AMT': 4.0})
     >>> model.dataset
          ID   TIME  AMT  WGT  APGR    DV  FA1  FA2
-    0     1    0.0  4.0  0.5   7.0   0.0  1.0  1.0
-    1     1    2.0  0.0  0.5   7.0  17.3  0.0  0.0
-    2     1   12.5  4.0  0.5   7.0   0.0  1.0  1.0
-    3     1   24.5  4.0  0.5   7.0   0.0  1.0  1.0
-    4     1   37.0  4.0  0.5   7.0   0.0  1.0  1.0
+    1     1    0.0  4.0  0.5   7.0   0.0  1.0  1.0
+    2     1    2.0  0.0  0.5   7.0  17.3  0.0  0.0
+    3     1   12.5  4.0  0.5   7.0   0.0  1.0  1.0
+    4     1   24.5  4.0  0.5   7.0   0.0  1.0  1.0
+    5     1   37.0  4.0  0.5   7.0   0.0  1.0  1.0
     ..   ..    ...  ...  ...   ...   ...  ...  ...
-    739  59  108.3  4.0  0.5   6.0   0.0  1.0  1.0
-    740  59  120.5  4.0  0.5   6.0   0.0  1.0  1.0
-    741  59  132.3  4.0  0.5   6.0   0.0  1.0  1.0
-    742  59  144.8  4.0  0.5   6.0   0.0  1.0  1.0
-    743  59  146.8  0.0  0.5   6.0  40.2  0.0  0.0
+    740  59  108.3  4.0  0.5   6.0   0.0  1.0  1.0
+    741  59  120.5  4.0  0.5   6.0   0.0  1.0  1.0
+    742  59  132.3  4.0  0.5   6.0   0.0  1.0  1.0
+    743  59  144.8  4.0  0.5   6.0   0.0  1.0  1.0
+    744  59  146.8  0.0  0.5   6.0  40.2  0.0  0.0
     <BLANKLINE>
     [744 rows x 8 columns]
 
@@ -1854,17 +1852,17 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
     >>> model = infer_datatypes(model, ['APGR'])
     >>> model.dataset
          ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
-    0     1    0.0  25.0  1.4     7   0.0  1.0  1.0
-    1     1    2.0   0.0  1.4     7  17.3  0.0  0.0
-    2     1   12.5   3.5  1.4     7   0.0  1.0  1.0
-    3     1   24.5   3.5  1.4     7   0.0  1.0  1.0
-    4     1   37.0   3.5  1.4     7   0.0  1.0  1.0
+    1     1    0.0  25.0  1.4     7   0.0  1.0  1.0
+    2     1    2.0   0.0  1.4     7  17.3  0.0  0.0
+    3     1   12.5   3.5  1.4     7   0.0  1.0  1.0
+    4     1   24.5   3.5  1.4     7   0.0  1.0  1.0
+    5     1   37.0   3.5  1.4     7   0.0  1.0  1.0
     ..   ..    ...   ...  ...   ...   ...  ...  ...
-    739  59  108.3   3.0  1.1     6   0.0  1.0  1.0
-    740  59  120.5   3.0  1.1     6   0.0  1.0  1.0
-    741  59  132.3   3.0  1.1     6   0.0  1.0  1.0
-    742  59  144.8   3.0  1.1     6   0.0  1.0  1.0
-    743  59  146.8   0.0  1.1     6  40.2  0.0  0.0
+    740  59  108.3   3.0  1.1     6   0.0  1.0  1.0
+    741  59  120.5   3.0  1.1     6   0.0  1.0  1.0
+    742  59  132.3   3.0  1.1     6   0.0  1.0  1.0
+    743  59  144.8   3.0  1.1     6   0.0  1.0  1.0
+    744  59  146.8   0.0  1.1     6  40.2  0.0  0.0
     <BLANKLINE>
     [744 rows x 8 columns]
     """
@@ -2516,17 +2514,17 @@ def bin_observations(
     >>> model = load_example_model("pheno")
     >>> bins, boundaries = bin_observations(model, method="equal_width", nbins=10)
     >>> bins
-    1      0
-    11     2
-    13     0
-    19     1
-    26     3
+    2      0
+    12     2
+    14     0
+    20     1
+    27     3
            ..
-    719    1
-    727    3
-    729    0
-    736    1
-    743    3
+    720    1
+    728    3
+    730    0
+    737    1
+    744    3
     Name: TIME, Length: 155, dtype: int64
     >>> boundaries
     array([  0.  ,  39.88,  78.76, 117.64, 156.52, 195.4 , 234.28, 273.16,
@@ -2636,17 +2634,17 @@ def binarize_dataset(
     >>> model = binarize_dataset(model, ['APGR'])
     >>> model.dataset
          ID   TIME   AMT  WGT    DV  FA1  FA2  APGR_1  APGR_2  APGR_3  APGR_4  APGR_5  APGR_6  APGR_7  APGR_8  APGR_9
-    0     1    0.0  25.0  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
-    1     1    2.0   0.0  1.4  17.3  0.0  0.0       0       0       0       0       0       0       1       0       0
-    2     1   12.5   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
-    3     1   24.5   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
-    4     1   37.0   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    1     1    0.0  25.0  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    2     1    2.0   0.0  1.4  17.3  0.0  0.0       0       0       0       0       0       0       1       0       0
+    3     1   12.5   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    4     1   24.5   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
+    5     1   37.0   3.5  1.4   0.0  1.0  1.0       0       0       0       0       0       0       1       0       0
     ..   ..    ...   ...  ...   ...  ...  ...     ...     ...     ...     ...     ...     ...     ...     ...     ...
-    739  59  108.3   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
-    740  59  120.5   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
-    741  59  132.3   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
-    742  59  144.8   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
-    743  59  146.8   0.0  1.1  40.2  0.0  0.0       0       0       0       0       0       1       0       0       0
+    740  59  108.3   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    741  59  120.5   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    742  59  132.3   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    743  59  144.8   3.0  1.1   0.0  1.0  1.0       0       0       0       0       0       1       0       0       0
+    744  59  146.8   0.0  1.1  40.2  0.0  0.0       0       0       0       0       0       1       0       0       0
     <BLANKLINE>
     [744 rows x 16 columns]
     """

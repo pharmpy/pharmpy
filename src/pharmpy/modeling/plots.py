@@ -775,6 +775,7 @@ def _calculate_vpc(
     if stratify_on is not None:
         simtab[stratify_on] = np.tile(model.dataset[stratify_on], nsim)
     simtab = simtab.reset_index(['SIM'])
+    simtab.index = range(1, len(simtab) + 1)
     simtab = simtab.loc[observations.index]
     simtab["__BIN__"] = bincol
     if query is not None:

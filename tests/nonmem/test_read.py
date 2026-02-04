@@ -15,17 +15,17 @@ def test_read_nonmem_dataset(testdata):
     colnames = ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     df = read_nonmem_dataset(path, colnames=colnames, ignore_character='@')
     assert list(df.columns) == colnames
-    assert df['ID'][0] == 1
-    assert df['TIME'][2] == 12.5
+    assert df['ID'].iloc[0] == 1
+    assert df['TIME'].iloc[2] == 12.5
 
     raw = read_nonmem_dataset(path, colnames=colnames, ignore_character='@', raw=True)
-    assert raw['ID'][0] == '1'
+    assert raw['ID'].iloc[0] == '1'
     assert list(df.columns) == colnames
 
     raw2 = read_nonmem_dataset(
         path, colnames=colnames, ignore_character='@', raw=True, parse_columns=['ID']
     )
-    assert raw2['ID'][0] == 1.0
+    assert raw2['ID'].iloc[0] == 1.0
 
     df_drop = read_nonmem_dataset(
         path,

@@ -56,17 +56,17 @@ def test_get_doseid(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     doseid = get_doseid(model)
     assert len(doseid) == 744
-    assert doseid[0] == 1
-    assert doseid[743] == 13
+    assert doseid[1] == 1
+    assert doseid[744] == 13
 
     # Same timepoint for dose and observation
     df = model.dataset.copy()
-    df.loc[742, 'TIME'] = df.loc[743, 'TIME']
+    df.loc[743, 'TIME'] = df.loc[744, 'TIME']
     model = model.replace(dataset=df)
     doseid = get_doseid(model)
     assert len(doseid) == 744
-    assert doseid[743] == 12
-    assert doseid[742] == 13
+    assert doseid[744] == 12
+    assert doseid[743] == 13
 
 
 def test_get_number_of_individuals(load_example_model_for_test):
@@ -77,12 +77,12 @@ def test_get_number_of_individuals(load_example_model_for_test):
 def test_get_observations(load_example_model_for_test):
     model = load_example_model_for_test('pheno')
     ser = get_observations(model)
-    assert ser.loc[1, 2.0] == 17.3
-    assert ser.loc[2, 63.5] == 24.6
+    assert ser.loc[2, 2.0] == 9.7
+    assert ser.loc[3, 83.5] == 23.8
     assert len(ser) == 155
     s2 = get_observations(model, keep_index=True)
-    assert s2.loc[1] == 17.3
-    assert s2.loc[11] == 31.0
+    assert s2.loc[2] == 17.3
+    assert s2.loc[12] == 31.0
 
 
 def test_number_of_observations(load_example_model_for_test):
@@ -203,9 +203,9 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     m = add_time_after_dose(m)
     tad = m.dataset['TAD']
 
-    assert tad[0] == 0.0
-    assert tad[1] == 2.0
-    assert tad[743] == 2.0
+    assert tad[1] == 0.0
+    assert tad[2] == 2.0
+    assert tad[744] == 2.0
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     m = add_time_after_dose(m)
@@ -524,7 +524,6 @@ def test_deidentify_data():
 
 def test_set_dvid(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
-    print("QQ", m.datainfo['FA1'].variable)
     m = set_dvid(m, 'FA1')
     col = m.datainfo['FA1']
     assert col.type == 'dvid'
@@ -544,8 +543,8 @@ def test_set_reference_values(load_example_model_for_test):
     m2 = set_reference_values(m, {'WGT': 0.5, 'AMT': 4})
     df = m2.dataset
     assert list(df['WGT'].unique()) == [0.5]
-    assert df['AMT'][0] == 4.0
-    assert df['AMT'][1] == 0.0
+    assert df['AMT'][1] == 4.0
+    assert df['AMT'][2] == 0.0
 
 
 def test_unload_dataset(load_example_model_for_test):
@@ -596,7 +595,7 @@ def test_bin_observations(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     ser, bin_edges = bin_observations(model, method="equal_width", nbins=10)
     assert ser.iloc[0] == 0
-    assert ser[267] == 9
+    assert ser[268] == 9
     assert ser.iloc[153] == 1
     assert len(ser) == 155
     assert bin_edges[0] == 0

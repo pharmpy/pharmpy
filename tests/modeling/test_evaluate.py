@@ -28,8 +28,8 @@ def test_evaluate_expression(load_model_for_test, testdata):
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
     ser = evaluate_expression(model, 'TVV', res.parameter_estimates)
-    assert ser[0] == pytest.approx(1.413062)
-    assert ser[743] == pytest.approx(1.110262)
+    assert ser[1] == pytest.approx(1.413062)
+    assert ser[744] == pytest.approx(1.110262)
 
 
 def test_evaluate_population_prediction(load_model_for_test, testdata):
@@ -71,7 +71,9 @@ def test_evaluate_eta_gradient(load_model_for_test, testdata):
 
     dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
     grad = evaluate_eta_gradient(model, dataset=dataset)
-    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dF/dETA_1']))
+    pd.testing.assert_frame_equal(
+        grad, pd.DataFrame([1.0, 1.0], columns=['dF/dETA_1'], index=[1, 2])
+    )
 
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)
@@ -86,7 +88,9 @@ def test_evaluate_epsilon_gradient(load_model_for_test, testdata):
 
     dataset = read_nonmem_dataset(StringIO('1 0 3\n2 0 4\n'), colnames=['ID', 'TIME', 'DV'])
     grad = evaluate_epsilon_gradient(model, dataset=dataset)
-    pd.testing.assert_frame_equal(grad, pd.DataFrame([1.0, 1.0], columns=['dY/dEPS_1']))
+    pd.testing.assert_frame_equal(
+        grad, pd.DataFrame([1.0, 1.0], columns=['dY/dEPS_1'], index=[1, 2])
+    )
 
     linpath = testdata / 'nonmem' / 'pheno_real_linbase.mod'
     linmod = load_model_for_test(linpath)

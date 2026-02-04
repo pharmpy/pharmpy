@@ -202,7 +202,7 @@ def filter_and_convert_nonmem_dataset_in_place(
         if _dtype:
             df = df.astype(_dtype)
 
-    df.reset_index(drop=True, inplace=True)
+    df.index = range(1, len(df) + 1)
     return df
 
 

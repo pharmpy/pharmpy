@@ -288,6 +288,7 @@ def cleanup_columns(modelentry):
     df = df.join(etas, on="ID")
 
     df = df.reset_index(drop=True)
+    df.index = range(1, len(df) + 1)
     obs = get_observations(model, keep_index=True)
     df = df.loc[obs.index]
     return df

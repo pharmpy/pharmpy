@@ -908,7 +908,7 @@ def parse_dataset(
     null_value = data_record.null_value
     have_pk = bool(control_stream.get_pk_record())
 
-    return filter_and_convert_dataset_in_place(
+    converted_df = filter_and_convert_dataset_in_place(
         df,
         di,
         data_record,
@@ -919,6 +919,7 @@ def parse_dataset(
         raw=raw,
         parse_columns=parse_columns,
     )
+    return converted_df
 
 
 def filter_and_convert_dataset_in_place(

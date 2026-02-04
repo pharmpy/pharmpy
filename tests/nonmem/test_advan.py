@@ -613,7 +613,7 @@ def test_f_statement(load_model_for_test, testdata):
     df = model.dataset
 
     df['CMT'] = [0.0] * len(df)
-    df.loc[1, 'CMT'] = 1.0
+    df.loc[2, 'CMT'] = 1.0
     model = model.replace(dataset=df)
     _, f, _ = compartmental_model(model, 'ADVAN12', 'TRANS4')
     assert f.symbol.name == 'F'

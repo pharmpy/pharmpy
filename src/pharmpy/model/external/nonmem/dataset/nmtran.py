@@ -136,6 +136,7 @@ def read_NMTRAN_data(io: IOFromChunks, **kwargs: Any) -> pd.DataFrame:
         dtype=object,
         index_col=False,
     )
+    df.index = range(1, len(df) + 1)
 
     assert isinstance(df, pd.DataFrame)
 
