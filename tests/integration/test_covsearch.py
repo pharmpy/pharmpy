@@ -137,7 +137,7 @@ def test_default_str(tmp_path, model_count, start_modelres):
         assert model_count(rundir) == 39 + 2
 
 
-def test_covsearch_dummy_adaptive_scope_reduction(tmp_path, start_modelres):
+def test_covsearch_adaptive_scope_reduction_dummy(tmp_path, start_modelres):
     with chdir(tmp_path):
         search_space = (
             'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'

@@ -6,6 +6,7 @@ from pathlib import Path
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.df import create_series
 from pharmpy.model import EstimationStep, Parameters, SimulationStep
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import create_rng, get_observations, write_dataset, write_model
@@ -158,12 +159,12 @@ def create_dummy_modelfit_results(model, ref=None):
         residuals = None
         predictions = None
     else:
-        cwres = pd.Series(_rand_array(1, n_obs, rng), name='CWRES')
+        cwres = create_series(_rand_array(1, n_obs, rng), name='CWRES')
         residuals = pd.concat([cwres], axis=1)
 
-        cipredi = pd.Series(_rand_array(1, n, rng), name='CIPREDI')
-        ipred = pd.Series(_rand_array(1, n, rng), name='IPRED')
-        pred = pd.Series(_rand_array(1, n, rng), name='PRED')
+        cipredi = create_series(_rand_array(1, n, rng), name='CIPREDI')
+        ipred = create_series(_rand_array(1, n, rng), name='IPRED')
+        pred = create_series(_rand_array(1, n, rng), name='PRED')
         predictions = pd.concat([cipredi, ipred, pred], axis=1)
 
     estimation_steps = [step for step in model.execution_steps if isinstance(step, EstimationStep)]
