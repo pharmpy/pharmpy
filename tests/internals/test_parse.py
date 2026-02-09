@@ -1,8 +1,10 @@
 import textwrap
+from datetime import datetime
 
 import pytest
 
 from pharmpy.internals.parse import AttrToken, AttrTree, prettyprint
+from pharmpy.internals.parse.date import parse_datestamp
 
 
 def assert_create(expect, *args, **kwargs):
@@ -130,3 +132,15 @@ def test_tree_create_abuse():
         └─ _LEAF_ " (nope, here!)"
     """
     assert_create(out, 'root', inp)
+
+
+@pytest.mark.parametrize(
+    "s,correct",
+    [
+        ("Tue Feb  3 03:50:44 PM CET 2026", datetime(2026, 2, 3, 15, 50, 44)),
+        ("Tue Feb  3 03:50:44 AM CET 2025", datetime(2025, 2, 3, 3, 50, 44)),
+    ],
+)
+def test_parse_datestamp(s, correct):
+    res = parse_datestamp(s)
+    assert res == correct
