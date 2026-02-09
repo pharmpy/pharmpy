@@ -19,6 +19,7 @@ Bugfixes
 ========
 
 * :code:`modeling.set_additive_error_model` would often rename the sigma parameter unnecessarily. (#4303) 
+* Handle parsing of AM/PM in NONMEM lst-file datestamps
 
 1.12.0 (2025-12-05)
 -------------------
