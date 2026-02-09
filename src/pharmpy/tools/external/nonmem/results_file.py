@@ -394,7 +394,6 @@ class NONMEMResultsFile:
 
     @staticmethod
     def parse_runtime(row: str, row_next: Optional[str] = None):
-        # TODO: Support AM/PM
         weekday_month_en = re.compile(
             r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
             r'\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'  # Month
@@ -410,7 +409,7 @@ class NONMEMResultsFile:
         )
         day_month_year = re.compile(r'^(\d{2})/(\d{2})/(\d{4})\s*$')  # dd/mm/yyyy
         year_month_day = re.compile(r'^(\d{4})-\d{2}-\d{2}\s*$')  # yyyy/mm/dd
-        timestamp = re.compile(r'([0-9]{2}:[0-9]{2}:[0-9]{2})')
+        timestamp = re.compile(r'([0-9]{2}:[0-9]{2}:[0-9]{2} (AM|PM)?)')
 
         month_no = {
             'JAN': 1,
