@@ -23,7 +23,7 @@ fastjsonschema==2.21.2
 fsspec==2026.2.0
 idna==3.11
 imagesize==1.4.1
-ipykernel==7.1.0
+ipykernel==7.2.0
 ipython==9.10.0
 ipython_pygments_lexers==1.1.1
 ipywidgets==8.1.8
