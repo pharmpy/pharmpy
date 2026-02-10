@@ -1067,6 +1067,7 @@ def _parse_tables(
 
     if 'ID' in df.columns:
         df['ID'] = df['ID'].convert_dtypes()
+    df.index = range(1, len(df) + 1)
     dataset = model.dataset
     if dataset is not None and not df.empty:
         if len(df) == len(dataset):
@@ -1077,7 +1078,7 @@ def _parse_tables(
             # Needed when rows have been dropped when parsing (e.g. when IDs with no observations
             # are filtered when parsing the dataset), but IDs still exist in results.
             # See https://github.com/pharmpy/pharmpy/pull/4106
-            df = df.iloc[dataset.index]
+            df = df.loc[dataset.index]
 
     assert isinstance(df, pd.DataFrame)
     return df
