@@ -566,7 +566,7 @@ def run_amd_task(
 
     _run_qa(final_model, final_results, context)
 
-    plots = create_plots(final_model, final_results, model)
+    plots = create_plots(final_model, final_results)
 
     if not simulation_data.empty:
         final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=get_dvid_name(model))
@@ -841,21 +841,21 @@ def _create_tool_summary(rows):
     return df
 
 
-def create_plots(final_model, final_results, model):
-    dvid_name = get_dvid_name(model)
+def create_plots(final_model, final_results):
+    dvid_name = get_dvid_name(final_model)
     if final_results.predictions is not None:
-        dv_vs_ipred_plot = plot_dv_vs_ipred(model, final_results.predictions, dvid_name)
-        dv_vs_pred_plot = plot_dv_vs_pred(model, final_results.predictions, dvid_name)
+        dv_vs_ipred_plot = plot_dv_vs_ipred(final_model, final_results.predictions, dvid_name)
+        dv_vs_pred_plot = plot_dv_vs_pred(final_model, final_results.predictions, dvid_name)
     else:
         dv_vs_pred_plot = None
         dv_vs_ipred_plot = None
     if final_results.residuals is not None:
-        cwres_vs_idv_plot = plot_cwres_vs_idv(model, final_results.residuals, dvid_name)
+        cwres_vs_idv_plot = plot_cwres_vs_idv(final_model, final_results.residuals, dvid_name)
     else:
         cwres_vs_idv_plot = None
     if final_results.predictions is not None and final_results.residuals is not None:
         abs_cwres_vs_ipred_plot = plot_abs_cwres_vs_ipred(
-            model,
+            final_model,
             predictions=final_results.predictions,
             residuals=final_results.residuals,
             stratify_on=dvid_name,

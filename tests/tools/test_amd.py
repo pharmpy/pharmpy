@@ -839,7 +839,7 @@ def test_create_plots(load_model_for_test, pheno_path, results_to_remove, expect
         res_dict = res.to_dict()
         res_dict[results_to_remove] = None
         res = ModelfitResults.from_dict(res_dict)
-    plots = create_plots(model, res, model)
+    plots = create_plots(model, res)
     for plot_name, plot in plots.items():
         if plot_name in expected_empty_plots:
             assert not plot
