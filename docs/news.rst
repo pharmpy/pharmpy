@@ -2,6 +2,20 @@
 News
 ====
 
+Pharmpy and pharmr 2.0.0 released
+---------------------------------
+
+*2026-01-13* --- Pharmpy 2.0.0 and pharmr 2.0.0 are now available.
+
+One and half years have passed since the first major release of Pharmpy and pharmr.
+The team has been focused on improving the AMD tools, simplifying scripted workflows, speeding up reading NONMEM files and PD modeling. With this major release we break backwards compatibility in some ways:
+
+* Datasets are now indexed starting from 1 instead of 0
+* The datainfo structure has changed. Old datainfo files will stop working.
+* The datainfo files now carry a version number to allow changes in the future withput breaking compatibility
+
+See :ref:`CHANGELOG<2.0.0>` for details.
+
 Pharmpy and pharmr 1.11.0 released
 ----------------------------------
 
