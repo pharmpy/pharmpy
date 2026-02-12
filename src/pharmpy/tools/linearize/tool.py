@@ -1,6 +1,7 @@
 from typing import Optional
 
 from pharmpy.basic import Expr
+from pharmpy.internals.df import reset_index
 from pharmpy.model import Assignment, EstimationStep, Model, Statements
 from pharmpy.model.external.nonmem.model import Model as NONMEMModel
 from pharmpy.modeling import (
@@ -287,7 +288,7 @@ def cleanup_columns(modelentry):
     etas = etas.rename(eta_name_subs, axis=1)
     df = df.join(etas, on="ID")
 
-    df = df.reset_index(drop=True)
+    df = reset_index(df)
     df.index = range(1, len(df) + 1)
     obs = get_observations(model, keep_index=True)
     df = df.loc[obs.index]

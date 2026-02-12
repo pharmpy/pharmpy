@@ -12,6 +12,7 @@ from pharmpy.deps import sympy
 from pharmpy.deps.rich import box as rich_box
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import table as rich_table
+from pharmpy.internals.df import reset_index
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.internals.math import replace_nan
 from pharmpy.model import (
@@ -734,7 +735,7 @@ def expand_additional_doses(model: Model, flag: bool = False):
         df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
     else:
         df.drop([addl, ii, '_EXPANDED'], axis=1, inplace=True)
-    model = model.replace(dataset=df.reset_index(drop=True))
+    model = model.replace(dataset=reset_index(df))
     return model.update_source()
 
 
@@ -2188,7 +2189,7 @@ def read_dataset_from_datainfo(
         )
         # This assumes a PK model
         df = filter_observations(df, datainfo)
-        df = df.reset_index(drop=True)
+        df = reset_index(df)
     else:
         df = pd.read_csv(
             datainfo.path,
@@ -2440,17 +2441,17 @@ def set_dataset(
     >>> model = set_dataset(model, dataset_path, datatype='nonmem')
     >>> model.dataset
          ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
-    0     1    0.0  25.0  1.4   7.0   0.0  1.0  1.0
-    1     1    2.0   0.0  1.4   7.0  17.3  0.0  0.0
-    2     1   12.5   3.5  1.4   7.0   0.0  1.0  1.0
-    3     1   24.5   3.5  1.4   7.0   0.0  1.0  1.0
-    4     1   37.0   3.5  1.4   7.0   0.0  1.0  1.0
+    1     1    0.0  25.0  1.4   7.0   0.0  1.0  1.0
+    2     1    2.0   0.0  1.4   7.0  17.3  0.0  0.0
+    3     1   12.5   3.5  1.4   7.0   0.0  1.0  1.0
+    4     1   24.5   3.5  1.4   7.0   0.0  1.0  1.0
+    5     1   37.0   3.5  1.4   7.0   0.0  1.0  1.0
     ..   ..    ...   ...  ...   ...   ...  ...  ...
-    739  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
-    740  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
-    741  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
-    742  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
-    743  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
+    740  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
+    741  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
+    742  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
+    743  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
+    744  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
     <BLANKLINE>
     [744 rows x 8 columns]
 

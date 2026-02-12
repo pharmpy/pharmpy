@@ -14,6 +14,7 @@ from typing import Literal, Mapping, Optional, Union
 import pharmpy.config as config
 from pharmpy.basic import Expr, TSymbol
 from pharmpy.deps import pandas
+from pharmpy.internals.df import reset_index
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import (
     Compartment,
@@ -716,24 +717,25 @@ def filter_dataset(model: Model, expr: str) -> Model:
     >>> model = filter_dataset(model, 'WGT < 1.4')
     >>> model.dataset
          ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
-    0     4    0.0  18.6  0.9   6.0   0.0  1.0  1.0
-    1     4    1.8   0.0  0.9   6.0  20.8  0.0  0.0
-    2     4   12.0   2.3  0.9   6.0   0.0  1.0  1.0
-    3     4   24.3   2.3  0.9   6.0   0.0  1.0  1.0
-    4     4   35.8   2.3  0.9   6.0   0.0  1.0  1.0
+    1     4    0.0  18.6  0.9   6.0   0.0  1.0  1.0
+    2     4    1.8   0.0  0.9   6.0  20.8  0.0  0.0
+    3     4   12.0   2.3  0.9   6.0   0.0  1.0  1.0
+    4     4   24.3   2.3  0.9   6.0   0.0  1.0  1.0
+    5     4   35.8   2.3  0.9   6.0   0.0  1.0  1.0
     ..   ..    ...   ...  ...   ...   ...  ...  ...
-    395  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
-    396  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
-    397  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
-    398  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
-    399  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
+    396  59  108.3   3.0  1.1   6.0   0.0  1.0  1.0
+    397  59  120.5   3.0  1.1   6.0   0.0  1.0  1.0
+    398  59  132.3   3.0  1.1   6.0   0.0  1.0  1.0
+    399  59  144.8   3.0  1.1   6.0   0.0  1.0  1.0
+    400  59  146.8   0.0  1.1   6.0  40.2  0.0  0.0
     <BLANKLINE>
     [400 rows x 8 columns]
 
     """
     original_dataset = get_and_check_dataset(model)
     try:
-        new_dataset = original_dataset.query(expr).reset_index(drop=True)
+        new_dataset = original_dataset.query(expr)
+        new_dataset = reset_index(new_dataset)
         new_model = model.replace(dataset=new_dataset)
     except pandas.errors.UndefinedVariableError as e:
         raise ValueError(f'The expression `{expr}` is invalid: {e}')

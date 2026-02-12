@@ -6,6 +6,7 @@ from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
+from pharmpy.internals.df import reset_index
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import (
@@ -605,7 +606,7 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
         )  # filter non-observations
         indices_obs = input_dataset_obs.index[input_dataset_obs[f'{dvid_name}'] == dv].tolist()
         residuals = residuals.iloc[indices_obs]
-    cwres = residuals['CWRES'].reset_index(drop=True)
+    cwres = reset_index(residuals['CWRES'])
     if has_blq_transformation(input_model):
         cwres = cwres.loc[cwres != 0]
 
@@ -620,30 +621,30 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
     if dv is not None:
         indices = input_dataset.index[input_dataset['DVID'] == dv].tolist()
         predictions = predictions.loc[indices]
-    ipred = predictions[ipredcol].reset_index(drop=True)
+    ipred = reset_index(predictions[ipredcol])
 
     mdv = get_mdv(input_model)
     if dv is not None:
         mdv = mdv.loc[indices]
-    mdv = mdv.reset_index(drop=True)
+    mdv = reset_index(mdv)
 
     label_id = input_model.datainfo.id_column.name
     if dv is not None:
-        input_id = (
-            input_dataset[label_id].loc[indices].astype('int64').squeeze().reset_index(drop=True)
-        )
+        input_id = input_dataset[label_id].loc[indices].astype('int64').squeeze()
     else:
-        input_id = input_dataset[label_id].astype('int64').squeeze().reset_index(drop=True)
+        input_id = input_dataset[label_id].astype('int64').squeeze()
+    input_id = reset_index(input_id)
 
     input_model = add_time_after_dose(input_model)
     tad_label = input_model.datainfo.find_column_by_property("descriptor", "time after dose").name
     if dv is not None:
-        tad = input_model.dataset[tad_label].loc[indices].squeeze().reset_index(drop=True)
+        tad = input_model.dataset[tad_label].loc[indices].squeeze()
     else:
-        tad = input_model.dataset[tad_label].squeeze().reset_index(drop=True)
+        tad = input_model.dataset[tad_label].squeeze()
+    tad = reset_index(tad)
 
     df = pd.concat([mdv, input_id, tad, ipred], axis=1)
-    df = df[df['MDV'] == 0].reset_index(drop=True)
+    df = reset_index(df[df['MDV'] == 0])
     df = pd.concat([df, cwres], axis=1).rename(columns={'CWRES': 'DV', ipredcol: 'IPRED'})
     df = df.loc[df['DV'].notna()]
     return df

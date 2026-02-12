@@ -17,6 +17,7 @@ from typing import Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.df import reset_index
 from pharmpy.internals.math import round_and_keep_sum
 from pharmpy.model import Model
 
@@ -235,7 +236,7 @@ class Resample(DatasetIterator):
             sub = self._df.loc[self._df[self._group] == grp_id].copy()
             sub[self._group] = new_grp
             new_df = pd.concat([new_df, sub])
-        new_df.reset_index(inplace=True, drop=True)
+        new_df = reset_index(new_df)
         if self._name:
             new_df.name = self._name
         else:

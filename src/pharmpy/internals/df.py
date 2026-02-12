@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import Iterator, Union
+from typing import Iterator, Union, overload
 
 from pharmpy.deps import pandas as pd
 
@@ -35,3 +35,18 @@ def create_series(x, name: str) -> pd.Series:
     """Create a pandas series with index starting from 1"""
     ser = pd.Series(x, name=name, index=range(1, len(x) + 1))
     return ser
+
+
+@overload
+def reset_index(df: pd.DataFrame) -> pd.DataFrame:
+    pass
+
+
+@overload
+def reset_index(df: pd.Series) -> pd.Series:
+    pass
+
+
+def reset_index(df):
+    df = df.set_axis(range(1, len(df) + 1), axis=0)
+    return df

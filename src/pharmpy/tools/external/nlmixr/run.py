@@ -12,6 +12,7 @@ import pharmpy.config as config
 import pharmpy.model
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
+from pharmpy.internals.df import reset_index
 from pharmpy.model.external.nlmixr import convert_model
 from pharmpy.model.external.nlmixr.model import add_evid
 from pharmpy.modeling import (
@@ -326,8 +327,8 @@ def compare_models(
     ):
         nm_to_r = True
 
-    mod1 = mod1.replace(dataset=mod1.dataset.reset_index())
-    mod2 = mod2.replace(dataset=mod2.dataset.reset_index())
+    mod1 = mod1.replace(dataset=reset_index(mod1.dataset))
+    mod2 = mod2.replace(dataset=reset_index(mod2.dataset))
 
     if "EVID" not in mod1.dataset.columns:
         mod1 = add_evid(mod1)
@@ -337,7 +338,7 @@ def compare_models(
 
     if nm_to_r:
         if mod1_type == "nonmem":
-            predictions = model_1_res.predictions.reset_index()
+            predictions = reset_index(model_1_res.predictions)
             predictions = predictions.drop(
                 mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list()
             )
@@ -350,7 +351,7 @@ def compare_models(
                 dv_var
             ]
         if mod2_type == "nonmem":
-            predictions = model_2_res.predictions.reset_index()
+            predictions = reset_index(model_2_res.predictions)
             predictions = predictions.drop(
                 mod2.dataset[~mod2.dataset["EVID"].isin([0, 2])].index.to_list()
             )
@@ -368,7 +369,7 @@ def compare_models(
         dv_var = "DV"
         dv = dataset.drop(mod1.dataset[~mod1.dataset["EVID"].isin([0, 2])].index.to_list())[dv_var]
 
-    dv = dv.reset_index(drop=True)
+    dv = reset_index(dv)
 
     mod1_results = mod1_res_pred.predictions.copy()
 

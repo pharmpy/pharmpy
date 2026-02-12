@@ -5,6 +5,7 @@ from typing import Optional
 import pharmpy.model
 from pharmpy.deps import sympy
 from pharmpy.internals.code_generator import CodeGenerator
+from pharmpy.internals.df import reset_index
 from pharmpy.model.external.nlmixr.error_model import convert_eps_to_sigma
 from pharmpy.model.external.nlmixr.model import add_evid
 from pharmpy.model.external.nlmixr.model_block import add_bio_lag, add_ode, convert_eq
@@ -92,7 +93,7 @@ def convert_model(model, skip_check=False):
             assert rxode_model.dataset is not None
         rxode_model = rxode_model.replace(
             datainfo=rxode_model.datainfo.replace(path=None),
-            dataset=rxode_model.dataset.reset_index(drop=True),
+            dataset=reset_index(rxode_model.dataset),
         )
 
         # Add evid

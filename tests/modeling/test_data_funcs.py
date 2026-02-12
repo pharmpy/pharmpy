@@ -4,6 +4,7 @@ import pytest
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.df import reset_index
 from pharmpy.modeling import (
     add_time_after_dose,
     add_time_of_last_dose,
@@ -469,27 +470,27 @@ def test_expand_additional_doses(load_model_for_test, testdata):
     df = model.dataset
     assert len(df) == 1494
     assert len(df.columns) == 5
-    assert df.loc[0, 'AMT'] == 400.0
     assert df.loc[1, 'AMT'] == 400.0
     assert df.loc[2, 'AMT'] == 400.0
     assert df.loc[3, 'AMT'] == 400.0
-    assert df.loc[4, 'AMT'] == 200.0
-    assert df.loc[0, 'TIME'] == 0.0
-    assert df.loc[1, 'TIME'] == 12.0
-    assert df.loc[2, 'TIME'] == 24.0
-    assert df.loc[3, 'TIME'] == 36.0
-    assert df.loc[4, 'TIME'] == 48.0
+    assert df.loc[4, 'AMT'] == 400.0
+    assert df.loc[5, 'AMT'] == 200.0
+    assert df.loc[1, 'TIME'] == 0.0
+    assert df.loc[2, 'TIME'] == 12.0
+    assert df.loc[3, 'TIME'] == 24.0
+    assert df.loc[4, 'TIME'] == 36.0
+    assert df.loc[5, 'TIME'] == 48.0
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     model = expand_additional_doses(model, flag=True)
     df = model.dataset
     assert len(df) == 1494
     assert len(df.columns) == 8
-    assert not df.loc[0, 'EXPANDED']
-    assert df.loc[1, 'EXPANDED']
+    assert not df.loc[1, 'EXPANDED']
     assert df.loc[2, 'EXPANDED']
     assert df.loc[3, 'EXPANDED']
-    assert not df.loc[4, 'EXPANDED']
+    assert df.loc[4, 'EXPANDED']
+    assert not df.loc[5, 'EXPANDED']
 
 
 def test_deidentify_data():
@@ -502,6 +503,7 @@ def test_deidentify_data():
     correct = pd.to_datetime(
         pd.Series(["1908-05-25", "1909-04-02", "1907-12-23", "1901-02-28"], name='DATE')
     )
+    correct = reset_index(correct)
     pd.testing.assert_series_equal(df['DATE'], correct)
 
     example = pd.DataFrame(
@@ -512,11 +514,15 @@ def test_deidentify_data():
         }
     )
     df = deidentify_data(example, date_columns=['DATE', 'BIRTH'])
-    correct_date = pd.to_datetime(
-        pd.Series(["1959-12-23", "1953-02-28", "1960-05-25", "1961-04-02"], name='DATE')
+    correct_date = reset_index(
+        pd.to_datetime(
+            pd.Series(["1959-12-23", "1953-02-28", "1960-05-25", "1961-04-02"], name='DATE')
+        )
     )
-    correct_birth = pd.to_datetime(
-        pd.Series(["1904-10-12", "1904-10-12", "1928-07-07", "1928-07-07"], name='BIRTH')
+    correct_birth = reset_index(
+        pd.to_datetime(
+            pd.Series(["1904-10-12", "1904-10-12", "1928-07-07", "1928-07-07"], name='BIRTH')
+        )
     )
     pd.testing.assert_series_equal(df['DATE'], correct_date)
     pd.testing.assert_series_equal(df['BIRTH'], correct_birth)

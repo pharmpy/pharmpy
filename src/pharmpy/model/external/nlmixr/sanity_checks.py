@@ -10,6 +10,7 @@ import warnings
 
 import pharmpy.model
 from pharmpy.basic import Expr
+from pharmpy.internals.df import reset_index
 from pharmpy.modeling import (
     has_additive_error_model,
     has_combined_error_model,
@@ -242,7 +243,7 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                                 "TIME",
                             ] += 0.000001
 
-    model = model.replace(dataset=dataset)
+    model = model.replace(dataset=reset_index(dataset))
     return model
 
 

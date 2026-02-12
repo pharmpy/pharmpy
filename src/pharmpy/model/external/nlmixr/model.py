@@ -4,6 +4,7 @@ from typing import Optional
 
 import pharmpy.model
 from pharmpy.internals.code_generator import CodeGenerator
+from pharmpy.internals.df import reset_index
 from pharmpy.model import Assignment, Compartment, get_and_check_dataset, get_and_check_odes
 from pharmpy.model.model import ModelInternals
 from pharmpy.modeling import drop_columns, get_evid, translate_nmtran_time
@@ -62,7 +63,7 @@ def convert_model(
             df = get_and_check_dataset(nlmixr_model)
         nlmixr_model = nlmixr_model.replace(
             datainfo=nlmixr_model.datainfo.replace(path=None),
-            dataset=df.reset_index(drop=True),
+            dataset=reset_index(df),
         )
 
         # Add evid
