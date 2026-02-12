@@ -1,5 +1,5 @@
-next version
-------------
+2.0.0 (2026-02-12)
+------------------
 
 New features
 ============
@@ -7,6 +7,10 @@ New features
 * Add :code:`modeling.calculate_summary_statistic`
 * Add :code:`modeling.is_binary`
 * Add exponential decrease to new steady state PD model
+* Faster parsing of NONMEM .lst files
+* Add support for pandas 3.0
+* Add parsing of shrinkage from NONMEM .lst file
+* Check that there is a DVID column and at least 2 DVs in structsearch for PKPD models
 
 Changes
 =======
@@ -14,12 +18,17 @@ Changes
 * Row indices of dataset now starts with 1 instead of 0
 * :code:`modeling.filter_data` will not change the name or the description of the model
 * :code:`modeling.filter_data` will always reset the index of the dataset
+* Added possibility to describe more than one variable per column in DataInfo
+* Add property molar_mass to DataVariable
 
 Bugfixes
 ========
 
 * :code:`modeling.set_additive_error_model` would often rename the sigma parameter unnecessarily. (#4303) 
 * Handle parsing of AM/PM in NONMEM lst-file datestamps
+* Fix handling of duplicate column names in NONMEM $INPUT
+* Fix crash for parsing of some NONMEM models having multiple DVs
+* Fix broken :code:`modeling.set_combined_error_model` for models with multiple DVs.
 
 1.12.0 (2025-12-05)
 -------------------
