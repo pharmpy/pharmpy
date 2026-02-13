@@ -13,6 +13,7 @@ from pharmpy.modeling import (
     convert_model,
     create_basic_kpd_model,
     create_basic_pd_model,
+    filter_dataset,
     get_observations,
     is_binary,
     set_description,
@@ -37,6 +38,7 @@ def create_workflow(
     type: Literal['pd', 'kpd'],
     treatment_variable: Optional[str] = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',
+    strategy: Literal['fulldata', 'partialdata'] = 'fulldata',
     results: Optional[ModelfitResults] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
@@ -54,6 +56,8 @@ def create_workflow(
         Name of the variable representing the treatment, e.g. TRT, DOSE or AUC. Do not use if `type` is 'kpd'
     kpd_driver : str
         Driver for KPD model (virtual infusion rate 'ir' or 'amount')
+    strategy : str
+        Which modelling strategy to use: 'fulldata' or 'partialdata'
     results : ModelfitResults (optional)
         Results to input model
     strictness : str
@@ -86,7 +90,12 @@ def create_workflow(
         base_output = wb.output_tasks
 
     placebo_task = Task(
-        'run_placebo_models', run_placebo_models, strictness, parameter_uncertainty_method
+        'run_placebo_models',
+        run_placebo_models,
+        strictness,
+        parameter_uncertainty_method,
+        treatment_variable,
+        strategy,
     )
     wb.add_task(placebo_task, predecessors=base_output)
 
@@ -143,7 +152,9 @@ def create_base_model(type, dataset, kpd_driver):
     return model
 
 
-def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme):
+def run_placebo_models(
+    context, strictness, parameter_uncertainty_method, treatment_variable, strategy, baseme
+):
     exprs = (
         ("linear", "*"),
         ("linear", "+"),
@@ -154,9 +165,17 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
         ("tmax", "+"),
     )
     context.log_info(f"Running {len(exprs)} placebo/disease progression models.")
+    if strategy == 'fulldata':
+        current_me = baseme
+    else:
+        model = filter_dataset(baseme.model, f"{treatment_variable}!=0")
+        current_me = ModelEntry.create(model=model, modelfit_results=baseme.modelfit_results)
+
     wb = WorkflowBuilder()
     for expr, op in exprs:
-        create_task = Task(f'create_placebo_{expr}_{op}', create_placebo_model, expr, op, baseme)
+        create_task = Task(
+            f'create_placebo_{expr}_{op}', create_placebo_model, expr, op, current_me
+        )
         wb.add_task(create_task)
         fit_wf = create_fit_workflow(n=1)
         wb.insert_workflow(fit_wf, [create_task])
@@ -179,9 +198,13 @@ def run_placebo_models(context, strictness, parameter_uncertainty_method, baseme
     if final_model is None:
         context.abort_workflow("No placebo/disease progression model selected")
 
-    final_me = ModelEntry.create(
-        model=rank_res.final_model, modelfit_results=rank_res.final_results
-    )
+    if strategy != 'fulldata':
+        final_model = final_model.replace(
+            dataset=baseme.model.dataset, datainfo=baseme.model.datainfo
+        )
+        final_model = final_model.update_source()
+
+    final_me = ModelEntry.create(model=final_model, modelfit_results=rank_res.final_results)
 
     return final_me, rank_res
 
