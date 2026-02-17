@@ -12,4 +12,4 @@ platformdirs==4.9.2
 pluggy==1.6.0
 pyproject-api==1.10.0
 tomli==2.4.0
-virtualenv==20.36.1
+virtualenv==20.37.0
