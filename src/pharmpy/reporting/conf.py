@@ -15,5 +15,6 @@ html_theme_options = {'body_max_width': 'none'}
 html_title = 'Results'
 master_doc = 'results'
 
-# Added to avoid zmq.error.ZMQError: Address already in use
-jupyter_execute_kwargs = {'extra_arguments': ["--transport=ipc"]}
+# transport=ipc Added to avoid zmq.error.ZMQError: Address already in use
+# startup_timeout set due to timeout given once on cluster
+jupyter_execute_kwargs = {'extra_arguments': ["--transport=ipc"], 'startup_timeout': 180}
