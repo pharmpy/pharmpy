@@ -406,7 +406,7 @@ class ModelfitResults(Results):
         Table of various residuals
     predictions: pd.DataFrame
         Table of various predictions
-    derivaitves: pd.DataFrame
+    derivatives: pd.DataFrame
         Table of various derivatives
     estimation_runtime : float
         Runtime for one estimation step
