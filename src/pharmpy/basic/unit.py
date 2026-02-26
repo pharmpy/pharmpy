@@ -1,32 +1,44 @@
 from __future__ import annotations
 
 import re
-from typing import Union
+from typing import Literal, Union
 
-from pharmpy.deps import sympy, sympy_printing
-from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.unicode import int_to_superscript
+from pharmpy.deps import pint
+
+ureg = pint.UnitRegistry()
+ureg.define("l = liter = L")
 
 
 class Unit:
-    def __init__(self, source: Union[Unit, str]):
+    def __init__(self, source: Union[Unit, str, Literal[1], pint.Unit]):
         if isinstance(source, Unit):
-            self._expr = source._expr
-        elif source == "1":
-            self._expr = sympy.core.numbers.One()  # pyright: ignore [reportCallIssue]
+            self._units = source._units
+        elif isinstance(source, pint.Unit):
+            self._units = source
         else:
-            self._expr = subs(
-                sympy.sympify(source),  # pyright: ignore [reportArgumentType]
-                _unit_subs(),
-                simultaneous=True,
-            )
+            if source == "1" or source == 1:
+                self._units = ureg.dimensionless
+            else:
+                try:
+                    self._units = ureg(source).units  # pyright: ignore [reportArgumentType]
+                except pint.errors.UndefinedUnitError:
+                    raise ValueError(f"Unknown unit {source}")
 
     def unicode(self) -> str:
-        printer = UnitPrinter()
-        return printer._print(self._expr)
+        if self._units == ureg.dimensionless:
+            s = "1"
+        else:
+            s = f"{self._units:~P}"
+            # Conversion needed because of https://github.com/hgrecco/pint/issues/2272
+            s = s.replace("·", "⋅")
+        return s
 
     def serialize(self) -> str:
-        return sympy.srepr(self._expr)
+        if self._units == ureg.dimensionless:
+            s = "1"
+        else:
+            s = f"{self._units:~P}"
+        return s
 
     @classmethod
     def deserialize(cls, s) -> Unit:
@@ -36,64 +48,41 @@ class Unit:
     def unitless(cls) -> Unit:
         return cls("1")
 
+    def is_compatible_with(self, other: Unit) -> bool:
+        """Check if this unit is compatible with (i.e. convertible to) another unit"""
+        return self._units.is_compatible_with(other._units)
+
+    def get_dimensionality_string(self) -> str:
+        """Get a human readable string with dimensionality of unit"""
+        if self == Unit.unitless():
+            return "1"
+        s = str(ureg.get_dimensionality(self._units))
+        s = s.replace("[", "").replace("]", "").replace(" ", "")
+        return s
+
+    def __mul__(self, other: Unit) -> Unit:
+        return Unit(self._units * other._units)
+
+    def __truediv__(self, other: Unit) -> Unit:
+        return Unit(self._units / other._units)  # pyright: ignore [reportArgumentType]
+
+    def __pow__(self, n: int) -> Unit:
+        return Unit(self._units**n)  # pyright: ignore [reportArgumentType]
+
     def __eq__(self, other):
-        return isinstance(other, Unit) and self._expr == other._expr or self._expr == other
+        if not isinstance(other, Unit):
+            return NotImplemented
+        return self._units == other._units
 
     def __hash__(self):
-        return hash(self._expr)
+        return hash(self._units)
 
     def __repr__(self):
-        return repr(self._expr)
-
-    def _sympify_(self):
-        return self._expr
+        return self.unicode()
 
 
 # Type hint for public functions taking an expression as input
 TUnit = str | Unit
-
-_unit_subs_cache = None
-
-
-def _unit_subs():
-    global _unit_subs_cache
-    if _unit_subs_cache is None:
-        subs = {}
-        import sympy.physics.units as units
-
-        for k, v in units.__dict__.items():
-            if isinstance(v, sympy.Expr) and v.has(units.Unit):
-                subs[sympy.Symbol(k)] = v
-
-        _unit_subs_cache = subs
-
-    return _unit_subs_cache
-
-
-class UnitPrinter(sympy_printing.str.StrPrinter):
-    """Print physical unit as unicode"""
-
-    def _print_Mul(self, expr):
-        pow_strings = [self._print(e) for e in expr.args if e.is_Pow]
-        plain_strings = [self._print(e) for e in expr.args if not e.is_Pow]
-        all_strings = sorted(plain_strings) + sorted(pow_strings)
-        return '⋅'.join(all_strings)
-
-    def _print_Pow(self, expr, rational=False):
-        base = expr.args[0]
-        exp = expr.args[1]
-        if exp.is_Integer:
-            exp_str = int_to_superscript(int(exp))
-        else:
-            exp_str = "^" + self._print(exp)
-        return self._print(base) + exp_str
-
-    def _print_Quantity(self, expr):
-        # FIXME: sympy cannot handle the abbreviation of ml
-        if str(expr) == "milliliter":
-            return "ml"
-        else:
-            return str(expr.args[1])
 
 
 class Quantity:
@@ -120,9 +109,14 @@ class Quantity:
         return f"{self._value} {self._unit}"
 
     @property
-    def value(self):
+    def value(self) -> float:
         return self._value
 
     @property
-    def unit(self):
+    def unit(self) -> Unit:
         return self._unit
+
+    def convert_to(self, unit: Unit) -> Quantity:
+        quant = pint.Quantity(self._value, self._unit._units)
+        new_quant = quant.to(unit._units)
+        return Quantity(new_quant.magnitude, unit)

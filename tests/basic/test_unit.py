@@ -1,15 +1,17 @@
 import pytest
-import sympy
 
 from pharmpy.basic.unit import Quantity, Unit
 
 
 def test_init():
-    unit1 = Unit('x')
-    assert repr(unit1) == 'x'
+    unit1 = Unit('ml')
+    assert repr(unit1) == 'mL'
 
     unit2 = Unit(unit1)
     assert unit1 == unit2
+
+    with pytest.raises(ValueError):
+        Unit("myownunit")
 
 
 def test_unitless():
@@ -17,31 +19,52 @@ def test_unitless():
 
 
 def test_serialize():
-    unit = Unit('x')
+    unit = Unit('m')
     unit_ser = unit.serialize()
-    assert unit_ser == "Symbol('x')"
+    assert unit_ser == "m"
     assert Unit.deserialize(unit_ser) == unit
+    assert Unit(1).serialize() == "1"
 
 
 @pytest.mark.parametrize(
     'expr, unicode_ref',
-    [('x', 'x'), ('x*y', 'x⋅y'), ('x^-1', 'x⁻¹'), ('x^0.01', 'x^0.01'), ('milliliter', 'ml')],
+    [('g', 'g'), ('g*h', 'g⋅h'), ('h^-1', '1/h'), ('ml', 'mL'), ('ug', 'µg'), ('µl', 'µL')],
 )
 def test_unicode(expr, unicode_ref):
     assert Unit(expr).unicode() == unicode_ref
 
 
-def test_sympify():
-    unit = Unit('x')
-    unit_sympy = unit._sympify_()
-    assert unit_sympy == sympy.Symbol('x')
+@pytest.mark.parametrize(
+    'unit1,unit2,correct',
+    [('mg', 'mg', True), ('g', 'mg', True), ('g/L', 'g/mL', True), ('h*m', 'h', False)],
+)
+def test_is_convertible_to(unit1, unit2, correct):
+    assert Unit(unit1).is_compatible_with(Unit(unit2)) is correct
+
+
+def test_hash():
+    x = Unit("kg")
+    assert hash(x) == hash(Unit("kg"))
+
+
+@pytest.mark.parametrize(
+    'unit,correct',
+    [
+        ('mg', 'mass'),
+        ('kg', 'mass'),
+        ('1', '1'),
+        ('m/s', 'length/time'),
+    ],
+)
+def test_get_dimensionality_string(unit, correct):
+    assert Unit(unit).get_dimensionality_string() == correct
 
 
 def test_quantity():
     x = Quantity(2.5, Unit("mg"))
     assert x.value == 2.5
     assert x.unit == Unit("mg")
-    assert repr(x) == "2.5 milligram"
+    assert repr(x) == "2.5 mg"
 
     y = Quantity(1.5, Unit("mg"))
     assert x != y
@@ -54,3 +77,7 @@ def test_quantity():
 
     with pytest.raises(ValueError):
         Quantity.parse("mg")
+
+    w = x.convert_to(Unit("g"))
+    assert w.value == 0.0025
+    assert w.unit == Unit("g")

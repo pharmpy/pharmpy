@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Union
+from collections.abc import Iterable, Mapping
+from typing import Optional, Union
 
 from pharmpy.deps import symengine, sympy
 from pharmpy.deps.sympy_printing import pretty
@@ -66,6 +66,10 @@ class Expr:
         else:
             args = tuple(Expr(a) for a in x)
         return args
+
+    @property
+    def expr_args(self) -> tuple[Expr, ...]:
+        return tuple(Expr(a) for a in self._expr.args)
 
     @property
     def piecewise_args(self) -> tuple[tuple[Expr, BooleanExpr], ...]:
@@ -453,3 +457,15 @@ class BooleanExpr:
 TExpr = Union[int, float, str, sympy.Expr, symengine.Basic, Expr]
 TSymbol = Union[str, sympy.Expr, symengine.Basic, Expr]
 TBooleanExpr = Union[str, sympy.Basic, symengine.Basic, BooleanExpr]
+
+
+def solve(eqs: Iterable[BooleanExpr], exclude: Optional[Iterable[Expr]] = None):
+    if exclude is None:
+        exclude = []
+    sol = sympy.solve(eqs, exclude=list(exclude), dict=True)
+    if sol:
+        sol = sol[0]
+    else:
+        return {}
+    solution = {Expr(key): Expr(value) for key, value in sol.items()}
+    return solution

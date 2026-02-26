@@ -1,12 +1,11 @@
 from __future__ import annotations
 
-from typing import TypeVar, Union
+from typing import Any, Optional, TypeVar, Union
 
-from pharmpy.basic import Unit
+from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
+from pharmpy.basic.expr import solve
 from pharmpy.deps import sympy
-from pharmpy.internals.expr.subs import subs
-from pharmpy.internals.expr.tree import prune
-from pharmpy.model import Assignment, CompartmentalSystem, Model
+from pharmpy.model import Assignment, CompartmentalSystem, Model, Statements, get_and_check_dataset
 
 T = TypeVar('T')
 
@@ -18,7 +17,7 @@ def _extract_minus(expr):
         return expr
 
 
-def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
+def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit:
     """Derive the physical unit of a variable in the model
 
     Unit information for the dataset needs to be available.
@@ -29,7 +28,7 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     ----------
     model : Model
         Pharmpy model
-    variable : str or Symbol
+    variable : str or Expr
         Find physical unit of this variable
 
     Returns
@@ -42,74 +41,230 @@ def get_unit_of(model: Model, variable: Union[str, sympy.Symbol]) -> Unit:
     >>> from pharmpy.modeling import load_example_model, get_unit_of
     >>> model = load_example_model("pheno")
     >>> get_unit_of(model, "Y")
-    milligram/liter
+    mg/L
     >>> get_unit_of(model, "VC")
-    liter
+    L
     >>> get_unit_of(model, "WGT")
-    kilogram
+    kg
     """
     if isinstance(variable, str):
-        symbol = sympy.Symbol(variable)
-    else:
-        symbol = variable
-        variable = variable.name
+        variable = Expr.symbol(variable)
 
     di = model.datainfo
-    if variable in di.names:
-        return di[variable].variable.get_property("unit")
 
-    # FIXME: Handle other DVs?
-    y = sympy.sympify(list(model.dependent_variables.keys())[0])
-    input_units = {sympy.Symbol(col.name): col.variable.get_property('unit')._expr for col in di}
-    pruned_nodes = {sympy.exp}
+    # FIXME: No multiple DV-support for now
 
-    def pruning_predicate(e: sympy.Basic) -> bool:
-        return e.func in pruned_nodes
+    # Map from Symbol -> known Unit
+    known = {col.symbol: col.variable.get_property("unit") for col in di}
+    y = list(model.dependent_variables.keys())[0]
+    known[y] = known[di.dv_column.symbol]
+    if model.statements.ode_system is not None:
+        # FIXME: Handle case where no amt column found
+        amount_unit = di.typeix['dose'][0].variable.get_property("unit")
+        for amt in model.statements.ode_system.amounts:
+            known[amt] = amount_unit
+        # FIXME: Handle case where no idv column found
+        idv_unit = di.typeix['idv'][0].variable.get_property("unit")
+        known[model.statements.ode_system.t] = idv_unit
+    else:
+        amount_unit = None
+        idv_unit = None
 
-    unit_eqs = []
-    # FIXME: Using private _expr in some places. sympify doesn't work for some reason.
-    a = di[di.dv_column.name].variable.get_property('unit')._expr
-    unit_eqs.append(y - a)
-    d = {}
+    # Set of tuples symbol, expression where units cannot yet be deduced
+    unknown = set()
 
-    for s in model.statements:
+    for s in reversed(model.statements):
+        if variable in known:
+            return known[variable]
+
         if isinstance(s, Assignment):
-            expr = sympy.expand(
-                subs(
-                    prune(
-                        pruning_predicate,
-                        sympy.sympify(s.expression),  # pyright: ignore [reportArgumentType]
-                    ),
-                    input_units,
-                    simultaneous=True,
-                )
-            )
-            if expr.is_Add:
-                for term in expr.args:
-                    unit_eqs.append(
-                        sympy.sympify(s.symbol)  # pyright: ignore [reportOperatorIssue]
-                        - _extract_minus(term)
-                    )
-            else:
-                unit_eqs.append(sympy.sympify(s.symbol) - _extract_minus(expr))
+            handle_assignment(s.symbol, s.expression, known, unknown, model)
         elif isinstance(s, CompartmentalSystem):
-            amt_unit = di[di.typeix['dose'][0].name].variable.get_property("unit")._expr
-            time_unit = di[di.idv_column.name].variable.get_property("unit")._expr
-            for e in s.compartmental_matrix.diagonal():
-                e = sympy.sympify(e)
-                if e.is_Add:
-                    for term in e.args:
-                        unit_eqs.append(amt_unit / time_unit - _extract_minus(term))
-                elif e == 0:
-                    pass
-                else:
-                    unit_eqs.append(amt_unit / time_unit - _extract_minus(e))
-            for a in s.amounts:
-                sy = sympy.Symbol(a.name)
-                d[a] = sy
-                unit_eqs.append(amt_unit - sy)
+            eqs = s.eqs
+            for eq in eqs:
+                func = eq.lhs.args[0]
+                assert isinstance(func, Expr)
+                funcname = func.name
+                # FIXME: Could collide
+                derivative_symbol = Expr.symbol(f"d{funcname}_dt")
+                assert isinstance(amount_unit, Unit)
+                assert isinstance(idv_unit, Unit)
+                known[derivative_symbol] = amount_unit / idv_unit
+                handle_assignment(derivative_symbol, eq.rhs, known, unknown, model)
 
-    filtered_unit_eqs = [eq.subs(d) for eq in unit_eqs]
-    # NOTE: For some reason telling sympy to solve for "symbol" does not work
-    sol = sympy.solve(filtered_unit_eqs, dict=True)
-    return Unit(sol[0][symbol])
+        unknown = recheck_unknowns(unknown, known)
+
+    raise RuntimeError(f"Couldn't deduct unit for {variable}")
+
+
+def product(a, start: Any = 1):
+    prod = start
+    for e in a:
+        prod *= e
+    return prod
+
+
+def simplify_for_units(expr: Expr) -> Expr:
+    # Remove known unitless cases: exp, log
+    # FIXME: Remove constants other than -1, 1 and 0
+    if expr.is_add():
+        return sum((simplify_for_units(term) for term in expr.expr_args), start=Expr(0))
+    elif expr.is_mul():
+        return product((simplify_for_units(factor) for factor in expr.expr_args), start=Expr(1))
+    elif expr.is_exp() or (expr.is_function() and expr.name == "log"):
+        return Expr(1)
+    elif expr.is_function() and expr.name in {"forward", "first"}:
+        return simplify_for_units(expr.expr_args[0])
+    elif expr.is_function() and expr.name in {"newind", "count_if"}:
+        return Expr(1)
+    else:
+        return expr
+
+
+def deduct_equal_units(symbol: Expr, expr: Expr) -> list[BooleanExpr]:
+    # FIXME: we could also recurse down to additions inside exp and log or parentheses
+    eqs = []
+    expr = expr.expand()
+    if expr.is_add():
+        for term in expr.expr_args:
+            eqs.append(BooleanExpr.eq(symbol, simplify_for_units(term)))
+    elif expr.is_piecewise():
+        for piece in expr.piecewise_args[0::2]:
+            if piece != symbol:
+                assert isinstance(piece, Expr)
+                eqs.append(BooleanExpr.eq(symbol, simplify_for_units(piece)))
+    else:
+        eqs.append(BooleanExpr.eq(symbol, simplify_for_units(expr)))
+    return eqs
+
+
+def derive_unit(expr, known):
+    if expr.is_number():
+        unit = Unit(1)
+    elif expr.is_symbol():
+        unit = known[expr]
+    elif expr.is_mul():
+        unit = product([derive_unit(factor, known) for factor in expr.args], start=Unit(1))
+    elif expr.is_pow():
+        base, exp = expr.args
+        if not exp.is_integer():
+            raise NotImplementedError("Non integer exponent not implemented for unit deduction")
+        unit = derive_unit(base, known) ** int(exp)
+    else:
+        raise NotImplementedError("Expression not implemented for unit deduction")
+    return unit
+
+
+def used_symbols(expr):
+    # This is a workardound for free_symbols which doesn't give A_...(t)
+    assignment = Assignment(Expr("DUMMY"), expr)
+    symbols = assignment.rhs_symbols
+    return symbols
+
+
+def handle_assignment(symbol, expression, known, unknown, model):
+    eqs = deduct_equal_units(symbol, expression)
+    sol = solve(eqs, exclude=known.keys())
+    for lhs, rhs in sol.items():
+        # FIXME: Could also learn the unit of the whole assignment
+        # FIXME: Shouldn't have to know unit of t to use unit of A_CENTRAL(t)
+        # FIXME: Unit of covariance is product of unit of both rvs
+        # FIXME: Can get information from conditions in piecewises
+        if rhs == 1:
+            unit = Unit(1)
+        elif used_symbols(rhs).issubset(known.keys()):
+            unit = derive_unit(rhs, known)
+        else:
+            unknown.add((lhs, rhs))
+            continue
+
+        known[lhs] = unit
+        if lhs in model.random_variables:
+            rv = model.random_variables[lhs]
+            var = rv.variance
+            known[var] = unit**2
+
+
+def recheck_unknowns(unknown, known):
+    still_unknown = set()
+    for symbol, expression in unknown:
+        if used_symbols(expression).issubset(known.keys()):
+            unit = derive_unit(expression, known)
+            known[symbol] = unit
+        else:
+            still_unknown.add((symbol, expression))
+    return still_unknown
+
+
+def convert_unit(
+    model: Model,
+    variable: str,
+    unit: Union[str, Unit],
+    original_unit: Optional[Union[str, Unit]] = None,
+    in_dataset: bool = False,
+) -> Model:
+    """Convert between units for a variable
+
+    The conversion could either be handled in the model code or optionally in the dataset (if applicable).
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    variable : str
+        Which variable in the dataset or the model code to convert
+    unit : str
+        The new unit
+    original_unit : str
+        If no original unit is available in the datainfo this will be used
+    in_dataset : bool
+        Set to True if the conversion should be done in the dataset instead of in model code
+
+    Returns
+    -------
+    Model
+        Updated Pharmpy model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import load_example_model, convert_unit
+    >>> model = load_example_model("pheno")
+    >>> model = convert_unit(model, "WGT", "g")
+    """
+
+    unit = Unit(unit)
+    if original_unit is None:
+        if variable in model.datainfo:
+            original_unit = model.datainfo[variable].variable.properties.get("unit", None)
+            if original_unit is None:
+                raise ValueError("Cannot find the original unit of {variable}")
+        else:
+            raise ValueError("Cannot find the original unit of {variable}")
+    original_unit = Unit(original_unit)
+    if original_unit == unit:
+        return model
+    if not original_unit.is_compatible_with(unit):
+        raise ValueError(f"Unable to convert from {original_unit} to {unit}: different dimensions.")
+    conversion_factor = Quantity(1.0, original_unit).convert_to(unit).value
+    conversion_factor = (
+        int(conversion_factor) if int(conversion_factor) == conversion_factor else conversion_factor
+    )
+
+    if not in_dataset:
+        original_symbol = Expr.symbol(variable)
+        scaled_symbol = Expr.symbol(f"SCALED_{variable}")
+        expr = conversion_factor * original_symbol
+        assignment = Assignment.create(scaled_symbol, expr)
+        new_statements = assignment + Statements.create(
+            [s.subs({original_symbol: scaled_symbol}) for s in model.statements]
+        )
+        model = model.replace(statements=new_statements)
+    else:
+        df = get_and_check_dataset(model)
+        scaled_column = conversion_factor * df[variable]
+        df = df.assign(**{variable: scaled_column})
+        new_var = model.datainfo[variable].variable.set_property("unit", unit)
+        new_col = model.datainfo[variable].replace(variable_mapping=new_var)
+        new_di = model.datainfo.set_column(new_col)
+        model = model.replace(dataset=df, datainfo=new_di)
+    return model.update_source()

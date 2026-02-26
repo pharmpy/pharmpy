@@ -443,8 +443,7 @@ def test_check_dataset(load_example_model_for_test):
 
     df = check_dataset(m, verbose=True, dataframe=True)
     assert df is not None
-    assert df[df['code'] == 'A1']['result'].iloc[0] == 'OK'
-    assert df[df['code'] == 'A4']['result'].iloc[0] == 'SKIP'
+    assert df['result'].iloc[0] == 'OK'
 
     df = m.dataset.copy()
     df.loc[743, 'WGT'] = -1

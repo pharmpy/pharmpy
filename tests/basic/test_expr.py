@@ -2,7 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.basic import BooleanExpr
-from pharmpy.basic.expr import Expr, ExprPrinter
+from pharmpy.basic.expr import Expr, ExprPrinter, solve
 
 
 def test_init_expr():
@@ -290,3 +290,8 @@ def test_hashability():
     assert isinstance(hash(x), int)
     y = BooleanExpr.true()
     assert isinstance(hash(y), int)
+
+
+def test_solve():
+    sol = solve([])
+    assert sol == {}

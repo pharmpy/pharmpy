@@ -1,6 +1,7 @@
 from .allometry import add_allometry
 from .basic_models import create_basic_kpd_model, create_basic_pd_model, create_basic_pk_model
 from .blq import transform_blq
+from .check_dataset import check_dataset
 from .common import (
     bump_model_number,
     convert_model,
@@ -36,7 +37,6 @@ from .data import (
     bin_observations,
     binarize_dataset,
     calculate_summary_statistic,
-    check_dataset,
     deidentify_data,
     drop_columns,
     drop_dropped_columns,
@@ -264,7 +264,7 @@ from .results import (
     insert_ebes_into_dataset,
 )
 from .tmdd import set_tmdd
-from .units import get_unit_of
+from .units import convert_unit, get_unit_of
 from .write_dataset import write_csv, write_dataset
 
 # Must be set directly, otherwise errors about unused imports
@@ -322,6 +322,7 @@ __all__ = [
     'cholesky_decompose',
     'cleanup_model',
     'convert_model',
+    'convert_unit',
     'create_basic_kpd_model',
     'create_basic_pd_model',
     'create_basic_pk_model',

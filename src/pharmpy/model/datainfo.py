@@ -357,7 +357,7 @@ class DataVariable(Immutable):
         >>> from pharmpy.model import DataVariable
         >>> var1 = DataVariable.create("WGT", properties={"unit": "kg"})
         >>> var1.get_property("unit")
-        kilogram
+        kg
         >>> var2 = DataVariable.create("ID")
         >>> var2.get_property("unit")
         1
@@ -367,7 +367,7 @@ class DataVariable(Immutable):
             raise ValueError(f"Unknown property {property}")
 
         if property == 'unit':
-            default = Expr.integer(1)
+            default = Unit(1)
         else:
             default = None
         value = self.properties.get(property, default)
@@ -396,7 +396,7 @@ class DataVariable(Immutable):
         >>> var1 = DataVariable.create("WGT")
         >>> var2 = var1.set_property("unit", "kg")
         >>> var2.get_property("unit")
-        kilogram
+        kg
         """
         props = dict(self._properties)
         props[property] = value

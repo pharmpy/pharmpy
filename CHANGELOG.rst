@@ -1,3 +1,16 @@
+next release
+------------
+
+New features
+============
+
+* Add :code:`modeling.convert_unit`
+
+Changes
+=======
+
+* Change unit representations to use abbreviations. For example gram is now g.
+
 2.0.0 (2026-02-12)
 ------------------
 
