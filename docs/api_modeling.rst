@@ -68,6 +68,7 @@ Dataset handling
     set_dvid
     set_lloq_data
     set_reference_values
+    set_unit
     translate_nmtran_time
     undrop_columns
     unload_dataset

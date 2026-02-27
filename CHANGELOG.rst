@@ -5,6 +5,7 @@ New features
 ============
 
 * Add :code:`modeling.convert_unit`
+* Add :code:`modeling.set_unit`
 
 Changes
 =======

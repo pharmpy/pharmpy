@@ -72,6 +72,7 @@ from .data import (
     undrop_columns,
     unload_dataset,
 )
+from .datainfo import set_unit
 from .error import (
     has_additive_error_model,
     has_combined_error_model,
@@ -490,6 +491,7 @@ __all__ = [
     'set_time_varying_error_model',
     'set_tmdd',
     'set_transit_compartments',
+    'set_unit',
     'set_upper_bounds',
     'set_weibull_absorption',
     'set_weighted_error_model',
