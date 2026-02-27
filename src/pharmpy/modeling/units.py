@@ -1,20 +1,10 @@
 from __future__ import annotations
 
-from typing import Any, Optional, TypeVar, Union
+from typing import Any, Optional, Union
 
 from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
 from pharmpy.basic.expr import solve
-from pharmpy.deps import sympy
 from pharmpy.model import Assignment, CompartmentalSystem, Model, Statements, get_and_check_dataset
-
-T = TypeVar('T')
-
-
-def _extract_minus(expr):
-    if expr.is_Mul and expr.args[0] == -1:
-        return sympy.Mul(*expr.args[1:])
-    else:
-        return expr
 
 
 def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit:
@@ -55,17 +45,21 @@ def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit:
     # FIXME: No multiple DV-support for now
 
     # Map from Symbol -> known Unit
-    known = {col.symbol: col.variable.get_property("unit") for col in di}
+    known = {
+        col.symbol: col.variable.properties.get("unit", None)
+        for col in di
+        if not col.variable.properties.get("unit", None) is None
+    }
     y = list(model.dependent_variables.keys())[0]
     known[y] = known[di.dv_column.symbol]
     if model.statements.ode_system is not None:
-        # FIXME: Handle case where no amt column found
-        amount_unit = di.typeix['dose'][0].variable.get_property("unit")
-        for amt in model.statements.ode_system.amounts:
-            known[amt] = amount_unit
-        # FIXME: Handle case where no idv column found
-        idv_unit = di.typeix['idv'][0].variable.get_property("unit")
-        known[model.statements.ode_system.t] = idv_unit
+        amount_unit = di.typeix['dose'][0].variable.properties.get("unit", None)
+        if amount_unit is not None:
+            for amt in model.statements.ode_system.amounts:
+                known[amt] = amount_unit
+        idv_unit = di.typeix['idv'][0].variable.properties.get("unit", None)
+        if idv_unit is not None:
+            known[model.statements.ode_system.t] = idv_unit
     else:
         amount_unit = None
         idv_unit = None
@@ -87,12 +81,11 @@ def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit:
                 funcname = func.name
                 # FIXME: Could collide
                 derivative_symbol = Expr.symbol(f"d{funcname}_dt")
-                assert isinstance(amount_unit, Unit)
-                assert isinstance(idv_unit, Unit)
-                known[derivative_symbol] = amount_unit / idv_unit
+                if amount_unit is not None and idv_unit is not None:
+                    known[derivative_symbol] = amount_unit / idv_unit
                 handle_assignment(derivative_symbol, eq.rhs, known, unknown, model)
 
-        unknown = recheck_unknowns(unknown, known)
+        unknown = recheck_unknowns(unknown, known, model)
 
     raise RuntimeError(f"Couldn't deduct unit for {variable}")
 
@@ -129,9 +122,8 @@ def deduct_equal_units(symbol: Expr, expr: Expr) -> list[BooleanExpr]:
         for term in expr.expr_args:
             eqs.append(BooleanExpr.eq(symbol, simplify_for_units(term)))
     elif expr.is_piecewise():
-        for piece in expr.piecewise_args[0::2]:
-            if piece != symbol:
-                assert isinstance(piece, Expr)
+        for piece, _ in expr.piecewise_args:
+            if piece != symbol and not piece.is_number():
                 eqs.append(BooleanExpr.eq(symbol, simplify_for_units(piece)))
     else:
         eqs.append(BooleanExpr.eq(symbol, simplify_for_units(expr)))
@@ -155,10 +147,16 @@ def derive_unit(expr, known):
     return unit
 
 
-def used_symbols(expr):
+def used_symbols(expr, model):
     # This is a workardound for free_symbols which doesn't give A_...(t)
     assignment = Assignment(Expr("DUMMY"), expr)
     symbols = assignment.rhs_symbols
+    # Handle case where t is only found in amounts. Not needed for deduction
+    odes = model.statements.ode_system
+    if odes is not None:
+        d = {amt: Expr(f"__DUMMY___{i}") for i, amt in enumerate(odes.amounts)}
+        if model.statements.ode_system.t not in expr.subs(d).free_symbols:
+            symbols -= {model.statements.ode_system.t}
     return symbols
 
 
@@ -167,12 +165,11 @@ def handle_assignment(symbol, expression, known, unknown, model):
     sol = solve(eqs, exclude=known.keys())
     for lhs, rhs in sol.items():
         # FIXME: Could also learn the unit of the whole assignment
-        # FIXME: Shouldn't have to know unit of t to use unit of A_CENTRAL(t)
         # FIXME: Unit of covariance is product of unit of both rvs
         # FIXME: Can get information from conditions in piecewises
         if rhs == 1:
             unit = Unit(1)
-        elif used_symbols(rhs).issubset(known.keys()):
+        elif used_symbols(rhs, model).issubset(known.keys()):
             unit = derive_unit(rhs, known)
         else:
             unknown.add((lhs, rhs))
@@ -185,12 +182,17 @@ def handle_assignment(symbol, expression, known, unknown, model):
             known[var] = unit**2
 
 
-def recheck_unknowns(unknown, known):
+def recheck_unknowns(unknown, known, model):
     still_unknown = set()
     for symbol, expression in unknown:
-        if used_symbols(expression).issubset(known.keys()):
-            unit = derive_unit(expression, known)
-            known[symbol] = unit
+        # We need to attempt solving the equation again since
+        # the unknown might not be on the lhs
+        eq = BooleanExpr.eq(symbol, expression)
+        sol = solve(eq, exclude=known.keys())
+        sol_symbol, sol_expression = sol.popitem()
+        if used_symbols(sol_expression, model).issubset(known.keys()):
+            unit = derive_unit(sol_expression, known)
+            known[sol_symbol] = unit
         else:
             still_unknown.add((symbol, expression))
     return still_unknown
