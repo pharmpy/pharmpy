@@ -1,25 +1,35 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union
+from typing import Any, Optional, Union, overload
 
 from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
 from pharmpy.basic.expr import solve
 from pharmpy.model import Assignment, CompartmentalSystem, Model, Statements, get_and_check_dataset
 
 
-def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit:
+@overload
+def get_unit_of(model: Model, variable: None) -> dict[str, Unit]: ...
+
+
+@overload
+def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit: ...
+
+
+def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit | dict[str, Unit]:
     """Derive the physical unit of a variable in the model
 
     Unit information for the dataset needs to be available.
-    The variable can be defined in the code, a dataset olumn, a parameter
-    or a random variable.
+    The variable can be defined in the code, a dataset column, a parameter
+    or a random variable. Optionally units could be derived for all variables
+    in the model.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
-    variable : str or Expr
-        Find physical unit of this variable
+    variable : str | Expr | None
+        Find physical unit of this variable. For None get a dict with units for
+        all variables defined by the model.
 
     Returns
     -------
@@ -68,7 +78,7 @@ def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit:
     unknown = set()
 
     for s in reversed(model.statements):
-        if variable in known:
+        if variable is not None and variable in known:
             return known[variable]
 
         if isinstance(s, Assignment):
@@ -87,7 +97,25 @@ def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit:
 
         unknown = recheck_unknowns(unknown, known, model)
 
-    raise RuntimeError(f"Couldn't deduct unit for {variable}")
+    if variable is not None:
+        raise RuntimeError(f"Couldn't deduct unit for {variable}")
+    else:
+        all_units = {}
+        for symbol in get_all_symbols(model):
+            all_units[str(symbol)] = known.get(symbol, None)
+        return all_units
+
+
+def get_all_symbols(model):
+    symbols = (
+        set(model.parameters.symbols)
+        | set(model.random_variables.symbols)
+        | model.statements.lhs_symbols
+        | set(model.datainfo.symbols)
+    )
+    if model.statements.ode_system is not None:
+        symbols.add(model.statements.ode_system.t)
+    return symbols
 
 
 def product(a, start: Any = 1):
@@ -188,7 +216,7 @@ def recheck_unknowns(unknown, known, model):
         # We need to attempt solving the equation again since
         # the unknown might not be on the lhs
         eq = BooleanExpr.eq(symbol, expression)
-        sol = solve(eq, exclude=known.keys())
+        sol = solve([eq], exclude=known.keys())
         sol_symbol, sol_expression = sol.popitem()
         if used_symbols(sol_expression, model).issubset(known.keys()):
             unit = derive_unit(sol_expression, known)
