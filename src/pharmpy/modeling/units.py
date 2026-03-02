@@ -97,6 +97,9 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
 
         unknown = recheck_unknowns(unknown, known, model)
 
+    if variable is not None and variable in known:
+        return known[variable]
+
     if variable is not None:
         raise RuntimeError(f"Couldn't deduct unit for {variable}")
     else:
