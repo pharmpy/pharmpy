@@ -292,6 +292,27 @@ def test_hashability():
     assert isinstance(hash(y), int)
 
 
+@pytest.mark.parametrize(
+    'expr, ref',
+    [
+        (Expr('x'), "Symbol('x')"),
+        (Expr('x + y'), "Add(Symbol('x'), Symbol('y'))"),
+        (
+            BooleanExpr.eq(Expr('x'), Expr('y + 1')),
+            "Equality(Symbol('x'), Add(Symbol('y'), Integer(1)))",
+        ),
+    ],
+)
+def test_serialize(expr, ref):
+    s = expr.serialize()
+    assert s == ref
+    if isinstance(expr, Expr):
+        deser = Expr.deserialize(s)
+    else:
+        deser = BooleanExpr.deserialize(s)
+    assert deser == expr
+
+
 def test_solve():
     sol = solve([])
     assert sol == {}

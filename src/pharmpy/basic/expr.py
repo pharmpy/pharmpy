@@ -351,6 +351,13 @@ class BooleanExpr:
                 expr = sympy.StrictGreaterThan(expr.rhs, expr.lhs)
             self._expr = expr
 
+    def serialize(self) -> str:
+        return sympy.srepr(sympy.sympify(self._expr))
+
+    @classmethod
+    def deserialize(cls, s: str) -> BooleanExpr:
+        return cls(sympy.parse_expr(s))
+
     @property
     def free_symbols(self) -> set[Expr]:
         symbs = {Expr(a) for a in self._expr.free_symbols}
