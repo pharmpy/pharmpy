@@ -198,6 +198,7 @@ def test_columninfo_hash():
 def test_create():
     di = DataInfo.create()
     assert len(di) == 0
+    assert di.provenance == Provenance()
     di = DataInfo.create(columns=["COL1", "COL2"])
     assert len(di) == 2
     ci1 = ColumnInfo.create("COL1")
@@ -221,6 +222,9 @@ def test_create():
 
     with pytest.raises(ValueError):
         DataInfo.create(["DV", "DV"])
+
+    with pytest.raises(TypeError):
+        DataInfo.create(["DV"], provenance=23)
 
 
 def test_eq():
