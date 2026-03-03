@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy.basic import Expr, Unit
-from pharmpy.model import ColumnInfo, DataInfo, DataVariable
+from pharmpy.basic import BooleanExpr, Expr, Unit
+from pharmpy.model import ColumnInfo, DataInfo, DataVariable, Provenance, ReadDataset, Select
 
 
 def test_datavariable_create():
@@ -572,3 +572,67 @@ def test_mapped_variable():
     assert len(col2.variables) == 2
     di = DataInfo.create([col1, col2])
     assert len(di.variables) == 3
+
+
+def test_read_dataset():
+    path_str = r"/myfile/is/here.csv"
+    path = Path(path_str)
+    op = ReadDataset(path=path)
+    assert op.path == path
+    op2 = ReadDataset.create(path=path_str)
+    assert op2.path == path
+    assert op == op2
+    assert op == op
+    assert hash(op) == hash(op2)
+    assert op != "othertype"
+    assert ReadDataset.from_dict(op.to_dict()) == op
+    assert repr(op) == f"ReadDataset(path={path_str})"
+
+
+def test_select():
+    expr_str = r"WGT>1.0"
+    expr = BooleanExpr(expr_str)
+    op = Select(expression=expr)
+    assert op.expression == expr
+    op2 = Select.create(expression=expr_str)
+    assert op2.expression == expr
+    assert op == op2
+    assert op == op
+    assert hash(op) == hash(op2)
+    assert op != "othertype"
+    assert Select.from_dict(op.to_dict()) == op
+    assert repr(op) == f"Select({expr})"
+    assert op.replace(expression=expr) == op
+    with pytest.raises(TypeError):
+        Select.create(op)
+
+
+def test_provenance():
+    path = Path("/myfile/is/here.csv")
+    op = ReadDataset(path=path)
+    expr = BooleanExpr("WGT>1.0")
+    op2 = Select(expression=expr)
+    prov = Provenance((op, op2))
+    assert len(prov) == 2
+    prov2 = Provenance.create([op, op2])
+    prov3 = Provenance.create([op])
+    assert prov == prov2
+    assert prov != prov3
+    assert prov == prov
+    assert prov != 23
+    assert prov[0] == op
+    assert hash(prov) == hash(prov2)
+    assert Provenance.from_dict(prov.to_dict()) == prov
+    assert repr(prov) == "Provenance(ReadDataset(path=/myfile/is/here.csv), Select(WGT > 1.0))"
+
+    prov4 = Provenance((op2,))
+    assert prov3 + prov4 == prov
+    assert prov3 + op2 == prov
+    assert prov3 + [op2] == prov
+    assert op + prov4 == prov
+    assert (op,) + prov4 == prov
+    assert prov4 != prov3
+    assert prov[1:] == prov4
+
+    with pytest.raises(TypeError):
+        Provenance.create([2])

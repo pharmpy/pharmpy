@@ -3,12 +3,13 @@
 from __future__ import annotations
 
 import json
+from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from pathlib import Path
 from typing import Any, Optional, Union, cast, overload
 
 from pharmpy import conf
-from pharmpy.basic import Expr, Unit
+from pharmpy.basic import BooleanExpr, Expr, Unit
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import Immutable, frozenmapping
@@ -892,7 +893,7 @@ class DataInfo(Sequence, Immutable):
                 columns=self._columns + tuple(other), path=self.path, separator=self.separator
             )
 
-    def __radd__(self, other: DataInfo) -> DataInfo:
+    def __radd__(self, other: Union[ColumnInfo, Sequence[ColumnInfo]]) -> DataInfo:
         if isinstance(other, ColumnInfo):
             return DataInfo.create(
                 columns=(other,) + self._columns, path=self.path, separator=self.separator
@@ -1411,3 +1412,159 @@ class TypeIndexer:
         if not cols:
             raise IndexError(f"No columns of type {i} available")
         return DataInfo.create(cols)
+
+
+class DatasetOperation(Immutable):
+    @abstractmethod
+    def to_dict(self) -> dict[str, Any]: ...
+
+
+class ReadDataset(DatasetOperation):
+    def __init__(self, path: Path):
+        self._path = path
+
+    @classmethod
+    def create(cls, path: Union[Path, str]):
+        path = Path(path)
+        return cls(path=path)
+
+    @property
+    def path(self) -> Path:
+        return self._path
+
+    def __eq__(self, other: Any):
+        if self is other:
+            return True
+        if not isinstance(other, ReadDataset):
+            return NotImplemented
+        return self._path == other._path
+
+    def __hash__(self):
+        return hash(self.path)
+
+    def to_dict(self) -> dict[str, Any]:
+        return {'__class__': 'ReadDataset', 'path': str(self._path)}
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> ReadDataset:
+        return cls(path=Path(d['path']))
+
+    def __repr__(self):
+        return f"ReadDataset(path={self._path})"
+
+
+class Select(DatasetOperation):
+    def __init__(self, expression: BooleanExpr):
+        self._expression = expression
+
+    @classmethod
+    def create(cls, expression: Union[BooleanExpr, str]):
+        if isinstance(expression, str):
+            expression = BooleanExpr(expression)
+        elif not isinstance(expression, BooleanExpr):
+            raise TypeError(f"Bad type of expression: {type(expression)}")
+        return cls(expression)
+
+    def replace(self, expression: Union[BooleanExpr, str]):
+        return Select.create(expression=expression)
+
+    @property
+    def expression(self):
+        return self._expression
+
+    def to_dict(self) -> dict[str, Any]:
+        return {'__class__': 'Select', 'expression': self._expression.serialize()}
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Select:
+        return cls(expression=BooleanExpr.deserialize(d['expression']))
+
+    def __eq__(self, other: Any):
+        if self is other:
+            return True
+        if not isinstance(other, Select):
+            return NotImplemented
+        return self._expression == other._expression
+
+    def __hash__(self):
+        return hash(self._expression)
+
+    def __repr__(self):
+        return f"Select({self._expression})"
+
+
+class Provenance(Sequence, Immutable):
+    def __init__(self, operations: tuple[DatasetOperation, ...] = ()):
+        self._operations = operations
+
+    @classmethod
+    def create(cls, operations: Sequence[DatasetOperation]) -> Provenance:
+        for op in operations:
+            if not isinstance(op, DatasetOperation):
+                raise TypeError("All elements of Provenance must be DatasetOperation")
+        return cls(operations=tuple(operations))
+
+    @overload
+    def __getitem__(self, index: int) -> DatasetOperation: ...
+
+    @overload
+    def __getitem__(self, index: slice) -> Provenance: ...
+
+    def __getitem__(self, index: Union[int, slice]) -> Union[DatasetOperation, Provenance]:
+        if isinstance(index, int):
+            return self._operations[index]
+        else:
+            return Provenance.create(operations=self._operations[index])
+
+    def __len__(self):
+        return len(self._operations)
+
+    def __hash__(self):
+        return hash(self._operations)
+
+    def __eq__(self, other: Any) -> bool:
+        if self is other:
+            return True
+        if not isinstance(other, Provenance):
+            return NotImplemented
+        if len(self) != len(other):
+            return False
+        for op1, op2 in zip(self._operations, other._operations):
+            if op1 != op2:
+                return False
+        return True
+
+    def __add__(
+        self, other: Union[Provenance, DatasetOperation, Sequence[DatasetOperation]]
+    ) -> Provenance:
+        if isinstance(other, Provenance):
+            return Provenance.create(operations=self._operations + other._operations)
+        elif isinstance(other, DatasetOperation):
+            return Provenance.create(operations=self._operations + (other,))
+        else:
+            return Provenance.create(operations=self._operations + tuple(other))
+
+    def __radd__(self, other: Union[DatasetOperation, Sequence[DatasetOperation]]) -> Provenance:
+        if isinstance(other, DatasetOperation):
+            return Provenance.create(operations=(other,) + self._operations)
+        else:
+            return Provenance.create(operations=tuple(other) + self._operations)
+
+    def to_dict(self) -> dict[str, Any]:
+        operations = [op.to_dict() for op in self._operations]
+        return {'operations': operations}
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Provenance:
+        operations = []
+        for opdict in d['operations']:
+            if opdict['__class__'] == 'Select':
+                op = Select.from_dict(opdict)
+            else:
+                op = ReadDataset.from_dict(opdict)
+            operations.append(op)
+        return cls.create(operations=operations)
+
+    def __repr__(self):
+        a = [repr(op) for op in self._operations]
+        return f"Provenance({', '.join(a)})"
