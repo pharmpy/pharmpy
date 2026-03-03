@@ -5,7 +5,7 @@ from pharmpy.workflows.hashing import DatasetHash, ModelHash
 def test_hash(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     h = ModelHash(model)
-    assert str(h) == "3Elh8qR0D20ee9uhAwMcM1gxYeI-8oP6ofjtKKn_y6w"
+    assert str(h) == "j1ZMriGj8bC4x5pAp7VhFGCvoeY7JZzNZDSD1BWVMks"
     d = DatasetHash(model.dataset)
     assert str(d) == h.dataset_hash
 
