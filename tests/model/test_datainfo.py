@@ -613,6 +613,14 @@ def test_select():
     assert op.replace(expression=expr) == op
     with pytest.raises(TypeError):
         Select.create(op)
+    expr = BooleanExpr.eq(Expr.symbol("WGT"), Expr.symbol("S"))
+    strings = {Expr.symbol("S"): "#"}
+    op3 = Select.create(expr, strings)
+    strings2 = {Expr.symbol("S"): "."}
+    op4 = op3.replace(strings=strings2)
+    assert op4.strings == strings2
+    assert op3.strings == strings
+    assert repr(op3) == f"Select({expr}, {strings})"
 
 
 def test_provenance():

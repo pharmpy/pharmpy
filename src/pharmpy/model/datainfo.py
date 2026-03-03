@@ -55,43 +55,70 @@ class ReadDataset(DatasetOperation):
 
 
 class Select(DatasetOperation):
-    def __init__(self, expression: BooleanExpr):
+    def __init__(
+        self, expression: BooleanExpr, strings: frozenmapping[Expr, str] = frozenmapping({})
+    ):
         self._expression = expression
+        self._strings = strings
 
     @classmethod
-    def create(cls, expression: Union[BooleanExpr, str]):
+    def create(
+        cls, expression: Union[BooleanExpr, str], strings: Mapping[Expr, str] = frozenmapping({})
+    ):
         if isinstance(expression, str):
             expression = BooleanExpr(expression)
         elif not isinstance(expression, BooleanExpr):
             raise TypeError(f"Bad type of expression: {type(expression)}")
-        return cls(expression)
+        return cls(expression=expression, strings=frozenmapping(strings))
 
-    def replace(self, expression: Union[BooleanExpr, str]):
-        return Select.create(expression=expression)
+    def replace(
+        self,
+        expression: Optional[Union[BooleanExpr, str]] = None,
+        strings: Optional[Mapping[Expr, str]] = None,
+    ):
+        if expression is None:
+            expression = self._expression
+        if strings is None:
+            strings = self._strings
+        return Select.create(expression=expression, strings=strings)
 
     @property
-    def expression(self):
+    def expression(self) -> BooleanExpr:
         return self._expression
 
+    @property
+    def strings(self) -> frozenmapping[Expr, str]:
+        return self._strings
+
     def to_dict(self) -> dict[str, Any]:
-        return {'__class__': 'Select', 'expression': self._expression.serialize()}
+        return {
+            '__class__': 'Select',
+            'expression': self._expression.serialize(),
+            'strings': {key.serialize(): value for key, value in self._strings.items()},
+        }
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Select:
-        return cls(expression=BooleanExpr.deserialize(d['expression']))
+        expression = BooleanExpr.deserialize(d['expression'])
+        strings = {Expr.deserialize(key): str(value) for key, value in d['strings'].items()}
+        return cls(expression=expression, strings=frozenmapping(strings))
 
     def __eq__(self, other: Any):
         if self is other:
             return True
         if not isinstance(other, Select):
             return NotImplemented
-        return self._expression == other._expression
+        return self._expression == other._expression and self._strings == other._strings
 
     def __hash__(self):
-        return hash(self._expression)
+        return hash((self._expression, self._strings))
 
     def __repr__(self):
-        return f"Select({self._expression})"
+        if self._strings:
+            strings = f", {self._strings}"
+        else:
+            strings = ""
+        return f"Select({self._expression}{strings})"
 
 
 class Provenance(Sequence, Immutable):
