@@ -321,9 +321,10 @@ class Model(BaseModel):
         return str(self.internals.control_stream)
 
     def read_raw_dataset(self, parse_columns: tuple[str, ...] = ()):
-        return parse_dataset(
+        _, df = parse_dataset(
             self.datainfo, self.internals.control_stream, raw=True, parse_columns=parse_columns
         )
+        return df
 
     @property
     def internals(self) -> NONMEMModelInternals:
@@ -354,7 +355,7 @@ def parse_model(
 
     try:
         if di.path is not None:
-            dataset = parse_dataset(di, control_stream, raw=False)
+            di, dataset = parse_dataset(di, control_stream, raw=False)
     except FileNotFoundError:
         pass
 

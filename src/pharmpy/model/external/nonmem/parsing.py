@@ -5,7 +5,7 @@ import warnings
 from pathlib import Path
 from typing import Iterable, Optional, cast
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import sympy
 from pharmpy.internals.fs.path import path_absolute
@@ -25,6 +25,7 @@ from pharmpy.model import (
     Parameter,
     Parameters,
     RandomVariables,
+    Select,
     Statements,
 )
 from pharmpy.model.external.nonmem.records.data_record import DataRecord
@@ -897,7 +898,7 @@ def parse_dataset(
 
     data_records = control_stream.get_records('DATA')
     if not data_records:
-        return None
+        return di, None
 
     data_record = data_records[0]
     ignore_character = data_record.ignore_character
@@ -908,7 +909,7 @@ def parse_dataset(
     null_value = data_record.null_value
     have_pk = bool(control_stream.get_pk_record())
 
-    converted_df = filter_and_convert_dataset_in_place(
+    new_di, converted_df = filter_and_convert_dataset_in_place(
         df,
         di,
         data_record,
@@ -919,7 +920,7 @@ def parse_dataset(
         raw=raw,
         parse_columns=parse_columns,
     )
-    return converted_df
+    return new_di, converted_df
 
 
 def filter_and_convert_dataset_in_place(
@@ -961,8 +962,8 @@ def filter_and_convert_dataset_in_place(
     # Let TIME be the idv in both $PK and $PRED models
     # Remove individuals without observations
     if have_pk:
-        df = filter_observations(df, di)
-    return df
+        di, df = filter_observations(df, di)
+    return di, df
 
 
 def filter_observations(df: pd.DataFrame, di: DataInfo):
@@ -976,13 +977,38 @@ def filter_observations(df: pd.DataFrame, di: DataInfo):
                 label = di.typeix['dose'][0].name
             except IndexError:
                 # No event or dose information in dataset
-                return df
+                return di, df
 
     rows_with_observations = df[label].astype('float') == 0
     ids = df['ID']
     ids_with_observations = cast(pd.Series, ids[rows_with_observations])
     rows_whose_ids_have_observations = ids.isin(ids_with_observations)
-    return cast(pd.DataFrame, df[rows_whose_ids_have_observations])
+    ids_without_observations = cast(pd.Series, ids[~rows_whose_ids_have_observations]).unique()
+    if len(ids_without_observations) > 0:
+        new_df = cast(pd.DataFrame, df[rows_whose_ids_have_observations])
+        new_di = update_provenance_for_ids_without_observations(di, ids_without_observations)
+    else:
+        new_df = df
+        new_di = di
+
+    return new_di, new_df
+
+
+def update_provenance_for_ids_without_observations(di, ids_without_observations):
+    idname = di.id_column.name
+    exprs = [
+        BooleanExpr.ne(Expr.symbol(idname), Expr.integer(idn)) for idn in ids_without_observations
+    ]
+    if len(exprs) > 1:
+        expr = exprs[0]
+        for e in exprs[1:]:
+            expr &= e
+    else:
+        expr = exprs[0]
+    select = Select.create(expression=expr)
+    new_provenance = di.provenance + select
+    new_di = di.replace(provenance=new_provenance)
+    return new_di
 
 
 def parse_table_columns(control_stream, netas, problem_no=0):

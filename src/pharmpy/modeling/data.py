@@ -1924,7 +1924,7 @@ def read_dataset_from_datainfo(
             dtype=datainfo.get_dtype_dict(),
         )
         # This assumes a PK model
-        df = filter_observations(df, datainfo)
+        _, df = filter_observations(df, datainfo)
         df = reset_index(df)
     else:
         df = pd.read_csv(
