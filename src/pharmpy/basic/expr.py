@@ -432,6 +432,10 @@ class BooleanExpr:
         return cls(sympy.Le(lhs, rhs))
 
     @classmethod
+    def lt(cls, lhs: TExpr, rhs: TExpr) -> BooleanExpr:
+        return cls(sympy.Lt(lhs, rhs))
+
+    @classmethod
     def true(cls) -> BooleanExpr:
         return cls(sympy.true)
 

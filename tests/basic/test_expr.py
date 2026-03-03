@@ -94,6 +94,7 @@ def test_init_boolean_expr():
     assert expr1 == expr2
     expr3 = BooleanExpr(sympy.Gt(Expr('x'), Expr(0)))
     assert expr3.lhs == Expr('x')
+    assert expr3 == BooleanExpr.gt(Expr('x'), Expr(0))
     expr4 = BooleanExpr('x & y')
     assert expr4.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
     assert expr4 == BooleanExpr(expr4)
