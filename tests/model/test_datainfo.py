@@ -575,7 +575,10 @@ def test_mapped_variable():
 
 
 def test_read_dataset():
-    path_str = r"/myfile/is/here.csv"
+    if sys.platform != "win32":
+        path_str = r"/myfile/is/here.csv"
+    else:
+        path_str = r"\myfile\is\here.csv"
     path = Path(path_str)
     op = ReadDataset(path=path)
     assert op.path == path
@@ -586,7 +589,7 @@ def test_read_dataset():
     assert hash(op) == hash(op2)
     assert op != "othertype"
     assert ReadDataset.from_dict(op.to_dict()) == op
-    assert repr(op) == f"ReadDataset(path={path})"
+    assert repr(op) == f"ReadDataset(path={path_str})"
 
 
 def test_select():
