@@ -586,7 +586,7 @@ def test_read_dataset():
     assert hash(op) == hash(op2)
     assert op != "othertype"
     assert ReadDataset.from_dict(op.to_dict()) == op
-    assert repr(op) == f"ReadDataset(path={path_str})"
+    assert repr(op) == f"ReadDataset(path={path})"
 
 
 def test_select():
