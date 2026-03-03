@@ -5,8 +5,9 @@ from pathlib import Path
 from typing import Any, Container, Iterable, Optional, TextIO, cast
 
 from pharmpy import conf
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.model import DatasetError, DatasetWarning
+from pharmpy.model import DatasetError, DatasetWarning, Select
 
 from .convert import convert, convert_in_place
 from .filter import (
@@ -163,10 +164,13 @@ def filter_and_convert_nonmem_dataset_in_place(
     if statements is None:
         convert_remaining = list(convert_todo)
     else:
+        filters = parse_filter_statements(statements)
+        filters = list(filters)
+        filters_to_selects(filters, ignore=ignore == statements)
         df, convert_done = _filter_in_place(
             df,
             columns,
-            statements,
+            filters,
             convert_todo,
             negation if statements is ignore else lambda x: x,
             conjunction,
@@ -206,11 +210,36 @@ def filter_and_convert_nonmem_dataset_in_place(
     return df
 
 
-def _filter_in_place(
-    df, columns, statements, convert_todo, _map, _reduce, null_value, missing_data_token
-):
-    filters = parse_filter_statements(statements)
+def filters_to_selects(filters, ignore: bool) -> list[Select]:
+    selects = []
+    for f in filters:
+        lhs = Expr.symbol(f.column)
+        if 'STR' in f.operator:
+            rhs = Expr.symbol("S")
+            strings = {rhs: f.expr}
+        else:
+            rhs = Expr(f.expr)
+            strings = {}
+        if f.operator in {'OP_EQ', 'OP_STR_EQ'}:
+            bexp = BooleanExpr.eq(lhs, rhs)
+        elif f.operator in {'OP_NE', 'OP_STR_NE'}:
+            bexp = BooleanExpr.ne(lhs, rhs)
+        elif f.operator == 'OP_LT':
+            bexp = BooleanExpr.lt(lhs, rhs)
+        elif f.operator == 'OP_GT':
+            bexp = BooleanExpr.gt(lhs, rhs)
+        elif f.operator == 'OP_LT_EQ':
+            bexp = BooleanExpr.le(lhs, rhs)
+        else:  # f.operator == 'OP_GT_EQ'
+            bexp = BooleanExpr.ge(lhs, rhs)
+        sel = Select.create(expression=bexp, strings=strings)
+        selects.append(sel)
+    return selects
 
+
+def _filter_in_place(
+    df, columns, filters, convert_todo, _map, _reduce, null_value, missing_data_token
+):
     df.columns = list(map(character, columns))
     tmp = df
     blocks = list(filter_schedule(filters))
