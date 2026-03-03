@@ -612,7 +612,11 @@ def test_select():
 
 
 def test_provenance():
-    path = Path("/myfile/is/here.csv")
+    if sys.platform != "win32":
+        path_str = r"/myfile/is/here.csv"
+    else:
+        path_str = r"\myfile\is\here.csv"
+    path = Path(path_str)
     op = ReadDataset(path=path)
     expr = BooleanExpr("WGT>1.0")
     op2 = Select(expression=expr)
@@ -627,7 +631,7 @@ def test_provenance():
     assert prov[0] == op
     assert hash(prov) == hash(prov2)
     assert Provenance.from_dict(prov.to_dict()) == prov
-    assert repr(prov) == "Provenance(ReadDataset(path=/myfile/is/here.csv), Select(WGT > 1.0))"
+    assert repr(prov) == f"Provenance(ReadDataset(path={path_str}), Select(WGT > 1.0))"
 
     prov4 = Provenance((op2,))
     assert prov3 + prov4 == prov
