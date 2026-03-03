@@ -948,7 +948,7 @@ def filter_and_convert_dataset_in_place(
         else:
             accept = replace_synonym_in_filters(accept, replacements)
 
-    df = filter_and_convert_nonmem_dataset_in_place(
+    df, provenance = filter_and_convert_nonmem_dataset_in_place(
         df,
         raw,
         drop=drop,
@@ -959,6 +959,7 @@ def filter_and_convert_dataset_in_place(
         dtype=None if raw else di.get_dtype_dict(),
         missing_data_token=di.missing_data_token,
     )
+    di = di.replace(provenance=di.provenance + provenance)
     # Let TIME be the idv in both $PK and $PRED models
     # Remove individuals without observations
     if have_pk:

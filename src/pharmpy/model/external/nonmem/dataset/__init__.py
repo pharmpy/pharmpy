@@ -7,7 +7,7 @@ from typing import Any, Container, Iterable, Optional, TextIO, cast
 from pharmpy import conf
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.model import DatasetError, DatasetWarning, Select
+from pharmpy.model import DatasetError, DatasetWarning, Provenance, Select
 
 from .convert import convert, convert_in_place
 from .filter import (
@@ -110,7 +110,7 @@ def read_nonmem_dataset(
 
     df = read_nonmem_df(path_or_io, raw, ignore_character, colnames)
 
-    return filter_and_convert_nonmem_dataset_in_place(
+    df, _ = filter_and_convert_nonmem_dataset_in_place(
         df,
         raw=raw,
         drop=drop,
@@ -121,6 +121,7 @@ def read_nonmem_dataset(
         dtype=dtype,
         missing_data_token=missing_data_token,
     )
+    return df
 
 
 def filter_and_convert_nonmem_dataset_in_place(
@@ -163,10 +164,12 @@ def filter_and_convert_nonmem_dataset_in_place(
     statements = ignore or accept
     if statements is None:
         convert_remaining = list(convert_todo)
+        provenance = Provenance()
     else:
         filters = parse_filter_statements(statements)
         filters = list(filters)
-        filters_to_selects(filters, ignore=ignore == statements)
+        selects = filters_to_selects(filters, ignore=ignore == statements)
+        provenance = Provenance.create(selects)
         df, convert_done = _filter_in_place(
             df,
             columns,
@@ -207,7 +210,7 @@ def filter_and_convert_nonmem_dataset_in_place(
             df = df.astype(_dtype)
 
     df.index = range(1, len(df) + 1)
-    return df
+    return df, provenance
 
 
 def filters_to_selects(filters, ignore: bool) -> list[Select]:
@@ -232,6 +235,8 @@ def filters_to_selects(filters, ignore: bool) -> list[Select]:
             bexp = BooleanExpr.le(lhs, rhs)
         else:  # f.operator == 'OP_GT_EQ'
             bexp = BooleanExpr.ge(lhs, rhs)
+        if ignore:
+            bexp = ~bexp
         sel = Select.create(expression=bexp, strings=strings)
         selects.append(sel)
     return selects
