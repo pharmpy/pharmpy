@@ -24,7 +24,9 @@ from pharmpy.model import (
     NormalDistribution,
     Parameter,
     Parameters,
+    Provenance,
     RandomVariables,
+    ReadDataset,
     Select,
     Statements,
 )
@@ -772,6 +774,9 @@ def parse_datainfo(control_stream, path) -> DataInfo:
     dipath = resolved_dataset_path.with_suffix('.datainfo')
     if dipath.is_file():
         di_pharmpy = DataInfo.read_json(dipath)
+        if len(di_pharmpy.provenance) == 0:
+            # INFO: In case there was no provenance in the .datainfo file
+            di_pharmpy = di_pharmpy.replace(provenance=di_nonmem.provenance)
         di_pharmpy = di_pharmpy.replace(path=resolved_dataset_path)
         di_pharmpy = validate_datainfo(di_pharmpy, di_nonmem)
         return di_pharmpy
@@ -866,8 +871,15 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
             info = ColumnInfo.create(colname, drop=coldrop)
         column_info.append(info)
 
-    di = DataInfo.create(column_info, path=resolved_dataset_path)
+    prov = create_provenance(resolved_dataset_path)
+    di = DataInfo.create(column_info, path=resolved_dataset_path, provenance=prov)
     return di
+
+
+def create_provenance(dataset_path):
+    op = ReadDataset(path=dataset_path)
+    prov = Provenance.create([op])
+    return prov
 
 
 def replace_synonym_in_filters(filters, replacements):
