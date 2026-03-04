@@ -614,6 +614,8 @@ def test_select():
     with pytest.raises(TypeError):
         Select.create(op)
     expr = BooleanExpr.eq(Expr.symbol("WGT"), Expr.symbol("S"))
+    with pytest.raises(ValueError):
+        Select.create(expr)
     strings = {Expr.symbol("S"): "#"}
     op3 = Select.create(expr, strings)
     strings2 = {Expr.symbol("S"): "."}
