@@ -76,7 +76,7 @@ class ModelHash(Hash):
             if di is not None:
                 if model.dataset is None:
                     model = load_dataset(model)
-                di = di.replace(path=None)
+                di = di.replace(path=None, provenance=None)
                 model = model.replace(datainfo=di)
             model = model.replace(name='', description='')
             model_bytes = _encode(model)

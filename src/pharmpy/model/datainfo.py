@@ -1013,7 +1013,7 @@ class DataInfo(Sequence, Immutable):
         path: Optional[Union[str, Path]] = None,
         separator: str = ',',
         missing_data_token: Optional[str] = None,
-        provenance: Provenance = Provenance(),
+        provenance: Optional[Provenance] = None,
     ) -> DataInfo:
         if columns:
             if not isinstance(columns, Sequence):
@@ -1043,6 +1043,8 @@ class DataInfo(Sequence, Immutable):
         missing_ids = variable_ids - colnames_set
         if missing_ids:
             raise ValueError(f"All variable_ids must exist as columns. Missing: {missing_ids}")
+        if provenance is None:
+            provenance = Provenance()
         if not isinstance(provenance, Provenance):
             raise TypeError("provenance must be a Provenance object")
 
