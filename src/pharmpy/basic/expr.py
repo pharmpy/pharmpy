@@ -346,7 +346,7 @@ class BooleanExpr:
         if isinstance(source, BooleanExpr):
             self._expr = source._expr
         else:
-            expr = sympy.sympify(source)
+            expr = sympy.sympify(source, evaluate=False) # pyright: ignore [reportCallIssue]
             if isinstance(expr, sympy.StrictLessThan) and expr.rhs.is_Symbol:
                 expr = sympy.StrictGreaterThan(expr.rhs, expr.lhs)
             self._expr = expr
