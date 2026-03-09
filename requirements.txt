@@ -7,7 +7,7 @@ babel==2.18.0
 beautifulsoup4==4.14.3
 bleach==6.3.0
 certifi==2026.2.25
-charset-normalizer==3.4.4
+charset-normalizer==3.4.5
 click==8.3.1
 cloudpickle==3.1.2
 comm==0.2.3
