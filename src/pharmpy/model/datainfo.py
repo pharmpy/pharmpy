@@ -44,7 +44,8 @@ class ReadDataset(DatasetOperation):
         return hash(self.path)
 
     def to_dict(self) -> dict[str, Any]:
-        return {'__class__': 'ReadDataset', 'path': str(self._path)}
+        d = {'class': 'ReadDataset', 'path': str(self._path)}
+        return d
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> ReadDataset:
@@ -94,7 +95,7 @@ class Select(DatasetOperation):
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            '__class__': 'Select',
+            'class': 'Select',
             'expression': self._expression.serialize(),
             'strings': {key.serialize(): value for key, value in self._strings.items()},
         }
@@ -188,7 +189,7 @@ class Provenance(Sequence, Immutable):
     def from_dict(cls, d: dict[str, Any]) -> Provenance:
         operations = []
         for opdict in d['operations']:
-            if opdict['__class__'] == 'Select':
+            if opdict['class'] == 'Select':
                 op = Select.from_dict(opdict)
             else:
                 op = ReadDataset.from_dict(opdict)
