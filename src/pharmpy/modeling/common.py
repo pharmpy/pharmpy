@@ -12,7 +12,7 @@ from pathlib import Path
 from typing import Literal, Mapping, Optional, Union
 
 import pharmpy.config as config
-from pharmpy.basic import Expr, TSymbol
+from pharmpy.basic import BooleanExpr, Expr, TSymbol
 from pharmpy.deps import pandas
 from pharmpy.internals.df import reset_index
 from pharmpy.internals.fs.path import normalize_user_given_path
@@ -26,6 +26,7 @@ from pharmpy.model import (
     Parameter,
     Parameters,
     RandomVariables,
+    Select,
     get_and_check_dataset,
 )
 from pharmpy.model.statements import Output
@@ -735,10 +736,13 @@ def filter_dataset(model: Model, expr: str) -> Model:
     original_dataset = get_and_check_dataset(model)
     try:
         new_dataset = original_dataset.query(expr)
-        new_dataset = reset_index(new_dataset)
-        new_model = model.replace(dataset=new_dataset)
     except pandas.errors.UndefinedVariableError as e:
         raise ValueError(f'The expression `{expr}` is invalid: {e}')
+    new_dataset = reset_index(new_dataset)
+    select = Select.create(expression=BooleanExpr(expr))
+    new_prov = model.datainfo.provenance + select
+    new_di = model.datainfo.replace(provenance=new_prov)
+    new_model = model.replace(dataset=new_dataset, datainfo=new_di)
     return new_model
 
 
