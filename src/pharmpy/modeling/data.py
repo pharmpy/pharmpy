@@ -19,6 +19,7 @@ from pharmpy.model import (
     DatasetError,
     DataVariable,
     Model,
+    Provenance,
     get_and_check_dataset,
 )
 from pharmpy.model.model import update_datainfo
@@ -2100,7 +2101,8 @@ def unload_dataset(model: Model):
     True
 
     """
-    model = model.replace(dataset=None)
+    di = model.datainfo.replace(provenance=Provenance())
+    model = model.replace(dataset=None, datainfo=di)
     return model
 
 
