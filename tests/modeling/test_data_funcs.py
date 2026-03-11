@@ -576,9 +576,11 @@ def test_set_dataset(load_example_model_for_test, testdata):
     model = set_dataset(model, path_or_df=mox_path, datatype=None)
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
+    assert len(model.datainfo.provenance) == 1
 
     model = set_dataset(model, path_or_df=mox_path, datatype='nonmem')
     assert 'id' in model.datainfo.types
+    assert len(model.datainfo.provenance) == 1
 
     model = load_example_model_for_test("pheno")
     assert model.datainfo.path.name == 'pheno.dta'
@@ -588,12 +590,19 @@ def test_set_dataset(load_example_model_for_test, testdata):
     assert model.datainfo.path is None
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
+    assert len(model.datainfo.provenance) == 0
 
     model = load_example_model_for_test("pheno")
     model = set_dataset(model, path_or_df=dataset, datatype='nonmem')
     assert model.datainfo.path is None
     assert model.dataset is not None
     assert 'id' in model.datainfo.types
+    assert len(model.datainfo.provenance) == 0
+
+    model = load_example_model_for_test("pheno")
+    pheno_filtered_path = testdata / 'nonmem' / 'pheno_no_obs_1stID.dta'
+    model = set_dataset(model, path_or_df=pheno_filtered_path, datatype='nonmem')
+    assert len(model.datainfo.provenance) == 2
 
 
 def test_bin_observations(load_example_model_for_test):
