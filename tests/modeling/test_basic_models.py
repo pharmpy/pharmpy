@@ -16,6 +16,7 @@ from pharmpy.modeling import (
 def test_create_basic_pk_model(testdata, tmp_path):
     model = create_basic_pk_model('iv')
     assert len(model.parameters) == 6
+    assert len(model.datainfo.provenance) == 0
 
     model = create_basic_pk_model('oral')
     assert len(model.parameters) == 8
@@ -29,6 +30,7 @@ def test_create_basic_pk_model(testdata, tmp_path):
     assert not model.dataset.empty
     assert not run1.dataset.empty
     assert isinstance(model.dependent_variables, frozenmapping)
+    assert len(model.datainfo.provenance) == 1
 
     df = model.dataset
     df['CMT'] = np.random.randint(1, 3, size=len(df))
@@ -48,6 +50,17 @@ def test_create_basic_pk_model(testdata, tmp_path):
     )
     assert not model.dataset.empty
     assert model.datainfo._separator == r'\s+'
+    assert len(model.datainfo.provenance) == 1
+
+    pheno_filtered_path = testdata / 'nonmem' / 'pheno_no_obs_1stID.dta'
+    model = create_basic_pk_model(
+        administration='oral',
+        dataset_path=pheno_filtered_path,
+        cl_init=0.01,
+        vc_init=1.0,
+        mat_init=0.1,
+    )
+    assert len(model.datainfo.provenance) == 2
 
 
 def test_create_basic_pk_model_raises(testdata):
@@ -69,23 +82,27 @@ def test_create_basic_pd_model(testdata):
     assert len(model.parameters) == 2
 
     dataset_path = testdata / 'nonmem/pheno.dta'
-    create_basic_pd_model(dataset_path)
+    model = create_basic_pd_model(dataset_path)
+    assert len(model.datainfo.provenance) == 1
 
 
 def test_create_basic_kpd_model(testdata):
     model1 = create_basic_kpd_model()
     assert model1.dataset is None
+    assert len(model1.datainfo.provenance) == 0
     assert len(model1.parameters) == 4
 
     dataset_path = testdata / 'nonmem/pheno.dta'
     model2 = create_basic_kpd_model(dataset_path, driver='ir')
     assert model2.dataset is not None
+    assert len(model2.datainfo.provenance) == 1
     assert len(model2.parameters) == 4
     kpd_assign = model2.statements.after_odes.find_assignment('KPD')
     assert kpd_assign.expression == Expr.function('A_CENTRAL', Expr.symbol('t')) * Expr.symbol('KE')
 
     model3 = create_basic_kpd_model(dataset_path, driver='amount')
     assert model3.dataset is not None
+    assert len(model3.datainfo.provenance) == 1
     assert len(model3.parameters) == 4
     kpd_assign = model3.statements.after_odes.find_assignment('KPD')
     assert kpd_assign.expression == Expr.function('A_CENTRAL', Expr.symbol('t'))

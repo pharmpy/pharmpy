@@ -1908,14 +1908,36 @@ def read_dataset_from_datainfo(
     pd.DataFrame
         The dataset
     """
+    df, _ = read_dataset_from_datainfo_update(datainfo, datatype=datatype)
+    return df
+
+
+def read_dataset_from_datainfo_update(
+    datainfo: Union[DataInfo, Path, str], datatype: Optional[str] = None
+):
     if not isinstance(datainfo, DataInfo):
         datainfo = DataInfo.read_json(datainfo)
 
     if datainfo.path is None:
         raise ValueError('datainfo.path is None')
+    from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
+    from pharmpy.model.external.nonmem.parsing import filter_observations
+
+    op = ReadDataset(path=datainfo.path)
+    prov = Provenance.create([op])
+    di = datainfo.replace(provenance=prov)
 
     if datatype == 'nonmem':
-        df, _ = _read_dataset_from_datainfo_nonmem(datainfo)
+        drop = [col.drop for col in datainfo]
+        df = read_nonmem_dataset(
+            di.path,
+            ignore_character='@',
+            drop=drop,
+            colnames=datainfo.names,
+            dtype=datainfo.get_dtype_dict(),
+        )
+        # This assumes a PK model
+        di, df = filter_observations(df, di)
     else:
         df = pd.read_csv(
             datainfo.path,
@@ -1923,24 +1945,6 @@ def read_dataset_from_datainfo(
             dtype=datainfo.get_dtype_dict(),
             float_precision='round_trip',
         )
-    return df
-
-
-def _read_dataset_from_datainfo_nonmem(datainfo):
-    from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
-    from pharmpy.model.external.nonmem.parsing import filter_observations
-
-    drop = [col.drop for col in datainfo]
-    df = read_nonmem_dataset(
-        datainfo.path,
-        ignore_character='@',
-        drop=drop,
-        colnames=datainfo.names,
-        dtype=datainfo.get_dtype_dict(),
-    )
-    # This assumes a PK model
-    di, df = filter_observations(df, datainfo)
-    df = reset_index(df)
     return df, di
 
 
@@ -2215,15 +2219,7 @@ def set_dataset(
         di = DataInfo.create(columns=columns, path=path)
 
     if path:
-        if datatype == 'nonmem':
-            # FIXME: NONMEM dataset parsing can change datainfo, should be handled
-            #  in public read_dataset_from_datainfo
-            df, di = _read_dataset_from_datainfo_nonmem(di)
-        else:
-            df = read_dataset_from_datainfo(di, datatype=datatype)
-        op = ReadDataset(path=path)
-        prov = Provenance.create([op])
-        di = di.replace(provenance=prov + di.provenance)
+        df, di = read_dataset_from_datainfo_update(di, datatype=datatype)
 
     if len(df.columns) == 1:
         warnings.warn('Could only find one column, should this be another datatype?')
