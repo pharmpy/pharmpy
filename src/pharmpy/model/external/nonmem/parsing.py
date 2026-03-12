@@ -19,6 +19,7 @@ from pharmpy.model import (
     DataVariable,
     EstimationStep,
     ExecutionSteps,
+    Ignore,
     JointNormalDistribution,
     ModelSyntaxError,
     NormalDistribution,
@@ -27,7 +28,6 @@ from pharmpy.model import (
     Provenance,
     RandomVariables,
     ReadDataset,
-    Select,
     Statements,
 )
 from pharmpy.model.external.nonmem.records.data_record import DataRecord
@@ -1010,7 +1010,7 @@ def filter_observations(df: pd.DataFrame, di: DataInfo):
 def update_provenance_for_ids_without_observations(di, ids_without_observations):
     idname = di.id_column.name
     exprs = [
-        BooleanExpr.ne(Expr.symbol(idname), Expr.integer(idn)) for idn in ids_without_observations
+        BooleanExpr.eq(Expr.symbol(idname), Expr.integer(idn)) for idn in ids_without_observations
     ]
     if len(exprs) > 1:
         expr = exprs[0]
@@ -1018,8 +1018,8 @@ def update_provenance_for_ids_without_observations(di, ids_without_observations)
             expr &= e
     else:
         expr = exprs[0]
-    select = Select.create(expression=expr)
-    new_provenance = di.provenance + select
+    ignore = Ignore.create(expression=expr)
+    new_provenance = di.provenance + ignore
     new_di = di.replace(provenance=new_provenance)
     return new_di
 

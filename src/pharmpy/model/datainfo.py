@@ -55,7 +55,7 @@ class ReadDataset(DatasetOperation):
         return f"ReadDataset(path={self._path})"
 
 
-class Select(DatasetOperation):
+class Ignore(DatasetOperation):
     def __init__(
         self, expression: BooleanExpr, strings: frozenmapping[Expr, str] = frozenmapping({})
     ):
@@ -83,7 +83,7 @@ class Select(DatasetOperation):
             expression = self._expression
         if strings is None:
             strings = self._strings
-        return Select.create(expression=expression, strings=strings)
+        return Ignore.create(expression=expression, strings=strings)
 
     @property
     def expression(self) -> BooleanExpr:
@@ -95,13 +95,13 @@ class Select(DatasetOperation):
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'class': 'Select',
+            'class': 'Ignore',
             'expression': self._expression.serialize(),
             'strings': {key.serialize(): value for key, value in self._strings.items()},
         }
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> Select:
+    def from_dict(cls, d: dict[str, Any]) -> Ignore:
         expression = BooleanExpr.deserialize(d['expression'])
         strings = {Expr.deserialize(key): str(value) for key, value in d['strings'].items()}
         return cls(expression=expression, strings=frozenmapping(strings))
@@ -109,7 +109,7 @@ class Select(DatasetOperation):
     def __eq__(self, other: Any):
         if self is other:
             return True
-        if not isinstance(other, Select):
+        if not isinstance(other, Ignore):
             return NotImplemented
         return self._expression == other._expression and self._strings == other._strings
 
@@ -121,7 +121,7 @@ class Select(DatasetOperation):
             strings = f", {self._strings}"
         else:
             strings = ""
-        return f"Select({self._expression}{strings})"
+        return f"Ignore({self._expression}{strings})"
 
 
 class Provenance(Sequence, Immutable):
@@ -189,8 +189,8 @@ class Provenance(Sequence, Immutable):
     def from_dict(cls, d: dict[str, Any]) -> Provenance:
         operations = []
         for opdict in d['operations']:
-            if opdict['class'] == 'Select':
-                op = Select.from_dict(opdict)
+            if opdict['class'] == 'Ignore':
+                op = Ignore.from_dict(opdict)
             else:
                 op = ReadDataset.from_dict(opdict)
             operations.append(op)

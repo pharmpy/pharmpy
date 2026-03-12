@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
-from pharmpy.basic import Expr
-from pharmpy.model import ColumnInfo, DataVariable
+from pharmpy.basic import BooleanExpr, Expr
+from pharmpy.model import ColumnInfo, DataVariable, Ignore
 from pharmpy.model import Model as BaseModel
 from pharmpy.model.external.nlmixr.model import Model as nlmixrModel
 from pharmpy.model.external.nonmem import Model as NMModel
@@ -180,6 +180,7 @@ def test_filter_dataset(load_model_for_test, testdata):
     assert 2 in model.dataset['DVID'].values
     model_filtered = filter_dataset(model, 'DVID == 1')
     assert 2 not in model_filtered.dataset['DVID'].values
+    assert model_filtered.datainfo.provenance[-1] == Ignore(BooleanExpr.ne(Expr.symbol('DVID'), 1))
     with pytest.raises(ValueError):
         filter_dataset(model, 'dummy_col == 1')
 

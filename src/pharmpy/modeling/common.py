@@ -20,13 +20,13 @@ from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    Ignore,
     JointNormalDistribution,
     Model,
     NormalDistribution,
     Parameter,
     Parameters,
     RandomVariables,
-    Select,
     get_and_check_dataset,
 )
 from pharmpy.model.statements import Output
@@ -739,8 +739,8 @@ def filter_dataset(model: Model, expr: str) -> Model:
     except pandas.errors.UndefinedVariableError as e:
         raise ValueError(f'The expression `{expr}` is invalid: {e}')
     new_dataset = reset_index(new_dataset)
-    select = Select.create(expression=BooleanExpr(expr))
-    new_prov = model.datainfo.provenance + select
+    ignore = Ignore.create(expression=~BooleanExpr(expr))
+    new_prov = model.datainfo.provenance + ignore
     new_di = model.datainfo.replace(provenance=new_prov)
     new_model = model.replace(dataset=new_dataset, datainfo=new_di)
     return new_model

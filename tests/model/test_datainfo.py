@@ -4,7 +4,7 @@ from pathlib import Path
 import pytest
 
 from pharmpy.basic import BooleanExpr, Expr, Unit
-from pharmpy.model import ColumnInfo, DataInfo, DataVariable, Provenance, ReadDataset, Select
+from pharmpy.model import ColumnInfo, DataInfo, DataVariable, Ignore, Provenance, ReadDataset
 
 
 def test_datavariable_create():
@@ -597,33 +597,33 @@ def test_read_dataset():
     assert repr(op) == f"ReadDataset(path={path_str})"
 
 
-def test_select():
-    expr_str = r"WGT>1.0"
+def test_ignore():
+    expr_str = r"WGT<1.0"
     expr = BooleanExpr(expr_str)
-    op = Select(expression=expr)
+    op = Ignore(expression=expr)
     assert op.expression == expr
-    op2 = Select.create(expression=expr_str)
+    op2 = Ignore.create(expression=expr_str)
     assert op2.expression == expr
     assert op == op2
     assert op == op
     assert hash(op) == hash(op2)
     assert op != "othertype"
-    assert Select.from_dict(op.to_dict()) == op
-    assert repr(op) == f"Select({expr})"
+    assert Ignore.from_dict(op.to_dict()) == op
+    assert repr(op) == f"Ignore({expr})"
     assert op.replace(expression=expr) == op
     with pytest.raises(TypeError):
-        Select.create(op)
+        Ignore.create(op)
     expr = BooleanExpr.eq(Expr.symbol("WGT"), Expr.symbol("S"))
     with pytest.raises(ValueError):
         strings = {Expr.symbol("K"): "#"}
-        Select.create(expr, strings)
+        Ignore.create(expr, strings)
     strings = {Expr.symbol("S"): "#"}
-    op3 = Select.create(expr, strings)
+    op3 = Ignore.create(expr, strings)
     strings2 = {Expr.symbol("S"): "."}
     op4 = op3.replace(strings=strings2)
     assert op4.strings == strings2
     assert op3.strings == strings
-    assert repr(op3) == f"Select({expr}, {strings})"
+    assert repr(op3) == f"Ignore({expr}, {strings})"
 
 
 def test_provenance():
@@ -633,8 +633,8 @@ def test_provenance():
         path_str = r"\myfile\is\here.csv"
     path = Path(path_str)
     op = ReadDataset(path=path)
-    expr = BooleanExpr("WGT>1.0")
-    op2 = Select(expression=expr)
+    expr = BooleanExpr("WGT<1.0")
+    op2 = Ignore(expression=expr)
     prov = Provenance((op, op2))
     assert len(prov) == 2
     prov2 = Provenance.create([op, op2])
@@ -646,7 +646,7 @@ def test_provenance():
     assert prov[0] == op
     assert hash(prov) == hash(prov2)
     assert Provenance.from_dict(prov.to_dict()) == prov
-    assert repr(prov) == f"Provenance(ReadDataset(path={path_str}), Select(WGT > 1.0))"
+    assert repr(prov) == f"Provenance(ReadDataset(path={path_str}), Ignore(WGT < 1.0))"
 
     prov4 = Provenance((op2,))
     assert prov3 + prov4 == prov

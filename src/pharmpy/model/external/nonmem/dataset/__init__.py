@@ -7,7 +7,7 @@ from typing import Any, Container, Iterable, Optional, TextIO, cast
 from pharmpy import conf
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.model import DatasetError, DatasetWarning, Provenance, Select
+from pharmpy.model import DatasetError, DatasetWarning, Ignore, Provenance
 
 from .convert import convert, convert_in_place
 from .filter import (
@@ -213,7 +213,7 @@ def filter_and_convert_nonmem_dataset_in_place(
     return df, provenance
 
 
-def filters_to_selects(filters, ignore: bool) -> list[Select]:
+def filters_to_selects(filters, ignore: bool) -> list[Ignore]:
     selects = []
     for f in filters:
         lhs = Expr.symbol(f.column)
@@ -235,9 +235,9 @@ def filters_to_selects(filters, ignore: bool) -> list[Select]:
             bexp = BooleanExpr.le(lhs, rhs)
         else:  # f.operator == 'OP_GT_EQ'
             bexp = BooleanExpr.ge(lhs, rhs)
-        if ignore:
+        if not ignore:
             bexp = ~bexp
-        sel = Select.create(expression=bexp, strings=strings)
+        sel = Ignore.create(expression=bexp, strings=strings)
         selects.append(sel)
     return selects
 

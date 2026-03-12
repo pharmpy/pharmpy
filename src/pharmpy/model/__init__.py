@@ -1,5 +1,5 @@
 from .data import DatasetError, DatasetWarning
-from .datainfo import ColumnInfo, DataInfo, DataVariable, Provenance, ReadDataset, Select
+from .datainfo import ColumnInfo, DataInfo, DataVariable, Ignore, Provenance, ReadDataset
 from .distributions.symbolic import (
     Distribution,
     FiniteDistribution,
@@ -47,6 +47,7 @@ __all__ = (
     'FiniteDistribution',
     'get_and_check_dataset',
     'get_and_check_odes',
+    'Ignore',
     'Infusion',
     'JointNormalDistribution',
     'Model',
@@ -60,7 +61,6 @@ __all__ = (
     'Provenance',
     'RandomVariables',
     'ReadDataset',
-    'Select',
     'SimulationStep',
     'Statement',
     'Statements',

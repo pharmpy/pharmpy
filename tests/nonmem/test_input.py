@@ -1,3 +1,7 @@
+from pharmpy.basic import BooleanExpr, Expr
+from pharmpy.model import Ignore
+
+
 def test_data_read(pheno):
     df = pheno.dataset
     # FIXME: should have numeric TIME
@@ -20,6 +24,7 @@ def test_remove_individuals_without_observations(create_model_for_test, datadir)
     df = model.dataset
     assert 1 not in df['ID']
     assert len(df['ID'].unique()) == 58
+    assert model.datainfo.provenance[-1] == Ignore(BooleanExpr.eq(Expr.symbol('ID'), 1))
 
 
 def test_ignore_with_synonym(create_model_for_test, pheno_data):
