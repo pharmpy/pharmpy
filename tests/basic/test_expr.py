@@ -151,18 +151,30 @@ def test_boolean_expr_args():
 
 
 @pytest.mark.parametrize(
-    'expr_lhs, expr_rhs',
+    'lhs, rhs',
     [
         (Expr('x'), Expr('y')),
         (Expr('x'), Expr('y + 1')),
         (Expr('x'), Expr.function('f', 't')),
     ],
 )
-def test_boolean_expr_args_rel(expr_lhs, expr_rhs):
-    expr = BooleanExpr.eq(expr_lhs, expr_rhs)
-    assert expr.args == (expr_lhs, expr_rhs)
-    expr = BooleanExpr.ne(expr_lhs, expr_rhs)
-    assert expr.args == (expr_lhs, expr_rhs)
+def test_boolean_expr_args_rel(lhs, rhs):
+    expr = BooleanExpr.eq(lhs, rhs)
+    assert expr.is_relational()
+    assert expr.is_eq()
+    assert expr.args == (lhs, rhs)
+    expr = BooleanExpr.ne(lhs, rhs)
+    assert expr.is_relational()
+    assert expr.is_ne()
+    assert expr.args == (lhs, rhs)
+    expr = BooleanExpr.lt(lhs, rhs)
+    assert expr.is_lt()
+    expr = BooleanExpr.le(lhs, rhs)
+    assert expr.is_le()
+    expr = BooleanExpr.gt(lhs, rhs)
+    assert expr.is_gt()
+    expr = BooleanExpr.ge(lhs, rhs)
+    assert expr.is_ge()
 
 
 @pytest.mark.parametrize(

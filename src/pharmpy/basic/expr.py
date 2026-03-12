@@ -347,7 +347,11 @@ class BooleanExpr:
             self._expr = source._expr
         else:
             expr = sympy.sympify(source, evaluate=False)  # pyright: ignore [reportCallIssue]
-            if isinstance(expr, sympy.StrictLessThan) and expr.rhs.is_Symbol:
+            if (
+                isinstance(expr, sympy.StrictLessThan)
+                and expr.rhs.is_Symbol
+                and not expr.lhs.is_Symbol
+            ):
                 expr = sympy.StrictGreaterThan(expr.rhs, expr.lhs)
             self._expr = expr
 
@@ -453,6 +457,27 @@ class BooleanExpr:
 
     def __repr__(self) -> str:
         return repr(self._expr)
+
+    def is_relational(self):
+        return isinstance(self._expr, sympy.core.relational.Relational)
+
+    def is_lt(self):
+        return isinstance(self._expr, sympy.StrictLessThan)
+
+    def is_le(self):
+        return isinstance(self._expr, sympy.LessThan)
+
+    def is_gt(self):
+        return isinstance(self._expr, sympy.StrictGreaterThan)
+
+    def is_ge(self):
+        return isinstance(self._expr, sympy.GreaterThan)
+
+    def is_eq(self):
+        return isinstance(self._expr, sympy.Equality)
+
+    def is_ne(self):
+        return isinstance(self._expr, sympy.Unequality)
 
     def is_true(self):
         return self._expr == sympy.true
