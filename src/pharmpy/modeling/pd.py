@@ -21,6 +21,7 @@ from pharmpy.modeling import (
     calculate_summary_statistic,
     create_symbol,
     get_central_volume_and_clearance,
+    remove_unused_parameters_and_rvs,
     set_initial_condition,
 )
 
@@ -559,10 +560,6 @@ def set_placebo_model(
 
     P = Expr.symbol("PDP")
 
-    p_index = model.statements.find_assignment_index("PDP")
-    if p_index is not None:
-        raise ValueError("PDP already in the model. Not yet supported")
-
     idv = Expr.symbol(model.datainfo.idv_column.name)
     old_rassign = model.statements.get_assignment("R")
 
@@ -622,10 +619,22 @@ def set_placebo_model(
     passign = Assignment(P, passign_expr)
     new_rassign = Assignment(old_rassign.symbol, rassign_expr)
 
-    r_index = model.statements.get_assignment_index("R")
-    statements = (
-        model.statements[:r_index] + passign + new_rassign + model.statements[r_index + 1 :]
-    )
+    p_index = model.statements.find_assignment_index("PDP")
+    have_old_pdp_model = p_index is not None
+    if have_old_pdp_model:
+        old_p_deps = model.statements[p_index].rhs_symbols
+
+    if p_index is not None:
+        statements = model.statements[:p_index] + model.statements[p_index + 1 :]
+    else:
+        statements = model.statements
+
+    r_index = statements.get_assignment_index("R")
+    statements = statements[:r_index] + passign + new_rassign + statements[r_index + 1 :]
+    if have_old_pdp_model:
+        statements = statements.remove_symbol_definitions(old_p_deps, passign)
+
     model = model.replace(statements=statements)
-    model = model.update_source()
+    if have_old_pdp_model:
+        model = remove_unused_parameters_and_rvs(model)
     return model
