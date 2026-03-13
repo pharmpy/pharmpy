@@ -621,8 +621,6 @@ def set_placebo_model(
 
     p_index = model.statements.find_assignment_index("PDP")
     have_old_pdp_model = p_index is not None
-    if have_old_pdp_model:
-        old_p_deps = model.statements[p_index].rhs_symbols
 
     if p_index is not None:
         statements = model.statements[:p_index] + model.statements[p_index + 1 :]
@@ -632,6 +630,7 @@ def set_placebo_model(
     r_index = statements.get_assignment_index("R")
     statements = statements[:r_index] + passign + new_rassign + statements[r_index + 1 :]
     if have_old_pdp_model:
+        old_p_deps = model.statements[p_index].rhs_symbols
         statements = statements.remove_symbol_definitions(old_p_deps, passign)
 
     model = model.replace(statements=statements)
