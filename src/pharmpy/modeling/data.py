@@ -5,7 +5,7 @@ import warnings
 from pathlib import Path
 from typing import Collection, Container, Literal, Optional, Union
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
@@ -18,6 +18,7 @@ from pharmpy.model import (
     DataInfo,
     DatasetError,
     DataVariable,
+    Ignore,
     Model,
     Provenance,
     ReadDataset,
@@ -1646,21 +1647,38 @@ def _loq_mask(
     df = get_and_check_dataset(model)
     if lloq is not None or uloq is not None:
         dv = model.datainfo.dv_column.name
+        dv_symb = _as_expr(dv)
+    lloq_symb = _as_expr(lloq)
+    uloq_symb = _as_expr(uloq)
+    alq_symb = _as_expr(alq)
+    blq_symb = _as_expr(blq)
     mdv = get_mdv(model)
     which_keep = pd.Series(True, index=df.index)
     if isinstance(lloq, str):
         lloq = df[lloq]
     if isinstance(uloq, str):
         uloq = df[uloq]
+    exprs_keep = []
     if lloq is not None:
+        exprs_keep.append(BooleanExpr.gt(dv_symb, lloq_symb))
         which_keep &= (df[dv] > lloq) | mdv
     elif blq is not None:
+        exprs_keep.append(BooleanExpr.eq(blq_symb, 0))
         which_keep &= (df[blq] == 0) | mdv
     if uloq is not None:
+        exprs_keep.append(BooleanExpr.lt(dv_symb, uloq_symb))
         which_keep &= (df[dv] < uloq) | mdv
     elif alq is not None:
+        exprs_keep.append(BooleanExpr.eq(alq_symb, 0))
         which_keep &= (df[alq] == 0) | mdv
-    return which_keep
+    return which_keep, exprs_keep
+
+
+def _as_expr(value):
+    if value is None:
+        return None
+    else:
+        return Expr(value)
 
 
 def remove_loq_data(
@@ -1709,7 +1727,7 @@ def remove_loq_data(
     transform_blq
 
     """
-    which_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
+    which_keep, exprs_keep = _loq_mask(model, lloq=lloq, uloq=uloq, blq=blq, alq=alq)
     df = get_and_check_dataset(model)
     if keep > 0:
         idcol = model.datainfo.id_column.name
@@ -1718,7 +1736,14 @@ def remove_loq_data(
         )
         obj = keep_df.groupby([idcol, 'consec']).cumsum().le(keep)['remove']
         which_keep = obj | which_keep
-    model = model.replace(dataset=df[which_keep])
+    dataset_new = df[which_keep]
+    if len(dataset_new) == len(model.dataset):
+        return model
+    di = model.datainfo
+    ignores = [Ignore.create(expression=~expr) for expr in exprs_keep]
+    new_provenance = di.provenance + ignores
+    new_di = di.replace(provenance=new_provenance)
+    model = model.replace(dataset=dataset_new, datainfo=new_di)
     return model.update_source()
 
 
@@ -1758,7 +1783,7 @@ def set_lloq_data(
     transform_blq
 
     """
-    which_keep = _loq_mask(model, lloq=lloq, blq=blq)
+    which_keep, _ = _loq_mask(model, lloq=lloq, blq=blq)
     df = model.dataset.copy()
     dv = model.datainfo.dv_column.name
     if isinstance(value, Expr) or isinstance(value, str):
