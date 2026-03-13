@@ -9,7 +9,6 @@ from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
-    add_placebo_model,
     convert_model,
     create_basic_kpd_model,
     create_basic_pd_model,
@@ -20,6 +19,7 @@ from pharmpy.modeling import (
     set_direct_effect,
     set_initial_estimates,
     set_name,
+    set_placebo_model,
     set_proportional_error_model,
 )
 from pharmpy.tools.common import (
@@ -249,7 +249,7 @@ def run_drug_effect_models(
 def create_placebo_model(expr, op, baseme):
     base_model = baseme.model
     model = set_initial_estimates(base_model, baseme.modelfit_results.parameter_estimates)
-    model = add_placebo_model(model, expr, op)
+    model = set_placebo_model(model, expr, op)
     if op == '*':
         txtop = 'mult'
     elif op == '+':

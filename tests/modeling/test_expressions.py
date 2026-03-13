@@ -20,7 +20,6 @@ from pharmpy.modeling import (
     add_indirect_effect,
     add_metabolite,
     add_peripheral_compartment,
-    add_placebo_model,
     calculate_epsilon_gradient_expression,
     calculate_eta_gradient_expression,
     cholesky_decompose,
@@ -50,6 +49,7 @@ from pharmpy.modeling import (
     remove_covariate_effect,
     set_direct_effect,
     set_first_order_absorption,
+    set_placebo_model,
     set_transit_compartments,
     simplify_expression,
     solve_ode_system,
@@ -747,7 +747,7 @@ def test_get_individual_parameters_pd_models(
         model = create_basic_kpd_model(dataset_path, driver='ir')
         variable = 'KPD'
     if pdp_kind:
-        model = add_placebo_model(model, pdp_kind)
+        model = set_placebo_model(model, pdp_kind)
     model = set_direct_effect(model, pd_kind, variable)
     assert set(get_individual_parameters(model)) == set(expected)
 

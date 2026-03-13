@@ -233,7 +233,7 @@ PD modeling
 
     add_effect_compartment
     add_indirect_effect
-    add_placebo_model
+    set_placebo_model
     set_baseline_effect
     set_direct_effect
 

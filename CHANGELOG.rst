@@ -11,6 +11,7 @@ Changes
 =======
 
 * Change unit representations to use abbreviations. For example gram is now g.
+* Rename add_placebo_model to set_placebo_model
 
 2.0.0 (2026-02-12)
 ------------------

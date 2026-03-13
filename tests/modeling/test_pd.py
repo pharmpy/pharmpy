@@ -11,12 +11,12 @@ from pharmpy.model import (
 from pharmpy.modeling import (
     add_effect_compartment,
     add_indirect_effect,
-    add_placebo_model,
     create_basic_kpd_model,
     create_basic_pd_model,
     set_baseline_effect,
     set_direct_effect,
     set_michaelis_menten_elimination,
+    set_placebo_model,
 )
 
 
@@ -226,9 +226,9 @@ def test_find_central_comp(load_model_for_test, testdata):
         ),
     ],
 )
-def test_add_placebo_model(expr, op, Pexpr, Rexpr):
+def test_set_placebo_model(expr, op, Pexpr, Rexpr):
     model = create_basic_pd_model()
-    model = add_placebo_model(model, expr, operator=op)
+    model = set_placebo_model(model, expr, operator=op)
 
     P, R = S('PDP'), S('R')
     assert model.statements.get_assignment(P) == Assignment.create(P, Pexpr)

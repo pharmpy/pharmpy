@@ -237,9 +237,9 @@ from .parameters import (
 from .pd import (
     add_effect_compartment,
     add_indirect_effect,
-    add_placebo_model,
     set_baseline_effect,
     set_direct_effect,
+    set_placebo_model,
 )
 from .plots import (
     plot_abs_cwres_vs_ipred,
@@ -288,7 +288,6 @@ __all__ = [
     'add_pd_iiv',
     'add_peripheral_compartment',
     'add_pk_iiv',
-    'add_placebo_model',
     'add_population_parameter',
     'add_predictions',
     'add_residuals',
@@ -483,6 +482,7 @@ __all__ = [
     'set_n_transit_compartments',
     'set_ode_solver',
     'set_peripheral_compartments',
+    'set_placebo_model',
     'set_power_on_ruv',
     'set_proportional_error_model',
     'set_reference_values',

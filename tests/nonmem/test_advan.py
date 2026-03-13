@@ -7,9 +7,9 @@ from pharmpy.model.external.nonmem import convert_model
 from pharmpy.model.external.nonmem.advan import compartmental_model
 from pharmpy.modeling import (
     add_admid,
-    add_placebo_model,
     create_basic_kpd_model,
     get_initial_conditions,
+    set_placebo_model,
     write_model,
 )
 
@@ -635,6 +635,6 @@ def test_f_statement(load_model_for_test, testdata):
 
 def test_k_parameter_kpd_models(testdata):
     model = create_basic_kpd_model(testdata / 'nonmem' / 'pheno.dta')
-    model = add_placebo_model(model, 'linear')
+    model = set_placebo_model(model, 'linear')
     model = convert_model(model)
     assert model.statements.get_assignment('K').expression == Expr('KE')

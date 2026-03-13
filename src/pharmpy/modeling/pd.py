@@ -502,7 +502,7 @@ def set_baseline_effect(model: Model, expr: str = 'const'):
     return model
 
 
-def add_placebo_model(
+def set_placebo_model(
     model: Model,
     expr: Literal['linear', 'exp', 'hyperbolic'],
     operator: Literal['*', '+', 'prop'] = '*',
@@ -547,7 +547,7 @@ def add_placebo_model(
     --------
     >>> from pharmpy.modeling import *
     >>> model = create_basic_pd_model()
-    >>> model = add_placebo_model(model, "linear")
+    >>> model = set_placebo_model(model, "linear")
     >>> model.statements.find_assignment("PDP")
     PDP = SLOPE⋅TIME
 
