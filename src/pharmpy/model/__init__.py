@@ -1,5 +1,5 @@
 from .data import DatasetError, DatasetWarning
-from .datainfo import ColumnInfo, DataInfo, DataVariable, Ignore, Provenance, ReadDataset
+from .datainfo import Add, ColumnInfo, DataInfo, DataVariable, Drop, Ignore, Provenance, ReadDataset
 from .distributions.symbolic import (
     Distribution,
     FiniteDistribution,
@@ -31,6 +31,7 @@ from .statements import (
 )
 
 __all__ = (
+    'Add',
     'Assignment',
     'Bolus',
     'ColumnInfo',
@@ -42,6 +43,7 @@ __all__ = (
     'DatasetWarning',
     'DataVariable',
     'Distribution',
+    'Drop',
     'EstimationStep',
     'ExecutionSteps',
     'FiniteDistribution',

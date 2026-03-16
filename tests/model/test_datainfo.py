@@ -4,7 +4,16 @@ from pathlib import Path
 import pytest
 
 from pharmpy.basic import BooleanExpr, Expr, Unit
-from pharmpy.model import ColumnInfo, DataInfo, DataVariable, Ignore, Provenance, ReadDataset
+from pharmpy.model import (
+    Add,
+    ColumnInfo,
+    DataInfo,
+    DataVariable,
+    Drop,
+    Ignore,
+    Provenance,
+    ReadDataset,
+)
 
 
 def test_datavariable_create():
@@ -626,6 +635,42 @@ def test_ignore():
     assert repr(op3) == f"Ignore({expr}, {strings})"
 
 
+def test_drop():
+    column = Expr.symbol('WGT')
+    op = Drop(column)
+    assert op.column == column
+    op2 = Drop.create(column.name)
+    assert op2.column == column
+    assert op == op2
+    assert op == op
+    assert hash(op) == hash(op2)
+    assert op != "othertype"
+    assert Drop.from_dict(op.to_dict()) == op
+    assert repr(op) == f"Drop({column.name})"
+    with pytest.raises(TypeError):
+        Drop.create(op)
+    with pytest.raises(ValueError):
+        Drop.create(Expr('x + y'))
+
+
+def test_add_op():
+    column = Expr.symbol('TAD')
+    op = Add(column)
+    assert op.column == column
+    op2 = Add.create(column.name)
+    assert op2.column == column
+    assert op == op2
+    assert op == op
+    assert hash(op) == hash(op2)
+    assert op != "othertype"
+    assert Add.from_dict(op.to_dict()) == op
+    assert repr(op) == f"Add({column.name})"
+    with pytest.raises(TypeError):
+        Add.create(op)
+    with pytest.raises(ValueError):
+        Add.create(Expr('x + y'))
+
+
 def test_provenance():
     if sys.platform != "win32":
         path_str = r"/myfile/is/here.csv"
@@ -648,14 +693,19 @@ def test_provenance():
     assert Provenance.from_dict(prov.to_dict()) == prov
     assert repr(prov) == f"Provenance(ReadDataset(path={path_str}), Ignore(WGT < 1.0))"
 
-    prov4 = Provenance((op2,))
-    assert prov3 + prov4 == prov
+    op3 = Drop.create('CMT')
+    op4 = Add.create('TAD')
+    prov4 = Provenance((op, op2, op3, op4))
+    assert Provenance.from_dict(prov4.to_dict()) == prov4
+
+    prov5 = Provenance((op2,))
+    assert prov3 + prov5 == prov
     assert prov3 + op2 == prov
     assert prov3 + [op2] == prov
-    assert op + prov4 == prov
-    assert (op,) + prov4 == prov
-    assert prov4 != prov3
-    assert prov[1:] == prov4
+    assert op + prov5 == prov
+    assert (op,) + prov5 == prov
+    assert prov5 != prov3
+    assert prov[1:] == prov5
 
     with pytest.raises(TypeError):
         Provenance.create([2])

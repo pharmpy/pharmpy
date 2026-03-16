@@ -124,6 +124,92 @@ class Ignore(DatasetOperation):
         return f"Ignore({self._expression}{strings})"
 
 
+class Drop(DatasetOperation):
+    def __init__(self, column: Expr):
+        self._column = column
+
+    @classmethod
+    def create(cls, column: Union[Expr, str]):
+        if isinstance(column, str):
+            column = Expr.symbol(column)
+        if not isinstance(column, Expr):
+            raise TypeError(f"Bad type of `column`: {type(column)}")
+        if len(column.args) > 1:
+            raise ValueError(f"Argument `column` must be a symbol: {column}")
+        return cls(column=column)
+
+    @property
+    def column(self) -> Expr:
+        return self._column
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            'class': 'Drop',
+            'column': self.column.serialize(),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Drop:
+        column = Expr.deserialize(d['column'])
+        return cls(column=column)
+
+    def __eq__(self, other: Any):
+        if self is other:
+            return True
+        if not isinstance(other, Drop):
+            return NotImplemented
+        return self._column == other._column
+
+    def __hash__(self):
+        return hash(self._column)
+
+    def __repr__(self):
+        return f"Drop({self._column})"
+
+
+class Add(DatasetOperation):
+    def __init__(self, column: Expr):
+        self._column = column
+
+    @classmethod
+    def create(cls, column: Union[Expr, str]):
+        if isinstance(column, str):
+            column = Expr.symbol(column)
+        if not isinstance(column, Expr):
+            raise TypeError(f"Bad type of `column`: {type(column)}")
+        if len(column.args) > 1:
+            raise ValueError(f"Argument `column` must be a symbol: {column}")
+        return cls(column=column)
+
+    @property
+    def column(self) -> Expr:
+        return self._column
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            'class': 'Add',
+            'column': self.column.serialize(),
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> Add:
+        column = Expr.deserialize(d['column'])
+        return cls(column=column)
+
+    def __eq__(self, other: Any):
+        if self is other:
+            return True
+        if not isinstance(other, Add):
+            return NotImplemented
+        return self._column == other._column
+
+    def __hash__(self):
+        return hash(self._column)
+
+    def __repr__(self):
+        return f"Add({self._column})"
+
+
 class Provenance(Sequence, Immutable):
     def __init__(self, operations: tuple[DatasetOperation, ...] = ()):
         self._operations = operations
@@ -189,8 +275,13 @@ class Provenance(Sequence, Immutable):
     def from_dict(cls, d: dict[str, Any]) -> Provenance:
         operations = []
         for opdict in d['operations']:
+            op_class = opdict['class']
             if opdict['class'] == 'Ignore':
                 op = Ignore.from_dict(opdict)
+            elif op_class == 'Drop':
+                op = Drop.from_dict(opdict)
+            elif op_class == 'Add':
+                op = Add.from_dict(opdict)
             else:
                 op = ReadDataset.from_dict(opdict)
             operations.append(op)
