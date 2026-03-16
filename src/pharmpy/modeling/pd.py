@@ -558,10 +558,27 @@ def set_placebo_model(
     if r_index is None:
         raise ValueError("Cannot find response variable R. Is this a PD model?")
 
+    def remove_variable(expr, x):
+        if expr.is_mul():
+            product = Expr.integer(1)
+            for factor in expr.args:
+                if factor != x:
+                    product *= remove_variable(factor, x)
+            return product
+        elif expr.is_add():
+            s = Expr.integer(0)
+            for term in expr.args:
+                if term != x:
+                    s += remove_variable(term, x)
+            return s
+        else:
+            return expr
+
     P = Expr.symbol("PDP")
 
     idv = Expr.symbol(model.datainfo.idv_column.name)
     old_rassign = model.statements.get_assignment("R")
+    old_rassign_expr = remove_variable(old_rassign.expression, P)
 
     def operate(lhs, rhs, operator):
         if operator == '*':
@@ -577,7 +594,7 @@ def set_placebo_model(
         slope = create_symbol(model, "SLOPE")
         model = add_individual_parameter(model, slope.name, lower=-float("inf"))
         passign_expr = slope * idv
-        rassign_expr = operate(old_rassign.expression, P, operator)
+        rassign_expr = operate(old_rassign_expr, P, operator)
     elif expr == 'exp_decrease':
         if operator != '*':
             raise ValueError('Only * is supported for exp')
@@ -585,7 +602,7 @@ def set_placebo_model(
         td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
         model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = (-idv / td).exp()
-        rassign_expr = old_rassign.expression * P
+        rassign_expr = old_rassign_expr * P
     elif expr == 'exp_decrease_to_new_SS':
         if operator != '+':
             raise ValueError('Only + is supported for exp_decrease_to_new_SS')
@@ -596,7 +613,7 @@ def set_placebo_model(
         pdp_ss_init = model.parameters['POP_B'].init / 2.0
         model = add_individual_parameter(model, pdp_ss.name, init=pdp_ss_init)
         passign_expr = (pdp_ss - Expr.symbol("B")) * (1 - (-idv / td).exp())
-        rassign_expr = old_rassign.expression + P
+        rassign_expr = old_rassign_expr + P
     elif expr == 'exp_increase':
         if operator != '*':
             raise ValueError('Only * is supported for exp')
@@ -604,7 +621,7 @@ def set_placebo_model(
         td_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
         model = add_individual_parameter(model, td.name, init=td_init)
         passign_expr = 1 - (-idv / td).exp()
-        rassign_expr = old_rassign.expression * P
+        rassign_expr = old_rassign_expr * P
     elif expr == 'tmax':
         t50 = create_symbol(model, "T50")
         t50_init = 2.0 * calculate_summary_statistic(model, "max", idv.name, default=1.0)
@@ -612,7 +629,7 @@ def set_placebo_model(
         tmax = create_symbol(model, "TMAX")
         model = add_individual_parameter(model, tmax.name, lower=-1.0)
         passign_expr = tmax * idv / (t50 + idv)
-        rassign_expr = operate(old_rassign.expression, P, operator)
+        rassign_expr = operate(old_rassign_expr, P, operator)
     else:
         raise ValueError(f"Unknown placebo model {expr}")
 
