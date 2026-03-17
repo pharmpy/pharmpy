@@ -19,10 +19,12 @@ from pharmpy.model import (
     CompartmentalSystemBuilder,
     DataVariable,
     Distribution,
+    Drop,
     EstimationStep,
     Infusion,
     Parameter,
     Parameters,
+    Provenance,
     RandomVariables,
     SimulationStep,
     Statements,
@@ -2285,9 +2287,12 @@ def add_dummy_dv(model: Model) -> Model:
     except IndexError:
         if model.dataset is not None and 'DV' not in model.dataset.columns:
             df = model.dataset.copy()
+            prov = model.datainfo.provenance
             df['DV'] = 0.0
             colinfo = ColumnInfo.create('DV', DataVariable.create('DV', type='dv'))
             di = model.datainfo + colinfo
+            prov = Provenance.create([d for d in prov if d != Drop.create('DV')])
+            di = di.replace(provenance=prov)
             model = model.replace(dataset=df, datainfo=di)
     return model
 

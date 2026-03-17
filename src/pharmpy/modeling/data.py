@@ -19,6 +19,7 @@ from pharmpy.model import (
     DataInfo,
     DatasetError,
     DataVariable,
+    Drop,
     Ignore,
     Model,
     Provenance,
@@ -1357,7 +1358,7 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
     if isinstance(column_names, str):
         column_names = [column_names]
     di = model.datainfo
-    newcols, to_drop = [], []
+    newcols, to_drop, prov_new = [], [], []
     for col in di:
         if col.name in column_names:
             if mark:
@@ -1365,9 +1366,12 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
                 newcols.append(newcol)
             else:
                 to_drop.append(col.name)
+            if (drop := Drop.create(col.name)) not in di.provenance:
+                prov_new.append(drop)
         else:
             newcols.append(col)
-    replace_dict = {'datainfo': di.replace(columns=newcols)}
+    di = di.replace(columns=newcols, provenance=di.provenance + prov_new)
+    replace_dict = {'datainfo': di}
     if to_drop:
         df = get_and_check_dataset(model).copy()
         replace_dict['dataset'] = df.drop(to_drop, axis=1)
@@ -1412,7 +1416,10 @@ def undrop_columns(model: Model, column_names: Union[list[str], str]):
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model = model.replace(datainfo=di.replace(columns=newcols))
+    undrop = [Drop.create(col.name) for col in newcols]
+    prov_new = Provenance.create([op for op in di.provenance if op not in undrop])
+    di = di.replace(columns=newcols, provenance=prov_new)
+    model = model.replace(datainfo=di)
     return model.update_source()
 
 
@@ -1449,7 +1456,9 @@ def remove_unused_columns(model: Model) -> Model:
     model = drop_dropped_columns(model)
     deps = _all_dependent_symbols(model)
     keep = [name for name in model.datainfo.names if name in deps]
-    di = model.datainfo[keep]
+    drop = [Drop.create(col) for col in model.datainfo.names if col not in keep]
+    prov_new = model.datainfo.provenance + drop
+    di = model.datainfo[keep].replace(provenance=prov_new)
     df = model.dataset[keep]
     model = model.replace(dataset=df, datainfo=di)
     return model.update_source()
@@ -1749,9 +1758,9 @@ def remove_loq_data(
         return model
     di = model.datainfo
     ignores = [Ignore.create(expression=~expr) for expr in exprs_keep]
-    new_provenance = di.provenance + ignores
-    new_di = di.replace(provenance=new_provenance)
-    model = model.replace(dataset=dataset_new, datainfo=new_di)
+    prov_new = di.provenance + ignores
+    di_new = di.replace(provenance=prov_new)
+    model = model.replace(dataset=dataset_new, datainfo=di_new)
     return model.update_source()
 
 

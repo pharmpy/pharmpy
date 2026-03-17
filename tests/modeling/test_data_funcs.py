@@ -5,7 +5,7 @@ import pytest
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
-from pharmpy.model import Add
+from pharmpy.model import Add, Drop
 from pharmpy.modeling import (
     add_admid,
     add_cmt,
@@ -291,12 +291,20 @@ def test_drop_columns(load_example_model_for_test):
     correct = ['ID', 'TIME', 'AMT', 'WGT', 'DV', 'FA1', 'FA2']
     assert m.datainfo.names == correct
     assert list(m.dataset.columns) == correct
+    assert m.datainfo.provenance[-1] == Drop.create('APGR')
+    assert len(m.datainfo.provenance) == 2
     m = drop_columns(m, ['DV', 'ID'])  # DV still in because NONMEM model
     assert m.datainfo.names == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
+    assert all(Drop.create(col) in m.datainfo.provenance for col in ['ID', 'APGR'])
+    assert Drop.create('DV') not in m.datainfo.provenance
+    assert len(m.datainfo.provenance) == 3
     m = drop_columns(m, ['TIME'], mark=True)
     assert m.datainfo['TIME'].drop
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
+    assert all(Drop.create(col) in m.datainfo.provenance for col in ['ID', 'APGR', 'TIME'])
+    assert Drop.create('DV') not in m.datainfo.provenance
+    assert len(m.datainfo.provenance) == 4
 
 
 def test_drop_dropped_columns(load_example_model_for_test):
@@ -304,17 +312,25 @@ def test_drop_dropped_columns(load_example_model_for_test):
     m = drop_dropped_columns(m)
     correct = ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
     assert list(m.dataset.columns) == correct
+    assert not any(isinstance(op, Drop) for op in m.datainfo.provenance)
+    assert len(m.datainfo.provenance) == 1
     m = drop_columns(m, ['ID', 'TIME', 'AMT'], mark=True)
     m = drop_dropped_columns(m)
     assert list(m.dataset.columns) == ['WGT', 'APGR', 'DV', 'FA1', 'FA2']
+    assert all(Drop.create(col) in m.datainfo.provenance for col in ['ID', 'AMT', 'TIME'])
+    assert len(m.datainfo.provenance) == 4
 
 
 def test_undrop_columns(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
     m = drop_columns(m, ["APGR", "WGT"], mark=True)
+    assert all(Drop.create(col) in m.datainfo.provenance for col in ['APGR', 'WGT'])
+    assert len(m.datainfo.provenance) == 3
     m = undrop_columns(m, "WGT")
     assert not m.datainfo["WGT"].drop
     assert m.datainfo["APGR"].drop
+    assert not any(isinstance(op, Drop) for op in m.datainfo.provenance)
+    assert len(m.datainfo.provenance) == 1
 
 
 def test_remove_loq_data(load_example_model_for_test):
@@ -770,6 +786,8 @@ def test_remove_unused_columns(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = remove_unused_columns(model)
     assert model.datainfo.names == ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
+    assert all(Drop.create(col) in model.datainfo.provenance for col in ['FA1', 'FA2'])
+    assert len(model.datainfo.provenance) == 3
 
 
 @pytest.mark.parametrize(
