@@ -12,6 +12,7 @@ from pharmpy.internals.df import reset_index
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.internals.math import replace_nan
 from pharmpy.model import (
+    Add,
     Assignment,
     ColumnInfo,
     CompartmentalSystem,
@@ -965,13 +966,15 @@ def add_admid(model: Model):
     di = model.datainfo
     if "admid" not in di.types:
         adm = get_admid(model)
-        dataset = model.dataset
-        dataset["ADMID"] = adm
+        dataset = model.dataset.copy()
+        dataset[adm.name] = adm
         di = update_datainfo(model.datainfo, dataset)
-        var = di['ADMID'].variable.replace(type='admid')
-        colinfo = di['ADMID'].replace(variable_mapping=var)
-        model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
-
+        var = di[adm.name].variable.replace(type='admid')
+        colinfo = di[adm.name].replace(variable_mapping=var)
+        di = di.set_column(colinfo)
+        add = Add.create(adm.name)
+        di = di.replace(provenance=di.provenance + add)
+        model = model.replace(datainfo=di, dataset=dataset)
     return model.update_source()
 
 
@@ -1093,14 +1096,16 @@ def add_cmt(model: Model):
     """
     di = model.datainfo
     if "compartment" not in di.types:
-        cmt_name = "CMT"
         cmt = get_cmt(model)
-        dataset = model.dataset
-        dataset[cmt_name] = cmt
+        dataset = model.dataset.copy()
+        dataset[cmt.name] = cmt
         di = update_datainfo(model.datainfo, dataset)
-        colinfo = di[cmt_name].replace(type='compartment')
-        model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
-
+        var = di[cmt.name].variable.replace(type='compartment')
+        colinfo = di[cmt.name].replace(variable_mapping=var)
+        di = di.set_column(colinfo)
+        add = Add.create(cmt.name)
+        di = di.replace(provenance=di.provenance + add)
+        model = model.replace(datainfo=di, dataset=dataset)
     return model.update_source()
 
 
@@ -1189,9 +1194,9 @@ def add_time_after_dose(model: Model):
         lambda x: x.sort_values(by=['_DOSEID'], kind='stable', ignore_index=True)
     )
     df.index = range(1, len(df) + 1)
-
-    df['TAD'] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0.0)
-    df['TAD'] = df.groupby([idlab, '_DOSEID'])['TAD'].cumsum()
+    tad_name = 'TAD'
+    df[tad_name] = df.groupby([idlab, '_DOSEID'])['_NEWTIME'].diff().fillna(0.0)
+    df[tad_name] = df.groupby([idlab, '_DOSEID'])[tad_name].cumsum()
     if addl:
         df = df[~df['EXPANDED']].reset_index(drop=True)
         df.drop(columns=['EXPANDED'], inplace=True)
@@ -1201,12 +1206,15 @@ def add_time_after_dose(model: Model):
     # FIXME: Temp workaround, should be canonicalized in Model.replace
     di = update_datainfo(model.datainfo, df)
     var = (
-        di['TAD']
+        di[tad_name]
         .variable.set_property('descriptor', 'time after dose')
         .set_property('unit', di[idv].variable.get_property('unit'))
     )
-    colinfo = di['TAD'].replace(variable_mapping=var)
-    model = model.replace(datainfo=di.set_column(colinfo), dataset=df)
+    colinfo = di[tad_name].replace(variable_mapping=var)
+    di = di.set_column(colinfo)
+    add = Add.create(tad_name)
+    di = di.replace(provenance=di.provenance + add)
+    model = model.replace(datainfo=di, dataset=df)
     return model.update_source()
 
 

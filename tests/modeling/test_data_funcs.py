@@ -5,7 +5,10 @@ import pytest
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
+from pharmpy.model import Add
 from pharmpy.modeling import (
+    add_admid,
+    add_cmt,
     add_time_after_dose,
     add_time_of_last_dose,
     bin_observations,
@@ -193,10 +196,32 @@ def test_get_evid(load_example_model_for_test):
     assert evid.sum() == 589
 
 
+def test_add_admid(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert 'ADMID' not in model.dataset.columns
+    with pytest.raises(IndexError):
+        model.datainfo.typeix['admid']
+    model = add_admid(model)
+    assert 'ADMID' in model.dataset.columns
+    assert model.datainfo.typeix['admid']
+    assert model.datainfo.provenance[-1] == Add.create('ADMID')
+
+
 def test_get_cmt(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     cmt = get_cmt(model)
     assert cmt.sum() == 589
+
+
+def test_add_cmt(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert 'CMT' not in model.dataset.columns
+    with pytest.raises(IndexError):
+        model.datainfo.typeix['compartment']
+    model = add_cmt(model)
+    assert 'CMT' in model.dataset.columns
+    assert model.datainfo.typeix['compartment']
+    assert model.datainfo.provenance[-1] == Add.create('CMT')
 
 
 def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, testdata):
@@ -207,6 +232,7 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     assert tad[1] == 0.0
     assert tad[2] == 2.0
     assert tad[744] == 2.0
+    assert m.datainfo.provenance[-1] == Add.create('TAD')
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     m = add_time_after_dose(m)
@@ -236,11 +262,13 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     ]
     assert m.dataset.loc[103, 'TAD'] == 0.0
     assert m.dataset.loc[104, 'TAD'] == pytest.approx(1.17)
+    assert m.datainfo.provenance[-1] == Add.create('TAD')
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:16])
     assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 0.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
+    assert m.datainfo.provenance[-1] == Add.create('TAD')
 
 
 def test_add_time_of_last_dose(load_example_model_for_test):
