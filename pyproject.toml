@@ -80,6 +80,7 @@ zip-safe = false
 include-package-data = true
 
 [tool.black]
+target-version = ["py311"]
 line-length = 100
 skip-string-normalization = 1
 
