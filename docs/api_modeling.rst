@@ -67,6 +67,7 @@ Dataset handling
     set_dataset
     set_dvid
     set_lloq_data
+    set_property
     set_reference_values
     set_unit
     translate_nmtran_time

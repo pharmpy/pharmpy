@@ -72,7 +72,7 @@ from .data import (
     undrop_columns,
     unload_dataset,
 )
-from .datainfo import set_unit
+from .datainfo import set_property, set_unit
 from .error import (
     has_additive_error_model,
     has_combined_error_model,
@@ -484,6 +484,7 @@ __all__ = [
     'set_peripheral_compartments',
     'set_placebo_model',
     'set_power_on_ruv',
+    'set_property',
     'set_proportional_error_model',
     'set_reference_values',
     'set_seq_zo_fo_absorption',
