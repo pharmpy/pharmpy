@@ -31,6 +31,23 @@ from .odes import add_individual_parameter, set_initial_estimates
 PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin']
 
 
+def remove_variable(expr, x):
+    if expr.is_mul():
+        product = Expr.integer(1)
+        for factor in expr.args:
+            if factor != x:
+                product *= remove_variable(factor, x)
+        return product
+    elif expr.is_add():
+        s = Expr.integer(0)
+        for term in expr.args:
+            if term != x:
+                s += remove_variable(term, x)
+        return s
+    else:
+        return expr
+
+
 def add_effect_compartment(model: Model, expr: PDTypes):
     r"""Add an effect compartment.
 
@@ -557,22 +574,6 @@ def set_placebo_model(
     r_index = model.statements.find_assignment_index("R")
     if r_index is None:
         raise ValueError("Cannot find response variable R. Is this a PD model?")
-
-    def remove_variable(expr, x):
-        if expr.is_mul():
-            product = Expr.integer(1)
-            for factor in expr.args:
-                if factor != x:
-                    product *= remove_variable(factor, x)
-            return product
-        elif expr.is_add():
-            s = Expr.integer(0)
-            for term in expr.args:
-                if term != x:
-                    s += remove_variable(term, x)
-            return s
-        else:
-            return expr
 
     P = Expr.symbol("PDP")
 
