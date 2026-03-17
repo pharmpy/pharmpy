@@ -13,6 +13,8 @@ Changes
 * Change unit representations to use abbreviations. For example gram is now g.
 * Rename add_placebo_model to set_placebo_model
 
+.. _2.0.0:
+
 2.0.0 (2026-02-12)
 ------------------
 
@@ -45,6 +47,8 @@ Bugfixes
 * Fix crash for parsing of some NONMEM models having multiple DVs
 * Fix broken :code:`modeling.set_combined_error_model` for models with multiple DVs.
 
+.. _1.12.0:
+
 1.12.0 (2025-12-05)
 -------------------
 
@@ -67,6 +71,7 @@ Bugfixes
 * Fix crash when outputting the ode-system or doing changes to some NONMEM 1cmt PD-models
 
 
+.. _1.11.1:
 
 1.11.1 (2025-11-24)
 -------------------
@@ -82,6 +87,8 @@ Bugfixes
 * Fix memory leak for model objects
 * Fix crash when creating model3b in FREM (regression)
 * Fix issue with assignment indirectly depending on t ('T') not being put in $DES for NONMEM models
+
+.. _1.11.0:
 
 1.11.0 (2025-11-17)
 -------------------
