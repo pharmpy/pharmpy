@@ -337,6 +337,7 @@ def test_solve():
         (Expr('x'), Expr('x'), 0),
         (Expr("B*(1 + E)"), Expr('E'), Expr("B")),
         (Expr("B*E"), Expr('E'), Expr("B")),
+        (Expr("B"), Expr("E"), Expr("B")),
     ],
 )
 def test_remove_variable_impact(expr, x, ref):
