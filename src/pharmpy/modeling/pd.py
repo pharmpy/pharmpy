@@ -277,8 +277,12 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
             statements = model.statements[0:r_index] + E + model.statements[r_index:]
             model = model.replace(statements=statements)
     else:
+        old_E = model.statements[e_index]
+        removed_symbols = old_E.rhs_symbols
         statements = model.statements[0:e_index] + E + model.statements[e_index + 1 :]
+        statements = statements.remove_symbol_definitions(removed_symbols, E)
         model = model.replace(statements=statements)
+        model = remove_unused_parameters_and_rvs(model)
 
     return model
 
