@@ -505,3 +505,26 @@ def solve(eqs: Iterable[BooleanExpr], exclude: Optional[Iterable[Expr]] = None):
         return {}
     solution = {Expr(key): Expr(value) for key, value in sol.items()}
     return solution
+
+
+def remove_variable_impact(expr: Expr, x: Expr) -> Expr:
+    # Remove the impact of variable x on expr
+    # Handles polynomials currently
+    if expr.is_mul():
+        product = Expr.integer(1)
+        for factor in expr.args:
+            assert isinstance(factor, Expr)
+            if factor != x:
+                product *= remove_variable_impact(factor, x)
+        return product
+    elif expr.is_add():
+        s = Expr.integer(0)
+        for term in expr.args:
+            assert isinstance(term, Expr)
+            if term != x:
+                s += remove_variable_impact(term, x)
+        return s
+    elif expr == x:
+        return Expr.integer(0)
+    else:
+        return expr

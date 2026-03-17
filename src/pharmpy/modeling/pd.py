@@ -7,6 +7,7 @@ from __future__ import annotations
 from typing import Literal, Optional
 
 from pharmpy.basic import Expr
+from pharmpy.basic.expr import remove_variable_impact
 from pharmpy.model import (
     Assignment,
     Compartment,
@@ -29,23 +30,6 @@ from .error import set_proportional_error_model
 from .odes import add_individual_parameter, set_initial_estimates
 
 PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin']
-
-
-def remove_variable(expr, x):
-    if expr.is_mul():
-        product = Expr.integer(1)
-        for factor in expr.args:
-            if factor != x:
-                product *= remove_variable(factor, x)
-        return product
-    elif expr.is_add():
-        s = Expr.integer(0)
-        for term in expr.args:
-            if term != x:
-                s += remove_variable(term, x)
-        return s
-    else:
-        return expr
 
 
 def add_effect_compartment(model: Model, expr: PDTypes):
@@ -310,7 +294,7 @@ def _add_response(model: Model, expr: str):
         if r_index is not None:
             assignment = model.statements[r_index]
             assert isinstance(assignment, Assignment)
-            expression = remove_variable(assignment.expression, E)
+            expression = remove_variable_impact(assignment.expression, E)
             expression = expression * (Expr.integer(1) + E)
             assignment = Assignment(Expr.symbol("R"), expression)
             statements = model.statements[0:r_index] + assignment + model.statements[r_index + 1 :]
@@ -585,7 +569,7 @@ def set_placebo_model(
 
     idv = Expr.symbol(model.datainfo.idv_column.name)
     old_rassign = model.statements.get_assignment("R")
-    old_rassign_expr = remove_variable(old_rassign.expression, P)
+    old_rassign_expr = remove_variable_impact(old_rassign.expression, P)
 
     def operate(lhs, rhs, operator):
         if operator == '*':

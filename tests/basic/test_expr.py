@@ -2,7 +2,7 @@ import pytest
 import sympy
 
 from pharmpy.basic import BooleanExpr
-from pharmpy.basic.expr import Expr, ExprPrinter, solve
+from pharmpy.basic.expr import Expr, ExprPrinter, remove_variable_impact, solve
 
 
 def test_init_expr():
@@ -329,3 +329,16 @@ def test_serialize(expr, ref):
 def test_solve():
     sol = solve([])
     assert sol == {}
+
+
+@pytest.mark.parametrize(
+    'expr, x, ref',
+    [
+        (Expr('x'), Expr('x'), 0),
+        (Expr("B*(1 + E)"), Expr('E'), Expr("B")),
+        (Expr("B*E"), Expr('E'), Expr("B")),
+    ],
+)
+def test_remove_variable_impact(expr, x, ref):
+    new = remove_variable_impact(expr, x)
+    assert new == ref
