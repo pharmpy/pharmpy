@@ -306,15 +306,17 @@ def _get_x50(model, conc):
 def _add_response(model: Model, expr: str):
     r_index = model.statements.find_assignment_index("R")
     if expr != "loglin":
+        E = Expr.symbol("E")
         if r_index is not None:
             assignment = model.statements[r_index]
             assert isinstance(assignment, Assignment)
-            expression = assignment.expression * (Expr.integer(1) + Expr.symbol("E"))
+            expression = remove_variable(assignment.expression, E)
+            expression = expression * (Expr.integer(1) + E)
             assignment = Assignment(Expr.symbol("R"), expression)
             statements = model.statements[0:r_index] + assignment + model.statements[r_index + 1 :]
         else:
             b = Expr.symbol("B")
-            assignment = Assignment(Expr.symbol("R"), b * (Expr.integer(1) + Expr.symbol("E")))
+            assignment = Assignment(Expr.symbol("R"), b * (Expr.integer(1) + E))
             statements = model.statements + assignment
         model = model.replace(statements=statements)
     return model
