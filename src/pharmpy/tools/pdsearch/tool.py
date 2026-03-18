@@ -38,7 +38,7 @@ def create_workflow(
     type: Literal['pd', 'kpd'],
     treatment_variable: Optional[str] = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',
-    strategy: Literal['fulldata', 'partialdata'] = 'fulldata',
+    data_strategy: Literal['fulldata', 'partialdata'] = 'fulldata',
     results: Optional[ModelfitResults] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
@@ -56,8 +56,8 @@ def create_workflow(
         Name of the variable representing the treatment, e.g. TRT, DOSE or AUC. Do not use if `type` is 'kpd'
     kpd_driver : str
         Driver for KPD model (virtual infusion rate 'ir' or 'amount')
-    strategy : str
-        Which modelling strategy to use: 'fulldata' or 'partialdata'
+    data_strategy : str
+        Strategy for using the dataset: 'fulldata' or 'partialdata'
     results : ModelfitResults (optional)
         Results to input model
     strictness : str
@@ -95,7 +95,7 @@ def create_workflow(
         strictness,
         parameter_uncertainty_method,
         treatment_variable,
-        strategy,
+        data_strategy,
     )
     wb.add_task(placebo_task, predecessors=base_output)
 
@@ -153,7 +153,7 @@ def create_base_model(type, dataset, kpd_driver):
 
 
 def run_placebo_models(
-    context, strictness, parameter_uncertainty_method, treatment_variable, strategy, baseme
+    context, strictness, parameter_uncertainty_method, treatment_variable, data_strategy, baseme
 ):
     exprs = (
         ("linear", "*"),
@@ -165,7 +165,7 @@ def run_placebo_models(
         ("tmax", "+"),
     )
     context.log_info(f"Running {len(exprs)} placebo/disease progression models.")
-    if strategy == 'fulldata':
+    if data_strategy == 'fulldata':
         current_me = baseme
     else:
         model = filter_dataset(baseme.model, f"{treatment_variable}!=0")
@@ -198,7 +198,7 @@ def run_placebo_models(
     if final_model is None:
         context.abort_workflow("No placebo/disease progression model selected")
 
-    if strategy != 'fulldata':
+    if data_strategy != 'fulldata':
         final_model = final_model.replace(
             dataset=baseme.model.dataset, datainfo=baseme.model.datainfo
         )
