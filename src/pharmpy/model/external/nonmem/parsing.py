@@ -463,13 +463,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
     derivatives = tuple(etaderiv_names + epsilonderivs_names + verbatim_derivatives)
 
     for record in records:
-        value = record.get_option('METHOD')
-        if value is None or value == '0' or value == 'ZERO':
-            name = 'fo'
-        elif value == '1' or value == 'CONDITIONAL' or value == 'COND':
-            name = 'foce'
-        else:
-            name = value
+        name = record.estimation_method
         interaction = False
         evaluation = False
         maximum_evaluations = None
