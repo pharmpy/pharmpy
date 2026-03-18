@@ -38,6 +38,7 @@ def create_workflow(
     type: Literal['pd', 'kpd'],
     treatment_variable: Optional[str] = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',
+    algorithm: Literal['stepwise', 'exhaustive_stepwise'] = 'stepwise',
     data_strategy: Literal['fulldata', 'partialdata'] = 'fulldata',
     results: Optional[ModelfitResults] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
@@ -56,6 +57,8 @@ def create_workflow(
         Name of the variable representing the treatment, e.g. TRT, DOSE or AUC. Do not use if `type` is 'kpd'
     kpd_driver : str
         Driver for KPD model (virtual infusion rate 'ir' or 'amount')
+    algorithm : str
+        Which search algorithm to use. Either 'stepwise' or 'exhaustive_stepwise'
     data_strategy : str
         Strategy for using the dataset: 'fulldata' or 'partialdata'
     results : ModelfitResults (optional)
@@ -90,8 +93,8 @@ def create_workflow(
         base_output = wb.output_tasks
 
     placebo_task = Task(
-        'run_placebo_models',
-        run_placebo_models,
+        'run_placebo_models_and_rank',
+        run_placebo_models_and_rank,
         strictness,
         parameter_uncertainty_method,
         treatment_variable,
@@ -152,9 +155,7 @@ def create_base_model(type, dataset, kpd_driver):
     return model
 
 
-def run_placebo_models(
-    context, strictness, parameter_uncertainty_method, treatment_variable, data_strategy, baseme
-):
+def create_and_run_placebo_models(context, treatment_variable, data_strategy, baseme):
     exprs = (
         ("linear", "*"),
         ("linear", "+"),
@@ -183,6 +184,14 @@ def run_placebo_models(
     wb.gather(wb.output_tasks)
 
     mes = context.call_workflow(Workflow(wb), "fit-placebo")
+    return mes
+
+
+def run_placebo_models_and_rank(
+    context, strictness, parameter_uncertainty_method, treatment_variable, data_strategy, baseme
+):
+    mes = create_and_run_placebo_models(context, treatment_variable, data_strategy, baseme)
+
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
