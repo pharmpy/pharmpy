@@ -879,6 +879,28 @@ def _get_last_est(execution_steps: ExecutionSteps):
     return len(execution_steps) - 1
 
 
+def parse_fo_posthoc(model, path, control_stream):
+    # FO POSTHOC etas can only be found in tabled etas not in the phi-file
+    individual_estimates = None
+    records = control_stream.get_records('ESTIMATION')
+    if records:
+        final_record = records[-1]
+        if final_record.estimation_method == 'fo' and final_record.has_option('POSTHOC'):
+            eta_names = model.random_variables.etas.names
+            # This might get parsed twice, but this is a rare case...
+            df = _parse_tables(
+                model,
+                path,
+                control_stream,
+                netas=len(eta_names),
+                include_etas=True,
+            )
+            df = df.groupby('ID', sort=False, as_index=True).first()
+            eta_map = {f'ETA{i}': name for i, name in enumerate(eta_names, start=1)}
+            individual_estimates = df[eta_map.keys()].rename(columns=eta_map)
+    return individual_estimates
+
+
 def _parse_phi(
     path: Path,
     control_stream: NMTranControlStream,
@@ -888,10 +910,12 @@ def _parse_phi(
     pe,
     subproblem=None,
 ):
+    individual_estimates = parse_fo_posthoc(model, path, control_stream)
+
     try:
         phi_tables = NONMEMTableFile(path.with_suffix('.phi'))
     except FileNotFoundError:
-        return Individuals(None, None, None)
+        return Individuals(None, individual_estimates, None)
     if subproblem is None:
         table = None
 
@@ -903,7 +927,7 @@ def _parse_phi(
         table = phi_tables.tables[subproblem - 1]
 
     if table is None:
-        return Individuals(None, None, None)
+        return Individuals(None, individual_estimates, None)
 
     assert isinstance(table, PhiTable)
 
@@ -911,19 +935,21 @@ def _parse_phi(
     rv_names = list(filter(eta_names.__contains__, etas.names))
     try:
         individual_ofv = table.iofv
-        prefix, individual_estimates = _parse_individual_estimates(model, pe, table, rv_names)
-        ids, eta_col_names, matrix_array = table.etc_data()
-        index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
-        indices = tuple(map(index.__getitem__, rv_names))
-        selector = np.ix_(indices, indices)
-        etc_frames = [
-            pd.DataFrame(matrix[selector], columns=rv_names, index=rv_names)
-            for matrix in matrix_array
-        ]
-        covs = pd.Series(etc_frames, index=ids, dtype='object')
+        covs = None
+        if individual_estimates is None:
+            prefix, individual_estimates = _parse_individual_estimates(model, pe, table, rv_names)
+            ids, eta_col_names, matrix_array = table.etc_data()
+            index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
+            indices = tuple(map(index.__getitem__, rv_names))
+            selector = np.ix_(indices, indices)
+            etc_frames = [
+                pd.DataFrame(matrix[selector], columns=rv_names, index=rv_names)
+                for matrix in matrix_array
+            ]
+            covs = pd.Series(etc_frames, index=ids, dtype='object')
         return Individuals(individual_ofv, individual_estimates, covs)
     except KeyError:
-        return Individuals(None, None, None)
+        return Individuals(None, individual_estimates, None)
 
 
 def _parse_individual_estimates(model, pe, table, rv_names):
@@ -1008,7 +1034,11 @@ def _parse_ets(path, etas, subproblem):
 
 
 def _parse_tables(
-    model: Model, path: Path, control_stream: NMTranControlStream, netas
+    model: Model,
+    path: Path,
+    control_stream: NMTranControlStream,
+    netas,
+    include_etas=False,
 ) -> pd.DataFrame:
     """Parse $TABLE and table files into one large dataframe of useful columns"""
     interesting_columns = {
@@ -1023,6 +1053,10 @@ def _parse_tables(
         'CWRES',
         'MDV',
     }
+    if include_etas:
+        for i in range(1, netas + 1):
+            eta_name = f"ETA{i}"
+            interesting_columns.add(eta_name)
 
     derivative_regex = r'[HG]\d+'
     verbatim_derivatives = extract_verbatim_derivatives(control_stream, model.random_variables)
