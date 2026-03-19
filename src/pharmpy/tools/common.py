@@ -10,6 +10,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.modeling import (
     calculate_eta_shrinkage,
+    get_thetas,
     plot_abs_cwres_vs_ipred,
     plot_cwres_vs_idv,
     plot_dv_vs_ipred,
@@ -26,7 +27,10 @@ RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
 
 def update_initial_estimates(
-    model: Model, modelfit_results: Optional[ModelfitResults], move_est_close_to_bounds=True
+    model: Model,
+    modelfit_results: Optional[ModelfitResults],
+    move_est_close_to_bounds=True,
+    max_theta=False,
 ):
     if modelfit_results is None:
         return model
@@ -36,9 +40,15 @@ def update_initial_estimates(
         ):
             return model
 
+    pe = dict(modelfit_results.parameter_estimates)
+    if max_theta:
+        for theta in get_thetas(model):
+            if pe[theta.name] > 1000000:
+                pe[theta.name] = 10000
+
     model = set_initial_estimates(
         model,
-        modelfit_results.parameter_estimates,
+        pe,
         move_est_close_to_bounds=move_est_close_to_bounds,
         strict=False,
     )
