@@ -25,6 +25,7 @@ from pharmpy.modeling import (
 from pharmpy.tools.common import (
     create_plots,
     table_final_eta_shrinkage,
+    update_initial_estimates,
 )
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool, summarize_modelfit_results
@@ -92,29 +93,48 @@ def create_workflow(
         wb.insert_workflow(fitbase, predecessors=[start_task])
         base_output = wb.output_tasks
 
-    placebo_task = Task(
-        'run_placebo_models_and_rank',
-        run_placebo_models_and_rank,
-        strictness,
-        parameter_uncertainty_method,
-        treatment_variable,
-        data_strategy,
-    )
-    wb.add_task(placebo_task, predecessors=base_output)
+    if algorithm == 'stepwise':
+        placebo_task = Task(
+            'run_placebo_models_and_rank',
+            run_placebo_models_and_rank,
+            strictness,
+            parameter_uncertainty_method,
+            treatment_variable,
+            data_strategy,
+        )
+        wb.add_task(placebo_task, predecessors=base_output)
 
-    de_task = Task(
-        'run_drug_effect_models',
-        run_drug_effect_models,
-        treatment_variable,
-        strictness,
-        parameter_uncertainty_method,
-    )
-    wb.add_task(de_task)
+        de_task = Task(
+            'run_drug_effect_models',
+            run_drug_effect_models,
+            treatment_variable,
+            strictness,
+            parameter_uncertainty_method,
+        )
+        wb.add_task(de_task)
 
-    postprocess_task = Task('postprocess', postprocess)
-    wb.add_task(postprocess_task, predecessors=de_task)
+        postprocess_task = Task('postprocess', postprocess)
+        wb.add_task(postprocess_task, predecessors=de_task)
 
-    wb.scatter(placebo_task, (de_task, postprocess_task))
+        wb.scatter(placebo_task, (de_task, postprocess_task))
+
+    else:
+        placebo_task = Task(
+            'run_placebo_models', create_and_run_placebo_models, treatment_variable, data_strategy
+        )
+        wb.add_task(placebo_task, predecessors=base_output)
+
+        de_task = Task(
+            'run_drug_effect_models',
+            run_drug_effect_models_exhaustive,
+            treatment_variable,
+            strictness,
+            parameter_uncertainty_method,
+        )
+        wb.add_task(de_task, predecessors=placebo_task)
+
+        postprocess_task = Task('postprocess', postprocess, None)
+        wb.add_task(postprocess_task, predecessors=de_task)
 
     return Workflow(wb)
 
@@ -184,7 +204,7 @@ def create_and_run_placebo_models(context, treatment_variable, data_strategy, ba
     wb.gather(wb.output_tasks)
 
     mes = context.call_workflow(Workflow(wb), "fit-placebo")
-    return mes
+    return (baseme,) + mes
 
 
 def run_placebo_models_and_rank(
@@ -195,9 +215,9 @@ def run_placebo_models_and_rank(
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
-        models=[me.model for me in mes] + [baseme.model],
-        results=[me.modelfit_results for me in mes] + [baseme.modelfit_results],
-        ref_model=baseme.model,
+        models=[me.model for me in mes],
+        results=[me.modelfit_results for me in mes],
+        ref_model=mes[0].model,
         rank_type='bic_mixed',
         strictness=strictness,
         parameter_uncertainty_method=parameter_uncertainty_method,
@@ -218,25 +238,35 @@ def run_placebo_models_and_rank(
     return final_me, rank_res
 
 
-def create_and_run_drug_effect_models(context, treatment_variable, baseme):
-    exprs = ("step", "emax", "sigmoid")
-    if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
-        # If the driver is binary linear and step are the same model
-        # so add linear if not binary
-        exprs = ("linear",) + exprs
+def create_and_run_drug_effect_models(context, treatment_variable: str, mes):
+    if isinstance(mes, ModelEntry):
+        mes = [mes]
 
-    context.log_info(f"Running {len(exprs)} drug_effect models.")
-
+    n_models = 0
     wb = WorkflowBuilder()
-    for expr in exprs:
-        create_task = Task(
-            f'create_drug_effect_{expr}', create_drug_effect_model, treatment_variable, expr, baseme
-        )
-        wb.add_task(create_task)
-        fit_wf = create_fit_workflow(n=1)
-        wb.insert_workflow(fit_wf, [create_task])
+    for baseme in mes:
+        exprs = ("step", "emax", "sigmoid")
+        if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
+            # If the driver is binary linear and step are the same model
+            # so add linear if not binary
+            exprs = ("linear",) + exprs
+
+        for expr in exprs:
+            create_task = Task(
+                f'create_drug_effect_{expr}',
+                create_drug_effect_model,
+                treatment_variable,
+                expr,
+                baseme,
+            )
+            wb.add_task(create_task)
+            fit_wf = create_fit_workflow(n=1)
+            wb.insert_workflow(fit_wf, [create_task])
+            n_models += 1
 
     wb.gather(wb.output_tasks)
+
+    context.log_info(f"Running {n_models} drug_effect models.")
 
     mes = context.call_workflow(Workflow(wb), "fit-drug_effect")
     return mes
@@ -261,6 +291,25 @@ def run_drug_effect_models(
     return rank_res
 
 
+def run_drug_effect_models_exhaustive(
+    context, treatment_variable, strictness, parameter_uncertainty_method, basemes
+):
+    mes = create_and_run_drug_effect_models(context, treatment_variable, basemes)
+
+    rank_res = run_subtool(
+        tool_name='modelrank',
+        ctx=context,
+        models=[me.model for me in mes] + [me.model for me in basemes],
+        results=[me.modelfit_results for me in mes] + [me.modelfit_results for me in basemes],
+        ref_model=basemes[0].model,
+        rank_type='bic_mixed',
+        strictness=strictness,
+        parameter_uncertainty_method=parameter_uncertainty_method,
+    )
+
+    return rank_res
+
+
 def create_placebo_model(expr, op, baseme):
     base_model = baseme.model
     model = set_initial_estimates(base_model, baseme.modelfit_results.parameter_estimates)
@@ -272,7 +321,7 @@ def create_placebo_model(expr, op, baseme):
     else:
         txtop = op
 
-    model = set_name(model, f"placebo_{expr}_{txtop}")
+    model = set_name(model, f"placebo_{txtop}_{expr}")
     model = set_description(model, f"PLACEBO({expr.upper()} {txtop})")
     if expr == 'linear':
         model = add_iiv(model, 'SLOPE', 'prop')
@@ -284,9 +333,9 @@ def create_drug_effect_model(treatment_variable, expr, baseme):
     if not treatment_variable:
         treatment_variable = 'KPD'
     base_model = baseme.model
-    model = set_initial_estimates(base_model, baseme.modelfit_results.parameter_estimates)
+    model = update_initial_estimates(base_model, baseme.modelfit_results, max_theta=True)
     model = set_direct_effect(model, expr, variable=treatment_variable)
-    model = set_name(model, f"drug_{expr}")
+    model = set_name(model, f"{base_model.name}_drug_{expr}")
     model = set_description(model, model.description + f"; DIRECTEFFECT({expr.upper()})")
     me = ModelEntry.create(model=model, parent=base_model)
     return me
