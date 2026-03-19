@@ -484,6 +484,8 @@ def set_dvid(model: Model, name: str):
     di = di.set_column(col)
 
     if new_dataset:
+        prov_new = [Drop.create(name), Add.create(name)]
+        di = di.replace(provenance=di.provenance + prov_new)
         model = model.replace(datainfo=di, dataset=df)
     else:
         model = model.replace(datainfo=di)
@@ -1806,7 +1808,12 @@ def set_lloq_data(
     if isinstance(value, Expr) or isinstance(value, str):
         value = df.eval(str(value))
     df[dv] = df[dv].where(which_keep, value)
-    model = model.replace(dataset=df)
+    if df.equals(model.dataset):
+        return model
+    di = model.datainfo
+    prov_new = [Drop.create(blq), Add.create(blq)]
+    di = di.replace(provenance=di.provenance + prov_new)
+    model = model.replace(dataset=df, datainfo=di)
     return model
 
 
@@ -1862,8 +1869,13 @@ def set_reference_values(model: Model, refs: dict[str, Union[int, float]]):
             newcols[colname] = value
         datatype = ColumnInfo.convert_datatype_to_pd_dtype(di[colname].datatype)
         dtypes[colname] = datatype
+    prov_new = []
+    for col in newcols.keys():
+        prov_new.append(Drop.create(col))
+        prov_new.append(Add.create(col))
     df = df.assign(**newcols).astype(dtypes)
-    model = model.replace(dataset=df)
+    di = di.replace(provenance=di.provenance + prov_new)
+    model = model.replace(dataset=df, datainfo=di)
     return model
 
 
@@ -2456,6 +2468,7 @@ def binarize_dataset(
         if not columns:
             return model
 
+    drop, add = [], []
     changed = False
 
     for col in columns:
@@ -2478,6 +2491,7 @@ def binarize_dataset(
 
         df = df.assign(**level_map)
         if not keep:
+            drop.append(Drop.create(col))
             df = df.drop(columns=[col])
 
         di = update_datainfo(di, df)
@@ -2488,11 +2502,13 @@ def binarize_dataset(
             )
             ci_new = ci.replace(variable_mapping=var)
             di = di.set_column(ci_new)
+            add.append(Add.create(col_name))
 
         changed = True
 
     if changed:
-        model = model.replace(dataset=df, datainfo=di)
+        prov = di.provenance + drop + add
+        model = model.replace(dataset=df, datainfo=di.replace(provenance=prov))
 
     return model
 

@@ -443,7 +443,7 @@ def test_remove_blq(load_example_model_for_test, d, expected, keep):
 
 @pytest.mark.usefixtures('load_example_model_for_test')
 @pytest.mark.parametrize(
-    'd,expected,value',
+    'd,expected,value,prov_changed',
     [
         (
             {
@@ -454,6 +454,7 @@ def test_remove_blq(load_example_model_for_test, d, expected, keep):
             },
             [0, 1, 0, 0, 4, 5, 0, 0],
             0,
+            True,
         ),
         (
             {
@@ -464,6 +465,7 @@ def test_remove_blq(load_example_model_for_test, d, expected, keep):
             },
             [0, 1, 1, 1, 4, 5, 1, 1],
             1,
+            True,
         ),
         (
             {
@@ -474,15 +476,20 @@ def test_remove_blq(load_example_model_for_test, d, expected, keep):
             },
             [0, 1, 2, 3, 4, 5, 6, 7],
             0,
+            False,
         ),
     ],
 )
-def test_set_lloq_value(load_example_model_for_test, d, expected, value):
+def test_set_lloq_value(load_example_model_for_test, d, expected, value, prov_changed):
     m = load_example_model_for_test('pheno')
     df = pd.DataFrame(d)
     m = m.replace(dataset=df, datainfo=create_default_datainfo(df))
     new = set_lloq_data(m, value, blq='BLQ')
     assert list(new.dataset['DV']) == expected
+    if prov_changed:
+        assert len(new.datainfo.provenance) == 2
+    else:
+        assert len(new.datainfo.provenance) == 0
 
 
 def test_check_dataset(load_example_model_for_test):
@@ -582,11 +589,16 @@ def test_set_dvid(load_example_model_for_test):
     assert col.type == 'dvid'
     assert col.variable.scale == 'nominal'
     assert col.variable.properties['categories'] == (0, 1)
+    assert Drop.create('FA1') in m.datainfo.provenance
+    assert Add.create('FA1') in m.datainfo.provenance
+    assert len(m.datainfo.provenance) == 3
     m = set_dvid(m, 'FA1')
     assert m.datainfo['FA1'].type == 'dvid'
+    assert len(m.datainfo.provenance) == 3
     m = set_dvid(m, 'FA2')
     assert m.datainfo['FA1'].type == 'unknown'
     assert m.datainfo['FA2'].type == 'dvid'
+    assert len(m.datainfo.provenance) == 5
     with pytest.raises(ValueError):
         set_dvid(m, 'WGT')
 
@@ -598,6 +610,10 @@ def test_set_reference_values(load_example_model_for_test):
     assert list(df['WGT'].unique()) == [0.5]
     assert df['AMT'][1] == 4.0
     assert df['AMT'][2] == 0.0
+    prov = m2.datainfo.provenance
+    assert all(Drop.create(col) in prov for col in ['WGT', 'AMT'])
+    assert all(Add.create(col) in prov for col in ['WGT', 'AMT'])
+    assert len(prov) == 5
 
 
 def test_unload_dataset(load_example_model_for_test):
@@ -754,6 +770,14 @@ def test_binarize_dataset(keep, all_levels, columns, annotate_columns, cols):
     di = model.datainfo
     assert all(di[col].variable.is_categorical() for col in cols)
     assert all(di[col].type == 'covariate' for col in cols)
+
+    assert all(Add.create(col) in di.provenance for col in cols)
+    if keep:
+        assert len(di.provenance) == len(cols)
+    else:
+        columns_to_remove = columns if columns else ['X']
+        assert all(Drop.create(col) in di.provenance for col in columns_to_remove)
+        assert len(di.provenance) == len(cols) + len(columns_to_remove)
 
 
 def test_binarize_dataset_raises():
