@@ -1811,7 +1811,7 @@ def set_lloq_data(
     if df.equals(model.dataset):
         return model
     di = model.datainfo
-    prov_new = [Drop.create(blq), Add.create(blq)]
+    prov_new = [Drop.create(dv), Add.create(dv)]
     di = di.replace(provenance=di.provenance + prov_new)
     model = model.replace(dataset=df, datainfo=di)
     return model
