@@ -4,7 +4,15 @@ from typing import Any, Optional, Union, overload
 
 from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
 from pharmpy.basic.expr import solve
-from pharmpy.model import Assignment, CompartmentalSystem, Model, Statements, get_and_check_dataset
+from pharmpy.model import (
+    Assignment,
+    CompartmentalSystem,
+    CompartmentalSystemBuilder,
+    Model,
+    Statements,
+    get_and_check_dataset,
+    get_and_check_odes,
+)
 
 
 @overload
@@ -236,7 +244,7 @@ def convert_unit(
     original_unit: Optional[Union[str, Unit]] = None,
     in_dataset: bool = False,
 ) -> Model:
-    """Convert between units for a variable
+    """Convert between units for a data variable
 
     The conversion could either be handled in the model code or optionally in the dataset (if applicable).
 
@@ -266,31 +274,41 @@ def convert_unit(
     """
 
     unit = Unit(unit)
+    if original_unit is None and variable in model.datainfo:
+        original_unit = model.datainfo[variable].variable.properties.get("unit", None)
     if original_unit is None:
-        if variable in model.datainfo:
-            original_unit = model.datainfo[variable].variable.properties.get("unit", None)
-            if original_unit is None:
-                raise ValueError("Cannot find the original unit of {variable}")
-        else:
-            raise ValueError("Cannot find the original unit of {variable}")
+        raise ValueError("Cannot find the original unit of {variable}")
     original_unit = Unit(original_unit)
+
     if original_unit == unit:
         return model
+
     if not original_unit.is_compatible_with(unit):
         raise ValueError(f"Unable to convert from {original_unit} to {unit}: different dimensions.")
+
     conversion_factor = Quantity(1.0, original_unit).convert_to(unit).value
     conversion_factor = (
         int(conversion_factor) if int(conversion_factor) == conversion_factor else conversion_factor
     )
 
     if not in_dataset:
-        original_symbol = Expr.symbol(variable)
-        scaled_symbol = Expr.symbol(f"SCALED_{variable}")
-        expr = conversion_factor * original_symbol
-        assignment = Assignment.create(scaled_symbol, expr)
-        new_statements = assignment + Statements.create(
-            [s.subs({original_symbol: scaled_symbol}) for s in model.statements]
-        )
+        column = model.datainfo[variable]
+        if column.type in {'dose', 'dv'}:
+            odes = get_and_check_odes(model)
+            dosing_cmts = odes.dosing_compartments
+            cb = CompartmentalSystemBuilder(odes)
+            cb.set_bioavailability(dosing_cmts[0], conversion_factor)
+            new_statements = (
+                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
+            )
+        else:
+            original_symbol = Expr.symbol(variable)
+            scaled_symbol = Expr.symbol(f"SCALED_{variable}")
+            expr = conversion_factor * original_symbol
+            assignment = Assignment.create(scaled_symbol, expr)
+            new_statements = assignment + Statements.create(
+                [s.subs({original_symbol: scaled_symbol}) for s in model.statements]
+            )
         model = model.replace(statements=new_statements)
     else:
         df = get_and_check_dataset(model)
