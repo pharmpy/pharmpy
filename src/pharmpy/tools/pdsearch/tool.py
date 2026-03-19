@@ -218,9 +218,7 @@ def run_placebo_models_and_rank(
     return final_me, rank_res
 
 
-def run_drug_effect_models(
-    context, treatment_variable, strictness, parameter_uncertainty_method, baseme
-):
+def create_and_run_drug_effect_models(context, treatment_variable, baseme):
     exprs = ("step", "emax", "sigmoid")
     if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
         # If the driver is binary linear and step are the same model
@@ -241,6 +239,14 @@ def run_drug_effect_models(
     wb.gather(wb.output_tasks)
 
     mes = context.call_workflow(Workflow(wb), "fit-drug_effect")
+    return mes
+
+
+def run_drug_effect_models(
+    context, treatment_variable, strictness, parameter_uncertainty_method, baseme
+):
+    mes = create_and_run_drug_effect_models(context, treatment_variable, baseme)
+
     rank_res = run_subtool(
         tool_name='modelrank',
         ctx=context,
@@ -287,9 +293,13 @@ def create_drug_effect_model(treatment_variable, expr, baseme):
 
 
 def postprocess(context, rank_res, rank_res2):
-    step1 = rank_res.summary_tool.assign(step=1)
-    step2 = rank_res2.summary_tool.assign(step=2)
-    summary_tool = pd.concat((step1, step2))
+    if rank_res is not None:
+        step1 = rank_res.summary_tool.assign(step=1)
+        step2 = rank_res2.summary_tool.assign(step=2)
+        summary_tool = pd.concat((step1, step2))
+    else:
+        summary_tool = rank_res2.summary_tool.assign(step=1)
+
     summary_tool = summary_tool.reset_index().set_index(["model", "step"])
     summary_models = summarize_modelfit_results(context)
 
