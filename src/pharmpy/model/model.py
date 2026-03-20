@@ -741,10 +741,6 @@ class Model(Immutable):
 
 
 def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
-    for op1, op2 in zip(curdi.provenance, curdi.provenance[1:]):
-        if isinstance(op1, Drop) and isinstance(op2, Add) and op1.column == op2.column:
-            return curdi.replace(path=None)
-
     colnames = dataset.columns
     columns = []
     for colname in colnames:
@@ -755,6 +751,10 @@ def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
             col = ColumnInfo.create(colname, datatype=datatype)
         columns.append(col)
     newdi = curdi.replace(columns=columns)
+
+    for op1, op2 in zip(curdi.provenance, curdi.provenance[1:]):
+        if isinstance(op1, Drop) and isinstance(op2, Add) and op1.column == op2.column:
+            return newdi.replace(path=None)
 
     # NOTE: Remove path if dataset has been updated
     return curdi if newdi == curdi else newdi.replace(path=None)

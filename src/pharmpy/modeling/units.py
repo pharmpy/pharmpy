@@ -5,9 +5,11 @@ from typing import Any, Optional, Union, overload
 from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
 from pharmpy.basic.expr import solve
 from pharmpy.model import (
+    Add,
     Assignment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    Drop,
     Model,
     Statements,
     get_and_check_dataset,
@@ -317,5 +319,7 @@ def convert_unit(
         new_var = model.datainfo[variable].variable.set_property("unit", unit)
         new_col = model.datainfo[variable].replace(variable_mapping=new_var)
         new_di = model.datainfo.set_column(new_col)
+        prov_new = [Drop.create(variable), Add.create(variable)]
+        new_di = new_di.replace(provenance=new_di.provenance + prov_new)
         model = model.replace(dataset=df, datainfo=new_di)
     return model.update_source()

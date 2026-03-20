@@ -1939,7 +1939,8 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
                 ci = di[col]
                 ci = ci.replace(datatype='int32')
                 di = di.set_column(ci)
-
+                prov_new = [Drop.create(col), Add.create(col)]
+                di = di.replace(provenance=di.provenance + prov_new)
     if changed:
         model = model.replace(dataset=df, datainfo=di)
 
@@ -2210,8 +2211,8 @@ def load_dataset(model: Model):
     [744 rows x 8 columns]
 
     """
-    df = read_dataset_from_datainfo(model.datainfo)
-    model = model.replace(dataset=df)
+    df, di = read_dataset_from_datainfo_update(model.datainfo)
+    model = model.replace(dataset=df, datainfo=di)
     return model
 
 

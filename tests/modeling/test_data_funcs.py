@@ -627,8 +627,10 @@ def test_load_dataset(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = unload_dataset(model)
     assert model.dataset is None
+    assert len(model.datainfo.provenance) == 0
     model = load_dataset(model)
     assert model.dataset is not None
+    assert len(model.datainfo.provenance) == 1
 
 
 def test_set_dataset(load_example_model_for_test, testdata):
@@ -692,45 +694,25 @@ def test_infer_datatypes(load_example_model_for_test):
     assert m2.datainfo['FA1'].datatype == 'float64'
     assert m2.dataset['APGR'].dtype == np.int32
     assert m2.dataset['FA1'].dtype == np.float64
+    assert Drop.create('APGR') in m2.datainfo.provenance
+    assert Add.create('APGR') in m2.datainfo.provenance
+    assert len(m2.datainfo.provenance) == 3
 
     m2 = infer_datatypes(model)
     assert m2.datainfo['APGR'].datatype == 'int32'
     assert m2.datainfo['FA1'].datatype == 'int32'
+    assert m2.datainfo['FA2'].datatype == 'int32'
     assert m2.dataset['APGR'].dtype == np.int32
     assert m2.dataset['FA1'].dtype == np.int32
+    assert m2.dataset['FA2'].dtype == np.int32
+    assert Drop.create('FA1') in m2.datainfo.provenance
+    assert Add.create('FA1') in m2.datainfo.provenance
+    assert Drop.create('FA2') in m2.datainfo.provenance
+    assert Add.create('FA2') in m2.datainfo.provenance
+    assert len(m2.datainfo.provenance) == 7
 
 
-@pytest.mark.parametrize(
-    'keep, all_levels, columns, annotate_columns, cols',
-    [
-        (False, False, ['X'], False, {'X_1', 'X_2'}),
-        (
-            True,
-            False,
-            ['X'],
-            False,
-            {'X_1', 'X_2'},
-        ),
-        (
-            False,
-            True,
-            ['X'],
-            False,
-            {'X_1', 'X_2', 'X_3'},
-        ),
-        (
-            True,
-            True,
-            ['X'],
-            False,
-            {'X_1', 'X_2', 'X_3'},
-        ),
-        (False, False, ['Z'], False, {'Z_cat1'}),
-        (False, False, ['X', 'Z'], False, {'X_1', 'X_2', 'Z_cat1'}),
-        (False, False, None, True, {'X_1', 'X_2'}),
-    ],
-)
-def test_binarize_dataset(keep, all_levels, columns, annotate_columns, cols):
+def _setup_binarize_test():
     d = {
         'ID': [1, 1, 2, 2, 3, 3],
         'TIME': [0.0, 1.0] * 3,
@@ -741,43 +723,85 @@ def test_binarize_dataset(keep, all_levels, columns, annotate_columns, cols):
     }
     dataset = pd.DataFrame(d)
     model = create_basic_pk_model('iv')
-    assert model.dataset == binarize_dataset(model, None).dataset
     model = set_dataset(model, dataset, datatype='nonmem')
-    if annotate_columns:
-        ci = model.datainfo['X']
-        var = ci.variable.replace(type='covariate', scale='ordinal', count=False)
-        ci = ci.replace(variable_mapping=var)
-        di = model.datainfo.set_column(ci)
-        model = model.replace(datainfo=di)
+    return dataset, model
 
-    df_before = model.dataset
-    model = binarize_dataset(model, columns=columns, keep=keep, all_levels=all_levels)
+
+def test_binarize_dataset():
+    dataset, model = _setup_binarize_test()
+    model = binarize_dataset(model, columns=['X'], keep=False, all_levels=False)
     df = model.dataset
-    assert not df.equals(df_before)
-    assert set(df.columns.values) - set(df_before.columns.values) == cols
-
-    if columns:
-        assert all(col in df.columns.values for col in columns) == keep
-        if 'X' in columns:
-            assert df['X_1'].tolist() == [1, 0, 0, 0, 1, 0]
-            assert all(df[col].tolist() != df['X_1'].tolist() for col in cols if col != 'X_1')
-        if 'Z' in columns:
-            assert df['Z_cat1'].tolist() == [1, 0, 1, 0, 1, 0]
-            assert all(df[col].tolist() != df['Z_cat1'].tolist() for col in cols if col != 'Z_cat1')
-
-    assert all(df[col1].equals(df[col2]) is False for col1, col2 in combinations(cols, 2))
+    new_cols = {'X_1', 'X_2'}
+    assert new_cols <= set(df.columns.values)
+    assert 'X' not in df.columns
+    assert df['X_1'].tolist() == [1, 0, 0, 0, 1, 0]
+    assert all(df[col1].equals(df[col2]) is False for col1, col2 in combinations(new_cols, 2))
 
     di = model.datainfo
-    assert all(di[col].variable.is_categorical() for col in cols)
-    assert all(di[col].type == 'covariate' for col in cols)
+    assert all(di[col].variable.is_categorical() for col in new_cols)
+    assert all(di[col].type == 'covariate' for col in new_cols)
+    assert all(Add.create(col) in di.provenance for col in new_cols)
+    assert Drop.create('X') in di.provenance
 
-    assert all(Add.create(col) in di.provenance for col in cols)
-    if keep:
-        assert len(di.provenance) == len(cols)
-    else:
-        columns_to_remove = columns if columns else ['X']
-        assert all(Drop.create(col) in di.provenance for col in columns_to_remove)
-        assert len(di.provenance) == len(cols) + len(columns_to_remove)
+
+@pytest.mark.parametrize('keep', [True, False])
+def test_binarize_dataset_keep(keep):
+    dataset, model = _setup_binarize_test()
+    model = binarize_dataset(model, columns=['X'], keep=keep, all_levels=False)
+    df = model.dataset
+    new_cols = {'X_1', 'X_2'}
+    assert ('X' in df.columns) == keep
+    assert new_cols <= set(df.columns.values)
+
+    di = model.datainfo
+    assert all(Add.create(col) in di.provenance for col in new_cols)
+    expected_no_of_drop = 1 if keep else 2
+    assert list(di.provenance).count(Drop.create('X')) == expected_no_of_drop
+
+
+@pytest.mark.parametrize('all_levels', [True, False])
+def test_binarize_dataset_all_levels(all_levels):
+    dataset, model = _setup_binarize_test()
+    model = binarize_dataset(model, columns=['X'], keep=False, all_levels=all_levels)
+    df = model.dataset
+    new_cols = {'X_1', 'X_2', 'X_3'} if all_levels else {'X_1', 'X_2'}
+    assert new_cols <= set(df.columns.values)
+
+    di = model.datainfo
+    assert all(di[col].variable.is_categorical() for col in new_cols)
+    assert all(di[col].type == 'covariate' for col in new_cols)
+    assert all(Add.create(col) in di.provenance for col in new_cols)
+
+
+def test_binarize_dataset_multiple_columns():
+    dataset, model = _setup_binarize_test()
+    model = binarize_dataset(model, columns=['X', 'Z'], keep=False, all_levels=False)
+    df = model.dataset
+    new_cols = {'X_1', 'X_2', 'Z_cat1'}
+    assert new_cols <= set(df.columns.values)
+
+    di = model.datainfo
+    assert all(di[col].variable.is_categorical() for col in new_cols)
+    assert all(di[col].type == 'covariate' for col in new_cols)
+    assert all(Add.create(col) in di.provenance for col in new_cols)
+
+
+def test_binarize_dataset_annotated():
+    dataset, model = _setup_binarize_test()
+    ci = model.datainfo['X']
+    var = ci.variable.replace(type='covariate', scale='ordinal', count=False)
+    ci = ci.replace(variable_mapping=var)
+    di = model.datainfo.set_column(ci)
+    model = model.replace(datainfo=di)
+    model = binarize_dataset(model, columns=None, keep=False, all_levels=False)
+    df = model.dataset
+    new_cols = {'X_1', 'X_2'}
+    assert new_cols <= set(df.columns.values)
+
+    di = model.datainfo
+    assert all(di[col].variable.is_categorical() for col in new_cols)
+    assert all(di[col].type == 'covariate' for col in new_cols)
+    assert all(Add.create(col) in di.provenance for col in new_cols)
 
 
 def test_binarize_dataset_raises():

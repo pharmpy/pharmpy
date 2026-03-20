@@ -12,6 +12,7 @@ from pharmpy.model import (
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    Ignore,
     Model,
     get_and_check_odes,
     output,
@@ -471,7 +472,11 @@ def set_tmdd(
         if model.dataset is not None:
             dvid = model.datainfo.find_single_column_name('dvid', default='DVID')
             dvs = [dv for dv in model.dependent_variables.values()]
-            model = model.replace(dataset=model.dataset.query(f'{dvid} in @dvs'))
+            df = model.dataset.query(f'{dvid} in @dvs')
+            expr = ' & '.join(f'({dvid} != {val})' for val in dvs)
+            prov_new = Ignore.create(expr)
+            di = model.datainfo.replace(provenance=model.datainfo.provenance + prov_new)
+            model = model.replace(dataset=df, datainfo=di)
     return model.update_source()
 
 

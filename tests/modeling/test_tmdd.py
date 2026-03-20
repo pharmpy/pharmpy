@@ -170,6 +170,8 @@ def test_full_multiple_dvs(pheno_path, load_model_for_test, model_name, dv_types
     model_no_di = set_tmdd(model, model_name, dv_types)
     assert model_no_di.dependent_variables == expected
     assert len(model_no_di.random_variables.epsilons) > 1
+    assert len(model_no_di.datainfo.provenance[-1].expression.args) == len(expected)
+    assert len(model_no_di.datainfo.provenance) == 2
 
     var = model.datainfo['DVID'].variable.replace(type='dvid')
     dvid_col = model.datainfo['DVID'].replace(variable_mapping=var)
@@ -178,6 +180,8 @@ def test_full_multiple_dvs(pheno_path, load_model_for_test, model_name, dv_types
     model_di = set_tmdd(model_di, model_name, dv_types)
     assert model_di.dependent_variables == expected
     assert len(model_di.random_variables.epsilons) > 1
+    assert len(model_no_di.datainfo.provenance[-1].expression.args) == len(expected)
+    assert len(model_no_di.datainfo.provenance) == 2
 
 
 def test_multiple_dvs(load_model_for_test, pheno_path, testdata):
