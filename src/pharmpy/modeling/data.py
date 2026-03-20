@@ -1552,28 +1552,28 @@ def _translate_nonmem_time_and_date_value(ser, timecol, datecol):
             year = int(year)
         month = int(month)
         day = int(day)
-        hour = int(timeval)
-        timeval = (timeval - hour) * 60
-        minute = int(timeval)
-        timeval = (timeval - minute) * 60
-        second = int(timeval)
-        timeval = (timeval - second) * 1000000
-        microsecond = int(timeval)
-        timeval = (timeval - microsecond) * 1000
-        nanosecond = int(timeval)
-        ts = pd.Timestamp(
-            year=year,
-            month=month,
-            day=day,
-            hour=hour,
-            minute=minute,
-            second=second,
-            microsecond=microsecond,
-            nanosecond=nanosecond,
-        )
-        return ts
     else:
         raise DatasetError(f'Bad DATE value: {date}')
+    hour = int(timeval)
+    timeval = (timeval - hour) * 60
+    minute = int(timeval)
+    timeval = (timeval - minute) * 60
+    second = int(timeval)
+    timeval = (timeval - second) * 1000000
+    microsecond = int(timeval)
+    timeval = (timeval - microsecond) * 1000
+    nanosecond = int(timeval)
+    ts = pd.Timestamp(
+        year=year,
+        month=month,
+        day=day,
+        hour=hour,
+        minute=minute,
+        second=second,
+        microsecond=microsecond,
+        nanosecond=nanosecond,
+    )
+    return ts
 
 
 def _translate_time_and_date_columns(df, timecol, datecol, idcol):
@@ -1644,7 +1644,8 @@ def translate_nmtran_time(model: Model):
         model = drop_columns(model, datecol.name)
         timecol = timecol.replace(unit='h')
     timecol = timecol.replace(datatype='float64')
-    di = di.set_column(timecol)
+    prov_new = [Drop.create(timecol.name), Add.create(timecol.name)]
+    di = di.set_column(timecol).replace(provenance=di.provenance + prov_new)
     model = model.replace(datainfo=di, dataset=df)
     return model.update_source()
 
