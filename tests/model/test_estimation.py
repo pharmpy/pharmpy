@@ -31,12 +31,13 @@ def test_estimation_method():
     assert a == EstimationStep.create(
         'fo', interaction=False, parameter_uncertainty_method='sandwich'
     )
+    assert a.variables == ()
     assert (
         repr(a)
         == "EstimationStep('FO', interaction=False, parameter_uncertainty_method='SANDWICH', evaluation=False, "
         "maximum_evaluations=None, laplace=False, isample=None, niter=None, auto=None, "
         "keep_every_nth_iter=None, individual_eta_samples=False, solver=None, solver_rtol=None, solver_atol=None, "
-        "tool_options={})"
+        "tool_options={}, variables=())"
     )
 
     with pytest.raises(ValueError):
@@ -133,6 +134,7 @@ def test_dict():
         'predictions': (),
         'residuals': (),
         'individual_eta_samples': False,
+        'variables': (),
     }
     step2 = EstimationStep.from_dict(d)
     assert step2 == a
@@ -162,6 +164,7 @@ def test_dict():
                 'predictions': (),
                 'residuals': (),
                 'individual_eta_samples': False,
+                'variables': (),
             },
             {
                 'method': 'FO',
@@ -183,6 +186,7 @@ def test_dict():
                 'predictions': (),
                 'residuals': (),
                 'individual_eta_samples': False,
+                'variables': (),
             },
         )
     }
@@ -297,6 +301,7 @@ def test_simulation_step():
         'solver_atol': None,
         'solver_rtol': None,
         'tool_options': {},
+        'variables': (),
     }
     assert ss2 == SimulationStep.from_dict(d)
     d['tool_options'] = frozenmapping({})
@@ -304,5 +309,6 @@ def test_simulation_step():
 
     assert (
         repr(ss2)
-        == 'SimulationStep(n=2, seed=1234, solver=None, solver_rtol=None, solver_atol=None, tool_options={})'
+        == 'SimulationStep(n=2, seed=1234, solver=None, solver_rtol=None, solver_atol=None, tool_options={}'
+        ', variables=())'
     )

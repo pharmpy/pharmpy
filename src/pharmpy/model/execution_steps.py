@@ -18,11 +18,13 @@ class ExecutionStep(Immutable):
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
         tool_options: frozenmapping[str, Any] = frozenmapping({}),
+        variables: tuple[str, ...] = (),
     ):
         self._solver = solver
         self._solver_rtol = solver_rtol
         self._solver_atol = solver_atol
         self._tool_options = tool_options
+        self._variables = variables
 
     @staticmethod
     def _canonicalize_solver(solver):
@@ -38,6 +40,11 @@ class ExecutionStep(Immutable):
     def _canonicalize_tool_options(tool_options):
         tool_options = frozenmapping(tool_options)
         return tool_options
+
+    @staticmethod
+    def _canonicalize_variables(variables):
+        variables = tuple(variables)
+        return variables
 
     @property
     def solver(self) -> Optional[str]:
@@ -77,25 +84,34 @@ class ExecutionStep(Immutable):
         """Dictionary of tool specific options"""
         return self._tool_options
 
+    @property
+    def variables(self) -> tuple[str, ...]:
+        """Variables to table"""
+        return self._variables
+
     def _add_to_dict(self, d):
         tool_options = dict(self._tool_options)
         d['solver'] = self._solver
         d['solver_rtol'] = self._solver_rtol
         d['solver_atol'] = self._solver_atol
         d['tool_options'] = tool_options
+        d['variables'] = self._variables
 
     @staticmethod
     def _adjust_dict(d):
         del d['class']
         if isinstance(d['tool_options'], dict):
             d['tool_options'] = frozenmapping(d['tool_options'])
+        if isinstance(d['variables'], list):
+            d['variables'] = tuple(d['variables'])
 
     def _partial_repr(self):
         solver = f"'{self.solver}'" if self.solver is not None else self.solver
         return (
             f"solver={solver}, "
             f"solver_rtol={self.solver_rtol}, solver_atol={self.solver_atol}, "
-            f"tool_options={self.tool_options}"
+            f"tool_options={self.tool_options}, "
+            f"variables={self._variables}"
         )
 
     def __eq__(self, other):
@@ -105,6 +121,7 @@ class ExecutionStep(Immutable):
             and self.solver_rtol == other.solver_rtol
             and self.solver_atol == other.solver_atol
             and self.tool_options == other.tool_options
+            and self._variables == other._variables
         )
 
     def __hash__(self):
@@ -114,6 +131,7 @@ class ExecutionStep(Immutable):
                 self._solver_rtol,
                 self._solver_atol,
                 self._tool_options,
+                self._variables,
             )
         )
 
@@ -146,6 +164,7 @@ class EstimationStep(ExecutionStep):
         tool_options: frozenmapping[str, Any] = frozenmapping({}),
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
+        variables: tuple[str, ...] = (),
     ):
         self._method = method
         self._interaction = interaction
@@ -189,6 +208,7 @@ class EstimationStep(ExecutionStep):
         tool_options: Mapping[str, Any] = frozenmapping({}),
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
+        variables: tuple[str, ...] = (),
     ):
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
@@ -228,6 +248,7 @@ class EstimationStep(ExecutionStep):
             )
         solver = ExecutionStep._canonicalize_solver(solver)
         tool_options = ExecutionStep._canonicalize_tool_options(tool_options)
+        variables = ExecutionStep._canonicalize_variables(variables)
         return cls(
             method=method,
             interaction=interaction,
@@ -247,6 +268,7 @@ class EstimationStep(ExecutionStep):
             tool_options=tool_options,
             derivatives=derivatives,
             individual_eta_samples=bool(individual_eta_samples),
+            variables=variables,
         )
 
     def replace(self, **kwargs) -> EstimationStep:
@@ -477,6 +499,7 @@ class SimulationStep(ExecutionStep):
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
         tool_options: frozenmapping[str, Any] = frozenmapping({}),
+        variables: tuple[str, ...] = (),
     ):
         self._n = n
         self._seed = seed
@@ -485,6 +508,7 @@ class SimulationStep(ExecutionStep):
             solver_rtol=solver_rtol,
             solver_atol=solver_atol,
             tool_options=tool_options,
+            variables=variables,
         )
 
     @classmethod
@@ -496,10 +520,19 @@ class SimulationStep(ExecutionStep):
         solver_rtol: Optional[int] = None,
         solver_atol: Optional[int] = None,
         tool_options: Mapping[str, Any] = frozenmapping({}),
+        variables: Sequence[str] = (),
     ):
         if n < 1:
             raise ValueError("Need at least one replicate in SimulationStep")
-        return cls(n=n, seed=seed)
+        return cls(
+            n=n,
+            seed=seed,
+            solver=solver,
+            solver_rtol=solver_rtol,
+            solver_atol=solver_atol,
+            tool_options=frozenmapping(tool_options),
+            variables=tuple(variables),
+        )
 
     def replace(self, **kwargs) -> SimulationStep:
         """Derive a new SimulationStep with new properties"""
