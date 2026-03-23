@@ -1100,7 +1100,7 @@ def test_solver():
 $PROBLEM
 $DATA ../../pheno.dta IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
-$SUBROUTINE ADVAN6 TOL=5
+$SUBROUTINE ADVAN13 TOL=5
 $MODEL COMP=(CENTRAL)
 $PK
 CL=THETA(1)*EXP(ETA(1))
@@ -1120,7 +1120,7 @@ $ESTIMATION METHOD=1 INTERACTION MAXEVALS=9999
     model = Model.parse_model_from_string(code)
     assert len(model.execution_steps) == 1
     step = model.execution_steps[0]
-    assert step.solver == 'DVERK'
+    assert step.solver == 'LSODA'
     assert step.solver_rtol == 5
     assert step.solver_atol == 1e-12
 
