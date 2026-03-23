@@ -1838,14 +1838,11 @@ def update_estimation(control_stream, model):
     single_deriv_subset = set(nonmem_deriv_names(single_deriv_subset, model.random_variables))
     multi_deriv_subset = set([d for d in derivatives_subset if len(d) > 1])
 
-    old_predictions_subset = set()
-    old_residuals_subset = set()
+    old_columns = set()
     for estep in old_ests:
-        old_predictions_subset.update(estep.predictions)
-        old_residuals_subset.update(estep.residuals)
-    pred_res_to_remove = old_predictions_subset.difference(predictions_subset).union(
-        old_residuals_subset.difference(residuals_subset)
-    )
+        old_columns.update(estep.predictions)
+        old_columns.update(estep.residuals)
+    to_remove = old_columns.difference(predictions_subset.union(residuals_subset))
 
     # Find which derivative parameters to remove
     remove_param = {}
@@ -1906,7 +1903,7 @@ def update_estimation(control_stream, model):
         derivative_regex = r'[HG]\d+'
         have_noprint = False
         for item in table.all_options:
-            if item.key in remove_param or item.key in pred_res_to_remove:
+            if item.key in remove_param or item.key in to_remove:
                 new_table = new_table.remove_option(item.key)
             elif item.key in predictions_subset:
                 predictions_subset.discard(item.key)
