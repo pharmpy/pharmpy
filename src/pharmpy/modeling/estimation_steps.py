@@ -226,7 +226,7 @@ def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED):
     >>> model = set_simulation(model, n=10, seed=1234)
     >>> steps = model.execution_steps
     >>> steps[0]
-    SimulationStep(n=10, seed=1234, solver=None, solver_rtol=None, solver_atol=None, tool_options={})
+    SimulationStep(n=10, seed=1234, solver=None, solver_rtol=None, solver_atol=None, tool_options={}, variables=())
 
     """
     final_est = None

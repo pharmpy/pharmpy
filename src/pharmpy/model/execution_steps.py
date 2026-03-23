@@ -97,8 +97,6 @@ class ExecutionStep(Immutable):
         del d['class']
         if isinstance(d['tool_options'], dict):
             d['tool_options'] = frozenmapping(d['tool_options'])
-        if isinstance(d['variables'], list):
-            d['variables'] = tuple(d['variables'])
 
     def _partial_repr(self):
         solver = f"'{self.solver}'" if self.solver is not None else self.solver
