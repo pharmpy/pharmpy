@@ -1826,9 +1826,11 @@ def update_estimation(control_stream, model):
     predictions_subset = set()
     residuals_subset = set()
     derivatives_subset = set()
+    variables_subset = set()
     for estep in new_ests:
         predictions_subset.update(estep.predictions)
         residuals_subset.update(estep.residuals)
+        variables_subset.update(estep.variables)
         derivatives_subset.update(estep.derivatives)
         for der in estep.derivatives:
             if any(d not in model.random_variables for d in der):
@@ -1842,7 +1844,11 @@ def update_estimation(control_stream, model):
     for estep in old_ests:
         old_columns.update(estep.predictions)
         old_columns.update(estep.residuals)
-    to_remove = old_columns.difference(predictions_subset.union(residuals_subset))
+        old_columns.update(estep.variables)
+    to_remove = old_columns.difference(
+        predictions_subset.union(residuals_subset).union(variables_subset)
+    )
+    to_add = variables_subset - old_columns
 
     # Find which derivative parameters to remove
     remove_param = {}
@@ -1923,6 +1929,9 @@ def update_estimation(control_stream, model):
 
         for option in sorted(single_deriv_subset):
             new_table = new_table.append_option(option)
+
+        for col in sorted(to_add):
+            new_table = new_table.append_option(col)
 
         if not have_noprint:
             new_table = new_table.append_option('NOPRINT')
