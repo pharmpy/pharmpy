@@ -93,7 +93,7 @@ jobs:
     steps:
 
       - name: Checkout Pharmpy
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Get NONMEM
         id: cache-nonmem
@@ -163,7 +163,7 @@ jobs:
     steps:
 
       - name: Checkout Pharmpy
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup gfortran
         uses: rikardn/setup-fortran@f6a49e34d573ca3753a8ea751bf8dda1879e5f05
@@ -216,7 +216,7 @@ jobs:
     steps:
 
       - name: Checkout Pharmpy
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup gfortran
         uses: rikardn/setup-fortran@f6a49e34d573ca3753a8ea751bf8dda1879e5f05
