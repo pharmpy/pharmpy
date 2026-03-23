@@ -858,3 +858,50 @@ def is_simulation_model(model: Model) -> bool:
         if not isinstance(step, SimulationStep):
             return False
     return True
+
+
+def add_output_variables(model: Model, variables: Sequence[str], append: bool = True) -> Model:
+    """Add output variables to an execution step
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+    variables : Sequence[str]
+        List of variables to add
+    append : bool
+        Set to false to overwrite all variables
+
+    Returns
+    -------
+    Model
+        Updated Pharmpy model
+
+    Examples
+    --------
+    >>> from pharmpy.modeling import *
+    >>> model = load_example_model("pheno")
+    >>> model.execution_steps[-1].variables
+    ('ID', 'TIME', 'DV')
+    >>> model = add_output_variables(model, ['CL'])
+    >>> model.execution_steps[-1].variables
+    ('ID', 'TIME', 'DV', 'CL')
+
+    See also
+    --------
+    add_predictions
+    add_residuals
+    remove_predictions
+    remove_residuals
+    """
+
+    steps = model.execution_steps
+    step = steps[-1]
+    if append:
+        new_variables = step.variables + tuple(variables)
+    else:
+        new_variables = tuple(variables)
+    newstep = step.replace(variables=new_variables)
+    newsteps = steps[0:-1] + newstep
+    model = model.replace(execution_steps=newsteps)
+    return model.update_source()

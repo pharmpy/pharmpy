@@ -276,6 +276,7 @@ Estimation steps
     add_parameter_uncertainty_step
     add_predictions
     add_residuals
+    add_output_variables
     append_estimation_step_options
     is_simulation_model
     remove_derivative

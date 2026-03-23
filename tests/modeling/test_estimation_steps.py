@@ -4,6 +4,7 @@ from pharmpy.model import SimulationStep
 from pharmpy.modeling import (
     add_derivative,
     add_estimation_step,
+    add_output_variables,
     add_parameter_uncertainty_step,
     add_predictions,
     add_residuals,
@@ -528,3 +529,12 @@ def test_is_simulation_model(load_example_model_for_test):
     assert not is_simulation_model(model)
     m2 = set_simulation(model)
     assert is_simulation_model(m2)
+
+
+def test_add_output_variables(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert model.execution_steps[-1].variables == ('ID', 'TIME', 'DV')
+    model = add_output_variables(model, ["CL", "VC"])
+    assert model.execution_steps[-1].variables == ('ID', 'TIME', 'DV', 'CL', 'VC')
+    model = add_output_variables(model, ["CL", "VC"], append=False)
+    assert model.execution_steps[-1].variables == ('CL', 'VC')

@@ -93,6 +93,7 @@ from .estimation import calculate_parameters_from_ucp, calculate_ucp_scale
 from .estimation_steps import (
     add_derivative,
     add_estimation_step,
+    add_output_variables,
     add_parameter_uncertainty_step,
     add_predictions,
     add_residuals,
@@ -284,6 +285,7 @@ __all__ = [
     'add_indirect_effect',
     'add_lag_time',
     'add_metabolite',
+    'add_output_variables',
     'add_parameter_uncertainty_step',
     'add_pd_iiv',
     'add_peripheral_compartment',
