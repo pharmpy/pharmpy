@@ -446,6 +446,15 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
     columns = [item for row in columns for item in row]
     predictions = tuple(sorted(param for param in columns if param in all_predictions))
     residuals = tuple(sorted(param for param in columns if param in all_residuals))
+    variables = []
+    for col in columns:
+        if (
+            col not in variables
+            and col not in predictions
+            and col not in residuals
+            and not re.match(r"ETA\d+", col)
+        ):
+            variables.append(col)
 
     for table in table_records:
         etaderivs = table.eta_derivatives
@@ -556,6 +565,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 predictions=predictions,
                 residuals=residuals,
                 individual_eta_samples=individual_eta_samples,
+                variables=variables,
             )
         except ValueError:
             raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')

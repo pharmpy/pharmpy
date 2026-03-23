@@ -41,11 +41,6 @@ class ExecutionStep(Immutable):
         tool_options = frozenmapping(tool_options)
         return tool_options
 
-    @staticmethod
-    def _canonicalize_variables(variables):
-        variables = tuple(variables)
-        return variables
-
     @property
     def solver(self) -> Optional[str]:
         """Numerical solver to use when numerically solving the ODE system
@@ -185,6 +180,7 @@ class EstimationStep(ExecutionStep):
             solver_rtol=solver_rtol,
             solver_atol=solver_atol,
             tool_options=tool_options,
+            variables=variables,
         )
 
     @classmethod
@@ -208,7 +204,7 @@ class EstimationStep(ExecutionStep):
         tool_options: Mapping[str, Any] = frozenmapping({}),
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
-        variables: tuple[str, ...] = (),
+        variables: Sequence[str] = (),
     ):
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
@@ -248,7 +244,6 @@ class EstimationStep(ExecutionStep):
             )
         solver = ExecutionStep._canonicalize_solver(solver)
         tool_options = ExecutionStep._canonicalize_tool_options(tool_options)
-        variables = ExecutionStep._canonicalize_variables(variables)
         return cls(
             method=method,
             interaction=interaction,
@@ -268,7 +263,7 @@ class EstimationStep(ExecutionStep):
             tool_options=tool_options,
             derivatives=derivatives,
             individual_eta_samples=bool(individual_eta_samples),
-            variables=variables,
+            variables=tuple(variables),
         )
 
     def replace(self, **kwargs) -> EstimationStep:
