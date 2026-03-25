@@ -17,7 +17,7 @@ jobs:
 
       - name: Cache NONMEM
         id: cache-nonmem
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
             path: 751.zip
             key: nonmem-751
@@ -97,7 +97,7 @@ jobs:
 
       - name: Get NONMEM
         id: cache-nonmem
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
             path: 751.zip
             key: nonmem-751
@@ -145,7 +145,7 @@ jobs:
         if: ${{ failure() }}
 
       - name: Upload failed integration test directories artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ failure() }}
         with:
             name: integration-tests-ubuntu
@@ -173,7 +173,7 @@ jobs:
 
       - name: Get NONMEM
         id: cache-nonmem
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
             path: 751.zip
             key: nonmem-751
@@ -226,7 +226,7 @@ jobs:
 
       - name: Get NONMEM
         id: cache-nonmem
-        uses: actions/cache@v3
+        uses: actions/cache@v5
         with:
             path: 751.zip
             key: nonmem-751
@@ -268,7 +268,7 @@ jobs:
         run: tox -e integration
 
       - name: Upload failed integration test directories artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         if: ${{ failure() }}
         with:
             name: integration-tests-ubuntu
