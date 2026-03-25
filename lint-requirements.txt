@@ -10,7 +10,7 @@ pyright==1.1.408
 readme-renderer==44.0
 twine==6.2.0 
 # Indirect dependencies
-build==1.4.0
+build==1.4.1
 certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.6
