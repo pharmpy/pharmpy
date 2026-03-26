@@ -299,7 +299,9 @@ def convert_unit(
             odes = get_and_check_odes(model)
             dosing_cmts = odes.dosing_compartments
             cb = CompartmentalSystemBuilder(odes)
-            cb.set_bioavailability(dosing_cmts[0], conversion_factor)
+            cb.set_bioavailability(
+                dosing_cmts[0], dosing_cmts[0].bioavailability * conversion_factor
+            )
             new_statements = (
                 model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
             )
