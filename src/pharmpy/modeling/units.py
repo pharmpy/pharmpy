@@ -168,7 +168,7 @@ def simplify_for_units(expr: Expr) -> Expr:
     elif expr.is_exp() or (expr.is_function() and expr.name == "log"):
         return Expr(1)
     elif expr.is_pow():
-        return simplify_for_units(expr.args[0]) ** simplify_for_units(expr.args[1])
+        return simplify_for_units(expr.expr_args[0]) ** simplify_for_units(expr.expr_args[1])
     elif expr.is_function() and expr.name in {"forward", "first"}:
         return simplify_for_units(expr.expr_args[0])
     elif expr.is_function() and expr.name in {"newind", "count_if"}:
@@ -224,7 +224,17 @@ def used_symbols(expr, model):
     return symbols
 
 
+def handle_exp(expression, known, unknown, model):
+    if isinstance(expression, Expr) and expression.is_exp():
+        idsymb = model.datainfo.id_column.symbol
+        handle_assignment(idsymb, expression.args[1], known, unknown, model)
+    elif len(expression.args) > 0:
+        for arg in expression.args:
+            handle_exp(arg, known, unknown, model)
+
+
 def handle_assignment(symbol, expression, known, unknown, model):
+    handle_exp(expression, known, unknown, model)
     eqs = deduct_equal_units(symbol, expression)
     sol = solve(eqs, exclude=known.keys())
     for lhs, rhs in sol.items():

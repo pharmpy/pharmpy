@@ -13,10 +13,12 @@ from pharmpy.modeling import (
 
 def test_get_unit_of(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_real.mod")
+    print(model.statements)
     assert get_unit_of(model, "Y") == Unit("mg/L")
     assert get_unit_of(model, "V") == Unit("L")
     assert get_unit_of(model, "WGT") == Unit("kg")
     assert get_unit_of(model, "CL") == Unit("L/h")
+    assert get_unit_of(model, "ETA_1") == Unit(1)
 
     m2 = add_lag_time(model)
     assert get_unit_of(m2, "MDT") == Unit("h")
