@@ -60,6 +60,19 @@ class Unit:
         s = s.replace("[", "").replace("]", "").replace(" ", "")
         return s
 
+    def replace_unit_of_dimension(self, replacement: Unit) -> Unit:
+        """Replace the unit for one dimension"""
+        quant = pint.Quantity(1.0, self._units)
+        items = quant.unit_items()
+        new_unit = ureg("").units
+        for unit_str, multiplicity in items:
+            element = ureg(unit_str).units
+            if element.dimensionality == replacement._units.dimensionality:
+                new_unit *= replacement._units**multiplicity
+            else:
+                new_unit *= element**multiplicity
+        return Unit(new_unit)
+
     def __mul__(self, other: Unit) -> Unit:
         return Unit(self._units * other._units)
 

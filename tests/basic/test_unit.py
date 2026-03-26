@@ -60,6 +60,19 @@ def test_get_dimensionality_string(unit, correct):
     assert Unit(unit).get_dimensionality_string() == correct
 
 
+@pytest.mark.parametrize(
+    'unit,replacement,correct',
+    [
+        ('mg', 'mg', 'mg'),
+        ('mg/L', 'ug', 'ug/L'),
+    ],
+)
+def test_replace_unit_of_dimension(unit, replacement, correct):
+    orig = Unit(unit)
+    new = orig.replace_unit_of_dimension(Unit(replacement))
+    assert new == Unit(correct)
+
+
 def test_quantity():
     x = Quantity(2.5, Unit("mg"))
     assert x.value == 2.5
