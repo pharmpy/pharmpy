@@ -1,3 +1,5 @@
+import pytest
+
 from pharmpy.basic import Unit
 from pharmpy.model import Add, Assignment, Drop
 from pharmpy.modeling import convert_unit, get_unit_of
@@ -26,3 +28,28 @@ def test_convert_unit(load_example_model_for_test):
     m2 = convert_unit(model, "WGT", "kg", in_dataset=True)
     assert model == m2
     assert len(m2.datainfo.provenance) == 1
+
+
+@pytest.mark.parametrize(
+    'variable,unit,dv_unit,amt_unit,values',
+    [
+        ("WGT", "g", None, None, (1400.0, 1400.0)),
+        ("AMT", "ug", "ug/L", "ug", (25000.0, 0.0)),
+        ("AMT", "mg", "mg/L", "mg", (25.0, 0.0)),
+        ("DV", "g/L", "g/L", "g", (0.0, 0.0173)),
+        ("DV", "g/mL", "g/mL", "g", (0.0, 0.0000173)),
+        ("DV", "mg/mL", "mg/mL", "mg", (0.0, 0.0173)),
+    ],
+)
+def test_convert_unit_in_dataset(
+    load_example_model_for_test, variable, unit, dv_unit, amt_unit, values
+):
+    model = load_example_model_for_test("pheno")
+    m2 = convert_unit(model, variable, unit, in_dataset=True)
+    assert m2.datainfo[variable].variable.properties['unit'] == Unit(unit)
+    if dv_unit is not None:
+        assert m2.datainfo.dv_column.variable.properties['unit'] == Unit(dv_unit)
+    if amt_unit is not None:
+        assert m2.datainfo.typeix['dose'][0].variable.properties['unit'] == Unit(amt_unit)
+    assert m2.dataset[variable].iloc[0] == values[0]
+    assert m2.dataset[variable].iloc[1] == values[1]

@@ -293,8 +293,9 @@ def convert_unit(
         int(conversion_factor) if int(conversion_factor) == conversion_factor else conversion_factor
     )
 
+    column = model.datainfo[variable]
+
     if not in_dataset:
-        column = model.datainfo[variable]
         if column.type in {'dose', 'dv'}:
             odes = get_and_check_odes(model)
             dosing_cmts = odes.dosing_compartments
@@ -302,9 +303,15 @@ def convert_unit(
             cb.set_bioavailability(
                 dosing_cmts[0], dosing_cmts[0].bioavailability * conversion_factor
             )
-            new_statements = (
-                model.statements.before_odes + CompartmentalSystem(cb) + model.statements.after_odes
-            )
+            amounts = set(odes.amounts)
+            after_odes = []
+            for s in model.statements.after_odes:
+                if not s.rhs_symbols.isdisjoint(amounts):
+                    new_s = Assignment.create(s.symbol, s.expression / conversion_factor)
+                    after_odes.append(new_s)
+                else:
+                    after_odes.append(s)
+            new_statements = model.statements.before_odes + CompartmentalSystem(cb) + after_odes
         else:
             original_symbol = Expr.symbol(variable)
             scaled_symbol = Expr.symbol(f"SCALED_{variable}")
@@ -316,12 +323,43 @@ def convert_unit(
         model = model.replace(statements=new_statements)
     else:
         df = get_and_check_dataset(model)
-        scaled_column = conversion_factor * df[variable]
-        df = df.assign(**{variable: scaled_column})
-        new_var = model.datainfo[variable].variable.set_property("unit", unit)
-        new_col = model.datainfo[variable].replace(variable_mapping=new_var)
-        new_di = model.datainfo.set_column(new_col)
-        prov_new = [Drop.create(variable), Add.create(variable)]
-        new_di = new_di.replace(provenance=new_di.provenance + prov_new)
-        model = model.replace(dataset=df, datainfo=new_di)
+        df, di = _scale_dataset_column(df, model.datainfo, variable, conversion_factor, unit)
+        other_type = _get_other_type(column.type)
+        if other_type is not None:
+            other_name = di.find_single_column_name(other_type)
+            original_other_unit = model.datainfo[other_name].variable.properties.get("unit", None)
+            if original_other_unit is not None:
+                if other_type == 'dose':
+                    new_v = (
+                        unit.replace_unit_of_dimension(original_other_unit) / original_other_unit
+                    )
+                    new_other_unit = unit / new_v
+                else:
+                    new_other_unit = original_other_unit.replace_unit_of_dimension(unit)
+            else:
+                new_other_unit = None
+            df, di = _scale_dataset_column(df, di, other_name, conversion_factor, new_other_unit)
+        model = model.replace(dataset=df, datainfo=di)
     return model.update_source()
+
+
+def _get_other_type(tp):
+    if tp == 'dv':
+        other_type = 'dose'
+    elif tp == 'dose':
+        other_type = 'dv'
+    else:
+        other_type = None
+    return other_type
+
+
+def _scale_dataset_column(df, di, variable, conversion_factor, unit):
+    scaled_column = conversion_factor * df[variable]
+    df = df.assign(**{variable: scaled_column})
+    if unit is not None:
+        new_var = di[variable].variable.set_property("unit", unit)
+        new_col = di[variable].replace(variable_mapping=new_var)
+        di = di.set_column(new_col)
+    prov_new = (Drop.create(variable), Add.create(variable))
+    di = di.replace(provenance=di.provenance + prov_new)
+    return df, di
