@@ -33,6 +33,7 @@ from pharmpy.model import (
 from pharmpy.model.model import update_datainfo
 from pharmpy.modeling import get_admid, get_cmt, get_ids, simplify_expression
 
+from .parsing import parse_table_record_columns
 from .records.parsers import CodeRecordParser
 
 if TYPE_CHECKING:
@@ -1905,53 +1906,60 @@ def update_estimation(control_stream, model):
     elif tables:
         # Update the last table with the new information
         table = tables[-1]
-        new_table = table
-        derivative_regex = r'[HG]\d+'
-        have_noprint = False
-        for item in table.all_options:
-            if item.key in remove_param or item.key in to_remove:
-                new_table = new_table.remove_option(item.key)
-            elif item.key in predictions_subset:
-                predictions_subset.discard(item.key)
-            elif item.key in residuals_subset:
-                residuals_subset.discard(item.key)
-            elif item.key in single_deriv_subset:
-                single_deriv_subset.discard(item.key)
-            elif re.match(derivative_regex, item.key):  # Remove unwanted derivatives
-                new_table = new_table.remove_option(item.key)
-            else:
-                # Unknown --> Leave as is
-                if item.key == 'NOPRINT':
-                    have_noprint = True
+        all_cols = parse_table_record_columns(
+            table, {}, (), (), len(model.random_variables.etas.names)
+        )
+        if not set(all_cols) == to_remove:
+            new_table = table
+            derivative_regex = r'[HG]\d+'
+            have_noprint = False
+            for item in table.all_options:
+                if item.key in remove_param or item.key in to_remove:
+                    new_table = new_table.remove_option(item.key)
+                elif item.key in predictions_subset:
+                    predictions_subset.discard(item.key)
+                elif item.key in residuals_subset:
+                    residuals_subset.discard(item.key)
+                elif item.key in single_deriv_subset:
+                    single_deriv_subset.discard(item.key)
+                elif re.match(derivative_regex, item.key):  # Remove unwanted derivatives
+                    new_table = new_table.remove_option(item.key)
+                else:
+                    # Unknown --> Leave as is
+                    if item.key == 'NOPRINT':
+                        have_noprint = True
 
-        for option in sorted(predictions_subset.union(residuals_subset)):
-            new_table = new_table.append_option(option)
+            for option in sorted(predictions_subset.union(residuals_subset)):
+                new_table = new_table.append_option(option)
 
-        for option in sorted(single_deriv_subset):
-            new_table = new_table.append_option(option)
+            for option in sorted(single_deriv_subset):
+                new_table = new_table.append_option(option)
 
-        for col in sorted(to_add):
-            new_table = new_table.append_option(col)
+            for col in sorted(to_add):
+                new_table = new_table.append_option(col)
 
-        if not have_noprint:
-            new_table = new_table.append_option('NOPRINT')
+            if not have_noprint:
+                new_table = new_table.append_option('NOPRINT')
 
-        # Check what already exist
-        multi_deriv_subset = [
-            d for d in multi_deriv_subset if d not in set(verbatim_derivatives.values())
-        ]
-        if multi_deriv_subset:
-            # ADD TO STATEMENTS AS WELL
-            control_stream, new_table, new_statements = add_multi_deriv(
-                new_table,
-                multi_deriv_subset,
-                model.random_variables,
-                control_stream,
-                new_statements,
-            )
+            # Check what already exist
+            multi_deriv_subset = [
+                d for d in multi_deriv_subset if d not in set(verbatim_derivatives.values())
+            ]
+            if multi_deriv_subset:
+                # ADD TO STATEMENTS AS WELL
+                control_stream, new_table, new_statements = add_multi_deriv(
+                    new_table,
+                    multi_deriv_subset,
+                    model.random_variables,
+                    control_stream,
+                    new_statements,
+                )
 
-        new_table = sort_table(new_table)
-        control_stream = control_stream.replace_records([table], [new_table])
+            new_table = sort_table(new_table)
+            control_stream = control_stream.replace_records([table], [new_table])
+        else:
+            control_stream.remove_records([table])
+
     return control_stream, new_statements
 
 

@@ -1032,7 +1032,6 @@ def parse_table_columns(control_stream, netas, problem_no=0):
     # Handle synonyms and appended columns
 
     reserved = {'PRED', 'IPRED', 'CIPREDI', 'WRES'}
-    synonyms = dict()
     all_columns = []
 
     code_recs = (
@@ -1048,36 +1047,42 @@ def parse_table_columns(control_stream, netas, problem_no=0):
     colnames, _, _, _ = parse_column_info(control_stream)
     symbs |= set(colnames) | reserved
 
+    synonyms = {}
     for table_record in control_stream.get_records('TABLE', problem_no=problem_no):
-        noappend = False
-        columns = []
-        for opt, key, value in table_record.parse_options(nonoptions=symbs, netas=netas):
-            if key == 'NOAPPEND':
-                noappend = True
-            elif opt.need_value is None:
-                if value is None:
-                    if key in synonyms:
-                        columns.append(synonyms[key])
-                    else:
-                        columns.append(key)
-                else:
-                    if key in reserved:
-                        columns.append(key)
-                        synonyms[value] = key
-                    elif value in reserved:
-                        columns.append(value)
-                        synonyms[key] = value
-                    else:
-                        # FIXME: Fallback since we don't know all reserved names
-                        columns.append(key)
-
-        if not noappend:
-            toremove = ['PRED', 'RES', 'WRES']
-            toappend = ['DV'] + toremove
-            # Remove appended columns explicitly in $TABLE except DV
-            columns = [col for col in columns if col not in toremove]
-            columns.extend(toappend)
-
+        columns = parse_table_record_columns(table_record, synonyms, reserved, symbs, netas)
         all_columns.append(columns)
 
     return all_columns
+
+
+def parse_table_record_columns(table_record, synonyms, reserved, nonoptions, netas):
+    noappend = False
+    columns = []
+    for opt, key, value in table_record.parse_options(nonoptions=nonoptions, netas=netas):
+        if key == 'NOAPPEND':
+            noappend = True
+        elif opt.need_value is None:
+            if value is None:
+                if key in synonyms:
+                    columns.append(synonyms[key])
+                else:
+                    columns.append(key)
+            else:
+                if key in reserved:
+                    columns.append(key)
+                    synonyms[value] = key
+                elif value in reserved:
+                    columns.append(value)
+                    synonyms[key] = value
+                else:
+                    # FIXME: Fallback since we don't know all reserved names
+                    columns.append(key)
+
+    if not noappend:
+        toremove = ['PRED', 'RES', 'WRES']
+        toappend = ['DV'] + toremove
+        # Remove appended columns explicitly in $TABLE except DV
+        columns = [col for col in columns if col not in toremove]
+        columns.extend(toappend)
+
+    return columns
