@@ -17,6 +17,7 @@ from pharmpy.model import (
 )
 
 from .compartments import get_bioavailability, get_lag_times
+from .odes import get_zero_order_inputs
 
 
 @overload
@@ -105,7 +106,8 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
             handle_assignment(s.symbol, s.expression, known, unknown, model)
         elif isinstance(s, CompartmentalSystem):
             eqs = s.eqs
-            for eq in eqs:
+            zinps = get_zero_order_inputs(model)
+            for eq, zinp in zip(eqs, zinps):
                 func = eq.lhs.args[0]
                 assert isinstance(func, Expr)
                 funcname = func.name
@@ -114,6 +116,8 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
                 if amount_unit is not None and idv_unit is not None:
                     known[derivative_symbol] = amount_unit / idv_unit
                 handle_assignment(derivative_symbol, eq.rhs, known, unknown, model)
+                if zinp != 0:
+                    handle_assignment(derivative_symbol, zinp, known, unknown, model)
 
         unknown = recheck_unknowns(unknown, known, model)
 
