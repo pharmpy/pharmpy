@@ -17,7 +17,7 @@ from pharmpy.model import (
 )
 
 from .compartments import get_bioavailability, get_lag_times
-from .odes import get_zero_order_inputs
+from .odes import get_initial_conditions, get_zero_order_inputs
 
 
 @overload
@@ -94,6 +94,12 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
         bios = get_bioavailability(model)
         for bio in bios.values():
             handle_assignment(id_symbol, bio, known, unknown, model)
+        if amount_unit is not None:
+            amount_symbol = di.typeix['dose'][0].symbol
+            ics = get_initial_conditions(model)
+            for ic in ics.values():
+                if ic != 0:
+                    handle_assignment(amount_symbol, ic, known, unknown, model)
     else:
         amount_unit = None
         idv_unit = None
