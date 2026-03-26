@@ -16,7 +16,7 @@ from pharmpy.model import (
     get_and_check_odes,
 )
 
-from .compartments import get_lag_times
+from .compartments import get_bioavailability, get_lag_times
 
 
 @overload
@@ -77,6 +77,8 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
 
     y = list(model.dependent_variables.keys())[0]
     known[y] = known[di.dv_column.symbol]
+    id_symbol = model.datainfo.id_column.symbol
+    known[id_symbol] = Unit("")
     if model.statements.ode_system is not None:
         amount_unit = di.typeix['dose'][0].variable.properties.get("unit", None)
         if amount_unit is not None:
@@ -88,6 +90,9 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
         lag_times = get_lag_times(model)
         for lag_time in lag_times.values():
             handle_assignment(di.idv_column.symbol, lag_time, known, unknown, model)
+        bios = get_bioavailability(model)
+        for bio in bios.values():
+            handle_assignment(id_symbol, bio, known, unknown, model)
     else:
         amount_unit = None
         idv_unit = None
@@ -152,6 +157,8 @@ def simplify_for_units(expr: Expr) -> Expr:
         return product((simplify_for_units(factor) for factor in expr.expr_args), start=Expr(1))
     elif expr.is_exp() or (expr.is_function() and expr.name == "log"):
         return Expr(1)
+    elif expr.is_pow():
+        return simplify_for_units(expr.args[0]) ** simplify_for_units(expr.args[1])
     elif expr.is_function() and expr.name in {"forward", "first"}:
         return simplify_for_units(expr.expr_args[0])
     elif expr.is_function() and expr.name in {"newind", "count_if"}:
@@ -162,6 +169,7 @@ def simplify_for_units(expr: Expr) -> Expr:
 
 def deduct_equal_units(symbol: Expr, expr: Expr) -> list[BooleanExpr]:
     # FIXME: we could also recurse down to additions inside exp and log or parentheses
+    expr = simplify_for_units(expr)
     eqs = []
     expr = expr.expand()
     if expr.is_add():

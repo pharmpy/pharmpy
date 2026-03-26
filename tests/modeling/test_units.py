@@ -2,7 +2,13 @@ import pytest
 
 from pharmpy.basic import Unit
 from pharmpy.model import Add, Assignment, Drop
-from pharmpy.modeling import add_lag_time, convert_unit, get_unit_of
+from pharmpy.modeling import (
+    add_lag_time,
+    convert_unit,
+    create_basic_pk_model,
+    get_unit_of,
+    set_unit,
+)
 
 
 def test_get_unit_of(load_model_for_test, testdata):
@@ -14,6 +20,13 @@ def test_get_unit_of(load_model_for_test, testdata):
 
     m2 = add_lag_time(model)
     assert get_unit_of(m2, "MDT") == Unit("h")
+
+    m = create_basic_pk_model("ivoral")
+    m = set_unit(m, "DV", "mg/L")
+    m = set_unit(m, "AMT", "mg")
+    m = set_unit(m, "TIME", "h")
+    assert get_unit_of(m, "F_BIO") == Unit("")
+    assert get_unit_of(m, "ETA_BIO") == Unit("")
 
 
 def test_convert_unit(load_example_model_for_test):
