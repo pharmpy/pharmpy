@@ -16,6 +16,8 @@ from pharmpy.model import (
     get_and_check_odes,
 )
 
+from .compartments import get_lag_times
+
 
 @overload
 def get_unit_of(model: Model, variable: None) -> dict[str, Unit]: ...
@@ -70,6 +72,9 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
         for col in di
         if not col.variable.properties.get("unit", None) is None
     }
+    # Set of tuples symbol, expression where units cannot yet be deduced
+    unknown = set()
+
     y = list(model.dependent_variables.keys())[0]
     known[y] = known[di.dv_column.symbol]
     if model.statements.ode_system is not None:
@@ -77,15 +82,15 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
         if amount_unit is not None:
             for amt in model.statements.ode_system.amounts:
                 known[amt] = amount_unit
-        idv_unit = di.typeix['idv'][0].variable.properties.get("unit", None)
+        idv_unit = di.idv_column.variable.properties.get("unit", None)
         if idv_unit is not None:
             known[model.statements.ode_system.t] = idv_unit
+        lag_times = get_lag_times(model)
+        for lag_time in lag_times.values():
+            handle_assignment(di.idv_column.symbol, lag_time, known, unknown, model)
     else:
         amount_unit = None
         idv_unit = None
-
-    # Set of tuples symbol, expression where units cannot yet be deduced
-    unknown = set()
 
     for s in reversed(model.statements):
         if variable is not None and variable in known:

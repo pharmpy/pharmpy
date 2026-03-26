@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy.basic import Unit
 from pharmpy.model import Add, Assignment, Drop
-from pharmpy.modeling import convert_unit, get_unit_of
+from pharmpy.modeling import add_lag_time, convert_unit, get_unit_of
 
 
 def test_get_unit_of(load_model_for_test, testdata):
@@ -11,6 +11,9 @@ def test_get_unit_of(load_model_for_test, testdata):
     assert get_unit_of(model, "V") == Unit("L")
     assert get_unit_of(model, "WGT") == Unit("kg")
     assert get_unit_of(model, "CL") == Unit("L/h")
+
+    m2 = add_lag_time(model)
+    assert get_unit_of(m2, "MDT") == Unit("h")
 
 
 def test_convert_unit(load_example_model_for_test):
