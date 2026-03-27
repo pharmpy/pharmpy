@@ -44,6 +44,9 @@ def test_get_unit_of(load_model_for_test, testdata):
     assert get_unit_of(m, "F_BIO") == Unit("")
     assert get_unit_of(m, "ETA_BIO") == Unit("")
 
+    with pytest.raises(ValueError):
+        get_unit_of(m, "UNKNOWNNAME")
+
 
 def test_convert_unit(load_example_model_for_test):
     model = load_example_model_for_test("pheno")

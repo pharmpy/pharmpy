@@ -63,6 +63,10 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
     if isinstance(variable, str):
         variable = Expr.symbol(variable)
 
+    all_symbols = get_all_symbols(model)
+    if variable not in all_symbols:
+        raise ValueError(f"Variable {variable} is not defined in the model")
+
     di = model.datainfo
 
     # FIXME: No multiple DV-support for now
@@ -136,7 +140,7 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
         raise RuntimeError(f"Couldn't deduct unit for {variable}")
     else:
         all_units = {}
-        for symbol in get_all_symbols(model):
+        for symbol in all_symbols:
             all_units[str(symbol)] = known.get(symbol, None)
         return all_units
 
