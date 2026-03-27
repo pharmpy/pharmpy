@@ -3,17 +3,19 @@ import pytest
 from pharmpy.basic import Unit
 from pharmpy.model import Add, Assignment, Drop
 from pharmpy.modeling import (
+    add_iiv,
     add_lag_time,
     convert_unit,
     create_basic_pk_model,
+    create_joint_distribution,
     get_unit_of,
+    remove_iiv,
     set_unit,
 )
 
 
 def test_get_unit_of(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_real.mod")
-    print(model.statements)
     assert get_unit_of(model, "Y") == Unit("mg/L")
     assert get_unit_of(model, "V") == Unit("L")
     assert get_unit_of(model, "WGT") == Unit("kg")
@@ -22,6 +24,18 @@ def test_get_unit_of(load_model_for_test, testdata):
 
     m2 = add_lag_time(model)
     assert get_unit_of(m2, "MDT") == Unit("h")
+
+    m3 = create_joint_distribution(model, ("ETA_1", "ETA_2"))
+    assert get_unit_of(m3, "IIV_CL_IIV_V") == Unit(1)
+
+    m4 = remove_iiv(model, "ETA_1")
+    m4 = add_iiv(m4, "CL", "add")
+    m4 = create_joint_distribution(m4, ("ETA_CL", "ETA_2"))
+    assert get_unit_of(m4, "ETA_CL") == Unit("L/h")
+    assert get_unit_of(m4, "ETA_2") == Unit("1")
+    assert get_unit_of(m4, "IIV_CL") == Unit("L^2/h^2")
+    assert get_unit_of(m4, "IVV") == Unit("1")
+    assert get_unit_of(m4, "IIV_V_IIV_CL") == Unit("L^2/h^2")
 
     m = create_basic_pk_model("ivoral")
     m = set_unit(m, "DV", "mg/L")

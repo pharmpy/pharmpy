@@ -104,6 +104,8 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
         amount_unit = None
         idv_unit = None
 
+    add_covariances(model, unknown)
+
     for s in reversed(model.statements):
         if variable is not None and variable in known:
             return known[variable]
@@ -137,6 +139,23 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
         for symbol in get_all_symbols(model):
             all_units[str(symbol)] = known.get(symbol, None)
         return all_units
+
+
+def add_covariances(model, unknown):
+    # Unit of variance is the square of the unit of the eta
+    # Unit of a covariance is the product of the units of the variances
+    cov = model.random_variables.covariance_matrix
+
+    for rv, diag in zip(model.random_variables.symbols, cov.diagonal()):
+        unknown.add((diag, rv**2))
+
+    if len(cov) == 1:
+        return
+    for row in range(1, cov.rows):
+        for col in range(0, row):
+            e = cov[row, col]
+            if e != 0:
+                unknown.add((e, cov[row, row] * cov[col, col]))
 
 
 def get_all_symbols(model):
@@ -250,10 +269,6 @@ def handle_assignment(symbol, expression, known, unknown, model):
             continue
 
         known[lhs] = unit
-        if lhs in model.random_variables:
-            rv = model.random_variables[lhs]
-            var = rv.variance
-            known[var] = unit**2
 
 
 def recheck_unknowns(unknown, known, model):
