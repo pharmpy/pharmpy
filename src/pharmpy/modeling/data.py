@@ -13,6 +13,7 @@ from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.internals.math import replace_nan
 from pharmpy.model import (
     AddColumn,
+    AddRows,
     Assignment,
     ColumnInfo,
     CompartmentalSystem,
@@ -695,13 +696,14 @@ def expand_additional_doses(model: Model, flag: bool = False):
     Model
         Updated Pharmpy model
     """
+    di = model.datainfo
     try:
-        addl = model.datainfo.typeix['additional'][0].name
-        ii = model.datainfo.typeix['ii'][0].name
+        addl = di.typeix['additional'][0].name
+        ii = di.typeix['ii'][0].name
     except IndexError:
         return model
-    idv = model.datainfo.idv_column.name
-    idcol = model.datainfo.id_column.name
+    idv = di.idv_column.name
+    idcol = di.id_column.name
 
     df = get_and_check_dataset(model)
 
@@ -734,11 +736,17 @@ def expand_additional_doses(model: Model, flag: bool = False):
     )
     df[idv] = df['_TIMES'].astype(np.float64)
     df.drop(['_TIMES', '_RESETGROUP'], axis=1, inplace=True)
+
+    df = reset_index(df)
+    added_rows = df[df['_EXPANDED']]
+    add = [AddRows.create(added_rows.index.tolist())]
     if flag:
         df.rename(columns={'_EXPANDED': 'EXPANDED'}, inplace=True)
+        add.append(AddColumn.create('EXPANDED'))
     else:
         df.drop([addl, ii, '_EXPANDED'], axis=1, inplace=True)
-    model = model.replace(dataset=reset_index(df))
+    di = di.replace(provenance=di.provenance + add)
+    model = model.replace(dataset=df, datainfo=di)
     return model.update_source()
 
 

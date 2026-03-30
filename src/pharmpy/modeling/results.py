@@ -13,6 +13,7 @@ from pharmpy.internals.expr.parse import parse as parse_expr
 from pharmpy.internals.expr.subs import subs, xreplace_dict
 from pharmpy.internals.math import round_to_n_sigdig, symmetric_to_flattened, triangular
 from pharmpy.model import (
+    AddColumn,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Model,
@@ -842,9 +843,11 @@ def insert_ebes_into_dataset(
     """
 
     eta_map = {name: f'ET_{i + 1}' for i, name in enumerate(model.random_variables.etas.names)}
+    di = model.datainfo
     df = model.dataset
     ebes = individual_estimates.rename(columns=lambda c: eta_map[c])
     joined = df.merge(ebes, left_on="ID", right_index=True, how="left")
+    prov_new = di.provenance + [AddColumn.create(col) for col in ebes.columns]
 
     if individual_estimates_covariance is not None:
         etcs = np.empty((len(individual_estimates_covariance), triangular(len(ebes.columns))))
@@ -860,7 +863,8 @@ def insert_ebes_into_dataset(
         )
 
         joined = joined.merge(etcs, left_on="ID", right_index=True, how="left")
+        prov_new += [AddColumn.create(col) for col in etcs.columns]
 
-    model = model.replace(dataset=joined)
+    model = model.replace(dataset=joined, datainfo=di.replace(provenance=prov_new))
     model = model.update_source()
     return model

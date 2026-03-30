@@ -5,7 +5,7 @@ import pytest
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
-from pharmpy.model import AddColumn, Drop
+from pharmpy.model import AddColumn, AddRows, Drop
 from pharmpy.modeling import (
     add_admid,
     add_cmt,
@@ -534,6 +534,8 @@ def test_expand_additional_doses(load_model_for_test, testdata):
     assert df.loc[3, 'TIME'] == 24.0
     assert df.loc[4, 'TIME'] == 36.0
     assert df.loc[5, 'TIME'] == 48.0
+    assert isinstance(model.datainfo.provenance[-1], AddRows)
+    assert len(model.datainfo.provenance) == 2
 
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     model = expand_additional_doses(model, flag=True)
@@ -545,6 +547,8 @@ def test_expand_additional_doses(load_model_for_test, testdata):
     assert df.loc[3, 'EXPANDED']
     assert df.loc[4, 'EXPANDED']
     assert not df.loc[5, 'EXPANDED']
+    assert isinstance(model.datainfo.provenance[-1], AddColumn)
+    assert len(model.datainfo.provenance) == 3
 
 
 def test_deidentify_data():

@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 from pharmpy.deps import pandas as pd
+from pharmpy.model import AddColumn
 from pharmpy.modeling import (
     calculate_aic,
     calculate_bic,
@@ -221,5 +222,9 @@ def test_insert_ebes_into_dataset(load_example_model_for_test):
         'ETC_2_1',
         'ETC_2_2',
     ]
-    assert model2.datainfo.names == names
+    di = model2.datainfo
+    assert di.names == names
     assert list(model2.dataset.columns) == names
+    new_names = set(model2.dataset.columns) - set(model.dataset.columns)
+    assert all(AddColumn.create(name) in di.provenance for name in new_names)
+    assert len(di.provenance) == len(new_names) + 1
