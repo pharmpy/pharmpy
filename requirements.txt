@@ -24,7 +24,7 @@ fsspec==2026.2.0
 idna==3.11
 imagesize==2.0.0
 ipykernel==7.2.0
-ipython==9.10.0
+ipython==9.10.1
 ipython_pygments_lexers==1.1.1
 ipywidgets==8.1.8
 itables==2.7.3
