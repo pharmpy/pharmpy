@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     get_unit_of,
     remove_iiv,
+    set_property,
     set_unit,
 )
 
@@ -63,6 +64,12 @@ def test_convert_unit(load_example_model_for_test):
     m2 = convert_unit(model, "WGT", "kg", in_dataset=True)
     assert model == m2
     assert len(m2.datainfo.provenance) == 1
+
+    m2 = set_property(model, "DV", "molar_mass", 136.0)
+    m2 = convert_unit(m2, "DV", "M")
+    assert float(m2.statements.before_odes[-1].expression) == pytest.approx(
+        7.35294117647059e-6, abs=1e-7
+    )
 
 
 @pytest.mark.parametrize(

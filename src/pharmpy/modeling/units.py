@@ -337,10 +337,19 @@ def convert_unit(
     if original_unit == unit:
         return model
 
-    if not original_unit.is_compatible_with(unit):
+    molar_mass = model.datainfo[variable].variable.properties.get("molar_mass", None)
+
+    if not original_unit.is_compatible_with(unit, molar_mass=molar_mass):
         raise ValueError(f"Unable to convert from {original_unit} to {unit}: different dimensions.")
 
-    conversion_factor = Quantity(1.0, original_unit).convert_to(unit).value
+    if molar_mass:
+        conversion_factor = (
+            Quantity(1.0, original_unit)
+            .convert_to(unit, molar_mass=Quantity(molar_mass, Unit("g/mol")))
+            .value
+        )
+    else:
+        conversion_factor = Quantity(1.0, original_unit).convert_to(unit).value
     conversion_factor = (
         int(conversion_factor) if int(conversion_factor) == conversion_factor else conversion_factor
     )
