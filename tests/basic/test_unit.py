@@ -35,11 +35,18 @@ def test_unicode(expr, unicode_ref):
 
 
 @pytest.mark.parametrize(
-    'unit1,unit2,correct',
-    [('mg', 'mg', True), ('g', 'mg', True), ('g/L', 'g/mL', True), ('h*m', 'h', False)],
+    'unit1,unit2,correct,mm',
+    [
+        ('mg', 'mg', True, None),
+        ('g', 'mg', True, None),
+        ('g/L', 'g/mL', True, None),
+        ('h*m', 'h', False, None),
+        ('M', 'mg/L', True, 136.0),
+        ('mol', 'mg', False, None),
+    ],
 )
-def test_is_convertible_to(unit1, unit2, correct):
-    assert Unit(unit1).is_compatible_with(Unit(unit2)) is correct
+def test_is_convertible_to(unit1, unit2, correct, mm):
+    assert Unit(unit1).is_compatible_with(Unit(unit2), molar_mass=mm) is correct
 
 
 def test_hash():

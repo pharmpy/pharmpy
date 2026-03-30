@@ -48,9 +48,17 @@ class Unit:
     def unitless(cls) -> Unit:
         return cls("1")
 
-    def is_compatible_with(self, other: Unit) -> bool:
+    def is_compatible_with(self, other: Unit, molar_mass: Optional[float] = None) -> bool:
         """Check if this unit is compatible with (i.e. convertible to) another unit"""
-        return self._units.is_compatible_with(other._units)
+        if molar_mass:
+            unit1 = Unit(str(ureg.Quantity(1.0, self._units).to_base_units().units))
+            unit1 = unit1._replace_unit_of_dimension(ureg.mol.dimensionality, ureg.gram)
+            unit2 = Unit(str(ureg.Quantity(1.0, other._units).to_base_units().units))
+            unit2 = unit2._replace_unit_of_dimension(ureg.mol.dimensionality, ureg.gram)
+            is_compat = unit1.is_compatible_with(unit2)
+        else:
+            is_compat = self._units.is_compatible_with(other._units)
+        return is_compat
 
     def get_dimensionality_string(self) -> str:
         """Get a human readable string with dimensionality of unit"""
@@ -60,18 +68,23 @@ class Unit:
         s = s.replace("[", "").replace("]", "").replace(" ", "")
         return s
 
-    def replace_unit_of_dimension(self, replacement: Unit) -> Unit:
-        """Replace the unit for one dimension"""
+    def _replace_unit_of_dimension(self, dimension, unit) -> Unit:
         quant = pint.Quantity(1.0, self._units)
         items = quant.unit_items()
         new_unit = ureg("").units
         for unit_str, multiplicity in items:
             element = ureg(unit_str).units
-            if element.dimensionality == replacement._units.dimensionality:
-                new_unit *= replacement._units**multiplicity
+            if element.dimensionality == dimension:
+                new_unit *= unit**multiplicity
             else:
                 new_unit *= element**multiplicity
         return Unit(new_unit)
+
+    def replace_unit_of_dimension(self, replacement: Unit) -> Unit:
+        """Replace the unit for one dimension"""
+        return self._replace_unit_of_dimension(
+            replacement._units.dimensionality, replacement._units
+        )
 
     def __mul__(self, other: Unit) -> Unit:
         return Unit(self._units * other._units)
@@ -130,7 +143,7 @@ class Quantity:
         return self._unit
 
     def convert_to(self, unit: Unit, molar_mass: Optional[Quantity] = None) -> Quantity:
-        quant = ureg.Quantity(self._value,  self._unit._units)
+        quant = ureg.Quantity(self._value, self._unit._units)
         if molar_mass:
             mw = ureg.Quantity(molar_mass._value, molar_mass._unit._units)
             new_quant = quant.to(unit._units, "chemistry", mw=mw)
