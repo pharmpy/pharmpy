@@ -123,10 +123,13 @@ def execute_model(model_entry, context):
     )
 
     with database.transaction(model_entry) as txn:
-        if (
-            not (model_path / basename).with_suffix('.lst').is_file()
-            or not (model_path / basename).with_suffix('.ext').is_file()
-        ):
+        lst_file = (model_path / basename).with_suffix('.lst')
+        if lst_file.is_file():
+            with open(lst_file, 'r') as f:
+                license_expired_msg = 'NONMEM LICENSE HAS EXPIRED'
+                if license_expired_msg in f.read():
+                    context.abort_workflow('NONMEM license has expired')
+        if not lst_file.is_file() or not (model_path / basename).with_suffix('.ext').is_file():
             context.log_warning(
                 'Expected result files do not exist, copying everything', model=model_entry.model
             )
