@@ -1,6 +1,7 @@
 from .data import DatasetError, DatasetWarning
 from .datainfo import (
     AddColumn,
+    AddRows,
     ColumnInfo,
     DataInfo,
     DataVariable,
@@ -41,6 +42,7 @@ from .statements import (
 
 __all__ = (
     'AddColumn',
+    'AddRows',
     'Assignment',
     'Bolus',
     'ColumnInfo',

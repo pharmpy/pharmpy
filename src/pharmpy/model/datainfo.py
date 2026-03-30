@@ -6,7 +6,7 @@ import json
 from abc import abstractmethod
 from collections.abc import Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, Iterable, Optional, Union, cast, overload
 
 from pharmpy import conf
 from pharmpy.basic import BooleanExpr, Expr, Unit
@@ -210,6 +210,46 @@ class AddColumn(DatasetOperation):
         return f"AddColumn({self._column})"
 
 
+class AddRows(DatasetOperation):
+    def __init__(self, rows: tuple[int, ...]):
+        self._rows = rows
+
+    @classmethod
+    def create(cls, rows: Iterable[int]):
+        if not isinstance(rows, Iterable):
+            raise TypeError(f"Bad type of `rows`: {type(rows)}")
+        if not all(isinstance(x, int) for x in rows):
+            raise TypeError(f"Argument `rows` must consist of ints, got: {rows}")
+        return cls(rows=tuple(rows))
+
+    @property
+    def rows(self) -> tuple[int, ...]:
+        return self._rows
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            'class': 'AddRows',
+            'rows': self.rows,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> AddRows:
+        return cls(rows=d['rows'])
+
+    def __eq__(self, other: Any):
+        if self is other:
+            return True
+        if not isinstance(other, AddRows):
+            return NotImplemented
+        return self._rows == other._rows
+
+    def __hash__(self):
+        return hash(self._rows)
+
+    def __repr__(self):
+        return f"AddRows({self._rows})"
+
+
 class Provenance(Sequence, Immutable):
     def __init__(self, operations: tuple[DatasetOperation, ...] = ()):
         self._operations = operations
@@ -282,6 +322,8 @@ class Provenance(Sequence, Immutable):
                 op = Drop.from_dict(opdict)
             elif op_class == 'AddColumn':
                 op = AddColumn.from_dict(opdict)
+            elif op_class == 'AddRows':
+                op = AddRows.from_dict(opdict)
             else:
                 op = ReadDataset.from_dict(opdict)
             operations.append(op)

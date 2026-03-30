@@ -6,6 +6,7 @@ import pytest
 from pharmpy.basic import BooleanExpr, Expr, Unit
 from pharmpy.model import (
     AddColumn,
+    AddRows,
     ColumnInfo,
     DataInfo,
     DataVariable,
@@ -653,7 +654,7 @@ def test_drop():
         Drop.create(Expr('x + y'))
 
 
-def test_add_op():
+def test_add_column():
     column = Expr.symbol('TAD')
     op = AddColumn(column)
     assert op.column == column
@@ -669,6 +670,24 @@ def test_add_op():
         AddColumn.create(op)
     with pytest.raises(ValueError):
         AddColumn.create(Expr('x + y'))
+
+
+def test_add_rows():
+    rows = (1, 2, 3)
+    op = AddRows(rows)
+    assert op.rows == rows
+    op2 = AddRows.create(list(rows))
+    assert op2.rows == rows
+    assert op == op2
+    assert op == op
+    assert hash(op) == hash(op2)
+    assert op != "othertype"
+    assert AddRows.from_dict(op.to_dict()) == op
+    assert repr(op) == f"AddRows({rows})"
+    with pytest.raises(TypeError):
+        AddRows.create(1)
+    with pytest.raises(TypeError):
+        AddRows.create([1.0, 2])
 
 
 def test_provenance():
@@ -695,7 +714,8 @@ def test_provenance():
 
     op3 = Drop.create('CMT')
     op4 = AddColumn.create('TAD')
-    prov4 = Provenance((op, op2, op3, op4))
+    op5 = AddRows.create([1, 2, 3])
+    prov4 = Provenance((op, op2, op3, op4, op5))
     assert Provenance.from_dict(prov4.to_dict()) == prov4
 
     prov5 = Provenance((op2,))
