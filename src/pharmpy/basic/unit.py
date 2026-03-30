@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.deps import pint
 
@@ -129,7 +129,11 @@ class Quantity:
     def unit(self) -> Unit:
         return self._unit
 
-    def convert_to(self, unit: Unit) -> Quantity:
-        quant = pint.Quantity(self._value, self._unit._units)
-        new_quant = quant.to(unit._units)
+    def convert_to(self, unit: Unit, molar_mass: Optional[Quantity] = None) -> Quantity:
+        quant = ureg.Quantity(self._value,  self._unit._units)
+        if molar_mass:
+            mw = ureg.Quantity(molar_mass._value, molar_mass._unit._units)
+            new_quant = quant.to(unit._units, "chemistry", mw=mw)
+        else:
+            new_quant = quant.to(unit._units)
         return Quantity(new_quant.magnitude, unit)

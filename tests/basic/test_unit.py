@@ -94,3 +94,8 @@ def test_quantity():
     w = x.convert_to(Unit("g"))
     assert w.value == 0.0025
     assert w.unit == Unit("g")
+
+    x = Quantity(1.0, Unit("mg/L"))
+    mm = Quantity(163.0, Unit("g/mol"))
+    new = x.convert_to(Unit("M"), molar_mass=mm)
+    assert new.unit == Unit("M")
