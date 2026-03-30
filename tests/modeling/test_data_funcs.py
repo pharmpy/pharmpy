@@ -5,7 +5,7 @@ import pytest
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
-from pharmpy.model import Add, Drop
+from pharmpy.model import AddColumn, Drop
 from pharmpy.modeling import (
     add_admid,
     add_cmt,
@@ -204,7 +204,7 @@ def test_add_admid(load_example_model_for_test):
     model = add_admid(model)
     assert 'ADMID' in model.dataset.columns
     assert model.datainfo.typeix['admid']
-    assert model.datainfo.provenance[-1] == Add.create('ADMID')
+    assert model.datainfo.provenance[-1] == AddColumn.create('ADMID')
 
 
 def test_get_cmt(load_example_model_for_test):
@@ -221,7 +221,7 @@ def test_add_cmt(load_example_model_for_test):
     model = add_cmt(model)
     assert 'CMT' in model.dataset.columns
     assert model.datainfo.typeix['compartment']
-    assert model.datainfo.provenance[-1] == Add.create('CMT')
+    assert model.datainfo.provenance[-1] == AddColumn.create('CMT')
 
 
 def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, testdata):
@@ -232,7 +232,7 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     assert tad[1] == 0.0
     assert tad[2] == 2.0
     assert tad[744] == 2.0
-    assert m.datainfo.provenance[-1] == Add.create('TAD')
+    assert m.datainfo.provenance[-1] == AddColumn.create('TAD')
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'pef.mod')
     m = add_time_after_dose(m)
@@ -262,13 +262,13 @@ def test_add_time_after_dose(load_model_for_test, load_example_model_for_test, t
     ]
     assert m.dataset.loc[103, 'TAD'] == 0.0
     assert m.dataset.loc[104, 'TAD'] == pytest.approx(1.17)
-    assert m.datainfo.provenance[-1] == Add.create('TAD')
+    assert m.datainfo.provenance[-1] == AddColumn.create('TAD')
 
     m = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox1.mod')
     m = add_time_after_dose(m)
     tad = list(m.dataset['TAD'].iloc[0:16])
     assert tad == [0.0, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0, 0.0, 0.0, 0.5, 1.0, 1.5, 2.0, 4.0, 6.0, 8.0]
-    assert m.datainfo.provenance[-1] == Add.create('TAD')
+    assert m.datainfo.provenance[-1] == AddColumn.create('TAD')
 
 
 def test_add_time_of_last_dose(load_example_model_for_test):
@@ -590,7 +590,7 @@ def test_set_dvid(load_example_model_for_test):
     assert col.variable.scale == 'nominal'
     assert col.variable.properties['categories'] == (0, 1)
     assert Drop.create('FA1') in m.datainfo.provenance
-    assert Add.create('FA1') in m.datainfo.provenance
+    assert AddColumn.create('FA1') in m.datainfo.provenance
     assert len(m.datainfo.provenance) == 3
     m = set_dvid(m, 'FA1')
     assert m.datainfo['FA1'].type == 'dvid'
@@ -612,7 +612,7 @@ def test_set_reference_values(load_example_model_for_test):
     assert df['AMT'][2] == 0.0
     prov = m2.datainfo.provenance
     assert all(Drop.create(col) in prov for col in ['WGT', 'AMT'])
-    assert all(Add.create(col) in prov for col in ['WGT', 'AMT'])
+    assert all(AddColumn.create(col) in prov for col in ['WGT', 'AMT'])
     assert len(prov) == 5
 
 
@@ -695,7 +695,7 @@ def test_infer_datatypes(load_example_model_for_test):
     assert m2.dataset['APGR'].dtype == np.int32
     assert m2.dataset['FA1'].dtype == np.float64
     assert Drop.create('APGR') in m2.datainfo.provenance
-    assert Add.create('APGR') in m2.datainfo.provenance
+    assert AddColumn.create('APGR') in m2.datainfo.provenance
     assert len(m2.datainfo.provenance) == 3
 
     m2 = infer_datatypes(model)
@@ -706,9 +706,9 @@ def test_infer_datatypes(load_example_model_for_test):
     assert m2.dataset['FA1'].dtype == np.int32
     assert m2.dataset['FA2'].dtype == np.int32
     assert Drop.create('FA1') in m2.datainfo.provenance
-    assert Add.create('FA1') in m2.datainfo.provenance
+    assert AddColumn.create('FA1') in m2.datainfo.provenance
     assert Drop.create('FA2') in m2.datainfo.provenance
-    assert Add.create('FA2') in m2.datainfo.provenance
+    assert AddColumn.create('FA2') in m2.datainfo.provenance
     assert len(m2.datainfo.provenance) == 7
 
 
@@ -740,7 +740,7 @@ def test_binarize_dataset():
     di = model.datainfo
     assert all(di[col].variable.is_categorical() for col in new_cols)
     assert all(di[col].type == 'covariate' for col in new_cols)
-    assert all(Add.create(col) in di.provenance for col in new_cols)
+    assert all(AddColumn.create(col) in di.provenance for col in new_cols)
     assert Drop.create('X') in di.provenance
 
 
@@ -754,7 +754,7 @@ def test_binarize_dataset_keep(keep):
     assert new_cols <= set(df.columns.values)
 
     di = model.datainfo
-    assert all(Add.create(col) in di.provenance for col in new_cols)
+    assert all(AddColumn.create(col) in di.provenance for col in new_cols)
     expected_no_of_drop = 1 if keep else 2
     assert list(di.provenance).count(Drop.create('X')) == expected_no_of_drop
 
@@ -770,7 +770,7 @@ def test_binarize_dataset_all_levels(all_levels):
     di = model.datainfo
     assert all(di[col].variable.is_categorical() for col in new_cols)
     assert all(di[col].type == 'covariate' for col in new_cols)
-    assert all(Add.create(col) in di.provenance for col in new_cols)
+    assert all(AddColumn.create(col) in di.provenance for col in new_cols)
 
 
 def test_binarize_dataset_multiple_columns():
@@ -783,7 +783,7 @@ def test_binarize_dataset_multiple_columns():
     di = model.datainfo
     assert all(di[col].variable.is_categorical() for col in new_cols)
     assert all(di[col].type == 'covariate' for col in new_cols)
-    assert all(Add.create(col) in di.provenance for col in new_cols)
+    assert all(AddColumn.create(col) in di.provenance for col in new_cols)
 
 
 def test_binarize_dataset_annotated():
@@ -801,7 +801,7 @@ def test_binarize_dataset_annotated():
     di = model.datainfo
     assert all(di[col].variable.is_categorical() for col in new_cols)
     assert all(di[col].type == 'covariate' for col in new_cols)
-    assert all(Add.create(col) in di.provenance for col in new_cols)
+    assert all(AddColumn.create(col) in di.provenance for col in new_cols)
 
 
 def test_binarize_dataset_raises():

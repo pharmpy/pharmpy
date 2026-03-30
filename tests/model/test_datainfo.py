@@ -5,7 +5,7 @@ import pytest
 
 from pharmpy.basic import BooleanExpr, Expr, Unit
 from pharmpy.model import (
-    Add,
+    AddColumn,
     ColumnInfo,
     DataInfo,
     DataVariable,
@@ -655,20 +655,20 @@ def test_drop():
 
 def test_add_op():
     column = Expr.symbol('TAD')
-    op = Add(column)
+    op = AddColumn(column)
     assert op.column == column
-    op2 = Add.create(column.name)
+    op2 = AddColumn.create(column.name)
     assert op2.column == column
     assert op == op2
     assert op == op
     assert hash(op) == hash(op2)
     assert op != "othertype"
-    assert Add.from_dict(op.to_dict()) == op
-    assert repr(op) == f"Add({column.name})"
+    assert AddColumn.from_dict(op.to_dict()) == op
+    assert repr(op) == f"AddColumn({column.name})"
     with pytest.raises(TypeError):
-        Add.create(op)
+        AddColumn.create(op)
     with pytest.raises(ValueError):
-        Add.create(Expr('x + y'))
+        AddColumn.create(Expr('x + y'))
 
 
 def test_provenance():
@@ -694,7 +694,7 @@ def test_provenance():
     assert repr(prov) == f"Provenance(ReadDataset(path={path_str}), Ignore(WGT < 1.0))"
 
     op3 = Drop.create('CMT')
-    op4 = Add.create('TAD')
+    op4 = AddColumn.create('TAD')
     prov4 = Provenance((op, op2, op3, op4))
     assert Provenance.from_dict(prov4.to_dict()) == prov4
 

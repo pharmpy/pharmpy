@@ -12,7 +12,7 @@ from pharmpy.internals.df import reset_index
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.internals.math import replace_nan
 from pharmpy.model import (
-    Add,
+    AddColumn,
     Assignment,
     ColumnInfo,
     CompartmentalSystem,
@@ -484,7 +484,7 @@ def set_dvid(model: Model, name: str):
     di = di.set_column(col)
 
     if new_dataset:
-        prov_new = [Drop.create(name), Add.create(name)]
+        prov_new = [Drop.create(name), AddColumn.create(name)]
         di = di.replace(provenance=di.provenance + prov_new)
         model = model.replace(datainfo=di, dataset=df)
     else:
@@ -975,7 +975,7 @@ def add_admid(model: Model):
         var = di[adm.name].variable.replace(type='admid')
         colinfo = di[adm.name].replace(variable_mapping=var)
         di = di.set_column(colinfo)
-        add = Add.create(adm.name)
+        add = AddColumn.create(adm.name)
         di = di.replace(provenance=di.provenance + add)
         model = model.replace(datainfo=di, dataset=dataset)
     return model.update_source()
@@ -1106,7 +1106,7 @@ def add_cmt(model: Model):
         var = di[cmt.name].variable.replace(type='compartment')
         colinfo = di[cmt.name].replace(variable_mapping=var)
         di = di.set_column(colinfo)
-        add = Add.create(cmt.name)
+        add = AddColumn.create(cmt.name)
         di = di.replace(provenance=di.provenance + add)
         model = model.replace(datainfo=di, dataset=dataset)
     return model.update_source()
@@ -1215,7 +1215,7 @@ def add_time_after_dose(model: Model):
     )
     colinfo = di[tad_name].replace(variable_mapping=var)
     di = di.set_column(colinfo)
-    add = Add.create(tad_name)
+    add = AddColumn.create(tad_name)
     di = di.replace(provenance=di.provenance + add)
     model = model.replace(datainfo=di, dataset=df)
     return model.update_source()
@@ -1644,7 +1644,7 @@ def translate_nmtran_time(model: Model):
         model = drop_columns(model, datecol.name)
         timecol = timecol.replace(unit='h')
     timecol = timecol.replace(datatype='float64')
-    prov_new = [Drop.create(timecol.name), Add.create(timecol.name)]
+    prov_new = [Drop.create(timecol.name), AddColumn.create(timecol.name)]
     di = di.set_column(timecol).replace(provenance=di.provenance + prov_new)
     model = model.replace(datainfo=di, dataset=df)
     return model.update_source()
@@ -1812,7 +1812,7 @@ def set_lloq_data(
     if df.equals(model.dataset):
         return model
     di = model.datainfo
-    prov_new = [Drop.create(dv), Add.create(dv)]
+    prov_new = [Drop.create(dv), AddColumn.create(dv)]
     di = di.replace(provenance=di.provenance + prov_new)
     model = model.replace(dataset=df, datainfo=di)
     return model
@@ -1873,7 +1873,7 @@ def set_reference_values(model: Model, refs: dict[str, Union[int, float]]):
     prov_new = []
     for col in newcols.keys():
         prov_new.append(Drop.create(col))
-        prov_new.append(Add.create(col))
+        prov_new.append(AddColumn.create(col))
     df = df.assign(**newcols).astype(dtypes)
     di = di.replace(provenance=di.provenance + prov_new)
     model = model.replace(dataset=df, datainfo=di)
@@ -1939,7 +1939,7 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
                 ci = di[col]
                 ci = ci.replace(datatype='int32')
                 di = di.set_column(ci)
-                prov_new = [Drop.create(col), Add.create(col)]
+                prov_new = [Drop.create(col), AddColumn.create(col)]
                 di = di.replace(provenance=di.provenance + prov_new)
     if changed:
         model = model.replace(dataset=df, datainfo=di)
@@ -2504,7 +2504,7 @@ def binarize_dataset(
             )
             ci_new = ci.replace(variable_mapping=var)
             di = di.set_column(ci_new)
-            add.append(Add.create(col_name))
+            add.append(AddColumn.create(col_name))
 
         changed = True
 

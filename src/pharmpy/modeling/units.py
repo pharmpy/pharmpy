@@ -5,7 +5,7 @@ from typing import Any, Optional, Union, overload
 from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
 from pharmpy.basic.expr import solve
 from pharmpy.model import (
-    Add,
+    AddColumn,
     Assignment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
@@ -412,6 +412,6 @@ def _scale_dataset_column(df, di, variable, conversion_factor, unit):
         new_var = di[variable].variable.set_property("unit", unit)
         new_col = di[variable].replace(variable_mapping=new_var)
         di = di.set_column(new_col)
-    prov_new = (Drop.create(variable), Add.create(variable))
+    prov_new = (Drop.create(variable), AddColumn.create(variable))
     di = di.replace(provenance=di.provenance + prov_new)
     return df, di

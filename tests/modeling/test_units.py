@@ -1,7 +1,7 @@
 import pytest
 
 from pharmpy.basic import Unit
-from pharmpy.model import Add, Assignment, Drop
+from pharmpy.model import AddColumn, Assignment, Drop
 from pharmpy.modeling import (
     add_iiv,
     add_lag_time,
@@ -57,7 +57,7 @@ def test_convert_unit(load_example_model_for_test):
     assert m2.statements[0].symbol.name == 'TVCL'
     assert m2.dataset['WGT'][1] == 1400.0
     assert Drop.create('WGT') in m2.datainfo.provenance
-    assert Add.create('WGT') in m2.datainfo.provenance
+    assert AddColumn.create('WGT') in m2.datainfo.provenance
     assert len(m2.datainfo.provenance) == 3
 
     m2 = convert_unit(model, "WGT", "kg", in_dataset=True)

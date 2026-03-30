@@ -27,7 +27,7 @@ from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 from pharmpy.model.external import detect_model
 
-from . import Add, Drop
+from . import AddColumn, Drop
 from .datainfo import ColumnInfo, DataInfo
 from .execution_steps import ExecutionSteps
 from .parameters import Parameters
@@ -753,7 +753,7 @@ def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
     newdi = curdi.replace(columns=columns)
 
     for op1, op2 in zip(curdi.provenance, curdi.provenance[1:]):
-        if isinstance(op1, Drop) and isinstance(op2, Add) and op1.column == op2.column:
+        if isinstance(op1, Drop) and isinstance(op2, AddColumn) and op1.column == op2.column:
             return newdi.replace(path=None)
 
     # NOTE: Remove path if dataset has been updated

@@ -167,7 +167,7 @@ class Drop(DatasetOperation):
         return f"Drop({self._column})"
 
 
-class Add(DatasetOperation):
+class AddColumn(DatasetOperation):
     def __init__(self, column: Expr):
         self._column = column
 
@@ -187,19 +187,19 @@ class Add(DatasetOperation):
 
     def to_dict(self) -> dict[str, Any]:
         return {
-            'class': 'Add',
+            'class': 'AddColumn',
             'column': self.column.serialize(),
         }
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]) -> Add:
+    def from_dict(cls, d: dict[str, Any]) -> AddColumn:
         column = Expr.deserialize(d['column'])
         return cls(column=column)
 
     def __eq__(self, other: Any):
         if self is other:
             return True
-        if not isinstance(other, Add):
+        if not isinstance(other, AddColumn):
             return NotImplemented
         return self._column == other._column
 
@@ -207,7 +207,7 @@ class Add(DatasetOperation):
         return hash(self._column)
 
     def __repr__(self):
-        return f"Add({self._column})"
+        return f"AddColumn({self._column})"
 
 
 class Provenance(Sequence, Immutable):
@@ -280,8 +280,8 @@ class Provenance(Sequence, Immutable):
                 op = Ignore.from_dict(opdict)
             elif op_class == 'Drop':
                 op = Drop.from_dict(opdict)
-            elif op_class == 'Add':
-                op = Add.from_dict(opdict)
+            elif op_class == 'AddColumn':
+                op = AddColumn.from_dict(opdict)
             else:
                 op = ReadDataset.from_dict(opdict)
             operations.append(op)
