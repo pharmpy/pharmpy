@@ -328,8 +328,11 @@ def convert_unit(
     """
 
     unit = Unit(unit)
-    if original_unit is None and variable in model.datainfo:
-        original_unit = model.datainfo[variable].variable.properties.get("unit", None)
+    column = model.datainfo[variable]
+    if column.type == 'idv':
+        raise ValueError(f"Cannot scale the independent variable ({variable})")
+    if original_unit is None:
+        original_unit = column.variable.properties.get("unit", None)
     if original_unit is None:
         raise ValueError("Cannot find the original unit of {variable}")
     original_unit = Unit(original_unit)
@@ -337,7 +340,7 @@ def convert_unit(
     if original_unit == unit:
         return model
 
-    molar_mass = model.datainfo[variable].variable.properties.get("molar_mass", None)
+    molar_mass = column.variable.properties.get("molar_mass", None)
 
     if not original_unit.is_compatible_with(unit, molar_mass=molar_mass):
         raise ValueError(f"Unable to convert from {original_unit} to {unit}: different dimensions.")
@@ -353,8 +356,6 @@ def convert_unit(
     conversion_factor = (
         int(conversion_factor) if int(conversion_factor) == conversion_factor else conversion_factor
     )
-
-    column = model.datainfo[variable]
 
     if not in_dataset:
         if column.type in {'dose', 'dv'}:

@@ -71,6 +71,9 @@ def test_convert_unit(load_example_model_for_test):
         7.35294117647059e-6, abs=1e-7
     )
 
+    with pytest.raises(ValueError):
+        convert_unit(m2, "TIME", "s")
+
 
 @pytest.mark.parametrize(
     'variable,unit,dv_unit,amt_unit,values',
