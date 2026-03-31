@@ -10,6 +10,7 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Drop,
+    Infusion,
     Model,
     Statements,
     get_and_check_dataset,
@@ -360,6 +361,7 @@ def convert_unit(
     if not in_dataset:
         if column.type in {'dose', 'dv'}:
             odes = get_and_check_odes(model)
+            _raise_if_rate(odes)
             dosing_cmts = odes.dosing_compartments
             cb = CompartmentalSystemBuilder(odes)
             cb.set_bioavailability(
@@ -403,6 +405,13 @@ def convert_unit(
             df, di = _scale_dataset_column(df, di, other_name, conversion_factor, new_other_unit)
         model = model.replace(dataset=df, datainfo=di)
     return model.update_source()
+
+
+def _raise_if_rate(odes):
+    for comp in odes.dosing_compartments:
+        for dose in comp.doses:
+            if isinstance(dose, Infusion) and dose.rate is not None:
+                raise ValueError("Cannot convert unit of infusions with rate in model code")
 
 
 def _get_other_type(tp):
