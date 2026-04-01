@@ -13,7 +13,9 @@ from pharmpy.modeling import (
     create_basic_kpd_model,
     create_basic_pd_model,
     filter_dataset,
+    fix_parameters,
     get_observations,
+    get_sigmas,
     is_binary,
     set_description,
     set_direct_effect,
@@ -40,7 +42,7 @@ def create_workflow(
     treatment_variable: Optional[str] = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',
     algorithm: Literal['stepwise', 'exhaustive_stepwise'] = 'stepwise',
-    data_strategy: Literal['fulldata', 'partialdata'] = 'fulldata',
+    data_strategy: Literal['full', 'partial', 'fix'] = 'full',
     results: Optional[ModelfitResults] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
@@ -61,7 +63,7 @@ def create_workflow(
     algorithm : str
         Which search algorithm to use. Either 'stepwise' or 'exhaustive_stepwise'
     data_strategy : str
-        Strategy for using the dataset: 'fulldata' or 'partialdata'
+        Strategy for using the dataset: 'full', 'partial' or 'fix'
     results : ModelfitResults (optional)
         Results to input model
     strictness : str
@@ -110,6 +112,7 @@ def create_workflow(
             treatment_variable,
             strictness,
             parameter_uncertainty_method,
+            data_strategy,
         )
         wb.add_task(de_task)
 
@@ -130,6 +133,7 @@ def create_workflow(
             treatment_variable,
             strictness,
             parameter_uncertainty_method,
+            data_strategy,
         )
         wb.add_task(de_task, predecessors=placebo_task)
 
@@ -186,7 +190,7 @@ def create_and_run_placebo_models(context, treatment_variable, data_strategy, ba
         ("tmax", "+"),
     )
     context.log_info(f"Running {len(exprs)} placebo/disease progression models.")
-    if data_strategy == 'fulldata':
+    if data_strategy == 'full':
         current_me = baseme
     else:
         model = filter_dataset(baseme.model, f"{treatment_variable}!=0")
@@ -227,7 +231,7 @@ def run_placebo_models_and_rank(
     if final_model is None:
         context.abort_workflow("No placebo/disease progression model selected")
 
-    if data_strategy != 'fulldata':
+    if data_strategy != 'full':
         final_model = final_model.replace(
             dataset=baseme.model.dataset, datainfo=baseme.model.datainfo
         )
@@ -238,9 +242,20 @@ def run_placebo_models_and_rank(
     return final_me, rank_res
 
 
-def create_and_run_drug_effect_models(context, treatment_variable: str, mes):
+def fix_thetas_and_omegas(me: ModelEntry) -> ModelEntry:
+    model = me.model
+    sigmas = get_sigmas(model).names
+    thetas_and_omegas = set(model.parameters.names) - set(sigmas)
+    model = fix_parameters(model, thetas_and_omegas)
+    return ModelEntry.create(model=model, modelfit_results=me.modelfit_results)
+
+
+def create_and_run_drug_effect_models(context, treatment_variable: str, data_strategy, mes):
     if isinstance(mes, ModelEntry):
         mes = [mes]
+
+    if data_strategy == 'fix':
+        mes = [fix_thetas_and_omegas(me) for me in mes]
 
     n_models = 0
     wb = WorkflowBuilder()
@@ -273,9 +288,9 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, mes):
 
 
 def run_drug_effect_models(
-    context, treatment_variable, strictness, parameter_uncertainty_method, baseme
+    context, treatment_variable, strictness, parameter_uncertainty_method, data_strategy, baseme
 ):
-    mes = create_and_run_drug_effect_models(context, treatment_variable, baseme)
+    mes = create_and_run_drug_effect_models(context, treatment_variable, data_strategy, baseme)
 
     rank_res = run_subtool(
         tool_name='modelrank',
@@ -292,9 +307,9 @@ def run_drug_effect_models(
 
 
 def run_drug_effect_models_exhaustive(
-    context, treatment_variable, strictness, parameter_uncertainty_method, basemes
+    context, treatment_variable, strictness, parameter_uncertainty_method, data_strategy, basemes
 ):
-    mes = create_and_run_drug_effect_models(context, treatment_variable, basemes)
+    mes = create_and_run_drug_effect_models(context, treatment_variable, data_strategy, basemes)
 
     rank_res = run_subtool(
         tool_name='modelrank',
