@@ -1,6 +1,6 @@
 from typing import Any, Union, overload
 
-from pharmpy.model import DataInfo, Model
+from pharmpy.model import DataInfo, DataVariable, Model
 
 
 @overload
@@ -115,9 +115,9 @@ def set_property(
         var = col[n]
         new_var = var.set_property(property, value)
         new_mapping = col.variable_mapping.replace(n, new_var)
-    elif len(col) > 1:
+    elif not isinstance(col.variable_mapping, DataVariable):
         new_mapping = {}
-        for key, var in col.variable_mapping:
+        for key, var in col.variable_mapping.items():
             new_var = var.set_property(property, value)
             new_mapping[key] = new_var
     else:

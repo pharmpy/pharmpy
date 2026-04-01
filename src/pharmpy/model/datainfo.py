@@ -759,7 +759,7 @@ class ColumnInfo(Immutable):
     ----------
     name : str
         Column name
-    variable_mapping : Mapping[int, DataVariable]
+    variable_mapping : frozenmapping[int, DataVariable]
         A single DataVariable or a Mapping from identifier column to the DataVariable
     variable_id : str
         The DataVariable identifier column
@@ -839,7 +839,7 @@ class ColumnInfo(Immutable):
     def __init__(
         self,
         name: str,
-        variable_mapping: Union[Mapping[int, DataVariable], DataVariable],
+        variable_mapping: Union[frozenmapping[int, DataVariable], DataVariable],
         variable_id: Optional[str] = None,
         drop: bool = False,
         datatype: str = "float64",
@@ -1007,7 +1007,7 @@ class ColumnInfo(Immutable):
         return self._variable_id
 
     @property
-    def variable_mapping(self) -> Union[Mapping[int, DataVariable], DataVariable]:
+    def variable_mapping(self) -> Union[frozenmapping[int, DataVariable], DataVariable]:
         """Mapping from value in identifier column to DataVariable"""
         return self._variable_mapping
 
