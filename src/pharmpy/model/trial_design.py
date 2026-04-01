@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from typing import Any, Optional
 
 from pharmpy.internals.immutable import Immutable
+from pharmpy.model.datainfo import DataVariable
 
 
 class Activity(Immutable):
@@ -13,18 +14,20 @@ class Activity(Immutable):
 class Observations(Activity):
     """Observation activity"""
 
-    def __init__(self, variable: str, start_time: float, time_points: tuple[float, ...]):
+    def __init__(self, variable: DataVariable, start_time: float, time_points: tuple[float, ...]):
         self._variable = variable
         self._start_time = start_time
         self._time_points = time_points
 
     @classmethod
-    def create(cls, variable: str, start_time: float, time_points: Sequence[float]) -> Observations:
+    def create(
+        cls, variable: DataVariable, start_time: float, time_points: Sequence[float]
+    ) -> Observations:
         return cls(variable, start_time, tuple(time_points))
 
     def replace(
         self,
-        variable: Optional[str] = None,
+        variable: Optional[DataVariable] = None,
         start_time: Optional[float] = None,
         time_points: Optional[Sequence[float]] = None,
     ) -> Observations:
@@ -37,7 +40,7 @@ class Observations(Activity):
         return Observations.create(variable, start_time, time_points)
 
     @property
-    def variable(self) -> str:
+    def variable(self) -> DataVariable:
         """Observed variable"""
         return self._variable
 
@@ -54,14 +57,14 @@ class Observations(Activity):
     def to_dict(self) -> dict[str, Any]:
         return {
             'class': 'Observations',
-            'variable': self._variable,
+            'variable': self._variable.to_dict(),
             'start_time': self._start_time,
             'time_points': self._time_points,
         }
 
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Observations:
-        return cls.create(d['variable'], d['start_time'], d['time_points'])
+        return cls.create(DataVariable.from_dict(d['variable']), d['start_time'], d['time_points'])
 
     def __eq__(self, other: Any):
         if self is other:
@@ -78,4 +81,4 @@ class Observations(Activity):
         return hash((self._variable, self._start_time, self._time_points))
 
     def __repr__(self):
-        return f"Observations({self._variable}, {self._start_time}, {self._time_points})"
+        return f"Observations({self._variable.name}, {self._start_time}, {self._time_points})"
