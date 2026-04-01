@@ -198,10 +198,10 @@ def plot_transformed_eta_distributions(
         try:
             sympy_expr = expr.subs({eta: rv})
             curdens = sympy_stats.density(sympy_expr)
-            densfn = sympy.lambdify(curdens.variables[0], curdens.expr)
+            densfn = sympy.lambdify(curdens.variables[0], curdens.expr)  # pyright: ignore
         except ValueError:
             samples = model.random_variables.sample(
-                expr, parameter_estimates, samples=1000, rng=rng
+                expr, parameter_estimates, samples=1000, rng=rng  # pyright: ignore
             )
             densfn = scipy.stats.gaussian_kde(samples)
 
@@ -313,7 +313,7 @@ def plot_dv_vs_pred(
     predictions: pd.DataFrame,
     stratify_on: Optional[str] = None,
     bins: int = 8,
-) -> alt.Chart:
+) -> alt.TopLevelMixin:
     """Plot DV vs PRED
 
     Parameters
@@ -368,7 +368,7 @@ def plot_dv_vs_ipred(
     predictions: pd.DataFrame,
     stratify_on: Optional[str] = None,
     bins: int = 8,
-) -> alt.Chart:
+) -> alt.TopLevelMixin:
     """Plot DV vs IPRED
 
     Parameters
@@ -426,7 +426,7 @@ def plot_abs_cwres_vs_ipred(
     residuals: pd.DataFrame,
     stratify_on: Optional[str] = None,
     bins: int = 8,
-) -> alt.Chart:
+) -> alt.TopLevelMixin:
     r"""Plot \|CWRES\| vs IPRED
 
     Parameters
@@ -574,7 +574,7 @@ def plot_cwres_vs_idv(
     residuals: pd.DataFrame,
     stratify_on: Optional[str] = None,
     bins: int = 8,
-) -> alt.Chart:
+) -> alt.TopLevelMixin:
     """Plot CWRES vs idv
 
     Parameters
@@ -753,7 +753,7 @@ def _validate_strat(model, stratify_on):
 
 
 def _calculate_vpc(
-    model, simulations, binning: str, nbins: int, qi: float, ci: float, query=None, stratify_on=None
+    model, simulations, binning, nbins: int, qi: float, ci: float, query=None, stratify_on=None
 ):
     dv = model.datainfo.dv_column.name
     nrows = len(model.dataset)
