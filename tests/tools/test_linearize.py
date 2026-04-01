@@ -2,8 +2,9 @@ from io import StringIO
 
 import pytest
 
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.model import DataInfo
+from pharmpy.model import AddColumn, DataInfo, Ignore
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.linearize.results import calculate_results, psn_linearize_results
@@ -163,10 +164,17 @@ def test_create_linearized_model(load_model_for_test, testdata):
 
     derivative_modelentry = ModelEntry.create(model=derivative_model, modelfit_results=modelres)
 
-    linearized_model = create_linearized_model(
+    linearized_model_entry = create_linearized_model(
         "linbase", "Linearized model", model, derivative_modelentry
     )
-    assert len(linearized_model.model.statements) == 9
+    linearized_model = linearized_model_entry.model
+    assert len(linearized_model.statements) == 9
+
+    prov = linearized_model.datainfo.provenance
+    new_columns = set(linearized_model.datainfo.names) - set(derivative_model.datainfo.names)
+    assert all(AddColumn.create(col) in prov for col in new_columns)
+    ignore_expr = BooleanExpr.ne(Expr.symbol('AMT'), 0)
+    assert prov[-1] == Ignore.create(ignore_expr)
 
 
 def test_delinearize_model(load_model_for_test, testdata):

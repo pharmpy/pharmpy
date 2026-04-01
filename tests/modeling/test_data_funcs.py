@@ -2,13 +2,15 @@ from itertools import combinations
 
 import pytest
 
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
-from pharmpy.model import AddColumn, AddRows, Drop
+from pharmpy.model import AddColumn, AddRows, Drop, Ignore
 from pharmpy.modeling import (
     add_admid,
     add_cmt,
+    add_effect_compartment,
     add_time_after_dose,
     add_time_of_last_dose,
     bin_observations,
@@ -49,6 +51,7 @@ from pharmpy.modeling import (
     unload_dataset,
 )
 from pharmpy.modeling.basic_models import create_default_datainfo
+from pharmpy.modeling.data import get_observations_and_exclusion_criteria
 
 
 def test_get_ids(load_example_model_for_test):
@@ -78,7 +81,7 @@ def test_get_number_of_individuals(load_example_model_for_test):
     assert get_number_of_individuals(model) == 59
 
 
-def test_get_observations(load_example_model_for_test):
+def test_get_observations(load_example_model_for_test, testdata):
     model = load_example_model_for_test('pheno')
     ser = get_observations(model)
     assert ser.loc[2, 2.0] == 9.7
@@ -87,6 +90,27 @@ def test_get_observations(load_example_model_for_test):
     s2 = get_observations(model, keep_index=True)
     assert s2.loc[2] == 17.3
     assert s2.loc[12] == 31.0
+    path = testdata / 'nonmem' / 'models' / 'pheno_dvid.csv'
+    model = set_dataset(model, path, datatype='nonmem')
+    model = add_effect_compartment(model, 'linear')
+    ser1 = get_observations(model, dv=1)
+    ser2 = get_observations(model, dv=2)
+    assert len(ser1.index) != len(ser2.index)
+
+
+def test_get_observations_and_ignores(load_example_model_for_test, testdata):
+    model = load_example_model_for_test('pheno')
+    _, ignore = get_observations_and_exclusion_criteria(model)
+    amt_expr = BooleanExpr.ne(Expr.symbol('AMT'), 0)
+    assert ignore == Ignore.create(amt_expr)
+    path = testdata / 'nonmem' / 'models' / 'pheno_dvid.csv'
+    model = set_dataset(model, path, datatype='nonmem')
+    model = add_effect_compartment(model, 'linear')
+    _, ignore = get_observations_and_exclusion_criteria(model, dv=1)
+    dvid_symb = Expr.symbol('DVID')
+    assert ignore == Ignore.create(BooleanExpr.ne(dvid_symb, 1) & amt_expr)
+    _, ignore = get_observations_and_exclusion_criteria(model, dv=2)
+    assert ignore == Ignore.create(BooleanExpr.ne(dvid_symb, 2) & amt_expr)
 
 
 def test_number_of_observations(load_example_model_for_test):

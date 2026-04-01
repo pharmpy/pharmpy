@@ -1397,7 +1397,9 @@ class DataInfo(Sequence, Immutable):
                 new_mapping[key] = new_variable
         newcol = mycol.replace(variable_mapping=new_mapping)
         cols = self._columns[0:ind] + (newcol,) + self._columns[ind + 1 :]
-        return DataInfo.create(cols, path=self._path, separator=self._separator)
+        return DataInfo.create(
+            cols, path=self._path, separator=self._separator, provenance=self._provenance
+        )
 
     def set_id_column(self, name: str) -> DataInfo:
         return self._set_column_type(name, 'id')

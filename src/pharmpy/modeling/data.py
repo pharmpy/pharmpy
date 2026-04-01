@@ -271,6 +271,13 @@ def get_observations(
     get_number_of_observations : get the number of observations
     get_number_of_observations_per_individual : get the number of observations per individual
     """
+    df, _ = get_observations_and_exclusion_criteria(model, keep_index, dv)
+    return df
+
+
+def get_observations_and_exclusion_criteria(
+    model: Model, keep_index: bool = False, dv: Union[Expr, str, int, None] = None
+) -> tuple[pd.Series, Optional[Ignore]]:
     try:
         label = model.datainfo.typeix['mdv'][0].name
     except IndexError:
@@ -292,14 +299,19 @@ def get_observations(
         dv = get_dv_symbol(model, dv)
         dvid = model.dependent_variables[dv]
         dvidlab = model.datainfo.find_single_column_name("dvid")
+        dvid_expr = BooleanExpr.ne(Expr.symbol(dvidlab), dvid)
         df = df.loc[df[dvidlab] == dvid]
+    else:
+        dvid_expr = None
 
     if label:
+        obs_expr = BooleanExpr.ne(Expr.symbol(label), 0)
         df = df.query(f'{label} == 0')
         if df.empty:
             df = df.astype({label: 'float'})
             df = df.query(f'{label} == 0')
     else:
+        obs_expr = None
         df = df.copy()
 
     if not keep_index:
@@ -314,7 +326,21 @@ def get_observations(
         df = df.squeeze()
     else:
         df = df[dvcol]
-    return df
+
+    if ignore_expr := _combine_expressions(dvid_expr, obs_expr):
+        ignore = Ignore.create(ignore_expr)
+    else:
+        ignore = None
+    return df, ignore
+
+
+def _combine_expressions(expr1, expr2):
+    if expr1 and expr2:
+        return expr1 & expr2
+    elif expr1:
+        return expr1
+    else:
+        return expr2
 
 
 def get_baselines(model: Model):

@@ -2,19 +2,19 @@ from typing import Optional
 
 from pharmpy.basic import Expr
 from pharmpy.internals.df import reset_index
-from pharmpy.model import Assignment, EstimationStep, Model, Statements
+from pharmpy.model import AddColumn, Assignment, EstimationStep, Model, Statements
 from pharmpy.model.external.nonmem.model import Model as NONMEMModel
 from pharmpy.modeling import (
     add_estimation_step,
     add_predictions,
     convert_model,
-    get_observations,
     get_omegas,
     get_sigmas,
     remove_parameter_uncertainty_step,
     set_estimation_step,
     set_initial_estimates,
 )
+from pharmpy.modeling.data import get_observations_and_exclusion_criteria
 from pharmpy.modeling.estimation_steps import add_derivative
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -172,7 +172,7 @@ def _create_linearized_model(context, model_name, description, model, derivative
 
 
 def create_linearized_model(model_name, description, model, derivative_model_entry):
-    df = cleanup_columns(derivative_model_entry)
+    df, di = cleanup_columns(derivative_model_entry)
 
     derivative_model = derivative_model_entry.model
     linbase = Model.create(
@@ -180,6 +180,7 @@ def create_linearized_model(model_name, description, model, derivative_model_ent
         random_variables=derivative_model_entry.model.random_variables,
         dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
         dataset=df,
+        datainfo=di,
         name=model_name,
         description=description,
     )
@@ -268,6 +269,7 @@ def cleanup_columns(modelentry):
 
     df = model.dataset[["ID", "TIME", "DV"]].copy()  # Assume existence
     df['OPRED'] = ipred
+    cols_added = [AddColumn.create('OPRED')]
 
     derivatives = modelentry.modelfit_results.derivatives
     derivative_name_subs = {}
@@ -280,6 +282,7 @@ def cleanup_columns(modelentry):
                 raise ValueError(f"Unsupported derivative {der_col} ModelfitResults object")
     derivatives = derivatives.rename(derivative_name_subs, axis=1)
     df = df.join(derivatives)
+    cols_added += [AddColumn.create(col) for col in derivatives.columns]
 
     etas = modelentry.modelfit_results.individual_estimates
     eta_name_subs = {}
@@ -287,12 +290,15 @@ def cleanup_columns(modelentry):
         eta_name_subs[eta] = f"OETA_{n}"
     etas = etas.rename(eta_name_subs, axis=1)
     df = df.join(etas, on="ID")
+    cols_added += [AddColumn.create(col) for col in etas.columns]
 
     df = reset_index(df)
     df.index = range(1, len(df) + 1)
-    obs = get_observations(model, keep_index=True)
+    obs, ignore = get_observations_and_exclusion_criteria(model, keep_index=True)
     df = df.loc[obs.index]
-    return df
+    prov_new = model.datainfo.provenance + cols_added + ignore
+    di = model.datainfo.replace(provenance=prov_new)
+    return df, di
 
 
 def create_derivative_name(model, param_list):
