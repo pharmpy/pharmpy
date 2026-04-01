@@ -7,7 +7,11 @@ from pharmpy.tools import fit, run_pdsearch
 
 @pytest.mark.parametrize(
     'type, kwargs',
-    [('pd', {'treatment_variable': 'TIME'}), ('kpd', {'kpd_driver': 'ir'})],
+    [
+        ('pd', {'treatment_variable': 'TIME'}),
+        ('kpd', {'kpd_driver': 'ir'}),
+        ('pd', {'treatment_variable': 'TIME', 'data_strategy': 'partialdata'}),
+    ],
 )
 def test_pdsearch_dummy(
     tmp_path,
