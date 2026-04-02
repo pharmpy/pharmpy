@@ -2,7 +2,7 @@ import re
 from functools import partial
 from typing import Literal, Optional, cast
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
@@ -10,9 +10,12 @@ from pharmpy.internals.df import reset_index
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import (
+    AddColumn,
     Assignment,
+    Drop,
     EstimationStep,
     ExecutionSteps,
+    Ignore,
     Model,
     NormalDistribution,
     Parameter,
@@ -519,7 +522,8 @@ def _create_base_model(input_model_entry, current_iteration, dv):
         execution_steps=ExecutionSteps.create([est]),
         dependent_variables={y.symbol: 1},
     )
-    base_model = base_model.replace(dataset=_create_dataset(input_model_entry, dv))
+    df, di = _create_dataset(input_model_entry, dv)
+    base_model = base_model.replace(dataset=df, datainfo=di)
     return ModelEntry.create(base_model, modelfit_results=None, parent=input_model)
 
 
@@ -564,9 +568,13 @@ def _create_combined_model(base_model_entry, current_iteration):
     model = add_population_parameter(model, prop_name, 1, lower=0)
     df = model.dataset
     assert df is not None
-    df = df.copy()
-    df['IPRED'] = df['IPRED'].replace(0, 2.225e-307)
-    model = model.replace(dataset=df)
+    if (df['IPRED'] == 0).any():
+        df = df.copy()
+        df['IPRED'] = df['IPRED'].replace(0, 2.225e-307)
+        di = model.datainfo
+        prov_new = di.provenance + [Drop.create('IPRED'), AddColumn.create('IPRED')]
+        di = di.replace(provenance=prov_new)
+        model = model.replace(dataset=df, datainfo=di)
     ipred_min = df['IPRED'].min()
     if ipred_min == 0 or np.isnan(ipred_min):
         sigma_add_init = 0.001
@@ -595,6 +603,7 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
     assert residuals is not None
     input_dataset = input_model.dataset
     assert input_dataset is not None
+    prov_new = input_model.datainfo.provenance
     if dv is not None:
         try:
             dvid_name = input_model.datainfo.typeix['dvid'][0].name
@@ -606,6 +615,9 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
         )  # filter non-observations
         indices_obs = input_dataset_obs.index[input_dataset_obs[f'{dvid_name}'] == dv].tolist()
         residuals = residuals.iloc[indices_obs]
+        obs_expr = BooleanExpr.eq(Expr.symbol(observation_label), 0)
+        dv_expr = BooleanExpr.ne(Expr.symbol(dvid_name), dv)
+        prov_new += [Ignore.create(obs_expr), Ignore.create(dv_expr)]
     cwres = reset_index(residuals['CWRES'])
     if has_blq_transformation(input_model):
         cwres = cwres.loc[cwres != 0]
@@ -647,7 +659,11 @@ def _create_dataset(input_model_entry: ModelEntry, dv):
     df = reset_index(df[df['MDV'] == 0])
     df = pd.concat([df, cwres], axis=1).rename(columns={'CWRES': 'DV', ipredcol: 'IPRED'})
     df = df.loc[df['DV'].notna()]
-    return df
+    added = [AddColumn.create(col) for col in df.columns if col not in input_dataset.columns]
+    dropped = [Drop.create(col) for col in input_dataset.columns if col not in df.columns]
+    prov_new += dropped + added
+    di = input_model.datainfo.replace(provenance=prov_new)
+    return df, di
 
 
 def _time_after_dose(model):
@@ -696,7 +712,7 @@ def _create_best_model(model_entry, res, current_iteration, dv, groups, cutoff=3
             # Name is like time_varying10
             i = int(re.search(r"(\d+)$", name).group(1))
             quantile = i / groups
-            df = _create_dataset(model_entry, dv=dv)
+            df, _ = _create_dataset(model_entry, dv=dv)
             tad = df['TAD']
             cutoff_tvar = tad.quantile(q=quantile)
             model = set_time_varying_error_model(model, cutoff=cutoff_tvar, idv='TAD', dv=dv)

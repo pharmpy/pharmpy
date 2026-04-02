@@ -3,8 +3,9 @@ from dataclasses import replace
 
 import pytest
 
-from pharmpy.basic import Expr
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.model import AddColumn, Drop, Ignore
 from pharmpy.modeling import (
     has_combined_error_model,
     has_proportional_error_model,
@@ -37,22 +38,28 @@ def test_filter_dataset(load_model_for_test, testdata):
     res = parse_modelfit_results(model, path)
     indices = model.dataset.index[model.dataset['DVID'] == 2].tolist()
     model_entry = ModelEntry.create(model, modelfit_results=res)
-    df = _create_dataset(model_entry, dv=2)
+    df, di = _create_dataset(model_entry, dv=2)
     expected_cwres = [-1.15490, 0.95703, -0.85365, 0.42327]
     assert df['DV'].tolist() == expected_cwres
     assert df['IPRED'].tolist() == res.predictions['CIPREDI'].loc[indices].tolist()
     assert df['ID'].tolist() == model.dataset['ID'].loc[indices].tolist()
+    expr1 = BooleanExpr.eq(Expr.symbol('DV'), 0)
+    assert Ignore.create(expr1) in di.provenance
+    expr2 = BooleanExpr.ne(Expr.symbol('DVID'), 2)
+    assert Ignore.create(expr2) in di.provenance
 
     var = model.datainfo.typeix['dvid'][0].variable.replace(type='unknown')
     ci_dvid = model.datainfo.typeix['dvid'][0].replace(variable_mapping=var)
     di = model.datainfo.set_column(ci_dvid)
     model = model.replace(datainfo=di)
     model_entry = ModelEntry.create(model, modelfit_results=res)
-    df = _create_dataset(model_entry, dv=2)
+    df, di = _create_dataset(model_entry, dv=2)
     expected_cwres = [-1.15490, 0.95703, -0.85365, 0.42327]
     assert df['DV'].tolist() == expected_cwres
     assert df['IPRED'].tolist() == res.predictions['CIPREDI'].loc[indices].tolist()
     assert df['ID'].tolist() == model.dataset['ID'].loc[indices].tolist()
+    assert Ignore.create(expr1) in di.provenance
+    assert Ignore.create(expr2) in di.provenance
 
 
 def test_resmod_results(testdata):
@@ -106,11 +113,16 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
     model_entry = ModelEntry.create(model, modelfit_results=res)
-    df = _create_dataset(model_entry, dv=None)
-
+    df, di = _create_dataset(model_entry, dv=None)
     assert len(df) == 1006
     assert (df['DV'] != 0).all()
+    new_names = set(df.columns) - set(model.dataset.columns)
+    assert all(AddColumn.create(name) in di.provenance for name in new_names)
+    dropped_columns = set(model.dataset.columns) - set(df.columns)
+    assert len(di.provenance) == len(new_names) + len(dropped_columns) + 1
 
+
+def test_create_dataset_blq(tmp_path, testdata, load_model_for_test):
     with chdir(tmp_path):
         for path in (testdata / 'nonmem' / 'ruvsearch').glob('mox3.*'):
             shutil.copy2(path, tmp_path)
@@ -130,10 +142,14 @@ def test_create_dataset(load_model_for_test, testdata, tmp_path):
         model = transform_blq(model, method='m3', lloq=0.05)
         model_entry = ModelEntry.create(model, modelfit_results=res)
 
-        df = _create_dataset(model_entry, dv=None)
+        df, di = _create_dataset(model_entry, dv=None)
 
         assert len(df) == 1005
         assert (df['DV'] != 0).all()
+        new_names = set(df.columns) - set(model.dataset.columns)
+        assert all(AddColumn.create(name) in di.provenance for name in new_names)
+        dropped_columns = set(model.dataset.columns) - set(df.columns)
+        assert len(di.provenance) == len(new_names) + len(dropped_columns) + 1
 
 
 def test_create_result_tables(load_model_for_test, testdata, model_entry_factory):
@@ -292,6 +308,26 @@ def test_create_best_model_no_best(load_model_for_test, testdata, model_entry_fa
         me_start, res, current_iteration=1, dv=None, groups=4, cutoff=99999999999
     )
     assert me_best is None and best_model_name is None
+
+
+def test_create_combined_model_ipred_zero(testdata, load_model_for_test):
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model_start = load_model_for_test(path)
+    res_start = parse_modelfit_results(model_start, path)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    me_base = _create_base_model(me_start, current_iteration=1, dv=None)
+    df = me_base.model.dataset.copy()
+    df.loc[df.index[::2], 'IPRED'] = 0
+    model_base = me_base.model.replace(dataset=df)
+    me_base = ModelEntry.create(model_base, modelfit_results=me_base.modelfit_results)
+
+    assert (me_base.model.dataset['IPRED'] == 0).any()
+    me_cand = _create_combined_model(me_base, current_iteration=1)
+    assert (me_cand.model.dataset['IPRED'] != 0).all()
+    di = me_cand.model.datainfo
+    assert di.provenance[-2] == Drop.create('IPRED')
+    assert di.provenance[-1] == AddColumn.create('IPRED')
 
 
 @pytest.mark.parametrize(
