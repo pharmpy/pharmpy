@@ -14,7 +14,7 @@ build==1.4.2
 certifi==2026.2.25
 cffi==2.0.0
 charset-normalizer==3.4.7
-click==8.3.1
+click==8.3.2
 cryptography==46.0.6
 idna==3.11
 importlib-metadata==9.0.0
