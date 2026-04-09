@@ -11,6 +11,7 @@ from pharmpy.internals.parse import AttrTree
 from pharmpy.internals.parse.generic import AttrToken
 from pharmpy.internals.sequence.lcs import diff
 from pharmpy.model import (
+    AddColumn,
     Assignment,
     Bolus,
     ColumnInfo,
@@ -413,8 +414,9 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
             and model.dataset is not None
         ):
             df = model.dataset.drop(columns=['RATE'])
-            model = model.replace(dataset=df)
-
+            di = model.datainfo
+            di = di.replace(provenance=di.provenance + Drop.create('RATE'))
+            model = model.replace(dataset=df, datainfo=di)
         model = pk_param_conversion(model, advan=advan, trans=trans)
         model = update_needed_pk_parameters(model, advan, trans)
         model = update_subroutines_record(model, advan, trans)
@@ -457,7 +459,6 @@ def check_and_update_cmt_column(model, old, new):
 def _add_cmt(model):
     """Add a CMT column, overwriting column name CMT if existing"""
     # NOTE : pharmpy.modeling.add_cmt not used due to recursion of update_source()
-    di = model.datainfo
     cmt_name = "CMT"
     cmt = get_cmt(model)
     dataset = model.dataset
@@ -465,7 +466,13 @@ def _add_cmt(model):
     di = update_datainfo(model.datainfo, dataset)
     var = di[cmt_name].variable.replace(type='compartment')
     colinfo = di[cmt_name].replace(variable_mapping=var)
-    model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
+    di = di.set_column(colinfo)
+    if cmt_name in di.names:
+        prov_new = [Drop.create(cmt_name), AddColumn.create(cmt_name)]
+    else:
+        prov_new = AddColumn.create(cmt_name)
+    di = di.replace(provenance=di.provenance + prov_new)
+    model = model.replace(datainfo=di, dataset=dataset)
     return model
 
 
@@ -490,8 +497,13 @@ def update_cmt(model, old, new):
             dataset['CMT'] = cmt_col
             di = update_datainfo(model.datainfo, dataset)
             colinfo = di['CMT'].replace(type='compartment')
-            model = model.replace(datainfo=di.set_column(colinfo), dataset=dataset)
-
+            di = di.set_column(colinfo)
+            if 'CMT' in di.names:
+                prov_new = [Drop.create('CMT'), AddColumn.create('CMT')]
+            else:
+                prov_new = AddColumn.create('CMT')
+            di = di.replace(provenance=di.provenance + prov_new)
+            model = model.replace(datainfo=di, dataset=dataset)
             updated_dataset = True
         elif "CMT" in model.datainfo.names and len(old.compartment_names) != len(
             new.compartment_names
@@ -516,8 +528,11 @@ def update_cmt(model, old, new):
                     # Remap oral doses to new dosing compartment
                     remap[oldmap[dose_comp.name]] = newmap[new.dosing_compartments[0].name]
             dataset = dataset.replace({"CMT": remap})
-            model = model.replace(dataset=dataset)
-
+            di = model.datainfo
+            di = di.replace(
+                provenance=di.provenance + [Drop.create('CMT'), AddColumn.create('CMT')]
+            )
+            model = model.replace(dataset=dataset, datainfo=di)
             updated_dataset = True
         else:
             # Could verify that the cmt column is the same
@@ -595,7 +610,9 @@ def update_infusion(model: Model, old: CompartmentalSystem):
             rate = np.where(dataset['AMT'] == 0, np.int32(0), np.int32(-2))
             dataset['RATE'] = rate
             updated_dataset = True
-            model = model.replace(dataset=dataset)
+            di = model.datainfo
+            di = di.replace(provenance=di.provenance + AddColumn.create('RATE'))
+            model = model.replace(dataset=dataset, datainfo=di)
     else:
         updated_dataset = False
     model = model.replace(statements=statements)

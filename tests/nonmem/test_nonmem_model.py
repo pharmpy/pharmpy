@@ -7,8 +7,10 @@ import pytest
 from pharmpy.basic import Expr
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import (
+    AddColumn,
     Assignment,
     CompartmentalSystem,
+    Drop,
     EstimationStep,
     ExecutionSteps,
     Model,
@@ -34,6 +36,7 @@ from pharmpy.modeling import (
     set_initial_condition,
     set_initial_estimates,
     set_transit_compartments,
+    set_zero_order_absorption,
     set_zero_order_elimination,
     set_zero_order_input,
     write_dataset,
@@ -692,9 +695,13 @@ def test_cmt_update(load_model_for_test, testdata, tmp_path):
     from pharmpy.modeling import undrop_columns
 
     model = undrop_columns(model, 'CMT')
+    assert model.datainfo.provenance[-2] == Drop.create('CMT')
+    assert model.datainfo.provenance[-1] == AddColumn.create('CMT')
     model_transits = set_transit_compartments(model, 2)
     updated_cmt = model_transits.dataset["CMT"]
     assert set(updated_cmt.unique()) == {0, 1}
+    assert model_transits.datainfo.provenance[-2] == Drop.create('CMT')
+    assert model_transits.datainfo.provenance[-1] == AddColumn.create('CMT')
 
     with chdir(tmp_path):
         dataset = model.dataset.copy()
@@ -1054,7 +1061,10 @@ def test_convert_model_iv(testdata, tmp_path):
     with chdir(tmp_path):
         shutil.copy2(testdata / 'nonmem' / 'pheno_rate.dta', '.')
         start_model = create_basic_pk_model(administration='iv', dataset_path='pheno_rate.dta')
-        convert_model(start_model)
+        assert 'RATE' in start_model.datainfo.names
+        model = convert_model(start_model)
+        assert 'RATE' not in model.datainfo.names
+        assert model.datainfo.provenance[-1] == Drop.create('RATE')
 
 
 def test_parse_derivatives(load_model_for_test, testdata):
@@ -1413,3 +1423,11 @@ $ESTIMATION METHOD=0
     model = Model.parse_model_from_string(code)
     assert model.datainfo.names == ['ID', 'DV', 'WGT']
     assert model.statements[0].expression == Expr.symbol("TV") * Expr.symbol("WGT")
+
+
+def test_add_rate_column(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    assert 'RATE' not in model.datainfo.names
+    model = set_zero_order_absorption(model)
+    assert 'RATE' in model.datainfo.names
+    assert model.datainfo.provenance[-1] == AddColumn.create('RATE')
