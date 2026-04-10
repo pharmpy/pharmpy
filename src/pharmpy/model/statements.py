@@ -1498,6 +1498,13 @@ class Dose(ABC):
     @abstractmethod
     def to_dict(self) -> dict[str, Any]: ...
 
+    @classmethod
+    def from_dict(cls, d) -> Dose:
+        if d['class'] == 'Bolus':
+            return Bolus.from_dict(d)
+        else:
+            return Infusion.from_dict(d)
+
     @abstractmethod
     def replace(self, **kwargs) -> Self: ...
 
@@ -1970,10 +1977,7 @@ class Compartment(CompartmentBase):
         else:
             all_doses = tuple()
             for dose in d['doses']:
-                if dose['class'] == 'Bolus':
-                    all_doses += (Bolus.from_dict(dose),)
-                else:
-                    all_doses += (Infusion.from_dict(dose),)
+                all_doses += (Dose.from_dict(dose),)
         return cls(
             name=d['name'],
             amount=Expr.deserialize(d['amount']),
