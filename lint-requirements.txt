@@ -24,7 +24,7 @@ keyring==25.7.0
 markdown-it-py==4.0.0
 mccabe==0.7.0
 mdurl==0.1.2
-more-itertools==11.0.1
+more-itertools==11.0.2
 mypy-extensions==1.1.0
 nh3==0.3.4
 nodeenv==1.10.0
