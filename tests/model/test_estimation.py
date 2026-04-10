@@ -63,6 +63,7 @@ def test_eq():
     s2 = ExecutionSteps()
     assert s1 == s2
     a = EstimationStep.create('foce')
+    assert a == a
     s3 = ExecutionSteps.create([a, a])
     assert s1 != s3
     b = EstimationStep.create('fo')
