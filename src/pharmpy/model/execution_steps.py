@@ -632,12 +632,7 @@ class ExecutionSteps(Sequence, Immutable):
             return True
         if not isinstance(other, ExecutionSteps):
             return NotImplemented
-        if len(self) != len(other):
-            return False
-        for s1, s2 in zip(self, other):
-            if s1 != s2:
-                return False
-        return True
+        return self._steps == other._steps
 
     def __hash__(self):
         return hash(self._steps)

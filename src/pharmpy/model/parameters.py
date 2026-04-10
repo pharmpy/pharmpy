@@ -419,16 +419,11 @@ class Parameters(CollectionsSequence, Immutable):
             raise ValueError(f"Cannot remove Parameters from {other}")
 
     def __eq__(self, other: Any):
+        if self is other:
+            return True
         if not isinstance(other, Parameters):
             return NotImplemented
-        if hash(self) != hash(other):
-            return False
-        if len(self) != len(other):
-            return False  # pragma: no cover
-        for p1, p2 in zip(self, other):
-            if p1 != p2:
-                return False  # pragma: no cover
-        return True
+        return self._params == other._params
 
     @cache_method_no_args
     def __hash__(self):

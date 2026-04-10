@@ -284,12 +284,7 @@ class Provenance(Sequence, Immutable):
             return True
         if not isinstance(other, Provenance):
             return NotImplemented
-        if len(self) != len(other):
-            return False
-        for op1, op2 in zip(self._operations, other._operations):
-            if op1 != op2:
-                return False
-        return True
+        return self._operations == other._operations
 
     def __add__(
         self, other: Union[Provenance, DatasetOperation, Sequence[DatasetOperation]]
@@ -1242,12 +1237,7 @@ class DataInfo(Sequence, Immutable):
             return True
         if not isinstance(other, DataInfo):
             return NotImplemented
-        if len(self) != len(other):
-            return False
-        for col1, col2 in zip(self, other):
-            if col1 != col2:
-                return False
-        return True
+        return self._columns == other._columns
 
     def __hash__(self):
         return hash(self._columns)

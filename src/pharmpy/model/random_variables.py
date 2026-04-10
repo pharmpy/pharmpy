@@ -132,14 +132,7 @@ class VariabilityHierarchy(Immutable):
     def __eq__(self, other: Any):
         if not isinstance(other, VariabilityHierarchy):
             return NotImplemented
-
-        if len(self._levels) != len(other._levels):
-            return False
-        else:
-            for l1, l2 in zip(self._levels, other._levels):
-                if l1 != l2:
-                    return False
-            return True
+        return self._levels == other._levels
 
     def __hash__(self):
         return hash(self._levels)
@@ -407,15 +400,11 @@ class RandomVariables(CollectionsSequence, Immutable):
             return True
         if not isinstance(other, RandomVariables):
             return NotImplemented
-        if len(self) == len(other):
-            for s, o in zip(self._dists, other._dists):
-                if s != o:
-                    return False
-            return (
-                self._eta_levels == other._eta_levels
-                and self._epsilon_levels == other._epsilon_levels
-            )
-        return False
+        return (
+            self._dists == other._dists
+            and self._eta_levels == other._eta_levels
+            and self._epsilon_levels == other._epsilon_levels
+        )
 
     def __hash__(self):
         return hash((self._dists, self._eta_levels, self._epsilon_levels))

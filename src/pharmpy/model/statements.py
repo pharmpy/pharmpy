@@ -2570,13 +2570,7 @@ class Statements(Sequence, Immutable):
             return True
         if not isinstance(other, Statements):
             return NotImplemented
-        if len(self) != len(other):
-            return False
-        else:
-            for first, second in zip(self, other):
-                if first != second:
-                    return False
-        return True
+        return self._statements == other._statements
 
     def __hash__(self):
         return hash(self._statements)
