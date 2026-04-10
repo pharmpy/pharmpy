@@ -67,6 +67,7 @@ def test_eq():
     assert s1 != s3
     b = EstimationStep.create('fo')
     s4 = ExecutionSteps.create([a, b])
+    assert s4 == s4
     assert s3 != s4
     assert s3 != 'x'
 
