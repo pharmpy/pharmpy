@@ -278,3 +278,10 @@ class Arm:
 
     def __repr__(self):
         return f"Arm(size={self._size}, {self._activities})"
+
+    def is_placebo(self) -> bool:
+        """Is this arm a placebo arm?"""
+        for act in self._activities:
+            if isinstance(act, Administration) and act.dose.amount != 0:
+                return False
+        return True

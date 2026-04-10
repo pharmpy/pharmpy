@@ -153,3 +153,20 @@ def test_arm():
         arm3 + 1
 
     assert repr(arm1) == "Arm(size=50, (Observations(CONC, 0.0, (0.0, 1.0, 2.0)),))"
+
+
+def test_arm_is_placebo():
+    dv = DataVariable("CONC", "dv", "ratio")
+    obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
+    amt = DataVariable("AMT", "dose", "ratio")
+    dose = Bolus.create(100)
+    adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
+    arm1 = Arm.create(size=50, activities=[obs1, adm1])
+
+    assert not arm1.is_placebo()
+
+    dose = Bolus.create(0)
+    adm2 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
+    arm2 = Arm.create(size=50, activities=[obs1, adm2])
+
+    assert arm2.is_placebo()
