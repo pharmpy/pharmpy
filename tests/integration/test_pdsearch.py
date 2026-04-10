@@ -10,7 +10,7 @@ from pharmpy.tools import fit, run_pdsearch
     [
         ('pd', {'treatment_variable': 'TIME'}),
         ('kpd', {'kpd_driver': 'ir'}),
-        ('pd', {'treatment_variable': 'TIME', 'data_strategy': 'partialdata'}),
+        ('pd', {'treatment_variable': 'TIME', 'data_strategy': 'partial'}),
     ],
 )
 def test_pdsearch_dummy(
