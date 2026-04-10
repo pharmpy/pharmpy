@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.model import Bolus, DataVariable
-from pharmpy.model.trial_design import Administration, Arm, Observations
+from pharmpy.model.trial_design import Administration, Arm, Observations, TrialDesign
 
 
 def test_observations():
@@ -170,3 +170,138 @@ def test_arm_is_placebo():
     arm2 = Arm.create(size=50, activities=[obs1, adm2])
 
     assert arm2.is_placebo()
+
+
+def test_trialdesign():
+    dv = DataVariable("CONC", "dv", "ratio")
+    obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
+    amt = DataVariable("AMT", "dose", "ratio")
+    dose = Bolus.create(100)
+    adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
+    arm1 = Arm.create(size=50, activities=[obs1, adm1])
+
+    dose2 = Bolus.create(200)
+    adm2 = Administration(amt, dose2, 0.0, (0.0, 1.0, 2.0))
+    arm2 = Arm.create(size=50, activities=[obs1, adm2])
+
+    td = TrialDesign((arm1, arm2))
+    assert td == td
+    assert td != "a"
+
+    td2 = TrialDesign.create((arm1, arm2))
+    assert td == td2
+    assert hash(td) == hash(td2)
+
+    assert td.replace(arms=(arm2, arm1)).arms == (arm2, arm1)
+
+    d = {
+        'arms': (
+            {
+                'activities': (
+                    {
+                        'class': 'Observations',
+                        'start_time': 0.0,
+                        'time_points': (
+                            0.0,
+                            1.0,
+                            2.0,
+                        ),
+                        'variable': {
+                            'count': False,
+                            'name': 'CONC',
+                            'properties': {},
+                            'scale': 'ratio',
+                            'type': 'dv',
+                        },
+                    },
+                    {
+                        'class': 'Administration',
+                        'dose': {
+                            'admid': 1,
+                            'amount': 'Integer(100)',
+                            'class': 'Bolus',
+                        },
+                        'start_time': 0.0,
+                        'time_points': (
+                            0.0,
+                            1.0,
+                            2.0,
+                        ),
+                        'variable': {
+                            'count': False,
+                            'name': 'AMT',
+                            'properties': {},
+                            'scale': 'ratio',
+                            'type': 'dose',
+                        },
+                    },
+                ),
+                'size': 50,
+            },
+            {
+                'activities': (
+                    {
+                        'class': 'Observations',
+                        'start_time': 0.0,
+                        'time_points': (
+                            0.0,
+                            1.0,
+                            2.0,
+                        ),
+                        'variable': {
+                            'count': False,
+                            'name': 'CONC',
+                            'properties': {},
+                            'scale': 'ratio',
+                            'type': 'dv',
+                        },
+                    },
+                    {
+                        'class': 'Administration',
+                        'dose': {
+                            'admid': 1,
+                            'amount': 'Integer(200)',
+                            'class': 'Bolus',
+                        },
+                        'start_time': 0.0,
+                        'time_points': (
+                            0.0,
+                            1.0,
+                            2.0,
+                        ),
+                        'variable': {
+                            'count': False,
+                            'name': 'AMT',
+                            'properties': {},
+                            'scale': 'ratio',
+                            'type': 'dose',
+                        },
+                    },
+                ),
+                'size': 50,
+            },
+        ),
+    }
+
+    assert td.to_dict() == d
+    assert TrialDesign.from_dict(d) == td
+
+    assert len(td) == 2
+    assert td[0] == arm1
+    assert td[0:] == td
+
+    assert len(td + arm1) == 3
+    assert len(td + (arm1,)) == 3
+    assert len(arm1 + td) == 3
+    assert len([arm1] + td) == 3
+
+    with pytest.raises(TypeError):
+        23 + td
+
+    with pytest.raises(TypeError):
+        td + 23
+
+    with pytest.raises(TypeError):
+        td + "a"
+
+    assert isinstance(repr(td), str)

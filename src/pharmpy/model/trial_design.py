@@ -186,7 +186,7 @@ class Administration(Activity):
         return f"Administration({self._variable.name}, {self._dose}, {self._start_time}, {self._time_points})"
 
 
-class Arm:
+class Arm(Immutable):
     """Arm definition"""
 
     def __init__(self, size: int, activities: tuple[Activity, ...]):
@@ -285,3 +285,85 @@ class Arm:
             if isinstance(act, Administration) and act.dose.amount != 0:
                 return False
         return True
+
+
+class TrialDesign(Immutable):
+    """TrialDesign"""
+
+    def __init__(self, arms: tuple[Arm, ...]):
+        self._arms = arms
+
+    @classmethod
+    def create(cls, arms: Sequence[Arm]) -> TrialDesign:
+        for arm in arms:
+            if not isinstance(arm, Arm):
+                raise TypeError("Arms in TrialDesign must be of type Arm")
+        return cls(tuple(arms))
+
+    def replace(
+        self,
+        arms: Sequence[Arm],
+    ) -> TrialDesign:
+        return TrialDesign.create(arms=arms)
+
+    @property
+    def arms(self) -> tuple[Arm, ...]:
+        """The arms"""
+        return self._arms
+
+    def to_dict(self) -> dict[str, Any]:
+        arms = tuple(arm.to_dict() for arm in self)
+        return {
+            'arms': arms,
+        }
+
+    @classmethod
+    def from_dict(cls, d: dict[str, Any]) -> TrialDesign:
+        arms = []
+        for sdict in d['arms']:
+            arms.append(Arm.from_dict(sdict))
+        return cls.create(arms=arms)
+
+    def __len__(self):
+        return len(self._arms)
+
+    @overload
+    def __getitem__(self, ind: int) -> Arm: ...
+
+    @overload
+    def __getitem__(self, ind: slice) -> TrialDesign: ...
+
+    def __getitem__(self, ind: Union[int, slice]) -> Union[Arm, TrialDesign]:
+        if isinstance(ind, slice):
+            return TrialDesign(arms=self._arms[ind])
+        else:
+            return self._arms[ind]
+
+    def __add__(self, other: Union[Arm, Iterable[Arm]]) -> TrialDesign:
+        if isinstance(other, Arm):
+            return self.replace(arms=self._arms + (other,))
+        elif isinstance(other, Iterable):
+            return self.replace(arms=self._arms + tuple(other))
+        else:
+            return NotImplemented
+
+    def __radd__(self, other: Union[Arm, Iterable[Arm]]) -> TrialDesign:
+        if isinstance(other, Arm):
+            return self.replace(arms=(other,) + self._arms)
+        elif isinstance(other, Iterable):
+            return self.replace(arms=tuple(other) + self._arms)
+        else:
+            return NotImplemented
+
+    def __eq__(self, other: Any):
+        if self is other:
+            return True
+        if not isinstance(other, TrialDesign):
+            return NotImplemented
+        return self._arms == other._arms
+
+    def __hash__(self):
+        return hash(self._arms)
+
+    def __repr__(self):
+        return f"TrialDesign({self._arms})"
