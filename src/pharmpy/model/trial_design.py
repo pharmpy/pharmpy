@@ -492,8 +492,7 @@ def preliminary_rendering(lane, idv_unit):
             rendered = tmp.export_text()
             actual_width = max(len(line) for line in rendered.splitlines())
             delta_time = frame.end_time - frame.start_time
-            if delta_time == 0:
-                delta_time = 1
+            delta_time = 1 if delta_time == 0 else delta_time
             frame.chars_per_scale = actual_width / delta_time
 
 
