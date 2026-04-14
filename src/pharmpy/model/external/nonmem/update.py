@@ -387,9 +387,20 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
     """
     if old is None:
         old = CompartmentalSystem(CompartmentalSystemBuilder())
-    model = update_lag_time(model, old, new)
-    model = update_bio(model, old, new)
-    model, updated_dataset = check_and_update_cmt_column(model, old, new)
+
+    try:
+        new.dosing_compartments
+    except ValueError:
+        have_dosing = False
+    else:
+        have_dosing = True
+
+    if not have_dosing:
+        updated_dataset = False
+    else:
+        model = update_lag_time(model, old, new)
+        model = update_bio(model, old, new)
+        model, updated_dataset = check_and_update_cmt_column(model, old, new)
 
     advan, trans, nonlin, haszo = new_advan_trans(model)
 
@@ -412,10 +423,11 @@ def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: Com
         if not is_nonlinear_odes(model):
             model = from_des(model, advan)
 
-    if not updated_dataset:
-        model, updated_dataset = update_infusion(model, old)
-    else:
-        model, _ = update_infusion(model, old)
+    if have_dosing:
+        if not updated_dataset:
+            model, updated_dataset = update_infusion(model, old)
+        else:
+            model, _ = update_infusion(model, old)
     return model, updated_dataset
 
 
@@ -680,7 +692,11 @@ def to_des(model: Model, new: CompartmentalSystem):
     cs = cs.insert_record(mod)
     old_mod = mod
     assert isinstance(mod, ModelRecord)
-    dosecmt_name = new.dosing_compartments[0].name
+
+    try:
+        dosecmt_name = new.dosing_compartments[0].name
+    except ValueError:
+        dosecmt_name = None
     for eq in new.eqs:
         name = eq.lhs.args[0].name[2:]  # pyright: ignore [reportAttributeAccessIssue]
         if name == dosecmt_name:
