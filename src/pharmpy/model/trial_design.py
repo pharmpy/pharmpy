@@ -491,7 +491,10 @@ def preliminary_rendering(lane, idv_unit):
             tmp.print(panel)
             rendered = tmp.export_text()
             actual_width = max(len(line) for line in rendered.splitlines())
-            frame.chars_per_scale = actual_width / (frame.end_time - frame.start_time)
+            delta_time = frame.end_time - frame.start_time
+            if delta_time == 0:
+                delta_time = 1
+            frame.chars_per_scale = actual_width / delta_time
 
 
 def calculate_widths(arm_lanes, chars_per_scale, total_width):
@@ -500,6 +503,7 @@ def calculate_widths(arm_lanes, chars_per_scale, total_width):
             widths = []
             for frame in lane:
                 width = (frame.end_time - frame.start_time) * chars_per_scale
+                width = 12 if width < 12 else width
                 widths.append(width)
             widths = list(round_and_keep_sum(pd.Series(widths), total_width))
             for frame, width in zip(lane, widths):
