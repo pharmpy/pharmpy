@@ -322,8 +322,6 @@ def test_render_trial_design():
     td = TrialDesign.create([arm, arm2])
 
     s = repr(td)
-    print(s)
-    assert False
     assert "Arm" in s
 
     dv = DataVariable.create("CONC", "dv", "ratio", properties={'unit': 'h'})

@@ -559,10 +559,12 @@ def observations_panel(obs, width=None):
 
 
 def administration_panel(admin, width=None):
+    unit = admin.variable.properties.get('unit', None)
+    unit_str = "" if unit is None else " " + str(unit)
     panel = rich_panel.Panel(
-        list_with_unit(admin.time_points, admin.variable.properties.get('unit', None)),
+        list_with_unit(admin.time_points, unit),
         title="[cyan]Administration",
-        subtitle="[dim]100mg Bolus",
+        subtitle=f"[dim]{admin.dose.amount}{unit_str} {admin.dose.__class__.__name__}",
         border_style="green",
         expand=False,
         width=width,
