@@ -338,6 +338,7 @@ def add_indirect_effect(
     model: Model,
     expr: Literal['linear', 'emax', 'sigmoid', 'step'],
     prod: bool = True,
+    variable: Optional[str] = None,
 ):
     r"""Add indirect (turnover) effect
 
@@ -377,6 +378,8 @@ def add_indirect_effect(
         Production (True) (default) or degradation (False)
     expr : {'linear', 'emax', 'sigmoid', 'step'}
         Name of PD effect function.
+    variable : str
+        Name of variable to use (if None concentration will be used)
 
     Return
     ------
@@ -390,10 +393,14 @@ def add_indirect_effect(
     >>> model = add_indirect_effect(model, expr='linear', prod=True)
 
     """
-    vc, cl = get_central_volume_and_clearance(model)
-    odes = get_and_check_odes(model)
-    central = odes.central_compartment
-    conc_c = central.amount / vc
+    if variable is None:
+        vc, _ = get_central_volume_and_clearance(model)
+        odes = get_and_check_odes(model)
+        central = odes.central_compartment
+        variable_symb = central.amount / vc
+    else:
+        odes = None
+        variable_symb = Expr.symbol(variable)
 
     response = Compartment.create("RESPONSE")
     a_response = response.amount
@@ -411,13 +418,13 @@ def add_indirect_effect(
     if expr == 'linear':
         s = Expr.symbol("SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
-        R = Expr.symbol("SLOPE") * conc_c
+        R = Expr.symbol("SLOPE") * variable_symb
     elif expr == 'emax':
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
-        R = emax * conc_c / (ec50 + conc_c)
+        R = emax * variable_symb / (ec50 + variable_symb)
     elif expr == 'sigmoid':
         emax = Expr.symbol("E_MAX")
         ec50 = Expr.symbol("EC_50")
@@ -426,11 +433,14 @@ def add_indirect_effect(
         model = set_initial_estimates(model, {"POP_N": 1})
         model = add_individual_parameter(model, ec50.name)
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        R = emax * conc_c**n / (ec50**n + conc_c**n)
+        R = emax * variable_symb**n / (ec50**n + variable_symb**n)
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
-    cb = CompartmentalSystemBuilder(odes)
+    if odes is not None:
+        cb = CompartmentalSystemBuilder(odes)
+    else:
+        cb = CompartmentalSystemBuilder()
     if prod:
         response = Compartment.create("RESPONSE", input=kin * (1 + R))
         cb.add_compartment(response)
@@ -452,16 +462,19 @@ def add_indirect_effect(
 
     model = set_initial_condition(model, "RESPONSE", b)
 
-    # Add dependent variable Y_2
-    y_2 = Expr.symbol('Y_2')
-    y = Assignment(y_2, a_response)
-    dvs = model.dependent_variables.replace(y_2, 2)
-    model = model.replace(statements=model.statements + y, dependent_variables=dvs)
+    if odes is not None:
+        # Add dependent variable Y_2
+        y_2 = Expr.symbol('Y_2')
+        y = Assignment(y_2, a_response)
+        dvs = model.dependent_variables.replace(y_2, 2)
+        model = model.replace(statements=model.statements + y, dependent_variables=dvs)
 
-    # Add error model
-    model = set_proportional_error_model(model, dv=2, zero_protection=False)
+        # Add error model
+        model = set_proportional_error_model(model, dv=2, zero_protection=False)
+    else:
+        model = model.update_source()
 
-    return model.update_source()
+    return model
 
 
 def set_baseline_effect(model: Model, expr: str = 'const'):
