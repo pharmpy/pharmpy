@@ -299,31 +299,47 @@ class Arm(Immutable):
 class TrialDesign(Immutable):
     """TrialDesign"""
 
-    def __init__(self, arms: tuple[Arm, ...]):
+    def __init__(self, arms: tuple[Arm, ...], independent_variable: DataVariable):
         self._arms = arms
+        self._independent_variable = independent_variable
 
     @classmethod
-    def create(cls, arms: Sequence[Arm]) -> TrialDesign:
+    def create(
+        cls, arms: Sequence[Arm], independent_variable: Optional[DataVariable]
+    ) -> TrialDesign:
         for arm in arms:
             if not isinstance(arm, Arm):
                 raise TypeError("Arms in TrialDesign must be of type Arm")
-        return cls(tuple(arms))
+        if not isinstance(independent_variable, DataVariable):
+            raise TypeError("The independent_variable of TrialDesign must be of type DataVariable")
+        return cls(tuple(arms), independent_variable)
 
     def replace(
         self,
-        arms: Sequence[Arm],
+        arms: Optional[Sequence[Arm]] = None,
+        independent_variable: Optional[DataVariable] = None,
     ) -> TrialDesign:
-        return TrialDesign.create(arms=arms)
+        if arms is None:
+            arms = self._arms
+        if independent_variable is None:
+            independent_variable = self._independent_variable
+        return TrialDesign.create(arms=arms, independent_variable=independent_variable)
 
     @property
     def arms(self) -> tuple[Arm, ...]:
         """The arms"""
         return self._arms
 
+    @property
+    def independent_variable(self) -> DataVariable:
+        """Independent variable for the entire trial"""
+        return self._independent_variable
+
     def to_dict(self) -> dict[str, Any]:
         arms = tuple(arm.to_dict() for arm in self)
         return {
             'arms': arms,
+            'independent_variable': self._independent_variable.to_dict(),
         }
 
     @classmethod
@@ -331,7 +347,9 @@ class TrialDesign(Immutable):
         arms = []
         for sdict in d['arms']:
             arms.append(Arm.from_dict(sdict))
-        return cls.create(arms=arms)
+        return cls.create(
+            arms=arms, independent_variable=DataVariable.from_dict(d['independent_variable'])
+        )
 
     def __len__(self):
         return len(self._arms)
@@ -344,7 +362,9 @@ class TrialDesign(Immutable):
 
     def __getitem__(self, ind: Union[int, slice]) -> Union[Arm, TrialDesign]:
         if isinstance(ind, slice):
-            return TrialDesign(arms=self._arms[ind])
+            return TrialDesign(
+                arms=self._arms[ind], independent_variable=self._independent_variable
+            )
         else:
             return self._arms[ind]
 
@@ -369,10 +389,12 @@ class TrialDesign(Immutable):
             return True
         if not isinstance(other, TrialDesign):
             return NotImplemented
-        return self._arms == other._arms
+        return (
+            self._arms == other._arms and self._independent_variable == other._independent_variable
+        )
 
     def __hash__(self):
-        return hash(self._arms)
+        return hash((self._arms, self._independent_variable))
 
     def __repr__(self):
         return render_trial_design(self)
@@ -455,13 +477,13 @@ def add_start_and_end_gaps(arm_lanes, min_start_time, max_end_time):
                 lane.insert(0, gap)
 
 
-def preliminary_rendering(lane):
+def preliminary_rendering(lane, idv_unit):
     for frame in lane:
         act = frame.activity
         if isinstance(act, Observations):
-            panel = observations_panel(act)
+            panel = observations_panel(act, idv_unit)
         elif isinstance(act, Administration):
-            panel = administration_panel(act)
+            panel = administration_panel(act, idv_unit)
         else:
             panel = None
         if panel is not None:
@@ -484,7 +506,7 @@ def calculate_widths(arm_lanes, chars_per_scale, total_width):
                 frame.width = width
 
 
-def render_lanes(arm_lanes, padding=0):
+def render_lanes(arm_lanes, idv_unit, padding=0):
     s = ""
     for n_arm, arm in enumerate(arm_lanes, start=1):
         for n_lane, lane in enumerate(arm):
@@ -501,9 +523,9 @@ def render_lanes(arm_lanes, padding=0):
                 if act is None:
                     panel = rich_panel.Panel("", box=box.SIMPLE, width=frame.width)
                 elif isinstance(act, Observations):
-                    panel = observations_panel(act, width=frame.width)
+                    panel = observations_panel(act, idv_unit, width=frame.width)
                 else:  # isinstance(act, Administration):
-                    panel = administration_panel(act, width=frame.width)
+                    panel = administration_panel(act, idv_unit, width=frame.width)
                 columns.append(panel)
             cols = rich_columns.Columns(columns, padding=0)
             console = rich_console.Console()
@@ -514,13 +536,14 @@ def render_lanes(arm_lanes, padding=0):
 
 
 def render_trial_design(td):
+    idv_unit = td.independent_variable.properties.get("unit", None)
     arm_lanes = []
     for arm in td:
         frames = create_frames(arm)
         frames = sort_activity_frames(frames)
         lanes = split_into_lanes(frames)
         for lane in lanes:
-            preliminary_rendering(lane)
+            preliminary_rendering(lane, idv_unit)
         arm_lanes.append(lanes)
 
     min_start_time, max_end_time = get_global_start_end_times(arm_lanes)
@@ -534,7 +557,7 @@ def render_trial_design(td):
 
     axis = text_axis([min_start_time, max_end_time], total_width)
     axis_padding = len(axis) - len(axis.lstrip(" "))
-    s = render_lanes(arm_lanes, axis_padding)
+    s = render_lanes(arm_lanes, idv_unit, axis_padding)
 
     axis = text_axis([min_start_time, max_end_time], total_width)
     for line in axis.split("\n"):
@@ -542,13 +565,13 @@ def render_trial_design(td):
     return s
 
 
-def observations_panel(obs, width=None):
+def observations_panel(obs, idv_unit, width=None):
     if width is None:
         expand = False
     else:
         expand = True
     panel = rich_panel.Panel(
-        list_with_unit(get_time_points(obs), obs.variable.properties.get('unit', None)),
+        list_with_unit(get_time_points(obs), idv_unit),
         title="[cyan]Observations",
         subtitle=f"[dim]{obs.variable.name}",
         border_style="green",
@@ -558,11 +581,11 @@ def observations_panel(obs, width=None):
     return panel
 
 
-def administration_panel(admin, width=None):
+def administration_panel(admin, idv_unit, width=None):
     unit = admin.variable.properties.get('unit', None)
     unit_str = "" if unit is None else " " + str(unit)
     panel = rich_panel.Panel(
-        list_with_unit(admin.time_points, unit),
+        list_with_unit(admin.time_points, idv_unit),
         title="[cyan]Administration",
         subtitle=f"[dim]{admin.dose.amount}{unit_str} {admin.dose.__class__.__name__}",
         border_style="green",

@@ -174,6 +174,7 @@ def test_arm_is_placebo():
 
 def test_trialdesign():
     dv = DataVariable("CONC", "dv", "ratio")
+    idv = DataVariable.create("TIME", "idv", "ratio", properties={'unit': 'h'})
     obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
     amt = DataVariable("AMT", "dose", "ratio")
     dose = Bolus.create(100)
@@ -184,15 +185,17 @@ def test_trialdesign():
     adm2 = Administration(amt, dose2, 0.0, (0.0, 1.0, 2.0))
     arm2 = Arm.create(size=50, activities=[obs1, adm2])
 
-    td = TrialDesign((arm1, arm2))
+    td = TrialDesign((arm1, arm2), independent_variable=idv)
     assert td == td
     assert td != "a"
 
-    td2 = TrialDesign.create((arm1, arm2))
+    td2 = TrialDesign.create((arm1, arm2), independent_variable=idv)
     assert td == td2
     assert hash(td) == hash(td2)
 
     assert td.replace(arms=(arm2, arm1)).arms == (arm2, arm1)
+    idv2 = DataVariable.create("TAJM", "idv", "ratio")
+    assert td.replace(independent_variable=idv2).independent_variable == idv2
 
     d = {
         'arms': (
@@ -281,6 +284,15 @@ def test_trialdesign():
                 'size': 50,
             },
         ),
+        'independent_variable': {
+            'count': False,
+            'name': 'TIME',
+            'properties': {
+                'unit': 'h',
+            },
+            'scale': 'ratio',
+            'type': 'idv',
+        },
     }
 
     assert td.to_dict() == d
@@ -297,18 +309,20 @@ def test_trialdesign():
 
     with pytest.raises(TypeError):
         23 + td
-
     with pytest.raises(TypeError):
         td + 23
-
     with pytest.raises(TypeError):
         td + "a"
+
+    with pytest.raises(TypeError):
+        TrialDesign.create((arm1, arm2), independent_variable=23)
 
     assert isinstance(repr(td), str)
 
 
 def test_render_trial_design():
     dv = DataVariable.create("CONC", "dv", "ratio", properties={'unit': 'mg/L'})
+    idv = DataVariable.create("TIME", "idv", "ratio", properties={'unit': 'h'})
     obs = Observations.create(dv, 0.50, (0.0, 1.0, 2.0))
     obs2 = Observations.create(dv, 2.0, (0.0, 1.0))
 
@@ -319,13 +333,14 @@ def test_render_trial_design():
     arm = Arm.create(50, (obs, obs2, admin))
 
     arm2 = Arm.create(50, (obs, obs2))
-    td = TrialDesign.create([arm, arm2])
+    td = TrialDesign.create([arm, arm2], independent_variable=idv)
 
     s = repr(td)
     assert "Arm" in s
 
-    dv = DataVariable.create("CONC", "dv", "ratio", properties={'unit': 'h'})
+    dv = DataVariable.create("CONC", "dv", "ratio")
     obs = Observations.create(dv, 0, (0, 1, 2))
     arm = Arm.create(50, (obs,))
-    td = TrialDesign.create([arm])
+    idv2 = DataVariable.create("TIME", "idv", "ratio")
+    td = TrialDesign.create([arm], independent_variable=idv2)
     repr(td)
