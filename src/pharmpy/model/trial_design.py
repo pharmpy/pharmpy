@@ -1,10 +1,19 @@
 from __future__ import annotations
 
+import math
 from abc import abstractmethod
 from collections.abc import Iterable, Sequence
+from dataclasses import dataclass
+from io import StringIO
 from typing import Any, Optional, Union, overload
 
+from pharmpy.deps import pandas as pd
+from pharmpy.deps.rich import box
+from pharmpy.deps.rich import columns as rich_columns
+from pharmpy.deps.rich import console as rich_console
+from pharmpy.deps.rich import panel as rich_panel
 from pharmpy.internals.immutable import Immutable
+from pharmpy.internals.math import round_and_keep_sum
 from pharmpy.model.datainfo import DataVariable
 from pharmpy.model.statements import Dose
 
@@ -366,4 +375,230 @@ class TrialDesign(Immutable):
         return hash(self._arms)
 
     def __repr__(self):
-        return f"TrialDesign({self._arms})"
+        return render_trial_design(self)
+
+
+def get_time_points(activity):
+    # Make into method?
+    adjusted_time_points = [activity.start_time + time for time in activity.time_points]
+    return adjusted_time_points
+
+
+@dataclass
+class Frame:
+    start_time: float
+    end_time: float
+    activity: Optional[Activity]
+    chars_per_scale: float = -float("inf")
+    width: int = 0
+
+
+def create_frames(arm):
+    frames = []
+    for act in arm:
+        time_points = get_time_points(act)
+        start_time = time_points[0]
+        end_time = time_points[-1]
+        frame = Frame(start_time, end_time, act)
+        frames.append(frame)
+    return frames
+
+
+def sort_activity_frames(frames):
+    # acts is a list of Frames
+    return sorted(frames, key=lambda frame: frame.start_time)
+
+
+def split_into_lanes(frames):
+    # Splits into lanes if necessary and adds gaps between activities
+    lanes = []
+    end_times = []
+    for frame in frames:
+        for i, lane in enumerate(lanes):
+            if frame.start_time > end_times[i]:
+                gap = Frame(end_times[i], frame.start_time, None)
+                lanes[i].append(gap)
+            if frame.start_time >= end_times[i]:
+                lanes[i].append(frame)
+                end_times[i] = frame.end_time
+                break
+        else:
+            # Add lane
+            lanes.append([frame])
+            end_times.append(frame.end_time)
+    return lanes
+
+
+def get_global_start_end_times(arm_lanes):
+    max_end_time = 0
+    min_start_time = 1e18
+    for arm in arm_lanes:
+        for lane in arm:
+            for frame in lane:
+                if frame.end_time > max_end_time:
+                    max_end_time = frame.end_time
+                if frame.start_time < min_start_time:
+                    min_start_time = frame.start_time
+    return min_start_time, max_end_time
+
+
+def add_start_and_end_gaps(arm_lanes, min_start_time, max_end_time):
+    for arm in arm_lanes:
+        for lane in arm:
+            panel = lane[-1]
+            if panel.end_time < max_end_time:
+                gap = Frame(panel.end_time, max_end_time, None)
+                lane.append(gap)
+            if panel.start_time > min_start_time:
+                gap = Frame(min_start_time, panel.start_time, None)
+                lane.append(gap)
+
+
+def preliminary_rendering(lane):
+    for frame in lane:
+        act = frame.activity
+        if isinstance(act, Observations):
+            panel = observations_panel(act)
+        else:  # isinstance(act, Administration):
+            panel = administration_panel(act)
+        tmp = rich_console.Console(file=StringIO(), record=True, width=1000)
+        tmp.print(panel)
+        rendered = tmp.export_text()
+        actual_width = max(len(line) for line in rendered.splitlines())
+        frame.chars_per_scale = actual_width / (frame.end_time - frame.start_time)
+
+
+def calculate_widths(arm_lanes, chars_per_scale, total_width):
+    for arm in arm_lanes:
+        for lane in arm:
+            widths = []
+            for frame in lane:
+                width = (frame.end_time - frame.start_time) * chars_per_scale
+                widths.append(width)
+            widths = list(round_and_keep_sum(pd.Series(widths), total_width))
+            for frame, width in zip(lane, widths):
+                frame.width = width
+
+
+def render_lanes(arm_lanes, padding=0):
+    s = ""
+    for n_arm, arm in enumerate(arm_lanes, start=1):
+        for n_lane, lane in enumerate(arm):
+            if n_lane == 0:
+                arm_panel = rich_panel.Panel(f"Arm {n_arm}", box=box.SIMPLE, width=9)
+            else:
+                arm_panel = rich_panel.Panel("", box=box.SIMPLE, width=9)
+            columns = [arm_panel]
+            if padding > 0:
+                pad_panel = rich_panel.Panel("", box=box.SIMPLE, width=padding)
+                columns.append(pad_panel)
+            for frame in lane:
+                act = frame.activity
+                if act is None:
+                    panel = rich_panel.Panel("", box=box.SIMPLE, width=frame.width)
+                elif isinstance(act, Observations):
+                    panel = observations_panel(act, width=frame.width)
+                else:  # isinstance(act, Administration):
+                    panel = administration_panel(act, width=frame.width)
+                columns.append(panel)
+            cols = rich_columns.Columns(columns, padding=0)
+            console = rich_console.Console()
+            with console.capture() as capture:
+                console.print(cols)
+            s += capture.get()
+    return s
+
+
+def render_trial_design(td):
+    arm_lanes = []
+    for arm in td:
+        frames = create_frames(arm)
+        frames = sort_activity_frames(frames)
+        lanes = split_into_lanes(frames)
+        for lane in lanes:
+            preliminary_rendering(lane)
+        arm_lanes.append(lanes)
+
+    min_start_time, max_end_time = get_global_start_end_times(arm_lanes)
+    add_start_and_end_gaps(arm_lanes, min_start_time, max_end_time)
+
+    max_chars_per_scale = max(
+        [frame.chars_per_scale for arm in arm_lanes for lane in arm for frame in lane]
+    )
+    total_width = math.ceil((max_end_time - min_start_time) * max_chars_per_scale)
+    calculate_widths(arm_lanes, max_chars_per_scale, total_width)
+
+    axis = text_axis([min_start_time, max_end_time], total_width)
+    axis_padding = len(axis) - len(axis.lstrip(" "))
+    s = render_lanes(arm_lanes, axis_padding)
+
+    axis = text_axis([min_start_time, max_end_time], total_width)
+    for line in axis.split("\n"):
+        s += " " * 9 + line + "\n"
+    return s
+
+
+def observations_panel(obs, width=None):
+    if width is None:
+        expand = False
+    else:
+        expand = True
+    panel = rich_panel.Panel(
+        list_with_unit(obs.time_points, obs.variable.properties.get('unit', None)),
+        title="[cyan]Observations",
+        subtitle=f"[dim]{obs.variable.name}",
+        border_style="green",
+        expand=expand,
+        width=width,
+    )
+    return panel
+
+
+def administration_panel(admin, width=None):
+    panel = rich_panel.Panel(
+        list_with_unit(admin.time_points, admin.variable.properties.get('unit', None)),
+        title="[cyan]Administration",
+        subtitle="[dim]100mg Bolus",
+        border_style="green",
+        expand=False,
+        width=width,
+    )
+    return panel
+
+
+def list_with_unit(x, unit=None):
+    s = ", ".join(map(str, x))
+    if unit is not None:
+        s += f" {unit}"
+    return s
+
+
+def text_axis(points, size):
+    STARTCH = "├"
+    ENDCH = "┤"
+    TICKCH = "┬"
+    BARCH = "─"
+
+    chars_for_bars = size - len(points)
+    interval_per_char = (points[-1] - points[0]) / chars_for_bars
+
+    distances = [j - i for i, j in zip(points, points[1:])]
+    char_distances = [dist / interval_per_char for dist in distances]
+    char_distances = list(round_and_keep_sum(pd.Series(char_distances), chars_for_bars))
+
+    bars = [BARCH * n for n in char_distances]
+    ticked_bars = STARTCH + TICKCH.join(bars) + ENDCH
+
+    point_strings = list(map(str, points))
+
+    chars_after_tick = [len(s) - (len(s) // 2) - 1 for s in point_strings]
+    chars_before_tick = [len(s) - n - 1 for s, n in zip(point_strings, chars_after_tick)]
+
+    spaces = [
+        " " * (dist - before - after)
+        for before, after, dist in zip(chars_before_tick[1:], chars_after_tick, char_distances)
+    ]
+    interleaved = [point_strings[0]] + [x for pair in zip(spaces, point_strings[1:]) for x in pair]
+    points_line = "".join(interleaved)
+    padding = " " * chars_before_tick[0]
+    return padding + ticked_bars + '\n' + points_line
