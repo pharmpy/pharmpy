@@ -309,17 +309,23 @@ def test_trialdesign():
 
 def test_render_trial_design():
     dv = DataVariable.create("CONC", "dv", "ratio", properties={'unit': 'h'})
-    obs = Observations.create(dv, 0.0, (0.0, 1.0, 2.0))
+    obs = Observations.create(dv, 0.50, (0.0, 1.0, 2.0))
+    obs2 = Observations.create(dv, 2.0, (0.0, 1.0))
 
     adm = DataVariable.create("AMT", "dose", "ratio", properties={'unit': 'mg/L'})
     dose = Bolus(100)
     admin = Administration.create(adm, dose, 0.0, [0.0, 1.0])
 
-    arm = Arm.create(50, (obs, admin))
+    arm = Arm.create(50, (obs, obs2, admin))
 
-    arm2 = Arm.create(50, (obs,))
+    arm2 = Arm.create(50, (obs, obs2))
     td = TrialDesign.create([arm, arm2])
 
     s = repr(td)
-    print(s)
     assert "Arm" in s
+
+    dv = DataVariable.create("CONC", "dv", "ratio", properties={'unit': 'h'})
+    obs = Observations.create(dv, 0, (0, 1, 2))
+    arm = Arm.create(50, (obs,))
+    td = TrialDesign.create([arm])
+    repr(td)

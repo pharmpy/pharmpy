@@ -445,13 +445,14 @@ def get_global_start_end_times(arm_lanes):
 def add_start_and_end_gaps(arm_lanes, min_start_time, max_end_time):
     for arm in arm_lanes:
         for lane in arm:
-            panel = lane[-1]
-            if panel.end_time < max_end_time:
-                gap = Frame(panel.end_time, max_end_time, None)
+            last_frame = lane[-1]
+            if last_frame.end_time < max_end_time:
+                gap = Frame(last_frame.end_time, max_end_time, None)
                 lane.append(gap)
-            if panel.start_time > min_start_time:
-                gap = Frame(min_start_time, panel.start_time, None)
-                lane.append(gap)
+            first_frame = lane[0]
+            if first_frame.start_time > min_start_time:
+                gap = Frame(min_start_time, first_frame.start_time, None)
+                lane.insert(0, gap)
 
 
 def preliminary_rendering(lane):
@@ -459,13 +460,16 @@ def preliminary_rendering(lane):
         act = frame.activity
         if isinstance(act, Observations):
             panel = observations_panel(act)
-        else:  # isinstance(act, Administration):
+        elif isinstance(act, Administration):
             panel = administration_panel(act)
-        tmp = rich_console.Console(file=StringIO(), record=True, width=1000)
-        tmp.print(panel)
-        rendered = tmp.export_text()
-        actual_width = max(len(line) for line in rendered.splitlines())
-        frame.chars_per_scale = actual_width / (frame.end_time - frame.start_time)
+        else:
+            panel = None
+        if panel is not None:
+            tmp = rich_console.Console(file=StringIO(), record=True, width=1000)
+            tmp.print(panel)
+            rendered = tmp.export_text()
+            actual_width = max(len(line) for line in rendered.splitlines())
+            frame.chars_per_scale = actual_width / (frame.end_time - frame.start_time)
 
 
 def calculate_widths(arm_lanes, chars_per_scale, total_width):
@@ -544,7 +548,7 @@ def observations_panel(obs, width=None):
     else:
         expand = True
     panel = rich_panel.Panel(
-        list_with_unit(obs.time_points, obs.variable.properties.get('unit', None)),
+        list_with_unit(get_time_points(obs), obs.variable.properties.get('unit', None)),
         title="[cyan]Observations",
         subtitle=f"[dim]{obs.variable.name}",
         border_style="green",
