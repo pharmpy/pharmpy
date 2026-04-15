@@ -251,6 +251,12 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
+    model = _add_E(model, effect)
+
+    return model
+
+
+def _add_E(model, effect):
     E = Assignment(Expr.symbol("E"), effect)
     e_index = model.statements.find_assignment_index("E")
     if e_index is None:
@@ -267,7 +273,6 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
         statements = statements.remove_symbol_definitions(removed_symbols, E)
         model = model.replace(statements=statements)
         model = remove_unused_parameters_and_rvs(model)
-
     return model
 
 
