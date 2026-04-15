@@ -418,18 +418,25 @@ def add_indirect_effect(
     model = add_individual_parameter(model, b.name)
 
     kout_ass = Assignment.create(kout, 1 / met)
-    kin_ass = Assignment.create(kin, kout * b)
+
+    r_assignment = model.statements.find_assignment("R")
+    if r_assignment is not None:
+        r_expression = r_assignment.expression
+        kin_expr = r_expression * kout
+    else:
+        kin_expr = kout * b
+    kin_ass = Assignment.create(kin, kin_expr)
 
     if expr == 'linear':
         s = Expr.symbol("SLOPE")
         model = add_individual_parameter(model, s.name, lower=-float("inf"))
-        R = Expr.symbol("SLOPE") * variable_symb
+        E = Expr.symbol("SLOPE") * variable_symb
     elif expr == 'emax':
         emax = Expr.symbol("E_MAX")
         model = add_individual_parameter(model, emax.name, lower=-1.0)
         ec50 = Expr.symbol("EC_50")
         model = add_individual_parameter(model, ec50.name)
-        R = emax * variable_symb / (ec50 + variable_symb)
+        E = emax * variable_symb / (ec50 + variable_symb)
     elif expr == 'sigmoid':
         emax = Expr.symbol("E_MAX")
         ec50 = Expr.symbol("EC_50")
@@ -438,7 +445,7 @@ def add_indirect_effect(
         model = set_initial_estimates(model, {"POP_N": 1})
         model = add_individual_parameter(model, ec50.name)
         model = add_individual_parameter(model, emax.name, lower=-1.0)
-        R = emax * variable_symb**n / (ec50**n + variable_symb**n)
+        E = emax * variable_symb**n / (ec50**n + variable_symb**n)
     else:
         raise ValueError(f'Unknown model "{expr}".')
 
@@ -447,13 +454,13 @@ def add_indirect_effect(
     else:
         cb = CompartmentalSystemBuilder()
     if prod:
-        response = Compartment.create("RESPONSE", input=kin * (1 + R))
+        response = Compartment.create("RESPONSE", input=kin * (1 + E))
         cb.add_compartment(response)
         cb.add_flow(response, output, kout)
     elif not prod:
         response = Compartment.create("RESPONSE", input=kin)
         cb.add_compartment(response)
-        cb.add_flow(response, output, kout * (1 + R))
+        cb.add_flow(response, output, kout * (1 + E))
 
     model = model.replace(
         statements=Statements(
@@ -466,6 +473,19 @@ def add_indirect_effect(
     )
 
     model = set_initial_condition(model, "RESPONSE", b)
+
+    r_index = model.statements.find_assignment_index("R")
+    if r_index is not None:
+        new_r = Assignment(Expr("R"), a_response)
+        y_index = model.statements.find_assignment_index("Y")
+        assert y_index is not None
+        model = model.replace(
+            statements=model.statements[:r_index]
+            + model.statements[r_index + 1 : y_index]
+            + model.statements[y_index + 1 :]
+            + new_r
+            + model.statements[y_index]
+        )
 
     if odes is not None:
         # Add dependent variable Y_2
