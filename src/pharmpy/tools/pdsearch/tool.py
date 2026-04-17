@@ -6,6 +6,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
@@ -18,12 +19,12 @@ from pharmpy.modeling import (
     get_sigmas,
     is_binary,
     set_description,
-    set_direct_effect,
     set_initial_estimates,
     set_name,
     set_placebo_model,
     set_proportional_error_model,
 )
+from pharmpy.modeling.mfl import generate_transformations
 from pharmpy.tools.common import (
     create_plots,
     table_final_eta_shrinkage,
@@ -260,18 +261,18 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
     n_models = 0
     wb = WorkflowBuilder()
     for baseme in mes:
-        exprs = ("step", "emax", "sigmoid")
+        mfl = ModelFeatures.create("DIRECTEFFECT([STEP, EMAX, SIGMOID])")
         if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
             # If the driver is binary linear and step are the same model
             # so add linear if not binary
-            exprs = ("linear",) + exprs
+            mfl = mfl + ModelFeatures.create("DIRECTEFFECT(LINEAR)")
 
-        for expr in exprs:
+        for feature in mfl:
             create_task = Task(
-                f'create_drug_effect_{expr}',
+                f'create_drug_effect_{feature.args[0].lower()}',
                 create_drug_effect_model,
                 treatment_variable,
-                expr,
+                feature,
                 baseme,
             )
             wb.add_task(create_task)
@@ -344,14 +345,16 @@ def create_placebo_model(expr, op, baseme):
     return me
 
 
-def create_drug_effect_model(treatment_variable, expr, baseme):
+def create_drug_effect_model(treatment_variable, feature, baseme):
     if not treatment_variable:
         treatment_variable = 'KPD'
     base_model = baseme.model
     model = update_initial_estimates(base_model, baseme.modelfit_results, max_theta=True)
-    model = set_direct_effect(model, expr, variable=treatment_variable)
-    model = set_name(model, f"{base_model.name}_drug_{expr}")
-    model = set_description(model, model.description + f"; DIRECTEFFECT({expr.upper()})")
+    mfl = ModelFeatures.create([feature])
+    func = generate_transformations(mfl)[0]
+    model = func(model, variable=treatment_variable)
+    model = set_name(model, f"{base_model.name}_drug_{feature.args[0].lower()}")
+    model = set_description(model, model.description + f"; {feature}")
     me = ModelEntry.create(model=model, parent=base_model)
     return me
 
