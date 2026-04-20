@@ -98,6 +98,8 @@ def test_init_boolean_expr():
     expr4 = BooleanExpr('x & y')
     assert expr4.free_symbols == {Expr.symbol('x'), Expr.symbol('y')}
     assert expr4 == BooleanExpr(expr4)
+    expr5 = BooleanExpr('S > 1')
+    assert expr5.free_symbols == {Expr.symbol('S')}
 
 
 @pytest.mark.parametrize(
