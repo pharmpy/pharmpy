@@ -15,11 +15,12 @@ import warnings
 from collections.abc import Mapping
 from typing import Optional, Union
 
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
 from pharmpy.internals.math import round_and_keep_sum
-from pharmpy.model import Model
+from pharmpy.model import Ignore, Model, Provenance
 
 
 class DatasetIterator:
@@ -60,14 +61,17 @@ class DatasetIterator:
             self._model = None
             return df_or_model
 
-    def _combine_dataset(self, df):
+    def _combine_dataset(self, df, provenance=None):
         """If we are working with a model set the dataset and return model
         else simply pass the dataset through
         """
         if self._model is None:
             return df
         else:
-            return self._model.replace(name=df.name, dataset=df)
+            if not provenance:
+                provenance = Provenance()
+            di = self._model.datainfo.replace(provenance=provenance)
+            return self._model.replace(name=df.name, dataset=df, datainfo=di)
 
     def __iter__(self):
         return self
@@ -98,7 +102,12 @@ class Omit(DatasetIterator):
         next_group = self._unique_groups[self._next - 1]
         new_df = df[df[self._group] != next_group]
         self._prepare_next(new_df)
-        return self._combine_dataset(new_df), next_group
+        if self._model:
+            ignore = Ignore.create(BooleanExpr.eq(Expr.symbol(self._group), next_group))
+            prov = self._model.datainfo.provenance + ignore
+        else:
+            prov = None
+        return self._combine_dataset(new_df, prov), next_group
 
 
 def omit_data(

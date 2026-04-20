@@ -4,6 +4,7 @@ import pytest
 
 import pharmpy.modeling.iterators as iters
 from pharmpy.deps import pandas as pd
+from pharmpy.model import Ignore, Provenance
 
 
 @pytest.fixture
@@ -33,6 +34,21 @@ def test_omit(df):
     assert new_df.name == 'omitted_3'
     with pytest.raises(StopIteration):
         next(omitter)
+
+
+def test_omit_with_model(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    omitter = iters.Omit(model, 'ID')
+    new_model, group = next(omitter)
+    assert group == 1
+    assert set(new_model.dataset.index).issubset(model.dataset.index)
+    assert len(new_model.datainfo.provenance) == 2
+    assert new_model.datainfo.provenance[-1] == Ignore.create('ID == 1')
+    new_model, group = next(omitter)
+    assert group == 2
+    assert set(new_model.dataset.index).issubset(model.dataset.index)
+    assert len(new_model.datainfo.provenance) == 2
+    assert new_model.datainfo.provenance[-1] == Ignore.create('ID == 2')
 
 
 def test_resampler_default(df):
@@ -109,3 +125,15 @@ def test_resampler_anonymization(testdata):
         df_oldid.reset_index(inplace=True, drop=True)
         df_newid['ID'] = old_id
         pandas.testing.assert_frame_equal(df_newid, df_oldid)
+
+
+def test_resampler_with_model(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    np.random.seed(28)
+    resampler = iters.Resample(model, 'ID', resamples=2)
+    new_model, ids = next(resampler)
+    assert set(ids).issubset(model.dataset.index)
+    assert new_model.datainfo.provenance == Provenance()
+    new_model, ids = next(resampler)
+    assert set(ids).issubset(model.dataset.index)
+    assert new_model.datainfo.provenance == Provenance()
