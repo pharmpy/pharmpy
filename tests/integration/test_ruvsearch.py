@@ -4,33 +4,16 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.modeling import (  # convert_model,; create_basic_pk_model,
+from pharmpy.modeling import (
+    convert_model,
+    create_basic_pk_model,
+    fix_parameters,
     remove_parameter_uncertainty_step,
+    set_direct_effect,
     transform_blq,
 )
-from pharmpy.tools import read_modelfit_results, run_tool  # fit,; run_structsearch,
+from pharmpy.tools import fit, read_modelfit_results, run_tool
 from pharmpy.workflows import LocalDirectoryContext
-
-# from pharmpy.tools.structsearch.pkpd import create_pk_model
-
-
-# def test_ruvsearch_dv(tmp_path, load_model_for_test, testdata):
-#    with chdir(tmp_path):
-#        dataset = testdata / "nonmem/pheno_pd.csv"
-#        model = create_basic_pk_model("iv", dataset_path=dataset)
-#        model = convert_model(model, 'nonmem')
-
-# Fit pk model
-#        pk_model = create_pk_model(model)
-#        pk_res = fit(pk_model)
-
-# structsearch
-#        res_struct = run_structsearch(type='pkpd', results=pk_res, model=model)
-#        model = res_struct.models[1]
-
-# ruvsearch
-#        res_ruv = run_tool('ruvsearch', model=model, results=model.modelfit_results, dv=2)
-#        assert res_ruv
 
 
 def test_ruvsearch(tmp_path, testdata):
@@ -129,3 +112,17 @@ def test_ruvsearch_dummy(tmp_path, testdata, kwargs, no_of_steps, no_of_models):
         assert (rundir / 'models' / 'base_1' / 'model.ctl').exists()
         assert (rundir / 'models' / 'base_1' / 'model_results.json').exists()
         assert not (rundir / 'models' / 'base_1' / 'model.lst').exists()
+
+
+def test_ruvsearch_dv(tmp_path, load_model_for_test, testdata):
+    with chdir(tmp_path):
+        dataset = testdata / "nonmem/pheno_pd.csv"
+        model = create_basic_pk_model("iv", dataset_path=dataset)
+        model = convert_model(model, 'nonmem')
+
+        pkpd_model = fix_parameters(model, model.parameters.names)
+        pkpd_model = set_direct_effect(pkpd_model, 'linear')
+        pkpd_res = fit(pkpd_model)
+
+        res_ruv = run_tool('ruvsearch', model=pkpd_model, results=pkpd_res, dv=2)
+        assert res_ruv
