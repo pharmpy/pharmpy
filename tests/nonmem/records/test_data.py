@@ -1,7 +1,8 @@
 import pytest
 from lark.exceptions import UnexpectedToken
 
-from pharmpy.model import ModelSyntaxError
+from pharmpy.basic import Expr
+from pharmpy.model import Ignore, ModelSyntaxError
 
 
 def test_data_filename_get(parser):
@@ -143,6 +144,38 @@ def test_ignore_accept(parser):
     record = parser.parse('$DATA      ../pheno.dta IGNORE=@ IGNORE(APGR.GT.23)\n').records[0]
     record = record.remove_ignore().remove_accept()
     assert str(record) == '$DATA      ../pheno.dta IGNORE=@ \n'
+
+
+@pytest.mark.parametrize(
+    'rec, expected',
+    [
+        (
+            'IGNORE=(DV.EQ.1)',
+            {'DV == S': {Expr.symbol('S'): '1'}},
+        ),
+        (
+            'IGNORE=(DV.EQN.1)',
+            {'DV == 1': dict()},
+        ),
+        (
+            'ACCEPT=(DV.EQ.1, MDV.NEN.23)',
+            {'DV != S': {Expr.symbol('S'): '1'}, 'MDV == 23': dict()},
+        ),
+        (
+            'IGNORE=(WGT < 1, ID.EQ."lk")',
+            {'WGT < 1': dict(), 'ID == S': {Expr.symbol('S'): '"lk"'}},
+        ),
+        (
+            'IGNORE(APGR.GT.23)',
+            {'APGR > 23': dict()},
+        ),
+    ],
+)
+def test_get_selects(parser, rec, expected):
+    record = parser.parse(f'$DATA pheno.dta {rec}').records[0]
+    selects = record.get_selects(ignore='IGNORE' in rec)
+    assert len(selects) == len(expected)
+    assert selects == [Ignore.create(expr, strings=strings) for expr, strings in expected.items()]
 
 
 def test_comments(parser):

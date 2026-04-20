@@ -2,8 +2,9 @@
 NONMEM data record class.
 """
 
+from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.parse import AttrToken, AttrTree
-from pharmpy.model import ModelSyntaxError
+from pharmpy.model import Ignore, ModelSyntaxError
 
 from .option_record import OptionRecord
 
@@ -142,6 +143,47 @@ class DataRecord(OptionRecord):
             for filt in option.subtrees('filter'):
                 filters.append(filt)
         return filters
+
+    def get_selects(self, ignore: bool) -> list[Ignore]:
+        ops = ('OP_EQ', 'OP_NE', 'OP_LT', 'OP_GT', 'OP_LT_EQ', 'OP_GT_EQ', 'OP_STR_EQ', 'OP_STR_NE')
+
+        filters = self.ignore if ignore else self.accept
+        selects = []
+        for f in filters:
+            col = f.find('COLUMN').value
+            try:
+                expr = f.find('EXPR').value
+            except AttributeError:
+                expr = f.find('QEXPR').value
+            assert expr is not None
+            op = [tok for tok in f.tokens if tok.rule in ops]
+            assert len(op) == 1
+            op = op[0].rule
+            lhs = Expr.symbol(col)
+            expr = Expr(expr) if expr.isnumeric() else expr
+            if 'STR' in op:
+                rhs = Expr.symbol("S")
+                strings = {rhs: str(expr)}
+            else:
+                rhs = expr
+                strings = {}
+            if op in {'OP_EQ', 'OP_STR_EQ'}:
+                bexp = BooleanExpr.eq(lhs, rhs)
+            elif op in {'OP_NE', 'OP_STR_NE'}:
+                bexp = BooleanExpr.ne(lhs, rhs)
+            elif op == 'OP_LT':
+                bexp = BooleanExpr.lt(lhs, rhs)
+            elif op == 'OP_GT':
+                bexp = BooleanExpr.gt(lhs, rhs)
+            elif op == 'OP_LT_EQ':
+                bexp = BooleanExpr.le(lhs, rhs)
+            else:  # op == 'OP_GT_EQ'
+                bexp = BooleanExpr.ge(lhs, rhs)
+            if not ignore:
+                bexp = ~bexp
+            sel = Ignore.create(expression=bexp, strings=strings)
+            selects.append(sel)
+        return selects
 
     def remove_ignore(self):
         newroot = self.root.remove('ignore')
