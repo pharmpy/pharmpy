@@ -964,7 +964,7 @@ def filter_and_convert_dataset_in_place(
         else:
             accept = replace_synonym_in_filters(accept, replacements)
 
-    df, provenance = filter_and_convert_nonmem_dataset_in_place(
+    df = filter_and_convert_nonmem_dataset_in_place(
         df,
         raw,
         drop=drop,
@@ -974,6 +974,9 @@ def filter_and_convert_dataset_in_place(
         accept=accept,
         dtype=None if raw else di.get_dtype_dict(),
         missing_data_token=di.missing_data_token,
+    )
+    provenance = Provenance.create(
+        data_record.get_selects(ignore=True) + data_record.get_selects(ignore=False)
     )
     di = di.replace(provenance=di.provenance + provenance)
     # Let TIME be the idv in both $PK and $PRED models

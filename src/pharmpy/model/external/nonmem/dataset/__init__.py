@@ -5,9 +5,8 @@ from pathlib import Path
 from typing import Any, Container, Iterable, Optional, TextIO, cast
 
 from pharmpy import conf
-from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
-from pharmpy.model import DatasetError, DatasetWarning, Ignore, Provenance
+from pharmpy.model import DatasetError, DatasetWarning
 
 from .convert import convert, convert_in_place
 from .filter import (
@@ -110,7 +109,7 @@ def read_nonmem_dataset(
 
     df = read_nonmem_df(path_or_io, raw, ignore_character, colnames)
 
-    df, _ = filter_and_convert_nonmem_dataset_in_place(
+    df = filter_and_convert_nonmem_dataset_in_place(
         df,
         raw=raw,
         drop=drop,
@@ -164,12 +163,9 @@ def filter_and_convert_nonmem_dataset_in_place(
     statements = ignore or accept
     if statements is None:
         convert_remaining = list(convert_todo)
-        provenance = Provenance()
     else:
         filters = parse_filter_statements(statements)
         filters = list(filters)
-        selects = filters_to_selects(filters, ignore=ignore == statements)
-        provenance = Provenance.create(selects)
         df, convert_done = _filter_in_place(
             df,
             columns,
@@ -210,36 +206,7 @@ def filter_and_convert_nonmem_dataset_in_place(
             df = df.astype(_dtype)
 
     df.index = range(1, len(df) + 1)
-    return df, provenance
-
-
-def filters_to_selects(filters, ignore: bool) -> list[Ignore]:
-    selects = []
-    for f in filters:
-        lhs = Expr.symbol(f.column)
-        if 'STR' in f.operator:
-            rhs = Expr.symbol("S")
-            strings = {rhs: f.expr}
-        else:
-            rhs = Expr(f.expr)
-            strings = {}
-        if f.operator in {'OP_EQ', 'OP_STR_EQ'}:
-            bexp = BooleanExpr.eq(lhs, rhs)
-        elif f.operator in {'OP_NE', 'OP_STR_NE'}:
-            bexp = BooleanExpr.ne(lhs, rhs)
-        elif f.operator == 'OP_LT':
-            bexp = BooleanExpr.lt(lhs, rhs)
-        elif f.operator == 'OP_GT':
-            bexp = BooleanExpr.gt(lhs, rhs)
-        elif f.operator == 'OP_LT_EQ':
-            bexp = BooleanExpr.le(lhs, rhs)
-        else:  # f.operator == 'OP_GT_EQ'
-            bexp = BooleanExpr.ge(lhs, rhs)
-        if not ignore:
-            bexp = ~bexp
-        sel = Ignore.create(expression=bexp, strings=strings)
-        selects.append(sel)
-    return selects
+    return df
 
 
 def _filter_in_place(
