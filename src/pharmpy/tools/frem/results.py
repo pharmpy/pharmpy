@@ -14,7 +14,7 @@ from pharmpy.internals.math import (
     conditional_joint_normal_lambda,
     is_posdef,
 )
-from pharmpy.model import Model
+from pharmpy.model import AddColumn, Model, Provenance
 from pharmpy.modeling import (
     calculate_individual_shrinkage,
     create_rng,
@@ -1057,10 +1057,13 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     # add log transformed columns for the -log option. Should be done when creating dataset
     df = model_4.dataset
     if logtransformed_covariates:
+        prov = []
         for lncov in logtransformed_covariates:
             df = df.copy()
             df[f'LN{lncov}'] = np.log(df[lncov])
-        model_4 = model_4.replace(dataset=df)
+            prov.append(AddColumn.create(f'LN{lncov}'))
+        di = model_4.datainfo.replace(provenance=Provenance.create(prov))
+        model_4 = model_4.replace(dataset=df, datainfo=di)
 
     nunique = get_baselines(model_4)[all_covariates].nunique()
     continuous = list(nunique.index[nunique != 2])

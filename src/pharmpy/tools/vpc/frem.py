@@ -1,7 +1,7 @@
 from pharmpy.basic import Expr
 from pharmpy.internals.df import reset_index
 from pharmpy.internals.math import triangular
-from pharmpy.model import Assignment, Model, Statements, get_and_check_dataset
+from pharmpy.model import Assignment, Ignore, Model, Statements, get_and_check_dataset
 from pharmpy.modeling import (
     cholesky_decompose,
     drop_columns,
@@ -22,8 +22,11 @@ def prepare_evaluation_model(me: ModelEntry) -> ModelEntry:
     model = me.model
     df = get_and_check_dataset(model)
     df = df[df['FREMTYPE'] != 0]
+    di = model.datainfo
+    prov = Ignore.create('FREMTYPE == 0')
+    di = di.replace(provenance=di.provenance + prov)
     df = reset_index(df)
-    model = model.replace(dataset=df)
+    model = model.replace(dataset=df, datainfo=di)
     model = set_evaluation_step(model)
     model = remove_parameter_uncertainty_step(model)
     results = me.modelfit_results
@@ -61,8 +64,12 @@ def prepare_frem_model(original_model: Model, me: ModelEntry) -> ModelEntry:
     df = original_model.dataset
     df = df[df['FREMTYPE'] == 0]
     df = reset_index(df)
-
-    model = model.replace(dataset=df, statements=kept_statements, random_variables=kept_rvs)
+    di = original_model.datainfo
+    prov = Ignore.create('FREMTYPE != 0')
+    di = di.replace(provenance=di.provenance + prov)
+    model = model.replace(
+        dataset=df, datainfo=di, statements=kept_statements, random_variables=kept_rvs
+    )
     model = remove_unused_parameters_and_rvs(model)
     frem_etas = list(model.random_variables.etas[-1].names)
     model = cholesky_decompose(model, frem_etas)
