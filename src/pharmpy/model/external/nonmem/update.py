@@ -680,7 +680,15 @@ def to_des(model: Model, new: CompartmentalSystem):
     cs = model.internals.control_stream
     old_des = cs.get_records('DES')
     cs = cs.remove_records(old_des)
-    subs = cs.get_records('SUBROUTINES')[0]
+    all_subs = cs.get_records('SUBROUTINES')
+    if not all_subs:
+        subs = create_record('$SUBROUTINES ADVAN1\n')
+        cs = cs.insert_record(subs)
+        pred = cs.get_records('PRED')[0]
+        pk = pred.set_name('PK')
+        cs = cs.replace_records([pred], [pk])
+    else:
+        subs = all_subs[0]
     newrec = subs.remove_option_startswith('TRANS')
     newrec = newrec.remove_option_startswith('ADVAN')
     newrec = newrec.remove_option('TOL')

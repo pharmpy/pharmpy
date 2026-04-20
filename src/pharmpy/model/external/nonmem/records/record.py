@@ -10,6 +10,9 @@ class Record:
         self.raw_name = raw_name
         self._root = root
 
+    def set_name(self, name):
+        return self.__class__(name, '$' + name, self._root)
+
     def replace(self, root):
         return self.__class__(self.name, self.raw_name, root)
 
