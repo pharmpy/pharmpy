@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 
 sys.path.append(os.path.abspath('./_ext'))
@@ -97,3 +98,5 @@ linkcheck_ignore = [r'https://doi.org/10.1002/psp4.12741', # Page is reachable f
     r'https://projecteuclid.org/journals/electronic-journal-of-statistics/volume-8/issue-1/A-note-on-BIC-in-mixed-effects-models/10.1214/14-EJS890.full',
     r'https://www.page-meeting.org/?abstract=8683',
     r'https://www.page-meeting.org/default.asp?abstract=11600']
+
+linkcheck_ignore = [re.escape(url) for url in linkcheck_ignore]
