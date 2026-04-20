@@ -617,23 +617,27 @@ def test_ignore():
     assert op == op2
     assert op == op
     assert hash(op) == hash(op2)
+    op3 = Ignore.create(expression=expr_str)
+    assert op == op3
     assert op != "othertype"
     assert Ignore.from_dict(op.to_dict()) == op
     assert repr(op) == f"Ignore({expr})"
     assert op.replace(expression=expr) == op
     with pytest.raises(TypeError):
         Ignore.create(op)
+    with pytest.raises(TypeError):
+        Ignore.create(expr, 'x')
     expr = BooleanExpr.eq(Expr.symbol("WGT"), Expr.symbol("S"))
     with pytest.raises(ValueError):
         strings = {Expr.symbol("K"): "#"}
         Ignore.create(expr, strings)
     strings = {Expr.symbol("S"): "#"}
-    op3 = Ignore.create(expr, strings)
+    op4 = Ignore.create(expr, strings)
     strings2 = {Expr.symbol("S"): "."}
-    op4 = op3.replace(strings=strings2)
-    assert op4.strings == strings2
-    assert op3.strings == strings
-    assert repr(op3) == f"Ignore({expr}, {strings})"
+    op5 = op4.replace(strings=strings2)
+    assert op5.strings == strings2
+    assert op4.strings == strings
+    assert repr(op4) == f"Ignore({expr}, {strings})"
 
 
 def test_drop():

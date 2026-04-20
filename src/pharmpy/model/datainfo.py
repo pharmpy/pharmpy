@@ -68,8 +68,10 @@ class Ignore(DatasetOperation):
     ):
         if isinstance(expression, str):
             expression = BooleanExpr(expression)
-        elif not isinstance(expression, BooleanExpr):
+        elif not isinstance(expression, (BooleanExpr, str)):
             raise TypeError(f"Bad type of expression: {type(expression)}")
+        if not isinstance(strings, Mapping):
+            raise TypeError(f"Bad type of strings: {type(strings)}")
         if not set(strings.keys()).issubset(expression.free_symbols):
             raise ValueError("All symbols in strings must be used in expression")
         return cls(expression=expression, strings=frozenmapping(strings))
