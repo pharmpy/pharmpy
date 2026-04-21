@@ -1,3 +1,6 @@
+from typing import Self
+
+
 class Record:
     """
     Top level class for records.
@@ -15,6 +18,15 @@ class Record:
 
     def replace(self, root):
         return self.__class__(self.name, self.raw_name, root)
+
+    @classmethod
+    def create(cls, name: str, content: str) -> Self:
+        from .factory import known_records
+
+        parser = known_records[name][1]
+        root = parser(content).root
+        record = cls(name, '$' + name, root)
+        return record
 
     @property
     def root(self):

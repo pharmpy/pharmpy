@@ -683,8 +683,7 @@ def to_des(model: Model, new: CompartmentalSystem):
     cs = cs.remove_records(old_des)
     all_subs = cs.get_records('SUBROUTINES')
     if not all_subs:
-        subs = create_record('$SUBROUTINES ADVAN1\n')
-        assert isinstance(subs, SubroutineRecord)
+        subs = SubroutineRecord.create('SUBROUTINES', ' ADVAN1\n')
         cs = cs.insert_record(subs)
         pred = cs.get_records('PRED')[0]
         pk = pred.set_name('PK')
@@ -815,10 +814,9 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
 
     error = model.internals.control_stream.get_error_record()
     if not error and len(error_statements) > 0:
-        empty_error = create_record('$ERROR\n')
-        newcs = model.internals.control_stream.insert_record(empty_error)
+        error = CodeRecord.create('ERROR', '\n')
+        newcs = model.internals.control_stream.insert_record(error)
         model = model.replace(internals=model.internals.replace(control_stream=newcs))
-        error = model.internals.control_stream.get_error_record()
     if error:
         for i, s in enumerate(error_statements):
             if s.symbol.name == 'F':
@@ -1408,10 +1406,9 @@ def update_model_record(model: Model, advan):
             newcs = model.internals.control_stream.remove_records(
                 model.internals.control_stream.get_records('MODEL')
             )
-            mod = create_record('$MODEL\n')
+            mod = ModelRecord.create('MODEL', '\n')
             newcs = newcs.insert_record(mod)
             old_mod = mod
-            assert isinstance(mod, ModelRecord)
             comps = {v: k for k, v in newmap.items()}
             i = 1
             while True:
