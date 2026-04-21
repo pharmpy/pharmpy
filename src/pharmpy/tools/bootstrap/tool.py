@@ -128,6 +128,7 @@ def post_process_results(context, original_model, original_model_res, strictness
         included_individuals=groups,
         dofv_results=dofv_results,
         strictness=strictness,
+        context=context,
     )
     context.log_info("Finishing tool bootstrap")
     return res

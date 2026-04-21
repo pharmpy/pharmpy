@@ -101,9 +101,10 @@ def calculate_results(
     included_individuals=None,
     dofv_results=None,
     strictness: str = "",
+    context=None,
 ):
-    if original_results is None:
-        warnings.warn(
+    if original_results is None and context is not None:
+        context.log_warning(
             'No results for the base model could be read. Cannot calculate bias and '
             'original_bootdata_ofv'
         )
