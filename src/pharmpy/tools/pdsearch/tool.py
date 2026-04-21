@@ -261,7 +261,9 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
     n_models = 0
     wb = WorkflowBuilder()
     for baseme in mes:
-        mfl = ModelFeatures.create("DIRECTEFFECT([STEP, EMAX, SIGMOID])")
+        mfl = ModelFeatures.create(
+            "DIRECTEFFECT([STEP, EMAX, SIGMOID]);INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)"
+        )
         if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
             # If the driver is binary linear and step are the same model
             # so add linear if not binary
