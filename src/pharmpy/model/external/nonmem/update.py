@@ -818,6 +818,7 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         empty_error = create_record('$ERROR\n')
         newcs = model.internals.control_stream.insert_record(empty_error)
         model = model.replace(internals=model.internals.replace(control_stream=newcs))
+        error = model.internals.control_stream.get_error_record()
     if error:
         for i, s in enumerate(error_statements):
             if s.symbol.name == 'F':
