@@ -4,6 +4,7 @@ Final model
 .. jupyter-execute::
     :hide-code:
 
+    from IPython.display import display
     from pharmpy.workflows.results import read_results
     from pharmpy.tools.common import table_final_parameter_estimates
 
@@ -42,10 +43,10 @@ CWRES vs TIME
 -------------
 
 .. jupyter-execute::
-    :hide-code:
+   :hide-code:
 
     if have_final:
-        res.final_model_cwres_vs_idv_plot
+        display(res.final_model_cwres_vs_idv_plot)
 
 
 DV vs PRED
@@ -55,7 +56,7 @@ DV vs PRED
    :hide-code:
 
     if have_final:
-        res.final_model_dv_vs_pred_plot
+        display(res.final_model_dv_vs_pred_plot)
 
 DV vs IPRED
 -----------
@@ -64,7 +65,7 @@ DV vs IPRED
    :hide-code:
 
     if have_final:
-        res.final_model_dv_vs_ipred_plot
+        display(res.final_model_dv_vs_ipred_plot)
 
 
 ETA distribution
@@ -74,7 +75,7 @@ ETA distribution
    :hide-code:
 
     if have_final:
-        res.final_model_eta_distribution_plot
+        display(res.final_model_eta_distribution_plot)
 
 Tool summary
 ~~~~~~~~~~~~
