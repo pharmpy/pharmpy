@@ -197,3 +197,45 @@ def test_comment(parser):
     record = parser.parse(contents).records[0]
     record = record.set_ignore_character("A")
     assert str(record) == '$DATA     cpt7.dta \n;         Dataset\nIGNORE=A\n'
+
+
+@pytest.mark.parametrize(
+    'expr, strings, expected',
+    [
+        ('DVID == S', {Expr.symbol('S'): '1'}, 'DVID.EQ.1'),
+        ('DVID == 1', dict(), 'DVID.EQN.1'),
+        ('DVID != S', {Expr.symbol('S'): '1'}, 'DVID.NE.1'),
+        ('DVID != 1', dict(), 'DVID.NEN.1'),
+        ('DV > 0', dict(), 'DV.GT.0'),
+        ('DV >= 0', dict(), 'DV.GE.0'),
+        ('DV < 1', dict(), 'DV.LT.1'),
+        ('DV <= 1', dict(), 'DV.LE.1'),
+    ],
+)
+def test_add_ignore(parser, expr, strings, expected):
+    record = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
+    assert record.ignore == []
+    ignore = Ignore.create(expr, strings=strings)
+    record = record.add_ignore([ignore])
+    assert len(record.ignore) == 1
+    assert str(record.ignore[0]) == expected
+    assert str(record) == f'$DATA pheno.dta IGNORE=@ IGNORE=({expected})'
+    assert str(parser.parse(str(record)).records[0]) == str(record)
+
+
+def test_add_ignore_stepwise(parser):
+    record = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
+    assert record.ignore == []
+    ignore1 = Ignore.create('DV == S', strings={Expr.symbol('S'): '1'})
+    ignore2 = Ignore.create('DVID != 1')
+    record = record.add_ignore([ignore1, ignore2])
+    assert len(record.ignore) == 2
+    assert str(record.ignore[0]) == 'DV.EQ.1'
+    assert str(record.ignore[1]) == 'DVID.NEN.1'
+    ignore3 = Ignore.create('APGR > 23')
+    record = record.add_ignore([ignore3])
+    assert len(record.ignore) == 3
+    assert str(record.ignore[2]) == 'APGR.GT.23'
+    record = record.add_ignore([ignore1])
+    assert len(record.ignore) == 3
+    assert 'IGNORE=(DV.EQ.1) IGNORE=(DVID.NEN.1) IGNORE=(APGR.GT.23)' in str(record)

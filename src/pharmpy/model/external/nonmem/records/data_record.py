@@ -2,7 +2,10 @@
 NONMEM data record class.
 """
 
+from itertools import chain
+
 from pharmpy.basic import BooleanExpr, Expr
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.model import Ignore, ModelSyntaxError
 
@@ -10,6 +13,18 @@ from .option_record import OptionRecord
 
 TYPES_OF_SPACE = frozenset(('WS', 'NEWLINE'))
 TYPES_OF_KEEP = frozenset(('WS', 'NEWLINE', 'COMMENT'))
+OPS = frozenmapping(
+    {
+        'OP_EQ': '.EQN.',
+        'OP_NE': '.NEN.',
+        'OP_LT': '.LT.',
+        'OP_LT_EQ': '.LE.',
+        'OP_GT': '.GT.',
+        'OP_GT_EQ': '.GE.',
+        'OP_STR_EQ': '.EQ.',
+        'OP_STR_NE': '.NE.',
+    }
+)
 
 
 class DataRecord(OptionRecord):
@@ -145,8 +160,6 @@ class DataRecord(OptionRecord):
         return filters
 
     def get_selects(self, ignore: bool) -> list[Ignore]:
-        ops = ('OP_EQ', 'OP_NE', 'OP_LT', 'OP_GT', 'OP_LT_EQ', 'OP_GT_EQ', 'OP_STR_EQ', 'OP_STR_NE')
-
         filters = self.ignore if ignore else self.accept
         selects = []
         for f in filters:
@@ -156,7 +169,7 @@ class DataRecord(OptionRecord):
             except AttributeError:
                 expr = f.find('QEXPR').value
             assert expr is not None
-            op = [tok for tok in f.tokens if tok.rule in ops]
+            op = [tok for tok in f.tokens if tok.rule in OPS.keys()]
             assert len(op) == 1
             op = op[0].rule
             lhs = Expr.symbol(col)
@@ -200,3 +213,58 @@ class DataRecord(OptionRecord):
     def remove_accept(self):
         newroot = self.root.remove('accept')
         return self.replace(root=newroot)
+
+    def add_ignore(self, new):
+        old = self.get_selects(ignore=True) + self.get_selects(ignore=False)
+
+        ignore_token = AttrToken('IGNORE', 'IGNORE')
+        eq_token = AttrToken('EQUALS', '=')
+        lpar_token = AttrToken('LPAR', '(')
+        rpar_token = AttrToken('RPAR', ')')
+
+        nodes = []
+        for ignore in new:
+            if ignore in old:
+                continue
+            expr, strings = ignore.expression, ignore.strings
+            rhs = expr.rhs if not strings else strings[expr.rhs]
+
+            op = 'OP_'
+            if strings:
+                op += 'STR_'
+            if expr.is_eq():
+                op += 'EQ'
+            elif expr.is_ne():
+                op += 'NE'
+            elif expr.is_lt():
+                op += 'LT'
+            elif expr.is_gt():
+                op += 'GT'
+            elif expr.is_le():
+                op += 'LT_EQ'
+            else:  # expr.is_ge()
+                op += 'GT_EQ'
+
+            ignore_tree = AttrTree.create(
+                'filter', [{'COLUMN': str(expr.lhs), op: OPS[op], 'EXPR': str(rhs)}]
+            )
+
+            node = AttrTree('ignore', (ignore_token, eq_token, lpar_token, ignore_tree, rpar_token))
+            nodes.append(node)
+
+        if not nodes:
+            return self
+
+        children = self.root.children
+        newroot = AttrTree(self.root.rule, children + self._insert_whitespace(nodes))
+
+        return self.replace(root=newroot)
+
+    @staticmethod
+    def _insert_whitespace(nodes):
+        ws_token = AttrToken('WS', ' ')
+        return (
+            (ws_token,)
+            + tuple(chain.from_iterable((node, ws_token) for node in nodes[:-1]))
+            + (nodes[-1],)
+        )
