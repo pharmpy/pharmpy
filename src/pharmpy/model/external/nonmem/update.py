@@ -31,6 +31,7 @@ from pharmpy.model import (
     Statements,
     output,
 )
+from pharmpy.model.external.nonmem.records.subroutine_record import SubroutineRecord
 from pharmpy.model.model import update_datainfo
 from pharmpy.modeling import get_admid, get_cmt, get_ids, simplify_expression
 
@@ -683,6 +684,7 @@ def to_des(model: Model, new: CompartmentalSystem):
     all_subs = cs.get_records('SUBROUTINES')
     if not all_subs:
         subs = create_record('$SUBROUTINES ADVAN1\n')
+        assert isinstance(subs, SubroutineRecord)
         cs = cs.insert_record(subs)
         pred = cs.get_records('PRED')[0]
         pk = pred.set_name('PK')
