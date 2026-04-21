@@ -8,7 +8,7 @@ from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_ch
 from pharmpy.mfl import IIV, Covariance
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.mfl import Ref
-from pharmpy.model import Model
+from pharmpy.model import Ignore, Model, Provenance, ReadDataset
 from pharmpy.modeling import (
     add_iiv,
     add_predictions,
@@ -257,10 +257,13 @@ def run_amd_task(
     model = add_predictions(model, ['PRED', 'CIPREDI'])
     model = add_residuals(model, ['CWRES'])
 
+    original_dataset = model.dataset.copy()
     if modeltype == "tmdd":
-        model, orig_dataset = filter_tmdd_dataset(model)
+        model, filter_op = filter_tmdd_dataset(model)
     elif modeltype == "drug_metabolite":
-        model, orig_dataset = filter_drug_metabolite_dataset(model)
+        model, filter_op = filter_drug_metabolite_dataset(model)
+    else:
+        filter_op = None
 
     if lloq_method is not None:
         model = transform_blq(
@@ -332,7 +335,8 @@ def run_amd_task(
                     type=modeltype,
                     strictness=strictness,
                     dv_types=dv_types,
-                    orig_dataset=orig_dataset,
+                    orig_dataset=original_dataset,
+                    filter_op=filter_op,
                     parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                 )
@@ -504,7 +508,7 @@ def run_amd_task(
     for tool_name, func in run_subfuncs.items():
         next_model, next_res = next_model_entry.model, next_model_entry.modelfit_results
         if modeltype == 'drug_metabolite' and tool_name == "structsearch":
-            next_model = next_model.replace(dataset=orig_dataset)
+            next_model = _replace_with_original_dataset(next_model, original_dataset, filter_op)
         subresults = func(next_model, next_res)
 
         if subresults is None:
@@ -643,16 +647,16 @@ def create_start_model(input, modeltype, administration, cl_init, vc_init, mat_i
 
 def filter_tmdd_dataset(model):
     dvid_name = get_dvid_name(model)
-    orig_dataset = model.dataset
     model = filter_dataset(model, f'{dvid_name} < 2')
-    return model, orig_dataset
+    filter_op = model.datainfo.provenance[-1]
+    return model, filter_op
 
 
 def filter_drug_metabolite_dataset(model):
     dvid_name = get_dvid_name(model)
-    orig_dataset = model.dataset
     model = filter_dataset(model, f'{dvid_name} != 2')
-    return model, orig_dataset
+    filter_op = model.datainfo.provenance[-1]
+    return model, filter_op
 
 
 def get_dvid_name(model):
@@ -789,6 +793,17 @@ def get_search_space_covsearch(ss_mfl, modeltype, administration):
             # FIXME : Allow addition between search space with reference values in COVARITATE statement
             covsearch_features = mfl_parse(str(cov_ss) + ";COVARIATE?(RUV,ADMID,CAT)", True)
     return covsearch_features
+
+
+def _replace_with_original_dataset(model, new_dataset, filter_op):
+    di = model.datainfo
+    if any(isinstance(op, (ReadDataset, Ignore)) is False for op in di.provenance):
+        # FIXME: more sophisticated approach needed for more complex operations
+        prov = Provenance()
+    else:
+        prov = Provenance.create([op for op in di.provenance if op != filter_op])
+    model = model.replace(dataset=new_dataset, datainfo=di.replace(provenance=prov))
+    return model
 
 
 def _table_final_parameter_estimates(parameter_estimates, ses):
@@ -968,7 +983,14 @@ def _subfunc_structsearch(ctx, **kwargs) -> SubFunc:
 
 
 def _subfunc_structsearch_tmdd(
-    search_space, type, strictness, dv_types, orig_dataset, parameter_uncertainty_method, ctx
+    search_space,
+    type,
+    strictness,
+    dv_types,
+    orig_dataset,
+    filter_op,
+    parameter_uncertainty_method,
+    ctx,
 ) -> SubFunc:
     def _run_structsearch_tmdd(model, modelfit_results):
         subctx_name = 'modelsearch'
@@ -1039,7 +1061,9 @@ def _subfunc_structsearch_tmdd(
                 highest_ranked = rank_filtered.index[0]
                 extra_model = retrieve_models(subctx1.path, names=[highest_ranked])[0]
                 if dv_types is not None:
-                    extra_model = extra_model.replace(dataset=orig_dataset)
+                    extra_model = _replace_with_original_dataset(
+                        extra_model, orig_dataset, filter_op
+                    )
                 res_path = (
                     subctx1.path
                     / "models"
@@ -1050,7 +1074,7 @@ def _subfunc_structsearch_tmdd(
 
         # Replace original dataset if multiple DVs
         if dv_types is not None:
-            final_model = final_model.replace(dataset=orig_dataset)
+            final_model = _replace_with_original_dataset(final_model, orig_dataset, filter_op)
 
         res = run_subtool(
             'structsearch',

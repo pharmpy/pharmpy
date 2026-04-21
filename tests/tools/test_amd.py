@@ -3,6 +3,7 @@ from pathlib import Path
 import pytest
 
 from pharmpy.deps import numpy as np
+from pharmpy.model import Ignore
 from pharmpy.modeling import (
     create_basic_pk_model,
     create_joint_distribution,
@@ -537,29 +538,29 @@ def test_create_structural_covariates_model(load_model_for_test, pheno_path):
 def test_filter_tmdd_dataset(testdata):
     dataset_path = testdata / 'nonmem' / 'pheno.dta'
     model = create_basic_pk_model('iv', dataset_path)
-    df = model.dataset
-    dvid_col = (np.arange(len(df)) % 3) + 1
+    orig_dataset = model.dataset
+    dvid_col = (np.arange(len(orig_dataset)) % 3) + 1
     df = model.dataset.assign(DVID=dvid_col)
     model = model.replace(dataset=df)
     assert set(model.dataset['DVID'].values) == {1, 2, 3}
-    model_filtered, orig_dataset = filter_tmdd_dataset(model)
+    model_filtered, filter_op = filter_tmdd_dataset(model)
     assert set(model.dataset['DVID'].values) == {1, 2, 3}
     assert set(model_filtered.dataset['DVID'].values) == {1}
-    assert set(orig_dataset['DVID'].values) == {1, 2, 3}
+    assert filter_op == Ignore.create('DVID >= 2')
 
 
 def test_filter_drug_metabolite_dataset(testdata):
     dataset_path = testdata / 'nonmem' / 'pheno.dta'
     model = create_basic_pk_model('iv', dataset_path)
-    df = model.dataset
-    dvid_col = (np.arange(len(df)) % 3) + 1
+    orig_dataset = model.dataset
+    dvid_col = (np.arange(len(orig_dataset)) % 3) + 1
     df = model.dataset.assign(DVID=dvid_col)
     model = model.replace(dataset=df)
     assert set(model.dataset['DVID'].values) == {1, 2, 3}
-    model_filtered, orig_dataset = filter_drug_metabolite_dataset(model)
+    model_filtered, filter_op = filter_drug_metabolite_dataset(model)
     assert set(model.dataset['DVID'].values) == {1, 2, 3}
     assert set(model_filtered.dataset['DVID'].values) == {1, 3}
-    assert set(orig_dataset['DVID'].values) == {1, 2, 3}
+    assert filter_op == Ignore.create('DVID == 2')
 
 
 @pytest.mark.parametrize(
