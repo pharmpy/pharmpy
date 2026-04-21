@@ -15,6 +15,12 @@ Changes
 * Change unit representations to use abbreviations. For example gram is now g.
 * Rename add_placebo_model to set_placebo_model
 
+
+Bugfixes
+========
+
+* Fix regression causing plots for final model in AMD-tools to not show
+
 .. _2.0.0:
 
 2.0.0 (2026-02-12)
