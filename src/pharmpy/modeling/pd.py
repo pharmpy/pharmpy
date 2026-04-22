@@ -462,15 +462,14 @@ def add_indirect_effect(
         cb.add_compartment(response)
         cb.add_flow(response, output, kout * (1 + E))
 
-    model = model.replace(
-        statements=Statements(
-            model.statements.before_odes
-            + kout_ass
-            + kin_ass
-            + CompartmentalSystem(cb)
-            + model.statements.after_odes
-        )
+    new_statements = Statements(
+        model.statements.before_odes
+        + kout_ass
+        + kin_ass
+        + CompartmentalSystem(cb)
+        + model.statements.after_odes
     )
+    model = model.replace(statements=new_statements)
 
     model = set_initial_condition(model, "RESPONSE", b)
 
