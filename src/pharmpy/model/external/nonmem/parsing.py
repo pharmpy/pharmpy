@@ -270,6 +270,10 @@ def parse_statements(
         if trans_amounts:
             statements = statements.subs(trans_amounts)
 
+    # Replace synonyms from $INPUT
+    _, _, replacements, _ = parse_column_info(control_stream)
+    d = {Expr.symbol(key): Expr.symbol(value) for key, value in replacements.items()}
+    statements = statements.subs(d)
     return statements, comp_map
 
 
