@@ -12,6 +12,7 @@ def test_init():
 
     unit3 = Unit("1")
     assert unit3 == 1
+    assert str(unit3) == "1"
 
     with pytest.raises(ValueError):
         Unit("myownunit")
