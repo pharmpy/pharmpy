@@ -70,7 +70,7 @@ def _kwargs(parameter, kwargs):
     except KeyError:
         default = parameter.default
         if default == parameter.empty:
-            raise KeyError
+            raise KeyError(f'Missing required argument "{parameter.name}"')
         return default
 
 
