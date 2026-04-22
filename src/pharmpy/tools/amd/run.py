@@ -522,10 +522,9 @@ def run_amd_task(
                 model=final_model, modelfit_results=subresults.final_results, parent=next_model
             )
             context.store_model_entry(final_model_entry)
-            if (mfl_allometry is not None and tool_name == 'modelsearch') or (
-                tool_name == "allometry"
-                and 'covariates' in order
-                and 'allometry' in order[: order.index('covariates')]
+            if ('covariates' in order) and (
+                (mfl_allometry is not None and tool_name == 'modelsearch')
+                or (tool_name == "allometry" and 'allometry' in order[: order.index('covariates')])
             ):
                 cov_before = ModelFeatures.create_from_mfl_string(get_model_features(next_model))
                 cov_after = ModelFeatures.create_from_mfl_string(get_model_features(final_model))
