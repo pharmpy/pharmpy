@@ -51,15 +51,15 @@ def calculate_results(model_entries):
             if model_res is not None and model_res.ofv is not None:
                 dofv = base_ofv - model_res.ofv
                 if name.startswith('IIV_on_RUV'):
-                    param = {'omega': round(model_res.parameter_estimates["IIV_RUV1"], 6)}
+                    param = {'omega': model_res.parameter_estimates["IIV_RUV1"]}
                 elif name.startswith('power'):
-                    param = {'theta': round(model_res.parameter_estimates["power1"], 6)}
+                    param = {'theta': model_res.parameter_estimates["power1"]}
                 elif name.startswith('time_varying'):
-                    param = {'theta': round(model_res.parameter_estimates["time_varying"], 6)}
+                    param = {'theta': model_res.parameter_estimates["time_varying"]}
                 else:
                     param = {
-                        'sigma_add': round(model_res.parameter_estimates["sigma_add"], 6),
-                        'sigma_prop': round(model_res.parameter_estimates["sigma_prop"], 6),
+                        'sigma_add': model_res.parameter_estimates["sigma_add"],
+                        'sigma_prop': model_res.parameter_estimates["sigma_prop"],
                     }
                 a = name.split('_')
                 name = '_'.join(a[0:-1])
