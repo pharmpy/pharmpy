@@ -71,7 +71,7 @@ pure-eval==0.2.3
 Pygments==2.20.0
 python-dateutil==2.9.0.post0
 pytz==2026.1.post1
-pywin32>=302,!=304; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
+pywin32!=304,>=311; sys_platform == 'win32' and platform_python_implementation != 'PyPy'
 PyYAML==6.0.3
 pyzmq==27.1.0
 referencing==0.37.0
