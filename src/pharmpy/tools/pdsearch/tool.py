@@ -114,6 +114,7 @@ def create_workflow(
             strictness,
             parameter_uncertainty_method,
             data_strategy,
+            type,
         )
         wb.add_task(de_task)
 
@@ -135,6 +136,7 @@ def create_workflow(
             strictness,
             parameter_uncertainty_method,
             data_strategy,
+            type,
         )
         wb.add_task(de_task, predecessors=placebo_task)
 
@@ -251,7 +253,7 @@ def fix_thetas_and_omegas(me: ModelEntry) -> ModelEntry:
     return ModelEntry.create(model=model, modelfit_results=me.modelfit_results)
 
 
-def create_and_run_drug_effect_models(context, treatment_variable: str, data_strategy, mes):
+def create_and_run_drug_effect_models(context, treatment_variable: str, data_strategy, type, mes):
     if isinstance(mes, ModelEntry):
         mes = [mes]
 
@@ -261,9 +263,13 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
     n_models = 0
     wb = WorkflowBuilder()
     for baseme in mes:
-        mfl = ModelFeatures.create(
-            "DIRECTEFFECT([STEP, EMAX, SIGMOID]);INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)"
-        )
+        if type == 'pd':
+            mfl = ModelFeatures.create(
+                "DIRECTEFFECT([STEP, EMAX, SIGMOID]);INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)"
+            )
+        else:
+            # INDIRECTEFFECT not supported for KPD models
+            mfl = ModelFeatures.create("DIRECTEFFECT([STEP, EMAX, SIGMOID])")
         if treatment_variable is None or not is_binary(baseme.model, treatment_variable):
             # If the driver is binary linear and step are the same model
             # so add linear if not binary
@@ -291,9 +297,17 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
 
 
 def run_drug_effect_models(
-    context, treatment_variable, strictness, parameter_uncertainty_method, data_strategy, baseme
+    context,
+    treatment_variable,
+    strictness,
+    parameter_uncertainty_method,
+    data_strategy,
+    type,
+    baseme,
 ):
-    mes = create_and_run_drug_effect_models(context, treatment_variable, data_strategy, baseme)
+    mes = create_and_run_drug_effect_models(
+        context, treatment_variable, data_strategy, type, baseme
+    )
 
     rank_res = run_subtool(
         tool_name='modelrank',
@@ -310,9 +324,17 @@ def run_drug_effect_models(
 
 
 def run_drug_effect_models_exhaustive(
-    context, treatment_variable, strictness, parameter_uncertainty_method, data_strategy, basemes
+    context,
+    treatment_variable,
+    strictness,
+    parameter_uncertainty_method,
+    data_strategy,
+    type,
+    basemes,
 ):
-    mes = create_and_run_drug_effect_models(context, treatment_variable, data_strategy, basemes)
+    mes = create_and_run_drug_effect_models(
+        context, treatment_variable, data_strategy, type, basemes
+    )
 
     rank_res = run_subtool(
         tool_name='modelrank',
