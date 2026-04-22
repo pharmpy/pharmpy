@@ -320,15 +320,14 @@ def test_drop_columns(load_example_model_for_test):
     m = drop_columns(m, ['DV', 'ID'])  # DV still in because NONMEM model
     assert m.datainfo.names == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
-    assert all(Drop.create(col) in m.datainfo.provenance for col in ['ID', 'APGR'])
-    assert Drop.create('DV') not in m.datainfo.provenance
-    assert len(m.datainfo.provenance) == 3
+    assert all(Drop.create(col) in m.datainfo.provenance for col in ['ID', 'APGR', 'DV'])
+    assert AddColumn.create('DV') in m.datainfo.provenance
+    assert len(m.datainfo.provenance) == 5
     m = drop_columns(m, ['TIME'], mark=True)
     assert m.datainfo['TIME'].drop
     assert list(m.dataset.columns) == ['TIME', 'AMT', 'WGT', 'FA1', 'FA2', 'DV']
-    assert all(Drop.create(col) in m.datainfo.provenance for col in ['ID', 'APGR', 'TIME'])
-    assert Drop.create('DV') not in m.datainfo.provenance
-    assert len(m.datainfo.provenance) == 4
+    assert Drop.create('TIME') not in m.datainfo.provenance
+    assert len(m.datainfo.provenance) == 5
 
 
 def test_drop_dropped_columns(load_example_model_for_test):
@@ -348,8 +347,8 @@ def test_drop_dropped_columns(load_example_model_for_test):
 def test_undrop_columns(load_example_model_for_test):
     m = load_example_model_for_test('pheno')
     m = drop_columns(m, ["APGR", "WGT"], mark=True)
-    assert all(Drop.create(col) in m.datainfo.provenance for col in ['APGR', 'WGT'])
-    assert len(m.datainfo.provenance) == 3
+    assert not any(isinstance(op, Drop) for op in m.datainfo.provenance)
+    assert len(m.datainfo.provenance) == 1
     m = undrop_columns(m, "WGT")
     assert not m.datainfo["WGT"].drop
     assert m.datainfo["APGR"].drop

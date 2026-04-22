@@ -1402,8 +1402,8 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
                 newcols.append(newcol)
             else:
                 to_drop.append(col.name)
-            if (drop := Drop.create(col.name)) not in di.provenance:
-                prov_new.append(drop)
+                if (drop := Drop.create(col.name)) not in di.provenance:
+                    prov_new.append(drop)
         else:
             newcols.append(col)
     di = di.replace(columns=newcols, provenance=di.provenance + prov_new)
@@ -1452,9 +1452,7 @@ def undrop_columns(model: Model, column_names: Union[list[str], str]):
             newcols.append(newcol)
         else:
             newcols.append(col)
-    undrop = [Drop.create(col.name) for col in newcols]
-    prov_new = Provenance.create([op for op in di.provenance if op not in undrop])
-    di = di.replace(columns=newcols, provenance=prov_new)
+    di = di.replace(columns=newcols)
     model = model.replace(datainfo=di)
     return model.update_source()
 
