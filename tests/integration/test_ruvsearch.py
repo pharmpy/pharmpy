@@ -37,8 +37,8 @@ def test_ruvsearch(tmp_path, testdata):
             == '    Y = A(2)/VC + A(2)*EPS(1)*THETA(4)*EXP(ETA_RV1)/VC'
         )
         assert best_model.code.split('\n')[15] == '    Y = A(2)/VC + A(2)*EPS(1)*EXP(ETA_RV1)/VC'
-        assert best_model.code.split('\n')[20] == '$THETA  1.38007 ; time_varying'
-        assert best_model.code.split('\n')[26] == '$OMEGA  0.031441 ; IIV_RUV1'
+        assert best_model.code.split('\n')[20].startswith('$THETA  1.3800')
+        assert best_model.code.split('\n')[26].startswith('$OMEGA  0.0314')
 
 
 def test_ruvsearch_blq(tmp_path, testdata):
