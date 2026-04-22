@@ -10,6 +10,9 @@ def test_init():
     unit2 = Unit(unit1)
     assert unit1 == unit2
 
+    unit3 = Unit("1")
+    assert unit3 == 1
+
     with pytest.raises(ValueError):
         Unit("myownunit")
 

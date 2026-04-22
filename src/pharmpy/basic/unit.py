@@ -96,6 +96,8 @@ class Unit:
         return Unit(self._units**n)  # pyright: ignore [reportArgumentType]
 
     def __eq__(self, other):
+        if other == 1:
+            return self._units == ureg.dimensionless
         if not isinstance(other, Unit):
             return NotImplemented
         return self._units == other._units
