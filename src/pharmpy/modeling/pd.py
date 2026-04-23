@@ -415,7 +415,8 @@ def add_indirect_effect(
     met = Expr.symbol('MET')
     model = add_individual_parameter(model, met.name)
     b = Expr.symbol("B")  # baseline
-    model = add_individual_parameter(model, b.name)
+    if b not in model.statements.lhs_symbols:
+        model = add_individual_parameter(model, b.name)
 
     kout_ass = Assignment.create(kout, 1 / met)
 
