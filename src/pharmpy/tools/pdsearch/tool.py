@@ -23,6 +23,7 @@ from pharmpy.modeling import (
     set_name,
     set_placebo_model,
     set_proportional_error_model,
+    unfix_parameters,
 )
 from pharmpy.modeling.mfl import generate_transformations
 from pharmpy.tools.common import (
@@ -118,7 +119,7 @@ def create_workflow(
         )
         wb.add_task(de_task)
 
-        postprocess_task = Task('postprocess', postprocess)
+        postprocess_task = Task('postprocess', postprocess, data_strategy)
         wb.add_task(postprocess_task, predecessors=de_task)
 
         wb.scatter(placebo_task, (de_task, postprocess_task))
@@ -140,7 +141,7 @@ def create_workflow(
         )
         wb.add_task(de_task, predecessors=placebo_task)
 
-        postprocess_task = Task('postprocess', postprocess, None)
+        postprocess_task = Task('postprocess', postprocess, data_strategy, None)
         wb.add_task(postprocess_task, predecessors=de_task)
 
     return Workflow(wb)
@@ -197,6 +198,8 @@ def create_and_run_placebo_models(context, treatment_variable, data_strategy, ba
         current_me = baseme
     else:
         model = filter_dataset(baseme.model, f"{treatment_variable}!=0")
+        if len(get_observations(model)) == 0:
+            context.abort_workflow("No observations left in dataset after ignoring placebo data")
         current_me = ModelEntry.create(model=model, modelfit_results=baseme.modelfit_results)
 
     wb = WorkflowBuilder()
@@ -383,7 +386,7 @@ def create_drug_effect_model(treatment_variable, feature, baseme):
     return me
 
 
-def postprocess(context, rank_res, rank_res2):
+def postprocess(context, data_strategy, rank_res, rank_res2):
     if rank_res is not None:
         step1 = rank_res.summary_tool.assign(step=1)
         step2 = rank_res2.summary_tool.assign(step=2)
@@ -391,17 +394,34 @@ def postprocess(context, rank_res, rank_res2):
     else:
         summary_tool = rank_res2.summary_tool.assign(step=1)
 
+    final_model = rank_res2.final_model
+    final_results = rank_res2.final_results
+
+    if data_strategy == 'fix':
+        unfixed_model = unfix_parameters(final_model, final_model.parameters.names)
+        if unfixed_model != final_model:
+            unfixed_model = set_name(unfixed_model, "unfixed_final")
+            me = ModelEntry.create(model=unfixed_model)
+            fit_wf = create_fit_workflow(me)
+
+            context.log_info("Running final model with all parameters unfixed.")
+            mes = context.call_workflow(fit_wf, "fit-unfixed_model")
+            final_model = mes.model
+            final_results = mes.modelfit_results
+
     summary_tool = summary_tool.reset_index().set_index(["model", "step"])
     summary_models = summarize_modelfit_results(context)
 
-    plots = create_plots(rank_res2.final_model, rank_res2.final_results)
-    eta_shrinkage = table_final_eta_shrinkage(rank_res2.final_model, rank_res2.final_results)
+    plots = create_plots(final_model, final_results)
+    eta_shrinkage = table_final_eta_shrinkage(final_model, final_results)
+
+    context.store_final_model_entry(final_model)
 
     res = PDSearchResults(
         summary_tool=summary_tool,
         summary_models=summary_models,
-        final_model=rank_res2.final_model,
-        final_results=rank_res2.final_results,
+        final_model=final_model,
+        final_results=final_results,
         final_model_dv_vs_ipred_plot=plots['dv_vs_ipred'],
         final_model_dv_vs_pred_plot=plots['dv_vs_pred'],
         final_model_cwres_vs_idv_plot=plots['cwres_vs_idv'],
