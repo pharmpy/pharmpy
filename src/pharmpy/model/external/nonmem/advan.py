@@ -650,6 +650,8 @@ def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
             },
         )
 
+    assert dataset is not None
+
     doses = tuple()
     if admid_name is not None and cmt_loop:
         for comp_number in dataset['CMT'].unique():
