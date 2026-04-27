@@ -26,7 +26,7 @@ mccabe==0.7.0
 mdurl==0.1.2
 more-itertools==11.0.2
 mypy-extensions==1.1.0
-nh3==0.3.4
+nh3==0.3.5
 nodeenv==1.10.0
 packaging==26.2
 pathspec==1.1.0
