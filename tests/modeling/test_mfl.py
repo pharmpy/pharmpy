@@ -21,6 +21,7 @@ from pharmpy.modeling import (
     set_direct_effect,
     set_first_order_absorption,
     set_first_order_elimination,
+    set_iiv_on_ruv,
     set_instantaneous_absorption,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
@@ -280,6 +281,16 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
         ),
         (
             [create_joint_distribution],
+            'covariance',
+            'COVARIANCE(IIV,[CL,MAT,VC])',
+        ),
+        (
+            [set_iiv_on_ruv],
+            'iiv',
+            'IIV([CL,MAT,VC],EXP)',
+        ),
+        (
+            [set_iiv_on_ruv, create_joint_distribution],
             'covariance',
             'COVARIANCE(IIV,[CL,MAT,VC])',
         ),

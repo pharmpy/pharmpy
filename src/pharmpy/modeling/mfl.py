@@ -181,19 +181,26 @@ def get_model_features(
                 fp, op = fp_op[0][0], fp_op[0][1]
                 features.append(Covariate.create(parameter=param, covariate=cov.name, fp=fp, op=op))
 
-    if type is None or type == 'iiv':
-        features.extend(_get_variability(model, 'iiv'))
+    if type is None or type in ('iiv', 'iov', 'covariance'):
+        iivs = _get_variability(model, 'iiv')
+        iovs = _get_variability(model, 'iov')
 
-    if type is None or type == 'iov':
-        features.extend(_get_variability(model, 'iov'))
+        if type is None or type == 'iiv':
+            features.extend(iivs)
 
-    if type is None or type == 'covariance':
-        iivs = model.random_variables.iiv
-        for iiv1, iiv2 in itertools.combinations(iivs.names, 2):
-            if iivs.get_covariance(iiv1, iiv2) != 0:
-                param1 = get_rv_parameters(model, iiv1)[0]
-                param2 = get_rv_parameters(model, iiv2)[0]
-                features.append(Covariance.create('IIV', (param1, param2)))
+        if type is None or type == 'iov':
+            features.extend(iovs)
+
+        if type is None or type == 'covariance':
+            iiv_params = [get_parameter_rv(model, iiv.parameter) for iiv in iivs]
+            iiv_params = [iiv[0] if iiv else iiv for iiv in iiv_params]
+            for iiv1, iiv2 in itertools.combinations(iiv_params, 2):
+                if not iiv1 or not iiv2:
+                    continue
+                if model.random_variables.get_covariance(iiv1, iiv2) != 0:
+                    param1 = get_rv_parameters(model, iiv1)[0]
+                    param2 = get_rv_parameters(model, iiv2)[0]
+                    features.append(Covariance.create('IIV', (param1, param2)))
 
     return ModelFeatures.create(features)
 
