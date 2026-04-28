@@ -720,7 +720,8 @@ def _create_base_model(input_model_entry, mfl, as_fullblock, linearize=False):
     base_model = transform_into_search_space(base_model, mfl, type='covariance')
     if as_fullblock and len(base_model.random_variables.iiv) > 1:
         ies = input_res.individual_estimates
-        base_model = create_joint_distribution(base_model, individual_estimates=ies)
+        rvs = [iiv.parameter for iiv in mfl.iiv]
+        base_model = create_joint_distribution(base_model, rvs=rvs, individual_estimates=ies)
     base_mfl = get_model_features(base_model)
     description = create_description(base_mfl, type='iiv')
     base_model = base_model.replace(name='base', description=description)

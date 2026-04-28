@@ -11,8 +11,9 @@ from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters,
     remove_iiv,
+    set_iiv_on_ruv,
 )
-from pharmpy.modeling.mfl import get_model_features
+from pharmpy.modeling.mfl import expand_model_features, get_model_features
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.iivsearch.algorithms import (
     create_candidate_linearized,
@@ -325,6 +326,19 @@ def test_create_base_model(
     if type == 'linearize':
         params_new = base_model.parameters - model.parameters
         assert all(p.init == 0.000001 for p in params_new)
+
+
+def test_create_base_model_iiv_on_ruv(testdata, load_model_for_test, model_entry_factory):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = set_iiv_on_ruv(model)
+    model_entry = model_entry_factory([model])[0]
+    mfl = ModelFeatures.create('IIV(CL,EXP);IIV?(@PK,EXP)')
+    mfl = expand_model_features(model, mfl)
+    base_model = create_base_model_entry('td', mfl, True, model_entry).model
+    model_features = get_model_features(base_model, type='iiv') + get_model_features(
+        base_model, type='covariance'
+    )
+    assert str(model_features) == 'IIV([CL,V],EXP);COVARIANCE(IIV,[CL,V])'
 
 
 def test_create_base_model_raises(load_model_for_test, testdata):
