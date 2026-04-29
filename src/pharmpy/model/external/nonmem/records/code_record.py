@@ -643,6 +643,13 @@ class CodeRecord(Record):
         return CodeRecord(self.name, self.raw_name, new_root, index=new_index, statements=new)
 
     def _statement_to_nodes(self, defined_symbols: set, s: Assignment, rvs, trans):
+        is_mixed_piecewise = any(
+            isinstance(arg, Expr) and arg.is_piecewise() for arg in s.expression.args
+        )
+        if not s.expression.is_piecewise() and is_mixed_piecewise:
+            raise ValueError(
+                f'Expression not supported, contains both piecewise and regular args: {s.expression}'
+            )
         statement_str = nmtran_assignment_string(s, defined_symbols, rvs, trans, self.name) + '\n'
         node_tree = CodeRecordParser(statement_str).root
         assert node_tree is not None

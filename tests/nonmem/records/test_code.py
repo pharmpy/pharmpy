@@ -827,3 +827,13 @@ def test_update_error_nodes_nested(parser):
     y2_str = 'IF (DVID.EQ.2) Y = Y_2'
     assert str(rec).split('\n').count(y_str) == 1
     assert str(rec).split('\n').count(y2_str) == 1
+
+
+def test_update_mixed_piecewise_raises(parser):
+    buf_original = '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n'
+    rec_original = parser.parse(buf_original).records[0]
+    expr = Expr.symbol('x') + Expr.piecewise(('1', 'a > 0'), ('2', 'a < 0'))
+    s = Assignment.create(Expr.symbol('Y'), expr)
+    statements = rec_original.statements + s
+    with pytest.raises(ValueError):
+        rec_original.update_statements(statements)
