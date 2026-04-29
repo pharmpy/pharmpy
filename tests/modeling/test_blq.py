@@ -1,5 +1,6 @@
 import pytest
 
+from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.model.model import update_datainfo
 from pharmpy.modeling import (
@@ -154,11 +155,11 @@ def test_has_blq_transformation(load_model_for_test, testdata, method, error_fun
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = error_func(model)
 
-    assert not has_blq_transformation(model)
+    assert not has_blq_transformation(model, Expr.symbol('Y'))
 
     model = transform_blq(model, method=method, lloq=0.1)
 
-    assert has_blq_transformation(model)
+    assert has_blq_transformation(model, Expr.symbol('Y'))
 
 
 def test_transform_blq_invalid_input_model(load_model_for_test, testdata):

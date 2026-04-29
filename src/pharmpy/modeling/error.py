@@ -154,7 +154,7 @@ def set_additive_error_model(
     stats, y, f = _preparations(model, dv)
 
     data_trans = _canonicalize_data_transformation(model, data_trans, dv)
-    if has_blq_transformation(model):
+    if has_blq_transformation(model, y):
         # FIXME: Since SD contains sigmas, connected epsilons will not be removed, this would cause
         #  names like epsilon_a1. This is a workaround
         stats_temp = stats.reassign(Expr.symbol('SD'), 0)
@@ -316,7 +316,7 @@ def set_proportional_error_model(
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    if has_blq_transformation(model):
+    if has_blq_transformation(model, y):
         error_expr, sd_expr = _get_blq_statements(model, f, error_expr, f_dummy, [eps])
         stats_new = stats.reassign(y, error_expr)
         stats_new = stats_new.reassign(Expr.symbol('SD'), sd_expr)
@@ -353,7 +353,12 @@ def set_proportional_error_model(
 
 def _get_blq_statements(model, f, error_expr, f_dummy, epsilons):
     blq_symb, _ = get_blq_symb_and_type(model)
-    above_lloq_arg = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
+    try:
+        above_lloq_arg = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
+    except ValueError:
+        print(model.code)
+        print(f)
+        raise
     below_lloq_arg = arg if (arg := f.piecewise_args[0]) != above_lloq_arg else f.piecewise_args[1]
     above_lloq_expr, lloq_cond = above_lloq_arg[0], above_lloq_arg[1]
     error_expr = error_expr.subs({f_dummy: above_lloq_expr})
@@ -458,7 +463,7 @@ def set_combined_error_model(
         error_expr = f_dummy.log() + ruv_prop + ruv_add / f_dummy
     elif data_trans == dv:
         # Time varying
-        if expr.is_piecewise() and not has_blq_transformation(model):
+        if expr.is_piecewise() and not has_blq_transformation(model, y):
             expr_0 = expr.piecewise_args[0][0]
             expr_1 = expr.piecewise_args[1][0]
             cond_0 = expr.piecewise_args[0][1]
@@ -486,7 +491,7 @@ def set_combined_error_model(
             eta_ruv in model.random_variables.free_symbols
             and theta_time not in model.parameters.symbols
         ):
-            if has_blq_transformation(model):
+            if has_blq_transformation(model, y):
                 raise ValueError('Currently not supported to change from IIV on RUV model with BLQ')
             error_expr = f_dummy + f_dummy * ruv_prop * eta_ruv.exp() + ruv_add * eta_ruv.exp()
         else:
@@ -507,7 +512,7 @@ def set_combined_error_model(
     else:
         raise ValueError(f"Not supported data transformation {data_trans}")
 
-    if has_blq_transformation(model):
+    if has_blq_transformation(model, y):
         error_expr, sd_expr = _get_blq_statements(
             model, f, error_expr, f_dummy, [eps_prop, eps_add]
         )
@@ -1029,8 +1034,7 @@ def set_power_on_ruv(
         ipred = get_ipred(model, dv=dv_symb)
     else:
         ipred = Expr(ipred)
-
-    if has_blq_transformation(model):
+    if has_blq_transformation(model, dv_symb):
         is_blq_model = True
         blq_symb, _ = get_blq_symb_and_type(model)
     else:

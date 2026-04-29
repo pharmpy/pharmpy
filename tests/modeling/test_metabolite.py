@@ -3,6 +3,7 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     has_presystemic_metabolite,
     remove_peripheral_compartment,
+    transform_blq,
 )
 
 
@@ -41,6 +42,18 @@ def test_add_metabolite(testdata, load_model_for_test):
 
     assert not odes.find_peripheral_compartments("METABOLITE")
     assert not odes.find_peripheral_compartments()
+
+
+def test_add_metabolite_with_blq(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_conc.mod')
+    model = transform_blq(model, method='m3', lloq=0.5)
+    model = add_metabolite(model)
+    odes = model.statements.ode_system
+    assert odes.compartment_names == ['CENTRAL', 'METABOLITE']
+    assert not has_presystemic_metabolite(model)
+    a = model.code.split('\n')
+    assert a[33] == 'IF (DVID.EQ.1) Y = Y'
+    assert a[34] == 'IF (DVID.EQ.2) Y = Y_M'
 
 
 def test_presystemic_metabolite(testdata, load_model_for_test):

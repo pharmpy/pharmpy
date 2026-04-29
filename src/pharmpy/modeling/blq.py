@@ -257,12 +257,15 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     return model.update_source()
 
 
-def has_blq_transformation(model: Model):
+def has_blq_transformation(model: Model, y=None):
     # FIXME: Make more general
-    y_symb = list(model.dependent_variables.keys())[0]
-    y = model.statements.error.find_assignment(y_symb)
+    if y:
+        y = model.statements.error.find_assignment(y)
+    else:
+        y_symb = list(model.dependent_variables.keys())[0]
+        y = model.statements.error.find_assignment(y_symb)
     if not y:
-        raise ValueError(f'Could not find assignment for \'{y_symb}\'')
+        raise ValueError(f'Could not find assignment for \'{y}\'')
     y_expr = y.expression
     if not y_expr.is_piecewise():
         return False
