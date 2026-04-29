@@ -1030,6 +1030,13 @@ def set_power_on_ruv(
     else:
         ipred = Expr(ipred)
 
+    if has_blq_transformation(model):
+        is_blq_model = True
+        blq_symb, _ = get_blq_symb_and_type(model)
+    else:
+        is_blq_model = False
+        blq_symb = None
+
     # Assert that the provided epsilons are used for the corresponding DV
     # Else give warning
     if (
@@ -1087,9 +1094,8 @@ def set_power_on_ruv(
                         ipredadj = s.symbol
                         break
 
-        if has_blq_transformation(model):
+        if is_blq_model:
             _, _, f = _preparations(model)
-            blq_symb, _ = get_blq_symb_and_type(model)
             ipred, _ = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
 
     for e in eps:
@@ -1137,7 +1143,7 @@ def set_power_on_ruv(
                 y = y.subs(subs_dict)
                 sset = sset.reassign(y.symbol, y.expression)
 
-        if has_blq_transformation(model):
+        if is_blq_model:
             # FIXME: Make more general
             sd_new = _get_blq_sd_expr(model, sset.get_assignment('Y').expression, [], blq_symb)
             sset = sset.reassign(Expr.symbol('SD'), sd_new)
