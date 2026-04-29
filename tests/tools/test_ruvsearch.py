@@ -7,11 +7,13 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import AddColumn, Drop, Ignore
 from pharmpy.modeling import (
+    has_additive_error_model,
     has_combined_error_model,
     has_proportional_error_model,
     remove_parameter_uncertainty_step,
     set_combined_error_model,
     set_iiv_on_ruv,
+    set_power_on_ruv,
     transform_blq,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
@@ -25,6 +27,7 @@ from pharmpy.tools.ruvsearch.tool import (
     _create_iiv_on_ruv_model,
     _create_power_model,
     _create_time_varying_model,
+    create_additive_nlme_model,
     create_result_tables,
     create_workflow,
     validate_input,
@@ -308,6 +311,48 @@ def test_create_best_model_no_best(load_model_for_test, testdata, model_entry_fa
         me_start, res, current_iteration=1, dv=None, groups=4, cutoff=99999999999
     )
     assert me_best is None and best_model_name is None
+
+
+@pytest.mark.parametrize(
+    'error_type',
+    ['combined', 'power'],
+)
+def test_create_additive_nlme_model(load_model_for_test, testdata, model_entry_factory, error_type):
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model_start = load_model_for_test(path)
+    if error_type == 'combined':
+        model_start = set_combined_error_model(model_start)
+    else:
+        model_start = set_power_on_ruv(model_start)
+    res_start = parse_modelfit_results(model_start, path)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    model_additive = create_additive_nlme_model(me_start, error_type, dv=None)
+
+    assert has_additive_error_model(model_additive)
+
+
+@pytest.mark.parametrize(
+    'error_type',
+    ['combined', 'power'],
+)
+def test_create_additive_nlme_model_blq(
+    load_model_for_test, testdata, model_entry_factory, error_type
+):
+    path = testdata / 'nonmem' / 'ruvsearch' / 'mox3.mod'
+    model_start = load_model_for_test(path)
+    model_start = transform_blq(model_start, method='m3', lloq=0.5)
+    if error_type == 'combined':
+        model_start = set_combined_error_model(model_start)
+    else:
+        model_start = set_power_on_ruv(model_start)
+    res_start = parse_modelfit_results(model_start, path)
+    me_start = ModelEntry.create(model_start, modelfit_results=res_start)
+
+    model_additive = create_additive_nlme_model(me_start, error_type, dv=None)
+    y = model_additive.statements.find_assignment('Y')
+
+    assert str(y.expression.piecewise_args[0][0]) == 'epsilon_a + A_CENTRAL(t)/VC'
 
 
 def test_create_combined_model_ipred_zero(testdata, load_model_for_test):

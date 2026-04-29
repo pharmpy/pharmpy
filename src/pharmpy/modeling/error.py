@@ -152,27 +152,42 @@ def set_additive_error_model(
     model = remove_error_model(model)
 
     stats, y, f = _preparations(model, dv)
-    ruv = create_symbol(model, 'epsilon_a')
 
     data_trans = _canonicalize_data_transformation(model, data_trans, dv)
-    expr = f + ruv
+    if has_blq_transformation(model):
+        # FIXME: Since SD contains sigmas, connected epsilons will not be removed, this would cause
+        #  names like epsilon_a1. This is a workaround
+        stats_temp = stats.reassign(Expr.symbol('SD'), 0)
+        model = model.replace(statements=stats_temp)
+        model = remove_unused_parameters_and_rvs(model)
+        sigma = create_symbol(model, 'sigma')
+        model = add_population_parameter(model, sigma.name, _get_prop_init(model))
+        ruv = create_symbol(model, 'epsilon_a')
+        eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
+
+        f_dummy = Expr.dummy('F_DUMMY')
+        expr_dummy = f_dummy + ruv
+
+        expr, sd_expr = _get_blq_statements(model, f, expr_dummy, f_dummy, eps)
+        stats = stats.reassign(Expr.symbol('SD'), sd_expr)
+    else:
+        sigma = create_symbol(model, 'sigma')
+        model = add_population_parameter(model, sigma.name, _get_prop_init(model))
+        ruv = create_symbol(model, 'epsilon_a')
+        eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
+        expr = f + ruv
 
     if data_trans != dv:
         expr_subs = data_trans.subs({dv: expr})
         expr = expr_subs.series(ruv, n=series_terms)
 
-    sigma = create_symbol(model, 'sigma')
-    model = add_population_parameter(model, sigma.name, _get_prop_init(model))
-
-    eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
+    stats = stats.reassign(y, expr)
 
     rvs_new, params_new = _get_unused_parameters_and_rvs(
-        stats.reassign(y, expr), model.parameters, model.random_variables + eps
+        stats, model.parameters, model.random_variables + eps
     )
 
-    model = model.replace(
-        statements=stats.reassign(y, expr), random_variables=rvs_new, parameters=params_new
-    )
+    model = model.replace(statements=stats, random_variables=rvs_new, parameters=params_new)
     no_longer_needed = _statements_no_longer_needed(original_model, model)
     model = _remove_assignments(model, no_longer_needed)
     return model.update_source()
@@ -302,7 +317,11 @@ def set_proportional_error_model(
         raise ValueError(f"Not supported data transformation {data_trans}")
 
     if has_blq_transformation(model):
-        f, stats_new = _get_updated_blq_statements(model, error_expr, f, f_dummy, eps)
+        error_expr, sd_expr = _get_blq_statements(model, f, error_expr, f_dummy, [eps])
+        stats_new = stats.reassign(y, error_expr)
+        stats_new = stats_new.reassign(Expr.symbol('SD'), sd_expr)
+        blq_symb, _ = get_blq_symb_and_type(model)
+        f, _ = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
     else:
         expr = error_expr.subs({f_dummy: f})
         stats_new = stats.reassign(y, expr)
@@ -332,26 +351,28 @@ def set_proportional_error_model(
     return model.update_source()
 
 
-def _get_updated_blq_statements(model, expr_dummy, f, f_dummy, eps_new):
-    y = list(model.dependent_variables.keys())[0]
-    f_above_lloq = _get_f_above_lloq(model, f)
-    expr_above_lloq = expr_dummy.subs({f_dummy: f_above_lloq})
-    expr = f.subs({f_above_lloq: expr_above_lloq})
-    # FIXME: Make more general
-    sd = model.statements.find_assignment('SD')
-    sd_new = get_sd_expr(expr_above_lloq, model.random_variables + eps_new, model.parameters)
-    stats_new = model.statements.reassign(sd.symbol, sd_new)
-    stats_new = stats_new.reassign(y, expr)
-    return f_above_lloq, stats_new
-
-
-def _get_f_above_lloq(model, f):
+def _get_blq_statements(model, f, error_expr, f_dummy, epsilons):
     blq_symb, _ = get_blq_symb_and_type(model)
-    for expr, cond in f.piecewise_args:
+    above_lloq_arg = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
+    below_lloq_arg = arg if (arg := f.piecewise_args[0]) != above_lloq_arg else f.piecewise_args[1]
+    above_lloq_expr, lloq_cond = above_lloq_arg[0], above_lloq_arg[1]
+    error_expr = error_expr.subs({f_dummy: above_lloq_expr})
+    lloq_expr = Expr.piecewise((error_expr, lloq_cond), below_lloq_arg)
+    sd_expr = _get_blq_sd_expr(model, lloq_expr, epsilons, blq_symb)
+    return lloq_expr, sd_expr
+
+
+def _get_blq_arg_above_lloq(args, blq_symb):
+    for expr, cond in args:
         if blq_symb in cond.free_symbols:
-            return Expr(expr)
-    else:
-        raise AssertionError('BLQ symbol not found')
+            return expr, cond
+    raise ValueError('BLQ symbol not found')
+
+
+def _get_blq_sd_expr(model, expr, eps_new, blq_symb):
+    above_expr, _ = _get_blq_arg_above_lloq(expr.piecewise_args, blq_symb)
+    expr = get_sd_expr(above_expr, model.random_variables + eps_new, model.parameters)
+    return expr
 
 
 def set_combined_error_model(
@@ -487,9 +508,11 @@ def set_combined_error_model(
         raise ValueError(f"Not supported data transformation {data_trans}")
 
     if has_blq_transformation(model):
-        _, stats_new = _get_updated_blq_statements(
-            model, error_expr, f, f_dummy, [eps_prop, eps_add]
+        error_expr, sd_expr = _get_blq_statements(
+            model, f, error_expr, f_dummy, [eps_prop, eps_add]
         )
+        stats_new = stats.reassign(y, error_expr)
+        stats_new = stats_new.reassign(Expr.symbol('SD'), sd_expr)
     else:
         expr = error_expr.subs({f_dummy: f})
         stats_new = stats.reassign(y, expr)
@@ -1066,7 +1089,8 @@ def set_power_on_ruv(
 
         if has_blq_transformation(model):
             _, _, f = _preparations(model)
-            ipred = _get_f_above_lloq(model, f)
+            blq_symb, _ = get_blq_symb_and_type(model)
+            ipred, _ = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
 
     for e in eps:
         e = e.names[0]
@@ -1115,10 +1139,8 @@ def set_power_on_ruv(
 
         if has_blq_transformation(model):
             # FIXME: Make more general
-            y_above_lloq, _ = sset.get_assignment('Y').expression.piecewise_args[0]
-            sd = model.statements.get_assignment('SD')
-            sd_new = get_sd_expr(y_above_lloq, model.random_variables, Parameters.create(pset))
-            sset = sset.reassign(sd.symbol, sd_new)
+            sd_new = _get_blq_sd_expr(model, sset.get_assignment('Y').expression, [], blq_symb)
+            sset = sset.reassign(Expr.symbol('SD'), sd_new)
     model = model.replace(parameters=Parameters.create(pset), statements=sset)
 
     return model.update_source()

@@ -113,6 +113,14 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
             'SD = SQRT(IPREDADJ**(2*THETA(3))*SIGMA(1,1))',
             ('Y = F + EPS(1)*IPREDADJ**THETA(3)', 'Y = (CUMD - CUMDZ)/(1 - CUMDZ)'),
         ),
+        (
+            'm3',
+            set_proportional_error_model,
+            set_additive_error_model,
+            {},
+            'SD = SQRT(SIGMA(1,1))',
+            ('Y = F + EPS(1)', 'Y = PHI((-F + LLOQ)/SD)'),
+        ),
     ],
 )
 def test_update_blq_transformation(
