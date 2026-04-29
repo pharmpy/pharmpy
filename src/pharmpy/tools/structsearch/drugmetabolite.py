@@ -55,11 +55,6 @@ def create_drug_metabolite_models(
     start_task = Task("start", _start, model, results)
     wb.add_task(start_task)
 
-    def apply_transformation(eff, f, model_entry):
-        candidate_model = f(model_entry.model)
-        candidate_model = candidate_model.replace(name="TEMP", description='_'.join(eff))
-        return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model)
-
     for eff, func in metabolite_functions.items():
         candidate_met_task = Task(str(eff), apply_transformation, eff, func)
         wb.add_task(candidate_met_task, predecessors=start_task)
@@ -81,6 +76,12 @@ def create_drug_metabolite_models(
         )
 
     return WorkflowBuilder(wb), candidate_model_tasks, base_description
+
+
+def apply_transformation(eff, f, model_entry):
+    candidate_model = f(model_entry.model)
+    candidate_model = candidate_model.replace(name="TEMP", description='_'.join(eff))
+    return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
 
 
 def _start(model, results):
