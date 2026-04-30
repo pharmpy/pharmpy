@@ -4,6 +4,7 @@ from collections import defaultdict
 from functools import partial
 from typing import Callable, Literal, Optional, Sequence, Union
 
+from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.mfl import (
     IIV,
@@ -484,6 +485,8 @@ def transform_into_search_space(
     search_space = _get_mfl_from_type(search_space, type)
     model_features = get_model_features(model, type=type)
 
+    verify_search_space(model, search_space)
+
     if model_features == search_space:
         return model
 
@@ -581,3 +584,36 @@ def is_in_search_space(
         return False
     else:
         return True
+
+
+def get_search_space_parameters_not_in_model(
+    model: Model,
+    search_space: Union[ModelFeatures, Sequence[ModelFeature]],
+) -> tuple[str, ...]:
+    def _is_param_in_model(p, symbols):
+        if isinstance(p, str) and Expr.symbol(p) not in symbols:
+            return False
+        return True
+
+    params_not_in_model = []
+    for feature in search_space:
+        if isinstance(feature, (IIV, Covariate)):
+            p = feature.parameter
+            if not _is_param_in_model(p, model.statements.free_symbols):
+                params_not_in_model.append(p)
+        elif isinstance(feature, Covariance):
+            params = feature.parameters
+            if not isinstance(params, str):
+                continue
+            for p in params:
+                if not _is_param_in_model(p, model.statements.free_symbols):
+                    params_not_in_model.append(p)
+
+    params_not_in_model = tuple(sorted(set(params_not_in_model)))
+    return params_not_in_model
+
+
+def verify_search_space(model: Model, search_space: Union[ModelFeatures, Sequence[ModelFeature]]):
+    params_not_in_model = get_search_space_parameters_not_in_model(model, search_space)
+    if params_not_in_model:
+        raise ValueError(f'Invalid `search_space`: {params_not_in_model} not in model')

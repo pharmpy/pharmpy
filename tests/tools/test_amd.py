@@ -3,6 +3,8 @@ from pathlib import Path
 import pytest
 
 from pharmpy.deps import numpy as np
+from pharmpy.mfl import IIV
+from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.model import Ignore
 from pharmpy.modeling import (
     create_basic_pk_model,
@@ -11,6 +13,8 @@ from pharmpy.modeling import (
     has_first_order_absorption,
     has_instantaneous_absorption,
     remove_parameter_uncertainty_step,
+    set_michaelis_menten_elimination,
+    set_mixed_mm_fo_elimination,
 )
 from pharmpy.tools import read_results
 from pharmpy.tools.amd.run import (
@@ -34,6 +38,7 @@ from pharmpy.tools.amd.run import (
     parse_search_space,
     parse_search_space_new,
     split_structural_search_space,
+    update_iiv_search_space,
     validate_input,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
@@ -846,6 +851,20 @@ def test_create_plots(load_model_for_test, pheno_path, results_to_remove, expect
             assert not plot
         else:
             assert plot
+
+
+def test_update_iiv_search_space(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    search_space = ModelFeaturesNew.create('IIV(CL,EXP);IIV?(@PK,EXP);COVARIANCE(IIV,@IIV)')
+    assert update_iiv_search_space(model, search_space) == search_space
+    model_mm = set_michaelis_menten_elimination(model)
+    search_space_mm = update_iiv_search_space(model_mm, search_space)
+    assert search_space_mm != search_space
+    assert IIV.create('CL', 'EXP') in search_space
+    assert IIV.create('CL', 'EXP') not in search_space_mm
+    model_mixed = set_mixed_mm_fo_elimination(model)
+    search_space_mixed = update_iiv_search_space(model_mixed, search_space)
+    assert IIV.create('CL', 'EXP') in search_space_mixed
 
 
 @pytest.mark.parametrize(

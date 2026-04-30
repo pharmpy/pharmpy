@@ -551,6 +551,19 @@ def test_transform_into_search_space(load_model_for_test, testdata, funcs, sourc
     assert repr(get_model_features(model_transformed, type=type)) == expected
 
 
+def test_transform_into_search_space_raises(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    mf1 = ModelFeatures.create('IIV(X,EXP);IIV?([VC,MAT],EXP)')
+    with pytest.raises(ValueError):
+        transform_into_search_space(model, mf1)
+    mf2 = ModelFeatures.create('COVARIANCE(IIV,[X,VC])')
+    with pytest.raises(ValueError):
+        transform_into_search_space(model, mf2)
+    mf3 = ModelFeatures.create('COVARIATE(X,WT,EXP)')
+    with pytest.raises(ValueError):
+        transform_into_search_space(model, mf3)
+
+
 @pytest.mark.parametrize(
     'funcs, source, type, expected',
     (

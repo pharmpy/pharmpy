@@ -31,7 +31,13 @@ from pharmpy.modeling import (
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
+from pharmpy.modeling.mfl import (
+    expand_model_features,
+)
 from pharmpy.modeling.mfl import get_model_features as get_model_features_new
+from pharmpy.modeling.mfl import (
+    get_search_space_parameters_not_in_model,
+)
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools import retrieve_models
@@ -1129,6 +1135,8 @@ def _subfunc_iiv(
             rank_type = 'bic'
             e_p, e_q = None, None
 
+        search_space_updated = update_iiv_search_space(model, search_space)
+
         res = run_subtool(
             'iivsearch',
             ctx,
@@ -1136,7 +1144,7 @@ def _subfunc_iiv(
             model=model,
             results=modelfit_results,
             algorithm='top_down_exhaustive',
-            search_space=repr(search_space),
+            search_space=repr(search_space_updated),
             strictness=strictness,
             rank_type=rank_type,
             E_p=e_p,
@@ -1148,6 +1156,28 @@ def _subfunc_iiv(
         return res
 
     return _run_iiv
+
+
+def update_iiv_search_space(model, search_space: ModelFeaturesNew):
+    if not search_space:
+        return search_space
+    mfl = expand_model_features(model, search_space)
+    params_not_in_model = get_search_space_parameters_not_in_model(model, mfl)
+    if not params_not_in_model:
+        return search_space
+
+    features_new = []
+    for f in search_space:
+        if isinstance(f, IIV) and f.parameter in params_not_in_model:
+            continue
+        if isinstance(f, Covariance):
+            if not isinstance(f.parameters, Ref) and set(f.parameters).issubset(
+                params_not_in_model
+            ):
+                continue
+        features_new.append(f)
+
+    return ModelFeaturesNew.create(features_new)
 
 
 def run_kpd_iivsearch_base_model(model, ctx):
