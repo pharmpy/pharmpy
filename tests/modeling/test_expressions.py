@@ -51,6 +51,7 @@ from pharmpy.modeling import (
     set_first_order_absorption,
     set_placebo_model,
     set_transit_compartments,
+    set_zero_order_absorption,
     simplify_expression,
     solve_ode_system,
 )
@@ -656,6 +657,12 @@ def test_get_individual_parameters_redundant_assign(load_model_for_test, testdat
     model = set_transit_compartments(model, 3)
 
     assert set(get_individual_parameters(model)) == {'CL', 'MAT', 'MDT', 'V'}
+
+
+def test_get_individual_parameters_scaling_assign(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    model = set_zero_order_absorption(model)
+    assert set(get_individual_parameters(model)) == {'CL', 'V', 'MAT'}
 
 
 basic_pk_model = create_basic_pk_model()

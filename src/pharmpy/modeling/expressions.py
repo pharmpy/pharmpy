@@ -844,6 +844,7 @@ def get_individual_parameters(
     theta_eta_deps = _find_theta_eta_dependents(model, full_graph)
     eps_deps = _find_eps_dependents(model, full_graph)
     separable_statements = _find_separable_statements(model)
+    scaling_statements = _find_scaling_statements(model)
     ode_statement = _find_ode_statement(model)
     dv_statements = _find_dv_statements(model)
     time_deps = _find_time_dependents(model, full_graph)
@@ -852,6 +853,7 @@ def get_individual_parameters(
         all_statements.intersection(theta_eta_deps)
         - eps_deps
         - separable_statements
+        - scaling_statements
         - ode_statement
         - dv_statements
         - time_deps
@@ -1022,6 +1024,24 @@ def _find_separable_statements(model):
                 separable.add(i)
                 break
     return separable
+
+
+def _find_scaling_statements(model):
+    statements = model.statements
+    all_assigned_symbols = _get_all_assigned_symbols(model)
+    candidates = {
+        i
+        for i, s in enumerate(statements)
+        if isinstance(s, Assignment) and s.rhs_symbols.issubset(all_assigned_symbols)
+    }
+
+    scaling = set()
+    for i in candidates:
+        expr = statements[i].expression
+        if expr.is_mul() and len(expr.free_symbols) == 1:
+            scaling.add(i)
+
+    return scaling
 
 
 def _get_all_assigned_symbols(model):

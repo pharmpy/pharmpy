@@ -151,7 +151,7 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
         (
             [set_zero_order_absorption],
             None,
-            'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,D1,VC],EXP)',
+            'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);IIV([CL,MAT,VC],EXP)',
         ),
         (
             [set_seq_zo_fo_absorption],
