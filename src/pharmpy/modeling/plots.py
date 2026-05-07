@@ -769,8 +769,11 @@ def _calculate_vpc(
     obstab = model.dataset.loc[observations.index]
     if query is not None:
         obstab = obstab.query(query)
+        model_to_bin = model.replace(dataset=obstab)
+    else:
+        model_to_bin = model
     obstab = obstab[dv]
-    bincol, boundaries = bin_observations(model, binning, nbins)
+    bincol, boundaries = bin_observations(model_to_bin, binning, nbins)
     populated_bins = bincol.loc[obstab.index].unique()
 
     if len(bincol.unique()) != bincol.unique().max() + 1 or len(populated_bins) < nbins:

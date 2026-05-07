@@ -113,7 +113,7 @@ def test_vpc_plot(tmp_path, load_model_for_test, testdata):
         plot.save('chart.html')
 
 
-def test_(tmp_path, load_model_for_test, testdata):
+def test_vpc_plot_dvid(tmp_path, load_model_for_test, testdata):
     with chdir(tmp_path):
         model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
         data_path = testdata / 'nonmem' / 'vpc_simulations_dvid.csv'
