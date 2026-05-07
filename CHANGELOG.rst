@@ -21,6 +21,7 @@ Bugfixes
 
 * Fix regression causing plots for final model in AMD-tools to not show
 * Change behaviour of default in :code:`modeling.get_observations`, :code:`dv=None` now means using all DVIDs
+* Fix regression where bins in VPC plots disappeared
 
 .. _2.0.0:
 
