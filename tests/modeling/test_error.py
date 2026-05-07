@@ -273,13 +273,16 @@ $ESTIMATION METHOD=1 INTERACTION
 def test_get_prop_init(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
 
-    init = _get_prop_init(model)
+    init = _get_prop_init(model, dv=None)
+    assert init == 11.2225
+
+    init = _get_prop_init(model, dv=1)
     assert init == 11.2225
 
     df = model.dataset.copy()
     df['DV'] = 0.0
     model = model.replace(dataset=df)
-    init = _get_prop_init(model)
+    init = _get_prop_init(model, dv=None)
     assert init == 0.01
 
 

@@ -240,7 +240,7 @@ def get_observations(
         Set to True if the original index should be kept.
         Otherwise a new index using ID and idv will be created.
     dv : Union[Expr, str, int, None]
-        Name or DVID of dependent variable. None for the default (first or only)
+        Name or DVID of dependent variable. None for the default (all DVIDs)
 
     Returns
     -------
@@ -295,7 +295,7 @@ def get_observations_and_exclusion_criteria(
 
     df = get_and_check_dataset(model)
 
-    if len(model.dependent_variables) > 1:
+    if len(model.dependent_variables) > 1 and dv is not None:
         dv = get_dv_symbol(model, dv)
         dvid = model.dependent_variables[dv]
         dvidlab = model.datainfo.find_single_column_name("dvid")

@@ -161,7 +161,7 @@ def set_additive_error_model(
         model = model.replace(statements=stats_temp)
         model = remove_unused_parameters_and_rvs(model)
         sigma = create_symbol(model, 'sigma')
-        model = add_population_parameter(model, sigma.name, _get_prop_init(model))
+        model = add_population_parameter(model, sigma.name, _get_prop_init(model, dv=dv))
         ruv = create_symbol(model, 'epsilon_a')
         eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
 
@@ -172,7 +172,7 @@ def set_additive_error_model(
         stats = stats.reassign(Expr.symbol('SD'), sd_expr)
     else:
         sigma = create_symbol(model, 'sigma')
-        model = add_population_parameter(model, sigma.name, _get_prop_init(model))
+        model = add_population_parameter(model, sigma.name, _get_prop_init(model, dv=dv))
         ruv = create_symbol(model, 'epsilon_a')
         eps = NormalDistribution.create(ruv.name, 'RUV', 0, sigma)
         expr = f + ruv
@@ -211,9 +211,10 @@ def _statements_no_longer_needed(base, updated):
     return no_longer_needed
 
 
-def _get_prop_init(model):
+def _get_prop_init(model, dv):
     if model.dataset is not None and 'idv' in model.datainfo.types and 'dv' in model.datainfo.types:
-        dv_min = get_observations(model).min()
+        dv = get_dv_symbol(model, dv).name
+        dv_min = get_observations(model, dv=dv).min()
     else:
         dv_min = 0
 
@@ -453,7 +454,7 @@ def set_combined_error_model(
     sigma_prop = create_symbol(model, 'sigma_prop')
     model = add_population_parameter(model, sigma_prop.name, 0.09)
     sigma_add = create_symbol(model, 'sigma_add')
-    model = add_population_parameter(model, sigma_add.name, _get_prop_init(model))
+    model = add_population_parameter(model, sigma_add.name, _get_prop_init(model, dv=dv))
 
     eps_prop = NormalDistribution.create(ruv_prop.name, 'RUV', 0, sigma_prop)
     eps_add = NormalDistribution.create(ruv_add.name, 'RUV', 0, sigma_add)

@@ -30,7 +30,7 @@ from pharmpy.model import (
 from pharmpy.modeling.help_functions import _as_integer
 
 from .common import remove_unused_parameters_and_rvs, rename_symbols
-from .data import add_time_of_last_dose, get_doseid, get_observations
+from .data import add_time_of_last_dose, get_doseid, get_dv_symbol, get_observations
 from .expressions import create_symbol, is_real
 from .parameters import (
     add_population_parameter,
@@ -399,7 +399,7 @@ def set_zero_order_elimination(model: Model):
     else:
         model = _do_michaelis_menten_elimination(model)
         if model.dataset is not None:
-            obs = get_observations(model)
+            obs = _get_pk_observations(model)
             init = obs.min() / 100  # 1% of smallest observation
         else:
             init = 0.01
@@ -407,6 +407,12 @@ def set_zero_order_elimination(model: Model):
             init = 0.01
         model = fix_parameters_to(model, {'POP_KM': init})
     return model
+
+
+def _get_pk_observations(model):
+    # FIXME: assumes PK is the first dependent variable, use datainfo annotation when implemented
+    dv = get_dv_symbol(model, dv=None).name
+    return get_observations(model, dv=dv)
 
 
 def has_michaelis_menten_elimination(model: Model):
@@ -680,7 +686,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
 
     model, km = _add_parameter(model, 'KM', init=km_init)
     if model.dataset is not None and 'idv' in model.datainfo.types and 'dv' in model.datainfo.types:
-        maxobs = get_observations(model).max()
+        maxobs = _get_pk_observations(model).max()
     else:
         maxobs = 1.0
     model = set_upper_bounds(model, {'POP_KM': 1.5 * maxobs})
@@ -785,7 +791,7 @@ def _get_mm_inits(model: Model, rate_numer, combined):
         clmm_init /= 2
 
     if model.dataset is not None and 'idv' in model.datainfo.types and 'dv' in model.datainfo.types:
-        dv_max = get_observations(model).max()
+        dv_max = _get_pk_observations(model).max()
     else:
         dv_max = 1.0
     km_init = dv_max / 2
@@ -2072,7 +2078,7 @@ def _get_absorption_init(model, param_name) -> float:
     if model.dataset is None:
         time_min = 1.0
     else:
-        obs = get_observations(model)
+        obs = _get_pk_observations(model)
         time = obs.index.get_level_values(level=time_label)
         time_min = _get_min_value(time[time > 0])
 

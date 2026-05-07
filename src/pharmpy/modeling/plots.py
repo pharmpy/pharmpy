@@ -14,7 +14,12 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import scipy, sympy, sympy_stats
 from pharmpy.model import Assignment, Model, get_and_check_dataset
-from pharmpy.modeling import bin_observations, create_rng, infer_datatypes
+from pharmpy.modeling import (
+    bin_observations,
+    create_rng,
+    get_dv_symbol,
+    infer_datatypes,
+)
 
 from .data import get_observations
 
@@ -117,7 +122,9 @@ def plot_individual_predictions(
         plot_individual_predictions(model, res.predictions, individuals=[1, 2, 3, 4, 5])
 
     """
-    obs = get_observations(model, keep_index=True)
+    # FIXME: use first DV to get previous behaviour in get_observations()
+    dv = get_dv_symbol(model, dv=None).name
+    obs = get_observations(model, keep_index=True, dv=dv)
     idcol = model.datainfo.id_column.name
     idvcol = model.datainfo.idv_column.name
     columns = (idcol, idvcol, model.datainfo.dv_column.name)

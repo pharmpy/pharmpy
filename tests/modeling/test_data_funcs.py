@@ -93,9 +93,12 @@ def test_get_observations(load_example_model_for_test, testdata):
     path = testdata / 'nonmem' / 'models' / 'pheno_dvid.csv'
     model = set_dataset(model, path, datatype='nonmem')
     model = add_effect_compartment(model, 'linear')
-    ser1 = get_observations(model, dv=1)
-    ser2 = get_observations(model, dv=2)
+    ser1 = get_observations(model, keep_index=True, dv=1)
+    ser2 = get_observations(model, keep_index=True, dv=2)
     assert len(ser1.index) != len(ser2.index)
+    ser3 = get_observations(model, keep_index=True, dv=None)
+    assert len(ser3.index) == len(ser1.index) + len(ser2.index)
+    assert set(ser3.index) == set(ser1.index) | set(ser2.index)
 
 
 def test_get_observations_and_ignores(load_example_model_for_test, testdata):
@@ -111,6 +114,8 @@ def test_get_observations_and_ignores(load_example_model_for_test, testdata):
     assert ignore == Ignore.create(BooleanExpr.ne(dvid_symb, 1) & amt_expr)
     _, ignore = get_observations_and_exclusion_criteria(model, dv=2)
     assert ignore == Ignore.create(BooleanExpr.ne(dvid_symb, 2) & amt_expr)
+    _, ignore = get_observations_and_exclusion_criteria(model, dv=None)
+    assert ignore == Ignore.create(amt_expr)
 
 
 def test_number_of_observations(load_example_model_for_test):

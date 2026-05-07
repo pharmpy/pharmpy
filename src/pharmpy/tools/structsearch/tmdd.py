@@ -1,6 +1,7 @@
 import itertools
 
 from pharmpy.modeling import (
+    get_dv_symbol,
     get_observations,
     remove_peripheral_compartment,
     set_initial_estimates,
@@ -18,7 +19,9 @@ def product_dict(**kwargs):
 def create_qss_models(model, ests, dv_types, index=1):
     # Create qss models with different initial estimates from basic pk model
     qss_base_model = set_tmdd(model, type="QSS", dv_types=dv_types)
-    cmax = get_observations(model).max()
+    # FIXME: assumes PK is the first dependent variable, use datainfo annotation when implemented
+    dv = get_dv_symbol(model, dv=None).name
+    cmax = get_observations(model, dv=dv).max()
     all_inits = product_dict(
         POP_KDEG=(0.5623, 17.28), POP_R_0=(0.001 * cmax, 0.01 * cmax, 0.1 * cmax, 1 * cmax)
     )
