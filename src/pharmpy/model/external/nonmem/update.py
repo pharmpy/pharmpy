@@ -1876,6 +1876,8 @@ def update_estimation(control_stream, model):
         for der in estep.derivatives:
             if any(d not in model.random_variables for d in der):
                 raise ValueError(f'Derivative {der} not supported in NONMEM currently')
+    for estep in new_sims:
+        variables_subset.update(estep.variables)
     verbatim_derivatives = extract_verbatim_derivatives(control_stream, model.random_variables)
     single_deriv_subset = set([d for d in derivatives_subset if len(d) == 1])
     single_deriv_subset = set(nonmem_deriv_names(single_deriv_subset, model.random_variables))
@@ -1885,6 +1887,8 @@ def update_estimation(control_stream, model):
     for estep in old_ests:
         old_columns.update(estep.predictions)
         old_columns.update(estep.residuals)
+        old_columns.update(estep.variables)
+    for estep in new_sims:
         old_columns.update(estep.variables)
     to_remove = old_columns.difference(
         predictions_subset.union(residuals_subset).union(variables_subset)
