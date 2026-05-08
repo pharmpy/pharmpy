@@ -2,6 +2,16 @@
 News
 ====
 
+
+Pharmpy and pharmr 2.1.0 released
+---------------------------------
+
+*2026-05-11* --- Pharmpy 2.1.0 and pharmr 2.1.0 are now available.
+
+See :ref:`CHANGELOG<2.1.0>` for details.
+
+
+
 Pharmpy and pharmr 2.0.0 released
 ---------------------------------
 
