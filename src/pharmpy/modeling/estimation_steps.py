@@ -240,6 +240,7 @@ def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED):
             solver=final_est.solver,
             solver_atol=final_est.solver_atol,
             solver_rtol=final_est.solver_rtol,
+            variables=final_est.variables,
         )
     else:
         step = SimulationStep.create(n=n, seed=seed)
