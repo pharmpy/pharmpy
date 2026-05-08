@@ -1,5 +1,7 @@
-next release
-------------
+.. _2.1.0:
+
+2.1.0 (2026-05-11)
+------------------
 
 New features
 ============
@@ -7,13 +9,24 @@ New features
 * Add :code:`modeling.convert_unit`
 * Add :code:`modeling.set_unit`
 * Add :code:`modeling.set_property`
+* Parse variables other than predictions and residuals from $TABLE in NONMEM models
 * Add :code:`modeling.add_output_variable`
+* Add option :code:`data_strategy` to pdsearch
+* Add :code:`modeling.get_unit_of` can get units of all variables in a model with a single call
+* Add :code:`Provenance` to keep track of the origin of and changes to the model dataset. Can be reached via `code:`model.datainfo.provenance`
+* Allow :code:`modeling.set_placebo_model` to update an already existing placebo model.
+* Parse POSTHOC etas for FO in NONMEM results
+* Add an exhaustive stepwise algorithm to pdsearch
+* Abort a tool early if the NONMEM license has expired
+* Support pure PD models as input to :code:`modeling.add_indirect_effect`
 
 Changes
 =======
 
 * Change unit representations to use abbreviations. For example gram is now g.
-* Rename add_placebo_model to set_placebo_model
+* Rename :code:`modeling.add_placebo_model` to :code:`modeling.set_placebo_model`
+* Pharmpy now requires numpy version 2 or higher
+* Change the default behaviour of :code:modeling.get_observations` to include observations of all DVIDs.
 
 
 Bugfixes
@@ -23,6 +36,13 @@ Bugfixes
 * Change behaviour of default in :code:`modeling.get_observations`, :code:`dv=None` now means using all DVIDs
 * Fix regression where bins in VPC plots disappeared
 * Bin observations per strata in :code:`modeling.plot_vpc`
+* :code:`modeling.get_unit_of` should be able to find the correct unit for more cases and give an error if it was unable to.
+* Handle NONMEM models with no dosing compartment when updating the model
+* Support setting additive error model with BLQ-transformations (#4375)
+* Fix crash when having multiple DVs, M3 or M4 BLQ handling and changing error model for the second DV
+* Fix crashes in AMD when parameters are no longer in the model (#4371)
+* Fix :code:`modeling.get_individual_parameters` to not find scaled parameters as actual parameters (#4371)
+* Fix regression in the vpc tool causing the DV column not to be included when simulating.
 
 .. _2.0.0:
 
