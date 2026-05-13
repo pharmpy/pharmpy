@@ -1,3 +1,13 @@
+.. _2.1.1:
+
+2.1.1
+-----
+
+Bugfixes
+========
+
+* Fix default value for :code:`search_space` option in IIVSearch (default caused crash in previous version)
+
 .. _2.1.0:
 
 2.1.0 (2026-05-08)

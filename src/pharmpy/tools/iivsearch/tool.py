@@ -70,7 +70,7 @@ def create_workflow(
     model: Model,
     results: ModelfitResults,
     algorithm: Literal[tuple(IIV_ALGORITHMS)] = "top_down_exhaustive",
-    search_space: Optional[str] = None,
+    search_space: str = 'IIV?(@IIV,EXP);COVARIANCE?(IIV,@IIV)',
     as_fullblock: bool = False,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     linearize: bool = False,
