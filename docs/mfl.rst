@@ -286,10 +286,6 @@ All continuous covariate effects of WGT on distribution parameters:
 Variability
 -----------
 
-.. note::
-
-    Currently under development and can be used experimentally in IIVSearch.
-
 Specifying IIV on all PK parameters and covariances between them:
 
 .. code::

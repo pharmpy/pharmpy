@@ -7,27 +7,6 @@ IIVsearch
 The IIVsearch tool is a general tool to decide the best IIV structure given an input model. This includes deciding which IIV
 to keep and the covariance structure based on a chosen selection criteria.
 
-The default behavior of the tool (given default arguments) is the following:
-
-.. graphviz::
-
-    digraph BST {
-            node [fontname="Arial",shape="rect"];
-            rankdir="LR";
-            base [label="Input model", shape="oval"]
-            s0 [label="Base model", shape="oval"]
-            s1 [label="Number of IIVs algorithm"]
-            s2 [label="Covariance algorithm"]
-            s3 [label="Final model", shape="oval"]
-
-            base -> s0 [label = "Add IIVs"]
-            s0 -> s1
-            s1 -> s2 [label = "Select best model"]
-            s2 -> s3
-
-    }
-
-
 ~~~~~~~
 Running
 ~~~~~~~
@@ -47,7 +26,7 @@ To initiate IIVsearch in Python/R:
                         results=start_model_results,
                         algorithm='top_down_exhaustive',
                         correlation_algorithm=None,
-                        iiv_strategy='fullblock',
+                        search_space='IIV(CL,EXP);IIV?(@PK,EXP);COVARIANCE?(IIV,@IIV)'
                         rank_type='bic')
 
 This will take an input ``model`` and run the top down exhaustive ``algorithm`` for the number of etas.
@@ -76,9 +55,6 @@ Mandatory
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``results``                                   | ModelfitResults of input model                                     |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| ``algorithm``                                 | :ref:`Algorithm<algorithms_iivsearch>` to use                      |
-|                                               | (e.g. ``'top_down_exhaustive'``)                                   |
-+-----------------------------------------------+--------------------------------------------------------------------+
 
 Optional
 --------
@@ -86,10 +62,15 @@ Optional
 +-----------------------------------------------+--------------------------------------------------------------------+
 | Argument                                      | Description                                                        |
 +===============================================+====================================================================+
-| ``iiv_strategy``                              | If/how IIV should be added to input model (default is to not add). |
-|                                               | See :ref:`iiv_strategies_iivsearch`                                |
+| ``algorithm``                                 | :ref:`Algorithm<algorithms_iivsearch>` to use                      |
+|                                               | (e.g. ``'top_down_exhaustive'``)                                   |
 +-----------------------------------------------+--------------------------------------------------------------------+
-| ``rank_type``                                 | Which :ref:`selection criteria<ranking_iivsearch>` to rank models  | 
+| ``search_space``                              | Which IIVs and/or covariance structures to explore.                |
+|                                               | See :ref:`search_space_iivsearch`                                  |
++-----------------------------------------------+--------------------------------------------------------------------+
+| ``as_fullblock``                              | Whether to add IIVs as a fullblock.                                |
++-----------------------------------------------+--------------------------------------------------------------------+
+| ``rank_type``                                 | Which :ref:`selection criteria<ranking_iivsearch>` to rank models  |
 |                                               | on, e.g. OFV (default is BIC)                                      |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``linearize``                                 | Decide whether or not to :ref:`linearize<linearize_iivsearch>`     |
@@ -99,9 +80,6 @@ Optional
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``cutoff``                                    | :ref:`cutoff<ranking_iivsearch>` for the ranking function, exclude |
 |                                               | models that are below cutoff (default is none)                     |
-+-----------------------------------------------+--------------------------------------------------------------------+
-| ``keep``                                      | List of IIVs to keep, either by parameter name or ETA name.        |
-|                                               | Default is ["CL"]                                                  |
 +-----------------------------------------------+--------------------------------------------------------------------+
 | ``strictness``                                | :ref:`strictness<strictness>` criteria for model selection.        |
 |                                               | Default is "minimization_successful or                             |
@@ -117,9 +95,10 @@ Optional
 
 .. note::
 
-    In this documentation, "base model" will be used to describe the model which all candidates are based on. Note
-    that if you have set ``iiv_strategy`` to anything other than ``'no_add'``, this model will be different to the
-    input model`. The term "base model" can thus be either the input model or a copy with added IIVs.
+    In this documentation, "base model" will be used to describe the model which all candidates are based on.
+    If you have set ``as_fullblock``, chosen a bottom up algorithm, or your input model is not part of the
+    provided search space, this model will be different to the input model. The term "base model" can thus be
+    either the input model or a copy with added IIVs.
 
 
 .. _algorithms_iivsearch:
@@ -135,6 +114,26 @@ algorithms are wanted.
 
 .. warning::
     At least one algorithm argument must be set.
+
+The default behavior of the tool is the following:
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial",shape="rect"];
+            rankdir="LR";
+            base [label="Input model", shape="oval"]
+            s0 [label="Base model", shape="oval"]
+            s1 [label="Number of IIVs algorithm"]
+            s2 [label="Covariance algorithm"]
+            s3 [label="Final model", shape="oval"]
+
+            base -> s0 [label = "Add IIVs"]
+            s0 -> s1
+            s1 -> s2 [label = "Select best model"]
+            s2 -> s3
+
+    }
 
 
 Number of IIVs
@@ -158,7 +157,7 @@ Top down exhaustive search
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The ``top_down_exhaustive`` algorithm for choosing number of etas will create candidate models for all combinations of
-removed IIVs. If no etas are set in the ``keep`` option, it will also create a naive pooled model meaning all the etas
+removed IIVs. If the search space has no mandatory IIVs, it will also create a naive pooled model meaning all the etas
 are fixed to 0. This can be useful when identifying local minima, since all other candidate models should have a lower
 OFV than the naive pooled model (which doesn't have any inter-individual variability).
 
@@ -308,36 +307,48 @@ will be the following:
 +---------------------------+------------------------------+---------------------------------------------------+
 | ``algorithm``             | ``correlation_algorithm``    | Behavior                                          |
 +===========================+==============================+===================================================+
-| ``'top_down_exhaustive'`` | ``None/NULL``                | Top down exhausive for both steps                 |
+| ``'top_down_exhaustive'`` | ``None/NULL``                | Top down exhaustive for both steps                |
 +---------------------------+------------------------------+---------------------------------------------------+
 | ``'bottom_up_stepwise'``  | ``None/NULL``                | Bottom down stepwise for number of IIVs, top down |
 |                           |                              | exhaustive for correlation structure              |
 +---------------------------+------------------------------+---------------------------------------------------+
 
 
-.. _iiv_strategies_iivsearch:
+.. _search_space_iivsearch:
 
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-Adding IIV to the input model
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+Search space
+~~~~~~~~~~~~
 
-The ``iiv_strategy`` option determines whether or not IIV on the PK parameters should be added to the input model.
-The different strategies can be seen here:
+.. note::
 
-+------------------------+----------------------------------------------------------------------------------+
-| Strategy               | Description                                                                      |
-+========================+==================================================================================+
-| ``'no_add'``           | Input model is kept as base model                                                |
-+------------------------+----------------------------------------------------------------------------------+
-| ``'add_diagonal'``     | Diagonal IIV is added to all PK parameters                                       |
-+------------------------+----------------------------------------------------------------------------------+
-| ``'fullblock'``        | IIV is added to all PK parameters, and all IIVs will be in a full block          |
-+------------------------+----------------------------------------------------------------------------------+
-| ``'pd_add_diagonal'``  | Diagonal IIV is added to all PD parameters                                       |
-+------------------------+----------------------------------------------------------------------------------+
-| ``'pd_fullblock'``     | IIV is added to all PD parameters, and all IIVs will be in a full block          |
-+------------------------+----------------------------------------------------------------------------------+
+    This option has replaced previous options :code:`keep` and :code:`iiv_strategy`.
 
+The model feature search space is a set of all possible combinations of model features that is allowed for the final
+model. The search space is given as a string with a specific grammar, according to the `Model Feature Language` (MFL)
+(see :ref:`detailed description<mfl>`). The default search space in IIVSearch is :code:`IIV?(@IIV,EXP);COVARIANCE?(IIV,@IIV)`.
+This will examine all IIVs in the model (except for IIVs on in the error model), and whichever IIVs are present in the
+model when exploring the covariances will be tried. Some other examples of search spaces are:
+
+
++---------------------------------------------------------+-------------------------------------------------+
+| Search space                                            | Explanation                                     |
++=========================================================+=================================================+
+| :code:`IIV?(@IIV,EXP);COVARIANCE?(IIV,@IIV)` (default)  | Explore all IIVs in input model, try all        |
+|                                                         | covariance structures between IIVs in model     |
++---------------------------------------------------------+-------------------------------------------------+
+| :code:`IIV?(@PK,EXP)`                                   | Try IIV on all PK parameters. If correlation    |
+|                                                         | algorithm is set, remove all covariances        |
++---------------------------------------------------------+-------------------------------------------------+
+| :code:`IIV(CL,EXP);IIV?(@PK,EXP);COVARIANCE?(IIV,@IIV)` | Keep IIV on CL, try IIV on all PK parameters,   |
+|                                                         | try all covariance structures between selected  |
+|                                                         | IIVs                                            |
++---------------------------------------------------------+-------------------------------------------------+
+| :code:`IIV(@PK,EXP);IIV?(@PD,ADD);                      | Explore exponential etas on all PK parameters,  |
+| COVARIANCE(IIV,@PK_IIV);COVARIANCE?(IIV,@PD_IIV)`       | additive etas on all PD parameters, try all     |
+|                                                         | covariance structures between IIVs on PK and PD |
+|                                                         | parameters separately                           |
++---------------------------------------------------------+-------------------------------------------------+
 
 .. _ranking_iivsearch:
 
