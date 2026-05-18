@@ -621,8 +621,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
         rdata = pyreadr.read_r(rdata_path)
     except (FileNotFoundError, OSError, pyreadr.PyreadrError):
         return None
-
-    rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names]
+    rdata["thetas"] = rdata["thetas"].loc[get_thetas(model).names, :]
     s = []
     for sigma in get_sigmas(model):
         if sigma.init != 1 and not sigma.fix:
