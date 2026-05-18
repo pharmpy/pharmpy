@@ -7,6 +7,7 @@ Bugfixes
 ========
 
 * Fix default value for :code:`search_space` option in IIVSearch (default caused crash in previous version)
+* Fix regression in :code:`set_dataset` causing a crash for string input
 
 .. _2.1.0:
 

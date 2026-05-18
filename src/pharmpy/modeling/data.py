@@ -2038,7 +2038,8 @@ def read_dataset_from_datainfo_update(
 
 def create_default_datainfo(path_or_df):
     if not isinstance(path_or_df, pd.DataFrame):
-        path = path_absolute(path_or_df)
+        path = normalize_user_given_path(path_or_df)
+        path = path_absolute(path)
         datainfo_path = path.with_suffix('.datainfo')
 
         if datainfo_path.is_file():
