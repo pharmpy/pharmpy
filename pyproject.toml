@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pharmpy-core"
-version = "2.1.0"
+version = "2.1.1"
 description = "Pharmacometric modeling"
 license = "LGPL-3.0-or-later"
 license-files = ["LICENSE", "LICENSE.LESSER"]
