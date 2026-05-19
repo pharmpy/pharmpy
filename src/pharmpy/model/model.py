@@ -380,7 +380,8 @@ class Model(Immutable):
 
         if new_dataset and dataset is not None:
             datainfo = update_datainfo(datainfo, dataset)
-            if not new_datainfo:
+            # FIXME: second condition occurs when e.g. ignoring rows, different mechanism will handle this later
+            if not new_datainfo or datainfo.provenance != self._datainfo.provenance:
                 datainfo = datainfo.replace(path=None)
 
         # Has to be checked after datainfo is updated since it looks for symbols in datainfo as well

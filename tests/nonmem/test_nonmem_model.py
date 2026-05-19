@@ -28,6 +28,7 @@ from pharmpy.modeling import (
     add_population_parameter,
     create_basic_pk_model,
     create_joint_distribution,
+    filter_dataset,
     read_model,
     read_model_from_string,
     remove_iiv,
@@ -1431,3 +1432,23 @@ def test_add_rate_column(load_model_for_test, pheno_path):
     model = set_zero_order_absorption(model)
     assert 'RATE' in model.datainfo.names
     assert model.datainfo.provenance[-1] == AddColumn.create('RATE')
+
+
+def test_update_data_ignore(testdata):
+    code = f"""$PROBLEM base model
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@ IGNORE=(ID.EQN.2)
+
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 2 ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
+"""
+    model = Model.parse_model_from_string(code)
+    model = filter_dataset(model, 'ID != 1')
+    model = model.update_source()
+    data_rec = model.internals.control_stream.get_records("DATA")[0]
+    assert data_rec.filename == 'DUMMYPATH'
