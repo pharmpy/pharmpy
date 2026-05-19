@@ -8,6 +8,8 @@ Bugfixes
 
 * Fix default value for :code:`search_space` option in IIVSearch (default caused crash in previous version)
 * Fix regression in :code:`set_dataset` causing a crash for string input
+* Fix nlmixr crash when parsing results
+* Fix regression where old dataset was used when filtering rows
 
 .. _2.1.0:
 
