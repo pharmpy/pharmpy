@@ -1,7 +1,7 @@
 .. _2.1.1:
 
-2.1.1
------
+2.1.1 (2026-05-19)
+------------------
 
 Bugfixes
 ========
@@ -10,6 +10,7 @@ Bugfixes
 * Fix regression in :code:`set_dataset` causing a crash for string input
 * Fix nlmixr crash when parsing results
 * Fix regression where old dataset was used when filtering rows
+* Fix issue with rendering plots in R widget
 
 .. _2.1.0:
 
