@@ -150,32 +150,83 @@ def test_ignore_accept(parser):
     'rec, expected',
     [
         (
-            'IGNORE=(DV.EQ.1)',
-            {'DV == S': {Expr.symbol('S'): '1'}},
-        ),
-        (
             'IGNORE=(DV.EQN.1)',
-            {'DV == 1': dict()},
+            ['DV == 1'],
         ),
         (
-            'ACCEPT=(DV.EQ.1, MDV.NEN.23)',
-            {'DV != S': {Expr.symbol('S'): '1'}, 'MDV == 23': dict()},
+            'ACCEPT=(DV.EQN.1, MDV.NEN.23)',
+            ['DV != 1', 'MDV == 23'],
         ),
         (
-            'IGNORE=(WGT < 1, ID.EQ."lk")',
-            {'WGT < 1': dict(), 'ID == S': {Expr.symbol('S'): '"lk"'}},
+            'IGNORE=(WGT < 1, ID.NEN.1)',
+            ['WGT < 1', 'ID != 1'],
         ),
         (
             'IGNORE(APGR.GT.23)',
-            {'APGR > 23': dict()},
+            ['APGR > 23'],
+        ),
+        (
+            'IGNORE=(APGR.GE.23)',
+            ['APGR >= 23'],
+        ),
+        (
+            'IGNORE(APGR.LT.23)',
+            ['APGR < 23'],
+        ),
+        (
+            'IGNORE(APGR.LE.23)',
+            ['APGR <= 23'],
+        ),
+        (
+            'IGNORE=(DV.EQN.0.1)',
+            ['DV == 0.1'],
+        ),
+        (
+            'IGNORE=(DV.EQN.1,ID.NEN.1)',
+            ['DV == 1', 'ID != 1'],
+        ),
+        (
+            'IGNORE=(DV.EQN.1) ACCEPT=(APGR.LE.23, MDV.NEN.23) IGNORE=(ID.NEN.1)',
+            ['DV == 1', 'APGR > 23', 'MDV == 23', 'ID != 1'],
         ),
     ],
 )
-def test_get_selects(parser, rec, expected):
+def test_get_filters(parser, rec, expected):
     record = parser.parse(f'$DATA pheno.dta {rec}').records[0]
-    selects = record.get_selects(ignore='IGNORE' in rec)
+    selects = record.get_filters()
     assert len(selects) == len(expected)
-    assert selects == [Ignore.create(expr, strings=strings) for expr, strings in expected.items()]
+    assert selects == [Ignore.create(expr) for expr in expected]
+
+
+@pytest.mark.parametrize(
+    'rec, expr, strings',
+    [
+        (
+            'IGNORE=(DV.EQ.1)',
+            'DV == S',
+            {Expr.symbol('S'): '1'},
+        ),
+        (
+            'IGNORE=(DV.NE.1)',
+            'DV != S',
+            {Expr.symbol('S'): '1'},
+        ),
+        (
+            'IGNORE=(ID.EQ."lk")',
+            'ID == S',
+            {Expr.symbol('S'): '"lk"'},
+        ),
+        (
+            'ACCEPT=(DV.EQ.1)',
+            'DV != S',
+            {Expr.symbol('S'): '1'},
+        ),
+    ],
+)
+def test_get_filters_strings(parser, rec, expr, strings):
+    record = parser.parse(f'$DATA pheno.dta {rec}').records[0]
+    selects = record.get_filters()
+    assert selects == [Ignore.create(expr, strings=strings)]
 
 
 def test_comments(parser):
@@ -200,42 +251,64 @@ def test_comment(parser):
 
 
 @pytest.mark.parametrize(
-    'expr, strings, expected',
+    'new, expected',
     [
-        ('DVID == S', {Expr.symbol('S'): '1'}, 'DVID.EQ.1'),
-        ('DVID == 1', dict(), 'DVID.EQN.1'),
-        ('DVID != S', {Expr.symbol('S'): '1'}, 'DVID.NE.1'),
-        ('DVID != 1', dict(), 'DVID.NEN.1'),
-        ('DV > 0', dict(), 'DV.GT.0'),
-        ('DV >= 0', dict(), 'DV.GE.0'),
-        ('DV < 1', dict(), 'DV.LT.1'),
-        ('DV <= 1', dict(), 'DV.LE.1'),
+        (Ignore.create('DV == 2'), 'DV.EQN.2'),
+        (Ignore.create('DV == S', strings={Expr.symbol('S'): '2'}), 'DV.EQ.2'),
+        (Ignore.create('DV != 2'), 'DV.NEN.2'),
+        (Ignore.create('DV != S', strings={Expr.symbol('S'): '2'}), 'DV.NE.2'),
+        (Ignore.create('DV < 2'), 'DV.LT.2'),
+        (Ignore.create('DV <= 2'), 'DV.LE.2'),
+        (Ignore.create('DV > 2'), 'DV.GT.2'),
+        (Ignore.create('DV >= 2'), 'DV.GE.2'),
+        (Ignore.create('DV == 2.0'), 'DV.EQN.2.00000000000000'),
     ],
 )
-def test_add_ignore(parser, expr, strings, expected):
-    record = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
-    assert record.ignore == []
-    ignore = Ignore.create(expr, strings=strings)
-    record = record.add_ignore([ignore])
-    assert len(record.ignore) == 1
-    assert str(record.ignore[0]) == expected
-    assert str(record) == f'$DATA pheno.dta IGNORE=@ IGNORE=({expected})'
-    assert str(parser.parse(str(record)).records[0]) == str(record)
+def test_update_filters_single(parser, new, expected):
+    rec_old = parser.parse('$DATA pheno.dta IGNORE=(DV.EQ.1) ACCEPT=(APGR.LE.23)').records[0]
+    rec_new = rec_old.update_filters([new])
+    assert str(rec_new) == str(rec_old) + f' IGNORE=({expected})'
+    assert str(rec_new) == str(rec_new.update_filters([new]))
 
 
-def test_add_ignore_stepwise(parser):
-    record = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
-    assert record.ignore == []
+def test_update_filters_existing(parser):
+    rec_old = parser.parse('$DATA pheno.dta IGNORE=(DV.EQN.1)').records[0]
+    rec_new = rec_old.update_filters([Ignore.create('DV == 1')])
+    assert str(rec_new) == str(rec_old)
+
+
+def test_update_filters_no_new(parser):
+    rec_old = parser.parse('$DATA pheno.dta IGNORE=(DV.EQN.1)').records[0]
+    rec_new = rec_old.update_filters([])
+    assert str(rec_new) == str(rec_old)
+
+
+def test_update_filters_from_empty(parser):
+    rec_old = parser.parse('$DATA pheno.dta').records[0]
+    rec_new = rec_old.update_filters([Ignore.create('DV == 1')])
+    assert str(rec_new) == str(rec_old) + ' IGNORE=(DV.EQN.1)'
+
+
+def test_update_filters_multiple(parser):
+    rec_old = parser.parse('$DATA pheno.dta IGNORE=(DV.EQ.1)').records[0]
+    new = [Ignore.create('DV == 2'), Ignore.create('APGR > 23')]
+    rec_new = rec_old.update_filters(new)
+    assert str(rec_new) == str(rec_old) + ' IGNORE=(DV.EQN.2) IGNORE=(APGR.GT.23)'
+
+
+def test_update_filters_stepwise(parser):
+    rec_old = parser.parse('$DATA pheno.dta IGNORE=@').records[0]
+    assert rec_old.ignore == []
     ignore1 = Ignore.create('DV == S', strings={Expr.symbol('S'): '1'})
     ignore2 = Ignore.create('DVID != 1')
-    record = record.add_ignore([ignore1, ignore2])
-    assert len(record.ignore) == 2
-    assert str(record.ignore[0]) == 'DV.EQ.1'
-    assert str(record.ignore[1]) == 'DVID.NEN.1'
+    rec_1 = rec_old.update_filters([ignore1, ignore2])
+    assert len(rec_1.ignore) == 2
+    assert str(rec_1.ignore[0]) == 'DV.EQ.1'
+    assert str(rec_1.ignore[1]) == 'DVID.NEN.1'
     ignore3 = Ignore.create('APGR > 23')
-    record = record.add_ignore([ignore3])
-    assert len(record.ignore) == 3
-    assert str(record.ignore[2]) == 'APGR.GT.23'
-    record = record.add_ignore([ignore1])
-    assert len(record.ignore) == 3
-    assert 'IGNORE=(DV.EQ.1) IGNORE=(DVID.NEN.1) IGNORE=(APGR.GT.23)' in str(record)
+    rec_2 = rec_1.update_filters([ignore3])
+    assert len(rec_2.ignore) == 3
+    assert str(rec_2.ignore[2]) == 'APGR.GT.23'
+    rec_3 = rec_2.update_filters([ignore1])
+    assert len(rec_3.ignore) == 3
+    assert 'IGNORE=(DV.EQ.1) IGNORE=(DVID.NEN.1) IGNORE=(APGR.GT.23)' in str(rec_3)
