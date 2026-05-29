@@ -1741,6 +1741,37 @@ class DataInfo(Sequence, Immutable):
                     return None
         return found
 
+    def find_variable(self, alias: str) -> DataVariable:
+        """Find a single data variable given a column name alias
+
+        The alias can be the name of the column (e.g. "DV") if it maps to one single data variable
+        or the name of the column suffixed by ":" and the DVID number if it maps to multiple
+        data variables (e.g. "DV:1" meaning the DV column where DVID is 1)
+        """
+
+        a = alias.split(":")
+        colname = a[0]
+        if len(a) == 1:
+            ind = None
+        elif len(a) == 2:
+            ind = int(a[1])
+        else:
+            raise ValueError("Bad data variable alias should be either a column name or e.g. DV:1")
+
+        if colname not in self:
+            raise ValueError(f"No column named {colname}")
+        column = self[colname]
+
+        if ind is None:
+            variable = column.variable
+        else:
+            if isinstance(column.variable_mapping, DataVariable):
+                raise ValueError("Column does not have multiple data variables")
+            if ind not in column.variable_mapping:
+                raise ValueError(f"No index {ind} of data variable")
+            variable = column.variable_mapping[ind]
+        return variable
+
 
 class TypeIndexer:
     def __init__(self, obj):

@@ -588,6 +588,20 @@ def test_mapped_variable():
     di = DataInfo.create([col1, col2])
     assert len(di.variables) == 3
 
+    with pytest.raises(ValueError):
+        di.find_variable("DV")
+    with pytest.raises(ValueError):
+        di.find_variable("DV:1:2")
+    with pytest.raises(ValueError):
+        di.find_variable("DV:3")
+    with pytest.raises(ValueError):
+        di.find_variable("DVID:1")
+    with pytest.raises(ValueError):
+        di.find_variable("NOTACOL")
+    assert di.find_variable("DV:1") == dv1
+    assert di.find_variable("DV:2") == dv2
+    assert di.find_variable("DVID") == var1
+
 
 def test_read_dataset():
     if sys.platform != "win32":
