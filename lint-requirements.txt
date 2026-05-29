@@ -31,7 +31,7 @@ nodeenv==1.10.0
 packaging==26.2
 pathspec==1.1.1
 pkginfo==1.12.1.2
-platformdirs==4.9.6
+platformdirs==4.10.0
 pycodestyle==2.14.0
 pycparser==3.0
 pyflakes==3.4.0
