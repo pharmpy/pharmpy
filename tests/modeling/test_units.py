@@ -66,7 +66,9 @@ def test_convert_unit(load_example_model_for_test):
     assert len(m2.datainfo.provenance) == 1
 
     m2 = set_property(model, "DV", "molar_mass", 136.0)
+    m2 = set_property(m2, "AMT", "molar_mass", 136.0)
     m2 = convert_unit(m2, "DV", "M")
+    m2 = convert_unit(m2, "AMT", "mol")
     assert float(m2.statements.before_odes[-1].expression) == pytest.approx(
         7.35294117647059e-6, abs=1e-7
     )
@@ -91,6 +93,11 @@ def test_convert_unit_in_dataset(
 ):
     model = load_example_model_for_test("pheno")
     m2 = convert_unit(model, variable, unit, in_dataset=True)
+    if variable == "AMT":
+        m2 = convert_unit(m2, "DV", dv_unit, in_dataset=True)
+    elif variable == "DV":
+        m2 = convert_unit(m2, "AMT", amt_unit, in_dataset=True)
+
     assert m2.datainfo[variable].variable.properties['unit'] == Unit(unit)
     if dv_unit is not None:
         assert m2.datainfo.dv_column.variable.properties['unit'] == Unit(dv_unit)

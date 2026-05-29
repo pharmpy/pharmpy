@@ -9,6 +9,7 @@ from pharmpy.model import (
     Assignment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    DataVariable,
     Drop,
     Infusion,
     Model,
@@ -303,6 +304,8 @@ def convert_unit(
 
     The conversion could either be handled in the model code or optionally in the dataset (if applicable).
 
+    Note that only ratio units are supported (i.e. not interval scale units like °C).
+
     Parameters
     ----------
     model : Model
@@ -329,11 +332,12 @@ def convert_unit(
     """
 
     unit = Unit(unit)
-    column = model.datainfo[variable]
+    column = model.datainfo.find_column(variable)
+    datavar = model.datainfo.find_variable(variable)
     if column.type == 'idv':
         raise ValueError(f"Cannot scale the independent variable ({variable})")
     if original_unit is None:
-        original_unit = column.variable.properties.get("unit", None)
+        original_unit = datavar.properties.get("unit", None)
     if original_unit is None:
         raise ValueError("Cannot find the original unit of {variable}")
     original_unit = Unit(original_unit)
@@ -362,20 +366,27 @@ def convert_unit(
         if column.type in {'dose', 'dv'}:
             odes = get_and_check_odes(model)
             _raise_if_rate(odes)
-            dosing_cmts = odes.dosing_compartments
-            cb = CompartmentalSystemBuilder(odes)
-            cb.set_bioavailability(
-                dosing_cmts[0], dosing_cmts[0].bioavailability * conversion_factor
-            )
             amounts = set(odes.amounts)
-            after_odes = []
-            for s in model.statements.after_odes:
-                if not s.rhs_symbols.isdisjoint(amounts):
-                    new_s = Assignment.create(s.symbol, s.expression / conversion_factor)
-                    after_odes.append(new_s)
-                else:
-                    after_odes.append(s)
-            new_statements = model.statements.before_odes + CompartmentalSystem(cb) + after_odes
+            if column.type == 'dose':
+                dosing_cmts = odes.dosing_compartments
+                cb = CompartmentalSystemBuilder(odes)
+                cb.set_bioavailability(
+                    dosing_cmts[0], dosing_cmts[0].bioavailability * conversion_factor
+                )
+                new_statements = (
+                    model.statements.before_odes
+                    + CompartmentalSystem(cb)
+                    + model.statements.after_odes
+                )
+            else:
+                after_odes = []
+                for s in model.statements.after_odes:
+                    if not s.rhs_symbols.isdisjoint(amounts):
+                        new_s = Assignment.create(s.symbol, s.expression / conversion_factor)
+                        after_odes.append(new_s)
+                    else:
+                        after_odes.append(s)
+                new_statements = model.statements.before_odes + odes + after_odes
         else:
             original_symbol = Expr.symbol(variable)
             scaled_symbol = Expr.symbol(f"SCALED_{variable}")
@@ -387,24 +398,10 @@ def convert_unit(
         model = model.replace(statements=new_statements)
     else:
         df = get_and_check_dataset(model)
-        df, di = _scale_dataset_column(df, model.datainfo, variable, conversion_factor, unit)
-        other_type = _get_other_type(column.type)
-        if other_type is not None:
-            other_name = di.find_single_column_name(other_type)
-            original_other_unit = model.datainfo[other_name].variable.properties.get("unit", None)
-            if original_other_unit is not None:
-                if other_type == 'dose':
-                    new_v = (
-                        unit.replace_unit_of_dimension(original_other_unit) / original_other_unit
-                    )
-                    new_other_unit = unit / new_v
-                else:
-                    new_other_unit = original_other_unit.replace_unit_of_dimension(unit)
-            else:
-                new_other_unit = None
-            df, di = _scale_dataset_column(df, di, other_name, conversion_factor, new_other_unit)
+        df, di = _scale_dataset_column(df, model.datainfo, column, datavar, conversion_factor, unit)
         model = model.replace(dataset=df, datainfo=di)
-    return model.update_source()
+    model = model.update_source()
+    return model
 
 
 def _raise_if_rate(odes):
@@ -414,23 +411,21 @@ def _raise_if_rate(odes):
                 raise ValueError("Cannot convert unit of infusions with rate in model code")
 
 
-def _get_other_type(tp):
-    if tp == 'dv':
-        other_type = 'dose'
-    elif tp == 'dose':
-        other_type = 'dv'
+def _scale_dataset_column(df, di, column, datavar, conversion_factor, unit):
+    colname = column.name
+    new_var = datavar.set_property("unit", unit)
+    if isinstance(column.variable_mapping, DataVariable):
+        scaled_column = conversion_factor * df[colname]
+        new_col = column.replace(variable_mapping=new_var)
     else:
-        other_type = None
-    return other_type
+        ind = next(k for k, v in column.variable_mapping.items() if v == datavar)
+        scaled_column = conversion_factor * df.loc[df[column.variable_id] == ind, colname]
+        new_mapping = dict(column.variable_mapping)
+        new_mapping[ind] = new_var
+        new_col = column.replace(variable_mapping=new_mapping)
 
-
-def _scale_dataset_column(df, di, variable, conversion_factor, unit):
-    scaled_column = conversion_factor * df[variable]
-    df = df.assign(**{variable: scaled_column})
-    if unit is not None:
-        new_var = di[variable].variable.set_property("unit", unit)
-        new_col = di[variable].replace(variable_mapping=new_var)
-        di = di.set_column(new_col)
-    prov_new = (Drop.create(variable), AddColumn.create(variable))
+    df = df.assign(**{colname: scaled_column})
+    di = di.set_column(new_col)
+    prov_new = (Drop.create(colname), AddColumn.create(colname))
     di = di.replace(provenance=di.provenance + prov_new)
     return df, di
