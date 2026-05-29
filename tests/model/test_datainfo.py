@@ -602,6 +602,11 @@ def test_mapped_variable():
     assert di.find_variable("DV:2") == dv2
     assert di.find_variable("DVID") == var1
 
+    with pytest.raises(ValueError):
+        di.find_column("NOTACOL")
+
+    assert di.find_column("DV:1") == col2
+
 
 def test_read_dataset():
     if sys.platform != "win32":

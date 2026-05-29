@@ -1772,6 +1772,20 @@ class DataInfo(Sequence, Immutable):
             variable = column.variable_mapping[ind]
         return variable
 
+    def find_column(self, alias: str) -> ColumnInfo:
+        """Find a single column given a column name alias
+
+        The data variable suffix of the alias will be ignored
+        """
+
+        a = alias.split(":")
+        colname = a[0]
+
+        if colname not in self:
+            raise ValueError(f"No column named {colname}")
+        column = self[colname]
+        return column
+
 
 class TypeIndexer:
     def __init__(self, obj):
