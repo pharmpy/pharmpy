@@ -1,6 +1,13 @@
-======== ======== ======== ======== ======== ========
-|badge1| |badge2| |badge3| |badge4| |badge5| |badge6|
-======== ======== ======== ======== ======== ========
+.. list-table::
+   :class: borderless
+   :widths: auto
+
+   * - |badge1|
+     - |badge2|
+     - |badge3|
+     - |badge4|
+     - |badge5|
+     - |badge6|
 
 .. |badge1| image:: https://img.shields.io/pypi/v/pharmpy-core.svg
    :target: https://pypi.org/project/pharmpy-core
