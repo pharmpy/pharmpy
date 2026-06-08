@@ -1,12 +1,12 @@
 # Direct dependencies
 pip==26.1.2
-tox==4.55.0
+tox==4.55.1
 # Indirect dependencies
 cachetools==7.1.4
 chardet==7.4.3
 colorama==0.4.6
 distlib==0.4.1
-filelock==3.29.0
+filelock==3.29.1
 packaging==26.2
 platformdirs==4.10.0
 pluggy==1.6.0
