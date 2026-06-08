@@ -12,7 +12,7 @@ from typing import Optional
 
 import pharmpy.config as config
 from pharmpy.model.external.nonmem import convert_model
-from pharmpy.modeling import get_config_path, write_dataset, write_model
+from pharmpy.modeling import get_config_path, read_model, write_dataset, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results, parse_simulation_results
 from pharmpy.workflows import ModelEntry
 
@@ -102,6 +102,18 @@ def execute_model(model_entry, context):
             break
         else:
             time.sleep(1)
+
+    if context.retrieve_common_options().get('validate_dataset', False):
+        try:
+            validate_dataset(model, model_path)
+        except (ValueError, AssertionError) as e:
+            with database.transaction(model_entry) as txn:
+                txn.store_local_file(model_path / 'FCON')
+                txn.store_local_file(model_path / 'FDATA')
+            if isinstance(e, ValueError):
+                context.log_warning(str(e), model=model_entry.model)
+            else:
+                context.log_error(str(e), model=model_entry.model)
 
     metadata = {
         'plugin': 'nonmem',
@@ -226,3 +238,18 @@ def create_parafile_and_option(context, path: Path, tmp_path: Optional[Path]) ->
         return f"-parafile={path.name}"
     else:
         return ""
+
+
+def validate_dataset(model, path: Path):
+    try:
+        fcon_model = read_model(path / 'FCON')
+    except Exception:
+        raise ValueError('Could not parse FCON model to compare datasets')
+    dataset = model.dataset.copy()
+    to_drop = [ci.name for ci in model.datainfo if ci.drop]
+    dataset = dataset.drop(to_drop, axis=1)
+    fdata = fcon_model.dataset
+    fdata = fdata[fdata.columns.intersection(dataset.columns)]
+
+    if not fdata.equals(dataset):
+        raise AssertionError('FDATA does not match internal dataset')

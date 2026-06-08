@@ -1,3 +1,4 @@
+import filecmp
 import shutil
 
 import pytest
@@ -7,6 +8,7 @@ from pharmpy.config import site_config_path, user_config_path
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
+from pharmpy.modeling import filter_dataset
 from pharmpy.tools import fit
 from pharmpy.tools.external.nlmixr import verification as nlmixr_verification
 from pharmpy.tools.external.nonmem import conf
@@ -28,7 +30,7 @@ def test_fit_single(tmp_path, model_count, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
         model = Model.parse_model('pheno.mod')
         model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
-        res = fit(model)
+        res = fit(model, validate_dataset=True)
         rundir = tmp_path / 'modelfit1'
         assert res.ofv == pytest.approx(730.8947268137308)
         assert rundir.is_dir()
@@ -37,6 +39,9 @@ def test_fit_single(tmp_path, model_count, testdata):
         assert not [
             path.name for path in (rundir / 'models' / 'pheno').iterdir() if 'contr' in path.name
         ]
+        original_dataset_path = tmp_path / 'pheno.dta'
+        context_dataset_path = rundir / '.modeldb' / '.datasets' / 'pheno.dta'
+        assert filecmp.cmp(original_dataset_path, context_dataset_path)
 
 
 def test_fit_multiple(tmp_path, model_count, testdata):
@@ -45,6 +50,9 @@ def test_fit_multiple(tmp_path, model_count, testdata):
         shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path / 'pheno_1.dta')
         model_1 = Model.parse_model('pheno_1.mod')
         df = pd.read_table(tmp_path / 'pheno_1.dta', sep=r'\s+', header=0)
+        # Mimic NONMEM dataset parsing
+        df.index = range(1, len(df) + 1)
+        df['ID'] = df['ID'].astype('int32')
         model_1 = model_1.replace(
             dataset=df, datainfo=model_1.datainfo.replace(path=tmp_path / 'pheno_1.dta')
         )
@@ -54,7 +62,7 @@ def test_fit_multiple(tmp_path, model_count, testdata):
         model_2 = model_2.replace(
             dataset=df, datainfo=model_2.datainfo.replace(path=tmp_path / 'pheno_2.dta')
         )
-        res1, res2 = fit([model_1, model_2])
+        res1, res2 = fit([model_1, model_2], validate_dataset=True)
         rundir = tmp_path / 'modelfit1'
         assert res1.ofv == pytest.approx(730.8947268137308)
         assert res2.ofv == pytest.approx(730.8947268137308)
@@ -164,3 +172,26 @@ def test_execute_model_nonmem(tmp_path, testdata):
         assert isinstance(model_entry, ModelEntry)
         assert model_entry.modelfit_results
         assert (db.path / 'models' / 'pheno_real').is_dir()
+
+
+def test_fit_ignore_statements(tmp_path, model_count, testdata):
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox2.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'models' / 'mox_simulated_normal.csv', tmp_path)
+        model = Model.parse_model('mox2.mod')
+        model = model.replace(
+            datainfo=model.datainfo.replace(path=tmp_path / 'mox_simulated_normal.csv')
+        )
+        model = filter_dataset(model, 'VISI == 3')
+        res = fit(model, validate_dataset=True)
+        rundir = tmp_path / 'modelfit1'
+        assert res.ofv == pytest.approx(-706.1332300694054)
+        assert rundir.is_dir()
+        assert model_count(rundir) == 1
+        assert (rundir / 'models' / 'mox2' / '.pharmpy').exists()
+        assert not [
+            path.name for path in (rundir / 'models' / 'mox2').iterdir() if 'contr' in path.name
+        ]
+        original_dataset_path = tmp_path / 'mox_simulated_normal.csv'
+        context_dataset_path = rundir / '.modeldb' / '.datasets' / 'mox_simulated_normal.csv'
+        assert filecmp.cmp(original_dataset_path, context_dataset_path)

@@ -276,25 +276,34 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
         else:
             h_dir.mkdir(parents=True, exist_ok=True)
 
-            highest = 0
-            for file in datasets_path.iterdir():
-                name = file.name
-                if name.startswith('data') and name.endswith('.csv'):
-                    number = int(name[4:-4])  # Remove data and .csv
-                    if number > highest:
-                        highest = number
+            if model.datainfo.path:
+                dataset_filename = model.datainfo.path.name
+                dataset_basename = model.datainfo.path.stem
+            else:
+                highest = 0
+                for file in datasets_path.iterdir():
+                    name = file.name
+                    if name.startswith('data') and name.endswith('.csv'):
+                        number = int(name[4:-4])  # Remove data and .csv
+                        if number > highest:
+                            highest = number
 
-            dataset_basename = f'data{highest + 1}'
-            dataset_filename = f'{dataset_basename}.csv'
+                dataset_basename = f'data{highest + 1}'
+                dataset_filename = f'{dataset_basename}.csv'
+
+            data_path = path_absolute(datasets_path / dataset_filename)
+
+            if model.datainfo.path:
+                shutil.copy2(model.datainfo.path, data_path)
+            else:
+                model = write_dataset(model, path=data_path, force=True)
+
+            datainfo = model.datainfo.replace(path=data_path)
+            model = model.replace(datainfo=datainfo)
 
             # NOTE: Create the index file at .datasets/.hash/<hash>/<dataset_filename>
             index_path = h_dir / dataset_filename
             index_path.touch()
-
-            data_path = path_absolute(datasets_path / dataset_filename)
-            datainfo = model.datainfo.replace(path=data_path)
-            model = model.replace(datainfo=datainfo)
-            model = write_dataset(model, path=data_path, force=True)
 
             # NOTE: Write datainfo last so that we are "sure" dataset is there
             # if datainfo is there

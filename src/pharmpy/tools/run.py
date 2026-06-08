@@ -57,6 +57,7 @@ def fit(
     name: Optional[str] = None,
     context: Optional[Context] = None,
     ncores: int = 1,
+    validate_dataset: bool = False,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
 
@@ -72,6 +73,8 @@ def fit(
         Run in this context
     ncores : int
         Number of cores to use for estimation
+    validate_dataset : bool
+        Whether to validate Pharmpy dataset against FDATA file (relevant for NONMEM models)
 
     Return
     ------
@@ -107,6 +110,7 @@ def fit(
         context=context,
         dispatcher=dispatcher,
         ncores=ncores,
+        validate_dataset=validate_dataset,
     )
 
     return (
