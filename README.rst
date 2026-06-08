@@ -1,9 +1,13 @@
-|badge1| \
-|badge2| \
-|badge3| \
-|badge4| \
-|badge5| \
-|badge6|
+.. raw:: html
+
+    <p align="left">
+      <a href="https://pypi.org/project/pharmpy-core"><img src="https://img.shields.io/pypi/v/pharmpy-core.svg" alt="PyPI version"></a>
+      <a href="https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER"><img src="https://img.shields.io/pypi/l/pharmpy-core.svg" alt="License"></a>
+      <a href="https://github.com/pharmpy/pharmpy/actions"><img src="https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg" alt="GA Build"></a>
+      <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/pypi/pyversions/pharmpy-core" alt="Python versions"></a>
+      <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
+      <a href="https://codecov.io/gh/pharmpy/pharmpy"><img src="https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII" alt="Coverage"></a>
+    </p>
 
 .. |badge1| image:: https://img.shields.io/pypi/v/pharmpy-core.svg
    :target: https://pypi.org/project/pharmpy-core
