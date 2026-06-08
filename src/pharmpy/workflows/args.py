@@ -31,10 +31,10 @@ def split_common_options(
     Tuple of dispatching options, common options and other option dictionaries
     """
     all_dispatching_options = ('context', 'name', 'ref', 'broadcaster', 'dispatcher', 'ncores')
-    all_common_options = 'esttool'
+    all_common_options = ('esttool', 'validate_dataset')
     # The defaults below will be overwritten by the user given options
     dispatching_options = get_default_dispatching_options()
-    common_options: dict[str, Any] = {'esttool': 'nonmem'}
+    common_options = get_default_common_options()
     seed = None
     other_options = {}
     for key, value in d.items():
@@ -45,6 +45,11 @@ def split_common_options(
                 if value not in ALLOWED_ESTTOOLS:
                     raise ValueError(
                         f"Invalid estimation tool {value}, must be one of {ALLOWED_ESTTOOLS}"
+                    )
+            if key == 'validate_dataset':
+                if not isinstance(value, bool):
+                    raise TypeError(
+                        f"Invalid `validate_dataset` option {type(value)}, must be bool"
                     )
             common_options[key] = value
         elif key == "seed":
@@ -65,6 +70,11 @@ def get_default_dispatching_options():
         'ncores': None,
     }
     return dispatching_options
+
+
+def get_default_common_options():
+    common_options = {'esttool': 'nonmem', 'validate_dataset': False}
+    return common_options
 
 
 def canonicalize_dispatching_options(d):
