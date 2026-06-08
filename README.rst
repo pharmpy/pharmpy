@@ -1,3 +1,5 @@
+.. Use html to render badges since the github rst renderer will add extra underscore between badges
+
 .. raw:: html
 
     <p align="left">
@@ -8,24 +10,6 @@
       <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
       <a href="https://codecov.io/gh/pharmpy/pharmpy"><img src="https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII" alt="Coverage"></a>
     </p>
-
-.. |badge1| image:: https://img.shields.io/pypi/v/pharmpy-core.svg
-   :target: https://pypi.org/project/pharmpy-core
-
-.. |badge2| image:: https://img.shields.io/pypi/l/pharmpy-core.svg
-   :target: https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER
-
-.. |badge3| image:: https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg
-    :target: https://github.com/pharmpy/pharmpy/actions
-
-.. |badge4| image:: https://img.shields.io/pypi/pyversions/pharmpy-core
-   :target: https://www.python.org/downloads/
-
-.. |badge5| image:: https://img.shields.io/badge/code%20style-black-000000.svg
-   :target: https://github.com/psf/black
-
-.. |badge6| image:: https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII
-    :target: https://codecov.io/gh/pharmpy/pharmpy
 
 .. _README:
 
