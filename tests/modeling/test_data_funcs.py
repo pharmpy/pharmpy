@@ -6,7 +6,7 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
-from pharmpy.model import AddColumn, AddRows, Drop, Ignore
+from pharmpy.model import AddColumn, AddRows, Drop, Ignore, ReadDataset
 from pharmpy.modeling import (
     add_admid,
     add_cmt,
@@ -41,6 +41,7 @@ from pharmpy.modeling import (
     load_dataset,
     remove_loq_data,
     remove_unused_columns,
+    reset_dataset,
     set_covariates,
     set_dataset,
     set_dvid,
@@ -907,3 +908,10 @@ def test_is_binary(load_example_model_for_test, expr, correct):
     model = load_example_model_for_test("pheno")
     res = is_binary(model, expr)
     assert res is correct
+
+
+def test_reset_dataset(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert isinstance(model.datainfo.provenance[-1], ReadDataset)
+    model = reset_dataset(model)
+    assert len(model.datainfo.provenance) == 0

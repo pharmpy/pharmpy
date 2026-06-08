@@ -63,6 +63,7 @@ Dataset handling
     read_dataset_from_datainfo
     remove_loq_data
     remove_unused_columns
+    reset_dataset
     set_covariates
     set_dataset
     set_dvid
