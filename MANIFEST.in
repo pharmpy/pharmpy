@@ -25,7 +25,6 @@ include lint-requirements.txt
 include tox.ini
 
 exclude clean_cache.sh
-exclude codecov.yml
 exclude bumpversion.sh
 exclude .mailmap
 

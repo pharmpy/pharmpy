@@ -8,7 +8,6 @@
       <a href="https://github.com/pharmpy/pharmpy/actions"><img src="https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg" alt="GA Build"></a>
       <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/pypi/pyversions/pharmpy-core" alt="Python versions"></a>
       <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
-      <a href="https://codecov.io/gh/pharmpy/pharmpy"><img src="https://codecov.io/gh/pharmpy/pharmpy/branch/main/graph/badge.svg?token=JZTHXXQPII" alt="Coverage"></a>
     </p>
 
 .. _README:

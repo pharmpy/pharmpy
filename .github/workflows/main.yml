@@ -76,12 +76,6 @@ jobs:
         run: |
             tox -e ${{ matrix.tox-env }}
 
-      - uses: codecov/codecov-action@v6
-        if: matrix.tox-env == 'unit-cover'
-        with:
-          flags: unit,${{ matrix.platform }},python-${{ matrix.python-version }}
-          files: ./.coverage.xml
-
       - name: Check coverage level
         if: matrix.tox-env == 'unit-cover'
         shell: bash
