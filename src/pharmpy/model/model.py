@@ -471,9 +471,9 @@ class Model(Immutable):
             return False
         if self.random_variables != other.random_variables:
             return False
-        if self.statements != other.statements:
-            return False
         if self.dependent_variables != other.dependent_variables:
+            return False
+        if self.statements != other.statements:
             return False
         if self.observation_transformation != other.observation_transformation:
             return False
