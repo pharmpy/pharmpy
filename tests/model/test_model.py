@@ -91,6 +91,11 @@ def test_model_equality(load_example_model_for_test):
 
     ass = Assignment.create('a', 0)
     model2 = Model.create(
+        'model2', dependent_variables={'a': 1}, statements=model1.statements + ass
+    )
+    assert model1 != model2
+
+    model2 = Model.create(
         'model2', dependent_variables=model1.dependent_variables, statements=model1.statements + ass
     )
     assert model1 != model2
