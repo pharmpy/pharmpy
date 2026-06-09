@@ -250,7 +250,7 @@ class Model(Immutable):
         dvs: Optional[Mapping[TSymbol, int]],
     ) -> frozenmapping[Expr, int]:
         if dvs is None:
-            dvs = {Expr.symbol('y'): 1}
+            dvs = {Expr.symbol('Y'): 1}
         for key, value in dvs.items():
             if isinstance(key, str):
                 key = Expr.symbol(key)
