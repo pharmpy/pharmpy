@@ -178,7 +178,6 @@ def create_linearized_model(model_name, description, model, derivative_model_ent
     linbase = Model.create(
         parameters=get_omegas(derivative_model) + get_sigmas(derivative_model),
         random_variables=derivative_model_entry.model.random_variables,
-        dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
         dataset=df,
         datainfo=di,
         name=model_name,
@@ -199,7 +198,10 @@ def create_linearized_model(model_name, description, model, derivative_model_ent
     linbase = add_estimation_step(linbase, "FOCE", maximum_evaluations=999999, interaction=True)
 
     statements = _create_linearized_model_statements(linbase, model)
-    linbase = linbase.replace(statements=statements)
+    linbase = linbase.replace(
+        statements=statements,
+        dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
+    )
 
     if isinstance(derivative_model, NONMEMModel):
         linbase = convert_model(linbase, to_format='nonmem')

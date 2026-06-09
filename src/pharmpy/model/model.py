@@ -120,10 +120,6 @@ class Model(Immutable):
         internals: Optional[ModelInternals] = None,
     ):
         Model._canonicalize_name(name)
-        dvs = Model._canonicalize_dependent_variables(dependent_variables)
-        obs_transformation = Model._canonicalize_observation_transformation(
-            observation_transformation, dvs
-        )
         random_variables = Model._canonicalize_random_variables(random_variables)
         parameters = Model._canonicalize_parameters(parameters)
         parameters = Model._canonicalize_parameter_estimates(parameters, random_variables)
@@ -140,6 +136,10 @@ class Model(Immutable):
             statements, parameters, random_variables, datainfo
         )
         Model._check_symbol_names(datainfo, statements)
+        dvs = Model._canonicalize_dependent_variables(dependent_variables, statements)
+        obs_transformation = Model._canonicalize_observation_transformation(
+            observation_transformation, dvs
+        )
         return cls(
             name=name,
             dependent_variables=dvs,
@@ -247,10 +247,14 @@ class Model(Immutable):
 
     @staticmethod
     def _canonicalize_dependent_variables(
-        dvs: Optional[Mapping[TSymbol, int]],
+        dvs: Optional[Mapping[TSymbol, int]], statements: Statements
     ) -> frozenmapping[Expr, int]:
         if dvs is None:
-            dvs = {Expr.symbol('Y'): 1}
+            if len(statements) > 0:
+                dvs = {Expr.symbol('Y'): 1}
+            else:
+                dvs = {}
+        lhs_symbols = statements.lhs_symbols
         for key, value in dvs.items():
             if isinstance(key, str):
                 key = Expr.symbol(key)
@@ -258,6 +262,8 @@ class Model(Immutable):
                 raise TypeError("Dependent variable keys must be a string or a symbol")
             if not isinstance(value, int):
                 raise TypeError("Dependent variable values must be of int type")
+            if key not in lhs_symbols:
+                raise ValueError(f"Dependent variable not defined in Statements: {key}")
         return frozenmapping(dvs)
 
     @staticmethod
@@ -324,22 +330,6 @@ class Model(Immutable):
             except KeyError:
                 pass
 
-        if 'dependent_variables' in kwargs:
-            dependent_variables = Model._canonicalize_dependent_variables(
-                kwargs['dependent_variables']
-            )
-            kwargs.pop('dependent_variables')
-        else:
-            dependent_variables = self.dependent_variables
-
-        if 'observation_transformation' in kwargs:
-            observation_transformation = Model._canonicalize_observation_transformation(
-                kwargs['observation_transformation'], dependent_variables
-            )
-            kwargs.pop('observation_transformation')
-        else:
-            observation_transformation = self.observation_transformation
-
         if 'random_variables' in kwargs:
             random_variables = Model._canonicalize_random_variables(kwargs['random_variables'])
             kwargs.pop('random_variables')
@@ -392,6 +382,22 @@ class Model(Immutable):
             kwargs.pop('statements')
         else:
             statements = self.statements
+
+        if 'dependent_variables' in kwargs:
+            dependent_variables = Model._canonicalize_dependent_variables(
+                kwargs['dependent_variables'], statements
+            )
+            kwargs.pop('dependent_variables')
+        else:
+            dependent_variables = self.dependent_variables
+
+        if 'observation_transformation' in kwargs:
+            observation_transformation = Model._canonicalize_observation_transformation(
+                kwargs['observation_transformation'], dependent_variables
+            )
+            kwargs.pop('observation_transformation')
+        else:
+            observation_transformation = self.observation_transformation
 
         if 'execution_steps' in kwargs:
             execution_steps = Model._canonicalize_execution_steps(kwargs['execution_steps'])

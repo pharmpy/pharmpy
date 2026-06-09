@@ -90,10 +90,9 @@ def test_model_equality(load_example_model_for_test):
     assert model1 != model2
 
     ass = Assignment.create('a', 0)
-    model2 = Model.create('model2', statements=model1.statements + ass)
-    assert model1 != model2
-
-    model2 = Model.create('model2', dependent_variables=pheno1.dependent_variables)
+    model2 = Model.create(
+        'model2', dependent_variables=model1.dependent_variables, statements=model1.statements + ass
+    )
     assert model1 != model2
 
     model2 = Model.create('model2', observation_transformation=pheno1.observation_transformation)
@@ -146,6 +145,9 @@ def test_replace(load_model_for_test, testdata):
     with pytest.raises(ValueError, match=re.escape("Invalid keywords given : ['unknown_arg']")):
         model.replace(unknown_arg=9)
 
+    with pytest.raises(ValueError):
+        model.replace(dependent_variables={'X': 1})
+
 
 def test_dict(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno.mod'
@@ -174,7 +176,7 @@ def test_create_model():
     assert isinstance(m.parameters, Parameters)
     assert isinstance(m.execution_steps, ExecutionSteps)
     assert isinstance(m.statements, Statements)
-    assert m.dependent_variables == {Expr.symbol('y'): 1}
+    assert m.dependent_variables == {}
 
     # datainfo
     with pytest.raises(TypeError, match='model.datainfo must be of DataInfo type'):
@@ -228,9 +230,12 @@ def test_create_model():
     with pytest.raises(TypeError, match='Dependent variable keys must be a string or a symbol'):
         Model.create(name='model', dependent_variables={1: 2})
 
-    m = Model.create(name='model', dependent_variables={'y2': 2})
+    assign = Assignment.create('y2', 0)
+    m = Model.create(name='model', dependent_variables={'y2': 2}, statements=Statements([assign]))
     assert m.dependent_variables == {'y2': 2}
-    m = Model.create(name='model', dependent_variables={Expr.symbol('y2'): 2})
+    m = Model.create(
+        name='model', dependent_variables={Expr.symbol('y2'): 2}, statements=Statements([assign])
+    )
     assert m.dependent_variables == {Expr.symbol('y2'): 2}
 
     # name
@@ -336,9 +341,6 @@ def test_statements(load_example_model_for_test):
     assign = Assignment.create(Expr.symbol('A'), Expr.symbol('t'))
     with pytest.raises(ValueError, match='Symbol t is not defined'):
         Model.create('model', statements=Statements() + assign)
-
-    assign = Assignment.create(Expr.function('A', Expr.symbol('t')), Expr.symbol('t'))
-    Model.create('model', statements=Statements() + assign)
 
     assign = Assignment.create(Expr.function('A', 0), Expr.symbol('t'))
     with pytest.raises(ValueError, match='Symbol t is not defined'):
