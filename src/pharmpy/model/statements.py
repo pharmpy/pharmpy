@@ -308,6 +308,12 @@ class CompartmentalSystemBuilder:
         >>> cb.add_compartment(central)
         >>> cb.add_flow(depot, central, "KA")
         """
+        if not (source in self._g and destination in self._g):
+            raise ValueError(
+                "Compartment does not exist in system."
+                "This can happen if the compartment was not added with add_compartment "
+                "or if the compartment was updated with for example set_dose"
+            )
         self._g.add_edge(source, destination, rate=Expr(rate))
 
     def remove_flow(self, source: Compartment, destination: CompartmentBase) -> None:

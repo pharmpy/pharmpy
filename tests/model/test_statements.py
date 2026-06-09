@@ -508,7 +508,7 @@ def test_dosing_compartment(load_model_for_test, testdata):
     cb = CompartmentalSystemBuilder(odes)
     central = odes.central_compartment
     dose = Bolus(Expr.symbol('AMT'))
-    cb.set_dose(central, dose=dose)
+    central = cb.set_dose(central, dose=dose)
     cs = CompartmentalSystem(cb)
 
     assert len(cs.dosing_compartments) == 2
@@ -519,6 +519,8 @@ def test_dosing_compartment(load_model_for_test, testdata):
     cb.add_flow(central, peripheral, S('X'))
     cb.add_flow(peripheral, central, S('X'))
     cb.set_dose(peripheral, dose=dose)
+    with pytest.raises(ValueError):
+        cb.add_flow(peripheral, central, 0)
     cs = CompartmentalSystem(cb)
     assert len(cs.dosing_compartments) == 3
     assert cs.dosing_compartments[-1].name == 'CENTRAL'
@@ -1094,9 +1096,12 @@ def test_to_compartmental_system(load_model_for_test, testdata):
     k, v = S('k'), S('V')
     cb = CompartmentalSystemBuilder()
     central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
     cb.add_flow(central, output, k)
     complex = Compartment.create('COMPLEX')
     target = Compartment.create('TARGET')
+    cb.add_compartment(complex)
+    cb.add_compartment(target)
     cb.add_flow(target, complex, central.amount / v)
     cb.add_flow(complex, target, k)
     cb.add_flow(target, output, k)
