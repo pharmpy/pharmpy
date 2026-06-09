@@ -123,6 +123,8 @@ class NormalDistribution(Distribution):
     def create(
         cls, name: str, level: str, mean: Union[Expr, int, float], variance: Union[Expr, int, float]
     ):
+        if not isinstance(name, str):
+            raise TypeError(f"name must be a string not {type(name)}")
         level = level.upper()
         mean = Expr(mean)
         variance = Expr(variance)
@@ -328,6 +330,9 @@ class JointNormalDistribution(Distribution):
             raise ValueError(
                 'Covariance matrix of joint normal distribution is not positive semidefinite'
             )
+        for name in names:
+            if not isinstance(name, str):
+                raise TypeError(f"names must be all strings. Found {type(name)}")
         return cls(names, level, mean, variance)
 
     def replace(self, **kwargs) -> JointNormalDistribution:

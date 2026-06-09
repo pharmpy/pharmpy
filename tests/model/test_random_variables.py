@@ -28,6 +28,8 @@ def test_normal_rv():
     assert dist.names == ('NEW',)
     with pytest.raises(ValueError):
         NormalDistribution.create('X', 'iiv', 0, -1)
+    with pytest.raises(TypeError):
+        NormalDistribution.create(0, 'iiv', 0, 1)
 
 
 def test_joint_normal_rv():
@@ -36,6 +38,10 @@ def test_joint_normal_rv():
     assert dist.level == 'IIV'
     dist = dist.replace(names=['NEW', 'ETA2'])
     assert dist.names == ('NEW', 'ETA2')
+    with pytest.raises(TypeError):
+        JointNormalDistribution.create(
+            ['ETA1', Expr.symbol('ETA2')], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]]
+        )
 
 
 def test_joint_normal_rv_non_symmetric():
