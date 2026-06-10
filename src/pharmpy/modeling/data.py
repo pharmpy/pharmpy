@@ -2265,7 +2265,7 @@ def set_dataset(
         Dataset path or dataframe
     format : str
         File format of dataset (default csv. Can also be set to 'nonmem')
-    datatype : str
+    datatype : Any
         Deprecated. Use format instead
 
     Returns
