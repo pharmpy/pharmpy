@@ -21,8 +21,9 @@ def symbol(x):
 
 
 def test_normal_rv():
-    dist = NormalDistribution.create('ETA(1)', 'iiv', 0, 1)
-    assert dist.names == ('ETA(1)',)
+    dist = NormalDistribution.create('ETA1', 'iiv', 0, 1)
+    assert dist.names == ('ETA1',)
+    assert dist.symbol == symbol('ETA1')
     assert dist.level == 'IIV'
     dist = dist.replace(name='NEW')
     assert dist.names == ('NEW',)
@@ -35,6 +36,7 @@ def test_normal_rv():
 def test_joint_normal_rv():
     dist = JointNormalDistribution.create(['ETA1', 'ETA2'], 'iiv', [0, 0], [[1, 0.1], [0.1, 2]])
     assert dist.names == ('ETA1', 'ETA2')
+    assert dist.symbols == (symbol('ETA1'), symbol('ETA2'))
     assert dist.level == 'IIV'
     dist = dist.replace(names=['NEW', 'ETA2'])
     assert dist.names == ('NEW', 'ETA2')

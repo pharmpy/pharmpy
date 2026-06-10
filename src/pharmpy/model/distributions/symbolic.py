@@ -172,6 +172,11 @@ class NormalDistribution(Distribution):
             (Expr.symbol(self._name),),
         )
 
+    @property
+    def symbol(self) -> Expr:
+        """Symbol of this random variable"""
+        return Expr.symbol(self._name)
+
     def subs(self, d: Mapping[TExpr, TExpr]) -> NormalDistribution:
         """Substitute expressions
 
@@ -380,6 +385,11 @@ class JointNormalDistribution(Distribution):
             self._variance.free_symbols,
             (Expr.symbol(name) for name in self._names),
         )
+
+    @property
+    def symbols(self) -> tuple[Expr, ...]:
+        """Symbols for all random variables"""
+        return tuple(Expr.symbol(name) for name in self._names)
 
     def subs(self, d: Mapping[TExpr, TExpr]) -> JointNormalDistribution:
         """Substitute expressions
