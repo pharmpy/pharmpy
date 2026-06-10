@@ -91,7 +91,7 @@ def test_get_observations(load_example_model_for_test, testdata):
     assert s2.loc[2] == 17.3
     assert s2.loc[12] == 31.0
     path = testdata / 'nonmem' / 'models' / 'pheno_dvid.csv'
-    model = set_dataset(model, path, datatype='nonmem')
+    model = set_dataset(model, path, format='nonmem')
     model = add_effect_compartment(model, 'linear')
     ser1 = get_observations(model, keep_index=True, dv=1)
     ser2 = get_observations(model, keep_index=True, dv=2)
@@ -107,7 +107,7 @@ def test_get_observations_and_ignores(load_example_model_for_test, testdata):
     amt_expr = BooleanExpr.ne(Expr.symbol('AMT'), 0)
     assert ignore == Ignore.create(amt_expr)
     path = testdata / 'nonmem' / 'models' / 'pheno_dvid.csv'
-    model = set_dataset(model, path, datatype='nonmem')
+    model = set_dataset(model, path, format='nonmem')
     model = add_effect_compartment(model, 'linear')
     _, ignore = get_observations_and_exclusion_criteria(model, dv=1)
     dvid_symb = Expr.symbol('DVID')
@@ -671,12 +671,12 @@ def test_set_dataset(load_example_model_for_test, testdata):
     pheno_path = testdata / 'nonmem' / 'pheno.dta'
 
     assert model.datainfo.path.name == 'pheno.dta'
-    model = set_dataset(model, path_or_df=mox_path, datatype=None)
+    model = set_dataset(model, path_or_df=mox_path, format=None)
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
     assert len(model.datainfo.provenance) == 1
 
-    model = set_dataset(model, path_or_df=mox_path, datatype='nonmem')
+    model = set_dataset(model, path_or_df=mox_path, format='nonmem')
     assert 'id' in model.datainfo.types
     assert len(model.datainfo.provenance) == 1
 
@@ -684,14 +684,14 @@ def test_set_dataset(load_example_model_for_test, testdata):
     assert model.datainfo.path.name == 'pheno.dta'
     dataset = pd.read_csv(pheno_path, sep='\\s+')
 
-    model = set_dataset(model, path_or_df=dataset, datatype=None)
+    model = set_dataset(model, path_or_df=dataset, format=None)
     assert model.datainfo.path is None
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
     assert len(model.datainfo.provenance) == 0
 
     model = load_example_model_for_test("pheno")
-    model = set_dataset(model, path_or_df=dataset, datatype='nonmem')
+    model = set_dataset(model, path_or_df=dataset, format='nonmem')
     assert model.datainfo.path is None
     assert model.dataset is not None
     assert 'id' in model.datainfo.types
@@ -699,8 +699,11 @@ def test_set_dataset(load_example_model_for_test, testdata):
 
     model = load_example_model_for_test("pheno")
     pheno_filtered_path = testdata / 'nonmem' / 'pheno_no_obs_1stID.dta'
-    model = set_dataset(model, path_or_df=pheno_filtered_path, datatype='nonmem')
+    model = set_dataset(model, path_or_df=pheno_filtered_path, format='nonmem')
     assert len(model.datainfo.provenance) == 2
+
+    with pytest.deprecated_call():
+        set_dataset(model, pheno_filtered_path, datatype='nonmem')
 
 
 def test_bin_observations(load_example_model_for_test):
@@ -755,7 +758,7 @@ def _setup_binarize_test():
     }
     dataset = pd.DataFrame(d)
     model = create_basic_pk_model('iv')
-    model = set_dataset(model, dataset, datatype='nonmem')
+    model = set_dataset(model, dataset, format='nonmem')
     return dataset, model
 
 
@@ -846,7 +849,7 @@ def test_binarize_dataset_raises():
     }
     dataset = pd.DataFrame(d)
     model = create_basic_pk_model('iv')
-    model = set_dataset(model, dataset, datatype='nonmem')
+    model = set_dataset(model, dataset, format='nonmem')
 
     with pytest.raises(ValueError):
         binarize_dataset(model, columns=None)

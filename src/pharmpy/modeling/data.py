@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import Collection, Container, Literal, Optional, Union
+from typing import Any, Collection, Container, Literal, Optional, Union
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -2250,7 +2250,10 @@ def load_dataset(model: Model):
 
 
 def set_dataset(
-    model: Model, path_or_df: Union[str, Path, pd.DataFrame], datatype: Optional[str] = None
+    model: Model,
+    path_or_df: Union[str, Path, pd.DataFrame],
+    format: Optional[str] = None,
+    datatype: Any = None,
 ):
     """Load the dataset given datainfo
 
@@ -2260,8 +2263,10 @@ def set_dataset(
         Pharmpy model
     path_or_df : str, Path, or pd.DataFrame
         Dataset path or dataframe
+    format : str
+        File format of dataset (default csv. Can also be set to 'nonmem')
     datatype : str
-        Type of dataset (optional)
+        Deprecated. Use format instead
 
     Returns
     -------
@@ -2276,7 +2281,7 @@ def set_dataset(
     >>> dataset_path = model.datainfo.path
     >>> model.dataset is None
     True
-    >>> model = set_dataset(model, dataset_path, datatype='nonmem')
+    >>> model = set_dataset(model, dataset_path, format='nonmem')
     >>> model.dataset
          ID   TIME   AMT  WGT  APGR    DV  FA1  FA2
     1     1    0.0  25.0  1.4   7.0   0.0  1.0  1.0
@@ -2294,6 +2299,13 @@ def set_dataset(
     [744 rows x 8 columns]
 
     """
+    if datatype is not None:
+        format = datatype
+        warnings.warn(
+            "The option 'datatype' for set_dataset is deprecated. Use 'format' instead",
+            DeprecationWarning,
+        )
+
     if isinstance(path_or_df, pd.DataFrame):
         df = path_or_df
         path = None
@@ -2301,17 +2313,17 @@ def set_dataset(
         df = None
         path = normalize_user_given_path(path_or_df)
 
-    if datatype == 'nonmem':
+    if format == 'nonmem':
         di = create_default_datainfo(path_or_df)
     else:
         columns = list(df.columns.values) if df is not None else None
         di = DataInfo.create(columns=columns, path=path)
 
     if path:
-        df, di = read_dataset_from_datainfo_update(di, datatype=datatype)
+        df, di = read_dataset_from_datainfo_update(di, datatype=format)
 
     if len(df.columns) == 1:
-        warnings.warn('Could only find one column, should this be another datatype?')
+        warnings.warn('Could only find one column, should this be another file format?')
 
     model = model.replace(dataset=df, datainfo=di)
     return model.update_source()

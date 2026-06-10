@@ -644,7 +644,7 @@ def create_start_model(input, modeltype, administration, cl_init, vc_init, mat_i
         )
 
     if isinstance(input, pd.DataFrame):
-        model = set_dataset(model, input, datatype='nonmem')
+        model = set_dataset(model, input, format='nonmem')
 
     model = convert_model(model, 'nonmem')  # FIXME: Workaround for results retrieval system
     return model
