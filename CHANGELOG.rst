@@ -1,3 +1,11 @@
+next version
+------------
+
+Bugfixes
+========
+
+* Fix bug in pharmr causing datasets with string columns to not be read in correctly
+
 .. _2.1.1:
 
 2.1.1 (2026-05-19)
