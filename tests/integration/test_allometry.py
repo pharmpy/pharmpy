@@ -23,7 +23,7 @@ def test_allometry(tmp_path, testdata):
         sep = os.path.sep
         model_name = 'scaled_model'
         assert str(context.retrieve_model_entry(model_name).model.datainfo.path).endswith(
-            f'{sep}allometry1{sep}.modeldb{sep}.datasets{sep}data1.csv'
+            f'{sep}allometry1{sep}.modeldb{sep}.datasets{sep}pheno5.csv'
         )
         key = context.retrieve_key(model_name)
         context.model_database.retrieve_file(key, 'model.lst', tmp_path)
@@ -31,5 +31,5 @@ def test_allometry(tmp_path, testdata):
             while line := fh.readline():
                 # NOTE: Skip date, time, description etc
                 if line[:6] == '$DATA ':
-                    assert line == f'$DATA ..{sep}.datasets{sep}data1.csv IGNORE=@\n'
+                    assert line == f'$DATA ..{sep}.datasets{sep}pheno5.csv IGNORE=@\n'
                     break
