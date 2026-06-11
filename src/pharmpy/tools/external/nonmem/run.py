@@ -68,8 +68,13 @@ def execute_model(model_entry, context):
     datasets_path = dataset_path.parent
     datasets_path.mkdir(parents=True, exist_ok=True)
 
-    # NOTE: Write dataset and model files so they can be used by NONMEM.
-    model = write_dataset(model, path=dataset_path, force=True)
+    if model.datainfo.path:
+        shutil.copy2(model.datainfo.path, dataset_path)
+        di = model.datainfo.replace(path=dataset_path)
+        model = model.replace(datainfo=di).update_source()
+    else:
+        # NOTE: Write dataset and model files so they can be used by NONMEM.
+        model = write_dataset(model, path=dataset_path, force=True)
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
     parafile_option = create_parafile_and_option(context, model_path / 'parafile.pnm', tmp_path)
