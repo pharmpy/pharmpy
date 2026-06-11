@@ -2,7 +2,7 @@ FILE    FSTREAM
 PROB                                                                            
 FMTN   3                                                                        
 LDFO   0                                                                        
-DATA       1   01148  21   0   0   0   0          -1   0 0                      
+DATA       1   0 541  21   0   0   0   0          -1   0 0                      
 ITEM       1  19  21  11   1   0   0   0   0   0   0   0   0   0   0   0        
 INDX      20  14  16   0  17  18   0   0   0   0   0                            
 XVID       0   0   0   0   0                                                    

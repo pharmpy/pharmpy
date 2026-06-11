@@ -1,34 +1,55 @@
 import pytest
 
-from pharmpy.model.external.fcon.model import group_formats, read_multiline_observations
+from pharmpy.model.external.fcon.model import parse_formats, read_multiline_observations
+from pharmpy.modeling import filter_dataset
 
 
-@pytest.mark.parametrize(
-    'fcon, model_path, col',
-    [
-        (
-            'pheno',
-            'pheno_real.mod',
-            'WGT',
-        ),
-        (
-            'mox2',
-            'models/mox2.mod',
-            'TIME',
-        ),
-    ],
-)
-def test_dataset(load_model_for_test, testdata, fcon, model_path, col):
-    model = load_model_for_test(testdata / 'nonmem' / 'fcon' / fcon / 'FCON')
+def test_dataset_pheno(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'fcon' / 'pheno' / 'FCON')
     assert model.internals.code.startswith('FILE')
 
     df = model.dataset
     assert df.notna().all().all()
     assert df['ID'].dtype == 'int32'
 
-    nmtran = load_model_for_test(testdata / 'nonmem' / model_path)
+    nmtran = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     assert df.index.equals(nmtran.dataset.index)
-    assert list(df[col]) == list(nmtran.dataset[col])
+    assert list(df['WGT']) == list(nmtran.dataset['WGT'])
+
+
+def test_dataset_mox2(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'fcon' / 'mox2' / 'FCON')
+    assert model.internals.code.startswith('FILE')
+
+    df = model.dataset
+    assert df.notna().all().all()
+    assert df['ID'].dtype == 'int32'
+
+    nmtran = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    nmtran = filter_dataset(nmtran, 'VISI == 3.0')
+    assert df.index.equals(nmtran.dataset.index)
+    assert list(df['TIME']) == list(nmtran.dataset['TIME'])
+
+
+@pytest.mark.parametrize(
+    'code, expected',
+    [
+        (
+            '(8E6.0,2F2.0)',
+            [['8E6.0', '2F2.0']],
+        ),
+        (
+            '(2(4E19.0/),3E19.0,2F2.0)',
+            [['4E19.0'], ['4E19.0'], ['3E19.0', '2F2.0']],
+        ),
+        (
+            '(2(4E19.0/)/2F2.0)',
+            [['4E19.0'], ['4E19.0'], ['2F2.0']],
+        ),
+    ],
+)
+def test_parse_formats(code, expected):
+    assert parse_formats(code) == expected
 
 
 def test_read_multiline_observations(testdata):
@@ -56,18 +77,7 @@ def test_read_multiline_observations(testdata):
         'EVID',
         'MDV',
     ]
-    formats = ['4(4E19.0/)', '3E19.0', '2F2.0']
+    formats = parse_formats('(4(4E19.0/),3E19.0,2F2.0)')
     df = read_multiline_observations(path, labels, formats)
-    assert len(df) == 1148
+    assert len(df) == 541
     assert df.notna().all().all()
-
-
-def test_group_formats():
-    formats = ['4(4E19.0/)', '3E19.0', '2F2.0']
-    assert group_formats(formats) == [
-        ['4E19.0'],
-        ['4E19.0'],
-        ['4E19.0'],
-        ['4E19.0'],
-        ['3E19.0', '2F2.0'],
-    ]
