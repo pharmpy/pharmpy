@@ -2725,5 +2725,5 @@ def reset_dataset(model: Model) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = reset_dataset(model)
     """
-    di = model.datainfo.replace(provenance=None)
-    return model.replace(datainfo=di)
+    di = model.datainfo.replace(provenance=None, path=None)
+    return model.replace(datainfo=di).update_source()

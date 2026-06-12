@@ -14,6 +14,7 @@ from pharmpy.tools.external.nlmixr import verification as nlmixr_verification
 from pharmpy.tools.external.nonmem import conf
 from pharmpy.tools.external.nonmem.run import execute_model as nonmem_execute_model
 from pharmpy.tools.external.rxode import verification as rxode_verification
+from pharmpy.tools.run import run_tool
 from pharmpy.workflows import LocalDirectoryContext, ModelEntry
 
 
@@ -195,3 +196,22 @@ def test_fit_ignore_statements(tmp_path, model_count, testdata):
         original_dataset_path = tmp_path / 'mox_simulated_normal.csv'
         context_dataset_path = rundir / '.modeldb' / '.datasets' / 'mox_simulated_normal.csv'
         assert filecmp.cmp(original_dataset_path, context_dataset_path)
+
+
+def test_fit_use_pharmpy_dataset(tmp_path, model_count, testdata):
+    with chdir(tmp_path):
+        shutil.copy2(testdata / 'nonmem' / 'pheno.mod', tmp_path)
+        shutil.copy2(testdata / 'nonmem' / 'pheno.dta', tmp_path)
+        model = Model.parse_model('pheno.mod')
+        model = model.replace(datainfo=model.datainfo.replace(path=tmp_path / 'pheno.dta'))
+        res = run_tool('modelfit', model, always_create_new_dataset_file=True)
+        rundir = tmp_path / 'modelfit1'
+        assert res.ofv == pytest.approx(730.8947268137308)
+        assert rundir.is_dir()
+        assert model_count(rundir) == 1
+        assert (rundir / 'models' / 'pheno' / '.pharmpy').exists()
+        assert not [
+            path.name for path in (rundir / 'models' / 'pheno').iterdir() if 'contr' in path.name
+        ]
+        assert not (rundir / '.modeldb' / '.datasets' / 'pheno.dta').is_file()
+        assert (rundir / '.modeldb' / '.datasets' / 'data1.csv').is_file()
