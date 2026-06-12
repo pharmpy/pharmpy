@@ -221,8 +221,12 @@ class Model(BaseModel):
             model = add_dummy_dv(model)
             keep_dataset = keep_original_dataset(model)
             cs = update_input(cs, model, keep_dataset)
-
-            if keep_dataset:
+            if model.datainfo.path and model.datainfo.path != model.internals.old_datainfo.path:
+                filename = get_relative_dataset_path(
+                    datapath=model.datainfo.path, newpath=None, warn=False
+                )
+                newdata = newdata.set_filename(filename)
+            elif keep_dataset:
                 ignores = [op for op in model.datainfo.provenance if isinstance(op, Ignore)]
                 newdata = newdata.update_filters(ignores)
                 if not model.datainfo.path:
@@ -306,14 +310,9 @@ class Model(BaseModel):
             assert (
                 not datapath.exists() or datapath.is_file()
             ), f'input path change, but no file exists at target {str(datapath)}'
-            parent_path = Path.cwd() if path is None else path.parent
-            try:
-                filename = str(path_relative_to(parent_path, datapath))
-            except ValueError:
-                # NOTE: If parent path and datapath are in different drives absolute path
-                # needs to be used
-                filename = str(path_absolute(datapath))
-                warnings.warn('Cannot resolve relative path, falling back to absolute path')
+            filename = get_relative_dataset_path(
+                datapath=model.datainfo.path, newpath=path, warn=True
+            )
             newdata = data_record.set_filename(filename)
             internals = model.internals
             assert isinstance(internals, NONMEMModelInternals)
@@ -517,3 +516,16 @@ def keep_original_dataset(model):
         if isinstance(op, (AddRows, AddColumn)):
             return False
     return True
+
+
+def get_relative_dataset_path(datapath, newpath, warn=True):
+    parent_path = Path.cwd() if newpath is None else newpath.parent
+    try:
+        filename = str(path_relative_to(parent_path, datapath))
+    except ValueError:
+        # NOTE: If parent path and datapath are in different drives absolute path
+        # needs to be used
+        filename = str(path_absolute(datapath))
+        if warn:
+            warnings.warn('Cannot resolve relative path, falling back to absolute path')
+    return filename

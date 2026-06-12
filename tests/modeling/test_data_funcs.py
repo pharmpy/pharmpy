@@ -17,6 +17,7 @@ from pharmpy.modeling import (
     binarize_dataset,
     calculate_summary_statistic,
     check_dataset,
+    convert_model,
     create_basic_pk_model,
     deidentify_data,
     drop_columns,
@@ -705,6 +706,14 @@ def test_set_dataset(load_example_model_for_test, testdata):
 
     with pytest.deprecated_call():
         set_dataset(model, pheno_filtered_path, datatype='nonmem')
+
+
+def test_set_dataset_from_basic(load_example_model_for_test, testdata):
+    model = create_basic_pk_model('iv')
+    model = convert_model(model, 'nonmem')
+    model = set_dataset(model, testdata / 'nonmem' / 'pheno.dta', datatype="nonmem")
+    assert model.datainfo.path == testdata / 'nonmem' / 'pheno.dta'
+    assert 'tests/testdata/nonmem/pheno.dta' in model.code
 
 
 def test_bin_observations(load_example_model_for_test):
