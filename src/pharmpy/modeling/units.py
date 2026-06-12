@@ -293,6 +293,45 @@ def recheck_unknowns(unknown, known, model):
     return still_unknown
 
 
+def get_factor(expr):
+    # Get if expr has a factor of any power of ten (except 1)
+    # If not return None
+    # Else return the factor as an expression
+    def is_power_of_ten(x):
+        s = str(x)
+        return s.startswith("1") and s[1:] == "0" * (len(s) - 1)
+
+    if expr.is_mul():
+        for arg in expr.args:
+            if arg.is_integer():
+                if is_power_of_ten(arg):
+                    return arg
+            elif arg.is_rational():
+                p, q = arg.as_numer_denom()
+                if p == 1 and is_power_of_ten(q):
+                    return arg
+    elif expr.is_integer() and is_power_of_ten(expr):
+        return expr
+    elif expr.is_rational():
+        p, q = expr.as_numer_denom()
+        if p == 1 and is_power_of_ten(q):
+            return expr
+
+    return None
+
+
+def update_factor(expr, factor, div=False):
+    s_factor = get_factor(expr)
+    if s_factor is not None:
+        if not div:
+            factor *= s_factor
+        else:
+            factor /= s_factor
+    if factor == 1:
+        factor = None
+    return factor
+
+
 def convert_unit(
     model: Model,
     variable: str,
@@ -342,9 +381,6 @@ def convert_unit(
         raise ValueError("Cannot find the original unit of {variable}")
     original_unit = Unit(original_unit)
 
-    if original_unit == unit:
-        return model
-
     molar_mass = column.variable.properties.get("molar_mass", None)
 
     if not original_unit.is_compatible_with(unit, molar_mass=molar_mass):
@@ -370,18 +406,38 @@ def convert_unit(
             if column.type == 'dose':
                 dosing_cmts = odes.dosing_compartments
                 cb = CompartmentalSystemBuilder(odes)
-                cb.set_bioavailability(
-                    dosing_cmts[0], dosing_cmts[0].bioavailability * conversion_factor
-                )
-                new_statements = (
-                    model.statements.before_odes
-                    + CompartmentalSystem(cb)
-                    + model.statements.after_odes
-                )
+                bio = dosing_cmts[0].bioavailability
+                s = model.statements.find_assignment(bio)
+                if s is not None:
+                    conversion_factor = update_factor(s.expression, conversion_factor, div=True)
+                    if conversion_factor is None:
+                        return model
+                    new_expr = s.expression * conversion_factor
+                    if new_expr == 1:
+                        cb.set_bioavailability(dosing_cmts[0], new_expr)
+                        i = model.statements.get_assignment_index(bio)
+                        new_statements = (
+                            model.statements.before_odes[0:i]
+                            + model.statements.before_odes[i + 1 :]
+                            + CompartmentalSystem(cb)
+                            + model.statements.after_odes
+                        )
+                    else:
+                        new_statements = model.statements.reassign(s.symbol, new_expr)
+                else:
+                    cb.set_bioavailability(dosing_cmts[0], conversion_factor)
+                    new_statements = (
+                        model.statements.before_odes
+                        + CompartmentalSystem(cb)
+                        + model.statements.after_odes
+                    )
             else:
                 after_odes = []
                 for s in model.statements.after_odes:
                     if not s.rhs_symbols.isdisjoint(amounts):
+                        conversion_factor = update_factor(s.expression, conversion_factor)
+                        if conversion_factor is None:
+                            return model  # FIXME: Could be more!
                         new_s = Assignment.create(s.symbol, s.expression / conversion_factor)
                         after_odes.append(new_s)
                     else:
@@ -397,6 +453,8 @@ def convert_unit(
             )
         model = model.replace(statements=new_statements)
     else:
+        if original_unit == unit:
+            return model
         df = get_and_check_dataset(model)
         df, di = _scale_dataset_column(df, model.datainfo, column, datavar, conversion_factor, unit)
         model = model.replace(dataset=df, datainfo=di)

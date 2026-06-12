@@ -27,6 +27,11 @@ def test_symbol():
     assert Expr.log(Expr.symbol("x")).name == 'log'
 
 
+def test_is_rational():
+    expr = Expr("1/1000")
+    assert expr.is_rational()
+
+
 def test_piecewise():
     expr = Expr.piecewise(("1", "x > 0"), ("2", "x < 0"))
     assert expr.is_piecewise()

@@ -225,6 +225,9 @@ class Expr:
     def is_integer(self) -> bool:
         return isinstance(self._expr, symengine.Integer)
 
+    def is_rational(self) -> bool:
+        return isinstance(self._expr, symengine.Rational)
+
     def is_number(self) -> bool:
         return isinstance(self._expr, symengine.Number)
 
