@@ -2359,8 +2359,12 @@ def update_input(control_stream, model: Model, keep_dataset: bool):
     """Update $INPUT"""
     input_records = control_stream.get_records("INPUT")
     _, drop, _, colnames = parse_column_info(control_stream)
-    df_colnames = model.dataset.columns.to_list()
     di = model.datainfo
+    # FIXME: needed for type check, workaround for issue #4636
+    if model.dataset is not None:
+        df_colnames = model.dataset.columns.to_list()
+    else:
+        df_colnames = di.names
 
     new_input = input_records[0]
     for op, colname in diff(colnames, di.names):

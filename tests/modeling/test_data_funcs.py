@@ -711,7 +711,7 @@ def test_set_dataset(load_example_model_for_test, testdata):
 def test_set_dataset_from_basic(load_example_model_for_test, testdata):
     model = create_basic_pk_model('iv')
     model = convert_model(model, 'nonmem')
-    model = set_dataset(model, testdata / 'nonmem' / 'pheno.dta', datatype="nonmem")
+    model = set_dataset(model, testdata / 'nonmem' / 'pheno.dta', format="nonmem")
     assert model.datainfo.path == testdata / 'nonmem' / 'pheno.dta'
     assert 'tests/testdata/nonmem/pheno.dta' in model.code
 

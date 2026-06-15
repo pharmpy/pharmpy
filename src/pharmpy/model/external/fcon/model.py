@@ -162,7 +162,7 @@ def read_multiline_observations(path, labels, formats):
 
 
 def parse_line(line, fmts):
-    offset = 0
+    offset, end = 0, 0
     values = []
     for fmt in fmts:
         no_of_cols, col_width = get_format_args(fmt)
