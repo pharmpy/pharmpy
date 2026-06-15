@@ -2360,7 +2360,7 @@ def update_input(control_stream, model: Model, keep_dataset: bool):
     input_records = control_stream.get_records("INPUT")
     _, drop, _, colnames = parse_column_info(control_stream)
     di = model.datainfo
-    # FIXME: needed for type check, workaround for issue #4636
+    # FIXME: needed when dataset is empty, workaround for issue #4636
     if model.dataset is not None:
         df_colnames = model.dataset.columns.to_list()
     else:

@@ -1,4 +1,5 @@
 from itertools import combinations
+from pathlib import Path
 
 import pytest
 
@@ -713,7 +714,8 @@ def test_set_dataset_from_basic(load_example_model_for_test, testdata):
     model = convert_model(model, 'nonmem')
     model = set_dataset(model, testdata / 'nonmem' / 'pheno.dta', format="nonmem")
     assert model.datainfo.path == testdata / 'nonmem' / 'pheno.dta'
-    assert 'tests/testdata/nonmem/pheno.dta' in model.code
+    rel_path = Path('tests/testdata/nonmem/pheno.dta')
+    assert str(rel_path) in model.code
 
 
 def test_bin_observations(load_example_model_for_test):
