@@ -606,15 +606,23 @@ def calculate_bic(
 
     Different variations of the BIC can be calculated:
 
-    * | mixed (default)
+    * | mixed :footcite:p:`delattre_2014` (default)
       | BIC = -2LL + n_random_parameters * log(n_individuals) +
       |       n_fixed_parameters * log(n_observations)
-    * | fixed
+    * | fixed :footcite:p:`delattre_2020`
       | BIC = -2LL + n_estimated_parameters * log(n_observations)
     * | random
       | BIC = -2LL + n_estimated_parameters * log(n_individuals)
     * | iiv
       | BIC = -2LL + n_estimated_iiv_omega_parameters * log(n_individuals)
+
+    .. note::
+
+        Note that for the mixed BIC sigmas are always counted as fixed parameters and thetas
+        can be counted as random if it associated with an eta. See :footcite:p:`delattre_2014`
+        for details.
+
+    .. footbibliography::
 
     Parameters
     ----------
