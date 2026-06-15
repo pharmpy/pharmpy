@@ -51,7 +51,7 @@ def _parse_labels_and_formats(code):
                 labels.extend(a)
         if line.startswith('FORM'):
             next_line = next(lines)
-            formats = parse_formats(next_line)
+            formats = parse_formats(next_line.strip()[1:-1])
             break
     else:
         raise ModelSyntaxError("Problems parsing the FORM record in FCONS")
@@ -60,36 +60,42 @@ def _parse_labels_and_formats(code):
 
 
 def parse_formats(line):
-    line_stripped = line.strip()[1:-1]
-    if '/' not in line:
-        return [line_stripped.split(',')]
+    # NOTE: This does not support all FORTRAN formats
+    # Some assumptions:
+    #   1. No nested repetitions, e.g: 2(2(2F2.0/))
+    #   2. Grouping is done left to write, e.g: 3E19.0,2(4E19.0/) is equivalent to 3E19.0,4E19.0,4E19.0/
+    #   3. Parenthesis is only used in repetitions
 
-    # Assumes all remaining after line break is one row (e.g. 2(4E19.0/)/2F2.0)
-    fmts = _replace_linebreak(line_stripped).split(',')
+    fmts_split = _split_formats(line)
 
-    rows = []
-    final_row = False
-    for fmt in fmts:
+    fmts_expanded = []
+    for fmt in fmts_split:
         outer_match = re.match(r'(\d+)?\((.+)\)', fmt)
         if outer_match:
-            no_of_rows = int(outer_match.group(1))
-            inner_fmt = outer_match.group(2).rstrip('/')
+            no_of_repeats = int(outer_match.group(1))
+            inner_fmt = outer_match.group(2)
         else:
-            no_of_rows = 1
+            no_of_repeats = 1
             inner_fmt = fmt
+        fmts_expanded.extend([inner_fmt] * no_of_repeats)
 
-        if no_of_rows > 1:
-            rows.extend([[inner_fmt]] * no_of_rows)
+    fmts_grouped, current_group = [], []
+    for fmt in fmts_expanded:
+        print(fmt)
+        if '/' in fmt:
+            current_group.append(fmt.rstrip('/'))
+            fmts_grouped.append(current_group)
+            current_group = []
         else:
-            if final_row:
-                rows[-1].append(inner_fmt)
-            else:
-                rows.append([inner_fmt])
-                final_row = True
-    return rows
+            current_group.append(fmt)
+
+    if current_group:
+        fmts_grouped.append(current_group)
+
+    return fmts_grouped
 
 
-def _replace_linebreak(line):
+def _split_formats(line):
     line_new = []
     depth = 0
 
@@ -101,11 +107,12 @@ def _replace_linebreak(line):
             depth -= 1
             line_new.append(c)
         elif c == '/' and depth == 0:
-            line_new.append(',')
+            line_new.append('/,')  # Not valid FORTRAN format but to simplify splitting
         else:
             line_new.append(c)
 
-    return ''.join(line_new)
+    fmts = ''.join(line_new).rstrip(',')  # E.g. 2E19.0/,2F2.0/, -> 2E19.0/,2F2.0/
+    return fmts.split(',')
 
 
 def parse_dataset(code, path):
