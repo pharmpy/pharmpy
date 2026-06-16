@@ -21,6 +21,10 @@ from .parafile import create_parafile
 PARENT_DIR = f'..{os.path.sep}'
 
 
+class DatasetValidationError(Exception):
+    pass
+
+
 def execute_model(model_entry, context):
     assert isinstance(model_entry, ModelEntry)
     model = model_entry.model
@@ -111,7 +115,7 @@ def execute_model(model_entry, context):
     if context.retrieve_common_options().get('validate_dataset', False):
         try:
             validate_dataset(model, model_path)
-        except (ValueError, AssertionError) as e:
+        except (ValueError, DatasetValidationError) as e:
             with database.transaction(model_entry) as txn:
                 txn.store_local_file(model_path / 'FCON')
                 txn.store_local_file(model_path / 'FDATA')
@@ -257,4 +261,4 @@ def validate_dataset(model, path: Path):
     fdata = fdata[fdata.columns.intersection(dataset.columns)]
 
     if not fdata.equals(dataset):
-        raise AssertionError('FDATA does not match internal dataset')
+        raise DatasetValidationError('FDATA does not match internal dataset')
