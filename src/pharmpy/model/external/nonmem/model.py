@@ -504,16 +504,15 @@ def handle_case(datainfo, dataset, statements):
 
 
 def keep_original_dataset(model):
-    if len(model.datainfo.provenance) == 0:
-        return False
-    if not isinstance(model.datainfo.provenance[0], ReadDataset):
+    if len(model.datainfo.provenance) == 0 or not isinstance(
+        model.datainfo.provenance[0], ReadDataset
+    ):
         return False
     for op in model.datainfo.provenance:
-        # FIXME: Needs special handling when generating NONMEM code
-        if isinstance(op, Ignore):
-            if not op.expression.is_relational():
-                return False
-        if isinstance(op, (AddRows, AddColumn)):
+        if isinstance(op, (AddRows, AddColumn)) or (
+            isinstance(op, Ignore)
+            and not op.expression.is_relational()  # & is not supported in $DATA update
+        ):
             return False
     return True
 
