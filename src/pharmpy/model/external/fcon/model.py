@@ -6,11 +6,13 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Container, Optional
+from typing import Optional
 
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.df import safe_convert_column_to_int32
 from pharmpy.model import Model as BaseModel
 from pharmpy.model import ModelSyntaxError
+from pharmpy.model.external.nonmem.dataset import get_idcol
 
 FORTRAN_FORMAT = re.compile(r'(\d+)\w(\d+)')
 
@@ -119,10 +121,9 @@ def parse_dataset(code, path):
     df = read_fdata_file(path.parent / 'FDATA', labels, formats)
     df.index = range(1, len(df) + 1)
 
-    # Copied conversion from pharmpy/model/external/nonmem/dataset/__init__.py
-    idcol = _idcol(labels)
-    if all((_ids := df[idcol].astype('int32')) == df[idcol]):
-        df[idcol] = _ids
+    idcol = get_idcol(labels)
+    if idcol:
+        df = safe_convert_column_to_int32(df, idcol)
 
     return df
 
@@ -175,15 +176,6 @@ def parse_line(line, fmts):
             values.append(value)
         offset = end
     return values
-
-
-def _idcol(columns: Container[str | None]) -> str | None:
-    if 'ID' in columns:
-        return 'ID'
-    elif 'L1' in columns:
-        return 'L1'
-    else:
-        return None
 
 
 def parse_model(code: str, path: Path, missing_data_token: Optional[str] = None):

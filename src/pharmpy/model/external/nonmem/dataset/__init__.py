@@ -6,6 +6,7 @@ from typing import Any, Container, Iterable, Optional, TextIO, cast
 
 from pharmpy import conf
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.df import safe_convert_column_to_int32
 from pharmpy.model import DatasetError, DatasetWarning
 
 from .convert import convert, convert_in_place
@@ -36,7 +37,7 @@ def _make_ids_unique(idcol: str, df: pd.DataFrame, columns: Iterable[str | None]
         df[idcol] = id_change.cumsum()
 
 
-def _idcol(columns: Container[str | None]) -> str | None:
+def get_idcol(columns: Container[str | None]) -> str | None:
     if 'ID' in columns:
         return 'ID'
     elif 'L1' in columns:
@@ -135,7 +136,7 @@ def filter_and_convert_nonmem_dataset_in_place(
     missing_data_token: Optional[str] = None,
 ):
     columns = df.columns
-    idcol = _idcol(columns)
+    idcol = get_idcol(columns)
 
     if drop is None:
         drop = [False] * len(columns)
@@ -184,8 +185,8 @@ def filter_and_convert_nonmem_dataset_in_place(
     if idcol is not None:
         _make_ids_unique(idcol, df, convert_todo)
 
-        if not raw and all((_ids := df[idcol].astype('int32')) == df[idcol]):
-            df[idcol] = _ids
+        if not raw:
+            df = safe_convert_column_to_int32(df, idcol)
 
     if not raw:
         # Parse TIME if possible
