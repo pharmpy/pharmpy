@@ -81,7 +81,6 @@ def parse_formats(line):
 
     fmts_grouped, current_group = [], []
     for fmt in fmts_expanded:
-        print(fmt)
         if '/' in fmt:
             current_group.append(fmt.rstrip('/'))
             fmts_grouped.append(current_group)
@@ -117,15 +116,7 @@ def _split_formats(line):
 
 def parse_dataset(code, path):
     labels, formats = _parse_labels_and_formats(code)
-    widths = []
-    if len(formats) > 1:
-        df = read_multiline_observations(path.parent / 'FDATA', labels, formats)
-    else:
-        formats = formats[0]
-        for fmt in formats:
-            no_of_cols, col_width = get_format_args(fmt)
-            widths += [col_width] * no_of_cols
-        df = pd.read_fwf(path.parent / 'FDATA', widths=widths, header=None, names=labels)
+    df = read_fdata_file(path.parent / 'FDATA', labels, formats)
     df.index = range(1, len(df) + 1)
 
     # Copied conversion from pharmpy/model/external/nonmem/dataset/__init__.py
@@ -144,8 +135,8 @@ def get_format_args(fmt):
     return no_of_cols, col_width
 
 
-def read_multiline_observations(path, labels, formats):
-    observation = []
+def read_fdata_file(path, labels, formats):
+    current_record = []
     parsed_rows = []
     i = 0
 
@@ -155,13 +146,13 @@ def read_multiline_observations(path, labels, formats):
             if not line:
                 continue
             parsed_line = parse_line(line, formats[i])
-            observation.extend(parsed_line)
+            current_record.extend(parsed_line)
             i += 1
 
-            if len(observation) >= len(labels):
-                assert len(observation) == len(labels)
-                parsed_rows.append(observation)
-                observation = []
+            if len(current_record) >= len(labels):
+                assert len(current_record) == len(labels)
+                parsed_rows.append(current_record)
+                current_record = []
                 i = 0
 
     df = pd.DataFrame(parsed_rows, columns=labels)

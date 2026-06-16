@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.model.external.fcon.model import parse_formats, read_multiline_observations
+from pharmpy.model.external.fcon.model import parse_formats, read_fdata_file
 from pharmpy.modeling import filter_dataset
 
 
@@ -76,7 +76,7 @@ def test_parse_formats(code, expected):
     assert parse_formats(code) == expected
 
 
-def test_read_multiline_observations(testdata):
+def test_read_fdata_file(testdata):
     path = testdata / 'nonmem' / 'fcon' / 'mox2' / 'FDATA'
     labels = [
         'ID',
@@ -102,6 +102,6 @@ def test_read_multiline_observations(testdata):
         'MDV',
     ]
     formats = parse_formats('4(4E19.0/),3E19.0,2F2.0')
-    df = read_multiline_observations(path, labels, formats)
+    df = read_fdata_file(path, labels, formats)
     assert len(df) == 541
     assert df.notna().all().all()
