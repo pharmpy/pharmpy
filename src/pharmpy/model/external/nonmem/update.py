@@ -2356,7 +2356,12 @@ def add_dummy_dv(model: Model) -> Model:
 
 
 def update_input(control_stream, model: Model, keep_dataset: bool):
-    """Update $INPUT"""
+    """Update $INPUT
+
+    keep_dataset is whether the update should keep the original dataset in mind (e.g if the original
+    dataset should be used and a column has been removed we need to update that node, otherwise it can
+    be removed).
+    """
     input_records = control_stream.get_records("INPUT")
     _, drop, _, colnames = parse_column_info(control_stream)
     di = model.datainfo

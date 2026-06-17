@@ -27,8 +27,7 @@ from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 from pharmpy.model.external import detect_model
 
-from . import AddColumn, Drop
-from .datainfo import ColumnInfo, DataInfo
+from .datainfo import AddColumn, ColumnInfo, DataInfo, Drop
 from .execution_steps import ExecutionSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
@@ -370,7 +369,6 @@ class Model(Immutable):
 
         if new_dataset and dataset is not None:
             datainfo = update_datainfo(datainfo, dataset)
-            # FIXME: second condition occurs when e.g. ignoring rows, different mechanism will handle this later
             if not new_datainfo or (
                 datainfo.path == self._datainfo.path
                 and datainfo.provenance != self._datainfo.provenance

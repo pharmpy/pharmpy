@@ -2705,7 +2705,12 @@ def _get_all_statement_deps(model: Model, expr: Expr) -> set[Expr]:
 
 
 def reset_dataset(model: Model) -> Model:
-    """Resets dataset so that Pharmpy dataset is used in e.g. estimation
+    """Use Pharmpy dataset instead of original file
+
+    The parsed dataset will be written down when doing e.g. estimation or writing files
+    instead of the original dataset file
+
+    Removes path and provenance from DataInfo.
 
     Note: Use this to get same behavior as Pharmpy<=2.1.1
 

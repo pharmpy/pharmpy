@@ -1287,7 +1287,10 @@ class DataInfo(Sequence, Immutable):
 
     @property
     def path(self) -> Optional[Path]:
-        r"""Path of dataset file
+        r"""Path of dataset file.
+
+        If `path` is not None, the parsed dataset can be recreated given the `path` and the rest of DataInfo
+        (including provenance).
 
         Examples
         --------
