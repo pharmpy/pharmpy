@@ -221,19 +221,16 @@ class Model(BaseModel):
             model = add_dummy_dv(model)
             keep_dataset = keep_original_dataset(model)
             cs = update_input(cs, model, keep_dataset)
-            if model.datainfo.path and model.datainfo.path != model.internals.old_datainfo.path:
-                filename = get_relative_dataset_path(
-                    datapath=model.datainfo.path, newpath=None, warn=False
-                )
-                newdata = newdata.set_filename(filename)
+
+            has_new_path = (
+                model.datainfo.path and model.datainfo.path != model.internals.old_datainfo.path
+            )
+            if has_new_path:
+                newdata = update_data_filename(newdata, model.datainfo.path)
             elif keep_dataset:
                 ignores = [op for op in model.datainfo.provenance if isinstance(op, Ignore)]
                 newdata = newdata.update_filters(ignores)
-                if not model.datainfo.path:
-                    read_op = model.datainfo.provenance[0]
-                    assert isinstance(read_op, ReadDataset)
-                    di_new = model.datainfo.replace(path=read_op.path)
-                    model = model.replace(datainfo=di_new)
+                model = set_original_dataset_path(model)
             elif (
                 model.datainfo.path is None
                 or (model.datainfo.path is None and model.dataset is not None)
@@ -528,3 +525,15 @@ def get_relative_dataset_path(datapath, newpath, warn=True):
         if warn:
             warnings.warn('Cannot resolve relative path, falling back to absolute path')
     return filename
+
+
+def update_data_filename(newdata, path):
+    filename = get_relative_dataset_path(datapath=path, newpath=None, warn=False)
+    return newdata.set_filename(filename)
+
+
+def set_original_dataset_path(model):
+    read_op = model.datainfo.provenance[0]
+    assert isinstance(read_op, ReadDataset)
+    di = model.datainfo.replace(path=read_op.path)
+    return model.replace(datainfo=di)
