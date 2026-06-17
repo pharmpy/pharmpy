@@ -20,7 +20,7 @@ distributed==2026.6.0
 docutils==0.22.4
 executing==2.2.1
 fastjsonschema==2.21.2
-fsspec==2026.4.0
+fsspec==2026.6.0
 idna==3.18
 imagesize==2.0.0
 ipykernel==7.3.0
