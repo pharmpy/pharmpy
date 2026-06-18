@@ -27,8 +27,7 @@ from pharmpy.internals.df import hash_df_runtime
 from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 from pharmpy.model.external import detect_model
 
-from . import AddColumn, Drop
-from .datainfo import ColumnInfo, DataInfo
+from .datainfo import AddColumn, AddRows, ColumnInfo, DataInfo
 from .execution_steps import ExecutionSteps
 from .parameters import Parameters
 from .random_variables import RandomVariables
@@ -370,8 +369,11 @@ class Model(Immutable):
 
         if new_dataset and dataset is not None:
             datainfo = update_datainfo(datainfo, dataset)
-            # FIXME: second condition occurs when e.g. ignoring rows, different mechanism will handle this later
-            if not new_datainfo or datainfo.provenance != self._datainfo.provenance:
+            new_provenance = (
+                datainfo.path == self._datainfo.path
+                and datainfo.provenance != self._datainfo.provenance
+            )
+            if new_provenance or not new_datainfo:
                 datainfo = datainfo.replace(path=None)
 
         # Has to be checked after datainfo is updated since it looks for symbols in datainfo as well
@@ -759,9 +761,8 @@ def update_datainfo(curdi: DataInfo, dataset: pd.DataFrame) -> DataInfo:
         columns.append(col)
     newdi = curdi.replace(columns=columns)
 
-    for op1, op2 in zip(curdi.provenance, curdi.provenance[1:]):
-        if isinstance(op1, Drop) and isinstance(op2, AddColumn) and op1.column == op2.column:
-            return newdi.replace(path=None)
+    if any(isinstance(op, (AddColumn, AddRows)) for op in curdi.provenance):
+        return newdi.replace(path=None)
 
     # NOTE: Remove path if dataset has been updated
     return curdi if newdi == curdi else newdi.replace(path=None)

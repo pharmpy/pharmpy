@@ -159,44 +159,47 @@ class DataRecord(OptionRecord):
                 filters.append(filt)
         return filters
 
-    def get_selects(self, ignore: bool) -> list[Ignore]:
-        filters = self.ignore if ignore else self.accept
-        selects = []
-        for f in filters:
-            col = f.find('COLUMN').value
-            try:
-                expr = f.find('EXPR').value
-            except AttributeError:
-                expr = f.find('QEXPR').value
-            assert expr is not None
-            op = [tok for tok in f.tokens if tok.rule in OPS.keys()]
-            assert len(op) == 1
-            op = op[0].rule
-            lhs = Expr.symbol(col)
-            expr = Expr(expr) if expr.isnumeric() else expr
-            if 'STR' in op:
-                rhs = Expr.symbol("S")
-                strings = {rhs: str(expr)}
-            else:
-                rhs = expr
-                strings = {}
-            if op in {'OP_EQ', 'OP_STR_EQ'}:
-                bexp = BooleanExpr.eq(lhs, rhs)
-            elif op in {'OP_NE', 'OP_STR_NE'}:
-                bexp = BooleanExpr.ne(lhs, rhs)
-            elif op == 'OP_LT':
-                bexp = BooleanExpr.lt(lhs, rhs)
-            elif op == 'OP_GT':
-                bexp = BooleanExpr.gt(lhs, rhs)
-            elif op == 'OP_LT_EQ':
-                bexp = BooleanExpr.le(lhs, rhs)
-            else:  # op == 'OP_GT_EQ'
-                bexp = BooleanExpr.ge(lhs, rhs)
-            if not ignore:
-                bexp = ~bexp
-            sel = Ignore.create(expression=bexp, strings=strings)
-            selects.append(sel)
-        return selects
+    def get_filters(self) -> list[Ignore]:
+        filters = []
+        for child in self.root.children:
+            if child.rule not in ('ignore', 'accept'):
+                continue
+
+            for f in child.subtrees('filter'):
+                col = f.find('COLUMN').value
+                try:
+                    expr = f.find('EXPR').value
+                except AttributeError:
+                    expr = f.find('QEXPR').value
+                assert expr is not None
+                op = [tok for tok in f.tokens if tok.rule in OPS.keys()]
+                assert len(op) == 1
+                op = op[0].rule
+                lhs = Expr.symbol(col)
+                expr = Expr(expr) if _is_number(expr) else expr
+                if 'STR' in op:
+                    rhs = Expr.symbol("S")
+                    strings = {rhs: str(expr)}
+                else:
+                    rhs = expr
+                    strings = {}
+                if op in {'OP_EQ', 'OP_STR_EQ'}:
+                    bexp = BooleanExpr.eq(lhs, rhs)
+                elif op in {'OP_NE', 'OP_STR_NE'}:
+                    bexp = BooleanExpr.ne(lhs, rhs)
+                elif op == 'OP_LT':
+                    bexp = BooleanExpr.lt(lhs, rhs)
+                elif op == 'OP_GT':
+                    bexp = BooleanExpr.gt(lhs, rhs)
+                elif op == 'OP_LT_EQ':
+                    bexp = BooleanExpr.le(lhs, rhs)
+                else:  # op == 'OP_GT_EQ'
+                    bexp = BooleanExpr.ge(lhs, rhs)
+                if child.rule == 'accept':
+                    bexp = ~bexp
+                ignore = Ignore.create(expression=bexp, strings=strings)
+                filters.append(ignore)
+        return filters
 
     def remove_ignore(self):
         newroot = self.root.remove('ignore')
@@ -214,8 +217,11 @@ class DataRecord(OptionRecord):
         newroot = self.root.remove('accept')
         return self.replace(root=newroot)
 
-    def add_ignore(self, new):
-        old = self.get_selects(ignore=True) + self.get_selects(ignore=False)
+    def update_filters(self, new):
+        if not new:
+            return self
+
+        old = self.get_filters()
 
         ignore_token = AttrToken('IGNORE', 'IGNORE')
         eq_token = AttrToken('EQUALS', '=')
@@ -256,7 +262,9 @@ class DataRecord(OptionRecord):
             return self
 
         children = self.root.children
-        newroot = AttrTree(self.root.rule, children + self._insert_whitespace(nodes))
+        newtree = self._insert_whitespace(nodes)
+        i = self._get_insert_index()
+        newroot = AttrTree(self.root.rule, children[:i] + newtree + children[i:])
 
         return self.replace(root=newroot)
 
@@ -268,3 +276,19 @@ class DataRecord(OptionRecord):
             + tuple(chain.from_iterable((node, ws_token) for node in nodes[:-1]))
             + (nodes[-1],)
         )
+
+    def _get_insert_index(self):
+        n = len(self.root.children)
+        for i, node in enumerate(reversed(list(self.root.tree_walk()))):
+            if node.rule != 'NEWLINE':
+                return n - i
+        return 0
+
+
+def _is_number(s: str):
+    try:
+        float(s)
+    except ValueError:
+        return False
+    else:
+        return True

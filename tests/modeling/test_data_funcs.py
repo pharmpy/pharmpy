@@ -1,4 +1,5 @@
 from itertools import combinations
+from pathlib import Path
 
 import pytest
 
@@ -6,7 +7,7 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
-from pharmpy.model import AddColumn, AddRows, Drop, Ignore
+from pharmpy.model import AddColumn, AddRows, Drop, Ignore, ReadDataset
 from pharmpy.modeling import (
     add_admid,
     add_cmt,
@@ -17,6 +18,7 @@ from pharmpy.modeling import (
     binarize_dataset,
     calculate_summary_statistic,
     check_dataset,
+    convert_model,
     create_basic_pk_model,
     deidentify_data,
     drop_columns,
@@ -41,6 +43,7 @@ from pharmpy.modeling import (
     load_dataset,
     remove_loq_data,
     remove_unused_columns,
+    reset_dataset,
     set_covariates,
     set_dataset,
     set_dvid,
@@ -706,6 +709,15 @@ def test_set_dataset(load_example_model_for_test, testdata):
         set_dataset(model, pheno_filtered_path, datatype='nonmem')
 
 
+def test_set_dataset_from_basic(load_example_model_for_test, testdata):
+    model = create_basic_pk_model('iv')
+    model = convert_model(model, 'nonmem')
+    model = set_dataset(model, testdata / 'nonmem' / 'pheno.dta', format="nonmem")
+    assert model.datainfo.path == testdata / 'nonmem' / 'pheno.dta'
+    rel_path = Path('tests/testdata/nonmem/pheno.dta')
+    assert str(rel_path) in model.code
+
+
 def test_bin_observations(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     ser, bin_edges = bin_observations(model, method="equal_width", nbins=10)
@@ -907,3 +919,10 @@ def test_is_binary(load_example_model_for_test, expr, correct):
     model = load_example_model_for_test("pheno")
     res = is_binary(model, expr)
     assert res is correct
+
+
+def test_reset_dataset(load_example_model_for_test):
+    model = load_example_model_for_test("pheno")
+    assert isinstance(model.datainfo.provenance[-1], ReadDataset)
+    model = reset_dataset(model)
+    assert len(model.datainfo.provenance) == 0

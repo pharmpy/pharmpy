@@ -262,7 +262,13 @@ class LocalDirectoryContext(Context):
     def retrieve_common_options(self) -> dict[str, Any]:
         ctx_top = self.get_top_level_context()
         meta = ctx_top.retrieve_metadata()
-        return meta['common_options']
+        if 'common_options' in meta:
+            options = meta['common_options']
+        else:
+            from pharmpy.workflows.args import get_default_common_options
+
+            options = get_default_common_options()
+        return options
 
     def retrieve_dispatching_options(self) -> dict[str, Any]:
         if hasattr(self, '_dispatching_options'):

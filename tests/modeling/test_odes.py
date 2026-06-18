@@ -2013,7 +2013,8 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # 0-order to Bolus
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     model = set_instantaneous_absorption(model)
-    assert model.code.split('\n')[2:] == advan1_before.split('\n')[2:]
+    assert model.code.split('\n')[2] == '$INPUT ID TIME AMT RATE=DROP WGT APGR DV FA1 FA2'
+    assert model.code.split('\n')[3:] == advan1_before.split('\n')[3:]
 
     # 1st order to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
@@ -2025,8 +2026,8 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1_zero_order.mod')
     model = set_first_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA DUMMYPATH IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$DATA pheno_zero_order.csv IGNORE=@
+$INPUT ID TIME AMT RATE=DROP WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
 $PK
@@ -2067,7 +2068,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
     # Bolus to 1st order
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan1.mod')
     model = set_first_order_absorption(model)
-    assert model.code.split('\n')[2:] == correct.split('\n')[2:]
+    assert model.code.split('\n')[1] == '$DATA ../pheno.dta IGNORE=@'
+    assert model.code.split('\n')[2] == '$INPUT ID TIME AMT WGT APGR DV FA1 FA2'
+    assert model.code.split('\n')[3:] == correct.split('\n')[3:]
 
     # Bolus to 0-order
     datadir = testdata / 'nonmem' / 'modeling'
@@ -2166,8 +2169,8 @@ def test_seq_to_FO(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2_seq.mod')
     model = set_first_order_absorption(model)
     correct = '''$PROBLEM PHENOBARB SIMPLE MODEL
-$DATA DUMMYPATH IGNORE=@
-$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$DATA pheno_zero_order.csv IGNORE=@
+$INPUT ID TIME AMT RATE=DROP WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN2 TRANS2
 
 $PK

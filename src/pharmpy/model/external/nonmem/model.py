@@ -11,9 +11,24 @@ from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import path_absolute, path_relative_to
 from pharmpy.internals.immutable import frozenmapping
-from pharmpy.model import Assignment, DataInfo, EstimationStep, ExecutionSteps
+from pharmpy.model import (
+    AddColumn,
+    AddRows,
+    Assignment,
+    DataInfo,
+    EstimationStep,
+    ExecutionSteps,
+    Ignore,
+)
 from pharmpy.model import Model as BaseModel
-from pharmpy.model import NormalDistribution, Parameter, Parameters, RandomVariables, Statements
+from pharmpy.model import (
+    NormalDistribution,
+    Parameter,
+    Parameters,
+    RandomVariables,
+    ReadDataset,
+    Statements,
+)
 from pharmpy.model.model import ModelInternals, update_datainfo
 from pharmpy.modeling.write_dataset import write_dataset
 
@@ -204,16 +219,26 @@ class Model(BaseModel):
             label = model.datainfo.names[0]
             newdata = data_record.set_ignore_character_from_header(label)
             model = add_dummy_dv(model)
-            cs = update_input(cs, model)
+            keep_dataset = keep_original_dataset(model)
+            cs = update_input(cs, model, keep_dataset)
 
-            # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
-            # IGNOREs to add i.e. for filter out certain ID.
-            newdata = newdata.remove_ignore().remove_accept()
-            if (
+            has_new_path = (
+                model.datainfo.path and model.datainfo.path != model.internals.old_datainfo.path
+            )
+            if has_new_path:
+                newdata = update_data_filename(newdata, model.datainfo.path)
+            elif keep_dataset:
+                ignores = [op for op in model.datainfo.provenance if isinstance(op, Ignore)]
+                newdata = newdata.update_filters(ignores)
+                model = set_original_dataset_path(model)
+            elif (
                 model.datainfo.path is None
                 or (model.datainfo.path is None and model.dataset is not None)
                 or updated_dataset
             ):
+                # Remove IGNORE/ACCEPT. Could do diff between old dataset and find simple
+                # IGNOREs to add i.e. for filter out certain ID.
+                newdata = newdata.remove_ignore().remove_accept()
                 newdata = newdata.set_filename('DUMMYPATH')
 
             cs = cs.replace_records([data_record], [newdata])
@@ -282,14 +307,9 @@ class Model(BaseModel):
             assert (
                 not datapath.exists() or datapath.is_file()
             ), f'input path change, but no file exists at target {str(datapath)}'
-            parent_path = Path.cwd() if path is None else path.parent
-            try:
-                filename = str(path_relative_to(parent_path, datapath))
-            except ValueError:
-                # NOTE: If parent path and datapath are in different drives absolute path
-                # needs to be used
-                filename = str(path_absolute(datapath))
-                warnings.warn('Cannot resolve relative path, falling back to absolute path')
+            filename = get_relative_dataset_path(
+                datapath=model.datainfo.path, newpath=path, warn=True
+            )
             newdata = data_record.set_filename(filename)
             internals = model.internals
             assert isinstance(internals, NONMEMModelInternals)
@@ -478,3 +498,42 @@ def handle_case(datainfo, dataset, statements):
         if dataset is not None:
             dataset.columns = datainfo.names
     return datainfo, dataset, statements
+
+
+def keep_original_dataset(model):
+    if len(model.datainfo.provenance) == 0 or not isinstance(
+        model.datainfo.provenance[0], ReadDataset
+    ):
+        return False
+    for op in model.datainfo.provenance:
+        if isinstance(op, (AddRows, AddColumn)) or (
+            isinstance(op, Ignore)
+            and not op.expression.is_relational()  # & is not supported in $DATA update
+        ):
+            return False
+    return True
+
+
+def get_relative_dataset_path(datapath, newpath, warn=True):
+    parent_path = Path.cwd() if newpath is None else newpath.parent
+    try:
+        filename = str(path_relative_to(parent_path, datapath))
+    except ValueError:
+        # NOTE: If parent path and datapath are in different drives absolute path
+        # needs to be used
+        filename = str(path_absolute(datapath))
+        if warn:
+            warnings.warn('Cannot resolve relative path, falling back to absolute path')
+    return filename
+
+
+def update_data_filename(newdata, path):
+    filename = get_relative_dataset_path(datapath=path, newpath=None, warn=False)
+    return newdata.set_filename(filename)
+
+
+def set_original_dataset_path(model):
+    read_op = model.datainfo.provenance[0]
+    assert isinstance(read_op, ReadDataset)
+    di = model.datainfo.replace(path=read_op.path)
+    return model.replace(datainfo=di)

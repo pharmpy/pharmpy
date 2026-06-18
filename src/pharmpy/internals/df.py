@@ -50,3 +50,9 @@ def reset_index(df: pd.Series) -> pd.Series:
 def reset_index(df):
     df = df.set_axis(range(1, len(df) + 1), axis=0)
     return df
+
+
+def safe_convert_column_to_int32(df: pd.DataFrame, col: str) -> pd.DataFrame:
+    if all((_ids := df[col].astype('int32')) == df[col]):
+        df = df.assign(**{col: _ids})
+    return df

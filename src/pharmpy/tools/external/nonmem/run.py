@@ -12,13 +12,17 @@ from typing import Optional
 
 import pharmpy.config as config
 from pharmpy.model.external.nonmem import convert_model
-from pharmpy.modeling import get_config_path, write_dataset, write_model
+from pharmpy.modeling import get_config_path, read_model, write_dataset, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results, parse_simulation_results
 from pharmpy.workflows import ModelEntry
 
 from .parafile import create_parafile
 
 PARENT_DIR = f'..{os.path.sep}'
+
+
+class DatasetValidationError(Exception):
+    pass
 
 
 def execute_model(model_entry, context):
@@ -68,8 +72,13 @@ def execute_model(model_entry, context):
     datasets_path = dataset_path.parent
     datasets_path.mkdir(parents=True, exist_ok=True)
 
-    # NOTE: Write dataset and model files so they can be used by NONMEM.
-    model = write_dataset(model, path=dataset_path, force=True)
+    if model.datainfo.path:
+        shutil.copy2(model.datainfo.path, dataset_path)
+        di = model.datainfo.replace(path=dataset_path)
+        model = model.replace(datainfo=di).update_source()
+    else:
+        # NOTE: Write dataset and model files so they can be used by NONMEM.
+        model = write_dataset(model, path=dataset_path, force=True)
     model = write_model(model, path=model_path / "model.ctl", force=True)
 
     parafile_option = create_parafile_and_option(context, model_path / 'parafile.pnm', tmp_path)
@@ -102,6 +111,18 @@ def execute_model(model_entry, context):
             break
         else:
             time.sleep(1)
+
+    if context.retrieve_common_options().get('validate_dataset', False):
+        try:
+            validate_dataset(model, model_path)
+        except (ValueError, DatasetValidationError) as e:
+            with database.transaction(model_entry) as txn:
+                txn.store_local_file(model_path / 'FCON')
+                txn.store_local_file(model_path / 'FDATA')
+            if isinstance(e, ValueError):
+                context.log_warning(str(e), model=model_entry.model)
+            else:
+                context.log_error(str(e), model=model_entry.model)
 
     metadata = {
         'plugin': 'nonmem',
@@ -226,3 +247,17 @@ def create_parafile_and_option(context, path: Path, tmp_path: Optional[Path]) ->
         return f"-parafile={path.name}"
     else:
         return ""
+
+
+def validate_dataset(model, path: Path):
+    try:
+        fcon_model = read_model(path / 'FCON')
+    except Exception:
+        raise ValueError('Could not parse FCON model to compare datasets')
+    to_drop = [ci.name for ci in model.datainfo if ci.drop]
+    dataset = model.dataset.drop(to_drop, axis=1, inplace=False)
+    fdata = fcon_model.dataset
+    fdata = fdata[fdata.columns.intersection(dataset.columns)]
+
+    if not fdata.equals(dataset):
+        raise DatasetValidationError('FDATA does not match internal dataset')

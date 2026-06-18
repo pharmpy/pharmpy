@@ -27,6 +27,7 @@ from pharmpy.modeling import (
     get_sigmas,
     get_thetas,
     read_model,
+    reset_dataset,
 )
 from pharmpy.modeling.lrt import degrees_of_freedom as lrt_df
 from pharmpy.modeling.lrt import test as lrt_test
@@ -57,6 +58,7 @@ def fit(
     name: Optional[str] = None,
     context: Optional[Context] = None,
     ncores: int = 1,
+    validate_dataset: bool = False,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
 
@@ -72,6 +74,8 @@ def fit(
         Run in this context
     ncores : int
         Number of cores to use for estimation
+    validate_dataset : bool
+        Whether to validate Pharmpy dataset against FDATA file (relevant for NONMEM models)
 
     Return
     ------
@@ -107,6 +111,7 @@ def fit(
         context=context,
         dispatcher=dispatcher,
         ncores=ncores,
+        validate_dataset=validate_dataset,
     )
 
     return (
@@ -267,6 +272,13 @@ def run_tool_with_name(
         'name': str(ctx.name),
         'ref': str(ctx.ref),
     }
+
+    if common_options['always_create_new_dataset_file']:
+        args_new = [reset_dataset(x) if isinstance(x, Model) else x for x in args]
+        for key, value in tool_options.items():
+            if isinstance(value, Model):
+                tool_options[key] = reset_dataset(value)
+        args = tuple(args_new)
 
     tool_metadata = create_metadata(
         database=ctx,

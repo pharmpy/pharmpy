@@ -13,6 +13,7 @@ from pharmpy.model import (
     Drop,
     EstimationStep,
     ExecutionSteps,
+    Ignore,
     Model,
     ModelSyntaxError,
     NormalDistribution,
@@ -421,7 +422,6 @@ def test_add_random_variables_and_statements(pheno):
     )
 
     model = model.update_source()
-    print(model.internals.control_stream.get_pred_pk_record())
     assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
         'X = ETA_NEW + EPS(2) + 1\n\n'
     )
@@ -1449,6 +1449,187 @@ $ESTIMATION METHOD=1 INTER
 """
     model = Model.parse_model_from_string(code)
     model = filter_dataset(model, 'ID != 1')
-    model = model.update_source()
     data_rec = model.internals.control_stream.get_records("DATA")[0]
-    assert data_rec.filename == 'DUMMYPATH'
+    assert model.code.split('\n')[2] == code.split('\n')[2] + ' IGNORE=(ID.EQN.1)'
+    assert data_rec.get_filters() == [Ignore.create('ID == 2'), Ignore.create('ID == 1')]
+
+
+def test_update_data_accept(testdata):
+    code = f"""$PROBLEM base model
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@ ACCEPT=(ID.NEN.2)
+
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 2 ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
+"""
+    model = Model.parse_model_from_string(code)
+    model = filter_dataset(model, 'ID != 1')
+    data_rec = model.internals.control_stream.get_records("DATA")[0]
+    assert model.code.split('\n')[2] == code.split('\n')[2] + ' IGNORE=(ID.EQN.1)'
+    assert data_rec.get_filters() == [Ignore.create('ID == 2'), Ignore.create('ID == 1')]
+
+
+def test_update_data_changed_column(testdata):
+    code = f"""$PROBLEM base model
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@ IGNORE=(ID.EQN.2)
+
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 2 ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
+"""
+    model = Model.parse_model_from_string(code)
+    df = model.dataset.copy()
+    df['FA2'] = 0
+    di = model.datainfo
+    prov_new = [Drop.create('FA2'), AddColumn.create('FA2')]
+    di = di.replace(provenance=di.provenance + prov_new)
+    model = model.replace(dataset=df, datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[2] == '$DATA DUMMYPATH IGNORE=@ '
+
+
+def test_update_data_added_dummy_dv(testdata):
+    code = f"""$PROBLEM base model
+$INPUT ID TIME AMT WGT APGR DV FA1 FA2
+$DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@ IGNORE=(ID.EQN.2)
+
+$PRED
+Y = THETA(1) + ETA(1) + EPS(1)
+
+$THETA 1  ; TH1
+$OMEGA 2 ; OM1
+$SIGMA 3 ; SI1
+$ESTIMATION METHOD=1 INTER
+"""
+    model = Model.parse_model_from_string(code)
+    df = model.dataset.copy()
+    df = df.drop(['DV'], axis=1)
+    di = model.datainfo
+    prov_new = [Drop.create('DV')]
+    di = di.replace(provenance=di.provenance + prov_new)
+    model = model.replace(dataset=df, datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT APGR FA1 FA2 DV'
+    assert model.code.split('\n')[2] == '$DATA DUMMYPATH IGNORE=@ '
+
+
+def test_update_input_no_change(create_model_for_test, pheno_data):
+    model_start = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PK\n"
+    )
+    model = model_start.update_source()
+    assert model.code.split('\n')[1] == model_start.code.split('\n')[1]
+    assert model.code.split('\n')[2] == model_start.code.split('\n')[2]
+
+
+def test_update_input_remove_column(create_model_for_test, pheno_data):
+    model_start = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PK\n"
+    )
+    df = model_start.dataset.copy()
+    df = df.drop('APGR', axis=1)
+    di = model_start.datainfo
+    di = di.replace(provenance=di.provenance + Drop.create('APGR'))
+    model = model_start.replace(dataset=df, datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT APGR=DROP DV FA1 FA2'
+    assert model.code.split('\n')[2] == model_start.code.split('\n')[2]
+
+
+def test_update_input_drop_column(create_model_for_test, pheno_data):
+    model_start = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PK\n"
+    )
+    di = model_start.datainfo
+    ci = di['APGR'].replace(drop=True)
+    di = di.set_column(ci)
+    model = model_start.replace(datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT APGR=DROP DV FA1 FA2'
+    assert model.code.split('\n')[2] == model_start.code.split('\n')[2]
+
+
+def test_update_input_change_column(create_model_for_test, pheno_data):
+    model_start = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PK\n"
+    )
+    df = model_start.dataset.copy()
+    df['FA1'] = 1
+    di = model_start.datainfo
+    di = di.replace(provenance=di.provenance + Drop.create('FA1') + AddColumn.create('FA1'))
+    model = model_start.replace(dataset=df, datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[1] == model_start.code.split('\n')[1]
+    assert model.code.split('\n')[2] == '$DATA DUMMYPATH IGNORE=@'
+
+
+def test_update_input_add_column(create_model_for_test, pheno_data):
+    model_start = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PK\n"
+    )
+    df = model_start.dataset.copy()
+    df['X'] = 1
+    di = model_start.datainfo
+    di = di.replace(provenance=di.provenance + AddColumn.create('X'))
+    model = model_start.replace(dataset=df, datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT APGR DV FA1 FA2 X'
+    assert model.code.split('\n')[2] == '$DATA DUMMYPATH IGNORE=@'
+
+
+def test_update_input_remove_column_and_change_column(create_model_for_test, pheno_data):
+    model_start = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PK\n"
+    )
+    df = model_start.dataset.copy()
+    df = df.drop('APGR', axis=1)
+    df['FA1'] = 1
+    di = model_start.datainfo
+    di = di.replace(
+        provenance=di.provenance
+        + Drop.create('APGR')
+        + Drop.create('FA1')
+        + AddColumn.create('FA1')
+    )
+    model = model_start.replace(dataset=df, datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT DV FA1 FA2'
+    assert model.code.split('\n')[2] == '$DATA DUMMYPATH IGNORE=@'
+
+
+@pytest.mark.filterwarnings("ignore::UserWarning")
+def test_update_input_drop_column_with_anonymous(create_model_for_test, pheno_data):
+    model_start = create_model_for_test(
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV DROP FA2\n"
+        f"$DATA {pheno_data} IGNORE=@\n"
+        f"$PK\n"
+    )
+    di = model_start.datainfo
+    ci = di['APGR'].replace(drop=True)
+    di = di.set_column(ci)
+    model = model_start.replace(datainfo=di)
+    model = model.update_source()
+    assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT APGR=DROP DV DROP FA2'
+    assert model.code.split('\n')[2] == model_start.code.split('\n')[2]

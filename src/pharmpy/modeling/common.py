@@ -743,7 +743,7 @@ def filter_dataset(model: Model, expr: str) -> Model:
     new_prov = model.datainfo.provenance + ignore
     new_di = model.datainfo.replace(provenance=new_prov)
     new_model = model.replace(dataset=new_dataset, datainfo=new_di)
-    return new_model
+    return new_model.update_source()
 
 
 def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:

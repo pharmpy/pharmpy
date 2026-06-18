@@ -2702,3 +2702,33 @@ def _get_all_statement_deps(model: Model, expr: Expr) -> set[Expr]:
             all_deps |= symbol_deps
         all_deps |= {s}
     return all_deps
+
+
+def reset_dataset(model: Model) -> Model:
+    """Use Pharmpy dataset instead of original file
+
+    The parsed dataset will be written down when doing e.g. estimation or writing files
+    instead of the original dataset file
+
+    Removes path and provenance from DataInfo.
+
+    Note: Use this to get same behavior as Pharmpy<=2.1.1
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    Model
+        Updated Pharmpy model
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, reset_dataset
+    >>> model = load_example_model("pheno")
+    >>> model = reset_dataset(model)
+    """
+    di = model.datainfo.replace(provenance=None, path=None)
+    return model.replace(datainfo=di).update_source()

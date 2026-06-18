@@ -2355,42 +2355,47 @@ def add_dummy_dv(model: Model) -> Model:
     return model
 
 
-def update_input(control_stream, model: Model):
-    """Update $INPUT"""
+def update_input(control_stream, model: Model, keep_dataset: bool):
+    """Update $INPUT
+
+    keep_dataset is whether the update should keep the original dataset in mind (e.g if the original
+    dataset should be used and a column has been removed we need to update that node, otherwise it can
+    be removed).
+    """
     input_records = control_stream.get_records("INPUT")
     _, drop, _, colnames = parse_column_info(control_stream)
-    keep = []
-    i = 0
-    for child in input_records[0].root.children:
-        if child.rule != 'option':
-            keep.append(child)
+    di = model.datainfo
+    # FIXME: needed when dataset is empty, workaround for issue #4636
+    if model.dataset is not None:
+        df_colnames = model.dataset.columns.to_list()
+    else:
+        df_colnames = di.names
+
+    new_input = input_records[0]
+    for op, colname in diff(colnames, di.names):
+        if op == 1:  # Column in datainfo but not in $INPUT
+            is_anonymous = df_colnames[di.names.index(colname)].startswith('_DROP')
+            if not is_anonymous:
+                value = 'DROP' if di[colname].drop else None
+                new_input = new_input.append_option(colname, value)
             continue
-
-        if (colnames[i] is not None and (colnames[i] != model.datainfo[i].name)) or (
-            not drop[i] and (model.datainfo[i].drop or model.datainfo[i].datatype == 'nmtran-date')
-        ):
-            dropped = model.datainfo[i].drop or model.datainfo[i].datatype == 'nmtran-date'
-            anonymous = colnames[i] is None
-            key = 'DROP' if anonymous and dropped else model.datainfo[i].name
-            value = 'DROP' if not anonymous and dropped else None
-            new = input_records[0]._create_option(key, value)
-            keep.append(new)
+        if op == -1:  # Column in $INPUT but not in datainfo
+            if not keep_dataset:
+                new_input = new_input.remove_option(colname)
+                continue
+            if colname is None:
+                continue
+            new = new_input._create_option(colname, 'DROP')
+            new_input = new_input.replace_option(colname, new)
         else:
-            keep.append(child)
+            ci = di[colname]
+            drop_nmtran_data = ci.datatype == 'nmtran-date' and not ci.drop
+            drop_column = ci.drop and not drop[colnames.index(colname)]
+            if not drop_nmtran_data and not drop_column:
+                continue
+            new = new_input._create_option(colname, 'DROP')
+            new_input = new_input.replace_option(colname, new)
 
-        i += 1
-
-        if i >= len(model.datainfo):
-            last_child = input_records[0].root.children[-1]
-            if last_child.rule == 'NEWLINE':
-                keep.append(last_child)
-            break
-
-    newroot = AttrTree(input_records[0].root.rule, tuple(keep))
-    new_input = input_records[0].replace(root=newroot)
-
-    for ci in model.datainfo[len(colnames) :]:
-        new_input = new_input.append_option(ci.name, 'DROP' if ci.drop else None)
     control_stream = control_stream.replace_records([input_records[0]], [new_input])
     return control_stream
 
