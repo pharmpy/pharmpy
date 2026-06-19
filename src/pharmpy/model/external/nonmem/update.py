@@ -1522,7 +1522,9 @@ def update_needed_pk_parameters(model: Model, advan, trans):
                             model, param, rate, source_comp, dest_comp, synonyms=names
                         )
                     else:
-                        if ass_index := model.statements.find_assignment_index(param):
+                        if Expr.symbol(param) in odes.free_symbols:
+                            continue
+                        if (ass_index := model.statements.find_assignment_index(param)) is not None:
                             model = model.replace(
                                 statements=model.statements[:ass_index]
                                 + model.statements[ass_index + 1 :]
