@@ -3,6 +3,7 @@ from pharmpy.modeling import (
     add_peripheral_compartment,
     has_presystemic_metabolite,
     remove_peripheral_compartment,
+    set_transit_compartments,
     transform_blq,
 )
 
@@ -54,6 +55,15 @@ def test_add_metabolite_with_blq(testdata, load_model_for_test):
     a = model.code.split('\n')
     assert a[33] == 'IF (DVID.EQ.1) Y = Y'
     assert a[34] == 'IF (DVID.EQ.2) Y = Y_M'
+
+
+def test_add_metabolite_transits_nodepot(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    model = set_transit_compartments(model, 2, keep_depot=False)
+    model = add_peripheral_compartment(model)
+    model = add_metabolite(model)
+
+    assert model.statements.ode_system.find_compartment("METABOLITE") is not None
 
 
 def test_presystemic_metabolite(testdata, load_model_for_test):
