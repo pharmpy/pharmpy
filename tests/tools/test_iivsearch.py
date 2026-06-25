@@ -2,7 +2,7 @@ from functools import partial
 
 import pytest
 
-from pharmpy.mfl import ModelFeatures
+from pharmpy.mfl import IIV, ModelFeatures
 from pharmpy.modeling import (
     add_iiv,
     add_lag_time,
@@ -19,6 +19,7 @@ from pharmpy.tools.iivsearch.algorithms import (
     create_candidate_linearized,
     create_description,
     get_covariance_combinations,
+    get_covariance_mfl,
     get_iiv_combinations,
 )
 from pharmpy.tools.iivsearch.tool import (
@@ -98,6 +99,7 @@ def test_prepare_input_model_entry(load_model_for_test, testdata):
             ['td_exhaustive_no_of_etas', 'td_exhaustive_block_structure'],
         ),
         ('bottom_up_stepwise', None, ['bu_stepwise_no_of_etas', 'td_exhaustive_block_structure']),
+        ('simultaneous_stepwise', None, ['bu_stepwise_simultaneous']),
     ],
 )
 def test_prepare_algorithms(algorithm, correlation_algorithm, list_of_algorithms):
@@ -351,6 +353,45 @@ def test_create_base_model_raises(load_model_for_test, testdata):
 
 
 @pytest.mark.parametrize(
+    'mfl, new, expected',
+    [
+        (
+            'IIV([CL,VC],EXP);COVARIANCE(IIV,[CL,VC])',
+            ['MAT'],
+            [
+                'IIV([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])',
+                'IIV([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,MAT,VC])',
+            ],
+        ),
+        (
+            'IIV([CL,VC,MAT],EXP);COVARIANCE(IIV,[CL,VC])',
+            ['MDT'],
+            [
+                'IIV([CL,MAT,MDT,VC],EXP);COVARIANCE(IIV,[CL,VC])',
+                'IIV([CL,MAT,MDT,VC],EXP);COVARIANCE(IIV,[CL,MDT,VC])',
+                'IIV([CL,MAT,MDT,VC],EXP);COVARIANCE(IIV,[CL,VC]);COVARIANCE(IIV,[MAT,MDT])',
+            ],
+        ),
+        (
+            'IIV([CL,VC],EXP);COVARIANCE(IIV,[CL,VC])',
+            ['MAT', 'MDT'],
+            [
+                'IIV([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,VC])',
+                'IIV([CL,MAT,VC],EXP);COVARIANCE(IIV,[CL,MAT,VC])',
+                'IIV([CL,MDT,VC],EXP);COVARIANCE(IIV,[CL,VC])',
+                'IIV([CL,MDT,VC],EXP);COVARIANCE(IIV,[CL,MDT,VC])',
+            ],
+        ),
+    ],
+)
+def test_get_covariance_mfl(mfl, new, expected):
+    mfl = ModelFeatures.create(mfl)
+    new = [IIV.create(p, fp='exp', optional=False) for p in new]
+
+    assert [str(block) for block in get_covariance_mfl(mfl, new)] == expected
+
+
+@pytest.mark.parametrize(
     'kwargs, expected',
     [
         (
@@ -477,6 +518,12 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             dict(algorithm='skip', correlation_algorithm=None),
             ValueError,
             'correlation_algorithm need to be specified',
+        ),
+        (
+            None,
+            dict(algorithm='simultaneous_stepwise', correlation_algorithm='top_down_exhaustive'),
+            ValueError,
+            'correlation_algorithm cannot be set',
         ),
         (None, {'rank_type': 'ofv', 'E_p': 1.0}, ValueError, 'E_p and E_q can only be provided'),
         (None, {'rank_type': 'ofv', 'E_q': 1.0}, ValueError, 'E_p and E_q can only be provided'),

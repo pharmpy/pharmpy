@@ -151,6 +151,16 @@ from pharmpy.workflows import LocalDirectoryContext
             1,
             'iivsearch_run1',
         ),
+        (
+            'simultaneous_stepwise',
+            None,
+            'IIV(CL,exp);IIV?(@PK,exp)',
+            dict(),
+            9,
+            3,
+            2,
+            'iivsearch_run7',
+        ),
     ],
 )
 def test_iivsearch_dummy(
@@ -300,6 +310,12 @@ def test_iivsearch_pd_dummy(
             'bottom_up_stepwise',
             'skip',
             4,
+            {'search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
+        ),
+        (
+            'simultaneous_stepwise',
+            None,
+            7,
             {'search_space': 'IIV(CL,exp);IIV?(@PK,exp)'},
         ),
     ),

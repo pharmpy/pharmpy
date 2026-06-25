@@ -147,6 +147,87 @@ def bu_stepwise_no_of_etas(
     return rank_results, tuple(mes)
 
 
+def bu_stepwise_simultaneous(
+    context, base_model_entry, mfl, index_offset, param_mapping, rank_options
+):
+    if param_mapping:
+        linbase_model_entry = base_model_entry
+        mfl = expand_model_features(linbase_model_entry.parent, mfl.iiv)
+        base_model_entry = run_base_model_entry_linearized(
+            context, index_offset, mfl, param_mapping, linbase_model_entry
+        )
+        mes = [base_model_entry]
+    else:
+        mfl = expand_model_features(base_model_entry.model, mfl.iiv)
+        linbase_model_entry = None
+        mes = []
+
+    iivs = mfl.iiv.filter(filter_on='optional').force_optional()
+
+    rank_results = []
+    selected_model_entry = base_model_entry
+    for i in range(len(iivs)):
+        wb_step = WorkflowBuilder(name=f'step{i}')
+        selected_model = selected_model_entry.model
+        if param_mapping:
+            base_iiv = get_base_features_linearized(
+                selected_model, type='iiv', param_mapping=param_mapping
+            )
+            base_cov = get_base_features_linearized(
+                selected_model, type='covariance', param_mapping=param_mapping
+            )
+            create_candidate_func = create_candidate_linearized
+            extra_args = (param_mapping, linbase_model_entry)
+        else:
+            base_iiv = get_model_features(selected_model_entry.model, type='iiv')
+            base_cov = get_model_features(selected_model_entry.model, type='covariance')
+            create_candidate_func = create_candidate
+            extra_args = (
+                False,
+                selected_model_entry,
+            )
+
+        iivs_to_test = iivs.force_optional() - base_iiv.iiv
+        mfls_to_test = get_covariance_mfl(base_iiv + base_cov, iivs_to_test)
+
+        for j, mfl in enumerate(mfls_to_test, 1):
+            candidate_number = index_offset + len(mes) + j
+            model_name = f'iivsearch_run{candidate_number}'
+            task_candidate_entry = Task(
+                f'create_{model_name}',
+                create_candidate_func,
+                model_name,
+                mfl,
+                'simultaneous',
+                *extra_args,
+            )
+            wb_step.add_task(task_candidate_entry)
+            wf_fit = modelfit.create_fit_workflow(n=1)
+            wb_step.insert_workflow(wf_fit, predecessors=[task_candidate_entry])
+
+        wb_step.gather(wb_step.output_tasks)
+        wf_step = Workflow(wb_step)
+        mes_step = context.call_workflow(wf_step, unique_name=f'run_candidates_step{i}')
+
+        rank_res = rank_models(
+            context,
+            rank_options,
+            selected_model_entry.model,
+            [selected_model_entry] + list(mes_step),
+        )
+
+        rank_results.append(rank_res)
+        mes.extend(mes_step)
+
+        if rank_res.final_model == selected_model_entry.model:
+            break
+
+        mes_all = (selected_model_entry,) + mes_step
+        selected_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
+
+    return rank_results, tuple(mes)
+
+
 def get_base_features_linearized(base_model, type, param_mapping):
     rvs = base_model.random_variables.iiv
     rvs = [
@@ -248,9 +329,16 @@ def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
     candidate_model = update_initial_estimates(base_model, base_res)
     candidate_model = candidate_model.replace(name=name)
     ies = base_res.individual_estimates
-    candidate_model = transform_into_search_space(
-        candidate_model, mfl.force_optional(), type=type, individual_estimates=ies
-    )
+    mfl = mfl.force_optional()
+    if type == 'simultaneous':
+        candidate_model = transform_into_search_space(candidate_model, mfl, type='iiv')
+        candidate_model = transform_into_search_space(
+            candidate_model, mfl, type='covariance', individual_estimates=ies
+        )
+    else:
+        candidate_model = transform_into_search_space(
+            candidate_model, mfl, type=type, individual_estimates=ies
+        )
     if as_fullblock and len(mfl.iiv) > 1:
         candidate_model = create_joint_distribution(candidate_model, individual_estimates=ies)
     description = create_description(get_model_features(candidate_model), type)
@@ -264,12 +352,12 @@ def create_candidate_linearized(name, mfl, type, param_mapping, base_model_entry
     candidate_model = base_model.replace(name=name)
     candidate_model = update_initial_estimates(candidate_model, base_res)
     param_to_eta = {k: v for v, k in param_mapping.items()}
-    if type == 'iiv':
+    if type in ('iiv', 'simultaneous'):
         to_keep = [param_to_eta[iiv.parameter] for iiv in mfl.iiv]
         to_remove = [eta for eta in base_model.random_variables.iiv.names if eta not in to_keep]
         for parameter in to_remove:
             candidate_model = remove_iiv(candidate_model, to_remove=parameter)
-    else:
+    if type in ('covariance', 'simultaneous'):
         covariances = Covariance.get_covariance_blocks(mfl.covariance)
         ies = base_res.individual_estimates
         for block in covariances:
@@ -283,6 +371,25 @@ def create_candidate_linearized(name, mfl, type, param_mapping, base_model_entry
     description = create_description(iivs + covs, type)
     candidate_model = set_description(candidate_model, description)
     return ModelEntry.create(model=candidate_model, parent=base_model)
+
+
+def get_covariance_mfl(base_features, iivs_new):
+    remaining_iiv = {iiv.parameter for iiv in base_features.iiv}
+    current_blocks = Covariance.get_covariance_blocks(base_features.covariance)
+    mfls = []
+    for new in iivs_new:
+        mfls.append(base_features + new)
+
+        for block in current_blocks:
+            mfl_cov = [Covariance.create('IIV', parameters=(new.parameter, p)) for p in block]
+            mfls.append(base_features + new + mfl_cov)
+            remaining_iiv -= set(block)
+
+        for iiv in sorted(remaining_iiv):
+            mfl_cov = Covariance.create('IIV', parameters=(new.parameter, iiv))
+            mfls.append(base_features + new + mfl_cov)
+
+    return mfls
 
 
 def run_base_model_entry_linearized(context, index_offset, mfl, param_mapping, linbase_model_entry):
@@ -312,10 +419,10 @@ def run_base_model_entry_linearized(context, index_offset, mfl, param_mapping, l
 
 
 def create_description(model_or_mfl, type):
-    assert type in ['iiv', 'covariance']
+    assert type in ['iiv', 'covariance', 'simultaneous']
     if isinstance(model_or_mfl, Model):
         mfl = get_model_features(model_or_mfl, type=type)
-        if type == 'covariance':
+        if type != 'iiv':
             mfl += get_model_features(model_or_mfl, type='iiv')
     else:
         mfl = model_or_mfl

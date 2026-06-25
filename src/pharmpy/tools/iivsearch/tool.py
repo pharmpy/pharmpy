@@ -45,6 +45,7 @@ IIV_ALGORITHMS = frozenset(
     (
         'top_down_exhaustive',
         'bottom_up_stepwise',
+        'simultaneous_stepwise',
         'skip',
     )
 )
@@ -208,6 +209,7 @@ def prepare_algorithms(algorithm, correlation_algorithm):
     algorithm_sub = {
         "top_down_exhaustive": "td_exhaustive_no_of_etas",
         "bottom_up_stepwise": "bu_stepwise_no_of_etas",
+        "simultaneous_stepwise": "bu_stepwise_simultaneous",
     }
     correlation_algorithm_sub = {
         "top_down_exhaustive": "td_exhaustive_block_structure",
@@ -216,7 +218,7 @@ def prepare_algorithms(algorithm, correlation_algorithm):
     list_of_algorithms = []
     if algorithm != "skip":
         list_of_algorithms.append(algorithm_sub[algorithm])
-    if correlation_algorithm != "skip":
+    if correlation_algorithm != "skip" and 'simultaneous' not in algorithm:
         if correlation_algorithm is None:
             if algorithm in correlation_algorithm_sub.keys():
                 correlation_algorithm = algorithm
@@ -510,9 +512,21 @@ def _run_stepwise_search(
     param_mapping=None,
 ):
     algorithm_func = getattr(algorithms, algorithm_name)
-    rank_res, mes = algorithm_func(
-        context, base_model_entry, mfl, index_offset, as_fullblock, param_mapping, rank_options
-    )
+    if 'simultaneous' in algorithm_name:
+        args = (context, base_model_entry, mfl, index_offset, param_mapping, rank_options)
+    else:
+        args = (
+            context,
+            base_model_entry,
+            mfl,
+            index_offset,
+            as_fullblock,
+            param_mapping,
+            rank_options,
+        )
+
+    rank_res, mes = algorithm_func(*args)
+
     if not rank_res:
         context.log_info('No models to run, skipping step')
         return base_model_entry, index_offset, []
@@ -845,6 +859,10 @@ def validate_input(
     elif algorithm == "skip" and correlation_algorithm is None:
         raise ValueError(
             "correlation_algorithm need to be specified if" " 'algorithm' is set to skip"
+        )
+    elif algorithm == "simultaneous_stepwise" and correlation_algorithm is not None:
+        raise ValueError(
+            "correlation_algorithm cannot be set when algorithm is simultaneous_stepwise"
         )
 
     if rank_type != 'mbic' and (E_p is not None or E_q is not None):
