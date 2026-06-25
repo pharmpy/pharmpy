@@ -479,7 +479,7 @@ def run_stepwise_search_linearized(
 
     res = _run_stepwise_search(
         context,
-        f'{step}_linearized',
+        step,
         mfl,
         rank_options,
         linbase_model_entry,
@@ -510,14 +510,9 @@ def _run_stepwise_search(
     param_mapping=None,
 ):
     algorithm_func = getattr(algorithms, algorithm_name)
-    if not param_mapping:
-        rank_res, mes = algorithm_func(
-            context, base_model_entry, mfl, index_offset, as_fullblock, rank_options
-        )
-    else:
-        rank_res, mes = algorithm_func(
-            context, base_model_entry, mfl, index_offset, rank_options, param_mapping
-        )
+    rank_res, mes = algorithm_func(
+        context, base_model_entry, mfl, index_offset, as_fullblock, param_mapping, rank_options
+    )
     if not rank_res:
         context.log_info('No models to run, skipping step')
         return base_model_entry, index_offset, []

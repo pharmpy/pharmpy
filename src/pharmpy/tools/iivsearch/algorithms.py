@@ -31,7 +31,7 @@ def td_exhaustive(
 
     base_model = base_model_entry.model
     if param_mapping:
-        base_features = get_base_features_linearized(type, base_model, param_mapping)
+        base_features = get_base_features_linearized(base_model, type, param_mapping)
     else:
         base_features = get_model_features(base_model, type=type)
 
@@ -75,94 +75,51 @@ def td_exhaustive(
 
 
 def bu_stepwise_no_of_etas(
-    context, base_model_entry, mfl, index_offset, as_fullblock, rank_options
+    context, base_model_entry, mfl, index_offset, as_fullblock, param_mapping, rank_options
 ):
-    mfl = expand_model_features(base_model_entry.model, mfl.iiv)
-    iivs = mfl.iiv.filter(filter_on='optional')
+    if param_mapping:
+        linbase_model_entry = base_model_entry
+        mfl = expand_model_features(linbase_model_entry.parent, mfl.iiv)
+        base_model_entry = run_base_model_entry_linearized(
+            context, index_offset, mfl, param_mapping, linbase_model_entry
+        )
+        mes = [base_model_entry]
+    else:
+        mfl = expand_model_features(base_model_entry.model, mfl.iiv)
+        linbase_model_entry = None
+        mes = []
+
+    iivs = mfl.iiv.filter(filter_on='optional').force_optional()
 
     rank_results = []
-    mes = []
-
     selected_model_entry = base_model_entry
     for i in range(len(iivs)):
         wb_step = WorkflowBuilder(name=f'step{i}')
-        base_features = get_model_features(selected_model_entry.model, type='iiv')
+        selected_model = selected_model_entry.model
+        if param_mapping:
+            base_features = get_base_features_linearized(
+                selected_model, type='iiv', param_mapping=param_mapping
+            )
+            create_candidate_func = create_candidate_linearized
+            extra_args = (param_mapping, linbase_model_entry)
+        else:
+            base_features = get_model_features(selected_model, type='iiv')
+            create_candidate_func = create_candidate
+            extra_args = (as_fullblock, selected_model_entry)
+
         to_test = iivs.force_optional() - base_features.iiv
         for j, iiv in enumerate(to_test, 1):
-            candidate_number = index_offset + len(mes) + j
-            model_name = f'iivsearch_run{candidate_number}'
-            task_candidate_entry = Task(
-                f'create_{model_name}',
-                create_candidate,
-                model_name,
-                base_features + iiv,
-                'iiv',
-                as_fullblock,
-                selected_model_entry,
-            )
-            wb_step.add_task(task_candidate_entry)
-            wf_fit = modelfit.create_fit_workflow(n=1)
-            wb_step.insert_workflow(wf_fit, predecessors=[task_candidate_entry])
-
-        wb_step.gather(wb_step.output_tasks)
-        wf_step = Workflow(wb_step)
-        mes_step = context.call_workflow(wf_step, unique_name=f'run_candidates_step{i}')
-
-        rank_res = rank_models(
-            context,
-            rank_options,
-            selected_model_entry.model,
-            [selected_model_entry] + list(mes_step),
-        )
-
-        rank_results.append(rank_res)
-        mes.extend(mes_step)
-
-        if rank_res.final_model == selected_model_entry.model:
-            break
-
-        mes_all = (selected_model_entry,) + mes_step
-        selected_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
-
-    return rank_results, tuple(mes)
-
-
-def bu_stepwise_no_of_etas_linearized(
-    context, linbase_model_entry, mfl, index_offset, rank_options, param_mapping
-):
-    mfl = expand_model_features(linbase_model_entry.parent, mfl.iiv)
-
-    to_keep = mfl.iiv - mfl.iiv.filter(filter_on='optional')
-    base_model_entry = run_base_model_entry_linearized(
-        context, index_offset, to_keep, param_mapping, linbase_model_entry
-    )
-    base_features = get_base_features_linearized('iiv', base_model_entry.model, param_mapping)
-
-    rank_results = []
-    mes = [base_model_entry]
-
-    selected_model_entry = base_model_entry
-    to_test = mfl.iiv.filter(filter_on='optional').force_optional()
-
-    i = 1
-    while True:
-        if not to_test:
-            break
-
-        wb_step = WorkflowBuilder(name=f'step{i}')
-        for j, eta in enumerate(to_test, 1):
-            to_keep = base_features + eta
             n = index_offset + len(mes) + j
             model_name = f'iivsearch_run{n}'
             task_candidate_entry = Task(
                 f'create_{model_name}',
-                create_candidate_linearized,
+                create_candidate_func,
                 model_name,
-                to_keep,
+                base_features + iiv,
                 'iiv',
-                param_mapping,
-                linbase_model_entry,
+                *extra_args,
             )
+
             wb_step.add_task(task_candidate_entry)
             wf_fit = modelfit.create_fit_workflow(n=1)
             wb_step.insert_workflow(wf_fit, predecessors=[task_candidate_entry])
@@ -186,16 +143,11 @@ def bu_stepwise_no_of_etas_linearized(
 
         mes_all = (selected_model_entry,) + mes_step
         selected_model_entry = get_best_model_entry(mes_all, rank_res.final_model)
-        base_features = get_base_features_linearized(
-            'iiv', selected_model_entry.model, param_mapping
-        )
-        to_test -= base_features
-        i += 1
 
     return rank_results, tuple(mes)
 
 
-def get_base_features_linearized(type, base_model, param_mapping):
+def get_base_features_linearized(base_model, type, param_mapping):
     rvs = base_model.random_variables.iiv
     rvs = [
         dist
@@ -326,16 +278,14 @@ def create_candidate_linearized(name, mfl, type, param_mapping, base_model_entry
                 candidate_model, etas, individual_estimates=ies
             )
 
-    iivs = get_base_features_linearized('iiv', candidate_model, param_mapping)
-    covs = get_base_features_linearized('covariance', candidate_model, param_mapping)
+    iivs = get_base_features_linearized(candidate_model, 'iiv', param_mapping)
+    covs = get_base_features_linearized(candidate_model, 'covariance', param_mapping)
     description = create_description(iivs + covs, type)
     candidate_model = set_description(candidate_model, description)
     return ModelEntry.create(model=candidate_model, parent=base_model)
 
 
-def run_base_model_entry_linearized(
-    context, index_offset, to_keep, param_mapping, linbase_model_entry
-):
+def run_base_model_entry_linearized(context, index_offset, mfl, param_mapping, linbase_model_entry):
     wb = WorkflowBuilder(name='base_model')
 
     candidate_number = index_offset + 1
@@ -344,7 +294,7 @@ def run_base_model_entry_linearized(
         f'create_{model_name}',
         create_candidate_linearized,
         model_name,
-        to_keep,
+        mfl.iiv - mfl.iiv.filter(filter_on='optional'),
         'iiv',
         param_mapping,
         linbase_model_entry,
