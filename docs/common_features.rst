@@ -6,65 +6,92 @@ Common features
 
 .. note::
 
-    The AMD tool is a collection of tools, meaning that some aspects of this section may not be applicable. For
-    example, datasets will be in the database for each subtool.
+    The AMD tool is a collection of tools, meaning that some aspects of this section may not be applicable.
+
 .. _tool_database:
 
-Tool database
-~~~~~~~~~~~~~
+Tool context
+~~~~~~~~~~~~
 
-When running a tool, all candidate models and their corresponding files are stored in a tool database. As an example,
-using the Modelsearch tool with NONMEM for estimation, a tool database might look like this:
+When running a tool, a tool context will be created. In it, all estimated models and their corresponding files are
+stored, as well as various result files and metadata. Using the Modelsearch tool with NONMEM for estimation, a tool
+context might look like this:
 
 .. code-block::
 
-    modelsearch_dir1/
+    modelsearch1
+    ├── annotations
+    ├── log.csv
     ├── metadata.json
     ├── models
-    │   ├── .datasets
-    │   │   ├── .hash
-    │   │   │   └── ...
-    │   │   ├── modelsearch_candidate1.csv
-    │   │   ├── modelsearch_candidate1.datainfo
-    │   │   ├── modelsearch_candidate2.csv
-    │   │   └── modelsearch_candidate2.datainfo
-    │   ├── modelsearch_candidate1
-    │   │   ├── modelsearch_candidate1.ext
-    │   │   ├── modelsearch_candidate1.lst
-    │   │   ├── modelsearch_candidate1.mod
-    │   │   ├── modelsearch_candidate1.phi
+    │   ├── final
+    │   │   ├── model.ctl
+    │   │   ├── model.ext
+    │   │   ├── ...
     │   │   ├── mytab_mox1
-    │   │   ├── nonmem.json
     │   │   ├── .pharmpy
-    │   │   │   └── ...
+    │   │   │   ├── metadata.json
+    │   │   │   └── results.json
     │   │   ├── stderr
     │   │   └── stdout
-    │   ├── modelsearch_candidate2
+    │   ├── input
+    │   │   └── model.ctl
+    │   ├── modelsearch_run1
+    │   │   ├── model.ctl
+    │   │   ├── model.ext
     │   │   └── ...
-    │   ├── modelsearch_candidate3
+    │   ├── modelsearch_run2
+    │   │   ├── model.ctl
+    │   │   ├── model.ext
     │   │   └── ...
-    │   └── modelsearch_candidate4
-    │       └── ...
+    │   └── modelsearch_run3
+    │   │   ├── model.ctl
+    │   │   ├── model.ext
+    │   │   └── ...
+    │   └── ...
     ├── results.csv
-    └── results.json
+    ├── results.html
+    ├── results.json
+    └── subcontexts
+        └── modelrank1
+            └── ...
 
-The top level ``modelsearch_dir1/`` will contain files relevant for the whole tool, such as metadata and results.
-The subdirectory ``models/`` will contain subfolders for each model candidate, as well as a directory for all unique
-datasets from the tool (see :ref:`tool_datasets`). Each candidate directory will contain the resulting NONMEM files, as
-well as NONMEM output in ``stderr`` and ``stdout``.
+
+The top level ``modelsearch1`` will contain files relevant for the whole tool, such as metadata and results.
+The subdirectory ``models`` will contain subfolders for each model candidate. Each candidate directory will contain
+the resulting NONMEM files, as well as NONMEM output in ``stderr`` and ``stdout``. The subcontext directory contains
+tool directories for other tools that have been called (most commonly the :ref:`ModelRank<modelrank>`) tool, which in
+turn has the same structure with result files, model directory etc.
 
 Running directory
 =================
 
-.. note::
-    This information is for NONMEM runs as it is the only estimation software currently fully supported for running
-    tools.
+All tools are run in a temporary directory. This means that when Pharmpy starts a tool, the model candidates and their
+datasets will be written/copied to the temporary directory, and all estimations will be started there. When model has
+been estimated, it will be copied to the tool database.
 
-All tools are run in a temporary directory. This means, when Pharmpy starts a tool, the model candidates and their
-datasets will be written to the temporary directory, and all estimations will be started there. When model has been
-estimated, it will be copied to the tool database. The dataset will also be copied to ``.datasets/`` `if that dataset
-has not been stored in the database yet`. Which dataset that is copied is dependent on which of the candidate models
-that have finished running first. See :ref:`tool_datasets` for more information.
+Model database
+~~~~~~~~~~~~~~
+
+In the tool context, there will be two directories of interest: ``models`` and ``.modeldb``. The ``models``-directory is
+meant for interaction, and will contain all models that have been generated by the tool as well as the input model.
+The ``.modeldb``-directory is a hidden directory on macOS and Linux and visible on Windows, but is not meant for
+interaction. In this directory the actual model files are stored, while the model directories in ``models`` use symlinks
+to ``.modeldb``. The reason for this is that in a tool (especially in more complex tools like AMD), a model may appear
+multiple times, for example the input model for one of AMDs subtools is the final model of another. In order to avoid
+duplicating files, the ``.modeldb``-directory will be used for all subtools, and then mapped with symlinks. In ``.modeldb``
+the names of the directories are the hash of the model.
+
+.. _tool_datasets:
+
+Datasets
+~~~~~~~~
+
+Pharmpy will create a directory ``.datasets`` in the ``.modeldb``-directory where any unique datasets the tool creates
+(and the original dataset if used) will be stored. An example of this is when running Modelsearch and having zero order
+absorption in the search space, a RATE column will be created. If any of the stepwise algorithms are used, the
+subsequent models will have the "same" dataset, and thus only one copy of that dataset will be located in
+``.datasets``.
 
 Results
 ~~~~~~~
@@ -74,21 +101,20 @@ script:
 
 .. pharmpy-code::
 
-    res = run_modelsearch('ABSORPTION(ZO);PERIPHERALS(1)',
-                          'reduced_stepwise',
-                          model=start_model,
+    res = run_modelsearch(model=start_model,
                           results=start_model_results,
-                          iiv_strategy='absorption_delay',
-                          rank_type='bic',
-                          cutoff=None)
+                          search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+                          algorithm='reduced_stepwise',
+                          rank_type='bic')
     res.summary_models
 
 For a more detailed description of which results are available, please check the documentation for each tool.
 
 Additionally, Pharmpy will create at least two files: ``results.csv`` and ``results.json``. The .csv is intended as
-a way to quickly look over your results, while the .json is a way to recreate the results object. This allows for
-access to the different summary tables as data frames, and is intended to use to programmatically interact with the
-results.
+a way to quickly look over your results, while the .json is a way to recreate the results object and can be read in
+with :py:func:`pharmpy.tools.read_results`. This allows for access to the different summary tables as data frames,
+and is intended to use to programmatically interact with the results. For most tools, a ``results.html`` will also be
+created, this is an interactive report of the tool.
 
 .. pharmpy-code::
 
@@ -110,13 +136,3 @@ time, which options were used, which Pharmpy version etc. Example of metadata-fi
     with open('tests/testdata/results/metadata.json') as f:
         print(f.read())
 
-
-.. _tool_datasets:
-
-Datasets
-~~~~~~~~
-
-Pharmpy will create a directory ``.datasets/`` where any unique datasets the tool creates will be stored. An example
-of this is when running Modelsearch and having zero order absorption in the search space, a RATE column will be
-created. If any of the stepwise algorithms are used, the subsequent models will have the "same" dataset, and thus only
-one copy of that dataset will be located in ``.datasets/``.
