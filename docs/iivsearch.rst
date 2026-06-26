@@ -143,7 +143,7 @@ Number of IIVs
 | Algorithm                           | Description                                                                    |
 +=====================================+================================================================================+
 | ``'top_down_exhaustive'``           | Removes available IIV in all possible combinations (except for IIVs specified  |
-|                                     | in ``keep``-option)                                                            |
+|                                     | specified in ``search_space``-option)                                          |
 +-------------------------------------+--------------------------------------------------------------------------------+
 | ``'bottom_up_stepwise'``            | Iteratively adds all available IIV, one at a time. After each addition, the    |
 |                                     | best model is selected. The algorithm stops when no better model was found     |
@@ -262,8 +262,14 @@ the following models:
 
 .. _iiv_algorithms_combined:
 
-Combing algorithms
-------------------
+Exploring both number of etas and correlation structure
+-------------------------------------------------------
+
+The IIVSearch tool supports exploring both the number of etas and the correlation structure in the same tool run.
+Either they can be explored one after the other or simultaneously.
+
+Combining algorithms
+^^^^^^^^^^^^^^^^^^^^
 
 If both :code:`algorithm` and :code:`correlation_algorithm` are set, they will be performed in a stepwise manner.
 
@@ -313,6 +319,52 @@ will be the following:
 |                           |                              | exhaustive for correlation structure              |
 +---------------------------+------------------------------+---------------------------------------------------+
 
+Simultaneous exploration
+^^^^^^^^^^^^^^^^^^^^^^^^
+
+The number of etas and the correlation structure can be explored simultaneously. This is also specified in the
+``algorithm``-option. Current implementations are:
+
++-------------------------------------+--------------------------------------------------------------------------------+
+| Algorithm                           | Description                                                                    |
++=====================================+================================================================================+
+| ``'simultaneous_stepwise'``         | Iteratively adds all available IIV, one at a time. When adding an IIV it will  |
+|                                     | be tested in each existing block.                                              |
++-------------------------------------+--------------------------------------------------------------------------------+
+
+Simultaneous stepwise algorithm
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For a given search space, the simultaneous stepwise algorithm will add the IIVs one at the time, these will be tested
+in each of the existing blocks in the parent model. Given a model where we want to keep IIV on clearance (CL), and
+explore IIV on central volume (VC) and mean absorption time (MAT) with all correlation structures, the exploration will
+look as follows:
+
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial"];
+            s1 [label="[CL]"]
+            s2 [label="[CL,VC]"]
+            s3 [label="[CL] + [VC]"]
+            s4 [label="[CL,MAT]"]
+            s5 [label="[CL] + [MAT]"]
+            s6 [label="[CL,MAT] + [VC]"]
+            s7 [label="[CL] + [VC,MAT]"]
+            s8 [label="[CL] + [VC] + [MAT]"]
+
+            s1 -> s2
+            s1 -> s3
+            s1 -> s4
+            s1 -> s5
+            s3 -> s6
+            s3 -> s7
+            s3 -> s8
+        }
+
+If at any step the child model is worse than the parent model, the algorithm will terminate and the parent model
+will be selected.
 
 .. _search_space_iivsearch:
 

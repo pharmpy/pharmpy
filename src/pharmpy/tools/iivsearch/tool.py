@@ -90,7 +90,7 @@ def create_workflow(
         Pharmpy model
     results : ModelfitResults
         Results for model
-    algorithm : {'top_down_exhaustive','bottom_up_stepwise', 'skip'}
+    algorithm : {'top_down_exhaustive','bottom_up_stepwise', 'simultaneous_stepwise', 'skip'}
         Which algorithm to run when determining number of IIVs.
     search_space : str
         Search space to explore
