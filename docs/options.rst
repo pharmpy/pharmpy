@@ -31,18 +31,24 @@ Common options
 
 Common options are options that can directly affect the execution of a tool and not only the environment in which the tool is run (see the dispatching options). 
 
-+-----------------------------+-------------------------------------------------------------------------------------------------+
-| Option                      | Description                                                                                     |
-+=============================+=================================================================================================+
-| :code:`esttool`             | The tool to use for model estimation and evaluation.                                            |
-|                             | The options are :code:`nonmem`, :code:`nlmixr`, :code:`pharmpy` and :code:`dummy`.              |
-|                             | The dummy estimation tool doesn't do estimation, but instead randomizes the results.            |
-|                             | Since this is very fast it can be used for testing and demonstration purposes.                  |
-|                             | The built in Pharmpy estimation engine is very limited.                                         |
-|                             | :code:`nonmem` is the default                                                                   |
-+-----------------------------+-------------------------------------------------------------------------------------------------+
++----------------------------------------+-------------------------------------------------------------------------------------------------+
+| Option                                 | Description                                                                                     |
++========================================+=================================================================================================+
+| :code:`esttool`                        | The tool to use for model estimation and evaluation.                                            |
+|                                        | The options are :code:`nonmem`, :code:`nlmixr`, :code:`pharmpy` and :code:`dummy`.              |
+|                                        | The dummy estimation tool doesn't do estimation, but instead randomizes the results.            |
+|                                        | Since this is very fast it can be used for testing and demonstration purposes.                  |
+|                                        | The built in Pharmpy estimation engine is very limited.                                         |
+|                                        | :code:`nonmem` is the default                                                                   |
++----------------------------------------+-------------------------------------------------------------------------------------------------+
+| :code:`validate_dataset`               | (Only relevant for NONMEM) Whether the dataset should be validated or not against the FDATA     |
+|                                        | file. Default is false                                                                          |
++----------------------------------------+-------------------------------------------------------------------------------------------------+
+| :code:`always_create_new_dataset_file` | (Only relevant for NONMEM) Whether Pharmpy dataset should be written down to a new file, if     |
+|                                        | false the original file will be copied when possible. Default is false                          |
++----------------------------------------+-------------------------------------------------------------------------------------------------+
 
-Dipatching options
+Dispatching options
 ~~~~~~~~~~~~~~~~~~
 
 Dipatching options are technical options telling Pharmpy something about how a workflow should be dispatched, i.e. run. They are not intended to be able to directly change any results of a tool just how they are executed.
@@ -68,4 +74,5 @@ Dipatching options are technical options telling Pharmpy something about how a w
 +-----------------------------+-------------------------------------------------------------------------------------------------+
 | :code:`ref`                 | The path to the tool run. For more information see :ref:`context`                               |
 +-----------------------------+-------------------------------------------------------------------------------------------------+
-
+| :code:`context`             | Context to use for the tool run. For more information see :ref:`context`                        |
++-----------------------------+-------------------------------------------------------------------------------------------------+
