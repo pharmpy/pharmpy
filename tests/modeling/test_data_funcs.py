@@ -675,6 +675,7 @@ def test_set_dataset(load_example_model_for_test, testdata):
 
     assert model.datainfo.path.name == 'pheno.dta'
     model = set_dataset(model, path_or_df=mox_path, format=None)
+    assert 'mox_simulated_normal.csv' in model.code
     assert model.dataset is not None
     assert all(col_type == 'unknown' for col_type in model.datainfo.types)
     assert len(model.datainfo.provenance) == 1

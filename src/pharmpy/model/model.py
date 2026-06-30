@@ -368,7 +368,12 @@ class Model(Immutable):
             new_datainfo = False
 
         if new_dataset and dataset is not None:
+            new_path = (
+                datainfo.path if new_datainfo and datainfo.path != self._datainfo.path else None
+            )
             datainfo = update_datainfo(datainfo, dataset)
+            if new_path:
+                datainfo = datainfo.replace(path=new_path)
             new_provenance = (
                 datainfo.path == self._datainfo.path
                 and datainfo.provenance != self._datainfo.provenance
