@@ -85,11 +85,21 @@ The path to the dataset file if one exists.
 
     di.path
 
+The path to the dataset is ``None`` if the original read in dataset is no longer possible to use, e.g. if a
+column has been added or changed.
+
 Separator character for the dataset file.
 
 .. pharmpy-execute::
 
     di.separator
+
+The provenance describes which operations have been made to a dataset. In other words: which steps are needed to go from
+the read in dataset to the current dataset.
+
+.. pharmpy-execute::
+
+    di.provenance
 
 ColumnInfo
 ==========
@@ -174,3 +184,91 @@ And the columns structure:
         ``drop``, boolean
         ``datatype``, string
         ``descriptor``, string
+
+
+~~~~~~~~~~~~~~
+NONMEM dataset
+~~~~~~~~~~~~~~
+
+Since Pharmpy 2.2.0, Pharmpy supports using the original dataset if possible when estimating etc.
+
+Parsing
+=======
+
+Pharmpy does the following filter when parsing a NONMEM dataset:
+
+* Filter individuals without observations
+* Filter all expression specified by IGNORE/ACCEPT statements in $DATA
+
+These filters will be added in ``DataInfo.provenance``.
+
+.. pharmpy-execute::
+   :hide-output:
+   :hide-code:
+
+    from pharmpy.modeling import read_model, filter_dataset
+    model = read_model(path / 'pheno_pd.mod')
+    model = filter_dataset(model, 'DVID==2')
+
+As an example, if we have the following model which filters out records with ``DVID == 2``:
+
+.. pharmpy-execute::
+   :hide-code:
+
+   from pharmpy.modeling import print_model_code
+   print_model_code(model)
+
+We can examine the provenance of that dataset:
+
+.. pharmpy-execute::
+
+   model.datainfo.provenance
+
+Here we can see the reading operation and then a filtering operation.
+
+Updating
+========
+
+If a change is made to the dataset which allows us to use the original dataset (e.g. filtering rows or removing columns),
+DROPs and IGNOREs will be added to the NONMEM code as needed. As an example, if we filter out some more records from the
+previous model:
+
+.. pharmpy-execute::
+
+   from pharmpy.modeling import filter_dataset
+   model = filter_dataset(model, 'APGR >= 8')
+
+The provenance will add an ignore operation:
+
+.. pharmpy-execute::
+
+   model.datainfo.provenance
+
+And $DATA and $INPUT will be updated accordingly:
+
+.. pharmpy-execute::
+
+   print_model_code(model)
+
+In some cases, the original dataset can no longer be used. For example if a new column is added:
+
+.. pharmpy-execute::
+
+   from pharmpy.modeling import add_time_after_dose
+   model = add_time_after_dose(model)
+
+The provenance will still have a new add column operation:
+
+.. pharmpy-execute::
+
+   model.datainfo.provenance
+
+But the NONMEM code will now have a dummy path as the path and the IGNORE statements will be removed (since the
+Pharmpy dataset has removed those rows):
+
+.. pharmpy-execute::
+
+   print_model_code(model)
+
+If writing the model (e.g. when writing the files or estimating the model), ``DUMMYPATH`` will be replaced with a real
+path.

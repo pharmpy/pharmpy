@@ -49,7 +49,7 @@ Common options are options that can directly affect the execution of a tool and 
 +----------------------------------------+-------------------------------------------------------------------------------------------------+
 
 Dispatching options
-~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~~~~~~~~
 
 Dipatching options are technical options telling Pharmpy something about how a workflow should be dispatched, i.e. run. They are not intended to be able to directly change any results of a tool just how they are executed.
 
