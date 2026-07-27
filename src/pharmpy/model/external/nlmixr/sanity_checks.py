@@ -72,12 +72,7 @@ def check_model(
         print_warning("Omega with value same not supported. Parameters are updated")
         model = change_rvs_same(model)
 
-    # Checks regarding esimation method
-    method = model.execution_steps[0].method
-    if not known_estimation_method(method):
-        print_warning(
-            f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
-        )
+    check_estimation_method(model)
 
     return model
 
@@ -89,12 +84,16 @@ def add_time(model):
     return model
 
 
-def known_estimation_method(method):
-    nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
-    if method in nonmem_method_to_nlmixr.keys():
-        return True
+def check_estimation_method(model):
+    if not model.execution_steps:
+        print_warning("No estimation step specified. Using 'FOCEI' as placeholder")
     else:
-        return False
+        method = model.execution_steps[0].method
+        methods_in_nlmixr = {"FOCE", "FO", "SAEM"}
+        if method not in methods_in_nlmixr:
+            print_warning(
+                f"Estimation method {method} unknown to nlmixr2. Using 'FOCEI' as placeholder"
+            )
 
 
 def known_error_model(model: pharmpy.model.Model) -> bool:

@@ -18,10 +18,10 @@ def add_theta(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
     cg.add("# --- THETAS ---")
     thetas = [p for p in model.parameters if p.symbol not in model.random_variables.free_symbols]
     for theta in thetas:
-        if model.execution_steps[0].method not in ["SAEM", "NLME"]:
-            add_ini_parameter(cg, theta, boundary=True)
-        else:
+        if model.execution_steps and model.execution_steps[0].method in {"SAEM", "NLME"}:
             add_ini_parameter(cg, theta)
+        else:
+            add_ini_parameter(cg, theta, boundary=True)
 
 
 def add_eta(model: pharmpy.model.Model, cg: CodeGenerator, as_list=False) -> None:
@@ -82,29 +82,22 @@ def add_sigma(model: pharmpy.model.Model, cg: CodeGenerator) -> None:
         sigma = dist.variance
         if len(dist.names) == 1:
             sigma_param = model.parameters[sigma]
-            if sigma_param.init != 1:
-                if model.execution_steps[0].method not in ["SAEM", "NLME"]:
-                    add_ini_parameter(cg, sigma_param, boundary=True)
-                else:
+            if sigma_param.init != 1 or not sigma_param.fix:
+                if model.execution_steps and model.execution_steps[0].method in {"SAEM", "NLME"}:
                     add_ini_parameter(cg, sigma_param)
-            elif not sigma_param.fix:
-                if model.execution_steps[0].method not in ["SAEM", "NLME"]:
-                    add_ini_parameter(cg, sigma_param, boundary=True)
                 else:
-                    add_ini_parameter(cg, sigma_param)
+                    add_ini_parameter(cg, sigma_param, boundary=True)
         else:
             for row, col in zip(range(sigma.rows), range(sigma.rows + 1)):
                 sigma_param = model.parameters[sigma[row, col]]
-                if sigma_param.init != 1:
-                    if model.execution_steps[0].method not in ["SAEM", "NLME"]:
-                        add_ini_parameter(cg, sigma_param, boundary=True)
-                    else:
+                if sigma_param.init != 1 or not sigma_param.fix:
+                    if model.execution_steps and model.execution_steps[0].method in {
+                        "SAEM",
+                        "NLME",
+                    }:
                         add_ini_parameter(cg, sigma_param)
-                elif not sigma_param.fix:
-                    if model.execution_steps[0].method not in ["SAEM", "NLME"]:
-                        add_ini_parameter(cg, sigma_param, boundary=True)
                     else:
-                        add_ini_parameter(cg, sigma_param)
+                        add_ini_parameter(cg, sigma_param, boundary=True)
 
 
 def add_ini_parameter(cg: CodeGenerator, parameter, boundary: bool = False) -> None:

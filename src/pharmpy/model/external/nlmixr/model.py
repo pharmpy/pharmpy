@@ -225,19 +225,24 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
 
     """
     # FIXME: Raise error if the method does not match when evaluating
-    execution_steps = model.execution_steps[0]
-    if "fix_eta" in execution_steps.tool_options:
+    if model.execution_steps:
+        execution_step = model.execution_steps[0]
+    else:
+        execution_step = pharmpy.model.EstimationStep.create(
+            "FOCE", interaction=True, maximum_evaluations=99999
+        )
+    if "fix_eta" in execution_step.tool_options:
         fix_eta = True
     else:
         fix_eta = False
 
-    if [s.evaluation for s in model.execution_steps][0] is True:
+    if execution_step.evaluation:
         max_eval = 0
     else:
-        max_eval = execution_steps.maximum_evaluations
+        max_eval = execution_step.maximum_evaluations
 
-    method = execution_steps.method
-    interaction = execution_steps.interaction
+    method = execution_step.method
+    interaction = execution_step.interaction
 
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
 
