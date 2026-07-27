@@ -736,6 +736,7 @@ def _do_michaelis_menten_elimination(model: Model, combined: bool = False):
 
 
 def _rename_parameter(model: Model, old_name, new_name):
+    model = rename_symbols(model, {f'ETA_{old_name}': f'ETA_{new_name}'})
     statements = model.statements
     rvs = model.random_variables
     a = statements.find_assignment(old_name)

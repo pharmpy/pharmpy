@@ -1375,6 +1375,11 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
 
 
 def test_transits_absfo(load_model_for_test, testdata):
+    model = create_basic_pk_model(administration="oral")
+    model = set_transit_compartments(model, 2, keep_depot=False)
+    mdt = model.statements.get_assignment("MDT")
+    assert mdt.expression == Expr("POP_MDT*exp(ETA_MDT)")
+
     model = load_model_for_test(testdata / 'nonmem' / 'modeling' / 'pheno_advan2.mod')
     model = set_transit_compartments(model, 0, keep_depot=False)
     transits = model.statements.ode_system.find_transit_compartments(model.statements)
