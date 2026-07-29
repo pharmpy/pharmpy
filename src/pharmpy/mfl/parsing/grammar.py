@@ -22,7 +22,7 @@
 grammar = r"""
 %ignore " "
 _SEPARATOR: /;|\n/
-start: _statement (_SEPARATOR _statement)*
+start: _SEPARATOR* _statement (_SEPARATOR+ _statement?)*
 _statement: definition | _feature
 
 definition: "LET"i "(" VARIABLE_NAME "," values ")"
