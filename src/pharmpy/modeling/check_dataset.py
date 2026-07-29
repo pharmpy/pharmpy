@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 from dataclasses import dataclass
 
 from pharmpy.basic import Quantity, Unit
@@ -17,6 +18,7 @@ def get_variable_description(model, variable) -> str:
             inv_mapping = {v: k for k, v in col.variable_mapping.items()}
             i = inv_mapping[variable]
             return f"{col.name}[{col.variable_id} == {i}]"
+    raise ValueError("Variable not in DataInfo")
 
 
 def get_variable_data(model, variable) -> pd.Series:
@@ -28,6 +30,7 @@ def get_variable_data(model, variable) -> pd.Series:
             inv_mapping = {v: k for k, v in col.variable_mapping.items()}
             i = inv_mapping[variable]
             return model.dataset.loc[model.dataset[col.variable_id] == i, col.name]
+    raise ValueError("Variable not in DataInfo")
 
 
 class Violation:
@@ -55,8 +58,9 @@ class DataInfoViolation(Violation):
         return f"{self.msg} for {get_variable_description(self.model, self.variable)}"
 
 
-class VariableQuantifier:
-    pass
+class VariableQuantifier(ABC):
+    @abstractmethod
+    def get_variables(self, model: Model) -> list[DataVariable]: ...
 
 
 @dataclass
