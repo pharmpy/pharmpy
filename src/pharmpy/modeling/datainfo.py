@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from typing import Any, Union, overload
 
 from pharmpy.model import DataInfo, DataVariable, Model
@@ -114,7 +115,9 @@ def set_property(
     if n is not None:
         var = col[n]
         new_var = var.set_property(property, value)
-        new_mapping = col.variable_mapping.replace(n, new_var)
+        old_mapping = col.variable_mapping
+        assert isinstance(old_mapping, Mapping)
+        new_mapping = old_mapping.replace(n, new_var)
     elif not isinstance(col.variable_mapping, DataVariable):
         new_mapping = {}
         for key, var in col.variable_mapping.items():

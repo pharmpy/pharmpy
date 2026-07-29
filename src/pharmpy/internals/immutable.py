@@ -88,7 +88,7 @@ class frozenmapping(Mapping[K, V]):
             self._hash = hash(tuple((k, v) for k, v in self._mapping.items()))
         return self._hash
 
-    def replace(self, key, value):
+    def replace(self, key: K, value: V):
         new = dict(self._mapping)
         new[key] = value
         return frozenmapping(new)
