@@ -694,8 +694,10 @@ def _dosing(di, dataset, dose_comp):
 
     df = dataset
 
-    if df is None:
-        return Bolus(amt)
+    if 'AMT' not in di.names:
+        raise ModelSyntaxError("AMT missing in $INPUT when RATE is available")
+    elif df is None:
+        return Infusion(amt, rate=Expr.symbol('RATE'))
     elif (df['RATE'] == 0).all():
         return Bolus(amt)
     elif (df['RATE'] == -1).any():
