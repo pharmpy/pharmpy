@@ -506,7 +506,7 @@ TSymbol = Union[str, sympy.Expr, symengine.Basic, Expr]
 TBooleanExpr = Union[str, sympy.Basic, symengine.Basic, BooleanExpr]
 
 
-def solve(eqs: Iterable[BooleanExpr], exclude: Optional[Iterable[Expr]] = None):
+def solve(eqs: Iterable[BooleanExpr], exclude: Optional[Iterable[Expr]] = None) -> dict[Expr, Expr]:
     if exclude is None:
         exclude = []
     sol = sympy.solve(eqs, exclude=list(exclude), dict=True)
