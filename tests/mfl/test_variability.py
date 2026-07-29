@@ -217,3 +217,9 @@ def test_repr_many(var_type, list_of_kwargs, expected):
     assert var_type.repr_many(mfl1) == expected
     mfl2 = ModelFeatures.create([features[0]])
     assert var_type.repr_many(mfl2) == repr(features[0])
+
+
+def test_expanded_parameter():
+    var = IIV.create(Ref('PK'), 'EXP', False)
+    with pytest.raises(ValueError):
+        var.expanded_parameter
