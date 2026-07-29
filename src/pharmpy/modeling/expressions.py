@@ -368,7 +368,7 @@ def mu_reference_model(model: Model):
                 + statements[insertion_ind + 1 :]
             )
             # Add mu referencing to last definition of parameter instead
-            last_ind = model.statements.find_assignment_index(assignment.symbol)
+            last_ind = model.statements.get_assignment_index(assignment.symbol)
             last_assignment = model.statements.find_assignment(assignment.symbol)
             assert last_assignment is not None
             last_def = last_assignment.expression
@@ -436,7 +436,7 @@ def get_mu_connected_to_parameter(model: Model, parameter: str) -> Optional[str]
 
     """
     mu_regex = r'^mu_\d*$'
-    for p in model.statements.find_assignment(parameter).free_symbols:
+    for p in model.statements.get_assignment(parameter).free_symbols:
         if match := re.match(mu_regex, str(p)):
             return match[0]
     return None
@@ -1389,14 +1389,14 @@ def remove_covariate_effect_from_statements(
     return new_before_odes
 
 
-def _neutral(expr: Expr) -> sympy.Integer:
+def _neutral(expr: Expr) -> Expr:
     expr = Expr(expr)
     if expr.is_add():
-        return sympy.Integer(0)
+        return Expr.integer(0)
     if expr.is_mul():
-        return sympy.Integer(1)
+        return Expr.integer(1)
     if expr.is_pow():
-        return sympy.Integer(1)
+        return Expr.integer(1)
 
     raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
 
@@ -1480,7 +1480,7 @@ def _remove_covariate_effect_from_statements_recursive(
     symbol: Expr,
     expression: Expr,
     covariate: Expr,
-    parent: Union[None, Expr],
+    parent: Optional[Expr],
     current_theta_expression: Optional[Expr] = None,
 ) -> ExpressionTreeNode:
     if expression.free_symbols.intersection(thetas):
@@ -1854,7 +1854,7 @@ def _get_component_edges(cs: CompartmentalSystem, vertices: set[Compartment]):
 def _get_component_free_symbols(
     is_central: bool,
     vertices: set[Compartment],
-    edges: Iterable[tuple[Compartment, Compartment, sympy.Expr]],
+    edges: Iterable[tuple[Compartment, Compartment, Expr]],
 ) -> Iterable[sympy.Symbol]:
     for u, v, rate in edges:
         # NOTE: These must not necessarily be outgoing edges
@@ -2124,7 +2124,7 @@ def get_dv_symbol(model: Model, dv: Union[Expr, str, int, None] = None) -> Expr:
 
 def _create_sd_corr_matrix(dist: JointNormalDistribution) -> Matrix:
     n = len(dist)
-    A = [[0 for _ in range(n)] for _ in range(n)]
+    A = [[Expr.integer(0) for _ in range(n)] for _ in range(n)]
     for row in range(n):
         for col in range(n):
             if row == col:
@@ -2176,7 +2176,7 @@ def _create_inits(model: Model, dist: JointNormalDistribution) -> Matrix:
             init = model.parameters[name].init
             d[name] = init
     sdcorr = model.random_variables.parameters_sdcorr(d)
-    A = [[0 for _ in range(n)] for _ in range(n)]
+    A = [[0.0 for _ in range(n)] for _ in range(n)]
     for row in range(n):
         for col in range(row + 1):
             name = var[row, col].name
@@ -2281,7 +2281,7 @@ def cholesky_decompose(model: Model, rvs: Optional[Collection[str]] = None) -> M
                     expr = simplify_expression(model, expr)
                     L_assignments.append(Assignment(symbol, expr))
                 rv_subs[etas[row]] = new_eta
-                eta_assignments.append(Assignment(new_eta, eta_expr))
+                eta_assignments.append(Assignment.create(new_eta, eta_expr))
         i += 1
 
     if L_assignments:
