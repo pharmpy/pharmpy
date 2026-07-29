@@ -83,7 +83,7 @@ def expand_model_features(model: Model, model_features: ModelFeatures) -> ModelF
     return model_features_expanded
 
 
-def _interpret_ref(model, symbol):
+def _interpret_ref(model: Model, symbol) -> tuple[str, ...]:
     if symbol.name in ['ABSORPTION', 'ELIMINATION', 'DISTRIBUTION']:
         return tuple(get_pk_parameters(model, kind=symbol.name.lower()))
     elif symbol.name == 'CATEGORICAL':
@@ -119,11 +119,11 @@ def _interpret_ref(model, symbol):
     elif symbol.name == 'BIOAVAIL':
         return tuple(_get_bioaval_parameters(model))
     elif symbol.name == 'PK_IIV':
-        return [
+        return tuple(
             pk_param
             for pk_param in get_pk_parameters(model)
             if len(get_parameter_rv(model, pk_param)) > 0
-        ]
+        )
     else:
         raise ValueError(f'Could not find symbol: {symbol}')
 
@@ -196,6 +196,8 @@ def get_model_features(
             iiv_params = [get_parameter_rv(model, iiv.parameter) for iiv in iivs]
             iiv_params = [iiv[0] if iiv else iiv for iiv in iiv_params]
             for iiv1, iiv2 in itertools.combinations(iiv_params, 2):
+                assert isinstance(iiv1, str)
+                assert isinstance(iiv2, str)
                 if not iiv1 or not iiv2:
                     continue
                 if model.random_variables.get_covariance(iiv1, iiv2) != 0:
@@ -344,7 +346,7 @@ def _get_transit_func(feature: Transits):
     if feature.number == 'N':
         func = partial(set_n_transit_compartments, keep_depot=feature.depot)
     else:
-        n = feature.number
+        n = int(feature.number)
         if not feature.depot:
             if n == 0:
                 return []
@@ -371,7 +373,7 @@ def _get_peripherals_func(feature: Peripherals):
 
 
 def _get_pd_func(feature: Union[DirectEffect, IndirectEffect, EffectComp]):
-    kwargs = {'expr': feature.type.lower()}
+    kwargs: dict[str, Union[str, bool]] = {'expr': feature.type.lower()}
     if isinstance(feature, IndirectEffect):
         kwargs['prod'] = feature.production
     assert type(feature) in FUNC_MAPPING.keys()
@@ -415,33 +417,34 @@ def _get_iiv_func(feature: IIV, include_add: bool, include_remove: bool):
     funcs = []
     if include_add:
         func_add = partial(
-            add_iiv, list_of_parameters=feature.parameter, expression=feature.fp.lower()
+            add_iiv, list_of_parameters=feature.expanded_parameter, expression=feature.fp.lower()
         )
         funcs.append(func_add)
     if include_remove:
-        func_remove = partial(remove_iiv, to_remove=feature.parameter)
+        func_remove = partial(remove_iiv, to_remove=feature.expanded_parameter)
         funcs.append(func_remove)
     return funcs
 
 
 def _get_covariance_func(
-    features: Sequence[Covariance], include_add, include_remove, ies: Optional[pd.DataFrame]
+    features: ModelFeatures, include_add, include_remove, ies: Optional[pd.DataFrame]
 ):
     funcs = []
     if include_add:
         blocks = Covariance.get_covariance_blocks(features)
         for block in blocks:
-            if include_add:
-                func_join = partial(
-                    create_joint_distribution,
-                    rvs=block,
-                    individual_estimates=ies,
-                )
-                funcs.append(func_join)
+            assert isinstance(block, tuple)
+            func_join = partial(
+                create_joint_distribution,
+                rvs=block,
+                individual_estimates=ies,
+            )
+            funcs.append(func_join)
     if include_remove:
         groups = defaultdict(list)
         for feature in features:
-            param_1, param_2 = feature.parameters
+            assert isinstance(feature, Covariance)
+            param_1, param_2 = feature.expanded_parameters
             groups[param_1].append(param_2)
             groups[param_2].append(param_1)
 
@@ -550,7 +553,7 @@ def _get_feature_diffs(search_space, model_features, type):
             continue
 
         if (type is None or type == 'iiv') and isinstance(feature, IIV):
-            other_features = mutex_dict.get(feature.parameter)
+            other_features = mutex_dict[feature.parameter]
             # Handle multiple types of fps for IIVs, e.g. exp cannot be combined with add
             if any(f in model_features for f in other_features):
                 continue

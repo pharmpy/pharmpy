@@ -64,6 +64,12 @@ class Covariance(ModelFeature):
         return self._optional
 
     @property
+    def expanded_parameters(self) -> tuple[str, str]:
+        if isinstance(self._parameters, Ref):
+            raise ValueError("Must be expanded")
+        return self._parameters
+
+    @property
     def args(self) -> tuple[str, Union[tuple[str, str], Ref], bool]:
         return self.type, self.parameters, self.optional
 
@@ -147,7 +153,9 @@ class Covariance(ModelFeature):
         return ';'.join(covariances)
 
     @staticmethod
-    def get_covariance_blocks(mf: Union[ModelFeatures, Sequence[Covariance]]):
+    def get_covariance_blocks(
+        mf: Union[ModelFeatures, Sequence[Covariance]],
+    ) -> tuple[Union[Ref, tuple[str, ...]], ...]:
         features = tuple(feat for feat in mf if isinstance(feat, Covariance))
         assert len(features) == len(mf)
 

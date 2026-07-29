@@ -51,6 +51,12 @@ class Variability(ModelFeature):
         return self._optional
 
     @property
+    def expanded_parameter(self) -> str:
+        if isinstance(self._parameter, Ref):
+            raise ValueError("Feature must be expanded")
+        return self._parameter
+
+    @property
     def args(self) -> tuple[Union[str, Ref], str, bool]:
         return self.parameter, self.fp, self.optional
 

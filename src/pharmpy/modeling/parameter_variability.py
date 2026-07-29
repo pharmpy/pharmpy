@@ -1028,7 +1028,7 @@ class EtaTransformation:
 
 def create_joint_distribution(
     model: Model,
-    rvs: Optional[list[str]] = None,
+    rvs: Optional[Sequence[str]] = None,
     individual_estimates: Optional[pd.DataFrame] = None,
 ):
     """

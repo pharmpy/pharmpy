@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections import defaultdict
+from collections.abc import Mapping
 from typing import Iterable, Iterator, Literal, Sequence, Type, TypeVar, Union
 
 from pharmpy.internals.immutable import Immutable
@@ -225,7 +226,7 @@ class ModelFeatures(Immutable):
             feature_map[type(feature)].append(feature)
         return True
 
-    def expand(self, expand_to: dict[Ref, Sequence[str]]) -> ModelFeatures:
+    def expand(self, expand_to: Mapping[Ref, Sequence[str]]) -> ModelFeatures:
         if self.is_expanded():
             return self
 
