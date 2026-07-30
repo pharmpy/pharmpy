@@ -1,6 +1,7 @@
 from collections.abc import Sequence
 
-from pharmpy.model import Arm, DataVariable, Observations, TrialDesign
+from pharmpy.basic import Expr
+from pharmpy.model import Administration, Arm, Bolus, DataVariable, Observations, TrialDesign
 
 
 def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
@@ -101,13 +102,73 @@ def add_observations(
                0.0                       16.0
     <BLANKLINE>
 
-    Empty trial design object
-
     """
 
     datavar = DataVariable.create(name=variable, type="dv")
     obs = Observations.create(variable=datavar, start_time=start_time, time_points=time_points)
     oldarm = td[arm]
     newarm = oldarm + obs
+    newtd = td.replace_arm(newarm)
+    return newtd
+
+
+def add_administration(
+    td: TrialDesign,
+    arm: str,
+    variable: str,
+    amount: float,
+    time_points: Sequence[float],
+    start_time: float = 0.0,
+) -> TrialDesign:
+    """Add observations to an arm in a trial design
+
+    Parameters
+    ----------
+    td : TrialDesign
+        TrialDesign to add to
+    arm : str
+        Name of the arm
+    variable : str
+        Name of the dose variable (e.g. AMT)
+    amount : float
+        The dose amount
+    time_points : Sequence[float]
+        List of the time points for the administration
+    start_time : float
+        Set a start_time to offset the time_points. Default 0.0
+
+    Returns
+    -------
+    TrialDesign
+        An updated TrialDesign
+
+    Example
+    -------
+    >>> from pharmpy.modeling import create_trial_design, add_arm, add_observations
+    >>> from pharmpy.modeling import add_administration
+    >>> td = create_trial_design()
+    >>> td = add_arm(td, name="Drug", size=100)
+    >>> td = add_observations(td, arm="Drug", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
+    >>> td = add_administration(td, arm="Drug", variable="AMT", amount=10.0, time_points=[0.0, 8.0])
+    >>> td
+                 ╭──────────── Observations ────────────╮
+      Drug       │ 0.0, 1.0, 2.0, 4.0, 16.0             │
+                 ╰───────────────── DV ─────────────────╯
+                 ╭─ Administration ─╮
+                 │ 0.0, 8.0         │
+                 ╰─ 10.000000000000─╯
+                 ├──────────────────────────────────────┤
+                0.0                                   16.0
+    <BLANKLINE>
+
+    """
+
+    datavar = DataVariable.create(name=variable, type="dose")
+    dose = Bolus(amount=Expr(amount), admid=1)
+    adm = Administration.create(
+        variable=datavar, dose=dose, start_time=start_time, time_points=time_points
+    )
+    oldarm = td[arm]
+    newarm = oldarm + adm
     newtd = td.replace_arm(newarm)
     return newtd

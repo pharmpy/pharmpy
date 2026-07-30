@@ -579,7 +579,7 @@ def render_lanes(arms, arm_lanes, idv_unit, padding=0):
             if n_lane == 0:
                 arm_panel = rich_panel.Panel(arms[n_arm].name, box=box.SIMPLE, width=12)
             else:
-                arm_panel = rich_panel.Panel("", box=box.SIMPLE, width=9)
+                arm_panel = rich_panel.Panel("", box=box.SIMPLE, width=12)
             columns = [arm_panel]
             if padding > 0:
                 pad_panel = rich_panel.Panel("", box=box.SIMPLE, width=padding)
@@ -629,7 +629,7 @@ def render_trial_design(td):
 
     axis = text_axis([min_start_time, max_end_time], total_width)
     for line in axis.split("\n"):
-        s += " " * 9 + line + "\n"
+        s += " " * 12 + line + "\n"
     return s
 
 

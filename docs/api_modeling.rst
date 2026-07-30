@@ -407,6 +407,7 @@ Trial design
 .. autosummary::
    :toctree: api/
 
+    add_administration
     add_arm
     add_observations
     create_trial_design

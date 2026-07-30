@@ -8,6 +8,7 @@ New features
 * Add :code:`modeling.create_trial_design`
 * Add :code:`modeling.add_arm`
 * Add :code:`modeling.add_observations`
+* Add :code:`modeling.add_administration`
 
 Bugfixes
 ========

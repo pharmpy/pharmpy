@@ -267,13 +267,14 @@ from .results import (
     insert_ebes_into_dataset,
 )
 from .tmdd import set_tmdd
-from .trial_design import add_arm, add_observations, create_trial_design
+from .trial_design import add_administration, add_arm, add_observations, create_trial_design
 from .units import convert_unit, get_unit_of
 from .write_dataset import write_csv, write_dataset
 
 # Must be set directly, otherwise errors about unused imports
 __all__ = [
     'add_admid',
+    'add_administration',
     'add_allometry',
     'add_arm',
     'add_bioavailability',
