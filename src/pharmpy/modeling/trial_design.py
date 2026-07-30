@@ -30,13 +30,15 @@ def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
     return new_td
 
 
-def add_arm(td: TrialDesign, size: int) -> TrialDesign:
+def add_arm(td: TrialDesign, name: str, size: int) -> TrialDesign:
     """Add an empty arm to a trial design
 
     Parameters
     ----------
     td : TrialDesign
         TrialDesign to add to
+    name : str
+        Name of the arm
     size : int
         Size of the arm (number of subjects)
 
@@ -49,12 +51,12 @@ def add_arm(td: TrialDesign, size: int) -> TrialDesign:
     -------
     >>> from pharmpy.modeling import create_trial_design, add_arm
     >>> td = create_trial_design()
-    >>> td = add_arm(td, size=100)
+    >>> td = add_arm(td, name="Placebo", size=100)
     >>> td
     Empty trial design object
 
     """
 
-    arm = Arm.create(size=size, activities=())
+    arm = Arm.create(name=name, size=size, activities=())
     new_td = td + arm
     return new_td

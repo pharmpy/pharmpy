@@ -198,27 +198,40 @@ class Administration(Activity):
 class Arm(Immutable):
     """Arm definition"""
 
-    def __init__(self, size: int, activities: tuple[Activity, ...]):
+    def __init__(self, name: str, size: int, activities: tuple[Activity, ...]):
+        self._name = name
         self._size = size
         self._activities = activities
 
     @classmethod
-    def create(cls, size: int, activities: Sequence[Activity]) -> Arm:
+    def create(cls, name: str, size: int, activities: Sequence[Activity]) -> Arm:
         for act in activities:
             if not isinstance(act, Activity):
                 raise TypeError("Activities in Arm must be of type Activity")
-        return cls(size, tuple(activities))
+        if not isinstance(name, str):
+            raise TypeError("name of Arm must be str")
+        if not isinstance(size, int):
+            raise TypeError("size of Arm must be int")
+        return cls(name, size, tuple(activities))
 
     def replace(
         self,
+        name: Optional[str] = None,
         size: Optional[int] = None,
         activities: Optional[Sequence[Activity]] = None,
     ) -> Arm:
+        if name is None:
+            name = self._name
         if size is None:
             size = self._size
         if activities is None:
             activities = self._activities
-        return Arm.create(size=size, activities=activities)
+        return Arm.create(name=name, size=size, activities=activities)
+
+    @property
+    def name(self) -> str:
+        """Name of arm"""
+        return self._name
 
     @property
     def size(self) -> int:
@@ -233,6 +246,7 @@ class Arm(Immutable):
     def to_dict(self) -> dict[str, Any]:
         acts = tuple(a.to_dict() for a in self)
         return {
+            'name': self._name,
             'size': self._size,
             'activities': acts,
         }
@@ -242,7 +256,7 @@ class Arm(Immutable):
         acts = []
         for sdict in d['activities']:
             acts.append(Activity.from_dict(sdict))
-        return cls.create(size=d['size'], activities=acts)
+        return cls.create(name=d['name'], size=d['size'], activities=acts)
 
     def __len__(self):
         return len(self._activities)
@@ -280,13 +294,17 @@ class Arm(Immutable):
             return True
         if not isinstance(other, Arm):
             return NotImplemented
-        return self._size == other._size and self._activities == other._activities
+        return (
+            self._name == other._name
+            and self._size == other._size
+            and self._activities == other._activities
+        )
 
     def __hash__(self):
-        return hash((self._size, self._activities))
+        return hash((self._name, self._size, self._activities))
 
     def __repr__(self):
-        return f"Arm(size={self._size}, {self._activities})"
+        return f"Arm(name={self._name}, size={self._size}, {self._activities})"
 
     def is_placebo(self) -> bool:
         """Is this arm a placebo arm?"""

@@ -74,8 +74,8 @@ def test_administration():
 def test_arm():
     dv = DataVariable("CONC", "dv", "ratio")
     obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
-    arm1 = Arm(size=50, activities=(obs1,))
-    arm2 = Arm.create(size=50, activities=[obs1])
+    arm1 = Arm(name="Arm1", size=50, activities=(obs1,))
+    arm2 = Arm.create(name="Arm1", size=50, activities=[obs1])
     assert arm1 == arm1
     assert arm1 == arm2
     assert hash(arm1) == hash(arm2)
@@ -88,9 +88,10 @@ def test_arm():
     amt = DataVariable("AMT", "dose", "ratio")
     dose = Bolus.create(100)
     adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
-    arm4 = Arm.create(size=50, activities=[obs1, adm1])
+    arm4 = Arm.create(name="Arm4", size=50, activities=[obs1, adm1])
 
     d = {
+        'name': 'Arm4',
         'size': 50,
         'activities': (
             {
@@ -132,16 +133,16 @@ def test_arm():
     dose = Bolus.create(100)
     adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
 
-    arm3 = Arm.create(size=75, activities=[obs1, obs2, adm1])
+    arm3 = Arm.create(name="Arm3", size=75, activities=[obs1, obs2, adm1])
     assert len(arm3) == 3
     assert arm3[2] == adm1
-    assert arm3[0:2] == Arm.create(size=75, activities=[obs1, obs2])
-    assert arm3[1:] == Arm.create(size=75, activities=[obs2, adm1])
+    assert arm3[0:2] == Arm.create(name="Arm3", size=75, activities=[obs1, obs2])
+    assert arm3[1:] == Arm.create(name="Arm3", size=75, activities=[obs2, adm1])
 
-    assert obs1 + Arm.create(size=75, activities=[obs2, adm1]) == arm3
-    assert [obs1] + Arm.create(size=75, activities=[obs2, adm1]) == arm3
-    assert Arm.create(size=75, activities=[obs1, obs2]) + adm1 == arm3
-    assert Arm.create(size=75, activities=[obs1, obs2]) + [adm1] == arm3
+    assert obs1 + Arm.create(name="Arm3", size=75, activities=[obs2, adm1]) == arm3
+    assert [obs1] + Arm.create(name="Arm3", size=75, activities=[obs2, adm1]) == arm3
+    assert Arm.create(name="Arm3", size=75, activities=[obs1, obs2]) + adm1 == arm3
+    assert Arm.create(name="Arm3", size=75, activities=[obs1, obs2]) + [adm1] == arm3
 
     with pytest.raises(TypeError):
         23 + arm3
@@ -152,7 +153,7 @@ def test_arm():
     with pytest.raises(TypeError):
         arm3 + 1
 
-    assert repr(arm1) == "Arm(size=50, (Observations(CONC, 0.0, (0.0, 1.0, 2.0)),))"
+    assert repr(arm1) == "Arm(name=Arm1, size=50, (Observations(CONC, 0.0, (0.0, 1.0, 2.0)),))"
 
 
 def test_arm_is_placebo():
@@ -161,13 +162,13 @@ def test_arm_is_placebo():
     amt = DataVariable("AMT", "dose", "ratio")
     dose = Bolus.create(100)
     adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
-    arm1 = Arm.create(size=50, activities=[obs1, adm1])
+    arm1 = Arm.create(name="Arm1", size=50, activities=[obs1, adm1])
 
     assert not arm1.is_placebo()
 
     dose = Bolus.create(0)
     adm2 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
-    arm2 = Arm.create(size=50, activities=[obs1, adm2])
+    arm2 = Arm.create(name="Arm2", size=50, activities=[obs1, adm2])
 
     assert arm2.is_placebo()
 
@@ -179,11 +180,11 @@ def test_trialdesign():
     amt = DataVariable("AMT", "dose", "ratio")
     dose = Bolus.create(100)
     adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
-    arm1 = Arm.create(size=50, activities=[obs1, adm1])
+    arm1 = Arm.create(name="Arm1", size=50, activities=[obs1, adm1])
 
     dose2 = Bolus.create(200)
     adm2 = Administration(amt, dose2, 0.0, (0.0, 1.0, 2.0))
-    arm2 = Arm.create(size=50, activities=[obs1, adm2])
+    arm2 = Arm.create(name="Arm2", size=50, activities=[obs1, adm2])
 
     td = TrialDesign((arm1, arm2), independent_variable=idv)
     assert td == td
@@ -200,6 +201,7 @@ def test_trialdesign():
     d = {
         'arms': (
             {
+                'name': 'Arm1',
                 'activities': (
                     {
                         'class': 'Observations',
@@ -242,6 +244,7 @@ def test_trialdesign():
                 'size': 50,
             },
             {
+                'name': 'Arm2',
                 'activities': (
                     {
                         'class': 'Observations',
@@ -321,7 +324,7 @@ def test_trialdesign():
 
     td = TrialDesign.create(arms=(), independent_variable=idv)
     empty_repr = repr(td)
-    empty_arm = Arm.create(size=20, activities=())
+    empty_arm = Arm.create(name="Empty", size=20, activities=())
     td = TrialDesign.create(arms=(empty_arm,), independent_variable=idv)
     empty_repr2 = repr(td)
     assert empty_repr == empty_repr2
@@ -337,9 +340,9 @@ def test_render_trial_design():
     dose = Bolus(100)
     admin = Administration.create(adm, dose, 0.0, [0.0, 1.0])
 
-    arm = Arm.create(50, (obs, obs2, admin))
+    arm = Arm.create("Arm", 50, (obs, obs2, admin))
 
-    arm2 = Arm.create(50, (obs, obs2))
+    arm2 = Arm.create("Arm2", 50, (obs, obs2))
     td = TrialDesign.create([arm, arm2], independent_variable=idv)
 
     s = repr(td)
@@ -347,7 +350,7 @@ def test_render_trial_design():
 
     dv = DataVariable.create("CONC", "dv", "ratio")
     obs = Observations.create(dv, 0, (0, 1, 2))
-    arm = Arm.create(50, (obs,))
+    arm = Arm.create("Arm", 50, (obs,))
     idv2 = DataVariable.create("TIME", "idv", "ratio")
     td = TrialDesign.create([arm], independent_variable=idv2)
     repr(td)
@@ -357,12 +360,19 @@ def test_render_trial_design():
     'arms,answer',
     [
         ((), True),
-        ((Arm.create(size=50, activities=()),), True),
-        ((Arm.create(size=20, activities=()), Arm.create(size=10, activities=())), True),
+        ((Arm.create(name="Arm", size=50, activities=()),), True),
         (
             (
-                Arm.create(size=20, activities=()),
+                Arm.create(name="Arm1", size=20, activities=()),
+                Arm.create(name="Arm2", size=10, activities=()),
+            ),
+            True,
+        ),
+        (
+            (
+                Arm.create(name="Arm1", size=20, activities=()),
                 Arm.create(
+                    name="Arm2",
                     size=10,
                     activities=(
                         Observations.create(

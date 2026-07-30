@@ -8,5 +8,5 @@ def test_create_trial_design():
 
 def test_add_arm():
     td = create_trial_design()
-    td = add_arm(td, size=20)
+    td = add_arm(td, name="Drug", size=20)
     assert len(td.arms) == 1
