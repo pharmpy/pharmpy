@@ -1,6 +1,13 @@
 next version
 ------------
 
+New features
+============
+
+* Add TrialDesign class
+* Add :code:`modeling.create_trial_design`
+* Add :code:`modeling.add_arm`
+
 Bugfixes
 ========
 

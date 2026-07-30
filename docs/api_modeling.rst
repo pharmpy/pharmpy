@@ -400,3 +400,12 @@ Iterators
 
     omit_data
     resample_data
+
+Trial design
+------------
+
+.. autosummary::
+   :toctree: api/
+
+    add_arm
+    create_trial_design

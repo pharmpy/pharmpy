@@ -267,6 +267,7 @@ from .results import (
     insert_ebes_into_dataset,
 )
 from .tmdd import set_tmdd
+from .trial_design import add_arm, create_trial_design
 from .units import convert_unit, get_unit_of
 from .write_dataset import write_csv, write_dataset
 
@@ -274,6 +275,7 @@ from .write_dataset import write_csv, write_dataset
 __all__ = [
     'add_admid',
     'add_allometry',
+    'add_arm',
     'add_bioavailability',
     'add_cmt',
     'add_covariate_effect',
@@ -333,6 +335,7 @@ __all__ = [
     'create_joint_distribution',
     'create_rng',
     'create_symbol',
+    'create_trial_design',
     'deidentify_data',
     'display_odes',
     'drop_columns',
