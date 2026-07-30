@@ -408,4 +408,5 @@ Trial design
    :toctree: api/
 
     add_arm
+    add_observations
     create_trial_design

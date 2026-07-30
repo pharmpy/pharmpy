@@ -267,7 +267,7 @@ from .results import (
     insert_ebes_into_dataset,
 )
 from .tmdd import set_tmdd
-from .trial_design import add_arm, create_trial_design
+from .trial_design import add_arm, add_observations, create_trial_design
 from .units import convert_unit, get_unit_of
 from .write_dataset import write_csv, write_dataset
 
@@ -288,6 +288,7 @@ __all__ = [
     'add_indirect_effect',
     'add_lag_time',
     'add_metabolite',
+    'add_observations',
     'add_output_variables',
     'add_parameter_uncertainty_step',
     'add_pd_iiv',
