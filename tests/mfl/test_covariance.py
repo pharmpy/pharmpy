@@ -61,6 +61,7 @@ def test_expand():
     c2_expanded = c2.expand(expand_to)
     assert len(c2_expanded) == 3
     assert c2_expanded[0].parameters == ('CL', 'MAT')
+    assert c2_expanded[0].expanded_parameters == ('CL', 'MAT')
 
     assert c2.expand({Ref('PK'): tuple()}) == tuple()
 
@@ -237,3 +238,9 @@ def test_repr_many(list_of_kwargs, expected):
     assert Covariance.repr_many(mfl1) == expected
     mfl2 = ModelFeatures.create([features[0]])
     assert Covariance.repr_many(mfl2) == repr(features[0])
+
+
+def test_expand_parameters():
+    c = Covariance(type='IIV', parameters=Ref('PK'), optional=True)
+    with pytest.raises(ValueError):
+        c.expanded_parameters
