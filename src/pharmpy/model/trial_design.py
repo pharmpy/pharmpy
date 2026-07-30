@@ -572,12 +572,12 @@ def calculate_widths(arm_lanes, chars_per_scale, total_width):
                 frame.width = width
 
 
-def render_lanes(arm_lanes, idv_unit, padding=0):
+def render_lanes(arms, arm_lanes, idv_unit, padding=0):
     s = ""
-    for n_arm, arm in enumerate(arm_lanes, start=1):
+    for n_arm, arm in enumerate(arm_lanes):
         for n_lane, lane in enumerate(arm):
             if n_lane == 0:
-                arm_panel = rich_panel.Panel(f"Arm {n_arm}", box=box.SIMPLE, width=9)
+                arm_panel = rich_panel.Panel(arms[n_arm].name, box=box.SIMPLE, width=12)
             else:
                 arm_panel = rich_panel.Panel("", box=box.SIMPLE, width=9)
             columns = [arm_panel]
@@ -625,7 +625,7 @@ def render_trial_design(td):
 
     axis = text_axis([min_start_time, max_end_time], total_width)
     axis_padding = len(axis) - len(axis.lstrip(" "))
-    s = render_lanes(arm_lanes, idv_unit, axis_padding)
+    s = render_lanes(td.arms, arm_lanes, idv_unit, axis_padding)
 
     axis = text_axis([min_start_time, max_end_time], total_width)
     for line in axis.split("\n"):

@@ -1,6 +1,6 @@
 from collections.abc import Sequence
 
-from pharmpy.model import Arm, DataVariable, TrialDesign, Observations
+from pharmpy.model import Arm, DataVariable, Observations, TrialDesign
 
 
 def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
@@ -94,17 +94,16 @@ def add_observations(
     >>> td = add_arm(td, name="Placebo", size=100)
     >>> td = add_observations(td, arm="Placebo", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
     >>> td
-			  ╭────── Observations ──────╮
-      Arm 1   │ 0.0, 1.0, 2.0, 4.0, 16.0 │
-              ╰─────────── DV ───────────╯
-              ├──────────────────────────┤
-             0.0                       16.0
+                ╭────── Observations ──────╮
+      Placebo   │ 0.0, 1.0, 2.0, 4.0, 16.0 │
+                ╰─────────── DV ───────────╯
+                ├──────────────────────────┤
+               0.0                       16.0
     <BLANKLINE>
 
     Empty trial design object
 
     """
-
 
     datavar = DataVariable.create(name=variable, type="dv")
     obs = Observations.create(variable=datavar, start_time=start_time, time_points=time_points)
