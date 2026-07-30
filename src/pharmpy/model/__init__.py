@@ -39,10 +39,14 @@ from .statements import (
     output,
     to_compartmental_system,
 )
+from .trial_design import Activity, Administration, Arm, Observations, TrialDesign
 
 __all__ = (
+    'Activity',
     'AddColumn',
     'AddRows',
+    'Administration',
+    'Arm',
     'Assignment',
     'Bolus',
     'ColumnInfo',
@@ -68,6 +72,7 @@ __all__ = (
     'ModelfitResultsError',
     'ModelSyntaxError',
     'NormalDistribution',
+    'Observations',
     'output',
     'Parameter',
     'Parameters',
@@ -78,6 +83,7 @@ __all__ = (
     'Statement',
     'Statements',
     'to_compartmental_system',
+    'TrialDesign',
     'VariabilityHierarchy',
     'VariabilityLevel',
 )

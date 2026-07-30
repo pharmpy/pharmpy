@@ -399,6 +399,15 @@ class TrialDesign(Immutable):
     def __repr__(self):
         return render_trial_design(self)
 
+    @property
+    def is_empty(self):
+        if not self._arms:
+            return True
+        for arm in self._arms:
+            if len(arm) > 0:
+                return False
+        return True
+
 
 def get_time_points(activity):
     # Make into method?
@@ -539,6 +548,8 @@ def render_lanes(arm_lanes, idv_unit, padding=0):
 
 
 def render_trial_design(td):
+    if td.is_empty:
+        return "Empty trial design object"
     idv_unit = td.independent_variable.properties.get("unit", None)
     arm_lanes = []
     for arm in td:

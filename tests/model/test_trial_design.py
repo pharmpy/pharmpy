@@ -319,6 +319,13 @@ def test_trialdesign():
 
     assert isinstance(repr(td), str)
 
+    td = TrialDesign.create(arms=(), independent_variable=idv)
+    empty_repr = repr(td)
+    empty_arm = Arm.create(size=20, activities=())
+    td = TrialDesign.create(arms=(empty_arm,), independent_variable=idv)
+    empty_repr2 = repr(td)
+    assert empty_repr == empty_repr2
+
 
 def test_render_trial_design():
     dv = DataVariable.create("CONC", "dv", "ratio", properties={'unit': 'mg/L'})
@@ -344,3 +351,33 @@ def test_render_trial_design():
     idv2 = DataVariable.create("TIME", "idv", "ratio")
     td = TrialDesign.create([arm], independent_variable=idv2)
     repr(td)
+
+
+@pytest.mark.parametrize(
+    'arms,answer',
+    [
+        ((), True),
+        ((Arm.create(size=50, activities=()),), True),
+        ((Arm.create(size=20, activities=()), Arm.create(size=10, activities=())), True),
+        (
+            (
+                Arm.create(size=20, activities=()),
+                Arm.create(
+                    size=10,
+                    activities=(
+                        Observations.create(
+                            DataVariable.create("CONC", "dv", "ratio"),
+                            start_time=0,
+                            time_points=(0, 1, 2),
+                        ),
+                    ),
+                ),
+            ),
+            False,
+        ),
+    ],
+)
+def test_is_empty(arms, answer):
+    idv = DataVariable.create("TIME", "idv", "ratio")
+    td = TrialDesign.create(arms=arms, independent_variable=idv)
+    assert td.is_empty is answer
