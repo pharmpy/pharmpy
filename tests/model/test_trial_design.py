@@ -303,8 +303,16 @@ def test_trialdesign():
 
     assert len(td) == 2
     assert td[0] == arm1
+    assert td["Arm1"] == arm1
+    with pytest.raises(KeyError):
+        td["zzxxyy"]
     assert td[0:] == td
 
+    with pytest.raises(ValueError):
+        # Arm1 name in both
+        td + arm1
+
+    arm1 = arm1.replace(name="Arm11")
     assert len(td + arm1) == 3
     assert len(td + (arm1,)) == 3
     assert len(arm1 + td) == 3
@@ -391,3 +399,18 @@ def test_is_empty(arms, answer):
     idv = DataVariable.create("TIME", "idv", "ratio")
     td = TrialDesign.create(arms=arms, independent_variable=idv)
     assert td.is_empty is answer
+
+
+def test_replace_arm():
+    idv = DataVariable.create("TIME", "idv", "ratio")
+    arm1 = Arm.create(name="Arm1", size=20, activities=())
+    arm2 = Arm.create(name="Arm2", size=10, activities=())
+    arm3 = Arm.create(name="Arm1", size=15, activities=())
+    arms = (arm1, arm2)
+
+    td = TrialDesign.create(arms=arms, independent_variable=idv)
+    td = td.replace_arm(arm3)
+    assert td[0].name == "Arm1"
+    assert td[0].size == 15
+    assert td[1].name == "Arm2"
+    assert td[1].size == 10

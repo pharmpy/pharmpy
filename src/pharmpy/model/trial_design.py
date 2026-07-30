@@ -325,9 +325,14 @@ class TrialDesign(Immutable):
     def create(
         cls, arms: Sequence[Arm], independent_variable: Optional[DataVariable]
     ) -> TrialDesign:
+        seen_names = set()
         for arm in arms:
             if not isinstance(arm, Arm):
                 raise TypeError("Arms in TrialDesign must be of type Arm")
+            if arm.name in seen_names:
+                raise ValueError(f"The Arm name {arm.name} is not unique")
+            else:
+                seen_names.add(arm.name)
         if not isinstance(independent_variable, DataVariable):
             raise TypeError("The independent_variable of TrialDesign must be of type DataVariable")
         return cls(tuple(arms), independent_variable)
@@ -376,13 +381,21 @@ class TrialDesign(Immutable):
     def __getitem__(self, ind: int) -> Arm: ...
 
     @overload
+    def __getitem__(self, ind: str) -> Arm: ...
+
+    @overload
     def __getitem__(self, ind: slice) -> TrialDesign: ...
 
-    def __getitem__(self, ind: Union[int, slice]) -> Union[Arm, TrialDesign]:
+    def __getitem__(self, ind: Union[int, slice, str]) -> Union[Arm, TrialDesign]:
         if isinstance(ind, slice):
             return TrialDesign(
                 arms=self._arms[ind], independent_variable=self._independent_variable
             )
+        elif isinstance(ind, str):
+            for arm in self._arms:
+                if arm.name == ind:
+                    return arm
+            raise KeyError(f"Cannot find arm named {ind}")
         else:
             return self._arms[ind]
 
@@ -425,6 +438,29 @@ class TrialDesign(Immutable):
             if len(arm) > 0:
                 return False
         return True
+
+    def replace_arm(self, arm: Arm) -> TrialDesign:
+        """Replace an Arm with an existing name
+
+        Parameters
+        ----------
+        arm : Arm
+            New Arm
+
+        Returns
+        -------
+        TrialDesign
+            Updated TrialDesign
+        """
+
+        newarms = []
+        for cur in self:
+            if cur.name != arm.name:
+                newarms.append(cur)
+            else:
+                newarms.append(arm)
+        new_design = self.replace(arms=newarms)
+        return new_design
 
 
 def get_time_points(activity):
