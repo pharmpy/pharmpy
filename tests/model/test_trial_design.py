@@ -76,6 +76,12 @@ def test_arm():
     obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
     arm1 = Arm(name="Arm1", size=50, activities=(obs1,))
     arm2 = Arm.create(name="Arm1", size=50, activities=[obs1])
+
+    with pytest.raises(TypeError):
+        Arm.create(name=23, size=50, activities=[obs1])
+    with pytest.raises(TypeError):
+        Arm.create(name="Arm1", size="ARM", activities=[obs1])
+
     assert arm1 == arm1
     assert arm1 == arm2
     assert hash(arm1) == hash(arm2)
