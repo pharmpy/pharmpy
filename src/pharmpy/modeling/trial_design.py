@@ -1,7 +1,20 @@
+import math
 from collections.abc import Sequence
 
 from pharmpy.basic import Expr
-from pharmpy.model import Administration, Arm, Bolus, DataVariable, Observations, TrialDesign
+from pharmpy.deps import pandas as pd
+from pharmpy.model import (
+    Administration,
+    Arm,
+    Bolus,
+    DataVariable,
+    Model,
+    Observations,
+    TrialDesign,
+    get_and_check_dataset,
+)
+
+from .data import get_doses, get_ids, get_observations
 
 
 def create_trial_design(idv_name: str = 'TIME') -> TrialDesign:
@@ -172,3 +185,61 @@ def add_administration(
     newarm = oldarm + adm
     newtd = td.replace_arm(newarm)
     return newtd
+
+
+def infer_design_from_dataset(model: Model) -> TrialDesign:
+    df = get_and_check_dataset(model)
+    td = create_trial_design(idv_name=model.datainfo.idv_column.name)
+    nids = len(get_ids(model))
+    td = add_arm(td, name="DRUG", size=nids)
+
+    # Rule 1: observation time points present in over 50% of individuals moved to closest nice number
+    # Rule 2: Currently: don't care about the remaining time points
+
+    all_doses = get_doses(model)
+    doses = all_doses.reset_index()[['ID', 'TIME']]
+    frequent_dosing_times = _get_frequent_time_points(doses)
+
+    # FIXME: This depends on times already being nice numbers
+    for dt in frequent_dosing_times:
+        amts = df.loc[(df['TIME'] == dt) & df['AMT'] != 0, 'AMT']
+        if len(amts.unique()) == 1:
+            td = add_administration(
+                td, arm="DRUG", variable="AMT", time_points=[dt], amount=amts.iloc[0]
+            )
+
+    observations = get_observations(model).reset_index()[['ID', 'TIME']]
+    frequent_observation_times = _get_frequent_time_points(observations)
+
+    td = add_observations(
+        td, arm="DRUG", variable="DV", time_points=list(frequent_observation_times)
+    )
+    return td
+
+
+# Could move to internal
+NICE_NUMBERS = (0.0, 0.25, 0.5, 0.75, 1.0)
+
+
+def _move_to_closest_nice_number(x):
+    current_nice = 0.0
+    current_delta = 2.0
+    for d in NICE_NUMBERS:
+        nice_num = math.floor(x) + d
+        delta = abs(x - nice_num)
+        if delta < current_delta:
+            current_delta = delta
+            current_nice = nice_num
+    return current_nice
+
+
+def _niceify(x):
+    return pd.Series(x).apply(_move_to_closest_nice_number)
+
+
+def _get_frequent_time_points(df):
+    # df has an ID and a TIME column
+    nids = len(df['ID'].unique())
+    freq = df.groupby('TIME')['ID'].nunique()
+    frequent_times = _niceify(freq[freq / nids > 0.5].index)
+    return frequent_times

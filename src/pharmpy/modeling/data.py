@@ -651,7 +651,7 @@ def list_time_varying_covariates(model: Model):
         return list(time_var.index[time_var])
 
 
-def get_doses(model: Model):
+def get_doses(model: Model) -> pd.Series:
     """Get a series of all doses
 
     Indexed with ID and TIME
