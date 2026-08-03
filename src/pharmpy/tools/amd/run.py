@@ -1611,6 +1611,10 @@ def validate_input(
     check_list("strategy", strategy, ALLOWED_STRATEGY)
 
     if modeltype == 'pkpd':
+        if not isinstance(input, Model):
+            raise TypeError(
+                f"Argument `input` must be a model when `modeltype` is pkpd: got {type(input)}"
+            )
         if cl_init is not None or vc_init is not None or mat_init is not None:
             raise ValueError("Cannot provide pk parameter inits for pkpd model")
         if b_init is None:

@@ -1011,6 +1011,19 @@ def test_validate_input_raises(load_example_model_for_test, kwargs, exception, m
         validate_input(model, **kwargs)
 
 
+def test_validate_input_raises_pkpd_no_model(testdata):
+    dataset_path = testdata / 'nonmem' / 'pheno.dta'
+    with pytest.raises(TypeError, match='Argument `input` must be a model'):
+        validate_input(
+            dataset_path,
+            modeltype='pkpd',
+            b_init=1.0,
+            emax_init=1.0,
+            ec50_init=1.0,
+            met_init=1.0,
+        )
+
+
 def test_validate_input_raises_rse_dataset(testdata):
     dataset_path = testdata / 'nonmem' / 'pheno.dta'
     with pytest.raises(ValueError, match='`parameter_uncertainty_method` not set'):
