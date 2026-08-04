@@ -219,7 +219,7 @@ def run_amd_task(
 
     try:
         ss_mfl = parse_search_space(search_space)
-        iiv_features = get_search_space_iivsearch(modeltype)
+        iiv_features = get_search_space_iivsearch(modeltype, model=input)
     except:  # noqa E722
         # FIXME: Workaround until new ModelFeatures is used everywhere
         search_space, iiv_features = parse_search_space_new(search_space)
@@ -695,6 +695,7 @@ def create_structural_covariates_model(search_space, model_entry):
 def get_search_space_iivsearch(modeltype, reevaluation=False, model=None):
     features = ModelFeaturesNew.create([])
     if modeltype == 'pkpd':
+        assert model is not None
         pk_iiv = get_model_features_new(model, type='iiv')
         pk_cov = get_model_features_new(model, type='covariance')
         features += pk_iiv + pk_cov
