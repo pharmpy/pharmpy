@@ -19,6 +19,8 @@ from pharmpy.model.statements import Dose
 
 
 class Activity(Immutable):
+    _start_time: float
+
     @abstractmethod
     def to_dict(self) -> dict[str, Any]: ...
 
@@ -29,6 +31,12 @@ class Activity(Immutable):
         else:
             act = Administration.from_dict(d)
         return act
+
+    @property
+    def start_time(self) -> float:
+        """Start time of activity"""
+        return self._start_time
+
 
 
 class Observations(Activity):
@@ -63,11 +71,6 @@ class Observations(Activity):
     def variable(self) -> DataVariable:
         """Observed variable"""
         return self._variable
-
-    @property
-    def start_time(self) -> float:
-        """Start time of observation sequence"""
-        return self._start_time
 
     @property
     def time_points(self) -> tuple[float, ...]:
@@ -147,11 +150,6 @@ class Administration(Activity):
     def dose(self) -> Dose:
         """The dose"""
         return self._dose
-
-    @property
-    def start_time(self) -> float:
-        """Start time of observation sequence"""
-        return self._start_time
 
     @property
     def time_points(self) -> tuple[float, ...]:
@@ -237,6 +235,17 @@ class Arm(Immutable):
     def size(self) -> int:
         """Size of arm"""
         return self._size
+
+    @property
+    def start_time(self) -> float:
+        """Start time for Arm activities
+        Will default to 0.0 for an Arm with no activities
+        """
+        if self._activities:
+            start_time = min(act.start_time for act in self._activities)
+        else:
+            start_time = 0.0
+        return start_time
 
     @property
     def activities(self) -> tuple[Activity, ...]:
@@ -490,7 +499,6 @@ def create_frames(arm):
 
 
 def sort_activity_frames(frames):
-    # acts is a list of Frames
     return sorted(frames, key=lambda frame: frame.start_time)
 
 
@@ -610,6 +618,7 @@ def render_trial_design(td):
         frames = create_frames(arm)
         frames = sort_activity_frames(frames)
         lanes = split_into_lanes(frames)
+        print(lanes)
         for lane in lanes:
             preliminary_rendering(lane, idv_unit)
         arm_lanes.append(lanes)

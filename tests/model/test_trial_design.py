@@ -75,6 +75,7 @@ def test_arm():
     dv = DataVariable("CONC", "dv", "ratio")
     obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
     arm1 = Arm(name="Arm1", size=50, activities=(obs1,))
+    assert arm1.start_time == 0.0
     arm2 = Arm.create(name="Arm1", size=50, activities=[obs1])
 
     with pytest.raises(TypeError):
@@ -95,6 +96,7 @@ def test_arm():
     dose = Bolus.create(100)
     adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
     arm4 = Arm.create(name="Arm4", size=50, activities=[obs1, adm1])
+    assert arm4.start_time == 0.0
 
     d = {
         'name': 'Arm4',
