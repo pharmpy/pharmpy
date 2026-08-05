@@ -20,6 +20,7 @@ from pharmpy.model.statements import Dose
 
 class Activity(Immutable):
     _start_time: float
+    _time_points: tuple[float, ...]
 
     @abstractmethod
     def to_dict(self) -> dict[str, Any]: ...
@@ -37,6 +38,10 @@ class Activity(Immutable):
         """Start time of activity"""
         return self._start_time
 
+    @property
+    def end_time(self) -> float:
+        """End time of activity"""
+        return self._start_time + self._time_points[-1]
 
 
 class Observations(Activity):

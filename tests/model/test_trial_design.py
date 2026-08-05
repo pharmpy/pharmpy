@@ -40,6 +40,8 @@ def test_administration():
     amt = DataVariable("AMT", "dose", "ratio")
     dose = Bolus.create(100)
     adm1 = Administration(amt, dose, 0.0, (0.0, 1.0, 2.0))
+    assert adm1.start_time == 0.0
+    assert adm1.end_time == 2.0
     adm2 = Administration.create(amt, dose, 0.0, [0.0, 1.0, 2.0])
     assert adm1 == adm2
     assert adm1 == adm1
