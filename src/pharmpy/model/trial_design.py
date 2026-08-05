@@ -244,6 +244,7 @@ class Arm(Immutable):
     @property
     def start_time(self) -> float:
         """Start time for Arm activities
+
         Will default to 0.0 for an Arm with no activities
         """
         if self._activities:
@@ -251,6 +252,18 @@ class Arm(Immutable):
         else:
             start_time = 0.0
         return start_time
+
+    @property
+    def end_time(self) -> float:
+        """End time for Arm activites
+
+        Will default to 0.0 for an Arm with no activites
+        """
+        if self._activities:
+            end_time = max(act.end_time for act in self._activities)
+        else:
+            end_time = 0.0
+        return end_time
 
     @property
     def activities(self) -> tuple[Activity, ...]:

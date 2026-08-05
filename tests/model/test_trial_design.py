@@ -73,11 +73,18 @@ def test_administration():
     assert Administration.from_dict(d) == adm1
 
 
+def test_empty_arm():
+    arm = Arm.create(name="MYARM", size=20, activities=[])
+    assert arm.start_time == 0.0
+    assert arm.end_time == 0.0
+
+
 def test_arm():
     dv = DataVariable("CONC", "dv", "ratio")
     obs1 = Observations(dv, 0.0, (0.0, 1.0, 2.0))
     arm1 = Arm(name="Arm1", size=50, activities=(obs1,))
     assert arm1.start_time == 0.0
+    assert arm1.end_time == 2.0
     arm2 = Arm.create(name="Arm1", size=50, activities=[obs1])
 
     with pytest.raises(TypeError):
