@@ -1,4 +1,10 @@
-from pharmpy.modeling import add_administration, add_arm, add_observations, create_trial_design
+from pharmpy.modeling import (
+    add_administration,
+    add_arm,
+    add_observations,
+    create_dataset_from_design,
+    create_trial_design,
+)
 
 
 def test_create_trial_design():
@@ -25,3 +31,16 @@ def test_add_administration():
     td = add_arm(td, name="Drug", size=20)
     td = add_administration(td, arm="Drug", variable="AMT", amount=10.0, time_points=[0.0, 4.0])
     assert td[0][0].dose.amount == 10.0
+
+
+def test_create_dataset_from_design():
+    td = create_trial_design("TIME")
+    td = add_arm(td, "DRUG", 20)
+    td = add_administration(td, "DRUG", "AMT", 100, [0.0, 12.0])
+    td = add_observations(td, "DRUG", "DV", [0.0, 2.0, 16.0])
+    td = add_arm(td, "PLACEBO", 20)
+    td = add_observations(td, "PLACEBO", "DV", [0.0, 2.0, 16.0])
+    df = create_dataset_from_design(td)
+    assert len(df) == 160
+    assert list(df.columns) == ['ID', 'ARM', 'TIME', 'EVID', 'AMT', 'DV']
+    assert list(df.loc[0, :]) == [1, 1, 0.0, 1, 100.0, 0.0]

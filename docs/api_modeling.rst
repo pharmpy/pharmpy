@@ -410,4 +410,5 @@ Trial design
     add_administration
     add_arm
     add_observations
+    create_dataset_from_design
     create_trial_design

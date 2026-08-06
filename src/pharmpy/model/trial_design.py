@@ -196,7 +196,7 @@ class Administration(Activity):
         return f"Administration({self._variable.name}, {self._dose}, {self._start_time}, {self._time_points})"
 
 
-class Arm(Immutable):
+class Arm(Sequence, Immutable):
     """Arm definition"""
 
     def __init__(self, name: str, size: int, activities: tuple[Activity, ...]):
@@ -339,7 +339,7 @@ class Arm(Immutable):
         return True
 
 
-class TrialDesign(Immutable):
+class TrialDesign(Sequence, Immutable):
     """TrialDesign"""
 
     def __init__(self, arms: tuple[Arm, ...], independent_variable: DataVariable):
@@ -411,7 +411,9 @@ class TrialDesign(Immutable):
     @overload
     def __getitem__(self, ind: slice) -> TrialDesign: ...
 
-    def __getitem__(self, ind: Union[int, slice, str]) -> Union[Arm, TrialDesign]:
+    def __getitem__(  # pyright: ignore[reportIncompatibleMethodOverride]
+        self, ind: Union[int, slice, str]
+    ) -> Union[Arm, TrialDesign]:
         if isinstance(ind, slice):
             return TrialDesign(
                 arms=self._arms[ind], independent_variable=self._independent_variable

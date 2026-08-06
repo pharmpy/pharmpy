@@ -267,7 +267,13 @@ from .results import (
     insert_ebes_into_dataset,
 )
 from .tmdd import set_tmdd
-from .trial_design import add_administration, add_arm, add_observations, create_trial_design
+from .trial_design import (
+    add_administration,
+    add_arm,
+    add_observations,
+    create_dataset_from_design,
+    create_trial_design,
+)
 from .units import convert_unit, get_unit_of
 from .write_dataset import write_csv, write_dataset
 
@@ -334,6 +340,7 @@ __all__ = [
     'create_basic_pd_model',
     'create_basic_pk_model',
     'create_config_template',
+    'create_dataset_from_design',
     'create_joint_distribution',
     'create_rng',
     'create_symbol',

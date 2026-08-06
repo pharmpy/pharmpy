@@ -2,6 +2,7 @@ import math
 from collections.abc import Sequence
 
 from pharmpy.basic import Expr
+from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import (
     Administration,
@@ -185,6 +186,79 @@ def add_administration(
     newarm = oldarm + adm
     newtd = td.replace_arm(newarm)
     return newtd
+
+
+def create_dataset_from_design(td: TrialDesign) -> pd.DataFrame:
+    """Create a dataset matching a design
+
+    Parameters
+    ----------
+    td : TrialDesign
+        TrialDesign to add to
+
+    Returns
+    -------
+    pd.DataFrame
+        A dataset
+
+    Example
+    -------
+    >>> from pharmpy.modeling import create_trial_design, add_arm, add_observations
+    >>> from pharmpy.modeling import add_administration, create_dataset_from_design
+    >>> td = create_trial_design()
+    >>> td = add_arm(td, name="Drug", size=100)
+    >>> td = add_observations(td, arm="Drug", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
+    >>> td = add_administration(td, arm="Drug", variable="AMT", amount=10.0, time_points=[0.0, 8.0])
+    >>> df = create_dataset_from_design(td)
+    >>> df
+          ID  TIME  EVID   AMT   DV
+    0      1   0.0     1  10.0  0.0
+    1      1   0.0     0   0.0  0.0
+    2      1   1.0     0   0.0  0.0
+    3      1   2.0     0   0.0  0.0
+    4      1   4.0     0   0.0  0.0
+    ..   ...   ...   ...   ...  ...
+    695  100   1.0     0   0.0  0.0
+    696  100   2.0     0   0.0  0.0
+    697  100   4.0     0   0.0  0.0
+    698  100   8.0     1  10.0  0.0
+    699  100  16.0     0   0.0  0.0
+    <BLANKLINE>
+    [700 rows x 5 columns]
+    """
+
+    next_id = 1
+    full_df = pd.DataFrame()
+    idv_name = td.independent_variable.name
+    for armid, arm in enumerate(td, start=1):
+        amount = []
+        evid = []
+        time = []
+        armcol = []
+        for act in arm:
+            for t in act.time_points:
+                curtime = t + act.start_time
+                armcol.append(armid)
+                time.append(curtime)
+                if isinstance(act, Observations):
+                    evid.append(0)
+                    amount.append(0)
+                else:
+                    evid.append(1)
+                    amount.append(float(act.dose.amount))
+        d = {idv_name: time, 'EVID': evid, 'AMT': amount}
+        if len(td) > 1:
+            d = {'ARM': armcol} | d
+        one_id = pd.DataFrame(d)
+        df = pd.concat([one_id] * arm.size, ignore_index=True)
+        df.insert(0, 'ID', np.repeat(range(next_id, next_id + arm.size), len(one_id)))
+        full_df = pd.concat([full_df, df], ignore_index=True)
+        next_id += arm.size
+    full_df = full_df.sort_values(
+        by=["ID", idv_name, "EVID"], ascending=[True, True, False]
+    ).reset_index(drop=True)
+    full_df['DV'] = 0.0
+    return full_df
 
 
 def infer_design_from_dataset(model: Model) -> TrialDesign:
