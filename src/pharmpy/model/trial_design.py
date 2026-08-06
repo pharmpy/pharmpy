@@ -301,6 +301,8 @@ class Arm(Sequence, Immutable):
     def __add__(self, other: Union[Activity, Iterable[Activity]]) -> Arm:
         if isinstance(other, Activity):
             return self.replace(activities=self._activities + (other,))
+        elif isinstance(other, TrialDesign):
+            return NotImplemented
         elif isinstance(other, Iterable):
             return self.replace(activities=self._activities + tuple(other))
         else:
