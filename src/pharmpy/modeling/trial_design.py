@@ -164,14 +164,14 @@ def add_administration(
     >>> td = add_observations(td, arm="Drug", variable="DV", time_points=[0.0, 1.0, 2.0, 4.0, 16.0])
     >>> td = add_administration(td, arm="Drug", variable="AMT", amount=10.0, time_points=[0.0, 8.0])
     >>> td
-                 ╭──────────── Observations ────────────╮
-      Drug       │ 0.0, 1.0, 2.0, 4.0, 16.0             │
-                 ╰───────────────── DV ─────────────────╯
-                 ╭─ Administration ─╮
-                 │ 0.0, 8.0         │
-                 ╰─ 10.000000000000─╯
-                 ├──────────────────────────────────────┤
-                0.0                                   16.0
+            ╭────── Observations ──────╮
+      Drug  │ 0.0, 1.0, 2.0, 4.0, 16.0 │
+            ╰─────────── DV ───────────╯
+            ╭───── Administration ─────╮
+            │ 0.0, 8.0                 │
+            ╰─────── 10.0 Bolus ───────╯
+            ├──────────────────────────┤
+           0.0                       16.0
     <BLANKLINE>
 
     """

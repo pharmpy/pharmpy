@@ -362,7 +362,7 @@ def test_render_trial_design():
     obs2 = Observations.create(dv, 2.0, (0.0, 1.0))
 
     adm = DataVariable.create("AMT", "dose", "ratio", properties={'unit': 'mg'})
-    dose = Bolus(100)
+    dose = Bolus.create(100)
     admin = Administration.create(adm, dose, 0.0, [0.0, 1.0])
 
     arm = Arm.create("Arm", 50, (obs, obs2, admin))
@@ -379,6 +379,18 @@ def test_render_trial_design():
     idv2 = DataVariable.create("TIME", "idv", "ratio")
     td = TrialDesign.create([arm], independent_variable=idv2)
     repr(td)
+
+    obs1 = Observations.create(dv, 0.0, (0.0, 1.0, 6.0))
+    obs2 = Observations.create(dv, 12.0, (0.0, 1.0, 6.0))
+    admin = Administration.create(adm, dose, 0.0, [0.0, 1.0])
+    arm = Arm.create("Drug", 100, (admin, obs1, obs2))
+    td = TrialDesign.create([arm], independent_variable=idv)
+    repr(td)
+
+    from pharmpy.model.trial_design import EmptyBlock
+
+    block = EmptyBlock(23)
+    assert block.min_char_size == 0
 
 
 @pytest.mark.parametrize(

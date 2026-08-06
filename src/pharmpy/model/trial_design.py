@@ -1,15 +1,13 @@
 from __future__ import annotations
 
-import math
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from io import StringIO
 from typing import Any, Optional, Union, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.rich import box
-from pharmpy.deps.rich import columns as rich_columns
 from pharmpy.deps.rich import console as rich_console
 from pharmpy.deps.rich import panel as rich_panel
 from pharmpy.internals.immutable import Immutable
@@ -455,7 +453,10 @@ class TrialDesign(Immutable):
         return hash((self._arms, self._independent_variable))
 
     def __repr__(self):
-        return render_trial_design(self)
+        if self.is_empty:
+            return "Empty trial design object"
+        else:
+            return render_trial_design(self)
 
     @property
     def is_empty(self):
@@ -490,204 +491,77 @@ class TrialDesign(Immutable):
         return new_design
 
 
+def render_rich_object(obj):
+    buffer = StringIO()
+    console = rich_console.Console(file=buffer)
+    console.print(obj)
+    return buffer.getvalue().split('\n')[:-1]
+
+
+@dataclass(frozen=True)
+class TimeSlot:
+    start: float
+    end: float
+    title: str
+    footer: str
+    content: str
+
+
+@dataclass
+class ScheduleGrid:
+    lanes: list[list[TimeSlot]] = field(default_factory=lambda: [[]])
+
+    def pack_activities(self):
+        slots = sorted(self.lanes[0], key=lambda slot: slot.start)
+        lanes = []
+        end_times = []
+        for slot in slots:
+            for i, lane in enumerate(lanes):
+                if slot.start >= end_times[i]:
+                    lanes[i].append(slot)
+                    end_times[i] = slot.end
+                    break
+            else:
+                lanes.append([slot])
+                end_times.append(slot.end)
+        return ScheduleGrid(lanes=lanes)
+
+
+@dataclass
+class Timeline:
+    grids: dict[str, ScheduleGrid] = field(default_factory=dict)
+
+    def pack_activities(self):
+        grids = {}
+        for key, value in self.grids.items():
+            grids[key] = value.pack_activities()
+        return Timeline(grids=grids)
+
+    @property
+    def start(self) -> float:
+        return min(lane[0].start for grid in self.grids.values() for lane in grid.lanes)
+
+    @property
+    def end(self) -> float:
+        return max(lane[-1].end for grid in self.grids.values() for lane in grid.lanes)
+
+
 def get_time_points(activity):
     # Make into method?
     adjusted_time_points = [activity.start_time + time for time in activity.time_points]
     return adjusted_time_points
 
 
-@dataclass
-class Frame:
-    start_time: float
-    end_time: float
-    activity: Optional[Activity]
-    chars_per_scale: float = -float("inf")
-    width: int = 0
+def get_start_and_end_time(activity):
+    start_time = activity.start_time
+    end_time = activity.end_time
+    return start_time, end_time
 
 
-def create_frames(arm):
-    frames = []
-    for act in arm:
-        time_points = get_time_points(act)
-        start_time = time_points[0]
-        end_time = time_points[-1]
-        frame = Frame(start_time, end_time, act)
-        frames.append(frame)
-    return frames
-
-
-def sort_activity_frames(frames):
-    return sorted(frames, key=lambda frame: frame.start_time)
-
-
-def split_into_lanes(frames):
-    # Splits into lanes if necessary and adds gaps between activities
-    lanes = []
-    end_times = []
-    for frame in frames:
-        for i, lane in enumerate(lanes):
-            if frame.start_time > end_times[i]:
-                gap = Frame(end_times[i], frame.start_time, None)
-                lanes[i].append(gap)
-            if frame.start_time >= end_times[i]:
-                lanes[i].append(frame)
-                end_times[i] = frame.end_time
-                break
-        else:
-            # Add lane
-            lanes.append([frame])
-            end_times.append(frame.end_time)
-    return lanes
-
-
-def get_global_start_end_times(arm_lanes):
-    max_end_time = 0
-    min_start_time = 1e18
-    for arm in arm_lanes:
-        for lane in arm:
-            for frame in lane:
-                if frame.end_time > max_end_time:
-                    max_end_time = frame.end_time
-                if frame.start_time < min_start_time:
-                    min_start_time = frame.start_time
-    return min_start_time, max_end_time
-
-
-def add_start_and_end_gaps(arm_lanes, min_start_time, max_end_time):
-    for arm in arm_lanes:
-        for lane in arm:
-            last_frame = lane[-1]
-            if last_frame.end_time < max_end_time:
-                gap = Frame(last_frame.end_time, max_end_time, None)
-                lane.append(gap)
-            first_frame = lane[0]
-            if first_frame.start_time > min_start_time:
-                gap = Frame(min_start_time, first_frame.start_time, None)
-                lane.insert(0, gap)
-
-
-def preliminary_rendering(lane, idv_unit):
-    for frame in lane:
-        act = frame.activity
-        if isinstance(act, Observations):
-            panel = observations_panel(act, idv_unit)
-        elif isinstance(act, Administration):
-            panel = administration_panel(act, idv_unit)
-        else:
-            panel = None
-        if panel is not None:
-            tmp = rich_console.Console(file=StringIO(), record=True, width=1000)
-            tmp.print(panel)
-            rendered = tmp.export_text()
-            actual_width = max(len(line) for line in rendered.splitlines())
-            delta_time = frame.end_time - frame.start_time
-            delta_time = 1 if delta_time == 0 else delta_time
-            frame.chars_per_scale = actual_width / delta_time
-
-
-def calculate_widths(arm_lanes, chars_per_scale, total_width):
-    for arm in arm_lanes:
-        for lane in arm:
-            widths = []
-            for frame in lane:
-                width = (frame.end_time - frame.start_time) * chars_per_scale
-                width = 12 if width < 12 else width
-                widths.append(width)
-            widths = list(round_and_keep_sum(pd.Series(widths), total_width))
-            for frame, width in zip(lane, widths):
-                frame.width = width
-
-
-def render_lanes(arms, arm_lanes, idv_unit, padding=0):
-    s = ""
-    for n_arm, arm in enumerate(arm_lanes):
-        for n_lane, lane in enumerate(arm):
-            if n_lane == 0:
-                arm_panel = rich_panel.Panel(arms[n_arm].name, box=box.SIMPLE, width=12)
-            else:
-                arm_panel = rich_panel.Panel("", box=box.SIMPLE, width=12)
-            columns = [arm_panel]
-            if padding > 0:
-                pad_panel = rich_panel.Panel("", box=box.SIMPLE, width=padding)
-                columns.append(pad_panel)
-            for frame in lane:
-                act = frame.activity
-                if act is None:
-                    panel = rich_panel.Panel("", box=box.SIMPLE, width=frame.width)
-                elif isinstance(act, Observations):
-                    panel = observations_panel(act, idv_unit, width=frame.width)
-                else:  # isinstance(act, Administration):
-                    panel = administration_panel(act, idv_unit, width=frame.width)
-                columns.append(panel)
-            cols = rich_columns.Columns(columns, padding=0)
-            console = rich_console.Console()
-            with console.capture() as capture:
-                console.print(cols)
-            s += capture.get()
-    return s
-
-
-def render_trial_design(td):
-    if td.is_empty:
-        return "Empty trial design object"
-    idv_unit = td.independent_variable.properties.get("unit", None)
-    arm_lanes = []
-    for arm in td:
-        frames = create_frames(arm)
-        frames = sort_activity_frames(frames)
-        lanes = split_into_lanes(frames)
-        print(lanes)
-        for lane in lanes:
-            preliminary_rendering(lane, idv_unit)
-        arm_lanes.append(lanes)
-
-    min_start_time, max_end_time = get_global_start_end_times(arm_lanes)
-    add_start_and_end_gaps(arm_lanes, min_start_time, max_end_time)
-
-    max_chars_per_scale = max(
-        [frame.chars_per_scale for arm in arm_lanes for lane in arm for frame in lane]
-    )
-    total_width = math.ceil((max_end_time - min_start_time) * max_chars_per_scale)
-    calculate_widths(arm_lanes, max_chars_per_scale, total_width)
-
-    axis = text_axis([min_start_time, max_end_time], total_width)
-    axis_padding = len(axis) - len(axis.lstrip(" "))
-    s = render_lanes(td.arms, arm_lanes, idv_unit, axis_padding)
-
-    axis = text_axis([min_start_time, max_end_time], total_width)
-    for line in axis.split("\n"):
-        s += " " * 12 + line + "\n"
-    return s
-
-
-def observations_panel(obs, idv_unit, width=None):
-    if width is None:
-        expand = False
-    else:
-        expand = True
-    panel = rich_panel.Panel(
-        list_with_unit(get_time_points(obs), idv_unit),
-        title="[cyan]Observations",
-        subtitle=f"[dim]{obs.variable.name}",
-        border_style="green",
-        expand=expand,
-        width=width,
-    )
-    return panel
-
-
-def administration_panel(admin, idv_unit, width=None):
-    unit = admin.variable.properties.get('unit', None)
+def get_unit_string(activity):
+    unit = activity.variable.properties.get('unit', None)
     unit_str = "" if unit is None else " " + str(unit)
-    panel = rich_panel.Panel(
-        list_with_unit(admin.time_points, idv_unit),
-        title="[cyan]Administration",
-        subtitle=f"[dim]{admin.dose.amount}{unit_str} {admin.dose.__class__.__name__}",
-        border_style="green",
-        expand=False,
-        width=width,
-    )
-    return panel
+    return unit_str
 
 
 def list_with_unit(x, unit=None):
@@ -695,6 +569,190 @@ def list_with_unit(x, unit=None):
     if unit is not None:
         s += f" {unit}"
     return s
+
+
+def create_administration_slot(admin, idv_unit, end) -> TimeSlot:
+    start, _ = get_start_and_end_time(admin)
+    unit = get_unit_string(admin)
+    title = "Administration"
+    footer = f"{float(admin.dose.amount)}{unit} {admin.dose.__class__.__name__}"
+    content = list_with_unit(admin.time_points, idv_unit)
+    slot = TimeSlot(start, end, title, footer, content)
+    return slot
+
+
+def create_observation_slot(obs, idv_unit) -> TimeSlot:
+    start, end = get_start_and_end_time(obs)
+    title = "Observations"
+    footer = obs.variable.name
+    content = list_with_unit(get_time_points(obs), idv_unit)
+    slot = TimeSlot(start, end, title, footer, content)
+    return slot
+
+
+def build_timeline(td: TrialDesign) -> Timeline:
+    time_line = Timeline()
+    idv_unit = td.independent_variable.properties.get("unit", None)
+
+    for arm in td:
+        # FIXME: Make these into properties
+        admin_starts = [act.start_time for act in arm if isinstance(act, Administration)]
+        arm_end = max(get_start_and_end_time(act)[1] for act in arm)
+        admin_end_times = admin_starts[1:] + [arm_end]
+
+        grid = ScheduleGrid()
+        next_admin = 0
+        for act in arm:
+            if isinstance(act, Administration):
+                slot = create_administration_slot(act, idv_unit, admin_end_times[next_admin])
+                next_admin += 1
+            else:  # Observations
+                slot = create_observation_slot(act, idv_unit)
+            grid.lanes[0].append(slot)  # Everything in first lane before packing
+        time_line.grids[arm.name] = grid
+    return time_line
+
+
+class Block(ABC):
+    @property
+    @abstractmethod
+    def min_char_size(self) -> int: ...
+
+    @property
+    @abstractmethod
+    def min_chars_per_time(self) -> float: ...
+
+    @abstractmethod
+    def render(self, width: int, height: int) -> Tile: ...
+
+
+@dataclass(frozen=True)
+class EmptyBlock(Block):
+    time_length: float
+
+    @property
+    def min_char_size(self) -> int:
+        return 0
+
+    @property
+    def min_chars_per_time(self) -> float:
+        return 0.0
+
+    def render(self, width: int, height: int) -> Tile:
+        return Tile([" " * width for _ in range(height)])
+
+
+@dataclass(frozen=True)
+class FramedBlock(Block):
+    title: str
+    footer: str
+    content: str
+    time_length: float
+
+    @property
+    def min_char_size(self) -> int:
+        return max(len(self.title) + 2, len(self.footer) + 2, len(self.content) + 4)
+
+    @property
+    def min_chars_per_time(self) -> float:
+        tl = self.time_length if self.time_length > 0 else 1.0
+        return self.min_char_size / tl
+
+    def render(self, width: int, height: int) -> Tile:
+        panel = rich_panel.Panel(
+            self.content,
+            title=f"[cyan]{self.title}",
+            subtitle=f"[dim]{self.footer}",
+            border_style="green",
+            width=width,
+            height=height,
+        )
+        return Tile(render_rich_object(panel))
+
+
+@dataclass(frozen=True)
+class PlainBlock(Block):
+    text: str
+
+    @property
+    def min_char_size(self):
+        return len(self.text) + 4
+
+    @property
+    def min_chars_per_time(self) -> float:
+        return 0.0
+
+    def render(self, width: int, height: int) -> Tile:
+        panel = rich_panel.Panel(self.text, box=box.SIMPLE, width=width, height=height)
+        return Tile(render_rich_object(panel))
+
+
+@dataclass(frozen=True)
+class EmptyAlignedBlock(Block):
+    @property
+    def min_char_size(self) -> int:
+        return 0
+
+    @property
+    def min_chars_per_time(self) -> float:
+        return 0.0
+
+    def render(self, width: int, height: int) -> Tile:
+        return Tile([" " * width for _ in range(height)])
+
+
+@dataclass
+class BlockGrid:
+    lanes: list[list[Block]] = field(default_factory=lambda: [[]])
+
+
+@dataclass
+class Tile:
+    rows: list[str]
+
+    def __add__(self, other: Tile) -> Tile:
+        new_rows = [first + second for first, second in zip(self.rows, other.rows)]
+        return Tile(new_rows)
+
+    def __repr__(self):
+        return '\n'.join(self.rows)
+
+
+def timeline_to_block_grid(tl: Timeline) -> BlockGrid:
+    all_blocks = []
+    for name, schedule in tl.grids.items():
+        for i, lane in enumerate(schedule.lanes):
+            if i == 0:
+                row_title = PlainBlock(name)
+            else:
+                row_title = EmptyAlignedBlock()
+            lane_blocks: list[Block] = [row_title]
+            prev_end = lane[0].start
+            for slot in lane:
+                if slot.start != prev_end:
+                    empty = EmptyBlock(time_length=slot.start - prev_end)
+                    lane_blocks.append(empty)
+                block = FramedBlock(
+                    title=slot.title,
+                    footer=slot.footer,
+                    content=slot.content,
+                    time_length=slot.end - slot.start,
+                )
+                lane_blocks.append(block)
+                prev_end = slot.end
+            all_blocks.append(lane_blocks)
+    grid = BlockGrid(lanes=all_blocks)
+    return grid
+
+
+def calculate_row_header_width(grid: BlockGrid) -> int:
+    min_char_size_first_column = max(lane[0].min_char_size for lane in grid.lanes)
+    return min_char_size_first_column
+
+
+def calculate_needed_chars_per_time(grid: BlockGrid) -> float:
+    min_chars_per_time = max(block.min_chars_per_time for lane in grid.lanes for block in lane)
+    return min_chars_per_time
 
 
 def text_axis(points, size):
@@ -725,4 +783,42 @@ def text_axis(points, size):
     interleaved = [point_strings[0]] + [x for pair in zip(spaces, point_strings[1:]) for x in pair]
     points_line = "".join(interleaved)
     padding = " " * chars_before_tick[0]
-    return padding + ticked_bars + '\n' + points_line
+    return Tile([padding + ticked_bars, points_line])
+
+
+def print_grid(grid: BlockGrid, start: float, end: float) -> str:
+    s = ""
+    height = 3
+    row_header_width = calculate_row_header_width(grid)
+    chars_per_time = calculate_needed_chars_per_time(grid)
+    total_target_width = round((end - start) * chars_per_time)
+
+    for lane in grid.lanes:
+        row_tile = lane[0].render(width=row_header_width, height=height)
+        current_time = start
+        final_block_index = len(lane) - 2
+        for i, block in enumerate(lane[1:]):
+            col_start = round((current_time - start) * chars_per_time)
+            duration = block.time_length  # pyright: ignore
+            if i == final_block_index:
+                col_end = total_target_width
+            else:
+                col_end = round((current_time + duration - start) * chars_per_time)
+            calculated_width = max(1, col_end - col_start)
+            tile = block.render(width=calculated_width, height=height)
+            row_tile += tile
+            current_time += duration
+        s += str(row_tile) + "\n"
+
+    axis = text_axis([start, end], total_target_width)
+    axis_padding = Tile([" " * (row_header_width - 1)] * 2)
+    s += str(axis_padding + axis)
+    return s
+
+
+def render_trial_design(td: TrialDesign) -> str:
+    timeline = build_timeline(td)
+    timeline = timeline.pack_activities()
+    grid = timeline_to_block_grid(timeline)
+    s = print_grid(grid, start=timeline.start, end=timeline.end)
+    return s
