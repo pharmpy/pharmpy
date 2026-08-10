@@ -75,6 +75,7 @@ Dataset handling
     translate_nmtran_time
     undrop_columns
     unload_dataset
+    write_datainfo
 
 Dataset exploration
 --------------------

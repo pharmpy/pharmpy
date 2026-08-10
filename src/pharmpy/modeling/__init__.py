@@ -73,6 +73,7 @@ from .data import (
     translate_nmtran_time,
     undrop_columns,
     unload_dataset,
+    write_datainfo,
 )
 from .datainfo import annotate_unit, set_property
 from .error import (
@@ -530,6 +531,7 @@ __all__ = [
     'update_initial_individual_estimates',
     'use_thetas_for_error_stdev',
     'write_csv',
+    'write_datainfo',
     'write_dataset',
     'write_model',
     'unconstrain_parameters',

@@ -53,6 +53,7 @@ from pharmpy.modeling import (
     translate_nmtran_time,
     undrop_columns,
     unload_dataset,
+    write_datainfo,
 )
 from pharmpy.modeling.basic_models import create_default_datainfo
 from pharmpy.modeling.data import get_observations_and_exclusion_criteria
@@ -937,3 +938,13 @@ def test_read_datainfo(testdata):
     path = Path(testdata / 'nonmem/models/nosuchfile.datainfo')
     with pytest.raises(FileNotFoundError):
         read_datainfo(path)
+
+
+def test_write_datainfo(load_example_model_for_test, tmp_path):
+    model = load_example_model_for_test("pheno")
+    path = tmp_path / "mydata.datainfo"
+    write_datainfo(model.datainfo, path=path)
+    di = read_datainfo(path)
+    assert di == model.datainfo
+    with pytest.raises(FileExistsError):
+        write_datainfo(model.datainfo, path=path)

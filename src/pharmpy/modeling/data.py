@@ -2059,6 +2059,28 @@ def read_datainfo(path: Union[str, Path]) -> DataInfo:
     return di
 
 
+def write_datainfo(di: DataInfo, path: Union[str, Path], force: bool = False) -> None:
+    """Write a DataInfo object to a datainfo file
+
+    Parameters
+    ----------
+    di : DataInfo
+        DataInfo object
+    path : Path | str
+        Path to write the datainfo file
+    force : bool
+        Force overwrite if file already exists
+    """
+
+    path = normalize_user_given_path(path)
+    if path.is_file() and not force:
+        raise FileExistsError(
+            f"A datainfo file already exists at {path}. " "Set force=True to overwrite"
+        )
+    di.to_json(path)
+    return di
+
+
 def create_default_datainfo(path_or_df):
     if not isinstance(path_or_df, pd.DataFrame):
         path = normalize_user_given_path(path_or_df)
