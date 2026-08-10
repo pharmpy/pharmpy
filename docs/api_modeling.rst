@@ -51,6 +51,7 @@ Dataset handling
     add_cmt
     add_time_after_dose
     add_time_of_last_dose
+    annotate_unit
     bin_observations
     binarize_dataset
     convert_unit
@@ -70,7 +71,6 @@ Dataset handling
     set_lloq_data
     set_property
     set_reference_values
-    set_unit
     translate_nmtran_time
     undrop_columns
     unload_dataset

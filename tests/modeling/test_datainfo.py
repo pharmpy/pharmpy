@@ -1,10 +1,10 @@
 from pharmpy.basic import Unit
-from pharmpy.modeling import set_property, set_unit
+from pharmpy.modeling import annotate_unit, set_property
 
 
-def test_set_unit(load_example_model_for_test):
+def test_annotate_unit(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    model = set_unit(model, "WGT", "g")
+    model = annotate_unit(model, "WGT", "g")
     assert model.datainfo["WGT"].variable.get_property("unit") == Unit("g")
 
 

@@ -73,7 +73,7 @@ from .data import (
     undrop_columns,
     unload_dataset,
 )
-from .datainfo import set_property, set_unit
+from .datainfo import annotate_unit, set_property
 from .error import (
     has_additive_error_model,
     has_combined_error_model,
@@ -306,6 +306,7 @@ __all__ = [
     'add_residuals',
     'add_time_after_dose',
     'add_time_of_last_dose',
+    'annotate_unit',
     'append_estimation_step_options',
     'bin_observations',
     'binarize_dataset',
@@ -508,7 +509,6 @@ __all__ = [
     'set_time_varying_error_model',
     'set_tmdd',
     'set_transit_compartments',
-    'set_unit',
     'set_upper_bounds',
     'set_weibull_absorption',
     'set_weighted_error_model',

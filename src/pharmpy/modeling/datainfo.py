@@ -5,17 +5,17 @@ from pharmpy.model import DataInfo, DataVariable, Model
 
 
 @overload
-def set_unit(model_or_datainfo: Model, column: str, unit: str) -> Model: ...
+def annotate_unit(model_or_datainfo: Model, column: str, unit: str) -> Model: ...
 
 
 @overload
-def set_unit(model_or_datainfo: DataInfo, column: str, unit: str) -> DataInfo: ...
+def annotate_unit(model_or_datainfo: DataInfo, column: str, unit: str) -> DataInfo: ...
 
 
-def set_unit(
+def annotate_unit(
     model_or_datainfo: Union[Model, DataInfo], column: str, unit: str
 ) -> Union[Model, DataInfo]:
-    """Specify the unit of a column
+    """Specify the unit of a data column
 
     Note that no conversion of units will happen if the unit was already set.
 
@@ -37,9 +37,9 @@ def set_unit(
 
     Example
     -------
-    >>> from pharmpy.modeling import load_example_model, set_unit
+    >>> from pharmpy.modeling import load_example_model, annotate_unit
     >>> model = load_example_model("pheno")
-    >>> model = set_unit(model, "WGT", "kg")
+    >>> model = annotate_unit(model, "WGT", "kg")
 
     See also
     --------
@@ -95,7 +95,7 @@ def set_property(
     See also
     --------
 
-    set_unit - Set unit of a data variable
+    annotate_unit - Annotate the unit of a data variable
 
     """
 

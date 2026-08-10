@@ -5,13 +5,13 @@ from pharmpy.model import AddColumn, Assignment, Drop
 from pharmpy.modeling import (
     add_iiv,
     add_lag_time,
+    annotate_unit,
     convert_unit,
     create_basic_pk_model,
     create_joint_distribution,
     get_unit_of,
     remove_iiv,
     set_property,
-    set_unit,
 )
 
 
@@ -39,9 +39,9 @@ def test_get_unit_of(load_model_for_test, testdata):
     assert get_unit_of(m4, "IIV_V_IIV_CL") == Unit("L^2/h^2")
 
     m = create_basic_pk_model("ivoral")
-    m = set_unit(m, "DV", "mg/L")
-    m = set_unit(m, "AMT", "mg")
-    m = set_unit(m, "TIME", "h")
+    m = annotate_unit(m, "DV", "mg/L")
+    m = annotate_unit(m, "AMT", "mg")
+    m = annotate_unit(m, "TIME", "h")
     assert get_unit_of(m, "F_BIO") == Unit("")
     assert get_unit_of(m, "ETA_BIO") == Unit("")
 
