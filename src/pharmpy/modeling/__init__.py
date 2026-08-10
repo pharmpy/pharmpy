@@ -60,7 +60,6 @@ from .data import (
     is_binary,
     list_time_varying_covariates,
     load_dataset,
-    read_datainfo,
     read_dataset_from_datainfo,
     remove_loq_data,
     remove_unused_columns,
@@ -73,9 +72,8 @@ from .data import (
     translate_nmtran_time,
     undrop_columns,
     unload_dataset,
-    write_datainfo,
 )
-from .datainfo import annotate_unit, set_property
+from .datainfo import annotate_unit, read_datainfo, set_property, write_datainfo
 from .error import (
     has_additive_error_model,
     has_combined_error_model,

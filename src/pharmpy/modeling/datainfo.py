@@ -1,7 +1,53 @@
 from collections.abc import Mapping
+from pathlib import Path
 from typing import Any, Union, overload
 
+from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import DataInfo, DataVariable, Model
+
+
+def read_datainfo(path: Union[str, Path]) -> DataInfo:
+    """Read a datainfo file
+
+    Parameters
+    ----------
+    path : Path | str
+        A path to a datainfo file
+
+    Returns
+    -------
+    DataInfo
+        DataInfo object
+    """
+
+    path = normalize_user_given_path(path)
+    path = path_absolute(path)
+    if path.is_file():
+        di = DataInfo.read_json(path)
+    else:
+        raise FileNotFoundError("Could not find path to datainfo file")
+    return di
+
+
+def write_datainfo(di: DataInfo, path: Union[str, Path], force: bool = False) -> None:
+    """Write a DataInfo object to a datainfo file
+
+    Parameters
+    ----------
+    di : DataInfo
+        DataInfo object
+    path : Path | str
+        Path to write the datainfo file
+    force : bool
+        Force overwrite if file already exists
+    """
+
+    path = normalize_user_given_path(path)
+    if path.is_file() and not force:
+        raise FileExistsError(
+            f"A datainfo file already exists at {path}. " "Set force=True to overwrite"
+        )
+    di.to_json(path)
 
 
 @overload
