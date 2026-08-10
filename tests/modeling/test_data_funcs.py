@@ -934,3 +934,6 @@ def test_read_datainfo(testdata):
     path = Path(testdata / 'nonmem/models/mox_simulated_normal.datainfo')
     di = read_datainfo(path)
     assert di['SEX'].datatype == 'int32'
+    path = Path(testdata / 'nonmem/models/nosuchfile.datainfo')
+    with pytest.raises(FileNotFoundError):
+        read_datainfo(path)

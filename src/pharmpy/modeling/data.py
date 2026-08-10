@@ -2052,7 +2052,10 @@ def read_datainfo(path: Union[str, Path]) -> DataInfo:
 
     path = normalize_user_given_path(path)
     path = path_absolute(path)
-    di = DataInfo.read_json(path)
+    if path.is_file():
+        di = DataInfo.read_json(path)
+    else:
+        raise FileNotFoundError("Could not find path to datainfo file")
     return di
 
 
@@ -2061,22 +2064,24 @@ def create_default_datainfo(path_or_df):
         path = normalize_user_given_path(path_or_df)
         path = path_absolute(path)
         datainfo_path = path.with_suffix('.datainfo')
-
-        if datainfo_path.is_file():
-            di = DataInfo.read_json(datainfo_path)
+        try:
+            di = read_datainfo(datainfo_path)
+        except FileNotFoundError:
+            pass
+        else:
             di = di.replace(path=path)
             return di
-        else:
-            with open(path) as file:
-                first_line = file.readline()
-                if ',' not in first_line:
-                    colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
-                    separator = r'\s+'
-                else:
-                    colnames = list(pd.read_csv(path, nrows=0))
-                    separator = ','
-            if len(colnames) > 0:
-                colnames[0] = colnames[0].lstrip('#')
+
+        with open(path) as file:
+            first_line = file.readline()
+            if ',' not in first_line:
+                colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
+                separator = r'\s+'
+            else:
+                colnames = list(pd.read_csv(path, nrows=0))
+                separator = ','
+        if len(colnames) > 0:
+            colnames[0] = colnames[0].lstrip('#')
 
     else:
         colnames = path_or_df.columns
