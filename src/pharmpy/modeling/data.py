@@ -2036,6 +2036,26 @@ def read_dataset_from_datainfo_update(
     return df, di
 
 
+def read_datainfo(path: Union[str, Path]) -> DataInfo:
+    """Read a datainfo file
+
+    Parameters
+    ----------
+    path : Path | str
+        A path to a datainfo file
+
+    Returns
+    -------
+    DataInfo
+        DataInfo object
+    """
+
+    path = normalize_user_given_path(path)
+    path = path_absolute(path)
+    di = DataInfo.read_json(path)
+    return di
+
+
 def create_default_datainfo(path_or_df):
     if not isinstance(path_or_df, pd.DataFrame):
         path = normalize_user_given_path(path_or_df)

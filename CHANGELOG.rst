@@ -10,6 +10,7 @@ New features
 * Add :code:`modeling.add_observations`
 * Add :code:`modeling.add_administration`
 * Add :code:`modeling.create_dataset_from_design`
+* Add :code:`modeling.read_datainfo`
 
 Changes
 =======

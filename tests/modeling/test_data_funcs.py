@@ -41,6 +41,7 @@ from pharmpy.modeling import (
     is_binary,
     list_time_varying_covariates,
     load_dataset,
+    read_datainfo,
     remove_loq_data,
     remove_unused_columns,
     reset_dataset,
@@ -927,3 +928,9 @@ def test_reset_dataset(load_example_model_for_test):
     assert isinstance(model.datainfo.provenance[-1], ReadDataset)
     model = reset_dataset(model)
     assert len(model.datainfo.provenance) == 0
+
+
+def test_read_datainfo(testdata):
+    path = Path(testdata / 'nonmem/models/mox_simulated_normal.datainfo')
+    di = read_datainfo(path)
+    assert di['SEX'].datatype == 'int32'

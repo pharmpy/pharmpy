@@ -61,6 +61,7 @@ Dataset handling
     expand_additional_doses
     is_binary
     load_dataset
+    read_datainfo
     read_dataset_from_datainfo
     remove_loq_data
     remove_unused_columns
