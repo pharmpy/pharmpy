@@ -8,7 +8,7 @@ from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_ch
 from pharmpy.mfl import IIV, Covariance
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.mfl import Ref
-from pharmpy.model import Ignore, Model, Provenance, ReadDataset
+from pharmpy.model import DataInfo, Ignore, Model, Provenance, ReadDataset
 from pharmpy.modeling import (
     add_iiv,
     add_predictions,
@@ -68,7 +68,7 @@ DEFAULT_STRICTNESS = "minimization_successful or (rounding_errors and sigdigs>=0
 
 
 def create_workflow(
-    input: Union[Model, Path, str],
+    input: Union[Model, Path, str, DataInfo],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -100,7 +100,7 @@ def create_workflow(
     input : Model, Path or DataFrame
         Starting model or dataset
     results : ModelfitResults
-        Reults of input if input is a model
+        Results of input if input is a model
     modeltype : str
         Type of model to build. Valid strings are 'basic_pk', 'pkpd', 'drug_metabolite' and 'tmdd'
     administration : str
@@ -189,7 +189,7 @@ def create_workflow(
 # FIXME: refactor into separate tasks
 def run_amd_task(
     context: Context,
-    input: Union[Model, Path, str],
+    input: Union[Model, Path, str, DataInfo],
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -245,8 +245,13 @@ def run_amd_task(
         model = model.replace(name='start')
         context.store_input_model_entry(model)
     else:
+        if isinstance(input, DataInfo):
+            path = input.path
+        else:
+            path = input
+
         model = create_start_model(
-            input,
+            path,
             modeltype=modeltype,
             administration=administration,
             cl_init=cl_init,
