@@ -1,10 +1,12 @@
 import re
+from collections.abc import Mapping
 from pathlib import Path
 from typing import Callable, Literal, Optional, Sequence, Union
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.mfl import IIV, Covariance
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.mfl import Ref
@@ -13,6 +15,7 @@ from pharmpy.modeling import (
     add_iiv,
     add_predictions,
     add_residuals,
+    convert_unit,
     create_basic_pk_model,
     get_column_name,
     get_individual_parameters,
@@ -90,6 +93,7 @@ def create_workflow(
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str]]] = None,
 ):
@@ -145,6 +149,8 @@ def create_workflow(
         Default is 'final'.
     parameter_uncertainty_method: {'SANDWICH', 'SMAT', 'RMAT', 'EFIM'} or None
         Parameter uncertainty method.
+    units: Mapping[str, str]
+        Specify units to use for DV or AMT. For example {'DV': 'mg/L'}
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
     _E: dict
@@ -211,6 +217,7 @@ def run_amd_task(
     mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
     _E: Optional[dict[str, Union[float, str]]] = None,
 ):
@@ -267,6 +274,9 @@ def run_amd_task(
 
     model = add_predictions(model, ['PRED', 'CIPREDI'])
     model = add_residuals(model, ['CWRES'])
+
+    for variable, unit in units.items():
+        model = convert_unit(model, variable, unit, in_dataset=False)
 
     original_dataset = model.dataset.copy()
     if modeltype == "tmdd":

@@ -13,6 +13,7 @@ New features
 * Add :code:`modeling.read_datainfo`
 * Add :code:`modeling.write_datainfo`
 * Add :code:`modeling.create_datainfo`
+* Add option :code:`units` to :code:`run_amd`
 
 Changes
 =======
