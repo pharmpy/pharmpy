@@ -32,7 +32,7 @@ from .odes import add_individual_parameter, set_initial_estimates
 PDTypes = Literal['linear', 'emax', 'sigmoid', 'step', 'loglin']
 
 
-def add_effect_compartment(model: Model, expr: PDTypes):
+def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
     r"""Add an effect compartment.
 
     Implemented PD models are:
@@ -109,7 +109,7 @@ def add_effect_compartment(model: Model, expr: PDTypes):
     return model.update_source()
 
 
-def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = None):
+def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = None) -> Model:
     r"""Add an effect to a model.
 
     Effects are by default using concentratrion, but any user specified
@@ -344,7 +344,7 @@ def add_indirect_effect(
     expr: Literal['linear', 'emax', 'sigmoid'],
     prod: bool = True,
     variable: Optional[str] = None,
-):
+) -> Model:
     r"""Add indirect (turnover) effect
 
     The concentration :math:`C_c` has an impact on the production or degradation rate of the response  R:
@@ -502,7 +502,7 @@ def add_indirect_effect(
     return model
 
 
-def set_baseline_effect(model: Model, expr: str = 'const'):
+def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
     r"""Create baseline effect model.
 
     Currently implemented baseline effects are:
@@ -552,7 +552,7 @@ def set_placebo_model(
     model: Model,
     expr: Literal['linear', 'exp', 'hyperbolic'],
     operator: Literal['*', '+', 'prop'] = '*',
-):
+) -> Model:
     r"""Add a placebo or disease progression effect to a model.
 
     .. warning:: This function is under development.

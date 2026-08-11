@@ -15,7 +15,7 @@ from pharmpy.model import (
 )
 
 
-def get_thetas(model: Model):
+def get_thetas(model: Model) -> Parameters:
     """Get all thetas (structural parameters) of a model
 
     Parameters
@@ -26,7 +26,7 @@ def get_thetas(model: Model):
     Returns
     -------
     Parameters
-        A copy of all theta parameters
+        All theta parameters
 
     Example
     -------
@@ -48,7 +48,7 @@ def get_thetas(model: Model):
     return Parameters(tuple(thetas))
 
 
-def get_omegas(model: Model):
+def get_omegas(model: Model) -> Parameters:
     """Get all omegas (variability parameters) of a model
 
     Parameters
@@ -59,7 +59,7 @@ def get_omegas(model: Model):
     Returns
     -------
     Parameters
-        A copy of all omega parameters
+        All omega parameters
 
     Example
     -------
@@ -79,7 +79,7 @@ def get_omegas(model: Model):
     return Parameters(tuple(omegas))
 
 
-def get_sigmas(model: Model):
+def get_sigmas(model: Model) -> Parameters:
     """Get all sigmas (residual error variability parameters) of a model
 
     Parameters
@@ -90,7 +90,7 @@ def get_sigmas(model: Model):
     Returns
     -------
     Parameters
-        A copy of all sigma parameters
+        All sigma parameters
 
     Example
     -------
@@ -116,7 +116,7 @@ def set_initial_estimates(
     inits: Mapping[str, float],
     move_est_close_to_bounds: bool = False,
     strict: bool = True,
-):
+) -> Model:
     """Update initial parameter estimate for a model
 
     Updates initial estimates of population parameters for a model.
@@ -263,7 +263,7 @@ def _get_diag_init(param, init):
         return init
 
 
-def set_upper_bounds(model: Model, bounds: Mapping[str, float], strict: bool = True):
+def set_upper_bounds(model: Model, bounds: Mapping[str, float], strict: bool = True) -> Model:
     """Set parameter upper bounds
 
     Parameters
@@ -308,7 +308,7 @@ def set_upper_bounds(model: Model, bounds: Mapping[str, float], strict: bool = T
     return model.update_source()
 
 
-def set_lower_bounds(model: Model, bounds: Mapping[str, float], strict: bool = True):
+def set_lower_bounds(model: Model, bounds: Mapping[str, float], strict: bool = True) -> Model:
     """Set parameter lower bounds
 
     Parameters
@@ -354,7 +354,9 @@ def set_lower_bounds(model: Model, bounds: Mapping[str, float], strict: bool = T
     return model
 
 
-def fix_parameters(model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True):
+def fix_parameters(
+    model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True
+) -> Model:
     """Fix parameters
 
     Fix all listed parameters
@@ -416,7 +418,9 @@ def _check_input_params(model, parameter_names):
         raise ValueError(f'Parameters not found in model: {params_not_in_model}')
 
 
-def unfix_parameters(model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True):
+def unfix_parameters(
+    model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True
+) -> Model:
     """Unfix parameters
 
     Unfix all listed parameters
@@ -473,7 +477,7 @@ def unfix_parameters(model: Model, parameter_names: Union[Iterable[str], str], s
     return model
 
 
-def fix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = True):
+def fix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = True) -> Model:
     """Fix parameters to
 
     Fix all listed parameters to specified value/values
@@ -516,7 +520,7 @@ def fix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = T
     return model
 
 
-def unfix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = True):
+def unfix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = True) -> Model:
     """Unfix parameters to
 
     Unfix all listed parameters to specified value/values
@@ -561,7 +565,9 @@ def unfix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool =
     return model
 
 
-def fix_or_unfix_parameters(model: Model, parameters: Mapping[str, bool], strict: bool = True):
+def fix_or_unfix_parameters(
+    model: Model, parameters: Mapping[str, bool], strict: bool = True
+) -> Model:
     """Fix or unfix parameters
 
     Set fixedness of parameters to specified values
@@ -614,7 +620,9 @@ def fix_or_unfix_parameters(model: Model, parameters: Mapping[str, bool], strict
     return model
 
 
-def unconstrain_parameters(model: Model, parameter_names: Iterable[str], strict: bool = True):
+def unconstrain_parameters(
+    model: Model, parameter_names: Iterable[str], strict: bool = True
+) -> Model:
     """Remove all constraints from parameters
 
     Parameters
@@ -670,7 +678,7 @@ def add_population_parameter(
     lower: Optional[float] = None,
     upper: Optional[float] = None,
     fix: bool = False,
-):
+) -> Model:
     """Add a new population parameter to the model
 
     Parameters
@@ -715,7 +723,7 @@ def add_population_parameter(
     return model.update_source()
 
 
-def replace_fixed_thetas(model: Model):
+def replace_fixed_thetas(model: Model) -> Model:
     """Replace all fixed thetas with constants in the model statements
 
     Parameters

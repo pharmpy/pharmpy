@@ -1,5 +1,6 @@
 from typing import Optional
 
+from pharmpy.basic import Matrix
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
@@ -70,6 +71,7 @@ def delinearize_model(
                 # Create the join_normal_distribution
                 dl_model = create_joint_distribution(dl_model, added_etas_names)
                 new_matrix = dl_model.random_variables.etas[-1].variance
+                assert isinstance(new_matrix, Matrix)
                 new_initial_matrix = block.variance
                 off_diagonal_updates = {}
                 for row in range(1, len(added_etas)):

@@ -45,7 +45,7 @@ def _canonicalize_data_transformation(model, value, dv):
     return value
 
 
-def remove_error_model(model: Model):
+def remove_error_model(model: Model) -> Model:
     """Remove error model.
 
     Parameters
@@ -84,7 +84,7 @@ def set_additive_error_model(
     dv: Union[Expr, str, int, None] = None,
     data_trans: Optional[TExpr] = None,
     series_terms: int = 2,
-):
+) -> Model:
     r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
 
     The error function being applied depends on the data transformation. The table displays
@@ -229,7 +229,7 @@ def set_proportional_error_model(
     dv: Union[Expr, str, int, None] = None,
     data_trans: Optional[TExpr] = None,
     zero_protection: bool = True,
-):
+) -> Model:
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
 
     The error function being applied depends on the data transformation.
@@ -385,7 +385,7 @@ def set_combined_error_model(
     model: Model,
     dv: Union[Expr, str, int, None] = None,
     data_trans: Optional[TExpr] = None,
-):
+) -> Model:
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
     proportional and 0.09 for additive.
 
@@ -531,7 +531,7 @@ def set_combined_error_model(
     return model.update_source()
 
 
-def has_additive_error_model(model: Model, dv: Union[Expr, str, int, None] = None):
+def has_additive_error_model(model: Model, dv: Union[Expr, str, int, None] = None) -> bool:
     """Check if a model has an additive error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -572,7 +572,7 @@ def has_additive_error_model(model: Model, dv: Union[Expr, str, int, None] = Non
     return eps not in (expr - eps).simplify().free_symbols
 
 
-def has_proportional_error_model(model: Model, dv: Union[Expr, str, int, None] = None):
+def has_proportional_error_model(model: Model, dv: Union[Expr, str, int, None] = None) -> bool:
     """Check if a model has a proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -638,7 +638,7 @@ def _check_and_get_zero_protect(error_sset, y_symbs):
     return None, None
 
 
-def has_combined_error_model(model: Model, dv: Union[Expr, str, int, None] = None):
+def has_combined_error_model(model: Model, dv: Union[Expr, str, int, None] = None) -> bool:
     """Check if a model has a combined additive and proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -687,7 +687,7 @@ def has_combined_error_model(model: Model, dv: Union[Expr, str, int, None] = Non
     )
 
 
-def use_thetas_for_error_stdev(model: Model):
+def use_thetas_for_error_stdev(model: Model) -> Model:
     """Use thetas to estimate standard deviation of error
 
     Parameters
@@ -732,7 +732,7 @@ def use_thetas_for_error_stdev(model: Model):
     return model.update_source()
 
 
-def set_weighted_error_model(model: Model):
+def set_weighted_error_model(model: Model) -> Model:
     """Encode error model with one epsilon and W as weight
 
     Parameters
@@ -784,7 +784,7 @@ def set_weighted_error_model(model: Model):
     return model.update_source()
 
 
-def has_weighted_error_model(model: Model):
+def has_weighted_error_model(model: Model) -> bool:
     """Check if a model has a weighted error model
 
     Parameters
@@ -850,7 +850,7 @@ def _index_of_first_assignment(statements: Statements, symbol) -> int:
     )
 
 
-def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
+def set_dtbs_error_model(model: Model, fix_to_log: bool = False) -> Model:
     """Dynamic transform both sides
 
     Parameters
@@ -918,7 +918,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False):
 
 def set_time_varying_error_model(
     model: Model, cutoff: float, idv: str = 'TIME', dv: Union[Expr, str, int, None] = None
-):
+) -> Model:
     """Set a time varying error model per time cutoff
 
     Parameters
@@ -973,7 +973,7 @@ def set_power_on_ruv(
     lower_limit: Optional[float] = 0.01,
     ipred: Optional[str | Expr] = None,
     zero_protection: bool = False,
-):
+) -> Model:
     """Applies a power effect to provided epsilons. If a dependent variable
     is provided, then only said epsilons affecting said variable will be changed.
 
@@ -1176,7 +1176,7 @@ def set_iiv_on_ruv(
     list_of_eps: Optional[Union[list[str], str]] = None,
     same_eta: bool = True,
     eta_names: Optional[Union[list[str], str]] = None,
-):
+) -> Model:
     """
     Multiplies epsilons with exponential (new) etas.
 

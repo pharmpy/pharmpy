@@ -4,7 +4,7 @@ from pharmpy.basic import Expr
 from pharmpy.model import Model, Parameters, RandomVariables
 
 
-def replace_non_random_rvs(model: Model):
+def replace_non_random_rvs(model: Model) -> Model:
     """Replace all random variables that are not actually random
 
     Some random variables are constant. For example a normal

@@ -18,7 +18,7 @@ def add_allometry(
     lower_bounds: Optional[list[Union[int, float]]] = None,
     upper_bounds: Optional[list[Union[int, float]]] = None,
     fixed: bool = True,
-):
+) -> Model:
     """Add allometric scaling of parameters
 
     Add an allometric function to each listed parameter. The function will be
@@ -108,7 +108,7 @@ def add_allometry(
         vcs = find_volume_parameters(model)
 
         if parameters is None:
-            parsed_parameters = cls + vcs
+            parsed_parameters = [Expr(p) for p in cls + vcs]
 
         if initials is None:
             # Need to understand which parameter is CL or Q and which is V

@@ -48,7 +48,7 @@ def add_iiv(
     operation: str = '*',
     initial_estimate: float = 0.09,
     eta_names: Optional[list[str]] = None,
-):
+) -> Model:
     r"""Adds IIVs to :class:`pharmpy.model`.
 
     Effects that currently have templates are:
@@ -184,7 +184,7 @@ def add_iov(
     list_of_parameters: Optional[Union[list[str], str]] = None,
     eta_names: Optional[Union[list[str], str]] = None,
     distribution: Literal['disjoint', 'joint', 'explicit', 'same-as-iiv'] = 'disjoint',
-):
+) -> Model:
     """Adds IOVs to :class:`pharmpy.model`.
 
     Initial estimate of new IOVs are 10% of the IIV eta it is based on.
@@ -440,7 +440,7 @@ def _add_iov_declare_diagonal_omegas(rvs, pset, etas, indices, omega_iov_name):
         pset.append(Parameter(str(omega_iov), init=init))
 
 
-def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
+def add_pk_iiv(model: Model, initial_estimate: float = 0.09) -> Model:
     """Adds IIVs to all PK parameters in :class:`pharmpy.model`.
 
     Will add exponential IIVs to all parameters that are included in the ODE.
@@ -487,7 +487,7 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09):
     return model.update_source()
 
 
-def add_pd_iiv(model: Model, initial_estimate: float = 0.09):
+def add_pd_iiv(model: Model, initial_estimate: float = 0.09) -> Model:
     """Adds IIVs to all PD parameters in :class:`pharmpy.model`.
 
     Parameters
@@ -635,7 +635,7 @@ class EtaAddition:
         return cls(template)
 
 
-def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None):
+def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None) -> Model:
     """
     Removes all IIV etas given a list with eta names and/or parameter names.
 
@@ -713,7 +713,7 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None):
     return model
 
 
-def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None):
+def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None) -> Model:
     """Removes all IOV etas given a list with eta names.
 
     Parameters
@@ -787,7 +787,9 @@ def _get_iov_groups(model: Model):
     return same.values()
 
 
-def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[list[str], str]] = None):
+def transform_etas_boxcox(
+    model: Model, list_of_etas: Optional[Union[list[str], str]] = None
+) -> Model:
     """Applies a boxcox transformation to selected etas
 
     Initial estimate for lambda is 0.1 with bounds (-3, 3).
@@ -825,7 +827,9 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[Union[list[str], 
     return model.update_source()
 
 
-def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[list[str], str]] = None):
+def transform_etas_tdist(
+    model: Model, list_of_etas: Optional[Union[list[str], str]] = None
+) -> Model:
     """Applies a t-distribution transformation to selected etas
 
     Initial estimate for degrees of freedom is 80 with bounds (3, 100).
@@ -863,7 +867,9 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[Union[list[str], s
     return model.update_source()
 
 
-def transform_etas_john_draper(model: Model, list_of_etas: Optional[Union[list[str], str]] = None):
+def transform_etas_john_draper(
+    model: Model, list_of_etas: Optional[Union[list[str], str]] = None
+) -> Model:
     """Applies a John Draper transformation to selected etas
 
     See [1]_ for more information.
@@ -1030,7 +1036,7 @@ def create_joint_distribution(
     model: Model,
     rvs: Optional[Sequence[str]] = None,
     individual_estimates: Optional[pd.DataFrame] = None,
-):
+) -> Model:
     """
     Combines some or all etas into a joint distribution.
 
@@ -1110,7 +1116,9 @@ def create_joint_distribution(
     return model
 
 
-def split_joint_distribution(model: Model, rvs: Optional[Union[Sequence[str], str]] = None):
+def split_joint_distribution(
+    model: Model, rvs: Optional[Union[Sequence[str], str]] = None
+) -> Model:
     """
     Splits etas following a joint distribution into separate distributions.
 
@@ -1222,7 +1230,7 @@ def _choose_cov_param_init(model, individual_estimates, rvs, parent1, parent2):
 
 def update_initial_individual_estimates(
     model: Model, individual_estimates: pd.Series, force: bool = True
-):
+) -> Model:
     """Update initial individual estimates for a model
 
     Updates initial individual estimates for a model.

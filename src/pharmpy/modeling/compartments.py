@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+from pharmpy.basic import Expr
 from pharmpy.model import Model
 
 
-def get_lag_times(model: Model):
+def get_lag_times(model: Model) -> dict[str, Expr]:
     """Get lag times for all compartments
 
     Parameters
@@ -28,7 +29,7 @@ def get_lag_times(model: Model):
     return d
 
 
-def get_bioavailability(model: Model):
+def get_bioavailability(model: Model) -> dict[str, Expr]:
     """Get bioavailability of doses for all compartments
 
     Parameters

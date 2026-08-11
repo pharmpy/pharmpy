@@ -105,7 +105,9 @@ def _find_noncov_theta(model, paramsymb, full=False):
     raise ValueError(f"Could not find theta connected to {paramsymb}")
 
 
-def add_individual_parameter(model: Model, name: str, init: float = 0.1, lower: float = 0.0):
+def add_individual_parameter(
+    model: Model, name: str, init: float = 0.1, lower: float = 0.0
+) -> Model:
     """Add an individual or pk parameter to a model
 
     Parameters
@@ -149,7 +151,7 @@ def _add_parameter(
     return model, symb
 
 
-def set_first_order_elimination(model: Model):
+def set_first_order_elimination(model: Model) -> Model:
     """Sets elimination to first order
 
     Parameters
@@ -236,7 +238,9 @@ def set_first_order_elimination(model: Model):
     return model
 
 
-def add_bioavailability(model: Model, add_parameter: bool = True, logit_transform: bool = False):
+def add_bioavailability(
+    model: Model, add_parameter: bool = True, logit_transform: bool = False
+) -> Model:
     """Add bioavailability statement for the first dose compartment of the model.
     Can be added as a new parameter or otherwise it will be set to 1. If added as a parameter,
     a logit transformation can also be applied.
@@ -308,7 +312,7 @@ def add_bioavailability(model: Model, add_parameter: bool = True, logit_transfor
     return model.update_source()
 
 
-def remove_bioavailability(model: Model):
+def remove_bioavailability(model: Model) -> Model:
     """Remove bioavailability from the first dose compartment of model.
 
     Parameters
@@ -346,7 +350,7 @@ def remove_bioavailability(model: Model):
     return model
 
 
-def set_zero_order_elimination(model: Model):
+def set_zero_order_elimination(model: Model) -> Model:
     """Sets elimination to zero order.
 
     Initial estimate for KM is set to 1% of smallest observation.
@@ -415,7 +419,7 @@ def _get_pk_observations(model):
     return get_observations(model, dv=dv)
 
 
-def has_michaelis_menten_elimination(model: Model):
+def has_michaelis_menten_elimination(model: Model) -> bool:
     """Check if the model describes Michaelis-Menten elimination
 
     This function relies on heuristics and will not be able to detect all
@@ -452,7 +456,7 @@ def has_michaelis_menten_elimination(model: Model):
     return is_nonlinear and not is_zero_order and not could_be_mixed
 
 
-def has_zero_order_elimination(model: Model):
+def has_zero_order_elimination(model: Model) -> bool:
     """Check if the model describes zero-order elimination
 
     This function relies on heuristics and will not be able to detect all
@@ -489,7 +493,7 @@ def has_zero_order_elimination(model: Model):
     return is_nonlinear and is_zero_order and not could_be_mixed
 
 
-def has_mixed_mm_fo_elimination(model: Model):
+def has_mixed_mm_fo_elimination(model: Model) -> bool:
     """Check if the model describes mixed Michaelis-Menten and first order elimination
 
     This function relies on heuristics and will not be able to detect all
@@ -526,7 +530,7 @@ def has_mixed_mm_fo_elimination(model: Model):
     return is_nonlinear and not is_zero_order and could_be_mixed
 
 
-def has_first_order_elimination(model: Model):
+def has_first_order_elimination(model: Model) -> bool:
     """Check if the model describes first order elimination
 
     This function relies on heuristics and will not be able to detect all
@@ -559,7 +563,7 @@ def has_first_order_elimination(model: Model):
     return not is_nonlinear
 
 
-def set_michaelis_menten_elimination(model: Model):
+def set_michaelis_menten_elimination(model: Model) -> Model:
     """Sets elimination to Michaelis-Menten.
 
     Note that the parametrization is not the usual, but is instead using a CLMM parameter.
@@ -615,7 +619,7 @@ def set_michaelis_menten_elimination(model: Model):
     return model
 
 
-def set_mixed_mm_fo_elimination(model: Model):
+def set_mixed_mm_fo_elimination(model: Model) -> Model:
     """Sets elimination to mixed Michaelis-Menten and first order.
 
     Initial estimate for CLMM is set to CL/2 and KM is set to :math:`max(DV)/2`.
@@ -804,7 +808,7 @@ def _get_mm_inits(model: Model, rate_numer, combined):
     return km_init, clmm_init
 
 
-def set_n_transit_compartments(model: Model, keep_depot: bool = True):
+def set_n_transit_compartments(model: Model, keep_depot: bool = True) -> Model:
     """Set the n-transit compartments model
 
     This is the absorption delay model where the number of transit compartments is a parameter
@@ -938,7 +942,7 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True):
     return model
 
 
-def set_transit_compartments(model: Model, n: int, keep_depot: bool = True):
+def set_transit_compartments(model: Model, n: int, keep_depot: bool = True) -> Model:
     """Set the number of transit compartments of model.
 
     Initial estimate for the absorption delay is
@@ -1175,7 +1179,7 @@ def _update_numerators(model: Model):
     return model
 
 
-def add_lag_time(model: Model):
+def add_lag_time(model: Model) -> Model:
     """Add lag time to the dose compartment of model.
 
     Initial estimate for lag time is set the
@@ -1245,7 +1249,7 @@ def add_lag_time(model: Model):
     return model
 
 
-def remove_lag_time(model: Model):
+def remove_lag_time(model: Model) -> Model:
     """Remove lag time from the dose compartment of model.
 
     Parameters
@@ -1286,7 +1290,7 @@ def remove_lag_time(model: Model):
     return model
 
 
-def set_zero_order_absorption(model: Model):
+def set_zero_order_absorption(model: Model) -> Model:
     """Set or change to zero order absorption rate.
 
     Initial estimate for absorption rate is set
@@ -1372,7 +1376,7 @@ def set_zero_order_absorption(model: Model):
     return model
 
 
-def set_first_order_absorption(model: Model):
+def set_first_order_absorption(model: Model) -> Model:
     """Set or change to first order absorption rate.
 
     Initial estimate for absorption rate is set to
@@ -1463,7 +1467,7 @@ def set_first_order_absorption(model: Model):
     return model
 
 
-def set_instantaneous_absorption(model: Model):
+def set_instantaneous_absorption(model: Model) -> Model:
     """Set or change to instantaneous absorption rate.
 
     Currently lagtime together with instantaneous absorption is not supported.
@@ -1534,7 +1538,7 @@ def set_instantaneous_absorption(model: Model):
     return model
 
 
-def set_seq_zo_fo_absorption(model: Model):
+def set_seq_zo_fo_absorption(model: Model) -> Model:
     """Set or change to sequential zero order first order absorption rate.
 
     Initial estimate for
@@ -1780,7 +1784,7 @@ def _disallow_infusion(model, odes):
                 raise ModelError("Model already has an infusion given in the dataset")
 
 
-def has_zero_order_absorption(model: Model):
+def has_zero_order_absorption(model: Model) -> bool:
     """Check if ode system describes a zero order absorption
 
     currently defined as having Infusion dose with rate not in dataset
@@ -1839,7 +1843,7 @@ def _sorted_doses(comp, model):
         return doses
 
 
-def has_first_order_absorption(model: Model):
+def has_first_order_absorption(model: Model) -> bool:
     """Check if ode system describes a first order absorption
 
     Currently defined as the central compartment having a unidirectional input
@@ -1875,7 +1879,7 @@ def has_first_order_absorption(model: Model):
     return False
 
 
-def has_instantaneous_absorption(model: Model):
+def has_instantaneous_absorption(model: Model) -> bool:
     """Check if ode system describes a instantaneous absorption
 
     Defined as being a instantaneous dose directly into the central compartment
@@ -1907,7 +1911,7 @@ def has_instantaneous_absorption(model: Model):
     return True
 
 
-def has_seq_zo_fo_absorption(model: Model):
+def has_seq_zo_fo_absorption(model: Model) -> bool:
     """Check if ode system describes a sequential zero-order, first-order absorption
 
     Defined as the model having both zero- and first-order absorption.
@@ -1934,7 +1938,7 @@ def has_seq_zo_fo_absorption(model: Model):
         return False
 
 
-def get_number_of_peripheral_compartments(model: Model):
+def get_number_of_peripheral_compartments(model: Model) -> int:
     """Return the number of peripherals compartments connected to the central
     compartment
 
@@ -1953,7 +1957,7 @@ def get_number_of_peripheral_compartments(model: Model):
     return len(odes.find_peripheral_compartments())
 
 
-def get_number_of_transit_compartments(model: Model):
+def get_number_of_transit_compartments(model: Model) -> int:
     """Return the number of transit compartments in the model
 
     Parameters
@@ -1971,7 +1975,7 @@ def get_number_of_transit_compartments(model: Model):
     return len(odes.find_transit_compartments(model.statements))
 
 
-def has_lag_time(model: Model):
+def has_lag_time(model: Model) -> bool:
     """Check if ode system is defined with absorption lag time
 
     Parameters
@@ -2096,7 +2100,7 @@ def _get_absorption_init(model, param_name) -> float:
     return init
 
 
-def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None):
+def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None) -> Model:
     """Sets the number of peripheral compartments for central compartment to a specified number.
 
     If name is set, the peripheral compartment will be added to the compartment
@@ -2162,7 +2166,7 @@ def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None
     return model
 
 
-def add_peripheral_compartment(model: Model, name: Optional[str] = None):
+def add_peripheral_compartment(model: Model, name: Optional[str] = None) -> Model:
     r"""Add a peripheral distribution compartment to model
 
     The rate of flow from the central to the peripheral compartment
@@ -2321,7 +2325,7 @@ def add_peripheral_compartment(model: Model, name: Optional[str] = None):
     return model.update_source()
 
 
-def remove_peripheral_compartment(model: Model, name: Optional[str] = None):
+def remove_peripheral_compartment(model: Model, name: Optional[str] = None) -> Model:
     r"""Remove a peripheral distribution compartment from model
 
     If name is set, a peripheral compartment will be removed from the compartment
@@ -2448,7 +2452,7 @@ def remove_peripheral_compartment(model: Model, name: Optional[str] = None):
 
 def set_ode_solver(
     model: Model, solver: Literal['CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSODI']
-):
+) -> Model:
     """Sets ODE solver to use for model
 
     The recognized solvers are CVODS, DGEAR, DVERK, IDA, LSODA and LSODI.
@@ -2482,7 +2486,7 @@ def set_ode_solver(
     return model
 
 
-def find_clearance_parameters(model: Model):
+def find_clearance_parameters(model: Model) -> list[str]:
     """Find clearance parameters in model
 
     Parameters
@@ -2522,7 +2526,7 @@ def find_clearance_parameters(model: Model):
     return sorted(cls, key=str)
 
 
-def find_volume_parameters(model: Model):
+def find_volume_parameters(model: Model) -> list[str]:
     """Find volume parameters in model
 
     Parameters
@@ -2973,7 +2977,7 @@ class ODEDisplayer:
         return r'\begin{cases} ' + r' \\ '.join(rows) + r' \end{cases}'
 
 
-def display_odes(model: Model):
+def display_odes(model: Model) -> ODEDisplayer:
     """Displays the ordinary differential equation system
 
     Parameters
@@ -3008,7 +3012,7 @@ def display_odes(model: Model):
     return ODEDisplayer(eqs, ics)
 
 
-def solve_ode_system(model: Model):
+def solve_ode_system(model: Model) -> Model:
     """Replace ODE system with analytical solution if possible
 
     Warnings
@@ -3059,7 +3063,7 @@ def solve_ode_system(model: Model):
     return model
 
 
-def get_central_volume_and_clearance(model: Model):
+def get_central_volume_and_clearance(model: Model) -> tuple[Expr, Expr]:
     """Get the volume and clearance parameters
 
     Parameters
@@ -3070,9 +3074,9 @@ def get_central_volume_and_clearance(model: Model):
 
     Returns
     -------
-    sympy.Symbol
+    Expr
         Volume symbol
-    sympy.Symbol
+    Expr
         Clearance symbol
 
     Example

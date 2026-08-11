@@ -570,7 +570,7 @@ def is_in_search_space(
     model: Model,
     search_space: Union[ModelFeatures, Sequence[ModelFeature]],
     type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
-):
+) -> bool:
     if isinstance(search_space, Sequence):
         search_space = ModelFeatures.create(search_space)
     search_space = _get_mfl_from_type(search_space, type)

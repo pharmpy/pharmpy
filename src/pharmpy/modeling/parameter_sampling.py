@@ -12,7 +12,7 @@ from pharmpy.internals.math import is_posdef, nearest_positive_semidefinite
 from pharmpy.model import Model
 
 
-def create_rng(seed: Union[np.random.Generator, int] = DEFAULT_SEED):
+def create_rng(seed: Union[np.random.Generator, int] = DEFAULT_SEED) -> np.random.Generator:
     """Create a new random number generator
 
     Pharmpy functions that use random sampling take a random number generator or seed as input.
@@ -134,7 +134,7 @@ def sample_parameters_uniformly(
     n: int = 1,
     seed: Union[np.random.Generator, int] = DEFAULT_SEED,
     scale: Literal['UCP', 'normal'] = 'normal',
-):
+) -> pd.DataFrame:
     """Sample parameter vectors using uniform sampling
 
     Each parameter value will be randomly sampled from a uniform distribution
@@ -211,7 +211,7 @@ def sample_parameters_from_covariance_matrix(
     force_posdef_covmatrix: bool = False,
     n: int = 1,
     seed: Union[np.random.Generator, int] = DEFAULT_SEED,
-):
+) -> pd.DataFrame:
     """Sample parameter vectors using the covariance matrix
 
     If parameters is not provided all estimated parameters will be used
@@ -289,7 +289,7 @@ def sample_individual_estimates(
     parameters: Optional[list[str]] = None,
     samples_per_id: int = 100,
     seed: Union[np.random.Generator, int] = DEFAULT_SEED,
-):
+) -> pd.DataFrame:
     """Sample individual estimates given their covariance.
 
     Parameters

@@ -181,7 +181,7 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     return True
 
 
-def has_covariate_effect(model: Model, parameter: str, covariate: str):
+def has_covariate_effect(model: Model, parameter: str, covariate: str) -> bool:
     """Tests if an instance of :class:`pharmpy.model` has a given covariate
     effect.
 
@@ -211,7 +211,9 @@ def has_covariate_effect(model: Model, parameter: str, covariate: str):
     return depends_on(model, parameter, covariate)
 
 
-def remove_covariate_effect(model: Model, parameter: str, covariate: str, keep_fixed: bool = True):
+def remove_covariate_effect(
+    model: Model, parameter: str, covariate: str, keep_fixed: bool = True
+) -> Model:
     """Remove a covariate effect from an instance of :class:`pharmpy.model`.
 
     Parameters
@@ -271,7 +273,7 @@ def add_covariate_effect(
     effect: EffectType,
     operation: OperationType = '*',
     allow_nested: bool = False,
-):
+) -> Model:
     """Adds covariate effect to :class:`pharmpy.model`.
 
     The following effects have templates:

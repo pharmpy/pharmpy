@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
+from typing import Literal, Optional, overload
 
 from pharmpy.basic import Quantity, Unit
 from pharmpy.deps import pandas as pd
@@ -232,7 +233,19 @@ def pretty_print_checks(checks):
         console.print(table)
 
 
-def check_dataset(model: Model, dataframe: bool = False, verbose: bool = False):
+@overload
+def check_dataset(model: Model, dataframe: Literal[False], verbose: bool = False) -> None: ...
+
+
+@overload
+def check_dataset(
+    model: Model, dataframe: Literal[True], verbose: bool = False
+) -> pd.DataFrame: ...
+
+
+def check_dataset(
+    model: Model, dataframe: bool = False, verbose: bool = False
+) -> Optional[pd.DataFrame]:
     """Check dataset for consistency across a set of rules
 
     Parameters

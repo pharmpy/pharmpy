@@ -42,7 +42,7 @@ def evaluate_expression(
     model: Model,
     expression: Union[str, TExpr],
     parameter_estimates: Optional[ParameterMap] = None,
-):
+) -> pd.Series:
     """Evaluate expression using model
 
     Calculate the value of expression for each data record.
@@ -100,7 +100,7 @@ def evaluate_expression(
 
 def evaluate_population_prediction(
     model: Model, parameters: Optional[ParameterMap] = None, dataset: Optional[pd.DataFrame] = None
-):
+) -> pd.Series:
     """Evaluate the numeric population prediction
 
     The prediction is evaluated at the current model parameter values
@@ -155,7 +155,7 @@ def evaluate_population_prediction(
 
     df = get_and_check_dataset(model) if dataset is None else dataset
 
-    pred = eval_expr(sympy.sympify(expr), len(df), DataFrameMapping(df))
+    pred = eval_expr(expr._sympy_(), len(df), DataFrameMapping(df))
     pred_series = pd.Series(pred, name='PRED', index=df.index)
     return pred_series
 
@@ -165,7 +165,7 @@ def evaluate_individual_prediction(
     etas: Optional[pd.DataFrame] = None,
     parameters: Optional[ParameterMap] = None,
     dataset: Optional[pd.DataFrame] = None,
-):
+) -> pd.Series:
     """Evaluate the numeric individual prediction
 
     The prediction is evaluated at the current model parameter values
@@ -239,14 +239,14 @@ def evaluate_individual_prediction(
 
     _df = df.join(_etas, on=idcol)
 
-    ipred = eval_expr(sympy.sympify(y), len(_df), DataFrameMapping(_df))
+    ipred = eval_expr(y._sympy_(), len(_df), DataFrameMapping(_df))
     ipred_series = pd.Series(ipred, name='IPRED', index=df.index)
     return ipred_series
 
 
-def _replace_parameters(model: Model, y: list[sympy.Expr], parameters: Optional[ParameterMap]):
+def _replace_parameters(model: Model, y: list[Expr], parameters: Optional[ParameterMap]):
     mapping = model.parameters.inits if parameters is None else parameters
-    return [x.subs(mapping) for x in y]  # pyright: ignore [reportCallIssue, reportArgumentType]
+    return [x.subs(mapping) for x in y]
 
 
 def evaluate_eta_gradient(
@@ -254,7 +254,7 @@ def evaluate_eta_gradient(
     etas: Optional[pd.DataFrame] = None,
     parameters: Optional[ParameterMap] = None,
     dataset: Optional[pd.DataFrame] = None,
-):
+) -> pd.DataFrame:
     """Evaluate the numeric eta gradient
 
     The gradient is evaluated at the current model parameter values
@@ -333,7 +333,7 @@ def evaluate_eta_gradient(
 
     return pd.DataFrame(
         {
-            name: eval_expr(sympy.sympify(expr), len(_df), DataFrameMapping(_df))
+            name: eval_expr(expr._sympy_(), len(_df), DataFrameMapping(_df))
             for expr, name in zip(y, derivative_names)
         },
         index=df.index,
@@ -345,7 +345,7 @@ def evaluate_epsilon_gradient(
     etas: Optional[pd.DataFrame] = None,
     parameters: Optional[ParameterMap] = None,
     dataset: Optional[pd.DataFrame] = None,
-):
+) -> pd.DataFrame:
     """Evaluate the numeric epsilon gradient
 
     The gradient is evaluated at the current model parameter values
@@ -427,7 +427,7 @@ def evaluate_epsilon_gradient(
 
     return pd.DataFrame(
         {
-            name: eval_expr(sympy.sympify(expr), len(_df), DataFrameMapping(_df))
+            name: eval_expr(expr._sympy_(), len(_df), DataFrameMapping(_df))
             for expr, name in zip(y, derivative_names)
         },
         index=df.index,
@@ -438,7 +438,7 @@ def evaluate_weighted_residuals(
     model: Model,
     parameters: Optional[ParameterMap] = None,
     dataset: Optional[pd.DataFrame] = None,
-):
+) -> pd.Series:
     """Evaluate the weighted residuals
 
     The residuals is evaluated at the current model parameter values

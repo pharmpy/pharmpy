@@ -37,7 +37,7 @@ def raise_if_odes(model):
         raise ValueError("Model having an ODE system is not supported")
 
 
-def get_observation_expression(model: Model):
+def get_observation_expression(model: Model) -> Expr:
     """Get the full symbolic expression for the observation according to the model
 
     This function currently only support models without ODE systems
@@ -79,7 +79,7 @@ def get_observation_expression(model: Model):
     return y
 
 
-def get_individual_prediction_expression(model: Model):
+def get_individual_prediction_expression(model: Model) -> Expr:
     """Get the full symbolic expression for the modelled individual prediction
 
     This function currently only support models without ODE systems
@@ -111,7 +111,7 @@ def get_individual_prediction_expression(model: Model):
     )
 
 
-def get_population_prediction_expression(model: Model):
+def get_population_prediction_expression(model: Model) -> Expr:
     """Get the full symbolic expression for the modelled population prediction
 
     This function currently only support models without ODE systems
@@ -144,7 +144,7 @@ def get_population_prediction_expression(model: Model):
     )
 
 
-def calculate_eta_gradient_expression(model: Model):
+def calculate_eta_gradient_expression(model: Model) -> list[Expr]:
     """Calculate the symbolic expression for the eta gradient
 
     This function currently only support models without ODE systems
@@ -156,8 +156,8 @@ def calculate_eta_gradient_expression(model: Model):
 
     Returns
     -------
-    Expression
-        Symbolic expression
+    list[Expr]
+        List of symbolic expressions
 
     Examples
     --------
@@ -176,7 +176,7 @@ def calculate_eta_gradient_expression(model: Model):
     return d
 
 
-def calculate_epsilon_gradient_expression(model: Model):
+def calculate_epsilon_gradient_expression(model: Model) -> list[Expr]:
     """Calculate the symbolic expression for the epsilon gradient
 
     This function currently only support models without ODE systems
@@ -188,8 +188,8 @@ def calculate_epsilon_gradient_expression(model: Model):
 
     Returns
     -------
-    Expression
-        Symbolic expression
+    list[Expr]
+        List of symbolic expressions
 
     Examples
     --------
@@ -209,7 +209,7 @@ def calculate_epsilon_gradient_expression(model: Model):
     return d
 
 
-def create_symbol(model: Model, stem: str, force_numbering: bool = False):
+def create_symbol(model: Model, stem: str, force_numbering: bool = False) -> Expr:
     """Create a new unique variable symbol given a model
 
     Parameters
@@ -287,7 +287,7 @@ def _find_eta_assignments(model):
     return reversed(leafs)
 
 
-def mu_reference_model(model: Model):
+def mu_reference_model(model: Model) -> Model:
     r"""Convert model to use mu-referencing
 
     Mu-referencing an eta is to separately define its actual mu (mean) parameter.
@@ -442,7 +442,7 @@ def get_mu_connected_to_parameter(model: Model, parameter: str) -> Optional[str]
     return None
 
 
-def simplify_expression(model: Model, expr: Union[str, TExpr]):
+def simplify_expression(model: Model, expr: Union[str, TExpr]) -> Expr:
     """Simplify expression given constraints in model
 
     Parameters
@@ -499,7 +499,7 @@ def _simplify_expression_from_parameters(expr, parameters) -> Expr:
     return Expr(simp)
 
 
-def make_declarative(model: Model):
+def make_declarative(model: Model) -> Model:
     """Make the model statments declarative
 
     Each symbol will only be declared once.
@@ -582,7 +582,7 @@ def make_declarative(model: Model):
     return model.update_source()
 
 
-def cleanup_model(model: Model):
+def cleanup_model(model: Model) -> Model:
     """Perform various cleanups of a model
 
     This is what is currently done
@@ -673,7 +673,7 @@ def cleanup_model(model: Model):
     return model
 
 
-def greekify_model(model: Model, named_subscripts: bool = False):
+def greekify_model(model: Model, named_subscripts: bool = False) -> Model:
     """Convert to using greek letters for all population parameters
 
     Parameters
@@ -2021,7 +2021,7 @@ def is_real(model: Model, expr: TExpr) -> Optional[bool]:
     return Expr(expr).is_real()
 
 
-def is_linearized(model: Model):
+def is_linearized(model: Model) -> bool:
     """Determine if a model is linearized
 
     Parameters

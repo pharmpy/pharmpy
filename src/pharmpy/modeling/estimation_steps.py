@@ -12,7 +12,7 @@ from pharmpy.modeling.help_functions import _as_integer
 MethodType = Literal['FO', 'FOCE', 'ITS', 'LAPLACE', 'IMPMAP', 'IMP', 'SAEM', 'BAYES']
 
 
-def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs):
+def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs) -> Model:
     """Set estimation step
 
     Sets estimation step for a model. Methods currently supported are:
@@ -91,7 +91,7 @@ def add_estimation_step(
     tool_options: Mapping[str, Any] = frozenmapping({}),
     derivatives: Sequence[Sequence[Expr]] = (),
     individual_eta_samples: bool = False,
-):
+) -> Model:
     """Add estimation step
 
     Adds estimation step for a model in a given index. Methods currently supported are:
@@ -202,7 +202,7 @@ def add_estimation_step(
     return model.update_source()
 
 
-def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED):
+def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED) -> Model:
     """Change model into simulation model
 
     Parameters
@@ -249,7 +249,7 @@ def set_simulation(model: Model, n: int = 1, seed: int = DEFAULT_SEED):
     return model.update_source()
 
 
-def remove_estimation_step(model: Model, idx: int):
+def remove_estimation_step(model: Model, idx: int) -> Model:
     """Remove estimation step
 
     Parameters
@@ -294,7 +294,9 @@ def remove_estimation_step(model: Model, idx: int):
     return model.update_source()
 
 
-def append_estimation_step_options(model: Model, tool_options: Mapping[str, Any], idx: int = -1):
+def append_estimation_step_options(
+    model: Model, tool_options: Mapping[str, Any], idx: int = -1
+) -> Model:
     """Append estimation step options
 
     Appends options to an existing estimation step.
@@ -354,7 +356,7 @@ def append_estimation_step_options(model: Model, tool_options: Mapping[str, Any]
 
 def add_parameter_uncertainty_step(
     model: Model, parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']
-):
+) -> Model:
     """Adds parameter uncertainty step to the final estimation step
 
     Parameters
@@ -396,7 +398,7 @@ def add_parameter_uncertainty_step(
     return model.update_source()
 
 
-def remove_parameter_uncertainty_step(model: Model):
+def remove_parameter_uncertainty_step(model: Model) -> Model:
     """Removes parameter uncertainty step from the final estimation step
 
     Parameters
@@ -435,7 +437,7 @@ def remove_parameter_uncertainty_step(model: Model):
     return model.update_source()
 
 
-def set_evaluation_step(model: Model, idx: int = -1):
+def set_evaluation_step(model: Model, idx: int = -1) -> Model:
     """Set evaluation step
 
     Change the final or the estimation step with a specific index to do evaulation.
@@ -487,7 +489,7 @@ def set_evaluation_step(model: Model, idx: int = -1):
 
 def add_derivative(
     model: Model, with_respect_to: Optional[Union[Sequence[Union[Sequence[str], str]], str]] = None
-):
+) -> Model:
     """
     Add a derivative to be calculcated when running the model. Currently, only
     derivatives with respect to the prediction is supported. Default is to add all possible
@@ -556,7 +558,7 @@ def add_derivative(
 
 def remove_derivative(
     model: Model, with_respect_to: Optional[Union[Sequence[Union[Sequence[str], str]], str]] = None
-):
+) -> Model:
     """
     Remove a derivative currently being calculcate when running model. Currently, only
     derivatives with respect to the prediction is supported. Default is to remove all
@@ -617,7 +619,7 @@ def remove_derivative(
     return model.update_source()
 
 
-def add_predictions(model: Model, pred: list[str]):
+def add_predictions(model: Model, pred: list[str]) -> Model:
     """Add predictions and/or residuals
 
     Add predictions to estimation step.
@@ -672,7 +674,7 @@ def add_predictions(model: Model, pred: list[str]):
     return model.update_source()
 
 
-def add_residuals(model: Model, res: list[str]):
+def add_residuals(model: Model, res: list[str]) -> Model:
     """Add predictions and/or residuals
 
     Add residuals to estimation step.
@@ -729,7 +731,7 @@ def add_residuals(model: Model, res: list[str]):
     return model.update_source()
 
 
-def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None):
+def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None) -> Model:
     """Remove predictions and/or residuals
 
     Remove predictions from estimation step. Default is to remove all predictions.
@@ -781,7 +783,7 @@ def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None):
     return model
 
 
-def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None):
+def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None) -> Model:
     """Remove residuals
 
     Remove residuals from estimation step. Default is to remove all residuals.

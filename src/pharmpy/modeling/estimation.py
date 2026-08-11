@@ -20,7 +20,7 @@ class UCPScale:
         return "<UCPScale object>"
 
 
-def calculate_ucp_scale(model: Model):
+def calculate_ucp_scale(model: Model) -> UCPScale:
     """Calculate a scale for unconstrained parameters for a model
 
     The UCPScale object can be used to calculate unconstrained parameters
@@ -91,7 +91,7 @@ def _scale_matrix(A):
 
 def calculate_parameters_from_ucp(
     model: Model, scale: UCPScale, ucps: Union[pd.Series, dict[str, float]]
-):
+) -> pd.Series:
     """Scale parameter values from ucp to normal scale
 
     Parameters

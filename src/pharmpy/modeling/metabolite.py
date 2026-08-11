@@ -150,7 +150,7 @@ def add_metabolite(model: Model, drug_dvid: int = 1, presystemic: bool = False) 
     return model
 
 
-def has_presystemic_metabolite(model: Model):
+def has_presystemic_metabolite(model: Model) -> bool:
     """Checks whether a model has a presystemic metabolite
 
     If pre-systemic drug there will be a flow from DEPOT to METABOLITE as well

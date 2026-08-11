@@ -41,7 +41,7 @@ def calculate_eta_shrinkage(
     parameter_estimates: pd.Series,
     individual_estimates: pd.DataFrame,
     sd: bool = False,
-):
+) -> pd.Series:
     """Calculate eta shrinkage for each eta
 
     Parameters
@@ -99,7 +99,7 @@ def calculate_eta_shrinkage(
 
 def calculate_individual_shrinkage(
     model: Model, parameter_estimates: pd.Series, individual_estimates_covariance: pd.DataFrame
-):
+) -> pd.DataFrame:
     """Calculate the individual eta-shrinkage
 
     Definition: ieta_shr = (var(eta) / omega)
@@ -223,7 +223,7 @@ def calculate_individual_parameter_statistics(
     parameter_estimates: Mapping[str, float],
     covariance_matrix: Optional[pd.DataFrame] = None,
     seed: Union[np.random.Generator, int] = DEFAULT_SEED,
-):
+) -> pd.DataFrame:
     """Calculate statistics for individual parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -415,7 +415,7 @@ def calculate_pk_parameters_statistics(
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
     seed: Union[np.random.Generator, int] = DEFAULT_SEED,
-):
+) -> pd.DataFrame:
     """Calculate statistics for common pharmacokinetic parameters
 
     Calculate the mean (expected value of the distribution), variance
@@ -566,7 +566,7 @@ def _split_equation(s):
     return name, expr
 
 
-def calculate_aic(model: Model, likelihood: float):
+def calculate_aic(model: Model, likelihood: float) -> float:
     """Calculate AIC
 
     AIC = -2LL + 2*n_estimated_parameters
@@ -712,7 +712,7 @@ def _categorize_parameters(model):
     return fixedpars, randpars
 
 
-def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9):
+def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9) -> pd.Series:
     """Check for highly correlated parameter estimates
 
     Parameters
@@ -748,7 +748,7 @@ def check_high_correlations(model: Model, cor: pd.DataFrame, limit: float = 0.9)
 
 def check_parameters_near_bounds(
     model: Model, values: pd.Series, zero_limit: float = 0.001, significant_digits: int = 2
-):
+) -> pd.Series:
     """Check if any estimated parameter value is close to its bounds
 
     Parameters

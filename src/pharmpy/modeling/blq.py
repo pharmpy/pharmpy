@@ -22,7 +22,7 @@ def transform_blq(
     model: Model,
     method: Literal['m1', 'm3', 'm4', 'm5', 'm6', 'm7'] = 'm4',
     lloq: Optional[float] = None,
-):
+) -> Model:
     """Transform for BLQ data
 
     Transform a given model, methods available are m1, m3, m4, m5, m6 and m7 [1]_.
@@ -257,7 +257,7 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     return model.update_source()
 
 
-def has_blq_transformation(model: Model, y=None):
+def has_blq_transformation(model: Model, y=None) -> bool:
     # FIXME: Make more general
     if y:
         y = model.statements.error.find_assignment(y)
