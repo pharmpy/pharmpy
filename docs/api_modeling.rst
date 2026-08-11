@@ -55,6 +55,7 @@ Dataset handling
     bin_observations
     binarize_dataset
     convert_unit
+    create_datainfo
     deidentify_data
     drop_columns
     drop_dropped_columns

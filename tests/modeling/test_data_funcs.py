@@ -55,8 +55,8 @@ from pharmpy.modeling import (
     unload_dataset,
     write_datainfo,
 )
-from pharmpy.modeling.basic_models import create_default_datainfo
 from pharmpy.modeling.data import get_observations_and_exclusion_criteria
+from pharmpy.modeling.datainfo import create_datainfo
 
 
 def test_get_ids(load_example_model_for_test):
@@ -469,7 +469,7 @@ def test_remove_loq_data(load_example_model_for_test):
 def test_remove_blq(load_example_model_for_test, d, expected, keep):
     m = load_example_model_for_test('pheno')
     df = pd.DataFrame(d)
-    m = m.replace(dataset=df, datainfo=create_default_datainfo(df))
+    m = m.replace(dataset=df, datainfo=create_datainfo(df))
     new = remove_loq_data(m, blq='BLQ', keep=keep)
     assert list(new.dataset['DV']) == expected
 
@@ -516,7 +516,7 @@ def test_remove_blq(load_example_model_for_test, d, expected, keep):
 def test_set_lloq_value(load_example_model_for_test, d, expected, value, prov_changed):
     m = load_example_model_for_test('pheno')
     df = pd.DataFrame(d)
-    m = m.replace(dataset=df, datainfo=create_default_datainfo(df))
+    m = m.replace(dataset=df, datainfo=create_datainfo(df))
     new = set_lloq_data(m, value, blq='BLQ')
     assert list(new.dataset['DV']) == expected
     if prov_changed:

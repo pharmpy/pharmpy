@@ -12,6 +12,7 @@ New features
 * Add :code:`modeling.create_dataset_from_design`
 * Add :code:`modeling.read_datainfo`
 * Add :code:`modeling.write_datainfo`
+* Add :code:`modeling.create_datainfo`
 
 Changes
 =======

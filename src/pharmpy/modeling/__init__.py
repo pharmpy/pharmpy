@@ -73,7 +73,7 @@ from .data import (
     undrop_columns,
     unload_dataset,
 )
-from .datainfo import annotate_unit, read_datainfo, set_property, write_datainfo
+from .datainfo import annotate_unit, create_datainfo, read_datainfo, set_property, write_datainfo
 from .error import (
     has_additive_error_model,
     has_combined_error_model,
@@ -341,6 +341,7 @@ __all__ = [
     'create_basic_pd_model',
     'create_basic_pk_model',
     'create_config_template',
+    'create_datainfo',
     'create_dataset_from_design',
     'create_joint_distribution',
     'create_rng',

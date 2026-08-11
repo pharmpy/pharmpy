@@ -9,7 +9,7 @@ from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
-from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
+from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.internals.math import replace_nan
 from pharmpy.model import (
     AddColumn,
@@ -19,7 +19,6 @@ from pharmpy.model import (
     CompartmentalSystem,
     DataInfo,
     DatasetError,
-    DataVariable,
     Drop,
     Ignore,
     Model,
@@ -29,7 +28,7 @@ from pharmpy.model import (
 )
 from pharmpy.model.model import update_datainfo
 
-from .datainfo import read_datainfo
+from .datainfo import create_datainfo
 from .evaluation import evaluate_expression
 from .expressions import get_dv_symbol
 from .iterators import resample_data
@@ -2037,94 +2036,6 @@ def read_dataset_from_datainfo_update(
     return df, di
 
 
-def _read_dataset_header_and_separator(path) -> tuple[list[str], str]:
-    with open(path) as file:
-        first_line = file.readline()
-        if ',' not in first_line:
-            colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
-            separator = r'\s+'
-        else:
-            colnames = list(pd.read_csv(path, nrows=0))
-            separator = ','
-    if len(colnames) > 0:
-        colnames[0] = colnames[0].lstrip('#')
-    return colnames, separator
-
-
-def create_default_datainfo(path_or_df):
-    if not isinstance(path_or_df, pd.DataFrame):
-        path = normalize_user_given_path(path_or_df)
-        path = path_absolute(path)
-        datainfo_path = path.with_suffix('.datainfo')
-        try:
-            di = read_datainfo(datainfo_path)
-        except FileNotFoundError:
-            pass
-        else:
-            di = di.replace(path=path)
-            return di
-
-        colnames, separator = _read_dataset_header_and_separator(path)
-
-    else:
-        colnames = path_or_df.columns
-        separator = None
-        path = None
-
-    column_info = []
-    for colname in colnames:
-        colname = colname.replace('.', '_')  # pandas uses . to name mangle
-        if colname == 'ID' or colname == 'L1':
-            var = DataVariable.create(colname, type='id', scale='nominal')
-            info = ColumnInfo.create(colname, var, datatype='int32')
-        elif colname == 'DV':
-            var = DataVariable.create(colname, type='dv')
-            info = ColumnInfo.create(colname, var)
-        elif colname == 'TIME':
-            if not set(colnames).isdisjoint({'DATE', 'DAT1', 'DAT2', 'DAT3'}):
-                datatype = 'nmtran-time'
-            else:
-                datatype = 'float64'
-            var = DataVariable.create(colname, type='idv', scale='ratio')
-            info = ColumnInfo.create(colname, var, datatype=datatype)
-        elif colname == 'EVID':
-            var = DataVariable.create(colname, type='event', scale='nominal')
-            info = ColumnInfo.create(colname, var)
-        elif colname == 'MDV':
-            if 'EVID' in colnames:
-                var = DataVariable.create(colname, type='mdv')
-                info = ColumnInfo.create(colname, var)
-            else:
-                var = DataVariable.create(colname, type='event', scale='nominal')
-                info = ColumnInfo.create(colname, var, datatype='int32')
-        elif colname == 'AMT':
-            var = DataVariable.create(colname, type='dose', scale='ratio')
-            info = ColumnInfo.create(colname, var)
-        elif colname == 'RATE':
-            var = DataVariable.create(colname, type='rate', scale='ratio')
-            info = ColumnInfo.create(colname, var)
-        elif colname == 'BLQ':
-            var = DataVariable.create(colname, type='blq', scale='nominal')
-            info = ColumnInfo.create(colname, var, datatype='int32')
-        elif colname == 'LLOQ':
-            var = DataVariable.create(colname, type='lloq', scale='ratio')
-            info = ColumnInfo.create(colname, var)
-        elif colname == 'DVID':
-            var = DataVariable.create(colname, type='dvid', scale='nominal')
-            info = ColumnInfo.create(colname, var, datatype='int32')
-        elif colname == 'SS':
-            var = DataVariable.create(colname, type='ss', scale='nominal')
-            info = ColumnInfo.create(colname, var, datatype='int32')
-        elif colname == 'II':
-            var = DataVariable.create(colname, type='ii', scale='ratio')
-            info = ColumnInfo.create(colname, var)
-        else:
-            info = ColumnInfo.create(colname)
-        column_info.append(info)
-    di = DataInfo.create(column_info, path=path, separator=separator)
-    return di
-
-
 def deidentify_data(
     df: pd.DataFrame, id_column: str = 'ID', date_columns: Optional[list[str]] = None
 ) -> pd.DataFrame:
@@ -2322,7 +2233,7 @@ def set_dataset(
         path = normalize_user_given_path(path_or_df)
 
     if format == 'nonmem':
-        di = create_default_datainfo(path_or_df)
+        di = create_datainfo(path_or_df)
     else:
         columns = list(df.columns.values) if df is not None else None
         di = DataInfo.create(columns=columns, path=path)

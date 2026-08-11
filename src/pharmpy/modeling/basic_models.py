@@ -31,7 +31,8 @@ from pharmpy.model import (
     output,
 )
 
-from .data import add_admid, create_default_datainfo, read_dataset_from_datainfo_update
+from .data import add_admid, read_dataset_from_datainfo_update
+from .datainfo import create_datainfo
 from .error import set_proportional_error_model
 from .odes import add_bioavailability, set_first_order_absorption
 from .parameter_variability import add_iiv, create_joint_distribution
@@ -76,7 +77,7 @@ def create_basic_pk_model(
     """
     if dataset_path is not None:
         dataset_path = normalize_user_given_path(dataset_path)
-        di = create_default_datainfo(dataset_path)
+        di = create_datainfo(dataset_path)
         df, di = read_dataset_from_datainfo_update(di, datatype='nonmem')
     else:
         di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
@@ -256,7 +257,7 @@ def create_basic_pd_model(
 
     if dataset_path is not None:
         dataset_path = normalize_user_given_path(dataset_path)
-        di = create_default_datainfo(dataset_path)
+        di = create_datainfo(dataset_path)
         df, di = read_dataset_from_datainfo_update(di, datatype='nonmem')
     else:
         di_col_dict = {'ID': 'id', 'TIME': 'idv', 'DV': 'dv'}
@@ -340,7 +341,7 @@ def create_basic_kpd_model(
 
     if dataset_path is not None:
         dataset_path = normalize_user_given_path(dataset_path)
-        di = create_default_datainfo(dataset_path)
+        di = create_datainfo(dataset_path)
         df, di = read_dataset_from_datainfo_update(di, datatype='nonmem')
     else:
         di_col_dict = {'ID': 'id', 'TIME': 'idv', 'AMT': 'dose', 'DV': 'dv'}
