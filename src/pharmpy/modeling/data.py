@@ -2037,6 +2037,20 @@ def read_dataset_from_datainfo_update(
     return df, di
 
 
+def _read_dataset_header_and_separator(path) -> tuple[list[str], str]:
+    with open(path) as file:
+        first_line = file.readline()
+        if ',' not in first_line:
+            colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
+            separator = r'\s+'
+        else:
+            colnames = list(pd.read_csv(path, nrows=0))
+            separator = ','
+    if len(colnames) > 0:
+        colnames[0] = colnames[0].lstrip('#')
+    return colnames, separator
+
+
 def create_default_datainfo(path_or_df):
     if not isinstance(path_or_df, pd.DataFrame):
         path = normalize_user_given_path(path_or_df)
@@ -2050,16 +2064,7 @@ def create_default_datainfo(path_or_df):
             di = di.replace(path=path)
             return di
 
-        with open(path) as file:
-            first_line = file.readline()
-            if ',' not in first_line:
-                colnames = list(pd.read_csv(path, nrows=0, sep=r'\s+'))
-                separator = r'\s+'
-            else:
-                colnames = list(pd.read_csv(path, nrows=0))
-                separator = ','
-        if len(colnames) > 0:
-            colnames[0] = colnames[0].lstrip('#')
+        colnames, separator = _read_dataset_header_and_separator(path)
 
     else:
         colnames = path_or_df.columns
