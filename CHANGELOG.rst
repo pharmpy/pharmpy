@@ -18,6 +18,7 @@ Changes
 =======
 
 * Rename :code:`set_unit` to :code:`annotate_unit`
+* :code:`modeling.set_covariate` can now also take a DataInfo as input
 
 Bugfixes
 ========

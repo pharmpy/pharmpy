@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 import warnings
 from pathlib import Path
-from typing import Any, Collection, Container, Literal, Optional, Union
+from typing import Any, Collection, Container, Literal, Optional, Union, overload
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -430,22 +430,32 @@ def get_baselines(model: Model) -> pd.DataFrame:
     return baselines
 
 
-def set_covariates(model: Model, covariates: Container[str]) -> Model:
+@overload
+def set_covariates(model: Model, covariates: Container[str]) -> Model: ...
+
+
+@overload
+def set_covariates(model: DataInfo, covariates: Container[str]) -> DataInfo: ...
+
+
+def set_covariates(
+    model: Union[Model, DataInfo], covariates: Container[str]
+) -> Union[Model, DataInfo]:
     """Set columns in the dataset to be covariates in the datainfo
 
     Parameters
     ----------
-    model : Model
-        Pharmpy model
+    model : Model | DataInfo
+        Pharmpy model or a DataInfo object
     covariates : Container
         Column names
 
     Returns
     -------
     Model
-        Updated Pharmpy model
+        Updated Pharmpy model or DataInfo object
     """
-    di = model.datainfo
+    di = model if isinstance(model, DataInfo) else model.datainfo
     newcols = []
     for col in di:
         if col.name in covariates:
@@ -454,8 +464,13 @@ def set_covariates(model: Model, covariates: Container[str]) -> Model:
             newcols.append(newcol)
         else:
             newcols.append(col)
-    model = model.replace(datainfo=di.replace(columns=newcols))
-    return model.update_source()
+    new_di = di.replace(columns=newcols)
+    if isinstance(model, Model):
+        model = model.replace(datainfo=new_di)
+        model = model.update_source()
+        return model
+    else:
+        return new_di
 
 
 def set_dvid(model: Model, name: str) -> Model:

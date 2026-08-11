@@ -872,12 +872,16 @@ def test_binarize_dataset_raises():
 
 def test_get_column_name(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
+    di = model.datainfo
     assert "AMT" == get_column_name(model, "dose")
     assert "ID" == get_column_name(model, "id")
     assert None is get_column_name(model, "blq")
     model = set_covariates(model, ["FA1", "FA2"])
     with pytest.raises(IndexError):
         get_column_name(model, "covariate")
+
+    di = set_covariates(di, ("FA1", "FA2"))
+    assert di == model.datainfo
 
 
 def test_remove_unused_columns(load_example_model_for_test):
