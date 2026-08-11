@@ -10,6 +10,7 @@ from pharmpy.modeling import (
     add_iov,
     create_joint_distribution,
     create_rng,
+    fix_parameters,
     transform_etas_boxcox,
     transform_etas_tdist,
 )
@@ -112,6 +113,30 @@ def test_create_eta_transformation_results(load_model_for_test, testdata, model_
         param_name = 'lambda' if me.model.name == 'boxcox' else 'df'
         assert table[param_name].is_unique
         assert (table['old_sd'] != table['new_sd']).all()
+        plot = res_dict[f'{me.model.name}_plot']
+        assert plot
+
+
+def test_create_eta_transformation_results_fixed_params(
+    load_model_for_test, testdata, model_entry_factory
+):
+    path = testdata / 'nonmem' / 'models' / 'mox2.mod'
+    model_base = load_model_for_test(path)
+    model_base = fix_parameters(model_base, parameter_names=['IIV_CL'])
+    res_base = parse_modelfit_results(model_base, path)
+    me_base = ModelEntry(model_base, modelfit_results=res_base)
+
+    model1 = transform_etas_tdist(model_base).replace(name='tdist')
+    model2 = transform_etas_boxcox(model_base).replace(name='boxcox')
+
+    me_cands = model_entry_factory([model1, model2], ref_val=res_base.ofv, parent=model_base)
+
+    for me in me_cands:
+        rng = create_rng(1)
+        res_dict = create_eta_transformation_results(me, me_base, rng)
+        table = res_dict[f'{me.model.name}_parameters']
+        assert 'ETA_1' not in table.index
+        assert 'ETA_2' in table.index
         plot = res_dict[f'{me.model.name}_plot']
         assert plot
 

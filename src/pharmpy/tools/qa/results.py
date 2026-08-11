@@ -9,7 +9,7 @@ from pharmpy.basic import Expr
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
-from pharmpy.model import JointNormalDistribution, Model, NormalDistribution
+from pharmpy.model import JointNormalDistribution, Model, NormalDistribution, RandomVariables
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import Results, read_results
@@ -412,8 +412,16 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
             for p in dist.variance.diagonal():
                 params.append(p)
 
-    boxcox_sds = [newres.parameter_estimates_sdcorr[p.name] for p in params]
-    orig_sds = [origres.parameter_estimates_sdcorr[p.name] for p in params]
+    boxcox_sds = [
+        newres.parameter_estimates_sdcorr[p.name]
+        for p in params
+        if not original_model_entry.model.parameters[p.name].fix
+    ]
+    orig_sds = [
+        origres.parameter_estimates_sdcorr[p.name]
+        for p in params
+        if not new_model_entry.model.parameters[p.name].fix
+    ]
     theta_names = [
         p for p in new_model_entry.model.parameters.names if p.startswith(parameter_name)
     ]
@@ -422,7 +430,7 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
     else:
         # Fall back to old behavior
         thetas = newres.parameter_estimates_sdcorr[0 : len(params)].values
-    eta_names = new_model_entry.model.random_variables.etas.names
+    eta_names = _filter_nonfixed_etas(new_model_entry.model).names
 
     table = pd.DataFrame(
         {parameter_name: thetas, 'new_sd': boxcox_sds, 'old_sd': orig_sds}, index=eta_names
@@ -438,6 +446,16 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
         }
     )
     return table, dofv_tab
+
+
+def _filter_nonfixed_etas(model):
+    fixed_params = model.parameters.fixed.names
+    nonfixed_etas = [
+        rv
+        for rv in model.random_variables.etas
+        if not set(rv.parameter_names).intersection(fixed_params)
+    ]
+    return RandomVariables.create(nonfixed_etas)
 
 
 def calc_fullblock(original_model_entry, fullblock_model_entry):
