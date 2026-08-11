@@ -214,7 +214,7 @@ def table_final_eta_shrinkage(model, results):
 def flatten_list(lst):
     result = []
     for item in lst:
-        if isinstance(item, list):
+        if isinstance(item, (list, tuple)):
             result.extend(flatten_list(item))
         else:
             result.append(item)

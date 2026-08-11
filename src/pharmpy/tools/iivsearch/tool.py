@@ -39,7 +39,13 @@ from pharmpy.tools.run import (
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
-from .algorithms import create_description, get_best_model_entry, rank_models
+from .algorithms import (
+    create_description,
+    get_best_model_entry,
+    get_fixed_etas,
+    get_parameter_names,
+    rank_models,
+)
 
 IIV_ALGORITHMS = frozenset(
     (
@@ -727,10 +733,16 @@ def _create_base_model(input_model_entry, mfl, as_fullblock, linearize=False):
     )
     base_model = transform_into_search_space(base_model, mfl, type='iiv')
     base_model = transform_into_search_space(base_model, mfl, type='covariance')
-    if as_fullblock and len(base_model.random_variables.iiv) > 1:
+
+    fixed_etas = get_fixed_etas(base_model)
+    nonfixed_etas = [rv for rv in base_model.random_variables.iiv if rv not in fixed_etas]
+
+    if as_fullblock and len(nonfixed_etas) > 1:
+        fixed_params = get_parameter_names(base_model, fixed_etas)
         ies = input_res.individual_estimates
-        rvs = [iiv.parameter for iiv in mfl.iiv]
+        rvs = [iiv.parameter for iiv in mfl.iiv if iiv.parameter not in fixed_params]
         base_model = create_joint_distribution(base_model, rvs=rvs, individual_estimates=ies)
+
     base_mfl = get_model_features(base_model)
     description = create_description(base_mfl, type='iiv')
     base_model = base_model.replace(name='base', description=description)

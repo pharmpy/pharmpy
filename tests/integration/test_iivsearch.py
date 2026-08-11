@@ -5,6 +5,7 @@ from pharmpy.modeling import (
     add_lag_time,
     convert_model,
     create_basic_pk_model,
+    fix_parameters,
     set_direct_effect,
     set_estimation_step,
 )
@@ -154,7 +155,7 @@ from pharmpy.workflows import LocalDirectoryContext
         (
             'simultaneous_stepwise',
             None,
-            'IIV(CL,exp);IIV?(@PK,exp)',
+            'IIV(CL,exp);IIV?(@PK,exp);COVARIANCE?(IIV,@IIV)',
             dict(),
             9,
             3,
@@ -238,7 +239,7 @@ def test_iivsearch_dummy(
         (
             'top_down_exhaustive',
             None,
-            'IIV(@PK,exp);IIV?(@PD,add);COVARIANCE(IIV,@PK_IIV);COVARIANCE?(IIV,@PD_IIV)',
+            'IIV(@PK,exp);IIV?(@PD,add);COVARIANCE(IIV,[CL,VC]);COVARIANCE?(IIV,@PD_IIV)',
             5,
             3,
             'iivsearch_run4',
@@ -261,6 +262,7 @@ def test_iivsearch_pd_dummy(
     with chdir(tmp_path):
         pk_model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno_pd.csv')
         pk_model = convert_model(pk_model, to_format='nonmem')
+        pk_model = fix_parameters(pk_model, parameter_names=pk_model.parameters.names)
         pd_model = set_direct_effect(pk_model, 'linear')
         pd_res = fit(pd_model, esttool='dummy')
 

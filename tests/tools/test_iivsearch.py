@@ -2,7 +2,7 @@ from functools import partial
 
 import pytest
 
-from pharmpy.mfl import IIV, ModelFeatures
+from pharmpy.mfl import IIV, Covariance, ModelFeatures
 from pharmpy.modeling import (
     add_iiv,
     add_lag_time,
@@ -11,6 +11,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     fix_parameters,
     remove_iiv,
+    set_direct_effect,
     set_iiv_on_ruv,
 )
 from pharmpy.modeling.mfl import expand_model_features, get_model_features
@@ -341,6 +342,33 @@ def test_create_base_model_iiv_on_ruv(testdata, load_model_for_test, model_entry
         base_model, type='covariance'
     )
     assert str(model_features) == 'IIV([CL,V],EXP);COVARIANCE(IIV,[CL,V])'
+
+
+@pytest.mark.parametrize('with_eta_block', [False, True])
+def test_create_base_model_fix(load_model_for_test, testdata, model_entry_factory, with_eta_block):
+    input_model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    mfl = ModelFeatures.create('IIV(@PK,exp);IIV?(@PD,add);COVARIANCE?(IIV,@PD_IIV)')
+    if with_eta_block:
+        input_model = create_joint_distribution(input_model, rvs=['CL', 'VC'])
+        mfl += Covariance.create('IIV', ('CL', 'VC'), optional=False)
+    input_model = fix_parameters(input_model, input_model.parameters.names)
+    input_model = set_direct_effect(input_model, 'linear')
+    input_model = add_iiv(input_model, 'B', 'prop')
+    input_model_entry = model_entry_factory([input_model])[0]
+
+    mfl = expand_model_features(input_model, mfl)
+
+    base_model_entry = create_base_model_entry('td', mfl, True, input_model_entry)
+    base_model = base_model_entry.model
+
+    base_rvs = base_model.random_variables
+    assert len(base_rvs.names) > len(input_model.random_variables.names)
+    assert base_rvs.get_covariance('ETA_B', 'ETA_SLOPE').name == 'IIV_B_IIV_SLOPE'
+    if with_eta_block:
+        assert base_rvs.get_covariance('ETA_1', 'ETA_2').name == 'IIV_CL_IIV_VC'
+    else:
+        assert base_rvs.get_covariance('ETA_1', 'ETA_2') == 0
+    assert base_rvs.get_covariance('ETA_1', 'ETA_B') == 0
 
 
 def test_create_base_model_raises(load_model_for_test, testdata):

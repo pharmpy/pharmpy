@@ -9,6 +9,7 @@ from pharmpy.mfl import IIV, Covariance, ModelFeatures
 from pharmpy.model import Model
 from pharmpy.modeling import (
     create_joint_distribution,
+    get_rv_parameters,
     remove_iiv,
     set_description,
 )
@@ -17,7 +18,7 @@ from pharmpy.modeling.mfl import (
     get_model_features,
     transform_into_search_space,
 )
-from pharmpy.tools.common import update_initial_estimates
+from pharmpy.tools.common import flatten_list, update_initial_estimates
 from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
@@ -339,12 +340,35 @@ def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
         candidate_model = transform_into_search_space(
             candidate_model, mfl, type=type, individual_estimates=ies
         )
-    if as_fullblock and len(mfl.iiv) > 1:
-        candidate_model = create_joint_distribution(candidate_model, individual_estimates=ies)
+
+    if as_fullblock:
+        fixed_etas = get_fixed_etas(base_model)
+        fixed_params = get_parameter_names(base_model, fixed_etas)
+        rvs = [iiv.parameter for iiv in mfl.iiv if iiv.parameter not in fixed_params]
+        if len(rvs) > 1:
+            candidate_model = create_joint_distribution(
+                candidate_model, rvs=rvs, individual_estimates=ies
+            )
     description = create_description(get_model_features(candidate_model), type)
     candidate_model = candidate_model.replace(description=description)
 
     return ModelEntry.create(model=candidate_model, parent=base_model)
+
+
+def get_fixed_etas(model):
+    fixed_params = model.parameters.fixed.names
+    fixed_etas = [
+        rv
+        for rv in model.random_variables.iiv
+        if set(rv.parameter_names).intersection(fixed_params)
+    ]
+    return fixed_etas
+
+
+def get_parameter_names(model, etas):
+    eta_names = flatten_list([rv.names for rv in etas])
+    fixed_params = [get_rv_parameters(model, rv) for rv in eta_names]
+    return flatten_list(fixed_params)
 
 
 def create_candidate_linearized(name, mfl, type, param_mapping, base_model_entry):
