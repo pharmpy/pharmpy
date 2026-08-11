@@ -47,3 +47,29 @@ def test_calculate_parameters_from_ucp(testdata, load_model_for_test):
     new_parameters.pop("PTVCL")
     with pytest.raises(ValueError, match='Parameter "PTVCL" is neither fixed nor given in ucps.'):
         calculate_parameters_from_ucp(model, ucp_scale, new_parameters)
+
+
+def test_calculate_ucp_scale_outside_bounds(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+
+    params = model.parameters.set_initial_estimates({'PTVCL': 1000001})
+    model = model.replace(parameters=params)
+
+    ucp = calculate_ucp_scale(model)
+
+    assert len(get_thetas(model)) == len(ucp.theta)
+    for res, expected in zip(ucp.theta, [-13.71550956, 13.90639125, 13.82933276]):
+        assert abs(res - expected) <= 10**-4
+
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+
+    ptvcl = model.parameters['PTVCL']
+    ptvcl = ptvcl.replace(lower=-float('inf'), init=-1000001)
+    params = ptvcl + (model.parameters - ptvcl)
+    model = model.replace(parameters=params)
+
+    ucp = calculate_ucp_scale(model)
+
+    assert len(get_thetas(model)) == len(ucp.theta)
+    for res, expected in zip(ucp.theta, [14.60865724, 13.90639125, 13.82933276]):
+        assert abs(res - expected) <= 10**-4

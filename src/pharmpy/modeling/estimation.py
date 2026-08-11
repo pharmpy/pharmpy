@@ -65,8 +65,14 @@ def calculate_ucp_scale(model: Model) -> UCPScale:
             if p.symbol not in model.random_variables.free_symbols:
                 upper = p.upper if p.upper < 1000000 else 1000000
                 lower = p.lower if p.lower > -1000000 else -1000000
+                if p.init < lower:
+                    init = lower + 1
+                elif p.init > upper:
+                    init = upper - 1
+                else:
+                    init = p.init
                 range_ul = upper - lower
-                range_prop = (p.init - lower) / range_ul
+                range_prop = (init - lower) / range_ul
                 scaled = 0.1 - math.log(range_prop / (1.0 - range_prop))
                 theta.append(scaled)
                 lb.append(lower)
