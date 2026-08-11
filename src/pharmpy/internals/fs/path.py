@@ -4,9 +4,12 @@ from typing import Union
 
 
 def path_relative_to(root: Path, path: Path) -> Path:
-    # NOTE: A ValueError will be raised on Windows if path and root are on
-    # different drives.
-    return Path(normpath(relpath(str(path_absolute(path)), start=str(path_absolute(root)))))
+    try:
+        respath = Path(normpath(relpath(str(path_absolute(path)), start=str(path_absolute(root)))))
+    except ValueError:
+        # This happens on Windows when the two paths are on different drives
+        respath = path
+    return respath
 
 
 def path_absolute(path: Path) -> Path:
