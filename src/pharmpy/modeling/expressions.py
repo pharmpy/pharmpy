@@ -49,7 +49,7 @@ def get_observation_expression(model: Model) -> Expr:
 
     Returns
     -------
-    Expression
+    Expr
         Symbolic expression
 
     Examples
@@ -91,7 +91,7 @@ def get_individual_prediction_expression(model: Model) -> Expr:
 
     Returns
     -------
-    Expression
+    Expr
         Symbolic expression
 
     Examples
@@ -123,7 +123,7 @@ def get_population_prediction_expression(model: Model) -> Expr:
 
     Returns
     -------
-    Expression
+    Expr
         Symbolic expression
 
     Examples
@@ -224,7 +224,7 @@ def create_symbol(model: Model, stem: str, force_numbering: bool = False) -> Exp
 
     Returns
     -------
-    Symbol
+    Expr
         Created symbol with unique name
 
     Examples
