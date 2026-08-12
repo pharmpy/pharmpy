@@ -10,6 +10,7 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.fs.symlink import create_directory_symlink
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.sort import sort_alphanum
 from pharmpy.model import Model
 from pharmpy.tools.mfl.parse import ModelFeatures
@@ -352,6 +353,8 @@ class MetadataJSONEncoder(json.JSONEncoder):
             return str(o)
         elif isinstance(o, Path):
             return str(o)
+        elif isinstance(o, frozenmapping):
+            return dict(o)
         return super().default(o)
 
 
