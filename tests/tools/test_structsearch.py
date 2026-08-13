@@ -143,6 +143,7 @@ def test_pkpd(load_model_for_test, testdata):
 
     assert len(pkpd_models) == 12
     assert pkpd_models[0].name == "structsearch_run1"
+    assert pkpd_models[0].description == 'DIRECT_LINEAR'
     assert pkpd_models[1].name == "structsearch_run2"
     assert pkpd_models[1].parameters['POP_B'].init == 5.75
     assert pkpd_models[1].parameters['POP_E_MAX'].init == 2.0
@@ -322,6 +323,15 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
             dict(type="drug_metabolite", search_space="METABOLITE(BASIC)", extra_model="TEMP"),
             ValueError,
             'Invalid argument "extra_model" for drug metabolite models.',
+        ),
+        (
+            dict(
+                type="drug_metabolite",
+                search_space="METABOLITE(BASIC);ABSORPTION(ZO)",
+                extra_model="TEMP",
+            ),
+            ValueError,
+            'Argument search_space contain attributes not used.',
         ),
         (
             dict(

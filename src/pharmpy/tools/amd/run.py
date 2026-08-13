@@ -226,10 +226,10 @@ def run_amd_task(
 
     try:
         ss_mfl = parse_search_space(search_space)
-        iiv_features = get_search_space_iivsearch(modeltype, model=input)
+        mfl_new = get_search_space_iivsearch(modeltype, model=input)
     except:  # noqa E722
         # FIXME: Workaround until new ModelFeatures is used everywhere
-        search_space, iiv_features = parse_search_space_new(search_space)
+        search_space, mfl_new = parse_search_space_new(search_space)
         ss_mfl = parse_search_space(search_space)
 
     if ss_mfl.allometry is not None:
@@ -321,9 +321,9 @@ def run_amd_task(
         order = [tool for tool in order if tool not in to_be_skipped]
 
     if modeltype == 'pkpd':
-        structsearch_features = get_search_space_pkpd(ss_mfl)
+        structsearch_features = get_search_space_pkpd(mfl_new)
     elif modeltype == 'drug_metabolite':
-        structsearch_features = get_search_space_drug_metabolite(ss_mfl, administration)
+        structsearch_features = get_search_space_drug_metabolite(mfl_new, administration)
     else:
         structsearch_features = None
 
@@ -408,7 +408,7 @@ def run_amd_task(
                     parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
                     dir_name="iivsearch",
-                    search_space=iiv_features,
+                    search_space=mfl_new,
                 )
             run_subfuncs[run_name] = func
         elif section == 'iovsearch':
@@ -620,10 +620,14 @@ def run_amd_task(
 
 def parse_search_space_new(search_space):
     mfl = ModelFeaturesNew.create(search_space)
+
     iiv_features = mfl.iiv + mfl.covariance
-    remaining_features = mfl - iiv_features
+    pd_features = mfl.direct_effects + mfl.effect_compartments + mfl.indirect_effects
+
+    remaining_features = mfl - iiv_features - pd_features
     search_space = repr(remaining_features)
-    return search_space, iiv_features
+
+    return search_space, ModelFeaturesNew.create(iiv_features + pd_features)
 
 
 def parse_search_space(search_space):
@@ -731,26 +735,25 @@ def get_search_space_iivsearch(modeltype, reevaluation=False, model=None):
     return ModelFeaturesNew.create(features)
 
 
-def get_search_space_pkpd(ss_mfl):
-    structsearch_features = ss_mfl.filter("pd")
-    if len(structsearch_features.mfl_statement_list()) == 0:
-        structsearch_features = mfl_parse(
+def get_search_space_pkpd(mfl):
+    structsearch_features = mfl.direct_effects + mfl.effect_compartments + mfl.indirect_effects
+    if len(structsearch_features) == 0:
+        structsearch_features = (
             "DIRECTEFFECT([LINEAR, EMAX, SIGMOID]);"
             "EFFECTCOMP([LINEAR, EMAX, SIGMOID]);"
-            "INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)",
-            True,
+            "INDIRECTEFFECT([LINEAR, EMAX, SIGMOID], *)"
         )
-    return structsearch_features
+    return ModelFeaturesNew.create(structsearch_features)
 
 
-def get_search_space_drug_metabolite(ss_mfl, administration):
-    structsearch_features = ss_mfl.filter("metabolite")
-    if len(structsearch_features.mfl_statement_list()) == 0:
+def get_search_space_drug_metabolite(mfl, administration):
+    structsearch_features = mfl.metabolites + [f for f in mfl.peripherals if f.metabolite]
+    if len(structsearch_features) == 0:
         if administration in {'oral', 'ivoral'}:
             mfl = "METABOLITE([PSC,BASIC]);PERIPHERALS([0,1],MET)"
         else:
             mfl = "METABOLITE([BASIC]);PERIPHERALS([0,1],MET)"
-        structsearch_features = mfl_parse(mfl, mfl_class=True)
+        structsearch_features = ModelFeaturesNew.create(mfl)
     return structsearch_features
 
 
@@ -989,6 +992,8 @@ def _subfunc_modelsearch(
 
 def _subfunc_structsearch(ctx, **kwargs) -> SubFunc:
     def _run_structsearch(model, modelfit_results):
+        if search_space := kwargs.get('search_space', None):
+            kwargs['search_space'] = repr(search_space)
         res = run_subtool(
             'structsearch',
             ctx,
@@ -1177,6 +1182,7 @@ def _subfunc_iiv(
 def update_iiv_search_space(model, search_space: ModelFeaturesNew):
     if not search_space:
         return search_space
+    search_space = search_space.iiv + search_space.covariance
     mfl = expand_model_features(model, search_space)
     params_not_in_model = get_search_space_parameters_not_in_model(model, mfl)
     if not params_not_in_model:
@@ -1265,7 +1271,8 @@ def split_structural_search_space(model, search_space):
     )
     allowed_parameters = sorted(list(allowed_parameters))
     # Extract all forced
-    mfl = search_space
+    structural_covariates = [cov for cov in search_space.covariate if cov.optional.option is False]
+    mfl = ModelFeatures.create_from_mfl_statement_list(structural_covariates)
     mfl_covariates = mfl.expand(model).covariate
     structural_searchspace = []
     skipped_parameters = set()

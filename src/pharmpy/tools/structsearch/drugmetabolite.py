@@ -1,12 +1,11 @@
 from typing import Union
 
+from pharmpy.mfl import Metabolite, ModelFeatures, Peripherals
 from pharmpy.model import Model
+from pharmpy.modeling.mfl import generate_transformations
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.modelsearch.algorithms import exhaustive_stepwise
 from pharmpy.workflows import ModelEntry, Task, WorkflowBuilder
-
-from ..mfl.parse import ModelFeatures
-from ..mfl.parse import parse as mfl_parse
 
 
 def create_drug_metabolite_models(
@@ -15,17 +14,13 @@ def create_drug_metabolite_models(
     # FIXME : Implement ModelFeatures when we can extract METABOLITE information
 
     if isinstance(search_space, str):
-        mfl_statements = mfl_parse(search_space, True)
+        mfl = ModelFeatures.create(search_space)
     else:
-        mfl_statements = search_space
-    metabolite_functions = mfl_statements.convert_to_funcs(
-        attribute_type=["metabolite"], subset_features="metabolite"
-    )
-    peripheral_functions = mfl_statements.convert_to_funcs(
-        attribute_type=["peripherals"], subset_features="metabolite"
-    )
-    # Filter away DRUG compartment peripherals (if any)
-    peripheral_functions = {k: v for k, v in peripheral_functions.items() if len(k) == 3}
+        mfl = search_space
+    mfl = filter_drug_peripherals(mfl)
+
+    metabolite_functions = generate_transformations(mfl.metabolites)
+    peripheral_functions = generate_transformations(mfl.peripherals)
 
     # TODO: Update method for finding metabolite name
     if (
@@ -48,14 +43,15 @@ def create_drug_metabolite_models(
     if model.statements.ode_system.find_compartment('METABOLITE'):
         base_description = model.description
     else:
-        base_description = determine_base_description(metabolite_functions, peripheral_functions)
+        base_description = determine_base_description(mfl)
 
     wb = WorkflowBuilder(name="drug_metabolite")
 
     start_task = Task("start", _start, model, results)
     wb.add_task(start_task)
 
-    for eff, func in metabolite_functions.items():
+    for feat, func in zip(mfl.metabolites, metabolite_functions):
+        eff = f'METABOLITE_{feat.type}'
         candidate_met_task = Task(str(eff), apply_transformation, eff, func)
         wb.add_task(candidate_met_task, predecessors=start_task)
 
@@ -71,16 +67,25 @@ def create_drug_metabolite_models(
 
             candidate_model_tasks += wf_fit.output_tasks
     else:
+        peripheral_dict = {
+            ('PERIPHERALS', feat.number, 'METABOLITE'): func
+            for feat, func in zip(mfl.peripherals, peripheral_functions)
+        }
         wb, candidate_model_tasks = exhaustive_stepwise(
-            peripheral_functions, "no_add", wb, "structsearch"
+            peripheral_dict, "no_add", wb, "structsearch"
         )
 
     return WorkflowBuilder(wb), candidate_model_tasks, base_description
 
 
+def filter_drug_peripherals(mfl):
+    drug_peripherals = [f for f in mfl if isinstance(f, Peripherals) and not f.metabolite]
+    return mfl - drug_peripherals
+
+
 def apply_transformation(eff, f, model_entry):
     candidate_model = f(model_entry.model)
-    candidate_model = candidate_model.replace(name="TEMP", description='_'.join(eff))
+    candidate_model = candidate_model.replace(name="TEMP", description=eff)
     return ModelEntry.create(model=candidate_model, modelfit_results=None, parent=model_entry.model)
 
 
@@ -96,12 +101,14 @@ def change_name(index, modelentry):
     )
 
 
-def determine_base_description(met_mfl_func, per_mfl_func):
+def determine_base_description(mfl):
     description = []
-    if "BASIC" in [k[1] for k in met_mfl_func.keys()]:
+    if Metabolite.create('BASIC') in mfl:
         description.append("METABOLITE_BASIC")
     else:
         description.append("METABOLITE_PSC")
-    if per_mfl_func:
-        description.append(f"PERIPHERALS({min([k[1] for k in per_mfl_func.keys()])}, METABOLITE)")
+
+    if mfl.peripherals:
+        min_peripheral = mfl.peripherals[0]  # Peripherals sorted by number
+        description.append(repr(min_peripheral).replace('MET', ' METABOLITE'))
     return ";".join(description)

@@ -1,6 +1,7 @@
 from typing import Optional, Union
 
 from pharmpy.deps import pandas as pd
+from pharmpy.mfl import DirectEffect, EffectComp, IndirectEffect, ModelFeatures
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_iiv,
@@ -9,9 +10,7 @@ from pharmpy.modeling import (
     set_initial_estimates,
     set_name,
 )
-
-from ..mfl.parse import ModelFeatures
-from ..mfl.parse import parse as mfl_parse
+from pharmpy.modeling.mfl import generate_transformations
 
 
 def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[float] = None):
@@ -73,30 +72,28 @@ def create_pkpd_models(
     List of pharmpy models
     """
     if isinstance(search_space, str):
-        mfl_statements = mfl_parse(search_space, True)
+        mfl = ModelFeatures.create(search_space)
     else:
-        mfl_statements = search_space
-    functions = mfl_statements.convert_to_funcs(model=model, subset_features="pd")
+        mfl = search_space
 
+    functions = generate_transformations(mfl)
     models = []
-    for index, (key, func) in enumerate(functions.items(), 1):
+    for index, (key, func) in enumerate(zip(mfl, functions), 1):
         pkpd_model = func(model)
-        description = '_'.join(key)
+        description = get_description(key)
         pkpd_model = pkpd_model.replace(description=description)
 
         pkpd_model = set_name(pkpd_model, f"structsearch_run{index}")
-
-        # Initial values
-        if 'INDIRECTEFFECT' in key and 'DEGRADATION' in key:
-            cur_emax_init = (1.0 / (emax_init + 1.0)) - 1.0
-        else:
-            cur_emax_init = emax_init
 
         if b_init is not None:
             pkpd_model = set_initial_estimates(pkpd_model, {'POP_B': b_init}, strict=False)
         if ests is not None:
             pkpd_model = fix_parameters_to(pkpd_model, ests, strict=False)
         if emax_init is not None:
+            if isinstance(key, IndirectEffect) and key.production is False:
+                cur_emax_init = (1.0 / (emax_init + 1.0)) - 1.0
+            else:
+                cur_emax_init = emax_init
             pkpd_model = set_initial_estimates(
                 pkpd_model, {'POP_E_MAX': cur_emax_init}, strict=False
             )
@@ -123,3 +120,14 @@ def create_pkpd_models(
         models.append(pkpd_model)
 
     return models
+
+
+def get_description(feature):
+    if isinstance(feature, DirectEffect):
+        description_args = ('DIRECT', feature.type)
+    elif isinstance(feature, EffectComp):
+        description_args = ('EFFECTCOMP', feature.type)
+    else:
+        production_type = 'PRODUCTION' if feature.production else 'DEGRADATION'
+        description_args = ('INDIRECT', feature.type, production_type)
+    return '_'.join(description_args)

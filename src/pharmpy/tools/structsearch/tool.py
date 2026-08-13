@@ -5,6 +5,7 @@ from typing import Literal, Optional, Union
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
 from pharmpy.modeling import get_column_name
 from pharmpy.modeling.tmdd import DV_TYPES
@@ -18,8 +19,6 @@ from pharmpy.tools.common import (
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
-from pharmpy.tools.mfl.parse import ModelFeatures
-from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import (
     run_subtool,
@@ -583,8 +582,13 @@ def validate_input(
     elif type.lower() == 'pkpd':
         if search_space is not None:
             if isinstance(search_space, str):
-                search_space = mfl_parse(search_space, True)
-            if search_space.filter("pd") != search_space:
+                search_space = ModelFeatures.create(search_space)
+            pd_features = (
+                search_space.direct_effects
+                + search_space.effect_compartments
+                + search_space.indirect_effects
+            )
+            if len(search_space - pd_features) > 0:
                 raise ValueError(
                     f'Argument search_space contain attributes not used for "{type}" models'
                 )
@@ -614,8 +618,11 @@ def validate_input(
     elif type.lower() == 'drug_metabolite':
         if search_space is not None:
             if isinstance(search_space, str):
-                search_space = mfl_parse(search_space, True)
-            if search_space.filter("metabolite") != search_space:
+                search_space = ModelFeatures.create(search_space)
+            metabolite_features = search_space.metabolites + [
+                f for f in search_space.peripherals if f.metabolite
+            ]
+            if metabolite_features != search_space:
                 raise ValueError(
                     f'Argument search_space contain attributes not used for "{type}" models'
                 )

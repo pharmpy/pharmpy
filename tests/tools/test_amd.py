@@ -620,11 +620,11 @@ def test_get_search_space_iivsearch(
 )
 def test_get_search_space_pkpd(mfl, expected):
     if mfl is None:
-        search_space = ModelFeatures()
+        search_space = ModelFeaturesNew.create('')
     else:
-        search_space = mfl_parse(mfl, mfl_class=True)
+        search_space = ModelFeaturesNew.create(mfl)
     search_space_pkpd = get_search_space_pkpd(search_space)
-    expected = mfl_parse(expected, mfl_class=True)
+    expected = ModelFeaturesNew.create(expected)
     assert search_space_pkpd == expected
 
 
@@ -665,11 +665,11 @@ def test_get_search_space_pkpd(mfl, expected):
 )
 def test_get_search_space_drug_metabolite(mfl, administration, expected):
     if mfl is None:
-        search_space = ModelFeatures()
+        search_space = ModelFeaturesNew.create('')
     else:
-        search_space = mfl_parse(mfl, mfl_class=True)
+        search_space = ModelFeaturesNew.create(mfl)
     search_space_met = get_search_space_drug_metabolite(search_space, administration)
-    expected = mfl_parse(expected, mfl_class=True)
+    expected = ModelFeaturesNew.create(expected)
     assert search_space_met == expected
 
 
