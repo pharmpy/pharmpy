@@ -5,7 +5,8 @@ from pathlib import Path
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.tools import run_amd
+from pharmpy.modeling import convert_model, create_basic_pk_model
+from pharmpy.tools import fit, run_amd
 from pharmpy.tools.context import open_context
 
 
@@ -186,6 +187,32 @@ def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, s
         ctx = open_context("amd1")
         subnames = ctx.list_all_subcontexts()
         assert set(subnames) == subtools
+
+
+def test_amd_dummy_pkpd(testdata, tmp_path):
+    with chdir(tmp_path):
+        pk_model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno_pd.csv')
+        pk_model = convert_model(pk_model, to_format='nonmem')
+        pk_res = fit(pk_model, esttool='dummy')
+
+        res = run_amd(
+            input=pk_model,
+            results=pk_res,
+            modeltype='pkpd',
+            b_init=1.0,
+            emax_init=10.0,
+            ec50_init=0.1,
+            met_init=0.1,
+            strategy='default',
+            retries_strategy='skip',
+            esttool='dummy',
+        )
+
+        assert len(res.summary_tool) > 0
+
+        ctx = open_context("amd1")
+        subnames = ctx.list_all_subcontexts()
+        assert 'structsearch' in subnames
 
 
 # def test_structure_mechanistic_exploratory(tmp_path, testdata):
