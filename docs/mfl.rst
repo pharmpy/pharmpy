@@ -150,7 +150,7 @@ Describe intervals
 
 It is possible to use ranges and arrays to describe the search space for e.g. transit and peripheral compartments.
 
-To test 0, 1, 2 and 3 peripheral compartments:
+To test 0, 1, 2 and 3 transit compartments:
 
 .. code::
 
