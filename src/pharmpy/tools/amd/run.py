@@ -42,6 +42,7 @@ from pharmpy.modeling.mfl import (
     get_search_space_parameters_not_in_model,
 )
 from pharmpy.modeling.parameter_variability import get_occasion_levels
+from pharmpy.modeling.plots import VPCBinningError
 from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools import retrieve_models
 from pharmpy.tools.allometry.tool import validate_allometric_variable
@@ -593,7 +594,13 @@ def run_amd_task(
     plots = create_plots(final_model, final_results)
 
     if not simulation_data.empty:
-        final_vpc_plot = plot_vpc(final_model, simulation_data, stratify_on=get_dvid_name(model))
+        try:
+            final_vpc_plot = plot_vpc(
+                final_model, simulation_data, stratify_on=get_dvid_name(model)
+            )
+        except VPCBinningError as e:
+            context.log_error(f'No vpc could be generated. {e}')
+            final_vpc_plot = None
     else:
         context.log_warning("No vpc could be generated. Did the simulation fail?")
         final_vpc_plot = None
