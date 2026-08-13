@@ -83,6 +83,17 @@ def test_prepare_input_model_entry(load_model_for_test, testdata):
     assert me.parent is None
 
 
+def test_prepare_input_model_entry_custom_covariates(load_model_for_test, testdata):
+    model_start = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    res_start = read_modelfit_results(testdata / 'nonmem' / 'pheno_real.mod')
+
+    me = prepare_input_model_entry(model_start, res_start)
+    assert me.model.name == 'input'
+    assert me.model.description == '[CL]+[V]'
+    assert me.modelfit_results is not None
+    assert me.parent is None
+
+
 @pytest.mark.parametrize(
     'algorithm, correlation_algorithm, list_of_algorithms',
     [

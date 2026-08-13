@@ -349,7 +349,10 @@ def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
             candidate_model = create_joint_distribution(
                 candidate_model, rvs=rvs, individual_estimates=ies
             )
-    description = create_description(get_model_features(candidate_model), type)
+    model_features = get_model_features(candidate_model, type='iiv') + get_model_features(
+        candidate_model, type='covariance'
+    )
+    description = create_description(model_features, type)
     candidate_model = candidate_model.replace(description=description)
 
     return ModelEntry.create(model=candidate_model, parent=base_model)
@@ -445,6 +448,7 @@ def run_base_model_entry_linearized(context, index_offset, mfl, param_mapping, l
 def create_description(model_or_mfl, type):
     assert type in ['iiv', 'covariance', 'simultaneous']
     if isinstance(model_or_mfl, Model):
+        assert type in ['iiv', 'covariance']
         mfl = get_model_features(model_or_mfl, type=type)
         if type != 'iiv':
             mfl += get_model_features(model_or_mfl, type='iiv')

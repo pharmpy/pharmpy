@@ -243,7 +243,9 @@ def start(context, input_model, input_res):
 
 
 def prepare_input_model_entry(input_model, input_res):
-    mfl = get_model_features(input_model)
+    mfl = get_model_features(input_model, type='iiv') + get_model_features(
+        input_model, type='covariance'
+    )
     description = create_description(mfl, type='iiv')
     input_model = input_model.replace(name="input", description=description)
     input_model_entry = ModelEntry.create(input_model, modelfit_results=input_res)
@@ -743,7 +745,9 @@ def _create_base_model(input_model_entry, mfl, as_fullblock, linearize=False):
         rvs = [iiv.parameter for iiv in mfl.iiv if iiv.parameter not in fixed_params]
         base_model = create_joint_distribution(base_model, rvs=rvs, individual_estimates=ies)
 
-    base_mfl = get_model_features(base_model)
+    base_mfl = get_model_features(base_model, type='iiv') + get_model_features(
+        base_model, type='covariance'
+    )
     description = create_description(base_mfl, type='iiv')
     base_model = base_model.replace(name='base', description=description)
     return base_model
