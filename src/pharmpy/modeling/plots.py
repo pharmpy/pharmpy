@@ -26,6 +26,10 @@ from .data import get_observations
 norm = scipy.stats.norm
 
 
+class VPCBinningError(Exception):
+    pass
+
+
 def _get_dv_unit(model):
     dv_column = model.datainfo.dv_column
     if len(dv_column) == 1:
@@ -773,11 +777,15 @@ def _calculate_vpc(
     else:
         model_to_bin = model
     obstab = obstab[dv]
+
+    if (no_of_obs := len(obstab)) < nbins:
+        raise VPCBinningError(f"Fewer observations ({no_of_obs}) than bins ({nbins})")
+
     bincol, boundaries = bin_observations(model_to_bin, binning, nbins)
     populated_bins = bincol.loc[obstab.index].unique()
 
     if len(bincol.unique()) != bincol.unique().max() + 1 or len(populated_bins) < nbins:
-        raise ValueError("Some bins are empty, please choose a different number of bins.")
+        raise VPCBinningError("Some bins are empty, please choose a different number of bins.")
 
     obsgroup = obstab.groupby(bincol)
 

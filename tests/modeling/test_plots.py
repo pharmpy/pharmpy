@@ -12,6 +12,7 @@ from pharmpy.modeling import (
     plot_transformed_eta_distributions,
     plot_vpc,
 )
+from pharmpy.modeling.plots import VPCBinningError
 from pharmpy.tools.external.results import parse_modelfit_results
 
 
@@ -119,3 +120,10 @@ def test_vpc_plot_dvid(tmp_path, load_model_for_test, testdata):
         data_path = testdata / 'nonmem' / 'vpc_simulations_dvid.csv'
         plot = plot_vpc(model, simulations=data_path, nbins=3, stratify_on='DVID')
         plot.save('chart.html')
+
+
+def test_vpc_plot_raises(tmp_path, load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    data_path = testdata / 'nonmem' / 'vpc_simulations_dvid.csv'
+    with pytest.raises(VPCBinningError):
+        plot_vpc(model, simulations=data_path, nbins=8, stratify_on='DVID')
