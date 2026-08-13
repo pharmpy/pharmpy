@@ -140,19 +140,12 @@ Parameter variability
     create_joint_distribution
     remove_iiv
     remove_iov
+    replace_non_random_rvs
     split_joint_distribution
     transform_etas_boxcox
     transform_etas_john_draper
     transform_etas_tdist
     update_initial_individual_estimates
-
-Random variables
-----------------
-
-.. autosummary::
-   :toctree: api/
-
-    replace_non_random_rvs
 
 Covariate effects
 -----------------
