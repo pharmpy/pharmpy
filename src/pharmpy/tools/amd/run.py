@@ -227,7 +227,8 @@ def run_amd_task(
 
     try:
         ss_mfl = parse_search_space(search_space)
-        mfl_new = get_search_space_iivsearch(modeltype, model=input)
+        model = input if modeltype == 'pkpd' else None  # PKPD always has model as input
+        mfl_new = get_search_space_iivsearch(modeltype, model=model)
     except:  # noqa E722
         # FIXME: Workaround until new ModelFeatures is used everywhere
         search_space, mfl_new = parse_search_space_new(search_space)
