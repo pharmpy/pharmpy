@@ -12,6 +12,7 @@ from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.fs.symlink import create_directory_symlink
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.sort import sort_alphanum
+from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.model import Model
 from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows.hashing import ModelHash
@@ -349,7 +350,7 @@ class MetadataJSONEncoder(json.JSONEncoder):
             return o.name
         elif isinstance(o, ModelfitResults):
             return o.to_json()
-        elif isinstance(o, ModelFeatures):
+        elif isinstance(o, (ModelFeatures, ModelFeaturesNew)):
             return str(o)
         elif isinstance(o, Path):
             return str(o)

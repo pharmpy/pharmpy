@@ -4,9 +4,9 @@ import sys
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
+from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import convert_model, create_basic_pk_model, filter_dataset
 from pharmpy.tools import fit, run_structsearch
-from pharmpy.tools.mfl.parse import parse as mfl_parse
 
 
 def test_pkpd(tmp_path, load_model_for_test, testdata):
@@ -131,17 +131,15 @@ def test_drug_metabolite_dummy(
         pk_res = fit(model, esttool='dummy')
 
         if as_mfl:
-            mfl = mfl_parse(kwargs['search_space'], mfl_class=True)
-        else:
-            mfl = kwargs['search_space']
+            mfl = ModelFeatures.create(kwargs['search_space'])
+            kwargs['search_space'] = mfl
 
-        kwargs['search_space'] = mfl
         res = run_structsearch(
             type='drug_metabolite',
             results=pk_res,
             model=model,
             esttool='dummy',
-            search_space=mfl,
+            **kwargs,
         )
 
         assert len(res.summary_tool) == no_of_cands
