@@ -227,6 +227,8 @@ class Model(BaseModel):
             )
             if has_new_path:
                 newdata = update_data_filename(newdata, model.datainfo.path)
+                ignores = [op for op in model.datainfo.provenance if isinstance(op, Ignore)]
+                newdata = newdata.update_filters(ignores)
             elif keep_dataset:
                 ignores = [op for op in model.datainfo.provenance if isinstance(op, Ignore)]
                 newdata = newdata.update_filters(ignores)

@@ -219,9 +219,15 @@ class DataRecord(OptionRecord):
 
     def update_filters(self, new):
         if not new:
-            return self
+            newrec = self.remove_ignore().remove_accept()
+            children = newrec._remove_trailing_whitespace(newrec.root.children)
+            newroot = AttrTree(self.root.rule, children)
+            return self.replace(root=newroot)
 
         old = self.get_filters()
+
+        if new == old:
+            return self
 
         ignore_token = AttrToken('IGNORE', 'IGNORE')
         eq_token = AttrToken('EQUALS', '=')
@@ -276,6 +282,18 @@ class DataRecord(OptionRecord):
             + tuple(chain.from_iterable((node, ws_token) for node in nodes[:-1]))
             + (nodes[-1],)
         )
+
+    @staticmethod
+    def _remove_trailing_whitespace(nodes):
+        last_idx = None
+        for i, child in enumerate(reversed(nodes)):
+            if child.rule != 'WS':
+                last_idx = -i
+                break
+        if last_idx:
+            return nodes[:last_idx]
+        else:
+            return nodes
 
     def _get_insert_index(self):
         n = len(self.root.children)

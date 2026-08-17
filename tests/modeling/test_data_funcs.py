@@ -24,6 +24,7 @@ from pharmpy.modeling import (
     drop_columns,
     drop_dropped_columns,
     expand_additional_doses,
+    filter_dataset,
     get_cmt,
     get_column_name,
     get_concentration_parameters_from_data,
@@ -719,6 +720,16 @@ def test_set_dataset_from_basic(load_example_model_for_test, testdata):
     assert model.datainfo.path == testdata / 'nonmem' / 'pheno.dta'
     rel_path = Path('tests/testdata/nonmem/pheno.dta')
     assert str(rel_path) in model.code
+
+
+def test_set_dataset_reset_ignore(load_example_model_for_test, testdata):
+    model = load_example_model_for_test("pheno")
+    pheno_path = model.datainfo.path
+    model = filter_dataset(model, 'ID != 1')
+    assert model.datainfo.path.name == 'pheno.dta'
+    assert model.datainfo.provenance[-1] == Ignore.create('ID == 1')
+    model = set_dataset(model, path_or_df=pheno_path, format='nonmem')
+    assert model.datainfo.provenance[-1] == ReadDataset.create(pheno_path)
 
 
 def test_bin_observations(load_example_model_for_test):

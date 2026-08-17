@@ -33,6 +33,7 @@ from pharmpy.modeling import (
     read_model,
     read_model_from_string,
     remove_iiv,
+    set_dataset,
     set_direct_effect,
     set_estimation_step,
     set_initial_condition,
@@ -1521,6 +1522,24 @@ $ESTIMATION METHOD=1 INTER
     model = model.update_source()
     assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT APGR FA1 FA2 DV'
     assert model.code.split('\n')[2] == '$DATA DUMMYPATH IGNORE=@ '
+
+
+def test_update_data_from_parsed_ignore(testdata):
+    code = f"""$PROBLEM base model
+    $INPUT ID TIME AMT WGT APGR DV FA1 FA2
+    $DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@ IGNORE=(ID.EQN.2)
+
+    $PRED
+    Y = THETA(1) + ETA(1) + EPS(1)
+
+    $THETA 1  ; TH1
+    $OMEGA 2 ; OM1
+    $SIGMA 3 ; SI1
+    $ESTIMATION METHOD=1 INTER
+    """
+    model = Model.parse_model_from_string(code)
+    model = set_dataset(model, testdata / "nonmem" / "pheno.dta", format='nonmem')
+    assert 'IGNORE=(ID.EQN.2)' not in model.code
 
 
 def test_update_input_no_change(create_model_for_test, pheno_data):

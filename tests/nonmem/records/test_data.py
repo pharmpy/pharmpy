@@ -280,7 +280,7 @@ def test_update_filters_existing(parser):
 def test_update_filters_no_new(parser):
     rec_old = parser.parse('$DATA pheno.dta IGNORE=(DV.EQN.1)').records[0]
     rec_new = rec_old.update_filters([])
-    assert str(rec_new) == str(rec_old)
+    assert str(rec_new) == '$DATA pheno.dta'
 
 
 def test_update_filters_from_empty(parser):
