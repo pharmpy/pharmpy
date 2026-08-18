@@ -7,7 +7,7 @@ from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.mfl import ModelFeatures
-from pharmpy.model import Model
+from pharmpy.model import DatasetError, Model
 from pharmpy.modeling import (
     add_iiv,
     convert_model,
@@ -164,7 +164,10 @@ def start_pdsearch(context, input, type, kpd_driver, results):
         context.store_input_model_entry(me)
         return me
     else:
-        model = create_base_model(type, input, kpd_driver)
+        try:
+            model = create_base_model(type, input, kpd_driver)
+        except DatasetError as e:
+            context.abort_workflow(f'Could not parse dataset: {e}')
         me = ModelEntry.create(model=model)
         return me
 

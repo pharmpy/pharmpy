@@ -11,7 +11,7 @@ from pharmpy.internals.immutable import frozenmapping
 from pharmpy.mfl import IIV, Covariance
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
 from pharmpy.mfl import Ref
-from pharmpy.model import DataInfo, Ignore, Model, Provenance, ReadDataset
+from pharmpy.model import DataInfo, DatasetError, Ignore, Model, Provenance, ReadDataset
 from pharmpy.modeling import (
     add_iiv,
     add_predictions,
@@ -259,14 +259,17 @@ def run_amd_task(
         else:
             path = input
 
-        model = create_start_model(
-            path,
-            modeltype=modeltype,
-            administration=administration,
-            cl_init=cl_init,
-            vc_init=vc_init,
-            mat_init=mat_init,
-        )
+        try:
+            model = create_start_model(
+                path,
+                modeltype=modeltype,
+                administration=administration,
+                cl_init=cl_init,
+                vc_init=vc_init,
+                mat_init=mat_init,
+            )
+        except DatasetError as e:
+            context.abort_workflow(f'Could not parse dataset: {e}')
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
