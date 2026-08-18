@@ -201,6 +201,116 @@ Is equivalent to:
 
     PERIPHERALS(0..2)
 
+.. _mfl_transits:
+
+Specifying transits
+===================
+
+The MFL supports transits with and without a depot, which can be specified as:
+
+.. code::
+
+    TRANSITS(1,DEPOT)
+    TRANSITS(1,NODEPOT)
+
+Or:
+
+.. code::
+
+    TRANSITS(1,*)
+
+The :code:`DEPOT/NODEPOT` option describes whether the final compartment before the central compartment
+should be an absorption compartment:
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial",shape="rect"];
+            rankdir="LR";
+            base [label="Dose", shape="plaintext"]
+            s0 [label="T1"]
+            s1 [label="...", shape="plaintext"]
+            s2 [label="Tn-1"]
+            s3 [label="Tn"]
+            s4 [label="Absorption"]
+            s5 [label="Central"]
+            s6 [label="", shape="plaintext"]
+
+            base -> s0
+            s0 -> s1 [label="ktr"]
+            s1 -> s2 [label="ktr"]
+            s2 -> s3 [label="ktr"]
+            s3 -> s4 [label="ktr"]
+            s4 -> s5 [label="ka"]
+            s5 -> s6 [label="CL"]
+        }
+
+
+Or a transit compartment:
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial",shape="rect"];
+            rankdir="LR";
+            base [label="Dose", shape="plaintext"]
+            s0 [label="T0"]
+            s1 [label="T1"]
+            s2 [label="...", shape="plaintext"]
+            s3 [label="Tn-1"]
+            s4 [label="Tn"]
+            s5 [label="Central"]
+            s6 [label="", shape="plaintext"]
+
+            base -> s0
+            s0 -> s1 [label="ktr"]
+            s1 -> s2 [label="ktr"]
+            s2 -> s3 [label="ktr"]
+            s3 -> s4 [label="ktr"]
+            s4 -> s5 [label="ktr"]
+            s5 -> s6 [label="CL"]
+        }
+
+This means that :code:`TRANSITS(1,DEPOT)` has 1 transit compartment and one depot:
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial",shape="rect"];
+            rankdir="LR";
+            base [label="Dose", shape="plaintext"]
+            s0 [label="T1"]
+            s1 [label="Absorption"]
+            s2 [label="Central"]
+            s3 [label="", shape="plaintext"]
+
+            base -> s0
+            s0 -> s1 [label="ktr"]
+            s1 -> s2 [label="ka"]
+            s2 -> s3 [label="CL"]
+        }
+
+While :code:`TRANSITS(1,NODEPOT)` has 2 transit compartments:
+
+.. graphviz::
+
+    digraph BST {
+            node [fontname="Arial",shape="rect"];
+            rankdir="LR";
+            base [label="Dose", shape="plaintext"]
+            s0 [label="T0"]
+            s1 [label="T1"]
+            s2 [label="Central"]
+            s3 [label="", shape="plaintext"]
+
+            base -> s0
+            s0 -> s1 [label="ktr"]
+            s1 -> s2 [label="ktr"]
+            s2 -> s3 [label="CL"]
+        }
+
+The reason for this is to simplify the comparison between different models in e.g. <modelsearch>.
+
 Examples
 ========
 
