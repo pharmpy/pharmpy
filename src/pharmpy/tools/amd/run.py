@@ -6,6 +6,7 @@ from typing import Callable, Literal, Optional, Sequence, Union
 from pharmpy.basic import TSymbol
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
+from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.immutable import frozenmapping
 from pharmpy.mfl import IIV, Covariance
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
@@ -47,6 +48,7 @@ from pharmpy.modeling.tmdd import DV_TYPES
 from pharmpy.tools import retrieve_models
 from pharmpy.tools.allometry.tool import validate_allometric_variable
 from pharmpy.tools.common import table_final_eta_shrinkage, update_initial_estimates
+from pharmpy.tools.covsearch.tool import get_effect_funcs_and_base_model, get_exploratory_covariates
 from pharmpy.tools.mfl.feature.covariate import covariates as extract_covariates
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.mfl.parse import parse as mfl_parse
@@ -54,14 +56,12 @@ from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 from pharmpy.tools.mfl.statement.feature.peripherals import Peripherals
 from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.pdsearch.tool import create_base_model as pdsearch_create_base_model
 from pharmpy.tools.run import is_strictness_fulfilled, run_subtool, summarize_errors_from_entries
 from pharmpy.workflows import Context, ModelEntry, Results, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
 
-from ...internals.fs.path import path_absolute
-from ..covsearch.tool import get_effect_funcs_and_base_model, get_exploratory_covariates
-from ..pdsearch.tool import create_base_model as pdsearch_create_base_model
 from .results import AMDResults
 
 ALLOWED_STRATEGY = ["default", "reevaluation", "SIR", "SRI", "RSI"]
