@@ -912,6 +912,11 @@ def test_validate_input(load_example_model_for_test, kwargs):
             'Invalid `retries_strategy`',
         ),
         (
+            {'lloq_method': 'x'},
+            ValueError,
+            'Invalid `lloq_method`',
+        ),
+        (
             {'modeltype': 'pkpd', 'cl_init': 1.0},
             ValueError,
             'Cannot provide pk parameter',
@@ -1001,6 +1006,17 @@ def test_validate_input(load_example_model_for_test, kwargs):
             },
             ValueError,
             'Having both allometric_variable and ALLOMETRY',
+        ),
+        (
+            {
+                'modeltype': 'drug_metabolite',
+                'lloq_method': 'm3',
+                'cl_init': 1.0,
+                'vc_init': 1.0,
+                'mat_init': 1.0,
+            },
+            ValueError,
+            'Option `lloq_method` is not supported for `modeltype`: drug_metabolite',
         ),
     ],
 )

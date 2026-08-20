@@ -32,6 +32,7 @@ from pharmpy.modeling import (
     set_dataset,
     set_simulation,
 )
+from pharmpy.modeling.blq import SUPPORTED_METHODS as SUPPORTED_BLQ_METHODS
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
@@ -1644,6 +1645,9 @@ def validate_input(
 
     check_list("strategy", strategy, ALLOWED_STRATEGY)
 
+    if lloq_method is not None:
+        check_list("lloq_method", lloq_method, SUPPORTED_BLQ_METHODS)
+
     if modeltype == 'pkpd':
         if not isinstance(input, Model):
             raise TypeError(
@@ -1712,6 +1716,9 @@ def validate_input(
     if _E:
         if any(value in (0.0, '0%') for value in _E.values()):
             raise ValueError('E-values in `_E` cannot be 0')
+
+    if modeltype in ['pkpd', 'drug_metabolite', 'tmdd'] and lloq_method is not None:
+        raise ValueError(f'Option `lloq_method` is not supported for `modeltype`: {modeltype}')
 
 
 def later_input_validation(
