@@ -544,6 +544,7 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on,
         columns.append(stratify_on)
     df = model.dataset.loc[obs.index, columns]
     df = df.join(predictions[[predcol_name]])
+    print(df.to_string())
 
     if stratify_on is None:
         title = f"Observations vs. {predcol_descr}s"
@@ -676,7 +677,9 @@ def plot_cwres_vs_idv(
 
 
 def _smooth(chart, x, y):
-    loess_smooth = chart.transform_loess(x, y).mark_line().encode(color=alt.value("#FF0000"))
+    loess_smooth = (
+        chart.transform_loess(x, y).mark_line().encode(color=alt.value("#FF0000"), tooltip=())
+    )
     return loess_smooth
 
 
