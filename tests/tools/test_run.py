@@ -19,12 +19,16 @@ from pharmpy.modeling import (
     read_model,
     remove_iiv,
     remove_iov,
+    set_iiv_on_ruv,
     set_initial_estimates,
     set_lower_bounds,
+    set_peripheral_compartments,
+    set_power_on_ruv,
     set_seq_zo_fo_absorption,
     set_zero_order_absorption,
     split_joint_distribution,
 )
+from pharmpy.modeling.mfl import expand_model_features, transform_into_search_space
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.run import (
     _create_metadata_tool,
@@ -435,6 +439,26 @@ def test_summarize_modelfit_results_errors(load_model_for_test, testdata, tmp_pa
         assert summary.loc['pheno_no_header']['warnings_found'] == 1
         assert summary.loc['pheno_rounding_error']['errors_found'] == 2
         assert summary.loc['pheno_rounding_error']['warnings_found'] == 0
+
+
+def test_summarize_modelfit_results_no_performance_warning(
+    testdata, load_model_for_test, model_entry_factory
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    model = set_peripheral_compartments(model, 2)
+
+    mfl = 'IIV(@PK,EXP);COVARIANCE(IIV,@PK)'
+    mfl = expand_model_features(model, ModelFeatures.create(mfl))
+    model = transform_into_search_space(model, mfl, type='iiv')
+    model = transform_into_search_space(model, mfl, type='covariance')
+    model1 = set_iiv_on_ruv(model)
+    model2 = set_power_on_ruv(model)
+
+    mes = model_entry_factory([model1, model2])
+    df = summarize_modelfit_results_from_entries(mes)
+
+    # Can cause pandas PerformanceWarning due to highly fragmented DataFrame, see #4730
+    df.to_json(orient='table', double_precision=15)
 
 
 def test_parse_modelfit_results_pheno_real(testdata, load_model_for_test):

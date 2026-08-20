@@ -1353,9 +1353,13 @@ def summarize_modelfit_results_from_entries(
 
     for me in mes:
         if me is not None and me.modelfit_results is not None:
-            summary = _get_model_result_summary(me, include_all_execution_steps)
-            summary.insert(0, 'description', me.model.description)
-            summaries.append(summary)
+            summary_dicts = _get_model_result_summary(me, include_all_execution_steps)
+            summaries.extend(summary_dicts)
+
+    if include_all_execution_steps:
+        index = ['model', 'step']
+    else:
+        index = ['model']
 
     with warnings.catch_warnings():
         # Needed because of warning in pandas 2.1.1
@@ -1365,22 +1369,21 @@ def summarize_modelfit_results_from_entries(
             category=FutureWarning,
         )
 
-        df = pd.concat(summaries)
+        df = pd.DataFrame(summaries).set_index(index)
 
     return df
 
 
 def _get_model_result_summary(me, include_all_execution_steps=False):
     res = me.modelfit_results
+    summary_base = {'model': me.model.name, 'description': me.model.description}
     if not include_all_execution_steps:
-        summary_dict = _summarize_step(res, -1)
-        index = pd.Index([me.model.name], name='model')
-        summary_df = pd.DataFrame(summary_dict, index=index)
+        summary_dict = {**summary_base, **_summarize_step(res, -1)}
+        return [summary_dict]
     else:
         summary_dicts = []
-        tuples = []
         for i in range(len(res.evaluation)):
-            summary_dict = _summarize_step(res, i)
+            summary_dict = {**summary_base, 'step': i + 1, **_summarize_step(res, i)}
             is_evaluation = res.evaluation.iloc[i]
             if is_evaluation:
                 run_type = 'evaluation'
@@ -1388,21 +1391,13 @@ def _get_model_result_summary(me, include_all_execution_steps=False):
                 run_type = 'estimation'
             summary_dict = {'run_type': run_type, **summary_dict}
             summary_dicts.append(summary_dict)
-            tuples.append((me.model.name, i + 1))
-        index = pd.MultiIndex.from_tuples(tuples, names=['model', 'step'])
-        summary_df = pd.DataFrame(summary_dicts, index=index)
-
-    no_of_errors = len(res.log.errors) if res.log is not None else 0
-    no_of_warnings = len(res.log.warnings) if res.log is not None else 0
-
-    minimization_idx = summary_df.columns.get_loc('minimization_successful')
-    summary_df.insert(loc=minimization_idx + 1, column='errors_found', value=no_of_errors)
-    summary_df.insert(loc=minimization_idx + 2, column='warnings_found', value=no_of_warnings)
-
-    return summary_df
+        return summary_dicts
 
 
 def _summarize_step(res, i):
+    no_of_errors = len(res.log.errors) if res.log is not None else 0
+    no_of_warnings = len(res.log.warnings) if res.log is not None else 0
+
     summary_dict = {}
 
     if i >= 0:
@@ -1414,6 +1409,9 @@ def _summarize_step(res, i):
         summary_dict['minimization_successful'] = minsucc
     else:
         summary_dict['minimization_successful'] = False
+
+    summary_dict['errors_found'] = no_of_errors
+    summary_dict['warnings_found'] = no_of_warnings
 
     if i == -1 and res.ofv_iterations is not None:
         i = max(res.ofv_iterations.index.get_level_values(0)) - 1
