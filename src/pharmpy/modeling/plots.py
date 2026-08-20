@@ -134,6 +134,9 @@ def plot_individual_predictions(
     columns = (idcol, idvcol, model.datainfo.dv_column.name)
     dataset = get_and_check_dataset(model)
     df = dataset.loc[obs.index, columns]
+    missing_ids = set(individuals) - set(df[idcol].unique())
+    if missing_ids:
+        raise ValueError(f"Some individuals ({missing_ids}) are not in the dataset")
 
     data = df.join(predictions)
     data = data.melt(id_vars=(idcol, idvcol))
