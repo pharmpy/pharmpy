@@ -20,6 +20,7 @@ Changes
 
 * Rename :code:`set_unit` to :code:`annotate_unit`
 * :code:`modeling.set_covariate` can now also take a DataInfo as input
+* Index column :code:`steps` in ofv_iterations renamed to :code:`step`
 
 Bugfixes
 ========

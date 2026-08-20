@@ -1179,7 +1179,7 @@ def _create_failed_ofv_iterations(n: int):
 
 
 def create_ofv_iterations_series(ofv, steps, iterations):
-    step_series = pd.Series(steps, dtype='int32', name='steps')
+    step_series = pd.Series(steps, dtype='int32', name='step')
     iteration_series = pd.Series(iterations, dtype='int32', name='iteration')
     with warnings.catch_warnings():
         # Needed because pandas 2.1.1 uses the _data attribute that it
