@@ -22,8 +22,8 @@ SECTIONS = frozenset(('tdist', 'boxcox', 'fullblock'))
 
 
 def create_workflow(
-    model: Optional[Model] = None,
-    results: Optional[ModelfitResults] = None,
+    model: Model,
+    results: ModelfitResults,
     linearize: bool = False,
     skip: Optional[list[Literal[tuple(SECTIONS)]]] = None,
 ):

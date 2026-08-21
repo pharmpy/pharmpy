@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pharmpy.basic import Expr
 from pharmpy.internals.df import reset_index
 from pharmpy.model import AddColumn, Assignment, EstimationStep, Model, Statements
@@ -24,8 +22,8 @@ from .results import calculate_results
 
 
 def create_workflow(
-    model: Optional[Model] = None,
-    results: Optional[ModelfitResults] = None,
+    model: Model,
+    results: ModelfitResults,
     model_name: str = "linbase",
     description: str = "",
 ):
@@ -51,11 +49,7 @@ def create_workflow(
     """
     wb = WorkflowBuilder(name="linearize")
 
-    if model is not None:
-        start_task = Task('start_linearize', start_linearize, model, results)
-    else:
-        start_task = Task('start_linearize', start_linearize)
-
+    start_task = Task('start_linearize', start_linearize, model, results)
     wb.add_task(start_task)
 
     # No need to run input model before adding derivatives

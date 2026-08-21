@@ -37,8 +37,8 @@ class Retry:
 
 
 def create_workflow(
-    model: Optional[Model] = None,
-    results: Optional[ModelfitResults] = None,
+    model: Model,
+    results: ModelfitResults,
     number_of_candidates: int = 5,
     fraction: float = 0.1,
     use_initial_estimates: bool = False,
@@ -81,12 +81,7 @@ def create_workflow(
 
     wb = WorkflowBuilder(name='retries')
 
-    if model is not None:
-        start_task = Task('Start_retries', _start, results, model)
-    else:
-        # Remove?
-        start_task = Task('Start_retries', _start)
-
+    start_task = Task('Start_retries', _start, results, model)
     wb.add_task(start_task)
 
     candidate_tasks = []
