@@ -35,7 +35,7 @@ platformdirs==4.11.3
 pycodestyle==2.14.0
 pycparser==3.0
 pyflakes==3.4.0
-Pygments==2.20.0
+Pygments==2.21.0
 pyproject_hooks==1.2.0
 requests==2.34.2
 requests-toolbelt==1.0.0
