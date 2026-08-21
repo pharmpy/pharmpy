@@ -58,11 +58,11 @@ dependencies, you can do the following to check the Python version in your retic
 
     reticulate::py_discover_config()
 
-Make sure the Python version is >= 3.10. If it is not, you can run the following in R:
+Make sure the Python version is >= 3.12. If it is not, you can run the following in R:
 
 .. code-block:: r
 
-    reticulate::conda_create('r-reticulate', python_version = '3.11')
+    reticulate::conda_create('r-reticulate', python_version = '3.13')
 
 Restart the session and try installing Pharmpy again:
 
@@ -86,7 +86,7 @@ and make sure 'r-reticulate' is found:
 .. code-block::
 
     python:         .../r-reticulate/bin/python
-    libpython:      .../r-reticulate/lib/libpython3.11.so
+    libpython:      .../r-reticulate/lib/libpython3.13.so
     ...
 
 If you are using Rstudio you can change this in either project or global options, under Python/Python interpreter.
