@@ -350,9 +350,7 @@ class Context(ABC):
         the context path to get a unique sequence.
         """
         ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
-        rng = np.random.default_rng(
-            [index, ctxpath_bytes, self.seed]  # pyright: ignore [reportArgumentType]
-        )
+        rng = np.random.default_rng([index, *ctxpath_bytes, self.seed])
         return rng
 
     def spawn_seed(self, rng, n=128) -> int:
