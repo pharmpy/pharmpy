@@ -839,7 +839,7 @@ def _replace_with_original_dataset(model, new_dataset, filter_op):
     else:
         prov = Provenance.create([op for op in di.provenance if op != filter_op])
     model = model.replace(dataset=new_dataset, datainfo=di.replace(provenance=prov))
-    return model
+    return model.update_source()
 
 
 def _table_final_parameter_estimates(parameter_estimates, ses):
