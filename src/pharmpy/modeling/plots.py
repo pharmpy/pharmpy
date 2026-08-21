@@ -548,7 +548,6 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on,
         columns.append(stratify_on)
     df = model.dataset.loc[obs.index, columns]
     df = df.join(predictions[[predcol_name]])
-    print(df.to_string())
 
     if stratify_on is None:
         title = f"Observations vs. {predcol_descr}s"
