@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import Any, Iterator, Union, overload
+from typing import Any, Iterator, Union, cast, overload
 
 from pharmpy.deps import pandas as pd
 
@@ -88,6 +88,8 @@ def pandas_to_dict(obj: pd.DataFrame | pd.Series) -> dict[str, Any]:
             'stop': df.index.stop,
             'step': df.index.step,
         }
+    else:
+        raise ValueError("Index type is not supported for serialization")
 
     dtypes = df.dtypes.astype(str).tolist()
     data = df.to_dict(orient="list")
@@ -109,5 +111,5 @@ def pandas_from_dict(d: dict[str, Any]) -> pd.Series | pd.DataFrame:
         new_index = pd.RangeIndex(start=index['start'], stop=index['stop'], step=index['step'])
         df = df.set_index(new_index)
     if d['is_series']:
-        df = df.squeeze()
+        df = cast(pd.Series | pd.DataFrame, df.squeeze())
     return df
