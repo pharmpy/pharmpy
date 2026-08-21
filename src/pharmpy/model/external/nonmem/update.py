@@ -600,22 +600,27 @@ def update_infusion(model: Model, old: CompartmentalSystem):
         else:
             raise NotImplementedError("First order infusion rate is not yet supported")
         statements = statements.before_odes + ass + get_odes(statements) + statements.after_odes
-        if model.dataset is None:
-            if model.datainfo and model.datainfo.path is None:
-                updated_dataset = None
-            else:
-                updated_dataset = False
-        else:
-            dataset = model.dataset.copy()
-            rate = np.where(dataset['AMT'] == 0, np.int32(0), np.int32(-2))
-            dataset['RATE'] = rate
-            updated_dataset = True
-            di = model.datainfo
-            di = di.replace(provenance=di.provenance + AddColumn.create('RATE'))
-            model = model.replace(dataset=dataset, datainfo=di)
+        model, updated_dataset = _add_rate_column(model)
     else:
         updated_dataset = False
     model = model.replace(statements=statements)
+    return model, updated_dataset
+
+
+def _add_rate_column(model):
+    if model.dataset is None:
+        if model.datainfo and model.datainfo.path is None:
+            updated_dataset = None
+        else:
+            updated_dataset = False
+    else:
+        dataset = model.dataset.copy()
+        rate = np.where(dataset['AMT'] == 0, np.int32(0), np.int32(-2))
+        dataset['RATE'] = rate
+        updated_dataset = True
+        di = model.datainfo
+        di = di.replace(provenance=di.provenance + AddColumn.create('RATE'))
+        model = model.replace(dataset=dataset, datainfo=di)
     return model, updated_dataset
 
 
@@ -779,6 +784,11 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         updated_dataset = True
 
     if old == new and old_solver == new_solver:
+        has_infusion = new_odes is not None and isinstance(
+            new_odes.dosing_compartments[0].doses[0], Infusion
+        )
+        if has_infusion and 'RATE' not in model.datainfo.names:
+            model, updated_dataset = _add_rate_column(model)
         return model, updated_dataset
 
     if new_odes is not None:

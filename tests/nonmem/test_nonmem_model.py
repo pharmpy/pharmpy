@@ -1652,3 +1652,12 @@ def test_update_input_drop_column_with_anonymous(create_model_for_test, pheno_da
     model = model.update_source()
     assert model.code.split('\n')[1] == '$INPUT ID TIME AMT WGT APGR=DROP DV DROP FA2'
     assert model.code.split('\n')[2] == model_start.code.split('\n')[2]
+
+
+def test_update_rate_column(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'pheno_dvid.mod')
+    original_dataset = model.dataset.copy()
+    model = filter_dataset(model, 'DVID != 2')
+    model = set_zero_order_absorption(model)
+    model = model.replace(dataset=original_dataset).update_source()
+    assert 'RATE' in model.datainfo.names
