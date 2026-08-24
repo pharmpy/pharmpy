@@ -35,7 +35,7 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
         # Below we solve for all delta-vectors in one line
         chol, islow = linalg.cho_factor(covariance_matrix)
         delta_matrix = cdd_estimates - base_estimate
-        x = linalg.solve_triangular(chol, delta_matrix.transpose(), lower=islow, trans=1)
+        x = linalg.solve_triangular(chol, delta_matrix.transpose(), lower=bool(islow), trans=1)
         return list(map(np.linalg.norm, x.transpose()))
     except Exception:
         return None
