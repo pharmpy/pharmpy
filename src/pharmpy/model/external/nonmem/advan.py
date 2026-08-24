@@ -687,25 +687,37 @@ def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
     return doses
 
 
-def _dosing(di, dataset, dose_comp):
-    amt = Expr.symbol('AMT')
-    if 'RATE' not in di.names or di['RATE'].drop:
-        return Bolus(amt)
+def _dosing(di, df, dose_comp):
+    try:
+        amtcols = di.typeix['dose']
+    except IndexError:
+        amt = None
+    else:
+        amt = amtcols[0].name
 
-    df = dataset
+    try:
+        ratecols = di.typeix['rate']
+    except IndexError:
+        rate = None
+    else:
+        rate = ratecols[0].name
 
-    if 'AMT' not in di.names:
+    if rate is None:
+        # FIXME: Need something else instead of the second case
+        return Bolus(amt) if amt is not None else Bolus(Expr.symbol("AMT"))
+
+    if amt is None:
         raise ModelSyntaxError("AMT missing in $INPUT when RATE is available")
     elif df is None:
-        return Infusion(amt, rate=Expr.symbol('RATE'))
-    elif (df['RATE'] == 0).all():
+        return Infusion(amt, rate=Expr.symbol(rate))
+    elif (df[rate] == 0).all():
         return Bolus(amt)
-    elif (df['RATE'] == -1).any():
+    elif (df[rate] == -1).any():
         return Infusion(amt, rate=Expr.symbol(f'R{dose_comp}'))
-    elif (df['RATE'] == -2).any():
+    elif (df[rate] == -2).any():
         return Infusion(amt, duration=Expr.symbol(f'D{dose_comp}'))
     else:
-        return Infusion(amt, rate=Expr.symbol('RATE'))
+        return Infusion(amt, rate=Expr.symbol(rate))
 
 
 def find_dose(doses, comp_number, admid=1):

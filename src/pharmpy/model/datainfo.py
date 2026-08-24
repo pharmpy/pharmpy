@@ -1522,7 +1522,7 @@ class DataInfo(Sequence, Immutable):
         except IndexError:
             if default:
                 return default
-            raise ValueError(f'Colum of type {type} not found and no default given')
+            raise ValueError(f'Column of type {type} not found and no default given')
         if len(col) > 1:
             raise ValueError(f'More than one column found: {col.names}')
         return col[0].name
