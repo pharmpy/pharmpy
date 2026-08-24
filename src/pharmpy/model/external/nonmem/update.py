@@ -759,6 +759,18 @@ def update_ics(statements, odes):
     return statements
 
 
+def _get_dosing_compartments(odes):
+    if odes is None:
+        dosing_compartments = None
+    else:
+        # raises if no dosing compartments
+        try:
+            dosing_compartments = odes.dosing_compartments
+        except ValueError:
+            dosing_compartments = None
+    return dosing_compartments
+
+
 def update_statements(model: Model, old: Statements, new: Statements, trans):
     trans['NaN'] = int(model.datainfo.missing_data_token)
 
@@ -784,8 +796,9 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         updated_dataset = True
 
     if old == new and old_solver == new_solver:
-        has_infusion = new_odes is not None and isinstance(
-            new_odes.dosing_compartments[0].doses[0], Infusion
+        dosing_compartments = _get_dosing_compartments(new_odes)
+        has_infusion = dosing_compartments is not None and isinstance(
+            dosing_compartments[0].doses[0], Infusion
         )
         if has_infusion and 'RATE' not in model.datainfo.names:
             model, updated_dataset = _add_rate_column(model)
