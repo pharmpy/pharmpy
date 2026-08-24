@@ -1542,6 +1542,24 @@ def test_update_data_from_parsed_ignore(testdata):
     assert 'IGNORE=(ID.EQN.2)' not in model.code
 
 
+def test_update_data_from_parsed_ignore_new_path(testdata):
+    code = f"""$PROBLEM base model
+    $INPUT ID TIME AMT WGT APGR DV FA1 FA2
+    $DATA {testdata / "nonmem" / "pheno.dta"} IGNORE=@ IGNORE=(ID.EQN.2)
+
+    $PRED
+    Y = THETA(1) + ETA(1) + EPS(1)
+
+    $THETA 1  ; TH1
+    $OMEGA 2 ; OM1
+    $SIGMA 3 ; SI1
+    $ESTIMATION METHOD=1 INTER
+    """
+    model = Model.parse_model_from_string(code)
+    model = set_dataset(model, testdata / "nonmem" / "pheno_pd.csv", format='nonmem')
+    assert 'IGNORE=(ID.EQN.2)' not in model.code
+
+
 def test_update_input_no_change(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
         f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
