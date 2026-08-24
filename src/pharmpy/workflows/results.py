@@ -31,9 +31,18 @@ def _df_to_json(df: pd.DataFrame) -> dict[str, Any]:
     if str(df.columns.dtype) == 'int64':
         # Workaround for https://github.com/pandas-dev/pandas/issues/46392
         df.columns = df.columns.map(str)
-    # Set double precision to 15 to remove some round-trip errors, however 17 should be set when its possible
-    # See: https://github.com/pandas-dev/pandas/issues/38437
-    df_json = df.to_json(orient='table', double_precision=15)
+    with warnings.catch_warnings():
+        # Can happen when building dataframes iteratively, e.g. when combining multiple dataframes
+        # Remove once we use internal serializer
+        warnings.filterwarnings(
+            "ignore",
+            message="DataFrame is highly fragmented",
+            category=pd.errors.PerformanceWarning,
+        )
+
+        # Set double precision to 15 to remove some round-trip errors, however 17 should be set when its possible
+        # See: https://github.com/pandas-dev/pandas/issues/38437
+        df_json = df.to_json(orient='table', double_precision=15)
     assert df_json is not None
     return json.loads(df_json)
 
