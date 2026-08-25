@@ -609,16 +609,17 @@ def _advan12_trans(trans: str):
 
 
 def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
-    # Only check doses
+    try:
+        amtcol = di.typeix["dose"][0].name
+    except IndexError:
+        # No dose column. This is OK for $DES models
+        if des:
+            return None
+        else:
+            raise ModelSyntaxError("AMT missing in $INPUT")
+
     if dataset is not None:
-        try:
-            amtcol = di.typeix["dose"][0].name
-        except IndexError as e:
-            # No dose column. This is OK for $DES models
-            if des:
-                return None
-            else:
-                raise e
+        # Only check doses
         dataset = dataset[dataset[amtcol] != 0]
 
     cmt_loop = False
@@ -688,12 +689,9 @@ def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
 
 
 def _dosing(di, df, dose_comp):
-    try:
-        amtcols = di.typeix['dose']
-    except IndexError:
-        amt = None
-    else:
-        amt = amtcols[0].name
+    amtcol = di.typeix['dose']
+    assert amtcol is not None
+    amt = amtcol[0].symbol
 
     try:
         ratecols = di.typeix['rate']
@@ -703,11 +701,7 @@ def _dosing(di, df, dose_comp):
         rate = ratecols[0].name
 
     if rate is None:
-        # FIXME: Need something else instead of the second case
-        return Bolus(amt) if amt is not None else Bolus(Expr.symbol("AMT"))
-
-    if amt is None:
-        raise ModelSyntaxError("AMT missing in $INPUT when RATE is available")
+        return Bolus(amt)
     elif df is None:
         return Infusion(amt, rate=Expr.symbol(rate))
     elif (df[rate] == 0).all():
