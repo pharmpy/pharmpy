@@ -225,13 +225,13 @@ class Model(BaseModel):
             has_new_path = (
                 model.datainfo.path and model.datainfo.path != model.internals.old_datainfo.path
             )
-            if has_new_path:
-                newdata = update_data_filename(newdata, model.datainfo.path)
-                newdata = newdata.update_filters([])
-            elif keep_dataset:
+            if keep_dataset:
+                if has_new_path:
+                    newdata = update_data_filename(newdata, model.datainfo.path)
+                else:
+                    model = set_original_dataset_path(model)
                 ignores = [op for op in model.datainfo.provenance if isinstance(op, Ignore)]
                 newdata = newdata.update_filters(ignores)
-                model = set_original_dataset_path(model)
             elif (
                 model.datainfo.path is None
                 or (model.datainfo.path is None and model.dataset is not None)
