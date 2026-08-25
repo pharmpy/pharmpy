@@ -1864,7 +1864,10 @@ def has_first_order_absorption(model: Model) -> bool:
     odes = model.statements.ode_system
     if odes is None:
         return False
-    dosing = odes.dosing_compartments[0]
+    try:
+        dosing = odes.dosing_compartments[0]
+    except ValueError:
+        return False
     central = odes.central_compartment
     if dosing == central:
         return False
@@ -1898,7 +1901,10 @@ def has_instantaneous_absorption(model: Model) -> bool:
     odes = model.statements.ode_system
     if odes is None:
         return False
-    dosing = odes.dosing_compartments[0]
+    try:
+        dosing = odes.dosing_compartments[0]
+    except ValueError:
+        return False
     central = odes.central_compartment
     if dosing != central:
         return False
