@@ -863,7 +863,7 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
         elif colname == 'CMT' and have_pk:
             var = DataVariable.create(colname, type='compartment', scale='nominal')
             info = ColumnInfo.create(colname, var, drop=coldrop)
-        elif colname == 'RATE' and have_pk:
+        elif (colname == 'RATE' or colname == replacements.get('RATE', None)) and have_pk:
             var = DataVariable.create(colname, type='rate')
             info = ColumnInfo.create(colname, var, drop=coldrop)
         elif colname == 'BLQ':

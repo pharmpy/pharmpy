@@ -696,8 +696,12 @@ def _dosing(di, df, dose_comp):
     try:
         ratecols = di.typeix['rate']
     except IndexError:
-        rate = None
+        if 'RATE' in di.names:
+            rate = 'RATE'
+        else:
+            rate = None
     else:
+        # Workaround for unknown "RATE" type for ZO absorption
         rate = ratecols[0].name
 
     if rate is None:
