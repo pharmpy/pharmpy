@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from hashlib import sha256
-from typing import Any, Iterator, Union, cast, overload
+from typing import Any, Iterator, Union, overload
 
 from pharmpy.deps import pandas as pd
 
@@ -111,5 +111,5 @@ def pandas_from_dict(d: dict[str, Any]) -> pd.Series | pd.DataFrame:
         new_index = pd.RangeIndex(start=index['start'], stop=index['stop'], step=index['step'])
         df = df.set_index(new_index)
     if d['is_series']:
-        df = cast(pd.Series | pd.DataFrame, df.squeeze())
+        df = df.iloc[:, 0]
     return df

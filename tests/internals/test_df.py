@@ -36,6 +36,7 @@ from pharmpy.internals.df import pandas_from_dict, pandas_to_dict
             ),
             name="my_series",
         ),
+        pd.Series([float("inf")], name="ABC"),
     ],
 )
 def test_round_trip(obj):
