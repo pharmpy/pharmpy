@@ -1,4 +1,5 @@
 import pytest
+import warnings
 
 from pharmpy.basic import Expr, Matrix
 from pharmpy.model import (
@@ -745,6 +746,15 @@ def test_repr(load_model_for_test, testdata):
     assert all(
         comp in _remove_dose_lines(cs_extra_comp_repr) for comp in cs_extra_comp.compartment_names
     )
+
+    cb = CompartmentalSystemBuilder()
+    central = Compartment.create('CENTRAL')
+    cb.add_compartment(central)
+    cb.add_flow(central, output, S('K'))
+    cs = CompartmentalSystem(cb)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        assert isinstance(repr(cs), str)
 
 
 def test_repr_latex():
