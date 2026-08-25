@@ -5,6 +5,7 @@ New features
 ============
 
 * Add TrialDesign class
+* Use dataset whenever possible in model and tool runs
 * Add :code:`modeling.create_trial_design`
 * Add :code:`modeling.add_arm`
 * Add :code:`modeling.add_observations`
@@ -14,6 +15,7 @@ New features
 * Add :code:`modeling.write_datainfo`
 * Add :code:`modeling.create_datainfo`
 * Add option :code:`units` to :code:`run_amd`
+* Add a simultaneous stepwise algorithm to IIVSearch
 
 Changes
 =======
@@ -27,6 +29,10 @@ Bugfixes
 ========
 
 * Fix bug in pharmr causing datasets with string columns to not be read in correctly
+* Fix issue where numpy 2.5.2 caused AMD to crash
+* Add RATE column to models where dataset has changed but ODE hasn't (e.g. replacing partial dataset with full dataset in drug metabolite models)
+* Make model and modelfit results mandatory in QA, linearize, and retries
+* Silence Pandas PerformanceWarning when serializing result dataframes
 
 .. _2.1.1:
 
