@@ -1379,7 +1379,13 @@ class CompartmentalSystem(Statement):
         def comp_string(comp):
             return comp.name + lag_string(comp) + f_string(comp)
 
-        current = self.dosing_compartments[0]
+        try:
+            current = self.dosing_compartments[0]
+        except ValueError:
+            warnings.warn("""The ODE system cannot be printed. Try statements.before_odes
+                and statements.after_odes instead.""")
+            return "ODESystem"
+
         comp_height = 0
         comp_width = 0
 
