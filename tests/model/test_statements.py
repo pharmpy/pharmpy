@@ -1,5 +1,6 @@
-import pytest
 import warnings
+
+import pytest
 
 from pharmpy.basic import Expr, Matrix
 from pharmpy.model import (
