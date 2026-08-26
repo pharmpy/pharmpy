@@ -1,14 +1,21 @@
-.. Use html to render badges since the github rst renderer will add extra underscore between badges
+|badge1| |badge2| |badge3| |badge4| |badge5|
 
-.. raw:: html
 
-    <p align="left">
-      <a href="https://pypi.org/project/pharmpy-core"><img src="https://img.shields.io/pypi/v/pharmpy-core.svg" alt="PyPI version"></a>
-      <a href="https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER"><img src="https://img.shields.io/pypi/l/pharmpy-core.svg" alt="License"></a>
-      <a href="https://github.com/pharmpy/pharmpy/actions"><img src="https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg" alt="GA Build"></a>
-      <a href="https://www.python.org/downloads/"><img src="https://img.shields.io/pypi/pyversions/pharmpy-core" alt="Python versions"></a>
-      <a href="https://github.com/psf/black"><img src="https://img.shields.io/badge/code%20style-black-000000.svg" alt="Code style: black"></a>
-    </p>
+.. |badge1| image:: https://img.shields.io/pypi/v/pharmpy-core.svg
+   :target: https://pypi.org/project/pharmpy-core
+
+.. |badge2| image:: https://img.shields.io/pypi/l/pharmpy-core.svg
+   :target: https://github.com/pharmpy/pharmpy/blob/main/LICENSE.LESSER
+
+.. |badge3| image:: https://github.com/pharmpy/pharmpy/actions/workflows/main.yml/badge.svg
+    :target: https://github.com/pharmpy/pharmpy/actions
+
+.. |badge4| image:: https://img.shields.io/pypi/pyversions/pharmpy-core
+   :target: https://www.python.org/downloads/
+
+.. |badge5| image:: https://img.shields.io/badge/code%20style-black-000000.svg
+   :target: https://github.com/psf/black
+
 
 .. _README:
 
