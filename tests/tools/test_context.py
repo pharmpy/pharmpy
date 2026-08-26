@@ -1,8 +1,9 @@
 import pytest
 
-from pharmpy.tools import export_model_files
+from pharmpy.tools import export_model_files, open_project
 from pharmpy.workflows import (
     LocalDirectoryContext,
+    LocalDirectoryProject,
     ModelEntry,
 )
 
@@ -54,3 +55,14 @@ def test_export_model_files(tmp_path, load_model_for_test, testdata):
     assert (tmp_path / 'pheno.ctl').exists()
     assert (tmp_path / 'mox2.ctl').exists()
     assert (tmp_path / 'mox2_mytab_mox2').exists()
+
+
+def test_open_project(tmp_path):
+    proj = open_project('myproject', tmp_path)
+    assert isinstance(proj, LocalDirectoryProject)
+    assert proj.path == tmp_path / 'myproject'
+    assert proj.path.is_dir()
+    assert (proj.path / '.modeldb').is_dir()
+
+    proj2 = open_project('myproject', tmp_path)
+    assert proj.path == proj2.path
