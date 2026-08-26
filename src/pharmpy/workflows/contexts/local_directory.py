@@ -18,7 +18,7 @@ from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.results import ModelfitResults, Results
 
-from ..model_database import LocalModelDirectoryDatabase
+from ..model_database import LocalModelDirectoryDatabase, ModelDatabase
 from ..results import read_results
 from .baseclass import Context
 
@@ -38,6 +38,7 @@ class LocalDirectoryContext(Context):
         self,
         name: str,
         ref: Optional[str] = None,
+        model_database: Optional[ModelDatabase] = None,
     ):
         if ref is None:
             ref = str(Path.cwd())
@@ -47,7 +48,7 @@ class LocalDirectoryContext(Context):
         if isnew:
             self._init_subcontexts()
         self._init_top_path()
-        self._init_model_database()
+        self._init_model_database(model_database)
         if isnew:
             self._init_annotations()
             self._init_model_name_map()
@@ -81,8 +82,12 @@ class LocalDirectoryContext(Context):
                 break
             path = parent.parent
 
-    def _init_model_database(self):
-        self._model_database = LocalModelDirectoryDatabase(self._top_path / '.modeldb')
+    def _init_model_database(self, model_database: Optional[ModelDatabase]):
+        if model_database is None:
+            path = self._top_path / '.modeldb'
+            self._model_database = LocalModelDirectoryDatabase(path)
+        else:
+            self._model_database = model_database
 
     def _init_annotations(self):
         path = self._annotations_path

@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy.modeling import create_rng
 from pharmpy.tools import load_example_modelfit_results
-from pharmpy.workflows import LocalDirectoryContext
+from pharmpy.workflows import LocalDirectoryContext, LocalModelDirectoryDatabase
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.model_entry import ModelEntry
 from pharmpy.workflows.results import read_results
@@ -141,6 +141,31 @@ def test_store_model(tmp_path, load_example_model_for_test):
     finalme = ctx.retrieve_final_model_entry()
     assert finalme.model.name == "final"
     assert finalme.model.parameters == newme.model.parameters
+
+
+def test_init_modeldb(tmp_path, load_example_model_for_test):
+    modeldb = LocalModelDirectoryDatabase(tmp_path / '.modeldb')
+    ctx = LocalDirectoryContext('mycontext', tmp_path, model_database=modeldb)
+    assert ctx.path == tmp_path / 'mycontext'
+    assert (ctx.path / 'models').is_dir()
+    assert not (ctx.path / '.modeldb').is_dir()
+    assert (tmp_path / '.modeldb').is_dir()
+
+    model = load_example_model_for_test("pheno")
+    ctx.store_model_entry(model)
+    me = ctx.retrieve_model_entry("pheno")
+    assert me.model == model
+    assert me.modelfit_results is None
+
+    res = load_example_modelfit_results("pheno")
+    me = ModelEntry.create(model, modelfit_results=res)
+    ctx.store_model_entry(me)
+    newme = ctx.retrieve_model_entry("pheno")
+    assert newme.model == me.model
+    assert dict(newme.modelfit_results.parameter_estimates) == dict(
+        me.modelfit_results.parameter_estimates
+    )
+    assert newme.model.name == "pheno"
 
 
 def test_key(tmp_path, load_example_model_for_test):
