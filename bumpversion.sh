@@ -26,5 +26,5 @@ if [ -n "$(git status --porcelain=v1 2>/dev/null)" ] ; then
     git commit -m "Updating copyright years"
 fi
 
->&2 printf 'Bumping version with bumpversion'
+>&2 printf 'Bumping version with bumpversion\n'
 bumpversion "$@"
