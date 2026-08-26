@@ -30,7 +30,7 @@ def split_common_options(
     -------
     Tuple of dispatching options, common options and other option dictionaries
     """
-    all_dispatching_options = ('context', 'name', 'ref', 'broadcaster', 'dispatcher', 'ncores')
+    all_dispatching_options = ('name', 'ref', 'broadcaster', 'dispatcher', 'ncores')
     all_common_options = ('esttool', 'validate_dataset', 'always_create_new_dataset_file')
     # The defaults below will be overwritten by the user given options
     dispatching_options = get_default_dispatching_options()
@@ -62,7 +62,6 @@ def split_common_options(
 
 def get_default_dispatching_options():
     dispatching_options = {
-        'context': None,
         'name': None,
         'ref': None,
         'broadcaster': None,

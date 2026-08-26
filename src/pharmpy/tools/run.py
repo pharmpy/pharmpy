@@ -56,7 +56,6 @@ def fit(
     model_or_models: Union[Model, list[Model]],
     esttool: Optional[str] = None,
     name: Optional[str] = None,
-    context: Optional[Context] = None,
     ncores: int = 1,
     validate_dataset: bool = False,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
@@ -70,8 +69,6 @@ def fit(
         Estimation tool to use. None to use default
     name : str
         Name of run
-    context : Context
-        Run in this context
     ncores : int
         Number of cores to use for estimation
     validate_dataset : bool
@@ -98,18 +95,11 @@ def fit(
         (True, model_or_models) if isinstance(model_or_models, Model) else (False, model_or_models)
     )
 
-    if not context:
-        dispatcher = 'local_serial'
-    else:
-        dispatcher = None
-
     modelfit_results = run_tool(
         'modelfit',
         models,
         esttool=esttool,
         name=name,
-        context=context,
-        dispatcher=dispatcher,
         ncores=ncores,
         validate_dataset=validate_dataset,
     )
@@ -716,13 +706,11 @@ def _create_new_subcontext_name(context: Context, tool_name: str) -> str:
 
 
 def get_context(dispatching_options, tool_name) -> Context:
-    ctx = dispatching_options['context']
-    if ctx is None:
-        from pharmpy.workflows import Context
+    from pharmpy.workflows import Context
 
-        name = _get_name(dispatching_options, tool_name)
-        ref = dispatching_options['ref']
-        ctx = Context.select_context(None, name, ref)
+    name = _get_name(dispatching_options, tool_name)
+    ref = dispatching_options['ref']
+    ctx = Context.select_context(None, name, ref)
     return ctx
 
 
