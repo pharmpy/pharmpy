@@ -2,6 +2,17 @@
 News
 ====
 
+Pharmpy and pharmr 2.2.0 released
+---------------------------------
+
+*2026-08-26* --- Pharmpy 2.2.0 and pharmr 2.2.0 are now available. The highlights of the release are:
+
+* Use original dataset whenever possible. Full details can be found in :ref:`user guide <nonmem_dataset>`
+* Support unit conversion in modeling and in AMD
+* New algorithm :code:`simultaneous_stepwise` in IIVSearch
+* Various bug fixes
+
+See :ref:`CHANGELOG<2.2.0>` for details.
 
 Pharmpy and pharmr 2.1.1 released
 ---------------------------------

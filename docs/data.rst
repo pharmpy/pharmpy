@@ -186,6 +186,8 @@ And the columns structure:
         ``descriptor``, string
 
 
+.. _nonmem_dataset:
+
 ~~~~~~~~~~~~~~
 NONMEM dataset
 ~~~~~~~~~~~~~~
