@@ -35,6 +35,7 @@ from pharmpy.modeling.mfl import get_model_features
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import (
     DispatchingError,
+    Project,
     Results,
     Workflow,
     execute_subtool,
@@ -58,6 +59,7 @@ def fit(
     name: Optional[str] = None,
     ncores: int = 1,
     validate_dataset: bool = False,
+    project: Optional[Project] = None,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
 
@@ -73,6 +75,8 @@ def fit(
         Number of cores to use for estimation
     validate_dataset : bool
         Whether to validate Pharmpy dataset against FDATA file (relevant for NONMEM models)
+    project : Project
+        Which project if any to run fit in
 
     Return
     ------
@@ -102,6 +106,7 @@ def fit(
         name=name,
         ncores=ncores,
         validate_dataset=validate_dataset,
+        project=project,
     )
 
     return (
@@ -257,11 +262,9 @@ def run_tool_with_name(
     else:
         pass
 
-    dispatching_options['context'] = {
-        '__class__': type(ctx).__name__,
-        'name': str(ctx.name),
-        'ref': str(ctx.ref),
-    }
+    ctx_metadata, proj_metadata = _get_ctx_proj_metadata(ctx, dispatching_options['project'])
+    dispatching_options['context'] = ctx_metadata
+    dispatching_options['project'] = proj_metadata
 
     if common_options['always_create_new_dataset_file']:
         args_new = [reset_dataset(x) if isinstance(x, Model) else x for x in args]
@@ -345,6 +348,25 @@ def _update_metadata(tool_metadata):
     # FIXME: Make metadata immutable
     tool_metadata['stats']['end_time'] = _now()
     return tool_metadata
+
+
+def _get_ctx_proj_metadata(ctx, proj):
+    ctx_metadata = {
+        '__class__': type(ctx).__name__,
+        'name': str(ctx.name),
+        'ref': str(ctx.ref),
+    }
+
+    if proj:
+        proj_metadata = {
+            '__class__': type(proj).__name__,
+            'name': str(proj.name),
+            'ref': str(proj.ref),
+        }
+    else:
+        proj_metadata = None
+
+    return ctx_metadata, proj_metadata
 
 
 def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
@@ -681,15 +703,19 @@ def _now():
 def _get_name(options, tool_name) -> str:
     name = options['name']
     if name is None:
-        name = _create_new_context_name(tool_name)
+        if proj := options['project']:
+            ref = proj.full_ref
+        else:
+            ref = None
+        name = _create_new_context_name(tool_name, ref)
     return name
 
 
-def _create_new_context_name(tool_name: str) -> str:
+def _create_new_context_name(tool_name: str, ref: Optional[str]) -> str:
     n = 1
     while True:
         name = f"{tool_name}{n}"
-        if not Context.default_exists(name):
+        if not Context.default_exists(name, ref):
             break
         n += 1
     return name
@@ -710,7 +736,16 @@ def get_context(dispatching_options, tool_name) -> Context:
 
     name = _get_name(dispatching_options, tool_name)
     ref = dispatching_options['ref']
-    ctx = Context.select_context(None, name, ref)
+    if (proj := dispatching_options['project']) is not None:
+        if ref:
+            ref = proj.full_ref + ref
+        else:
+            ref = proj.full_ref
+        modeldb = proj.model_database
+    else:
+        modeldb = None
+
+    ctx = Context.select_context(None, name, ref, model_database=modeldb)
     return ctx
 
 

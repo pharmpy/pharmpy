@@ -48,12 +48,14 @@ class Context(ABC):
         self._ref = ref
 
     @staticmethod
-    def select_context(name: Optional[str], ctxname: str, ref: Optional[str] = None) -> Context:
+    def select_context(
+        name: Optional[str], ctxname: str, ref: Optional[str] = None, **kwargs
+    ) -> Context:
         if name is not None and name.lower() != "local_directory":
             raise ValueError(f"Unknow context type {name}. The only supported is local_directory.")
         from pharmpy.workflows.contexts import LocalDirectoryContext
 
-        return LocalDirectoryContext(ctxname, ref)
+        return LocalDirectoryContext(ctxname, ref, **kwargs)
 
     @staticmethod
     def default_exists(name: str, ref: Optional[str] = None) -> bool:

@@ -4,6 +4,7 @@ from typing import Any, Optional
 
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
+from pharmpy.workflows.projects import Project
 
 ALLOWED_ESTTOOLS = (None, 'dummy', 'nonmem', 'nlmixr', 'pharmpy')
 
@@ -30,7 +31,7 @@ def split_common_options(
     -------
     Tuple of dispatching options, common options and other option dictionaries
     """
-    all_dispatching_options = ('name', 'ref', 'broadcaster', 'dispatcher', 'ncores')
+    all_dispatching_options = ('name', 'ref', 'broadcaster', 'dispatcher', 'ncores', 'project')
     all_common_options = ('esttool', 'validate_dataset', 'always_create_new_dataset_file')
     # The defaults below will be overwritten by the user given options
     dispatching_options = get_default_dispatching_options()
@@ -39,6 +40,9 @@ def split_common_options(
     other_options = {}
     for key, value in d.items():
         if key in all_dispatching_options:
+            if key == 'project':
+                if value and not isinstance(value, Project):
+                    raise TypeError(f"Invalid `project` option {type(value)}, must be Project")
             dispatching_options[key] = value
         elif key in all_common_options:
             if key == 'esttool':
@@ -67,6 +71,7 @@ def get_default_dispatching_options():
         'broadcaster': None,
         'dispatcher': None,
         'ncores': None,
+        'project': None,
     }
     return dispatching_options
 

@@ -303,7 +303,11 @@ class LocalDirectoryContext(Context):
         return parent
 
     def get_top_level_context(self) -> LocalDirectoryContext:
-        ctx_top = LocalDirectoryContext(name=self._top_path.name, ref=str(self._top_path.parent))
+        ctx_top = LocalDirectoryContext(
+            name=self._top_path.name,
+            ref=str(self._top_path.parent),
+            model_database=self._model_database,
+        )
         return ctx_top
 
     def get_subcontext(self, name: str) -> LocalDirectoryContext:
