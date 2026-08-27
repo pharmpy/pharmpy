@@ -30,3 +30,7 @@ class LocalDirectoryProject(Project):
 
     def _init_model_database(self):
         self.model_database = LocalModelDirectoryDatabase(self.path / '.modeldb')
+
+    @property
+    def full_ref(self) -> str:
+        return str(self.path)

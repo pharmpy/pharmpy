@@ -27,3 +27,8 @@ class Project(ABC):
     @property
     def ref(self) -> str:
         return self._ref
+
+    @property
+    @abstractmethod
+    def full_ref(self) -> str:
+        pass

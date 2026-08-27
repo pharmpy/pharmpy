@@ -6,6 +6,7 @@ def test_init(tmp_path):
     assert proj.path == tmp_path / 'myproject'
     assert (proj.path / '.modeldb').is_dir()
     assert repr(proj) == f'<Local directory project at {tmp_path / "myproject"}>'
+    assert proj.full_ref == str(tmp_path / 'myproject')
 
     proj2 = LocalDirectoryProject('myproject', tmp_path)
     assert proj2.path == proj.path
