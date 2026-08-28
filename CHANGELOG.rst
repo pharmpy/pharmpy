@@ -1,3 +1,11 @@
+next version
+------------
+
+New features
+============
+
+* Add :code:`modeling.plot_iteration_trace`
+
 .. _2.2.0:
 
 2.2.0 (2026-08-26)

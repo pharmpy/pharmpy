@@ -251,6 +251,7 @@ from .plots import (
     plot_eta_distributions,
     plot_individual_predictions,
     plot_iofv_vs_iofv,
+    plot_iteration_trace,
     plot_transformed_eta_distributions,
     plot_vpc,
 )
@@ -446,6 +447,7 @@ __all__ = [
     'plot_eta_distributions',
     'plot_individual_predictions',
     'plot_iofv_vs_iofv',
+    'plot_iteration_trace',
     'plot_transformed_eta_distributions',
     'print_model_code',
     'print_model_symbols',

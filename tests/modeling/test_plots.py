@@ -9,6 +9,7 @@ from pharmpy.modeling import (
     plot_eta_distributions,
     plot_individual_predictions,
     plot_iofv_vs_iofv,
+    plot_iteration_trace,
     plot_transformed_eta_distributions,
     plot_vpc,
 )
@@ -127,3 +128,11 @@ def test_vpc_plot_raises(tmp_path, load_model_for_test, testdata):
     data_path = testdata / 'nonmem' / 'vpc_simulations_dvid.csv'
     with pytest.raises(VPCBinningError):
         plot_vpc(model, simulations=data_path, nbins=8, stratify_on='DVID')
+
+
+def test_plot_iteration_trace(load_model_for_test, testdata):
+    path = testdata / 'nonmem' / 'pheno_real.mod'
+    model = load_model_for_test(path)
+    res = parse_modelfit_results(model, path)
+    plot = plot_iteration_trace(res.ofv_iterations, res.parameter_estimates_iterations)
+    assert plot

@@ -1146,3 +1146,54 @@ def _concat(charts):
     if n > 8:
         raise ValueError('No more than 8 subplots allowed.')
     return chart
+
+
+def plot_iteration_trace(
+    ofv_iterations: pd.Series, parameter_estimates_iterations: pd.DataFrame
+) -> alt.TopLevelMixin:
+    """Plot iteration traces for OFV and parameters of an estimation
+
+    Parameters
+    ----------
+    ofv_iterations : pd.Series
+        OFV iterations
+    parameter_estimates_iterations : pd.DataFrame
+        Parameter estimates iterations
+
+    Returns
+    -------
+    alt.Chart
+        Plot
+
+    Examples
+    --------
+
+    .. pharmpy-execute::
+
+        from pharmpy.modeling import load_example_model, plot_iteration_trace
+        from pharmpy.tools import load_example_modelfit_results
+
+        model = load_example_model("pheno")
+        res = load_example_modelfit_results("pheno")
+        plot_iteration_trace(res.ofv_iterations, res.parameter_estimates_iterations)
+
+    """
+
+    df = pd.concat((ofv_iterations, parameter_estimates_iterations), axis=1)
+    df = df.reset_index(drop=True)
+    df['iteration'] = range(0, len(df))  # Using a global iteration across steps
+    df = df.melt(id_vars=['iteration'], var_name='parameter', value_name='estimate')
+
+    chart = (
+        alt.Chart(df)
+        .mark_line()
+        .encode(
+            x=alt.X('iteration:Q', title='Iteration'),
+            y=alt.Y('estimate:Q', title=None),
+            color=alt.Color('parameter:N', legend=None),
+        )
+        .properties(width=300, height=150)
+        .facet(facet=alt.Facet('parameter:N', title=None, sort=list(df.columns)), columns=2)
+        .resolve_scale(y='independent')
+    )
+    return chart
