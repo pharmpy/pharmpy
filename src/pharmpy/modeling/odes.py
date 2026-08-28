@@ -1877,9 +1877,7 @@ def has_first_order_absorption(model: Model) -> bool:
 
     unidirectional_flow = [uni_flow for uni_flow in in_flow if uni_flow not in out_flow]
 
-    if len(unidirectional_flow) == 1:
-        return True
-    return False
+    return len(unidirectional_flow) == 1
 
 
 def has_instantaneous_absorption(model: Model) -> bool:
@@ -1938,10 +1936,7 @@ def has_seq_zo_fo_absorption(model: Model) -> bool:
     has_first_order_absorption
 
     """
-    if has_zero_order_absorption(model) and has_first_order_absorption(model):
-        return True
-    else:
-        return False
+    return has_zero_order_absorption(model) and has_first_order_absorption(model)
 
 
 def get_number_of_peripheral_compartments(model: Model) -> int:
