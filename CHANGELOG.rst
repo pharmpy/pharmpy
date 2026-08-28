@@ -5,6 +5,7 @@ New features
 ============
 
 * Add :code:`modeling.plot_iteration_trace`
+* Add :code:`modeling.get_derived_covariates`
 
 .. _2.2.0:
 

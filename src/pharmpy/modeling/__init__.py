@@ -26,6 +26,7 @@ from .compartments import get_bioavailability, get_lag_times
 from .covariate_effect import (
     add_covariate_effect,
     get_covariate_effects,
+    get_derived_covariates,
     has_covariate_effect,
     remove_covariate_effect,
 )
@@ -375,6 +376,7 @@ __all__ = [
     'get_config_path',
     'get_covariate_effects',
     'get_covariate_baselines',
+    'get_derived_covariates',
     'get_doses',
     'get_doseid',
     'get_dv_symbol',

@@ -4,6 +4,7 @@ import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
+from pharmpy.model import Assignment, Statements
 from pharmpy.modeling import (
     add_allometry,
     add_iov,
@@ -19,6 +20,7 @@ from pharmpy.modeling.covariate_effect import (
     _choose_param_inits,
     add_covariate_effect,
     get_covariate_effects,
+    get_derived_covariates,
     has_covariate_effect,
     remove_covariate_effect,
 )
@@ -1358,3 +1360,23 @@ def test_calculate_baselines(load_model_for_test, testdata, func, ref_val):
     val = func(model, 'WT', baselines=True)
     assert round(val, 5) == ref_val
     assert val != func(model, 'WT', baselines=False)
+
+
+@pytest.mark.parametrize(
+    'statements,correct',
+    [
+        ((Assignment.create("Y", "THETA_1"),), []),
+        (
+            (
+                Assignment.create("MYTIME", "TIME*2"),
+                Assignment.create("Y", "MYTIME*THETA_1"),
+            ),
+            ["MYTIME"],
+        ),
+    ],
+)
+def test_get_derived_covariates(load_model_for_test, testdata, statements, correct):
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    model = model.replace(statements=Statements.create(statements))
+    covs = get_derived_covariates(model)
+    assert covs == correct

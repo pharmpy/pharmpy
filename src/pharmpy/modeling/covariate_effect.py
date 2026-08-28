@@ -873,3 +873,39 @@ def get_covariates_allowed_in_covariate_effect(model: Model) -> set[str]:
         di_unknown = []
 
     return set(di_covariate).union(di_unknown, di_admid)
+
+
+def get_derived_covariates(model: Model) -> list[str]:
+    """Get all derived covariates in a model
+
+    A derived covariate is a covariate calculated in the model by
+    only using variables from the dataset and constants.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    list
+        List of the names of all derived covariate variables
+
+    """
+
+    allowed = set(model.datainfo.symbols)
+    candidates = []
+    other_deps = set()
+
+    # Find assignments only depending on dataset or only depending on such assignments
+    for s in model.statements:
+        if isinstance(s, Assignment) and s.expression.free_symbols <= allowed:
+            allowed.add(s.symbol)
+            candidates.append(s.symbol)
+        else:
+            other_deps |= s.free_symbols
+
+    # Keep used by at least one statement not in current candidates
+    keep = [str(c) for c in candidates if c in other_deps]
+
+    return keep

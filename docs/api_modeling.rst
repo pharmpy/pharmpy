@@ -156,6 +156,7 @@ Covariate effects
     add_allometry
     add_covariate_effect
     get_covariate_effects
+    get_derived_covariates
     has_covariate_effect
     remove_covariate_effect
 
