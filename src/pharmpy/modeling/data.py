@@ -1478,7 +1478,7 @@ def remove_unused_columns(model: Model) -> Model:
     Warnings
     --------
     Currently columns not needed to give a prediction, but used by other expressions in the
-    model are kept. This will change in the future.
+    model are kept. This might change in the future.
 
     Parameters
     ----------
@@ -1518,12 +1518,8 @@ def _all_dependent_symbols(model: Model) -> set[str]:
     deps = set()
     for dv in dvs:
         deps |= {str(symb) for symb in model.statements.dependencies(dv)}
-    essential_column_types = ('id', 'dv', 'dvid')
-    essential_columns = {
-        a for tp in essential_column_types if (a := get_column_name(model, tp)) is not None
-    }
-    deps |= essential_columns
 
+    essential_column_types = ('id', 'dv', 'dvid')
     if model.statements.ode_system is not None:
         ode_column_types = (
             'idv',
@@ -1537,10 +1533,13 @@ def _all_dependent_symbols(model: Model) -> set[str]:
             'compartment',
             'admid',
         )
-        essential_ode_columns = {
-            a for tp in ode_column_types if (a := get_column_name(model, tp)) is not None
-        }
-        deps |= essential_ode_columns
+        essential_column_types += ode_column_types
+
+    essential_columns = {
+        a for tp in essential_column_types if (a := get_column_name(model, tp)) is not None
+    }
+    deps |= essential_columns
+
     return deps
 
 
