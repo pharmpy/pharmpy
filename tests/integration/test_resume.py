@@ -1,7 +1,6 @@
 import pytest
 
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.tools.context import open_context
 from pharmpy.tools.run import run_tool
 
 
@@ -24,14 +23,12 @@ def test_resume_finished(
     kwargs,
 ):
     with chdir(tmp_path):
-        ctx = open_context('ctx1', tmp_path)
-
         kwargs.update(
             {
                 'model': start_modelres_dummy[0],
                 'results': start_modelres_dummy[1],
                 'esttool': 'dummy',
-                'context': ctx,
+                'name': 'ctx1',
             }
         )
 
