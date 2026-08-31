@@ -40,9 +40,7 @@ from pharmpy.modeling.mfl import (
     expand_model_features,
 )
 from pharmpy.modeling.mfl import get_model_features as get_model_features_new
-from pharmpy.modeling.mfl import (
-    get_search_space_parameters_not_in_model,
-)
+from pharmpy.modeling.mfl import get_search_space_parameters_not_in_model
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.modeling.plots import VPCBinningError
 from pharmpy.modeling.tmdd import DV_TYPES
