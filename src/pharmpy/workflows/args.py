@@ -64,7 +64,7 @@ def split_common_options(
     return dispatching_options, common_options, seed, other_options
 
 
-def get_default_dispatching_options():
+def get_default_dispatching_options() -> dict[str, Any]:
     dispatching_options = {
         'name': None,
         'ref': None,
@@ -76,7 +76,7 @@ def get_default_dispatching_options():
     return dispatching_options
 
 
-def get_default_common_options():
+def get_default_common_options() -> dict[str, Any]:
     common_options = {
         'esttool': 'nonmem',
         'validate_dataset': False,
