@@ -41,7 +41,7 @@ def split_common_options(
     for key, value in d.items():
         if key in all_dispatching_options:
             if key == 'project':
-                if value and not isinstance(value, Project):
+                if value is not None and not isinstance(value, Project):
                     raise TypeError(f"Invalid `project` option {type(value)}, must be Project")
             dispatching_options[key] = value
         elif key in all_common_options:
