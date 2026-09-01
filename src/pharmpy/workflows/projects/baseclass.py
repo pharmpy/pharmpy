@@ -28,7 +28,6 @@ class Project(ABC):
     def ref(self) -> str:
         return self._ref
 
-    @property
     @abstractmethod
-    def full_ref(self) -> str:
+    def get_context_ref(self, ref: Optional[str]) -> str:
         pass

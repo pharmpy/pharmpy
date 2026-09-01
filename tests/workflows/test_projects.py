@@ -6,7 +6,6 @@ def test_init(tmp_path):
     assert proj.path == tmp_path / 'myproject'
     assert (proj.path / '.modeldb').is_dir()
     assert repr(proj) == f'<Local directory project at {tmp_path / "myproject"}>'
-    assert proj.full_ref == str(tmp_path / 'myproject')
 
     proj2 = LocalDirectoryProject('myproject', tmp_path)
     assert proj2.path == proj.path
@@ -25,7 +24,7 @@ def test_init_already_existing_dir(tmp_path):
 def test_store_model_existing(tmp_path, load_example_model_for_test):
     proj = LocalDirectoryProject('myproject', tmp_path)
     ctx = LocalDirectoryContext(
-        name='mycontext', ref=proj.full_ref, model_database=proj.model_database
+        name='mycontext', ref=proj.get_context_ref(None), model_database=proj.model_database
     )
     model = load_example_model_for_test("pheno")
     ctx.store_model_entry(model)
@@ -33,3 +32,9 @@ def test_store_model_existing(tmp_path, load_example_model_for_test):
     ctx.store_model_entry(model)
     me2 = ctx.retrieve_model_entry("pheno")
     assert me1.model == me2.model
+
+
+def test_get_context_ref(tmp_path):
+    proj = LocalDirectoryProject('myproject', tmp_path)
+    assert proj.get_context_ref(None) == f'{tmp_path}/myproject'
+    assert proj.get_context_ref('path/to/ctx') == f'{tmp_path}/myproject/path/to/ctx'

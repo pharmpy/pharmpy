@@ -31,6 +31,9 @@ class LocalDirectoryProject(Project):
     def _init_model_database(self):
         self.model_database = LocalModelDirectoryDatabase(self.path / '.modeldb')
 
-    @property
-    def full_ref(self) -> str:
-        return str(self.path)
+    def get_context_ref(self, ref: Optional[str]) -> str:
+        if ref is not None:
+            new_ref = self.path / ref
+        else:
+            new_ref = self.path
+        return str(new_ref)

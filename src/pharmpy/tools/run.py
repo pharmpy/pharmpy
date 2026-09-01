@@ -704,7 +704,7 @@ def _get_name(options, tool_name) -> str:
     name = options['name']
     if name is None:
         if proj := options['project']:
-            ref = proj.full_ref
+            ref = proj.get_context_ref(options['ref'])
         else:
             ref = None
         name = _create_new_context_name(tool_name, ref)
@@ -737,10 +737,7 @@ def get_context(dispatching_options, tool_name) -> Context:
     name = _get_name(dispatching_options, tool_name)
     ref = dispatching_options['ref']
     if (proj := dispatching_options['project']) is not None:
-        if ref:
-            ref = proj.full_ref + ref
-        else:
-            ref = proj.full_ref
+        ref = proj.get_context_ref(ref)
         modeldb = proj.model_database
     else:
         modeldb = None
