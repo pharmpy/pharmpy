@@ -36,5 +36,6 @@ def test_store_model_existing(tmp_path, load_example_model_for_test):
 
 def test_get_context_ref(tmp_path):
     proj = LocalDirectoryProject('myproject', tmp_path)
-    assert proj.get_context_ref(None) == f'{tmp_path}/myproject'
-    assert proj.get_context_ref('path/to/ctx') == f'{tmp_path}/myproject/path/to/ctx'
+    assert proj.get_context_ref(None) == str(tmp_path / 'myproject')
+    ref = 'path/to/ctx'
+    assert proj.get_context_ref(ref) == str(tmp_path / 'myproject' / ref)
