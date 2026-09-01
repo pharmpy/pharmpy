@@ -1,4 +1,4 @@
-from pharmpy.workflows import LocalDirectoryProject
+from pharmpy.workflows import LocalDirectoryContext, LocalDirectoryProject
 
 
 def test_init(tmp_path):
@@ -20,3 +20,16 @@ def test_init_already_existing_dir(tmp_path):
     proj = LocalDirectoryProject('myproject', tmp_path)
     assert proj.path == tmp_path / 'myproject'
     assert (proj_path / '.modeldb').is_dir()
+
+
+def test_store_model_existing(tmp_path, load_example_model_for_test):
+    proj = LocalDirectoryProject('myproject', tmp_path)
+    ctx = LocalDirectoryContext(
+        name='mycontext', ref=proj.full_ref, model_database=proj.model_database
+    )
+    model = load_example_model_for_test("pheno")
+    ctx.store_model_entry(model)
+    me1 = ctx.retrieve_model_entry("pheno")
+    ctx.store_model_entry(model)
+    me2 = ctx.retrieve_model_entry("pheno")
+    assert me1.model == me2.model

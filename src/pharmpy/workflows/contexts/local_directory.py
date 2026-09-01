@@ -299,7 +299,9 @@ class LocalDirectoryContext(Context):
         if self.path == self._top_path:
             raise ValueError("Already at the top level context")
         parent_path = self.path.parent.parent
-        parent = LocalDirectoryContext(name=parent_path.name, ref=str(parent_path.parent))
+        parent = LocalDirectoryContext(
+            name=parent_path.name, ref=str(parent_path.parent), model_database=self._model_database
+        )
         return parent
 
     def get_top_level_context(self) -> LocalDirectoryContext:
@@ -317,7 +319,9 @@ class LocalDirectoryContext(Context):
         else:
             path = self.path / name
         if path.is_dir():
-            return LocalDirectoryContext(name=name, ref=str(path.parent))
+            return LocalDirectoryContext(
+                name=name, ref=str(path.parent), model_database=self._model_database
+            )
         else:
             raise ValueError(f'No subcontext with the name "{name}"')
 
@@ -327,7 +331,7 @@ class LocalDirectoryContext(Context):
             path = subcontexts_path
         else:
             path = self.path
-        ctx = LocalDirectoryContext(name=name, ref=str(path))
+        ctx = LocalDirectoryContext(name=name, ref=str(path), model_database=self._model_database)
         return ctx
 
     def finalize(self):
