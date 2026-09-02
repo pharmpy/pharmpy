@@ -8,7 +8,7 @@ _ws = {' ', '\x00', '\t'}
 class ProblemRecord(Record):
     @property
     def title(self):
-        return str(self.root.subtree('raw_title'))
+        return str(self.root.subtree('raw_title')).strip()
 
     def set_title(self, new_title):
         if new_title and new_title[0] in _ws:
