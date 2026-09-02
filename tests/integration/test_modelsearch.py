@@ -2,7 +2,7 @@ import pytest
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
-from pharmpy.tools import run_modelsearch
+from pharmpy.tools import open_project, run_modelsearch
 
 
 @pytest.mark.parametrize(
@@ -175,3 +175,35 @@ def test_modelsearch_dummy(
         assert (rundir / 'metadata.json').exists()
         assert (rundir / 'models' / 'modelsearch_run1' / 'model_results.json').exists()
         assert not (rundir / 'models' / 'modelsearch_run1' / 'model.lst').exists()
+
+
+def test_modelsearch_project(tmp_path, model_count, start_modelres):
+    with chdir(tmp_path):
+        proj = open_project('myproject', tmp_path)
+
+        res1 = run_modelsearch(
+            model=start_modelres[0],
+            results=start_modelres[1],
+            search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            algorithm='exhaustive_stepwise',
+            rank_type='bic',
+            strictness='minimization_successful',
+            project=proj,
+        )
+        assert (tmp_path / 'myproject' / 'modelsearch1').is_dir()
+        assert model_count(proj.model_database.path, '') == 5
+
+        res2 = run_modelsearch(
+            model=start_modelres[0],
+            results=start_modelres[1],
+            search_space='ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
+            algorithm='exhaustive_stepwise',
+            rank_type='bic',
+            strictness='',
+            project=proj,
+        )
+        assert (tmp_path / 'myproject' / 'modelsearch2').is_dir()
+        assert model_count(proj.model_database.path, '') == 5
+
+        assert res1.summary_tool['rank'].max() == 4
+        assert res2.summary_tool['rank'].max() == 5

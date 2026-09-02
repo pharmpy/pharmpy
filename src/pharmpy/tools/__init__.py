@@ -6,6 +6,7 @@ __all__ = (
     'export_model_files',  # pyright: ignore [reportUnsupportedDunderAll]
     'fit',  # pyright: ignore [reportUnsupportedDunderAll]
     'open_context',  # pyright: ignore [reportUnsupportedDunderAll]
+    'open_project',  # pyright: ignore [reportUnsupportedDunderAll]
     'is_strictness_fulfilled',  # pyright: ignore [reportUnsupportedDunderAll]
     'load_example_modelfit_results',  # pyright: ignore [reportUnsupportedDunderAll]
     'list_models',  # pyright: ignore [reportUnsupportedDunderAll]
@@ -66,6 +67,7 @@ _not_wrapped = {
     ),
     '.context': (
         'open_context',
+        'open_project',
         'print_log',
         'broadcast_log',
         'retrieve_model',

@@ -4,7 +4,7 @@ from typing import Optional, Union
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model
-from pharmpy.workflows import ModelfitResults
+from pharmpy.workflows import LocalDirectoryProject, ModelfitResults
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
 from pharmpy.workflows.contexts.baseclass import FINAL_MODEL_NAME, INPUT_MODEL_NAME
@@ -29,6 +29,27 @@ def open_context(name: str, ref: Union[str, Path, None] = None):
     ref = str(normalize_user_given_path(ref)) if ref is not None else None
     ctx = LocalDirectoryContext(name=name, ref=ref)
     return ctx
+
+
+def open_project(name: str, ref: Union[str, Path, None] = None):
+    """Open or create a project (with model database)
+
+    Parameters
+    ----------
+    name : str
+        Name of the project
+    ref : str or Path
+        Parent path of the project
+
+    Examples
+    --------
+    >>> from pharmpy.tools import open_project
+    >>> proj = open_project("myproject")  # doctest: +SKIP
+
+    """
+    ref = str(normalize_user_given_path(ref)) if ref is not None else None
+    proj = LocalDirectoryProject(name=name, ref=ref)
+    return proj
 
 
 def print_log(context: Context) -> None:

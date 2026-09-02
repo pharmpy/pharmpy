@@ -18,7 +18,7 @@ from pharmpy.tools.mfl.parse import ModelFeatures
 from pharmpy.workflows.hashing import ModelHash
 from pharmpy.workflows.results import ModelfitResults, Results
 
-from ..model_database import LocalModelDirectoryDatabase
+from ..model_database import LocalModelDirectoryDatabase, ModelDatabase
 from ..results import read_results
 from .baseclass import Context
 
@@ -38,6 +38,7 @@ class LocalDirectoryContext(Context):
         self,
         name: str,
         ref: Optional[str] = None,
+        model_database: Optional[ModelDatabase] = None,
     ):
         if ref is None:
             ref = str(Path.cwd())
@@ -47,7 +48,7 @@ class LocalDirectoryContext(Context):
         if isnew:
             self._init_subcontexts()
         self._init_top_path()
-        self._init_model_database()
+        self._init_model_database(model_database)
         if isnew:
             self._init_annotations()
             self._init_model_name_map()
@@ -81,8 +82,12 @@ class LocalDirectoryContext(Context):
                 break
             path = parent.parent
 
-    def _init_model_database(self):
-        self._model_database = LocalModelDirectoryDatabase(self._top_path / '.modeldb')
+    def _init_model_database(self, model_database: Optional[ModelDatabase]):
+        if model_database is None:
+            path = self._top_path / '.modeldb'
+            self._model_database = LocalModelDirectoryDatabase(path)
+        else:
+            self._model_database = model_database
 
     def _init_annotations(self):
         path = self._annotations_path
@@ -294,11 +299,17 @@ class LocalDirectoryContext(Context):
         if self.path == self._top_path:
             raise ValueError("Already at the top level context")
         parent_path = self.path.parent.parent
-        parent = LocalDirectoryContext(name=parent_path.name, ref=str(parent_path.parent))
+        parent = LocalDirectoryContext(
+            name=parent_path.name, ref=str(parent_path.parent), model_database=self._model_database
+        )
         return parent
 
     def get_top_level_context(self) -> LocalDirectoryContext:
-        ctx_top = LocalDirectoryContext(name=self._top_path.name, ref=str(self._top_path.parent))
+        ctx_top = LocalDirectoryContext(
+            name=self._top_path.name,
+            ref=str(self._top_path.parent),
+            model_database=self._model_database,
+        )
         return ctx_top
 
     def get_subcontext(self, name: str) -> LocalDirectoryContext:
@@ -308,7 +319,9 @@ class LocalDirectoryContext(Context):
         else:
             path = self.path / name
         if path.is_dir():
-            return LocalDirectoryContext(name=name, ref=str(path.parent))
+            return LocalDirectoryContext(
+                name=name, ref=str(path.parent), model_database=self._model_database
+            )
         else:
             raise ValueError(f'No subcontext with the name "{name}"')
 
@@ -318,7 +331,7 @@ class LocalDirectoryContext(Context):
             path = subcontexts_path
         else:
             path = self.path
-        ctx = LocalDirectoryContext(name=name, ref=str(path))
+        ctx = LocalDirectoryContext(name=name, ref=str(path), model_database=self._model_database)
         return ctx
 
     def finalize(self):

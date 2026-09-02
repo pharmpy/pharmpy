@@ -35,6 +35,7 @@ from pharmpy.modeling.mfl import get_model_features
 from pharmpy.tools.psn_helpers import create_results as psn_create_results
 from pharmpy.workflows import (
     DispatchingError,
+    Project,
     Results,
     Workflow,
     execute_subtool,
@@ -56,9 +57,9 @@ def fit(
     model_or_models: Union[Model, list[Model]],
     esttool: Optional[str] = None,
     name: Optional[str] = None,
-    context: Optional[Context] = None,
     ncores: int = 1,
     validate_dataset: bool = False,
+    project: Optional[Project] = None,
 ) -> Union[ModelfitResults, list[ModelfitResults]]:
     """Fit models.
 
@@ -70,12 +71,12 @@ def fit(
         Estimation tool to use. None to use default
     name : str
         Name of run
-    context : Context
-        Run in this context
     ncores : int
         Number of cores to use for estimation
     validate_dataset : bool
         Whether to validate Pharmpy dataset against FDATA file (relevant for NONMEM models)
+    project : Project
+        Which project if any to run fit in
 
     Return
     ------
@@ -98,20 +99,14 @@ def fit(
         (True, model_or_models) if isinstance(model_or_models, Model) else (False, model_or_models)
     )
 
-    if not context:
-        dispatcher = 'local_serial'
-    else:
-        dispatcher = None
-
     modelfit_results = run_tool(
         'modelfit',
         models,
         esttool=esttool,
         name=name,
-        context=context,
-        dispatcher=dispatcher,
         ncores=ncores,
         validate_dataset=validate_dataset,
+        project=project,
     )
 
     return (
@@ -267,11 +262,9 @@ def run_tool_with_name(
     else:
         pass
 
-    dispatching_options['context'] = {
-        '__class__': type(ctx).__name__,
-        'name': str(ctx.name),
-        'ref': str(ctx.ref),
-    }
+    ctx_metadata, proj_metadata = _get_ctx_proj_metadata(ctx, dispatching_options['project'])
+    dispatching_options['context'] = ctx_metadata
+    dispatching_options['project'] = proj_metadata
 
     if common_options['always_create_new_dataset_file']:
         args_new = [reset_dataset(x) if isinstance(x, Model) else x for x in args]
@@ -355,6 +348,25 @@ def _update_metadata(tool_metadata):
     # FIXME: Make metadata immutable
     tool_metadata['stats']['end_time'] = _now()
     return tool_metadata
+
+
+def _get_ctx_proj_metadata(ctx, proj):
+    ctx_metadata = {
+        '__class__': type(ctx).__name__,
+        'name': str(ctx.name),
+        'ref': str(ctx.ref),
+    }
+
+    if proj:
+        proj_metadata = {
+            '__class__': type(proj).__name__,
+            'name': str(proj.name),
+            'ref': str(proj.ref),
+        }
+    else:
+        proj_metadata = None
+
+    return ctx_metadata, proj_metadata
 
 
 def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
@@ -691,15 +703,19 @@ def _now():
 def _get_name(options, tool_name) -> str:
     name = options['name']
     if name is None:
-        name = _create_new_context_name(tool_name)
+        if proj := options['project']:
+            ref = proj.get_context_ref(options['ref'])
+        else:
+            ref = None
+        name = _create_new_context_name(tool_name, ref)
     return name
 
 
-def _create_new_context_name(tool_name: str) -> str:
+def _create_new_context_name(tool_name: str, ref: Optional[str]) -> str:
     n = 1
     while True:
         name = f"{tool_name}{n}"
-        if not Context.default_exists(name):
+        if not Context.default_exists(name, ref):
             break
         n += 1
     return name
@@ -716,13 +732,17 @@ def _create_new_subcontext_name(context: Context, tool_name: str) -> str:
 
 
 def get_context(dispatching_options, tool_name) -> Context:
-    ctx = dispatching_options['context']
-    if ctx is None:
-        from pharmpy.workflows import Context
+    from pharmpy.workflows import Context
 
-        name = _get_name(dispatching_options, tool_name)
-        ref = dispatching_options['ref']
-        ctx = Context.select_context(None, name, ref)
+    name = _get_name(dispatching_options, tool_name)
+    ref = dispatching_options['ref']
+    if (proj := dispatching_options['project']) is not None:
+        ref = proj.get_context_ref(ref)
+        modeldb = proj.model_database
+    else:
+        modeldb = None
+
+    ctx = Context.select_context(None, name, ref, model_database=modeldb)
     return ctx
 
 

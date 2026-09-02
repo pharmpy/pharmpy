@@ -1,6 +1,7 @@
 import shutil
 import tempfile
 from pathlib import Path
+from typing import Optional
 
 import pytest
 
@@ -36,11 +37,12 @@ def _run_est(testdata, esttool):
 
 @pytest.fixture(scope='session')
 def model_count():
-    def _model_count(rundir: Path):
+    def _model_count(rundir: Path, model_dir_name: Optional[str] = None):
+        dir_path = rundir / 'models' if model_dir_name is None else rundir / model_dir_name
         return sum(
             map(
                 lambda path: 0 if path.name in ['.lock', '.datasets', 'input_model'] else 1,
-                ((rundir / 'models').iterdir()),
+                (dir_path.iterdir()),
             )
         )
 

@@ -8,8 +8,8 @@ from pharmpy.config import site_config_path, user_config_path
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.model import Model
-from pharmpy.modeling import filter_dataset
-from pharmpy.tools import fit
+from pharmpy.modeling import filter_dataset, read_model
+from pharmpy.tools import fit, open_project
 from pharmpy.tools.external.nlmixr import verification as nlmixr_verification
 from pharmpy.tools.external.nonmem import conf
 from pharmpy.tools.external.nonmem.run import execute_model as nonmem_execute_model
@@ -215,3 +215,23 @@ def test_fit_use_pharmpy_dataset(tmp_path, model_count, testdata):
         ]
         assert not (rundir / '.modeldb' / '.datasets' / 'pheno.dta').is_file()
         assert (rundir / '.modeldb' / '.datasets' / 'data1.csv').is_file()
+
+
+def test_fit_in_project(tmp_path, load_example_model_for_test):
+    with chdir(tmp_path):
+        proj = open_project('myproject', tmp_path)
+        model = load_example_model_for_test('pheno')
+        res = fit(model, project=proj)
+        assert res.ofv == pytest.approx(586.2760562804789)
+        modeldb_path = tmp_path / 'myproject' / '.modeldb'
+        assert modeldb_path.exists()
+        assert not (tmp_path / 'myproject' / 'modelfit1' / '.modeldb').is_dir()
+        model_path = tmp_path / 'myproject' / 'modelfit1' / 'models' / 'pheno'
+        assert model_path.is_dir()
+        assert read_model(model_path / 'model.ctl') == model
+
+        fit(model, project=proj)
+        model_dirs = [
+            x for x in modeldb_path.iterdir() if x.is_dir() and not x.name.startswith(".")
+        ]
+        assert len(model_dirs) == 1

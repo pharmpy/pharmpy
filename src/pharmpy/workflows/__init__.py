@@ -9,6 +9,7 @@ from .model_database import (
     NullModelDatabase,
 )
 from .model_entry import ModelEntry
+from .projects import LocalDirectoryProject, Project
 from .results import ModelfitResults, Results, SimulationResults
 from .task import Task
 from .workflow import Workflow, WorkflowBuilder
@@ -26,11 +27,13 @@ __all__ = (
     'LocalDirectoryDatabase',
     'LocalModelDirectoryDatabase',
     'LocalDirectoryContext',
+    'LocalDirectoryProject',
     'Log',
     'NullModelDatabase',
     'ModelDatabase',
     'ModelEntry',
     'ModelfitResults',
+    'Project',
     'Results',
     'SimulationResults',
     'Task',
