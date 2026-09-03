@@ -98,5 +98,5 @@ def canonicalize_seed(seed):
     try:
         seed = int(seed)
     except ValueError:
-        InputValidationError("Seed must be an integer")
+        raise InputValidationError("Seed must be an integer")
     return seed
