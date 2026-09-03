@@ -28,7 +28,7 @@ def create_rng(
 
     Returns
     -------
-    Generator
+    RandomNumberGenerator
         Initialized random number generator object
 
     Examples
