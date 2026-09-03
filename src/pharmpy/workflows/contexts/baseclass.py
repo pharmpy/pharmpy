@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from datetime import datetime
 from typing import Any, Literal, Optional, Union
 
+from pharmpy.basic import RandomNumberGenerator
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
@@ -345,17 +346,17 @@ class Context(ABC):
         metadata = self.retrieve_metadata()
         return "stats" in metadata and "end_time" in metadata["stats"]
 
-    def create_rng(self, index: int):
+    def create_rng(self, index: int) -> RandomNumberGenerator:
         """Create a random number generator
 
         Creating the generator will be using the seed common option, the index and
         the context path to get a unique sequence.
         """
         ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
-        rng = np.random.default_rng([index, *ctxpath_bytes, self.seed])
+        rng = RandomNumberGenerator([index, *ctxpath_bytes, self.seed])
         return rng
 
-    def spawn_seed(self, rng, n=128) -> int:
+    def spawn_seed(self, rng: RandomNumberGenerator, n: int = 128) -> int:
         """Spawn a new seed using a random number generator
 
         Parameters
@@ -371,7 +372,7 @@ class Context(ABC):
             New random seed
         """
         n_full_words = n // 64
-        a = rng.integers(2**64 - 1, size=n_full_words, dtype=np.uint64)
+        a = rng.to_numpy().integers(2**64 - 1, size=n_full_words, dtype=np.uint64)
         x = 0
         m = 1
         for val in a:
@@ -379,6 +380,6 @@ class Context(ABC):
             m *= 2**64
         remaining_bits = n % 64
         if remaining_bits > 0:
-            b = rng.integers(2**remaining_bits - 1, size=1, dtype=np.uint64)
+            b = rng.to_numpy().integers(2**remaining_bits - 1, size=1, dtype=np.uint64)
             x += int(b[0]) * m
         return x

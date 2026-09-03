@@ -13,6 +13,7 @@ from typing import Any, Optional, Union, get_args, get_origin, get_type_hints
 import pharmpy
 import pharmpy.tools.modelfit
 import pharmpy.workflows.results
+from pharmpy.basic import Seed
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path
@@ -42,7 +43,7 @@ from pharmpy.workflows import (
     execute_workflow,
     split_common_options,
 )
-from pharmpy.workflows.args import InputValidationError, canonicalize_seed
+from pharmpy.workflows.args import InputValidationError
 from pharmpy.workflows.contexts import Context, LocalDirectoryContext
 from pharmpy.workflows.dispatchers import Dispatcher
 from pharmpy.workflows.model_database import ModelDatabase
@@ -218,7 +219,7 @@ def run_tool_with_name(
 ) -> Union[Model, list[Model], tuple[Model], Results]:
     dispatching_options, common_options, seed, tool_options = split_common_options(kwargs)
 
-    seed = canonicalize_seed(seed)
+    seed = Seed(seed)
 
     if validate_input := getattr(tool, 'validate_input', None):
         try:
@@ -330,7 +331,7 @@ def create_metadata(
     tool_func,
     args: Sequence,
     tool_options: Mapping[str, Any],
-    seed: int,
+    seed: Seed,
     common_options: Optional[Mapping[str, Any]] = None,
     dispatching_options: Optional[Mapping[str, Any]] = None,
 ):
@@ -339,7 +340,7 @@ def create_metadata(
         setup_metadata = _create_metadata_common(database, tool_name, common_options)
         tool_metadata['common_options'] = setup_metadata
         tool_metadata['dispatching_options'] = dispatching_options
-    tool_metadata['seed'] = seed
+    tool_metadata['seed'] = seed.value
 
     return tool_metadata
 
@@ -376,7 +377,7 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
     tool = import_tool(tool_name)
 
     seed = kwargs.get('seed', None)
-    seed = canonicalize_seed(seed)
+    seed = Seed(seed)
     if 'seed' in kwargs.keys():
         del kwargs['seed']
 

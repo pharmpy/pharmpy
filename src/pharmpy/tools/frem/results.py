@@ -942,7 +942,7 @@ def calculate_results_using_bipp(
     remaining_samples = samples
     k = 0
     while k < remaining_samples:
-        bootstrap = pool.sample(n=ninds, replace=True, random_state=rng.bit_generator)
+        bootstrap = pool.sample(n=ninds, replace=True, random_state=rng.to_numpy().bit_generator)
         ishk = ishr.loc[bootstrap.index]
         mean = ishk.to_numpy().mean(0)
         cf = (1 / (1 - mean)) ** (1 / 2)
@@ -1101,6 +1101,6 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         rescale=rescale,
         intermediate_models=intmods,
         intermediate_models_res=intmodres,
-        seed=np.random.default_rng(9843),
+        seed=9843,
     )
     return res

@@ -27,7 +27,7 @@ class NormalDistribution(NumericDistribution):
         self._std = std
 
     def sample(self, rng, size: int) -> np.ndarray:
-        return rng.normal(self._mean, self._std, size=size)
+        return rng.to_numpy().normal(self._mean, self._std, size=size)
 
 
 class MultivariateNormalDistribution(NumericDistribution):
@@ -36,7 +36,7 @@ class MultivariateNormalDistribution(NumericDistribution):
         self._sigma = sigma
 
     def sample(self, rng, size: int) -> np.ndarray:
-        return rng.multivariate_normal(self._mu, self._sigma, size=size)
+        return rng.to_numpy().multivariate_normal(self._mu, self._sigma, size=size)
 
 
 class FiniteDistribution(NumericDistribution):
@@ -44,6 +44,6 @@ class FiniteDistribution(NumericDistribution):
         self._probabilities = probabilities
 
     def sample(self, rng, size: int) -> np.ndarray:
-        return rng.choice(
+        return rng.to_numpy().choice(
             list(self._probabilities.keys()), size=size, p=list(self._probabilities.values())
         )

@@ -6,8 +6,7 @@ from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
 from typing import Any, Collection, Container, Optional, Sequence, Union, overload
 
-from pharmpy import DEFAULT_SEED
-from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
+from pharmpy.basic import Expr, Matrix, RandomNumberGenerator, Seed, TExpr, TSymbol
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy, sympy_stats
 from pharmpy.internals.expr.eval import eval_expr
@@ -18,14 +17,6 @@ from pharmpy.internals.math import cov2corr, is_positive_semidefinite, nearest_p
 
 from .distributions.numeric import NumericDistribution
 from .distributions.symbolic import Distribution, JointNormalDistribution, NormalDistribution
-
-
-def _create_rng(seed: Union[int, np.random.Generator] = DEFAULT_SEED) -> np.random.Generator:
-    """Create a new random number generator"""
-    if isinstance(seed, np.random.Generator):
-        return seed
-    else:
-        return np.random.default_rng(seed)
 
 
 class VariabilityLevel(Immutable):
@@ -802,7 +793,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         expr,
         parameters: Optional[Mapping[str, float]] = None,
         samples: int = 1,
-        rng: Union[np.random.Generator, int] = DEFAULT_SEED,
+        rng: Optional[Union[RandomNumberGenerator, Seed, int, float]] = None,
     ) -> np.ndarray:
         """Sample from the distribution of expr
 
@@ -816,7 +807,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             sympified_expr,
             xreplace_parameters,
             samples,
-            _create_rng(rng),
+            RandomNumberGenerator(rng),
         )
 
     @cache_method_no_args
@@ -1006,7 +997,7 @@ def sample_expr_from_rvs(
 def sample_rvs(
     sampling_rvs: Iterable[tuple[tuple[sympy.Expr, ...], NumericDistribution]],
     nsamples: int,
-    rng,
+    rng: RandomNumberGenerator,
 ) -> dict[sympy.Expr, np.ndarray]:
     data = {}
     for symbols, distribution in sampling_rvs:

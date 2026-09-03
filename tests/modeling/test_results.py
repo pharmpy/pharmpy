@@ -1,8 +1,8 @@
 from io import StringIO
 
-import numpy as np
 import pytest
 
+from pharmpy.basic import RandomNumberGenerator
 from pharmpy.deps import pandas as pd
 from pharmpy.model import AddColumn
 from pharmpy.modeling import (
@@ -53,7 +53,7 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
     path = testdata / 'nonmem' / 'secondary_parameters' / 'pheno.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(103)
+    rng = RandomNumberGenerator(103)
     stats = calculate_individual_parameter_statistics(
         model,
         'CL/V',
@@ -69,13 +69,12 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
     path = testdata / 'nonmem' / 'secondary_parameters' / 'run1.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(5678)
     stats = calculate_individual_parameter_statistics(
         model,
         'CL/V',
         res.parameter_estimates,
         res.covariance_matrix,
-        seed=rng,
+        seed=5678,
     )
     assert stats['mean'].iloc[0] == pytest.approx(0.0049100899539843)
     assert stats['variance'].iloc[0] == pytest.approx(7.391076132098555e-07)
@@ -84,13 +83,12 @@ def test_calculate_individual_parameter_statistics(load_model_for_test, testdata
     path = testdata / 'nonmem' / 'secondary_parameters' / 'run2.mod'
     covmodel = load_model_for_test(path)
     res = parse_modelfit_results(covmodel, path)
-    rng = np.random.default_rng(8976)
     stats = calculate_individual_parameter_statistics(
         covmodel,
         'K = CL/V',
         res.parameter_estimates,
         res.covariance_matrix,
-        seed=rng,
+        seed=8976,
     )
     assert stats['mean']['K', 'median'] == pytest.approx(0.004526899290470633)
     assert stats['variance']['K', 'median'] == pytest.approx(2.95125370813005e-06)
@@ -107,12 +105,11 @@ def test_calculate_pk_parameters_statistics(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'models' / 'mox1.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(
         model,
         res.parameter_estimates,
         res.covariance_matrix,
-        seed=rng,
+        seed=103,
     )
     assert df['mean'].loc['t_max', 'median'] == pytest.approx(1.5999856886869577)
     assert df['variance'].loc['t_max', 'median'] == pytest.approx(0.29728565293669557)
@@ -128,12 +125,11 @@ def test_calc_pk_two_comp_bolus(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'models' / 'mox_2comp.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(103)
     df = calculate_pk_parameters_statistics(
         model,
         res.parameter_estimates,
         res.covariance_matrix,
-        seed=rng,
+        seed=103,
     )
     # FIXME: Why doesn't random state handle this difference in stderr?
     df.drop('stderr', inplace=True, axis=1)

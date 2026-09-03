@@ -112,12 +112,12 @@ def create_dummy_modelfit_results(model, ref=None):
     rng = create_rng(seed)
 
     if ref:
-        ofv = rng.uniform(ref - 50, ref)
+        ofv = rng.to_numpy().uniform(ref - 50, ref)
     else:
-        ofv = rng.uniform(-20, 20)
+        ofv = rng.to_numpy().uniform(-20, 20)
 
     def _get_param_init(param):
-        init = param.init + rng.random() * 0.1
+        init = param.init + rng.to_numpy().random() * 0.1
         range = param.upper - param.lower
         if init >= param.upper or init <= param.lower:
             init = param.upper - (range / 2)
@@ -140,11 +140,11 @@ def create_dummy_modelfit_results(model, ref=None):
         if isinstance(step, EstimationStep)
     ):
         rse = pd.Series(model.parameters.inits)
-        rse.iloc[:] = rng.uniform(-1, 1)
+        rse.iloc[:] = rng.to_numpy().uniform(-1, 1)
         rse.name = 'RSE'
 
         se = pd.Series(model.parameters.inits)
-        se.iloc[:] = rng.uniform(-1, 1)
+        se.iloc[:] = rng.to_numpy().uniform(-1, 1)
         se.name = 'SE'
 
         param_names = model.parameters.names
@@ -221,7 +221,7 @@ def create_dummy_modelfit_results(model, ref=None):
 
 
 def _rand_array(x, y, rng, generator='random'):
-    rand_n = getattr(rng, generator)
+    rand_n = getattr(rng.to_numpy(), generator)
     if x == 1:
         return np.array([rand_n() for yi in range(y)])
     else:
@@ -246,7 +246,9 @@ def create_dummy_simulation_results(model):
 
     dv_sim_all = []
     for _ in range(0, no_of_sim_steps):
-        dv_sim = pd.DataFrame(dv.apply(lambda x: x if x == 0 else x + (x * rng.uniform(-0.1, 0.1))))
+        dv_sim = pd.DataFrame(
+            dv.apply(lambda x: x if x == 0 else x + (x * rng.to_numpy().uniform(-0.1, 0.1)))
+        )
         dv_sim.index.name = 'index'
         dv_sim_all.append(dv_sim)
     keys = list(range(1, no_of_sim_steps + 1))
