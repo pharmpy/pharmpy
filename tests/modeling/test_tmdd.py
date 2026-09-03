@@ -298,7 +298,7 @@ def test_dataset_multiple_dvs(pheno_path, load_model_for_test):
 def _add_random_dvids(model):
     df = model.dataset.copy()
     rng = create_rng(23)
-    df['DVID'] = np.array([rng.integers(1, 6) for i in range(len(df))])
+    df['DVID'] = np.array([rng.to_numpy().integers(1, 6) for i in range(len(df))])
     model = model.replace(dataset=df)
     di = model.datainfo
     var = di['DVID'].variable.replace(type='dvid')

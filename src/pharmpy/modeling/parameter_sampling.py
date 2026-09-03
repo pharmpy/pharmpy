@@ -5,14 +5,16 @@ from collections.abc import Mapping
 from functools import partial
 from typing import Literal, Optional, Union
 
-from pharmpy import DEFAULT_SEED
+from pharmpy.basic import RandomNumberGenerator, Seed
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.math import is_posdef, nearest_positive_semidefinite
 from pharmpy.model import Model
 
 
-def create_rng(seed: Union[np.random.Generator, int] = DEFAULT_SEED) -> np.random.Generator:
+def create_rng(
+    seed: Optional[Union[int, float, RandomNumberGenerator, Seed]] = None,
+) -> RandomNumberGenerator:
     """Create a new random number generator
 
     Pharmpy functions that use random sampling take a random number generator or seed as input.
@@ -22,28 +24,22 @@ def create_rng(seed: Union[np.random.Generator, int] = DEFAULT_SEED) -> np.rando
     ----------
     seed : int or rng
         Seed for the random number generator or None (default) for a randomized seed. If seed
-        is generator it will be passed through.
+        is a generator it will be passed through.
 
     Returns
     -------
     Generator
-        Initialized numpy random number generator object
+        Initialized random number generator object
 
     Examples
     --------
     >>> from pharmpy.modeling import create_rng
     >>> rng = create_rng(23)
-    >>> rng.standard_normal()
+    >>> rng.to_numpy().standard_normal()
     0.5532605888887387
 
     """
-    if isinstance(seed, np.random.Generator):
-        rng = seed
-    elif isinstance(seed, float) and int(seed) == seed:
-        # Case to support int-like floats in pharmr
-        rng = np.random.default_rng(int(seed))
-    else:
-        rng = np.random.default_rng(seed)
+    rng = RandomNumberGenerator(seed)
     return rng
 
 
@@ -58,7 +54,7 @@ def _sample_truncated_joint_normal(sigma, mu, a, b, n, rng):
     kept_samples = np.empty((0, len(mu)))
     remaining = n
     while remaining > 0:
-        samples = rng.multivariate_normal(
+        samples = rng.to_numpy().multivariate_normal(
             mu, sigma, size=remaining, method="cholesky", check_valid='ignore'
         )
         in_range = np.logical_and(samples > a, samples < b).all(axis=1)
@@ -132,7 +128,7 @@ def sample_parameters_uniformly(
     fraction: float = 0.1,
     force_posdef_samples: Optional[int] = None,
     n: int = 1,
-    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
+    seed: Optional[Union[RandomNumberGenerator, float, int, Seed]] = None,
     scale: Literal['UCP', 'normal'] = 'normal',
 ) -> pd.DataFrame:
     """Sample parameter vectors using uniform sampling
@@ -194,7 +190,7 @@ def sample_parameters_uniformly(
             elif scale == 'UCP':
                 lower = 0.1 - 0.1 * fraction
                 upper = 0.1 + 0.1 * fraction
-            samples[:, i] = rng.uniform(lower, upper, n)
+            samples[:, i] = rng.to_numpy().uniform(lower, upper, n)
         return samples
 
     samples = _sample_from_function(
@@ -210,7 +206,7 @@ def sample_parameters_from_covariance_matrix(
     force_posdef_samples: Optional[int] = None,
     force_posdef_covmatrix: bool = False,
     n: int = 1,
-    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
+    seed: Optional[Union[RandomNumberGenerator, int, float, Seed]] = None,
 ) -> pd.DataFrame:
     """Sample parameter vectors using the covariance matrix
 
@@ -231,8 +227,8 @@ def sample_parameters_from_covariance_matrix(
         Set to True to force the input covariance matrix to be positive definite
     n : int
         Number of samples
-    seed : Generator
-        Random number generator
+    seed : int or generator
+        An integer seed or a random number generator
 
     Returns
     -------
@@ -260,6 +256,7 @@ def sample_parameters_from_covariance_matrix(
     sample_individual_estimates : Sample individual estiates given their covariance
 
     """
+    seed = create_rng(seed)
     sigma = covariance_matrix.loc[parameter_estimates.keys(), parameter_estimates.keys()].to_numpy()
     if not is_posdef(sigma):
         if force_posdef_covmatrix:
@@ -288,7 +285,7 @@ def sample_individual_estimates(
     individual_estimates_covariance: pd.DataFrame,
     parameters: Optional[list[str]] = None,
     samples_per_id: int = 100,
-    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
+    seed: Optional[Union[RandomNumberGenerator, Seed, int, float]] = None,
 ) -> pd.DataFrame:
     """Sample individual estimates given their covariance.
 
@@ -346,7 +343,6 @@ def sample_individual_estimates(
 
     """
     rng = create_rng(seed)
-    assert rng is not None
     ests = individual_estimates
     covs = individual_estimates_covariance
     if parameters is None:
@@ -357,7 +353,9 @@ def sample_individual_estimates(
     for (idx, mu), sigma in zip(ests.iterrows(), covs):
         sigma = sigma.loc[parameters, parameters]
         sigma = nearest_positive_semidefinite(sigma)
-        id_samples = rng.multivariate_normal(mu.to_numpy(), sigma.to_numpy(), size=samples_per_id)
+        id_samples = rng.to_numpy().multivariate_normal(
+            mu.to_numpy(), sigma.to_numpy(), size=samples_per_id
+        )
         id_df = pd.DataFrame(id_samples, columns=ests.columns)
         id_df['ID'] = idx
         id_df['sample'] = list(range(0, samples_per_id))

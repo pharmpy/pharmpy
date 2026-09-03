@@ -7,8 +7,7 @@ from pathlib import Path
 from typing import Collection, Literal, Mapping, Optional, Union
 
 import pharmpy.visualization
-from pharmpy import DEFAULT_SEED
-from pharmpy.basic import Expr
+from pharmpy.basic import Expr, RandomNumberGenerator, Seed
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -159,7 +158,7 @@ def plot_transformed_eta_distributions(
     parameter_estimates: Union[pd.Series, Mapping[str, float]],
     individual_estimates: pd.DataFrame,
     parameter_estimates_untransformed: Union[pd.Series, Mapping[str, float]],
-    seed: Union[np.random.Generator, int] = DEFAULT_SEED,
+    seed: Optional[Union[RandomNumberGenerator, Seed, float, int]] = None,
 ):
     """Plot transformed eta distributions for all transformed etas
 

@@ -88,9 +88,8 @@ def test_frem_results_pheno(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'frem' / 'pheno' / 'model_4.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(39)
     res = calculate_results(
-        model, res, continuous=['APGR', 'WGT'], categorical=[], samples=10, seed=rng
+        model, res, continuous=['APGR', 'WGT'], categorical=[], samples=10, seed=39
     )
 
     correct = """parameter,covariate,condition,p5,mean,p95
@@ -266,9 +265,8 @@ def test_frem_results_pheno_categorical(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'frem' / 'pheno_cat' / 'model_4.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(8978)
     res = calculate_results(
-        model, res, continuous=['WGT'], categorical=['APGRX'], samples=10, seed=rng
+        model, res, continuous=['WGT'], categorical=['APGRX'], samples=10, seed=8978
     )
 
     correct = """parameter,covariate,condition,p5,mean,p95

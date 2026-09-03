@@ -1,6 +1,6 @@
-import numpy as np
 import pytest
 
+from pharmpy.basic import RandomNumberGenerator
 from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     create_rng,
@@ -13,10 +13,10 @@ from pharmpy.tools.external.results import parse_modelfit_results
 
 def test_create_rng():
     rng = create_rng(23)
-    assert rng.standard_normal() == 0.5532605888887387
+    assert rng.to_numpy().standard_normal() == 0.5532605888887387
 
     rng = create_rng(23.0)
-    assert rng.standard_normal() == 0.5532605888887387
+    assert rng.to_numpy().standard_normal() == 0.5532605888887387
 
 
 def test_sample_parameters_uniformly(load_model_for_test, testdata):
@@ -32,7 +32,6 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno_real.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(318)
     pe = res.parameter_estimates
     cm = res.covariance_matrix
     samples = sample_parameters_from_covariance_matrix(
@@ -40,7 +39,7 @@ def test_sample_parameter_from_covariance_matrix(load_model_for_test, testdata):
         pe,
         cm,
         n=3,
-        seed=rng,
+        seed=318,
     )
     correct = pd.DataFrame(
         {
@@ -70,7 +69,7 @@ def test_sample_individual_estimates(load_model_for_test, testdata):
     path = testdata / 'nonmem' / 'pheno_real.mod'
     model = load_model_for_test(path)
     res = parse_modelfit_results(model, path)
-    rng = np.random.default_rng(86)
+    rng = RandomNumberGenerator(86)
     ie = res.individual_estimates
     iec = res.individual_estimates_covariance
     samples = sample_individual_estimates(model, ie, iec, seed=rng)

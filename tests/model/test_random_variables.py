@@ -1,10 +1,9 @@
 import pickle
 
-import numpy as np
 import pytest
 import sympy
 
-from pharmpy.basic import Expr, Matrix
+from pharmpy.basic import Expr, Matrix, RandomNumberGenerator
 from pharmpy.model import (
     FiniteDistribution,
     JointNormalDistribution,
@@ -544,7 +543,7 @@ def test_sample():
     assert list(samples) == pytest.approx([1.7033555824617346, -1.4031809274765599])
 
     with pytest.raises(ValueError):
-        rvs.sample(rv1 + rv2, samples=1, rng=np.random.default_rng(9532))
+        rvs.sample(rv1 + rv2, samples=1, rng=RandomNumberGenerator(9532))
 
     samples = rvs.sample(1, samples=2)
     assert list(samples) == [1.0, 1.0]
@@ -981,7 +980,7 @@ def test_finite_evalf():
     dist = FiniteDistribution.create("MIX", 'iiv', {1: theta, 2: 1 - theta})
     d = {theta: 0.3}
     num = dist.evalf(d)
-    samples = num.sample(size=10, rng=np.random.default_rng(9532))
+    samples = num.sample(size=10, rng=RandomNumberGenerator(9532))
     assert list(samples) == [2, 1, 2, 2, 2, 2, 2, 1, 1, 2]
 
 

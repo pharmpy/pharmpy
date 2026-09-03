@@ -38,9 +38,11 @@ class Seed:
 class RandomNumberGenerator:
     """A random number generator"""
 
-    def __init__(self, obj: Optional[Union[int, float, Seed, RandomNumberGenerator]] = None):
+    def __init__(self, obj: Optional[Union[int, list, float, Seed, RandomNumberGenerator]] = None):
         if isinstance(obj, RandomNumberGenerator):
-            self._backend = obj
+            self._backend = obj._backend
+        elif isinstance(obj, list):
+            self._backend = np.random.default_rng(obj)
         else:
             seed = Seed(obj)
             self._backend = np.random.default_rng(seed.value)

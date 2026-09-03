@@ -48,6 +48,7 @@ def test_seed_repr():
         18912,
         Seed(19912),
         RandomNumberGenerator(987),
+        [1, 2, 3],
     ],
 )
 def test_rng(seed):
