@@ -60,7 +60,7 @@ pandas==3.0.5
 pandocfilters==1.5.1
 parso==0.8.7
 partd==1.4.2
-patsy==1.0.2
+patsy==1.0.3
 pexpect==4.9.0
 pint==0.25.3
 platformdirs==4.11.5
