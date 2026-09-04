@@ -1906,8 +1906,8 @@ def set_reference_values(model: Model, refs: dict[str, Union[int, float]]) -> Mo
     """
     df = model.dataset
     di = model.datainfo
-    newcols = dict()
-    dtypes = dict()
+    newcols = {}
+    dtypes = {}
     for colname, value in refs.items():
         if di[colname].type == 'dose':
             newdose = df[colname].mask(df[colname] > 0, value)
@@ -2458,7 +2458,7 @@ def binarize_dataset(
         if not all_levels:
             levels = levels[0:-1]
 
-        level_map = dict()
+        level_map = {}
         for level in levels:
             if '.' in str(level):
                 level = str(level).replace('.', '_')

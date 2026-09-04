@@ -530,7 +530,7 @@ class RandomVariables(CollectionsSequence, Immutable):
 
         The list has a lower triangular canonical order
         """
-        params = list()
+        params = []
         for dist in self:
             for name in dist.parameter_names:
                 if name not in params:

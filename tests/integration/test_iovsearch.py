@@ -53,7 +53,7 @@ def test_default_mox1(tmp_path, model_count, testdata):
 @pytest.mark.parametrize(
     'kwargs, no_of_candidate_models, best_model',
     [
-        (dict(), 9, 'iovsearch_run8'),
+        ({}, 9, 'iovsearch_run8'),
         ({'rank_type': 'mbic', 'E': 1.0}, 9, 'iovsearch_run8'),
         (
             {

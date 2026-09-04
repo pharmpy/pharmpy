@@ -33,9 +33,9 @@ def find_definitions(tree):
     definition_trees = list(tree.find_data('definition'))
 
     if not definition_trees:
-        return dict()
+        return {}
 
-    definitions = dict()
+    definitions = {}
     for subtree in definition_trees:
         symbol, values = DefinitionInterpreter().interpret(subtree)
         definitions[symbol] = values

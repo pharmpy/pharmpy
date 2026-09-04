@@ -460,7 +460,7 @@ class CompartmentalSystemBuilder:
         if compartment is None:
             raise ValueError('Option `compartment` cannot be None')
 
-        mapping = dict()
+        mapping = {}
         if admid:
             doses = tuple(dose for dose in compartment.doses if dose.admid != admid)
         else:

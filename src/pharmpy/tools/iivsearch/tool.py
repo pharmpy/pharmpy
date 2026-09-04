@@ -433,7 +433,7 @@ def _run_exhaustive_search(
     index_offset,
     kwargs=None,
 ):
-    kwargs = kwargs if kwargs else dict()
+    kwargs = kwargs if kwargs else {}
     wf_step = algorithms.td_exhaustive(type, base_model_entry, mfl, index_offset, **kwargs)
     if not wf_step:
         context.log_info('No models to run, skipping step')

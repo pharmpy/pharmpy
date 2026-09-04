@@ -611,7 +611,7 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             ValueError,
             'Value `E_q` must be denoted with `%`',
         ),
-        (('nonmem/qa/boxcox.mod',), dict(), ValueError, 'Invalid `model`'),
+        (('nonmem/qa/boxcox.mod',), {}, ValueError, 'Invalid `model`'),
     ],
 )
 def test_validate_input_raises(

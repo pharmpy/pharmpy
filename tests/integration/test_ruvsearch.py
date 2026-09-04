@@ -76,7 +76,7 @@ def test_ruvsearch_blq(tmp_path, testdata):
 @pytest.mark.parametrize(
     'kwargs, no_of_steps, no_of_models',
     [
-        (dict(), 3, 5),
+        ({}, 3, 5),
         ({'skip': ['IIV_on_RUV', 'time_varying']}, 1, 3),
     ],
 )

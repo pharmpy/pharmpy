@@ -351,8 +351,7 @@ class Results(Immutable):
         for key, value in d.items():
             if (
                 value.__class__.__module__.startswith('altair.')
-                or isinstance(value, Model)
-                or isinstance(value, ModelfitResults)
+                or isinstance(value, (Model, ModelfitResults))
                 or (isinstance(value, list) and len(value) > 0 and isinstance(value[0], Model))
             ):
                 continue

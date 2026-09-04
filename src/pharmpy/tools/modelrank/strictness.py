@@ -64,7 +64,7 @@ def preprocess_string(strictness: str) -> str:
 
 
 def evaluate_strictness(expr: BooleanExpr, predicates: dict[str, Optional[bool]]) -> Optional[bool]:
-    sub_dict = dict()
+    sub_dict = {}
     for key, value in predicates.items():
         # NaNs will raise in subs
         if value is None or (isinstance(value, float) and np.isnan(value)):
@@ -87,7 +87,7 @@ def get_strictness_predicates(
 
 
 def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str, Optional[bool]]:
-    predicates = dict()
+    predicates = {}
 
     def _eval_tree(sub_expr):
         for arg in sub_expr.args:

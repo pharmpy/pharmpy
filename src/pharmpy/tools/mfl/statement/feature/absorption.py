@@ -23,7 +23,7 @@ class Absorption(ModelFeature):
 
     def __sub__(self, other):
         if isinstance(other.modes, Wildcard):
-            return Absorption((Name('INST')))
+            return Absorption(Name('INST'))
         elif isinstance(self.modes, Wildcard):
             default = ABSORPTION_WILDCARD
             all_modes = tuple([a for a in default if a not in other.modes])

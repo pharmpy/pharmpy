@@ -262,7 +262,7 @@ def create_base_model(ss, allometry, model_or_model_entry):
 def post_process(
     context, mfl, rank_type, cutoff, strictness, E, parameter_uncertainty_method, *model_entries
 ):
-    input_model_entry, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
+    _, base_model_entry, res_model_entries = categorize_model_entries(model_entries)
 
     rank_type += '_mixed' if rank_type in ('bic', 'mbic') else ''
 

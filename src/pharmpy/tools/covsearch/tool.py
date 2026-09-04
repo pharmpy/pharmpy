@@ -378,7 +378,7 @@ def prepare_mfls(model, search_space):
 def get_exploratory_covariates(ss_mfl):
     exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
     cov_funcs = all_funcs(Model(), exploratory_cov)
-    exploratory_cov_funcs = dict()
+    exploratory_cov_funcs = {}
     for cov_effect, cov_func in cov_funcs.items():
         if cov_effect[-1] == "ADD":
             effect = cov_effect[1:-1]  # Everything except "ADD", e.g. ('CL', 'WT', 'exp', '*')

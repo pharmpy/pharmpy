@@ -192,13 +192,13 @@ def test_change_proportional_model(load_model_for_test, testdata):
     [
         (
             _create_iiv_on_ruv_model,
-            dict(),
+            {},
             'IIV_on_RUV_1',
             'theta + eta_base + epsilon*exp(ETA_RV1)',
         ),
         (
             _create_power_model,
-            dict(),
+            {},
             'power_1',
             'theta + eta_base + IPRED**power1*epsilon',
         ),
@@ -210,7 +210,7 @@ def test_change_proportional_model(load_model_for_test, testdata):
         ),
         (
             _create_combined_model,
-            dict(),
+            {},
             'combined_1',
             'theta + eta_base + epsilon_p + epsilon_a/IPRED',
         ),
@@ -243,13 +243,13 @@ def test_create_models(load_model_for_test, testdata, func, kwargs, description,
     [
         (
             _create_iiv_on_ruv_model,
-            dict(),
+            {},
             'IIV_on_RUV',
             'EPS_1*A_CENTRAL(t)*exp(ETA_RV1)/VC + A_CENTRAL(t)/VC',
         ),
         (
             _create_power_model,
-            dict(),
+            {},
             'power',
             'EPS_1*(A_CENTRAL(t)/VC)**power1 + A_CENTRAL(t)/VC',
         ),
@@ -261,7 +261,7 @@ def test_create_models(load_model_for_test, testdata, func, kwargs, description,
         ),
         (
             _create_combined_model,
-            dict(),
+            {},
             'combined',
             'epsilon_a + epsilon_p*A_CENTRAL(t)/VC + A_CENTRAL(t)/VC',
         ),
@@ -446,7 +446,7 @@ def test_create_combined_model_ipred_zero(testdata, load_model_for_test):
         ),
         (
             ('nonmem/pheno_real.mod',),
-            dict(),
+            {},
             ValueError,
             'Invalid `model`: TAD must be a column',
         ),

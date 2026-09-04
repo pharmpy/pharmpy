@@ -10,7 +10,7 @@ import pytest
 def pytest_runtest_setup(item):
     # Check if the item is a doctest
     found = False
-    kept = dict()
+    kept = {}
     for key, value in item.dtest.globs.items():
         if key == '__builtins__':
             found = True

@@ -851,7 +851,7 @@ def _is_collapsable(extended, expr_extended, expr_reduced, params_added):
     if expr_extended == expr_reduced:
         return True
     symbs = params_added.intersection(expr_extended.free_symbols)
-    subs_dict = dict()
+    subs_dict = {}
     for symb in symbs:
         sub_values = []
         if symb in extended.parameters.symbols:

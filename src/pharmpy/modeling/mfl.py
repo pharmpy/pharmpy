@@ -543,7 +543,7 @@ def _get_feature_diffs(search_space, model_features, type):
             feature = feature.replace(optional=False)
             mutex_dict[feature.parameter].append(feature)
     else:
-        mutex_dict = dict()
+        mutex_dict = {}
 
     features_not_in_model = search_space - model_features
     features_not_in_model = features_not_in_model.filter(filter_on='forced')

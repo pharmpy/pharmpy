@@ -5,8 +5,8 @@
 import importlib
 import inspect
 import re
+from collections.abc import Callable
 from functools import wraps
-from typing import Callable
 
 from .run import run_tool
 

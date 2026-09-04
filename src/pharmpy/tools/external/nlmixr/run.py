@@ -631,8 +631,8 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
     ofv = rdata['ofv']['ofv'][0]
     omegas_sigmas = {}
     omega = model.random_variables.etas.covariance_matrix
-    for i in range(0, omega.rows):
-        for j in range(0, omega.cols):
+    for i in range(omega.rows):
+        for j in range(omega.cols):
             symb = omega[i, j]
             if symb != 0:
                 omegas_sigmas[symb.name] = rdata['omega'].values[i, j]

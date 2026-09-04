@@ -8,7 +8,7 @@ from pharmpy.tools import open_project, run_modelsearch
 @pytest.mark.parametrize(
     'kwargs',
     [
-        dict(),
+        {},
         {
             'strictness': 'minimization_successful and rse <= 0.7',
             'parameter_uncertainty_method': 'SANDWICH',
@@ -44,7 +44,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres, kwargs):
         (
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive',
-            dict(),
+            {},
             False,
             3,
             2,
@@ -53,7 +53,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres, kwargs):
         (
             'ABSORPTION([FO,ZO]);PERIPHERALS([0,1])',
             'exhaustive_stepwise',
-            dict(),
+            {},
             False,
             4,
             2,
@@ -62,7 +62,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres, kwargs):
         (
             'ABSORPTION([FO,ZO,SEQ-ZO-FO]);PERIPHERALS([0,1])',
             'exhaustive_stepwise',
-            dict(),
+            {},
             False,
             7,
             4,
@@ -98,7 +98,7 @@ def test_modelsearch_nonmem(tmp_path, model_count, start_modelres, kwargs):
         (
             'ABSORPTION(FO);PERIPHERALS(0..2);ALLOMETRY(WT,70)',
             'exhaustive_stepwise',
-            dict(),
+            {},
             True,
             3,
             4,

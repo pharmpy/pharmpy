@@ -250,12 +250,12 @@ def export_model_files(
     if not destination_path.exists():
         os.mkdir(destination_path)
     db = context.model_database
-    model_files_map = dict()
+    model_files_map = {}
     for model_name in context.list_all_names():
         if model_name in (INPUT_MODEL_NAME, FINAL_MODEL_NAME):
             continue
         key = context.retrieve_key(model_name)
-        copy_map = dict()
+        copy_map = {}
         for file_name in db.list_all_files(key):
             file = Path(file_name)
             if file.suffix:

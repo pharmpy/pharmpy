@@ -75,7 +75,7 @@ def test_expand(var_type):
     assert var2.expand({Ref('PK'): ()}) == ()
 
     with pytest.raises(ValueError):
-        var2.expand(dict())
+        var2.expand({})
 
     with pytest.raises(ValueError):
         var2.expand({'x': ('y',)})

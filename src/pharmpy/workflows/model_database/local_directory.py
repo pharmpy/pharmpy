@@ -285,8 +285,7 @@ class LocalModelDirectoryDatabaseTransaction(ModelTransaction):
                     name = file.name
                     if name.startswith('data') and name.endswith('.csv'):
                         number = int(name[4:-4])  # Remove data and .csv
-                        if number > highest:
-                            highest = number
+                        highest = max(number, highest)
 
                 dataset_basename = f'data{highest + 1}'
                 dataset_filename = f'{dataset_basename}.csv'
@@ -402,7 +401,7 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
 
         raise KeyError(
             f'Could not find model in {self.database}.'
-            f' Looked up {", ".join(map(lambda p: f"`{p}`", errors))}.'
+            f' Looked up {", ".join(f"`{p}`" for p in errors)}.'
         )
 
     def retrieve_modelfit_results(self):

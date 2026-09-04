@@ -695,7 +695,7 @@ def test_get_model_entries_to_rank(
     [
         (
             4,
-            dict(),
+            {},
             ValueError,
             'Length mismatch',
         ),

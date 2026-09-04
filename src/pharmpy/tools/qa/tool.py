@@ -129,7 +129,7 @@ def create_candidate(me_base, type):
 
 
 def create_results(context, *mes):
-    res_dict = dict()
+    res_dict = {}
     me_base, me_cands = categorize_model_entries(mes)
 
     dofv_table = create_dofv_table(me_base, me_cands)
@@ -171,7 +171,7 @@ def categorize_model_entries(model_entries):
 
 
 def create_dofv_table(me_base, me_cands):
-    dofv_mapping = dict()
+    dofv_mapping = {}
     for me in me_cands:
         dofv = me_base.modelfit_results.ofv - me.modelfit_results.ofv
         d_params = len(me.model.parameters) - len(me_base.model.parameters)
@@ -182,7 +182,7 @@ def create_dofv_table(me_base, me_cands):
 
 
 def create_eta_transformation_results(me, me_base, rng):
-    res_dict = dict()
+    res_dict = {}
     pes = me.modelfit_results.parameter_estimates
     ies = me.modelfit_results.individual_estimates
     pes_base = me_base.modelfit_results.parameter_estimates

@@ -731,8 +731,8 @@ def parse_column_info(control_stream):
 
 
 def _get_duplicates(a) -> dict[str, list[int]]:
-    seen = dict()
-    duplicated = dict()
+    seen = {}
+    duplicated = {}
     for i, e in enumerate(a):
         if e in seen:
             if e in duplicated:

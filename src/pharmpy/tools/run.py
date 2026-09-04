@@ -574,7 +574,7 @@ def _store_input_models(db, metadata, tool_params, kwargs):
     # together given the function signature order belong together
     previous = None
     previous_arg = None
-    for arg in tool_params.keys():
+    for arg in tool_params:
         current = kwargs.get(arg, None)
         if _is_model_arg(current) or _is_results_arg(current):
             if previous is None:
@@ -662,7 +662,7 @@ def _create_metadata_common(
 ):
     setup_metadata = {}
     for key, value in common_options.items():
-        if key not in setup_metadata.keys():
+        if key not in setup_metadata:
             if isinstance(value, Path):
                 value = str(value)
             setup_metadata[str(key)] = value
@@ -1129,11 +1129,11 @@ def rank_models(
     rows = {}
     for model in models_all:
         delta, rank_value, rank = np.nan, np.nan, np.nan
-        if model.name in ranking.keys():
+        if model.name in ranking:
             rank = ranking[model.name]
-        if model.name in rank_values.keys():
+        if model.name in rank_values:
             rank_value = rank_values[model.name]
-        if model.name in delta_values.keys():
+        if model.name in delta_values:
             delta = delta_values[model.name]
 
         rows[model.name] = (delta, rank_value, rank)
@@ -1600,8 +1600,6 @@ def _prepare_E_value(e, p, type='p'):
         e = (float(e.strip('%')) / 100) * p
     elif e is None:
         e = 1
-    else:
-        e = e
     if e > p:
         raise ValueError(f'`E_{type}` cannot be bigger than `{type}`: E_{type}={e}, {type}={p}')
     return e

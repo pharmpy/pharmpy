@@ -678,7 +678,7 @@ class ExecutionSteps(Sequence, Immutable):
         niter = [s.niter for s in steps]
         auto = [s.auto for s in steps]
         keep_every_nth_iter = [s.keep_every_nth_iter for s in steps]
-        tool_options = [dict(s.tool_options) if s.tool_options else dict() for s in steps]
+        tool_options = [dict(s.tool_options) if s.tool_options else {} for s in steps]
         df = pd.DataFrame(
             {
                 'method': method,

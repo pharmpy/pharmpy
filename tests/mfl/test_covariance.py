@@ -73,7 +73,7 @@ def test_expand():
     assert c3_expanded[0].parameters == ('CL', 'MAT')
 
     with pytest.raises(ValueError):
-        c2.expand(dict())
+        c2.expand({})
 
     with pytest.raises(ValueError):
         c2.expand({'x': ('y', 'z')})

@@ -34,7 +34,7 @@ from ..features import (
 
 class MFLInterpreter(Interpreter):
     def __init__(self, definitions=None):
-        self.definitions = definitions if definitions is not None else dict()
+        self.definitions = definitions if definitions is not None else {}
         super().__init__()
 
     def expand_ref(self, arg):

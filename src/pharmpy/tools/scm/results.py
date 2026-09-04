@@ -272,7 +272,7 @@ def parse_mixed_block(block):
         elif match := pattern['included'].match(row):
             for relation in match.group('relations').split(','):
                 par, cov, state = relation.split('-')
-                if par not in included_relations.keys():
+                if par not in included_relations:
                     included_relations[par] = {}
                 included_relations[par][cov] = state
 

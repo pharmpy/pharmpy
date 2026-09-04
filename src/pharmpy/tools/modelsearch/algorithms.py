@@ -196,7 +196,7 @@ def _get_possible_actions(wf, mfl_funcs):
 def _get_previous_features(wf, task, mfl_funcs):
     tasks_upstream = wf.get_upstream_tasks(task)
     tasks_upstream.reverse()
-    tasks_dict = {key_to_str(key): key for key in mfl_funcs.keys()}
+    tasks_dict = {key_to_str(key): key for key in mfl_funcs}
     features_previous = [
         tasks_dict[task.name] for task in tasks_upstream if task.name in tasks_dict
     ]

@@ -528,7 +528,7 @@ def run_amd_task(
 
     next_model_entry = model_entry
     sum_subtools = []
-    sum_models = dict()
+    sum_models = {}
     sum_subtools.append(_create_sum_subtool('start', model_entry))
     for tool_name, func in run_subfuncs.items():
         next_model, next_res = next_model_entry.model, next_model_entry.modelfit_results
@@ -1159,7 +1159,7 @@ def _subfunc_iiv(
     search_space=None,
 ) -> SubFunc:
     def _run_iiv(model, modelfit_results):
-        if E and 'iivsearch' in E.keys():
+        if E and 'iivsearch' in E:
             rank_type = 'mbic'
             e_p, e_q = E['iivsearch']
         else:

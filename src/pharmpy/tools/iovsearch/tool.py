@@ -493,7 +493,7 @@ def create_results_tables(step_mapping, model_dict):
         if summary_step is not None:
             sum_tool.append(summary_step)
 
-    keys = list(range(0, len(step_mapping)))
+    keys = list(range(len(step_mapping)))
     summary_tool = concat_summaries(sum_tool, keys=list(range(1, len(sum_tool) + 1)))
     summary_models = concat_summaries(sum_mod, keys=keys)
     summary_errors = summarize_errors_from_entries(model_dict.values())

@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import uuid
 from collections.abc import Iterable
-from typing import Generic, Literal, Optional, TypeVar, Union
+from typing import Literal, Optional, TypeVar, Union
 
 from pharmpy.deps import networkx as nx
 from pharmpy.internals.immutable import Immutable
@@ -246,7 +246,7 @@ class WorkflowBuilder(WorkflowBase):
         return wb_new
 
 
-class Workflow(WorkflowBase, Generic[T], Immutable):
+class Workflow[T](WorkflowBase, Immutable):
     """Workflow class
 
     Representation of a directed acyclic graph with Tasks as nodes and

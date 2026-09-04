@@ -772,7 +772,7 @@ def _lrt(parent, child, nsamples, linreg_method):
 def _coveffect_key2list(effect_funcs):  # coveffect_key2list
     coveffect_list = {}
 
-    for key in effect_funcs.keys():
+    for key in effect_funcs:
         # initialize the list
         if key[0] not in coveffect_list:
             coveffect_list[key[0]] = []
@@ -792,7 +792,7 @@ def _coveffect_list2key(coveffect_list):
 
 
 def _retrieve_covfunc(effect_funcs, coveffect_keys):
-    retrieved_funcs = dict()
+    retrieved_funcs = {}
     for item in coveffect_keys:
         if item[1].startswith("log"):
             param, covar = item
