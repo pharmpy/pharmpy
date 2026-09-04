@@ -47,7 +47,7 @@ def delinearize_model(
 
         for eta in linearized_model.random_variables.etas.names:
             # Assert all ETAs in linearized model is in param_mapping
-            if eta not in param_mapping.keys():
+            if eta not in param_mapping:
                 raise ValueError(f'{eta} is missing from param_mapping')
 
         dl_model = remove_iiv(base_model)  # Remove all IIV and then add based on linearized model

@@ -1001,7 +1001,7 @@ def _find_ode_statement(model):
 def _find_dv_statements(model):
     inds = set()
     for i, s in enumerate(model.statements):
-        if isinstance(s, Assignment) and s.symbol in model.dependent_variables.keys():
+        if isinstance(s, Assignment) and s.symbol in model.dependent_variables:
             inds.add(i)
     return inds
 
@@ -1063,7 +1063,7 @@ def _replace_trivial_redefinitions(model):
         if isinstance(s, Assignment) and (
             s.expression in all_assigned_symbols or 1 / s.expression in all_assigned_symbols
         ):
-            if s.expression in d.keys():
+            if s.expression in d:
                 d[s.symbol] = d[s.expression]
             else:
                 d[s.symbol] = s.expression

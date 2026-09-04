@@ -323,7 +323,7 @@ def create_description(
     for dist in dists:
         rvs_names = dist.names
         param_names = [
-            param_dict[name] for name in rvs_names if name not in same and name in param_dict.keys()
+            param_dict[name] for name in rvs_names if name not in same and name in param_dict
         ]
         if param_names:
             blocks.append(f'[{",".join(param_names)}]')

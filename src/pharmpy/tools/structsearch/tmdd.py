@@ -29,7 +29,7 @@ def create_qss_models(model, ests, dv_types, index=1):
         set_initial_estimates(set_name(qss_base_model, f"structsearch_run{i}"), inits)
         for i, inits in enumerate(all_inits, start=index)
     ]
-    if "POP_KM" in ests.keys():
+    if "POP_KM" in ests:
         qss_candidate_models = [
             set_initial_estimates(
                 model,
@@ -44,7 +44,7 @@ def create_qss_models(model, ests, dv_types, index=1):
     else:
         est_vc = 0.1
 
-    if "POP_KM" in ests and "POP_CLMM" in ests.keys():
+    if "POP_KM" in ests and "POP_CLMM" in ests:
         qss_candidate_models = [
             set_initial_estimates(
                 model,
@@ -56,7 +56,7 @@ def create_qss_models(model, ests, dv_types, index=1):
             )
             for model in qss_candidate_models
         ]
-    if "IIV_CLMM" in ests.keys():
+    if "IIV_CLMM" in ests:
         qss_candidate_models = [
             set_initial_estimates(model, {"IIV_R_0": ests["IIV_CLMM"]})
             for model in qss_candidate_models

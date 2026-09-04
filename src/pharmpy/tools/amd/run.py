@@ -393,7 +393,7 @@ def run_amd_task(
                 )
                 run_subfuncs['structsearch'] = func
         elif section == 'iivsearch':
-            if 'iivsearch' in run_subfuncs.keys():
+            if 'iivsearch' in run_subfuncs:
                 iiv_features = get_search_space_iivsearch(modeltype, reevaluation=True)
                 run_name = 'rerun_iivsearch'
                 func = _subfunc_iiv(
@@ -426,7 +426,7 @@ def run_amd_task(
             )
             run_subfuncs['iovsearch'] = func
         elif section == 'residual':
-            if any(k.startswith('ruvsearch') for k in run_subfuncs.keys()):
+            if any(k.startswith('ruvsearch') for k in run_subfuncs):
                 run_name = 'rerun_ruvsearch'
             else:
                 run_name = 'ruvsearch'
@@ -970,7 +970,7 @@ def _subfunc_modelsearch(
     search_space: tuple[Statement, ...], strictness, E, parameter_uncertainty_method, ctx
 ) -> SubFunc:
     def _run_modelsearch(model, modelfit_results):
-        if E and 'modelsearch' in E.keys():
+        if E and 'modelsearch' in E:
             rank_type = 'mbic'
             e = E['modelsearch']
         else:
@@ -1492,7 +1492,7 @@ def _subfunc_iov(
     amd_start_model, occasion, strictness, E, parameter_uncertainty_method, ctx
 ) -> SubFunc:
     def _run_iov(model, modelfit_results):
-        if E and 'iovsearch' in E.keys():
+        if E and 'iovsearch' in E:
             rank_type = 'mbic'
             e = E['iovsearch']
         else:

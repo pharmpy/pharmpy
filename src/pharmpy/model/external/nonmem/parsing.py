@@ -315,7 +315,7 @@ def convert_dvs(statements, control_stream, dvid_name):
                 else:
                     dv_2 = str(expr.piecewise_args[1][0])
                 dvs = frozenmapping({Expr.symbol(dv_1): 1, Expr.symbol(dv_2): 2})
-                obs_trans = frozenmapping({dv: dv for dv in dvs.keys()})
+                obs_trans = frozenmapping({dv: dv for dv in dvs})
                 change = True
                 continue
         kept.append(s)

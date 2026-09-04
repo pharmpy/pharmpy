@@ -70,7 +70,7 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     if not data_dict:
         return []
 
-    key_width = max(len(field) for field in data_dict.keys())
+    key_width = max(len(field) for field in data_dict)
     if sort:
         data_dict = dict(sorted(data_dict.items()))
     if right_just:

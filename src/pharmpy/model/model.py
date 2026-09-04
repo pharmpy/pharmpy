@@ -91,9 +91,7 @@ class Model(Immutable):
         self._statements = statements
         self._dependent_variables = dependent_variables
         if observation_transformation is None:
-            observation_transformation = frozenmapping(
-                {dv: dv for dv in dependent_variables.keys()}
-            )
+            observation_transformation = frozenmapping({dv: dv for dv in dependent_variables})
         self._observation_transformation = observation_transformation
         self._execution_steps = execution_steps
         self._initial_individual_estimates = initial_individual_estimates
@@ -271,7 +269,7 @@ class Model(Immutable):
         dvs: frozenmapping[Expr, int],
     ) -> frozenmapping[Expr, Expr]:
         if obs is None:
-            obs = {dv: dv for dv in dvs.keys()}
+            obs = {dv: dv for dv in dvs}
         for key, value in obs.items():
             key = Expr(key)
             value = Expr(value)
@@ -419,7 +417,7 @@ class Model(Immutable):
             value_type = self.value_type
 
         if len(kwargs) != 0:
-            raise ValueError(f'Invalid keywords given : {[key for key in kwargs.keys()]}')
+            raise ValueError(f'Invalid keywords given : {[key for key in kwargs]}')
 
         if new_dataset or 'datainfo' in kwargs or 'statements' in kwargs:
             Model._check_symbol_names(datainfo, statements)

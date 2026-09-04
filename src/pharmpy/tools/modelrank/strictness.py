@@ -73,7 +73,7 @@ def evaluate_strictness(expr: BooleanExpr, predicates: dict[str, Optional[bool]]
     expr_subs = expr.subs(sub_dict)
     if expr_subs.is_indeterminate():
         # Subs with expressions like sigdigs >= 3.8 will not replace, only symbols
-        if str(expr_subs) in predicates.keys():
+        if str(expr_subs) in predicates:
             return predicates[str(expr_subs)]
         return None
     else:
@@ -98,7 +98,7 @@ def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str,
             if len(sub_expr.free_symbols) != 1:
                 return
             symb = str(sub_expr.free_symbols.pop())
-            if symb in predicates.keys() and (symb_expr := predicates[symb]) is not None:
+            if symb in predicates and (symb_expr := predicates[symb]) is not None:
                 if np.isnan(symb_expr):
                     # All comparisons with NaN should be False
                     predicates[expr_key] = False
@@ -128,7 +128,7 @@ def _eval_strictness_arg(me: ModelEntry, arg: str):
     termination_causes = ('rounding_errors', 'maxevals_exceeded')
     if arg in termination_causes:
         return arg in res.termination_cause if res.termination_cause else False
-    elif arg in synonyms.keys():
+    elif arg in synonyms:
         return getattr(res, synonyms[arg])
     elif arg.startswith('estimate_near_boundary'):
         ests = _get_subset_on_param_type(res.parameter_estimates, arg, model)

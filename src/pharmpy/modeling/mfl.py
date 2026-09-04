@@ -335,7 +335,7 @@ def _get_funcs(feature: ModelFeature, include_add: bool, include_remove: bool) -
 
 
 def _get_absorption_elimination_func(feature: Union[Absorption, Elimination]):
-    assert type(feature) in FUNC_MAPPING.keys()
+    assert type(feature) in FUNC_MAPPING
     func = FUNC_MAPPING[type(feature)].get(feature.type)
     if func is None:
         raise ValueError
@@ -376,7 +376,7 @@ def _get_pd_func(feature: Union[DirectEffect, IndirectEffect, EffectComp]):
     kwargs: dict[str, Union[str, bool]] = {'expr': feature.type.lower()}
     if isinstance(feature, IndirectEffect):
         kwargs['prod'] = feature.production
-    assert type(feature) in FUNC_MAPPING.keys()
+    assert type(feature) in FUNC_MAPPING
     func = partial(FUNC_MAPPING[type(feature)], **kwargs)
     return [func]
 

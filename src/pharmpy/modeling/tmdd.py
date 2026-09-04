@@ -352,28 +352,28 @@ def set_tmdd(
     # Multiple DVs:
     if dv_types is not None:
         if uptype in ('FULL', 'IB'):
-            if 'drug_tot' in dv_types.keys():
+            if 'drug_tot' in dv_types:
                 new_y = (central.amount + complex_comp.amount) / vc
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
                     statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
-            if 'target' in dv_types.keys():
+            if 'target' in dv_types:
                 y_target = Expr.symbol("Y_TARGET")
                 ytarget = Assignment.create(y_target, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target, dv_types['target'])
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
                 )
-            if 'complex' in dv_types.keys():
+            if 'complex' in dv_types:
                 y_complex = Expr.symbol("Y_COMPLEX")
                 ycomplex = Assignment.create(y_complex, complex_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
-            if 'target_tot' in dv_types.keys():
+            if 'target_tot' in dv_types:
                 y_target_tot = Expr.symbol("Y_TOTTARGET")
                 ytargettot = Assignment.create(
                     y_target_tot, (target_comp.amount + complex_comp.amount) / vc
@@ -383,14 +383,14 @@ def set_tmdd(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
         elif uptype == 'QSS':
-            if 'drug_tot' in dv_types.keys():
+            if 'drug_tot' in dv_types:
                 new_y = central.amount / vc
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
                     statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
-            if 'target' in dv_types.keys():
+            if 'target' in dv_types:
                 y_target = Expr.symbol("Y_TARGET")
                 ytarget = Assignment.create(
                     y_target, (target_comp.amount - central.amount + lafreef) / vc
@@ -399,14 +399,14 @@ def set_tmdd(
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
                 )
-            if 'complex' in dv_types.keys():
+            if 'complex' in dv_types:
                 y_complex = Expr.symbol("Y_COMPLEX")
                 ycomplex = Assignment.create(y_complex, (central.amount - lafreef) / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
                 model = model.replace(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
-            if 'target_tot' in dv_types.keys():
+            if 'target_tot' in dv_types:
                 y_target_tot = Expr.symbol("Y_TOTTARGET")
                 ytargettot = Assignment.create(y_target_tot, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
@@ -414,14 +414,14 @@ def set_tmdd(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
         elif uptype == 'MMAPP':
-            if 'target' in dv_types.keys():
+            if 'target' in dv_types:
                 y_target = Expr.symbol("Y_TARGET")
                 ytarget = Assignment.create(y_target, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target, dv_types['target'])
                 model = model.replace(
                     statements=model.statements + ytarget, dependent_variables=dvs
                 )
-            if 'target_tot' in dv_types.keys():
+            if 'target_tot' in dv_types:
                 y_target_tot = Expr.symbol("Y_TOTTARGET")
                 ytargettot = Assignment.create(y_target_tot, target_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
@@ -429,14 +429,14 @@ def set_tmdd(
                     statements=model.statements + ytargettot, dependent_variables=dvs
                 )
         elif uptype in ('CR', 'CRIB'):
-            if 'drug_tot' in dv_types.keys():
+            if 'drug_tot' in dv_types:
                 new_y = (central.amount + complex_comp.amount) / vc
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
                     statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
-            if 'complex' in dv_types.keys():
+            if 'complex' in dv_types:
                 y_complex = Expr.symbol("Y_COMPLEX")
                 ycomplex = Assignment.create(y_complex, complex_comp.amount / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
@@ -444,14 +444,14 @@ def set_tmdd(
                     statements=model.statements + ycomplex, dependent_variables=dvs
                 )
         elif uptype == 'WAGNER':
-            if 'drug_tot' in dv_types.keys():
+            if 'drug_tot' in dv_types:
                 new_y = central.amount / vc
                 after = model.statements.after_odes
                 after = after.reassign(y_symbol, new_y)
                 model = model.replace(
                     statements=model.statements.before_odes + get_and_check_odes(model) + after
                 )
-            if 'complex' in dv_types.keys():
+            if 'complex' in dv_types:
                 y_complex = Expr.symbol("Y_COMPLEX")
                 ycomplex = Assignment.create(y_complex, (central.amount - lafreef) / vc)
                 dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
@@ -464,7 +464,7 @@ def set_tmdd(
             model = set_proportional_error_model(model, dv=dv_types['target'])
         if Expr.symbol('Y_COMPLEX') in list(model.dependent_variables):
             model = set_proportional_error_model(model, dv=dv_types['complex'])
-        if Expr.symbol('Y') in list(model.dependent_variables) and 'drug_tot' in dv_types.keys():
+        if Expr.symbol('Y') in list(model.dependent_variables) and 'drug_tot' in dv_types:
             model = set_proportional_error_model(model, dv=dv_types['drug_tot'])
         if Expr.symbol('Y_TOTTARGET') in list(model.dependent_variables):
             model = set_proportional_error_model(model, dv=dv_types['target_tot'])

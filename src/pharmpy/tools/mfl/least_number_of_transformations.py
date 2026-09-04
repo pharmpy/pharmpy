@@ -57,8 +57,8 @@ def _lnt_indirect_effect(self, other, lnt):
     if not combine and rhs:
         # No shared attribute
         func_dict = other.convert_to_funcs(["indirect_effect"])
-        for key in lhs.keys():
-            if key in rhs.keys():
+        for key in lhs:
+            if key in rhs:
                 lnt[('INDIRECT', rhs[key][0], key.name)] = func_dict[
                     ('INDIRECT', rhs[key][0], key.name)
                 ]
@@ -75,8 +75,8 @@ def _lnt_transits(self, other, lnt):
     if not combine and rhs:
         # No shared attribute
         func_dict = other.convert_to_funcs(["transits"])
-        for key in lhs.keys():
-            if key in rhs.keys():
+        for key in lhs:
+            if key in rhs:
                 lnt[('TRANSITS', rhs[key][0], key.name)] = func_dict[
                     ('TRANSITS', rhs[key][0], key.name)
                 ]

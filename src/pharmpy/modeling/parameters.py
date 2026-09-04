@@ -207,7 +207,7 @@ def _move_omega_ests(rvs, pset, est_new):
             for i in range(sigma_sym.rows):
                 for j in range(sigma_sym.cols):
                     param_name = sigma_sym[i, j].name
-                    if param_name not in est_new.keys():
+                    if param_name not in est_new:
                         continue
                     if i != j:
                         if -0.99 < sdcorr[param_name] < 0.99:
@@ -223,7 +223,7 @@ def _move_omega_ests(rvs, pset, est_new):
                     newdict[param_name] = init
         else:
             param_name = dist.variance.name
-            if param_name not in est_new.keys():
+            if param_name not in est_new:
                 continue
             newdict[param_name] = _get_diag_init(pset[param_name], est_new[param_name])
     return newdict

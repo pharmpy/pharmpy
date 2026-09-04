@@ -246,7 +246,7 @@ def create_fit(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
 
     nonmem_method_to_nlmixr = {"FOCE": "foce", "FO": "fo", "SAEM": "saem"}
 
-    if method not in nonmem_method_to_nlmixr.keys():
+    if method not in nonmem_method_to_nlmixr:
         nlmixr_method = "focei"
     else:
         nlmixr_method = nonmem_method_to_nlmixr[method]

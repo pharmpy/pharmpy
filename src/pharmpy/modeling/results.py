@@ -695,7 +695,7 @@ def _categorize_parameters(model):
             fixedpars -= param_symbols
             randpars |= param_symbols
 
-    for y in model.dependent_variables.keys():
+    for y in model.dependent_variables:
         expr = model.statements.after_odes.full_expression(y)
         symbols = expr.free_symbols
         param_symbols = symbols.intersection(all_pop_params)

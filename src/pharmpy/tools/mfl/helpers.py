@@ -62,7 +62,7 @@ def funcs(
 
 def _group_incompatible_features(funcs):
     grouped = defaultdict(list)
-    for key in funcs.keys():
+    for key in funcs:
         grouped[key[0]].append(key)
     return grouped.values()
 

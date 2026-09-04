@@ -165,7 +165,7 @@ class NONMEMResultsFile:
     def ofv(self, table_number):
         ofv = None
         if self._supported_nonmem_version:
-            if table_number in self.table.keys():
+            if table_number in self.table:
                 ofv = self.table[table_number].get('OBJV')
         if ofv is not None:
             ofv = float(ofv)
@@ -646,7 +646,7 @@ class NONMEMResultsFile:
         parse = False
         for section in self.tag_items(path):
             if isinstance(section, VersionSection):
-                if 'nonmem_version' not in block.keys():
+                if 'nonmem_version' not in block:
                     version_number = section.version
                     block['nonmem_version'] = section.version
                     parse = NONMEMResultsFile.supported_version(version_number)

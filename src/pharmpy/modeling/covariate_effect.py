@@ -153,9 +153,9 @@ def _get_covariate_effect(model: Model, symbol, covariate):
 def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     if effect == "pow":
         if (
-            sympy.Wild("cov") in match.keys()
+            sympy.Wild("cov") in match
             and match[sympy.Wild("cov")].is_number
-            and sympy.Wild("median") in match.keys()
+            and sympy.Wild("median") in match
             and match[sympy.Wild("median")].is_Pow
         ):
             temp = match[sympy.Wild("cov")]
@@ -165,7 +165,7 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
     for key, values in symbols.items():
         # match keys will always be generated from cov effect template (e.g.
         # symbols {'cov': [cov_]} and match {cov_: WGT}
-        assert all(value in match.keys() for value in values)
+        assert all(value in match for value in values)
         if key == "theta":
             thetas = get_thetas(model).symbols
             if any(match[value] not in thetas for value in values):

@@ -341,7 +341,7 @@ def change_rvs_same(model: pharmpy.model.Model, sigma: bool = False) -> pharmpy.
         params = params + param
     model = model.replace(parameters=params)
 
-    etas = [e[0] for e in rvs_and_var.keys()]
+    etas = [e[0] for e in rvs_and_var]
     for rv in rvs:
         if rv.names in etas:
             old_to_new = [name_var for name_var in rvs_and_var if name_var[0] == rv.names]

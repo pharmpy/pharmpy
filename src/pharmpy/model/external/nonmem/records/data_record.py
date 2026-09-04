@@ -172,7 +172,7 @@ class DataRecord(OptionRecord):
                 except AttributeError:
                     expr = f.find('QEXPR').value
                 assert expr is not None
-                op = [tok for tok in f.tokens if tok.rule in OPS.keys()]
+                op = [tok for tok in f.tokens if tok.rule in OPS]
                 assert len(op) == 1
                 op = op[0].rule
                 lhs = Expr.symbol(col)

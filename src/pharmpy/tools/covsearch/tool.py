@@ -725,7 +725,7 @@ def filter_effects(effect_funcs, last_step_effect, nonsignificant_effects):
     }
 
     # Filter away any stashed effects as well
-    nonsig_param_cov_eff = tuple((eff[0], eff[1]) for eff in nonsignificant_effects.keys())
+    nonsig_param_cov_eff = tuple((eff[0], eff[1]) for eff in nonsignificant_effects)
 
     candidate_effect_funcs = {
         effect_description: effect_func

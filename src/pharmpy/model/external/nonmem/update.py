@@ -1512,10 +1512,10 @@ def update_needed_pk_parameters(model: Model, advan, trans):
         assert oldmap is not None
         newmap = new_compartmental_map(odes)
         newmap['OUTPUT'] = len(newmap) + 1
-        for source in newmap.keys():
+        for source in newmap:
             if source == 'OUTPUT':
                 continue
-            for dest in newmap.keys():
+            for dest in newmap:
                 if source != dest:  # NOTE: Skip same
                     source_comp = odes.find_compartment(source)
                     if dest == 'OUTPUT':
@@ -1937,7 +1937,7 @@ def update_estimation(control_stream, model):
         for statement in model.statements:
             if isinstance(statement, CompartmentalSystem):
                 new_statements.append(statement)
-            elif str(statement.symbol) not in remove_param.keys():
+            elif str(statement.symbol) not in remove_param:
                 new_statements.append(statement)
         new_statements = Statements(new_statements)
 
@@ -2109,7 +2109,7 @@ def update_verbatim(cs, random_variables, to_add: dict = {}, to_remove: dict = {
                 new_children += (child,)
             else:
                 deriv_param = m.group(1)
-                if deriv_param not in to_remove.keys():  # Here, entries are removed
+                if deriv_param not in to_remove:  # Here, entries are removed
                     new_children += (child,)
 
         if current_number == last_node and child.rule == "verbatim":
@@ -2519,7 +2519,7 @@ def abbr_translation(model: Model, rv_trans):
     abbr_recs = {
         Expr.symbol(abbr_pharmpy[value]): Expr.symbol(key)
         for key, value in abbr_replace.items()
-        if value in abbr_pharmpy.keys()
+        if value in abbr_pharmpy
     }
     abbr_trans.update(abbr_recs)
     return model, abbr_trans

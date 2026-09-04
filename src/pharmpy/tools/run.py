@@ -378,7 +378,7 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
 
     seed = kwargs.get('seed', None)
     seed = Seed(seed)
-    if 'seed' in kwargs.keys():
+    if 'seed' in kwargs:
         del kwargs['seed']
 
     if validate_input := getattr(tool, 'validate_input', None):
@@ -524,7 +524,7 @@ def _parse_args_kwargs_from_tool_options(tool_params, tool_options):
             args.append(tool_options[p.name])
         # Named args
         else:
-            if p.name in tool_options.keys():
+            if p.name in tool_options:
                 kwargs[p.name] = tool_options[p.name]
 
     return args, kwargs

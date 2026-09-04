@@ -67,7 +67,7 @@ class ModelFeatures(Immutable):
         }
         for feature in features:
             group = type(feature)
-            if group not in grouped_features.keys():
+            if group not in grouped_features:
                 raise NotImplementedError
             if feature not in grouped_features[group]:
                 if group == Allometry and len(grouped_features[group]) > 0:

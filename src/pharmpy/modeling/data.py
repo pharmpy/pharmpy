@@ -1917,7 +1917,7 @@ def set_reference_values(model: Model, refs: dict[str, Union[int, float]]) -> Mo
         datatype = ColumnInfo.convert_datatype_to_pd_dtype(di[colname].datatype)
         dtypes[colname] = datatype
     prov_new = []
-    for col in newcols.keys():
+    for col in newcols:
         prov_new.append(Drop.create(col))
         prov_new.append(AddColumn.create(col))
     df = df.assign(**newcols).astype(dtypes)
@@ -2475,7 +2475,7 @@ def binarize_dataset(
             df = df.drop(columns=[col])
 
         di = update_datainfo(di, df)
-        for col_name in level_map.keys():
+        for col_name in level_map:
             ci = di[col_name]
             var = ci.variable.replace(
                 type='covariate', count=False, scale='nominal', properties={"categories": (0, 1)}

@@ -99,7 +99,7 @@ class Configuration(ABC):
     module: str
 
     def __init__(self):
-        if user_config_file_enabled() and self.module in config_file.keys():
+        if user_config_file_enabled() and self.module in config_file:
             for key, value in config_file[self.module].items():
                 setattr(self, key, value)
 
@@ -119,7 +119,7 @@ class ConfigurationContext:
 
     def __enter__(self):
         old = {}
-        for key in self.options.keys():
+        for key in self.options:
             old[key] = getattr(self.config, key)
         for key, val in self.options.items():
             setattr(self.config, key, val)

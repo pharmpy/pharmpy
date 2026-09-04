@@ -348,7 +348,7 @@ class ModelFeatures:
                 value = (statement,)
             else:
                 value = statement
-            if key in kwargs.keys():
+            if key in kwargs:
                 kwargs[key] += value
             else:
                 kwargs[key] = value
@@ -695,7 +695,7 @@ class ModelFeatures:
 
         combined = {"MET": (), "DRUG": ()}
 
-        for key in combined.keys():
+        for key in combined:
             if add:
                 combined[key] = tuple(lhs[key].union(rhs[key]))
             else:
@@ -910,17 +910,15 @@ def _add_helper(s1, s2, value_name, join_name):
         for a in attribute_names:
             s2_join_name_dict[a].extend(attribute_values)
     s1_unique = {
-        k: tuple(set(s1_join_name_dict[k]) - set(s2_join_name_dict[k]))
-        for k in s1_join_name_dict.keys()
+        k: tuple(set(s1_join_name_dict[k]) - set(s2_join_name_dict[k])) for k in s1_join_name_dict
     }
     s2_unique = {
-        k: tuple(set(s2_join_name_dict[k]) - set(s1_join_name_dict[k]))
-        for k in s2_join_name_dict.keys()
+        k: tuple(set(s2_join_name_dict[k]) - set(s1_join_name_dict[k])) for k in s2_join_name_dict
     }
     s2_unique = {k: v for k, v in s2_unique.items() if v}
     s12_joined = {
         k: tuple(set(s1_join_name_dict[k]).intersection(set(s2_join_name_dict[k])))
-        for k in s1_join_name_dict.keys()
+        for k in s1_join_name_dict
     }
     s12_joined = {k: v for k, v in s12_joined.items() if v}
 

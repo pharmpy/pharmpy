@@ -107,7 +107,7 @@ def convert_model(model):
     nm_model._dataset = model.dataset
     nm_model._execution_steps = model.execution_steps
     nm_model._initial_individual_estimates = model.initial_individual_estimates
-    new_obs_trans = frozenmapping({dv: dv for dv in model.dependent_variables.keys()})
+    new_obs_trans = frozenmapping({dv: dv for dv in model.dependent_variables})
     internals = nm_model.internals.replace(old_parameters=Parameters())
     nm_model = nm_model.replace(
         name=model.name,

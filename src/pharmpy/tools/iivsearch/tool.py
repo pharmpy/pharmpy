@@ -226,7 +226,7 @@ def prepare_algorithms(algorithm, correlation_algorithm):
         list_of_algorithms.append(algorithm_sub[algorithm])
     if correlation_algorithm != "skip" and 'simultaneous' not in algorithm:
         if correlation_algorithm is None:
-            if algorithm in correlation_algorithm_sub.keys():
+            if algorithm in correlation_algorithm_sub:
                 correlation_algorithm = algorithm
             else:
                 correlation_algorithm = "top_down_exhaustive"
