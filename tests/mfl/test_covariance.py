@@ -63,7 +63,7 @@ def test_expand():
     assert c2_expanded[0].parameters == ('CL', 'MAT')
     assert c2_expanded[0].expanded_parameters == ('CL', 'MAT')
 
-    assert c2.expand({Ref('PK'): tuple()}) == tuple()
+    assert c2.expand({Ref('PK'): ()}) == ()
 
     expand_to = {Ref('PK'): ('CL', 'VC', 'MAT')}
 

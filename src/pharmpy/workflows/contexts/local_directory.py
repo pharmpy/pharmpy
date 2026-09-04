@@ -77,7 +77,7 @@ class LocalDirectoryContext(Context):
             parent = path.parent
             if path == parent:
                 raise FileNotFoundError("Cannot find top level of context.")
-            if not (parent.name == "subcontexts"):
+            if parent.name != "subcontexts":
                 self._top_path = path
                 break
             path = parent.parent
@@ -363,9 +363,7 @@ class MetadataJSONEncoder(json.JSONEncoder):
             return o.name
         elif isinstance(o, ModelfitResults):
             return o.to_json()
-        elif isinstance(o, (ModelFeatures, ModelFeaturesNew)):
-            return str(o)
-        elif isinstance(o, Path):
+        elif isinstance(o, (ModelFeatures, ModelFeaturesNew, Path)):
             return str(o)
         elif isinstance(o, frozenmapping):
             return dict(o)

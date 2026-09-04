@@ -263,7 +263,7 @@ def test_getitem():
         dist2[['x', 'y', 'z', 'w']]
 
     with pytest.raises(KeyError):
-        dist2[tuple()]
+        dist2[()]
 
     with pytest.raises(IndexError):
         dist2[4]

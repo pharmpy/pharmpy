@@ -396,7 +396,7 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
         database=ctx,
         tool_name=tool_name,
         tool_func=create_workflow,
-        args=tuple(),
+        args=(),
         tool_options=kwargs,
         seed=seed,
     )
@@ -674,7 +674,7 @@ def _filter_params(kind, params, types):
     if get_origin(kind) is Union:
         kind = get_args(kind)
     else:
-        kind = tuple()
+        kind = ()
     for i, param_key in enumerate(params):
         param = params[param_key]
         param_type = types.get(param_key)

@@ -1,4 +1,4 @@
-import pharmpy.config as config
+from pharmpy import config
 
 from .baseclass import Dispatcher
 

@@ -218,7 +218,7 @@ def test_dict(load_model_for_test, testdata):
     central2 = Compartment.from_dict(d)
     assert central == central2
 
-    central = Compartment.create('CENTRAL', doses=tuple())
+    central = Compartment.create('CENTRAL', doses=())
     d = central.to_dict()
     assert d == {
         'class': 'Compartment',
@@ -899,7 +899,7 @@ def test_remove_dose():
 
     cb.remove_dose(depot)
     cs = CompartmentalSystem(cb)
-    assert cs.find_compartment('DEPOT').doses == tuple()
+    assert cs.find_compartment('DEPOT').doses == ()
 
     dose2 = Infusion.create('AMT', rate='R1', admid=2)
     cb.add_dose(cs.find_compartment('DEPOT'), dose1)
@@ -912,13 +912,13 @@ def test_remove_dose():
     cb1.remove_dose(cs.central_compartment)
     cs1 = CompartmentalSystem(cb1)
     assert cs1.find_compartment('DEPOT').doses == (dose1,)
-    assert cs1.central_compartment.doses == tuple()
+    assert cs1.central_compartment.doses == ()
 
     cb2 = CompartmentalSystemBuilder(cs)
     cb2.remove_dose(cs.central_compartment, admid=2)
     cs2 = CompartmentalSystem(cb2)
     assert cs2.find_compartment('DEPOT').doses == (dose1,)
-    assert cs2.central_compartment.doses == tuple()
+    assert cs2.central_compartment.doses == ()
 
     with pytest.raises(ValueError):
         cb.remove_dose(None, dose1)
@@ -935,12 +935,12 @@ def test_move_dose():
     cb.add_flow(depot, central, S('KA'))
     cs = CompartmentalSystem(cb)
     assert cs.find_compartment('DEPOT').doses == (dose1,)
-    assert cs.central_compartment.doses == tuple()
+    assert cs.central_compartment.doses == ()
 
     cb1 = CompartmentalSystemBuilder(cs)
     cb1.move_dose(depot, central)
     cs1 = CompartmentalSystem(cb1)
-    assert cs1.find_compartment('DEPOT').doses == tuple()
+    assert cs1.find_compartment('DEPOT').doses == ()
     assert cs1.central_compartment.doses == (dose1,)
 
     cb2 = CompartmentalSystemBuilder(cs)
@@ -948,7 +948,7 @@ def test_move_dose():
     central = cb2.add_dose(cs.central_compartment, dose2)
     depot, central = cb2.move_dose(depot, central)
     cs2 = CompartmentalSystem(cb2)
-    assert cs2.find_compartment('DEPOT').doses == tuple()
+    assert cs2.find_compartment('DEPOT').doses == ()
     assert cs2.central_compartment.doses == (dose2, dose1)
 
     central, _ = cb2.move_dose(central, depot, admid=2)

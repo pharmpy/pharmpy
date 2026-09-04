@@ -92,7 +92,7 @@ class Covariance(ModelFeature):
             effects = [self.replace(parameters=pair) for pair in parameters]
             return tuple(sorted(effects))
         else:
-            return tuple()
+            return ()
 
     def __repr__(self) -> str:
         optional = '?' if self.optional else ''

@@ -72,7 +72,7 @@ def test_expand(var_type):
     assert len(var2_expanded) == 3
     assert var2_expanded[0].parameter == 'CL'
 
-    assert var2.expand({Ref('PK'): tuple()}) == tuple()
+    assert var2.expand({Ref('PK'): ()}) == ()
 
     with pytest.raises(ValueError):
         var2.expand(dict())

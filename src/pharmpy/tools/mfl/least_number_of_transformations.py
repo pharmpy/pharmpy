@@ -38,7 +38,7 @@ def least_number_of_transformations(
         if model is not None:
             lnt = _lnt_covariates(self, other, lnt, model)
         else:
-            if self.covariate != tuple() or other.covariate != tuple():
+            if self.covariate != () or other.covariate != ():
                 warnings.warn("Need argument 'model' in order to compare covariates")
 
         lnt = _lnt_peripherals(self, other, lnt, "metabolite")

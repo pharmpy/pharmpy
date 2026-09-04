@@ -2049,7 +2049,7 @@ def _add_first_order_absorption(
     )
     cb.add_compartment(depot)
     if remove_dose:
-        to_comp = cb.set_dose(to_comp, tuple())
+        to_comp = cb.set_dose(to_comp, ())
     to_comp = cb.set_lag_time(to_comp, Expr.integer(0))
     to_comp = cb.set_bioavailability(to_comp, Expr.integer(1))
 

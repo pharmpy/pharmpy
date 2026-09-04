@@ -104,13 +104,13 @@ def _interpret_ref(model: Model, symbol) -> tuple[str, ...]:
         try:
             pd_parameters = get_pd_parameters(model)
         except ValueError:
-            return tuple()
+            return ()
         return tuple(pd_parameters)
     elif symbol.name == 'PD_IIV':
         try:
             pd_parameters = get_pd_parameters(model)
         except ValueError:
-            return tuple()
+            return ()
         return tuple(
             pd_param for pd_param in pd_parameters if len(get_parameter_rv(model, pd_param)) > 0
         )

@@ -190,10 +190,9 @@ class ResultsJSONDecoder(json.JSONDecoder):
             elif cls == 'MultiIndex':
                 return _multi_index_read_json(obj)
 
-        if module is None:
-            if cls == 'vega-lite':
-                # NOTE: Slow parsing for parsing PsN frem output and old format
-                return alt.Chart.from_dict(obj, validate=True)
+        if module is None and cls == 'vega-lite':
+            # NOTE: Slow parsing for parsing PsN frem output and old format
+            return alt.Chart.from_dict(obj, validate=True)
 
         if module is not None and module.startswith('altair.'):
             # NOTE: Fast parsing when reading own output
@@ -350,13 +349,12 @@ class Results(Immutable):
         d = self.to_dict()
         s = ""
         for key, value in d.items():
-            if value.__class__.__module__.startswith('altair.'):
-                continue
-            elif isinstance(value, Model):
-                continue
-            elif isinstance(value, ModelfitResults):
-                continue
-            elif isinstance(value, list) and len(value) > 0 and isinstance(value[0], Model):
+            if (
+                value.__class__.__module__.startswith('altair.')
+                or isinstance(value, Model)
+                or isinstance(value, ModelfitResults)
+                or (isinstance(value, list) and len(value) > 0 and isinstance(value[0], Model))
+            ):
                 continue
             s += f'{key}\n'
             if isinstance(value, pd.DataFrame):
@@ -475,7 +473,7 @@ class ModelfitResults(Results):
     significant_digits: Optional[float] = None
     significant_digits_iterations: Optional[pd.Series] = None
     log_likelihood: Optional[float] = None
-    log: Optional['Log'] = None
+    log: Optional[Log] = None
     evaluation: Optional[pd.Series] = None
     covstep_successful: Optional[bool] = None
     gradients: Optional[pd.Series] = None
@@ -492,11 +490,11 @@ class ModelfitResults(Results):
         for key, value in sd.items():
             if key == 'log':
                 continue
-            if isinstance(sd[key], (pd.Series, pd.DataFrame)):
-                if not sd[key].equals(od[key]):
+            if isinstance(value, (pd.Series, pd.DataFrame)):
+                if not value.equals(od[key]):
                     return False
             else:
-                if sd[key] != od[key]:
+                if value != od[key]:
                     return False
         return True
 

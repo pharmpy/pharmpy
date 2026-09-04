@@ -455,7 +455,7 @@ def test_get_best_candidate(load_model_for_test, testdata, model_entry_factory):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     modelres = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
     parent_model_entry = ModelEntry(model, modelfit_results=modelres)
-    parent_cand = Candidate(parent_model_entry, steps=tuple())
+    parent_cand = Candidate(parent_model_entry, steps=())
 
     search_space = 'COVARIATE?([CL,VC,MAT],WT,EXP)'
     mfl = ModelFeatures.create_from_mfl_string(search_space)
@@ -463,7 +463,7 @@ def test_get_best_candidate(load_model_for_test, testdata, model_entry_factory):
 
     p_value = 0.01
 
-    candidates = [Candidate(parent_model_entry, steps=tuple())]
+    candidates = [Candidate(parent_model_entry, steps=())]
     candidates_step_1 = _create_candidates(
         model_entry_factory, effect_funcs, parent_cand, 1, p_value
     )
@@ -489,7 +489,7 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     modelres = parse_modelfit_results(model, testdata / 'nonmem' / 'models' / 'mox2.mod')
     parent_model_entry = ModelEntry(model, modelfit_results=modelres)
-    parent_cand = Candidate(parent_model_entry, steps=tuple())
+    parent_cand = Candidate(parent_model_entry, steps=())
 
     search_space = 'COVARIATE?([CL,VC],[WT,AGE],EXP)'
     mfl = ModelFeatures.create_from_mfl_string(search_space)

@@ -86,7 +86,7 @@ def _compartmental_model(
         )
         peripheral = Compartment.create(
             'PERIPHERAL',
-            doses=tuple(),
+            doses=(),
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
@@ -115,7 +115,7 @@ def _compartmental_model(
         )
         peripheral = Compartment.create(
             'PERIPHERAL',
-            doses=tuple(),
+            doses=(),
             lag_time=_get_alag(control_stream, 3),
             bioavailability=_get_bioavailability(control_stream, 3),
         )
@@ -182,13 +182,13 @@ def _compartmental_model(
         )
         per1 = Compartment.create(
             'PERIPHERAL1',
-            doses=tuple(),
+            doses=(),
             lag_time=_get_alag(control_stream, 2),
             bioavailability=_get_bioavailability(control_stream, 2),
         )
         per2 = Compartment.create(
             'PERIPHERAL2',
-            doses=tuple(),
+            doses=(),
             lag_time=_get_alag(control_stream, 3),
             bioavailability=_get_bioavailability(control_stream, 3),
         )
@@ -220,13 +220,13 @@ def _compartmental_model(
         )
         per1 = Compartment.create(
             'PERIPHERAL1',
-            doses=tuple(),
+            doses=(),
             lag_time=_get_alag(control_stream, 3),
             bioavailability=_get_bioavailability(control_stream, 3),
         )
         per2 = Compartment.create(
             'PERIPHERAL2',
-            doses=tuple(),
+            doses=(),
             lag_time=_get_alag(control_stream, 4),
             bioavailability=_get_bioavailability(control_stream, 4),
         )
@@ -653,7 +653,7 @@ def dosing(di: DataInfo, dataset, dose_comp: int, des: bool = False):
 
     assert dataset is not None
 
-    doses = tuple()
+    doses = ()
     if admid_name is not None and cmt_loop:
         for comp_number in dataset['CMT'].unique():
             cmt_dataset = dataset[dataset['CMT'] == comp_number]
@@ -719,7 +719,7 @@ def _dosing(di, df, dose_comp):
 
 
 def find_dose(doses, comp_number, admid=1):
-    comp_doses = tuple()
+    comp_doses = ()
     for dose in doses:
         if dose['comp_number'] == comp_number:
             comp_dose = dose['dose']

@@ -299,7 +299,7 @@ def rank_models(
 
 def create_result_tables(model_entries_per_step: list[list[ModelEntry]]):
     sum_models = [summarize_modelfit_results_from_entries(mes) for mes in model_entries_per_step]
-    keys = range(0, len(model_entries_per_step))
+    keys = range(len(model_entries_per_step))
     summary_models = concat_summaries(sum_models, keys)
     model_entries = flatten_list(model_entries_per_step)
     summary_errors = summarize_errors_from_entries(model_entries)

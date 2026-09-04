@@ -31,11 +31,10 @@ class Dispatcher(ABC):
         return canon_name
 
     def canonicalize_ncores(self, ncores: Optional[int]) -> int:
-        if ncores and ncores > 1:
-            if is_running_on_slurm():
-                raise ValueError(
-                    f'Invalid `ncores`: must be 1 or None when running on slurm, got {ncores}'
-                )
+        if ncores and ncores > 1 and is_running_on_slurm():
+            raise ValueError(
+                f'Invalid `ncores`: must be 1 or None when running on slurm, got {ncores}'
+            )
         if not ncores:
             hosts = self.get_hosts()
             ncores = sum(hosts.values())

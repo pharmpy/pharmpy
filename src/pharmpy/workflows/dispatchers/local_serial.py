@@ -25,7 +25,7 @@ class LocalSerialDispatcher(Dispatcher):
 
     @staticmethod
     def _run(workflow: Workflow[T]) -> T:
-        res_cache = dict()
+        res_cache = {}
         unvisited_children = {task: len(workflow.get_successors(task)) for task in workflow.tasks}
         for task in workflow.sort('topological'):
             parent_tasks = workflow.get_predecessors(task)

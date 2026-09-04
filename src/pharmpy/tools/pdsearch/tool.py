@@ -153,7 +153,7 @@ def _calc_pd_inits_from_data(model):
     theta_init = obs.groupby(idc).median().median()
     variance = (obs.groupby(idc).std() ** 2).mean()
     mean = obs.groupby(idc).mean().mean()
-    omega_init = math.log((1 + variance / mean**2))
+    omega_init = math.log(1 + variance / mean**2)
     return theta_init, omega_init
 
 

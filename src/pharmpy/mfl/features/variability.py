@@ -74,7 +74,7 @@ class Variability(ModelFeature):
             effects = [self.replace(parameter=p) for p in parameters]
             return tuple(sorted(effects))
         else:
-            return tuple()
+            return ()
 
     def __repr__(self) -> str:
         optional = '?' if self.optional else ''

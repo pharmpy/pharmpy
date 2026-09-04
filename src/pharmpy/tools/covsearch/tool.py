@@ -1000,7 +1000,7 @@ def _make_df_steps(best_modelentry: ModelEntry, candidates: list[Candidate]):
     # Find if longest forward is also the input for the backwards search
     # otherwise add an index offset to _make_df_steps_function
     forward_candidates = [
-        fc for fc in candidates if fc.steps == tuple() or isinstance(fc.steps[-1], ForwardStep)
+        fc for fc in candidates if fc.steps == () or isinstance(fc.steps[-1], ForwardStep)
     ]
     largest_forward_step = max([len(fc.steps) for fc in forward_candidates])
     largest_forward_candidates = [
@@ -1088,7 +1088,7 @@ def _make_df_steps_row(
     return {
         'step': (
             len(candidate.steps)
-            if candidate.steps == tuple()
+            if candidate.steps == ()
             or isinstance(candidate.steps[-1], ForwardStep)
             or isinstance(candidate.steps[-1], AdaptiveStep)
             else len(candidate.steps) + index_offset

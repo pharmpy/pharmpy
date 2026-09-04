@@ -91,7 +91,7 @@ def spec(model: Model, statements: Iterable[Statement]) -> Iterable[Spec]:
 
     for effect in effects:
         t = _effect_to_tuple(model, definitions, effect)
-        if all([e != tuple() for e in t]):  # NOTE: We do not yield empty products
+        if all([e != () for e in t]):  # NOTE: We do not yield empty products
             yield t
 
 

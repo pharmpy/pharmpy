@@ -36,7 +36,7 @@ def get_modelfit_results(model, path, esttool=None):
     # This is currently broken because of rounding issue in pandas
     # Also the modelfit_results attribute will soon be removed from model objects.
     import pharmpy.model.external.nonmem as nonmem_model
-    import pharmpy.tools.external.nonmem as nonmem
+    from pharmpy.tools.external import nonmem
 
     if esttool is not None:
         if esttool == 'dummy':
@@ -399,11 +399,11 @@ class LocalModelDirectoryDatabaseSnapshot(ModelSnapshot):
                 return path
             else:
                 errors.append(path)
-        else:
-            raise KeyError(
-                f'Could not find model in {self.database}.'
-                f' Looked up {", ".join(map(lambda p: f"`{p}`", errors))}.'
-            )
+
+        raise KeyError(
+            f'Could not find model in {self.database}.'
+            f' Looked up {", ".join(map(lambda p: f"`{p}`", errors))}.'
+        )
 
     def retrieve_modelfit_results(self):
         model = self.retrieve_model()

@@ -117,7 +117,7 @@ class Covariate(ModelFeature):
             or covariates is not None
             and len(covariates) == 0
         ):
-            return tuple()
+            return ()
         elif covariates and parameters:
             effects = [
                 self.replace(parameter=p, covariate=c)

@@ -41,7 +41,7 @@ class ModelFeatures(Immutable):
             return features
         if isinstance(features, str):
             if features == '':
-                return ModelFeatures(tuple())
+                return ModelFeatures(())
             features = parse(features)
         if not isinstance(features, Iterable):
             raise TypeError(f'Type of `feature` must be an iterable: got {type(features)}')
@@ -305,7 +305,7 @@ class ModelFeatures(Immutable):
         self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
     ) -> ModelFeatures:
         if isinstance(other, ModelFeature):
-            return ModelFeatures(tuple()) if other in self else ModelFeatures((other,))
+            return ModelFeatures(()) if other in self else ModelFeatures((other,))
         elif isinstance(other, Sequence):
             return ModelFeatures(
                 features=tuple(feature for feature in other if feature not in self)

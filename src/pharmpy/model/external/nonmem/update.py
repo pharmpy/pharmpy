@@ -2092,7 +2092,7 @@ def update_verbatim(cs, random_variables, to_add: dict = {}, to_remove: dict = {
 
     error_record = cs.get_error_record()
     old_attr_tree = error_record.root
-    new_children = tuple()
+    new_children = ()
     r = r"([\w\d]+)\s*=\s*([GH]+)\((\d+)\s*,\s*(\d+)\)$"
 
     last_node = len(old_attr_tree.children)

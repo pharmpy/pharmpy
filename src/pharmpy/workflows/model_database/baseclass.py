@@ -32,7 +32,6 @@ class ModelTransaction(ABC):
     @abstractmethod
     def store_model(self) -> None:
         """Store the model object bound to this transaction"""
-        pass
 
     @abstractmethod
     def store_local_file(self, path: Path, new_filename: Union[str, None] = None):
@@ -47,7 +46,6 @@ class ModelTransaction(ABC):
             Filename to give to the file. Optional, defaults to original
             filename given by path.
         """
-        pass
 
     @abstractmethod
     def store_metadata(self, metadata) -> None:
@@ -58,17 +56,14 @@ class ModelTransaction(ABC):
         metadata : Dict
             A dictionary with metadata
         """
-        pass
 
     @abstractmethod
     def store_modelfit_results(self) -> None:
         """Store modelfit results of the model bound to this transaction"""
-        pass
 
     @abstractmethod
     def store_model_entry(self) -> None:
         """Store model entry of the model entry bound to this transaction"""
-        pass
 
 
 class ModelSnapshot(ABC):
@@ -87,7 +82,6 @@ class ModelSnapshot(ABC):
         list[str]
             List of file names
         """
-        pass
 
     @abstractmethod
     def retrieve_file(self, filename: str, destination_path: Path, force: bool = False) -> None:
@@ -102,7 +96,6 @@ class ModelSnapshot(ABC):
         force : bool
             Force overwrite of file (default False)
         """
-        pass
 
     @abstractmethod
     def retrieve_all_files(self, destination_path: Path, force: bool = False) -> None:
@@ -115,7 +108,6 @@ class ModelSnapshot(ABC):
         force : bool
             Force overwrite of files (default False)
         """
-        pass
 
     @abstractmethod
     def retrieve_model(self) -> Model:
@@ -126,7 +118,6 @@ class ModelSnapshot(ABC):
         Model
             Retrieved model object
         """
-        pass
 
     @abstractmethod
     def retrieve_modelfit_results(self) -> Results:
@@ -142,7 +133,6 @@ class ModelSnapshot(ABC):
         Results
             Retrieved model results object
         """
-        pass
 
     @abstractmethod
     def retrieve_model_entry(self) -> ModelEntry:
@@ -153,7 +143,6 @@ class ModelSnapshot(ABC):
         ModelEntry
             Retrieved model entry object
         """
-        pass
 
 
 class ModelDatabase(ABC):
@@ -177,7 +166,6 @@ class ModelDatabase(ABC):
         model : Model
             Pharmpy model object
         """
-        pass
 
     @abstractmethod
     def store_local_file(
@@ -195,7 +183,6 @@ class ModelDatabase(ABC):
             Filename to give to the file. Optional, defaults to original
             filename given by path.
         """
-        pass
 
     @abstractmethod
     def store_metadata(self, model: Union[Model, ModelHash], metadata: dict) -> None:
@@ -208,7 +195,6 @@ class ModelDatabase(ABC):
         metadata : Dict
             A dictionary with metadata
         """
-        pass
 
     @abstractmethod
     def store_modelfit_results(self, model: Union[Model, ModelHash]) -> None:
@@ -219,7 +205,6 @@ class ModelDatabase(ABC):
         model : Model
             Pharmpy model object
         """
-        pass
 
     @abstractmethod
     def store_model_entry(self, model_entry: ModelEntry) -> None:
@@ -230,7 +215,6 @@ class ModelDatabase(ABC):
         model_entry : ModelEntry
             Pharmpy ModelEntry object
         """
-        pass
 
     @abstractmethod
     def list_all_files(self, model: Union[Model, ModelHash]) -> list[str]:
@@ -248,7 +232,6 @@ class ModelDatabase(ABC):
         list[str]
             List of file names
         """
-        pass
 
     @abstractmethod
     def retrieve_file(
@@ -271,7 +254,6 @@ class ModelDatabase(ABC):
         force : bool
             Force overwrite of file (default False)
         """
-        pass
 
     @abstractmethod
     def retrieve_all_files(
@@ -288,7 +270,6 @@ class ModelDatabase(ABC):
         force : bool
             Force overwrite of files (default False)
         """
-        pass
 
     @abstractmethod
     def retrieve_model(self, model: ModelHash) -> Model:
@@ -304,7 +285,6 @@ class ModelDatabase(ABC):
         Model
             Retrieved model object
         """
-        pass
 
     @abstractmethod
     def retrieve_modelfit_results(self, model: Union[Model, ModelHash]) -> Results:
@@ -320,7 +300,6 @@ class ModelDatabase(ABC):
         Results
             Retrieved model results object
         """
-        pass
 
     @abstractmethod
     def retrieve_model_entry(self, model: Union[Model, ModelHash]) -> ModelEntry:
@@ -336,7 +315,6 @@ class ModelDatabase(ABC):
         ModelEntry
             Retrieved model entry object
         """
-        pass
 
     @abstractmethod
     def snapshot(self, model: Union[Model, ModelHash]) -> ContextManager[ModelSnapshot]:
@@ -347,7 +325,6 @@ class ModelDatabase(ABC):
         model_name : str
             Name of the Pharmpy model object
         """
-        pass
 
     @abstractmethod
     def transaction(
@@ -360,7 +337,6 @@ class ModelDatabase(ABC):
         obj : Model | ModelEntry | ModelHash
             Pharmpy model, ModelEntry or ModelHash object
         """
-        pass
 
 
 class NonTransactionalModelDatabase(ModelDatabase):

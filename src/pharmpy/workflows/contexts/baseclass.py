@@ -135,7 +135,6 @@ class Context(ABC):
         res : Results
             Tool results object
         """
-        pass
 
     @abstractmethod
     def retrieve_results(self) -> Results:
@@ -146,7 +145,6 @@ class Context(ABC):
         Results
             Tool results object
         """
-        pass
 
     @abstractmethod
     def store_metadata(self, metadata: dict) -> None:
@@ -157,17 +155,14 @@ class Context(ABC):
         metadata : dict
             Tool metadata dictionary
         """
-        pass
 
     @abstractmethod
     def retrieve_metadata(self) -> dict:
         """Read tool metadata"""
-        pass
 
     @abstractmethod
     def store_key(self, name: str, key: ModelHash) -> None:
         """Associate a key with a model name"""
-        pass
 
     @abstractmethod
     def retrieve_key(self, name: str) -> ModelHash:
@@ -175,27 +170,22 @@ class Context(ABC):
 
         This key can be used to lookup the model in the model database
         """
-        pass
 
     @abstractmethod
     def list_all_names(self) -> list[str]:
         """Retrieve a list of all model names in the context"""
-        pass
 
     @abstractmethod
     def list_all_subcontexts(self) -> list[str]:
         """Retrieve a list of the names of all subcontexts in the context"""
-        pass
 
     @abstractmethod
     def store_annotation(self, name: str, annotation: str):
         """Store an annotation string (description) for a model"""
-        pass
 
     @abstractmethod
     def retrieve_annotation(self, name: str) -> str:
         """Retrieve an annotation for a model"""
-        pass
 
     def get_ncores_for_execution(self) -> int:
         """Get number of cores for execution (using available cores among allocation)"""
@@ -243,7 +233,6 @@ class Context(ABC):
         current - only the current Context level
         lower - current and sub levels
         """
-        pass
 
     @abstractmethod
     def retrieve_common_options(self) -> dict[str, Any]:
@@ -256,29 +245,24 @@ class Context(ABC):
     @abstractmethod
     def get_parent_context(self) -> Context:
         """Get the parent context of this context"""
-        pass
 
     @abstractmethod
     def get_top_level_context(self) -> Context:
         """Get the top level context of this context"""
-        pass
 
     @abstractmethod
     def get_subcontext(self, name: str) -> Context:
         """Get one of the subcontexts of this context"""
-        pass
 
     @abstractmethod
     def create_subcontext(self, name: str) -> Context:
         """Create a new subcontext of this context"""
-        pass
 
     @abstractmethod
     def finalize(self) -> None:
         """Called after a tool has finished its run in a context
         can be implemented to do cleanup of the context
         """
-        pass
 
     def _store_model(self, name: str, model: Union[Model, ModelEntry]):
         db = self.model_database
@@ -333,7 +317,6 @@ class Context(ABC):
     @abstractmethod
     def abort_workflow(self, message: str):
         """Ask the dispatcher to abort the currently running workflow immediately"""
-        pass
 
     def has_started(self) -> bool:
         """Check if the tool running in the context has started"""

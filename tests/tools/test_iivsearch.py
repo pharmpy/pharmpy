@@ -174,7 +174,7 @@ def test_get_covariance_combinations(mfl, base_features, expected):
     combinations = get_covariance_combinations(mfl, mfl_base)
     assert len(combinations) == expected
     mfl_forced = mfl - mfl.filter(filter_on='optional')
-    mf_empty = ModelFeatures(tuple())
+    mf_empty = ModelFeatures(())
     if mfl_forced:
         assert mf_empty not in combinations
     else:

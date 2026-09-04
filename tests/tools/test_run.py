@@ -65,7 +65,7 @@ def test_create_metadata_tool(tmp_path, testdata, load_model_for_test, kwargs):
             database=database,
             tool_name=tool_name,
             tool_func=tool.create_workflow,
-            args=tuple(),
+            args=(),
             kwargs=kwargs | {'model': model, 'results': results, 'search_space': search_space},
         )
 
@@ -100,7 +100,7 @@ def test_create_metadata_tool_list_of_models(tmp_path, testdata, load_model_for_
             database=database,
             tool_name=tool_name,
             tool_func=tool.create_workflow,
-            args=tuple(),
+            args=(),
             kwargs=kwargs,
         )
 

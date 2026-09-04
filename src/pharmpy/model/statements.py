@@ -367,12 +367,12 @@ class CompartmentalSystemBuilder:
         if destination.doses:
             new_dest_dose = destination.doses
         else:
-            new_dest_dose = tuple()
+            new_dest_dose = ()
         if admid:
             new_source_dose = tuple([d for d in source.doses if d.admid != admid])
             new_dest_dose += tuple([d for d in source.doses if d.admid == admid])
         else:
-            new_source_dose = tuple()
+            new_source_dose = ()
             new_dest_dose += source.doses
         new_source = source.replace(doses=new_source_dose)
         new_dest = destination.replace(doses=new_dest_dose)
@@ -402,7 +402,7 @@ class CompartmentalSystemBuilder:
         if compartment is None:
             raise ValueError('Option `compartment` cannot be None')
         if dose is None:
-            dose = tuple()
+            dose = ()
         elif isinstance(dose, Dose):
             dose = (dose,)
 
@@ -464,7 +464,7 @@ class CompartmentalSystemBuilder:
         if admid:
             doses = tuple(dose for dose in compartment.doses if dose.admid != admid)
         else:
-            doses = tuple()
+            doses = ()
         new_comp = compartment.replace(doses=doses)
         mapping[compartment] = new_comp
 
@@ -1058,7 +1058,7 @@ class CompartmentalSystem(Statement):
         >>> model.statements.ode_system.dosing_compartments
         (Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1)),)
         """
-        dosing_comps = tuple()
+        dosing_comps = ()
         comps = sorted(list(_comps(self._g)), key=lambda comp: comp.name)
         for node in comps:
             if node.doses:
@@ -1799,7 +1799,7 @@ class Compartment(CompartmentBase):
         self,
         name: str,
         amount: Expr,
-        doses: tuple[Dose, ...] = tuple(),
+        doses: tuple[Dose, ...] = (),
         input: Expr = Expr.integer(0),
         lag_time: Expr = Expr.integer(0),
         bioavailability: Expr = Expr.integer(1),
@@ -1816,7 +1816,7 @@ class Compartment(CompartmentBase):
         cls,
         name: str,
         amount: Optional[TExpr] = None,
-        doses: Sequence[Dose] = tuple(),
+        doses: Sequence[Dose] = (),
         input: TExpr = Expr.integer(0),
         lag_time: TExpr = Expr.integer(0),
         bioavailability: TExpr = Expr.integer(1),
@@ -1929,11 +1929,11 @@ class Compartment(CompartmentBase):
         Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(DOSE, admid=1))
         """
         if self.doses:
-            new_doses = tuple()
+            new_doses = ()
             for d in self.doses:
                 new_doses = new_doses + (d.subs(substitutions),)
         else:
-            new_doses = tuple()
+            new_doses = ()
         return Compartment(
             self.name,
             amount=self._amount.subs(substitutions),
@@ -1985,9 +1985,9 @@ class Compartment(CompartmentBase):
     @classmethod
     def from_dict(cls, d: dict[str, Any]) -> Compartment:
         if d['doses'] is None:
-            all_doses = tuple()
+            all_doses = ()
         else:
-            all_doses = tuple()
+            all_doses = ()
             for dose in d['doses']:
                 all_doses += (Dose.from_dict(dose),)
         return cls(
@@ -2003,7 +2003,7 @@ class Compartment(CompartmentBase):
         lag = '' if self._lag_time == 0 else f', lag_time={self._lag_time}'
         doses = (
             ''
-            if self._doses is tuple()
+            if self._doses == ()
             else f', doses={self._doses[0] if len(self._doses) == 1 else self._doses}'
         )
         input = '' if self._input == 0 else f', input={self._input}'

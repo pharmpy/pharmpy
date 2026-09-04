@@ -155,7 +155,7 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
     maxlen = max(lens)
     if maxlen > 16:
         for i, length in enumerate(lens):
-            collen = 16 if length < 16 else length
+            collen = max(16, length)
             block[i] = block[i][:length] + (maxlen - collen) * ' ' + block[i][length:]
 
     rawtable = pd.read_fwf(

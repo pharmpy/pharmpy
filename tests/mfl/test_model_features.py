@@ -27,7 +27,7 @@ class ModelFeatureX(ModelFeature):
 
     @property
     def args(self):
-        return tuple()
+        return ()
 
     def expand(self, model):
         return self
@@ -37,8 +37,8 @@ class ModelFeatureX(ModelFeature):
 
 
 def test_init():
-    mf1 = ModelFeatures(tuple())
-    assert mf1.features == tuple()
+    mf1 = ModelFeatures(())
+    assert mf1.features == ()
     a = Absorption.create('FO')
     mf2 = ModelFeatures((a,))
     assert mf2.features == (a,)
@@ -571,7 +571,7 @@ def test_covariance():
 
 def test_refs():
     mf = ModelFeatures.pk_oral()
-    assert mf.refs == tuple()
+    assert mf.refs == ()
     mf += Covariate.create(Ref('IIV'), 'WGT', 'exp')
     assert mf.refs == (Ref('IIV'),)
     mf += Covariate.create(Ref('ABSORPTION'), 'AGE', 'exp')
@@ -825,7 +825,7 @@ def test_sub():
     assert mf1 == mf5
 
     mf6 = a1 - mf1
-    assert mf6.features == tuple()
+    assert mf6.features == ()
 
     mf7 = [a1] - mf1
     assert mf7 == mf6

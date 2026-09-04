@@ -112,13 +112,13 @@ class ModelFeatures:
         self,
         absorption=None,
         elimination=None,
-        transits=tuple(),  # NOTE : This is a tuple
-        peripherals=tuple(),
+        transits=(),  # NOTE : This is a tuple
+        peripherals=(),
         lagtime=None,
-        covariate=tuple(),  # Note : Should always be tuple (empty meaning no covariates)
+        covariate=(),  # Note : Should always be tuple (empty meaning no covariates)
         direct_effect=None,
         effect_comp=None,
-        indirect_effect=tuple(),
+        indirect_effect=(),
         metabolite=None,
         allometry=None,
     ):
@@ -139,13 +139,13 @@ class ModelFeatures:
         cls,
         absorption=None,
         elimination=None,
-        transits=tuple(),
-        peripherals=tuple(),
+        transits=(),
+        peripherals=(),
         lagtime=None,
-        covariate=tuple(),
+        covariate=(),
         direct_effect=None,
         effect_comp=None,
-        indirect_effect=tuple(),
+        indirect_effect=(),
         metabolite=None,
         allometry=None,
     ):
@@ -194,9 +194,9 @@ class ModelFeatures:
                 absorption = Absorption((Name('INST'),))
             if elimination is None:
                 elimination = Elimination((Name('FO'),))
-            if transits == tuple():
+            if transits == ():
                 transits = (Transits((0,), (Name('DEPOT'),)),)
-            if peripherals == tuple():
+            if peripherals == ():
                 peripherals += (Peripherals((0,)),)
             if lagtime is None:
                 lagtime = LagTime((Name('OFF'),))
@@ -219,13 +219,13 @@ class ModelFeatures:
     def create_from_mfl_statement_list(cls, mfl_list):
         absorption = None
         elimination = None
-        transits = tuple()
-        peripherals = tuple()
+        transits = ()
+        peripherals = ()
         lagtime = None
-        covariate = tuple()
+        covariate = ()
         direct_effect = None
         effect_comp = None
-        indirect_effect = tuple()
+        indirect_effect = ()
         metabolite = None
         allometry = None
         let = {}
@@ -440,7 +440,7 @@ class ModelFeatures:
 
             covariate_combinations = [tuple({x} for x in e) for e in covariate_combinations]
             covariate_combinations = _reduce_covariate(covariate_combinations)
-            covariate = tuple()
+            covariate = ()
             for param, cov, fp, op, opt in covariate_combinations:
                 covariate += (
                     Covariate(tuple(param), tuple(cov), tuple(fp), list(op)[0], list(opt)[0]),
@@ -511,7 +511,7 @@ class ModelFeatures:
             if peripherals["DRUG"]:
                 peripherals = (Peripherals(tuple(peripherals["DRUG"]), (Name("DRUG"),)),)
             else:
-                peripherals = tuple()
+                peripherals = ()
             return ModelFeatures.create(
                 absorption=self.absorption,
                 elimination=self.elimination,
@@ -530,7 +530,7 @@ class ModelFeatures:
             if peripherals["MET"]:
                 peripherals = (Peripherals(tuple(peripherals["MET"]), (Name("MET"),)),)
             else:
-                peripherals = tuple()
+                peripherals = ()
             return ModelFeatures.create(peripherals=peripherals, metabolite=self.metabolite)
         else:
             raise ValueError(f"Unknown subset {subset}")
@@ -584,7 +584,7 @@ class ModelFeatures:
         # FIXME: to keep old behavior, remove
         if tool == 'modelsearch':
             return True
-        if self.covariate != tuple() or mfl.covariate != tuple():
+        if self.covariate != () or mfl.covariate != ():
             if model is None:
                 warnings.warn("Need argument 'model' in order to compare covariates")
             else:
@@ -693,7 +693,7 @@ class ModelFeatures:
         lhs = self._extract_peripherals()
         rhs = other._extract_peripherals()
 
-        combined = {"MET": tuple(), "DRUG": tuple()}
+        combined = {"MET": (), "DRUG": ()}
 
         for key in combined.keys():
             if add:
@@ -708,7 +708,7 @@ class ModelFeatures:
         if peripherals:
             return tuple(peripherals)
         else:
-            return tuple()
+            return ()
 
     def _add_sub_indirect_effect(self, other, add=True):
         """Apply logic for adding/subtracting mfl IndirectEffect(s).
@@ -735,7 +735,7 @@ class ModelFeatures:
             if lhs_indirect_effects:
                 return tuple(lhs_indirect_effects)
             else:
-                return tuple()
+                return ()
 
     def _add_sub_transits(self, other, add=True):
         """Apply logic for adding/subtracting mfl transits.
@@ -759,7 +759,7 @@ class ModelFeatures:
             if lhs_transits:
                 return tuple(lhs_transits)
             else:
-                return tuple()
+                return ()
 
     def _add_sub_covariates(self, other, add=True):
         lhs = self._extract_covariates()
@@ -792,7 +792,7 @@ class ModelFeatures:
         elif len(lhs) != 0 and len(rhs) == 0:
             res = lhs
         else:
-            return tuple()
+            return ()
 
         # Convert all elements to SETS before using reduce
         res = [tuple({x} for x in e) for e in res]
@@ -804,7 +804,7 @@ class ModelFeatures:
             )
 
         if all(len(c.parameter) == 0 for c in cov_res):
-            return tuple()
+            return ()
         else:
             return tuple(cov_res)
 

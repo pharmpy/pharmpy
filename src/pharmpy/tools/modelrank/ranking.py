@@ -29,11 +29,11 @@ def get_rank_values(
     else:
         if rank_type == 'ofv':
             rank_func = get_ofv
-            rank_kwargs = dict()
+            rank_kwargs = {}
             rank_val = 'ofv'
         elif rank_type == 'aic':
             rank_func = get_aic
-            rank_kwargs = dict()
+            rank_kwargs = {}
             rank_val = 'aic'
         else:
             rank_func = get_bic
@@ -60,7 +60,7 @@ def get_rank_values(
 
 
 def perform_lrt(me, me_parent, alpha) -> dict[str, Union[float, int, bool]]:
-    rank_dict = dict()
+    rank_dict = {}
     rank_dict['df'] = lrt_df(me_parent, me)
     if isinstance(alpha, tuple):
         alpha = alpha[0] if rank_dict['df'] >= 0 else alpha[1]
@@ -127,7 +127,7 @@ def get_rank_name(rank_type):
 
 
 def get_ofv(me, ref_value) -> dict[str, float]:
-    rank_dict = dict()
+    rank_dict = {}
     likelihood = me.modelfit_results.ofv
     if ref_value:
         rank_dict['dofv'] = ref_value - likelihood
@@ -138,7 +138,7 @@ def get_ofv(me, ref_value) -> dict[str, float]:
 
 
 def get_aic(me, ref_value) -> dict[str, Union[float, int]]:
-    rank_dict = dict()
+    rank_dict = {}
     likelihood = me.modelfit_results.ofv
     rank_dict['ofv'] = likelihood
     aic = calculate_aic(me.model, likelihood)
@@ -152,7 +152,7 @@ def get_aic(me, ref_value) -> dict[str, Union[float, int]]:
 
 
 def get_bic(me, ref_value, rank_type, search_space, E=None) -> dict[str, Union[float, int]]:
-    rank_dict = dict()
+    rank_dict = {}
     likelihood = me.modelfit_results.ofv
     rank_dict['ofv'] = likelihood
     bic = calculate_bic(me.model, likelihood, type=_get_bic_type(rank_type))

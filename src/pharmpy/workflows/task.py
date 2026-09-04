@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Callable, Self
+from collections.abc import Callable
+from typing import Self
 
 from pharmpy.internals.immutable import Immutable
 
