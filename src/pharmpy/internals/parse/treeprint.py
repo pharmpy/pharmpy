@@ -6,9 +6,10 @@ Baker). In development.
 from __future__ import annotations
 
 from collections import namedtuple
+from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Callable, Generic, Optional, TypeVar, Union
+from typing import Generic, Optional, TypeVar, Union
 
 
 class BranchStyle(Enum):

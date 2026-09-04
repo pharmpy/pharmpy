@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from typing import Iterable, Literal, Optional, Union
+from collections.abc import Iterable, Mapping
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np

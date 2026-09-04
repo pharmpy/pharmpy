@@ -1,9 +1,10 @@
 from __future__ import annotations
 
 import re
+from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Collection, Iterable, Literal, Optional, Sequence, TypeVar, Union
+from typing import Literal, Optional, TypeVar, Union
 
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx

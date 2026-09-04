@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import itertools
 from collections import defaultdict
-from collections.abc import Mapping
-from typing import Iterable, Iterator, Literal, Sequence, Type, TypeVar, Union
+from collections.abc import Iterable, Iterator, Mapping, Sequence
+from typing import Literal, Type, TypeVar, Union
 
 from pharmpy.internals.immutable import Immutable
 from pharmpy.mfl.features.mutex_feature import MutexFeature

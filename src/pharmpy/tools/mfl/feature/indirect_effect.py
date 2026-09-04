@@ -1,6 +1,6 @@
+from collections.abc import Iterable
 from functools import partial
 from itertools import product
-from typing import Iterable
 
 from pharmpy.model import Model
 from pharmpy.modeling import add_indirect_effect

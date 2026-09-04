@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable
 from operator import is_
-from typing import Callable, Type
+from typing import Type
 
 from pharmpy.deps import sympy
 

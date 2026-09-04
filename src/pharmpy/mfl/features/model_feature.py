@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import builtins
 from abc import abstractmethod
-from typing import TYPE_CHECKING, Any, Iterable, Mapping, Optional, Self, Sequence
+from collections.abc import Iterable, Mapping, Sequence
+from typing import TYPE_CHECKING, Any, Optional, Self
 
 from pharmpy.internals.immutable import Immutable
 

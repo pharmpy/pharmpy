@@ -1,5 +1,5 @@
+from collections.abc import Iterable
 from functools import partial
-from typing import Iterable
 
 from pharmpy.modeling import add_effect_compartment
 

@@ -8,8 +8,9 @@ import importlib
 import itertools
 import re
 import warnings
+from collections.abc import Mapping
 from pathlib import Path
-from typing import Literal, Mapping, Optional, Union
+from typing import Literal, Optional, Union
 
 import pharmpy.config as config
 from pharmpy.basic import BooleanExpr, Expr, TSymbol

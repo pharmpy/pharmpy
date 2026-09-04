@@ -1,5 +1,6 @@
+from collections.abc import Iterable
 from dataclasses import fields
-from typing import Iterable, Union
+from typing import Union
 
 from .statement.feature.covariate import Ref
 from .statement.feature.symbols import Name, Option, Wildcard

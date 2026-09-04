@@ -1,6 +1,6 @@
 from collections import defaultdict
+from collections.abc import Callable, Iterable
 from itertools import chain, product
-from typing import Callable, Iterable
 
 from pharmpy.model import Model
 

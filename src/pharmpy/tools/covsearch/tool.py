@@ -1,7 +1,8 @@
 from collections import Counter, defaultdict
+from collections.abc import Callable, Iterable
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Callable, Iterable, Literal, Optional, Union
+from typing import Any, Literal, Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd

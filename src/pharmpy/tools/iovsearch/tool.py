@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Callable, Iterable, Literal, Optional, TypeVar, Union
+from typing import Literal, Optional, TypeVar, Union
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd

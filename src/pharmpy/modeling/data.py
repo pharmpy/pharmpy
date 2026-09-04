@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import re
 import warnings
+from collections.abc import Collection, Container
 from pathlib import Path
-from typing import Any, Collection, Container, Literal, Optional, Union, overload
+from typing import Any, Literal, Optional, Union, overload
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np

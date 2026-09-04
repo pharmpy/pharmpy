@@ -1,4 +1,5 @@
-from typing import Iterable, Iterator, List, Union
+from collections.abc import Iterable, Iterator
+from typing import List, Union
 
 from lark import Token, Transformer, Tree
 from lark.tree import Meta

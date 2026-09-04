@@ -1,7 +1,7 @@
 import re
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Callable, Literal, Optional, Sequence, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import pandas as pd

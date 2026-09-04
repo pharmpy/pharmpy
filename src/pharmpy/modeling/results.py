@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import math
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
-from typing import Iterable, Literal, Mapping, Optional, Sequence, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import BooleanExpr, Expr, RandomNumberGenerator, Seed
 from pharmpy.deps import numpy as np

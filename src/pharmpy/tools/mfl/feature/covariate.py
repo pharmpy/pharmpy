@@ -1,6 +1,7 @@
+from collections.abc import Iterable, Sequence
 from functools import partial
 from itertools import product
-from typing import Iterable, Sequence, TypeVar, Union
+from typing import TypeVar, Union
 
 from pharmpy.model import Model
 from pharmpy.modeling import get_bioavailability

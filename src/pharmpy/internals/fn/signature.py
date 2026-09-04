@@ -1,6 +1,6 @@
+from collections.abc import Callable
 from functools import wraps
 from inspect import Signature, signature
-from typing import Callable
 
 
 def with_same_arguments_as(ref: Callable):

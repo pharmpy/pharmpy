@@ -6,8 +6,9 @@ Generic NONMEM code record class.
 from __future__ import annotations
 
 import re
+from collections.abc import Iterator, Sequence
 from operator import neg, pos, sub, truediv
-from typing import Iterator, Literal, Sequence
+from typing import Literal
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy, sympy_printing

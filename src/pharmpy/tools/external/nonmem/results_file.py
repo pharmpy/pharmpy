@@ -1,6 +1,7 @@
 import re
+from collections.abc import Callable, Generator, Iterable, Iterator
 from dataclasses import asdict, dataclass, fields, replace
-from typing import Any, Callable, Generator, Iterable, Iterator, Optional, Union
+from typing import Any, Optional, Union
 
 from packaging import version
 

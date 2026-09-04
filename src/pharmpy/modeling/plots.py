@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import re
 import warnings
+from collections.abc import Collection, Mapping
 from functools import partial
 from pathlib import Path
-from typing import Collection, Literal, Mapping, Optional, Union
+from typing import Literal, Optional, Union
 
 import pharmpy.visualization
 from pharmpy.basic import Expr, RandomNumberGenerator, Seed

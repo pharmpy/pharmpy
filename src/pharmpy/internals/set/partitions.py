@@ -1,4 +1,5 @@
-from typing import Iterable, Iterator, Sequence, Sized, TypeVar
+from collections.abc import Iterable, Iterator, Sequence, Sized
+from typing import TypeVar
 
 T = TypeVar('T')
 S = TypeVar('S', bound=Sized)

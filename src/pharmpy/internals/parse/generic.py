@@ -9,8 +9,9 @@ from __future__ import annotations
 
 import re
 from abc import ABC
+from collections.abc import Callable, Iterable, Sequence
 from itertools import chain
-from typing import Callable, Iterable, Optional, Sequence, Union
+from typing import Optional, Union
 
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token

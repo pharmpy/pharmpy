@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 import warnings
+from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Optional, Sequence, TypeVar
+from typing import Any, Optional, TypeVar
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np

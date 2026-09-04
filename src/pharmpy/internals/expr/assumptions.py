@@ -1,8 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from functools import reduce
 from operator import __and__
-from typing import Iterable
 
 from pharmpy.deps import sympy
 

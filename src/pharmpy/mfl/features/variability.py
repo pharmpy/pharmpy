@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Mapping, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Union
 
 from pharmpy.mfl.features.help_functions import get_repr, group_args
 

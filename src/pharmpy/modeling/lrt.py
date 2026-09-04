@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Iterable, Union
+from collections.abc import Iterable
+from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps.scipy import stats

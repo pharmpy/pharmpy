@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Optional, Sequence, Union
+from collections.abc import Sequence
+from typing import Optional, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd

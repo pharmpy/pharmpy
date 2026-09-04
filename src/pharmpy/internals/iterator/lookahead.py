@@ -1,6 +1,7 @@
 import sys
+from collections.abc import Iterable, Iterator
 from itertools import islice, tee
-from typing import Generic, Iterable, Iterator, TypeVar
+from typing import Generic, TypeVar
 
 T = TypeVar('T')
 

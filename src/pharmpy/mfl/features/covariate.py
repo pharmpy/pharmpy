@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import itertools
-from typing import TYPE_CHECKING, Mapping, Optional, Sequence, Union
+from collections.abc import Mapping, Sequence
+from typing import TYPE_CHECKING, Optional, Union
 
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature

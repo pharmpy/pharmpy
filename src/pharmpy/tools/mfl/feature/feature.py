@@ -1,4 +1,5 @@
-from typing import Callable, Hashable, Optional
+from collections.abc import Callable, Hashable
+from typing import Optional
 
 from pharmpy.model import Model
 

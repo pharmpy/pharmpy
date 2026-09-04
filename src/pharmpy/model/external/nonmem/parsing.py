@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import re
 import warnings
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable, Optional, cast
+from typing import Optional, cast
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd

@@ -1,5 +1,6 @@
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Callable, Iterable, Literal, Union, cast
+from typing import Literal, Union, cast
 
 from lark import Lark, Token
 

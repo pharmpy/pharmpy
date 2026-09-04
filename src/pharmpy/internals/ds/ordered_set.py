@@ -1,6 +1,6 @@
-from collections.abc import MutableSet
+from collections.abc import Iterable, MutableSet
 from itertools import chain
-from typing import AbstractSet, Any, Generic, Iterable, Literal, Optional, TypeVar
+from typing import AbstractSet, Any, Generic, Literal, Optional, TypeVar
 
 T = TypeVar('T')
 

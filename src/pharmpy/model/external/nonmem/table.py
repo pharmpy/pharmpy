@@ -2,10 +2,11 @@ from __future__ import annotations
 
 import csv
 import re
+from collections.abc import Iterable, Iterator
 from io import StringIO
 from itertools import chain
 from pathlib import Path
-from typing import Iterable, Iterator, Literal, Optional, Protocol, Union
+from typing import Literal, Optional, Protocol, Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd

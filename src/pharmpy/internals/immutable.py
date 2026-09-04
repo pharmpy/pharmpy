@@ -1,7 +1,7 @@
 from abc import ABC
-from collections.abc import Mapping
+from collections.abc import Iterator, Mapping
 from functools import wraps
-from typing import Iterator, TypeVar
+from typing import TypeVar
 from weakref import WeakKeyDictionary, WeakValueDictionary
 
 

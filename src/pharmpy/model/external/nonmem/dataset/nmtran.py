@@ -1,8 +1,9 @@
 import re
 from collections import deque
+from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Iterator, Optional, TextIO, Union
+from typing import Any, Optional, TextIO, Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError

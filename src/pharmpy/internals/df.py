@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterator
 from hashlib import sha256
-from typing import Any, Iterator, Union, overload
+from typing import Any, Union, overload
 
 from pharmpy.deps import pandas as pd
 

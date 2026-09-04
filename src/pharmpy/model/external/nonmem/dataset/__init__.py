@@ -1,8 +1,9 @@
 # Read dataset from file
 import warnings
+from collections.abc import Container, Iterable
 from itertools import chain
 from pathlib import Path
-from typing import Any, Container, Iterable, Optional, TextIO, cast
+from typing import Any, Optional, TextIO, cast
 
 from pharmpy import conf
 from pharmpy.deps import pandas as pd

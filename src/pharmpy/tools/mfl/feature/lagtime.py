@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from pharmpy.model import Model
 from pharmpy.modeling import add_lag_time, remove_lag_time

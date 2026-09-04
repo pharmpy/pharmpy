@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Iterable, Mapping, Sequence
 from itertools import product
-from typing import Any, Iterable, Literal, Mapping, Optional, Sequence, Union
+from typing import Any, Literal, Optional, Union
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr

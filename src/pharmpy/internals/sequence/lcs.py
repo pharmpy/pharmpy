@@ -1,4 +1,5 @@
-from typing import Iterator, Literal, Sequence, TypeVar
+from collections.abc import Iterator, Sequence
+from typing import Literal, TypeVar
 
 T = TypeVar('T')
 C = Literal[-1, 0, 1]

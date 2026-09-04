@@ -1,8 +1,9 @@
 import builtins
 import itertools
 from collections import defaultdict
+from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Callable, Literal, Optional, Sequence, Union
+from typing import Literal, Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd

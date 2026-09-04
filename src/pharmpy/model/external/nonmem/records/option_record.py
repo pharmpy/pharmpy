@@ -9,7 +9,8 @@ from __future__ import annotations
 import re
 from abc import ABC
 from collections import namedtuple
-from typing import Iterable, Optional, Union
+from collections.abc import Iterable
+from typing import Optional, Union
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 

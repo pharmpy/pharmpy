@@ -1,5 +1,5 @@
+from collections.abc import Iterable
 from functools import partial
-from typing import Iterable
 
 from pharmpy.model import Model
 from pharmpy.modeling import set_direct_effect

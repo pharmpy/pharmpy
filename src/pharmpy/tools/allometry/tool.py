@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import partial
-from typing import Iterable, Optional, Union
+from typing import Optional, Union
 
 from pharmpy.basic import Expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
