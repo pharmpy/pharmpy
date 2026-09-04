@@ -1266,10 +1266,10 @@ class CompartmentalSystem(Statement):
         nodes = self._order_compartments()
         size = len(nodes)
         f = symengine.zeros(size)
-        for i in range(0, size):
+        for i in range(size):
             from_comp = nodes[i]
             diagsum = 0
-            for j in range(0, size):
+            for j in range(size):
                 to_comp = nodes[j]
                 rate = self.get_flow(from_comp, to_comp)
                 if i != j:

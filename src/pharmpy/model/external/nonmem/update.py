@@ -208,8 +208,8 @@ def update_random_variable_records(model: Model, rvs_diff, record_type):
                 else:
                     params = []
                     if len(rvs) > 1:
-                        for row in range(0, len(rvs)):
-                            for col in range(0, row + 1):
+                        for row in range(len(rvs)):
+                            for col in range(row + 1):
                                 param = model.parameters[rvs.variance[row, col].name]
                                 params.append(param)
                     else:
@@ -248,8 +248,8 @@ def update_random_variable_records(model: Model, rvs_diff, record_type):
             else:
                 params = []
                 if len(rvs) > 1:
-                    for row in range(0, len(rvs)):
-                        for col in range(0, row + 1):
+                    for row in range(len(rvs)):
+                        for col in range(row + 1):
                             param = model.parameters[rvs.variance[row, col].name]
                             params.append(param)
                 else:
@@ -1031,7 +1031,7 @@ def pk_param_conversion(model: Model, advan, trans):
         d[sympy.Symbol(f'A({old})')] = sympy.Symbol(f'A({new})')
     if from_advan == 'ADVAN5' or from_advan == 'ADVAN7':
         reverse_map = {v: k for k, v in newmap.items()}
-        for i, j in product(range(1, len(oldmap)), range(0, len(oldmap))):
+        for i, j in product(range(1, len(oldmap)), range(len(oldmap))):
             if i != j and (i in remap and (j in remap or j == 0)):
                 if i in remap:
                     to_i = remap[i]
@@ -2533,8 +2533,8 @@ def create_name_map(model: Model):
 
     def add_rv_params(rvs: RandomVariables, param_name: str):
         cov = rvs.covariance_matrix
-        for row in range(0, cov.rows):
-            for col in range(0, row + 1):
+        for row in range(cov.rows):
+            for col in range(row + 1):
                 if cov[row, col] != 0:
                     nonmem_name = f'{param_name}({row + 1},{col + 1})'
                     name = cov[row, col].name

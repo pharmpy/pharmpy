@@ -370,7 +370,7 @@ def rank_models_with_uncertainty(
     else:
         final_model, final_results = best_me.model, best_me.modelfit_results
 
-    keys = list(range(0, i + 1))
+    keys = list(range(i + 1))
 
     summary_strictness = concat_summaries([no_cov_strictness] + cov_strictness, keys=keys)
     summary_selection_criteria = concat_summaries(

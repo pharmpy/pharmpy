@@ -100,7 +100,7 @@ class OmegaRecord(Record):
                 names = []
                 inits = []
                 for i in range(size):
-                    for j in range(0, i + 1):
+                    for j in range(i + 1):
                         comment = comments[label_index]
                         init = A[i, j]
                         names.append(comment)
@@ -380,7 +380,7 @@ class OmegaRecord(Record):
             if cholesky:
                 s += ' CHOLESKY'
             s += '\n'
-            for row in range(0, len(A)):
+            for row in range(len(A)):
                 s += ' '.join(np.atleast_1d(A[row, 0 : (row + 1)]).astype(str)) + '\n'
 
             temp = self.raw_name + s

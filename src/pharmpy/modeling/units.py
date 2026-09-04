@@ -158,7 +158,7 @@ def add_covariances(model, unknown):
     if len(cov) == 1:
         return
     for row in range(1, cov.rows):
-        for col in range(0, row):
+        for col in range(row):
             e = cov[row, col]
             if e != 0:
                 unknown.add((e, cov[row, row] * cov[col, col]))

@@ -550,7 +550,7 @@ class JointNormalDistribution(Distribution):
             to_pad = mu_strings if mu_height < sigma_height else sigma_strings
             num_lines = abs(mu_height - sigma_height)
             padding = ' ' * len(to_pad[0])
-            for i in range(0, num_lines):
+            for i in range(num_lines):
                 if i % 2 == 0:
                     to_pad.append(padding)
                 else:
@@ -560,7 +560,7 @@ class JointNormalDistribution(Distribution):
         if len(name_strings) < max_height:
             num_lines = abs(max_height - len(name_strings))
             padding = ' ' * len(name_strings[0])
-            for i in range(0, num_lines):
+            for i in range(num_lines):
                 if i % 2 == 0:
                     name_strings.append(padding)
                 else:

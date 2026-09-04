@@ -1180,7 +1180,7 @@ def plot_iteration_trace(
 
     df = pd.concat((ofv_iterations, parameter_estimates_iterations), axis=1)
     df = df.reset_index(drop=True)
-    df['iteration'] = range(0, len(df))  # Using a global iteration across steps
+    df['iteration'] = range(len(df))  # Using a global iteration across steps
     df = df.melt(id_vars=['iteration'], var_name='parameter', value_name='estimate')
 
     chart = (

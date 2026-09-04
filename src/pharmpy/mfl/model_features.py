@@ -94,7 +94,7 @@ class ModelFeatures(Immutable):
         transits = [Transits.create(0)]
         lagtime = [LagTime.create(on=False)]
         elimination = [Elimination.create(type='FO')]
-        peripherals = [Peripherals.create(n) for n in range(0, 3)]
+        peripherals = [Peripherals.create(n) for n in range(3)]
         features = transits + lagtime + elimination + peripherals
         return cls.create(features=features)
 
@@ -107,7 +107,7 @@ class ModelFeatures(Immutable):
         ]
         lagtime = [LagTime.create(on=False), LagTime.create(on=True)]
         elimination = [Elimination.create(type='FO')]
-        peripherals = [Peripherals.create(n) for n in range(0, 2)]
+        peripherals = [Peripherals.create(n) for n in range(2)]
         features = absorption + transits + lagtime + elimination + peripherals
         return cls.create(features=features)
 

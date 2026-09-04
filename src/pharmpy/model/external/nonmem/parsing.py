@@ -161,7 +161,7 @@ def rvs_from_blocks(abbr_names, blocks, parameters, rvtype):
             else:
                 cov = sympy.zeros(n)
                 for row in range(n):
-                    for col in range(0, row + 1):
+                    for col in range(row + 1):
                         symb = parameters[parameters_index].symbol
                         parameters_index += 1
                         cov[row, col] = symb

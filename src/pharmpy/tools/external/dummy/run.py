@@ -245,7 +245,7 @@ def create_dummy_simulation_results(model):
     dv = model.dataset['DV'].copy()
 
     dv_sim_all = []
-    for _ in range(0, no_of_sim_steps):
+    for _ in range(no_of_sim_steps):
         dv_sim = pd.DataFrame(
             dv.apply(lambda x: x if x == 0 else x + (x * rng.to_numpy().uniform(-0.1, 0.1)))
         )

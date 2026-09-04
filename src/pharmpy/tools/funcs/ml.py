@@ -308,7 +308,7 @@ def _predict_with_tflite(model_path: Union[str, Path], data: pd.DataFrame):
     nrows = len(data)
     output = np.empty(nrows)
 
-    for i in range(0, nrows):
+    for i in range(nrows):
         interpreter.set_tensor(input_details[0]['index'], npdata[i : (i + 1), :])
         interpreter.invoke()
         output_data = interpreter.get_tensor(output_details[0]['index'])
