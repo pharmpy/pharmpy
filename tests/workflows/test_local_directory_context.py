@@ -1,6 +1,5 @@
 import pytest
 
-from pharmpy.modeling import create_rng
 from pharmpy.tools import load_example_modelfit_results
 from pharmpy.workflows import LocalDirectoryContext, LocalModelDirectoryDatabase
 from pharmpy.workflows.hashing import ModelHash
@@ -185,19 +184,8 @@ def test_create_rng(tmp_path):
     ctx.store_metadata({'seed': 1234})
     rng = ctx.create_rng(0)
     assert list(rng.to_numpy().integers(0, 100, size=3)) == [85, 96, 32]
-    seed = ctx.spawn_seed(rng)
+    seed = rng.spawn_seed()
     assert seed == 66159679555173072263051878775941756502
-
-
-def test_spawn_seed(tmp_path):
-    ctx = LocalDirectoryContext(name='mycontext', ref=tmp_path)
-    rng = create_rng(1234)
-    seed = ctx.spawn_seed(rng)
-    assert seed == 129373904605721494098426312902902725561
-    seed = ctx.spawn_seed(rng, n=32)
-    assert seed == 735984819
-    seed = ctx.spawn_seed(rng, n=17)
-    assert seed == 121010
 
 
 @pytest.mark.parametrize(

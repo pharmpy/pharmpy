@@ -49,3 +49,29 @@ class RandomNumberGenerator:
 
     def to_numpy(self):
         return self._backend
+
+    def spawn_seed(self, n: int = 128) -> int:
+        """Spawn a new seed
+
+        Parameters
+        ----------
+        n : int
+            Size of seed to generate in number of bits
+
+        Returns
+        -------
+        int
+            New random seed
+        """
+        n_full_words = n // 64
+        a = self.to_numpy().integers(2**64 - 1, size=n_full_words, dtype=np.uint64)
+        x = 0
+        m = 1
+        for val in a:
+            x += int(val) * m
+            m *= 2**64
+        remaining_bits = n % 64
+        if remaining_bits > 0:
+            b = self.to_numpy().integers(2**remaining_bits - 1, size=1, dtype=np.uint64)
+            x += int(b[0]) * m
+        return x

@@ -54,3 +54,13 @@ def test_seed_repr():
 def test_rng(seed):
     rng = RandomNumberGenerator(seed)
     rng.to_numpy()
+
+
+def test_spawn_seed(tmp_path):
+    rng = RandomNumberGenerator(1234)
+    seed = rng.spawn_seed()
+    assert seed == 129373904605721494098426312902902725561
+    seed = rng.spawn_seed(n=32)
+    assert seed == 735984819
+    seed = rng.spawn_seed(n=17)
+    assert seed == 121010

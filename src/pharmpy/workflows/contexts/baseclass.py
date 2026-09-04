@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Any, Literal, Optional, Union
 
 from pharmpy.basic import RandomNumberGenerator
-from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
 from pharmpy.workflows.broadcasters import Broadcaster
@@ -355,31 +354,3 @@ class Context(ABC):
         ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
         rng = RandomNumberGenerator([index, *ctxpath_bytes, self.seed])
         return rng
-
-    def spawn_seed(self, rng: RandomNumberGenerator, n: int = 128) -> int:
-        """Spawn a new seed using a random number generator
-
-        Parameters
-        ----------
-        rng : Random number generator
-            Random number generator
-        n : int
-            Size of seed to generate in number of bits
-
-        Returns
-        -------
-        int
-            New random seed
-        """
-        n_full_words = n // 64
-        a = rng.to_numpy().integers(2**64 - 1, size=n_full_words, dtype=np.uint64)
-        x = 0
-        m = 1
-        for val in a:
-            x += int(val) * m
-            m *= 2**64
-        remaining_bits = n % 64
-        if remaining_bits > 0:
-            b = rng.to_numpy().integers(2**remaining_bits - 1, size=1, dtype=np.uint64)
-            x += int(b[0]) * m
-        return x

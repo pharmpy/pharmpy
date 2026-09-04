@@ -492,7 +492,7 @@ def run_amd_task(
             func = _subfunc_retries(
                 tool=section,
                 strictness=strictness,
-                seed=context.spawn_seed(rng),
+                seed=rng.spawn_seed(),
                 parameter_uncertainty_method=parameter_uncertainty_method,
                 ctx=context,
             )
@@ -502,7 +502,7 @@ def run_amd_task(
         func = _subfunc_retries(
             tool="",
             strictness=strictness,
-            seed=context.spawn_seed(rng),
+            seed=rng.spawn_seed(),
             parameter_uncertainty_method=parameter_uncertainty_method,
             ctx=context,
         )
@@ -588,7 +588,7 @@ def run_amd_task(
 
     # run simulation for VPC plot
     # NOTE: The seed is set to be in range for NONMEM
-    sim_model = set_simulation(final_model, n=300, seed=context.spawn_seed(rng, n=31))
+    sim_model = set_simulation(final_model, n=300, seed=rng.spawn_seed(n=31))
     sim_res = _run_simulation(sim_model, context)
     simulation_data = sim_res.table
 
