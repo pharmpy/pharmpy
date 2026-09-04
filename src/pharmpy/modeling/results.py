@@ -77,7 +77,7 @@ def calculate_eta_shrinkage(
     ETA_VC    0.128389
     dtype: float64
 
-    See also
+    See Also
     --------
     calculate_individual_shrinkage
 
@@ -188,7 +188,7 @@ def calculate_individual_shrinkage(
     58  0.727295  0.232867
     59  0.738777  0.224742
 
-    See also
+    See Also
     --------
     calculate_eta_shrinkage
 

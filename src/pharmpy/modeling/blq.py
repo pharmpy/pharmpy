@@ -122,7 +122,7 @@ def transform_blq(
         ⎪────────────    otherwise
     Y = ⎩ 1 - CUMDZ
 
-    See also
+    See Also
     --------
     remove_loq_data
     set_lloq_data

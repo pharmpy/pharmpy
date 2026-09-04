@@ -130,7 +130,7 @@ def calculate_parameters_from_ucp(
     SIGMA                 0.0130865
     dtype: object
 
-    See also
+    See Also
     --------
     calculate_ucp_scale : Calculate the scale for conversion from ucps
     """

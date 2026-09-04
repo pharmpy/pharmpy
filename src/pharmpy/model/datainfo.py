@@ -614,7 +614,7 @@ class DataVariable(Immutable):
         bool
             True if categorical (nominal or ordinal) and False otherwise.
 
-        See also
+        See Also
         --------
         is_numerical : Check if the data variable is numerical
 
@@ -639,7 +639,7 @@ class DataVariable(Immutable):
         bool
             True if numerical (interval or ratio) and False otherwise.
 
-        See also
+        See Also
         --------
         is_categorical : Check if the data variable is categorical
 
@@ -1058,7 +1058,7 @@ class ColumnInfo(Immutable):
         bool
             True if of integral datatype
 
-        See also
+        See Also
         --------
         is_categorical : Check if the column data is categorical
 

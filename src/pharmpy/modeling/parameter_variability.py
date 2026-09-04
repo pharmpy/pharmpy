@@ -102,7 +102,7 @@ def add_iiv(
     >>> model.statements.find_assignment("CL")
     CL = ETA_CL + TVCL
 
-    See also
+    See Also
     --------
     add_pk_iiv
     add_iov
@@ -220,7 +220,7 @@ def add_iov(
     >>> model.statements.find_assignment("CL")  # doctest: +SKIP
     CL = ETA_CL + TVCL
 
-    See also
+    See Also
     --------
     add_iiv
     add_pk_iiv
@@ -469,7 +469,7 @@ def add_pk_iiv(model: Model, initial_estimate: float = 0.09) -> Model:
                    ETA_MAT
     MAT = POP_MAT⋅ℯ
 
-    See also
+    See Also
     --------
     add_iiv
     add_iov
@@ -514,7 +514,7 @@ def add_pd_iiv(model: Model, initial_estimate: float = 0.09) -> Model:
                       ETA_EC_50
     EC₅₀ = POP_EC_50⋅ℯ
 
-    See also
+    See Also
     --------
     add_iiv
     add_iov
@@ -590,16 +590,16 @@ class EtaAddition:
     """
     Eta addition consisting of expression.
 
-    Attributes
-    ----------
-    template
-        Expression consisting of original statement +/* new eta with effect.
-
     :meta private:
+
+    Parameters
+    ----------
+    template : Expr
+        Expression consisting of original statement +/* new eta with effect.
 
     """
 
-    def __init__(self, template):
+    def __init__(self, template: Expr):
         self.template = template
 
     def apply(self, original, eta):
@@ -665,7 +665,7 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None) 
     >>> model.statements.find_assignment("VC")
     VC = TVV
 
-    See also
+    See Also
     --------
     remove_iov
     add_iiv
@@ -735,7 +735,7 @@ def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None) 
     >>> model = load_example_model("pheno")
     >>> model = remove_iov(model)
 
-    See also
+    See Also
     --------
     add_iiv
     add_iov
@@ -814,7 +814,7 @@ def transform_etas_boxcox(
     >>> model.statements.before_odes.full_expression("CL")
     POP_CL*WGT*exp((exp(ETA_CL)**lambda1 - 1)/lambda1)
 
-    See also
+    See Also
     --------
     transform_etas_tdist
     transform_etas_john_draper
@@ -854,7 +854,7 @@ def transform_etas_tdist(
     >>> model.statements.before_odes.full_expression("CL")    # doctest: +ELLIPSIS
     POP_CL*WGT*exp(ETA_CL*(1 + (ETA_CL**2 + 1)/(4*df1) + (5*ETA_CL**4 + 16*ETA_CL**2...
 
-    See also
+    See Also
     --------
     transform_etas_boxcox
     transform_etas_john_draper
@@ -900,7 +900,7 @@ def transform_etas_john_draper(
     >>> model.statements.before_odes.full_expression("CL")
     POP_CL*WGT*exp(((Abs(ETA_CL) + 1)**lambda1 - 1)*sign(ETA_CL)/lambda1)
 
-    See also
+    See Also
     --------
     transform_etas_boxcox
     transform_etas_tdist
@@ -1073,7 +1073,7 @@ def create_joint_distribution(
     ⎢      ⎥ ~ N⎪⎢ ⎥, ⎢                            ⎥⎪
     ⎣ETA_VC⎦    ⎩⎣0⎦  ⎣IIV_CL_IIV_VC     IIV_VC    ⎦⎭
 
-    See also
+    See Also
     --------
     split_joint_distribution : split etas into separate distributions
     """
@@ -1149,7 +1149,7 @@ def split_joint_distribution(
     ETA_CL ~ N(0, IIV_CL)
     ETA_VC ~ N(0, IIV_VC)
 
-    See also
+    See Also
     --------
     create_joint_distribution : combine etas into a join distribution
     """

@@ -199,7 +199,7 @@ def predict_outliers(model: Model, results: ModelfitResults, cutoff: float = 3.0
     58 -0.209665    False
     59 -0.225693    False
 
-    See also
+    See Also
     --------
     predict_influential_individuals
     predict_influential_outliers
@@ -235,7 +235,7 @@ def predict_influential_individuals(model: Model, results: ModelfitResults, cuto
         delta-OFV and an `influential` column with a boolean to tell whether the individual is
         influential or not.
 
-    See also
+    See Also
     --------
     predict_influential_outliers
     predict_outliers
@@ -278,7 +278,7 @@ def predict_influential_outliers(
         Dataframe over the individuals with a `outliers` and `dofv` columns containing the raw
         predictions and `influential`, `outlier` and `influential_outlier` boolean columns.
 
-    See also
+    See Also
     --------
     predict_influential_individuals
     predict_outliers

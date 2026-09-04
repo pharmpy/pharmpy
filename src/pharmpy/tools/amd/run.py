@@ -169,7 +169,7 @@ def create_workflow(
     >>> results = load_example_modelfit_results("pheno")
     >>> res = run_amd(model, results=results)      # doctest: +SKIP
 
-    See also
+    See Also
     --------
     run_iiv
     run_tool

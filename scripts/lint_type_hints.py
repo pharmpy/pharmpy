@@ -51,13 +51,15 @@ for name, func in funcs:
 
     # Exclude *args and **kwargs
     param_names = {param.name for param in params if param.kind not in (param.VAR_KEYWORD, param.VAR_POSITIONAL)}
-    diff = param_names.difference(type_hints.keys())
+    type_hint_names = {x for x in type_hints.keys() if not x.startswith("**")}
+    diff = param_names.difference(type_hint_names)
     if diff:
         raise TypeHintError(f'Not all args have type hints: {name} (args: {diff})')
 
-    all_param_names = {param.name for param in params}
+    all_param_names = {param.name for param in params if param.name != "kwargs"}
     if all_param_names:
         args = extract_parameters_from_docstring(func)
+        args = {x for x in args if not x.startswith("**") and x != "kwargs"}
         diff = all_param_names.symmetric_difference(args)
         if diff:
             raise ValueError(f'Not all args are documented: {name} (args: {diff})')

@@ -700,7 +700,7 @@ def use_thetas_for_error_stdev(model: Model) -> Model:
     Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     set_weighted_error_model : Encode error model with one epsilon and weight
     """
@@ -751,7 +751,7 @@ def set_weighted_error_model(model: Model) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = set_weighted_error_model(model)
 
-    See also
+    See Also
     --------
     use_thetas_for_error_stdev : Use thetas to estimate error
     """
@@ -1015,7 +1015,7 @@ def set_power_on_ruv(
               power₁
     Y = EPS₁⋅F       + F
 
-    See also
+    See Also
     --------
     set_iiv_on_ruv
 
@@ -1186,6 +1186,8 @@ def set_iiv_on_ruv(
     ----------
     model : Model
         Pharmpy model
+    dv : Union[Expr, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
     list_of_eps : str, list
         Name/names of epsilons to multiply with exponential etas. If None, all epsilons will
         be chosen. None is default.
@@ -1194,8 +1196,6 @@ def set_iiv_on_ruv(
         should be created for each RUV. True is default.
     eta_names : str, list
         Custom names of new etas. Must be equal to the number epsilons or 1 if same eta.
-    dv : Union[Expr, str, int, None]
-        Name or DVID of dependent variable. None for the default (first or only)
 
     Return
     ------
@@ -1211,7 +1211,7 @@ def set_iiv_on_ruv(
                 ETA_RV1
     Y = EPS₁⋅F⋅ℯ        + F
 
-    See also
+    See Also
     --------
     set_power_on_ruv
 

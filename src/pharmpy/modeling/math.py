@@ -41,7 +41,7 @@ def calculate_se_from_cov(cov: pd.DataFrame) -> pd.Series:
     SIGMA      0.002280
     dtype: float64
 
-    See also
+    See Also
     --------
     calculate_se_from_prec : Standard errors from precision matrix
     calculate_corr_from_cov : Correlation matrix from covariance matrix
@@ -91,7 +91,7 @@ def calculate_se_from_prec(precision_matrix: pd.DataFrame) -> pd.Series:
     SIGMA      0.002280
     dtype: float64
 
-    See also
+    See Also
     --------
     calculate_se_from_cov : Standard errors from covariance matrix
     calculate_corr_from_cov : Correlation matrix from covariance matrix
@@ -143,7 +143,7 @@ def calculate_corr_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
     IIV_VC   0.098882  0.356831 -0.062857 -0.185775  1.000000 -0.026388
     SIGMA    0.168004  0.239295  0.153034  0.165104 -0.026388  1.000000
 
-    See also
+    See Also
     --------
     calculate_se_from_cov : Standard errors from covariance matrix
     calculate_se_from_prec : Standard errors from precision matrix
@@ -194,7 +194,7 @@ def calculate_cov_from_prec(precision_matrix: pd.DataFrame) -> pd.DataFrame:
     IIV_VC   1.552150e-07  7.174490e-05 -0.000039 -0.000019  5.588920e-05 -4.497590e-07
     SIGMA    8.042430e-08  1.467290e-05  0.000029  0.000005 -4.497590e-07  5.197970e-06
 
-    See also
+    See Also
     --------
     calculate_se_from_cov : Standard errors from covariance matrix
     calculate_se_from_prec : Standard errors from precision matrix
@@ -252,7 +252,7 @@ def calculate_cov_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFrame
     IIV_VC   1.552153e-07  7.174494e-05 -0.000039 -0.000019  5.588923e-05 -4.497600e-07
     SIGMA    8.042458e-08  1.467293e-05  0.000029  0.000005 -4.497600e-07  5.197990e-06
 
-    See also
+    See Also
     --------
     calculate_se_from_cov : Standard errors from covariance matrix
     calculate_se_from_prec : Standard errors from precision matrix
@@ -305,7 +305,7 @@ def calculate_prec_from_cov(cov: pd.DataFrame) -> pd.DataFrame:
     IIV_VC  -3.911327e+04  -2799.330946   -205.261483    2472.034556  22348.216559    9193.203130
     SIGMA   -8.173148e+05  -7697.921603  -2224.522815  -10209.416944   9193.203130  249978.454601
 
-    See also
+    See Also
     --------
     calculate_se_from_cov : Standard errors from covariance matrix
     calculate_se_from_prec : Standard errors from precision matrix
@@ -359,7 +359,7 @@ def calculate_prec_from_corrse(corr: pd.DataFrame, se: pd.Series) -> pd.DataFram
     IIV_VC  -3.911320e+04  -2799.329201   -205.261518    2472.031665  22348.204432    9193.183296
     SIGMA   -8.173120e+05  -7697.904374  -2224.519605  -10209.388516   9193.183296  249977.511621
 
-    See also
+    See Also
     --------
     calculate_se_from_cov : Standard errors from covariance matrix
     calculate_se_from_prec : Standard errors from precision matrix
@@ -412,7 +412,7 @@ def calculate_corr_from_prec(precision_matrix: pd.DataFrame) -> pd.DataFrame:
     IIV_VC   0.098882  0.356831 -0.062857 -0.185775  1.000000 -0.026388
     SIGMA    0.168004  0.239295  0.153034  0.165104 -0.026388  1.000000
 
-    See also
+    See Also
     --------
     calculate_se_from_cov : Standard errors from covariance matrix
     calculate_se_from_prec : Standard errors from precision matrix

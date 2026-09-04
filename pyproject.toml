@@ -101,6 +101,23 @@ max-line-length = 120
 extend-ignore = [
     # See https://github.com/PyCQA/pycodestyle/issues/373
     "E203",
+    "DOC105",
+    "DOC203",
+    "DOC501",
+    "DOC502",
+    "DOC503",
+    "DOC504",
+]
+per-file-ignores = [
+    "src/pharmpy/workflows/*: DOC",
+    "src/pharmpy/basic/*: DOC",
+    "src/pharmpy/tools/*: DOC",
+    "src/pharmpy/model/*: DOC",
+    "src/pharmpy/reporting/*: DOC",
+    "src/pharmpy/mfl/*: DOC",
+    "src/pharmpy/deps/*: DOC",
+    "src/pharmpy/internals/*: DOC",
+    "src/pharmpy/visualization.py: DOC",
 ]
 
 [tool.pytest]

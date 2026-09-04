@@ -38,7 +38,7 @@ def get_thetas(model: Model) -> Parameters:
     POP_VC   1.009160   0.00     ∞  False
     COVAPGR  0.100000  -0.99     ∞  False
 
-    See also
+    See Also
     --------
     get_omegas : Get omega parameters
     get_sigmas : Get sigma parameters
@@ -70,7 +70,7 @@ def get_omegas(model: Model) -> Parameters:
     IIV_CL  0.030963    0.0     ∞  False
     IIV_VC  0.031128    0.0     ∞  False
 
-    See also
+    See Also
     --------
     get_thetas : Get theta parameters
     get_sigmas : Get sigma parameters
@@ -100,7 +100,7 @@ def get_sigmas(model: Model) -> Parameters:
               value  lower upper    fix
     SIGMA  0.013086    0.0     ∞  False
 
-    See also
+    See Also
     --------
     get_thetas : Get theta parameters
     get_omegas : Get omega parameters
@@ -157,7 +157,7 @@ def set_initial_estimates(
     >>> model.parameters['POP_CL']
     Parameter("POP_CL", 2.0, lower=0.0, upper=∞, fix=False)
 
-    See also
+    See Also
     --------
     fix_parameters_to : Fixing and setting parameter initial estimates in the same function
     unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
@@ -288,7 +288,7 @@ def set_upper_bounds(model: Model, bounds: Mapping[str, float], strict: bool = T
     >>> model.parameters['POP_CL']
     Parameter("POP_CL", 0.00469307, lower=0.0, upper=10, fix=False)
 
-    See also
+    See Also
     --------
     set_lower_bounds : Set parameter lower bounds
     unconstrain_parameters : Remove all constraints of parameters
@@ -333,7 +333,7 @@ def set_lower_bounds(model: Model, bounds: Mapping[str, float], strict: bool = T
     >>> model.parameters['POP_CL']
     Parameter("POP_CL", 0.00469307, lower=-10, upper=∞, fix=False)
 
-    See also
+    See Also
     --------
     set_upper_bounds : Set parameter upper bounds
     unconstrain_parameters : Remove all constraints of parameters
@@ -385,7 +385,7 @@ def fix_parameters(
     >>> model.parameters['POP_CL']
     Parameter("POP_CL", 0.00469307, lower=0.0, upper=∞, fix=True)
 
-    See also
+    See Also
     --------
     fix_or_unfix_parameters : Fix or unfix parameters (given boolean)
     fix_parameters_to : Fixing and setting parameter initial estimates in the same function
@@ -450,7 +450,7 @@ def unfix_parameters(
     >>> model.parameters.fix        # doctest: +ELLIPSIS
     {'POP_CL': False, 'POP_VC': True, ...}
 
-    See also
+    See Also
     --------
     unfix_paramaters_to : Unfixing parameters and setting a new initial estimate in the same
         function
@@ -506,7 +506,7 @@ def fix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool = T
     >>> model.parameters['POP_CL']
     Parameter("POP_CL", 0.5, lower=0.0, upper=∞, fix=True)
 
-    See also
+    See Also
     --------
     fix_parameters : Fix parameters
     fix_or_unfix_parameters : Fix or unfix parameters (given boolean)
@@ -552,7 +552,7 @@ def unfix_parameters_to(model: Model, inits: Mapping[str, float], strict: bool =
     Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     fix_parameters : Fix parameters
     fix_or_unfix_parameters : Fix or unfix parameters (given boolean)
@@ -596,7 +596,7 @@ def fix_or_unfix_parameters(
     Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     fix_parameters : Fix parameters
     unfix_paramaters : Unfixing parameters
@@ -649,7 +649,7 @@ def unconstrain_parameters(
     Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     set_lower_bounds : Set parameter lower bounds
     set_upper_bounds : Set parameter upper bounds

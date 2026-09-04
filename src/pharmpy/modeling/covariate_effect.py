@@ -47,7 +47,8 @@ def get_covariate_effects(model: Model) -> dict:
 
     Returns
     -------
-        Dictionary : Dictionary of parameters and connected covariate(s)
+    Dictionary
+        Dictionary of parameters and connected covariate(s)
 
     """
     parameters = get_individual_parameters(model)
@@ -701,18 +702,23 @@ class CovariateEffect:
     """
     Covariate effect consisting of new assignments.
 
+    :meta private:
+
+    Parameters
+    ----------
+    template : Assignment
+        Assignment based on covariate effect
+
     Attributes
     ----------
-    template
-        Assignment based on covariate effect
-    statistic_statements
+    statistic_statements : list[Assignment]
         Dict with mean, median and standard deviation
-
-    :meta private:
 
     """
 
-    def __init__(self, template):
+    statistic_statements: list[Assignment]
+
+    def __init__(self, template: Assignment):
         self.template = template
         self.statistic_statements = []
 

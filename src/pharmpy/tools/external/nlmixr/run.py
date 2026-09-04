@@ -488,7 +488,7 @@ def print_step(s: str) -> None:
     s : str
         Information to print.
 
-    See also
+    See Also
     --------
     verification : verify conversion of model to nlmixr2
 
@@ -511,7 +511,7 @@ def fixate_eta(model: pharmpy.model.Model) -> pharmpy.model.Model:
     model : TYPE
         Model with modified tool options to fixate etas during verification.
 
-    See also
+    See Also
     --------
     verification : verify conversion of model to nlmixr2
 

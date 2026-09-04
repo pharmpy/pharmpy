@@ -173,7 +173,7 @@ def sample_parameters_uniformly(
     1  0.004828  1.014444  0.149958  0.028853  0.027653  0.013348
     2  0.004347  1.053837  0.165804  0.028465  0.026798  0.013727
 
-    See also
+    See Also
     --------
     sample_parameters_from_covariance_matrix : Sample parameter vectors using the
         uncertainty covariance matrix
@@ -250,7 +250,7 @@ def sample_parameters_from_covariance_matrix(
     1  0.004631  1.024746  0.071056  0.031726  0.026824  0.012597
     2  0.004631  0.991088  0.130841  0.027464  0.024589  0.013215
 
-    See also
+    See Also
     --------
     sample_parameters_uniformly : Sample parameter vectors using uniform distribution
     sample_individual_estimates : Sample individual estiates given their covariance
@@ -335,7 +335,7 @@ def sample_individual_estimates(
     <BLANKLINE>
     [118 rows x 2 columns]
 
-    See also
+    See Also
     --------
     sample_parameters_from_covariance_matrix : Sample parameter vectors using the
         uncertainty covariance matrix

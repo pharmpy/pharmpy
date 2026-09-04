@@ -91,7 +91,7 @@ def fit(
     >>> model = load_example_model("pheno")      # doctest: +SKIP
     >>> results = fit(model)      # doctest: +SKIP
 
-    See also
+    See Also
     --------
     run_tool
 
@@ -137,7 +137,7 @@ def create_results(path: Union[str, Path], **kwargs) -> Results:
     >>> from pharmpy.tools.run import create_results
     >>> res = create_results("frem_dir1")   # doctest: +SKIP
 
-    See also
+    See Also
     --------
     read_results
 
@@ -165,7 +165,7 @@ def read_results(path: Union[str, Path]) -> Results:
     >>> from pharmpy.tools import read_results
     >>> res = read_results("results.json")     # doctest: +SKIP
 
-    See also
+    See Also
     --------
     create_results
 
@@ -817,7 +817,7 @@ def retrieve_final_model(res: Results) -> Model:
     >>> res = read_results("results.json")     # doctest: +SKIP
     >>> model = retrieve_final_model(res)      # doctest: +SKIP
 
-    See also
+    See Also
     --------
     retrieve_models
 

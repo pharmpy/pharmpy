@@ -133,7 +133,7 @@ def get_population_prediction_expression(model: Model) -> Expr:
     >>> get_population_prediction_expression(model)
     -D_ETA1*OETA1 - D_ETA2*OETA2 + OPRED
 
-    See also
+    See Also
     --------
     get_individual_prediction_expression : Get full symbolic epression for the individual prediction
     """
@@ -166,7 +166,7 @@ def calculate_eta_gradient_expression(model: Model) -> list[Expr]:
     >>> calculate_eta_gradient_expression(model)
     [D_ETA1, D_ETA2]
 
-    See also
+    See Also
     --------
     calculate_epsilon_gradient_expression : Epsilon gradient
     """
@@ -198,7 +198,7 @@ def calculate_epsilon_gradient_expression(model: Model) -> list[Expr]:
     >>> calculate_epsilon_gradient_expression(model)
     [D_EPS1 + D_EPSETA1_1*(ETA_1 - OETA1) + D_EPSETA1_2*(ETA_2 - OETA2)]
 
-    See also
+    See Also
     --------
     calculate_eta_gradient_expression : Eta gradient
     """
@@ -825,7 +825,7 @@ def get_individual_parameters(
     >>> get_individual_parameters(model, 'iov')
     []
 
-    See also
+    See Also
     --------
     get_pd_parameters
     get_pk_parameters
@@ -1212,7 +1212,7 @@ def has_random_effect(
     >>> has_random_effect(model, 'CL', 'iov')
     False
 
-    See also
+    See Also
     --------
     get_individual_parameters
     get_rv_parameters
@@ -1246,7 +1246,7 @@ def get_rv_parameters(model: Model, rv: str) -> list[str]:
     >>> get_rv_parameters(model, 'ETA_CL')
     ['CL']
 
-    See also
+    See Also
     --------
     has_random_effect
     get_pk_parameters
@@ -1294,7 +1294,7 @@ def get_parameter_rv(
     >>> get_parameter_rv(model, 'CL')
     ['ETA_CL']
 
-    See also
+    See Also
     --------
     get_rv_parameters
     has_random_effect
@@ -1649,7 +1649,7 @@ def get_pk_parameters(
     >>> get_pk_parameters(model, 'elimination')
     ['CL']
 
-    See also
+    See Also
     --------
     get_individual_parameters
     get_rv_parameters
@@ -1724,7 +1724,7 @@ def get_pd_parameters(model: Model) -> list[str]:
     >>> get_pd_parameters(model)
     ['B', 'SLOPE']
 
-    See also
+    See Also
     --------
     get_pk_parameters
 

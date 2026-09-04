@@ -26,7 +26,7 @@ def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs
         estimation method to change to
     idx : int
         index of estimation step, default is 0 (first estimation step)
-    kwargs
+    **kwargs : Any
         Arguments to pass to EstimationStep (such as interaction, evaluation)
 
     Returns
@@ -44,7 +44,7 @@ def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs
     EstimationStep('IMP', interaction=True, parameter_uncertainty_method='SANDWICH', evaluation=True, ...,
     tool_options=...
 
-    See also
+    See Also
     --------
     add_estimation_step
     remove_estimation_step
@@ -157,7 +157,7 @@ def add_estimation_step(
     >>> ests[1]   # doctest: +ELLIPSIS
     EstimationStep('IMP', interaction=False, parameter_uncertainty_method=None, ..., tool_options={'NITER': 1000,...
 
-    See also
+    See Also
     --------
     set_estimation_step
     remove_estimation_step
@@ -273,7 +273,7 @@ def remove_estimation_step(model: Model, idx: int) -> Model:
     >>> len(ests)
     0
 
-    See also
+    See Also
     --------
     add_estimation_step
     set_estimation_step
@@ -325,7 +325,7 @@ def append_estimation_step_options(
     >>> len(est.tool_options)
     2
 
-    See also
+    See Also
     --------
     add_estimation_step
     set_estimation_step
@@ -381,7 +381,7 @@ def add_parameter_uncertainty_step(
     >>> ests[0]   # doctest: +ELLIPSIS
     EstimationStep('FOCE', interaction=True, parameter_uncertainty_method='SANDWICH', ...)
 
-    See also
+    See Also
     --------
     add_estimation_step
     set_estimation_step
@@ -420,7 +420,7 @@ def remove_parameter_uncertainty_step(model: Model) -> Model:
     >>> ests[0]   # doctest: +ELLIPSIS
     EstimationStep('FOCE', interaction=True, parameter_uncertainty_method=None, ...)
 
-    See also
+    See Also
     --------
     add_estimation_step
     set_estimation_step
@@ -462,7 +462,7 @@ def set_evaluation_step(model: Model, idx: int = -1) -> Model:
     >>> model.execution_steps[0]   # doctest: +ELLIPSIS
     EstimationStep('FOCE', interaction=True, parameter_uncertainty_method='SANDWICH', evaluation=True, ...
 
-    See also
+    See Also
     --------
     set_estimation_step
     add_estimation_step
@@ -646,7 +646,7 @@ def add_predictions(model: Model, pred: list[str]) -> Model:
     >>> model.execution_steps[-1].predictions
     ('CIPREDI', 'IPRED', 'PRED')
 
-    See also
+    See Also
     --------
     remove_predictions
     remove_residuals
@@ -704,7 +704,7 @@ def add_residuals(model: Model, res: list[str]) -> Model:
     >>> model.execution_steps[-1].residuals
     ('CWRES', 'RES', 'WRES')
 
-    See also
+    See Also
     --------
     remove_predictions
     remove_residuals
@@ -756,7 +756,7 @@ def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None) 
     >>> model.execution_steps[-1].predictions
     ()
 
-    See also
+    See Also
     --------
     add_predictions
     add_residuals
@@ -808,7 +808,7 @@ def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None) ->
     >>> model.execution_steps[-1].residuals
     ()
 
-    See also
+    See Also
     --------
     add_predictions
     add_residuals
@@ -890,7 +890,7 @@ def add_output_variables(model: Model, variables: Sequence[str], append: bool = 
     >>> model.execution_steps[-1].variables
     ('ID', 'TIME', 'DV', 'CL')
 
-    See also
+    See Also
     --------
     add_predictions
     add_residuals

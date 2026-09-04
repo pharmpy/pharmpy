@@ -145,7 +145,7 @@ def evaluate_population_prediction(
     155    34.226455
     Name: PRED, Length: 155, dtype: float64
 
-    See also
+    See Also
     --------
     evaluate_individual_prediction : Evaluate the individual prediction
     """
@@ -214,7 +214,7 @@ def evaluate_individual_prediction(
     155    38.099690
     Name: IPRED, Length: 155, dtype: float64
 
-    See also
+    See Also
     --------
     evaluate_population_prediction : Evaluate the population prediction
     """
@@ -305,7 +305,7 @@ def evaluate_eta_gradient(
     <BLANKLINE>
     [155 rows x 2 columns]
 
-    See also
+    See Also
     --------
     evaluate_epsilon_gradient : Evaluate the epsilon gradient
     """
@@ -396,7 +396,7 @@ def evaluate_epsilon_gradient(
     <BLANKLINE>
     [155 rows x 1 columns]
 
-    See also
+    See Also
     --------
     evaluate_eta_gradient : Evaluate the eta gradient
     """

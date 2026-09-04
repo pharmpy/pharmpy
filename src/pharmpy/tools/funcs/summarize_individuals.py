@@ -180,7 +180,7 @@ def summarize_individuals_count_table(
     pd.DataFrame
         Table with one row per model.
 
-    See also
+    See Also
     --------
     summarize_individuals : Get raw individual data
 

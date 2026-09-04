@@ -85,7 +85,7 @@ def get_number_of_individuals(model: Model) -> int:
     For NONMEM models this is the number of individuals of the active dataset, i.e. after filtering
     of IGNORE and ACCEPT and removal of individuals with no observations.
 
-    See also
+    See Also
     --------
     get_number_of_observations : Get the number of observations in a dataset
     get_number_of_observations_per_individual : Get the number of observations per individual in a
@@ -120,7 +120,7 @@ def get_number_of_observations(model: Model) -> int:
     For NONMEM models this is the number of observations of the active dataset, i.e. after filtering
     of IGNORE and ACCEPT and removal of individuals with no observations.
 
-    See also
+    See Also
     --------
     get_number_of_individuals : Get the number of individuals in a dataset
     get_number_of_observations_per_individual : Get the number of observations per individual in a
@@ -215,7 +215,7 @@ def get_number_of_observations_per_individual(model: Model) -> pd.Series:
     For NONMEM models this is the individuals and number of observations of the active dataset, i.e.
     after filtering of IGNORE and ACCEPT and removal of individuals with no observations.
 
-    See also
+    See Also
     --------
     get_number_of_individuals : Get the number of individuals in a dataset
     get_number_of_observations_per_individual : Get the number of observations per individual in a
@@ -266,7 +266,7 @@ def get_observations(
         146.8    40.2
     Name: DV, Length: 155, dtype: float64
 
-    See also
+    See Also
     --------
     get_number_of_observations : get the number of observations
     get_number_of_observations_per_individual : get the number of observations per individual
@@ -549,7 +549,7 @@ def get_covariate_baselines(model: Model) -> pd.DataFrame:
     pd.DataFrame
         covariate baselines
 
-    See also
+    See Also
     --------
     get_baselines : baselines for all data columns
 
@@ -641,7 +641,7 @@ def list_time_varying_covariates(model: Model) -> list[str]:
     list
         Names of all time varying covariates
 
-    See also
+    See Also
     --------
     get_covariate_baselines : get baselines for all covariates
 
@@ -1010,7 +1010,7 @@ def add_admid(model: Model) -> Model:
     model : Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     get_admid : Get or create an admid column
     get_cmt : Get or create a cmt column
@@ -1046,7 +1046,7 @@ def set_admid(model: Model, column_name: str) -> Model:
     model : Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     get_admid : Get or create an admid column
     add_admid : Add an admid column to the dataset
@@ -1141,7 +1141,7 @@ def add_cmt(model: Model) -> Model:
     model : Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     get_admid : Get or create an admid column
     get_cmt : Get or create a cmt column
@@ -1176,7 +1176,7 @@ def add_time_of_last_dose(model: Model, name: str = "TDOSE") -> Model:
     Model
         Updated Pharmpy model
 
-    See also
+    See Also
     --------
     add_time_after_dose : Add time after dose to dataset
     """
@@ -1209,7 +1209,7 @@ def add_time_after_dose(model: Model) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = add_time_after_dose(model)
 
-    See also
+    See Also
     --------
     add_time_of_last_dose : Add time of last dose to model
     """
@@ -1360,7 +1360,7 @@ def drop_dropped_columns(model: Model) -> Model:
     >>> list(model.dataset.columns)
     ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV', 'FA1', 'FA2']
 
-    See also
+    See Also
     --------
     drop_columns : Drop specific columns or mark them as drop
     """
@@ -1401,7 +1401,7 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
     >>> list(model.dataset.columns)
     ['ID', 'TIME', 'AMT', 'DV', 'FA1', 'FA2']
 
-    See also
+    See Also
     --------
     drop_dropped_columns : Drop all columns marked as drop
     undrop_columns : Undrop columns of model
@@ -1452,7 +1452,7 @@ def undrop_columns(model: Model, column_names: Union[list[str], str]) -> Model:
     >>> model = drop_columns(model, ['WGT', 'APGR'], mark=True)
     >>> model = undrop_columns(model, 'WGT')
 
-    See also
+    See Also
     --------
     drop_dropped_columns : Drop all columns marked as drop
     drop_columns : Drop or mark columns as dropped
@@ -1498,7 +1498,7 @@ def remove_unused_columns(model: Model) -> Model:
     >>> list(model.dataset.columns)
     ['ID', 'TIME', 'AMT', 'WGT', 'APGR', 'DV']
 
-    See also
+    See Also
     --------
     drop_columns : Drop columns from the dataset
     """
@@ -1787,7 +1787,7 @@ def remove_loq_data(
     >>> len(model.dataset)
     736
 
-    See also
+    See Also
     --------
     set_lloq_data
     transform_blq
@@ -1843,7 +1843,7 @@ def set_lloq_data(
     >>> model = load_example_model("pheno")
     >>> model = set_lloq_data(model, 0, lloq=10)
 
-    See also
+    See Also
     --------
     remove_loq_data
     transform_blq

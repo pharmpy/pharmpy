@@ -6,6 +6,7 @@ flake8==7.3.0
 flake8-black==0.4.0
 flake8-pyproject==1.2.4
 isort==9.0.1
+pydoclint==0.9.1
 pyright==1.1.411
 readme-renderer==46.0
 twine==7.0.0 
@@ -16,6 +17,7 @@ cffi==2.1.1
 charset-normalizer==3.5.1
 click==8.5.0
 cryptography==50.0.1
+docstring_parser_fork==0.0.16
 idna==3.19
 importlib-metadata==9.0.1
 jaraco.classes==3.4.0

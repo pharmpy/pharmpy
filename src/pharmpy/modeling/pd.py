@@ -379,10 +379,10 @@ def add_indirect_effect(
     ----------
     model : Model
         Pharmpy model
-    prod : bool
-        Production (True) (default) or degradation (False)
     expr : {'linear', 'emax', 'sigmoid'}
         Name of PD effect function.
+    prod : bool
+        Production (True) (default) or degradation (False)
     variable : str
         Name of variable to use (if None concentration will be used)
 

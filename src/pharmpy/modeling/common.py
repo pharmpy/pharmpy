@@ -53,7 +53,7 @@ def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None)
     >>> from pharmpy.modeling import read_model
     >>> model = read_model("/home/run1.mod")    # doctest: +SKIP
 
-    See also
+    See Also
     --------
     read_model_from_database : Read model from database
     read_model_from_string : Read model from string
@@ -92,7 +92,7 @@ def read_model_from_string(code: str) -> Model:
     >>> read_model_from_string(s)  # doctest:+ELLIPSIS
     <...>
 
-    See also
+    See Also
     --------
     read_model : Read model from file
     read_model_from_database : Read model from database

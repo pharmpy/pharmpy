@@ -39,7 +39,7 @@ def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Expr):
     >>> prune(lambda expr: expr.func is sympy.exp, 3*sympy.exp(2))
     3
 
-    See also
+    See Also
     --------
     subs
 

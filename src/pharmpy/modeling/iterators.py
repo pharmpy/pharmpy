@@ -28,14 +28,17 @@ class DatasetIterator:
 
     The __next__ method could return either a DataFrame or a tuple where the first
     element is the main DataFrame.
+
+    Parameters
+    ----------
+    iterations : int
+        The number of iterations
+    name_pattern : str
+        Name pattern to use for generated datasets.
+        A number starting from 1 will be put in the placeholder.
     """
 
-    def __init__(self, iterations, name_pattern='dataset_{}'):
-        """Initialization of the base class
-        :param iterations: is the number of iterations
-        :param name_pattern: Name pattern to use for generated datasets.
-             A number starting from 1 will be put in the placeholder.
-        """
+    def __init__(self, iterations: int, name_pattern: str = 'dataset_{}'):
         self._next = 1
         self._iterations = iterations
         self._name_pattern = name_pattern

@@ -191,7 +191,7 @@ def annotate_unit(
     >>> model = load_example_model("pheno")
     >>> model = annotate_unit(model, "WGT", "kg")
 
-    See also
+    See Also
     --------
 
     convert_unit - Convert between units for a variable
@@ -242,7 +242,7 @@ def set_property(
     >>> model = load_example_model("pheno")
     >>> model = set_property(model, "APGR", "categories", [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-    See also
+    See Also
     --------
 
     annotate_unit - Annotate the unit of a data variable

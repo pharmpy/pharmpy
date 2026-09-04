@@ -175,7 +175,7 @@ def set_first_order_elimination(model: Model) -> Model:
     │CENTRAL│──CL/V→
     └───────┘
 
-    See also
+    See Also
     --------
     set_zero_order_elimination
     set_michaelis_menten_elimination
@@ -265,7 +265,7 @@ def add_bioavailability(
     >>> model = load_example_model("pheno")
     >>> model = add_bioavailability(model)
 
-    See also
+    See Also
     --------
     remove_bioavailability
 
@@ -331,7 +331,7 @@ def remove_bioavailability(model: Model) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = remove_bioavailability(model)
 
-    See also
+    See Also
     --------
     set_bioavailability
     """
@@ -376,7 +376,7 @@ def set_zero_order_elimination(model: Model) -> Model:
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
     └───────┘
 
-    See also
+    See Also
     --------
     set_first_order_elimination
     set_michaelis_menten_elimination
@@ -591,7 +591,7 @@ def set_michaelis_menten_elimination(model: Model) -> Model:
     │CENTRAL│──CLMM*KM/(V*(KM + A_CENTRAL(t)/V))→
     └───────┘
 
-    See also
+    See Also
     --------
     set_first_order_elimination
     set_zero_order_elimination
@@ -645,7 +645,7 @@ def set_mixed_mm_fo_elimination(model: Model) -> Model:
     │CENTRAL│──(CL + CLMM*KM/(KM + A_CENTRAL(t)/V))/V→
     └───────┘
 
-    See also
+    See Also
     --------
     set_first_order_elimination
     set_zero_order_elimination
@@ -849,7 +849,7 @@ def set_n_transit_compartments(model: Model, keep_depot: bool = True) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = set_n_transit_compartments(model)
 
-    See also
+    See Also
     --------
     add_lag_time
     set_transit_compartments
@@ -973,7 +973,7 @@ def set_transit_compartments(model: Model, n: int, keep_depot: bool = True) -> M
     │TRANSIT1│──K12→│TRANSIT2│──K23→│TRANSIT3│──K34→│CENTRAL│──K40→
     └────────┘      └────────┘      └────────┘      └───────┘
 
-    See also
+    See Also
     --------
     add_lag_time
     set_n_transit_compartments
@@ -1201,7 +1201,7 @@ def add_lag_time(model: Model) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = add_lag_time(model)
 
-    See also
+    See Also
     --------
     set_transit_compartments
     remove_lag_time
@@ -1268,7 +1268,7 @@ def remove_lag_time(model: Model) -> Model:
     >>> model = load_example_model("pheno")
     >>> model = remove_lag_time(model)
 
-    See also
+    See Also
     --------
     set_transit_compartments
     add_lag_time
@@ -1317,7 +1317,7 @@ def set_zero_order_absorption(model: Model) -> Model:
     │CENTRAL│──CL/V→
     └───────┘
 
-    See also
+    See Also
     --------
     set_instantaneous_absorption
     set_first_order_absorption
@@ -1406,7 +1406,7 @@ def set_first_order_absorption(model: Model) -> Model:
     │DEPOT│──KA→│CENTRAL│──CL/V→
     └─────┘     └───────┘
 
-    See also
+    See Also
     --------
     set_instantaneous_absorption
     set_zero_order_absorption
@@ -1493,7 +1493,7 @@ def set_instantaneous_absorption(model: Model) -> Model:
     │CENTRAL│──CL/V→
     └───────┘
 
-    See also
+    See Also
     --------
     set_zero_order_absorption
     set_first_order_absorption
@@ -1569,7 +1569,7 @@ def set_seq_zo_fo_absorption(model: Model) -> Model:
     │DEPOT│──KA→│CENTRAL│──CL/V→
     └─────┘     └───────┘
 
-    See also
+    See Also
     --------
     set_instantaneous_absorption
     set_zero_order_absorption
@@ -1625,9 +1625,10 @@ def has_weibull_absorption(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
+    Returns
     -------
-        Bool : True if model has weibull type absorption
+    bool
+        True if model has weibull type absorption
 
     """
 
@@ -1703,7 +1704,7 @@ def set_weibull_absorption(model: Model) -> Model:
     │DEPOT│──KAW→│CENTRAL│──CL/V→
     └─────┘      └───────┘
 
-    See also
+    See Also
     --------
     set_zero_order_absorption
     set_first_order_absorption
@@ -1854,7 +1855,7 @@ def has_first_order_absorption(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
+    Returns
     -------
     bool
         True if model has first order absorption
@@ -1890,7 +1891,7 @@ def has_instantaneous_absorption(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
+    Returns
     -------
     bool
         True if model has instantaneous absorption
@@ -1925,12 +1926,12 @@ def has_seq_zo_fo_absorption(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
+    Returns
     -------
     bool
         True if model has sequential zero-first absorption
 
-    See also
+    See Also
     --------
     has_zero_order_absorption
     has_first_order_absorption
@@ -1984,7 +1985,7 @@ def has_lag_time(model: Model) -> bool:
     model : Model
         Pharmpy model
 
-    Return
+    Returns
     -------
     bool
         True if model is defined with lagtime
@@ -2144,7 +2145,7 @@ def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None
     │PERIPHERAL2│
     └───────────┘
 
-    See also
+    See Also
     --------
     add_peripheral_compartment
     remove_peripheral_compartment
@@ -2219,7 +2220,7 @@ def add_peripheral_compartment(model: Model, name: Optional[str] = None) -> Mode
     │  CENTRAL  │──CL/V1→
     └───────────┘
 
-    See also
+    See Also
     --------
     set_peripheral_compartment
     remove_peripheral_compartment
@@ -2373,7 +2374,7 @@ def remove_peripheral_compartment(model: Model, name: Optional[str] = None) -> M
     │  CENTRAL  │──CL/V1→
     └───────────┘
 
-    See also
+    See Also
     --------
     set_peripheral_compartment
     add_peripheral_compartment
@@ -2635,7 +2636,7 @@ def has_odes(model: Model) -> bool:
     bool
         True if model has an ODE system
 
-    See also
+    See Also
     --------
     has_linear_odes
         has_linear_odes_with_real_eigenvalues
@@ -2665,7 +2666,7 @@ def has_linear_odes(model: Model) -> bool:
     bool
         True if model has an ODE system that is linear
 
-    See also
+    See Also
     --------
     has_odes
         has_linear_odes_with_real_eigenvalues
@@ -2700,7 +2701,7 @@ def has_linear_odes_with_real_eigenvalues(model: Model) -> bool:
     bool
         True if model has an ODE system that is linear
 
-    See also
+    See Also
     --------
     has_odes
         has_linear_odes
