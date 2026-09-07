@@ -641,7 +641,6 @@ def test_statements_setter_add(parser, buf_original, buf_new):
         ('$PRED\nY = A + B\n', '$PRED\nZ = E*F\n'),
         ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
         ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C - D\nZ = E\n'),
-        ('$PRED\nY = A + B\nX = C - D\nZ = E * F\n', '$PRED\nY = A + B\nX = C\nZ = E * F\n'),
     ],
 )
 def test_statements_setter_change(parser, buf_original, buf_new):

@@ -308,13 +308,6 @@ def test_replace_fixed_thetas(load_example_model_for_test):
             'iov',
             {'CL': ['ETA_IOV_1_1', 'ETA_IOV_1_2']},
         ),
-        (
-            lambda x: add_iov(x, "FA1", "CL"),
-            'parameters',
-            'etas',
-            'iov',
-            {'CL': ['ETA_IOV_1_1', 'ETA_IOV_1_2']},
-        ),
     ],
 )
 def test_map_eta_parameters(load_example_model_for_test, transform, keys, values, level, correct):

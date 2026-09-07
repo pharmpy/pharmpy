@@ -761,8 +761,6 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(ZO)', 1, 0, 0, 0),
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 1, 1, 0, 0),
         ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', '', 1, 0, 0, 0),
-        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(FO)', 1, 0, 0, 0),
-        ('ABSORPTION([FO,ZO,SEQ-ZO-FO])', 'ABSORPTION(SEQ-ZO-FO)', 1, 1, 0, 0),
         ('ELIMINATION([FO,MM])', 'ELIMINATION(FO)', 0, 0, 0, 0),
         ('ELIMINATION([FO,MM])', 'ELIMINATION(MM)', 0, 0, 0, 0),
         ('ELIMINATION([FO,MM,MIX-FO-MM])', 'ELIMINATION(FO)', 1, 0, 0, 0),

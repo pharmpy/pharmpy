@@ -64,10 +64,6 @@ def test_init():
             [Absorption.create('FO'), Peripherals.create(0), Peripherals.create(1)],
         ),
         (
-            [Peripherals.create(1), Absorption.create('FO'), Peripherals.create(0)],
-            [Absorption.create('FO'), Peripherals.create(0), Peripherals.create(1)],
-        ),
-        (
             [
                 Transits.create(1),
                 Transits.create(0),

@@ -464,12 +464,6 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
         ),
         (
             [],
-            'IIV([MAT,VC],EXP)',
-            'iiv',
-            'IIV([MAT,VC],EXP)',
-        ),
-        (
-            [],
             'IIV(CL,ADD);IIV([MAT,VC],EXP)',
             'iiv',
             'IIV(CL,ADD);IIV([MAT,VC],EXP)',

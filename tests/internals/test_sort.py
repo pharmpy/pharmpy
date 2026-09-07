@@ -8,7 +8,6 @@ from pharmpy.internals.sort import sort_alphanum
     (
         (("a", "b", "c"), ["a", "b", "c"]),
         (("a2", "a1", "a3"), ["a1", "a2", "a3"]),
-        (("a2", "a1", "a3"), ["a1", "a2", "a3"]),
         (("a10", "a9"), ["a9", "a10"]),
         (("a1m", "a1k"), ["a1k", "a1m"]),
     ),

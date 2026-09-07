@@ -57,12 +57,6 @@ INF = float("inf")
             ],
         ),
         (
-            '$THETA\n(0,0.105,)   ; RUV_CVFPG\n',
-            [
-                ('RUV_CVFPG', 0.105, 0, INF, False),
-            ],
-        ),
-        (
             '$THETA  (0,3) ; CL\n 2 FIXED ; V\n',
             [
                 ('CL', 3, 0, INF, False),

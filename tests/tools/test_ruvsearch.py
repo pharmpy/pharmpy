@@ -450,12 +450,6 @@ def test_create_combined_model_ipred_zero(testdata, load_model_for_test):
             ValueError,
             'Invalid `model`: TAD must be a column',
         ),
-        (
-            ('nonmem/ruvsearch/mox3.mod',),
-            dict(strictness='rse'),
-            ValueError,
-            '`parameter_uncertainty_method` not set',
-        ),
     ],
 )
 def test_validate_input_raises(
