@@ -1473,7 +1473,7 @@ def _get_estimation_runtime(res, i):
     return res.estimation_runtime_iterations.iloc[i]
 
 
-def read_modelfit_results(path: Union[str, Path], esttool: str = None) -> ModelfitResults:
+def read_modelfit_results(path: Union[str, Path], esttool: Optional[str] = None) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
