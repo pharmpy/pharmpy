@@ -43,7 +43,7 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
     pd.DataFrame | None
         The summary as a dataframe
 
-    """  # noqa: E501
+    """
     models = [me.model for me in mes]
     models_res = [me.modelfit_results for me in mes]
     if len(models) != len(models_res):
@@ -185,7 +185,7 @@ def summarize_individuals_count_table(
     --------
     summarize_individuals : Get raw individual data
 
-    """  # noqa: E501
+    """
     if model_entries is None:
         models = None
     else:

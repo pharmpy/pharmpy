@@ -57,7 +57,7 @@ def _stringify_attribute(attribute: Stringifiable) -> str:
         if len(attribute) == 1:
             return _stringify_attribute(attribute[0])
         elif len(attribute) >= 2:
-            if type(i := attribute[0]) == type(j := attribute[-1]) == int:  # noqa E721
+            if type(i := attribute[0]) == type(j := attribute[-1]) == int:
                 assert isinstance(i, int)
                 assert isinstance(j, int)
                 if tuple(range(i, j + 1)) == attribute:

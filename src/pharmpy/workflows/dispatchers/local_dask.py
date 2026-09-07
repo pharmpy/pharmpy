@@ -53,7 +53,7 @@ class LocalDaskDispatcher(Dispatcher):
                 # could instead set temporary_directory to tempfile.gettempdir().
                 # Note that if this is done, then our custom patch of
                 # TemporaryDirectory can be removed. See:
-                #   - https://github.com/dask/distributed/blob/cff33d500f24b67efbd94ce39b15cb36473cd9f6/distributed/diskutils.py#L132-L153 # noqa: E501
+                #   - https://github.com/dask/distributed/blob/cff33d500f24b67efbd94ce39b15cb36473cd9f6/distributed/diskutils.py#L132-L153
                 #   - https://github.com/dask/distributed/issues/6748
                 #   - https://github.com/dask/distributed/pull/7054
                 # NOTE: We also ignore cleanup errors that can occur on Windows. We
@@ -61,7 +61,7 @@ class LocalDaskDispatcher(Dispatcher):
                 #   - https://github.com/dask/distributed/issues/6052#issue-1189891052
                 #   - https://github.com/dask/distributed/issues/966#issuecomment-353265964
                 #   - https://github.com/dask/distributed/commit/9ffac1b9b
-                #   - https://github.com/dask/distributed/blob/5dc591bbdd4427fe49fe90338a34fc85ee35f2c9/distributed/diskutils.py#L23-L29  # noqa: E501
+                #   - https://github.com/dask/distributed/blob/5dc591bbdd4427fe49fe90338a34fc85ee35f2c9/distributed/diskutils.py#L23-L29
                 #   - https://github.com/dask/distributed/commit/7ed517c47de90a68abd537d29df9740a2c20b638
                 is_windows = os.name == 'nt'
                 with (

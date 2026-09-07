@@ -60,7 +60,7 @@ def get_observation_expression(model: Model) -> Expr:
     >>> expr = get_observation_expression(model)
     >>> print(expr.unicode())
     D_EPSETA1_2⋅EPS₁⋅(ETA₂ - OETA₂) + D_ETA1⋅(ETA₁ - OETA₁) + D_ETA2⋅(ETA₂ - OETA₂) + EPS₁⋅(D_EPS1 + D_EPSETA1_1⋅(ETA₁ - OETA₁)) + OPRED
-    """  # noqa E501
+    """
     raise_if_odes(model)
     stats = model.statements
     # FIXME: Handle other DVs

@@ -137,7 +137,7 @@ def locked_threads(parameters, is_done):  # pragma: no cover
         for task in as_completed(tasks):
             try:
                 task.result()
-            except:  # noqa E722
+            except:
                 is_done.wait()
                 raise
 

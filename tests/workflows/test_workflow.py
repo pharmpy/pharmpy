@@ -75,7 +75,7 @@ def test_as_dask_dict(tasks):
 
     wf_dict = Workflow(wb).as_dask_dict()
     assert re.match(
-        r"\{'.*': \('func', 'input'\), '.*': \('func', t1, '.*'\), '.*': \('func', t1, '.*'\), 'results': \('func', \[t2, t3\], '.*', '.*'\)\}",  # noqa
+        r"\{'.*': \('func', 'input'\), '.*': \('func', t1, '.*'\), '.*': \('func', t1, '.*'\), 'results': \('func', \[t2, t3\], '.*', '.*'\)\}",
         str(wf_dict),
     )
 

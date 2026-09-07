@@ -37,7 +37,7 @@ def ignore_scratch_warning():
 
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_constant(tmp_path):
-    a = lambda: 1  # noqa E731
+    a = lambda: 1
     t1 = Task('t1', a)
     wb = WorkflowBuilder(tasks=[t1], name='test-workflow')
     wf = Workflow(wb)
@@ -52,8 +52,8 @@ def test_execute_workflow_constant(tmp_path):
 
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_unary(tmp_path):
-    a = lambda: 2  # noqa E731
-    f = lambda x: x**2  # noqa E731
+    a = lambda: 2
+    f = lambda x: x**2
     t1 = Task('t1', a)
     t2 = Task('t2', f)
     wb = WorkflowBuilder(tasks=[t1], name='test-workflow')
@@ -70,9 +70,9 @@ def test_execute_workflow_unary(tmp_path):
 
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_binary(tmp_path):
-    a = lambda: 1  # noqa E731
-    b = lambda: 2  # noqa E731
-    f = lambda x, y: x + y  # noqa E731
+    a = lambda: 1
+    b = lambda: 2
+    f = lambda x, y: x + y
     t1 = Task('t1', a)
     t2 = Task('t2', b)
     t3 = Task('t3', f)
@@ -91,7 +91,7 @@ def test_execute_workflow_binary(tmp_path):
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_workflow_map_reduce(tmp_path):
     n = 10
-    f = lambda x: x**2  # noqa E731
+    f = lambda x: x**2
     layer_init = list(map(lambda i: Task(f'x{i}', lambda: i), range(n)))
     layer_map = list(map(lambda i: Task(f'f(x{i})', f), range(n)))
     layer_reduce = [Task('reduce', lambda *y: sum(y))]
@@ -232,9 +232,9 @@ def test_local_dispatcher():
 
 @pytest.mark.xdist_group(name="workflow")
 def test_serial_dispatcher_n_in_to_1_out(tmp_path):
-    a = lambda: 1  # noqa E731
-    b = lambda: 2  # noqa E731
-    f = lambda x, y: x + y  # noqa E731
+    a = lambda: 1
+    b = lambda: 2
+    f = lambda x, y: x + y
     t1 = Task('t1', a)
     t2 = Task('t2', b)
     t3 = Task('t3', f)
@@ -250,10 +250,10 @@ def test_serial_dispatcher_n_in_to_1_out(tmp_path):
 
 @pytest.mark.xdist_group(name="workflow")
 def test_serial_dispatcher_1_in_to_1_out(tmp_path):
-    start = lambda: 1  # noqa E731
-    a = lambda x: x  # noqa E731
-    b = lambda y: y + 1  # noqa E731
-    f = lambda x, y: x + y  # noqa E731
+    start = lambda: 1
+    a = lambda x: x
+    b = lambda y: y + 1
+    f = lambda x, y: x + y
     t0 = Task('t0', start)
     t1 = Task('t1', a)
     t2 = Task('t2', b)
@@ -269,8 +269,8 @@ def test_serial_dispatcher_1_in_to_1_out(tmp_path):
 
     assert res == 3
 
-    c = lambda z: z + 2  # noqa E731
-    g = lambda x, y: x + y  # noqa E731
+    c = lambda z: z + 2
+    g = lambda x, y: x + y
     t4 = Task('t4', c)
     t5 = Task('t5', g)
     wb.add_task(t4, predecessors=[t0])
@@ -284,12 +284,12 @@ def test_serial_dispatcher_1_in_to_1_out(tmp_path):
 
 @pytest.mark.xdist_group(name="workflow")
 def test_execute_with_subtool(tmp_path):
-    a = lambda: 1  # noqa E731
+    a = lambda: 1
     t1 = Task('t1', a)
     wb = WorkflowBuilder(tasks=[t1], name='test-tool')
 
     def _run_subtool(context, x):
-        g = lambda: x + 1  # noqa E731
+        g = lambda: x + 1
         t = Task('t', g)
         wb = WorkflowBuilder(tasks=[t], name='test-subtool')
         wf = Workflow(wb)

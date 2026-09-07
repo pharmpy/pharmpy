@@ -777,7 +777,7 @@ IF (DOSEID.EQ.2) DOSE2 = AMT
         # (
         #     S('X'),
         #     sympy.Piecewise((0, sympy.Ne(S('Y'), 1)), (2, sympy.Eq(S('Y'), 15)), (1, True)),
-        #     'IF (Y.NE.1) THEN\n    X = 0\nELSE IF (Y.EQ.15) THEN\n    X = 2\nELSE\n    X = 1\nEND IF\n',  # noqa: E501
+        #     'IF (Y.NE.1) THEN\n    X = 0\nELSE IF (Y.EQ.15) THEN\n    X = 2\nELSE\n    X = 1\nEND IF\n',
         # ),
     ],
 )

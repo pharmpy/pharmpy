@@ -1252,7 +1252,7 @@ def is_strictness_fulfilled(
             maxevals_exceeded = results.termination_cause == "maxevals_exceeded"  # noqa
             sigdigs = ArrayEvaluator([results.significant_digits])  # noqa
             final_zero_gradient = 'final_zero_gradient' in results.warnings  # noqa
-            estimate_near_boundary = 'estimate_near_boundary' in results.warnings  # noqa
+            estimate_near_boundary = 'estimate_near_boundary' in results.warnings
             if 'condition_number' in args_in_statement:
                 if results.correlation_matrix is not None:
                     condition_number = ArrayEvaluator(  # noqa
@@ -1262,7 +1262,7 @@ def is_strictness_fulfilled(
                     raise ValueError("Could not calculate condition_number.")
             if "rse" in args_in_statement:
                 if results.relative_standard_errors is not None:
-                    rse = ArrayEvaluator(results.relative_standard_errors)  # noqa
+                    rse = ArrayEvaluator(results.relative_standard_errors)
                 else:
                     raise ValueError("Could not calculate relative standard error.")
 

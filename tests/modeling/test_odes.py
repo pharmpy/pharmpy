@@ -1665,7 +1665,7 @@ $OMEGA 0.031128  ; IVV
 $SIGMA 0.013241
 
 $ESTIMATION METHOD=1 INTERACTION
-"""  # noqa: E501
+"""
     assert model.code == correct
 
     model = set_transit_compartments(model, 0)
