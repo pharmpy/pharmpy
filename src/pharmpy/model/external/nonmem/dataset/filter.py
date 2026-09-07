@@ -129,7 +129,7 @@ def numeric(column: str):
 
 def _escape(column: str):
     # TODO: Handle more cases.
-    # SEE: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.query.html#pandas.DataFrame.query  # noqa: 501
+    # SEE: https://pandas.pydata.org/pandas-docs/stable/reference/api/pandas.DataFrame.query.html#pandas.DataFrame.query  # noqa: E501
     if '`' in column:
         raise NotImplementedError(f'Cannot handle backtick (`) in column name: {column}')
     if '#' in column:
