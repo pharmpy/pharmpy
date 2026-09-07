@@ -1,6 +1,5 @@
 import os as _os
 import shutil as _shutil
-import sys
 import time
 import warnings as _warnings
 import weakref as _weakref
@@ -42,11 +41,7 @@ class TemporaryDirectory:
     @classmethod
     def _rmtree(cls, name, ignore_errors=False):
         def onerror(func, path, exc_info):
-            if sys.version_info.minor >= 12:
-                exc = exc_info
-            else:
-                # This was deprecated in Python 3.12
-                exc = exc_info[0]
+            exc = exc_info
             if issubclass(exc, PermissionError):
 
                 def resetperms(path):
@@ -84,11 +79,7 @@ class TemporaryDirectory:
                 if not ignore_errors:
                     raise
 
-        if sys.version_info.minor >= 12:
-            _shutil.rmtree(name, onexc=onerror)
-        else:
-            # This was deprecated in Python 3.12
-            _shutil.rmtree(name, onerror=onerror)
+        _shutil.rmtree(name, onexc=onerror)
 
     @classmethod
     def _cleanup(cls, name, warn_message, ignore_errors=False):
