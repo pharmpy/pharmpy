@@ -117,7 +117,7 @@ def test_eq(feature_class, type_a, type_b):
 def test_lt(feature_class, order, types):
     features = [feature_class.create(type) for type in types]
     features_sorted = sorted(features)
-    assert all(order[i] in features_sorted[i].args for i in range(0, len(features_sorted)))
+    assert all(order[i] in features_sorted[i].args for i in range(len(features_sorted)))
 
     assert not features[0] < features[0]
 
