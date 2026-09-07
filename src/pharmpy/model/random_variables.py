@@ -616,7 +616,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         """
         if isinstance(inds, Expr) and not inds.is_symbol():
             raise ValueError("Expression must be symbol")
-        if isinstance(inds, str) or isinstance(inds, Expr):
+        if isinstance(inds, (str, Expr)):
             inds = [inds]
         inds = [ind.name if not isinstance(ind, str) else ind for ind in inds]
 

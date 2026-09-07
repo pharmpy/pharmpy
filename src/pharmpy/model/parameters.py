@@ -404,7 +404,7 @@ class Parameters(CollectionsSequence, Immutable):
     def __sub__(self, other: Union[Parameter, Parameters, Sequence[Parameter]]) -> Parameters:
         if isinstance(other, Parameter):
             return Parameters(tuple(p for p in self._params if p.name != other.name))
-        elif isinstance(other, Parameters) or isinstance(other, Sequence):
+        elif isinstance(other, (Parameters, Sequence)):
             names = [p.name for p in other]
             return Parameters(tuple(p for p in self._params if p.name not in names))
         else:

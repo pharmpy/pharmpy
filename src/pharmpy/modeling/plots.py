@@ -1060,7 +1060,7 @@ def plot_vpc(
     >>> sim_data = run_simulation(sim_model) # doctest: +SKIP
     >>> plot_vpc(model, sim_data) # doctest: +SKIP
     """
-    if isinstance(simulations, str) or isinstance(simulations, Path):
+    if isinstance(simulations, (str, Path)):
         simulations = pd.read_table(simulations, delimiter=r'\s+|,', engine='python')
         if 'SIM' not in simulations.columns:
             raise ValueError('No column named "SIM" found in dataset.')

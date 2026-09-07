@@ -1853,7 +1853,7 @@ def set_lloq_data(
     which_keep, _ = _loq_mask(model, lloq=lloq, blq=blq)
     df = model.dataset.copy()
     dv = model.datainfo.dv_column.name
-    if isinstance(value, Expr) or isinstance(value, str):
+    if isinstance(value, (Expr, str)):
         value = df.eval(str(value))
     df[dv] = df[dv].where(which_keep, value)
     if df.equals(model.dataset):

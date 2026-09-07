@@ -613,13 +613,13 @@ class ExecutionSteps(Sequence, Immutable):
     def __add__(self, other: Union[EstimationStep, ExecutionSteps, Iterable]) -> ExecutionSteps:
         if isinstance(other, ExecutionSteps):
             return ExecutionSteps(self._steps + other._steps)
-        elif isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
+        elif isinstance(other, (EstimationStep, SimulationStep)):
             return ExecutionSteps(self._steps + (other,))
         else:
             return ExecutionSteps(self._steps + tuple(other))
 
     def __radd__(self, other: Union[EstimationStep, Iterable]) -> ExecutionSteps:
-        if isinstance(other, EstimationStep) or isinstance(other, SimulationStep):
+        if isinstance(other, (EstimationStep, SimulationStep)):
             return ExecutionSteps((other,) + self._steps)
         else:
             return ExecutionSteps(tuple(other) + self._steps)

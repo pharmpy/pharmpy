@@ -746,7 +746,7 @@ def get_context(dispatching_options, tool_name) -> Context:
 
 
 def _open_context(source):
-    if isinstance(source, Path) or isinstance(source, str):
+    if isinstance(source, (Path, str)):
         path = Path(source)
         context = LocalDirectoryContext(path)
     elif isinstance(source, Context):

@@ -221,11 +221,7 @@ def extract_add_prop(s, res_alias: set[sympy.Symbol], model: pharmpy.model.Model
             all_pow = True
             for t in s_arg:
                 for f in sympy.Mul.make_args(t):
-                    if (
-                        isinstance(f, sympy.Pow)
-                        or isinstance(f, sympy.Integer)
-                        or isinstance(f, sympy.Float)
-                    ):
+                    if isinstance(f, (sympy.Pow, sympy.Integer, sympy.Float)):
                         pass
                     else:
                         all_pow = False

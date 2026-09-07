@@ -1149,7 +1149,7 @@ class DataInfo(Sequence, Immutable):
         if columns:
             if not isinstance(columns, Sequence):
                 raise TypeError('Argument `columns` must be iterable')
-            if not all(isinstance(col, str) or isinstance(col, ColumnInfo) for col in columns):
+            if not all(isinstance(col, (str, ColumnInfo)) for col in columns):
                 raise TypeError(
                     'Argument `columns` need to consist of either type `str` or `ColumnInfo`'
                 )

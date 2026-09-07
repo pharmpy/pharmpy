@@ -1087,9 +1087,7 @@ def _make_df_steps_row(
     return {
         'step': (
             len(candidate.steps)
-            if candidate.steps == ()
-            or isinstance(candidate.steps[-1], ForwardStep)
-            or isinstance(candidate.steps[-1], AdaptiveStep)
+            if candidate.steps == () or isinstance(candidate.steps[-1], (ForwardStep, AdaptiveStep))
             else len(candidate.steps) + index_offset
         ),
         'parameter': parameter,
