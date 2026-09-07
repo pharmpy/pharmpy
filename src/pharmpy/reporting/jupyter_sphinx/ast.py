@@ -39,7 +39,7 @@ def load_content(cell, location, logger):
             )
         try:
             with Path(filename).open() as f:
-                content = [line.rstrip() for line in f.readlines()]
+                content = [line.rstrip() for line in f]
         except OSError:
             raise OSError(f"File {filename} not found or reading it failed")
     else:

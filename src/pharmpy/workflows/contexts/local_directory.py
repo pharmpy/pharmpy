@@ -221,7 +221,7 @@ class LocalDirectoryContext(Context):
             with open(path, 'r') as fh:
                 lines = []
                 found = False
-                for line in fh.readlines():
+                for line in fh:
                     a = line.split(" ", 1)
                     if a[0] == name:
                         lines.append(f'{name} {annotation}\n')
@@ -237,7 +237,7 @@ class LocalDirectoryContext(Context):
         path = self._annotations_path
         with self._read_lock(path):
             with open(path, 'r') as fh:
-                for line in fh.readlines():
+                for line in fh:
                     a = line.split(" ", 1)
                     if a[0] == name:
                         return a[1][:-1]
