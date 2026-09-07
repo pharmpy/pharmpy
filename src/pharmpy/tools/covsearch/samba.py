@@ -896,7 +896,6 @@ def scmlcs_nonlinear_model_selection(
 
     scores, new_models, candidate_steps = {}, {}, {}
     for cov_effect, cov_func in pruned_effects.items():
-
         name = f"step{step}_" + "_".join(cov_effect[:3])
         desc = best_model.description + f";({'-'.join(cov_effect[:3])})"
         model = updated_model.replace(name=name, description=desc)
@@ -988,8 +987,7 @@ def _prune_effect_funcs(effect_funcs, updated_model, step, context):
     }
     if not pruned_effects:
         context.log_info(
-            f"STEP {step} | NONLINEAR MODEL SELECTION\n"
-            f"     No valid covariate effects to update."
+            f"STEP {step} | NONLINEAR MODEL SELECTION\n     No valid covariate effects to update."
         )
 
     return pruned_effects

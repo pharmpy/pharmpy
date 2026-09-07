@@ -24,8 +24,9 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
                     elif mode.name == "MET":
                         # TODO: Update how we find name of metabolite compartment
                         name = "METABOLITE"
-                        yield ('PERIPHERALS', count, name), partial(
-                            set_peripheral_compartments, n=count, name=name
+                        yield (
+                            ('PERIPHERALS', count, name),
+                            partial(set_peripheral_compartments, n=count, name=name),
                         )
                     else:
                         raise ValueError(

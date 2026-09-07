@@ -37,8 +37,7 @@ def NMTRANStreamIterator(stream: TextIO, sep: re.Pattern[str], ignore: re.Patter
     while True:
         if " \t" in line:
             raise DatasetError(
-                "The dataset contains a TAB preceeded by a space, "
-                "which is not allowed by NM-TRAN"
+                "The dataset contains a TAB preceeded by a space, which is not allowed by NM-TRAN"
             )
 
         _line = line.lstrip(PAD).rstrip()

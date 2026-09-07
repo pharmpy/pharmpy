@@ -1,11 +1,7 @@
 import pytest
 
 from pharmpy.tools import export_model_files, open_project
-from pharmpy.workflows import (
-    LocalDirectoryContext,
-    LocalDirectoryProject,
-    ModelEntry,
-)
+from pharmpy.workflows import LocalDirectoryContext, LocalDirectoryProject, ModelEntry
 
 
 def test_export_model_files(tmp_path, load_model_for_test, testdata):

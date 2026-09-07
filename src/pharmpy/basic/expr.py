@@ -355,9 +355,7 @@ class BooleanExpr:
                 'N': sympy.Symbol('N'),
                 'S': sympy.Symbol('S'),
             }
-            expr = sympy.sympify(
-                source, evaluate=False, locals=ns
-            )  # pyright: ignore [reportCallIssue]
+            expr = sympy.sympify(source, evaluate=False, locals=ns)  # pyright: ignore [reportCallIssue]
             if (
                 isinstance(expr, sympy.StrictLessThan)
                 and expr.rhs.is_Symbol

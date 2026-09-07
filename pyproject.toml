@@ -78,13 +78,14 @@ where = ["src"]
 zip-safe = false
 include-package-data = true
 
-[tool.black]
-target-version = ["py312"]
+[tool.ruff]
 line-length = 100
-skip-string-normalization = 1
+target-version = "py312"
+
+[tool.ruff.format]
+quote-style = "preserve"
 
 [tool.isort]
-profile = "black"
 line_length = 100
 known_first_party = "pharmpy"
 default_section = "THIRDPARTY"

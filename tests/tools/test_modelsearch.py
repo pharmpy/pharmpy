@@ -211,37 +211,42 @@ def test_is_allowed():
     features = parse('PERIPHERALS([1,2])')
     features = funcs(Model(), features, modelsearch_features)
     feat_previous = []
-    feat_current, func_current = ('PERIPHERALS', 1), functools.partial(
-        set_peripheral_compartments, n=1
+    feat_current, func_current = (
+        ('PERIPHERALS', 1),
+        functools.partial(set_peripheral_compartments, n=1),
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features)
     feat_previous = [feat_current]
-    feat_current, func_current = ('PERIPHERALS', 2), functools.partial(
-        set_peripheral_compartments, n=2
+    feat_current, func_current = (
+        ('PERIPHERALS', 2),
+        functools.partial(set_peripheral_compartments, n=2),
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features)
 
     features = parse('PERIPHERALS([1,2])')
     features = funcs(Model(), features, modelsearch_features)
     feat_previous = [('PERIPHERALS', 1)]
-    feat_current, func_current = ('PERIPHERALS', 1), functools.partial(
-        set_peripheral_compartments, n=1
+    feat_current, func_current = (
+        ('PERIPHERALS', 1),
+        functools.partial(set_peripheral_compartments, n=1),
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
     features = parse('PERIPHERALS([1,2])')
     features = funcs(Model(), features, modelsearch_features)
     feat_previous = []
-    feat_current, func_current = ('PERIPHERALS', 2), functools.partial(
-        set_peripheral_compartments, n=2
+    feat_current, func_current = (
+        ('PERIPHERALS', 2),
+        functools.partial(set_peripheral_compartments, n=2),
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
     features = parse('PERIPHERALS(2)')
     features = funcs(Model(), features, modelsearch_features)
     feat_previous = []
-    feat_current, func_current = ('PERIPHERALS', 2), functools.partial(
-        set_peripheral_compartments, n=2
+    feat_current, func_current = (
+        ('PERIPHERALS', 2),
+        functools.partial(set_peripheral_compartments, n=2),
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features)
 

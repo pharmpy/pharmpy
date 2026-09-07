@@ -156,7 +156,9 @@ if is_windows:
         # to unlock an already unlocked fd. This does not matter as we make
         # sure we do not do that.
         msvcrt.locking(  # pyright: ignore [reportAttributeAccessIssue]
-            fd, msvcrt.LK_UNLCK, _lock_length  # pyright: ignore [reportAttributeAccessIssue]
+            fd,
+            msvcrt.LK_UNLCK,  # pyright: ignore [reportAttributeAccessIssue]
+            _lock_length,
         )
 
 else:

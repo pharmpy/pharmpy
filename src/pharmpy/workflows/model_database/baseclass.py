@@ -358,7 +358,7 @@ class DummyTransaction(ModelTransaction):
             self.model_entry = ModelEntry.create(obj)
         else:
             raise ValueError(
-                f'Invalid type `obj`: got {type(obj)}, expected Model, ModelEntry ' 'or ModelHash'
+                f'Invalid type `obj`: got {type(obj)}, expected Model, ModelEntry or ModelHash'
             )
 
     def store_model(self) -> None:

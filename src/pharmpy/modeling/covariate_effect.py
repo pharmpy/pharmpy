@@ -652,8 +652,7 @@ def _choose_bounds(effect, cov_median, cov_min, cov_max, index=None):
     elif effect == 'piece_lin':
         if cov_median == cov_min or cov_median == cov_max:
             raise ValueError(
-                'Median cannot be same as min or max, cannot use '
-                'piecewise-linear parameterization.'
+                'Median cannot be same as min or max, cannot use piecewise-linear parameterization.'
             )
         if index == 1:
             lower = -100000

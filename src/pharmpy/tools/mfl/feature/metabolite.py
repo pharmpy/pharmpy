@@ -17,6 +17,7 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
                 METABOLITE_WILDCARD if isinstance(statement.modes, Wildcard) else statement.modes
             )
             for mode in modes:
-                yield ('METABOLITE', mode.name), partial(
-                    add_metabolite, presystemic=True if mode.name == "PSC" else False
+                yield (
+                    ('METABOLITE', mode.name),
+                    partial(add_metabolite, presystemic=True if mode.name == "PSC" else False),
                 )

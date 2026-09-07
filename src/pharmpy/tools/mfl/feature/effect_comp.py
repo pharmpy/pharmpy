@@ -16,6 +16,7 @@ def features(model, statements: Iterable[Statement]) -> Iterable[Feature]:
                 EFFECTCOMP_WILDCARD if isinstance(statement.modes, Wildcard) else statement.modes
             )
             for mode in modes:
-                yield ('EFFECTCOMP', mode.name), partial(
-                    add_effect_compartment, expr=mode.name.lower()
+                yield (
+                    ('EFFECTCOMP', mode.name),
+                    partial(add_effect_compartment, expr=mode.name.lower()),
                 )

@@ -821,7 +821,7 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
             0,
         ),
         (
-            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'ELIMINATION([FO,MM,MIX-FO-MM]);PERIPHERALS([0,1])',
             'PERIPHERALS(1)',
             2,
             1,
@@ -829,7 +829,7 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
             0,
         ),
         (
-            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'ELIMINATION([FO,MM,MIX-FO-MM]);PERIPHERALS([0,1])',
             'PERIPHERALS(1);ELIMINATION(MM)',
             2,
             1,
@@ -837,7 +837,7 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
             0,
         ),
         (
-            'ELIMINATION([FO,MM,MIX-FO-MM]);' 'PERIPHERALS([0,1])',
+            'ELIMINATION([FO,MM,MIX-FO-MM]);PERIPHERALS([0,1])',
             'PERIPHERALS(1);ELIMINATION(MIX-FO-MM)',
             2,
             2,

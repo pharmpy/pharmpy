@@ -785,19 +785,19 @@ def test_get_search_space_modelsearch(mfl, modeltype, administration, expected):
             'ABSORPTION(ZO)',
             'basic_pk',
             'iv',
-            'COVARIATE?(@IIV,@CONTINUOUS,EXP);' 'COVARIATE?(@IIV,@CATEGORICAL,CAT)',
+            'COVARIATE?(@IIV,@CONTINUOUS,EXP);COVARIATE?(@IIV,@CATEGORICAL,CAT)',
         ),
         (
             None,
             'basic_pk',
             'iv',
-            'COVARIATE?(@IIV,@CONTINUOUS,EXP);' 'COVARIATE?(@IIV,@CATEGORICAL,CAT)',
+            'COVARIATE?(@IIV,@CONTINUOUS,EXP);COVARIATE?(@IIV,@CATEGORICAL,CAT)',
         ),
         (
             None,
             'pkpd',
             'iv',
-            'COVARIATE?(@PD_IIV,@CONTINUOUS,EXP);' 'COVARIATE?(@PD_IIV,@CATEGORICAL,CAT)',
+            'COVARIATE?(@PD_IIV,@CONTINUOUS,EXP);COVARIATE?(@PD_IIV,@CATEGORICAL,CAT)',
         ),
         (
             None,

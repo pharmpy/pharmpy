@@ -99,7 +99,8 @@ class LocalDaskDispatcher(Dispatcher):
 
                                 try:
                                     res: Optional[T] = client.get(
-                                        dsk_optimized, 'results'
+                                        dsk_optimized,
+                                        'results',
                                     )  # pyright: ignore [reportAssignmentType]
                                 except (
                                     dask.distributed.client.FutureCancelledError,

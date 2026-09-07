@@ -473,7 +473,7 @@ def validate_input(
 
     if ref_model not in models:
         raise ValueError(
-            'Incorrect `ref_model`: reference model must be part of input' 'models and results'
+            'Incorrect `ref_model`: reference model must be part of inputmodels and results'
         )
 
     if rank_type == 'lrt':

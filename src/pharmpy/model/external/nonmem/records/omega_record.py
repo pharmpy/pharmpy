@@ -147,35 +147,35 @@ class OmegaRecord(Record):
             if node.find('VAR'):
                 if var or sd or cholesky:
                     raise ModelSyntaxError(
-                        'Cannot specify either option VARIANCE, SD or ' 'CHOLESKY more than once'
+                        'Cannot specify either option VARIANCE, SD or CHOLESKY more than once'
                     )
                 else:
                     var = True
             if node.find('SD'):
                 if sd or var or cholesky:
                     raise ModelSyntaxError(
-                        'Cannot specify either option VARIANCE, SD or ' 'CHOLESKY more than once'
+                        'Cannot specify either option VARIANCE, SD or CHOLESKY more than once'
                     )
                 else:
                     sd = True
             if node.find('COV'):
                 if cov or corr:
                     raise ModelSyntaxError(
-                        'Cannot specify either option COVARIANCE or ' 'CORRELATION more than once'
+                        'Cannot specify either option COVARIANCE or CORRELATION more than once'
                     )
                 else:
                     cov = True
             if node.find('CORR'):
                 if corr or cov:
                     raise ModelSyntaxError(
-                        'Cannot specify either option COVARIANCE or ' 'CORRELATION more than once'
+                        'Cannot specify either option COVARIANCE or CORRELATION more than once'
                     )
                 else:
                     corr = True
             if node.find('CHOLESKY'):
                 if cholesky or var or sd:
                     raise ModelSyntaxError(
-                        'Cannot specify either option VARIANCE, SD or ' 'CHOLESKY more than once'
+                        'Cannot specify either option VARIANCE, SD or CHOLESKY more than once'
                     )
                 else:
                     cholesky = True

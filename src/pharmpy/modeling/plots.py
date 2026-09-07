@@ -14,12 +14,7 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps import scipy, sympy, sympy_stats
 from pharmpy.model import Assignment, Model, get_and_check_dataset
-from pharmpy.modeling import (
-    bin_observations,
-    create_rng,
-    get_dv_symbol,
-    infer_datatypes,
-)
+from pharmpy.modeling import bin_observations, create_rng, get_dv_symbol, infer_datatypes
 
 from .data import get_observations
 
@@ -216,7 +211,10 @@ def plot_transformed_eta_distributions(
             densfn = sympy.lambdify(curdens.variables[0], curdens.expr)  # pyright: ignore
         except ValueError:
             samples = model.random_variables.sample(
-                expr, parameter_estimates, samples=1000, rng=rng  # pyright: ignore
+                expr,
+                parameter_estimates,  # pyright: ignore
+                samples=1000,
+                rng=rng,
             )
             densfn = scipy.stats.gaussian_kde(samples)
 
@@ -757,7 +755,9 @@ def _bin_data(df, model, stratify_on, bins):
     if len(list(df[stratify_on].unique())) > bins:
         bins = np.linspace(df[stratify_on].min(), df[stratify_on].max(), bins + 1)
         unit = model.datainfo[f'{stratify_on}'].variable.get_property('unit')
-        labels = [_title_with_unit(f'{bins[i]} - {bins[i+1]}', unit) for i in range(len(bins) - 1)]
+        labels = [
+            _title_with_unit(f'{bins[i]} - {bins[i + 1]}', unit) for i in range(len(bins) - 1)
+        ]
         df[f'{stratify_on}'] = pd.cut(
             df[f'{stratify_on}'], bins=bins, labels=labels, include_lowest=True
         )
@@ -1079,7 +1079,7 @@ def plot_vpc(
         if n_unique > 8:
             bin_stratification = np.linspace(df[stratify_on].min(), df[stratify_on].max(), 9)
             for i in range(len(bin_stratification) - 1):
-                query = f'{stratify_on} >= {bin_stratification[i]} and {stratify_on} < {bin_stratification[i+1]}'
+                query = f'{stratify_on} >= {bin_stratification[i]} and {stratify_on} < {bin_stratification[i + 1]}'
                 charts.append(
                     _vpc_plot(
                         model,
@@ -1089,7 +1089,7 @@ def plot_vpc(
                         qi=qi,
                         ci=ci,
                         query=query,
-                        title=f'{stratify_on} {bin_stratification[i]} - {bin_stratification[i+1]}',
+                        title=f'{stratify_on} {bin_stratification[i]} - {bin_stratification[i + 1]}',
                         stratify_on=stratify_on,
                     )
                 )

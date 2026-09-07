@@ -39,7 +39,6 @@ def delinearize_model(
 
     """
     if param_mapping:
-
         for param in param_mapping.values():
             # Assert all mapping parameters are in the model
             if param not in get_individual_parameters(base_model):

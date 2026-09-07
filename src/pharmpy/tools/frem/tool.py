@@ -45,8 +45,7 @@ def check_covariates(input_model, covariates):
     tvar = list_time_varying_covariates(input_model)
     if tvar:
         warnings.warn(
-            f'The covariates {tvar} are time varying, but FREM will only use the '
-            f'baseline values.'
+            f'The covariates {tvar} are time varying, but FREM will only use the baseline values.'
         )
 
     # Covariates with only one baseline value

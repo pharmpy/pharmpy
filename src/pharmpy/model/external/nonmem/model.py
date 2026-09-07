@@ -305,9 +305,9 @@ class Model(BaseModel):
                 datapath = model.datainfo.path
                 assert datapath is not None
                 replace_dict['datainfo'] = model.datainfo.replace(path=datapath)
-            assert (
-                not datapath.exists() or datapath.is_file()
-            ), f'input path change, but no file exists at target {str(datapath)}'
+            assert not datapath.exists() or datapath.is_file(), (
+                f'input path change, but no file exists at target {str(datapath)}'
+            )
             filename = get_relative_dataset_path(
                 datapath=model.datainfo.path, newpath=path, warn=True
             )

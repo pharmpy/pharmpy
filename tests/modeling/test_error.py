@@ -910,7 +910,7 @@ $ESTIMATION METHOD=1 INTERACTION
             ['EPS_1'],
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\nIPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
         (
@@ -920,7 +920,7 @@ $ESTIMATION METHOD=1 INTERACTION
             'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
             'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
             'IRES=DV-IPRED+EPS(3)\n',
-            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
+            '$OMEGA  0.09 ; IIV_RUV1\n$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             ['EPS_1', 'EPS_3'],
@@ -929,7 +929,7 @@ $ESTIMATION METHOD=1 INTERACTION
             'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
             'IPRED=F+EPS(2)\n'
             'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV2)\n',
-            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2',
+            '$OMEGA  0.09 ; IIV_RUV1\n$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             None,
@@ -938,7 +938,7 @@ $ESTIMATION METHOD=1 INTERACTION
             'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
             'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
             'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV3)\n',
-            '$OMEGA  0.09 ; IIV_RUV1\n' '$OMEGA  0.09 ; IIV_RUV2\n' '$OMEGA  0.09 ; IIV_RUV3',
+            '$OMEGA  0.09 ; IIV_RUV1\n$OMEGA  0.09 ; IIV_RUV2\n$OMEGA  0.09 ; IIV_RUV3',
         ),
         (
             None,
@@ -953,14 +953,14 @@ $ESTIMATION METHOD=1 INTERACTION
             ['EPS_1'],
             False,
             ['ETA_3'],
-            'Y = F + EPS(1)*W*EXP(ETA(3))\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            'Y = F + EPS(1)*W*EXP(ETA(3))\nIPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
         (
             'EPS_1',
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n' 'IPRED=F+EPS(2)\n' 'IRES=DV-IPRED+EPS(3)\n',
+            'Y = F + EPS(1)*W*EXP(ETA_RV1)\nIPRED=F+EPS(2)\nIRES=DV-IPRED+EPS(3)\n',
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
     ],
@@ -992,15 +992,12 @@ def test_set_iiv_on_ruv(
 
     err_rec = model.internals.control_stream.get_records('ERROR')[0]
 
-    assert str(err_rec) == f'$ERROR\n' f'W=F\n' f'{err_ref}' f'IWRES=IRES/W\n\n'
+    assert str(err_rec) == f'$ERROR\nW=F\n{err_ref}IWRES=IRES/W\n\n'
 
     omega_rec = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
     assert omega_rec == (
-        f'$OMEGA DIAGONAL(2)\n'
-        f' 0.0309626  ;       IVCL\n'
-        f' 0.031128  ;        IVV\n\n'
-        f'{omega_ref}\n'
+        f'$OMEGA DIAGONAL(2)\n 0.0309626  ;       IVCL\n 0.031128  ;        IVV\n\n{omega_ref}\n'
     )
 
 
@@ -1082,7 +1079,7 @@ IF (DVID.EQ.2) Y = Y_2
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)*F**THETA(5)\n'
             'IRES=DV-IPRED+EPS(3)',
-            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2',
+            '$THETA  (0.01,1) ; power1\n$THETA  (0.01,1) ; power2',
         ),
         (
             ['EPS_1', 'EPS_3'],
@@ -1090,7 +1087,7 @@ IF (DVID.EQ.2) Y = Y_2
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED=F+EPS(2)\n'
             'IRES = DV - IPRED + EPS(3)*F**THETA(5)',
-            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2',
+            '$THETA  (0.01,1) ; power1\n$THETA  (0.01,1) ; power2',
         ),
         (
             None,
@@ -1098,7 +1095,7 @@ IF (DVID.EQ.2) Y = Y_2
             'Y = F + EPS(1)*F**THETA(4)\n'
             'IPRED = F + EPS(2)*F**THETA(5)\n'
             'IRES = DV - IPRED + EPS(3)*F**THETA(6)',
-            '$THETA  (0.01,1) ; power1\n' '$THETA  (0.01,1) ; power2\n' '$THETA  (0.01,1) ; power3',
+            '$THETA  (0.01,1) ; power1\n$THETA  (0.01,1) ; power2\n$THETA  (0.01,1) ; power3',
         ),
     ],
 )
@@ -1133,7 +1130,7 @@ def test_set_power_on_ruv(
         model = set_power_on_ruv(model, epsilons, zero_protection=True)
 
         rec_err = str(model.internals.control_stream.get_records('ERROR')[0])
-        correct = f'$ERROR\n' f'W=F\n' f'{err_ref}\n' f'IWRES=IRES/W\n\n'
+        correct = f'$ERROR\nW=F\n{err_ref}\nIWRES=IRES/W\n\n'
         assert rec_err == correct
 
         rec_theta = ''.join(str(rec) for rec in model.internals.control_stream.get_records('THETA'))

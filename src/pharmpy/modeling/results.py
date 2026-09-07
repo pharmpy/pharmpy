@@ -864,7 +864,7 @@ def insert_ebes_into_dataset(
             etcs[i] = flattened
 
         etc_names = [
-            f"ETC_{row+1}_{col+1}" for row in range(len(ebes.columns)) for col in range(row + 1)
+            f"ETC_{row + 1}_{col + 1}" for row in range(len(ebes.columns)) for col in range(row + 1)
         ]
         etcs = pd.DataFrame(
             etcs, index=individual_estimates_covariance.index, columns=pd.Index(etc_names)

@@ -96,14 +96,15 @@ def prepare_frem_model(original_model: Model, me: ModelEntry) -> ModelEntry:
             name = sdcorr_thetas[i].name
             if row == col:
                 assignment = Assignment(
-                    Expr.symbol(name), Expr.symbol(f"ETC_{row+1}_{col+1}").sqrt()
+                    Expr.symbol(name), Expr.symbol(f"ETC_{row + 1}_{col + 1}").sqrt()
                 )
             else:
                 assignment = Assignment(
                     Expr.symbol(name),
-                    Expr.symbol(f"ETC_{row+1}_{col+1}")
+                    Expr.symbol(f"ETC_{row + 1}_{col + 1}")
                     / (
-                        Expr.symbol(f"ETC_{col+1}_{col+1}") * Expr.symbol(f"ETC_{row+1}_{row+1}")
+                        Expr.symbol(f"ETC_{col + 1}_{col + 1}")
+                        * Expr.symbol(f"ETC_{row + 1}_{row + 1}")
                     ).sqrt(),
                 )
             assignments.append(assignment)

@@ -887,9 +887,7 @@ def update_dependent_variables(model: Model, trans):
             cg.add(f'Y = {yass.expression.subs(trans)}')
             cg.dedent()
         cg.add('END IF')
-        node = CodeRecordParser(
-            str(cg) + '\n'
-        ).root.children[  # pyright: ignore [reportOptionalMemberAccess]
+        node = CodeRecordParser(str(cg) + '\n').root.children[  # pyright: ignore [reportOptionalMemberAccess]
             0
         ]
 
@@ -2117,9 +2115,7 @@ def update_verbatim(cs, random_variables, to_add: dict = {}, to_remove: dict = {
                 new_children = _add_verbatim_derivative(new_children, to_add)
             else:
                 if len(new_children) > 0 and (
-                    new_children[-1]
-                    .children[0]
-                    .value  # pyright: ignore [reportAttributeAccessIssue]
+                    new_children[-1].children[0].value  # pyright: ignore [reportAttributeAccessIssue]
                     == '"LAST'
                 ):
                     new_children = new_children[:-1]  # Remove entire verbatim block
@@ -2180,13 +2176,13 @@ def convert_derive_to_nonmem(derivative, random_variables):
             raise ValueError("Unknown derivative '{derivative[0]}' within verbatim block")
 
     if first in random_variables.etas.symbols and second in random_variables.etas.symbols:
-        return f'G({first_n}, {second_n+1})'
+        return f'G({first_n}, {second_n + 1})'
     elif first in random_variables.epsilons.symbols and second in random_variables.epsilons.symbols:
-        return f'H({first_n}, {second_n+1})'
+        return f'H({first_n}, {second_n + 1})'
     elif first in random_variables.etas.symbols and second in random_variables.epsilons.symbols:
-        return f'HH({second_n}, {first_n+1})'
+        return f'HH({second_n}, {first_n + 1})'
     elif first in random_variables.epsilons.symbols and second in random_variables.etas.symbols:
-        return f'HH({first_n}, {second_n+1})'
+        return f'HH({first_n}, {second_n + 1})'
     else:
         raise ValueError("Unknown second order derivative")
 

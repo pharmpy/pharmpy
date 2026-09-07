@@ -15,7 +15,7 @@ def least_number_of_transformations(
     def _lnt_helper(lhs, rhs, mfl, name, lnt):
         if lhs is None and rhs is not None or lhs is not None and rhs is None:
             raise ValueError(
-                f"{name} : is only part of one of the MFLs" " and therefore cannot be compared"
+                f"{name} : is only part of one of the MFLs and therefore cannot be compared"
             )
         if lhs is None and rhs is None:
             return lnt

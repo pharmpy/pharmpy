@@ -149,7 +149,7 @@ def write_datainfo(di: DataInfo, path: Union[str, Path], force: bool = False) ->
     path = normalize_user_given_path(path)
     if path.is_file() and not force:
         raise FileExistsError(
-            f"A datainfo file already exists at {path}. " "Set force=True to overwrite"
+            f"A datainfo file already exists at {path}. Set force=True to overwrite"
         )
     di.to_json(path)
 

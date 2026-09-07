@@ -32,10 +32,7 @@ from pharmpy.tools.common import (
 from pharmpy.tools.iivsearch import algorithms
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.modelfit import create_fit_workflow
-from pharmpy.tools.run import (
-    run_subtool,
-    summarize_modelfit_results,
-)
+from pharmpy.tools.run import run_subtool, summarize_modelfit_results
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
@@ -873,9 +870,7 @@ def validate_input(
     if algorithm == correlation_algorithm == "skip":
         raise ValueError("Both algorithm and correlation_algorithm are set to 'skip'")
     elif algorithm == "skip" and correlation_algorithm is None:
-        raise ValueError(
-            "correlation_algorithm need to be specified if" " 'algorithm' is set to skip"
-        )
+        raise ValueError("correlation_algorithm need to be specified if 'algorithm' is set to skip")
     elif algorithm == "simultaneous_stepwise" and correlation_algorithm is not None:
         raise ValueError(
             "correlation_algorithm cannot be set when algorithm is simultaneous_stepwise"

@@ -18,7 +18,6 @@ from pharmpy.workflows.results import ModelfitResults, Results
 
 @dataclass(frozen=True)
 class BootstrapResults(Results):
-
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
     parameter_statistics: Optional[Any] = None
     parameter_distribution: Optional[Any] = None

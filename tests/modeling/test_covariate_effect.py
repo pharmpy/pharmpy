@@ -679,17 +679,17 @@ def test_has_covariate_effect(load_model_for_test, testdata, model_path, effect,
         (
             ('nonmem', 'pheno_real.mod'),
             [('CL', 'WGT')],
-            '@@ -4 +4 @@\n' '-TVCL=THETA(1)*WGT\n' '+TVCL = THETA(1)\n',
+            '@@ -4 +4 @@\n-TVCL=THETA(1)*WGT\n+TVCL = THETA(1)\n',
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             [('V', 'WGT')],
-            '@@ -5 +5 @@\n' '-TVV=THETA(2)*WGT\n' '+TVV = THETA(2)\n',
+            '@@ -5 +5 @@\n-TVV=THETA(2)*WGT\n+TVV = THETA(2)\n',
         ),
         (
             ('nonmem', 'pheno_real.mod'),
             [('V', 'APGR')],
-            '@@ -6 +5,0 @@\n' '-IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n',
+            '@@ -6 +5,0 @@\n-IF(APGR.LT.5) TVV=TVV*(1+THETA(3))\n',
         ),
         (
             ('nonmem', 'pheno_real.mod'),

@@ -1033,7 +1033,7 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     if lagtime:
         lagtime = "LAGTIME(ON)"
     if transits != 0:
-        transits = f'TRANSITS({transits}{","+depot})'
+        transits = f'TRANSITS({transits}{"," + depot})'
     if peripherals != 0:
         peripherals = f'PERIPHERALS({peripherals})'
     if len(covariates) != 0:

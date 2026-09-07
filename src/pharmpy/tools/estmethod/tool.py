@@ -150,7 +150,6 @@ def post_process(*model_entries):
 
 @dataclass(frozen=True)
 class EstMethodResults(ToolResults):
-
     summary_settings: Optional[Any] = None
 
 

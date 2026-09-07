@@ -201,15 +201,16 @@ def html_visit_altair_plot(self, node):
         stdout = f.getvalue()
     except Exception as e:
         warnings.warn(
-            "altair-plot: {}:{} Code Execution failed:"
-            "{}: {}".format(node["rst_source"], node["rst_lineno"], e.__class__.__name__, str(e))
+            "altair-plot: {}:{} Code Execution failed:{}: {}".format(
+                node["rst_source"], node["rst_lineno"], e.__class__.__name__, str(e)
+            )
         )
         raise nodes.SkipNode
 
     chart_name = node["chart-var-name"]
     if chart_name is not None:
         if chart_name not in namespace:
-            raise ValueError("chart-var-name='{}' not present in namespace" "".format(chart_name))
+            raise ValueError("chart-var-name='{}' not present in namespace".format(chart_name))
         chart = namespace[chart_name]
 
     output = node["output"]

@@ -26,11 +26,7 @@ from pharmpy.modeling import (
     unfix_parameters,
 )
 from pharmpy.modeling.mfl import generate_transformations
-from pharmpy.tools.common import (
-    create_plots,
-    table_final_eta_shrinkage,
-    update_initial_estimates,
-)
+from pharmpy.tools.common import create_plots, table_final_eta_shrinkage, update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool, summarize_modelfit_results
 from pharmpy.workflows import ModelEntry, ModelfitResults, Task, Workflow, WorkflowBuilder

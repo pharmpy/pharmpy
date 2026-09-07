@@ -304,7 +304,7 @@ from pharmpy.tools.mfl.stringify import stringify
             ),
         ),
         (
-            'COVARIATE?(@IIV, @CONTINUOUS, *);' 'COVARIATE?(*, @CATEGORICAL, [CAT, CAT2], *)',
+            'COVARIATE?(@IIV, @CONTINUOUS, *);COVARIATE?(*, @CATEGORICAL, [CAT, CAT2], *)',
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'APGR', 'cat2', '*', 'ADD'),
@@ -333,7 +333,7 @@ from pharmpy.tools.mfl.stringify import stringify
             ),
         ),
         (
-            'COVARIATE?(@PK, @CONTINUOUS, *);' 'COVARIATE?(@PK, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PK, @CONTINUOUS, *);COVARIATE?(@PK, @CATEGORICAL, CAT, *)',
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
@@ -371,7 +371,7 @@ from pharmpy.tools.mfl.stringify import stringify
             (),
         ),
         (
-            'METABOLITE([BASIC, PSC]);' 'PERIPHERALS(1..2, MET)',
+            'METABOLITE([BASIC, PSC]);PERIPHERALS(1..2, MET)',
             (
                 ('METABOLITE', 'BASIC'),
                 ('METABOLITE', 'PSC'),
@@ -403,7 +403,7 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
     ('source', 'expected'),
     (
         (
-            'COVARIATE?(@PK, @CONTINUOUS, *);' 'COVARIATE?(@PK, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PK, @CONTINUOUS, *);COVARIATE?(@PK, @CATEGORICAL, CAT, *)',
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
@@ -428,7 +428,7 @@ def test_all_funcs(load_model_for_test, pheno_path, source, expected):
             ),
         ),
         (
-            'COVARIATE?(@PD, @CONTINUOUS, *);' 'COVARIATE(@PD, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PD, @CONTINUOUS, *);COVARIATE(@PD, @CATEGORICAL, CAT, *)',
             (
                 ('COVARIATE', 'B', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'B', 'WGT', 'exp', '*', 'ADD'),
@@ -466,7 +466,7 @@ def test_all_funcs_pd(load_model_for_test, pheno_path, source, expected):
     ('source', 'expected'),
     (
         (
-            'COVARIATE?(@PD_IIV, @CONTINUOUS, *);' 'COVARIATE(@PD_IIV, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PD_IIV, @CONTINUOUS, *);COVARIATE(@PD_IIV, @CATEGORICAL, CAT, *)',
             (
                 ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'ADD'),
@@ -480,7 +480,7 @@ def test_all_funcs_pd(load_model_for_test, pheno_path, source, expected):
             ),
         ),
         (
-            'COVARIATE?(@PK_IIV, @CONTINUOUS, *);' 'COVARIATE(@PK_IIV, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@PK_IIV, @CONTINUOUS, *);COVARIATE(@PK_IIV, @CATEGORICAL, CAT, *)',
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
@@ -503,7 +503,7 @@ def test_all_funcs_pd(load_model_for_test, pheno_path, source, expected):
             ),
         ),
         (
-            'COVARIATE?(@IIV, @CONTINUOUS, *);' 'COVARIATE(@IIV, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@IIV, @CONTINUOUS, *);COVARIATE(@IIV, @CATEGORICAL, CAT, *)',
             (
                 ('COVARIATE', 'SLOPE', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'SLOPE', 'WGT', 'exp', '*', 'ADD'),
@@ -606,14 +606,14 @@ def test_illegal_mfl(code):
                 Elimination((Name('MM'), Name('MIX-FO-MM'))),
                 Peripherals((1, 2)),
             ),
-            'ELIMINATION([MM,MIX-FO-MM]);' 'PERIPHERALS(1..2)',
+            'ELIMINATION([MM,MIX-FO-MM]);PERIPHERALS(1..2)',
         ),
         (
             (
                 Covariate(Ref('IIV'), Ref('CONTINUOUS'), ('EXP',), '*'),
                 Covariate(Ref('IIV'), Ref('CATEGORICAL'), ('CAT',), '*'),
             ),
-            'COVARIATE(@IIV,@CONTINUOUS,EXP);' 'COVARIATE(@IIV,@CATEGORICAL,CAT)',
+            'COVARIATE(@IIV,@CONTINUOUS,EXP);COVARIATE(@IIV,@CATEGORICAL,CAT)',
         ),
         (
             (Covariate(('CL',), ('WGT',), Wildcard(), '+', Option(True)),),
@@ -1164,7 +1164,7 @@ def test_get_model_features(load_model_for_test, pheno_path):
             ),
         ),
         (
-            'COVARIATE?(@IIV, @CONTINUOUS, *);' 'COVARIATE?(*, @CATEGORICAL, CAT, *)',
+            'COVARIATE?(@IIV, @CONTINUOUS, *);COVARIATE?(*, @CATEGORICAL, CAT, *)',
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
@@ -1189,7 +1189,7 @@ def test_get_model_features(load_model_for_test, pheno_path):
             ),
         ),
         (
-            'COVARIATE?(@PK, @CONTINUOUS, *);' 'COVARIATE?(@PK, @CATEGORICAL, [CAT, CAT2], *)',
+            'COVARIATE?(@PK, @CONTINUOUS, *);COVARIATE?(@PK, @CATEGORICAL, [CAT, CAT2], *)',
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'APGR', 'cat2', '*', 'ADD'),
@@ -1231,7 +1231,7 @@ def test_get_model_features(load_model_for_test, pheno_path):
             (),
         ),
         (
-            'METABOLITE([BASIC, PSC]);' 'PERIPHERALS(1..2, MET)',
+            'METABOLITE([BASIC, PSC]);PERIPHERALS(1..2, MET)',
             (
                 ('METABOLITE', 'BASIC'),
                 ('METABOLITE', 'PSC'),
@@ -1272,11 +1272,7 @@ def test_ModelFeatures_eq(load_model_for_test, pheno_path):
     model_string = get_model_features(model)
     model_mfl = ModelFeatures.create_from_mfl_string(model_string)
     mfl = parse(
-        "ABSORPTION(INST);"
-        "ELIMINATION(FO);"
-        "TRANSITS(0,DEPOT);"
-        "PERIPHERALS(0);"
-        "LAGTIME(OFF)",
+        "ABSORPTION(INST);ELIMINATION(FO);TRANSITS(0,DEPOT);PERIPHERALS(0);LAGTIME(OFF)",
         True,
     )
     mfl = mfl.replace(covariate=model_mfl.covariate)
@@ -1290,11 +1286,7 @@ def test_ModelFeatures_add(load_model_for_test, pheno_path):
     mfl = parse("ABSORPTION([FO,ZO]);PERIPHERALS(1)", True)
 
     expected_mfl = parse(
-        "ABSORPTION([INST,FO,ZO]);"
-        "ELIMINATION(FO);"
-        "TRANSITS(0,DEPOT);"
-        "PERIPHERALS(0..1);"
-        "LAGTIME(OFF)",
+        "ABSORPTION([INST,FO,ZO]);ELIMINATION(FO);TRANSITS(0,DEPOT);PERIPHERALS(0..1);LAGTIME(OFF)",
         True,
     )
     expected_mfl = expected_mfl.replace(
@@ -1330,7 +1322,7 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
     mfl = parse("ABSORPTION([INST,ZO]);PERIPHERALS(0..1)", True)
 
     expected_mfl = parse(
-        "ABSORPTION(ZO);" "ELIMINATION(FO);" "TRANSITS(0,DEPOT);" "PERIPHERALS(1);" "LAGTIME(OFF)",
+        "ABSORPTION(ZO);ELIMINATION(FO);TRANSITS(0,DEPOT);PERIPHERALS(1);LAGTIME(OFF)",
         True,
     )
 
@@ -1340,11 +1332,7 @@ def test_ModelFeatures_sub(load_model_for_test, pheno_path):
     mfl = parse("ABSORPTION([INST,ZO]);PERIPHERALS(0..1)", True)
 
     expected_mfl = parse(
-        "ABSORPTION(INST);"
-        "ELIMINATION(FO);"
-        "TRANSITS(0,DEPOT);"
-        "PERIPHERALS(0);"
-        "LAGTIME(OFF)",
+        "ABSORPTION(INST);ELIMINATION(FO);TRANSITS(0,DEPOT);PERIPHERALS(0);LAGTIME(OFF)",
         True,
     )
     expected_mfl = expected_mfl.replace(

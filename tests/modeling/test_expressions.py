@@ -68,9 +68,7 @@ def test_get_observation_expression(testdata, load_model_for_test):
         s('ETA_1') - s('OETA1')
     ) + s('D_ETA2') * (s('ETA_2') - s('OETA2')) + s('EPS_1') * (
         s('D_EPS1') + s('D_EPSETA1_1') * (s('ETA_1') - s('OETA1'))
-    ) + s(
-        'OPRED'
-    )
+    ) + s('OPRED')
 
 
 def test_get_individual_prediction_expression(testdata, load_model_for_test):
@@ -207,7 +205,9 @@ def test_mu_reference_covariate_effect(testdata, load_model_for_test):
 
     model = mu_reference_model(model)
 
-    assert model.code == """$PROBLEM PHENOBARB SIMPLE MODEL
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
@@ -248,6 +248,7 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 """
+    )
 
 
 def test_add_covariate_effect_on_mu_referenced_model(testdata, load_model_for_test):
@@ -256,7 +257,9 @@ def test_add_covariate_effect_on_mu_referenced_model(testdata, load_model_for_te
     model = mu_reference_model(model)
 
     model = add_covariate_effect(model, "CL", "WGT", "pow")
-    assert model.code == """$PROBLEM PHENOBARB SIMPLE MODEL
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
@@ -296,9 +299,12 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 """
+    )
 
     model = remove_covariate_effect(model, "CL", "WGT")
-    assert model.code == """$PROBLEM PHENOBARB SIMPLE MODEL
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
@@ -335,6 +341,7 @@ $COVARIANCE UNCONDITIONAL
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE NOAPPEND
        NOPRINT ONEHEADER FILE=sdtab1
 """
+    )
 
 
 def test_has_mu_reference(testdata, load_model_for_test):

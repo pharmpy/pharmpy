@@ -26,7 +26,6 @@ class RxODEModelInternals(ModelInternals):
 
 
 class Model(pharmpy.model.Model):
-
     filename_extension = '.R'
 
     def __init__(self, **kwargs):

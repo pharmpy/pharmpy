@@ -39,7 +39,7 @@ def test_algorithm(algorithm, methods, solvers, parameter_uncertainty_methods, n
     [
         (
             '$ESTIMATION METHOD=COND INTER MAXEVAL=9999 AUTO=1 PRINT=10',
-            '$ESTIMATION METHOD=IMP INTER EONLY=1 MAXEVAL=9999 ISAMPLE=10000 ' 'NITER=10 PRINT=10',
+            '$ESTIMATION METHOD=IMP INTER EONLY=1 MAXEVAL=9999 ISAMPLE=10000 NITER=10 PRINT=10',
         ),
     ],
 )

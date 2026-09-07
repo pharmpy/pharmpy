@@ -699,12 +699,12 @@ def test_statements_setter_add_from_sympy(parser, buf_original, sym, expression,
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
             Assignment.create(S('YWGT'), sympy.Piecewise((1, sympy.Eq(S('WGT'), S('NaN'))))),
-            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'IF (NaN.EQ.WGT) YWGT = 1\n',
+            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nIF (NaN.EQ.WGT) YWGT = 1\n',
         ),
         (
             '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n',
             Assignment.create(S('Z'), PHI(S('A') + S('B'))),
-            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\n' 'Z = PHI(A + B)\n',
+            '$PRED\nY = THETA(1) + ETA(1) + EPS(1)\nZ = PHI(A + B)\n',
         ),
     ],
 )
@@ -718,9 +718,7 @@ def test_update(parser, buf_original, assignment, buf_expected):
 
 
 def test_nested_block_if(parser):
-    code = (
-        '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\n' 'CL=5\nELSE\nCL=6\nENDIF'
-    )
+    code = '\nIF (X.EQ.23) THEN\nIF (Y.EQ.0) THEN\nCL=1\nELSE\nCL=2\nENDIF\nCL=5\nELSE\nCL=6\nENDIF'
     code = _ensure_trailing_newline(code)
     rec = parser.parse('$PRED' + code).records[0]
 

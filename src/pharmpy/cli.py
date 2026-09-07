@@ -390,9 +390,7 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
                 error(exception=FileExistsError("Use -f or --force to force an overwrite"))
         except FileExistsError as e:
             error(
-                exception=FileExistsError(
-                    f'{e.args[0]} Use -f  or --force to ' 'force an overwrite'
-                )
+                exception=FileExistsError(f'{e.args[0]} Use -f  or --force to force an overwrite')
             )
     else:
         # Is a model
@@ -410,7 +408,7 @@ def write_model_or_dataset(model_or_dataset, new_df, path, force):
                 model = bump_model_number(model, path='.')
                 write_model(model, force=force)
         except FileExistsError as e:
-            error(FileExistsError(f'{e.args[0]} Use -f or --force to ' 'force an overwrite'))
+            error(FileExistsError(f'{e.args[0]} Use -f or --force to force an overwrite'))
 
 
 def data_resample(args):

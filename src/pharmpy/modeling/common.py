@@ -136,8 +136,7 @@ def write_model(model: Model, path: Union[str, Path] = '', force: bool = True) -
             filename = f'{model.name}{model.filename_extension}'
         except AttributeError:
             raise ValueError(
-                'Cannot name model file as no path argument was supplied and the '
-                'model has no name.'
+                'Cannot name model file as no path argument was supplied and the model has no name.'
             )
         path = path / filename
         new_name = None

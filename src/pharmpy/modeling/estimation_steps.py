@@ -662,8 +662,7 @@ def add_predictions(model: Model, pred: list[str]) -> Model:
 
     if any(p not in allowed_prediction_variables for p in pred):
         raise ValueError(
-            f'Prediction variables need to be one of the following:'
-            f' {allowed_prediction_variables}'
+            f'Prediction variables need to be one of the following: {allowed_prediction_variables}'
         )
 
     steps = model.execution_steps
@@ -720,7 +719,7 @@ def add_residuals(model: Model, res: list[str]) -> Model:
 
     if any(p not in allowed_residual_variables for p in res):
         raise ValueError(
-            f'Residual variables need to be one of the following:' f' {allowed_residual_variables}'
+            f'Residual variables need to be one of the following: {allowed_residual_variables}'
         )
 
     steps = model.execution_steps

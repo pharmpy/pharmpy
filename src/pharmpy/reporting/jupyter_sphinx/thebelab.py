@@ -105,7 +105,7 @@ def add_thebelab_library(doctree, env):
             return
     else:
         js.logger.warning(
-            "The supplied thebelab configuration should be either" " a filename or a dictionary."
+            "The supplied thebelab configuration should be either a filename or a dictionary."
         )
         return
 

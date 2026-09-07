@@ -59,16 +59,20 @@ def features(model: Model, statements: Iterable[Statement], remove=False) -> Ite
     # Add remove_covariate_effect if optional argument
     for args in parse_spec(spec(model, statements)):
         if remove or args[-1]:
-            yield ('COVARIATE',) + args[:-1] + ('REMOVE',), partial(
-                remove_covariate_effect, parameter=args[0], covariate=args[1]
+            yield (
+                ('COVARIATE',) + args[:-1] + ('REMOVE',),
+                partial(remove_covariate_effect, parameter=args[0], covariate=args[1]),
             )
         if not remove and (args[-1] or not args[-1]):
-            yield ('COVARIATE',) + args[:-1] + ('ADD',), partial(
-                add_covariate_effect,
-                parameter=args[0],
-                covariate=args[1],
-                effect=args[2],
-                operation=args[3],
+            yield (
+                ('COVARIATE',) + args[:-1] + ('ADD',),
+                partial(
+                    add_covariate_effect,
+                    parameter=args[0],
+                    covariate=args[1],
+                    effect=args[2],
+                    operation=args[3],
+                ),
             )
 
 

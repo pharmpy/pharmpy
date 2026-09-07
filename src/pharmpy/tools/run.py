@@ -293,7 +293,6 @@ def run_tool_with_name(
         and "esttool" in common_options
         and common_options["esttool"] != "dummy"
     ):
-
         model_type = str(type(tool_options["model"])).split(".")[-3]
         results = tool_options["results"]
         esttool = common_options["esttool"]

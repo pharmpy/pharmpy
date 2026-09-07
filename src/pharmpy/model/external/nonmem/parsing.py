@@ -681,8 +681,7 @@ def _synonym(key, value):
         return (value, key)
     else:
         raise DatasetError(
-            f'A column name "{key}" in $INPUT has a synonym to a non-reserved '
-            f'column name "{value}"'
+            f'A column name "{key}" in $INPUT has a synonym to a non-reserved column name "{value}"'
         )
 
 

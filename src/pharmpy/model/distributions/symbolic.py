@@ -771,7 +771,7 @@ class FiniteDistribution(Distribution):
         probs = []
         for n, expr in self._probabilities.items():
             probs.append(f'P({n}) = {expr.unicode()}')
-        return f'{Expr.symbol(self._name).unicode()}' f' ~ Finite({{' f'{", ".join(probs)}' f'}})'
+        return f'{Expr.symbol(self._name).unicode()} ~ Finite({{{", ".join(probs)}}})'
 
     def latex_string(self, aligned: bool = False) -> str:
         if aligned:

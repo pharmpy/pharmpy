@@ -164,7 +164,7 @@ def test_update_parameter_uncertainty_method(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
     model = add_parameter_uncertainty_step(model, 'SMAT')
     assert (
-        "$ESTIMATION METHOD=COND INTER\n" "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
+        "$ESTIMATION METHOD=COND INTER\n$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
     ) in model.code
     assert model.execution_steps[-1].parameter_uncertainty_method == 'SMAT'
     model = add_parameter_uncertainty_step(model, 'EFIM')
@@ -182,7 +182,7 @@ def test_update_parameter_uncertainty_method(testdata, load_model_for_test):
     assert model.execution_steps[-1].parameter_uncertainty_method is None
     model = add_parameter_uncertainty_step(model, 'SMAT')
     assert (
-        "$ESTIMATION METHOD=COND INTER\n" "$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
+        "$ESTIMATION METHOD=COND INTER\n$COVARIANCE MATRIX=S UNCONDITIONAL PRINT=E PRECOND=1\n"
     ) in model.code
     assert model.execution_steps[-1].parameter_uncertainty_method == 'SMAT'
 
@@ -488,7 +488,9 @@ $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
     model = remove_derivative(model, (("ETA_1", "EPS_1"), "EPS_1"))
     assert len(model.execution_steps[0].derivatives) == 0
 
-    assert model.code == """$PROBLEM PHENOBARB SIMPLE MODEL
+    assert (
+        model.code
+        == """$PROBLEM PHENOBARB SIMPLE MODEL
 $DATA 'pheno.dta' IGNORE=@
 $INPUT ID TIME AMT WGT APGR DV FA1 FA2
 $SUBROUTINE ADVAN1 TRANS2
@@ -522,6 +524,7 @@ $ESTIMATION METHOD=COND INTER
 $COVARIANCE UNCONDITIONAL PRINT=E PRECOND=1
 $TABLE ID TIME DV AMT WGT APGR IPRED PRED RES TAD CWRES NPDE
  NOAPPEND NOPRINT ONEHEADER FILE=sdtab1 RFORMAT="(1PE16.9,300(1PE24.16))"\n"""
+    )
 
 
 def test_is_simulation_model(load_example_model_for_test):

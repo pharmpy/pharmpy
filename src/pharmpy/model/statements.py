@@ -588,9 +588,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                         for second_comp in concentrations.intersection(free_images(term)):
                             for eq_2 in eqs:
                                 if (
-                                    eq_2.lhs.args[
-                                        0
-                                    ].name  # pyright: ignore [reportAttributeAccessIssue]
+                                    eq_2.lhs.args[0].name  # pyright: ignore [reportAttributeAccessIssue]
                                     == second_comp.name
                                 ):
                                     # If this is False, then input to compartment is of second order

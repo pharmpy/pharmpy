@@ -3,10 +3,7 @@ from typing import Optional
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
-from pharmpy.modeling import (
-    set_initial_estimates,
-    set_simulation,
-)
+from pharmpy.modeling import set_initial_estimates, set_simulation
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import run_subtool
 from pharmpy.tools.vpc.results import calculate_results

@@ -13,6 +13,9 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
     for statement in statements:
         if isinstance(statement, Allometry):
             ref = statement.reference if statement.reference is not None else 70.0
-            yield ('ALLOMETRY', statement.covariate, ref), partial(
-                add_allometry, allometric_variable=statement.covariate, reference_value=ref
+            yield (
+                ('ALLOMETRY', statement.covariate, ref),
+                partial(
+                    add_allometry, allometric_variable=statement.covariate, reference_value=ref
+                ),
             )

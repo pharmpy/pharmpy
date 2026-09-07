@@ -558,7 +558,6 @@ def _greedy_search(
     )
 
     if nonsignificant_effects and adaptive_scope_reduction:
-
         # TODO : Different number of steps for adaptive part (?)
         steps = range(1, max_steps + 1) if max_steps >= 0 else count(1)
 

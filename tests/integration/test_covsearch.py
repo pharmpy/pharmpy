@@ -24,7 +24,7 @@ from pharmpy.workflows import ModelfitResults
             'covsearch_run10',
         ),
         (
-            'LET(CONTINUOUS,[AGE,WT])\n' 'COVARIATE?([CL,VC],@CONTINUOUS,exp,*)',
+            'LET(CONTINUOUS,[AGE,WT])\nCOVARIATE?([CL,VC],@CONTINUOUS,exp,*)',
             'scm-forward',
             {},
             4,

@@ -256,10 +256,7 @@ def test_add_parameters(pheno, param_new, init_expected, buf_new):
     assert model.parameters[param_new.name].init == init_expected
 
     rec_ref = (
-        f'$THETA (0,0.00469307) ; PTVCL\n'
-        f'$THETA (0,1.00916) ; PTVV\n'
-        f'$THETA (-.99,.1)\n'
-        f'{buf_new}\n'
+        f'$THETA (0,0.00469307) ; PTVCL\n$THETA (0,1.00916) ; PTVV\n$THETA (-.99,.1)\n{buf_new}\n'
     )
 
     model = model.update_source()
@@ -1562,9 +1559,7 @@ def test_update_data_from_parsed_ignore_new_path(testdata):
 
 def test_update_input_no_change(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
     )
     model = model_start.update_source()
     assert model.code.split('\n')[1] == model_start.code.split('\n')[1]
@@ -1573,9 +1568,7 @@ def test_update_input_no_change(create_model_for_test, pheno_data):
 
 def test_update_input_remove_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
     )
     df = model_start.dataset.copy()
     df = df.drop('APGR', axis=1)
@@ -1589,9 +1582,7 @@ def test_update_input_remove_column(create_model_for_test, pheno_data):
 
 def test_update_input_drop_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
     )
     di = model_start.datainfo
     ci = di['APGR'].replace(drop=True)
@@ -1604,9 +1595,7 @@ def test_update_input_drop_column(create_model_for_test, pheno_data):
 
 def test_update_input_change_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
     )
     df = model_start.dataset.copy()
     df['FA1'] = 1
@@ -1620,9 +1609,7 @@ def test_update_input_change_column(create_model_for_test, pheno_data):
 
 def test_update_input_add_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
     )
     df = model_start.dataset.copy()
     df['X'] = 1
@@ -1636,9 +1623,7 @@ def test_update_input_add_column(create_model_for_test, pheno_data):
 
 def test_update_input_remove_column_and_change_column(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV FA1 FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
     )
     df = model_start.dataset.copy()
     df = df.drop('APGR', axis=1)
@@ -1659,9 +1644,7 @@ def test_update_input_remove_column_and_change_column(create_model_for_test, phe
 @pytest.mark.filterwarnings("ignore::UserWarning")
 def test_update_input_drop_column_with_anonymous(create_model_for_test, pheno_data):
     model_start = create_model_for_test(
-        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV DROP FA2\n"
-        f"$DATA {pheno_data} IGNORE=@\n"
-        f"$PK\n"
+        f"$PROBLEM\n$INPUT ID TIME AMT WGT APGR DV DROP FA2\n$DATA {pheno_data} IGNORE=@\n$PK\n"
     )
     di = model_start.datainfo
     ci = di['APGR'].replace(drop=True)

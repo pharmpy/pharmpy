@@ -186,7 +186,9 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 
         return AttrTree(self.rule, self.children[:i] + (new_child,) + self.children[i + 1 :])
 
-    def partition(self, rule) -> tuple[
+    def partition(
+        self, rule
+    ) -> tuple[
         tuple[Union[AttrTree, AttrToken], ...],
         tuple[Union[AttrTree, AttrToken], ...],
         tuple[Union[AttrTree, AttrToken], ...],

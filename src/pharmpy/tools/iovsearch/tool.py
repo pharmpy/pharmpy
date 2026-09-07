@@ -525,8 +525,7 @@ def validate_input(
     if model is not None:
         if column not in model.datainfo.names:
             raise ValueError(
-                f'Invalid `column`: got `{column}`,'
-                f' must be one of {sorted(model.datainfo.names)}.'
+                f'Invalid `column`: got `{column}`, must be one of {sorted(model.datainfo.names)}.'
             )
 
         if list_of_parameters is not None:

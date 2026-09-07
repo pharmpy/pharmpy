@@ -36,9 +36,7 @@ from pharmpy.modeling.blq import SUPPORTED_METHODS as SUPPORTED_BLQ_METHODS
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
-from pharmpy.modeling.mfl import (
-    expand_model_features,
-)
+from pharmpy.modeling.mfl import expand_model_features
 from pharmpy.modeling.mfl import get_model_features as get_model_features_new
 from pharmpy.modeling.mfl import get_search_space_parameters_not_in_model
 from pharmpy.modeling.parameter_variability import get_occasion_levels
@@ -1734,8 +1732,7 @@ def later_input_validation(
     # IOVSEARCH
     if occasion is not None and occasion not in model.dataset:
         raise ValueError(
-            f'Invalid `occasion`: got `{occasion}`,'
-            f' must be one of {sorted(model.datainfo.names)}.'
+            f'Invalid `occasion`: got `{occasion}`, must be one of {sorted(model.datainfo.names)}.'
         )
 
     # ALLOMETRY

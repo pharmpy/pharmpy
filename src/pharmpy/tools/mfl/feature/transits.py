@@ -23,12 +23,14 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
                 if count == "N":
                     yield ('TRANSITS', count, depot.name), set_n_transit_compartments
                 elif depot.name == 'DEPOT':
-                    yield ('TRANSITS', count, depot.name), partial(
-                        set_transit_compartments, n=count
+                    yield (
+                        ('TRANSITS', count, depot.name),
+                        partial(set_transit_compartments, n=count),
                     )
                 elif depot.name == 'NODEPOT':
-                    yield ('TRANSITS', count, depot.name), partial(
-                        set_transit_compartments, n=count + 1, keep_depot=False
+                    yield (
+                        ('TRANSITS', count, depot.name),
+                        partial(set_transit_compartments, n=count + 1, keep_depot=False),
                     )
                 else:
                     raise ValueError(f'Transit depot {depot} not supported')

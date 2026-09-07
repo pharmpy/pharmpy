@@ -334,7 +334,7 @@ from pharmpy.mfl.parsing import parse
             ],
         ),
         (
-            'LET(CONTINUOUS,[AGE,WT])\n' 'COVARIATE?(@IIV,@CONTINUOUS,EXP,*)',
+            'LET(CONTINUOUS,[AGE,WT])\nCOVARIATE?(@IIV,@CONTINUOUS,EXP,*)',
             Covariate,
             [
                 (Ref('IIV'), 'AGE', 'EXP', '*', True),

@@ -172,8 +172,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
         (
@@ -185,8 +185,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
         (
@@ -198,8 +198,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
         ),
         (
@@ -211,8 +211,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
         ),
         (
@@ -224,8 +224,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
         ),
         (
@@ -237,8 +237,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'explicit',
         ),
         (
@@ -250,8 +250,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'explicit',
         ),
         (
@@ -267,7 +267,7 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME\n'
@@ -289,7 +289,7 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
             '$OMEGA BLOCK(2)\n'
             '0.00309626\t; OMEGA_IOV_1\n'
             '0.001\t; OMEGA_IOV_1_2\n'
@@ -310,7 +310,7 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME\n'
@@ -328,8 +328,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(2)\n',
-            'CL=TVCL*EXP(ETA(1))\n' 'V = TVV*EXP(ETAI1)\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.0031128 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL=TVCL*EXP(ETA(1))\nV = TVV*EXP(ETAI1)\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.0031128 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'same-as-iiv',
         ),
         (
@@ -341,8 +341,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
             'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
         (
@@ -358,7 +358,7 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
             '$OMEGA  BLOCK(1)\n'
             '0.00309626 ; OMEGA_IOV_1\n'
             '$OMEGA  BLOCK(1) SAME\n'
@@ -380,7 +380,7 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
             'ETAI1 = IOV_1 + ETA(1)\n'
             'ETAI2 = IOV_2 + ETA(2)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V = TVV*EXP(ETAI2)\n' 'S1=V\n',
+            'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
             '$OMEGA BLOCK(2)\n'
             '0.00309626\t; OMEGA_IOV_1\n'
             '0.001\t; OMEGA_IOV_1_2\n'
@@ -397,8 +397,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
         (
@@ -410,8 +410,8 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
             'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
             'ETAI1 = IOV_1 + ETA(1)\n',
-            'CL = TVCL*EXP(ETAI1)\n' 'V=TVV*EXP(ETA(2))\n' 'S1=V\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
         ),
         (
@@ -428,7 +428,7 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'S1=V+ETA_S1\n'
             'MAT=THETA(3)*EXP(ETA_MAT)\n'
             'Q=THETA(4)*EXP(ETA_Q)\n',
-            '$OMEGA  BLOCK(1)\n' '0.00309626 ; OMEGA_IOV_1\n' '$OMEGA  BLOCK(1) SAME\n',
+            '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
         (
@@ -764,11 +764,7 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
             'S1=V+ETA_S1\n'
             'MAT=THETA(3)*EXP(ETA_MAT)\n'
             'Q=THETA(4)*EXP(ETA_Q)\n\n',
-            '$OMEGA 0.031128  ; IVV\n'
-            '$OMEGA 0.1\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             ['ETA_CL', 'ETA_V'],
@@ -778,7 +774,7 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
             'S1=V+ETA_S1\n'
             'MAT=THETA(3)*EXP(ETA_MAT)\n'
             'Q=THETA(4)*EXP(ETA_Q)\n\n',
-            '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n',
+            '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             ['ETA_CL', 'ETA_MAT'],
@@ -788,7 +784,7 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
             'S1=V+ETA_S1\n'
             'MAT = THETA(3)\n'
             'Q=THETA(4)*EXP(ETA_Q)\n\n',
-            '$OMEGA 0.031128  ; IVV\n' '$OMEGA 0.1\n' '$OMEGA  0.031128 ; OMEGA_5_5\n',
+            '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA  0.031128 ; OMEGA_5_5\n',
         ),
         (
             ['ETA_MAT', 'ETA_Q'],
@@ -798,7 +794,7 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
             'S1=V+ETA_S1\n'
             'MAT = THETA(3)\n'
             'Q = THETA(4)\n\n',
-            '$OMEGA DIAGONAL(2)\n' '0.0309626  ; IVCL\n' '0.031128  ; IVV\n' '$OMEGA 0.1\n',
+            '$OMEGA DIAGONAL(2)\n0.0309626  ; IVCL\n0.031128  ; IVV\n$OMEGA 0.1\n',
         ),
         (
             None,
@@ -819,11 +815,7 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
             'S1=V+ETA_S1\n'
             'MAT=THETA(3)*EXP(ETA_MAT)\n'
             'Q=THETA(4)*EXP(ETA_Q)\n\n',
-            '$OMEGA 0.031128  ; IVV\n'
-            '$OMEGA 0.1\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             'ETA_CL',
@@ -833,11 +825,7 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
             'S1=V+ETA_S1\n'
             'MAT=THETA(3)*EXP(ETA_MAT)\n'
             'Q=THETA(4)*EXP(ETA_Q)\n\n',
-            '$OMEGA 0.031128  ; IVV\n'
-            '$OMEGA 0.1\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
     ],
 )
@@ -931,7 +919,7 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
 
     model_str = model.code
     model_with_iov = model_str.replace(
-        '$OMEGA DIAGONAL(2)\n' '0.0309626  ; IVCL\n' '0.031128  ; IVV',
+        '$OMEGA DIAGONAL(2)\n0.0309626  ; IVCL\n0.031128  ; IVV',
         '$OMEGA BLOCK(1)\n0.1\n$OMEGA BLOCK(1) SAME\n',
     )
 
@@ -949,7 +937,7 @@ def test_remove_iov(create_model_for_test, load_model_for_test, testdata):
     )
     rec_omega = ''.join(str(rec) for rec in model.internals.control_stream.get_records('OMEGA'))
 
-    assert rec_omega == '$OMEGA 0.1\n' '$OMEGA BLOCK(2)\n' '0.0309626\n' '0.0005 0.031128\n'
+    assert rec_omega == '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n'
 
 
 def test_remove_iov_no_iovs(load_model_for_test, testdata):
@@ -1010,10 +998,13 @@ $ESTIMATION METHOD=1 INTERACTION
 
     model = remove_iov(model)
 
-    assert '''$OMEGA DIAGONAL(2)
+    assert (
+        '''$OMEGA DIAGONAL(2)
 0.015
 0.02
-$OMEGA 0.1''' in model.code
+$OMEGA 0.1'''
+        in model.code
+    )
 
 
 @pytest.mark.parametrize(
@@ -1129,7 +1120,7 @@ $OMEGA 0.1''' in model.code
             'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
             'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
-            '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n' '$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
         ),
         (
             'joint',
@@ -1143,7 +1134,7 @@ $OMEGA 0.1''' in model.code
             'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
             'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
             ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
-            '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n' '$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
+            '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
         ),
     ),
     ids=repr,

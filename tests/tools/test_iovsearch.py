@@ -274,9 +274,10 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     iov_summary = _create_summary_step(iov_entries)
     iiv_summary = _create_summary_step(iiv_entries)
 
-    iov_names, iiv_names = [me.model.name for me in iov_entries], [
-        me.model.name for me in iiv_entries
-    ]
+    iov_names, iiv_names = (
+        [me.model.name for me in iov_entries],
+        [me.model.name for me in iiv_entries],
+    )
 
     step_mapping = {
         0: ([me_start.model.name], None),

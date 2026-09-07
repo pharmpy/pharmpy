@@ -219,7 +219,6 @@ def _filter_in_place(
     blocks = list(filter_schedule(filters))
 
     for block in blocks:
-
         if block.convert:
             tmp[list(map(numeric, block.convert))] = convert(
                 tmp[list(map(character, block.convert))], str(null_value), missing_data_token

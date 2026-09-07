@@ -454,7 +454,6 @@ class CovarianceInterpreter(MFLInterpreter):
 
 
 class DefinitionInterpreter(Interpreter):
-
     def interpret(self, tree):
         children = self.visit_children(tree)
         assert len(children) == 2
