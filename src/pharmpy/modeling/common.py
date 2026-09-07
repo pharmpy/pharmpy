@@ -478,7 +478,7 @@ def get_model_covariates(model: Model, strings: bool = False) -> Union[list[str]
     covs = covs - {Expr.symbol(model.datainfo.id_column.name)}
 
     covs = list(covs)
-    covs = list(sorted(covs, key=lambda x: x.name))  # sort to make order deterministic
+    covs = sorted(covs, key=lambda x: x.name)  # sort to make order deterministic
     if strings:
         covs = [str(x) for x in covs]
     return covs

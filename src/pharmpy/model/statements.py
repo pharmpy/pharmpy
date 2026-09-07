@@ -2497,7 +2497,7 @@ class Statements(Sequence, Immutable):
         if i == 0 or not g:
             # Special case for models with only one statement or no dependent statements
             return symbs
-        for j, _ in nx.bfs_predecessors(g, i, sort_neighbors=lambda x: reversed(sorted(x))):
+        for j, _ in nx.bfs_predecessors(g, i, sort_neighbors=lambda x: sorted(x, reverse=True)):
             statement = self[j]
             if isinstance(statement, Assignment):
                 symbs -= {statement.symbol}
