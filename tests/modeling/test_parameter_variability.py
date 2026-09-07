@@ -1799,7 +1799,7 @@ def test_create_joint_distribution_choose_param_init(load_model_for_test, pheno_
     rvs = model.random_variables[('ETA_1', 'ETA_2')]
     with pytest.warns(UserWarning, match='Correlation of individual estimates'):
         init = _choose_cov_param_init(model, ie, rvs, *params)
-        assert init == 0.0031045
+    assert init == 0.0031045
 
 
 def test_create_joint_distribution_choose_param_init_fo(create_model_for_test):
