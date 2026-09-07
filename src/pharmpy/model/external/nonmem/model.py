@@ -19,9 +19,6 @@ from pharmpy.model import (
     EstimationStep,
     ExecutionSteps,
     Ignore,
-)
-from pharmpy.model import Model as BaseModel
-from pharmpy.model import (
     NormalDistribution,
     Parameter,
     Parameters,
@@ -29,6 +26,7 @@ from pharmpy.model import (
     ReadDataset,
     Statements,
 )
+from pharmpy.model import Model as BaseModel
 from pharmpy.model.model import ModelInternals, update_datainfo
 from pharmpy.modeling.write_dataset import write_dataset
 

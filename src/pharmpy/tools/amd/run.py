@@ -8,9 +8,8 @@ from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.immutable import frozenmapping
-from pharmpy.mfl import IIV, Covariance
+from pharmpy.mfl import IIV, Covariance, Ref
 from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
-from pharmpy.mfl import Ref
 from pharmpy.model import DataInfo, DatasetError, Ignore, Model, Provenance, ReadDataset
 from pharmpy.modeling import (
     add_iiv,
@@ -36,9 +35,8 @@ from pharmpy.modeling.blq import SUPPORTED_METHODS as SUPPORTED_BLQ_METHODS
 from pharmpy.modeling.blq import has_blq_transformation, transform_blq
 from pharmpy.modeling.common import convert_model, filter_dataset
 from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
-from pharmpy.modeling.mfl import expand_model_features
+from pharmpy.modeling.mfl import expand_model_features, get_search_space_parameters_not_in_model
 from pharmpy.modeling.mfl import get_model_features as get_model_features_new
-from pharmpy.modeling.mfl import get_search_space_parameters_not_in_model
 from pharmpy.modeling.parameter_variability import get_occasion_levels
 from pharmpy.modeling.plots import VPCBinningError
 from pharmpy.modeling.tmdd import DV_TYPES

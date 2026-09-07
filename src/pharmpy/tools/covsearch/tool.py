@@ -21,9 +21,8 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.covsearch.samba import samba_workflow
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral
+from pharmpy.tools.mfl.feature.covariate import EffectLiteral, parse_spec, spec
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
-from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
 from pharmpy.tools.mfl.helpers import all_funcs
 from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.mfl.statement.definition import Let

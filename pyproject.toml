@@ -85,13 +85,10 @@ target-version = "py312"
 [tool.ruff.format]
 quote-style = "preserve"
 
-[tool.isort]
-line_length = 100
-known_first_party = "pharmpy"
-default_section = "THIRDPARTY"
-forced_separate = "test_pharmpy"
-multi_line_output = 3
-include_trailing_comma = true
+[tool.ruff.lint.isort]
+known-first-party = ["pharmpy"]
+# default-section = "THIRDPARTY"
+forced-separate = ["test_pharmpy"]
 
 [tool.pyright]
 reportUnnecessaryTypeIgnoreComment = true

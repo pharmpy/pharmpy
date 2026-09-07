@@ -87,7 +87,7 @@ run all these things while developing so below are instructions on how to run pa
 Check code formatting
 *********************
 
-Pharmpy use the ``black`` code formatter, the ``flake8`` linter and ``isort`` for formatting of imports. Formatting and linting can be run separately with::
+Pharmpy use the ``ruff`` code formatter and linter and the ``flake8`` linter. Formatting and linting can be run separately with::
 
     tox -e format
 
@@ -98,15 +98,15 @@ Run the unit tests
 
 To run all unit tests for one python version::
 
-    tox -e py39
+    tox -e py313
 
 To run a particular unit test file::
 
-    tox -e py39 -- tests/modeling/test_parameters.py
+    tox -e py313 -- tests/modeling/test_parameters.py
 
 To run a particular test function in a particular test file::
 
-    tox -e py39 -- tests/modeling/test_parameters.py::test_get_thetas
+    tox -e py313 -- tests/modeling/test_parameters.py::test_get_thetas
 
 Build and test the documentation
 ********************************

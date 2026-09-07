@@ -3,7 +3,6 @@ check-manifest==0.51
 docutils==0.22.4
 flake8==7.3.0
 flake8-pyproject==1.2.4
-isort==9.0.1
 pydoclint==0.9.1
 pyright==1.1.411
 readme-renderer==46.0

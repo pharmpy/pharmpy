@@ -1,7 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Mapping
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 from collections.abc import Sequence as CollectionsSequence
 from typing import Any, Optional, Union, overload
 

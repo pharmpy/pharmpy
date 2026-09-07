@@ -1,10 +1,7 @@
 from __future__ import annotations
 
-from collections.abc import Collection
-from collections.abc import Container
+from collections.abc import Collection, Container, Iterable, Mapping, Sequence
 from collections.abc import Container as CollectionsContainer
-from collections.abc import Iterable, Mapping
-from collections.abc import Sequence
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
 from typing import Any, Optional, Union, overload
