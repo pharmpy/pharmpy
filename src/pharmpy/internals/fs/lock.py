@@ -102,7 +102,7 @@ if is_windows:
     import sys
 
     # NOTE: lock the entire file
-    _lock_length = -1 if sys.version_info.major == 2 else int(2**31 - 1)
+    _lock_length = -1 if sys.version_info.major == 2 else (2**31 - 1)
 
     def _is_process_level_lock_timeout_error(error: OSError) -> bool:
         """Check if an OSError corresponds to a blocking lock timeout error

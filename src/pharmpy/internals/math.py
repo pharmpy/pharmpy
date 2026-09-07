@@ -244,7 +244,7 @@ def round_to_n_sigdig(x, n):
     if x == 0:
         return x
     else:
-        return round(x, -int(math.floor(math.log10(abs(x)))) + (n - 1))
+        return round(x, -math.floor(math.log10(abs(x))) + (n - 1))
 
 
 def replace_nan(x, val):
