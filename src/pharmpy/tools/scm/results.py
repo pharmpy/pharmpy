@@ -353,10 +353,11 @@ def step_data_frame(step, included_relations):
     if 'pvalue' in df.columns:
         if step['criterion']:
             df.insert(9, 'goal_pvalue', step['criterion']['pvalue'])
-        elif step['previous_criterion']:
-            if step['previous_criterion']['is_backward'] == is_backward:
-                # same direction as previous step with criterion
-                df.insert(9, 'goal_pvalue', step['previous_criterion']['pvalue'])
+        elif (
+            step['previous_criterion'] and step['previous_criterion']['is_backward'] == is_backward
+        ):
+            # same direction as previous step with criterion
+            df.insert(9, 'goal_pvalue', step['previous_criterion']['pvalue'])
 
     chosenmodel = 'no model'
     if step['chosen']:

@@ -15,9 +15,8 @@ class Seed:
         elif isinstance(obj, Seed):
             seed = obj._value
         else:
-            if isinstance(obj, float):
-                if int(obj) != obj:
-                    raise ValueError("Seed must be an integer")
+            if isinstance(obj, float) and int(obj) != obj:
+                raise ValueError("Seed must be an integer")
             try:
                 seed = int(obj)
             except ValueError:

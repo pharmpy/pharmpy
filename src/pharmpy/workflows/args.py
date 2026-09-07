@@ -39,21 +39,16 @@ def split_common_options(
     other_options = {}
     for key, value in d.items():
         if key in all_dispatching_options:
-            if key == 'project':
-                if value is not None and not isinstance(value, Project):
-                    raise TypeError(f"Invalid `project` option {type(value)}, must be Project")
+            if key == 'project' and value is not None and not isinstance(value, Project):
+                raise TypeError(f"Invalid `project` option {type(value)}, must be Project")
             dispatching_options[key] = value
         elif key in all_common_options:
-            if key == 'esttool':
-                if value not in ALLOWED_ESTTOOLS:
-                    raise ValueError(
-                        f"Invalid estimation tool {value}, must be one of {ALLOWED_ESTTOOLS}"
-                    )
-            if key == 'validate_dataset':
-                if not isinstance(value, bool):
-                    raise TypeError(
-                        f"Invalid `validate_dataset` option {type(value)}, must be bool"
-                    )
+            if key == 'esttool' and value not in ALLOWED_ESTTOOLS:
+                raise ValueError(
+                    f"Invalid estimation tool {value}, must be one of {ALLOWED_ESTTOOLS}"
+                )
+            if key == 'validate_dataset' and not isinstance(value, bool):
+                raise TypeError(f"Invalid `validate_dataset` option {type(value)}, must be bool")
             common_options[key] = value
         elif key == "seed":
             seed = value
