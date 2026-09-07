@@ -12,7 +12,7 @@ configuration_filename = 'pharmpy.conf'
 
 
 def user_config_file_enabled():
-    return not int(os.getenv('PHARMPYNOCONFIGFILE', 0))
+    return not int(os.getenv('PHARMPYNOCONFIGFILE', '0'))
 
 
 def user_config_path():
