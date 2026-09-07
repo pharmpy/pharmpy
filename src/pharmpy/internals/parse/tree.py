@@ -17,7 +17,7 @@ class Leaf(Immutable):
 
 
 @dataclass(frozen=True)
-class Tree(Generic[T, L], Immutable):
+class Tree(Immutable, Generic[T, L]):
     rule: str
     children: tuple[Union[T, L], ...]
 
@@ -25,7 +25,7 @@ class Tree(Generic[T, L], Immutable):
 R = TypeVar('R')
 
 
-class Interpreter(Generic[T, L, R], ABC):
+class Interpreter(ABC, Generic[T, L, R]):
     def visit(self, tree: Tree[T, L]) -> R:
         return self.visit_tree(tree)
 
