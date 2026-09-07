@@ -3,10 +3,10 @@ from .ignored import with_ignored_tokens
 from .missing import InsertMissing
 
 __all__ = (
-    'AttrTree',
     'AttrToken',
-    'NoSuchRuleException',
+    'AttrTree',
     'GenericParser',
-    'with_ignored_tokens',
     'InsertMissing',
+    'NoSuchRuleException',
+    'with_ignored_tokens',
 )

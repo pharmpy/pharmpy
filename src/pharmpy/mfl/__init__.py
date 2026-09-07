@@ -19,21 +19,21 @@ from .features import (
 from .model_features import ModelFeatures
 
 __all__ = (
+    'IIV',
+    'IOV',
     'Absorption',
     'Allometry',
-    'Covariate',
     'Covariance',
+    'Covariate',
     'DirectEffect',
     'EffectComp',
     'Elimination',
-    'IIV',
-    'IOV',
     'IndirectEffect',
     'LagTime',
     'Metabolite',
     'ModelFeature',
     'ModelFeatures',
     'Peripherals',
-    'Transits',
     'Ref',
+    'Transits',
 )

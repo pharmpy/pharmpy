@@ -3,4 +3,4 @@ from .tool import create_workflow, validate_input
 
 results_object = COVSearchResults
 
-__all__ = ('create_workflow', 'COVSearchResults', 'validate_input')
+__all__ = ('COVSearchResults', 'create_workflow', 'validate_input')

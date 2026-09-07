@@ -26,4 +26,4 @@ class ModelfitConfiguration(config.Configuration):
 conf = ModelfitConfiguration()
 
 
-__all__ = ('create_workflow', 'create_fit_workflow')
+__all__ = ('create_fit_workflow', 'create_workflow')

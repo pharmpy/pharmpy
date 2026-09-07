@@ -32,4 +32,4 @@ class RxODEConfiguration(config.Configuration):
 
 conf = RxODEConfiguration()
 
-__all__ = ('Model', 'convert_model', 'parse_modelfit_results', 'verification', 'execute_model')
+__all__ = ('Model', 'convert_model', 'execute_model', 'parse_modelfit_results', 'verification')

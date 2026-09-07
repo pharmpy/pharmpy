@@ -26,8 +26,8 @@ r"""
 """
 
 __all__ = (
-    'parse_modelfit_results',
-    'conf',
     'NONMEMConfiguration',
+    'conf',
+    'parse_modelfit_results',
     'parse_simulation_results',
 )
