@@ -628,11 +628,7 @@ class NONMEMResultsFile:
                         preread = _decode_lst(it.peek())
                     except StopIteration:
                         break
-                    if (
-                        preread.startswith("0")
-                        or preread.startswith("1")
-                        or preread.startswith(" #")
-                    ):
+                    if preread.startswith(("0", "1", " #")):
                         break
                     else:
                         row = _decode_lst(next(it))
