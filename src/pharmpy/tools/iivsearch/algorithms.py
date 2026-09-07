@@ -2,7 +2,6 @@ import itertools
 from collections import defaultdict
 from collections.abc import Sequence
 
-import pharmpy.tools.modelfit as modelfit
 from pharmpy.deps import numpy as np
 from pharmpy.internals.set.subsets import non_empty_subsets
 from pharmpy.mfl import IIV, Covariance, ModelFeatures
@@ -18,6 +17,7 @@ from pharmpy.modeling.mfl import (
     get_model_features,
     transform_into_search_space,
 )
+from pharmpy.tools import modelfit
 from pharmpy.tools.common import flatten_list, update_initial_estimates
 from pharmpy.tools.run import run_subtool
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder

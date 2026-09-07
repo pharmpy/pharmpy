@@ -36,7 +36,7 @@ Definitions
 
 __version__ = '2.2.0'
 
-import pharmpy.config as config
+from pharmpy import config
 
 
 class PharmpyConfiguration(config.Configuration):

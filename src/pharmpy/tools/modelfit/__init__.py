@@ -13,7 +13,7 @@ r"""
      - Name of default estimation tool either 'nonmem' or 'nlmixr'
 """
 
-import pharmpy.config as config
+from pharmpy import config
 
 from .tool import create_fit_workflow, create_workflow
 

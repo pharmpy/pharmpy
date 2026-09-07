@@ -1495,7 +1495,7 @@ def read_modelfit_results(path: Union[str, Path], esttool: str = None) -> Modelf
 
 
 def _get_run_setup_from_metadata(path):
-    import pharmpy.workflows as workflows
+    from pharmpy import workflows
 
     context = workflows.Context.select_context(None, name=path, ref=None)
 

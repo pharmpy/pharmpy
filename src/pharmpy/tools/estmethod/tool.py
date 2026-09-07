@@ -2,7 +2,6 @@ import warnings
 from dataclasses import dataclass
 from typing import Any, Literal, Optional, Union
 
-import pharmpy.tools.estmethod.algorithms as algorithms
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -10,6 +9,7 @@ from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
 from pharmpy.modeling import has_linear_odes
 from pharmpy.tools.common import ToolResults
+from pharmpy.tools.estmethod import algorithms
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder

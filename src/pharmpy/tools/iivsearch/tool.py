@@ -3,7 +3,6 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Literal, Optional, Union
 
-import pharmpy.tools.iivsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.mfl import ModelFeatures
@@ -30,6 +29,7 @@ from pharmpy.tools.common import (
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
+from pharmpy.tools.iivsearch import algorithms
 from pharmpy.tools.linearize.delinearize import delinearize_model
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import (

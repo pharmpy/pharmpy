@@ -12,7 +12,7 @@ from collections.abc import Mapping
 from pathlib import Path
 from typing import Literal, Optional, Union
 
-import pharmpy.config as config
+from pharmpy import config
 from pharmpy.basic import BooleanExpr, Expr, TSymbol
 from pharmpy.deps import pandas
 from pharmpy.internals.df import reset_index

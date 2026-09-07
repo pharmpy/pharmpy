@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Literal, Optional, Union, overload
 
-import pharmpy.modeling as modeling
+from pharmpy import modeling
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd

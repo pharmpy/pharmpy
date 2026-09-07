@@ -6,8 +6,8 @@ from itertools import chain
 from math import sqrt
 from typing import Any, Union
 
-import pharmpy.internals.unicode as unicode
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
+from pharmpy.internals import unicode
 from pharmpy.internals.immutable import Immutable, cache_method_no_args, frozenmapping
 
 from .numeric import FiniteDistribution as NumericFiniteDistribution

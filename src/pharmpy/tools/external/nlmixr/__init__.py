@@ -1,6 +1,6 @@
 import pathlib
 
-import pharmpy.config as config
+from pharmpy import config
 from pharmpy.model.external.nlmixr import Model, convert_model
 
 from .run import execute_model, parse_modelfit_results, verification

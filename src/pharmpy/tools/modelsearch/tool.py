@@ -1,7 +1,6 @@
 from dataclasses import dataclass
 from typing import Literal, Optional, Union
 
-import pharmpy.tools.modelsearch.algorithms as algorithms
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
@@ -16,6 +15,7 @@ from pharmpy.tools.common import (
 from pharmpy.tools.mfl.least_number_of_transformations import least_number_of_transformations
 from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
+from pharmpy.tools.modelsearch import algorithms
 from pharmpy.tools.run import (
     run_subtool,
     summarize_errors_from_entries,

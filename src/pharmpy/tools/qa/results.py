@@ -4,12 +4,12 @@ from typing import Any, Optional
 
 import yaml
 
-import pharmpy.tools.psn_helpers as psn_helpers
 from pharmpy.basic import Expr
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.model import JointNormalDistribution, Model, NormalDistribution, RandomVariables
+from pharmpy.tools import psn_helpers
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows import ModelEntry
 from pharmpy.workflows.results import Results, read_results

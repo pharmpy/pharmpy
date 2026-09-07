@@ -18,7 +18,7 @@ def create_report(results: Results, path: Union[Path, str]):
     path : Path
         Path to report file
     """
-    import pharmpy.reporting.reporting as reporting
+    from pharmpy.reporting import reporting
 
     path = normalize_user_given_path(path)
 

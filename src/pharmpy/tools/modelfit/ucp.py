@@ -1,8 +1,7 @@
 import math
 
-import pharmpy.deps.scipy as scipy
 from pharmpy.deps import numpy as np
-from pharmpy.deps import symengine
+from pharmpy.deps import scipy, symengine
 
 
 def scale_matrix(A):

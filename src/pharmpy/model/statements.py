@@ -5,10 +5,10 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from typing import Any, Optional, Self, Union, overload
 
-import pharmpy.internals.unicode as unicode
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import symengine, sympy
+from pharmpy.internals import unicode
 from pharmpy.internals.expr.assumptions import assume_all, with_free_images_and_symbols_assumptions
 from pharmpy.internals.expr.leaves import free_images, free_images_and_symbols
 from pharmpy.internals.expr.ode import canonical_ode_rhs

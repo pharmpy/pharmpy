@@ -3,10 +3,8 @@ from typing import TYPE_CHECKING
 from pharmpy.internals.module.lazy import LazyImport
 
 if TYPE_CHECKING:
-    import sympy.printing.codeprinter as codeprinter
-    import sympy.printing.fortran as fortran
     import sympy.printing.pretty.pretty as pretty
-    import sympy.printing.str as str
+    from sympy.printing import codeprinter, fortran, str
 else:
     str = LazyImport('str', globals(), 'sympy.printing.str')
     fortran = LazyImport('fortran', globals(), 'sympy.printing.fortran')

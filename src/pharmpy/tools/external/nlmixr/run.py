@@ -8,8 +8,8 @@ import warnings
 from pathlib import Path
 from typing import Optional, Union
 
-import pharmpy.config as config
 import pharmpy.model
+from pharmpy import config
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.code_generator import CodeGenerator
 from pharmpy.internals.df import reset_index

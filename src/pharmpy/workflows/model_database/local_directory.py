@@ -55,7 +55,7 @@ def get_modelfit_results(model, path, esttool=None):
             res = None
     else:
         import pharmpy.model.external.nlmixr as nlmixr_model
-        import pharmpy.tools.external.nlmixr as nlmixr
+        from pharmpy.tools.external import nlmixr
 
         assert isinstance(model, nlmixr_model.Model)
         res = nlmixr.parse_modelfit_results(model, path)

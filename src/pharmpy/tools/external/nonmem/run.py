@@ -10,7 +10,7 @@ from pathlib import Path
 from tempfile import mkdtemp
 from typing import Optional
 
-import pharmpy.config as config
+from pharmpy import config
 from pharmpy.model.external.nonmem import convert_model
 from pharmpy.modeling import get_config_path, read_model, write_dataset, write_model
 from pharmpy.tools.external.nonmem import conf, parse_modelfit_results, parse_simulation_results
