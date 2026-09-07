@@ -85,7 +85,7 @@ def execute_model(model_entry, context, evaluate=False, path=None):
     else:
         p = f"{path / model.name}.RDATA"
     cg.add(f'save(file="{p}",ofv, thetas, omega, sigma, log_likelihood, runtime_total, pred)')
-    code += f'\n{str(cg)}'
+    code += f'\n{cg}'
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)
 

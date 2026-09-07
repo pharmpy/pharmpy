@@ -573,7 +573,7 @@ def parse_execution_steps(control_stream, random_variables) -> ExecutionSteps:
                 variables=variables,
             )
         except ValueError:
-            raise ModelSyntaxError(f'Non-recognized estimation method in: {str(record.root)}')
+            raise ModelSyntaxError(f'Non-recognized estimation method in: {record.root}')
         steps.append(meth)
 
     steps = ExecutionSteps.create(steps)

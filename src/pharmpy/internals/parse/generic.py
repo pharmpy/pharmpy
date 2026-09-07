@@ -68,7 +68,7 @@ def _parse_create_input(rule: Optional[str], items):
         length = len(items)
         names: tuple[Optional[str], ...] = (None,) * length
     if not items:
-        raise ValueError(f'refusing empty tree {repr(rule)} (only tokens are childless)')
+        raise ValueError(f'refusing empty tree {rule!r} (only tokens are childless)')
 
     return (rule, list(zip(names, items)), [])
 
@@ -273,7 +273,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         try:
             return next(iter(self.subtrees(rule)))
         except StopIteration:
-            raise NoSuchRuleException(f'No subtree "{rule}" in {repr(self)}.')
+            raise NoSuchRuleException(f'No subtree "{rule}" in {self!r}.')
 
     def subtree_at(self, i: int) -> AttrTree:
         child = self.children[i]
@@ -291,7 +291,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         try:
             return next(iter(self.leaves(rule)))
         except StopIteration:
-            raise NoSuchRuleException(f'No leaf "{rule}" in {repr(self)}.')
+            raise NoSuchRuleException(f'No leaf "{rule}" in {self!r}.')
 
     def leaf_at(self, i: int) -> AttrToken:
         child = self.children[i]
@@ -344,8 +344,8 @@ class NoSuchRuleException(AttributeError):
     """Rule not found (raised by :class:`AttrTree` for unknown children)."""
 
     def __init__(self, rule, tree: Optional[AttrTree] = None):
-        post = '' if tree is None else f' ({repr(tree.rule)})'
-        super().__init__(f'no {repr(rule)} child in tree{post}')
+        post = '' if tree is None else f' ({tree.rule!r})'
+        super().__init__(f'no {rule!r} child in tree{post}')
 
 
 class GenericParser(ABC):

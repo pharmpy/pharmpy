@@ -228,7 +228,7 @@ def nmfe_path():
 def nmfe(*args):
     conf_args = []
     if conf.licfile is not None:
-        conf_args.append(f'-licfile={str(conf.licfile)}')
+        conf_args.append(f'-licfile={conf.licfile}')
 
     return [
         nmfe_path(),

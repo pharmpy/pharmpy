@@ -227,7 +227,7 @@ def psn_cdd_results(path: Union[str, Path], base_model_path=None):
     """
     path = Path(path)
     if not path.is_dir():
-        raise OSError(f'Could not find cdd folder: {str(path)}')
+        raise OSError(f'Could not find cdd folder: {path}')
 
     options = psn_cdd_options(path)
 

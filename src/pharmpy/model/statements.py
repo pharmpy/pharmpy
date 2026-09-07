@@ -1476,7 +1476,7 @@ class CompartmentalSystem(Statement):
         all_doses = ""
         for dose_comp in self.dosing_compartments:
             for dose in dose_comp.doses:
-                all_doses += f'{str(dose)} → {dose_comp.name} \n'
+                all_doses += f'{dose} → {dose_comp.name} \n'
         s = all_doses + str(grid).rstrip()
         return s
 

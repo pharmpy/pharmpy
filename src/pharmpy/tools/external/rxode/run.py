@@ -57,7 +57,7 @@ def execute_model(model_entry, db):
         p = f"{path / model.name}.RDATA"
     cg.add(f'save(file="{p}", res, params)')
 
-    code += f'\n{str(cg)}'
+    code += f'\n{cg}'
 
     with open(path / f'{model.name}.R', 'w') as fh:
         fh.write(code)

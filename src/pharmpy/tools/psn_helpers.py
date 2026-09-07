@@ -128,7 +128,7 @@ def template_model_string(datafile=None, ignore=[], drop=[], label='TEMPLATE'):
         [
             '$PROBLEM ' + label,
             '$INPUT' + variables,
-            f'$DATA {str(datafile)}',
+            f'$DATA {datafile}',
             ignores,
             '$SUBROUTINE ADVAN1 TRANS2',
             '',

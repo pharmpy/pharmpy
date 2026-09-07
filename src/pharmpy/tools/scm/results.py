@@ -701,13 +701,13 @@ def psn_scm_results(path):
     """
     path = Path(path)
     if not path.is_dir():
-        raise OSError(f'Could not find scm directory: {str(path)}')
+        raise OSError(f'Could not find scm directory: {path}')
 
     options = psn_scm_options(path)
     logfile = path / options['logfile']
 
     if not logfile.is_file():
-        raise OSError(f'Could not find scm logfile: {str(logfile)}')
+        raise OSError(f'Could not find scm logfile: {logfile}')
 
     if options['test_relations'] is not None:
         parcov_dictionary = parcov_dict_from_test_relations(options['test_relations'])

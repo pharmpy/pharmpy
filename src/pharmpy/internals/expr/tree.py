@@ -84,4 +84,4 @@ def _neutral(fn: type[sympy.Basic]) -> sympy.Integer:
     if fn is sympy.Pow:
         return sympy.Integer(1)
 
-    raise ValueError(f'{type(fn)}: {repr(fn)}')
+    raise ValueError(f'{type(fn)}: {fn!r}')

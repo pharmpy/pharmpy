@@ -1399,7 +1399,7 @@ def _neutral(expr: Expr) -> Expr:
     if expr.is_pow():
         return Expr.integer(1)
 
-    raise ValueError(f'{type(expr)}: {repr(expr)} ({expr.free_symbols})')
+    raise ValueError(f'{type(expr)}: {expr} ({expr.free_symbols})')
 
 
 def _theta_symbols(model: Model) -> set[sympy.Symbol]:

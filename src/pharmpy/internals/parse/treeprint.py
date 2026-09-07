@@ -118,7 +118,7 @@ class Node(Generic[T]):
         return '\n'.join(lines)
 
     def __repr__(self):
-        head = f'{self.__class__.__name__}({self._obj.__class__.__name__}) {repr(self._obj)}'
+        head = f'{self.__class__.__name__}({self._obj.__class__.__name__}) {self._obj!r}'
         lines = [' ' + line for child in self._children for line in repr(child).splitlines()]
         return '\n'.join([head] + lines)
 
