@@ -701,18 +701,18 @@ def psn_scm_results(path):
     """
     path = Path(path)
     if not path.is_dir():
-        raise IOError(f'Could not find scm directory: {str(path)}')
+        raise OSError(f'Could not find scm directory: {str(path)}')
 
     options = psn_scm_options(path)
     logfile = path / options['logfile']
 
     if not logfile.is_file():
-        raise IOError(f'Could not find scm logfile: {str(logfile)}')
+        raise OSError(f'Could not find scm logfile: {str(logfile)}')
 
     if options['test_relations'] is not None:
         parcov_dictionary = parcov_dict_from_test_relations(options['test_relations'])
     else:
-        raise IOError(r'Could not find test_relations in scm config file')
+        raise OSError(r'Could not find test_relations in scm config file')
 
     steps = psn_scm_parse_logfile(logfile, options, parcov_dictionary)
     _add_covariate_effects_to_steps(steps, path)

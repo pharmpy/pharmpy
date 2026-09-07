@@ -1093,7 +1093,7 @@ def _parse_tables(
             table_file = NONMEMTableFile(
                 table_path, notitle=notitle, nolabel=nolabel, format=format
             )
-        except IOError:
+        except OSError:
             continue
         table = table_file.tables[0]
 
@@ -1475,7 +1475,7 @@ def _parse_table_file(model, path: Optional[Union[str, Path]], subproblem: Optio
         table_path = path.parent / table_rec.path
         try:
             table_file = NONMEMTableFile(table_path, notitle=notitle, nolabel=nolabel)
-        except IOError:
+        except OSError:
             continue
         for i in range(len(table_file)):
             sim = table_file.tables[i].data_frame[['DV']].copy()

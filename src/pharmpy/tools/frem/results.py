@@ -1014,7 +1014,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
 
     model_4_path = path / 'final_models' / 'model_4.mod'
     if not model_4_path.is_file():
-        raise IOError(f'Could not find FREM model 4: {str(model_4_path)}')
+        raise OSError(f'Could not find FREM model 4: {str(model_4_path)}')
     model_4 = Model.parse_model(model_4_path, missing_data_token=missing_data_token)
     model_4_results = parse_modelfit_results(model_4, model_4_path)
     if model_4_results is None:
