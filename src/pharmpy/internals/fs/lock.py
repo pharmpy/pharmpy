@@ -137,7 +137,7 @@ if is_windows:
                     break
                 except OSError as error:
                     if not _is_process_level_lock_timeout_error(error):
-                        raise error
+                        raise
         else:
             try:
                 msvcrt.locking(  # pyright: ignore [reportAttributeAccessIssue]
@@ -149,7 +149,7 @@ if is_windows:
                 if _is_process_level_lock_blocking_error(error):
                     raise AcquiringProcessLevelLockWouldBlockError()
                 else:
-                    raise error
+                    raise
 
     def _process_level_unlock(fd: int):
         # NOTE: This implementation (Windows) will raise an error if attempting
@@ -189,7 +189,7 @@ else:
                 if _is_process_level_lock_blocking_error(error):
                     raise AcquiringProcessLevelLockWouldBlockError()
                 else:
-                    raise error
+                    raise
 
     def _process_level_unlock(fd: int):
         # NOTE: This implementation (UNIX) will NOT raise an error if attempting
