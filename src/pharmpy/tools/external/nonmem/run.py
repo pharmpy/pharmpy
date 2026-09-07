@@ -92,7 +92,7 @@ def execute_model(model_entry, context):
 
     with open(stdout, "wb") as out, open(stderr, "wb") as err:
         result = subprocess.run(
-            args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, cwd=str(model_path)
+            args, stdin=subprocess.DEVNULL, stderr=err, stdout=out, cwd=str(model_path), check=False
         )
 
     basename = Path("model")

@@ -11,7 +11,7 @@ from pharmpy.workflows import Context
 def have_scm():
     # Check if scm is available through PsN
     try:
-        out = subprocess.run(["scm", "--version"], capture_output=True)
+        out = subprocess.run(["scm", "--version"], capture_output=True, check=False)
     except FileNotFoundError:
         return False
 
