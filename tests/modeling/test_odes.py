@@ -1,6 +1,6 @@
 import re
 import shutil
-from typing import Iterable
+from collections.abc import Iterable
 
 import pytest
 

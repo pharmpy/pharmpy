@@ -1,7 +1,7 @@
 from collections.abc import Collection, Container, Iterable, Iterator, Sequence, Sized
 from inspect import signature
 from types import UnionType
-from typing import Any, List, Literal, Optional, Type, Union, get_args, get_origin, get_type_hints
+from typing import Any, Literal, Optional, Union, get_args, get_origin, get_type_hints
 
 from ..unicode import itemize_strings
 
@@ -61,7 +61,7 @@ def _annotation_to_types(annotation):
 
 
 def _value_type(value):
-    return Type[value] if isinstance(value, type) else type(value)
+    return type[value] if isinstance(value, type) else type(value)
 
 
 def _kwargs(parameter, kwargs):
@@ -110,7 +110,7 @@ def _match(typing, value):
         # NOTE: Empty literals return False
         return any(map(lambda t: value == t, get_args(typing)))
 
-    if origin is list or origin is List:
+    if origin is list:
         return isinstance(value, list) and _match_sequence_items(get_args(typing), value)
 
     if origin is Sequence:

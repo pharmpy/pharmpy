@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Literal, Type, TypeVar, Union
+from typing import Literal, TypeVar, Union
 
 from pharmpy.internals.immutable import Immutable
 from pharmpy.mfl.features.mutex_feature import MutexFeature
@@ -183,7 +183,7 @@ class ModelFeatures(Immutable):
     def covariance(self) -> ModelFeatures:
         return self.get_feature_type(Covariance)
 
-    def get_feature_type(self, type: Type[T]) -> ModelFeatures:
+    def get_feature_type(self, type: type[T]) -> ModelFeatures:
         features = []
         for feature in self:
             if isinstance(feature, type):

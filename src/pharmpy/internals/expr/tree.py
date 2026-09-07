@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from collections.abc import Callable
 from operator import is_
-from typing import Type
 
 from pharmpy.deps import sympy
 
@@ -77,7 +76,7 @@ def prune(predicate: Callable[[sympy.Basic], bool], expr: sympy.Expr):
     return output[0][0]
 
 
-def _neutral(fn: Type[sympy.Basic]) -> sympy.Integer:
+def _neutral(fn: type[sympy.Basic]) -> sympy.Integer:
     if fn is sympy.Add:
         return sympy.Integer(0)
     if fn is sympy.Mul:

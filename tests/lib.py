@@ -1,9 +1,9 @@
 from difflib import unified_diff
 from itertools import islice
-from typing import Any, List
+from typing import Any
 
 
-def _diff_string_lists(a: List[str], b: List[str]):
+def _diff_string_lists(a: list[str], b: list[str]):
     return islice(
         unified_diff(a, b, n=0, lineterm=''),
         2,

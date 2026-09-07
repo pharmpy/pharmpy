@@ -1,5 +1,3 @@
-from typing import Tuple
-
 import pytest
 
 from pharmpy.modeling import create_basic_pk_model, set_direct_effect
@@ -621,7 +619,7 @@ def test_illegal_mfl(code):
         ),
     ),
 )
-def test_stringify(statements: Tuple[Statement, ...], expected: str):
+def test_stringify(statements: tuple[Statement, ...], expected: str):
     result = stringify(statements)
     assert result == expected
     parsed = parse(result)

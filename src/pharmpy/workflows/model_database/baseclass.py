@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from contextlib import contextmanager
+from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
-from typing import ContextManager, Union
+from typing import Union
 
 from pharmpy.model import Model
 
@@ -317,7 +317,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def snapshot(self, model: Union[Model, ModelHash]) -> ContextManager[ModelSnapshot]:
+    def snapshot(self, model: Union[Model, ModelHash]) -> AbstractContextManager[ModelSnapshot]:
         """Creates a readable snapshot context for a given model.
 
         Parameters
@@ -329,7 +329,7 @@ class ModelDatabase(ABC):
     @abstractmethod
     def transaction(
         self, obj: Union[Model, ModelEntry, ModelHash]
-    ) -> ContextManager[ModelTransaction]:
+    ) -> AbstractContextManager[ModelTransaction]:
         """Creates a writable transaction context for a given model.
 
         Parameters

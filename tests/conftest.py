@@ -1,5 +1,6 @@
+from collections.abc import Hashable
 from pathlib import Path
-from typing import Dict, Hashable, Optional, Union
+from typing import Optional, Union
 
 import pytest
 
@@ -29,7 +30,7 @@ def pheno(load_model_for_test, pheno_path):
 def load_model_for_test(tmp_path_factory):
     from pharmpy.model import Model
 
-    _cache: Dict[Hashable, Model] = {}
+    _cache: dict[Hashable, Model] = {}
 
     def _load(given_path: Union[str, Path]) -> Model:
         # TODO: Cache based on file contents instead.
@@ -69,7 +70,7 @@ def load_example_model_for_test():
     from pharmpy.model import Model
     from pharmpy.modeling import load_example_model
 
-    _cache: Dict[Hashable, Model] = {}
+    _cache: dict[Hashable, Model] = {}
 
     def _load(given_name: str) -> Model:
         def _parse_model():
