@@ -937,7 +937,7 @@ def _parse_phi(
         individual_ofv = table.iofv
         covs = None
         if individual_estimates is None:
-            prefix, individual_estimates = _parse_individual_estimates(model, pe, table, rv_names)
+            _, individual_estimates = _parse_individual_estimates(model, pe, table, rv_names)
             ids, eta_col_names, matrix_array = table.etc_data()
             index = {name_map[x]: i for i, x in enumerate(eta_col_names)}
             indices = tuple(map(index.__getitem__, rv_names))

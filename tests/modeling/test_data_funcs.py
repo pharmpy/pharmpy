@@ -785,11 +785,11 @@ def _setup_binarize_test():
     dataset = pd.DataFrame(d)
     model = create_basic_pk_model('iv')
     model = set_dataset(model, dataset, format='nonmem')
-    return dataset, model
+    return model
 
 
 def test_binarize_dataset():
-    dataset, model = _setup_binarize_test()
+    model = _setup_binarize_test()
     model = binarize_dataset(model, columns=['X'], keep=False, all_levels=False)
     df = model.dataset
     new_cols = {'X_1', 'X_2'}
@@ -807,7 +807,7 @@ def test_binarize_dataset():
 
 @pytest.mark.parametrize('keep', [True, False])
 def test_binarize_dataset_keep(keep):
-    dataset, model = _setup_binarize_test()
+    model = _setup_binarize_test()
     model = binarize_dataset(model, columns=['X'], keep=keep, all_levels=False)
     df = model.dataset
     new_cols = {'X_1', 'X_2'}
@@ -822,7 +822,7 @@ def test_binarize_dataset_keep(keep):
 
 @pytest.mark.parametrize('all_levels', [True, False])
 def test_binarize_dataset_all_levels(all_levels):
-    dataset, model = _setup_binarize_test()
+    model = _setup_binarize_test()
     model = binarize_dataset(model, columns=['X'], keep=False, all_levels=all_levels)
     df = model.dataset
     new_cols = {'X_1', 'X_2', 'X_3'} if all_levels else {'X_1', 'X_2'}
@@ -835,7 +835,7 @@ def test_binarize_dataset_all_levels(all_levels):
 
 
 def test_binarize_dataset_multiple_columns():
-    dataset, model = _setup_binarize_test()
+    model = _setup_binarize_test()
     model = binarize_dataset(model, columns=['X', 'Z'], keep=False, all_levels=False)
     df = model.dataset
     new_cols = {'X_1', 'X_2', 'Z_cat1'}
@@ -848,7 +848,7 @@ def test_binarize_dataset_multiple_columns():
 
 
 def test_binarize_dataset_annotated():
-    dataset, model = _setup_binarize_test()
+    model = _setup_binarize_test()
     ci = model.datainfo['X']
     var = ci.variable.replace(type='covariate', scale='ordinal', count=False)
     ci = ci.replace(variable_mapping=var)

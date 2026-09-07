@@ -81,7 +81,7 @@ def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
     >>> model.statements.ode_system.find_compartment("EFFECT")
     Compartment(EFFECT, amount=A_EFFECT(t), input=KE0*A_CENTRAL(t)/VC)
     """
-    vc, cl = get_central_volume_and_clearance(model)
+    vc, _ = get_central_volume_and_clearance(model)
 
     odes = get_and_check_odes(model)
     central = odes.central_compartment
@@ -165,7 +165,7 @@ def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = Non
 
     """
     if variable is None:
-        vc, cl = get_central_volume_and_clearance(model)
+        vc, _ = get_central_volume_and_clearance(model)
         odes = get_and_check_odes(model)
         conc_expr = odes.central_compartment.amount / vc
         variable_symb = conc_expr

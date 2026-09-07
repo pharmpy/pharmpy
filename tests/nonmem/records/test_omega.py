@@ -183,7 +183,7 @@ def test_errors(parser, buf, exc_msg):
     recs = parser.parse(buf)
     rec = recs.records[0]
     with pytest.raises(ModelSyntaxError, match=exc_msg):
-        pset, _, _ = rec.parse()
+        _, _, _ = rec.parse()
 
 
 @pytest.mark.usefixtures('parser')

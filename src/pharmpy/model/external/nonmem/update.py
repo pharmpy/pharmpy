@@ -654,7 +654,7 @@ def from_des(model, advan):
                 return numer.is_symbol() and denom.is_symbol()
 
             def _is_symb_expr_quotient(expr):
-                numer, denom = expr.as_numer_denom()
+                numer, _ = expr.as_numer_denom()
                 return numer.is_symbol()
 
             if all(_is_symb_quotient(rate) for rate in rates):
