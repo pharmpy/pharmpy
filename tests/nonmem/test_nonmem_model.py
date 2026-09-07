@@ -423,7 +423,7 @@ def test_add_random_variables_and_statements(pheno):
     assert str(model.internals.control_stream.get_pred_pk_record()).endswith(
         'X = ETA_NEW + EPS(2) + 1\n\n'
     )
-    assert '$ABBR REPLACE ETA_NEW=ETA(1)'
+    assert '$ABBR REPLACE ETA_NEW=ETA(3)' in model.code
 
 
 def test_minimal(load_model_for_test, datadir):
@@ -457,7 +457,7 @@ def test_deterministic_theta_comments(pheno):
 def test_remove_eta(pheno):
     model = remove_iiv(pheno, 'ETA_1')
     assert model.code.split('\n')[13] == 'V = TVV*EXP(ETA_2)'
-    assert '$ABBR REPLACE ETA_2=ETA(1)'
+    assert '$ABBR REPLACE ETA_2=ETA(1)' in model.code
 
 
 def test_symbol_names_in_comment(load_model_for_test, pheno_path):
@@ -1285,7 +1285,7 @@ $SIGMA 1
     assert model.code.split('\n')[4] == '$ABBR REPLACE ETA_MY=ETA(2)'
     assert not model.code.split('\n')[5].startswith('$ABBR')
     assert 'VAR = EXP(ETA_MY)' in model.code
-    assert 'Y = THETA(1) + VAR + ERR(1) + EXP(ETA_DUMMY)'
+    assert 'Y = THETA(1) + VAR + EXP(ETA_DUMMY) + EPS(1)' in model.code
     model = remove_iiv(model, ['ETA_DUMMY'])
     assert model.code.split('\n')[3] == '$ABBR REPLACE ETA_MY=ETA(1)'
     assert not model.code.split('\n')[4].startswith('$ABBR')
