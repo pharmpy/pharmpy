@@ -49,7 +49,7 @@ def strip_latex_delimiters(source):
     https://github.com/jupyter/jupyter-sphinx/issues/90 for discussion.
     """
     source = source.strip()
-    delimiter_pairs = (pair.split() for pair in r"\( \),\[ \],$$ $$,$ $".split(","))
+    delimiter_pairs = (pair.split() for pair in [r"\( \)", r"\[ \]", r"$$ $$", r"$ $"])
     for start, end in delimiter_pairs:
         if source.startswith(start) and source.endswith(end):
             return source[len(start) : -len(end)]
