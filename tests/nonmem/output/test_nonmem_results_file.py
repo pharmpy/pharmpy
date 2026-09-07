@@ -1,16 +1,24 @@
 from dataclasses import asdict
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import pytest
-from numpy import nan
 
 import pharmpy.model.external.nonmem.table as table
 import pharmpy.tools.external.nonmem.results_file as rf
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows.log import Log
 
-anan = pytest.approx(nan, nan_ok=True)
+anan = pytest.approx(np.nan, nan_ok=True)
+
+
+def myisnan(x):
+    try:
+        return np.isnan(x)
+    except TypeError:
+        pass
+    return False
 
 
 def _assert_estimation_status(_actual: rf.TermInfo, _expected: rf.TermInfo):
@@ -22,8 +30,8 @@ def _assert_estimation_status(_actual: rf.TermInfo, _expected: rf.TermInfo):
         assert type(actual[key]) is type(expected[key])
         if isinstance(expected[key], pd.DataFrame):
             assert str(actual[key]) == str(expected[key])
-        elif expected[key] is nan:
-            assert actual[key] is nan
+        elif myisnan(expected[key]):
+            assert myisnan(actual[key])
         else:
             assert actual[key] == expected[key]
 
