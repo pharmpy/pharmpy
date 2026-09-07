@@ -34,7 +34,7 @@ def load_content(cell, location, logger):
         env.note_dependency(rel_filename)
         if cell.content:
             logger.warning(
-                'Ignoring inline code in Jupyter cell included from "{}"'.format(rel_filename),
+                f'Ignoring inline code in Jupyter cell included from "{rel_filename}"',
                 location=location,
             )
         try:
@@ -58,7 +58,7 @@ def get_highlights(cell, content, location, logger):
         hl_lines = parselinenos(emphasize_linespec, nlines)
         if any(i >= nlines for i in hl_lines):
             logger.warning(
-                "Line number spec is out of range(1-{}): {}".format(nlines, emphasize_linespec),
+                f"Line number spec is out of range(1-{nlines}): {emphasize_linespec}",
                 location=location,
             )
         hl_lines = [i + 1 for i in hl_lines if i < nlines]
@@ -518,9 +518,7 @@ def output2sphinx(data, mime_type, metadata, out_dir, inline=False):
         )
     elif mime_type == "application/javascript":
         return docutils.nodes.raw(
-            text='<script type="{mime_type}">{data}</script>'.format(
-                mime_type=mime_type, data=data
-            ),
+            text=f'<script type="{mime_type}">{data}</script>',
             format="html",
         )
     elif mime_type == WIDGET_VIEW_MIMETYPE:

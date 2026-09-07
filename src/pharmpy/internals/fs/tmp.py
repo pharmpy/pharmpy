@@ -34,7 +34,7 @@ class TemporaryDirectory:
             self,
             self._cleanup,
             self.name,
-            warn_message="Implicitly cleaning up {!r}".format(self),
+            warn_message=f"Implicitly cleaning up {self!r}",
             ignore_errors=self._ignore_cleanup_errors,
         )
 
@@ -87,7 +87,7 @@ class TemporaryDirectory:
         _warnings.warn(warn_message, ResourceWarning)
 
     def __repr__(self):
-        return "<{} {!r}>".format(self.__class__.__name__, self.name)
+        return f"<{self.__class__.__name__} {self.name!r}>"
 
     def __enter__(self):
         return self.name

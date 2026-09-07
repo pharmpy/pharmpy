@@ -105,7 +105,7 @@ def validate_links(links):
     links = links.strip().split()
     diff = set(links) - set(DEFAULT_ALTAIRPLOT_LINKS.keys())
     if diff:
-        raise ValueError("Following links are invalid: {}".format(list(diff)))
+        raise ValueError(f"Following links are invalid: {list(diff)}")
     return {link: link in links for link in DEFAULT_ALTAIRPLOT_LINKS}
 
 
@@ -156,8 +156,8 @@ class AltairPlotDirective(Directive):
         # use the source file name to construct a friendly target_id
         serialno = env.new_serialno("altair-plot")
         rst_base = rst_filename.replace(".", "-")
-        div_id = "{}-altair-plot-{}".format(rst_base, serialno)
-        target_id = "{}-altair-source-{}".format(rst_base, serialno)
+        div_id = f"{rst_base}-altair-plot-{serialno}"
+        target_id = f"{rst_base}-altair-source-{serialno}"
         target_node = nodes.target("", "", ids=[target_id])
 
         # create the node in which the plot will appear;
@@ -210,7 +210,7 @@ def html_visit_altair_plot(self, node):
     chart_name = node["chart-var-name"]
     if chart_name is not None:
         if chart_name not in namespace:
-            raise ValueError("chart-var-name='{}' not present in namespace".format(chart_name))
+            raise ValueError(f"chart-var-name='{chart_name}' not present in namespace")
         chart = namespace[chart_name]
 
     output = node["output"]
@@ -295,13 +295,9 @@ def builder_inited(app):
 
 def setup(app):
     # These default URLs can be changed in conf.py; see setup() below.
-    VEGA_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega@{}".format(alt.VEGA_VERSION)
-    VEGALITE_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-lite@{}".format(
-        alt.VEGALITE_VERSION
-    )
-    VEGAEMBED_JS_URL_DEFAULT = "https://cdn.jsdelivr.net/npm/vega-embed@{}".format(
-        alt.VEGAEMBED_VERSION
-    )
+    VEGA_JS_URL_DEFAULT = f"https://cdn.jsdelivr.net/npm/vega@{alt.VEGA_VERSION}"
+    VEGALITE_JS_URL_DEFAULT = f"https://cdn.jsdelivr.net/npm/vega-lite@{alt.VEGALITE_VERSION}"
+    VEGAEMBED_JS_URL_DEFAULT = f"https://cdn.jsdelivr.net/npm/vega-embed@{alt.VEGAEMBED_VERSION}"
 
     setup.app = app
     setup.config = app.config

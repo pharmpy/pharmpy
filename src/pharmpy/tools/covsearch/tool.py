@@ -338,13 +338,13 @@ def get_effect_funcs_and_base_model(search_space, model):
         description.append("REMOVED")
         for cov_effect in parse_spec(spec(filtered_model, covariate_to_remove)):
             filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
     # Remove all custom effects
     covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
     for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
         if cov_effect[2].lower() == "custom":
             filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
 
     filtered_model = filtered_model.replace(description=';'.join(description))
 
@@ -355,7 +355,7 @@ def get_effect_funcs_and_base_model(search_space, model):
         description.append("ADDED")
         for cov_effect, cov_func in structural_cov_funcs.items():
             filtered_model = cov_func(filtered_model)
-            description.append('({}-{}-{})'.format(cov_effect[0], cov_effect[1], cov_effect[2]))
+            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
         filtered_model = filtered_model.replace(description=";".join(description))
 
     return (exploratory_cov_funcs, filtered_model)

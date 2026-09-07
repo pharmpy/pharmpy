@@ -202,7 +202,7 @@ def _default_formatter(x):
     if pd.isna(x):
         return ""
     if isinstance(x, float):
-        return "{:,.4f}".format(x)
+        return f"{x:,.4f}"
     return x
 
 
