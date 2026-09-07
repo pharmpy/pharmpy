@@ -93,9 +93,7 @@ def test_modelrank_uncertainty_dummy(
 
         assert idx1.equals(idx2) and idx1.equals(idx3)
 
-        assert set(res.summary_strictness.index.get_level_values('step')) == set(
-            range(no_of_steps)
-        )
+        assert set(res.summary_strictness.index.get_level_values('step')) == set(range(no_of_steps))
 
         if best_model_name is not None:
             assert res.final_model.name == best_model_name

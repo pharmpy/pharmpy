@@ -377,8 +377,7 @@ def run_subtool(tool_name: str, ctx: Context, name=None, **kwargs):
 
     seed = kwargs.get('seed', None)
     seed = Seed(seed)
-    if 'seed' in kwargs:
-        del kwargs['seed']
+    kwargs.pop('seed', None)
 
     if validate_input := getattr(tool, 'validate_input', None):
         validate_input(**kwargs)
