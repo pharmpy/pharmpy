@@ -297,12 +297,10 @@ def _get_covariate_funcs(ss_mfl, exploratory_covariate=False):
 
 def _is_structural_covaraite(cov_effect, structural_covs):
     return any(
-        (
-            strcov_effect[0] == cov_effect[0]
-            and strcov_effect[1] == cov_effect[1]
-            and strcov_effect[2] == cov_effect[2]
-            for strcov_effect in structural_covs
-        )
+        strcov_effect[0] == cov_effect[0]
+        and strcov_effect[1] == cov_effect[1]
+        and strcov_effect[2] == cov_effect[2]
+        for strcov_effect in structural_covs
     )
 
 

@@ -23,7 +23,7 @@ class LagTime(ModelFeature):
 
     def __sub__(self, other):
         if isinstance(other.modes, Wildcard):
-            return LagTime((Name('OFF')))
+            return LagTime(Name('OFF'))
         elif isinstance(self.modes, Wildcard):
             default = LAGTIME_WILDCARD
             all_modes = tuple([a for a in default if a not in other.modes])

@@ -21,7 +21,7 @@ class Elimination(ModelFeature):
 
     def __sub__(self, other):
         if isinstance(other.modes, Wildcard):
-            return Elimination((Name('INST')))
+            return Elimination(Name('INST'))
         elif isinstance(self.modes, Wildcard):
             default = ELIMINATION_WILDCARD
             all_modes = tuple([a for a in default if a not in other.modes])

@@ -176,10 +176,8 @@ def create_basic_pk_model(
             central_dose = find_dose(doses, comp_number=2, admid=2)
             if not central_dose:
                 raise ValueError(
-                    (
-                        "Could not determine IV dose from dataset. "
-                        "Currently require CMT column with values 1 and 2 "
-                    )
+                    "Could not determine IV dose from dataset. "
+                    "Currently require CMT column with values 1 and 2 "
                 )
         central = cb.find_compartment("CENTRAL")
         assert central is not None
