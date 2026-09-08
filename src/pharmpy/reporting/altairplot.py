@@ -241,7 +241,7 @@ def html_visit_altair_plot(self, node):
             try:
                 spec = chart.to_dict()
             except alt.utils.schemapi.SchemaValidationError:
-                raise ValueError("Invalid chart: {0}".format(node["code"]))
+                raise ValueError("Invalid chart: {}".format(node["code"]))
             actions = node["links"]
 
             # TODO: Add an option to save spects to file & load from there.
