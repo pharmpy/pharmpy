@@ -16,7 +16,7 @@ def _preview(content: str):
     cut = len(content) - MAXLEN
     if cut > 0:
         preview = '"' + repr(content[0:MAXLEN])[1:-1] + '"'
-        preview = '%s+%d' % (preview, cut)
+        preview = f'{preview}+{cut}'
     else:
         preview = '"' + repr(content)[1:-1] + '"'
     return preview
@@ -30,9 +30,9 @@ def _formatter(content: Union[bool, Literal['full']], ast_node):
             lines[1:] = [_preview(line) for line in lines[1:]]
             return '\n'.join(lines)
         else:
-            return '%s %s' % (ast_node.rule, _preview(str(ast_node)))
+            return f'{ast_node.rule} {_preview(str(ast_node))}'
     else:
-        return '%s' % (ast_node.rule,)
+        return str(ast_node.rule)
 
 
 def _format_tree(content: Union[bool, Literal['full']], ast_tree: Tree):
@@ -62,14 +62,12 @@ def transform(ast_tree_or_token: Union[Tree, Leaf], content: Union[bool, Literal
         nodes = ast_tree_or_token.children
         if isinstance(nodes, str):
             raise TypeError(
-                "'children' of tree appears to be 'str' (expects list/iterable): %s"
-                % repr(ast_tree_or_token)
+                f"'children' of tree appears to be 'str' (expects list/iterable): {ast_tree_or_token!r}"
             )
         formatter = partial(_format_tree, content)
         children = tuple(transform(ast_node, content) for ast_node in list(nodes))
         return Node(ast_tree_or_token, cls_str=formatter, children=children)
     else:
         raise TypeError(
-            "can't transform %s object (is not a Lark Tree or Token')"
-            % repr(ast_tree_or_token.__class__.__name__)
+            f"can't transform {ast_tree_or_token.__class__.__name__} object (is not a Lark Tree or Token)"
         )

@@ -46,8 +46,8 @@ def skip(self, node):
 # Used for nodes that should be gone by rendering time (OutputMimeBundleNode)
 def halt(self, node):
     raise ExtensionError(
-        "Rendering encountered a node type that should "
-        "have been removed before rendering: %s" % type(node)
+        f"Rendering encountered a node type that should "
+        f"have been removed before rendering: {type(node)}"
     )
 
 

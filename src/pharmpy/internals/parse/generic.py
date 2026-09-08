@@ -26,7 +26,7 @@ TYPES_OF_COMMENT = frozenset(('COMMENT',))
 
 class AttrToken(ImmutableLeaf):
     def __repr__(self):
-        return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.value))
+        return f'{self.__class__.__name__}({self.rule!r}, {self.value!r})'
 
     def __str__(self):
         return str(self.value)
@@ -149,7 +149,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
                 # NOTE: leaf
                 if not name:
                     _anon_count += 1
-                    name = '__ANON_%d' % (_anon_count,)
+                    name = f'__ANON_{_anon_count}'
                 children.append(AttrToken(name, str(thing)))
             else:
                 # NOTE: recurse
@@ -337,7 +337,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         return ''.join(str(x) for x in self.children)
 
     def __repr__(self):
-        return '%s(%s, %s)' % (self.__class__.__name__, repr(self.rule), repr(self.children))
+        return f'{self.__class__.__name__}({self.rule!r}, {self.children!r})'
 
 
 class NoSuchRuleException(AttributeError):

@@ -74,9 +74,9 @@ def format_keyval_pairs(data_dict, sort=True, right_just=False):
     if sort:
         data_dict = dict(sorted(data_dict.items()))
     if right_just:
-        line_format = '  %%%ds\t%%s' % key_width
+        line_format = f'  %{key_width}s\t%s'
     else:
-        line_format = '%%-%ds\t%%s' % key_width
+        line_format = f'%-{key_width}s\t%s'
 
     lines = []
     for key, values in data_dict.items():
@@ -489,7 +489,7 @@ def model_print(args):
     """Subcommand for formatting/printing model components."""
     lines = []
     for i, (model, _) in enumerate(args.models):
-        lines += ['[%d/%d] %r' % (i + 1, len(args.models), model.name)]
+        lines += [f'[{i + 1}/{len(args.models)}] {model.name}']
         dict_ = {}
         try:
             dict_['dataset'] = repr(model.dataset)
@@ -513,7 +513,7 @@ def model_print(args):
             s = str(model.statements) + '\n\n'
         dict_['statements'] = s
         dict_lines = format_keyval_pairs(dict_, sort=False)
-        lines += ['\t%s' % line for line in dict_lines]
+        lines += [f'\t{line}' for line in dict_lines]
     if len(lines) > 24:
         pydoc.pager('\n'.join(lines))
     else:
@@ -691,10 +691,10 @@ def check_input_path(path):
         pass
 
     if not path.exists():
-        exc = FileNotFoundError('No such input file: %r' % str(path))
+        exc = FileNotFoundError(f'No such input file: {path}')
         error(exc)
     elif path.is_dir():
-        exc = IsADirectoryError('Is a directory (not an input file): %r' % str(path))
+        exc = IsADirectoryError('Is a directory (not an input file): {path}')
         error(exc)
     else:
         return path
