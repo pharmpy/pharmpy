@@ -87,7 +87,6 @@ quote-style = "preserve"
 
 [tool.ruff.lint.isort]
 known-first-party = ["pharmpy"]
-# default-section = "THIRDPARTY"
 forced-separate = ["test_pharmpy"]
 
 [tool.pyright]
