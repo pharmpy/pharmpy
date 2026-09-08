@@ -85,6 +85,19 @@ target-version = "py312"
 [tool.ruff.format]
 quote-style = "preserve"
 
+[tool.ruff.lint.per-file-ignores]
+"tests/*" = ["ANN", "PLR0124"]
+"src/pharmpy/internals/*" = ["ANN"]
+"src/pharmpy/mfl/*" = ["ANN"]
+"src/pharmpy/reporting/*" = ["ANN"]
+"src/pharmpy/workflows/*" = ["ANN"]
+"src/pharmpy/visualization.py" = ["ANN"]
+"src/pharmpy/model/external/*" = ["ANN"]
+"src/pharmpy/cli.py" = ["ANN"]
+"src/pharmpy/tools/psn_helpers.py" = ["ANN"]
+"src/pharmpy/tools/mfl/*" = ["ANN"]
+"src/pharmpy/tools/external/*" = ["ANN"]
+
 [tool.ruff.lint.isort]
 known-first-party = ["pharmpy"]
 forced-separate = ["test_pharmpy"]
