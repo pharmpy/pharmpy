@@ -1,65 +1,115 @@
+from pathlib import Path
 import re
-from inspect import isfunction, getmembers, signature
-from typing import get_type_hints
+import sys
 
-import pharmpy.modeling
-import pharmpy.tools
-
-
-class TypeHintError(Exception):
-    pass
+# This script will check that all exported functions in modeling and tools have
+# typehints for all arguments. It can be replaced with ANN001 in ruff
+# It doesn't use introspection to not need pharmpy installed and to be fast
 
 
-def extract_parameters_from_docstring(func):
-    lines = func.__doc__.splitlines()
+def remove_nested_brackets(text: str, start: str, end: str) -> str:
+    result = []
+    depth = 0
 
-    def find_first_param_line(s):
-        for i, line in enumerate(s):
-            if line.lstrip() == 'Parameters':
-                return i + 2
-        raise ValueError(f"Could not find Parameters documentation of {func.__name__}")
+    for char in text:
+        if char == start:
+            depth += 1
+        elif char == end:
+            if depth > 0:
+                depth -= 1
+            else:
+                result.append(char)
+        elif depth == 0:
+            result.append(char)
 
-    def find_last_param_line(s, first):
-        for i, line in enumerate(s[first:]):
-            if line.lstrip() == "":
-                return i + first - 1
-        return i + first
-
-    def leading_spaces(s):
-        return len(s) - len(s.lstrip())
-
-    first_line = find_first_param_line(lines)
-    last_line = find_last_param_line(lines, first_line)
-    params = lines[first_line:last_line]
-    base_indentation = leading_spaces(params[0])
-    args = [re.split(r'[\s:]', line.lstrip(), maxsplit=1)[0] for line in params if leading_spaces(line) == base_indentation]
-    return args
+    return "".join(result)
 
 
-funcs = getmembers(pharmpy.modeling, isfunction) + getmembers(pharmpy.tools, isfunction)
+def remove_quotation(text : str) -> str:
+    result = []
+    inquote = None
+    for char in text:
+        if not inquote:
+            if char in {'"', "'"}:
+                inquote = char
+            else:
+                result.append(char)
+        elif char == inquote:
+                inquote = None
 
-for name, func in funcs:
-    type_hints = get_type_hints(func)
+    return "".join(result)
 
-    # Can be removed if all return types should be annotated
-    if 'return' in type_hints.keys():
-        del type_hints['return']
 
-    params = signature(func).parameters.values()
-    if not type_hints and len(params) > 0:
-        raise TypeHintError(f'Type hints missing: {name}')
+def check_type_annotations(files, funcs):
+    global error
+    for file in files:
+        with open(file, "r") as f:
+            curfunc = None
+            for line in f:
+                line = line.strip()
+                if curfunc is None and line.startswith("def "):
+                    name, _, curline = line[4:].partition("(")
+                    if name in funcs:
+                        curfunc = name
+                        parennest = 1 + curline.count("(") - curline.count(")")
+                elif curfunc is not None:
+                    curline += line
+                    parennest += line.count("(") - line.count(")")
+                if curfunc is not None and parennest == 0:
+                    args = remove_nested_brackets(curline, start="[", end="]")
+                    args = remove_quotation(args)
+                    args = remove_nested_brackets(args, start="(", end=")")
 
-    # Exclude *args and **kwargs
-    param_names = {param.name for param in params if param.kind not in (param.VAR_KEYWORD, param.VAR_POSITIONAL)}
-    type_hint_names = {x for x in type_hints.keys() if not x.startswith("**")}
-    diff = param_names.difference(type_hint_names)
-    if diff:
-        raise TypeHintError(f'Not all args have type hints: {name} (args: {diff})')
+                    args, _, result = args.partition(")")
+                    args = args.split(',')
+                    all_args = True
+                    for arg in args:
+                        if not arg:
+                            continue
+                        if ':' not in arg and 'kwargs' not in arg:
+                            all_args = False
+                            break
+                    if not all_args:
+                        print(f"Missing type annotations for {curfunc} in {file}")
+                        error = True
+                    curfunc = None
 
-    all_param_names = {param.name for param in params if param.name != "kwargs"}
-    if all_param_names:
-        args = extract_parameters_from_docstring(func)
-        args = {x for x in args if not x.startswith("**") and x != "kwargs"}
-        diff = all_param_names.symmetric_difference(args)
-        if diff:
-            raise ValueError(f'Not all args are documented: {name} (args: {diff})')
+
+def strip_comment(line):
+    code, _, _ = line.partition("#")
+    return code
+
+
+def parse_funcs_from_all(path):
+    names = set()
+    with open(path, "r") as f:
+        in_all = False
+        for line in f:
+            if line.startswith('__all__'):
+                in_all = True
+            elif in_all:
+                line = strip_comment(line)
+                if ')' in line or ']' in line:
+                    in_all = False
+                else:
+                    line = line.strip()[1:]
+                    name, _, _ = line.partition("'")  # Assumes ' around func names
+                    names.add(name)
+    return names
+
+
+path = Path(sys.argv[1])
+
+error = False
+
+funcs = parse_funcs_from_all(path / "modeling" / "__init__.py")
+files = list((path / "modeling").glob("*.py"))
+check_type_annotations(files, funcs)
+
+funcs = parse_funcs_from_all(path / "tools" / "__init__.py")
+funcs = {func for func in funcs if not func.startswith("run_")} | {"create_workflow"}
+files = list((path / "tools").glob("**/*.py"))
+check_type_annotations(files, funcs)
+
+if error:
+    raise SyntaxError("Some missing")
