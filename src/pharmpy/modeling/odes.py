@@ -1771,7 +1771,7 @@ def set_weibull_absorption(model: Model) -> Model:
     return model
 
 
-def _disallow_infusion(model, odes):
+def _disallow_infusion(model: Model, odes: CompartmentalSystem) -> None:
     dose_comp = odes.dosing_compartments[0]
     if isinstance(dose_comp.doses[0], Infusion):
         if dose_comp.doses[0].rate is not None:

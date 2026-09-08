@@ -213,7 +213,7 @@ def start(
     return res
 
 
-def _start(model, modelfit_results):
+def _start(model: Model, modelfit_results: ModelfitResults) -> ModelEntry:
     return ModelEntry.create(model, modelfit_results=modelfit_results)
 
 

@@ -97,6 +97,7 @@ quote-style = "preserve"
 "src/pharmpy/tools/psn_helpers.py" = ["ANN"]
 "src/pharmpy/tools/mfl/*" = ["ANN"]
 "src/pharmpy/tools/external/*" = ["ANN"]
+"src/pharmpy/tools/**/?[!o]*" = ["ANN"]
 
 [tool.ruff.lint.isort]
 known-first-party = ["pharmpy"]

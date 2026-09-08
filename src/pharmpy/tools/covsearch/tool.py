@@ -35,7 +35,7 @@ from pharmpy.tools.run import (
     summarize_modelfit_results_from_entries,
 )
 from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_dataframe
-from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
+from pharmpy.workflows import Context, ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
 from ..mfl.parse import ModelFeatures, get_model_features
@@ -868,7 +868,7 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
     )
 
 
-def task_results(context, state: SearchState):
+def task_results(context: Context, state: SearchState):
     candidates = state.all_candidates_so_far
     modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
     base_modelentry, *res_modelentries = modelentries

@@ -211,7 +211,7 @@ def _statements_no_longer_needed(base, updated):
     return no_longer_needed
 
 
-def _get_prop_init(model, dv):
+def _get_prop_init(model: Model, dv: str | Expr) -> float:
     if model.dataset is not None and 'idv' in model.datainfo.types and 'dv' in model.datainfo.types:
         dv = get_dv_symbol(model, dv).name
         dv_min = get_observations(model, dv=dv).min()

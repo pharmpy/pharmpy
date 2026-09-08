@@ -301,7 +301,7 @@ def create_iov_base_model_entry(input_model_entry, occ, list_of_parameters, dist
     return ModelEntry.create(model_with_iov, parent=input_model)
 
 
-def _create_description(model):
+def _create_description(model: Model) -> str:
     iiv_desc = create_description(model)
     iov_desc = create_description(model, iov=True)
     return f'IIV({iiv_desc});IOV({iov_desc})'
