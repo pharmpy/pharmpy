@@ -203,7 +203,7 @@ class Context(ABC):
         model: Optional[Model] = None,
     ) -> None:
         """Add a message to the log"""
-        date = datetime.now()
+        date = datetime.now().astimezone()
         if model is None:
             ctxpath = self.context_path
         else:
