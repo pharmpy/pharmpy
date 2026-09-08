@@ -467,34 +467,34 @@ class BooleanExpr:
     def __repr__(self) -> str:
         return repr(self._expr)
 
-    def is_relational(self):
+    def is_relational(self) -> bool:
         return isinstance(self._expr, sympy.core.relational.Relational)
 
-    def is_lt(self):
+    def is_lt(self) -> bool:
         return isinstance(self._expr, sympy.StrictLessThan)
 
-    def is_le(self):
+    def is_le(self) -> bool:
         return isinstance(self._expr, sympy.LessThan)
 
-    def is_gt(self):
+    def is_gt(self) -> bool:
         return isinstance(self._expr, sympy.StrictGreaterThan)
 
-    def is_ge(self):
+    def is_ge(self) -> bool:
         return isinstance(self._expr, sympy.GreaterThan)
 
-    def is_eq(self):
+    def is_eq(self) -> bool:
         return isinstance(self._expr, sympy.Equality)
 
-    def is_ne(self):
+    def is_ne(self) -> bool:
         return isinstance(self._expr, sympy.Unequality)
 
-    def is_true(self):
+    def is_true(self) -> bool:
         return self._expr == sympy.true
 
-    def is_false(self):
+    def is_false(self) -> bool:
         return self._expr == sympy.false
 
-    def is_indeterminate(self):
+    def is_indeterminate(self) -> bool:
         return not self.is_true() and not self.is_false()
 
 
