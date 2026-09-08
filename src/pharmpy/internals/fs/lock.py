@@ -72,7 +72,7 @@ import sys
 from collections import Counter
 from contextlib import contextmanager
 from threading import Condition, Lock, RLock, get_ident
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 T = TypeVar('T')
 
@@ -367,7 +367,7 @@ class ShareableThreadLock:
             raise AcquiringThreadLevelLockWouldBlockError()
 
 
-class ThreadSafeKeyedRefPool(Generic[T]):
+class ThreadSafeKeyedRefPool[T]:
     def __init__(self, lock, refs: dict, factory, destructor=None):
         self._lock = lock
         self._refs = refs

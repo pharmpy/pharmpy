@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Iterable, Iterator
 from itertools import islice, tee
-from typing import Generic, TypeVar
+from typing import TypeVar
 
 T = TypeVar('T')
 
@@ -33,7 +33,7 @@ def _fork(iterable: Iterable[T]):
     return _tee(iterable, 1)[0]
 
 
-class PeekableIterator(Generic[T]):
+class PeekableIterator[T]:
     def __init__(self, iterator: Iterator[T]):
         # NOTE: Adapted from https://docs.python.org/3/library/itertools.html#itertools.tee
         # NOTE: Extra copy required for Python 3.11

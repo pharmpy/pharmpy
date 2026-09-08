@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Generic, Literal, TypeVar
+from typing import Literal, TypeVar
 
 T = TypeVar('T', str, Literal[''])
 
@@ -9,7 +9,7 @@ class Symbol:
 
 
 @dataclass(frozen=True)
-class Name(Symbol, Generic[T]):
+class Name[T](Symbol):
     name: T
 
 
