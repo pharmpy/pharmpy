@@ -699,7 +699,7 @@ def _linear_covariate_selection(
         scores[covariate] = model_bic if selection_criterion == "bic" else lrt_pval
         model_res = LCSRecord(
             parameter=parameter,
-            inclusion=tuple([covariate]),
+            inclusion=(covariate,),
             bic=model_bic,
             dbic=base_bic - model_bic,
             ofv=model_ofv,
