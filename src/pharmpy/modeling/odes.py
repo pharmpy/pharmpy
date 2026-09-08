@@ -2749,11 +2749,11 @@ def _check_all_cycles(model):
         prod1 = prod2 = Expr.integer(1)  # Products for the two directions
         for i, comp in enumerate(cycle):
             if i != len(cycle) - 1:  # Not final element
-                flow1 = odes.get_flow(cycle[i], cycle[i + 1])
-                flow2 = odes.get_flow(cycle[i + 1], cycle[i])
+                flow1 = odes.get_flow(comp, cycle[i + 1])
+                flow2 = odes.get_flow(cycle[i + 1], comp)
             else:  # Final element so we go back to first compartment in cycle
-                flow1 = odes.get_flow(cycle[i], cycle[0])
-                flow2 = odes.get_flow(cycle[0], cycle[i])
+                flow1 = odes.get_flow(comp, cycle[0])
+                flow2 = odes.get_flow(cycle[0], comp)
             prod1 *= flow1
             prod2 *= flow2
         eq = sympy.sympify(prod1).equals(  # pyright: ignore [reportAttributeAccessIssue]

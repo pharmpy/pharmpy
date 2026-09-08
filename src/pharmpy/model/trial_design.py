@@ -522,7 +522,7 @@ class ScheduleGrid:
         for slot in slots:
             for i, lane in enumerate(lanes):
                 if slot.start >= end_times[i]:
-                    lanes[i].append(slot)
+                    lane.append(slot)
                     end_times[i] = slot.end
                     break
             else:
