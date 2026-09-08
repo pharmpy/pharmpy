@@ -483,7 +483,7 @@ def task_results(context, step_mapping_and_model_entries):
 
 def create_results_tables(step_mapping, model_dict):
     sum_tool, sum_mod = [], []
-    for step, (model_names, summary_step) in step_mapping.items():
+    for model_names, summary_step in step_mapping.values():
         candidate_entries = [
             model_entry
             for model_name, model_entry in model_dict.items()

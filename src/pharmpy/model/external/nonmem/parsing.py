@@ -760,7 +760,7 @@ def _mangle_all_dropped(colnames, drop):
     # and the DROP comes before the non-DROP so we need to mangle those
     # Update colnames in place
     duplicates = _get_duplicates(colnames)
-    for name, inds in duplicates.items():
+    for inds in duplicates.values():
         first_nodrop = None
         for i in inds:
             if not drop[i]:

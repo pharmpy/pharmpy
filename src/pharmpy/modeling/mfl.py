@@ -136,7 +136,7 @@ def _get_bioaval_parameters(model):
     all_bio = get_bioavailability(model)
     pk = model.statements.before_odes
     found = []
-    for _, bio in all_bio.items():
+    for bio in all_bio.values():
         if bio.is_symbol():
             ass = pk.find_assignment(bio)
             rhs_symbs = ass.rhs_symbols
