@@ -1001,8 +1001,7 @@ class CompartmentalSystem(Statement):
         for comp in _comps(self._g):
             if comp.name == name:
                 return comp
-        else:
-            return None
+        return None
 
     def find_compartment_or_raise(self, comp: Union[str, CompartmentBase]) -> Compartment:
         if isinstance(comp, CompartmentBase):
