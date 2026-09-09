@@ -199,7 +199,6 @@ def filter_and_convert_nonmem_dataset_in_place(
             except DatasetError:
                 if dtype and 'TIME' in dtype:
                     dtype['TIME'] = 'str'
-                pass
 
     if dtype:
         _columns = set(columns)

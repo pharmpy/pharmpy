@@ -37,8 +37,6 @@ from .statements import CompartmentalSystem, Statements
 class ModelError(Exception):
     """Exception for errors in model object"""
 
-    pass
-
 
 class ModelSyntaxError(ModelError):
     """Exception for Syntax errors in model code"""
@@ -49,8 +47,6 @@ class ModelSyntaxError(ModelError):
 
 class ModelfitResultsError(ModelError):
     """Exception for issues with ModelfitResults"""
-
-    pass
 
 
 @dataclass(frozen=True)

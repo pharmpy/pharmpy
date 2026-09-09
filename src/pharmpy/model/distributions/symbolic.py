@@ -25,13 +25,11 @@ class Distribution(Sized, Hashable, Immutable):
     @abstractmethod
     def names(self) -> tuple[str, ...]:
         """Names of random variables of distribution"""
-        pass
 
     @property
     @abstractmethod
     def level(self) -> str:
         """Name of VariabilityLevel of the random variables"""
-        pass
 
     @property
     @abstractmethod
@@ -72,7 +70,6 @@ class Distribution(Sized, Hashable, Immutable):
     @abstractmethod
     def parameter_names(self) -> tuple[str, ...]:
         """List of names of all parameters used in definition"""
-        pass
 
     @abstractmethod
     def subs(self, d: Mapping[TExpr, TExpr]) -> Distribution:
