@@ -99,6 +99,14 @@ quote-style = "preserve"
 "src/pharmpy/tools/external/*" = ["ANN"]
 "src/pharmpy/tools/**/?[!o]*" = ["ANN"]
 
+[tool.ruff.lint.flake8-bugbear]
+extend-immutable-calls = [
+    "pharmpy.basic.Expr.symbol", "pharmpy.basic.Expr.integer", "pharmpy.model.datainfo.DataInfo",
+    "pharmpy.model.execution_steps.ExecutionSteps", "pharmpy.internals.immutable.frozenmapping",
+    "pharmpy.model.statements.Statements", "pharmpy.model.random_variables.RandomVariables",
+    "pharmpy.model.parameters.Parameters", "pharmpy.model.datainfo.Provenance",
+]
+
 [tool.ruff.lint.isort]
 known-first-party = ["pharmpy"]
 forced-separate = ["test_pharmpy"]

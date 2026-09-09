@@ -1,5 +1,5 @@
 import pharmpy.model
-from pharmpy.basic.expr import Expr
+from pharmpy.basic import Expr
 from pharmpy.deps import sympy
 from pharmpy.model import Assignment, Model
 from pharmpy.modeling import get_thetas
