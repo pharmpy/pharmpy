@@ -2086,7 +2086,13 @@ def add_multi_deriv(table, multi_deriv_subset, random_variables, control_stream,
     return control_stream, table, new_statements
 
 
-def update_verbatim(cs, random_variables, to_add: dict = {}, to_remove: dict = {}):
+def update_verbatim(
+    cs, random_variables, to_add: dict | None = None, to_remove: dict | None = None
+):
+    if to_add is None:
+        to_add = {}
+    if to_remove is None:
+        to_remove = {}
 
     error_record = cs.get_error_record()
     old_attr_tree = error_record.root

@@ -46,7 +46,7 @@ def tool_from_command(command):
     return Path(tool_with_path).name
 
 
-def psn_directory_list(path, drop_tools=[]):
+def psn_directory_list(path, drop_tools=()):
     path = Path(path)
     folder_list = [{'name': p.name, 'tool': tool_name(p)} for p in path.iterdir() if p.is_dir()]
     return [d for d in folder_list if d['tool'] is not None and not d['tool'] in drop_tools]
@@ -95,7 +95,7 @@ def cmd_line_model_path(path):
                 return Path(re.sub(r'^-\s*', '', row))
 
 
-def template_model_string(datafile=None, ignore=[], drop=[], label='TEMPLATE'):
+def template_model_string(datafile=None, ignore=(), drop=(), label='TEMPLATE'):
     variables = ''
     indent = r'      '
     ignores = indent + 'IGNORE=@'

@@ -39,8 +39,8 @@ def add_statements(
     cg: CodeGenerator,
     statements: Statements,
     only_piecewise: Union[bool, None] = None,
-    dependencies: set[sympy.Symbol] = set(),
-    res_alias: set[sympy.Symbol] = set(),
+    dependencies: set[sympy.Symbol] | None = None,
+    res_alias: set[sympy.Symbol] | None = None,
 ):
     """
     Will add the provided statements to the code generator objects, translated
@@ -66,6 +66,10 @@ def add_statements(
         dependent variable. The default is set().
 
     """
+    if dependencies is None:
+        dependencies = set()
+    if res_alias is None:
+        res_alias = set()
 
     # FIXME: Handle other DVs?
     dv = list(model.dependent_variables.keys())[0]

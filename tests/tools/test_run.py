@@ -190,7 +190,7 @@ class DummyResults:
         minimization_successful=True,
         termination_cause=None,
         significant_digits=5,
-        warnings=[],
+        warnings=(),
     ):
         self.name = name
         self.ofv = ofv
