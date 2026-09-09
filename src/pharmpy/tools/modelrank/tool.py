@@ -176,8 +176,8 @@ def prepare_model_entries(
     me_cands = []
     me_ref = None
 
-    for model, results in zip(models, results):
-        me = ModelEntry.create(model, modelfit_results=results)
+    for model, result in zip(models, results):
+        me = ModelEntry.create(model, modelfit_results=result)
         if model == ref_model:
             assert me_ref is None
             me_ref = me

@@ -55,9 +55,9 @@ class InitOrLow(Visitor):
         other = {'init', 'up'}
         subtrees = list(filter(lambda child: isinstance(child, Tree), tree.children))
         is_low = any(tree.data in other for tree in subtrees)
-        for tree in subtrees:
-            if tree.data == 'init_or_low':
-                tree.data = 'low' if is_low else 'init'
+        for subtree in subtrees:
+            if subtree.data == 'init_or_low':
+                subtree.data = 'low' if is_low else 'init'
 
 
 @install_grammar
