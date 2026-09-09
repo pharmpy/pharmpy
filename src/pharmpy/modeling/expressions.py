@@ -1701,7 +1701,7 @@ def _get_drug_metabolite_parameters(model, dv=2):
         if rate != 0:
             return get_individual_parameters(model, dv=2)
     else:
-        None
+        return None
 
 
 def get_pd_parameters(model: Model) -> list[str]:
