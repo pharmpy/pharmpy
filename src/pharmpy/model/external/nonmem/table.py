@@ -192,7 +192,6 @@ class NONMEMTableFile:
     def __len__(self):
         return len(self.tables)
 
-    @property
     def table(
         self, problem=1, subproblem=0, superproblem1=0, iteration1=0, superproblem2=0, iteration2=0
     ):

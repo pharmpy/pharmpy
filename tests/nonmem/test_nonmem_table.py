@@ -8,7 +8,7 @@ from pharmpy.model.external.nonmem.table import CovTable, ExtTable, NONMEMTableF
 
 def test_nonmem_table(pheno_ext):
     ext_table_file = NONMEMTableFile(pheno_ext)
-    ext_table = ext_table_file.table
+    ext_table = ext_table_file.table()
     assert isinstance(ext_table, ExtTable)
     assert list(ext_table.data_frame.columns) == [
         'ITERATION',
@@ -25,7 +25,7 @@ def test_nonmem_table(pheno_ext):
 
 def test_ext_table(pheno_ext):
     ext_table_file = NONMEMTableFile(pheno_ext)
-    ext_table = ext_table_file.table
+    ext_table = ext_table_file.table()
     assert isinstance(ext_table, ExtTable)
     assert ext_table.number == 1
     assert ext_table.is_evaluation is False
@@ -42,7 +42,7 @@ def test_ext_table(pheno_ext):
 
 def test_phi_table(pheno_phi):
     phi_table_file = NONMEMTableFile(pheno_phi)
-    phi_table = phi_table_file.table
+    phi_table = phi_table_file.table()
     assert isinstance(phi_table, PhiTable)
     assert phi_table.problem == 1
     assert phi_table.subproblem == 0
@@ -67,7 +67,7 @@ def test_phi_table_phi(testdata):
 
 def test_cov_table(pheno_cov):
     cov_table_file = NONMEMTableFile(pheno_cov)
-    cov_table = cov_table_file.table
+    cov_table = cov_table_file.table()
     assert isinstance(cov_table, CovTable)
     df = cov_table.data_frame
     paramnames = ['THETA(1)', 'THETA(2)', 'THETA(3)', 'OMEGA(1,1)', 'OMEGA(2,2)', 'SIGMA(1,1)']

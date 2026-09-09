@@ -83,7 +83,6 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         self.rules: Names of children.
         self.eval: Transformed data type, in common with :class:`.AttrToken`.
         self.tokens: Recursive tokens as (flattened) list.
-        self.debug: Treeview str, formatted for debugging.
 
     Can be instantiated with :meth:`.__init__`, via :class:`lark.Tree`, or alternative constructors:
         1. :meth:`.transform` (transform recursively object of class :class:`lark.Tree`).
@@ -320,14 +319,13 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
             if isinstance(child, AttrToken):
                 yield child
 
-    @property
     def debug(self, *args, **kwargs):
         """Debug formatted tree structure."""
         return str(prettyprint.transform(self, *args, **kwargs))
 
     def treeprint(self, indent=''):
         """Prints debug formatted tree structure."""
-        print(self.debug)
+        print(self.debug())
 
     # -- private methods -----------------------------------------------
     def __len__(self):
