@@ -560,7 +560,7 @@ class IOVSearchResults(ToolResults):
 
 
 def _get_iov_piecewise_assignment_symbols(model: Model):
-    iovs = set(Expr.symbol(rv) for rv in model.random_variables.iov.names)
+    iovs = {Expr.symbol(rv) for rv in model.random_variables.iov.names}
     for statement in model.statements:
         if isinstance(statement, Assignment) and statement.expression.is_piecewise():
             try:

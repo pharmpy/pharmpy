@@ -1168,11 +1168,9 @@ def validate_input(
         )  # Ignore OPTIONAL attribute
 
         allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
-        allowed_parameters = set(
-            str(statement.symbol) for statement in model.statements.before_odes
-        )
+        allowed_parameters = {str(statement.symbol) for statement in model.statements.before_odes}
 
-        allowed_ops = set(['*', '+'])
+        allowed_ops = {'*', '+'}
 
         for effect in candidate_effects:
             if effect.covariate not in allowed_covariates:

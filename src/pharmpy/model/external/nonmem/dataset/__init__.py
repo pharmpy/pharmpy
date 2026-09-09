@@ -156,7 +156,7 @@ def filter_and_convert_nonmem_dataset_in_place(
     convert_todo = (
         set(parse_columns)
         if parse_columns is not None
-        else (set() if raw else set(col for col, dropped in zip(columns, drop) if not dropped))
+        else (set() if raw else {col for col, dropped in zip(columns, drop) if not dropped})
     )
 
     if not raw:

@@ -29,7 +29,7 @@ def exhaustive(mfl_funcs, iiv_strategy: str, allometry=None):
         model_name = f'modelsearch_run{i}'
 
         # NOTE: The different functions need to be extracted first otherwise an error is raised
-        funcs = set(mfl_funcs[feat] for feat in combo)
+        funcs = {mfl_funcs[feat] for feat in combo}
 
         task_create_candidate = Task(
             'create_candidate',

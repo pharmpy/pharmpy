@@ -416,7 +416,7 @@ class ModelFeatures:
         ]
         counts = [(c, param_cov.count(c)) for c in param_cov]
         if any(c[1] > 1 for c in counts):
-            error = set(c[0] for c in filter(lambda c: c[1] > 1, counts))
+            error = {c[0] for c in filter(lambda c: c[1] > 1, counts)}
             raise ValueError(
                 f"Covariate effect(s) {error} is forced by multiple reference statements."
                 f" Please redefine the search space."

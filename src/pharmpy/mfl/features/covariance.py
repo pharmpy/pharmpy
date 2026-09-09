@@ -169,7 +169,7 @@ class Covariance(ModelFeature):
         parameter_pairs = [
             feature.parameters for feature in features if not isinstance(feature.parameters, Ref)
         ]
-        unique_parameters = sorted(set(x for sub in parameter_pairs for x in sub))
+        unique_parameters = sorted({x for sub in parameter_pairs for x in sub})
 
         # Blocks of size 2 is trivial since each Covariance object represents this
         possible_subsets = list(subsets(unique_parameters, min_size=3))

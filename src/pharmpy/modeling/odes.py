@@ -66,7 +66,7 @@ def _find_noncov_theta(model, paramsymb, full=False):
 
     exprs = [start_expr]
     all_popparams = set(model.parameters.symbols)
-    all_covs = set(Expr.symbol(name) for name in model.datainfo.names)
+    all_covs = {Expr.symbol(name) for name in model.datainfo.names}
 
     while exprs:
         nthetas = float("Inf")
