@@ -33,7 +33,7 @@ class ReadDataset(DatasetOperation):
     def path(self) -> Path:
         return self._path
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, ReadDataset):
@@ -108,7 +108,7 @@ class Ignore(DatasetOperation):
         strings = {Expr.deserialize(key): str(value) for key, value in d['strings'].items()}
         return cls(expression=expression, strings=frozenmapping(strings))
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, Ignore):
@@ -155,7 +155,7 @@ class Drop(DatasetOperation):
         column = Expr.deserialize(d['column'])
         return cls(column=column)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, Drop):
@@ -198,7 +198,7 @@ class AddColumn(DatasetOperation):
         column = Expr.deserialize(d['column'])
         return cls(column=column)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, AddColumn):
@@ -238,7 +238,7 @@ class AddRows(DatasetOperation):
     def from_dict(cls, d: dict[str, Any]) -> AddRows:
         return cls(rows=d['rows'])
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, AddRows):
@@ -281,7 +281,7 @@ class Provenance(Sequence, Immutable):
     def __hash__(self):
         return hash(self._operations)
 
-    def __eq__(self, other: Any) -> bool:
+    def __eq__(self, other: object) -> bool:
         if self is other:
             return True
         if not isinstance(other, Provenance):
@@ -457,7 +457,7 @@ class DataVariable(Immutable):
         new = DataVariable.create(**d)
         return new
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, DataVariable):
@@ -897,7 +897,7 @@ class ColumnInfo(Immutable):
         new = ColumnInfo.create(**d)
         return new
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, ColumnInfo):
@@ -1234,7 +1234,7 @@ class DataInfo(Sequence, Immutable):
                 columns=tuple(other) + self._columns, path=self.path, separator=self.separator
             )
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, DataInfo):

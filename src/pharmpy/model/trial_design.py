@@ -92,7 +92,7 @@ class Observations(Activity):
     def from_dict(cls, d: dict[str, Any]) -> Observations:
         return cls.create(DataVariable.from_dict(d['variable']), d['start_time'], d['time_points'])
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, Observations):
@@ -177,7 +177,7 @@ class Administration(Activity):
             d['time_points'],
         )
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, Administration):
@@ -316,7 +316,7 @@ class Arm(Sequence, Immutable):
         else:
             return NotImplemented
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, Arm):
@@ -444,7 +444,7 @@ class TrialDesign(Sequence, Immutable):
         else:
             return NotImplemented
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, TrialDesign):

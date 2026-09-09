@@ -627,7 +627,7 @@ class ExecutionSteps(Sequence, Immutable):
     def __len__(self):
         return len(self._steps)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, ExecutionSteps):

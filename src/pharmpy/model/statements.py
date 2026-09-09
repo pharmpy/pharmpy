@@ -164,7 +164,7 @@ class Assignment(Statement):
         symbols = self._expression.free_symbols
         return funcs | symbols
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if not isinstance(other, Assignment):
             return NotImplemented
         if hash(self) != hash(other):
@@ -230,7 +230,7 @@ class Output(CompartmentBase):
     def from_dict(cls, d) -> Output:
         return cls.instance
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if not isinstance(other, CompartmentBase):
             return NotImplemented
         return self is other

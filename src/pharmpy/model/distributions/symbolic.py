@@ -229,7 +229,7 @@ class NormalDistribution(Distribution):
     def __getitem__(self, index) -> Distribution:
         return _getitem_single(self, index)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if not isinstance(other, NormalDistribution):
             return NotImplemented
         return (
@@ -731,7 +731,7 @@ class FiniteDistribution(Distribution):
         else:
             raise KeyError((name1, name2))
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if not isinstance(other, FiniteDistribution):
             return NotImplemented
         return (

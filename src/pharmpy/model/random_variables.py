@@ -47,7 +47,7 @@ class VariabilityLevel(Immutable):
         group = kwargs.get('group', self._group)
         return VariabilityLevel(name.upper(), bool(reference), group)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if not isinstance(other, VariabilityLevel):
             return NotImplemented
         return (
@@ -120,7 +120,7 @@ class VariabilityHierarchy(Immutable):
         new = VariabilityHierarchy.create(levels)
         return new
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if not isinstance(other, VariabilityHierarchy):
             return NotImplemented
         return self._levels == other._levels
@@ -386,7 +386,7 @@ class RandomVariables(CollectionsSequence, Immutable):
             n += len(dist)
         return n
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, RandomVariables):

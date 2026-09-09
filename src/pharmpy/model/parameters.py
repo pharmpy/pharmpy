@@ -137,7 +137,7 @@ class Parameter(Immutable):
     def from_dict(cls, d: dict[str, Any]):
         return cls(**d)
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         """Two parameters are equal if they have the same name, init and constraints"""
         if not isinstance(other, Parameter):
             return NotImplemented
@@ -418,7 +418,7 @@ class Parameters(CollectionsSequence, Immutable):
         else:
             raise ValueError(f"Cannot remove Parameters from {other}")
 
-    def __eq__(self, other: Any):
+    def __eq__(self, other: object):
         if self is other:
             return True
         if not isinstance(other, Parameters):
