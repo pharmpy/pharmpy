@@ -781,7 +781,7 @@ class ModelFeatures:
                 combined.difference_update(rhs)
                 for i in rhs:
                     opposite = list(i)
-                    opposite[4] = Option(False if i[4].option else True)
+                    opposite[4] = Option(not i[4].option)
                     opposite = tuple(opposite)
                     if opposite in combined:
                         combined.discard(opposite)
