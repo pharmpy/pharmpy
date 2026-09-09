@@ -1048,20 +1048,16 @@ def set_power_on_ruv(
         dv is not None
         and list_of_eps is not None
         and any(
-            [
-                Expr.symbol(e.names[0])
-                not in model.statements.after_odes.full_expression(dv_symb).free_symbols
-                for e in eps
-            ]
+            Expr.symbol(e.names[0])
+            not in model.statements.after_odes.full_expression(dv_symb).free_symbols
+            for e in eps
         )
     ):
         warnings.warn(f'Some provided epsilons are not connected to the supplied DV ({dv_symb})')
     elif dv is not None and any(
-        [
-            Expr.symbol(e.names[0])
-            not in model.statements.after_odes.full_expression(dv_symb).free_symbols
-            for e in eps
-        ]
+        Expr.symbol(e.names[0])
+        not in model.statements.after_odes.full_expression(dv_symb).free_symbols
+        for e in eps
     ):
         # Only analyze epsilons connected to the given DV
         eps = [

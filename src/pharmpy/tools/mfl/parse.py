@@ -594,7 +594,7 @@ class ModelFeatures:
     @staticmethod
     def _has_same_modes(feature_1, feature_2):
         if feature_1 and feature_2:
-            return all([s in feature_1.eval.modes for s in feature_2.eval.modes])
+            return all(s in feature_1.eval.modes for s in feature_2.eval.modes)
         return feature_1 == feature_2
 
     def _subset_transits(self, mfl):
@@ -605,9 +605,7 @@ class ModelFeatures:
         rhs_depot = set([d for t in mfl.transits for d in t.eval.depot])
         # FIXME : Need to compare counts per depot individually when comparing two
         # search spaces (Currenty working for model vs search space)
-        return all([c in lhs_counts for c in rhs_counts]) and all(
-            [d in lhs_depot for d in rhs_depot]
-        )
+        return all(c in lhs_counts for c in rhs_counts) and all(d in lhs_depot for d in rhs_depot)
 
     def _subset_covariates(self, mfl, model):
         def _get_effects(mfl):

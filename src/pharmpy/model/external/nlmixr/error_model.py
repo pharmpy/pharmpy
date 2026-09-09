@@ -179,7 +179,7 @@ class error:
             etas = [sympy.Symbol(i) for i in self.model.random_variables.etas.names]
             accepted_symbols.update(etas)
             for symbol in self.expr.free_symbols:
-                if not any([Expr(i) in accepted_symbols for i in find_aliases(symbol, self.model)]):
+                if not any(Expr(i) in accepted_symbols for i in find_aliases(symbol, self.model)):
                     if is_number(symbol, self.model):
                         accepted_symbols.update([symbol])
                     else:

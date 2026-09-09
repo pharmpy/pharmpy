@@ -162,13 +162,13 @@ def same_time(model: pharmpy.model.Model) -> bool:
                     subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
                     assert subset is not None
                     unique_evid = subset["EVID"].unique()  # pyright: ignore [reportAttributeAccessIssue]
-                    if any([x not in evid_ignore for x in unique_evid]) and any(
-                        [x in evid_ignore for x in unique_evid]
+                    if any(x not in evid_ignore for x in unique_evid) and any(
+                        x in evid_ignore for x in unique_evid
                     ):
                         if rate:
                             unique_rate = subset["RATE"].unique()  # pyright: ignore[reportAttributeAccessIssue]
-                            if any([x != 0 for x in unique_rate]) and any(
-                                [x == 0 for x in unique_rate]
+                            if any(x != 0 for x in unique_rate) and any(
+                                x == 0 for x in unique_rate
                             ):
                                 return True
                         else:
@@ -217,8 +217,8 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
                     subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
                     assert subset is not None
                     unique_evid = subset["EVID"].unique()  # pyright: ignore [reportAttributeAccessIssue]
-                    if any([x not in evid_ignore for x in unique_evid]) and any(
-                        [x in evid_ignore for x in unique_evid]
+                    if any(x not in evid_ignore for x in unique_evid) and any(
+                        x in evid_ignore for x in unique_evid
                     ):
                         if rate:
                             dataset.loc[
