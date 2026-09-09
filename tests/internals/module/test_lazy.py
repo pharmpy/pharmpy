@@ -10,7 +10,7 @@ def test_dir():
 
 def test_getattr():
     module = LazyImport('x', {}, 'pharmpy.internals.module.lazy')
-    assert getattr(module, 'LazyImport') is LazyImport
+    assert module.LazyImport is LazyImport
 
 
 def test_submodule():

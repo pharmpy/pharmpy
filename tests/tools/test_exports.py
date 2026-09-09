@@ -19,7 +19,7 @@ exports = (
 def test_import_tools_all(tool):
     import pharmpy.tools as tools
 
-    assert tool in getattr(tools, '__all__')
+    assert tool in tools.__all__
 
 
 @pytest.mark.parametrize(('tool',), exports)

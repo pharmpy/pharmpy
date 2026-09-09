@@ -821,7 +821,7 @@ def retrieve_final_model(res: Results) -> Model:
 
     """
     try:
-        final_model = getattr(res, 'final_model')
+        final_model = res.final_model
     except AttributeError:
         raise ValueError('Attribute \'final_model\' is missing from results object')
 

@@ -100,7 +100,7 @@ def __getattr__(key):
     with _tool_lock:
         if key not in _tool_cache:
             module = importlib.import_module('.wrap', __name__)
-            wrap = getattr(module, 'wrap')
+            wrap = module.wrap
             tool_name = key[4:]  # NOTE: This removes the run_ prefix
             _tool_cache[key] = wrap(tool_name)
 
