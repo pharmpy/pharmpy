@@ -63,12 +63,12 @@ def test_tree_create_shallow():
     root "LEAF"
      └─ A_TOKEN "LEAF"
     """
-    assert_create(out, 'root', dict(A_TOKEN='LEAF'))
+    assert_create(out, 'root', {'A_TOKEN': 'LEAF'})
     out = """
     __ANON_0 ""
      └─ LEAF ""
     """
-    assert_create(out, '', dict(LEAF=''))
+    assert_create(out, '', {'LEAF': ''})
 
 
 def test_tree_create_deep():
@@ -77,8 +77,8 @@ def test_tree_create_deep():
     inp = {
         'firstLEAF': '(leaf #1) ',
         'tree_anons': ['TEXT123 ', "'some string maybe' "],
-        'tree': dict(nested_tree=dict(end_LEAF_node='!?#@')),
-        'top_tree_again': dict(INTLEAF=123.456),
+        'tree': {'nested_tree': {'end_LEAF_node': '!?#@'}},
+        'top_tree_again': {'INTLEAF': 123.456},
         'LEAF': 'THE_END',
     }
     out = """
@@ -116,10 +116,8 @@ def test_tree_create_abuse():
     assert_create(out, False, [[['1'], ['2']], ['3'], '4'])
 
     # just throwing stuff at the wall.. but it seems to stick!
-    od = {'good_tree': dict(LEAF_A=' (^._.^)~ hello! '), 'bad_tree': dict(LEAF_B=None)}
-    inp = {
-        'item': [od, dict(dict(Btree=[dict(END_LEAF='...THE END')])), dict(_LEAF_=' (nope, here!)')]
-    }
+    od = {'good_tree': {'LEAF_A': ' (^._.^)~ hello! '}, 'bad_tree': {'LEAF_B': None}}
+    inp = {'item': [od, {'Btree': [{'END_LEAF': '...THE END'}]}, {'_LEAF_': ' (nope, here!)'}]}
     out = """
     root " (^._.^)~ hello! None...THE END (nope, here!)"
      └─ item " (^._.^)~ hello! None...THE END (nope, here!)"

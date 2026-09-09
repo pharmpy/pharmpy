@@ -528,39 +528,39 @@ def test_validate_input_with_model(load_model_for_test, testdata):
 @pytest.mark.parametrize(
     ('model_path', 'arguments', 'exception', 'match'),
     [
-        (None, dict(search_space='x'), ValueError, 'Could not parse `search_space`'),
-        (None, dict(algorithm=1), ValueError, 'Invalid `algorithm`'),
-        (None, dict(algorithm='brute_force_no_of_eta'), ValueError, 'Invalid `algorithm`'),
-        (None, dict(rank_type=1), ValueError, 'Invalid `rank_type`'),
-        (None, dict(rank_type='bi'), ValueError, 'Invalid `rank_type`'),
-        (None, dict(cutoff='1'), TypeError, 'Invalid `cutoff`'),
+        (None, {'search_space': 'x'}, ValueError, 'Could not parse `search_space`'),
+        (None, {'algorithm': 1}, ValueError, 'Invalid `algorithm`'),
+        (None, {'algorithm': 'brute_force_no_of_eta'}, ValueError, 'Invalid `algorithm`'),
+        (None, {'rank_type': 1}, ValueError, 'Invalid `rank_type`'),
+        (None, {'rank_type': 'bi'}, ValueError, 'Invalid `rank_type`'),
+        (None, {'cutoff': '1'}, TypeError, 'Invalid `cutoff`'),
         (
             None,
-            dict(model=1),
+            {'model': 1},
             TypeError,
             'Invalid `model`',
         ),
         (
             ('nonmem/pheno.mod',),
-            dict(strictness='rse'),
+            {'strictness': 'rse'},
             ValueError,
             '`parameter_uncertainty_method` not set',
         ),
         (
             None,
-            dict(algorithm='skip', correlation_algorithm='skip'),
+            {'algorithm': 'skip', 'correlation_algorithm': 'skip'},
             ValueError,
             'Both algorithm and correlation_algorithm',
         ),
         (
             None,
-            dict(algorithm='skip', correlation_algorithm=None),
+            {'algorithm': 'skip', 'correlation_algorithm': None},
             ValueError,
             'correlation_algorithm need to be specified',
         ),
         (
             None,
-            dict(algorithm='simultaneous_stepwise', correlation_algorithm='top_down_exhaustive'),
+            {'algorithm': 'simultaneous_stepwise', 'correlation_algorithm': 'top_down_exhaustive'},
             ValueError,
             'correlation_algorithm cannot be set',
         ),
@@ -628,9 +628,9 @@ def test_validate_input_raises(
     model = load_model_for_test(path)
     results = parse_modelfit_results(model, path)
 
-    harmless_arguments = dict(
-        algorithm='top_down_exhaustive',
-    )
+    harmless_arguments = {
+        'algorithm': 'top_down_exhaustive',
+    }
 
     kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
 

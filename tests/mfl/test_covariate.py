@@ -88,8 +88,8 @@ def test_expand():
     assert c4_expanded[0].parameter == 'CL'
     assert c4_expanded[0].covariate == 'AGE'
 
-    assert c2.expand({Ref('IIV'): tuple()}) == tuple()
-    assert c4.expand({Ref('IIV'): tuple(), Ref('CONTINUOUS'): ['WGT', 'AGE']}) == tuple()
+    assert c2.expand({Ref('IIV'): ()}) == ()
+    assert c4.expand({Ref('IIV'): (), Ref('CONTINUOUS'): ['WGT', 'AGE']}) == ()
 
     with pytest.raises(ValueError):
         c4.expand({Ref('IIV'): ['CL', 'VC', 'MAT']})

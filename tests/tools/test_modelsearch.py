@@ -469,79 +469,79 @@ def test_validate_input_with_model(load_model_for_test, testdata):
     [
         (
             None,
-            dict(search_space=1),
+            {'search_space': 1},
             TypeError,
             'Invalid `search_space`',
         ),
         (
             None,
-            dict(search_space=MINIMAL_INVALID_MFL_STRING),
+            {'search_space': MINIMAL_INVALID_MFL_STRING},
             ValueError,
             'Invalid `search_space`',
         ),
         (
             None,
-            dict(search_space='LET(x, 0)'),
+            {'search_space': 'LET(x, 0)'},
             ValueError,
             'Invalid `search_space`',
         ),
         (
             None,
-            dict(search_space='ABSORPTION(FO);ALLOMETRY(X,70)'),
+            {'search_space': 'ABSORPTION(FO);ALLOMETRY(X,70)'},
             ValueError,
             'Invalid `search_space`',
         ),
         (
             None,
-            dict(algorithm=1),
+            {'algorithm': 1},
             ValueError,
             'Invalid `algorithm`',
         ),
         (
             None,
-            dict(algorithm='brute_force'),
+            {'algorithm': 'brute_force'},
             ValueError,
             'Invalid `algorithm`',
         ),
         (
             None,
-            dict(iiv_strategy=1),
+            {'iiv_strategy': 1},
             ValueError,
             'Invalid `iiv_strategy`',
         ),
         (
             None,
-            dict(iiv_strategy='delay'),
+            {'iiv_strategy': 'delay'},
             ValueError,
             'Invalid `iiv_strategy`',
         ),
         (
             None,
-            dict(rank_type=1),
+            {'rank_type': 1},
             ValueError,
             'Invalid `rank_type`',
         ),
         (
             None,
-            dict(rank_type='bi'),
+            {'rank_type': 'bi'},
             ValueError,
             'Invalid `rank_type`',
         ),
         (
             None,
-            dict(cutoff='1'),
+            {'cutoff': '1'},
             TypeError,
             'Invalid `cutoff`',
         ),
         (
             None,
-            dict(model=1),
+            {'model': 1},
             TypeError,
             'Invalid `model`',
         ),
         (
             ('nonmem/ruvsearch/mox3.mod',),
-            dict(strictness='rse'),
+            {'strictness': 'rse'},
             ValueError,
             '`parameter_uncertainty_method` not set',
         ),
@@ -565,10 +565,10 @@ def test_validate_input_raises(
     model = load_model_for_test(path)
     results = parse_modelfit_results(model, path)
 
-    harmless_arguments = dict(
-        search_space=MINIMAL_VALID_MFL_STRING,
-        algorithm='exhaustive',
-    )
+    harmless_arguments = {
+        'search_space': MINIMAL_VALID_MFL_STRING,
+        'algorithm': 'exhaustive',
+    }
 
     kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
 

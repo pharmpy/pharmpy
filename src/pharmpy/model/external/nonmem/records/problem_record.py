@@ -16,7 +16,7 @@ class ProblemRecord(Record):
                 f'Invalid title "{new_title}". Title cannot start with any of {tuple(map(repr, sorted(_ws)))}.'
             )
 
-        title_tree = AttrTree.create('raw_title', dict(ANYTHING=new_title))
+        title_tree = AttrTree.create('raw_title', {'ANYTHING': new_title})
 
         _, _, after = self.root.partition('raw_title')
 

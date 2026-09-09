@@ -274,82 +274,88 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     ('arguments', 'exception', 'match'),
     [
         (
-            dict(type='tmdd', emax_init=0.2),
+            {'type': 'tmdd', 'emax_init': 0.2},
             ValueError,
             'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for TMDD models.',
         ),
         (
-            dict(type='a'),
+            {'type': 'a'},
             ValueError,
             'Invalid `type`',
         ),
         (
-            dict(type='tmdd', search_space='ABSORPTION'),
+            {'type': 'tmdd', 'search_space': 'ABSORPTION'},
             ValueError,
             'Invalid argument "search_space" for TMDD models.',
         ),
         (
-            dict(type='pkpd', search_space='DIRECTEFFECT(LINEAR)', dv_types={'drug': 1}),
+            {'type': 'pkpd', 'search_space': 'DIRECTEFFECT(LINEAR)', 'dv_types': {'drug': 1}},
             ValueError,
             'Invalid argument "dv_types" for PKPD models.',
         ),
         (
-            dict(type='drug_metabolite', search_space='METABOLITE(BASIC)', dv_types={'drug': 1}),
+            {
+                'type': 'drug_metabolite',
+                'search_space': 'METABOLITE(BASIC)',
+                'dv_types': {'drug': 1},
+            },
             ValueError,
             'Invalid argument "dv_types" for drug metabolite models.',
         ),
         (
-            dict(type='drug_metabolite', search_space='METABOLITE(BASIC)', met_init=1),
+            {'type': 'drug_metabolite', 'search_space': 'METABOLITE(BASIC)', 'met_init': 1},
             ValueError,
             'Invalid arguments "b_init", "emax_init", "ec50_init" and "met_init" for drug metabolite models.',
         ),
         (
-            dict(type="pkpd"),
+            {"type": "pkpd"},
             ValueError,
             'Argument search_space need to be specified.',
         ),
         (
-            dict(type='pkpd', search_space='DIRECTEFFECT(LINEAR)', extra_model="TEMP"),
+            {"type": 'pkpd', "search_space": 'DIRECTEFFECT(LINEAR)', "extra_model": "TEMP"},
             ValueError,
             'Invalid argument "extra_model" for PKPD models.',
         ),
         (
-            dict(type='pkpd', search_space='DIRECTEFFECT(LINEAR)', extra_model_results="TEMP"),
+            {"type": 'pkpd', "search_space": 'DIRECTEFFECT(LINEAR)', "extra_model_results": "TEMP"},
             ValueError,
             'Invalid argument "extra_model_results" for PKPD models.',
         ),
-        (dict(type="drug_metabolite"), ValueError, 'Argument search_space need to be specified.'),
+        ({'type': "drug_metabolite"}, ValueError, 'Argument search_space need to be specified.'),
         (
-            dict(type="drug_metabolite", search_space="METABOLITE(BASIC)", extra_model="TEMP"),
+            {'type': "drug_metabolite", 'search_space': "METABOLITE(BASIC)", 'extra_model': "TEMP"},
             ValueError,
             'Invalid argument "extra_model" for drug metabolite models.',
         ),
         (
-            dict(
-                type="drug_metabolite",
-                search_space="METABOLITE(BASIC);ABSORPTION(ZO)",
-                extra_model="TEMP",
-            ),
+            {
+                'type': "drug_metabolite",
+                'search_space': "METABOLITE(BASIC);ABSORPTION(ZO)",
+                'extra_model': "TEMP",
+            },
             ValueError,
             'Argument search_space contain attributes not used.',
         ),
         (
-            dict(
-                type="drug_metabolite", search_space="METABOLITE(BASIC)", extra_model_results="TEMP"
-            ),
+            {
+                'type': "drug_metabolite",
+                'search_space': "METABOLITE(BASIC)",
+                'extra_model_results': "TEMP",
+            },
             ValueError,
             'Invalid argument "extra_model_results" for drug metabolite models.',
         ),
-        (dict(type="tmdd", dv_types={'drug_tot': 1, 'target_tot': 2, 'complex': 3}), None, ""),
-        (dict(type='tmdd', dv_types={'drug': 1, 'target_tot': 2, 'complex': 3}), None, ""),
-        (dict(type='tmdd', dv_types={'drug': 1, 'target': 2, 'complex': 3}), None, ""),
+        ({'type': "tmdd", 'dv_types': {'drug_tot': 1, 'target_tot': 2, 'complex': 3}}, None, ""),
+        ({'type': 'tmdd', 'dv_types': {'drug': 1, 'target_tot': 2, 'complex': 3}}, None, ""),
+        ({'type': 'tmdd', 'dv_types': {'drug': 1, 'target': 2, 'complex': 3}}, None, ""),
         (
-            dict(type='tmdd', dv_types={'drug': 1, 'target': 1, 'complex': 2}),
+            {'type': 'tmdd', 'dv_types': {'drug': 1, 'target': 1, 'complex': 2}},
             ValueError,
             'Values must be unique.',
         ),
         (
-            dict(type='tmdd', dv_types={'target': 1, 'complex': 2}),
+            {'type': 'tmdd', 'dv_types': {'target': 1, 'complex': 2}},
             ValueError,
             'Only drug can have DVID = 1. Please choose another DVID.',
         ),

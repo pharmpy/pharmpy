@@ -707,13 +707,13 @@ def test_get_model_entries_to_rank(
         ),
         (
             5,
-            dict(search_space=1),
+            {'search_space': 1},
             TypeError,
             'Invalid `search_space`',
         ),
         (
             5,
-            dict(search_space='x'),
+            {'search_space': 'x'},
             ValueError,
             'Invalid `search_space`',
         ),

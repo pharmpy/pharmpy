@@ -21,18 +21,18 @@ class RecordParser(GenericParser):
 @install_grammar
 class AbbreviatedRecordParser(RecordParser):
     grammar_filename = 'abbreviated_record.lark'
-    grammar_options = dict(
-        propagate_positions=True,
-    )
+    grammar_options = {
+        'propagate_positions': True,
+    }
     post_process = (with_ignored_tokens,)
 
 
 @install_grammar
 class SimulationRecordParser(RecordParser):
     grammar_filename = 'simulation_record.lark'
-    grammar_options = dict(
-        propagate_positions=True,
-    )
+    grammar_options = {
+        'propagate_positions': True,
+    }
     post_process = (with_ignored_tokens,)
 
 
@@ -63,9 +63,9 @@ class InitOrLow(Visitor):
 @install_grammar
 class ThetaRecordParser(RecordParser):
     grammar_filename = 'theta_record.lark'
-    grammar_options = dict(
-        propagate_positions=True,
-    )
+    grammar_options = {
+        'propagate_positions': True,
+    }
     post_process = (
         InsertMissing(({'comment': ((1, 'COMMENT'),)},)),
         InitOrLow(),
@@ -76,34 +76,34 @@ class ThetaRecordParser(RecordParser):
 @install_grammar
 class OmegaRecordParser(RecordParser):
     grammar_filename = 'omega_record.lark'
-    grammar_options = dict(
-        propagate_positions=True,
-    )
+    grammar_options = {
+        'propagate_positions': True,
+    }
     post_process = (InsertMissing(({'comment': ((1, 'COMMENT'),)},)), with_ignored_tokens)
 
 
 @install_grammar
 class OptionRecordParser(RecordParser):
     grammar_filename = 'option_record.lark'
-    grammar_options = dict(
-        propagate_positions=True,
-    )
+    grammar_options = {
+        'propagate_positions': True,
+    }
     post_process = (with_ignored_tokens,)
 
 
 @install_grammar
 class DataRecordParser(RecordParser):
     grammar_filename = 'data_record.lark'
-    grammar_options = dict(
-        propagate_positions=True,
-    )
+    grammar_options = {
+        'propagate_positions': True,
+    }
     post_process = (with_ignored_tokens,)
 
 
 @install_grammar
 class CodeRecordParser(RecordParser):
     grammar_filename = 'code_record.lark'
-    grammar_options = dict(
-        propagate_positions=True,
-    )
+    grammar_options = {
+        'propagate_positions': True,
+    }
     post_process = (with_ignored_tokens,)

@@ -368,15 +368,15 @@ class GenericParser(ABC):
     AttrTree = AttrTree
 
     lark: Lark
-    lark_options = dict(
-        start='root',
-        parser='lalr',
-        keep_all_tokens=True,
-        propagate_positions=False,
-        maybe_placeholders=False,
-        debug=False,
-        cache=False,
-    )
+    lark_options = {
+        'start': 'root',
+        'parser': 'lalr',
+        'keep_all_tokens': True,
+        'propagate_positions': False,
+        'maybe_placeholders': False,
+        'debug': False,
+        'cache': False,
+    }
     post_process: tuple[Union[Visitor, Transformer, Callable[[str, Tree], Tree]], ...] = ()
 
     def __init__(self, buf=None):

@@ -147,7 +147,7 @@ def setup(app: Sphinx):
 
     app.add_config_value(
         "jupyter_execute_kwargs",
-        dict(timeout=-1, allow_errors=True, store_widget_state=True),
+        {"timeout": -1, "allow_errors": True, "store_widget_state": True},
         "env",
     )
     app.add_config_value("jupyter_execute_default_kernel", "python3", "env")

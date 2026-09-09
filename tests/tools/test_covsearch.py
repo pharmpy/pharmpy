@@ -177,87 +177,87 @@ def test_prepare_mfls(load_model_for_test, testdata, search_space, no_of_covaria
     [
         (
             None,
-            dict(p_forward='x'),
+            {'p_forward': 'x'},
             TypeError,
             'Invalid `p_forward`',
         ),
         (
             None,
-            dict(p_forward=1.05),
+            {'p_forward': 1.05},
             ValueError,
             'Invalid `p_forward`',
         ),
         (
             None,
-            dict(p_backward=[]),
+            {'p_backward': []},
             TypeError,
             'Invalid `p_backward`',
         ),
         (
             None,
-            dict(p_backward=1.01),
+            {'p_backward': 1.01},
             ValueError,
             'Invalid `p_backward`',
         ),
         (
             None,
-            dict(max_steps=1.2),
+            {'max_steps': 1.2},
             TypeError,
             'Invalid `max_steps`',
         ),
-        (None, dict(algorithm=()), ValueError, 'Invalid `algorithm`'),
+        (None, {'algorithm': ()}, ValueError, 'Invalid `algorithm`'),
         (
             None,
-            dict(algorithm='scm-backward'),
+            {'algorithm': 'scm-backward'},
             ValueError,
             'Invalid `algorithm`',
         ),
-        (('nonmem', 'pheno.mod'), dict(search_space=1), TypeError, 'Invalid `search_space`'),
+        (('nonmem', 'pheno.mod'), {'search_space': 1}, TypeError, 'Invalid `search_space`'),
         (
             ('nonmem', 'pheno.mod'),
-            dict(search_space=MINIMAL_INVALID_MFL_STRING),
+            {'search_space': MINIMAL_INVALID_MFL_STRING},
             ValueError,
             'Invalid `search_space`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(search_space='LAGTIME(ON)'),
+            {'search_space': 'LAGTIME(ON)'},
             ValueError,
             'Invalid `search_space`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(search_space='COVARIATE([CL, VC], WGT, EXP)'),
+            {'search_space': 'COVARIATE([CL, VC], WGT, EXP)'},
             ValueError,
             'Invalid `search_space` because of invalid parameter',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(search_space='COVARIATE([CL, V], SEX, EXP)'),
+            {'search_space': 'COVARIATE([CL, V], SEX, EXP)'},
             ValueError,
             'Invalid `search_space` because of invalid covariate',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(search_space='COVARIATE([CL, V], WGT, [EXP, CUSTOM])'),
+            {'search_space': 'COVARIATE([CL, V], WGT, [EXP, CUSTOM])'},
             ValueError,
             'Invalid `search_space` because of invalid effect function',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(search_space='COVARIATE(CL, WGT, exp, -)'),
+            {'search_space': 'COVARIATE(CL, WGT, exp, -)'},
             ValueError,
             'Invalid `search_space`',
         ),
         (
             None,
-            dict(model=1),
+            {'model': 1},
             TypeError,
             'Invalid `model`',
         ),
         (
             ('nonmem', 'pheno.mod'),
-            dict(strictness='rse'),
+            {'strictness': 'rse'},
             ValueError,
             '`parameter_uncertainty_method` not set',
         ),
@@ -277,9 +277,9 @@ def test_validate_input_raises(
     model = load_model_for_test(path)
     results = parse_modelfit_results(model, path)
 
-    harmless_arguments = dict(
-        search_space=MINIMAL_VALID_MFL_STRING,
-    )
+    harmless_arguments = {
+        'search_space': MINIMAL_VALID_MFL_STRING,
+    }
 
     kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
 

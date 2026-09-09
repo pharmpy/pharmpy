@@ -117,17 +117,17 @@ def test_create_candidate_model(
     ),
     [
         (
-            dict(algorithm='x', methods='all'),
+            {'algorithm': 'x', 'methods': 'all'},
             ValueError,
             'Invalid `algorithm`',
         ),
         (
-            dict(algorithm='exhaustive', methods=None, solvers=None),
+            {'algorithm': 'exhaustive', 'methods': None, 'solvers': None},
             ValueError,
             'Invalid search space options',
         ),
         (
-            dict(algorithm='exhaustive', solvers=['LSODA']),
+            {'algorithm': 'exhaustive', 'solvers': ['LSODA']},
             ValueError,
             'Invalid input `model`',
         ),

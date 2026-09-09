@@ -182,7 +182,7 @@ def calculate_results(
 
 def psn_cdd_options(path: Union[str, Path]):
     path = Path(path)
-    options: dict[str, Any] = dict(model_path=None, outside_n_sd_check=None, case_column='ID')
+    options: dict[str, Any] = {'model_path': None, 'outside_n_sd_check': None, 'case_column': 'ID'}
     with open(path / 'meta.yaml') as meta:
         cmd = None
         for row in meta:

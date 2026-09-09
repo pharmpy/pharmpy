@@ -283,7 +283,7 @@ def write_notebook_output(notebook, output_dir, notebook_name, location=None):
     This also modifies 'notebook' in-place, adding metadata to each cell that
     maps output mime-types to the filenames the output was saved under.
     """
-    resources = dict(unique_key=os.path.join(output_dir, notebook_name), outputs={})
+    resources = {"unique_key": os.path.join(output_dir, notebook_name), "outputs": {}}
 
     # Modifies 'resources' in-place
     ExtractOutputPreprocessor().preprocess(notebook, resources)
