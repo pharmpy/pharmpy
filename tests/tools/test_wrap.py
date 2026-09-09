@@ -5,20 +5,20 @@ import pytest
 
 def _is_iivsearch(obj):
     params = inspect.signature(obj).parameters
-    assert 'algorithm' in params.keys()
-    assert 'rank_type' in params.keys()
+    assert 'algorithm' in params
+    assert 'rank_type' in params
     assert params['rank_type'].default == 'bic'
-    assert 'kwargs' in params.keys()
+    assert 'kwargs' in params
     assert 'kwargs' in obj.__doc__
     return True
 
 
 def _is_modelsearch(obj):
     params = inspect.signature(obj).parameters
-    assert 'search_space' in params.keys()
-    assert 'rank_type' in params.keys()
+    assert 'search_space' in params
+    assert 'rank_type' in params
     assert params['rank_type'].default == 'bic'
-    assert 'kwargs' in params.keys()
+    assert 'kwargs' in params
     assert 'kwargs' in obj.__doc__
     return True
 

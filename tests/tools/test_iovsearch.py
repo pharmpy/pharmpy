@@ -366,7 +366,7 @@ def test_validate_input_raises(
     results = parse_modelfit_results(model, path)
 
     kwargs = {'model': model, 'results': results, **arguments}
-    if 'column' not in arguments.keys():
+    if 'column' not in arguments:
         kwargs['column'] = 'APGR'
 
     with pytest.raises(exception, match=match):

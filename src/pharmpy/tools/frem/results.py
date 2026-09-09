@@ -467,7 +467,7 @@ def base_vs_frem_model(frem_model_res, model_1_res):
     base_ests = model_1_res.parameter_estimates
     final_ests = frem_model_res.parameter_estimates
     ser = pd.Series(dtype=np.float64, name='relative_change')
-    for param in base_ests.keys():
+    for param in base_ests.index:
         if param in final_ests:
             ser[param] = (final_ests[param] - base_ests[param]) / abs(base_ests[param]) * 100
     return ser

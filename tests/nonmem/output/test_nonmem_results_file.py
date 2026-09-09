@@ -26,7 +26,7 @@ def _assert_estimation_status(_actual: rf.TermInfo, _expected: rf.TermInfo):
     actual = asdict(_actual)
 
     assert actual.keys() == expected.keys()
-    for key in expected.keys():
+    for key in expected:
         assert type(actual[key]) is type(expected[key])
         if isinstance(expected[key], pd.DataFrame):
             assert str(actual[key]) == str(expected[key])

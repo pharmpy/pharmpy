@@ -113,8 +113,8 @@ def test_filter_effects():
     last_effect = Effect(*effect_args_1)
     filtered_1 = filter_effects(effect_funcs, last_effect, {})
     assert len(filtered_1) == 3
-    assert effect_args_1 in effect_funcs.keys()
-    assert effect_args_1 not in filtered_1.keys()
+    assert effect_args_1 in effect_funcs
+    assert effect_args_1 not in filtered_1
     nonsignificant_effects = {effect_args_1: effect_funcs[effect_args_1]}
     effect_args_2 = ('CL', 'AGE', 'exp', '*')
     last_effect = Effect(*effect_args_2)
@@ -138,7 +138,7 @@ def test_extract_nonsignificant_effects(
     effect_funcs = get_exploratory_covariates(mfl)
     models = [func(model) for func in effect_funcs.values()]
     model_entries = model_entry_factory(models, ref_val=modelres.ofv)
-    steps = [ForwardStep(p_value, Effect(*key)) for key in effect_funcs.keys()]
+    steps = [ForwardStep(p_value, Effect(*key)) for key in effect_funcs]
     candidates = [Candidate(me, (step,)) for me, step in zip(model_entries, steps)]
     nonsignificant_effects = extract_nonsignificant_effects(
         parent_modelentry, candidates, effect_funcs, p_value

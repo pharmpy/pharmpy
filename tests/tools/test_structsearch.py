@@ -360,9 +360,9 @@ def test_validation(tmp_path, load_model_for_test, testdata, arguments, exceptio
     kwargs['results'] = ModelfitResults()
     model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
     kwargs['model'] = model
-    if "extra_model" in kwargs.keys():
+    if "extra_model" in kwargs:
         kwargs["extra_model"] = model
-    if "extra_model_results" in kwargs.keys():
+    if "extra_model_results" in kwargs:
         res = parse_modelfit_results(model, testdata / "nonmem" / "pheno.mod")
         kwargs["extra_model_results"] = res
 

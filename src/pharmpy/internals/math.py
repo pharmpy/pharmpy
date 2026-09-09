@@ -68,7 +68,7 @@ def round_and_keep_sum(x, s):
     """
     sorted_fractions = x.apply(lambda x: math.modf(x)[0]).sort_values(ascending=False)
     rounded_sample_sizes = x.apply(lambda x: math.modf(x)[1])
-    for group_index in sorted_fractions.keys():
+    for group_index in sorted_fractions.index:
         num_samples = rounded_sample_sizes.sum()
         diff = s - num_samples
         if diff == 0:

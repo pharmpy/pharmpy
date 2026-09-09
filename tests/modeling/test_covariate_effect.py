@@ -1335,7 +1335,7 @@ def test_get_covariate_effects_w_ETA(load_model_for_test, testdata):
     value = [("exp", "*")]
 
     cov_effects = get_covariate_effects(model)
-    assert key in cov_effects.keys()
+    assert key in cov_effects
     assert value == cov_effects[key]
 
 

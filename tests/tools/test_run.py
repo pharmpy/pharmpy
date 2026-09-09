@@ -702,7 +702,7 @@ def test_mbic_penalty(testdata, base_funcs, search_space, kwargs, candidate_func
     base_model = create_basic_pk_model('oral', dataset_path=testdata / 'nonmem' / 'pheno.dta')
     for func in base_funcs:
         base_model = func(base_model)
-    if 'base_model' in kwargs.keys():
+    if 'base_model' in kwargs:
         kwargs['base_model'] = base_model
     candidate = base_model
     for func, ref in zip(candidate_funcs, penalties):

@@ -634,7 +634,7 @@ def test_validate_input_raises(
 
     kwargs = {'model': model, 'results': results, **harmless_arguments, **arguments}
 
-    if 'search_space' not in kwargs.keys():
+    if 'search_space' not in kwargs:
         kwargs['search_space'] = MINIMAL_VALID_MFL_STRING
 
     with pytest.raises(exception, match=match):
