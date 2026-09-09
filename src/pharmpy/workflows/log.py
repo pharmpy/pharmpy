@@ -16,7 +16,7 @@ class LogEntry(Immutable):
     def create(cls, category: str, message: str):
         if category not in CATEGORIES:
             raise ValueError(f"Unknown category {category}")
-        return cls(category=category, message=message, time=datetime.datetime.now().astimezone())
+        return cls(category=category, message=message, time=datetime.datetime.now())  # noqa: DTZ005
 
     @property
     def category(self):
