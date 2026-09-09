@@ -226,9 +226,9 @@ def test_iovsearch_github_issues_976(load_model_for_test, testdata):
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == set()
 
     m = add_iov(m, 'FA1', distribution='same-as-iiv')
-    assert set(_get_iiv_etas_with_corresponding_iov(m)) == set(
-        map(lambda rv: S(rv), m.random_variables.iiv.names)
-    )
+    assert set(_get_iiv_etas_with_corresponding_iov(m)) == {
+        S(rv) for rv in m.random_variables.iiv.names
+    }
 
     m = remove_iov(m, 'ETA_IOV_1_1')
     assert set(_get_iiv_etas_with_corresponding_iov(m)) == {S('ETA_2')}

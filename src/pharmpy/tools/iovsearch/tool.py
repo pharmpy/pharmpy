@@ -225,12 +225,9 @@ def task_brute_force_search(
         return step_mapping, [input_model_entry, model_with_iov_entry, *iov_candidate_entries]
 
     # NOTE: Remove IIV with corresponding IOVs. Test all subsets (~2^n).
-    iiv_parameters_with_associated_iov = list(
-        map(
-            lambda s: s.name,
-            _get_iiv_etas_with_corresponding_iov(best_model_entry_so_far.model),
-        )
-    )
+    iiv_parameters_with_associated_iov = [
+        s.name for s in _get_iiv_etas_with_corresponding_iov(best_model_entry_so_far.model)
+    ]
     # TODO: Should we exclude already present IOVs?
     no_of_models = len(iov_candidate_entries) + 1
     iiv_subsets = list(non_empty_subsets(iiv_parameters_with_associated_iov))

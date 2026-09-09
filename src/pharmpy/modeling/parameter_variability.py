@@ -235,15 +235,13 @@ def add_iov(
     list_of_parameters = _format_input_list(list_of_parameters)
 
     if distribution == 'explicit':
-        if list_of_parameters is None or not all(
-            map(lambda x: isinstance(x, list), list_of_parameters)
-        ):
+        if list_of_parameters is None or not all(isinstance(x, list) for x in list_of_parameters):
             raise ValueError(
                 'distribution == "explicit" requires parameters to be given as lists of lists'
             )
     else:
         if list_of_parameters is not None and not all(
-            map(lambda x: isinstance(x, str), list_of_parameters)
+            isinstance(x, str) for x in list_of_parameters
         ):
             raise ValueError(
                 'distribution != "explicit" requires parameters to be given as lists of strings'
@@ -256,7 +254,7 @@ def add_iov(
             etas = [_get_etas(model, None, include_symbols=True)]
     else:
         if distribution == 'disjoint':
-            params = list(map(lambda x: [x], list_of_parameters))
+            params = [[x] for x in list_of_parameters]
         elif distribution == 'joint' or distribution == 'same-as-iiv':
             params = [list_of_parameters]
         else:

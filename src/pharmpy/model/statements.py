@@ -2135,9 +2135,9 @@ class Statements(Sequence, Immutable):
 
     def _get_ode_system_index(self):
         return next(
-            map(
-                lambda t: t[0],
-                filter(lambda t: isinstance(t[1], CompartmentalSystem), enumerate(self)),
+            (
+                t[0]
+                for t in filter(lambda t: isinstance(t[1], CompartmentalSystem), enumerate(self))
             ),
             -1,
         )

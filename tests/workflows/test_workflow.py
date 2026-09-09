@@ -121,7 +121,7 @@ def test_insert_workflow_with_predecessors(tasks):
 
 
 def test_insert_workflow_nm():
-    t1, t2, t3, t4, t5 = map(lambda i: Task(f't{i}', lambda: 0), range(5))
+    t1, t2, t3, t4, t5 = [Task(f't{i}', lambda: 0) for i in range(5)]
     wb1 = WorkflowBuilder(tasks=[t1, t2])
     wb2 = WorkflowBuilder(tasks=[t3, t4, t5])
     with pytest.raises(ValueError, match='.*not supported.*'):
@@ -129,7 +129,7 @@ def test_insert_workflow_nm():
 
 
 def test_get_upstream_tasks():
-    t1, t2, t3, t4, t5 = map(lambda i: Task(f't{i}', lambda: 0), range(5))
+    t1, t2, t3, t4, t5 = [Task(f't{i}', lambda: 0) for i in range(5)]
     wb = WorkflowBuilder(tasks=[t1, t2])
     wb.insert_workflow(WorkflowBuilder(tasks=[t3]))
     wb.insert_workflow(WorkflowBuilder(tasks=[t4, t5]))
@@ -156,7 +156,7 @@ def test_add(tasks):
 
 
 def test_traverse():
-    t1, t2, t3, t4, t5, t6 = map(lambda i: Task(f't{i}', lambda: 0), range(1, 7))
+    t1, t2, t3, t4, t5, t6 = [Task(f't{i}', lambda: 0) for i in range(1, 7)]
     wb = WorkflowBuilder(tasks=[t1])
     wb.add_task(task=t2, predecessors=[t1])
     wb.add_task(task=t3, predecessors=[t1])
@@ -180,7 +180,7 @@ def test_traverse():
 
 
 def test_sort():
-    t1, t2, t3, t4, t5, t6 = map(lambda i: Task(f't{i}', lambda: 0), range(1, 7))
+    t1, t2, t3, t4, t5, t6 = [Task(f't{i}', lambda: 0) for i in range(1, 7)]
     wb = WorkflowBuilder(tasks=[t1])
     wb.add_task(task=t2, predecessors=[t1])
     wb.add_task(task=t3, predecessors=[t1])

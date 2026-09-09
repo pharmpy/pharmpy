@@ -108,7 +108,7 @@ def _match(typing, value):
 
     if origin is Literal:
         # NOTE: Empty literals return False
-        return any(map(lambda t: value == t, get_args(typing)))
+        return any(value == t for t in get_args(typing))
 
     if origin is list:
         return isinstance(value, list) and _match_sequence_items(get_args(typing), value)
@@ -130,7 +130,7 @@ def _match(typing, value):
 
     if origin is Union or origin is UnionType:
         # NOTE: Empty unions return False
-        return any(map(lambda t: _match(t, value), get_args(typing)))
+        return any(_match(t, value) for t in get_args(typing))
 
     if origin is Optional:
         args = get_args(typing)

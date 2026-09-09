@@ -49,7 +49,7 @@ def validate_string(strictness: str):
         raise ValueError(f"Unallowed operators found: {', '.join(find_all_non_allowed_operators)}")
 
     # Check that only allowed arguments are in the statement
-    if not all(map(lambda x: x in ALLOWED_ARGS, args)):
+    if not all(x in ALLOWED_ARGS for x in args):
         raise ValueError(f'Some expressions were not correct. Valid arguments are: {ALLOWED_ARGS}')
 
 

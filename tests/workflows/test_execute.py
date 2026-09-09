@@ -93,7 +93,7 @@ def test_execute_workflow_map_reduce(tmp_path):
     n = 10
     f = lambda x: x**2
     layer_init = list(map(lambda i: Task(f'x{i}', lambda: i), range(n)))
-    layer_map = list(map(lambda i: Task(f'f(x{i})', f), range(n)))
+    layer_map = [Task(f'f(x{i})', f) for i in range(n)]
     layer_reduce = [Task('reduce', lambda *y: sum(y))]
     wb = WorkflowBuilder(tasks=layer_init, name='test-workflow')
     wb.insert_workflow(WorkflowBuilder(tasks=layer_map))
@@ -144,7 +144,7 @@ def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
         return res
 
     init = map(lambda i: Task(f'init_{i}', lambda x: x, models[i]), indices)
-    process = map(lambda i: Task(f'fit{i}', fit, ofvs[i]), indices)
+    process = [Task(f'fit{i}', fit, ofvs[i]) for i in indices]
     wb = WorkflowBuilder(tasks=init, name='test-workflow')
     wb.insert_workflow(WorkflowBuilder(tasks=process))
     gather = Task('gather', lambda *x: x)

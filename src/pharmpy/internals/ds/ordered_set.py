@@ -9,7 +9,7 @@ NIL = 0
 
 
 def _map(iterable: Iterable[T]) -> Iterable[tuple[T, Literal[0]]]:
-    return map(lambda x: (x, NIL), iterable)
+    return ((x, NIL) for x in iterable)
 
 
 class OrderedSet[T](MutableSet, AbstractSet[T]):

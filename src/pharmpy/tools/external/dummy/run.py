@@ -125,7 +125,7 @@ def create_dummy_modelfit_results(model, ref=None):
             init = 0.1 * range
         return param.replace(init=init)
 
-    params = list(map(lambda x: _get_param_init(x), list(model.parameters)))
+    params = [_get_param_init(x) for x in model.parameters]
     params = pd.Series(Parameters.create(params).inits)
     sdcorr = model.random_variables.parameters_sdcorr(params)
     sdcorr = {

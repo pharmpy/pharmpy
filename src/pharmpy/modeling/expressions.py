@@ -1525,15 +1525,11 @@ def _remove_covariate_effect_from_statements_recursive(
         )
 
     if isinstance(expression, sympy.Piecewise):
-        if any(map(lambda t: covariate in t[1].free_symbols, expression.args)):
+        if any(covariate in t[1].free_symbols for t in expression.args):
             # NOTE: At least one condition depends on the covariate
             if all(
-                map(
-                    lambda t: _is_univariate(
-                        thetas, _full_expression(assignments, t[1]), covariate
-                    ),
-                    expression.args,
-                )
+                _is_univariate(thetas, _full_expression(assignments, t[1]), covariate)
+                for t in expression.args
             ):
                 # NOTE: If expression is piecewise univariate and condition depends on
                 # covariate, return simplest expression from cases
@@ -1586,9 +1582,9 @@ def _remove_covariate_effect_from_statements_recursive(
         )
     )
 
-    changed = any(map(lambda n: n.changed, children))
-    is_constant = all(map(lambda n: n.constant, children))
-    contains_theta = any(map(lambda n: n.contains_theta, children))
+    changed = any(n.changed for n in children)
+    is_constant = all(n.constant for n in children)
+    contains_theta = any(n.contains_theta for n in children)
 
     if not changed:
         return ExpressionTreeNode(expression, False, is_constant, contains_theta)
@@ -1839,7 +1835,7 @@ def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> set[Com
         {compartment},
         lambda u: filterfalse(
             central_component_vertices.__contains__,
-            map(lambda flow: flow[0], flows(u)),
+            [flow[0] for flow in flows(u)],
         ),
     )
 

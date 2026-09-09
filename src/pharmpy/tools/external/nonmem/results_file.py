@@ -140,7 +140,7 @@ class NONMEMResultsFile:
     def estimation_status(self, table_number):
         result = TermInfo()
         if self._supported_nonmem_version:
-            _fields = set(map(lambda x: x.name, fields(TermInfo)))
+            _fields = {x.name for x in fields(TermInfo)}
             table = self.table.get(table_number)
             if table is not None:
                 result = replace(

@@ -291,12 +291,9 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
         m = 10
         n = m**2
         items = list(range(n))
-        partition = list(
-            map(
-                lambda g: list(map(lambda t: t[1], g[1])),
-                groupby(enumerate(items), lambda t: t[0] // m),
-            )
-        )
+        partition = [
+            list(map(lambda t: t[1], g[1])) for g in groupby(enumerate(items), lambda t: t[0] // m)
+        ]
 
         assert len(partition) == m
         assert sorted(chain(*partition)) == items
@@ -304,7 +301,7 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
         with mp.Pool(processes=len(partition)) as pool:
             pool.starmap(
                 many_exclusive_threads_and_processes_rw_process,
-                map(lambda part: (path, part), partition),
+                [(path, part) for part in partition],
             )
 
         with path_lock(path, shared=False) as fd:

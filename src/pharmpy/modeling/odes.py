@@ -2561,7 +2561,7 @@ def find_volume_parameters(model: Model) -> list[str]:
             assert assignment is not None
             rate = assignment.expression
         rate = Expr(sympy.cancel(rate))
-        a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
+        a, b = [x.free_symbols for x in rate.as_numer_denom()]
         volume_symbols = b - a - {t}
         for volume in volume_symbols:
             volume = _find_real_symbol(sset, volume)
@@ -3111,7 +3111,7 @@ def get_central_volume_and_clearance(model: Model) -> tuple[Expr, Expr]:
         assert assignment is not None
         rate = assignment.expression
     rate = Expr(sympy.cancel(rate))
-    a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
+    a, b = [x.free_symbols for x in rate.as_numer_denom()]
     if b:
         # Get volume parameter
         volume_symbols = b - a - {t}

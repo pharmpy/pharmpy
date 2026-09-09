@@ -750,7 +750,7 @@ def _parse_tree(tree: AttrTree):
                     symbol = interpreter.visit(assignment.subtree('assignable'))
                     expr = interpreter.visit(assignment.subtree('real_expr'))
                     # Check if symbol was previously declared
-                    else_val = symbol if any(map(lambda x: x.symbol == symbol, s)) else None
+                    else_val = symbol if any(x.symbol == symbol for x in s) else None
                     if else_val is not None:
                         pw = sympy.Piecewise((expr, logic_expr), (else_val, True))
                     else:

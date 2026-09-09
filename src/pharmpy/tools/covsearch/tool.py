@@ -870,7 +870,7 @@ def task_remove_covariate_effect(candidate: Candidate, effect: dict, effect_inde
 
 def task_results(context: Context, state: SearchState):
     candidates = state.all_candidates_so_far
-    modelentries = list(map(lambda candidate: candidate.modelentry, candidates))
+    modelentries = [candidate.modelentry for candidate in candidates]
     base_modelentry, *res_modelentries = modelentries
     assert base_modelentry is state.start_modelentry
     best_modelentry = state.best_candidate_so_far.modelentry

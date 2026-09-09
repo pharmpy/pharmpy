@@ -282,12 +282,9 @@ def calculate_individual_parameter_statistics(
         else:
             our_exprs = [_split_equation(e) for e in expr_or_exprs]
 
-    full_exprs = list(
-        map(
-            lambda e: (e[0], sympy.sympify(model.statements.before_odes.full_expression(e[1]))),
-            our_exprs,
-        )
-    )
+    full_exprs = [
+        (e[0], sympy.sympify(model.statements.before_odes.full_expression(e[1]))) for e in our_exprs
+    ]
 
     input_parameter_estimates = parameter_estimates
     parameter_estimates = xreplace_dict(parameter_estimates)

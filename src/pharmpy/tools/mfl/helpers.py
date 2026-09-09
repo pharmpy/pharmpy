@@ -50,12 +50,7 @@ def funcs(
 ) -> dict[FeatureKey, FeatureFn]:
     statements_list = list(statements)  # TODO: Only read statements once
 
-    features = chain.from_iterable(
-        map(
-            lambda features: features(model, statements_list),
-            generators,
-        )
-    )
+    features = chain.from_iterable(features(model, statements_list) for features in generators)
 
     return dict(features)
 
