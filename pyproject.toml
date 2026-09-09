@@ -86,7 +86,7 @@ target-version = "py312"
 quote-style = "preserve"
 
 [tool.ruff.lint.per-file-ignores]
-"tests/*" = ["ANN", "PLR0124"]
+"tests/*" = ["ANN", "B015", "PLR0124"]
 "src/pharmpy/internals/*" = ["ANN"]
 "src/pharmpy/mfl/*" = ["ANN"]
 "src/pharmpy/reporting/*" = ["ANN"]
