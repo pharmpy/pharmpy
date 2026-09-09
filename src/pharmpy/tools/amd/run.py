@@ -1275,7 +1275,7 @@ def split_structural_search_space(model, search_space):
     allowed_parameters = set(get_pk_parameters(model)).union(
         str(statement.symbol) for statement in model.statements.before_odes
     )
-    allowed_parameters = sorted(list(allowed_parameters))
+    allowed_parameters = sorted(allowed_parameters)
     # Extract all forced
     structural_covariates = [cov for cov in search_space.covariate if cov.optional.option is False]
     mfl = ModelFeatures.create_from_mfl_statement_list(structural_covariates)

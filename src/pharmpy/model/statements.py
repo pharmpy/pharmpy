@@ -1056,7 +1056,7 @@ class CompartmentalSystem(Statement):
         (Compartment(CENTRAL, amount=A_CENTRAL(t), doses=Bolus(AMT, admid=1)),)
         """
         dosing_comps = ()
-        comps = sorted(list(_comps(self._g)), key=lambda comp: comp.name)
+        comps = sorted(_comps(self._g), key=lambda comp: comp.name)
         for node in comps:
             if node.doses:
                 if node.name != self.central_compartment.name:
@@ -2450,7 +2450,7 @@ class Statements(Sequence, Immutable):
         """
         g = self._create_dependency_graph()
         index = self.index(statement)
-        succ = sorted(list(g.successors(index)))
+        succ = sorted(g.successors(index))
         stats = Statements()
         stats._statements = [self[i] for i in succ]
         return stats
