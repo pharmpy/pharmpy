@@ -330,7 +330,6 @@ def categorize_model_entries(model_entries):
     if not input_model_entry:
         raise ValueError('Error in workflow: No input model')
     if not base_model_entry:
-        input_model_entry = input_model_entry
         base_model_entry = input_model_entry
 
     return input_model_entry, base_model_entry, res_model_entries

@@ -2035,7 +2035,7 @@ class Statements(Sequence, Immutable):
     @classmethod
     def create(cls, statements: Optional[Union[Statements, Iterable[Statement]]] = None):
         if isinstance(statements, Statements):
-            statements = statements
+            pass
         elif statements is None:
             statements = ()
         elif isinstance(statements, Iterable):

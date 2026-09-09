@@ -64,8 +64,6 @@ def perform_lrt(me, me_parent, alpha) -> dict[str, Union[float, int, bool]]:
     rank_dict['df'] = lrt_df(me_parent, me)
     if isinstance(alpha, tuple):
         alpha = alpha[0] if rank_dict['df'] >= 0 else alpha[1]
-    else:
-        alpha = alpha
     rank_dict['alpha'] = alpha
     rank_dict['cutoff'] = lrt_cutoff(me_parent.model, me.model, alpha)
     extended = me_parent if len(me_parent.model.parameters) > len(me.model.parameters) else me
