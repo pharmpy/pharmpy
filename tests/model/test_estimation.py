@@ -226,7 +226,7 @@ def test_properties():
     assert a.derivatives == (d,)
 
     d = tuple(tuple(map(Expr.symbol, params)) for params in (('EPS_1', 'ETA_1'), ('ETA_1',)))
-    d2 = list(list(map(Expr.symbol, params)) for params in (('EPS_1', 'ETA_1'), ('ETA_1',)))
+    d2 = [list(map(Expr.symbol, params)) for params in (('EPS_1', 'ETA_1'), ('ETA_1',))]
     a = EstimationStep.create('foce', derivatives=d)
     b = EstimationStep.create('foce', derivatives=d2)
     assert a.derivatives == b.derivatives == d

@@ -57,7 +57,7 @@ def get_ids(model: Model) -> list[int]:
     """
     df = get_and_check_dataset(model)
     idcol = model.datainfo.id_column.name
-    ids = list(int(x) for x in df[idcol].unique())
+    ids = [int(x) for x in df[idcol].unique()]
     return ids
 
 

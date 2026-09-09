@@ -61,7 +61,7 @@ class AbsorptionInterpreter(Interpreter):
 
     def absorption_modes(self, tree):
         children = self.visit_children(tree)
-        return list(Name(child.value.upper()) for child in children)
+        return [Name(child.value.upper()) for child in children]
 
     def absorption_wildcard(self, tree):
         return Wildcard()

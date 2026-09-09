@@ -60,7 +60,7 @@ class LagTimeInterpreter(Interpreter):
 
     def lagtime_modes(self, tree):
         children = self.visit_children(tree)
-        return list(Name(child.value.upper()) for child in children)
+        return [Name(child.value.upper()) for child in children]
 
     def lagtime_wildcard(self, tree):
         return Wildcard()

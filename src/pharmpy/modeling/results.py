@@ -319,7 +319,7 @@ def calculate_individual_parameter_statistics(
         cases = {'median': {}}
     else:
         dataset = get_and_check_dataset(model)
-        column_filter = ['ID'] + list(symbol.name for symbol in all_covariate_free_symbols)
+        column_filter = ['ID'] + [symbol.name for symbol in all_covariate_free_symbols]
         q5 = dataset[column_filter].groupby('ID').median().quantile(0.05)
         q95 = dataset[column_filter].groupby('ID').median().quantile(0.95)
         median = dataset[column_filter].groupby('ID').median().median()

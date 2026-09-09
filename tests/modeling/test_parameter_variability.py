@@ -529,8 +529,8 @@ def test_add_iov_compose(load_model_for_test, pheno_path):
         str(model2.internals.control_stream.get_pred_pk_record()).split('\n')
     )
 
-    rec_omega_1 = list(str(rec) for rec in model1.internals.control_stream.get_records('OMEGA'))
-    rec_omega_2 = list(str(rec) for rec in model2.internals.control_stream.get_records('OMEGA'))
+    rec_omega_1 = [str(rec) for rec in model1.internals.control_stream.get_records('OMEGA')]
+    rec_omega_2 = [str(rec) for rec in model2.internals.control_stream.get_records('OMEGA')]
 
     assert rec_omega_1 == rec_omega_2
 

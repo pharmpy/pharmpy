@@ -59,7 +59,7 @@ class EliminationInterpreter(Interpreter):
 
     def elimination_modes(self, tree):
         children = self.visit_children(tree)
-        return list(Name(child.value.upper()) for child in children)
+        return [Name(child.value.upper()) for child in children]
 
     def elimination_wildcard(self, tree):
         return Wildcard()

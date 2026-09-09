@@ -64,7 +64,7 @@ class DirectEffectInterpreter(Interpreter):
 
     def pdtype_modes(self, tree):
         children = self.visit_children(tree)
-        return list(Name(child.value.upper()) for child in children)
+        return [Name(child.value.upper()) for child in children]
 
     def pdtype_wildcard(self, tree):
         return Wildcard()
