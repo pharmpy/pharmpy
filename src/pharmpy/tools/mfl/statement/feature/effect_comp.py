@@ -30,7 +30,7 @@ class EffectComp(ModelFeature):
                 all_modes = tuple([a for a in default if a not in other.modes])
             else:
                 # NOTE : WILDCARD should not be used here to future proof the method
-                all_modes = tuple(set([a for a in self.modes if a not in other.modes]))
+                all_modes = tuple({a for a in self.modes if a not in other.modes})
 
             if len(all_modes) == 0:
                 all_modes = None

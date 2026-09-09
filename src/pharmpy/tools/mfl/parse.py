@@ -399,14 +399,12 @@ class ModelFeatures:
         return self._metabolite
 
     def expand(self, model):
-        explicit_covariates = set(
-            [
-                p
-                for c in self.covariate
-                if (not isinstance(c.parameter, Ref) and not isinstance(c.covariate, Ref))
-                for p in product(c.parameter, c.covariate)
-            ]
-        )  # Override @ reference with explicit value
+        explicit_covariates = {
+            p
+            for c in self.covariate
+            if (not isinstance(c.parameter, Ref) and not isinstance(c.covariate, Ref))
+            for p in product(c.parameter, c.covariate)
+        }  # Override @ reference with explicit value
         covariate = tuple(
             c for c in [c.eval(model, explicit_covariates) for c in self.covariate] if c is not None
         )
@@ -598,11 +596,11 @@ class ModelFeatures:
         return feature_1 == feature_2
 
     def _subset_transits(self, mfl):
-        lhs_counts = set([c for t in self.transits for c in t.counts])
-        lhs_depot = set([d for t in self.transits for d in t.eval.depot])
+        lhs_counts = {c for t in self.transits for c in t.counts}
+        lhs_depot = {d for t in self.transits for d in t.eval.depot}
 
-        rhs_counts = set([c for t in mfl.transits for c in t.counts])
-        rhs_depot = set([d for t in mfl.transits for d in t.eval.depot])
+        rhs_counts = {c for t in mfl.transits for c in t.counts}
+        rhs_depot = {d for t in mfl.transits for d in t.eval.depot}
         # FIXME : Need to compare counts per depot individually when comparing two
         # search spaces (Currenty working for model vs search space)
         return all(c in lhs_counts for c in rhs_counts) and all(d in lhs_depot for d in rhs_depot)

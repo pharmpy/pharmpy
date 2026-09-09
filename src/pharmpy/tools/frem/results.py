@@ -854,7 +854,7 @@ def get_params(frem_model, rvs, npars):
             statement = [s for s in sset if statement.symbol in s.rhs_symbols][0]
         symbs.append(statement.symbol.name)
 
-    duplicates = set([e for e in symbs if symbs.count(e) > 1])
+    duplicates = {e for e in symbs if symbs.count(e) > 1}
 
     for i, s in enumerate(symbs):
         if s in duplicates:

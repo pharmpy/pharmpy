@@ -1902,9 +1902,9 @@ def update_estimation(control_stream, model):
     for estep in new_sims:
         variables_subset.update(estep.variables)
     verbatim_derivatives = extract_verbatim_derivatives(control_stream, model.random_variables)
-    single_deriv_subset = set([d for d in derivatives_subset if len(d) == 1])
+    single_deriv_subset = {d for d in derivatives_subset if len(d) == 1}
     single_deriv_subset = set(nonmem_deriv_names(single_deriv_subset, model.random_variables))
-    multi_deriv_subset = set([d for d in derivatives_subset if len(d) > 1])
+    multi_deriv_subset = {d for d in derivatives_subset if len(d) > 1}
 
     old_columns = set()
     for estep in old_ests:
