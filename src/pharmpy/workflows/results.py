@@ -143,7 +143,7 @@ def _multi_index_read_json(obj) -> pd.MultiIndex:
 class ResultsJSONDecoder(json.JSONDecoder):
     def __init__(self, model_deserialization_func=None, *args, **kwargs):
         self._model_deserialization_func = model_deserialization_func
-        json.JSONDecoder.__init__(self, object_hook=self.obj_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, *args, object_hook=self.obj_hook, **kwargs)
 
     def obj_hook(self, obj):
         # NOTE: This hook will be called for every dict produced by the

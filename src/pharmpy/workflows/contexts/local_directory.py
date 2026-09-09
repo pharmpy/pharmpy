@@ -372,7 +372,7 @@ class MetadataJSONEncoder(json.JSONEncoder):
 
 class MetadataJSONDecoder(json.JSONDecoder):
     def __init__(self, *args, **kwargs):
-        json.JSONDecoder.__init__(self, object_hook=self.obj_hook, *args, **kwargs)
+        json.JSONDecoder.__init__(self, *args, object_hook=self.obj_hook, **kwargs)
 
     def obj_hook(self, obj):
         return obj
