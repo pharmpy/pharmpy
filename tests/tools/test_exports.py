@@ -17,21 +17,21 @@ exports = (
 
 @pytest.mark.parametrize(('tool',), exports)
 def test_import_tools_all(tool):
-    import pharmpy.tools as tools
+    from pharmpy import tools
 
     assert tool in tools.__all__
 
 
 @pytest.mark.parametrize(('tool',), exports)
 def test_import_tools_dir(tool):
-    import pharmpy.tools as tools
+    from pharmpy import tools
 
     assert tool in dir(tools)
 
 
 @pytest.mark.parametrize(('tool',), exports)
 def test_import_tools_attr(tool):
-    import pharmpy.tools as tools
+    from pharmpy import tools
 
     assert callable(getattr(tools, tool))
 

@@ -6,7 +6,7 @@ import numpy as np
 import pytest
 from pytest import approx
 
-import pharmpy.tools as tools
+from pharmpy import tools
 from pharmpy.deps import pandas as pd
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.frem.models import calculate_parcov_inits, create_model3b

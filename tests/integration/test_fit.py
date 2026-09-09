@@ -3,7 +3,7 @@ import shutil
 
 import pytest
 
-import pharmpy.modeling as modeling
+from pharmpy import modeling
 from pharmpy.config import site_config_path, user_config_path
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.cwd import chdir

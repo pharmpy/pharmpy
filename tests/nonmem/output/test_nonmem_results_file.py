@@ -5,8 +5,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
-import pharmpy.model.external.nonmem.table as table
 import pharmpy.tools.external.nonmem.results_file as rf
+from pharmpy.model.external.nonmem import table
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.workflows.log import Log
 

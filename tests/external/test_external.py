@@ -1,6 +1,6 @@
 import pytest
 
-import pharmpy.model.external.utils as utils
+from pharmpy.model.external import utils
 
 
 def test_detect_model():

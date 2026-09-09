@@ -3,8 +3,8 @@ from unittest import mock
 
 import pytest
 
-import pharmpy.config as config
 import pharmpy.tools.external.nonmem.config
+from pharmpy import config
 from pharmpy.tools.external.nonmem.run import nmfe_path
 
 

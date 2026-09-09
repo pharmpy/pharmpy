@@ -4,7 +4,7 @@ import re
 import shutil
 from contextlib import redirect_stdout
 
-import pharmpy.cli as cli
+from pharmpy import cli
 from pharmpy.internals.fs.cwd import chdir
 
 

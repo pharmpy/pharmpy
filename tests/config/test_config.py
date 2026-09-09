@@ -1,7 +1,6 @@
 import pytest
 
-import pharmpy.config as config
-from pharmpy import conf
+from pharmpy import conf, config
 
 
 def test_config_item():
