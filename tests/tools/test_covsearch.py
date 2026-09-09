@@ -295,7 +295,7 @@ def test_covariate_filtering(load_model_for_test, testdata):
 
     eff, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     assert len(eff) == 2
-    expected_cov_eff = set((('CL', 'APGR', 'cat', '*'), ('V', 'APGR', 'cat', '*')))
+    expected_cov_eff = {('CL', 'APGR', 'cat', '*'), ('V', 'APGR', 'cat', '*')}
     assert set(eff.keys()) == expected_cov_eff
     assert len(get_covariate_effects(filtered_model)) == 2
 

@@ -173,7 +173,7 @@ class error:
             and self.model.parameters[self.sigma].init == 1
             and self.sigma_fix
         ):
-            accepted_symbols = set([self.sigma, self.sigma_alias])
+            accepted_symbols = {self.sigma, self.sigma_alias}
             thetas = get_thetas(self.model).symbols
             accepted_symbols.update(thetas)
             etas = [sympy.Symbol(i) for i in self.model.random_variables.etas.names]
@@ -215,7 +215,7 @@ def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
 
     """
     if aliases is None:
-        aliases = set([symbol])
+        aliases = {symbol}
     else:
         aliases.add(symbol)
     for expr in model.statements.after_odes:
