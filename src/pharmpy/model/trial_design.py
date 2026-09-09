@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from io import StringIO
+from itertools import pairwise
 from typing import Any, Optional, Union, overload
 
 from pharmpy.deps import pandas as pd
@@ -768,7 +769,7 @@ def text_axis(points, size):
     chars_for_bars = size - len(points)
     interval_per_char = (points[-1] - points[0]) / chars_for_bars
 
-    distances = [j - i for i, j in zip(points, points[1:])]
+    distances = [j - i for i, j in pairwise(points)]
     char_distances = [dist / interval_per_char for dist in distances]
     char_distances = list(round_and_keep_sum(pd.Series(char_distances), chars_for_bars))
 

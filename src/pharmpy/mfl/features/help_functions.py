@@ -1,4 +1,5 @@
 from collections import defaultdict
+from itertools import pairwise
 
 
 def group_args(args, i):
@@ -47,7 +48,7 @@ def format_numbers(numbers, as_range=False):
         return f'{numbers[0]}'
 
     numbers_sorted = sorted(numbers)
-    if as_range and all(b - a == 1 for a, b in zip(numbers_sorted, numbers_sorted[1:])):
+    if as_range and all(b - a == 1 for a, b in pairwise(numbers_sorted)):
         numbers_formatted = f'{numbers[0]}..{numbers[-1]}'
     else:
         numbers_formatted = f"[{','.join(str(n) for n in numbers_sorted)}]"
