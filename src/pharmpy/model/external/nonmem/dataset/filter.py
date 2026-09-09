@@ -1,20 +1,13 @@
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Literal, Union, cast
+from typing import Literal, cast
 
 from lark import Lark, Token
 
 from pharmpy.deps import pandas as pd
 
-FilterOperator = Union[
-    Literal["OP_EQ"],
-    Literal["OP_NE"],
-    Literal["OP_LT"],
-    Literal["OP_GT"],
-    Literal["OP_LT_EQ"],
-    Literal["OP_GT_EQ"],
-    Literal["OP_STR_EQ"],
-    Literal["OP_STR_NE"],
+FilterOperator = Literal[
+    "OP_EQ", "OP_NE", "OP_LT", "OP_GT", "OP_LT_EQ", "OP_GT_EQ", "OP_STR_EQ", "OP_STR_NE"
 ]
 
 

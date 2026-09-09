@@ -37,11 +37,7 @@ def parse_format(format: str):
         raise NotImplementedError(format)
 
 
-NONMEMTableFileSeparator = Union[
-    Literal[r"\s+"],
-    Literal["\t"],
-    Literal[","],
-]
+NONMEMTableFileSeparator = Literal[r"\s+", "\t", ","]
 
 
 @dataclass(frozen=True)
