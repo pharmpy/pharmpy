@@ -262,7 +262,7 @@ def add_iov(
 
         if not all(
             map(
-                lambda x: isinstance(x, list) and all(map(lambda y: isinstance(y, str), x)),
+                lambda x: isinstance(x, list) and all(isinstance(y, str) for y in x),
                 params,
             )
         ):

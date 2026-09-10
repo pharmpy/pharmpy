@@ -1819,8 +1819,8 @@ def _pk_free_symbols_from_compartment(
 def _get_component(cs: CompartmentalSystem, compartment: Compartment) -> set[Compartment]:
     central_component_vertices = strongly_connected_component_of(
         cs.central_compartment,
-        lambda u: map(lambda flow: flow[0], cs.get_compartment_outflows(u)),
-        lambda u: map(lambda flow: flow[0], cs.get_compartment_inflows(u)),
+        lambda u: [flow[0] for flow in cs.get_compartment_outflows(u)],
+        lambda u: [flow[0] for flow in cs.get_compartment_inflows(u)],
     )
 
     if compartment == cs.central_compartment:

@@ -160,7 +160,7 @@ class Matrix:
         return isp
 
     def _each_entry_is_a_symbol(self) -> bool:
-        return all(map(lambda s: isinstance(s, symengine.Symbol), self._m))
+        return all(isinstance(s, symengine.Symbol) for s in self._m)
 
     def eigenvals(self) -> dict[Expr, Expr]:
         d = sympy.ImmutableMatrix(self._m).eigenvals()

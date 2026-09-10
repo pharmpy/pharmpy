@@ -221,7 +221,7 @@ def set_first_order_elimination(model: Model) -> Model:
         if v not in rate.free_symbols:
             v = [
                 idx
-                for idx in list(map(lambda x: str(x), rate.free_symbols))
+                for idx in [str(x) for x in rate.free_symbols]
                 if idx[0] == 'V' and len(idx) <= 2
             ]
             v = Expr.symbol(v[0])
