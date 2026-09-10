@@ -288,7 +288,7 @@ class ThetaRecord(Record):
         def _update_theta(child: Union[AttrTree, AttrToken]):
             nonlocal i
 
-            if not isinstance(child, AttrTree) or not child.rule == 'theta':
+            if not isinstance(child, AttrTree) or child.rule != 'theta':
                 return child
 
             theta = child

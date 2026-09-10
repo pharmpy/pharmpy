@@ -1966,7 +1966,7 @@ def update_estimation(control_stream, model):
         all_cols = parse_table_record_columns(
             table, {}, (), (), len(model.random_variables.etas.names)
         )
-        if not set(all_cols) == to_remove:
+        if set(all_cols) != to_remove:
             new_table = table
             derivative_regex = r'[HG]\d+'
             have_noprint = False

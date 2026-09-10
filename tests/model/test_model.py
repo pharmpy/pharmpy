@@ -115,14 +115,14 @@ def test_model_equality(load_example_model_for_test):
     assert model1 != model2
 
     model2 = Model.create('model2', initial_individual_estimates=pd.DataFrame({'a': [1, 2, 3]}))
-    assert not model1 == model2
-    assert not model2 == model1
+    assert model1 != model2
+    assert model2 != model1
 
     model1 = Model.create('model1', initial_individual_estimates=pd.DataFrame({'a': [1, 2, 3]}))
     assert model1 == model2
 
     model1 = Model.create('model1', initial_individual_estimates=pd.DataFrame({'a': [1, 2, 4]}))
-    assert not model1 == model2
+    assert model1 != model2
 
 
 def test_replace(load_model_for_test, testdata):
