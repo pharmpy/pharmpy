@@ -33,8 +33,7 @@ def diff(old: Sequence[T], new: Sequence[T]) -> Iterator[tuple[C, T]]:
     rnew = rnew[: len(rnew) - len(saved)]
 
     c = _matrix(rold, rnew)
-    for op, val in _diff(c, rold, rnew, len(rold) - 1, len(rnew) - 1):
-        yield op, val
+    yield from _diff(c, rold, rnew, len(rold) - 1, len(rnew) - 1)
 
     while saved:
         yield saved.pop()
