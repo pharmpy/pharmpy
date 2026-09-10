@@ -155,8 +155,7 @@ class DataRecord(OptionRecord):
     def ignore(self):
         filters = []
         for option in self.root.subtrees('ignore'):
-            for filt in option.subtrees('filter'):
-                filters.append(filt)
+            filters.extend(option.subtrees('filter'))
         return filters
 
     def get_filters(self) -> list[Ignore]:
@@ -209,8 +208,7 @@ class DataRecord(OptionRecord):
     def accept(self):
         filters = []
         for option in self.root.subtrees('accept'):
-            for filt in option.subtrees('filter'):
-                filters.append(filt)
+            filters.extend(option.subtrees('filter'))
         return filters
 
     def remove_accept(self):

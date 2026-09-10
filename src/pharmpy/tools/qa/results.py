@@ -409,8 +409,7 @@ def calc_transformed_etas(original_model_entry, new_model_entry, transform_name,
             params.append(p)
         else:
             assert isinstance(dist, JointNormalDistribution)
-            for p in dist.variance.diagonal():
-                params.append(p)
+            params.extend(dist.variance.diagonal())
 
     boxcox_sds = [
         newres.parameter_estimates_sdcorr[p.name]

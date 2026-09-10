@@ -482,23 +482,19 @@ class ModelFeatures:
         if "elimination" in attribute_type:
             mfl_list.append(self.elimination)
         if "transits" in attribute_type:
-            for t in self.transits:
-                mfl_list.append(t)
+            mfl_list.extend(self.transits)
         if "peripherals" in attribute_type:
-            for p in self.peripherals:
-                mfl_list.append(p)
+            mfl_list.extend(self.peripherals)
         if "lagtime" in attribute_type:
             mfl_list.append(self.lagtime)
         if "covariate" in attribute_type:
-            for c in self.covariate:
-                mfl_list.append(c)
+            mfl_list.extend(self.covariate)
         if "direct_effect" in attribute_type:
             mfl_list.append(self.direct_effect)
         if "effect_comp" in attribute_type:
             mfl_list.append(self.effect_comp)
         if "indirect_effect" in attribute_type:
-            for i in self.indirect_effect:
-                mfl_list.append(i)
+            mfl_list.extend(self.indirect_effect)
         if "metabolite" in attribute_type:
             mfl_list.append(self.metabolite)
 
