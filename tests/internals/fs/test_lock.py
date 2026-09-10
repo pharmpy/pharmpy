@@ -101,7 +101,7 @@ def test_non_blocking(tmp_path, parallelization, exception, shared):
         nb = 1 + (
             1
             if not shared[0] or (os.name == 'nt' and 'processes' in repr(parallelization))
-            else sum(map(lambda s: 1 if s else 0, shared))
+            else sum(1 if s else 0 for s in shared)
         )
 
         with parallelization(n) as [executor, m]:

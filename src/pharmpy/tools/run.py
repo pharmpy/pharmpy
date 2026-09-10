@@ -1239,7 +1239,7 @@ def is_strictness_fulfilled(
             )
 
         # Check that only allowed arguments are in the statement
-        if not all(map(lambda x: x in allowed_args, args_in_statement)):
+        if not all(x in allowed_args for x in args_in_statement):
             raise ValueError(
                 f'Some expressions were not correct. Valid arguments are: {allowed_args}'
             )

@@ -2516,7 +2516,7 @@ def find_clearance_parameters(model: Model) -> list[str]:
             assignment = sset.find_assignment(rate)
             assert assignment is not None
             rate = assignment.expression
-        a, b = map(lambda x: x.free_symbols, rate.as_numer_denom())
+        a, b = [x.free_symbols for x in rate.as_numer_denom()]
         if b:
             clearance_symbols = a - b - {t}
             for clearance in clearance_symbols:

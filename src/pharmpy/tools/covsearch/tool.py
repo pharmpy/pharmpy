@@ -641,9 +641,7 @@ def perform_step_procedure(
             )
 
         all_candidates_so_far.extend(new_candidates)
-        new_candidate_modelentries = list(
-            map(lambda candidate: candidate.modelentry, new_candidates)
-        )
+        new_candidate_modelentries = [candidate.modelentry for candidate in new_candidates]
         # NOTE: We assume parent_modelentry.modelfit_results is not None
         parent_modelentry = best_candidate_so_far.modelentry
         assert parent_modelentry.modelfit_results is not None
