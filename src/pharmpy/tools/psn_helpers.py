@@ -12,9 +12,8 @@ def get_psn_option(path, option, remove_quotes=True):
             row = row.strip()
             if row.startswith(option + ':'):
                 token = row[len(option) + 2 :]
-                if remove_quotes:
-                    if token[0] in ("'", '"'):
-                        token = token[1:-1]
+                if remove_quotes and token[0] in ("'", '"'):
+                    token = token[1:-1]
                 return token
     return None
 

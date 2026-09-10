@@ -349,11 +349,11 @@ def validate_input(
         strictness is not None
         and parameter_uncertainty_method is None
         and "rse" in strictness.lower()
+        and model.execution_steps[-1].parameter_uncertainty_method is None
     ):
-        if model.execution_steps[-1].parameter_uncertainty_method is None:
-            raise ValueError(
-                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
-            )
+        raise ValueError(
+            '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
+        )
 
 
 @dataclass(frozen=True)

@@ -344,11 +344,14 @@ def extended_states(model_names, included_relations):
 def step_data_frame(step, included_relations):
     df = step['runtable']
     is_backward = df['is_backward'].iloc[0]
-    if is_backward and included_relations:
-        if np.all(np.isnan(df['extended_state'].values.flatten())):
-            # This must be a backward step without preceding steps of any kind
-            # and where included_relations was not found from conf file
-            df['extended_state'] = extended_states(df['model'], included_relations)
+    if (
+        is_backward
+        and included_relations
+        and np.all(np.isnan(df['extended_state'].values.flatten()))
+    ):
+        # This must be a backward step without preceding steps of any kind
+        # and where included_relations was not found from conf file
+        df['extended_state'] = extended_states(df['model'], included_relations)
     df['step'] = step['number']
     if 'pvalue' in df.columns:
         if step['criterion']:

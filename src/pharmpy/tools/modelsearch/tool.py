@@ -377,11 +377,11 @@ def validate_input(
         strictness is not None
         and parameter_uncertainty_method is None
         and "rse" in strictness.lower()
+        and model.execution_steps[-1].parameter_uncertainty_method is None
     ):
-        if model.execution_steps[-1].parameter_uncertainty_method is None:
-            raise ValueError(
-                '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
-            )
+        raise ValueError(
+            '`parameter_uncertainty_method` not set for model, cannot calculate relative standard errors.'
+        )
     if rank_type != 'mbic' and E is not None:
         raise ValueError(f'E can only be provided when `rank_type` is mbic: got `{rank_type}`')
     if rank_type == 'mbic':

@@ -487,19 +487,21 @@ def validate_input(
                     'degrees of freedom compared to reference model'
                 )
 
-    if not parameter_uncertainty_method and "rse" in strictness.lower():
-        if any(model.execution_steps[-1].parameter_uncertainty_method is None for model in models):
-            raise ValueError(
-                '`parameter_uncertainty_method` not set for one or more models, '
-                'cannot calculate relative standard errors.'
-            )
+    if (
+        not parameter_uncertainty_method
+        and "rse" in strictness.lower()
+        and any(model.execution_steps[-1].parameter_uncertainty_method is None for model in models)
+    ):
+        raise ValueError(
+            '`parameter_uncertainty_method` not set for one or more models, '
+            'cannot calculate relative standard errors.'
+        )
 
-    if search_space:
-        if isinstance(search_space, str):
-            try:
-                ModelFeaturesNew.create(search_space)
-            except ValueError:
-                raise ValueError(f'Invalid `search_space`: {search_space}')
+    if search_space and isinstance(search_space, str):
+        try:
+            ModelFeaturesNew.create(search_space)
+        except ValueError:
+            raise ValueError(f'Invalid `search_space`: {search_space}')
 
     if rank_type.startswith('mbic'):
         if search_space is None:

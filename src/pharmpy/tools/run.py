@@ -296,13 +296,11 @@ def run_tool_with_name(
         model_type = str(type(tool_options["model"])).split(".")[-3]
         results = tool_options["results"]
         esttool = common_options["esttool"]
-        if results:
-            if esttool != model_type:
-                if not (esttool is None and model_type == "nonmem"):
-                    ctx.log_warning(
-                        f"Not recommended to run tools with different estimation tool ({esttool})"
-                        f" than that of the input model ({model_type})"
-                    )
+        if results and esttool != model_type and not (esttool is None and model_type == "nonmem"):
+            ctx.log_warning(
+                f"Not recommended to run tools with different estimation tool ({esttool})"
+                f" than that of the input model ({model_type})"
+            )
 
     wf: Workflow = create_workflow(*args, **tool_options)
     assert wf.name == tool_name
@@ -1095,9 +1093,8 @@ def rank_models(
             model_ofv = np.nan if (mfr := res) is None else mfr.ofv
             if not lrt_test(parent_model, model, parent_ofv, model_ofv, co):
                 continue
-        elif cutoff is not None:
-            if ref_value - rank_value <= cutoff:
-                continue
+        elif cutoff is not None and ref_value - rank_value <= cutoff:
+            continue
 
         # Add ranking value and model
         rank_values[model.name] = rank_value
