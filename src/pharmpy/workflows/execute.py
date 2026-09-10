@@ -3,16 +3,14 @@ from __future__ import annotations
 import os
 import warnings
 from pathlib import Path
-from typing import Optional, TypeVar
+from typing import Optional
 
 from .dispatchers import Dispatcher
 from .results import ModelfitResults, Results
 from .workflow import Workflow, WorkflowBuilder, insert_context
 
-T = TypeVar('T')
 
-
-def execute_workflow(
+def execute_workflow[T](
     workflow: Workflow[T], dispatcher=None, context=None, path=None, resume=False
 ) -> Optional[T]:
     """Execute workflow
@@ -59,7 +57,7 @@ def execute_workflow(
     return res  # pyright: ignore [reportReturnType]
 
 
-def execute_subtool(workflow: Workflow[T], context):
+def execute_subtool[T](workflow: Workflow[T], context):
     assert context is not None
 
     res_name = context.context_path.replace('/', '_')

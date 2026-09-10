@@ -1,9 +1,6 @@
 import sys
 from collections.abc import Iterable, Iterator
 from itertools import islice, tee
-from typing import TypeVar
-
-T = TypeVar('T')
 
 _version = sys.version_info[:3]
 _minor = _version[:2]
@@ -22,14 +19,14 @@ elif _minor >= (3, 14):
 
 else:
     # SEE: https://github.com/python/cpython/issues/137597#issuecomment-3186240062
-    def _tee(iterable: Iterable[T], n: int = 2, /):
+    def _tee[T](iterable: Iterable[T], n: int = 2, /):
         if hasattr(iterable, "__copy__"):
             return tee(iterable, n + 1)[1:]
         else:
             return tee(iterable, n)
 
 
-def _fork(iterable: Iterable[T]):
+def _fork[T](iterable: Iterable[T]):
     return _tee(iterable, 1)[0]
 
 

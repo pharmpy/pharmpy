@@ -1,10 +1,7 @@
 from collections.abc import Callable, Iterable
-from typing import TypeVar
-
-T = TypeVar('T')
 
 
-def reachable_from(start_nodes: set[T], neighbors: Callable[[T], Iterable[T]]) -> set[T]:
+def reachable_from[T](start_nodes: set[T], neighbors: Callable[[T], Iterable[T]]) -> set[T]:
     queue = list(start_nodes)
     closure = set(start_nodes)
     while queue:

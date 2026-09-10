@@ -1,12 +1,9 @@
 from collections.abc import Callable, Iterable
-from typing import TypeVar
 
 from .reachability import reachable_from
 
-T = TypeVar('T')
 
-
-def strongly_connected_component_of(
+def strongly_connected_component_of[T](
     vertex: T, successors: Callable[[T], Iterable[T]], predecessors: Callable[[T], Iterable[T]]
 ):
     forward_reachable = reachable_from({vertex}, successors)

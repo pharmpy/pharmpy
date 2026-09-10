@@ -1,11 +1,10 @@
 from collections.abc import Iterator, Sequence
-from typing import Literal, TypeVar
+from typing import Literal
 
-T = TypeVar('T')
 C = Literal[-1, 0, 1]
 
 
-def diff(old: Sequence[T], new: Sequence[T]) -> Iterator[tuple[C, T]]:
+def diff[T](old: Sequence[T], new: Sequence[T]) -> Iterator[tuple[C, T]]:
     """Get diff between a and b in order for all elements
 
     Optimizes by first handling equal elements from the head and tail
@@ -39,7 +38,7 @@ def diff(old: Sequence[T], new: Sequence[T]) -> Iterator[tuple[C, T]]:
         yield saved.pop()
 
 
-def _matrix(a: Sequence[T], b: Sequence[T]) -> Sequence[Sequence[int]]:
+def _matrix[T](a: Sequence[T], b: Sequence[T]) -> Sequence[Sequence[int]]:
     # generate matrix of length of longest common subsequence for sublists of both lists
     lengths = [[0] * (len(b) + 1) for _ in range(len(a) + 1)]
     for i, x in enumerate(a):
@@ -51,7 +50,7 @@ def _matrix(a: Sequence[T], b: Sequence[T]) -> Sequence[Sequence[int]]:
     return lengths
 
 
-def _diff(
+def _diff[T](
     c: Sequence[Sequence[int]], x: Sequence[T], y: Sequence[T], i: int, j: int
 ) -> Iterator[tuple[C, T]]:
     """Print the diff using LCS length matrix using backtracking"""

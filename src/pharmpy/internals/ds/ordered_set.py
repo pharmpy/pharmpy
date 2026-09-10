@@ -1,14 +1,12 @@
 from collections.abc import Iterable, MutableSet
 from collections.abc import Set as AbstractSet
 from itertools import chain
-from typing import Any, Literal, Optional, TypeVar
-
-T = TypeVar('T')
+from typing import Any, Literal, Optional
 
 NIL = 0
 
 
-def _map(iterable: Iterable[T]) -> Iterable[tuple[T, Literal[0]]]:
+def _map[T](iterable: Iterable[T]) -> Iterable[tuple[T, Literal[0]]]:
     return ((x, NIL) for x in iterable)
 
 
