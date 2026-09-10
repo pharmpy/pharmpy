@@ -33,10 +33,7 @@ class ModelFeature(Immutable):
 
     def is_expanded(self):
         arg_types = (type(arg) for arg in self.args)
-        if Ref in arg_types:
-            return False
-        else:
-            return True
+        return Ref not in arg_types
 
     @staticmethod
     def _canonicalize_type(type: str, types: Iterable[str], name: Optional[str] = None) -> str:

@@ -185,7 +185,4 @@ def has_presystemic_metabolite(model: Model) -> bool:
     CM = odes.get_flow(central, metabolite)
     DM = odes.get_flow(depot, metabolite)
 
-    if CM != Expr.integer(0) and DM != Expr.integer(0):
-        return True
-    else:
-        return False
+    return CM != Expr.integer(0) and DM != Expr.integer(0)

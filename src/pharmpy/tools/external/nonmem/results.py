@@ -329,10 +329,8 @@ class ModelfitResultsProxy:
             or model.execution_steps[-1].parameter_uncertainty_method is None
         ):
             return None
-        elif self.status.covstatus:
-            return True
         else:
-            return False
+            return bool(self.status.covstatus)
 
     @property
     @cache_method_no_args

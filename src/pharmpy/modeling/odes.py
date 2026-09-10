@@ -1995,9 +1995,7 @@ def has_lag_time(model: Model) -> bool:
         return False
 
     dosing = odes.dosing_compartments[0]
-    if dosing.lag_time:
-        return True
-    return False
+    return bool(dosing.lag_time)
 
 
 def _add_zero_order_absorption(

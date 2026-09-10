@@ -1205,9 +1205,7 @@ def match_advan2(statements):
         # Cannot use reserved symbols
         return False
     central_outflows = odes.get_compartment_outflows(central)
-    if len(central_outflows) != 1:
-        return False
-    return True
+    return len(central_outflows) == 1
 
 
 def match_advan3(odes):
@@ -1217,9 +1215,7 @@ def match_advan3(odes):
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 1:
         return False
-    if odes.get_flow(bidir[0], output) != 0:
-        return False
-    return True
+    return odes.get_flow(bidir[0], output) == 0
 
 
 def match_advan4(statements):
@@ -1247,9 +1243,7 @@ def match_advan4(statements):
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 1:
         return False
-    if odes.get_flow(bidir[0], output) != 0 or odes.get_flow(bidir[0], dosing) != 0:
-        return False
-    return True
+    return odes.get_flow(bidir[0], output) == 0 and odes.get_flow(bidir[0], dosing) == 0
 
 
 def match_advan11(odes):
@@ -1259,13 +1253,11 @@ def match_advan11(odes):
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 2:
         return False
-    if (
-        odes.get_flow(bidir[0], output) != 0
-        or odes.get_flow(bidir[1], output) != 0
-        or odes.get_flow(bidir[0], bidir[1]) != 0
-    ):
-        return False
-    return True
+    return (
+        odes.get_flow(bidir[0], output) == 0
+        and odes.get_flow(bidir[1], output) == 0
+        and odes.get_flow(bidir[0], bidir[1]) == 0
+    )
 
 
 def match_advan12(statements):
@@ -1293,13 +1285,11 @@ def match_advan12(statements):
     bidir = odes.get_bidirectionals(central)
     if len(bidir) != 2:
         return False
-    if (
-        odes.get_flow(bidir[0], output) != 0
-        or odes.get_flow(bidir[1], output) != 0
-        or odes.get_flow(bidir[0], bidir[1]) != 0
-    ):
-        return False
-    return True
+    return (
+        odes.get_flow(bidir[0], output) == 0
+        and odes.get_flow(bidir[1], output) == 0
+        and odes.get_flow(bidir[0], bidir[1]) == 0
+    )
 
 
 def new_advan_trans(model: Model):

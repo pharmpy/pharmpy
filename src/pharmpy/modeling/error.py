@@ -811,10 +811,7 @@ def has_weighted_error_model(model: Model) -> bool:
     has_proportional_error_model : Check if a model has a proportional error model
     """
     w = get_weighted_error_model_weight(model)
-
-    if w:
-        return True
-    return False
+    return bool(w)
 
 
 def get_weighted_error_model_weight(model: Model):

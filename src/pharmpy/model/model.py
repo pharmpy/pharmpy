@@ -490,10 +490,7 @@ class Model(Immutable):
                 return False
         if self.datainfo != other.datainfo:
             return False
-        if self.value_type != other.value_type:
-            return False
-
-        return True
+        return self.value_type == other.value_type
 
     @cache_method_no_args
     def __hash__(self):
@@ -680,10 +677,7 @@ class Model(Immutable):
             True if both models have the same dataset
         """
         if self.dataset is None:
-            if other.dataset is None:
-                return True
-            else:
-                return False
+            return other.dataset is None
 
         if other.dataset is None:
             return False

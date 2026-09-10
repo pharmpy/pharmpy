@@ -298,10 +298,7 @@ def verification(
     if return_comp is True or return_stat is True:
         return combined_result
     else:
-        if all(combined_result["PASS/FAIL"] == "PASS"):
-            return True
-        else:
-            return False
+        return all(combined_result["PASS/FAIL"] == "PASS")
 
 
 def compare_models(

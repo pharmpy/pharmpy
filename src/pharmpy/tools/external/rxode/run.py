@@ -218,7 +218,4 @@ def verification(
     if return_comp is True:
         return combined_result
     else:
-        if all(combined_result["PASS/FAIL"] == "PASS"):
-            return True
-        else:
-            return False
+        return all(combined_result["PASS/FAIL"] == "PASS")

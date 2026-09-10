@@ -584,10 +584,7 @@ def is_in_search_space(
 
     features_to_add, features_to_remove = _get_feature_diffs(search_space, model_features, type)
 
-    if features_to_add or features_to_remove:
-        return False
-    else:
-        return True
+    return not (features_to_add or features_to_remove)
 
 
 def get_search_space_parameters_not_in_model(
@@ -595,9 +592,7 @@ def get_search_space_parameters_not_in_model(
     search_space: Union[ModelFeatures, Sequence[ModelFeature]],
 ) -> tuple[str, ...]:
     def _is_param_in_model(p, symbols):
-        if isinstance(p, str) and Expr.symbol(p) not in symbols:
-            return False
-        return True
+        return not (isinstance(p, str) and Expr.symbol(p) not in symbols)
 
     params_not_in_model = []
     for feature in search_space:

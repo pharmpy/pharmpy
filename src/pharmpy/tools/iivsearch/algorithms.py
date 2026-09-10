@@ -319,10 +319,7 @@ def _is_valid_block_combination(features: Sequence[Covariance]):
         adj[i, i] = True
         adj[j, j] = True
 
-    if (~adj).any():
-        return False
-    else:
-        return True
+    return not (~adj).any()
 
 
 def create_candidate(name, mfl, type, as_fullblock, base_model_entry):
