@@ -77,7 +77,7 @@ class TemporaryDirectory:
                 pass
             else:
                 if not ignore_errors:
-                    raise
+                    raise  # noqa: PLE0704
 
         _shutil.rmtree(name, onexc=onerror)
 
