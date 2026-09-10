@@ -37,7 +37,7 @@ def execute_model(model_entry, context, evaluate=False, path=None):
     model = model_entry.model
 
     if evaluate:
-        if [s.evaluation for s in model.execution_steps._steps][0] is False:
+        if next(s.evaluation for s in model.execution_steps._steps) is False:
             model = set_evaluation_step(model)
 
     if path is None:  # Only used in verification
@@ -250,7 +250,7 @@ def verification(
         nonmem_model = fixate_eta(nonmem_model)
 
     # Check that evaluation step is set to True
-    if [s.evaluation for s in nonmem_model.execution_steps._steps][0] is False:
+    if next(s.evaluation for s in nonmem_model.execution_steps._steps) is False:
         nonmem_model = set_evaluation_step(nonmem_model)
 
     # Update the NONMEM model with new estimates

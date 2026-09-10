@@ -468,7 +468,7 @@ def get_model_covariates(model: Model, strings: bool = False) -> Union[list[str]
         ode_deps = set()
 
     # FIXME: This should be handled for all DVs
-    first_dv = list(model.dependent_variables.keys())[0]
+    first_dv = next(iter(model.dependent_variables.keys()))
     y = model.statements.find_assignment(first_dv)
     y_deps = model.statements.error.dependencies(y)
 
@@ -837,7 +837,7 @@ def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
             if not _is_collapsable(extended, rate_extended, rate_reduced, params_added):
                 return None
 
-    y_symb = list(extended.dependent_variables.keys())[0]
+    y_symb = next(iter(extended.dependent_variables.keys()))
     y_extended = extended.statements.after_odes.full_expression(y_symb)
     y_reduced = reduced.statements.after_odes.full_expression(y_symb)
 

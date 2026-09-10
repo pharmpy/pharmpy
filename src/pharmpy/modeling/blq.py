@@ -198,7 +198,7 @@ def _m3_m4_method(model, indicator, indicator_type, level, level_type, method):
     model = model.replace(execution_steps=est_steps_new)
 
     # FIXME: Handle other DVs?
-    y_symb = list(model.dependent_variables.keys())[0]
+    y_symb = next(iter(model.dependent_variables.keys()))
     y = sset.find_assignment(y_symb)
     ipred = y.expression.subs({rv: 0 for rv in model.random_variables.epsilons.names})
 
@@ -262,7 +262,7 @@ def has_blq_transformation(model: Model, y=None) -> bool:
     if y:
         y = model.statements.error.find_assignment(y)
     else:
-        y_symb = list(model.dependent_variables.keys())[0]
+        y_symb = next(iter(model.dependent_variables.keys()))
         y = model.statements.error.find_assignment(y_symb)
     if not y:
         raise ValueError(f'Could not find assignment for \'{y}\'')

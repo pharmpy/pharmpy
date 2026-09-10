@@ -20,7 +20,7 @@ def least_number_of_transformations(
         if lhs is None and rhs is None:
             return lnt
         if not any(x in rhs.eval.modes for x in lhs.eval.modes):
-            name, func = list(mfl.convert_to_funcs([name]).items())[0]
+            name, func = next(iter(mfl.convert_to_funcs([name]).items()))
             lnt[name] = func
         return lnt
 

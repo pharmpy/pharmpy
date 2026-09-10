@@ -442,7 +442,7 @@ class ModelFeatures:
             covariate = ()
             for param, cov, fp, op, opt in covariate_combinations:
                 covariate += (
-                    Covariate(tuple(param), tuple(cov), tuple(fp), list(op)[0], list(opt)[0]),
+                    Covariate(tuple(param), tuple(cov), tuple(fp), next(iter(op)), next(iter(opt))),
                 )
 
         return ModelFeatures.create(
@@ -797,7 +797,7 @@ class ModelFeatures:
         cov_res = []
         for param, cov, fp, op, opt in res:
             cov_res.append(
-                Covariate(tuple(param), tuple(cov), tuple(fp), list(op)[0], list(opt)[0])
+                Covariate(tuple(param), tuple(cov), tuple(fp), next(iter(op)), next(iter(opt)))
             )
 
         if all(len(c.parameter) == 0 for c in cov_res):

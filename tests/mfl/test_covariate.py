@@ -49,7 +49,7 @@ def test_create():
 )
 def test_create_raises(new_opt, expected_error):
     args_dict = {'parameter': 'CL', 'covariate': 'WGT', 'fp': 'EXP', 'op': '*', 'optional': False}
-    opt_name = list(new_opt.keys())[0]
+    opt_name = next(iter(new_opt.keys()))
     args_dict[opt_name] = new_opt[opt_name]
     with pytest.raises(expected_error):
         Covariate.create(**args_dict)

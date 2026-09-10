@@ -1058,7 +1058,7 @@ def rank_models(
         )
     if rank_type == 'lrt' and not parent_dict:
         parent_dict = {model.name: base_model.name for model in models}
-    if parent_dict and not isinstance(list(parent_dict.keys())[0], str):
+    if parent_dict and not isinstance(next(iter(parent_dict.keys())), str):
         parent_dict = {child.name: parent.name for child, parent in parent_dict.items()}
 
     models_all = [base_model] + models

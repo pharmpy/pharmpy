@@ -584,7 +584,7 @@ def test_rank_model_entries(
 
     ranking = rank_model_entries(rank_values, rank_type)
 
-    me_best = list(ranking.keys())[0]
+    me_best = next(iter(ranking.keys()))
     assert me_best.model.name == final_model
 
     if rank_type == 'lrt' and final_model == model_ref.name:

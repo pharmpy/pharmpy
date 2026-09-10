@@ -72,7 +72,7 @@ def psn_linearize_results(path):
     base_model_path = path / 'scm_dir1' / 'derivatives.mod'
     base_model = Model.parse_model(base_model_path)
     base_model_results = parse_modelfit_results(base_model, base_model_path)
-    lin_path = list(path.glob('*_linbase.mod'))[0]
+    lin_path = next(iter(path.glob('*_linbase.mod')))
     lin_model = Model.parse_model(lin_path)
     lin_model_results = parse_modelfit_results(lin_model, lin_path)
 

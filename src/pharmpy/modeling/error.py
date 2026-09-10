@@ -23,7 +23,7 @@ def _preparations(model, y=None):
     stats = model.statements
     # FIXME: Handle other DVs?
     if y is None:
-        y = list(model.dependent_variables.keys())[0]
+        y = next(iter(model.dependent_variables.keys()))
     if not model.statements.find_assignment(y.name):
         raise ValueError(f'Could not find assignment for \'{y}\'')
     f = model.statements.find_assignment(y.name).expression.subs(
@@ -1156,7 +1156,7 @@ def set_power_on_ruv(
 def get_ipred(model, dv=None):
     # FIXME: Handle other DVs?
     if dv is None:
-        dv = list(model.dependent_variables.keys())[0]
+        dv = next(iter(model.dependent_variables.keys()))
     expr = model.statements.after_odes.full_expression(dv)
     ipred = expr.subs({Expr.symbol(rv): 0 for rv in model.random_variables.names})
     for s in model.statements:

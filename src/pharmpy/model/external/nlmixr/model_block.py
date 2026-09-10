@@ -72,7 +72,7 @@ def add_statements(
         res_alias = set()
 
     # FIXME: Handle other DVs?
-    dv = list(model.dependent_variables.keys())[0]
+    dv = next(iter(model.dependent_variables.keys()))
     for s in statements:
         if isinstance(s, Assignment):
             if s.symbol == dv and not s.expression.is_piecewise():

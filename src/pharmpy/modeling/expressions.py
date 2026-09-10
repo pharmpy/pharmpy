@@ -64,7 +64,7 @@ def get_observation_expression(model: Model) -> Expr:
     raise_if_odes(model)
     stats = model.statements
     # FIXME: Handle other DVs
-    dv = list(model.dependent_variables.keys())[0]
+    dv = next(iter(model.dependent_variables.keys()))
     for i, s in enumerate(stats):
         if s.symbol == dv:
             y = s.expression

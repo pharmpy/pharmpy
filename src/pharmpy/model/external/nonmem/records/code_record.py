@@ -71,7 +71,7 @@ class NMTranPrinter(sympy_printing.str.StrPrinter):
 
                 if rvs_intersect:
                     if len(rvs_intersect) == 1:
-                        rv_name = list(rvs_intersect)[0]
+                        rv_name = next(iter(rvs_intersect))
                         variability_level = self.rvs[rv_name].level
                         if variability_level == 'RUV':
                             terms_ruv.append(arg)

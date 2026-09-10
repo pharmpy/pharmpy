@@ -45,7 +45,7 @@ def execute_model(model_entry, db):
     code = pre + model.code
     cg = CodeGenerator()
 
-    dv = list(model.dependent_variables.keys())[0]
+    dv = next(iter(model.dependent_variables.keys()))
     cg.add(f"res <- as.data.frame(fit[c('id', 'time', '{dv}')])")
     cg.add("sigma <- as.data.frame(sigmas)")
     cg.add("omegas <- as.data.frame(omegas)")
@@ -138,7 +138,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None
     except (FileNotFoundError, OSError):
         return None
 
-    dv = list(model.dependent_variables.keys())[0]
+    dv = next(iter(model.dependent_variables.keys()))
     pred = rdata["res"][["id", "time", f"{dv}"]]
     pred.rename(columns={f"{dv}": 'PRED', "id": "ID", "time": "TIME"}, inplace=True)
     pred = pred.set_index(["ID", "TIME"])

@@ -849,9 +849,9 @@ def get_params(frem_model, rvs, npars):
     symbs = []
 
     for p in param_names:
-        statement = [s for s in sset if Expr.symbol(p) in s.rhs_symbols][0]
+        statement = next(s for s in sset if Expr.symbol(p) in s.rhs_symbols)
         if str(statement.expression) == p:
-            statement = [s for s in sset if statement.symbol in s.rhs_symbols][0]
+            statement = next(s for s in sset if statement.symbol in s.rhs_symbols)
         symbs.append(statement.symbol.name)
 
     duplicates = {e for e in symbs if symbs.count(e) > 1}

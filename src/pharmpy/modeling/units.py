@@ -82,7 +82,7 @@ def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit |
     # Set of tuples symbol, expression where units cannot yet be deduced
     unknown = set()
 
-    y = list(model.dependent_variables.keys())[0]
+    y = next(iter(model.dependent_variables.keys()))
     known[y] = known[di.dv_column.symbol]
     id_symbol = model.datainfo.id_column.symbol
     known[id_symbol] = Unit("")

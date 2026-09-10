@@ -183,7 +183,9 @@ def _remove_nan(inits):
 def _get_nonfixed_rvs(model):
     fixed_omegas = get_omegas(model).fixed.names
     rvs = model.random_variables
-    nonfixed_rvs = [rv for rv in rvs if str(list(rv.variance.free_symbols)[0]) not in fixed_omegas]
+    nonfixed_rvs = [
+        rv for rv in rvs if str(next(iter(rv.variance.free_symbols))) not in fixed_omegas
+    ]
     return RandomVariables.create(nonfixed_rvs)
 
 

@@ -3125,4 +3125,4 @@ def get_central_volume_and_clearance(model: Model) -> tuple[Expr, Expr]:
             cls.add(clearance)
     else:
         raise ValueError('Model is not suitable')
-    return list(vcs)[0], list(cls)[0]
+    return next(iter(vcs)), next(iter(cls))

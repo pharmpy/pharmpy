@@ -324,7 +324,7 @@ def calc_scm_dofv(scm_results):
     table.index = table.index.droplevel(0)
     univariate_sum = table['ofv_drop'].sum()
     top = table.sort_values(by=['ofv_drop']).iloc[-1:]
-    table['coeff'] = [list(coveff.values())[0] for coveff in table['covariate_effects']]
+    table['coeff'] = [next(iter(coveff.values())) for coveff in table['covariate_effects']]
     table = table[['ofv_drop', 'coeff']]
     table.columns = ['dofv', 'coeff']
     table.rename(mapper=lambda name: f'ETA({name[2:]})', level=0, inplace=True)
@@ -545,7 +545,7 @@ def psn_qa_results(path):
     orig_res = parse_modelfit_results(original_model, original_path)
     original_model_entry = ModelEntry.create(model=original_model, modelfit_results=orig_res)
 
-    base_path = list(path.glob('*_linbase.mod'))[0]
+    base_path = next(iter(path.glob('*_linbase.mod')))
     base_model = Model.parse_model(base_path)
     base_res = parse_modelfit_results(base_model, base_path)
     base_model_entry = ModelEntry.create(model=base_model, modelfit_results=base_res)

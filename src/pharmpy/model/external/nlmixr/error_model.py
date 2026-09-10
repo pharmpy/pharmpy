@@ -125,7 +125,7 @@ class res_error_term:
                     self.add.expr = self.add.expr + term
 
     def is_only_piecewise(self):
-        dv = list(self.model.dependent_variables.keys())[0]
+        dv = next(iter(self.model.dependent_variables.keys()))
         for s in reversed(self.model.statements.after_odes):
             if s.symbol == dv:
                 if not s.expression.is_piecewise():

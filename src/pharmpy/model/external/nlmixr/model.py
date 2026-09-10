@@ -151,7 +151,7 @@ def create_model(cg: CodeGenerator, model: pharmpy.model.Model) -> None:
     cg.add("")
 
     # Find what kind of error model we are looking at
-    dv = list(model.dependent_variables.keys())[0]
+    dv = next(iter(model.dependent_variables.keys()))
     dv_statement = model.statements.find_assignment(dv)
     assert isinstance(dv_statement, Assignment)
 

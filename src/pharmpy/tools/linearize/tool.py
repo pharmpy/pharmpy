@@ -194,7 +194,9 @@ def create_linearized_model(model_name, description, model, derivative_model_ent
     statements = _create_linearized_model_statements(linbase, model)
     linbase = linbase.replace(
         statements=statements,
-        dependent_variables={list(derivative_model_entry.model.dependent_variables.keys())[0]: 1},
+        dependent_variables={
+            next(iter(derivative_model_entry.model.dependent_variables.keys())): 1
+        },
     )
 
     if isinstance(derivative_model, NONMEMModel):
@@ -241,7 +243,7 @@ def _create_linearized_model_statements(linbase, model):
     ms.append(error_terms)
 
     # FIXME: Handle other DVs?
-    y = list(model.dependent_variables.keys())[0]
+    y = next(iter(model.dependent_variables.keys()))
     y_assignment = Assignment.create(y, ipred.symbol + error_terms.symbol)
 
     ms.append(y_assignment)

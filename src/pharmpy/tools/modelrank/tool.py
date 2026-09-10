@@ -234,7 +234,7 @@ def rank_models(
 
 
 def get_best_model_entry(me_rank_values):
-    best_me = list(me_rank_values.keys())[0]
+    best_me = next(iter(me_rank_values.keys()))
     if not np.isnan(me_rank_values[best_me]['rank_val']):
         return best_me
     else:
@@ -242,7 +242,7 @@ def get_best_model_entry(me_rank_values):
 
 
 def create_table(me_dict):
-    col_names = list(list(me_dict.values())[0].keys())
+    col_names = list(next(iter(me_dict.values())).keys())
     df_data = {col: [] for col in ['model'] + col_names}
     for me, predicates in me_dict.items():
         df_data['model'].append(me.model.name)

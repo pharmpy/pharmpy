@@ -96,7 +96,7 @@ class Transits(ModelFeature):
             numbers_by_type[feat.depot] += [feat.number]
         numbers_by_type = {key: tuple(value) for key, value in numbers_by_type.items()}
         if len(numbers_by_type) > 1 and len(set(numbers_by_type.values())) == 1:
-            numbers = list(numbers_by_type.values())[0]
+            numbers = next(iter(numbers_by_type.values()))
             inner = _get_inner(numbers, [True, False])
             return f'TRANSITS({inner})'
 

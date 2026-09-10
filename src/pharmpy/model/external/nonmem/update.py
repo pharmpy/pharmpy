@@ -2235,7 +2235,7 @@ def update_ccontra(model, path=None, force=False):
     h = model.observation_transformation[next(iter(obs_trans))]
 
     # FIXME: Handle other DVs?
-    y = list(model.dependent_variables.keys())[0]
+    y = next(iter(model.dependent_variables.keys()))
     dhdy = sympy.diff(h, y)
     ll = sympy.Integer(-2) * sympy.log(dhdy)
     ll = ll.subs(y, sympy.Symbol('y', real=True, positive=True))

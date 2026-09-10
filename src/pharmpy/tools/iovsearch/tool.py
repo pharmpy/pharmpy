@@ -434,11 +434,11 @@ def get_best_model_and_ranking(
     summary_step = add_parent_column(rank_res.summary_tool, candidate_entries)
 
     try:
-        return [
+        return next(
             model_entry
             for model_entry in candidate_entries
             if model_entry.model == rank_res.final_model
-        ][0], summary_step
+        ), summary_step
     except IndexError:
         return base_entry, summary_step
 
@@ -591,7 +591,7 @@ def _get_nonfixed_iivs(model):
     fixed_omegas = get_omegas(model).fixed.names
     iivs = model.random_variables.iiv
     nonfixed_iivs = [
-        iiv for iiv in iivs if str(list(iiv.variance.free_symbols)[0]) not in fixed_omegas
+        iiv for iiv in iivs if str(next(iter(iiv.variance.free_symbols))) not in fixed_omegas
     ]
     return RandomVariables.create(nonfixed_iivs)
 
