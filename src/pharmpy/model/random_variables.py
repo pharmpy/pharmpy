@@ -4,7 +4,7 @@ from collections.abc import Collection, Container, Iterable, Mapping, Sequence
 from collections.abc import Container as CollectionsContainer
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, Self, Union, overload
 
 from pharmpy.basic import Expr, Matrix, RandomNumberGenerator, Seed, TExpr, TSymbol
 from pharmpy.deps import numpy as np
@@ -38,8 +38,8 @@ class VariabilityLevel(Immutable):
         self._group = group
 
     @classmethod
-    def create(cls, name: str, reference: bool = False, group: Optional[str] = None):
-        return VariabilityLevel(name.upper(), bool(reference), group)
+    def create(cls, name: str, reference: bool = False, group: Optional[str] = None) -> Self:
+        return cls(name.upper(), bool(reference), group)
 
     def replace(self, **kwargs) -> VariabilityLevel:
         name = kwargs.get('name', self._name)
@@ -94,7 +94,7 @@ class VariabilityHierarchy(Immutable):
     @classmethod
     def create(
         cls, levels: Optional[Union[Sequence[VariabilityLevel], VariabilityHierarchy]] = None
-    ):
+    ) -> VariabilityHierarchy:
         if levels is None:
             levels = ()
         elif isinstance(levels, VariabilityHierarchy):
@@ -112,7 +112,7 @@ class VariabilityHierarchy(Immutable):
             if not found_ref:
                 raise ValueError("A VariabilityHierarchy must have a reference level")
             levels = tuple(levels)
-        return VariabilityHierarchy(levels)
+        return cls(levels)
 
     def replace(self, **kwargs) -> VariabilityHierarchy:
         """Replace properties and create a new VariabilityHierarchy object"""
@@ -260,7 +260,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         dists: Optional[Union[Sequence[Distribution], Distribution]] = None,
         eta_levels: Optional[VariabilityHierarchy] = None,
         epsilon_levels: Optional[VariabilityHierarchy] = None,
-    ):
+    ) -> Self:
         if eta_levels is None:
             iiv_level = VariabilityLevel('IIV', reference=True, group='ID')
             iov_level = VariabilityLevel('IOV', reference=False, group='OCC')

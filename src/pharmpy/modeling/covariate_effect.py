@@ -9,7 +9,7 @@ import re
 import warnings
 from collections import defaultdict
 from operator import add, mul
-from typing import Literal, Union
+from typing import Literal, Self, Union
 
 from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -777,7 +777,7 @@ class CovariateEffect:
         raise NotImplementedError(f'Can only handle + or *, got {operation_str}.')
 
     @classmethod
-    def linear(cls):
+    def linear(cls) -> Self:
         """Linear continuous template (for continuous covariates)."""
         symbol = Expr.symbol('symbol')
         expression = 1 + Expr.symbol('theta') * (Expr.symbol('cov') - Expr.symbol('median'))
@@ -786,7 +786,7 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def categorical(cls, counts, alternative=False):
+    def categorical(cls, counts, alternative=False) -> Self:
         """Linear categorical template (for categorical covariates)."""
         symbol = Expr.symbol('symbol')
         most_common = counts.idxmax()
@@ -820,7 +820,7 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def piecewise_linear(cls):
+    def piecewise_linear(cls) -> Self:
         """Piecewise linear ("hockey-stick") template (for continuous
         covariates)."""
         symbol = Expr.symbol('symbol')
@@ -839,7 +839,7 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def exponential(cls):
+    def exponential(cls) -> Self:
         """Exponential template (for continuous covariates)."""
         symbol = Expr.symbol('symbol')
         expression = Expr.exp(Expr.symbol('theta') * (Expr.symbol('cov') - Expr.symbol('median')))
@@ -848,7 +848,7 @@ class CovariateEffect:
         return cls(template)
 
     @classmethod
-    def power(cls):
+    def power(cls) -> Self:
         """Power template (for continuous covariates)."""
         symbol = Expr.symbol('symbol')
         expression = (Expr.symbol('cov') / Expr.symbol('median')) ** Expr.symbol('theta')

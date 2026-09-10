@@ -6,7 +6,7 @@ import json
 from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, Union, cast, overload
+from typing import Any, Optional, Self, Union, cast, overload
 
 from pharmpy import conf
 from pharmpy.basic import BooleanExpr, Expr, Unit
@@ -25,7 +25,7 @@ class ReadDataset(DatasetOperation):
         self._path = path
 
     @classmethod
-    def create(cls, path: Union[Path, str]):
+    def create(cls, path: Union[Path, str]) -> Self:
         path = Path(path)
         return cls(path=path)
 
@@ -65,7 +65,7 @@ class Ignore(DatasetOperation):
     @classmethod
     def create(
         cls, expression: Union[BooleanExpr, str], strings: Mapping[Expr, str] = frozenmapping({})
-    ):
+    ) -> Self:
         if isinstance(expression, str):
             expression = BooleanExpr(expression)
         elif not isinstance(expression, (BooleanExpr, str)):
@@ -131,7 +131,7 @@ class Drop(DatasetOperation):
         self._column = column
 
     @classmethod
-    def create(cls, column: Union[Expr, str]):
+    def create(cls, column: Union[Expr, str]) -> Self:
         if isinstance(column, str):
             column = Expr.symbol(column)
         if not isinstance(column, Expr):
@@ -174,7 +174,7 @@ class AddColumn(DatasetOperation):
         self._column = column
 
     @classmethod
-    def create(cls, column: Union[Expr, str]):
+    def create(cls, column: Union[Expr, str]) -> Self:
         if isinstance(column, str):
             column = Expr.symbol(column)
         if not isinstance(column, Expr):
@@ -217,7 +217,7 @@ class AddRows(DatasetOperation):
         self._rows = rows
 
     @classmethod
-    def create(cls, rows: Iterable[int]):
+    def create(cls, rows: Iterable[int]) -> Self:
         if not isinstance(rows, Iterable):
             raise TypeError(f"Bad type of `rows`: {type(rows)}")
         if not all(isinstance(x, int) for x in rows):
@@ -257,7 +257,7 @@ class Provenance(Sequence, Immutable):
         self._operations = operations
 
     @classmethod
-    def create(cls, operations: Sequence[DatasetOperation]) -> Provenance:
+    def create(cls, operations: Sequence[DatasetOperation]) -> Self:
         for op in operations:
             if not isinstance(op, DatasetOperation):
                 raise TypeError("All elements of Provenance must be DatasetOperation")
@@ -427,7 +427,7 @@ class DataVariable(Immutable):
         scale: str = 'ratio',
         count: bool = False,
         properties: Mapping[str, Any] = frozenmapping({}),
-    ) -> DataVariable:
+    ) -> Self:
         if not isinstance(name, str):
             raise TypeError("Data variable name must be a string")
         if type not in DataVariable._all_types:
@@ -855,7 +855,7 @@ class ColumnInfo(Immutable):
         variable_id: Optional[str] = None,
         drop: bool = False,
         datatype: str = "float64",
-    ) -> ColumnInfo:
+    ) -> Self:
         if variable_mapping is None:
             variable_mapping = DataVariable(name)
         if not isinstance(variable_mapping, DataVariable):
@@ -1145,7 +1145,7 @@ class DataInfo(Sequence, Immutable):
         separator: str = ',',
         missing_data_token: Optional[str] = None,
         provenance: Optional[Provenance] = None,
-    ) -> DataInfo:
+    ) -> Self:
         if columns:
             if not isinstance(columns, Sequence):
                 raise TypeError('Argument `columns` must be iterable')

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Optional, Union
+from typing import Optional, Self, Union
 
 from pharmpy.deps import symengine, sympy
 from pharmpy.deps.sympy_printing import pretty
@@ -303,17 +303,17 @@ class Expr:
         return cls(func)
 
     @classmethod
-    def piecewise(cls, *args) -> Expr:
+    def piecewise(cls, *args) -> Self:
         pw = symengine.Piecewise(*args)
         return cls(pw)
 
     @classmethod
-    def first(cls, col, group):
+    def first(cls, col, group) -> Expr:
         """Function giving the first value of col for all records in group"""
         return cls.function("first", (col, group))
 
     @classmethod
-    def newind(cls):
+    def newind(cls) -> Expr:
         """The newind function
 
         0 - For the first record of the dataset
@@ -323,7 +323,7 @@ class Expr:
         return cls.function("newind", ())
 
     @classmethod
-    def forward(cls, value, condition, group=None):
+    def forward(cls, value, condition, group=None) -> Expr:
         """Function to carry forward value at a certain condition"""
         if group is None:
             func = cls.function("forward", (value, condition))
@@ -332,7 +332,7 @@ class Expr:
         return func
 
     @classmethod
-    def count_if(cls, condition, group):
+    def count_if(cls, condition, group) -> Expr:
         """Function to increase and give count if condition is true"""
         return cls.function("count_if", (condition, group))
 

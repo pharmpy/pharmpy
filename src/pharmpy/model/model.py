@@ -111,7 +111,7 @@ class Model(Immutable):
         value_type: Union[str, Expr] = 'PREDICTION',
         description: str = '',
         internals: Optional[ModelInternals] = None,
-    ):
+    ) -> Self:
         Model._canonicalize_name(name)
         random_variables = Model._canonicalize_random_variables(random_variables)
         parameters = Model._canonicalize_parameters(parameters)

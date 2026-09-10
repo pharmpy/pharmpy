@@ -68,7 +68,7 @@ class Assignment(Statement):
         self._expression = expression
 
     @classmethod
-    def create(cls, symbol: TExpr, expression: TExpr) -> Assignment:
+    def create(cls, symbol: TExpr, expression: TExpr) -> Self:
         symbol = Expr(symbol)
         if not symbol.is_symbol():
             raise TypeError("symbol of Assignment must be a Symbol or str representing a symbol")
@@ -698,7 +698,7 @@ class CompartmentalSystem(Statement):
         cls,
         builder: CompartmentalSystemBuilder,
         t: Optional[Union[Expr, str]] = Expr.symbol('t'),
-    ) -> CompartmentalSystem:
+    ) -> Self:
         if builder is None:
             raise TypeError('Argument `builder` cannot be None`')
         elif not isinstance(builder, CompartmentalSystemBuilder):
@@ -1540,7 +1540,7 @@ class Bolus(Dose, Immutable):
         super().__init__(amount, admid)
 
     @classmethod
-    def create(cls, amount: TExpr, admid: int = 1) -> Bolus:
+    def create(cls, amount: TExpr, admid: int = 1) -> Self:
         return cls(Expr(amount), admid=admid)
 
     def replace(self, **kwargs) -> Bolus:
@@ -1645,7 +1645,7 @@ class Infusion(Dose, Immutable):
         admid: int = 1,
         rate: Optional[TExpr] = None,
         duration: Optional[TExpr] = None,
-    ) -> Infusion:
+    ) -> Self:
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
         if rate is not None and duration is not None:
@@ -1817,7 +1817,7 @@ class Compartment(CompartmentBase):
         input: TExpr = Expr.integer(0),
         lag_time: TExpr = Expr.integer(0),
         bioavailability: TExpr = Expr.integer(1),
-    ) -> Compartment:
+    ) -> Self:
         if not isinstance(name, str):
             raise TypeError("Name of a Compartment must be of string type")
         if amount is not None:
@@ -2032,7 +2032,7 @@ class Statements(Sequence, Immutable):
         self._statements = statements
 
     @classmethod
-    def create(cls, statements: Optional[Union[Statements, Iterable[Statement]]] = None):
+    def create(cls, statements: Optional[Union[Statements, Iterable[Statement]]] = None) -> Self:
         if isinstance(statements, Statements):
             pass
         elif statements is None:

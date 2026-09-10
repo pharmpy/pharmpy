@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, Self, Union, overload
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
@@ -203,7 +203,7 @@ class EstimationStep(ExecutionStep):
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
         variables: Sequence[str] = (),
-    ):
+    ) -> Self:
         method = EstimationStep._canonicalize_and_check_method(method)
         if maximum_evaluations is not None and maximum_evaluations < 1:
             raise ValueError(
@@ -514,7 +514,7 @@ class SimulationStep(ExecutionStep):
         solver_atol: Optional[int] = None,
         tool_options: Mapping[str, Any] = frozenmapping({}),
         variables: Sequence[str] = (),
-    ):
+    ) -> Self:
         if n < 1:
             raise ValueError("Need at least one replicate in SimulationStep")
         return cls(
@@ -586,7 +586,9 @@ class ExecutionSteps(Sequence, Immutable):
         self._steps = steps
 
     @classmethod
-    def create(cls, steps: Optional[Sequence[Union[EstimationStep, SimulationStep]]] = None):
+    def create(
+        cls, steps: Optional[Sequence[Union[EstimationStep, SimulationStep]]] = None
+    ) -> ExecutionSteps:
         if steps is None:
             steps = ()
         else:

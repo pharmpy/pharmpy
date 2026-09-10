@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections.abc import Collection, Hashable, Mapping, Sequence, Sized
 from itertools import chain
 from math import sqrt
-from typing import Any, Union
+from typing import Any, Self, Union
 
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.internals import unicode
@@ -119,7 +119,7 @@ class NormalDistribution(Distribution):
     @classmethod
     def create(
         cls, name: str, level: str, mean: Union[Expr, int, float], variance: Union[Expr, int, float]
-    ):
+    ) -> Self:
         if not isinstance(name, str):
             raise TypeError(f"name must be a string not {type(name)}")
         level = level.upper()
@@ -252,7 +252,7 @@ class NormalDistribution(Distribution):
         }
 
     @classmethod
-    def from_dict(cls, d: Mapping[str, Any]):
+    def from_dict(cls, d: Mapping[str, Any]) -> Self:
         return cls(
             name=d['name'],
             level=d['level'],
@@ -323,7 +323,7 @@ class JointNormalDistribution(Distribution):
         self._variance = variance
 
     @classmethod
-    def create(cls, names: Sequence[str], level: str, mean, variance):
+    def create(cls, names: Sequence[str], level: str, mean, variance) -> Self:
         names = tuple(names)
         level = level.upper()
         mean = Matrix(mean)
@@ -522,7 +522,7 @@ class JointNormalDistribution(Distribution):
         }
 
     @classmethod
-    def from_dict(cls, d: Mapping[str, Any]):
+    def from_dict(cls, d: Mapping[str, Any]) -> Self:
         return cls(
             names=d['names'],
             level=d['level'],
@@ -626,7 +626,7 @@ class FiniteDistribution(Distribution):
         self._probabilities = probabilities
 
     @classmethod
-    def create(cls, name: str, level: str, probabilities: Mapping[int, Union[Expr, str]]):
+    def create(cls, name: str, level: str, probabilities: Mapping[int, Union[Expr, str]]) -> Self:
         level = level.upper()
         probs = {n: Expr(expr) for n, expr in probabilities.items()}
         return cls(name, level, frozenmapping(probs))
@@ -756,7 +756,7 @@ class FiniteDistribution(Distribution):
         }
 
     @classmethod
-    def from_dict(cls, d: Mapping[str, Any]):
+    def from_dict(cls, d: Mapping[str, Any]) -> Self:
         probs = {n: Expr.deserialize(expr) for n, expr in d['probabilities'].items()}
         return cls(
             name=d['name'],

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Self, Union
 
 from pharmpy.deps import pint
 
@@ -119,7 +119,7 @@ class Quantity:
         self._unit = unit
 
     @classmethod
-    def parse(cls, s: str):
+    def parse(cls, s: str) -> Self:
         m = re.match(r'(-?\d+(\.\d+)?)', s)
         if m:
             number_string = m.group(0)

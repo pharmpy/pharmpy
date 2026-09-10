@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from collections.abc import Sequence as CollectionsSequence
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, Self, Union, overload
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -59,7 +59,7 @@ class Parameter(Immutable):
         lower: Optional[Union[float, Expr]] = None,
         upper: Optional[Union[float, Expr]] = None,
         fix: bool = False,
-    ):
+    ) -> Self:
         """Alternative constructor for Parameter with error checking"""
         if not isinstance(name, str):
             raise ValueError("Name of parameter must be of type string")
@@ -134,7 +134,7 @@ class Parameter(Immutable):
         }
 
     @classmethod
-    def from_dict(cls, d: dict[str, Any]):
+    def from_dict(cls, d: dict[str, Any]) -> Self:
         return cls(**d)
 
     def __eq__(self, other: object):
@@ -194,7 +194,9 @@ class Parameters(CollectionsSequence, Immutable):
         self._params = parameters
 
     @classmethod
-    def create(cls, parameters: Optional[Union[Parameters, Sequence[Parameter]]] = None):
+    def create(
+        cls, parameters: Optional[Union[Parameters, Sequence[Parameter]]] = None
+    ) -> Parameters:
         if isinstance(parameters, Parameters):
             return parameters
         elif parameters is None:

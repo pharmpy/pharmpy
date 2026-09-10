@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
-from typing import Literal, Optional, Union
+from typing import Literal, Optional, Self, Union
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -604,29 +604,29 @@ class EtaAddition:
         self.template = self.template.subs({'original': original, 'eta_new': eta})
 
     @classmethod
-    def additive(cls):
+    def additive(cls) -> Self:
         template = Expr.symbol('original') + Expr.symbol('eta_new')
         return cls(template)
 
     @classmethod
-    def proportional(cls):
+    def proportional(cls) -> Self:
         template = Expr.symbol('original') * (1 + Expr.symbol('eta_new'))
         return cls(template)
 
     @classmethod
-    def exponential(cls, operation):
+    def exponential(cls, operation) -> Self:
         template = operation(Expr.symbol('original'), Expr.symbol('eta_new').exp())
         return cls(template)
 
     @classmethod
-    def logit(cls):
+    def logit(cls) -> Self:
         template = Expr.symbol('original') * (
             Expr.symbol('eta_new').exp() / (1 + Expr.symbol('eta_new').exp())
         )
         return cls(template)
 
     @classmethod
-    def re_logit(cls):
+    def re_logit(cls) -> Self:
         template = (Expr.symbol('eta_new') * Expr.symbol('original')).exp() / (
             1 + (Expr.symbol('eta_new') * Expr.symbol('original')).exp()
         )
@@ -972,7 +972,7 @@ class EtaTransformation:
             self.assignments[i] = assignment.subs(etas).subs(thetas)
 
     @classmethod
-    def boxcox(cls, no_of_etas):
+    def boxcox(cls, no_of_etas) -> Self:
         assignments = []
         for i in range(1, no_of_etas + 1):
             symbol = Expr.symbol(f'etab{i}')
@@ -986,7 +986,7 @@ class EtaTransformation:
         return cls('boxcox', assignments, 'lambda')
 
     @classmethod
-    def tdist(cls, no_of_etas):
+    def tdist(cls, no_of_etas) -> Self:
         assignments = []
         for i in range(1, no_of_etas + 1):
             symbol = Expr.symbol(f'etat{i}')
@@ -1011,7 +1011,7 @@ class EtaTransformation:
         return cls('tdist', assignments, 'df')
 
     @classmethod
-    def john_draper(cls, no_of_etas):
+    def john_draper(cls, no_of_etas) -> Self:
         assignments = []
         for i in range(1, no_of_etas + 1):
             symbol = Expr.symbol(f'etad{i}')
