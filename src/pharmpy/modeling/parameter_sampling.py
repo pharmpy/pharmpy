@@ -102,13 +102,13 @@ def _sample_from_function(
         force_posdef = False
 
     i = 0
+    rvs = model.random_variables
     while remaining > 0:
         samples = samplingfn(pe, lower, upper, n=remaining, rng=rng)
         df = pd.DataFrame(samples, columns=parameter_estimates.keys())
         if not force_posdef:
-            selected = df[df.apply(model.random_variables.validate_parameters, axis=1)]
+            selected = df[df.apply(rvs.validate_parameters, axis=1)]
         else:
-            rvs = model.random_variables
             selected = df.transform(
                 lambda row: pd.Series(rvs.nearest_valid_parameters(row)), axis=1
             )
