@@ -206,11 +206,7 @@ def extract_add_prop(s, res_alias: set[sympy.Symbol], model: pharmpy.model.Model
         terms = [s]
     elif isinstance(s, sympy.Pow):
         terms = sympy.Add.make_args(s.args[0])
-    elif isinstance(s, sympy.Mul):
-        terms = [s]
-    elif isinstance(s, sympy.Integer):
-        terms = [s]
-    elif isinstance(s, sympy.Float):
+    elif isinstance(s, (sympy.Mul, sympy.Integer, sympy.Float)):
         terms = [s]
     else:
         terms = sympy.Add.make_args(s.expression)

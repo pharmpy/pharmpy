@@ -147,9 +147,7 @@ class InRange(Predictor):
                     and val < converted_lower
                     or not self.lower_included
                     and val <= converted_lower
-                ):
-                    violated_indices.append(i)
-                elif (
+                ) or (
                     self.upper_included
                     and val > converted_upper
                     or not self.upper_included

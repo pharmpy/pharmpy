@@ -187,9 +187,7 @@ class Model(BaseModel):
         for dist in model._random_variables.etas:
             for name in dist.names:
                 nonmem_pattern = re.match(r'ETA[_(]([0-9]+)\)*', name)
-                if not nonmem_pattern:
-                    rv_trans[name] = f'ETA({i})'
-                elif nonmem_pattern.group(1) != str(i):
+                if not nonmem_pattern or nonmem_pattern.group(1) != str(i):
                     rv_trans[name] = f'ETA({i})'
                 i += 1
 

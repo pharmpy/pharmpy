@@ -599,9 +599,12 @@ class NONMEMResultsFile:
                             except StopIteration:
                                 break
                             lead = preread[:2]
-                            if lead == ' #' and (m := TAG.match(preread)):
-                                break
-                            elif lead == '0P' and preread == "0PROGRAM TERMINATED BY OBJ\n":
+                            if (
+                                lead == ' #'
+                                and (m := TAG.match(preread))
+                                or lead == '0P'
+                                and preread == "0PROGRAM TERMINATED BY OBJ\n"
+                            ):
                                 break
                             else:
                                 row = _decode_lst(next(it))

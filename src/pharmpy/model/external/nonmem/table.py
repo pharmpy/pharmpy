@@ -27,9 +27,7 @@ def parse_format(format: str):
         return NONMEMTableFileFormat(format, r"\s+")
     elif sep == "t":
         return NONMEMTableFileFormat(format, "\t")
-    elif sep == ",":
-        return NONMEMTableFileFormat(format, ",")
-    elif sep == "c":
+    elif sep == "," or sep == "c":
         return NONMEMTableFileFormat(format, ",")
     elif sep == "q":
         return NONMEMTableFileFormat(format, ",", quoted=True)

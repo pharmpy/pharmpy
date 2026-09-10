@@ -1923,9 +1923,10 @@ def update_estimation(control_stream, model):
     if remove_param:
         new_statements = []
         for statement in model.statements:
-            if isinstance(statement, CompartmentalSystem):
-                new_statements.append(statement)
-            elif str(statement.symbol) not in remove_param:
+            if (
+                isinstance(statement, CompartmentalSystem)
+                or str(statement.symbol) not in remove_param
+            ):
                 new_statements.append(statement)
         new_statements = Statements(new_statements)
 

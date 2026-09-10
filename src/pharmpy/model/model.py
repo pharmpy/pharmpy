@@ -484,9 +484,10 @@ class Model(Immutable):
             if other.initial_individual_estimates is not None:
                 return False
         else:
-            if other.initial_individual_estimates is None:
-                return False
-            elif not self.initial_individual_estimates.equals(other.initial_individual_estimates):
+            if (
+                other.initial_individual_estimates is None
+                or not self.initial_individual_estimates.equals(other.initial_individual_estimates)
+            ):
                 return False
         if self.datainfo != other.datainfo:
             return False
