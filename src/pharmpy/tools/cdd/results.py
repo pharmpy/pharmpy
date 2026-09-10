@@ -105,11 +105,7 @@ def calculate_results(
 
     # create Series of NaN values and then replace any computable results
     cook_temp = pd.Series(np.nan, index=cdd_model_names)
-    try:
-        base_model_results.covariance_matrix
-    except Exception:
-        pass
-    else:
+    if base_model_results.covariance_matrix is not None:
         cook_temp.update(
             pd.Series(
                 compute_cook_scores(

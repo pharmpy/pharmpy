@@ -56,7 +56,7 @@ def calculate_results(original_model, original_results, simfit_results):
                 original_results.predictions[['IPRED', 'PRED']],
                 individuals=ids,
             )
-        except Exception:
+        except (TypeError, ValueError, KeyError, IndexError):
             pass
 
     res = SimevalResults(
