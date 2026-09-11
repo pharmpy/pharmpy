@@ -4,7 +4,7 @@ from abc import abstractmethod
 from collections.abc import Collection, Hashable, Mapping, Sequence, Sized
 from itertools import chain
 from math import sqrt
-from typing import Any, Self, Union
+from typing import Any, Self
 
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.internals import unicode
@@ -33,12 +33,12 @@ class Distribution(Sized, Hashable, Immutable):
 
     @property
     @abstractmethod
-    def mean(self) -> Union[Expr, Matrix]:
+    def mean(self) -> Expr | Matrix:
         pass
 
     @property
     @abstractmethod
-    def variance(self) -> Union[Expr, Matrix]:
+    def variance(self) -> Expr | Matrix:
         pass
 
     @abstractmethod
@@ -118,7 +118,7 @@ class NormalDistribution(Distribution):
 
     @classmethod
     def create(
-        cls, name: str, level: str, mean: Union[Expr, int, float], variance: Union[Expr, int, float]
+        cls, name: str, level: str, mean: Expr | int | float, variance: Expr | int | float
     ) -> Self:
         if not isinstance(name, str):
             raise TypeError(f"name must be a string not {type(name)}")
@@ -426,8 +426,8 @@ class JointNormalDistribution(Distribution):
             raise ValueError(e)
 
     def __getitem__(
-        self, index: Union[int, str, slice, Collection[Union[int, str]]]
-    ) -> Union[NormalDistribution, JointNormalDistribution]:
+        self, index: int | str | slice | Collection[int | str]
+    ) -> NormalDistribution | JointNormalDistribution:
         if isinstance(index, int):
             if -len(self) <= index < len(self):
                 names = (self._names[index],)
@@ -626,7 +626,7 @@ class FiniteDistribution(Distribution):
         self._probabilities = probabilities
 
     @classmethod
-    def create(cls, name: str, level: str, probabilities: Mapping[int, Union[Expr, str]]) -> Self:
+    def create(cls, name: str, level: str, probabilities: Mapping[int, Expr | str]) -> Self:
         level = level.upper()
         probs = {n: Expr(expr) for n, expr in probabilities.items()}
         return cls(name, level, frozenmapping(probs))
@@ -800,8 +800,8 @@ def _subs_name(name: str, d: Mapping[TExpr, TExpr]) -> str:
 
 
 def _getitem_single(
-    dist: Union[NormalDistribution, FiniteDistribution], index
-) -> Union[NormalDistribution, FiniteDistribution]:
+    dist: NormalDistribution | FiniteDistribution, index
+) -> NormalDistribution | FiniteDistribution:
     if isinstance(index, int):
         if index != 0:
             raise IndexError(index)

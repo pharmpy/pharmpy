@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal
 
 from lark.visitors import Interpreter
 
@@ -12,8 +12,8 @@ INDIRECT_EFFECT_PRODUCTION_WILDCARD = tuple([Name(x) for x in ('DEGRADATION', 'P
 
 @dataclass(frozen=True)
 class IndirectEffect(ModelFeature):
-    modes: Union[tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...], Wildcard]
-    production: Union[tuple[Name[Literal['DEGRADATION', 'PRODUCTION']], ...], Wildcard]
+    modes: tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID']], ...] | Wildcard
+    production: tuple[Name[Literal['DEGRADATION', 'PRODUCTION']], ...] | Wildcard
 
     def __len__(self):
         self_eval = self.eval

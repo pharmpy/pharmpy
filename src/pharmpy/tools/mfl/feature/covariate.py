@@ -1,7 +1,7 @@
 from collections.abc import Iterable, Sequence
 from functools import partial
 from itertools import product
-from typing import TypeVar, Union
+from typing import TypeVar
 
 from pharmpy.model import Model
 from pharmpy.modeling import get_bioavailability
@@ -33,15 +33,15 @@ from .feature import Feature
 T = TypeVar('T')
 
 EffectLiteral = tuple[str, str, EffectType, OperationType]
-EffectSpecFeature = Union[T, tuple[T, ...]]
-InputEffectSpecFeature = Union[T, Sequence[T]]
+EffectSpecFeature = T | tuple[T, ...]
+InputEffectSpecFeature = T | Sequence[T]
 Spec = tuple[
     EffectSpecFeature[str],
     EffectSpecFeature[str],
     EffectSpecFeature[EffectType],
     EffectSpecFeature[OperationType],
 ]
-InputSpec = Sequence[InputEffectSpecFeature[Union[str, EffectType, OperationType]],]
+InputSpec = Sequence[InputEffectSpecFeature[str | EffectType | OperationType],]
 
 all_continuous_covariate_effects = (
     'lin',

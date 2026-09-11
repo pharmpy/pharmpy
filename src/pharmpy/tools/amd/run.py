@@ -1,7 +1,7 @@
 import re
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import pandas as pd
@@ -67,7 +67,7 @@ DEFAULT_STRICTNESS = "minimization_successful or (rounding_errors and sigdigs>=0
 
 
 def create_workflow(
-    input: Union[Model, Path, str, DataInfo],
+    input: Model | Path | str | DataInfo,
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -86,12 +86,12 @@ def create_workflow(
     occasion: Optional[str] = None,
     strictness: str = DEFAULT_STRICTNESS,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
+    mechanistic_covariates: Optional[list[str | tuple[str]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
-    _E: Optional[dict[str, Union[float, str]]] = None,
+    _E: Optional[dict[str, float | str]] = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -191,7 +191,7 @@ def create_workflow(
 # FIXME: refactor into separate tasks
 def run_amd_task(
     context: Context,
-    input: Union[Model, Path, str, DataInfo],
+    input: Model | Path | str | DataInfo,
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -210,12 +210,12 @@ def run_amd_task(
     occasion: Optional[str] = None,
     strictness: str = DEFAULT_STRICTNESS,
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[list[Union[str, tuple[str]]]] = None,
+    mechanistic_covariates: Optional[list[str | tuple[str]]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
-    _E: Optional[dict[str, Union[float, str]]] = None,
+    _E: Optional[dict[str, float | str]] = None,
 ):
     context.log_info("Starting tool amd")
     rng = context.create_rng(0)
@@ -1608,7 +1608,7 @@ def _results(context, res):
 
 @with_runtime_arguments_type_check
 def validate_input(
-    input: Union[Model, Path, str, pd.DataFrame],
+    input: Model | Path | str | pd.DataFrame,
     results: Optional[ModelfitResults] = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
@@ -1627,11 +1627,11 @@ def validate_input(
     occasion: Optional[str] = None,
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[list[Union[str, tuple]]] = None,
+    mechanistic_covariates: Optional[list[str | tuple]] = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     ignore_datainfo_fallback: bool = False,
-    _E: Optional[dict[str, Union[float, str, Sequence[Union[float, str]]]]] = None,
+    _E: Optional[dict[str, float | str | Sequence[float | str]]] = None,
 ):
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
 
@@ -1720,7 +1720,7 @@ def later_input_validation(
     search_space: Optional[str],
     allometric_variable: Optional[TSymbol],
     occasion: Optional[str],
-    mechanistic_covariates: Optional[list[Union[str, tuple]]],
+    mechanistic_covariates: Optional[list[str | tuple]],
 ):
     # FIXME: This function should be removed and refactored into validate_inputs
     # and optionally give warnings/errors during the run

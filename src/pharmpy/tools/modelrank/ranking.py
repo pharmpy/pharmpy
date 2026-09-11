@@ -1,4 +1,4 @@
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.modeling import calculate_aic, calculate_bic
@@ -59,7 +59,7 @@ def get_rank_values(
     return rank_values
 
 
-def perform_lrt(me, me_parent, alpha) -> dict[str, Union[float, int, bool]]:
+def perform_lrt(me, me_parent, alpha) -> dict[str, float | int | bool]:
     rank_dict = {}
     rank_dict['df'] = lrt_df(me_parent, me)
     if isinstance(alpha, tuple):
@@ -135,7 +135,7 @@ def get_ofv(me, ref_value) -> dict[str, float]:
     return rank_dict
 
 
-def get_aic(me, ref_value) -> dict[str, Union[float, int]]:
+def get_aic(me, ref_value) -> dict[str, float | int]:
     rank_dict = {}
     likelihood = me.modelfit_results.ofv
     rank_dict['ofv'] = likelihood
@@ -149,7 +149,7 @@ def get_aic(me, ref_value) -> dict[str, Union[float, int]]:
     return rank_dict
 
 
-def get_bic(me, ref_value, rank_type, search_space, E=None) -> dict[str, Union[float, int]]:
+def get_bic(me, ref_value, rank_type, search_space, E=None) -> dict[str, float | int]:
     rank_dict = {}
     likelihood = me.modelfit_results.ofv
     rank_dict['ofv'] = likelihood

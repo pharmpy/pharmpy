@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -35,7 +35,7 @@ from .results import PDSearchResults
 
 
 def create_workflow(
-    input: Union[Path, str, Model],
+    input: Path | str | Model,
     type: Literal['pd', 'kpd'],
     treatment_variable: Optional[str] = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',

@@ -4,7 +4,6 @@ import base64
 import hashlib
 import json
 from abc import ABC
-from typing import Union
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
@@ -57,7 +56,7 @@ class DatasetHash(Hash):
 
 
 class ModelHash(Hash):
-    def __init__(self, obj: Union[str, Model, ModelEntry, ModelHash]):
+    def __init__(self, obj: str | Model | ModelEntry | ModelHash):
         if isinstance(obj, str):
             if len(obj) != 43:  # SHA-256 in base-64 encoding
                 raise ValueError(f"Invalid digest to construct hash: {obj}")

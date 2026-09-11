@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, Union, overload
+from typing import TYPE_CHECKING, Any, Literal, Optional, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
@@ -47,14 +47,14 @@ def _df_to_json(df: pd.DataFrame) -> dict[str, Any]:
     return json.loads(df_json)
 
 
-def _index_to_json(index: Union[pd.Index, pd.MultiIndex]) -> dict[str, Any]:
+def _index_to_json(index: pd.Index | pd.MultiIndex) -> dict[str, Any]:
     if isinstance(index, pd.MultiIndex):
         return {'__class__': 'MultiIndex', **_df_to_json(index.to_frame(index=False))}
     return {'__class__': 'Index', **_df_to_json(index.to_frame(index=False))}
 
 
 class ResultsJSONEncoder(json.JSONEncoder):
-    def default(self, o) -> Union[dict[str, Any], None]:
+    def default(self, o) -> dict[str, Any] | None:
         # NOTE: This function is called when the base JSONEncoder does not know
         # how to encode the given object, so it will not be called on int,
         # float, str, list, tuple, and dict. It could be called on set for
@@ -238,7 +238,7 @@ def _is_likely_to_be_json(source: str):
     return match is not None and match.group(1) == '{'
 
 
-def read_results(path_or_str: Union[str, Path], model_deserialization_func=None):
+def read_results(path_or_str: str | Path, model_deserialization_func=None):
     if isinstance(path_or_str, str) and _is_likely_to_be_json(path_or_str):
         manager = closing(StringIO(path_or_str))
     else:
@@ -284,7 +284,7 @@ class Results(Immutable):
     @overload
     def to_json(self, path: Path, lzma: bool = False) -> None: ...
 
-    def to_json(self, path: Optional[Path] = None, lzma: bool = False) -> Union[str, None]:
+    def to_json(self, path: Optional[Path] = None, lzma: bool = False) -> str | None:
         """Serialize results object as json
 
         Parameters

@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -176,7 +176,7 @@ def calculate_results(
     )
 
 
-def psn_cdd_options(path: Union[str, Path]):
+def psn_cdd_options(path: str | Path):
     path = Path(path)
     options: dict[str, Any] = {'model_path': None, 'outside_n_sd_check': None, 'case_column': 'ID'}
     with open(path / 'meta.yaml') as meta:
@@ -203,7 +203,7 @@ def psn_cdd_options(path: Union[str, Path]):
     return options
 
 
-def psn_cdd_skipped_individuals(path: Union[str, Path]):
+def psn_cdd_skipped_individuals(path: str | Path):
     path = Path(path) / 'skipped_individuals1.csv'
 
     with open(path) as skipped:
@@ -214,7 +214,7 @@ def psn_cdd_skipped_individuals(path: Union[str, Path]):
     return a
 
 
-def psn_cdd_results(path: Union[str, Path], base_model_path=None):
+def psn_cdd_results(path: str | Path, base_model_path=None):
     """Create cdd results from a PsN CDD run
 
     :param path: Path to PsN cdd run directory

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from pharmpy.mfl.features.help_functions import get_repr, group_args
 
@@ -15,15 +15,13 @@ VARIABILITY_FP_TYPES = frozenset(('EXP', 'ADD', 'PROP', 'LOG', 'RE_LOG'))
 
 
 class Variability(ModelFeature):
-    def __init__(self, parameter: Union[str, Ref], fp: str, optional: bool):
+    def __init__(self, parameter: str | Ref, fp: str, optional: bool):
         self._parameter = parameter
         self._fp = fp
         self._optional = optional
 
     @classmethod
-    def create(
-        cls, parameter: Union[str, Ref], fp: str = 'EXP', optional: bool = False
-    ) -> Variability:
+    def create(cls, parameter: str | Ref, fp: str = 'EXP', optional: bool = False) -> Variability:
         if not isinstance(parameter, str) and not isinstance(parameter, Ref):
             raise TypeError(f'Type of `parameter` must be a string or Ref: got {type(parameter)}')
         if not isinstance(optional, bool):
@@ -40,7 +38,7 @@ class Variability(ModelFeature):
         return self.__class__.create(parameter=parameter, fp=fp, optional=optional)
 
     @property
-    def parameter(self) -> Union[str, Ref]:
+    def parameter(self) -> str | Ref:
         return self._parameter
 
     @property
@@ -58,7 +56,7 @@ class Variability(ModelFeature):
         return self._parameter
 
     @property
-    def args(self) -> tuple[Union[str, Ref], str, bool]:
+    def args(self) -> tuple[str | Ref, str, bool]:
         return self.parameter, self.fp, self.optional
 
     def expand(self, expand_to: Mapping[Ref, Sequence[str]]) -> tuple[Variability, ...]:

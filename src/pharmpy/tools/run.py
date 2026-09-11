@@ -8,7 +8,8 @@ import warnings
 from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional, Union, get_args, get_origin, get_type_hints
+from types import UnionType
+from typing import Any, Optional, get_args, get_origin, get_type_hints
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -55,13 +56,13 @@ from .external import parse_modelfit_results
 
 
 def fit(
-    model_or_models: Union[Model, list[Model]],
+    model_or_models: Model | list[Model],
     esttool: Optional[str] = None,
     name: Optional[str] = None,
     ncores: int = 1,
     validate_dataset: bool = False,
     project: Optional[Project] = None,
-) -> Union[ModelfitResults, list[ModelfitResults]]:
+) -> ModelfitResults | list[ModelfitResults]:
     """Fit models.
 
     Parameters
@@ -117,7 +118,7 @@ def fit(
     )
 
 
-def create_results(path: Union[str, Path], **kwargs) -> Results:
+def create_results(path: str | Path, **kwargs) -> Results:
     """Create/recalculate results object given path to run directory
 
     Parameters
@@ -147,7 +148,7 @@ def create_results(path: Union[str, Path], **kwargs) -> Results:
     return res
 
 
-def read_results(path: Union[str, Path]) -> Results:
+def read_results(path: str | Path) -> Results:
     """Read results object from file
 
     Parameters
@@ -175,7 +176,7 @@ def read_results(path: Union[str, Path]) -> Results:
     return res
 
 
-def run_tool(tool_name: str, *args, **kwargs) -> Union[Model, list[Model], tuple[Model], Results]:
+def run_tool(tool_name: str, *args, **kwargs) -> Model | list[Model] | tuple[Model] | Results:
     """Run tool workflow
 
     .. note::
@@ -216,7 +217,7 @@ def import_tool(name: str):
 
 def run_tool_with_name(
     tool_name: str, tool, args: Sequence, kwargs: Mapping[str, Any]
-) -> Union[Model, list[Model], tuple[Model], Results]:
+) -> Model | list[Model] | tuple[Model] | Results:
     dispatching_options, common_options, seed, tool_options = split_common_options(kwargs)
 
     seed = Seed(seed)
@@ -616,9 +617,9 @@ def _store_model_and_results(
     db: ModelDatabase,
     metadata: dict,
     model_arg: str,
-    model: Union[Model, list[Model]],
+    model: Model | list[Model],
     results_arg,
-    results: Union[ModelfitResults, list[ModelfitResults]],
+    results: ModelfitResults | list[ModelfitResults],
 ):
     list_of_models = [model] if isinstance(model, Model) else model
     list_of_results = [results] if isinstance(results, ModelfitResults) else results
@@ -667,7 +668,7 @@ def _create_metadata_common(
 
 
 def _filter_params(kind, params, types):
-    if get_origin(kind) is Union:
+    if get_origin(kind) is UnionType:
         kind = get_args(kind)
     else:
         kind = ()
@@ -682,14 +683,12 @@ def _filter_params(kind, params, types):
 
 
 def _input_model_param_keys(params, types):
-    for _, param_key in _filter_params(Union[Model, list[Model]], params, types):
+    for _, param_key in _filter_params(Model | list[Model] | params | types):
         yield param_key
 
 
 def _results_param_keys(params, types):
-    for _, param_key in _filter_params(
-        Union[ModelfitResults, list[ModelfitResults]], params, types
-    ):
+    for _, param_key in _filter_params(ModelfitResults | list[ModelfitResults] | params | types):
         yield param_key
 
 
@@ -755,7 +754,7 @@ def _open_context(source):
 
 
 def retrieve_models(
-    source: Union[str, Path, Context],
+    source: str | Path | Context,
     names: Optional[list[str]] = None,
 ) -> list[Model]:
     """Retrieve models after a tool run
@@ -890,9 +889,7 @@ def print_fit_summary(model: Model, modelfit_results: ModelfitResults):
     print(df)
 
 
-def write_results(
-    results: Results, path: Union[str, Path], compression: bool = False, csv: bool = False
-):
+def write_results(results: Results, path: str | Path, compression: bool = False, csv: bool = False):
     """Write results object to json (or csv) file
 
     Note that the csv-file cannot be read into a results object again.
@@ -999,7 +996,7 @@ def rank_models(
     base_model_res: ModelfitResults,
     models: list[Model],
     models_res: list[ModelfitResults],
-    parent_dict: Optional[Union[dict[str, str], dict[Model, Model]]] = None,
+    parent_dict: Optional[dict[str, str] | dict[Model, Model]] = None,
     strictness: str = "minimization_successful",
     rank_type: str = 'ofv',
     cutoff: Optional[float] = None,
@@ -1468,7 +1465,7 @@ def _get_estimation_runtime(res, i):
     return res.estimation_runtime_iterations.iloc[i]
 
 
-def read_modelfit_results(path: Union[str, Path], esttool: Optional[str] = None) -> ModelfitResults:
+def read_modelfit_results(path: str | Path, esttool: Optional[str] = None) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
@@ -1542,9 +1539,9 @@ def load_example_modelfit_results(name: str):
 
 def calculate_mbic_penalty(
     candidate_model: Model,
-    search_space: Union[str, list[str], ModelFeatures],
-    E_p: Optional[Union[float, str]] = 1.0,
-    E_q: Optional[Union[float, str]] = 1.0,
+    search_space: str | list[str] | ModelFeatures,
+    E_p: Optional[float | str] = 1.0,
+    E_q: Optional[float | str] = 1.0,
 ):
     if E_p == 0 or E_q == 0:
         raise ValueError('E-values cannot be 0')

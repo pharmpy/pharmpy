@@ -5,7 +5,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from io import StringIO
 from itertools import pairwise
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.rich import box
@@ -293,13 +293,13 @@ class Arm(Sequence, Immutable):
     @overload
     def __getitem__(self, ind: slice) -> Arm: ...
 
-    def __getitem__(self, ind: Union[int, slice]) -> Union[Activity, Arm]:
+    def __getitem__(self, ind: int | slice) -> Activity | Arm:
         if isinstance(ind, slice):
             return self.replace(activities=self._activities[ind])
         else:
             return self._activities[ind]
 
-    def __add__(self, other: Union[Activity, Iterable[Activity]]) -> Arm:
+    def __add__(self, other: Activity | Iterable[Activity]) -> Arm:
         if isinstance(other, Activity):
             return self.replace(activities=self._activities + (other,))
         elif isinstance(other, TrialDesign):
@@ -309,7 +309,7 @@ class Arm(Sequence, Immutable):
         else:
             return NotImplemented
 
-    def __radd__(self, other: Union[Activity, Iterable[Activity]]) -> Arm:
+    def __radd__(self, other: Activity | Iterable[Activity]) -> Arm:
         if isinstance(other, Activity):
             return self.replace(activities=(other,) + self._activities)
         elif isinstance(other, Iterable):
@@ -415,8 +415,8 @@ class TrialDesign(Sequence, Immutable):
     def __getitem__(self, ind: slice) -> TrialDesign: ...
 
     def __getitem__(  # pyright: ignore[reportIncompatibleMethodOverride]
-        self, ind: Union[int, slice, str]
-    ) -> Union[Arm, TrialDesign]:
+        self, ind: int | slice | str
+    ) -> Arm | TrialDesign:
         if isinstance(ind, slice):
             return TrialDesign(
                 arms=self._arms[ind], independent_variable=self._independent_variable
@@ -429,7 +429,7 @@ class TrialDesign(Sequence, Immutable):
         else:
             return self._arms[ind]
 
-    def __add__(self, other: Union[Arm, Iterable[Arm]]) -> TrialDesign:
+    def __add__(self, other: Arm | Iterable[Arm]) -> TrialDesign:
         if isinstance(other, Arm):
             return self.replace(arms=self._arms + (other,))
         elif isinstance(other, Iterable):
@@ -437,7 +437,7 @@ class TrialDesign(Sequence, Immutable):
         else:
             return NotImplemented
 
-    def __radd__(self, other: Union[Arm, Iterable[Arm]]) -> TrialDesign:
+    def __radd__(self, other: Arm | Iterable[Arm]) -> TrialDesign:
         if isinstance(other, Arm):
             return self.replace(arms=(other,) + self._arms)
         elif isinstance(other, Iterable):

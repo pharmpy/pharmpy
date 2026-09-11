@@ -1,5 +1,3 @@
-from typing import Union
-
 from pharmpy.mfl import Metabolite, ModelFeatures, Peripherals
 from pharmpy.model import Model
 from pharmpy.modeling.mfl import generate_transformations
@@ -9,7 +7,7 @@ from pharmpy.workflows import ModelEntry, Task, WorkflowBuilder
 
 
 def create_drug_metabolite_models(
-    model: Model, results, search_space: Union[str, ModelFeatures]
+    model: Model, results, search_space: str | ModelFeatures
 ) -> tuple[WorkflowBuilder, list[Task], str]:
     # FIXME : Implement ModelFeatures when we can extract METABOLITE information
 

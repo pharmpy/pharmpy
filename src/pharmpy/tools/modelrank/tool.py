@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -47,8 +47,8 @@ def create_workflow(
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     rank_type: Literal[tuple(RANK_TYPES)] = 'ofv',
     alpha: Optional[float] = 0.05,
-    search_space: Optional[Union[str, ModelFeatures]] = None,
-    E: Optional[Union[float, str, tuple[float | str, float | str]]] = None,
+    search_space: Optional[str | ModelFeatures] = None,
+    E: Optional[float | str | tuple[float | str, float | str]] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
     exclude_reference_model: bool = False,
 ):
@@ -118,7 +118,7 @@ def start(
     rank_type: str,
     alpha: Optional[float],
     search_space: Optional[str],
-    E: Union[float, tuple[float]],
+    E: float | tuple[float],
     parameter_uncertainty_method: Optional[str],
     exclude_reference_model: bool = False,
 ):
@@ -194,7 +194,7 @@ def rank_models(
     rank_type: str,
     alpha: Optional[float],
     search_space: Optional[str],
-    E: Union[float, tuple[float]],
+    E: float | tuple[float],
     exclude_reference_model: bool = False,
 ):
     expr = get_strictness_expr(strictness)
@@ -293,7 +293,7 @@ def rank_models_with_uncertainty(
     rank_type: str,
     alpha: Optional[float],
     search_space: Optional[str],
-    E: Union[float, tuple[float]],
+    E: float | tuple[float],
     parameter_uncertainty_method: Optional[str],
     exclude_reference_model: bool = False,
 ):

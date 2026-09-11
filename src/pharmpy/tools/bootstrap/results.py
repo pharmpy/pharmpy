@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 import pharmpy.visualization
 from pharmpy.deps import numpy as np
@@ -51,7 +51,7 @@ def plot_dofv_quantiles(res):
     chi2 = chi2_dist.ppf(quantiles)
     degrees_dofvs = res.ofv_statistics['mean']['delta_bootdata']
     degrees_boot_base = res.ofv_statistics['mean']['delta_origdata']
-    df_dict: dict[Union[str, tuple], Any] = {
+    df_dict: dict[str | tuple, Any] = {
         'quantiles': quantiles,
         f'Reference χ²({degrees})': chi2,
     }

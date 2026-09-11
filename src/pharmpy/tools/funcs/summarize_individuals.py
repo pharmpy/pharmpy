@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -76,7 +76,7 @@ def outlier_count_func(df: pd.DataFrame) -> float:
     return float((abs(df) > 5).sum())
 
 
-def outlier_count(res: ModelfitResults, data) -> Union[pd.Series, float]:
+def outlier_count(res: ModelfitResults, data) -> pd.Series | float:
     if res is None:
         return np.nan
     residuals = res.residuals
@@ -88,7 +88,7 @@ def outlier_count(res: ModelfitResults, data) -> Union[pd.Series, float]:
         return groupedByID['CWRES'].agg(outlier_count_func)
 
 
-def _predicted(predict, model: Model, res: ModelfitResults, column: str) -> Union[pd.Series, float]:
+def _predicted(predict, model: Model, res: ModelfitResults, column: str) -> pd.Series | float:
     try:
         predicted = predict(model, res)
     except ModelfitResultsError:
@@ -102,21 +102,21 @@ def _predicted(predict, model: Model, res: ModelfitResults, column: str) -> Unio
     return predicted[column]
 
 
-def predicted_residual(model: Model, res: ModelfitResults) -> Union[pd.Series, float]:
+def predicted_residual(model: Model, res: ModelfitResults) -> pd.Series | float:
     return _predicted(predict_outliers, model, res, 'residual')
 
 
-def predicted_dofv(model: Model, res: ModelfitResults) -> Union[pd.Series, float]:
+def predicted_dofv(model: Model, res: ModelfitResults) -> pd.Series | float:
     return _predicted(predict_influential_individuals, model, res, 'dofv')
 
 
-def ofv(res: ModelfitResults) -> Union[pd.Series, float]:
+def ofv(res: ModelfitResults) -> pd.Series | float:
     return np.nan if res is None or res.individual_ofv is None else res.individual_ofv
 
 
 def dofv(
     parent_model_res: Optional[ModelfitResults], candidate_model_res: Optional[ModelfitResults]
-) -> Union[pd.Series, float]:
+) -> pd.Series | float:
     return np.nan if parent_model_res is None else ofv(parent_model_res) - ofv(candidate_model_res)
 
 

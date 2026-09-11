@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 import itertools
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from pharmpy.internals.set.subsets import subsets
 from pharmpy.mfl.features.help_functions import get_repr
@@ -18,14 +18,14 @@ COVARIANCE_TYPES = frozenset(('IIV', 'IOV'))
 
 
 class Covariance(ModelFeature):
-    def __init__(self, type: str, parameters: Union[tuple[str, str], Ref], optional: bool):
+    def __init__(self, type: str, parameters: tuple[str, str] | Ref, optional: bool):
         self._type = type
         self._parameters = parameters
         self._optional = optional
 
     @classmethod
     def create(
-        cls, type: str, parameters: Union[Sequence[str], Ref], optional: bool = False
+        cls, type: str, parameters: Sequence[str] | Ref, optional: bool = False
     ) -> Covariance:
         type = cls._canonicalize_type(type, COVARIANCE_TYPES)
         if not isinstance(parameters, Sequence) and not isinstance(parameters, Ref):
@@ -57,7 +57,7 @@ class Covariance(ModelFeature):
         return self._type
 
     @property
-    def parameters(self) -> Union[tuple[str, str], Ref]:
+    def parameters(self) -> tuple[str, str] | Ref:
         return self._parameters
 
     @property
@@ -71,11 +71,11 @@ class Covariance(ModelFeature):
         return self._parameters
 
     @property
-    def args(self) -> tuple[str, Union[tuple[str, str], Ref], bool]:
+    def args(self) -> tuple[str, tuple[str, str] | Ref, bool]:
         return self.type, self.parameters, self.optional
 
     def expand(
-        self, expand_to: Mapping[Ref, Sequence[Union[str, Sequence[str]]]]
+        self, expand_to: Mapping[Ref, Sequence[str | Sequence[str]]]
     ) -> tuple[Covariance, ...]:
         if self.is_expanded():
             return (self,)
@@ -155,8 +155,8 @@ class Covariance(ModelFeature):
 
     @staticmethod
     def get_covariance_blocks(
-        mf: Union[ModelFeatures, Sequence[Covariance]],
-    ) -> tuple[Union[Ref, tuple[str, ...]], ...]:
+        mf: ModelFeatures | Sequence[Covariance],
+    ) -> tuple[Ref | tuple[str, ...], ...]:
         features = tuple(feat for feat in mf if isinstance(feat, Covariance))
         assert len(features) == len(mf)
 

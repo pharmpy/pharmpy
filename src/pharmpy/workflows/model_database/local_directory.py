@@ -3,7 +3,6 @@ import shutil
 from contextlib import contextmanager
 from os import stat
 from pathlib import Path
-from typing import Union
 
 from pharmpy.internals.fs.lock import path_lock
 from pharmpy.internals.fs.path import path_absolute
@@ -187,7 +186,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         File extension to use for model files.
     """
 
-    def __init__(self, path: Union[str, Path] = '.', file_extension='.mod'):
+    def __init__(self, path: str | Path = '.', file_extension='.mod'):
         path = Path(path)
         path.mkdir(parents=True, exist_ok=True)
         self.path = path_absolute(path)
@@ -206,7 +205,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
         return path_lock(str(path), shared=False)
 
     @contextmanager
-    def snapshot(self, obj: Union[Model, ModelEntry, ModelHash]):
+    def snapshot(self, obj: Model | ModelEntry | ModelHash):
         key = ModelHash(obj)
         model_path = self.path / str(key)
         destination = model_path / DIRECTORY_PHARMPY_METADATA
@@ -221,7 +220,7 @@ class LocalModelDirectoryDatabase(TransactionalModelDatabase):
             yield LocalModelDirectoryDatabaseSnapshot(self, obj)
 
     @contextmanager
-    def transaction(self, obj: Union[Model, ModelEntry, ModelHash]):
+    def transaction(self, obj: Model | ModelEntry | ModelHash):
         key = ModelHash(obj)
         model_path = self.path / str(key)
         destination = model_path / DIRECTORY_PHARMPY_METADATA

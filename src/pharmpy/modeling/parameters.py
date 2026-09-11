@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -357,7 +357,7 @@ def set_lower_bounds(model: Model, bounds: Mapping[str, float], strict: bool = T
 
 
 def fix_parameters(
-    model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True
+    model: Model, parameter_names: Iterable[str] | str, strict: bool = True
 ) -> Model:
     """Fix parameters
 
@@ -421,7 +421,7 @@ def _check_input_params(model, parameter_names):
 
 
 def unfix_parameters(
-    model: Model, parameter_names: Union[Iterable[str], str], strict: bool = True
+    model: Model, parameter_names: Iterable[str] | str, strict: bool = True
 ) -> Model:
     """Unfix parameters
 

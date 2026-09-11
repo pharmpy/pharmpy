@@ -9,7 +9,7 @@ import re
 import warnings
 from collections import defaultdict
 from operator import add, mul
-from typing import Literal, Self, Union
+from typing import Literal, Self
 
 from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -30,7 +30,7 @@ from .expressions import (
 )
 from .parameters import get_thetas
 
-EffectType = Union[Literal['lin', 'cat', 'cat2', 'piece_lin', 'exp', 'pow'], str]
+EffectType = Literal['lin', 'cat', 'cat2', 'piece_lin', 'exp', 'pow'] | str
 OperationType = Literal['*', '+']
 
 

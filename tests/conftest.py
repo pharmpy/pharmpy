@@ -1,6 +1,6 @@
 from collections.abc import Hashable
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import pytest
 
@@ -32,7 +32,7 @@ def load_model_for_test(tmp_path_factory):
 
     _cache: dict[Hashable, Model] = {}
 
-    def _load(given_path: Union[str, Path]) -> Model:
+    def _load(given_path: str | Path) -> Model:
         # TODO: Cache based on file contents instead.
 
         def _parse_model():

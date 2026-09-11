@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model
@@ -10,7 +10,7 @@ from pharmpy.workflows.contexts import Context, LocalDirectoryContext
 from pharmpy.workflows.contexts.baseclass import FINAL_MODEL_NAME, INPUT_MODEL_NAME
 
 
-def open_context(name: str, ref: Union[str, Path, None] = None):
+def open_context(name: str, ref: str | Path | None = None):
     """Open a context from a tool run
 
     Parameters
@@ -31,7 +31,7 @@ def open_context(name: str, ref: Union[str, Path, None] = None):
     return ctx
 
 
-def open_project(name: str, ref: Union[str, Path, None] = None):
+def open_project(name: str, ref: str | Path | None = None):
     """Open or create a project (with model database)
 
     Parameters
@@ -217,7 +217,7 @@ def _get_model_names_recursive(context):
 
 
 def export_model_files(
-    context: Context, destination_path: Union[str, Path, None] = None, force: bool = False
+    context: Context, destination_path: str | Path | None = None, force: bool = False
 ):
     """Exports all model files to specified directory.
 

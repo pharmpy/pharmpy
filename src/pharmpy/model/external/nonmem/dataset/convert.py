@@ -1,6 +1,5 @@
 import re
 from functools import lru_cache
-from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.model.data import DatasetError
@@ -16,11 +15,11 @@ def convert(df, null_value: str, missing_data_token: str):
 
 @lru_cache(32)
 def _convert_data_item(
-    null_value: Union[float, np.float64],
+    null_value: float | np.float64,
     missing_data_token: str,
 ):
     @lru_cache(4096)
-    def _convert(x: Union[str, None]):
+    def _convert(x: str | None):
         if x in (None, ".", ""):
             return null_value
 

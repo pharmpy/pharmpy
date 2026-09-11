@@ -5,7 +5,7 @@ import warnings
 from collections.abc import Collection, Mapping
 from functools import partial
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import pharmpy.visualization
 from pharmpy.basic import Expr, RandomNumberGenerator, Seed
@@ -151,10 +151,10 @@ def plot_individual_predictions(
 
 def plot_transformed_eta_distributions(
     model: Model,
-    parameter_estimates: Union[pd.Series, Mapping[str, float]],
+    parameter_estimates: pd.Series | Mapping[str, float],
     individual_estimates: pd.DataFrame,
-    parameter_estimates_untransformed: Union[pd.Series, Mapping[str, float]],
-    seed: Optional[Union[RandomNumberGenerator, Seed, float, int]] = None,
+    parameter_estimates_untransformed: pd.Series | Mapping[str, float],
+    seed: Optional[RandomNumberGenerator | Seed | float | int] = None,
 ):
     """Plot transformed eta distributions for all transformed etas
 
@@ -987,7 +987,7 @@ def _vpc_plot(model, simulations, binning, nbins, qi, ci, query=None, title='', 
 
 def plot_vpc(
     model: Model,
-    simulations: Union[Path, pd.DataFrame, str],
+    simulations: Path | pd.DataFrame | str,
     binning: Literal["equal_width", "equal_number"] = "equal_number",
     nbins: int = 8,
     qi: float = 0.95,

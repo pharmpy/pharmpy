@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Optional, Self, Union
+from typing import Literal, Optional, Self
 
 from pharmpy.deps import pint
 
@@ -10,7 +10,7 @@ ureg.define("l = liter = L")
 
 
 class Unit:
-    def __init__(self, source: Union[Unit, str, Literal[1], pint.Unit]):
+    def __init__(self, source: Unit | str | Literal[1] | pint.Unit):
         if isinstance(source, Unit):
             self._units = source._units
         elif isinstance(source, pint.Unit):

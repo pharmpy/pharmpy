@@ -2,7 +2,7 @@ from collections import Counter
 from dataclasses import astuple, dataclass, field, replace
 from functools import partial
 from itertools import chain, count
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 import statsmodels.api as sm
 
@@ -98,7 +98,7 @@ NAME_WF = 'covsearch'
 def samba_workflow(
     model: Model,
     results: ModelfitResults,
-    search_space: Union[str, ModelFeatures],
+    search_space: str | ModelFeatures,
     max_steps: int = -1,
     p_forward: float = 0.05,
     p_backward: float = 0.01,

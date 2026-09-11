@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr
 from pharmpy.deps import sympy
@@ -141,7 +141,7 @@ def add_individual_parameter(
 
 
 def _add_parameter(
-    model: Model, name: str, init: float = 0.1, lower: float = 0, upper: Union[float, None] = None
+    model: Model, name: str, init: float = 0.1, lower: float = 0, upper: float | None = None
 ):
     pops = create_symbol(model, f'POP_{name}')
     model = add_population_parameter(model, pops.name, init, lower=lower, upper=upper)

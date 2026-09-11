@@ -1,6 +1,6 @@
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Any, Union, overload
+from typing import Any, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
@@ -21,7 +21,7 @@ def _read_dataset_header_and_separator(path) -> tuple[list[str], str]:
     return colnames, separator
 
 
-def create_datainfo(path_or_df: Union[str, Path, pd.DataFrame]) -> DataInfo:
+def create_datainfo(path_or_df: str | Path | pd.DataFrame) -> DataInfo:
     """Create a DataInfo
 
     Will assume NONMEM names of columns
@@ -110,7 +110,7 @@ def create_datainfo(path_or_df: Union[str, Path, pd.DataFrame]) -> DataInfo:
     return di
 
 
-def read_datainfo(path: Union[str, Path]) -> DataInfo:
+def read_datainfo(path: str | Path) -> DataInfo:
     """Read a datainfo file
 
     Parameters
@@ -133,7 +133,7 @@ def read_datainfo(path: Union[str, Path]) -> DataInfo:
     return di
 
 
-def write_datainfo(di: DataInfo, path: Union[str, Path], force: bool = False) -> None:
+def write_datainfo(di: DataInfo, path: str | Path, force: bool = False) -> None:
     """Write a DataInfo object to a datainfo file
 
     Parameters
@@ -162,9 +162,7 @@ def annotate_unit(model_or_datainfo: Model, column: str, unit: str) -> Model: ..
 def annotate_unit(model_or_datainfo: DataInfo, column: str, unit: str) -> DataInfo: ...
 
 
-def annotate_unit(
-    model_or_datainfo: Union[Model, DataInfo], column: str, unit: str
-) -> Union[Model, DataInfo]:
+def annotate_unit(model_or_datainfo: Model | DataInfo, column: str, unit: str) -> Model | DataInfo:
     """Specify the unit of a data column
 
     Note that no conversion of units will happen if the unit was already set.
@@ -212,8 +210,8 @@ def set_property(
 
 
 def set_property(
-    model_or_datainfo: Union[Model, DataInfo], column: str, property: str, value: Any
-) -> Union[Model, DataInfo]:
+    model_or_datainfo: Model | DataInfo, column: str, property: str, value: Any
+) -> Model | DataInfo:
     """Specify a property of a column
 
     See :py:attr:`pharmpy.DataInfo.properties` for documentation on data properties.

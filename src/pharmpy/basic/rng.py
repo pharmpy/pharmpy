@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.deps import numpy as np
 
@@ -9,7 +9,7 @@ from pharmpy.deps import numpy as np
 class Seed:
     """A random seed"""
 
-    def __init__(self, obj: Optional[Union[int, float, Seed]] = None):
+    def __init__(self, obj: Optional[int | float | Seed] = None):
         if obj is None:
             seed = int(os.urandom(16).hex(), 16)
         elif isinstance(obj, Seed):
@@ -37,7 +37,7 @@ class Seed:
 class RandomNumberGenerator:
     """A random number generator"""
 
-    def __init__(self, obj: Optional[Union[int, list, float, Seed, RandomNumberGenerator]] = None):
+    def __init__(self, obj: Optional[int | list | float | Seed | RandomNumberGenerator] = None):
         if isinstance(obj, RandomNumberGenerator):
             self._backend = obj._backend
         elif isinstance(obj, list):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.basic import BooleanExpr, Expr, RandomNumberGenerator, Seed
 from pharmpy.deps import numpy as np
@@ -217,12 +217,15 @@ def calculate_individual_shrinkage(
 
 def calculate_individual_parameter_statistics(
     model: Model,
-    expr_or_exprs: Union[
-        Iterable[BooleanExpr], Iterable[Expr], Iterable[str], BooleanExpr, Expr, str
-    ],
+    expr_or_exprs: Iterable[BooleanExpr]
+    | Iterable[Expr]
+    | Iterable[str]
+    | BooleanExpr
+    | Expr
+    | str,
     parameter_estimates: Mapping[str, float],
     covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[Union[RandomNumberGenerator, float, Seed, int]] = None,
+    seed: Optional[RandomNumberGenerator | float | Seed | int] = None,
 ) -> pd.DataFrame:
     """Calculate statistics for individual parameters
 
@@ -411,7 +414,7 @@ def calculate_pk_parameters_statistics(
     model: Model,
     parameter_estimates: pd.Series,
     covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[Union[RandomNumberGenerator, Seed, float, int]] = None,
+    seed: Optional[RandomNumberGenerator | Seed | float | int] = None,
 ) -> pd.DataFrame:
     """Calculate statistics for common pharmacokinetic parameters
 

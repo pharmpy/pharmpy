@@ -6,7 +6,7 @@ import json
 from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, Self, Union, cast, overload
+from typing import Any, Optional, Self, cast, overload
 
 from pharmpy import conf
 from pharmpy.basic import BooleanExpr, Expr, Unit
@@ -25,7 +25,7 @@ class ReadDataset(DatasetOperation):
         self._path = path
 
     @classmethod
-    def create(cls, path: Union[Path, str]) -> Self:
+    def create(cls, path: Path | str) -> Self:
         path = Path(path)
         return cls(path=path)
 
@@ -64,7 +64,7 @@ class Ignore(DatasetOperation):
 
     @classmethod
     def create(
-        cls, expression: Union[BooleanExpr, str], strings: Mapping[Expr, str] = frozenmapping({})
+        cls, expression: BooleanExpr | str, strings: Mapping[Expr, str] = frozenmapping({})
     ) -> Self:
         if isinstance(expression, str):
             expression = BooleanExpr(expression)
@@ -78,7 +78,7 @@ class Ignore(DatasetOperation):
 
     def replace(
         self,
-        expression: Optional[Union[BooleanExpr, str]] = None,
+        expression: Optional[BooleanExpr | str] = None,
         strings: Optional[Mapping[Expr, str]] = None,
     ):
         if expression is None:
@@ -131,7 +131,7 @@ class Drop(DatasetOperation):
         self._column = column
 
     @classmethod
-    def create(cls, column: Union[Expr, str]) -> Self:
+    def create(cls, column: Expr | str) -> Self:
         if isinstance(column, str):
             column = Expr.symbol(column)
         if not isinstance(column, Expr):
@@ -174,7 +174,7 @@ class AddColumn(DatasetOperation):
         self._column = column
 
     @classmethod
-    def create(cls, column: Union[Expr, str]) -> Self:
+    def create(cls, column: Expr | str) -> Self:
         if isinstance(column, str):
             column = Expr.symbol(column)
         if not isinstance(column, Expr):
@@ -269,7 +269,7 @@ class Provenance(Sequence, Immutable):
     @overload
     def __getitem__(self, index: slice) -> Provenance: ...
 
-    def __getitem__(self, index: Union[int, slice]) -> Union[DatasetOperation, Provenance]:
+    def __getitem__(self, index: int | slice) -> DatasetOperation | Provenance:
         if isinstance(index, int):
             return self._operations[index]
         else:
@@ -289,7 +289,7 @@ class Provenance(Sequence, Immutable):
         return self._operations == other._operations
 
     def __add__(
-        self, other: Union[Provenance, DatasetOperation, Sequence[DatasetOperation]]
+        self, other: Provenance | DatasetOperation | Sequence[DatasetOperation]
     ) -> Provenance:
         if isinstance(other, Provenance):
             return Provenance.create(operations=self._operations + other._operations)
@@ -298,7 +298,7 @@ class Provenance(Sequence, Immutable):
         else:
             return Provenance.create(operations=self._operations + tuple(other))
 
-    def __radd__(self, other: Union[DatasetOperation, Sequence[DatasetOperation]]) -> Provenance:
+    def __radd__(self, other: DatasetOperation | Sequence[DatasetOperation]) -> Provenance:
         if isinstance(other, DatasetOperation):
             return Provenance.create(operations=(other,) + self._operations)
         else:
@@ -836,7 +836,7 @@ class ColumnInfo(Immutable):
     def __init__(
         self,
         name: str,
-        variable_mapping: Union[frozenmapping[int, DataVariable], DataVariable],
+        variable_mapping: frozenmapping[int, DataVariable] | DataVariable,
         variable_id: Optional[str] = None,
         drop: bool = False,
         datatype: str = "float64",
@@ -851,7 +851,7 @@ class ColumnInfo(Immutable):
     def create(
         cls,
         name: str,
-        variable_mapping: Optional[Union[Mapping[int, DataVariable], DataVariable]] = None,
+        variable_mapping: Optional[Mapping[int, DataVariable] | DataVariable] = None,
         variable_id: Optional[str] = None,
         drop: bool = False,
         datatype: str = "float64",
@@ -1004,7 +1004,7 @@ class ColumnInfo(Immutable):
         return self._variable_id
 
     @property
-    def variable_mapping(self) -> Union[frozenmapping[int, DataVariable], DataVariable]:
+    def variable_mapping(self) -> frozenmapping[int, DataVariable] | DataVariable:
         """Mapping from value in identifier column to DataVariable"""
         return self._variable_mapping
 
@@ -1140,8 +1140,8 @@ class DataInfo(Sequence, Immutable):
     @classmethod
     def create(
         cls,
-        columns: Optional[Union[Sequence[ColumnInfo], Sequence[str]]] = None,
-        path: Optional[Union[str, Path]] = None,
+        columns: Optional[Sequence[ColumnInfo] | Sequence[str]] = None,
+        path: Optional[str | Path] = None,
         separator: str = ',',
         missing_data_token: Optional[str] = None,
         provenance: Optional[Provenance] = None,
@@ -1210,7 +1210,7 @@ class DataInfo(Sequence, Immutable):
             provenance=provenance,
         )
 
-    def __add__(self, other: Union[DataInfo, ColumnInfo, Sequence[ColumnInfo]]) -> DataInfo:
+    def __add__(self, other: DataInfo | ColumnInfo | Sequence[ColumnInfo]) -> DataInfo:
         if isinstance(other, DataInfo):
             return DataInfo.create(
                 columns=self._columns + other._columns, path=self.path, separator=self.separator
@@ -1224,7 +1224,7 @@ class DataInfo(Sequence, Immutable):
                 columns=self._columns + tuple(other), path=self.path, separator=self.separator
             )
 
-    def __radd__(self, other: Union[ColumnInfo, Sequence[ColumnInfo]]) -> DataInfo:
+    def __radd__(self, other: ColumnInfo | Sequence[ColumnInfo]) -> DataInfo:
         if isinstance(other, ColumnInfo):
             return DataInfo.create(
                 columns=(other,) + self._columns, path=self.path, separator=self.separator
@@ -1259,12 +1259,12 @@ class DataInfo(Sequence, Immutable):
             raise TypeError(f"Cannot index DataInfo by {type(i)}")
 
     @overload
-    def __getitem__(self, index: Union[int, str]) -> ColumnInfo: ...
+    def __getitem__(self, index: int | str) -> ColumnInfo: ...
 
     @overload
-    def __getitem__(self, index: Union[Sequence, slice]) -> DataInfo: ...
+    def __getitem__(self, index: Sequence | slice) -> DataInfo: ...
 
-    def __getitem__(self, index: Union[Sequence, slice, int, str]) -> Union[DataInfo, ColumnInfo]:
+    def __getitem__(self, index: Sequence | slice | int | str) -> DataInfo | ColumnInfo:
         if isinstance(index, (int, str)):
             return self._columns[self._getindex(index)]
         elif isinstance(index, Sequence):
@@ -1462,7 +1462,7 @@ class DataInfo(Sequence, Immutable):
         """All column types"""
         return [col.type for col in self._columns]
 
-    def set_types(self, value: Union[list[str], str]) -> DataInfo:
+    def set_types(self, value: list[str] | str) -> DataInfo:
         """Set types for all columns
 
         Parameters
@@ -1588,7 +1588,7 @@ class DataInfo(Sequence, Immutable):
             "provenance": self._provenance.to_dict(),
         }
 
-    def to_json(self, path: Optional[Union[Path, str]] = None):
+    def to_json(self, path: Optional[Path | str] = None):
         if path is None:
             d = self._to_dict(str(self.path) if self.path is not None else None)
         else:
@@ -1663,7 +1663,7 @@ class DataInfo(Sequence, Immutable):
         return di
 
     @staticmethod
-    def read_json(path: Union[Path, str]) -> DataInfo:
+    def read_json(path: Path | str) -> DataInfo:
         """Read DataInfo from JSON file
 
         Parameters

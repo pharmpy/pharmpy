@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -66,7 +66,7 @@ class RankingOptions:
     cutoff: Optional[float]
     strictness: str
     parameter_uncertainty_method: str
-    E: Optional[tuple[Union[float, str], Union[float, str]]]
+    E: Optional[tuple[float | str, float | str]]
     search_space: Optional[str]
 
 
@@ -78,11 +78,11 @@ def create_workflow(
     as_fullblock: bool = False,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     linearize: bool = False,
-    cutoff: Optional[Union[float, int]] = None,
+    cutoff: Optional[float | int] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
     correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
-    E_p: Optional[Union[float, str]] = None,
-    E_q: Optional[Union[float, str]] = None,
+    E_p: Optional[float | str] = None,
+    E_q: Optional[float | str] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.

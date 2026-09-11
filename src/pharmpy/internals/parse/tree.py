@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC
 from dataclasses import dataclass
-from typing import TypeVar, Union
+from typing import TypeVar
 
 from pharmpy.internals.immutable import Immutable
 
@@ -19,7 +19,7 @@ class Leaf(Immutable):
 @dataclass(frozen=True)
 class Tree[T, L](Immutable):
     rule: str
-    children: tuple[Union[T, L], ...]
+    children: tuple[T | L, ...]
 
 
 R = TypeVar('R')

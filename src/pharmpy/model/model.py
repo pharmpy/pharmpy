@@ -18,7 +18,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Self, Union
+from typing import Any, Optional, Self
 
 import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
@@ -75,7 +75,7 @@ class Model(Immutable):
         observation_transformation: Optional[frozenmapping[Expr, Expr]] = None,
         execution_steps: ExecutionSteps = ExecutionSteps(),
         initial_individual_estimates: Optional[pd.DataFrame] = None,
-        value_type: Union[str, Expr] = 'PREDICTION',
+        value_type: str | Expr = 'PREDICTION',
         description: str = '',
         internals: Optional[ModelInternals] = None,
     ):
@@ -108,7 +108,7 @@ class Model(Immutable):
         observation_transformation: Optional[Mapping[TSymbol, TExpr]] = None,
         execution_steps: Optional[ExecutionSteps] = None,
         initial_individual_estimates: Optional[pd.DataFrame] = None,
-        value_type: Union[str, Expr] = 'PREDICTION',
+        value_type: str | Expr = 'PREDICTION',
         description: str = '',
         internals: Optional[ModelInternals] = None,
     ) -> Self:
@@ -152,7 +152,7 @@ class Model(Immutable):
     ALLOWED_VALUE_TYPE_STRINGS = ('PREDICTION', 'LIKELIHOOD', '-2LL')
 
     @staticmethod
-    def _canonicalize_value_type(value: Any) -> Union[str, Expr]:
+    def _canonicalize_value_type(value: Any) -> str | Expr:
         allowed_strings = ('PREDICTION', 'LIKELIHOOD', '-2LL')
         if isinstance(value, str):
             if value.upper() not in Model.ALLOWED_VALUE_TYPE_STRINGS:
@@ -585,7 +585,7 @@ class Model(Immutable):
         return self._dependent_variables
 
     @property
-    def value_type(self) -> Union[str, Expr]:
+    def value_type(self) -> str | Expr:
         """The type of the model value (dependent variables)
 
         By default this is set to 'PREDICTION' to mean that the model outputs a prediction.
@@ -692,7 +692,7 @@ class Model(Immutable):
         return self._description
 
     @staticmethod
-    def parse_model(path: Union[Path, str], missing_data_token: Optional[str] = None):
+    def parse_model(path: Path | str, missing_data_token: Optional[str] = None):
         """Create a model object by parsing a model file of any supported type
 
         Parameters
@@ -738,7 +738,7 @@ class Model(Immutable):
         NONMEM model with an updated dataset) they will be replaced with DUMMYPATH"""
         return self
 
-    def write_files(self, path: Optional[Union[Path, str]] = None, force: bool = False) -> Model:
+    def write_files(self, path: Optional[Path | str] = None, force: bool = False) -> Model:
         """Write all extra files needed for a specific external format."""
         return self
 

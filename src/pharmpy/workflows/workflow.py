@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import uuid
 from collections.abc import Iterable
-from typing import Literal, Optional, TypeVar, Union
+from typing import Literal, Optional, TypeVar
 
 from pharmpy.deps import networkx as nx
 from pharmpy.internals.immutable import Immutable
@@ -122,9 +122,7 @@ class WorkflowBuilder(WorkflowBase):
             for task in tasks:
                 self.add_task(task)
 
-    def add_task(
-        self, task: Task, predecessors: Optional[Union[Task, Iterable[Task]]] = None
-    ) -> None:
+    def add_task(self, task: Task, predecessors: Optional[Task | Iterable[Task]] = None) -> None:
         """Add a task to the workflow
 
         Predecessors will be connected if given.
@@ -205,7 +203,7 @@ class WorkflowBuilder(WorkflowBase):
         nx.relabel_nodes(self._g, mapping, copy=False)
 
     def insert_workflow(
-        self, other: Workflow, predecessors: Optional[Union[Task, Iterable[Task]]] = None
+        self, other: Workflow, predecessors: Optional[Task | Iterable[Task]] = None
     ) -> None:
         """Insert other workflow
 

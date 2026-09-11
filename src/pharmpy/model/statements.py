@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, Self, Union, overload
+from typing import Any, Optional, Self, overload
 
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
@@ -18,7 +18,7 @@ from pharmpy.internals.immutable import Immutable, cache_method_no_args
 class Statement(Immutable):
     """Abstract base class for all types of statements"""
 
-    def __add__(self, other: Union[Statement, Statements, Iterable[Statement]]) -> Statements:
+    def __add__(self, other: Statement | Statements | Iterable[Statement]) -> Statements:
         if isinstance(other, Statements):
             return Statements((self,) + other._statements)
         elif isinstance(other, Statement):
@@ -28,7 +28,7 @@ class Statement(Immutable):
         else:
             return NotImplemented
 
-    def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
+    def __radd__(self, other: Statement | Iterable[Statement]) -> Statements:
         if isinstance(other, Iterable):
             return Statements.create(tuple(other) + (self,))
         else:
@@ -383,7 +383,7 @@ class CompartmentalSystemBuilder:
     def set_dose(
         self,
         compartment: Compartment,
-        dose: Optional[Union[Dose, tuple[Dose, ...]]],
+        dose: Optional[Dose | tuple[Dose, ...]],
     ) -> Compartment:
         """Set dose of compartment, replacing the previous.
 
@@ -411,7 +411,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
-    def add_dose(self, compartment: Compartment, dose: Union[Dose, tuple[Dose, ...]]):
+    def add_dose(self, compartment: Compartment, dose: Dose | tuple[Dose, ...]):
         """Add dose to compartment.
 
         Parameters
@@ -697,7 +697,7 @@ class CompartmentalSystem(Statement):
     def create(
         cls,
         builder: CompartmentalSystemBuilder,
-        t: Optional[Union[Expr, str]] = Expr.symbol('t'),
+        t: Optional[Expr | str] = Expr.symbol('t'),
     ) -> Self:
         if builder is None:
             raise TypeError('Argument `builder` cannot be None`')
@@ -886,7 +886,7 @@ class CompartmentalSystem(Statement):
         return rate
 
     def get_compartment_outflows(
-        self, compartment: Union[str, CompartmentBase]
+        self, compartment: str | CompartmentBase
     ) -> list[tuple[CompartmentBase, Expr]]:
         """Get list of all flows going out from a compartment
 
@@ -915,7 +915,7 @@ class CompartmentalSystem(Statement):
         return flows
 
     def get_compartment_inflows(
-        self, compartment: Union[CompartmentBase, str]
+        self, compartment: CompartmentBase | str
     ) -> list[tuple[Compartment, Expr]]:
         """Get list of all flows going in to a compartment
 
@@ -949,7 +949,7 @@ class CompartmentalSystem(Statement):
             flows.append((node, flow))
         return flows
 
-    def get_bidirectionals(self, compartment: Union[CompartmentBase, str]) -> list[Compartment]:
+    def get_bidirectionals(self, compartment: CompartmentBase | str) -> list[Compartment]:
         """Get list of all compartments with bidirectional flow from/to a compartment
 
         Parameters
@@ -1003,7 +1003,7 @@ class CompartmentalSystem(Statement):
                 return comp
         return None
 
-    def find_compartment_or_raise(self, comp: Union[str, CompartmentBase]) -> Compartment:
+    def find_compartment_or_raise(self, comp: str | CompartmentBase) -> Compartment:
         if isinstance(comp, CompartmentBase):
             return comp  # pyright: ignore
         found_comp = self.find_compartment(comp)
@@ -2026,13 +2026,13 @@ class Statements(Sequence, Immutable):
         A list of Statement or another Statements to populate this object
     """
 
-    def __init__(self, statements: Union[Statements, Iterable[Statement]] = ()):
+    def __init__(self, statements: Statements | Iterable[Statement] = ()):
         if not isinstance(statements, tuple):
             statements = tuple(statements)
         self._statements = statements
 
     @classmethod
-    def create(cls, statements: Optional[Union[Statements, Iterable[Statement]]] = None) -> Self:
+    def create(cls, statements: Optional[Statements | Iterable[Statement]] = None) -> Self:
         if isinstance(statements, Statements):
             pass
         elif statements is None:
@@ -2053,7 +2053,7 @@ class Statements(Sequence, Immutable):
     @overload
     def __getitem__(self, ind: slice) -> Statements: ...
 
-    def __getitem__(self, ind: Union[int, slice]) -> Union[Statement, Statements]:
+    def __getitem__(self, ind: int | slice) -> Statement | Statements:
         if isinstance(ind, slice):
             return Statements(self._statements[ind])
         else:
@@ -2062,7 +2062,7 @@ class Statements(Sequence, Immutable):
     def __len__(self):
         return len(self._statements)
 
-    def __add__(self, other: Union[Statements, Statement, Iterable[Statement]]) -> Statements:
+    def __add__(self, other: Statements | Statement | Iterable[Statement]) -> Statements:
         if isinstance(other, Statements):
             return Statements(self._statements + other._statements)
         elif isinstance(other, Statement):
@@ -2072,7 +2072,7 @@ class Statements(Sequence, Immutable):
         else:
             return NotImplemented
 
-    def __radd__(self, other: Union[Statement, Iterable[Statement]]) -> Statements:
+    def __radd__(self, other: Statement | Iterable[Statement]) -> Statements:
         if isinstance(other, Iterable):
             return Statements.create(tuple(other) + self._statements)
         else:
@@ -2455,7 +2455,7 @@ class Statements(Sequence, Immutable):
         stats._statements = [self[i] for i in succ]
         return stats
 
-    def dependencies(self, symbol_or_statement: Union[TSymbol, Statement]) -> set[Expr]:
+    def dependencies(self, symbol_or_statement: TSymbol | Statement) -> set[Expr]:
         """Find all dependencies of a symbol or statement
 
         Parameters

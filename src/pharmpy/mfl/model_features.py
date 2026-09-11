@@ -3,7 +3,7 @@ from __future__ import annotations
 import itertools
 from collections import defaultdict
 from collections.abc import Iterable, Iterator, Mapping, Sequence
-from typing import Literal, TypeVar, Union
+from typing import Literal, TypeVar
 
 from pharmpy.internals.immutable import Immutable
 from pharmpy.mfl.features.mutex_feature import MutexFeature
@@ -272,7 +272,7 @@ class ModelFeatures(Immutable):
         return ModelFeatures.create(features)
 
     def __add__(
-        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+        self, other: ModelFeature | ModelFeatures | Iterable[ModelFeature]
     ) -> ModelFeatures:
         if isinstance(other, ModelFeature):
             return ModelFeatures.create(features=self.features + (other,))
@@ -284,13 +284,13 @@ class ModelFeatures(Immutable):
             return NotImplemented
 
     def __radd__(
-        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+        self, other: ModelFeature | ModelFeatures | Iterable[ModelFeature]
     ) -> ModelFeatures:
         # ModelFeatures.create has a canonical order
         return self + other
 
     def __sub__(
-        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+        self, other: ModelFeature | ModelFeatures | Iterable[ModelFeature]
     ) -> ModelFeatures:
         if isinstance(other, ModelFeature):
             return ModelFeatures(features=tuple(feature for feature in self if feature != other))
@@ -302,7 +302,7 @@ class ModelFeatures(Immutable):
             return NotImplemented
 
     def __rsub__(
-        self, other: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
+        self, other: ModelFeature | ModelFeatures | Iterable[ModelFeature]
     ) -> ModelFeatures:
         if isinstance(other, ModelFeature):
             return ModelFeatures(()) if other in self else ModelFeatures((other,))
@@ -319,9 +319,7 @@ class ModelFeatures(Immutable):
     def __len__(self) -> int:
         return len(self.features)
 
-    def __contains__(
-        self, item: Union[ModelFeature, ModelFeatures, Iterable[ModelFeature]]
-    ) -> bool:
+    def __contains__(self, item: ModelFeature | ModelFeatures | Iterable[ModelFeature]) -> bool:
         if isinstance(item, ModelFeature):
             return self._contains(item)
         elif isinstance(item, ModelFeatures):

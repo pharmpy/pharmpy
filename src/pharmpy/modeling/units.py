@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Union, overload
+from typing import Any, Optional, overload
 
 from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
 from pharmpy.basic.expr import solve
@@ -27,10 +27,10 @@ def get_unit_of(model: Model, variable: None) -> dict[str, Unit]: ...
 
 
 @overload
-def get_unit_of(model: Model, variable: Union[str, Expr]) -> Unit: ...
+def get_unit_of(model: Model, variable: str | Expr) -> Unit: ...
 
 
-def get_unit_of(model: Model, variable: Union[str, Expr, None] = None) -> Unit | dict[str, Unit]:
+def get_unit_of(model: Model, variable: str | Expr | None = None) -> Unit | dict[str, Unit]:
     """Derive the physical unit of a variable in the model
 
     Unit information for the dataset needs to be available.
@@ -335,8 +335,8 @@ def update_factor(expr, factor, div=False):
 def convert_unit(
     model: Model,
     variable: str,
-    unit: Union[str, Unit],
-    original_unit: Optional[Union[str, Unit]] = None,
+    unit: str | Unit,
+    original_unit: Optional[str | Unit] = None,
     in_dataset: bool = False,
 ) -> Model:
     """Convert between units for a data variable

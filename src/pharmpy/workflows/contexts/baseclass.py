@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 from pharmpy.basic import RandomNumberGenerator
 from pharmpy.deps import pandas as pd
@@ -264,7 +264,7 @@ class Context(ABC):
         can be implemented to do cleanup of the context
         """
 
-    def _store_model(self, name: str, model: Union[Model, ModelEntry]):
+    def _store_model(self, name: str, model: Model | ModelEntry):
         db = self.model_database
         with db.transaction(model) as txn:
             txn.store_model_entry()
@@ -285,7 +285,7 @@ class Context(ABC):
         )
         return new_me
 
-    def store_model_entry(self, me: Union[Model, ModelEntry]) -> None:
+    def store_model_entry(self, me: Model | ModelEntry) -> None:
         name = me.name if isinstance(me, Model) else me.model.name
         self._store_model(name, me)
 
@@ -293,7 +293,7 @@ class Context(ABC):
         me = self._retrieve_me(name)
         return me
 
-    def store_input_model_entry(self, me: Union[Model, ModelEntry]) -> None:
+    def store_input_model_entry(self, me: Model | ModelEntry) -> None:
         self._store_model(INPUT_MODEL_NAME, me)
 
     def retrieve_input_model_entry(self) -> ModelEntry:

@@ -1,11 +1,10 @@
 from collections.abc import Mapping
-from typing import Union
 
 from lark import Tree, Visitor
 from lark.lexer import Token
 
 
-def _rule_of(item: Union[Tree, Token]) -> str:
+def _rule_of(item: Tree | Token) -> str:
     if isinstance(item, Tree):
         return item.data
     else:

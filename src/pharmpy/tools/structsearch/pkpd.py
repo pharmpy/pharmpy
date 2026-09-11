@@ -1,4 +1,4 @@
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.mfl import DirectEffect, EffectComp, IndirectEffect, ModelFeatures
@@ -41,12 +41,12 @@ def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[flo
 
 def create_pkpd_models(
     model: Model,
-    search_space: Union[str, ModelFeatures],
-    b_init: Optional[Union[int, float]] = None,
+    search_space: str | ModelFeatures,
+    b_init: Optional[int | float] = None,
     ests: Optional[pd.Series] = None,
-    emax_init: Optional[Union[int, float]] = None,
-    ec50_init: Optional[Union[int, float]] = None,
-    met_init: Optional[Union[int, float]] = None,
+    emax_init: Optional[int | float] = None,
+    ec50_init: Optional[int | float] = None,
+    met_init: Optional[int | float] = None,
 ):
     """Create pkpd models
 

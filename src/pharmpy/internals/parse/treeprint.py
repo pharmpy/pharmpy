@@ -9,7 +9,7 @@ from collections import namedtuple
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-from typing import Optional, TypeVar, Union
+from typing import Optional, TypeVar
 
 
 class BranchStyle(Enum):
@@ -42,7 +42,7 @@ class Node[T]:
     def __init__(
         self,
         obj: T,
-        cls_str: Union[str, Callable[[T], str]] = '__str__',
+        cls_str: str | Callable[[T], str] = '__str__',
         style: Optional[NodeStyle] = None,
         children: tuple[Node, ...] = (),
     ):

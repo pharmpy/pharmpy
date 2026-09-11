@@ -1,7 +1,7 @@
 import re
 from collections.abc import Callable, Generator, Iterable, Iterator
 from dataclasses import asdict, dataclass, fields, replace
-from typing import Any, Optional, Union
+from typing import Any, Optional
 
 from packaging import version
 
@@ -97,17 +97,17 @@ class KeyValueSection(Section):
     value: str
 
 
-TaggedSection = Union[
-    VersionSection,
-    StartTimeSection,
-    EndTimeSection,
-    ExecSection,
-    MethSection,
-    TermSection,
-    TereSection,
-    ProgramTerminatedByObjSection,
-    KeyValueSection,
-]
+TaggedSection = (
+    VersionSection
+    | StartTimeSection
+    | EndTimeSection
+    | ExecSection
+    | MethSection
+    | TermSection
+    | TereSection
+    | ProgramTerminatedByObjSection
+    | KeyValueSection
+)
 
 
 class NONMEMResultsFile:

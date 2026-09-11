@@ -4,7 +4,7 @@ import re
 import warnings
 from collections.abc import Collection, Container
 from pathlib import Path
-from typing import Any, Literal, Optional, Union, overload
+from typing import Any, Literal, Optional, overload
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -229,7 +229,7 @@ def get_number_of_observations_per_individual(model: Model) -> pd.Series:
 
 
 def get_observations(
-    model: Model, keep_index: bool = False, dv: Union[Expr, str, int, None] = None
+    model: Model, keep_index: bool = False, dv: Expr | str | int | None = None
 ) -> pd.Series:
     """Get observations from dataset
 
@@ -277,7 +277,7 @@ def get_observations(
 
 
 def get_observations_and_exclusion_criteria(
-    model: Model, keep_index: bool = False, dv: Union[Expr, str, int, None] = None
+    model: Model, keep_index: bool = False, dv: Expr | str | int | None = None
 ) -> tuple[pd.Series, Optional[Ignore]]:
     try:
         label = model.datainfo.typeix['mdv'][0].name
@@ -439,9 +439,7 @@ def set_covariates(model: Model, covariates: Container[str]) -> Model: ...
 def set_covariates(model: DataInfo, covariates: Container[str]) -> DataInfo: ...
 
 
-def set_covariates(
-    model: Union[Model, DataInfo], covariates: Container[str]
-) -> Union[Model, DataInfo]:
+def set_covariates(model: Model | DataInfo, covariates: Container[str]) -> Model | DataInfo:
     """Set columns in the dataset to be covariates in the datainfo
 
     Parameters
@@ -1377,7 +1375,7 @@ def drop_dropped_columns(model: Model) -> Model:
     return model.update_source()
 
 
-def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool = False) -> Model:
+def drop_columns(model: Model, column_names: list[str] | str, mark: bool = False) -> Model:
     """Drop columns from the dataset or mark as dropped
 
     Parameters
@@ -1431,7 +1429,7 @@ def drop_columns(model: Model, column_names: Union[list[str], str], mark: bool =
     return model.update_source()
 
 
-def undrop_columns(model: Model, column_names: Union[list[str], str]) -> Model:
+def undrop_columns(model: Model, column_names: list[str] | str) -> Model:
     """Undrop columns of model
 
     Parameters
@@ -1699,8 +1697,8 @@ def translate_nmtran_time(model: Model) -> Model:
 
 def _loq_mask(
     model: Model,
-    lloq: Optional[Union[float, str]] = None,
-    uloq: Optional[Union[float, str]] = None,
+    lloq: Optional[float | str] = None,
+    uloq: Optional[float | str] = None,
     blq: Optional[str] = None,
     alq: Optional[str] = None,
 ):
@@ -1750,8 +1748,8 @@ def _as_expr(value):
 
 def remove_loq_data(
     model: Model,
-    lloq: Optional[Union[float, str]] = None,
-    uloq: Optional[Union[float, str]] = None,
+    lloq: Optional[float | str] = None,
+    uloq: Optional[float | str] = None,
     blq: Optional[str] = None,
     alq: Optional[str] = None,
     keep: int = 0,
@@ -1816,8 +1814,8 @@ def remove_loq_data(
 
 def set_lloq_data(
     model: Model,
-    value: Union[str, float, Expr],
-    lloq: Optional[Union[float, str]] = None,
+    value: str | float | Expr,
+    lloq: Optional[float | str] = None,
     blq: Optional[str] = None,
 ) -> Model:
     """Set a dv value for lloq data records
@@ -1865,7 +1863,7 @@ def set_lloq_data(
     return model
 
 
-def set_reference_values(model: Model, refs: dict[str, Union[int, float]]) -> Model:
+def set_reference_values(model: Model, refs: dict[str, int | float]) -> Model:
     """Set reference values for selected columns
 
         All values for each selected column will be replaced. For dose columns
@@ -1995,7 +1993,7 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
 
 
 def read_dataset_from_datainfo(
-    datainfo: Union[DataInfo, Path, str], datatype: Optional[str] = None
+    datainfo: DataInfo | Path | str, datatype: Optional[str] = None
 ) -> pd.DataFrame:
     """Read a dataset given a datainfo object or path to a datainfo file
 
@@ -2016,7 +2014,7 @@ def read_dataset_from_datainfo(
 
 
 def read_dataset_from_datainfo_update(
-    datainfo: Union[DataInfo, Path, str], datatype: Optional[str] = None
+    datainfo: DataInfo | Path | str, datatype: Optional[str] = None
 ):
     if not isinstance(datainfo, DataInfo):
         datainfo = DataInfo.read_json(datainfo)
@@ -2185,7 +2183,7 @@ def load_dataset(model: Model) -> Model:
 
 def set_dataset(
     model: Model,
-    path_or_df: Union[str, Path, pd.DataFrame],
+    path_or_df: str | Path | pd.DataFrame,
     format: Optional[str] = None,
     datatype: Any = None,
 ) -> Model:

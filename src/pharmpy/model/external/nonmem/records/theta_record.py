@@ -1,6 +1,6 @@
 import math
 import re
-from typing import Union, cast
+from typing import cast
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 from pharmpy.internals.parse.generic import eval_token, remove_token_and_space
@@ -285,7 +285,7 @@ class ThetaRecord(Record):
         """
         i = 0
 
-        def _update_theta(child: Union[AttrTree, AttrToken]):
+        def _update_theta(child: AttrTree | AttrToken):
             nonlocal i
 
             if not isinstance(child, AttrTree) or child.rule != 'theta':

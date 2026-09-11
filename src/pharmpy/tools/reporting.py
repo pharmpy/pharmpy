@@ -1,12 +1,11 @@
 from pathlib import Path
-from typing import Union
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.internals.fs.tmp import TemporaryDirectory
 from pharmpy.workflows.results import Results
 
 
-def create_report(results: Results, path: Union[Path, str]):
+def create_report(results: Results, path: Path | str):
     """Create standard report for results
 
     The report will be an html created at specified path.

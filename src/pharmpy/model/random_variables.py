@@ -4,7 +4,7 @@ from collections.abc import Collection, Container, Iterable, Mapping, Sequence
 from collections.abc import Container as CollectionsContainer
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
-from typing import Any, Optional, Self, Union, overload
+from typing import Any, Optional, Self, overload
 
 from pharmpy.basic import Expr, Matrix, RandomNumberGenerator, Seed, TExpr, TSymbol
 from pharmpy.deps import numpy as np
@@ -93,7 +93,7 @@ class VariabilityHierarchy(Immutable):
 
     @classmethod
     def create(
-        cls, levels: Optional[Union[Sequence[VariabilityLevel], VariabilityHierarchy]] = None
+        cls, levels: Optional[Sequence[VariabilityLevel] | VariabilityHierarchy] = None
     ) -> VariabilityHierarchy:
         if levels is None:
             levels = ()
@@ -137,7 +137,7 @@ class VariabilityHierarchy(Immutable):
         levels = tuple(VariabilityLevel.from_dict(vl) for vl in d['levels'])
         return cls(levels=levels)
 
-    def _lookup(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel:
+    def _lookup(self, ind: int | str | VariabilityLevel) -> VariabilityLevel:
         # Lookup one index
         if isinstance(ind, int):
             # Index on numeric level for ints
@@ -155,10 +155,10 @@ class VariabilityHierarchy(Immutable):
         raise KeyError(f'Could not find level {ind} in VariabilityHierarchy')
 
     @overload
-    def __getitem__(self, ind: Union[Sequence, VariabilityHierarchy]) -> VariabilityHierarchy: ...
+    def __getitem__(self, ind: Sequence | VariabilityHierarchy) -> VariabilityHierarchy: ...
 
     @overload
-    def __getitem__(self, ind: Union[int, str, VariabilityLevel]) -> VariabilityLevel: ...
+    def __getitem__(self, ind: int | str | VariabilityLevel) -> VariabilityLevel: ...
 
     def __getitem__(self, ind):
         if isinstance(ind, VariabilityHierarchy):
@@ -257,7 +257,7 @@ class RandomVariables(CollectionsSequence, Immutable):
     @classmethod
     def create(
         cls,
-        dists: Optional[Union[Sequence[Distribution], Distribution]] = None,
+        dists: Optional[Sequence[Distribution] | Distribution] = None,
         eta_levels: Optional[VariabilityHierarchy] = None,
         epsilon_levels: Optional[VariabilityHierarchy] = None,
     ) -> Self:
@@ -327,7 +327,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         return self._epsilon_levels
 
     def __add__(
-        self, other: Union[Distribution, RandomVariables, Sequence[Distribution]]
+        self, other: Distribution | RandomVariables | Sequence[Distribution]
     ) -> RandomVariables:
         if isinstance(other, Distribution):
             if other.level not in self._eta_levels and other.level not in self._epsilon_levels:
@@ -356,7 +356,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                     self._dists + dists, self._eta_levels, self._epsilon_levels
                 )
 
-    def __radd__(self, other: Union[Distribution, Sequence[Distribution]]) -> RandomVariables:
+    def __radd__(self, other: Distribution | Sequence[Distribution]) -> RandomVariables:
         if isinstance(other, Distribution):
             if other.level not in self._eta_levels and other.level not in self._epsilon_levels:
                 raise ValueError(
@@ -431,10 +431,10 @@ class RandomVariables(CollectionsSequence, Immutable):
         raise KeyError(f'Could not find {ind} in RandomVariables')
 
     @overload
-    def __getitem__(self, ind: Union[int, str, Expr]) -> Distribution: ...
+    def __getitem__(self, ind: int | str | Expr) -> Distribution: ...
 
     @overload
-    def __getitem__(self, ind: Union[slice, Container[Union[str, Expr]]]) -> RandomVariables: ...
+    def __getitem__(self, ind: slice | Container[str | Expr]) -> RandomVariables: ...
 
     def __getitem__(self, ind):
         if isinstance(ind, int):
@@ -589,7 +589,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         new_dists = tuple(dist.subs(d) for dist in self._dists)
         return self.replace(dists=new_dists)
 
-    def unjoin(self, inds: Union[str, Expr, Iterable[Union[str, Expr]]]) -> RandomVariables:
+    def unjoin(self, inds: str | Expr | Iterable[str | Expr]) -> RandomVariables:
         """Remove all covariances the random variables have with other random variables
 
         Parameters
@@ -664,8 +664,8 @@ class RandomVariables(CollectionsSequence, Immutable):
 
     def join(
         self,
-        inds: Collection[Union[str, Expr]],
-        fill: Union[int, float, Expr] = 0,
+        inds: Collection[str | Expr],
+        fill: int | float | Expr = 0,
         name_template: Optional[str] = None,
         param_names: Optional[list[str]] = None,
     ) -> tuple[RandomVariables, dict[str, tuple[str, str]]]:
@@ -793,7 +793,7 @@ class RandomVariables(CollectionsSequence, Immutable):
         expr,
         parameters: Optional[Mapping[str, float]] = None,
         samples: int = 1,
-        rng: Optional[Union[RandomNumberGenerator, Seed, int, float]] = None,
+        rng: Optional[RandomNumberGenerator | Seed | int | float] = None,
     ) -> np.ndarray:
         """Sample from the distribution of expr
 
@@ -899,7 +899,7 @@ class RandomVariables(CollectionsSequence, Immutable):
                     )
         return newdict
 
-    def get_rvs_with_same_dist(self, rv: Union[str, sympy.Symbol]) -> RandomVariables:
+    def get_rvs_with_same_dist(self, rv: str | sympy.Symbol) -> RandomVariables:
         """Gets random variables with the same distribution as input random variable
 
         The resulting RandomVariables objects includes the input random variable.

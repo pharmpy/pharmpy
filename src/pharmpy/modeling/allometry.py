@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.model import Assignment, Model, Parameter, Parameters
@@ -14,9 +14,9 @@ def add_allometry(
     allometric_variable: Optional[TSymbol] = None,
     reference_value: TExpr = 70,
     parameters: Optional[list[TExpr]] = None,
-    initials: Optional[list[Union[int, float]]] = None,
-    lower_bounds: Optional[list[Union[int, float]]] = None,
-    upper_bounds: Optional[list[Union[int, float]]] = None,
+    initials: Optional[list[int | float]] = None,
+    lower_bounds: Optional[list[int | float]] = None,
+    upper_bounds: Optional[list[int | float]] = None,
     fixed: bool = True,
 ) -> Model:
     """Add allometric scaling of parameters

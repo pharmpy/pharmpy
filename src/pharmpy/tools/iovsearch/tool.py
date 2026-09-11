@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Literal, Optional, TypeVar, Union
+from typing import Literal, Optional, TypeVar
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -47,12 +47,12 @@ def create_workflow(
     model: Model,
     results: ModelfitResults,
     column: str = 'OCC',
-    list_of_parameters: Optional[list[Union[str, list[str]]]] = None,
+    list_of_parameters: Optional[list[str | list[str]]] = None,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
-    cutoff: Optional[Union[float, int]] = None,
+    cutoff: Optional[float | int] = None,
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
     strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    E: Optional[Union[float, str]] = None,
+    E: Optional[float | str] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
@@ -146,9 +146,9 @@ def _init(context, modelfit_results, model):
 def task_brute_force_search(
     context,
     occ: str,
-    list_of_parameters: Union[None, list],
+    list_of_parameters: None | list,
     rank_type: str,
-    cutoff: Union[None, float],
+    cutoff: None | float,
     E: Optional[float],
     strictness: str,
     parameter_uncertainty_method: Optional[str],
@@ -404,11 +404,11 @@ def get_best_model_and_ranking(
     base_entry: ModelEntry,
     model_entries: list[ModelEntry],
     rank_type: str,
-    cutoff: Union[None, float],
+    cutoff: None | float,
     strictness: str,
     parameter_uncertainty_method: Optional[str] = None,
     search_space: Optional[str] = None,
-    E: Optional[Union[float, str]] = None,
+    E: Optional[float | str] = None,
 ):
     candidate_entries = [base_entry, *model_entries]
 

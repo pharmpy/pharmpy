@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal
 
 from .count_interpreter import CountInterpreter
 from .feature import ModelFeature, feature
@@ -11,7 +11,7 @@ TRANSITS_DEPOT_WILDCARD = tuple([Name(x) for x in ('DEPOT', 'NODEPOT')])
 @dataclass(frozen=True)
 class Transits(ModelFeature):
     counts: tuple[int, ...]
-    depot: Union[tuple[Name[Literal['DEPOT', 'NODEPOT']], ...], Wildcard] = (Name('DEPOT'),)
+    depot: tuple[Name[Literal['DEPOT', 'NODEPOT']], ...] | Wildcard = (Name('DEPOT'),)
 
     def __add__(self, other):
         # NOTE : Use with caution as no addition logic is implemented here

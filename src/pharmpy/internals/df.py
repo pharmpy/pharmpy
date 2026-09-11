@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from collections.abc import Iterator
 from hashlib import sha256
-from typing import Any, Union, overload
+from typing import Any, overload
 
 from pharmpy.deps import pandas as pd
 
 
-def _pd_hash_values(obj: Union[pd.Index, pd.Series, pd.DataFrame]) -> pd.Series:
+def _pd_hash_values(obj: pd.Index | pd.Series | pd.DataFrame) -> pd.Series:
     # NOTE: We explicit all arguments for future-proofing
     return pd.util.hash_pandas_object(  # pyright: ignore [reportAttributeAccessIssue]
         obj, index=False, encoding='utf8', hash_key='0123456789123456', categorize=True

@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal
 
 from lark.visitors import Interpreter
 
@@ -11,7 +11,7 @@ ABSORPTION_WILDCARD = tuple([Name(x) for x in ('FO', 'ZO', 'SEQ-ZO-FO', 'INST', 
 
 @dataclass(frozen=True)
 class Absorption(ModelFeature):
-    modes: Union[tuple[Name[Literal['FO', 'ZO', 'SEQ-ZO-FO', 'INST', 'WEIBULL']], ...], Wildcard]
+    modes: tuple[Name[Literal['FO', 'ZO', 'SEQ-ZO-FO', 'INST', 'WEIBULL']], ...] | Wildcard
 
     def __add__(self, other):
         if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):

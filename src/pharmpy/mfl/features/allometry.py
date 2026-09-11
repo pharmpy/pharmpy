@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING
 
 from .model_feature import ModelFeature
 
@@ -14,7 +14,7 @@ class Allometry(ModelFeature):
         self._reference = reference
 
     @classmethod
-    def create(cls, covariate: str, reference: Union[int, float] = 70.0) -> Allometry:
+    def create(cls, covariate: str, reference: int | float = 70.0) -> Allometry:
         if not isinstance(covariate, str):
             raise TypeError(f'Type of `covariate` must be a string: got {type(covariate)}')
         if not isinstance(reference, float) and not isinstance(reference, int):

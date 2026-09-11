@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Union, overload
+from typing import overload
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import symengine, sympy
@@ -12,7 +12,7 @@ from .expr import Expr
 
 class Matrix:
     def __init__(
-        self, source: Union[sympy.ImmutableMatrix, symengine.ImmutableMatrix, Matrix, Iterable] = ()
+        self, source: sympy.ImmutableMatrix | symengine.ImmutableMatrix | Matrix | Iterable = ()
     ):
         if isinstance(source, Matrix):
             self._m = source._m
@@ -25,21 +25,19 @@ class Matrix:
     @overload
     def __getitem__(
         self,
-        ind: Union[
-            tuple[Sequence, Sequence],
-            tuple[int, Sequence],
-            tuple[Sequence, int],
-            tuple[slice, int],
-            tuple[int, slice],
-            tuple[slice, Sequence],
-            tuple[Sequence, slice],
-        ],
+        ind: tuple[Sequence, Sequence]
+        | tuple[int, Sequence]
+        | tuple[Sequence, int]
+        | tuple[slice, int]
+        | tuple[int, slice]
+        | tuple[slice, Sequence]
+        | tuple[Sequence, slice],
     ) -> Matrix: ...
 
     @overload
     def __getitem__(self, ind: int) -> Expr: ...
 
-    def __getitem__(self, ind) -> Union[Expr, Matrix]:
+    def __getitem__(self, ind) -> Expr | Matrix:
         a = self._m[ind]
         if isinstance(a, symengine.ImmutableDenseMatrix):
             return Matrix(a)

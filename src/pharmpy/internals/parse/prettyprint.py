@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from functools import partial
-from typing import Literal, Union
+from typing import Literal
 
 from .tree import Leaf, Tree
 from .treeprint import Node
@@ -22,7 +22,7 @@ def _preview(content: str):
     return preview
 
 
-def _formatter(content: Union[bool, Literal['full']], ast_node):
+def _formatter(content: bool | Literal['full'], ast_node):
     """Formats AST node (Tree and Leaf) for treeprint"""
     if content:
         if content == 'full':
@@ -35,15 +35,15 @@ def _formatter(content: Union[bool, Literal['full']], ast_node):
         return str(ast_node.rule)
 
 
-def _format_tree(content: Union[bool, Literal['full']], ast_tree: Tree):
+def _format_tree(content: bool | Literal['full'], ast_tree: Tree):
     return _formatter(content, ast_tree)
 
 
-def _format_token(content: Union[bool, Literal['full']], ast_token: Leaf):
+def _format_token(content: bool | Literal['full'], ast_token: Leaf):
     return _formatter(content, ast_token)
 
 
-def transform(ast_tree_or_token: Union[Tree, Leaf], content: Union[bool, Literal['full']] = True):
+def transform(ast_tree_or_token: Tree | Leaf, content: bool | Literal['full'] = True):
     """
     Traverses tree and generates :class:`treeprint.Node`, which can format a
     multiline (command) tree-styled string.

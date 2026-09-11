@@ -11,7 +11,7 @@ import re
 from abc import ABC
 from collections.abc import Callable, Iterable, Sequence
 from itertools import chain
-from typing import Optional, Union
+from typing import Optional
 
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
@@ -36,7 +36,7 @@ def _newline_node():
     return AttrToken('NEWLINE', '\n')
 
 
-def eval_token(token: AttrToken) -> Union[int, float, str]:
+def eval_token(token: AttrToken) -> int | float | str:
     """Evaluated value (str, int, float)."""
     if token.rule in ('DIGIT', 'INT', 'SIGNED_INT'):
         return int(token.value)
@@ -164,12 +164,12 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         """Returns index of first child matching 'rule', or -1."""
         return next((i for i, child in enumerate(self.children) if child.rule == rule), -1)
 
-    def find(self, rule) -> Optional[Union[AttrTree, AttrToken]]:
+    def find(self, rule) -> Optional[AttrTree | AttrToken]:
         """Returns first child matching 'rule', or None."""
         i = self.first_index(rule)
         return None if i == -1 else self.children[i]
 
-    def first_branch(self, *rules) -> Optional[Union[AttrTree, AttrToken]]:
+    def first_branch(self, *rules) -> Optional[AttrTree | AttrToken]:
         current = self
         for rule in rules:
             if not isinstance(current, AttrTree):
@@ -188,9 +188,9 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
     def partition(
         self, rule
     ) -> tuple[
-        tuple[Union[AttrTree, AttrToken], ...],
-        tuple[Union[AttrTree, AttrToken], ...],
-        tuple[Union[AttrTree, AttrToken], ...],
+        tuple[AttrTree | AttrToken, ...],
+        tuple[AttrTree | AttrToken, ...],
+        tuple[AttrTree | AttrToken, ...],
     ]:
         """Partition children into (head, item, tail).
 
@@ -218,7 +218,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
             tuple(child for child in self.children if child.rule != rule),
         )
 
-    def _clean_ws(self, new_children: Sequence[Union[AttrTree, AttrToken]]):
+    def _clean_ws(self, new_children: Sequence[AttrTree | AttrToken]):
         new_children_clean = []
         last_index = len(new_children) - 1
 
@@ -299,7 +299,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 
         raise ValueError(f'The is no subtree at index {i}')
 
-    def replace_first(self, child: Union[AttrTree, AttrToken]) -> AttrTree:
+    def replace_first(self, child: AttrTree | AttrToken) -> AttrTree:
         i = self.first_index(child.rule)
         if i == -1 or self.children[i] == child:
             return self
@@ -307,9 +307,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         new_children = self.children[:i] + (child,) + self.children[i + 1 :]
         return AttrTree(self.rule, new_children)
 
-    def map(
-        self, fn: Callable[[Union[AttrTree, AttrToken]], Union[AttrTree, AttrToken]]
-    ) -> AttrTree:
+    def map(self, fn: Callable[[AttrTree | AttrToken], AttrTree | AttrToken]) -> AttrTree:
         return AttrTree(self.rule, tuple(map(fn, self.children)))
 
     @property
@@ -377,7 +375,7 @@ class GenericParser(ABC):
         'debug': False,
         'cache': False,
     }
-    post_process: tuple[Union[Visitor, Transformer, Callable[[str, Tree], Tree]], ...] = ()
+    post_process: tuple[Visitor | Transformer | Callable[[str, Tree], Tree], ...] = ()
 
     def __init__(self, buf=None):
         self.root = self.parse(buf)
@@ -413,7 +411,7 @@ class GenericParser(ABC):
         return '\n'.join(lines)
 
 
-def _remove_token_and_space(node: Union[AttrTree, AttrToken], rule: str):
+def _remove_token_and_space(node: AttrTree | AttrToken, rule: str):
     if isinstance(node, AttrTree):
         return remove_token_and_space(node, rule, recursive=True)
     else:
@@ -437,7 +435,7 @@ def remove_token_and_space(tree: AttrTree, rule: str, recursive: bool = False):
 
 
 def insert_before_or_at_end(
-    tree: ImmutableTree, rule: str, nodes: Iterable[Union[ImmutableTree, ImmutableLeaf]]
+    tree: ImmutableTree, rule: str, nodes: Iterable[ImmutableTree | ImmutableLeaf]
 ):
     """Insert nodes before rule or if rule does not exist at end"""
     kept = []
@@ -453,9 +451,7 @@ def insert_before_or_at_end(
     return AttrTree(tree.rule, tuple(kept))
 
 
-def insert_after(
-    tree: ImmutableTree, rule: str, nodes: Iterable[Union[ImmutableTree, ImmutableLeaf]]
-):
+def insert_after(tree: ImmutableTree, rule: str, nodes: Iterable[ImmutableTree | ImmutableLeaf]):
     """Insert nodes after rule"""
     kept = []
     for node in tree.children:

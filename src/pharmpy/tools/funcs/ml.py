@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
 
 import packaging
 
@@ -292,7 +291,7 @@ def predict_influential_outliers(
     return df
 
 
-def _predict_with_tflite(model_path: Union[str, Path], data: pd.DataFrame):
+def _predict_with_tflite(model_path: str | Path, data: pd.DataFrame):
     import tflite_runtime.interpreter as tflite
 
     numpy_version = packaging.version.parse(np.__version__)

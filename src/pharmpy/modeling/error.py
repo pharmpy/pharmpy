@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 import warnings
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.basic import BooleanExpr, Expr, TExpr
 from pharmpy.deps import sympy
@@ -81,7 +81,7 @@ def remove_error_model(model: Model) -> Model:
 
 def set_additive_error_model(
     model: Model,
-    dv: Union[Expr, str, int, None] = None,
+    dv: Expr | str | int | None = None,
     data_trans: Optional[TExpr] = None,
     series_terms: int = 2,
 ) -> Model:
@@ -226,7 +226,7 @@ def _get_prop_init(model: Model, dv: str | Expr) -> float:
 
 def set_proportional_error_model(
     model: Model,
-    dv: Union[Expr, str, int, None] = None,
+    dv: Expr | str | int | None = None,
     data_trans: Optional[TExpr] = None,
     zero_protection: bool = True,
 ) -> Model:
@@ -383,7 +383,7 @@ def _get_blq_sd_expr(model, expr, eps_new, blq_symb):
 
 def set_combined_error_model(
     model: Model,
-    dv: Union[Expr, str, int, None] = None,
+    dv: Expr | str | int | None = None,
     data_trans: Optional[TExpr] = None,
 ) -> Model:
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
@@ -531,7 +531,7 @@ def set_combined_error_model(
     return model.update_source()
 
 
-def has_additive_error_model(model: Model, dv: Union[Expr, str, int, None] = None) -> bool:
+def has_additive_error_model(model: Model, dv: Expr | str | int | None = None) -> bool:
     """Check if a model has an additive error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -572,7 +572,7 @@ def has_additive_error_model(model: Model, dv: Union[Expr, str, int, None] = Non
     return eps not in (expr - eps).simplify().free_symbols
 
 
-def has_proportional_error_model(model: Model, dv: Union[Expr, str, int, None] = None) -> bool:
+def has_proportional_error_model(model: Model, dv: Expr | str | int | None = None) -> bool:
     """Check if a model has a proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -638,7 +638,7 @@ def _check_and_get_zero_protect(error_sset, y_symbs):
     return None, None
 
 
-def has_combined_error_model(model: Model, dv: Union[Expr, str, int, None] = None) -> bool:
+def has_combined_error_model(model: Model, dv: Expr | str | int | None = None) -> bool:
     """Check if a model has a combined additive and proportional error model
 
     Multiple dependent variables are supported. By default the only (in case of one) or the
@@ -914,7 +914,7 @@ def set_dtbs_error_model(model: Model, fix_to_log: bool = False) -> Model:
 
 
 def set_time_varying_error_model(
-    model: Model, cutoff: float, idv: str = 'TIME', dv: Union[Expr, str, int, None] = None
+    model: Model, cutoff: float, idv: str = 'TIME', dv: Expr | str | int | None = None
 ) -> Model:
     """Set a time varying error model per time cutoff
 
@@ -965,8 +965,8 @@ def set_time_varying_error_model(
 
 def set_power_on_ruv(
     model: Model,
-    list_of_eps: Optional[Union[str, list]] = None,
-    dv: Union[Expr, int, None] = None,
+    list_of_eps: Optional[str | list] = None,
+    dv: Expr | int | None = None,
     lower_limit: Optional[float] = 0.01,
     ipred: Optional[str | Expr] = None,
     zero_protection: bool = False,
@@ -1165,10 +1165,10 @@ def get_ipred(model, dv=None):
 
 def set_iiv_on_ruv(
     model: Model,
-    dv: Union[Expr, int, None] = None,
-    list_of_eps: Optional[Union[list[str], str]] = None,
+    dv: Expr | int | None = None,
+    list_of_eps: Optional[list[str] | str] = None,
     same_eta: bool = True,
-    eta_names: Optional[Union[list[str], str]] = None,
+    eta_names: Optional[list[str] | str] = None,
 ) -> Model:
     """
     Multiplies epsilons with exponential (new) etas.

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import math
-from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -96,7 +95,7 @@ def _scale_matrix(A):
 
 
 def calculate_parameters_from_ucp(
-    model: Model, scale: UCPScale, ucps: Union[pd.Series, dict[str, float]]
+    model: Model, scale: UCPScale, ucps: pd.Series | dict[str, float]
 ) -> pd.Series:
     """Scale parameter values from ucp to normal scale
 

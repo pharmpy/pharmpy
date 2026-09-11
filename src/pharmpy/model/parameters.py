@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from collections.abc import Sequence as CollectionsSequence
-from typing import Any, Optional, Self, Union, overload
+from typing import Any, Optional, Self, overload
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -55,9 +55,9 @@ class Parameter(Immutable):
     def create(
         cls,
         name: str,
-        init: Union[float, Expr],
-        lower: Optional[Union[float, Expr]] = None,
-        upper: Optional[Union[float, Expr]] = None,
+        init: float | Expr,
+        lower: Optional[float | Expr] = None,
+        upper: Optional[float | Expr] = None,
         fix: bool = False,
     ) -> Self:
         """Alternative constructor for Parameter with error checking"""
@@ -194,9 +194,7 @@ class Parameters(CollectionsSequence, Immutable):
         self._params = parameters
 
     @classmethod
-    def create(
-        cls, parameters: Optional[Union[Parameters, Sequence[Parameter]]] = None
-    ) -> Parameters:
+    def create(cls, parameters: Optional[Parameters | Sequence[Parameter]] = None) -> Parameters:
         if isinstance(parameters, Parameters):
             return parameters
         elif parameters is None:
@@ -224,7 +222,7 @@ class Parameters(CollectionsSequence, Immutable):
     def __len__(self):
         return len(self._params)
 
-    def _lookup_param(self, ind: Union[int, str, Expr, Parameter]):
+    def _lookup_param(self, ind: int | str | Expr | Parameter):
         if isinstance(ind, Expr):
             if ind.is_symbol():
                 ind = ind.name
@@ -244,12 +242,10 @@ class Parameters(CollectionsSequence, Immutable):
         return ind, self._params[ind]
 
     @overload
-    def __getitem__(self, ind: Union[int, str, Expr, Parameter]) -> Parameter: ...
+    def __getitem__(self, ind: int | str | Expr | Parameter) -> Parameter: ...
 
     @overload
-    def __getitem__(
-        self, ind: Union[slice, Sequence[Union[int, str, Expr, Parameter]]]
-    ) -> Parameters: ...
+    def __getitem__(self, ind: slice | Sequence[int | str | Expr | Parameter]) -> Parameters: ...
 
     def __getitem__(self, ind):
         if isinstance(ind, slice):
@@ -385,7 +381,7 @@ class Parameters(CollectionsSequence, Immutable):
         nonfixed = [p for p in self._params if not p.fix]
         return Parameters(tuple(nonfixed))
 
-    def __add__(self, other: Union[Parameter, Parameters, Sequence[Parameter]]) -> Parameters:
+    def __add__(self, other: Parameter | Parameters | Sequence[Parameter]) -> Parameters:
         if isinstance(other, Parameter):
             return Parameters.create(self._params + (other,))
         elif isinstance(other, Parameters):
@@ -395,7 +391,7 @@ class Parameters(CollectionsSequence, Immutable):
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
 
-    def __radd__(self, other: Union[Parameter, Sequence[Parameter]]) -> Parameters:
+    def __radd__(self, other: Parameter | Sequence[Parameter]) -> Parameters:
         if isinstance(other, Parameter):
             return Parameters.create((other,) + self._params)
         elif isinstance(other, Sequence):
@@ -403,7 +399,7 @@ class Parameters(CollectionsSequence, Immutable):
         else:
             raise ValueError(f"Cannot add {other} to Parameters")
 
-    def __sub__(self, other: Union[Parameter, Parameters, Sequence[Parameter]]) -> Parameters:
+    def __sub__(self, other: Parameter | Parameters | Sequence[Parameter]) -> Parameters:
         if isinstance(other, Parameter):
             return Parameters(tuple(p for p in self._params if p.name != other.name))
         elif isinstance(other, (Parameters, Sequence)):
@@ -412,7 +408,7 @@ class Parameters(CollectionsSequence, Immutable):
         else:
             raise ValueError(f"Cannot remove {other} from Parameters")
 
-    def __rsub__(self, other: Union[Parameter, Sequence[Parameter]]) -> Parameters:
+    def __rsub__(self, other: Parameter | Sequence[Parameter]) -> Parameters:
         if isinstance(other, Parameter):
             return Parameters(()) if other.name in self.names else Parameters((other,))
         elif isinstance(other, Sequence):

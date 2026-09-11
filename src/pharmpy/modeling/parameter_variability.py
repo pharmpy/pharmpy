@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
-from typing import Literal, Optional, Self, Union
+from typing import Literal, Optional, Self
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -43,8 +43,8 @@ ADD_IOV_DISTRIBUTION = frozenset(('disjoint', 'joint', 'explicit', 'same-as-iiv'
 
 def add_iiv(
     model: Model,
-    list_of_parameters: Union[list[str], str],
-    expression: Union[list[str], str],
+    list_of_parameters: list[str] | str,
+    expression: list[str] | str,
     operation: str = '*',
     initial_estimate: float = 0.09,
     eta_names: Optional[list[str]] = None,
@@ -181,8 +181,8 @@ def add_iiv(
 def add_iov(
     model: Model,
     occ: str,
-    list_of_parameters: Optional[Union[list[str], str]] = None,
-    eta_names: Optional[Union[list[str], str]] = None,
+    list_of_parameters: Optional[list[str] | str] = None,
+    eta_names: Optional[list[str] | str] = None,
     distribution: Literal['disjoint', 'joint', 'explicit', 'same-as-iiv'] = 'disjoint',
 ) -> Model:
     """Adds IOVs to :class:`pharmpy.model`.
@@ -568,7 +568,7 @@ def _canonicalize_categories(categories):
     return sorted(map(_canonicalize_category, categories))
 
 
-def _canonicalize_category(c: Union[int, float, str]):
+def _canonicalize_category(c: int | float | str):
     if isinstance(c, int):
         return c
 
@@ -633,7 +633,7 @@ class EtaAddition:
         return cls(template)
 
 
-def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None) -> Model:
+def remove_iiv(model: Model, to_remove: Optional[list[str] | str] = None) -> Model:
     """
     Removes all IIV etas given a list with eta names and/or parameter names.
 
@@ -711,7 +711,7 @@ def remove_iiv(model: Model, to_remove: Optional[Union[list[str], str]] = None) 
     return model
 
 
-def remove_iov(model: Model, to_remove: Optional[Union[list[str], str]] = None) -> Model:
+def remove_iov(model: Model, to_remove: Optional[list[str] | str] = None) -> Model:
     """Removes all IOV etas given a list with eta names.
 
     Parameters
@@ -785,9 +785,7 @@ def _get_iov_groups(model: Model):
     return same.values()
 
 
-def transform_etas_boxcox(
-    model: Model, list_of_etas: Optional[Union[list[str], str]] = None
-) -> Model:
+def transform_etas_boxcox(model: Model, list_of_etas: Optional[list[str] | str] = None) -> Model:
     """Applies a boxcox transformation to selected etas
 
     Initial estimate for lambda is 0.1 with bounds (-3, 3).
@@ -825,9 +823,7 @@ def transform_etas_boxcox(
     return model.update_source()
 
 
-def transform_etas_tdist(
-    model: Model, list_of_etas: Optional[Union[list[str], str]] = None
-) -> Model:
+def transform_etas_tdist(model: Model, list_of_etas: Optional[list[str] | str] = None) -> Model:
     """Applies a t-distribution transformation to selected etas
 
     Initial estimate for degrees of freedom is 80 with bounds (3, 100).
@@ -866,7 +862,7 @@ def transform_etas_tdist(
 
 
 def transform_etas_john_draper(
-    model: Model, list_of_etas: Optional[Union[list[str], str]] = None
+    model: Model, list_of_etas: Optional[list[str] | str] = None
 ) -> Model:
     """Applies a John Draper transformation to selected etas
 
@@ -1114,9 +1110,7 @@ def create_joint_distribution(
     return model
 
 
-def split_joint_distribution(
-    model: Model, rvs: Optional[Union[Sequence[str], str]] = None
-) -> Model:
+def split_joint_distribution(model: Model, rvs: Optional[Sequence[str] | str] = None) -> Model:
     """
     Splits etas following a joint distribution into separate distributions.
 

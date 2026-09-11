@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, Self, Union, overload
+from typing import Any, Optional, Self, overload
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
@@ -582,12 +582,12 @@ class ExecutionSteps(Sequence, Immutable):
         Used for initialization
     """
 
-    def __init__(self, steps: tuple[Union[EstimationStep, SimulationStep], ...] = ()):
+    def __init__(self, steps: tuple[EstimationStep | SimulationStep, ...] = ()):
         self._steps = steps
 
     @classmethod
     def create(
-        cls, steps: Optional[Sequence[Union[EstimationStep, SimulationStep]]] = None
+        cls, steps: Optional[Sequence[EstimationStep | SimulationStep]] = None
     ) -> ExecutionSteps:
         if steps is None:
             steps = ()
@@ -605,14 +605,12 @@ class ExecutionSteps(Sequence, Immutable):
     @overload
     def __getitem__(self, i: slice) -> ExecutionSteps: ...
 
-    def __getitem__(
-        self, i: Union[int, slice]
-    ) -> Union[EstimationStep, SimulationStep, ExecutionSteps]:
+    def __getitem__(self, i: int | slice) -> EstimationStep | SimulationStep | ExecutionSteps:
         if isinstance(i, slice):
             return ExecutionSteps(self._steps[i])
         return self._steps[i]
 
-    def __add__(self, other: Union[EstimationStep, ExecutionSteps, Iterable]) -> ExecutionSteps:
+    def __add__(self, other: EstimationStep | ExecutionSteps | Iterable) -> ExecutionSteps:
         if isinstance(other, ExecutionSteps):
             return ExecutionSteps(self._steps + other._steps)
         elif isinstance(other, (EstimationStep, SimulationStep)):
@@ -620,7 +618,7 @@ class ExecutionSteps(Sequence, Immutable):
         else:
             return ExecutionSteps(self._steps + tuple(other))
 
-    def __radd__(self, other: Union[EstimationStep, Iterable]) -> ExecutionSteps:
+    def __radd__(self, other: EstimationStep | Iterable) -> ExecutionSteps:
         if isinstance(other, (EstimationStep, SimulationStep)):
             return ExecutionSteps((other,) + self._steps)
         else:

@@ -6,7 +6,7 @@ from collections.abc import Iterable, Iterator
 from io import StringIO
 from itertools import chain
 from pathlib import Path
-from typing import Literal, Optional, Protocol, Union
+from typing import Literal, Optional, Protocol
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -93,7 +93,7 @@ class NONMEMTableFile:
 
     def __init__(
         self,
-        path: Optional[Union[str, Path]] = None,
+        path: Optional[str | Path] = None,
         tables: Optional[list[NONMEMTable]] = None,
         notitle: bool = False,
         nolabel: bool = False,

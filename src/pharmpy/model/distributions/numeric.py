@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Union
 
 from pharmpy.deps import numpy as np
 from pharmpy.internals.immutable import Immutable
@@ -14,7 +13,7 @@ class NumericDistribution(Immutable):
 
 
 class ConstantDistribution(NumericDistribution):
-    def __init__(self, value: Union[int, float]):
+    def __init__(self, value: int | float):
         self._value = float(value)
 
     def sample(self, rng, size: int) -> np.ndarray:

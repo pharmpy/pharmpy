@@ -3,7 +3,6 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from contextlib import AbstractContextManager, contextmanager
 from pathlib import Path
-from typing import Union
 
 from pharmpy.model import Model
 
@@ -13,7 +12,7 @@ from ..results import Results
 
 
 class ModelTransaction(ABC):
-    def __init__(self, database: ModelDatabase, obj: Union[Model, ModelEntry, ModelHash]):
+    def __init__(self, database: ModelDatabase, obj: Model | ModelEntry | ModelHash):
         self.database = database
         if isinstance(obj, ModelEntry):
             self.model_entry = obj
@@ -34,7 +33,7 @@ class ModelTransaction(ABC):
         """Store the model object bound to this transaction"""
 
     @abstractmethod
-    def store_local_file(self, path: Path, new_filename: Union[str, None] = None):
+    def store_local_file(self, path: Path, new_filename: str | None = None):
         """Store a file from the local machine for the model bound to this
         transaction
 
@@ -67,7 +66,7 @@ class ModelTransaction(ABC):
 
 
 class ModelSnapshot(ABC):
-    def __init__(self, database: ModelDatabase, model: Union[Model, ModelHash]):
+    def __init__(self, database: ModelDatabase, model: Model | ModelHash):
         self.database = database
         self.key = ModelHash(model)
 
@@ -169,7 +168,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def store_local_file(
-        self, model: Union[Model, ModelHash], path: Path, new_filename: Union[str, None] = None
+        self, model: Model | ModelHash, path: Path, new_filename: str | None = None
     ) -> None:
         """Store a file from the local machine
 
@@ -185,7 +184,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def store_metadata(self, model: Union[Model, ModelHash], metadata: dict) -> None:
+    def store_metadata(self, model: Model | ModelHash, metadata: dict) -> None:
         """Store metadata
 
         Parameters
@@ -197,7 +196,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def store_modelfit_results(self, model: Union[Model, ModelHash]) -> None:
+    def store_modelfit_results(self, model: Model | ModelHash) -> None:
         """Store modelfit results
 
         Parameters
@@ -217,7 +216,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def list_all_files(self, model: Union[Model, ModelHash]) -> list[str]:
+    def list_all_files(self, model: Model | ModelHash) -> list[str]:
         """Lists all file names related to a model run
 
         Note that this will not return a list of full paths, only the name of the files
@@ -236,7 +235,7 @@ class ModelDatabase(ABC):
     @abstractmethod
     def retrieve_file(
         self,
-        model: Union[Model, ModelHash],
+        model: Model | ModelHash,
         filename: str,
         destination_path: Path,
         force: bool = False,
@@ -257,7 +256,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def retrieve_all_files(
-        self, model: Union[Model, ModelHash], destination_path: Path, force: bool = False
+        self, model: Model | ModelHash, destination_path: Path, force: bool = False
     ) -> None:
         """Retrieve all files related to a model run
 
@@ -287,7 +286,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def retrieve_modelfit_results(self, model: Union[Model, ModelHash]) -> Results:
+    def retrieve_modelfit_results(self, model: Model | ModelHash) -> Results:
         """Read modelfit results from the database
 
         Parameters
@@ -302,7 +301,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def retrieve_model_entry(self, model: Union[Model, ModelHash]) -> ModelEntry:
+    def retrieve_model_entry(self, model: Model | ModelHash) -> ModelEntry:
         """Read model entry from the database
 
         Parameters
@@ -317,7 +316,7 @@ class ModelDatabase(ABC):
         """
 
     @abstractmethod
-    def snapshot(self, model: Union[Model, ModelHash]) -> AbstractContextManager[ModelSnapshot]:
+    def snapshot(self, model: Model | ModelHash) -> AbstractContextManager[ModelSnapshot]:
         """Creates a readable snapshot context for a given model.
 
         Parameters
@@ -328,7 +327,7 @@ class ModelDatabase(ABC):
 
     @abstractmethod
     def transaction(
-        self, obj: Union[Model, ModelEntry, ModelHash]
+        self, obj: Model | ModelEntry | ModelHash
     ) -> AbstractContextManager[ModelTransaction]:
         """Creates a writable transaction context for a given model.
 
@@ -341,16 +340,16 @@ class ModelDatabase(ABC):
 
 class NonTransactionalModelDatabase(ModelDatabase):
     @contextmanager
-    def snapshot(self, model: Union[Model, ModelHash]):
+    def snapshot(self, model: Model | ModelHash):
         yield DummySnapshot(self, model)
 
     @contextmanager
-    def transaction(self, obj: Union[Model, ModelEntry, ModelHash]):
+    def transaction(self, obj: Model | ModelEntry | ModelHash):
         yield DummyTransaction(self, obj)
 
 
 class DummyTransaction(ModelTransaction):
-    def __init__(self, database: ModelDatabase, obj: Union[Model, ModelEntry, ModelHash]):
+    def __init__(self, database: ModelDatabase, obj: Model | ModelEntry | ModelHash):
         self.database = database
         if isinstance(obj, ModelEntry):
             self.model_entry = obj
@@ -364,7 +363,7 @@ class DummyTransaction(ModelTransaction):
     def store_model(self) -> None:
         return self.database.store_model(self.model_entry.model)
 
-    def store_local_file(self, path: Path, new_filename: Union[str, None] = None) -> None:
+    def store_local_file(self, path: Path, new_filename: str | None = None) -> None:
         return self.database.store_local_file(self.model_entry.model, path, new_filename)
 
     def store_metadata(self, metadata: dict) -> None:
@@ -378,7 +377,7 @@ class DummyTransaction(ModelTransaction):
 
 
 class DummySnapshot(ModelSnapshot):
-    def __init__(self, database: ModelDatabase, model: Union[Model, ModelHash]):
+    def __init__(self, database: ModelDatabase, model: Model | ModelHash):
         self.database = database
         self.key = ModelHash(model)
 
@@ -402,24 +401,24 @@ class DummySnapshot(ModelSnapshot):
 
 
 class TransactionalModelDatabase(ModelDatabase):
-    def store_model(self, model: Union[Model, ModelEntry]) -> None:
+    def store_model(self, model: Model | ModelEntry) -> None:
         with self.transaction(model) as txn:
             return txn.store_model()
 
     def store_local_file(
         self,
-        model: Union[Model, ModelEntry, ModelHash],
+        model: Model | ModelEntry | ModelHash,
         path: Path,
-        new_filename: Union[str, None] = None,
+        new_filename: str | None = None,
     ) -> None:
         with self.transaction(model) as txn:
             return txn.store_local_file(path, new_filename)
 
-    def store_metadata(self, model: Union[Model, ModelEntry, ModelHash], metadata: dict) -> None:
+    def store_metadata(self, model: Model | ModelEntry | ModelHash, metadata: dict) -> None:
         with self.transaction(model) as txn:
             return txn.store_metadata(metadata)
 
-    def store_modelfit_results(self, model: Union[Model, ModelEntry]) -> None:
+    def store_modelfit_results(self, model: Model | ModelEntry) -> None:
         with self.transaction(model) as txn:
             return txn.store_modelfit_results()
 
@@ -427,13 +426,13 @@ class TransactionalModelDatabase(ModelDatabase):
         with self.transaction(model_entry) as txn:
             return txn.store_model_entry()
 
-    def list_all_files(self, obj: Union[Model, ModelEntry, ModelHash]) -> list[str]:
+    def list_all_files(self, obj: Model | ModelEntry | ModelHash) -> list[str]:
         with self.snapshot(obj) as sn:
             return sn.list_all_files()
 
     def retrieve_file(
         self,
-        obj: Union[Model, ModelEntry, ModelHash],
+        obj: Model | ModelEntry | ModelHash,
         filename: str,
         destination_path: Path,
         force: bool = False,
@@ -442,20 +441,20 @@ class TransactionalModelDatabase(ModelDatabase):
             sn.retrieve_file(filename, destination_path, force)
 
     def retrieve_all_files(
-        self, obj: Union[Model, ModelEntry, ModelHash], destination_path, force: bool = False
+        self, obj: Model | ModelEntry | ModelHash, destination_path, force: bool = False
     ) -> None:
         with self.snapshot(obj) as sn:
             sn.retrieve_all_files(destination_path, force)
 
-    def retrieve_model(self, obj: Union[Model, ModelEntry, ModelHash]) -> Model:
+    def retrieve_model(self, obj: Model | ModelEntry | ModelHash) -> Model:
         with self.snapshot(obj) as sn:
             return sn.retrieve_model()
 
-    def retrieve_modelfit_results(self, obj: Union[Model, ModelEntry, ModelHash]) -> Results:
+    def retrieve_modelfit_results(self, obj: Model | ModelEntry | ModelHash) -> Results:
         with self.snapshot(obj) as sn:
             return sn.retrieve_modelfit_results()
 
-    def retrieve_model_entry(self, obj: Union[Model, ModelEntry, ModelHash]) -> ModelEntry:
+    def retrieve_model_entry(self, obj: Model | ModelEntry | ModelHash) -> ModelEntry:
         with self.snapshot(obj) as sn:
             return sn.retrieve_model_entry()
 

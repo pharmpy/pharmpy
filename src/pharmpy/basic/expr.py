@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Optional, Self, Union
+from typing import Optional, Self
 
 from pharmpy.deps import symengine, sympy
 from pharmpy.deps.sympy_printing import pretty
@@ -377,7 +377,7 @@ class BooleanExpr:
         return symbs
 
     @property
-    def args(self) -> tuple[Union[BooleanExpr, Expr], ...]:
+    def args(self) -> tuple[BooleanExpr | Expr, ...]:
         args = tuple(
             BooleanExpr(a) if len(self._expr.args) > 1 else Expr(a) for a in self._expr.args
         )
@@ -499,9 +499,9 @@ class BooleanExpr:
 
 
 # Type hint for public functions taking an expression as input
-TExpr = Union[int, float, str, sympy.Expr, symengine.Basic, Expr]
-TSymbol = Union[str, sympy.Expr, symengine.Basic, Expr]
-TBooleanExpr = Union[str, sympy.Basic, symengine.Basic, BooleanExpr]
+TExpr = int | float | str | sympy.Expr | symengine.Basic | Expr
+TSymbol = str | sympy.Expr | symengine.Basic | Expr
+TBooleanExpr = str | sympy.Basic | symengine.Basic | BooleanExpr
 
 
 def solve(eqs: Iterable[BooleanExpr], exclude: Optional[Iterable[Expr]] = None) -> dict[Expr, Expr]:

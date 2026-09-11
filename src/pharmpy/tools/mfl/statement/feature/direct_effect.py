@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Union
+from typing import Literal
 
 from lark.visitors import Interpreter
 
@@ -11,7 +11,7 @@ DIRECT_EFFECT_WILDCARD = tuple([Name(x) for x in ('LINEAR', 'EMAX', 'SIGMOID', '
 
 @dataclass(frozen=True)
 class DirectEffect(ModelFeature):
-    modes: Union[tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN']], ...], Wildcard]
+    modes: tuple[Name[Literal['LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN']], ...] | Wildcard
 
     def __add__(self, other):
         if isinstance(self.modes, Wildcard) or isinstance(other.modes, Wildcard):

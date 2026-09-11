@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from typing import Union
 
 import pharmpy.model
 from pharmpy.basic import BooleanExpr
@@ -38,7 +37,7 @@ def add_statements(
     model: pharmpy.model.Model,
     cg: CodeGenerator,
     statements: Statements,
-    only_piecewise: Union[bool, None] = None,
+    only_piecewise: bool | None = None,
     dependencies: set[sympy.Symbol] | None = None,
     res_alias: set[sympy.Symbol] | None = None,
 ):

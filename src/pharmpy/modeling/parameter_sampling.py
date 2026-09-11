@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Mapping
 from functools import partial
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.basic import RandomNumberGenerator, Seed
 from pharmpy.deps import numpy as np
@@ -13,7 +13,7 @@ from pharmpy.model import Model
 
 
 def create_rng(
-    seed: Optional[Union[int, float, RandomNumberGenerator, Seed]] = None,
+    seed: Optional[int | float | RandomNumberGenerator | Seed] = None,
 ) -> RandomNumberGenerator:
     """Create a new random number generator
 
@@ -128,7 +128,7 @@ def sample_parameters_uniformly(
     fraction: float = 0.1,
     force_posdef_samples: Optional[int] = None,
     n: int = 1,
-    seed: Optional[Union[RandomNumberGenerator, float, int, Seed]] = None,
+    seed: Optional[RandomNumberGenerator | float | int | Seed] = None,
     scale: Literal['UCP', 'normal'] = 'normal',
 ) -> pd.DataFrame:
     """Sample parameter vectors using uniform sampling
@@ -206,7 +206,7 @@ def sample_parameters_from_covariance_matrix(
     force_posdef_samples: Optional[int] = None,
     force_posdef_covmatrix: bool = False,
     n: int = 1,
-    seed: Optional[Union[RandomNumberGenerator, int, float, Seed]] = None,
+    seed: Optional[RandomNumberGenerator | int | float | Seed] = None,
 ) -> pd.DataFrame:
     """Sample parameter vectors using the covariance matrix
 
@@ -285,7 +285,7 @@ def sample_individual_estimates(
     individual_estimates_covariance: pd.DataFrame,
     parameters: Optional[list[str]] = None,
     samples_per_id: int = 100,
-    seed: Optional[Union[RandomNumberGenerator, Seed, int, float]] = None,
+    seed: Optional[RandomNumberGenerator | Seed | int | float] = None,
 ) -> pd.DataFrame:
     """Sample individual estimates given their covariance.
 

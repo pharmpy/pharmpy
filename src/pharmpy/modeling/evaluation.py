@@ -18,7 +18,7 @@ from .expressions import (
     get_population_prediction_expression,
 )
 
-ParameterMap = Mapping[Union[str], Union[float, 'sympy.Float']]
+ParameterMap = Mapping[str, Union[float, 'sympy.Float']]
 
 
 class DataFrameMapping(Mapping['sympy.Expr', 'np.ndarray']):
@@ -40,7 +40,7 @@ class DataFrameMapping(Mapping['sympy.Expr', 'np.ndarray']):
 
 def evaluate_expression(
     model: Model,
-    expression: Union[str, TExpr],
+    expression: str | TExpr,
     parameter_estimates: Optional[ParameterMap] = None,
 ) -> pd.Series:
     """Evaluate expression using model

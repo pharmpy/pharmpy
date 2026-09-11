@@ -4,7 +4,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, Optional, Union, overload
+from typing import Any, Literal, Optional, overload
 
 from pharmpy import modeling
 from pharmpy.basic import Expr
@@ -396,7 +396,7 @@ class ModelfitResultsProxy:
 
 @overload
 def _parse_modelfit_results(
-    path: Optional[Union[str, Path]],
+    path: Optional[str | Path],
     control_stream: NMTranControlStream,
     name_map,
     model: Model,
@@ -409,7 +409,7 @@ def _parse_modelfit_results(
 
 @overload
 def _parse_modelfit_results(
-    path: Optional[Union[str, Path]],
+    path: Optional[str | Path],
     control_stream: NMTranControlStream,
     name_map,
     model: Model,
@@ -421,7 +421,7 @@ def _parse_modelfit_results(
 
 
 def _parse_modelfit_results(
-    path: Optional[Union[str, Path]],
+    path: Optional[str | Path],
     control_stream: NMTranControlStream,
     name_map,
     model: Model,
@@ -1442,7 +1442,7 @@ def simfit_results(model, model_path):
 
 def parse_modelfit_results(
     model,
-    path: Optional[Union[str, Path]],
+    path: Optional[str | Path],
     strict=False,
     subproblem: Optional[int] = None,
     with_log: bool = True,
@@ -1463,7 +1463,7 @@ def parse_modelfit_results(
     return res
 
 
-def _parse_table_file(model, path: Optional[Union[str, Path]], subproblem: Optional[int] = None):
+def _parse_table_file(model, path: Optional[str | Path], subproblem: Optional[int] = None):
     table_recs = model.internals.control_stream.get_records('TABLE')
     df = pd.DataFrame()
     for table_rec in table_recs:
@@ -1487,9 +1487,7 @@ def _parse_table_file(model, path: Optional[Union[str, Path]], subproblem: Optio
     return df
 
 
-def parse_simulation_results(
-    model, path: Optional[Union[str, Path]], subproblem: Optional[int] = None
-):
+def parse_simulation_results(model, path: Optional[str | Path], subproblem: Optional[int] = None):
     table = _parse_table_file(model, path=path, subproblem=subproblem)
     res = SimulationResults(table=table)
     return res

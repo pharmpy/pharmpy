@@ -13,7 +13,7 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Mapping
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -113,9 +113,7 @@ class Omit(DatasetIterator):
         return self._combine_dataset(new_df, prov), next_group
 
 
-def omit_data(
-    dataset_or_model: Union[pd.DataFrame, Model], group: str, name_pattern: str = 'omitted_{}'
-):
+def omit_data(dataset_or_model: pd.DataFrame | Model, group: str, name_pattern: str = 'omitted_{}'):
     """Iterate over omissions of a certain group in a dataset. One group is omitted at a time.
 
     Parameters
@@ -258,7 +256,7 @@ class Resample(DatasetIterator):
 
 
 def resample_data(
-    dataset_or_model: Union[pd.DataFrame, Model],
+    dataset_or_model: pd.DataFrame | Model,
     group: str,
     resamples: int = 1,
     stratify: Optional[str] = None,

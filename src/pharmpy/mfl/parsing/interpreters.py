@@ -1,5 +1,4 @@
 import itertools
-from typing import Union
 
 from lark.visitors import Interpreter
 
@@ -312,7 +311,7 @@ class AllometryInterpreter(Interpreter):
     def value(self, tree) -> str:
         return tree.children[0].value
 
-    def decimal(self, tree) -> Union[float, int]:
+    def decimal(self, tree) -> float | int:
         return float(tree.children[0].value)
 
 

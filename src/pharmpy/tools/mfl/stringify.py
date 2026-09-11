@@ -1,13 +1,12 @@
 from collections.abc import Iterable
 from dataclasses import fields
-from typing import Union
 
 from .statement.feature.covariate import Ref
 from .statement.feature.symbols import Name, Option, Wildcard
 from .statement.statement import Statement
 
-StringifiableAtom = Union[int, str, Name, Wildcard, Ref]
-Stringifiable = Union[StringifiableAtom, tuple[StringifiableAtom, ...]]
+StringifiableAtom = int | str | Name | Wildcard | Ref
+Stringifiable = StringifiableAtom | tuple[StringifiableAtom, ...]
 
 
 def stringify(statements: Iterable[Statement]) -> str:

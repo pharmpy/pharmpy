@@ -5,7 +5,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import sympy
@@ -41,7 +41,7 @@ from .parameters import set_initial_estimates
 
 def create_basic_pk_model(
     administration: str = 'iv',
-    dataset_path: Optional[Union[str, Path]] = None,
+    dataset_path: Optional[str | Path] = None,
     cl_init: float = 0.01,
     vc_init: float = 1.0,
     mat_init: float = 0.1,
@@ -307,7 +307,7 @@ def create_basic_pd_model(
 
 
 def create_basic_kpd_model(
-    dataset_path: Optional[Union[str, Path]] = None, driver: Literal['ir', 'amount'] = 'ir'
+    dataset_path: Optional[str | Path] = None, driver: Literal['ir', 'amount'] = 'ir'
 ) -> Model:
     """
     Creates a basic kpd model. The model will be a one compartment model.

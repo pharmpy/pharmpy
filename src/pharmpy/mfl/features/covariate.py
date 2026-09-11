@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Optional
 
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
@@ -19,8 +19,8 @@ COVARIATE_OP_TYPES = frozenset(('+', '*'))
 class Covariate(ModelFeature):
     def __init__(
         self,
-        parameter: Union[str, Ref],
-        covariate: Union[str, Ref],
+        parameter: str | Ref,
+        covariate: str | Ref,
         fp: str,
         op: str,
         optional: bool,
@@ -34,8 +34,8 @@ class Covariate(ModelFeature):
     @classmethod
     def create(
         cls,
-        parameter: Union[str, Ref],
-        covariate: Union[str, Ref],
+        parameter: str | Ref,
+        covariate: str | Ref,
         fp: str,
         op: str = '*',
         optional: bool = False,
@@ -73,11 +73,11 @@ class Covariate(ModelFeature):
         )
 
     @property
-    def parameter(self) -> Union[str, Ref]:
+    def parameter(self) -> str | Ref:
         return self._parameter
 
     @property
-    def covariate(self) -> Union[str, Ref]:
+    def covariate(self) -> str | Ref:
         return self._covariate
 
     @property
@@ -93,7 +93,7 @@ class Covariate(ModelFeature):
         return self._optional
 
     @property
-    def args(self) -> tuple[Union[str, Ref], Union[str, Ref], str, str, bool]:
+    def args(self) -> tuple[str | Ref, str | Ref, str, str, bool]:
         return self.parameter, self.covariate, self.fp, self.op, self.optional
 
     def expand(self, expand_to: Mapping[Ref, Sequence[str]]) -> tuple[Covariate, ...]:

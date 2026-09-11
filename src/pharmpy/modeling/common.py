@@ -10,7 +10,7 @@ import re
 import warnings
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy import config
 from pharmpy.basic import BooleanExpr, Expr, TSymbol
@@ -33,7 +33,7 @@ from pharmpy.model import (
 from pharmpy.model.statements import Output
 
 
-def read_model(path: Union[str, Path], missing_data_token: Optional[str] = None) -> Model:
+def read_model(path: str | Path, missing_data_token: Optional[str] = None) -> Model:
     """Read model from file
 
     Parameters
@@ -103,7 +103,7 @@ def read_model_from_string(code: str) -> Model:
     return model
 
 
-def write_model(model: Model, path: Union[str, Path] = '', force: bool = True) -> Model:
+def write_model(model: Model, path: str | Path = '', force: bool = True) -> Model:
     """Write model code to file
 
     An updated Pharmpy model is returned. This will have a new name based on the filename
@@ -323,7 +323,7 @@ def set_description(model: Model, new_description: str) -> Model:
     return model.update_source()
 
 
-def bump_model_number(model: Model, path: Optional[Union[str, Path]] = None) -> Model:
+def bump_model_number(model: Model, path: Optional[str | Path] = None) -> Model:
     """If the model name ends in a number increase it
 
     If path is set increase the number until no file exists
@@ -419,7 +419,7 @@ def load_example_model(name: str) -> Model:
     return model
 
 
-def get_model_covariates(model: Model, strings: bool = False) -> Union[list[str], list[Expr]]:
+def get_model_covariates(model: Model, strings: bool = False) -> list[str] | list[Expr]:
     """List of covariates used in model
 
     A covariate in the model is here defined to be a data item

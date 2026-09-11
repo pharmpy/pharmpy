@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.internals.fs.path import path_absolute
 
@@ -8,7 +8,7 @@ from .baseclass import Project
 
 
 class LocalDirectoryProject(Project):
-    def __init__(self, name: str, ref: Optional[Union[str, Path]] = None):
+    def __init__(self, name: str, ref: Optional[str | Path] = None):
         if ref is None:
             ref = str(Path.cwd())
         else:

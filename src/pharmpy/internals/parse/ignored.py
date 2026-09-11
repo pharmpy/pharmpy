@@ -1,5 +1,4 @@
 from collections.abc import Iterable, Iterator
-from typing import Union
 
 from lark import Token, Transformer, Tree
 from lark.tree import Meta
@@ -45,7 +44,7 @@ def _tokenize_ignored_characters(s: str, i: int, j: int) -> Iterable[Token]:
         i = head
 
 
-def _item_range(x: Union[Tree, Token]) -> tuple[int, int]:
+def _item_range(x: Tree | Token) -> tuple[int, int]:
     if isinstance(x, Tree):
         i = x.meta.start_pos
         j = x.meta.end_pos
@@ -58,7 +57,7 @@ def _item_range(x: Union[Tree, Token]) -> tuple[int, int]:
     return (i, j)
 
 
-def _interleave_ignored(source: str, it: Iterator[Union[Tree, Token]]):
+def _interleave_ignored(source: str, it: Iterator[Tree | Token]):
     x = next(it)
     yield x
 
@@ -81,7 +80,7 @@ def _interleave_ignored(source: str, it: Iterator[Union[Tree, Token]]):
         i = k
 
 
-def interleave_ignored(source: str, children: list[Union[Tree, Token]]):
+def interleave_ignored(source: str, children: list[Tree | Token]):
     return children if len(children) < 2 else list(_interleave_ignored(source, iter(children)))
 
 
@@ -103,7 +102,7 @@ def with_ignored_tokens(source, tree):
     final_meta.end_pos = len(source)
     final_meta.empty = False
 
-    final_children: list[Union[Tree, Token]] = (
+    final_children: list[Tree | Token] = (
         (
             list(_tokenize_ignored_characters(source, 0, new_tree.meta.start_pos))
             + new_tree.children

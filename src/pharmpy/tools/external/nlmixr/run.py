@@ -6,7 +6,7 @@ import sys
 import uuid
 import warnings
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import pharmpy.model
 from pharmpy import config
@@ -192,7 +192,7 @@ def verification(
     force_ipred: bool = False,
     force_pred: bool = False,
     ignore_print=False,
-) -> Union[bool, pd.DataFrame]:
+) -> bool | pd.DataFrame:
     """
     Verify that a model inputet in NONMEM format can be correctly translated to
     nlmixr as well as verify that the predictions of the two models are the same
@@ -594,7 +594,7 @@ def verify_param(model1, res1, model2, res2, est=False):
     return passed, failed
 
 
-def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None, ModelfitResults]:
+def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> None | ModelfitResults:
     """
     Create ModelfitResults object for given model object taken from values saved in executed Rdata file
 

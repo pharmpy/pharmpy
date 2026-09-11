@@ -2,7 +2,7 @@ from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -127,7 +127,7 @@ class SearchState:
 def create_workflow(
     model: Model,
     results: ModelfitResults,
-    search_space: Union[str, ModelFeatures],
+    search_space: str | ModelFeatures,
     p_forward: float = 0.01,
     p_backward: float = 0.001,
     max_steps: int = -1,
@@ -294,7 +294,7 @@ def _start(model, results, max_eval):
 
 
 def _init_search_state(
-    context, search_space: Union[str, ModelFeatures], modelentry: ModelEntry
+    context, search_space: str | ModelFeatures, modelentry: ModelEntry
 ) -> tuple[dict[tuple[str], callable], SearchState]:
     model = modelentry.model
     effect_funcs, base_model = get_effect_funcs_and_base_model(search_space, model)

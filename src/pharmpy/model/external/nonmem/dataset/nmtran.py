@@ -3,7 +3,7 @@ from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, TextIO, Union
+from typing import Any, Optional, TextIO
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError
@@ -99,11 +99,11 @@ class IOFromChunks:
         return value
 
 
-def open_NMTRAN(path: Union[str, Path]):
+def open_NMTRAN(path: str | Path):
     return open(str(path), "r", encoding="latin-1")
 
 
-def _stream_NMTRAN(path_or_io: Union[str, Path, TextIO]):
+def _stream_NMTRAN(path_or_io: str | Path | TextIO):
     if isinstance(path_or_io, (str, Path)):
         return open_NMTRAN(path_or_io)
     else:
@@ -112,7 +112,7 @@ def _stream_NMTRAN(path_or_io: Union[str, Path, TextIO]):
 
 @contextmanager
 def NMTRANDataLines(
-    path_or_io: Union[str, Path, TextIO],
+    path_or_io: str | Path | TextIO,
     sep: re.Pattern[str],
     ignore_character: Optional[str] = None,
 ):

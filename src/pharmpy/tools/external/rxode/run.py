@@ -5,7 +5,7 @@ import sys
 import uuid
 import warnings
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -127,7 +127,7 @@ def execute_model(model_entry, db):
     return model_entry
 
 
-def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> Union[None, ModelfitResults]:
+def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> None | ModelfitResults:
     rdata_path = path / (model.name + '.RDATA')
     with warnings.catch_warnings():
         # Supress a numpy deprecation warning
@@ -161,7 +161,7 @@ def verification(
     error: float = 10**-3,
     return_comp: bool = False,
     ignore_print=False,
-) -> Union[bool, pd.DataFrame]:
+) -> bool | pd.DataFrame:
     nonmem_model = model
 
     # Save results from the nonmem model

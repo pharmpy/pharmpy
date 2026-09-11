@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.model import Model
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -9,9 +9,9 @@ SupportedExternalTools = Literal['nonmem', 'nlmixr', 'rxode', 'dummy']
 
 
 def create_workflow(
-    model_or_models: Optional[Union[Model, Iterable[Model]]] = None,
+    model_or_models: Optional[Model | Iterable[Model]] = None,
     n: Optional[int] = None,
-) -> Workflow[Union[Model, tuple[Model, ...]]]:
+) -> Workflow[Model | tuple[Model, ...]]:
     """Run modelfit tool.
 
     .. note::

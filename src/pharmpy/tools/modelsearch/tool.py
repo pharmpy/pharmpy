@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -32,13 +32,13 @@ from .filter import mfl_filtering
 def create_workflow(
     model: Model,
     results: ModelfitResults,
-    search_space: Union[str, ModelFeatures],
+    search_space: str | ModelFeatures,
     algorithm: Literal[tuple(algorithms.ALGORITHMS)] = 'reduced_stepwise',
     iiv_strategy: Literal[tuple(algorithms.IIV_STRATEGIES)] = 'absorption_delay',
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
-    cutoff: Optional[Union[float, int]] = None,
+    cutoff: Optional[float | int] = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
-    E: Optional[Union[float, str]] = None,
+    E: Optional[float | str] = None,
     parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
 ):
     """Run Modelsearch tool. For more details, see :ref:`modelsearch`.

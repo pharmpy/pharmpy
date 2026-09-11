@@ -4,7 +4,7 @@ import re
 from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Literal, Optional, TypeVar, Union
+from typing import Literal, Optional, TypeVar
 
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
@@ -443,7 +443,7 @@ def get_mu_connected_to_parameter(model: Model, parameter: str) -> Optional[str]
     return None
 
 
-def simplify_expression(model: Model, expr: Union[str, TExpr]) -> Expr:
+def simplify_expression(model: Model, expr: str | TExpr) -> Expr:
     """Simplify expression given constraints in model
 
     Parameters
@@ -792,7 +792,7 @@ def greekify_model(model: Model, named_subscripts: bool = False) -> Model:
 def get_individual_parameters(
     model: Model,
     level: Literal['iiv', 'iov', 'random', 'all'] = 'all',
-    dv: Union[TSymbol, int, None] = None,
+    dv: TSymbol | int | None = None,
 ) -> list[str]:
     """Retrieves all individual parameters in a :class:`pharmpy.model`.
 
@@ -1883,7 +1883,7 @@ def _assignments(sset: Statements):
 def _filter_symbols(
     dependency_graph: dict[sympy.Symbol, set[sympy.Symbol]],
     roots: set[sympy.Symbol],
-    leaves: Union[set[sympy.Symbol], None] = None,
+    leaves: set[sympy.Symbol] | None = None,
 ) -> set[sympy.Symbol]:
     dependents = graph_inverse(dependency_graph)
 
@@ -2068,7 +2068,7 @@ def is_linearized(model: Model) -> bool:
     return True
 
 
-def get_dv_symbol(model: Model, dv: Union[Expr, str, int, None] = None) -> Expr:
+def get_dv_symbol(model: Model, dv: Expr | str | int | None = None) -> Expr:
     """Get the symbol for a certain dvid or dv and check that it is valid
 
     Parameters

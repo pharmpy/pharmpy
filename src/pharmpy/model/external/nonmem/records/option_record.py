@@ -10,7 +10,7 @@ import re
 from abc import ABC
 from collections import namedtuple
 from collections.abc import Iterable
-from typing import Optional, Union
+from typing import Optional
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 
@@ -214,7 +214,7 @@ class OptionRecord(Record):
     def replace_option(self, old, new):
         """Replace an option"""
 
-        def _fn(node: Union[AttrTree, AttrToken]):
+        def _fn(node: AttrTree | AttrToken):
             if isinstance(node, AttrTree) and node.rule == 'option':
                 key = _get_key(node)
                 if key == old:

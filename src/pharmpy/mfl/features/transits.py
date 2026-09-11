@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import builtins
 from collections import defaultdict
-from typing import TYPE_CHECKING, Literal, Union
+from typing import TYPE_CHECKING, Literal
 
 from pharmpy.mfl.features.help_functions import format_numbers
 
@@ -13,12 +13,12 @@ if TYPE_CHECKING:
 
 
 class Transits(ModelFeature):
-    def __init__(self, number: Union[int, str], depot: bool):
+    def __init__(self, number: int | str, depot: bool):
         self._number = number
         self._depot = depot
 
     @classmethod
-    def create(cls, number: Union[int, Literal['N']], depot: bool = True) -> Transits:
+    def create(cls, number: int | Literal['N'], depot: bool = True) -> Transits:
         if isinstance(number, int):
             if number < 0:
                 raise ValueError(f'Number of transits must be positive: got {number}')
@@ -42,7 +42,7 @@ class Transits(ModelFeature):
         return Transits.create(number=number, depot=depot)
 
     @property
-    def number(self) -> Union[int, str]:
+    def number(self) -> int | str:
         return self._number
 
     @property
@@ -50,7 +50,7 @@ class Transits(ModelFeature):
         return self._depot
 
     @property
-    def args(self) -> tuple[Union[int, str], bool]:
+    def args(self) -> tuple[int | str, bool]:
         return self.number, self.depot
 
     def __repr__(self) -> str:

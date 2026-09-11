@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from itertools import product
-from typing import Any, Literal, Optional, Union
+from typing import Any, Literal, Optional
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
@@ -489,7 +489,7 @@ def set_evaluation_step(model: Model, idx: int = -1) -> Model:
 
 
 def add_derivative(
-    model: Model, with_respect_to: Optional[Union[Sequence[Union[Sequence[str], str]], str]] = None
+    model: Model, with_respect_to: Optional[Sequence[Sequence[str] | str] | str] = None
 ) -> Model:
     """
     Add a derivative to be calculcated when running the model. Currently, only
@@ -558,7 +558,7 @@ def add_derivative(
 
 
 def remove_derivative(
-    model: Model, with_respect_to: Optional[Union[Sequence[Union[Sequence[str], str]], str]] = None
+    model: Model, with_respect_to: Optional[Sequence[Sequence[str] | str] | str] = None
 ) -> Model:
     """
     Remove a derivative currently being calculcate when running model. Currently, only

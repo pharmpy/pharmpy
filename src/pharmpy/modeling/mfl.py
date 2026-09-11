@@ -3,7 +3,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Literal, Optional, Union
+from typing import Literal, Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -286,7 +286,7 @@ def _get_variability(model, type):
 
 
 def generate_transformations(
-    model_features: Union[ModelFeatures, Sequence[ModelFeature]],
+    model_features: ModelFeatures | Sequence[ModelFeature],
     include_add: bool = True,
     include_remove: bool = True,
     individual_estimates: Optional[pd.DataFrame] = None,
@@ -335,7 +335,7 @@ def _get_funcs(feature: ModelFeature, include_add: bool, include_remove: bool) -
         raise NotImplementedError
 
 
-def _get_absorption_elimination_func(feature: Union[Absorption, Elimination]):
+def _get_absorption_elimination_func(feature: Absorption | Elimination):
     assert type(feature) in FUNC_MAPPING
     func = FUNC_MAPPING[type(feature)].get(feature.type)
     if func is None:
@@ -373,8 +373,8 @@ def _get_peripherals_func(feature: Peripherals):
     return [func]
 
 
-def _get_pd_func(feature: Union[DirectEffect, IndirectEffect, EffectComp]):
-    kwargs: dict[str, Union[str, bool]] = {'expr': feature.type.lower()}
+def _get_pd_func(feature: DirectEffect | IndirectEffect | EffectComp):
+    kwargs: dict[str, str | bool] = {'expr': feature.type.lower()}
     if isinstance(feature, IndirectEffect):
         kwargs['prod'] = feature.production
     assert type(feature) in FUNC_MAPPING
@@ -480,7 +480,7 @@ FUNC_MAPPING = {
 
 def transform_into_search_space(
     model: Model,
-    search_space: Union[ModelFeatures, Sequence[ModelFeature]],
+    search_space: ModelFeatures | Sequence[ModelFeature],
     type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
     individual_estimates: Optional[pd.DataFrame] = None,
 ) -> Model:
@@ -569,7 +569,7 @@ def _get_feature_diffs(search_space, model_features, type):
 
 def is_in_search_space(
     model: Model,
-    search_space: Union[ModelFeatures, Sequence[ModelFeature]],
+    search_space: ModelFeatures | Sequence[ModelFeature],
     type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
 ) -> bool:
     if isinstance(search_space, Sequence):
@@ -589,7 +589,7 @@ def is_in_search_space(
 
 def get_search_space_parameters_not_in_model(
     model: Model,
-    search_space: Union[ModelFeatures, Sequence[ModelFeature]],
+    search_space: ModelFeatures | Sequence[ModelFeature],
 ) -> tuple[str, ...]:
     def _is_param_in_model(p, symbols):
         return not (isinstance(p, str) and Expr.symbol(p) not in symbols)
@@ -612,7 +612,7 @@ def get_search_space_parameters_not_in_model(
     return params_not_in_model
 
 
-def verify_search_space(model: Model, search_space: Union[ModelFeatures, Sequence[ModelFeature]]):
+def verify_search_space(model: Model, search_space: ModelFeatures | Sequence[ModelFeature]):
     params_not_in_model = get_search_space_parameters_not_in_model(model, search_space)
     if params_not_in_model:
         raise ValueError(f'Invalid `search_space`: {params_not_in_model} not in model')
