@@ -2,8 +2,10 @@ import pytest
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
+from pharmpy.deps import pandas as pd
 from pharmpy.model.model import update_datainfo
 from pharmpy.modeling import (
+    create_datainfo,
     create_joint_distribution,
     remove_error_model,
     set_additive_error_model,
@@ -14,6 +16,121 @@ from pharmpy.modeling import (
     transform_blq,
 )
 from pharmpy.modeling.blq import has_blq_transformation
+
+
+@pytest.fixture(scope='module')
+def model_with_blq_column(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    df = model.dataset.copy()
+    df['BLQ'] = df.index < len(df) // 2
+    di = create_datainfo(df)
+    return model.replace(dataset=df, datainfo=di)
+
+
+@pytest.fixture(scope='module')
+def model_with_lloq_column(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    df = model.dataset.copy()
+    df['LLOQ'] = 20.0
+    di = create_datainfo(df)
+    return model.replace(dataset=df, datainfo=di)
+
+
+def test_transform_blq_m1(load_model_for_test, testdata, model_with_blq_column):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert len(model.dataset) == 744
+    model = transform_blq(model, method='m1', lloq=20)
+    assert len(model.dataset) == 703
+
+    model = transform_blq(model_with_blq_column, method='m1')
+    assert len(model.dataset) == 671
+
+
+def test_transform_blq_m5(
+    load_model_for_test, testdata, model_with_blq_column, model_with_lloq_column
+):
+    def get_lowest_dv(df):
+        return df[df['DV'] != 0]['DV'].min()
+
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert len(model.dataset) == 744
+    assert get_lowest_dv(model.dataset) == 6.7
+    model = transform_blq(model, method='m5', lloq=20)
+    assert len(model.dataset) == 744
+    assert get_lowest_dv(model.dataset) == 10.0
+
+    model = transform_blq(model_with_blq_column, method='m5', lloq=20)
+    assert len(model.dataset) == 744
+    assert get_lowest_dv(model.dataset) == 10.0
+
+    model = transform_blq(model_with_lloq_column, method='m5')
+    assert len(model.dataset) == 744
+    assert get_lowest_dv(model.dataset) == 10.0
+
+
+@pytest.mark.parametrize(
+    'blq_indicator_col, no_of_records',
+    [
+        (
+            False,
+            7,
+        ),
+        (
+            True,
+            6,
+        ),
+    ],
+)
+def test_transform_blq_m6(load_model_for_test, testdata, blq_indicator_col, no_of_records):
+    data = {
+        'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+        'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+        'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+    }
+    if blq_indicator_col:
+        data['BLQ'] = [0, 0, 1, 1, 0, 0, 1, 1]
+
+    df = pd.DataFrame(data)
+    di = create_datainfo(df)
+
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    model = model.replace(dataset=df, datainfo=di)
+    assert len(model.dataset) == 8
+    model = transform_blq(model, method='m6', lloq=4)
+    assert len(model.dataset) == no_of_records
+
+
+def test_transform_blq_m6_lloq(load_model_for_test, testdata):
+    data = {
+        'ID': [1, 1, 1, 1, 2, 2, 2, 2],
+        'MDV': [1, 1, 0, 0, 1, 1, 0, 0],
+        'LLOQ': [4, 4, 4, 4, 4, 4, 4, 4],
+        'DV': [0, 1, 2, 3, 4, 5, 6, 7],
+    }
+    df = pd.DataFrame(data)
+    di = create_datainfo(df)
+
+    model = load_model_for_test(testdata / 'nonmem' / 'minimal.mod')
+    model = model.replace(dataset=df, datainfo=di)
+    assert len(model.dataset) == 8
+    model = transform_blq(model, method='m6')
+    assert len(model.dataset) == 7
+
+
+def test_transform_blq_m7(load_model_for_test, testdata, model_with_blq_column):
+    def get_lowest_dv(df):
+        return df[df['DV'] != 0]['DV'].min()
+
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    assert len(model.dataset) == 744
+    assert get_lowest_dv(model.dataset) == 6.7
+    model = transform_blq(model, method='m7', lloq=20)
+    assert len(model.dataset) == 744
+    assert get_lowest_dv(model.dataset) > 20.0
+
+    model = transform_blq(model_with_blq_column, method='m7')
+    assert len(model.dataset) == 744
+    assert get_lowest_dv(model.dataset) == 12.7
 
 
 @pytest.mark.parametrize(
@@ -61,6 +178,12 @@ def test_transform_blq(load_model_for_test, testdata, method, error_func, sd_ref
     assert all(statement in model.code for statement in y_ref)
 
     assert all(est.laplace for est in model.execution_steps)
+
+
+def test_transform_blq_raises(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+    with pytest.raises(ValueError):
+        transform_blq(model, method='m1')
 
 
 @pytest.mark.parametrize(
@@ -209,3 +332,20 @@ def test_transform_blq_different_lloq(load_model_for_test, testdata):
 
     assert 'BLQ.EQ.0' in model_float_with_blq_col.code
     assert 'LLOQ = ' in model_float_with_blq_col.code
+
+
+def test_has_blq_transformation_blq_col(model_with_blq_column):
+    model = transform_blq(model_with_blq_column, method='m3', lloq=20.0)
+    assert has_blq_transformation(model, Expr.symbol('Y'))
+
+
+def test_has_blq_transformation_lloq_col(model_with_lloq_column):
+    model = transform_blq(model_with_lloq_column, method='m3')
+    assert has_blq_transformation(model, Expr.symbol('Y'))
+
+
+def test_transform_blq_raises_no_y(load_model_for_test, testdata):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
+
+    with pytest.raises(ValueError):
+        has_blq_transformation(model, Expr.symbol('X'))

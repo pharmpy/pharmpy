@@ -146,7 +146,7 @@ def transform_blq(
         model = _m5_method(model, indicator, indicator_type, level, level_type)
     elif lometh == 'm6':
         model = _m6_method(model, indicator, indicator_type, level, level_type)
-    elif lometh == 'm7':
+    else:
         model = _m7_method(model, indicator, indicator_type)
 
     return model
