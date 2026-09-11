@@ -683,12 +683,12 @@ def _filter_params(kind, params, types):
 
 
 def _input_model_param_keys(params, types):
-    for _, param_key in _filter_params(Model | list[Model] | params | types):
+    for _, param_key in _filter_params(Model | list[Model], params, types):
         yield param_key
 
 
 def _results_param_keys(params, types):
-    for _, param_key in _filter_params(ModelfitResults | list[ModelfitResults] | params | types):
+    for _, param_key in _filter_params(ModelfitResults | list[ModelfitResults], params, types):
         yield param_key
 
 
