@@ -9,7 +9,7 @@ readme-renderer==46.0
 ruff==0.16.6
 twine==7.0.0 
 # Indirect dependencies
-build==1.6.0
+build==1.6.1
 certifi==2026.7.22
 cffi==2.1.1
 charset-normalizer==3.5.1
