@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -63,11 +63,11 @@ IIV_CORRELATION_ALGORITHMS = frozenset(
 @dataclass(frozen=True)
 class RankingOptions:
     rank_type: str
-    cutoff: Optional[float]
+    cutoff: float | None
     strictness: str
     parameter_uncertainty_method: str
-    E: Optional[tuple[float | str, float | str]]
-    search_space: Optional[str]
+    E: tuple[float | str, float | str] | None
+    search_space: str | None
 
 
 def create_workflow(
@@ -78,12 +78,12 @@ def create_workflow(
     as_fullblock: bool = False,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
     linearize: bool = False,
-    cutoff: Optional[float | int] = None,
+    cutoff: float | int | None = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    correlation_algorithm: Optional[Literal[tuple(IIV_CORRELATION_ALGORITHMS)]] = None,
-    E_p: Optional[float | str] = None,
-    E_q: Optional[float | str] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    correlation_algorithm: Literal[tuple(IIV_CORRELATION_ALGORITHMS)] | None = None,
+    E_p: float | str | None = None,
+    E_q: float | str | None = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """Run IIVsearch tool. For more details, see :ref:`iivsearch`.
 

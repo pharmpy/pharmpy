@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import pharmpy.model
 from pharmpy.deps import sympy
@@ -21,8 +20,8 @@ from pharmpy.modeling import (
 
 @dataclass(frozen=True)
 class RxODEModelInternals(ModelInternals):
-    src: Optional[str] = None
-    path: Optional[Path] = None
+    src: str | None = None
+    path: Path | None = None
 
 
 class Model(pharmpy.model.Model):

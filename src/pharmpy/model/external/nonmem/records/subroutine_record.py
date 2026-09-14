@@ -2,8 +2,6 @@
 The NONMEM $SUBROUTINES record
 """
 
-from typing import Optional
-
 from .option_record import OptionRecord
 
 
@@ -36,7 +34,7 @@ class SubroutineRecord(OptionRecord):
         return tol
 
     @property
-    def atol(self) -> Optional[float]:
+    def atol(self) -> float | None:
         if self.advan not in {
             "ADVAN9",
             "ADVAN13",

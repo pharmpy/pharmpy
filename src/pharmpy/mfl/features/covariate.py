@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import itertools
 from collections.abc import Mapping, Sequence
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from .help_functions import get_repr, group_args
 from .model_feature import ModelFeature
@@ -100,7 +100,7 @@ class Covariate(ModelFeature):
         if self.is_expanded():
             return (self,)
 
-        def _expanded(attr) -> Optional[tuple[str, ...]]:
+        def _expanded(attr) -> tuple[str, ...] | None:
             if isinstance(attr, Ref):
                 values = expand_to.get(attr)
                 if values is None:

@@ -1,7 +1,7 @@
 import re
 from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import pandas as pd
@@ -68,30 +68,30 @@ DEFAULT_STRICTNESS = "minimization_successful or (rounding_errors and sigdigs>=0
 
 def create_workflow(
     input: Model | Path | str | DataInfo,
-    results: Optional[ModelfitResults] = None,
+    results: ModelfitResults | None = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: Optional[float] = None,
-    vc_init: Optional[float] = None,
-    mat_init: Optional[float] = None,
-    b_init: Optional[float] = None,
-    emax_init: Optional[float] = None,
-    ec50_init: Optional[float] = None,
-    met_init: Optional[float] = None,
-    search_space: Optional[str] = None,
-    lloq_method: Optional[str] = None,
-    lloq_limit: Optional[float] = None,
-    allometric_variable: Optional[TSymbol] = None,
-    occasion: Optional[str] = None,
+    cl_init: float | None = None,
+    vc_init: float | None = None,
+    mat_init: float | None = None,
+    b_init: float | None = None,
+    emax_init: float | None = None,
+    ec50_init: float | None = None,
+    met_init: float | None = None,
+    search_space: str | None = None,
+    lloq_method: str | None = None,
+    lloq_limit: float | None = None,
+    allometric_variable: TSymbol | None = None,
+    occasion: str | None = None,
     strictness: str = DEFAULT_STRICTNESS,
-    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[list[str | tuple[str]]] = None,
+    dv_types: dict[Literal[DV_TYPES], int] | None = None,
+    mechanistic_covariates: list[str | tuple[str]] | None = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
-    _E: Optional[dict[str, float | str]] = None,
+    _E: dict[str, float | str] | None = None,
 ):
     """Run Automatic Model Development (AMD) tool
 
@@ -192,30 +192,30 @@ def create_workflow(
 def run_amd_task(
     context: Context,
     input: Model | Path | str | DataInfo,
-    results: Optional[ModelfitResults] = None,
+    results: ModelfitResults | None = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: Optional[float] = None,
-    vc_init: Optional[float] = None,
-    mat_init: Optional[float] = None,
-    b_init: Optional[float] = None,
-    emax_init: Optional[float] = None,
-    ec50_init: Optional[float] = None,
-    met_init: Optional[float] = None,
-    search_space: Optional[str] = None,
-    lloq_method: Optional[str] = None,
-    lloq_limit: Optional[float] = None,
-    allometric_variable: Optional[TSymbol] = None,
-    occasion: Optional[str] = None,
+    cl_init: float | None = None,
+    vc_init: float | None = None,
+    mat_init: float | None = None,
+    b_init: float | None = None,
+    emax_init: float | None = None,
+    ec50_init: float | None = None,
+    met_init: float | None = None,
+    search_space: str | None = None,
+    lloq_method: str | None = None,
+    lloq_limit: float | None = None,
+    allometric_variable: TSymbol | None = None,
+    occasion: str | None = None,
     strictness: str = DEFAULT_STRICTNESS,
-    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[list[str | tuple[str]]] = None,
+    dv_types: dict[Literal[DV_TYPES], int] | None = None,
+    mechanistic_covariates: list[str | tuple[str]] | None = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
-    _E: Optional[dict[str, float | str]] = None,
+    _E: dict[str, float | str] | None = None,
 ):
     context.log_info("Starting tool amd")
     rng = context.create_rng(0)
@@ -923,7 +923,7 @@ def create_plots(final_model, final_results):
     }
 
 
-SubFunc = Callable[[Model], Optional[Results]]
+SubFunc = Callable[[Model], Results | None]
 
 
 def noop_subfunc(_: Model):
@@ -1521,7 +1521,7 @@ def check_skip(
     allometric_variable: str,
     order: list[str],
     ignore_datainfo_fallback: bool = False,
-    search_space: Optional[str] = None,
+    search_space: str | None = None,
 ):
     to_be_skipped = []
 
@@ -1609,29 +1609,29 @@ def _results(context, res):
 @with_runtime_arguments_type_check
 def validate_input(
     input: Model | Path | str | pd.DataFrame,
-    results: Optional[ModelfitResults] = None,
+    results: ModelfitResults | None = None,
     modeltype: str = 'basic_pk',
     administration: str = 'oral',
     strategy: str = "default",
-    cl_init: Optional[float] = None,
-    vc_init: Optional[float] = None,
-    mat_init: Optional[float] = None,
-    b_init: Optional[float] = None,
-    emax_init: Optional[float] = None,
-    ec50_init: Optional[float] = None,
-    met_init: Optional[float] = None,
-    search_space: Optional[str] = None,
-    lloq_method: Optional[str] = None,
-    lloq_limit: Optional[float] = None,
-    allometric_variable: Optional[TSymbol] = None,
-    occasion: Optional[str] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    mechanistic_covariates: Optional[list[str | tuple]] = None,
+    cl_init: float | None = None,
+    vc_init: float | None = None,
+    mat_init: float | None = None,
+    b_init: float | None = None,
+    emax_init: float | None = None,
+    ec50_init: float | None = None,
+    met_init: float | None = None,
+    search_space: str | None = None,
+    lloq_method: str | None = None,
+    lloq_limit: float | None = None,
+    allometric_variable: TSymbol | None = None,
+    occasion: str | None = None,
+    strictness: str | None = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    dv_types: dict[Literal[DV_TYPES], int] | None = None,
+    mechanistic_covariates: list[str | tuple] | None = None,
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     ignore_datainfo_fallback: bool = False,
-    _E: Optional[dict[str, float | str | Sequence[float | str]]] = None,
+    _E: dict[str, float | str | Sequence[float | str]] | None = None,
 ):
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
 
@@ -1717,10 +1717,10 @@ def validate_input(
 
 def later_input_validation(
     input: Model,
-    search_space: Optional[str],
-    allometric_variable: Optional[TSymbol],
-    occasion: Optional[str],
-    mechanistic_covariates: Optional[list[str | tuple]],
+    search_space: str | None,
+    allometric_variable: TSymbol | None,
+    occasion: str | None,
+    mechanistic_covariates: list[str | tuple] | None,
 ):
     # FIXME: This function should be removed and refactored into validate_inputs
     # and optionally give warnings/errors during the run

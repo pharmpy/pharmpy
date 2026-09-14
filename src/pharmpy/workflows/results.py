@@ -10,7 +10,7 @@ from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Literal, Optional, overload
+from typing import TYPE_CHECKING, Any, Literal, overload
 
 import pharmpy
 from pharmpy.deps import altair as alt
@@ -284,7 +284,7 @@ class Results(Immutable):
     @overload
     def to_json(self, path: Path, lzma: bool = False) -> None: ...
 
-    def to_json(self, path: Optional[Path] = None, lzma: bool = False) -> str | None:
+    def to_json(self, path: Path | None = None, lzma: bool = False) -> str | None:
         """Serialize results object as json
 
         Parameters
@@ -443,45 +443,45 @@ class ModelfitResults(Results):
         Individual eta samples
     """
 
-    ofv: Optional[float] = None
-    ofv_iterations: Optional[pd.Series] = None
-    parameter_estimates: Optional[pd.Series] = None
-    parameter_estimates_sdcorr: Optional[pd.Series] = None
-    parameter_estimates_iterations: Optional[pd.DataFrame] = None
-    covariance_matrix: Optional[pd.DataFrame] = None
-    correlation_matrix: Optional[pd.DataFrame] = None
-    precision_matrix: Optional[pd.DataFrame] = None
-    standard_errors: Optional[pd.Series] = None
-    standard_errors_sdcorr: Optional[pd.Series] = None
-    relative_standard_errors: Optional[pd.Series] = None
-    minimization_successful: Optional[bool] = None
-    minimization_successful_iterations: Optional[pd.Series] = None
-    estimation_runtime: Optional[float] = None
-    estimation_runtime_iterations: Optional[pd.Series] = None
-    individual_ofv: Optional[pd.Series] = None
-    individual_estimates: Optional[pd.DataFrame] = None
-    individual_estimates_covariance: Optional[pd.Series] = None
-    residuals: Optional[pd.DataFrame] = None
-    predictions: Optional[pd.DataFrame] = None
-    derivatives: Optional[pd.DataFrame] = None
-    runtime_total: Optional[float] = None
-    termination_cause: Optional[str] = None
-    termination_cause_iterations: Optional[pd.Series] = None
-    function_evaluations: Optional[float] = None
-    function_evaluations_iterations: Optional[pd.Series] = None
-    significant_digits: Optional[float] = None
-    significant_digits_iterations: Optional[pd.Series] = None
-    log_likelihood: Optional[float] = None
-    log: Optional[Log] = None
-    evaluation: Optional[pd.Series] = None
-    covstep_successful: Optional[bool] = None
-    gradients: Optional[pd.Series] = None
-    gradients_iterations: Optional[pd.DataFrame] = None
-    warnings: Optional[list[str]] = None
-    individual_eta_samples: Optional[pd.DataFrame] = None
-    condition_number: Optional[float] = None
-    eta_shrinkage: Optional[pd.DataFrame] = None
-    eps_shrinkage: Optional[pd.DataFrame] = None
+    ofv: float | None = None
+    ofv_iterations: pd.Series | None = None
+    parameter_estimates: pd.Series | None = None
+    parameter_estimates_sdcorr: pd.Series | None = None
+    parameter_estimates_iterations: pd.DataFrame | None = None
+    covariance_matrix: pd.DataFrame | None = None
+    correlation_matrix: pd.DataFrame | None = None
+    precision_matrix: pd.DataFrame | None = None
+    standard_errors: pd.Series | None = None
+    standard_errors_sdcorr: pd.Series | None = None
+    relative_standard_errors: pd.Series | None = None
+    minimization_successful: bool | None = None
+    minimization_successful_iterations: pd.Series | None = None
+    estimation_runtime: float | None = None
+    estimation_runtime_iterations: pd.Series | None = None
+    individual_ofv: pd.Series | None = None
+    individual_estimates: pd.DataFrame | None = None
+    individual_estimates_covariance: pd.Series | None = None
+    residuals: pd.DataFrame | None = None
+    predictions: pd.DataFrame | None = None
+    derivatives: pd.DataFrame | None = None
+    runtime_total: float | None = None
+    termination_cause: str | None = None
+    termination_cause_iterations: pd.Series | None = None
+    function_evaluations: float | None = None
+    function_evaluations_iterations: pd.Series | None = None
+    significant_digits: float | None = None
+    significant_digits_iterations: pd.Series | None = None
+    log_likelihood: float | None = None
+    log: Log | None = None
+    evaluation: pd.Series | None = None
+    covstep_successful: bool | None = None
+    gradients: pd.Series | None = None
+    gradients_iterations: pd.DataFrame | None = None
+    warnings: list[str] | None = None
+    individual_eta_samples: pd.DataFrame | None = None
+    condition_number: float | None = None
+    eta_shrinkage: pd.DataFrame | None = None
+    eps_shrinkage: pd.DataFrame | None = None
 
     def __eq__(self, other):
         sd = self.__dict__
@@ -511,7 +511,7 @@ class SimulationResults(Results):
         Table file of model
     """
 
-    table: Optional[pd.DataFrame] = None
+    table: pd.DataFrame | None = None
 
     def __repr__(self):
         return '<Pharmpy simulation results object>'

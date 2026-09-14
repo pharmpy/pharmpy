@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy, sympy_stats
@@ -21,7 +21,7 @@ SUPPORTED_METHODS = frozenset(['m1', 'm3', 'm4', 'm5', 'm6', 'm7'])
 def transform_blq(
     model: Model,
     method: Literal['m1', 'm3', 'm4', 'm5', 'm6', 'm7'] = 'm4',
-    lloq: Optional[float] = None,
+    lloq: float | None = None,
 ) -> Model:
     """Transform for BLQ data
 

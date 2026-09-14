@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Callable, Iterable
 from dataclasses import dataclass
-from typing import Literal, Optional, TypeVar
+from typing import Literal, TypeVar
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -47,13 +47,13 @@ def create_workflow(
     model: Model,
     results: ModelfitResults,
     column: str = 'OCC',
-    list_of_parameters: Optional[list[str | list[str]]] = None,
+    list_of_parameters: list[str | list[str]] | None = None,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
-    cutoff: Optional[float | int] = None,
+    cutoff: float | int | None = None,
     distribution: Literal[tuple(ADD_IOV_DISTRIBUTION)] = 'same-as-iiv',
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    E: Optional[float | str] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    strictness: str | None = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
+    E: float | str | None = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """Run IOVsearch tool. For more details, see :ref:`iovsearch`.
 
@@ -149,9 +149,9 @@ def task_brute_force_search(
     list_of_parameters: None | list,
     rank_type: str,
     cutoff: None | float,
-    E: Optional[float],
+    E: float | None,
     strictness: str,
-    parameter_uncertainty_method: Optional[str],
+    parameter_uncertainty_method: str | None,
     distribution: str,
     input_model_entry: ModelEntry,
 ):
@@ -305,7 +305,7 @@ def _create_description(model: Model) -> str:
 
 
 def create_description(
-    model: Model, iov: bool = False, param_dict: Optional[dict[str, str]] = None
+    model: Model, iov: bool = False, param_dict: dict[str, str] | None = None
 ) -> str:
     if iov:
         dists = model.random_variables.iov
@@ -406,9 +406,9 @@ def get_best_model_and_ranking(
     rank_type: str,
     cutoff: None | float,
     strictness: str,
-    parameter_uncertainty_method: Optional[str] = None,
-    search_space: Optional[str] = None,
-    E: Optional[float | str] = None,
+    parameter_uncertainty_method: str | None = None,
+    search_space: str | None = None,
+    E: float | str | None = None,
 ):
     candidate_entries = [base_entry, *model_entries]
 

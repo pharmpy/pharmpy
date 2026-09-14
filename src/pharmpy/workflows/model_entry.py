@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from pharmpy.internals.immutable import Immutable
 from pharmpy.model import Model
 
@@ -32,10 +30,10 @@ class ModelEntry(Immutable):
     def __init__(
         self,
         model: Model,
-        parent: Optional[Model] = None,
-        modelfit_results: Optional[ModelfitResults] = None,
-        simulation_results: Optional[SimulationResults] = None,
-        log: Optional[Log] = None,
+        parent: Model | None = None,
+        modelfit_results: ModelfitResults | None = None,
+        simulation_results: SimulationResults | None = None,
+        log: Log | None = None,
     ):
         self._model = model
         self._parent = parent
@@ -47,10 +45,10 @@ class ModelEntry(Immutable):
     def create(
         cls,
         model: Model,
-        parent: Optional[Model] = None,
-        modelfit_results: Optional[ModelfitResults] = None,
-        simulation_results: Optional[SimulationResults] = None,
-        log: Optional[Log] = None,
+        parent: Model | None = None,
+        modelfit_results: ModelfitResults | None = None,
+        simulation_results: SimulationResults | None = None,
+        log: Log | None = None,
     ) -> ModelEntry:
         if parent:
             ModelEntry._canonicalize_parent(model, parent)
@@ -72,8 +70,8 @@ class ModelEntry(Immutable):
     def attach_results(
         self,
         modelfit_results: ModelfitResults,
-        simulation_results: Optional[SimulationResults] = None,
-        log: Optional[Log] = None,
+        simulation_results: SimulationResults | None = None,
+        log: Log | None = None,
     ) -> ModelEntry:
         """Attaches modelfit results and possible log to ModelEntry objects"""
         if self._modelfit_results:
@@ -97,17 +95,17 @@ class ModelEntry(Immutable):
         return self._model
 
     @property
-    def parent(self) -> Optional[Model]:
+    def parent(self) -> Model | None:
         """Parent model of main model"""
         return self._parent
 
     @property
-    def modelfit_results(self) -> Optional[ModelfitResults]:
+    def modelfit_results(self) -> ModelfitResults | None:
         """Modelfit results of main model"""
         return self._modelfit_results
 
     @property
-    def simulation_results(self) -> Optional[SimulationResults]:
+    def simulation_results(self) -> SimulationResults | None:
         """Simulation results of main model"""
         return self._simulation_results
 

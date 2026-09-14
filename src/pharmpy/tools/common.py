@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Sequence
 from dataclasses import dataclass
-from typing import Any, Optional, TypeVar
+from typing import Any, TypeVar
 
 from pharmpy.deps import altair as alt
 from pharmpy.deps import numpy as np
@@ -29,7 +29,7 @@ RANK_TYPES = frozenset(('ofv', 'lrt', 'aic', 'bic', 'mbic'))
 
 def update_initial_estimates(
     model: Model,
-    modelfit_results: Optional[ModelfitResults],
+    modelfit_results: ModelfitResults | None,
     move_est_close_to_bounds=True,
     max_theta=False,
 ):
@@ -59,18 +59,18 @@ def update_initial_estimates(
 
 @dataclass(frozen=True)
 class ToolResults(Results):
-    summary_tool: Optional[Any] = None
-    summary_models: Optional[pd.DataFrame] = None
-    summary_errors: Optional[pd.DataFrame] = None
-    final_model: Optional[Model] = None
-    final_results: Optional[ModelfitResults] = None
+    summary_tool: Any | None = None
+    summary_models: pd.DataFrame | None = None
+    summary_errors: pd.DataFrame | None = None
+    final_model: Model | None = None
+    final_results: ModelfitResults | None = None
     models: Sequence[Model] = ()
-    final_model_dv_vs_ipred_plot: Optional[alt.Chart] = None
-    final_model_dv_vs_pred_plot: Optional[alt.Chart] = None
-    final_model_cwres_vs_idv_plot: Optional[alt.Chart] = None
-    final_model_abs_cwres_vs_ipred_plot: Optional[alt.Chart] = None
-    final_model_eta_distribution_plot: Optional[alt.Chart] = None
-    final_model_eta_shrinkage: Optional[pd.Series] = None
+    final_model_dv_vs_ipred_plot: alt.Chart | None = None
+    final_model_dv_vs_pred_plot: alt.Chart | None = None
+    final_model_cwres_vs_idv_plot: alt.Chart | None = None
+    final_model_abs_cwres_vs_ipred_plot: alt.Chart | None = None
+    final_model_eta_distribution_plot: alt.Chart | None = None
+    final_model_eta_shrinkage: pd.Series | None = None
 
 
 T = TypeVar('T', bound=ToolResults)
@@ -80,9 +80,9 @@ def summarize_tool(
     model_entries: Sequence[ModelEntry],
     start_model_entry: ModelEntry,
     rank_type: str,
-    cutoff: Optional[float],
+    cutoff: float | None,
     bic_type: str = 'mixed',
-    strictness: Optional[str] = None,
+    strictness: str | None = None,
     penalties=None,
 ) -> DataFrame:
     start_model_res = start_model_entry.modelfit_results

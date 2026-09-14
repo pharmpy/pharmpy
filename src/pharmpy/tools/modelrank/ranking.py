@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.deps import numpy as np
 from pharmpy.modeling import calculate_aic, calculate_bic
@@ -14,9 +14,9 @@ def get_rank_values(
     me_ref: ModelEntry,
     mes_cand: list[ModelEntry],
     rank_type: str,
-    alpha: Optional[float],
-    search_space: Optional[str],
-    E: Optional[float],
+    alpha: float | None,
+    search_space: str | None,
+    E: float | None,
     mes_to_rank: list[ModelEntry],
     exclude_reference_model: bool = False,
 ) -> dict[ModelEntry, dict[str, float]]:

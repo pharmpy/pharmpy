@@ -4,7 +4,7 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Literal, Optional, overload
+from typing import Any, Literal, overload
 
 from pharmpy import modeling
 from pharmpy.basic import Expr
@@ -48,9 +48,9 @@ class Tables:
 
 @dataclass(frozen=True)
 class Individuals:
-    ofv: Optional[pd.Series]
-    estimates: Optional[pd.DataFrame]
-    estimates_covariance: Optional[pd.Series]
+    ofv: pd.Series | None
+    estimates: pd.DataFrame | None
+    estimates_covariance: pd.Series | None
 
 
 @dataclass(frozen=True)
@@ -87,9 +87,9 @@ class Status:
 
 @dataclass(frozen=True)
 class Gradient:
-    all_iterations: Optional[pd.DataFrame]
-    final_is_zero: Optional[bool]
-    final_iteration: Optional[pd.Series]
+    all_iterations: pd.DataFrame | None
+    final_is_zero: bool | None
+    final_iteration: pd.Series | None
 
 
 @dataclass(frozen=True)
@@ -106,8 +106,8 @@ class ModelfitResultsProxy:
     name_map: dict[str, str]
     model: Model
     strict: bool = False
-    subproblem: Optional[int] = None
-    log: Optional[Log] = None
+    subproblem: int | None = None
+    log: Log | None = None
 
     @property
     @cache_method_no_args
@@ -184,7 +184,7 @@ class ModelfitResultsProxy:
 
     @property
     @cache_method_no_args
-    def relative_standard_errors(self) -> Optional[pd.Series]:
+    def relative_standard_errors(self) -> pd.Series | None:
         return _calculate_relative_standard_errors(self.iterations.final_pe, self.iterations.ses)
 
     @property
@@ -286,7 +286,7 @@ class ModelfitResultsProxy:
 
     @property
     @cache_method_no_args
-    def standard_errors(self) -> Optional[pd.Series]:
+    def standard_errors(self) -> pd.Series | None:
         ses = self.iterations.ses
 
         if ses is None:
@@ -299,14 +299,14 @@ class ModelfitResultsProxy:
 
     @property
     @cache_method_no_args
-    def termination_cause_iterations(self) -> Optional[pd.Series]:
+    def termination_cause_iterations(self) -> pd.Series | None:
         return pd.Series(
             self.status.termination_cause, index=self.estimation_steps, name='termination_cause'
         )
 
     @property
     @cache_method_no_args
-    def function_evaluations_iterations(self) -> Optional[pd.Series]:
+    def function_evaluations_iterations(self) -> pd.Series | None:
         return pd.Series(
             self.status.function_evaluations,
             index=self.estimation_steps,
@@ -315,14 +315,14 @@ class ModelfitResultsProxy:
 
     @property
     @cache_method_no_args
-    def significant_digits_iterations(self) -> Optional[pd.Series]:
+    def significant_digits_iterations(self) -> pd.Series | None:
         return pd.Series(
             self.status.significant_digits, index=self.estimation_steps, name='significant_digits'
         )
 
     @property
     @cache_method_no_args
-    def covstep_successful(self) -> Optional[bool]:
+    def covstep_successful(self) -> bool | None:
         model = self.model
         if (
             not model.execution_steps
@@ -334,7 +334,7 @@ class ModelfitResultsProxy:
 
     @property
     @cache_method_no_args
-    def warnings(self) -> Optional[list[str]]:
+    def warnings(self) -> list[str] | None:
         warnings = []
         if any(self.status.estimate_near_boundary):
             warnings.append('estimate_near_boundary')
@@ -345,7 +345,7 @@ class ModelfitResultsProxy:
 
     @property
     @cache_method_no_args
-    def individual_eta_samples(self) -> Optional[pd.DataFrame]:
+    def individual_eta_samples(self) -> pd.DataFrame | None:
         path = self.path
         model = self.model
         etas = model.random_variables.etas
@@ -396,12 +396,12 @@ class ModelfitResultsProxy:
 
 @overload
 def _parse_modelfit_results(
-    path: Optional[str | Path],
+    path: str | Path | None,
     control_stream: NMTranControlStream,
     name_map,
     model: Model,
     strict: bool,
-    subproblem: Optional[int],
+    subproblem: int | None,
     with_log: bool,
     lazy: Literal[False],
 ) -> ModelfitResults | None: ...
@@ -409,24 +409,24 @@ def _parse_modelfit_results(
 
 @overload
 def _parse_modelfit_results(
-    path: Optional[str | Path],
+    path: str | Path | None,
     control_stream: NMTranControlStream,
     name_map,
     model: Model,
     strict: bool,
-    subproblem: Optional[int],
+    subproblem: int | None,
     with_log: bool,
     lazy: Literal[True],
 ) -> LazyModelfitResults | None: ...
 
 
 def _parse_modelfit_results(
-    path: Optional[str | Path],
+    path: str | Path | None,
     control_stream: NMTranControlStream,
     name_map,
     model: Model,
     strict: bool = False,
-    subproblem: Optional[int] = None,
+    subproblem: int | None = None,
     with_log: bool = True,
     lazy: bool = False,
 ):
@@ -1197,7 +1197,7 @@ def _parse_ext(
     control_stream: NMTranControlStream,
     name_map,
     ext_tables: NONMEMTableFile,
-    subproblem: Optional[int],
+    subproblem: int | None,
     parameters: Parameters,
 ):
     table_numbers = _parse_table_numbers(ext_tables, subproblem)
@@ -1224,7 +1224,7 @@ def _parse_ext(
     )
 
 
-def _parse_table_numbers(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
+def _parse_table_numbers(ext_tables: NONMEMTableFile, subproblem: int | None):
     table_numbers: list[int | None] = []
     for table in ext_tables.tables:
         if subproblem and table.subproblem != subproblem:
@@ -1233,7 +1233,7 @@ def _parse_table_numbers(ext_tables: NONMEMTableFile, subproblem: Optional[int])
     return table_numbers
 
 
-def _parse_condition_number(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
+def _parse_condition_number(ext_tables: NONMEMTableFile, subproblem: int | None):
     final_table = None
     for table in ext_tables.tables:
         if (subproblem and table.subproblem != subproblem) or table.design_optimality is not None:
@@ -1248,7 +1248,7 @@ def _parse_condition_number(ext_tables: NONMEMTableFile, subproblem: Optional[in
         return None
 
 
-def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: Optional[int]):
+def _parse_ofv(ext_tables: NONMEMTableFile, subproblem: int | None):
     step = []
     iteration = []
     ofv = []
@@ -1313,7 +1313,7 @@ def _parse_parameter_estimates(
     control_stream: NMTranControlStream,
     name_map,
     ext_tables: NONMEMTableFile,
-    subproblem: Optional[int],
+    subproblem: int | None,
     parameters: Parameters,
 ):
     pe = pd.DataFrame()
@@ -1442,9 +1442,9 @@ def simfit_results(model, model_path):
 
 def parse_modelfit_results(
     model,
-    path: Optional[str | Path],
+    path: str | Path | None,
     strict=False,
-    subproblem: Optional[int] = None,
+    subproblem: int | None = None,
     with_log: bool = True,
     lazy: bool = False,
 ):
@@ -1463,7 +1463,7 @@ def parse_modelfit_results(
     return res
 
 
-def _parse_table_file(model, path: Optional[str | Path], subproblem: Optional[int] = None):
+def _parse_table_file(model, path: str | Path | None, subproblem: int | None = None):
     table_recs = model.internals.control_stream.get_records('TABLE')
     df = pd.DataFrame()
     for table_rec in table_recs:
@@ -1487,7 +1487,7 @@ def _parse_table_file(model, path: Optional[str | Path], subproblem: Optional[in
     return df
 
 
-def parse_simulation_results(model, path: Optional[str | Path], subproblem: Optional[int] = None):
+def parse_simulation_results(model, path: str | Path | None, subproblem: int | None = None):
     table = _parse_table_file(model, path=path, subproblem=subproblem)
     res = SimulationResults(table=table)
     return res

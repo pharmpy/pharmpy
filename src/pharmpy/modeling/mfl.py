@@ -3,7 +3,7 @@ import itertools
 from collections import defaultdict
 from collections.abc import Callable, Sequence
 from functools import partial
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -150,7 +150,7 @@ def _get_bioaval_parameters(model):
 
 
 def get_model_features(
-    model: Model, type: Optional[Literal['pk', 'covariates', 'iiv', 'iov', 'covariance']] = None
+    model: Model, type: Literal['pk', 'covariates', 'iiv', 'iov', 'covariance'] | None = None
 ) -> ModelFeatures:
     if type is not None and type not in ['pk', 'covariates', 'iiv', 'iov', 'covariance']:
         raise ValueError(f'Invalid `type`: {type}')
@@ -289,7 +289,7 @@ def generate_transformations(
     model_features: ModelFeatures | Sequence[ModelFeature],
     include_add: bool = True,
     include_remove: bool = True,
-    individual_estimates: Optional[pd.DataFrame] = None,
+    individual_estimates: pd.DataFrame | None = None,
 ) -> list[Callable]:
     if isinstance(model_features, Sequence):
         model_features = ModelFeatures.create(model_features)
@@ -428,7 +428,7 @@ def _get_iiv_func(feature: IIV, include_add: bool, include_remove: bool):
 
 
 def _get_covariance_func(
-    features: ModelFeatures, include_add, include_remove, ies: Optional[pd.DataFrame]
+    features: ModelFeatures, include_add, include_remove, ies: pd.DataFrame | None
 ):
     funcs = []
     if include_add:
@@ -481,8 +481,8 @@ FUNC_MAPPING = {
 def transform_into_search_space(
     model: Model,
     search_space: ModelFeatures | Sequence[ModelFeature],
-    type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
-    individual_estimates: Optional[pd.DataFrame] = None,
+    type: Literal['pk', 'covariates', 'iiv', 'covariance'] | None = None,
+    individual_estimates: pd.DataFrame | None = None,
 ) -> Model:
     if isinstance(search_space, Sequence):
         search_space = ModelFeatures.create(search_space)
@@ -570,7 +570,7 @@ def _get_feature_diffs(search_space, model_features, type):
 def is_in_search_space(
     model: Model,
     search_space: ModelFeatures | Sequence[ModelFeature],
-    type: Optional[Literal['pk', 'covariates', 'iiv', 'covariance']] = None,
+    type: Literal['pk', 'covariates', 'iiv', 'covariance'] | None = None,
 ) -> bool:
     if isinstance(search_space, Sequence):
         search_space = ModelFeatures.create(search_space)

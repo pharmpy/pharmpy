@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from itertools import product
 from pathlib import Path
-from typing import TYPE_CHECKING, Any, Optional
+from typing import TYPE_CHECKING, Any
 
 from pharmpy.basic import Expr
 from pharmpy.internals.code_generator import CodeGenerator
@@ -381,7 +381,7 @@ def create_omega_block(model: Model, distribution: Distribution, eta_number: int
     return record
 
 
-def update_ode_system(model: Model, old: Optional[CompartmentalSystem], new: CompartmentalSystem):
+def update_ode_system(model: Model, old: CompartmentalSystem | None, new: CompartmentalSystem):
     """Update ODE system
 
     Handle changes from to CompartmentSystem
@@ -1574,7 +1574,7 @@ def add_parameters_ratio(model: Model, numpar, denompar, source, dest):
     return model
 
 
-def define_parameter(model: Model, name: str, value: Expr, synonyms: Optional[list[str]] = None):
+def define_parameter(model: Model, name: str, value: Expr, synonyms: list[str] | None = None):
     """Define a parameter in statements if not defined
     Update if already defined as other value
     return True if new assignment was added
@@ -1625,7 +1625,7 @@ def add_rate_assignment_if_missing(
     value: Expr,
     source: Compartment,
     dest,
-    synonyms: Optional[list[str]] = None,
+    synonyms: list[str] | None = None,
 ):
     model, added = define_parameter(model, name, value, synonyms=synonyms)
     if added:
@@ -2339,7 +2339,7 @@ def get_needed_PC(model: Model) -> int:
     return n_compartments
 
 
-def get_needed_PD(model: Model) -> Optional[int]:
+def get_needed_PD(model: Model) -> int | None:
     df = model.dataset
     if df is None:
         return None

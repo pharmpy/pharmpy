@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, overload
+from typing import Any, overload
 
 from pharmpy.basic import BooleanExpr, Expr, Quantity, Unit
 from pharmpy.basic.expr import solve
@@ -336,7 +336,7 @@ def convert_unit(
     model: Model,
     variable: str,
     unit: str | Unit,
-    original_unit: Optional[str | Unit] = None,
+    original_unit: str | Unit | None = None,
     in_dataset: bool = False,
 ) -> Model:
     """Convert between units for a data variable

@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.tools.common import ToolResults
@@ -9,7 +8,7 @@ from pharmpy.tools.common import ToolResults
 
 @dataclass(frozen=True)
 class COVSearchResults(ToolResults):
-    steps: Optional[pd.DataFrame] = None
-    ofv_summary: Optional[pd.DataFrame] = None
-    candidate_summary: Optional[pd.DataFrame] = None
-    linear_covariate_screening_summary: Optional[pd.DataFrame] = None
+    steps: pd.DataFrame | None = None
+    ofv_summary: pd.DataFrame | None = None
+    candidate_summary: pd.DataFrame | None = None
+    linear_covariate_screening_summary: pd.DataFrame | None = None

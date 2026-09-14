@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 import warnings
-from typing import TYPE_CHECKING, Optional
+from typing import TYPE_CHECKING
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import sympy
@@ -752,11 +752,11 @@ def _get_bioavailability(control_stream: NMTranControlStream, n: int):
 def parse_model_record(control_stream):
     # Return DEFOBS, DEFDOSE and map from compartment name to number
     modrec = control_stream.get_records('MODEL')[0]
-    defobs: Optional[tuple[str, int]] = None
-    defdose: Optional[tuple[str, int]] = None
-    defcentral: Optional[tuple[str, int]] = None
-    defdepot: Optional[tuple[str, int]] = None
-    deffirst_dose: Optional[tuple[str, int]] = None
+    defobs: tuple[str, int] | None = None
+    defdose: tuple[str, int] | None = None
+    defcentral: tuple[str, int] | None = None
+    defdepot: tuple[str, int] | None = None
+    deffirst_dose: tuple[str, int] | None = None
     comp_names = []
     for i, (name, opts) in enumerate(modrec.compartments(), 1):
         if 'DEFOBSERVATION' in opts:

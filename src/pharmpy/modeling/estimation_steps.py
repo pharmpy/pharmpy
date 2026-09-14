@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
 from itertools import product
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
@@ -74,21 +74,21 @@ def set_estimation_step(model: Model, method: MethodType, idx: int = 0, **kwargs
 def add_estimation_step(
     model: Model,
     method: MethodType,
-    idx: Optional[int] = None,
+    idx: int | None = None,
     interaction: bool = False,
-    parameter_uncertainty_method: Optional[str] = None,
+    parameter_uncertainty_method: str | None = None,
     evaluation: bool = False,
-    maximum_evaluations: Optional[int] = None,
+    maximum_evaluations: int | None = None,
     laplace: bool = False,
-    isample: Optional[int] = None,
-    niter: Optional[int] = None,
-    auto: Optional[bool] = None,
-    keep_every_nth_iter: Optional[int] = None,
+    isample: int | None = None,
+    niter: int | None = None,
+    auto: bool | None = None,
+    keep_every_nth_iter: int | None = None,
     residuals: Sequence[str] = (),
     predictions: Sequence[str] = (),
-    solver: Optional[str] = None,
-    solver_rtol: Optional[int] = None,
-    solver_atol: Optional[int] = None,
+    solver: str | None = None,
+    solver_rtol: int | None = None,
+    solver_atol: int | None = None,
     tool_options: Mapping[str, Any] = frozenmapping({}),
     derivatives: Sequence[Sequence[Expr]] = (),
     individual_eta_samples: bool = False,
@@ -489,7 +489,7 @@ def set_evaluation_step(model: Model, idx: int = -1) -> Model:
 
 
 def add_derivative(
-    model: Model, with_respect_to: Optional[Sequence[Sequence[str] | str] | str] = None
+    model: Model, with_respect_to: Sequence[Sequence[str] | str] | str | None = None
 ) -> Model:
     """
     Add a derivative to be calculcated when running the model. Currently, only
@@ -558,7 +558,7 @@ def add_derivative(
 
 
 def remove_derivative(
-    model: Model, with_respect_to: Optional[Sequence[Sequence[str] | str] | str] = None
+    model: Model, with_respect_to: Sequence[Sequence[str] | str] | str | None = None
 ) -> Model:
     """
     Remove a derivative currently being calculcate when running model. Currently, only
@@ -731,7 +731,7 @@ def add_residuals(model: Model, res: list[str]) -> Model:
     return model.update_source()
 
 
-def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None) -> Model:
+def remove_predictions(model: Model, to_remove: Iterable[str] | None = None) -> Model:
     """Remove predictions and/or residuals
 
     Remove predictions from estimation step. Default is to remove all predictions.
@@ -783,7 +783,7 @@ def remove_predictions(model: Model, to_remove: Optional[Iterable[str]] = None) 
     return model
 
 
-def remove_residuals(model: Model, to_remove: Optional[Iterable[str]] = None) -> Model:
+def remove_residuals(model: Model, to_remove: Iterable[str] | None = None) -> Model:
     """Remove residuals
 
     Remove residuals from estimation step. Default is to remove all residuals.

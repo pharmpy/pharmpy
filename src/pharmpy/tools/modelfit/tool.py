@@ -1,5 +1,5 @@
 from collections.abc import Iterable
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.model import Model
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
@@ -9,8 +9,8 @@ SupportedExternalTools = Literal['nonmem', 'nlmixr', 'rxode', 'dummy']
 
 
 def create_workflow(
-    model_or_models: Optional[Model | Iterable[Model]] = None,
-    n: Optional[int] = None,
+    model_or_models: Model | Iterable[Model] | None = None,
+    n: int | None = None,
 ) -> Workflow[Model | tuple[Model, ...]]:
     """Run modelfit tool.
 
@@ -114,7 +114,7 @@ def retrieve_from_database_or_execute_model_with_tool():
     return task
 
 
-def get_execute_model(tool: Optional[SupportedExternalTools]):
+def get_execute_model(tool: SupportedExternalTools | None):
     from pharmpy.tools.modelfit import conf
 
     if tool is None:

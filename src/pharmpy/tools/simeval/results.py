@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import Model
@@ -16,9 +16,9 @@ from pharmpy.workflows import Results
 class SimevalResults(Results):
     """Simeval results class"""
 
-    sampled_iofv: Optional[Any] = None
-    iofv_summary: Optional[Any] = None
-    individual_predictions_plot: Optional[Any] = None
+    sampled_iofv: Any | None = None
+    iofv_summary: Any | None = None
+    individual_predictions_plot: Any | None = None
 
 
 def calculate_results(original_model, original_results, simfit_results):

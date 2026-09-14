@@ -10,7 +10,6 @@ import re
 from abc import ABC
 from collections import namedtuple
 from collections.abc import Iterable
-from typing import Optional
 
 from pharmpy.internals.parse import AttrToken, AttrTree
 
@@ -21,7 +20,7 @@ def _get_key(node: AttrTree) -> str:
     return str(node.children[0])
 
 
-def _get_value(node: AttrTree) -> Optional[str]:
+def _get_value(node: AttrTree) -> str | None:
     if len(node.children) > 1:
         return str(node.children[-1])
     else:
@@ -44,7 +43,7 @@ Option = namedtuple('Option', ['key', 'value'])
 
 
 class OptionRecord(Record):
-    option_defs: Optional[Opts] = None
+    option_defs: Opts | None = None
 
     def __init__(self, name, raw_name, root):
         if self.option_defs is not None:
@@ -153,7 +152,7 @@ class OptionRecord(Record):
             newroot = AttrTree(self.root.rule, tuple(new_children))
         return self.__class__(self.name, self.raw_name, newroot)
 
-    def _create_option(self, key: str, value: Optional[str] = None):
+    def _create_option(self, key: str, value: str | None = None):
         if key.startswith('('):
             key_token = AttrToken('PARENTHESIZED', key)
         else:
@@ -169,7 +168,7 @@ class OptionRecord(Record):
             node = AttrTree('option', (key_token, eq_token, value_token))
         return node
 
-    def prepend_option(self, key: str, value: Optional[str] = None):
+    def prepend_option(self, key: str, value: str | None = None):
         """Prepend option"""
         node = self._create_option(key, value)
         new_root = self._prepend_option_node(node)
@@ -181,7 +180,7 @@ class OptionRecord(Record):
         new = (node, ws_token)
         return AttrTree(self.root.rule, self.root.children[:1] + new + self.root.children[1:])
 
-    def append_option(self, key: str, value: Optional[str] = None):
+    def append_option(self, key: str, value: str | None = None):
         """Append option as last option
 
         Method applicable to option records with no special grammar

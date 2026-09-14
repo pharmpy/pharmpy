@@ -1,11 +1,10 @@
 import re
 from datetime import datetime
-from typing import Optional
 
 import dateutil
 
 
-def parse_datestamp(row: str, row_next: Optional[str] = None) -> Optional[datetime]:
+def parse_datestamp(row: str, row_next: str | None = None) -> datetime | None:
     weekday_month_en = re.compile(
         r'^\s*(Sun|Mon|Tue|Wed|Thu|Fri|Sat)'
         r'\s+(Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)'  # Month

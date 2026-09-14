@@ -1,5 +1,5 @@
 import os
-from typing import NoReturn, Optional, TypeVar
+from typing import NoReturn, TypeVar
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.internals.fs.tmp import TemporaryDirectory
@@ -12,7 +12,7 @@ T = TypeVar('T')
 
 
 class LocalSerialDispatcher(Dispatcher):
-    def run(self, workflow: Workflow[T], context) -> Optional[T]:
+    def run(self, workflow: Workflow[T], context) -> T | None:
         with TemporaryDirectory() as tempdirname, chdir(tempdirname):
             context.log_info(f"Dispatching workflow with local_serial dispatcher in {context}")
             with SigHandler(context):

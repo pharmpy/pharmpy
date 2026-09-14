@@ -6,7 +6,6 @@
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import safe_convert_column_to_int32
@@ -178,7 +177,7 @@ def parse_line(line, fmts):
     return values
 
 
-def parse_model(code: str, path: Path, missing_data_token: Optional[str] = None):
+def parse_model(code: str, path: Path, missing_data_token: str | None = None):
     internals = FCONInternals(code=code, path=path)
     dataset = parse_dataset(code, path)
     return Model(internals=internals, dataset=dataset)

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Optional, Self
+from typing import Self
 
 from pharmpy.deps import symengine, sympy
 from pharmpy.deps.sympy_printing import pretty
@@ -504,7 +504,7 @@ TSymbol = str | sympy.Expr | symengine.Basic | Expr
 TBooleanExpr = str | sympy.Basic | symengine.Basic | BooleanExpr
 
 
-def solve(eqs: Iterable[BooleanExpr], exclude: Optional[Iterable[Expr]] = None) -> dict[Expr, Expr]:
+def solve(eqs: Iterable[BooleanExpr], exclude: Iterable[Expr] | None = None) -> dict[Expr, Expr]:
     if exclude is None:
         exclude = []
     sol = sympy.solve(eqs, exclude=list(exclude), dict=True)

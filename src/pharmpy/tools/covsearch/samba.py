@@ -2,7 +2,7 @@ from collections import Counter
 from dataclasses import astuple, dataclass, field, replace
 from functools import partial
 from itertools import chain, count
-from typing import Literal, Optional
+from typing import Literal
 
 import statsmodels.api as sm
 
@@ -67,19 +67,19 @@ class SAMBAStep(ForwardStep):
 @dataclass
 class LCSRecord:
     parameter: str
-    inclusion: Optional[tuple[str, ...]]  # covariates included in the model
+    inclusion: tuple[str, ...] | None  # covariates included in the model
     bic: float
     dbic: float
     ofv: float
-    dofv: Optional[float]
-    lrt_pval: Optional[float]
+    dofv: float | None
+    lrt_pval: float | None
     estimates: dict[str, float]
 
 
 @dataclass
 class SWLCSRecord(LCSRecord):
     lcs_step: int
-    parent: Optional[tuple[str, ...]]  # parent model's inclusion
+    parent: tuple[str, ...] | None  # parent model's inclusion
     selection: list[str]
 
 
@@ -105,10 +105,10 @@ def samba_workflow(
     max_eval: bool = False,
     algorithm: Literal['samba', 'samba-foce', 'scm-lcs'] = 'samba',
     nsamples: int = 10,
-    max_covariates: Optional[int] = 3,
+    max_covariates: int | None = 3,
     selection_criterion: Literal['bic', 'lrt'] = 'bic',
     linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
-    stepwise_lcs: Optional[bool] = None,
+    stepwise_lcs: bool | None = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
 ):
     """

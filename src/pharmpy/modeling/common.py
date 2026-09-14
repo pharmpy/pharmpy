@@ -10,7 +10,7 @@ import re
 import warnings
 from collections.abc import Mapping
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy import config
 from pharmpy.basic import BooleanExpr, Expr, TSymbol
@@ -33,7 +33,7 @@ from pharmpy.model import (
 from pharmpy.model.statements import Output
 
 
-def read_model(path: str | Path, missing_data_token: Optional[str] = None) -> Model:
+def read_model(path: str | Path, missing_data_token: str | None = None) -> Model:
     """Read model from file
 
     Parameters
@@ -323,7 +323,7 @@ def set_description(model: Model, new_description: str) -> Model:
     return model.update_source()
 
 
-def bump_model_number(model: Model, path: Optional[str | Path] = None) -> Model:
+def bump_model_number(model: Model, path: str | Path | None = None) -> Model:
     """If the model name ends in a number increase it
 
     If path is set increase the number until no file exists
@@ -531,7 +531,7 @@ def print_model_symbols(model: Model) -> None:
     print(s)
 
 
-def get_config_path() -> Optional[str]:
+def get_config_path() -> str | None:
     r"""Returns path to the user config path
 
     Returns
@@ -746,7 +746,7 @@ def filter_dataset(model: Model, expr: str) -> Model:
     return new_model.update_source()
 
 
-def get_nested_model(model_1: Model, model_2: Model) -> Optional[Model]:
+def get_nested_model(model_1: Model, model_2: Model) -> Model | None:
     """Return nested model from a pair of models
 
     Function to get a nested model from a pair of models, None

@@ -3,7 +3,6 @@ from __future__ import annotations
 import os
 import warnings
 from pathlib import Path
-from typing import Optional
 
 from .dispatchers import Dispatcher
 from .results import ModelfitResults, Results
@@ -12,7 +11,7 @@ from .workflow import Workflow, WorkflowBuilder, insert_context
 
 def execute_workflow[T](
     workflow: Workflow[T], dispatcher=None, context=None, path=None, resume=False
-) -> Optional[T]:
+) -> T | None:
     """Execute workflow
 
     Parameters

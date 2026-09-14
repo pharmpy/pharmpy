@@ -1,7 +1,7 @@
 import warnings
 from dataclasses import dataclass, replace
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import pharmpy.visualization
 from pharmpy.deps import numpy as np
@@ -19,19 +19,19 @@ from pharmpy.workflows.results import ModelfitResults, Results
 @dataclass(frozen=True)
 class BootstrapResults(Results):
     # FIXME: Should inherit from results that take multiple runs like bootstrap, cdd etc.
-    parameter_statistics: Optional[Any] = None
-    parameter_distribution: Optional[Any] = None
-    covariance_matrix: Optional[Any] = None
-    ofv_distribution: Optional[Any] = None
-    ofv_statistics: Optional[Any] = None
-    included_individuals: Optional[Any] = None
-    ofvs: Optional[Any] = None
-    parameter_estimates: Optional[Any] = None
-    summary_models: Optional[Any] = None
-    ofv_plot: Optional[Any] = None
-    parameter_estimates_correlation_plot: Optional[Any] = None
-    dofv_quantiles_plot: Optional[Any] = None
-    parameter_estimates_histogram: Optional[Any] = None
+    parameter_statistics: Any | None = None
+    parameter_distribution: Any | None = None
+    covariance_matrix: Any | None = None
+    ofv_distribution: Any | None = None
+    ofv_statistics: Any | None = None
+    included_individuals: Any | None = None
+    ofvs: Any | None = None
+    parameter_estimates: Any | None = None
+    summary_models: Any | None = None
+    ofv_plot: Any | None = None
+    parameter_estimates_correlation_plot: Any | None = None
+    dofv_quantiles_plot: Any | None = None
+    parameter_estimates_histogram: Any | None = None
 
 
 def plot_ofv(res):

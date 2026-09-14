@@ -4,7 +4,7 @@ from collections.abc import Collection, Container, Iterable, Mapping, Sequence
 from collections.abc import Container as CollectionsContainer
 from collections.abc import Sequence as CollectionsSequence
 from itertools import chain, product
-from typing import Any, Optional, Self, overload
+from typing import Any, Self, overload
 
 from pharmpy.basic import Expr, Matrix, RandomNumberGenerator, Seed, TExpr, TSymbol
 from pharmpy.deps import numpy as np
@@ -32,13 +32,13 @@ class VariabilityLevel(Immutable):
         Name of data column to group this level. None for no grouping (default)
     """
 
-    def __init__(self, name: str, reference: bool = False, group: Optional[str] = None):
+    def __init__(self, name: str, reference: bool = False, group: str | None = None):
         self._name = name
         self._reference = reference
         self._group = group
 
     @classmethod
-    def create(cls, name: str, reference: bool = False, group: Optional[str] = None) -> Self:
+    def create(cls, name: str, reference: bool = False, group: str | None = None) -> Self:
         return cls(name.upper(), bool(reference), group)
 
     def replace(self, **kwargs) -> VariabilityLevel:
@@ -77,7 +77,7 @@ class VariabilityLevel(Immutable):
         return self._reference
 
     @property
-    def group(self) -> Optional[str]:
+    def group(self) -> str | None:
         """Group variable for variability level"""
         return self._group
 
@@ -93,7 +93,7 @@ class VariabilityHierarchy(Immutable):
 
     @classmethod
     def create(
-        cls, levels: Optional[Sequence[VariabilityLevel] | VariabilityHierarchy] = None
+        cls, levels: Sequence[VariabilityLevel] | VariabilityHierarchy | None = None
     ) -> VariabilityHierarchy:
         if levels is None:
             levels = ()
@@ -257,9 +257,9 @@ class RandomVariables(CollectionsSequence, Immutable):
     @classmethod
     def create(
         cls,
-        dists: Optional[Sequence[Distribution] | Distribution] = None,
-        eta_levels: Optional[VariabilityHierarchy] = None,
-        epsilon_levels: Optional[VariabilityHierarchy] = None,
+        dists: Sequence[Distribution] | Distribution | None = None,
+        eta_levels: VariabilityHierarchy | None = None,
+        epsilon_levels: VariabilityHierarchy | None = None,
     ) -> Self:
         if eta_levels is None:
             iiv_level = VariabilityLevel('IIV', reference=True, group='ID')
@@ -666,8 +666,8 @@ class RandomVariables(CollectionsSequence, Immutable):
         self,
         inds: Collection[str | Expr],
         fill: int | float | Expr = 0,
-        name_template: Optional[str] = None,
-        param_names: Optional[list[str]] = None,
+        name_template: str | None = None,
+        param_names: list[str] | None = None,
     ) -> tuple[RandomVariables, dict[str, tuple[str, str]]]:
         """Join random variables together into one joint distribution
 
@@ -791,9 +791,9 @@ class RandomVariables(CollectionsSequence, Immutable):
     def sample(
         self,
         expr,
-        parameters: Optional[Mapping[str, float]] = None,
+        parameters: Mapping[str, float] | None = None,
         samples: int = 1,
-        rng: Optional[RandomNumberGenerator | Seed | int | float] = None,
+        rng: RandomNumberGenerator | Seed | int | float | None = None,
     ) -> np.ndarray:
         """Sample from the distribution of expr
 

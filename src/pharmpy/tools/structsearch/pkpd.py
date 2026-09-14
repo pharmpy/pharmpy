@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pharmpy.deps import pandas as pd
 from pharmpy.mfl import DirectEffect, EffectComp, IndirectEffect, ModelFeatures
 from pharmpy.model import Model
@@ -13,7 +11,7 @@ from pharmpy.modeling import (
 from pharmpy.modeling.mfl import generate_transformations
 
 
-def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[float] = None):
+def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: float | None = None):
     """Create baseline pkpd model
 
     Parameters
@@ -42,11 +40,11 @@ def create_baseline_pd_model(model: Model, ests: pd.Series, b_init: Optional[flo
 def create_pkpd_models(
     model: Model,
     search_space: str | ModelFeatures,
-    b_init: Optional[int | float] = None,
-    ests: Optional[pd.Series] = None,
-    emax_init: Optional[int | float] = None,
-    ec50_init: Optional[int | float] = None,
-    met_init: Optional[int | float] = None,
+    b_init: int | float | None = None,
+    ests: pd.Series | None = None,
+    emax_init: int | float | None = None,
+    ec50_init: int | float | None = None,
+    met_init: int | float | None = None,
 ):
     """Create pkpd models
 

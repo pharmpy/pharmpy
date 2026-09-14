@@ -5,7 +5,6 @@ import re
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 from pharmpy.basic import Expr
 from pharmpy.deps import pandas as pd
@@ -65,14 +64,14 @@ class NONMEMModelInternals(ModelInternals):
     old_name: str
     old_description: str
     old_execution_steps: ExecutionSteps
-    old_observation_transformation: Optional[frozenmapping[Expr, Expr]]
+    old_observation_transformation: frozenmapping[Expr, Expr] | None
     old_parameters: Parameters
     old_random_variables: RandomVariables
     old_statements: Statements
-    old_initial_individual_estimates: Optional[pd.DataFrame]
+    old_initial_individual_estimates: pd.DataFrame | None
     old_datainfo: DataInfo
     old_dependent_variables: frozenmapping[Expr, int]
-    compartment_map: Optional[dict[str, int]]
+    compartment_map: dict[str, int] | None
     name_map: dict[str, str]
 
 
@@ -351,9 +350,9 @@ class Model(BaseModel):
 
 def parse_model(
     code: str,
-    path: Optional[Path] = None,
-    dataset: Optional[pd.DataFrame] = None,
-    missing_data_token: Optional[str] = None,
+    path: Path | None = None,
+    dataset: pd.DataFrame | None = None,
+    missing_data_token: str | None = None,
     **_,
 ):
     parser = NMTranParser()
@@ -383,8 +382,8 @@ def make_model(
     control_stream: NMTranControlStream,
     di: DataInfo,
     old_datainfo: DataInfo,
-    path: Optional[Path],
-    dataset: Optional[pd.DataFrame],
+    path: Path | None,
+    dataset: pd.DataFrame | None,
 ):
     if path is None:
         name = 'run1'

@@ -1,5 +1,4 @@
 import warnings
-from typing import Optional
 
 from pharmpy.model import Model
 from pharmpy.tools.mfl.feature.covariate import features as covariate_features
@@ -8,7 +7,7 @@ from pharmpy.tools.mfl.statement.feature.covariate import Covariate
 
 
 def least_number_of_transformations(
-    self, other, model: Optional[Model] = None, tool: Optional[str] = None
+    self, other, model: Model | None = None, tool: str | None = None
 ):
     """The smallest set of transformations to become part of other"""
 

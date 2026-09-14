@@ -1,12 +1,11 @@
 from abc import ABC, abstractmethod
-from typing import Optional
 
 
 class Project(ABC):
     def __init__(
         self,
         name: str,
-        ref: Optional[str] = None,
+        ref: str | None = None,
     ):
         # If the project already exists it will be opened, otherwise created
         # An implementation needs to create the model database here
@@ -29,5 +28,5 @@ class Project(ABC):
         return self._ref
 
     @abstractmethod
-    def get_context_ref(self, ref: Optional[str]) -> str:
+    def get_context_ref(self, ref: str | None) -> str:
         pass

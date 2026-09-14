@@ -1,7 +1,7 @@
 from collections.abc import Iterable, MutableSet
 from collections.abc import Set as AbstractSet
 from itertools import chain
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 NIL = 0
 
@@ -11,7 +11,7 @@ def _map[T](iterable: Iterable[T]) -> Iterable[tuple[T, Literal[0]]]:
 
 
 class OrderedSet[T](MutableSet, AbstractSet[T]):
-    def __init__(self, iterable: Optional[Iterable[T]] = None):
+    def __init__(self, iterable: Iterable[T] | None = None):
         # NOTE: A dictionary guarantees iteration order to be insertion order since
         # Python 3.6 in CPython and since Python 3.7 for all compliant
         # implementations. This implementation tries to work with these version

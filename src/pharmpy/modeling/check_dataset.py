@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal, Optional, overload
+from typing import Literal, overload
 
 from pharmpy.basic import Quantity, Unit
 from pharmpy.deps import pandas as pd
@@ -243,7 +243,7 @@ def check_dataset(
 
 def check_dataset(
     model: Model, dataframe: bool = False, verbose: bool = False
-) -> Optional[pd.DataFrame]:
+) -> pd.DataFrame | None:
     """Check dataset for consistency across a set of rules
 
     Parameters

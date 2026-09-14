@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import abstractmethod
 from datetime import datetime
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.internals.immutable import Immutable
 
@@ -11,7 +11,7 @@ BROADCASTERS = ('terminal', 'null')
 
 class Broadcaster(Immutable):
     @staticmethod
-    def canonicalize_broadcaster_name(name: Optional[str]) -> str:
+    def canonicalize_broadcaster_name(name: str | None) -> str:
         if name is None:
             from pharmpy import conf
 
@@ -23,7 +23,7 @@ class Broadcaster(Immutable):
         return canon_name
 
     @staticmethod
-    def select_broadcaster(name: Optional[str]) -> Broadcaster:
+    def select_broadcaster(name: str | None) -> Broadcaster:
         """Create a new broadcaster given a broadcaster name"""
         canon_name = Broadcaster.canonicalize_broadcaster_name(name)
         if canon_name == 'null':

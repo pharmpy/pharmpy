@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 import yaml
 
@@ -17,19 +17,19 @@ from pharmpy.workflows.results import Results, read_results
 
 @dataclass(frozen=True)
 class QAResults(Results):
-    dofv: Optional[Any] = None
-    fullblock_parameters: Optional[Any] = None
-    boxcox_parameters: Optional[Any] = None
-    tdist_parameters: Optional[Any] = None
-    add_etas_parameters: Optional[Any] = None
-    iov_parameters: Optional[Any] = None
-    influential_individuals: Optional[Any] = None
-    covariate_effects: Optional[Any] = None
-    univariate_sum: Optional[Any] = None
-    residual_error: Optional[Any] = None
-    structural_bias: Optional[Any] = None
-    tdist_plot: Optional[alt.Chart] = None
-    boxcox_plot: Optional[alt.Chart] = None
+    dofv: Any | None = None
+    fullblock_parameters: Any | None = None
+    boxcox_parameters: Any | None = None
+    tdist_parameters: Any | None = None
+    add_etas_parameters: Any | None = None
+    iov_parameters: Any | None = None
+    influential_individuals: Any | None = None
+    covariate_effects: Any | None = None
+    univariate_sum: Any | None = None
+    residual_error: Any | None = None
+    structural_bias: Any | None = None
+    tdist_plot: alt.Chart | None = None
+    boxcox_plot: alt.Chart | None = None
 
 
 def calculate_results(

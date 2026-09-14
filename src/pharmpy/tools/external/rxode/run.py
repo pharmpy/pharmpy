@@ -5,7 +5,6 @@ import sys
 import uuid
 import warnings
 from pathlib import Path
-from typing import Optional
 
 import pharmpy.model
 from pharmpy.deps import pandas as pd
@@ -157,7 +156,7 @@ def parse_modelfit_results(model: pharmpy.model.Model, path: Path) -> None | Mod
 
 def verification(
     model: pharmpy.model.Model,
-    modelfit_results: Optional[ModelfitResults] = None,
+    modelfit_results: ModelfitResults | None = None,
     error: float = 10**-3,
     return_comp: bool = False,
     ignore_print=False,

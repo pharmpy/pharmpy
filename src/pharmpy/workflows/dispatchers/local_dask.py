@@ -1,6 +1,6 @@
 import os
 import warnings
-from typing import NoReturn, Optional, TypeVar
+from typing import NoReturn, TypeVar
 
 import pharmpy.workflows.dispatchers
 from pharmpy.internals.fs.cwd import chdir
@@ -14,7 +14,7 @@ T = TypeVar('T')
 
 
 class LocalDaskDispatcher(Dispatcher):
-    def run(self, workflow: Workflow[T], context) -> Optional[T]:
+    def run(self, workflow: Workflow[T], context) -> T | None:
         # NOTE: We change to a new temporary directory so that all files generated
         # by the workflow end-up in the same root directory. Each task of a
         # workflow has the responsibility to avoid collisions on the file system
@@ -37,7 +37,7 @@ class LocalDaskDispatcher(Dispatcher):
             if dask_dispatcher == 'threaded':
                 from dask.threaded import get
 
-                res: Optional[T] = get(dsk, 'results')  # pyright: ignore [reportAssignmentType]
+                res: T | None = get(dsk, 'results')  # pyright: ignore [reportAssignmentType]
             else:
                 import dask
                 from dask.distributed import Client, LocalCluster
@@ -98,7 +98,7 @@ class LocalDaskDispatcher(Dispatcher):
                                 import dask.distributed
 
                                 try:
-                                    res: Optional[T] = client.get(
+                                    res: T | None = client.get(
                                         dsk_optimized,
                                         'results',
                                     )  # pyright: ignore [reportAssignmentType]
@@ -110,7 +110,7 @@ class LocalDaskDispatcher(Dispatcher):
                             context.log_info("End dispatch")
         return res
 
-    def call_workflow(self, wf: Workflow[T], unique_name: str, context) -> Optional[T]:
+    def call_workflow(self, wf: Workflow[T], unique_name: str, context) -> T | None:
         """Dynamically call a workflow from another workflow.
 
         Currently only supports dask distributed
@@ -141,7 +141,7 @@ class LocalDaskDispatcher(Dispatcher):
         dsk_optimized = optimize_task_graph_for_dask_distributed(client, dsk)
         futures = client.get(dsk_optimized, unique_name, sync=False)
         secede()
-        res: Optional[T] = client.gather(futures)  # pyright: ignore [reportAssignmentType]
+        res: T | None = client.gather(futures)  # pyright: ignore [reportAssignmentType]
         rejoin()
         return res
 

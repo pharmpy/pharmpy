@@ -11,7 +11,6 @@ import re
 from abc import ABC
 from collections.abc import Callable, Iterable, Sequence
 from itertools import chain
-from typing import Optional
 
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
@@ -59,14 +58,14 @@ def eval_token(token: AttrToken) -> int | float | str:
         return token.value
 
 
-def _parse_create_input(rule: Optional[str], items):
+def _parse_create_input(rule: str | None, items):
     try:
         names, items = zip(*items.items())
     except AttributeError:
         if isinstance(items, str):
             raise TypeError(str)
         length = len(items)
-        names: tuple[Optional[str], ...] = (None,) * length
+        names: tuple[str | None, ...] = (None,) * length
     if not items:
         raise ValueError(f'refusing empty tree {rule!r} (only tokens are childless)')
 
@@ -90,7 +89,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
     """
 
     @staticmethod
-    def create(rule: Optional[str], items) -> AttrTree:
+    def create(rule: str | None, items) -> AttrTree:
         """Alternative constructor: Creates new tree from (possibly nested) iterables.
 
         Only non-iterable items become leaves (i.e. content of token nodes). All others are trees.
@@ -164,12 +163,12 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
         """Returns index of first child matching 'rule', or -1."""
         return next((i for i, child in enumerate(self.children) if child.rule == rule), -1)
 
-    def find(self, rule) -> Optional[AttrTree | AttrToken]:
+    def find(self, rule) -> AttrTree | AttrToken | None:
         """Returns first child matching 'rule', or None."""
         i = self.first_index(rule)
         return None if i == -1 else self.children[i]
 
-    def first_branch(self, *rules) -> Optional[AttrTree | AttrToken]:
+    def first_branch(self, *rules) -> AttrTree | AttrToken | None:
         current = self
         for rule in rules:
             if not isinstance(current, AttrTree):
@@ -339,7 +338,7 @@ class AttrTree(ImmutableTree['AttrTree', 'AttrToken']):
 class NoSuchRuleException(AttributeError):
     """Rule not found (raised by :class:`AttrTree` for unknown children)."""
 
-    def __init__(self, rule, tree: Optional[AttrTree] = None):
+    def __init__(self, rule, tree: AttrTree | None = None):
         post = '' if tree is None else f' ({tree.rule!r})'
         super().__init__(f'no {rule!r} child in tree{post}')
 

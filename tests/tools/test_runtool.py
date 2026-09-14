@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.model import Model
 from pharmpy.tools.run import import_tool
@@ -13,7 +11,7 @@ def test_import_tool():
     assert tool == iivsearch
 
 
-def create_workflow_rename(new_name, mock_name=None, model: Optional[Model] = None):
+def create_workflow_rename(new_name, mock_name=None, model: Model | None = None):
     def rename(m):
         m = m.replace(name=new_name)
         return m
@@ -23,7 +21,7 @@ def create_workflow_rename(new_name, mock_name=None, model: Optional[Model] = No
     return Workflow(wb)
 
 
-def create_workflow_generic(name=None, model: Optional[Model] = None, mock_name=None):
+def create_workflow_generic(name=None, model: Model | None = None, mock_name=None):
     return Workflow(
         WorkflowBuilder(tasks=[Task('copy', lambda _: Results(), model)], name=mock_name)
     )

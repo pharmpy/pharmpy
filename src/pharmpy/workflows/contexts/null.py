@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pharmpy.deps import pandas as pd
 
 from ..broadcasters.null import NullBroadcaster
@@ -42,7 +40,7 @@ class NullContext(Context):
         pass
 
     @staticmethod
-    def exists(name: str, ref: Optional[str] = None) -> bool:
+    def exists(name: str, ref: str | None = None) -> bool:
         return True
 
     def store_key(self, *args, **kwargs):

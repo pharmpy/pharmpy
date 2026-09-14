@@ -3,7 +3,7 @@ from __future__ import annotations
 import math
 from collections.abc import Iterable, Mapping, Sequence
 from itertools import chain
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import BooleanExpr, Expr, RandomNumberGenerator, Seed
 from pharmpy.deps import numpy as np
@@ -224,8 +224,8 @@ def calculate_individual_parameter_statistics(
     | Expr
     | str,
     parameter_estimates: Mapping[str, float],
-    covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[RandomNumberGenerator | float | Seed | int] = None,
+    covariance_matrix: pd.DataFrame | None = None,
+    seed: RandomNumberGenerator | float | Seed | int | None = None,
 ) -> pd.DataFrame:
     """Calculate statistics for individual parameters
 
@@ -413,8 +413,8 @@ def calculate_individual_parameter_statistics(
 def calculate_pk_parameters_statistics(
     model: Model,
     parameter_estimates: pd.Series,
-    covariance_matrix: Optional[pd.DataFrame] = None,
-    seed: Optional[RandomNumberGenerator | Seed | float | int] = None,
+    covariance_matrix: pd.DataFrame | None = None,
+    seed: RandomNumberGenerator | Seed | float | int | None = None,
 ) -> pd.DataFrame:
     """Calculate statistics for common pharmacokinetic parameters
 
@@ -818,7 +818,7 @@ def _is_near_target(x, target, zero_limit, significant_digits):
 def insert_ebes_into_dataset(
     model: Model,
     individual_estimates: pd.DataFrame,
-    individual_estimates_covariance: Optional[pd.DataFrame] = None,
+    individual_estimates_covariance: pd.DataFrame | None = None,
 ) -> Model:
     """Insert EBEs and ETCs from results into the dataset of a model
 

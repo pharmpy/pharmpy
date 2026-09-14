@@ -6,7 +6,7 @@ import json
 from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
 from pathlib import Path
-from typing import Any, Optional, Self, cast, overload
+from typing import Any, Self, cast, overload
 
 from pharmpy import conf
 from pharmpy.basic import BooleanExpr, Expr, Unit
@@ -78,8 +78,8 @@ class Ignore(DatasetOperation):
 
     def replace(
         self,
-        expression: Optional[BooleanExpr | str] = None,
-        strings: Optional[Mapping[Expr, str]] = None,
+        expression: BooleanExpr | str | None = None,
+        strings: Mapping[Expr, str] | None = None,
     ):
         if expression is None:
             expression = self._expression
@@ -837,7 +837,7 @@ class ColumnInfo(Immutable):
         self,
         name: str,
         variable_mapping: frozenmapping[int, DataVariable] | DataVariable,
-        variable_id: Optional[str] = None,
+        variable_id: str | None = None,
         drop: bool = False,
         datatype: str = "float64",
     ):
@@ -851,8 +851,8 @@ class ColumnInfo(Immutable):
     def create(
         cls,
         name: str,
-        variable_mapping: Optional[Mapping[int, DataVariable] | DataVariable] = None,
-        variable_id: Optional[str] = None,
+        variable_mapping: Mapping[int, DataVariable] | DataVariable | None = None,
+        variable_id: str | None = None,
         drop: bool = False,
         datatype: str = "float64",
     ) -> Self:
@@ -999,7 +999,7 @@ class ColumnInfo(Immutable):
         return self._datatype
 
     @property
-    def variable_id(self) -> Optional[str]:
+    def variable_id(self) -> str | None:
         """Name of identifier column (e.g. DVID or ADMID)"""
         return self._variable_id
 
@@ -1123,9 +1123,9 @@ class DataInfo(Sequence, Immutable):
     def __init__(
         self,
         columns: tuple[ColumnInfo, ...] = (),
-        path: Optional[Path] = None,
+        path: Path | None = None,
         separator: str = ',',
-        missing_data_token: Optional[str] = None,
+        missing_data_token: str | None = None,
         provenance: Provenance = Provenance(),
     ):
         self._columns = columns
@@ -1140,11 +1140,11 @@ class DataInfo(Sequence, Immutable):
     @classmethod
     def create(
         cls,
-        columns: Optional[Sequence[ColumnInfo] | Sequence[str]] = None,
-        path: Optional[str | Path] = None,
+        columns: Sequence[ColumnInfo] | Sequence[str] | None = None,
+        path: str | Path | None = None,
         separator: str = ',',
-        missing_data_token: Optional[str] = None,
-        provenance: Optional[Provenance] = None,
+        missing_data_token: str | None = None,
+        provenance: Provenance | None = None,
     ) -> Self:
         if columns:
             if not isinstance(columns, Sequence):
@@ -1286,7 +1286,7 @@ class DataInfo(Sequence, Immutable):
         return False
 
     @property
-    def path(self) -> Optional[Path]:
+    def path(self) -> Path | None:
         r"""Path of dataset file.
 
         If `path` is not None, the parsed dataset can be recreated given the `path` and the rest of DataInfo
@@ -1498,7 +1498,7 @@ class DataInfo(Sequence, Immutable):
             newcols.append(newcol)
         return DataInfo.create(columns=newcols, path=self._path, separator=self._separator)
 
-    def find_single_column_name(self, type: str, default: Optional[str] = None) -> str:
+    def find_single_column_name(self, type: str, default: str | None = None) -> str:
         """Find name of single column given type
 
         Finds single column name with a given type, else provided default. Raises
@@ -1577,7 +1577,7 @@ class DataInfo(Sequence, Immutable):
             provenance=provenance,
         )
 
-    def _to_dict(self, path: Optional[str]) -> dict[str, Any]:
+    def _to_dict(self, path: str | None) -> dict[str, Any]:
         columns = [col.to_dict() for col in self._columns]
 
         return {
@@ -1588,7 +1588,7 @@ class DataInfo(Sequence, Immutable):
             "provenance": self._provenance.to_dict(),
         }
 
-    def to_json(self, path: Optional[Path | str] = None):
+    def to_json(self, path: Path | str | None = None):
         if path is None:
             d = self._to_dict(str(self.path) if self.path is not None else None)
         else:
@@ -1725,7 +1725,7 @@ class DataInfo(Sequence, Immutable):
         )
         return df.to_string(index=False)
 
-    def find_column_by_property(self, property: str, value: Any) -> Optional[ColumnInfo]:
+    def find_column_by_property(self, property: str, value: Any) -> ColumnInfo | None:
         """Find a single  column having a property/value pair
 
         Returns None if more than one column have the pair, if no column

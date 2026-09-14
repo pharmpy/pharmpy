@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Optional
 
 from pharmpy.internals.fs.path import path_absolute
 
@@ -8,7 +7,7 @@ from .baseclass import Project
 
 
 class LocalDirectoryProject(Project):
-    def __init__(self, name: str, ref: Optional[str | Path] = None):
+    def __init__(self, name: str, ref: str | Path | None = None):
         if ref is None:
             ref = str(Path.cwd())
         else:
@@ -31,7 +30,7 @@ class LocalDirectoryProject(Project):
     def _init_model_database(self):
         self.model_database = LocalModelDirectoryDatabase(self.path / '.modeldb')
 
-    def get_context_ref(self, ref: Optional[str]) -> str:
+    def get_context_ref(self, ref: str | None) -> str:
         if ref is not None:
             new_ref = self.path / ref
         else:

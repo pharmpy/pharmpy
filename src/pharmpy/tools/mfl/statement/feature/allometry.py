@@ -1,5 +1,4 @@
 from dataclasses import dataclass
-from typing import Optional
 
 from lark.visitors import Interpreter
 
@@ -14,7 +13,7 @@ class Allometry(ModelFeature):
     covariate: Symbol | str
     reference: float = 70.0
 
-    def eval(self, model: Optional[Model] = None):
+    def eval(self, model: Model | None = None):
         return None
 
 

@@ -1,4 +1,4 @@
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -25,7 +25,7 @@ def create_workflow(
     model: Model,
     results: ModelfitResults,
     linearize: bool = False,
-    skip: Optional[list[Literal[tuple(SECTIONS)]]] = None,
+    skip: list[Literal[tuple(SECTIONS)]] | None = None,
 ):
     """
     Run QA tool.

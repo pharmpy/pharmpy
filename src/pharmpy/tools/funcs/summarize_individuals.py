@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from collections.abc import Sequence
-from typing import Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -115,7 +114,7 @@ def ofv(res: ModelfitResults) -> pd.Series | float:
 
 
 def dofv(
-    parent_model_res: Optional[ModelfitResults], candidate_model_res: Optional[ModelfitResults]
+    parent_model_res: ModelfitResults | None, candidate_model_res: ModelfitResults | None
 ) -> pd.Series | float:
     return np.nan if parent_model_res is None else ofv(parent_model_res) - ofv(candidate_model_res)
 
@@ -144,7 +143,7 @@ def groupedByIDAddColumnsOneModel(
 
 
 def summarize_individuals_count_table(
-    model_entries: Optional[Sequence[ModelEntry]] = None,
+    model_entries: Sequence[ModelEntry] | None = None,
     df: pd.DataFrame = None,
 ):
     r"""Create a count table for individual data

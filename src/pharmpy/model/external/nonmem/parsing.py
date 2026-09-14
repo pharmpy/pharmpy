@@ -4,7 +4,7 @@ import re
 import warnings
 from collections.abc import Iterable
 from pathlib import Path
-from typing import Optional, cast
+from typing import cast
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import pandas as pd
@@ -232,7 +232,7 @@ def parse_statements(
     di: DataInfo,
     dataset,
     control_stream: NMTranControlStream,
-) -> tuple[Statements, Optional[dict[str, int]]]:
+) -> tuple[Statements, dict[str, int] | None]:
     rec = control_stream.get_pred_pk_record()
     statements = rec.statements
 
@@ -606,9 +606,7 @@ def parse_solver(control_stream):
     return solver, record.tol, record.atol
 
 
-def parse_initial_individual_estimates(
-    control_stream, name_map, basepath
-) -> Optional[pd.DataFrame]:
+def parse_initial_individual_estimates(control_stream, name_map, basepath) -> pd.DataFrame | None:
     """Initial individual estimates
 
     These are taken from the $ETAS FILE.
@@ -635,7 +633,7 @@ def parse_initial_individual_estimates(
         return None
 
 
-def parse_dataset_path(control_stream, basepath) -> Optional[Path]:
+def parse_dataset_path(control_stream, basepath) -> Path | None:
     record = next(iter(control_stream.get_records('DATA')), None)
 
     if record is None:
@@ -912,7 +910,7 @@ def parse_dataset(
     di: DataInfo,
     control_stream: NMTranControlStream,
     raw: bool = False,
-    parse_columns: Optional[Iterable[str]] = None,
+    parse_columns: Iterable[str] | None = None,
 ):
     assert di.path is not None
 
@@ -952,7 +950,7 @@ def filter_and_convert_dataset_in_place(
     replacements: dict[str, str],
     have_pk: bool,
     raw: bool = False,
-    parse_columns: Optional[Iterable[str]] = None,
+    parse_columns: Iterable[str] | None = None,
 ):
     if raw:
         ignore = None

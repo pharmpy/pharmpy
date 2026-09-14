@@ -1,7 +1,6 @@
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -179,7 +178,7 @@ def test_execute_workflow_results(tmp_path):
 
 @dataclass(frozen=True)
 class MyResults(Results):
-    ofv: Optional[float] = None
+    ofv: float | None = None
 
 
 @pytest.mark.xdist_group(name="workflow")

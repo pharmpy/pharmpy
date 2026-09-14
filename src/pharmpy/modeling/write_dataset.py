@@ -2,13 +2,12 @@ from __future__ import annotations
 
 import warnings
 from pathlib import Path
-from typing import Optional
 
 from pharmpy.internals.fs.path import normalize_user_given_path, path_absolute
 from pharmpy.model import Model
 
 
-def create_dataset_path(model: Model, path: Optional[str | Path] = None) -> Path:
+def create_dataset_path(model: Model, path: str | Path | None = None) -> Path:
     path = path_absolute(Path("" if path is None else path))
 
     if path and not path.is_dir():
@@ -22,7 +21,7 @@ def create_dataset_path(model: Model, path: Optional[str | Path] = None) -> Path
     return path / filename
 
 
-def write_csv(model: Model, path: Optional[str | Path] = None, force: bool = False) -> Model:
+def write_csv(model: Model, path: str | Path | None = None, force: bool = False) -> Model:
     """Write dataset to a csv file and updates the datainfo path
 
     Parameters
@@ -69,7 +68,7 @@ def write_csv(model: Model, path: Optional[str | Path] = None, force: bool = Fal
 
 
 def write_dataset(
-    model: Model, path: Optional[str | Path] = None, force: bool = False, type: str = "csv"
+    model: Model, path: str | Path | None = None, force: bool = False, type: str = "csv"
 ) -> Model:
     """Write dataset to file and updates the datainfo path
 

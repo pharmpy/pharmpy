@@ -9,7 +9,7 @@ from collections.abc import Mapping, Sequence
 from datetime import datetime
 from pathlib import Path
 from types import UnionType
-from typing import Any, Optional, get_args, get_origin, get_type_hints
+from typing import Any, get_args, get_origin, get_type_hints
 
 import pharmpy
 import pharmpy.tools.modelfit
@@ -57,11 +57,11 @@ from .external import parse_modelfit_results
 
 def fit(
     model_or_models: Model | list[Model],
-    esttool: Optional[str] = None,
-    name: Optional[str] = None,
+    esttool: str | None = None,
+    name: str | None = None,
     ncores: int = 1,
     validate_dataset: bool = False,
-    project: Optional[Project] = None,
+    project: Project | None = None,
 ) -> ModelfitResults | list[ModelfitResults]:
     """Fit models.
 
@@ -330,8 +330,8 @@ def create_metadata(
     args: Sequence,
     tool_options: Mapping[str, Any],
     seed: Seed,
-    common_options: Optional[Mapping[str, Any]] = None,
-    dispatching_options: Optional[Mapping[str, Any]] = None,
+    common_options: Mapping[str, Any] | None = None,
+    dispatching_options: Mapping[str, Any] | None = None,
 ):
     tool_metadata = _create_metadata_tool(database, tool_name, tool_func, args, tool_options)
     if common_options and dispatching_options:
@@ -655,7 +655,7 @@ def _store_model(db: ModelDatabase, metadata, arg: str, model: Model):
 
 
 def _create_metadata_common(
-    database: Context, tool_name: Optional[str], common_options: Mapping[str, Any]
+    database: Context, tool_name: str | None, common_options: Mapping[str, Any]
 ):
     setup_metadata = {}
     for key, value in common_options.items():
@@ -675,7 +675,7 @@ def _filter_params(kind, params, types):
     for i, param_key in enumerate(params):
         param = params[param_key]
         param_type = types.get(param_key)
-        if param_type in (*kind, *(Optional[k] for k in kind)):
+        if param_type in (*kind, *(k | None for k in kind)):
             # NOTE: We do not handle *{param_key}, or **{param_key}
             assert param.kind != param.VAR_POSITIONAL
             assert param.kind != param.VAR_KEYWORD
@@ -707,7 +707,7 @@ def _get_name(options, tool_name) -> str:
     return name
 
 
-def _create_new_context_name(tool_name: str, ref: Optional[str]) -> str:
+def _create_new_context_name(tool_name: str, ref: str | None) -> str:
     n = 1
     while True:
         name = f"{tool_name}{n}"
@@ -755,7 +755,7 @@ def _open_context(source):
 
 def retrieve_models(
     source: str | Path | Context,
-    names: Optional[list[str]] = None,
+    names: list[str] | None = None,
 ) -> list[Model]:
     """Retrieve models after a tool run
 
@@ -962,8 +962,8 @@ def rank_models_from_entries(
     me_models: list[ModelEntry],
     strictness: str = "minimization_successful",
     rank_type: str = 'ofv',
-    cutoff: Optional[float] = None,
-    penalties: Optional[list[float]] = None,
+    cutoff: float | None = None,
+    penalties: list[float] | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     base_model, base_res = me_base.model, me_base.modelfit_results
@@ -996,11 +996,11 @@ def rank_models(
     base_model_res: ModelfitResults,
     models: list[Model],
     models_res: list[ModelfitResults],
-    parent_dict: Optional[dict[str, str] | dict[Model, Model]] = None,
+    parent_dict: dict[str, str] | dict[Model, Model] | None = None,
     strictness: str = "minimization_successful",
     rank_type: str = 'ofv',
-    cutoff: Optional[float] = None,
-    penalties: Optional[list[float]] = None,
+    cutoff: float | None = None,
+    penalties: list[float] | None = None,
     **kwargs,
 ) -> pd.DataFrame:
     """Ranks a list of models
@@ -1465,7 +1465,7 @@ def _get_estimation_runtime(res, i):
     return res.estimation_runtime_iterations.iloc[i]
 
 
-def read_modelfit_results(path: str | Path, esttool: Optional[str] = None) -> ModelfitResults:
+def read_modelfit_results(path: str | Path, esttool: str | None = None) -> ModelfitResults:
     """Read results from external tool for a model
 
     Parameters
@@ -1540,8 +1540,8 @@ def load_example_modelfit_results(name: str):
 def calculate_mbic_penalty(
     candidate_model: Model,
     search_space: str | list[str] | ModelFeatures,
-    E_p: Optional[float | str] = 1.0,
-    E_q: Optional[float | str] = 1.0,
+    E_p: float | str | None = 1.0,
+    E_q: float | str | None = 1.0,
 ):
     if E_p == 0 or E_q == 0:
         raise ValueError('E-values cannot be 0')

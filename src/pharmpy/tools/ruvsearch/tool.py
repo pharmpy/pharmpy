@@ -1,6 +1,6 @@
 import re
 from functools import partial
-from typing import Literal, Optional, cast
+from typing import Literal, cast
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -66,11 +66,11 @@ def create_workflow(
     results: ModelfitResults,
     groups: int = 4,
     p_value: float = 0.001,
-    skip: Optional[list[Literal['IIV_on_RUV', 'power', 'combined', 'time_varying']]] = None,
+    skip: list[Literal['IIV_on_RUV', 'power', 'combined', 'time_varying']] | None = None,
     max_iter: int = 3,
-    dv: Optional[int] = None,
+    dv: int | None = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """Run the ruvsearch tool. For more details, see :ref:`ruvsearch`.
 
@@ -376,7 +376,7 @@ def _results(context, res):
 
 def create_additive_nlme_model(
     best_model_entry: ModelEntry, best_model_name: str, dv
-) -> Optional[Model]:
+) -> Model | None:
     is_combined = best_model_name.startswith("combined")
     is_power = best_model_name.startswith("power")
     if not (is_combined or is_power):

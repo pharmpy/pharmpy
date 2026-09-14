@@ -1,6 +1,6 @@
 import math
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -37,13 +37,13 @@ from .results import PDSearchResults
 def create_workflow(
     input: Path | str | Model,
     type: Literal['pd', 'kpd'],
-    treatment_variable: Optional[str] = None,
+    treatment_variable: str | None = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',
     algorithm: Literal['stepwise', 'exhaustive_stepwise'] = 'stepwise',
     data_strategy: Literal['full', 'partial', 'fix'] = 'full',
-    results: Optional[ModelfitResults] = None,
+    results: ModelfitResults | None = None,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """
     Build a PD model

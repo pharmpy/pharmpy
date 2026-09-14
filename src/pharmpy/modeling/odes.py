@@ -6,7 +6,7 @@ from __future__ import annotations
 
 import math
 from collections.abc import Iterable, Mapping
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr
 from pharmpy.deps import sympy
@@ -2100,7 +2100,7 @@ def _get_absorption_init(model, param_name) -> float:
     return init
 
 
-def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None) -> Model:
+def set_peripheral_compartments(model: Model, n: int, name: str | None = None) -> Model:
     """Sets the number of peripheral compartments for central compartment to a specified number.
 
     If name is set, the peripheral compartment will be added to the compartment
@@ -2166,7 +2166,7 @@ def set_peripheral_compartments(model: Model, n: int, name: Optional[str] = None
     return model
 
 
-def add_peripheral_compartment(model: Model, name: Optional[str] = None) -> Model:
+def add_peripheral_compartment(model: Model, name: str | None = None) -> Model:
     r"""Add a peripheral distribution compartment to model
 
     The rate of flow from the central to the peripheral compartment
@@ -2325,7 +2325,7 @@ def add_peripheral_compartment(model: Model, name: Optional[str] = None) -> Mode
     return model.update_source()
 
 
-def remove_peripheral_compartment(model: Model, name: Optional[str] = None) -> Model:
+def remove_peripheral_compartment(model: Model, name: str | None = None) -> Model:
     r"""Remove a peripheral distribution compartment from model
 
     If name is set, a peripheral compartment will be removed from the compartment

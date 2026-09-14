@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model, SimulationStep
@@ -10,7 +8,7 @@ from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
 
 def create_workflow(
-    model: Optional[Model] = None,
+    model: Model | None = None,
 ):
     """Run the simulation tool.
 

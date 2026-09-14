@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
 from pharmpy.model import Model
@@ -19,7 +17,7 @@ from pharmpy.workflows.results import ModelfitResults
 
 def create_workflow(
     model: Model,
-    results: Optional[ModelfitResults] = None,
+    results: ModelfitResults | None = None,
     samples: int = 1,
     dofv: bool = False,
     strictness: str = "",

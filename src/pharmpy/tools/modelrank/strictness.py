@@ -1,5 +1,4 @@
 import re
-from typing import Optional
 
 from pharmpy.basic.expr import BooleanExpr
 from pharmpy.deps import numpy as np
@@ -63,7 +62,7 @@ def preprocess_string(strictness: str) -> str:
     return strictness
 
 
-def evaluate_strictness(expr: BooleanExpr, predicates: dict[str, Optional[bool]]) -> Optional[bool]:
+def evaluate_strictness(expr: BooleanExpr, predicates: dict[str, bool | None]) -> bool | None:
     sub_dict = {}
     for key, value in predicates.items():
         # NaNs will raise in subs
@@ -82,11 +81,11 @@ def evaluate_strictness(expr: BooleanExpr, predicates: dict[str, Optional[bool]]
 
 def get_strictness_predicates(
     model_entries: list[ModelEntry], expr: BooleanExpr
-) -> dict[ModelEntry, dict[str, Optional[bool]]]:
+) -> dict[ModelEntry, dict[str, bool | None]]:
     return {me: get_strictness_predicates_me(me, expr) for me in model_entries}
 
 
-def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str, Optional[bool]]:
+def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str, bool | None]:
     predicates = {}
 
     def _eval_tree(sub_expr):

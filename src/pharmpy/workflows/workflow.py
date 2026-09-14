@@ -3,7 +3,7 @@ from __future__ import annotations
 import inspect
 import uuid
 from collections.abc import Iterable
-from typing import Literal, Optional, TypeVar
+from typing import Literal, TypeVar
 
 from pharmpy.deps import networkx as nx
 from pharmpy.internals.immutable import Immutable
@@ -80,7 +80,7 @@ class WorkflowBase:
         return list(self._g.successors(task))
 
     def traverse(
-        self, algorithm: Literal['dfs', 'bfs'], source: Optional[Task] = None
+        self, algorithm: Literal['dfs', 'bfs'], source: Task | None = None
     ) -> Iterable[Task]:
         if algorithm == 'dfs':
             return nx.dfs_tree(self._g, source)
@@ -108,9 +108,9 @@ class WorkflowBuilder(WorkflowBase):
 
     def __init__(
         self,
-        workflow: Optional[Workflow] = None,
-        tasks: Optional[Iterable[Task]] = None,
-        name: Optional[str] = None,
+        workflow: Workflow | None = None,
+        tasks: Iterable[Task] | None = None,
+        name: str | None = None,
     ):
         if workflow:
             self._g = workflow._g.copy()
@@ -122,7 +122,7 @@ class WorkflowBuilder(WorkflowBase):
             for task in tasks:
                 self.add_task(task)
 
-    def add_task(self, task: Task, predecessors: Optional[Task | Iterable[Task]] = None) -> None:
+    def add_task(self, task: Task, predecessors: Task | Iterable[Task] | None = None) -> None:
         """Add a task to the workflow
 
         Predecessors will be connected if given.
@@ -164,7 +164,7 @@ class WorkflowBuilder(WorkflowBase):
             self._g.add_edge(source, scatter_task)
             self._g.add_edge(scatter_task, task)
 
-    def gather(self, sources: Iterable[Task], destination: Optional[Task] = None) -> None:
+    def gather(self, sources: Iterable[Task], destination: Task | None = None) -> None:
         """Gather output from multiple tasks to one task
 
         The destination Task could be left out to keep the gathered output unconnected
@@ -203,7 +203,7 @@ class WorkflowBuilder(WorkflowBase):
         nx.relabel_nodes(self._g, mapping, copy=False)
 
     def insert_workflow(
-        self, other: Workflow, predecessors: Optional[Task | Iterable[Task]] = None
+        self, other: Workflow, predecessors: Task | Iterable[Task] | None = None
     ) -> None:
         """Insert other workflow
 
@@ -256,9 +256,7 @@ class Workflow[T](WorkflowBase, Immutable):
         List of tasks for initialization
     """
 
-    def __init__(
-        self, builder: Optional[WorkflowBuilder] = None, graph=None, name: Optional[str] = None
-    ):
+    def __init__(self, builder: WorkflowBuilder | None = None, graph=None, name: str | None = None):
         if builder is not None:
             self._g = nx.freeze(builder._g.copy())
             self._name = builder.name
@@ -268,7 +266,7 @@ class Workflow[T](WorkflowBase, Immutable):
 
     @classmethod
     def create(
-        cls, builder: Optional[WorkflowBuilder] = None, graph=None, name: Optional[str] = None
+        cls, builder: WorkflowBuilder | None = None, graph=None, name: str | None = None
     ) -> Workflow:
         return cls(builder=builder, graph=graph, name=name)
 
@@ -315,7 +313,7 @@ class Workflow[T](WorkflowBase, Immutable):
         return ids
 
     @property
-    def name(self) -> Optional[str]:
+    def name(self) -> str | None:
         """Name of Workflow"""
         return self._name
 

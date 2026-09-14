@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -14,7 +14,7 @@ from pharmpy.tools.common import ToolResults
 class RUVSearchResults(ToolResults):
     """RUVSearch results class"""
 
-    cwres_models: Optional[Any] = None
+    cwres_models: Any | None = None
 
 
 def calculate_results(model_entries):

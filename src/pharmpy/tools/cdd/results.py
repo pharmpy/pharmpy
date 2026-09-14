@@ -2,7 +2,7 @@ import re
 from dataclasses import dataclass
 from math import sqrt
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -18,9 +18,9 @@ from pharmpy.workflows import Results
 class CDDResults(Results):
     """CDD Results class"""
 
-    case_results: Optional[Any] = None
-    case_column: Optional[Any] = None
-    individual_predictions_plot: Optional[Any] = None
+    case_results: Any | None = None
+    case_column: Any | None = None
+    individual_predictions_plot: Any | None = None
 
 
 def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):

@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from collections.abc import Mapping
 from functools import partial
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import RandomNumberGenerator, Seed
 from pharmpy.deps import numpy as np
@@ -13,7 +13,7 @@ from pharmpy.model import Model
 
 
 def create_rng(
-    seed: Optional[int | float | RandomNumberGenerator | Seed] = None,
+    seed: int | float | RandomNumberGenerator | Seed | None = None,
 ) -> RandomNumberGenerator:
     """Create a new random number generator
 
@@ -126,9 +126,9 @@ def sample_parameters_uniformly(
     model: Model,
     parameter_estimates: Mapping[str, float],
     fraction: float = 0.1,
-    force_posdef_samples: Optional[int] = None,
+    force_posdef_samples: int | None = None,
     n: int = 1,
-    seed: Optional[RandomNumberGenerator | float | int | Seed] = None,
+    seed: RandomNumberGenerator | float | int | Seed | None = None,
     scale: Literal['UCP', 'normal'] = 'normal',
 ) -> pd.DataFrame:
     """Sample parameter vectors using uniform sampling
@@ -203,10 +203,10 @@ def sample_parameters_from_covariance_matrix(
     model: Model,
     parameter_estimates: Mapping[str, float],
     covariance_matrix: pd.DataFrame,
-    force_posdef_samples: Optional[int] = None,
+    force_posdef_samples: int | None = None,
     force_posdef_covmatrix: bool = False,
     n: int = 1,
-    seed: Optional[RandomNumberGenerator | int | float | Seed] = None,
+    seed: RandomNumberGenerator | int | float | Seed | None = None,
 ) -> pd.DataFrame:
     """Sample parameter vectors using the covariance matrix
 
@@ -283,9 +283,9 @@ def sample_individual_estimates(
     model: Model,
     individual_estimates: pd.DataFrame,
     individual_estimates_covariance: pd.DataFrame,
-    parameters: Optional[list[str]] = None,
+    parameters: list[str] | None = None,
     samples_per_id: int = 100,
-    seed: Optional[RandomNumberGenerator | Seed | int | float] = None,
+    seed: RandomNumberGenerator | Seed | int | float | None = None,
 ) -> pd.DataFrame:
     """Sample individual estimates given their covariance.
 

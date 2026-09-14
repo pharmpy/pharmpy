@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Mapping
-from typing import Optional, Union
+from typing import Union
 
 from pharmpy.basic import Expr, TExpr
 from pharmpy.deps import numpy as np
@@ -41,7 +41,7 @@ class DataFrameMapping(Mapping['sympy.Expr', 'np.ndarray']):
 def evaluate_expression(
     model: Model,
     expression: str | TExpr,
-    parameter_estimates: Optional[ParameterMap] = None,
+    parameter_estimates: ParameterMap | None = None,
 ) -> pd.Series:
     """Evaluate expression using model
 
@@ -99,7 +99,7 @@ def evaluate_expression(
 
 
 def evaluate_population_prediction(
-    model: Model, parameters: Optional[ParameterMap] = None, dataset: Optional[pd.DataFrame] = None
+    model: Model, parameters: ParameterMap | None = None, dataset: pd.DataFrame | None = None
 ) -> pd.Series:
     """Evaluate the numeric population prediction
 
@@ -162,9 +162,9 @@ def evaluate_population_prediction(
 
 def evaluate_individual_prediction(
     model: Model,
-    etas: Optional[pd.DataFrame] = None,
-    parameters: Optional[ParameterMap] = None,
-    dataset: Optional[pd.DataFrame] = None,
+    etas: pd.DataFrame | None = None,
+    parameters: ParameterMap | None = None,
+    dataset: pd.DataFrame | None = None,
 ) -> pd.Series:
     """Evaluate the numeric individual prediction
 
@@ -244,16 +244,16 @@ def evaluate_individual_prediction(
     return ipred_series
 
 
-def _replace_parameters(model: Model, y: list[Expr], parameters: Optional[ParameterMap]):
+def _replace_parameters(model: Model, y: list[Expr], parameters: ParameterMap | None):
     mapping = model.parameters.inits if parameters is None else parameters
     return [x.subs(mapping) for x in y]
 
 
 def evaluate_eta_gradient(
     model: Model,
-    etas: Optional[pd.DataFrame] = None,
-    parameters: Optional[ParameterMap] = None,
-    dataset: Optional[pd.DataFrame] = None,
+    etas: pd.DataFrame | None = None,
+    parameters: ParameterMap | None = None,
+    dataset: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Evaluate the numeric eta gradient
 
@@ -342,9 +342,9 @@ def evaluate_eta_gradient(
 
 def evaluate_epsilon_gradient(
     model: Model,
-    etas: Optional[pd.DataFrame] = None,
-    parameters: Optional[ParameterMap] = None,
-    dataset: Optional[pd.DataFrame] = None,
+    etas: pd.DataFrame | None = None,
+    parameters: ParameterMap | None = None,
+    dataset: pd.DataFrame | None = None,
 ) -> pd.DataFrame:
     """Evaluate the numeric epsilon gradient
 
@@ -436,8 +436,8 @@ def evaluate_epsilon_gradient(
 
 def evaluate_weighted_residuals(
     model: Model,
-    parameters: Optional[ParameterMap] = None,
-    dataset: Optional[pd.DataFrame] = None,
+    parameters: ParameterMap | None = None,
+    dataset: pd.DataFrame | None = None,
 ) -> pd.Series:
     """Evaluate the weighted residuals
 

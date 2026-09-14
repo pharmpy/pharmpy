@@ -4,7 +4,7 @@ import json
 import os.path
 from functools import partial
 from pathlib import Path
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fs.lock import path_lock
@@ -37,8 +37,8 @@ class LocalDirectoryContext(Context):
     def __init__(
         self,
         name: str,
-        ref: Optional[str] = None,
-        model_database: Optional[ModelDatabase] = None,
+        ref: str | None = None,
+        model_database: ModelDatabase | None = None,
     ):
         if ref is None:
             ref = str(Path.cwd())
@@ -82,7 +82,7 @@ class LocalDirectoryContext(Context):
                 break
             path = parent.parent
 
-    def _init_model_database(self, model_database: Optional[ModelDatabase]):
+    def _init_model_database(self, model_database: ModelDatabase | None):
         if model_database is None:
             path = self._top_path / '.modeldb'
             self._model_database = LocalModelDirectoryDatabase(path)
@@ -122,7 +122,7 @@ class LocalDirectoryContext(Context):
             path.unlink()
 
     @staticmethod
-    def exists(name: str, ref: Optional[str] = None):
+    def exists(name: str, ref: str | None = None):
         if ref is None:
             path = Path.cwd()
         else:

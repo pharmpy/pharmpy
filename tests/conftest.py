@@ -1,6 +1,5 @@
 from collections.abc import Hashable
 from pathlib import Path
-from typing import Optional
 
 import pytest
 
@@ -92,7 +91,7 @@ def load_example_model_for_test():
 def create_model_for_test(load_example_model_for_test):
     from pharmpy.model import Model
 
-    def _create(code: str, dataset: Optional[str] = None) -> Model:
+    def _create(code: str, dataset: str | None = None) -> Model:
         model = Model.parse_model_from_string(code)
         datapath = model.datainfo.path
         if dataset is not None:

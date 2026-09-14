@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 from itertools import product
-from typing import Literal, Optional
+from typing import Literal
 
 from lark.visitors import Interpreter
 
@@ -19,7 +19,7 @@ class Covariate(ModelFeature):
     op: Literal['*', '+'] = '*'
     optional: Option = Option(False)
 
-    def eval(self, model: Optional[Model] = None, explicit_covariates: Optional[set] = None):
+    def eval(self, model: Model | None = None, explicit_covariates: set | None = None):
         # Circular import issue
         from ...feature.covariate import _interpret_ref
 
@@ -67,7 +67,7 @@ class Covariate(ModelFeature):
             return None
         return Covariate(parameter=parameter, covariate=covariate, fp=fp, op=op, optional=optional)
 
-    def get_length(self, model: Optional[Model] = None):
+    def get_length(self, model: Model | None = None):
         self_eval = self.eval(model)
         if self_eval is None:
             return 0

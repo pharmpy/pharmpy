@@ -3,7 +3,7 @@ from collections import deque
 from collections.abc import Iterator
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Any, Optional, TextIO
+from typing import Any, TextIO
 
 from pharmpy.deps import pandas as pd
 from pharmpy.model import DatasetError
@@ -114,7 +114,7 @@ def _stream_NMTRAN(path_or_io: str | Path | TextIO):
 def NMTRANDataLines(
     path_or_io: str | Path | TextIO,
     sep: re.Pattern[str],
-    ignore_character: Optional[str] = None,
+    ignore_character: str | None = None,
 ):
     if ignore_character is None:
         ignore_character = "#"

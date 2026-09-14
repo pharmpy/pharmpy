@@ -3,7 +3,6 @@ from __future__ import annotations
 from collections.abc import Iterable
 from dataclasses import dataclass
 from functools import partial
-from typing import Optional
 
 from pharmpy.basic import Expr
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -22,10 +21,10 @@ def create_workflow(
     results: ModelfitResults,
     allometric_variable: str | Expr = 'WT',
     reference_value: str | int | float | Expr = 70,
-    parameters: Optional[list[str | Expr]] = None,
-    initials: Optional[list[int | float]] = None,
-    lower_bounds: Optional[list[int | float]] = None,
-    upper_bounds: Optional[list[int | float]] = None,
+    parameters: list[str | Expr] | None = None,
+    initials: list[int | float] | None = None,
+    lower_bounds: list[int | float] | None = None,
+    upper_bounds: list[int | float] | None = None,
     fixed: bool = True,
 ):
     """Run allometry tool. For more details, see :ref:`allometry`.
@@ -151,7 +150,7 @@ def validate_allometric_variable(model: Model, allometric_variable: str):
         )
 
 
-def validate_parameters(model: Model, parameters: Optional[Iterable[str | Expr]]):
+def validate_parameters(model: Model, parameters: Iterable[str | Expr] | None):
     if parameters is not None:
         allowed_parameters = set(get_pk_parameters(model)).union(
             str(statement.symbol) for statement in model.statements.before_odes

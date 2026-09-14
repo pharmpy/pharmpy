@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.modeling import plot_vpc
 from pharmpy.workflows.results import Results
@@ -7,7 +7,7 @@ from pharmpy.workflows.results import Results
 
 @dataclass(frozen=True)
 class VPCResults(Results):
-    plot: Optional[Any] = None
+    plot: Any | None = None
 
 
 def calculate_results(input_model, simulation_results, stratify):

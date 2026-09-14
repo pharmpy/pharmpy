@@ -4,7 +4,7 @@ import re
 import warnings
 from collections.abc import Collection, Container
 from pathlib import Path
-from typing import Any, Literal, Optional, overload
+from typing import Any, Literal, overload
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -278,7 +278,7 @@ def get_observations(
 
 def get_observations_and_exclusion_criteria(
     model: Model, keep_index: bool = False, dv: Expr | str | int | None = None
-) -> tuple[pd.Series, Optional[Ignore]]:
+) -> tuple[pd.Series, Ignore | None]:
     try:
         label = model.datainfo.typeix['mdv'][0].name
     except IndexError:
@@ -1697,10 +1697,10 @@ def translate_nmtran_time(model: Model) -> Model:
 
 def _loq_mask(
     model: Model,
-    lloq: Optional[float | str] = None,
-    uloq: Optional[float | str] = None,
-    blq: Optional[str] = None,
-    alq: Optional[str] = None,
+    lloq: float | str | None = None,
+    uloq: float | str | None = None,
+    blq: str | None = None,
+    alq: str | None = None,
 ):
     """Boolean series with False for lloq records and True for non-lloq
     Options as remove_loq_data
@@ -1748,10 +1748,10 @@ def _as_expr(value):
 
 def remove_loq_data(
     model: Model,
-    lloq: Optional[float | str] = None,
-    uloq: Optional[float | str] = None,
-    blq: Optional[str] = None,
-    alq: Optional[str] = None,
+    lloq: float | str | None = None,
+    uloq: float | str | None = None,
+    blq: str | None = None,
+    alq: str | None = None,
     keep: int = 0,
 ) -> Model:
     """Remove loq data records from the dataset
@@ -1815,8 +1815,8 @@ def remove_loq_data(
 def set_lloq_data(
     model: Model,
     value: str | float | Expr,
-    lloq: Optional[float | str] = None,
-    blq: Optional[str] = None,
+    lloq: float | str | None = None,
+    blq: str | None = None,
 ) -> Model:
     """Set a dv value for lloq data records
 
@@ -1925,7 +1925,7 @@ def set_reference_values(model: Model, refs: dict[str, int | float]) -> Model:
     return model
 
 
-def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> Model:
+def infer_datatypes(model: Model, columns: Collection[str] | None = None) -> Model:
     """Infer and set datatypes for the dataset
 
         All columns or only the ones set in the columns option will be checked
@@ -1993,7 +1993,7 @@ def infer_datatypes(model: Model, columns: Optional[Collection[str]] = None) -> 
 
 
 def read_dataset_from_datainfo(
-    datainfo: DataInfo | Path | str, datatype: Optional[str] = None
+    datainfo: DataInfo | Path | str, datatype: str | None = None
 ) -> pd.DataFrame:
     """Read a dataset given a datainfo object or path to a datainfo file
 
@@ -2013,9 +2013,7 @@ def read_dataset_from_datainfo(
     return df
 
 
-def read_dataset_from_datainfo_update(
-    datainfo: DataInfo | Path | str, datatype: Optional[str] = None
-):
+def read_dataset_from_datainfo_update(datainfo: DataInfo | Path | str, datatype: str | None = None):
     if not isinstance(datainfo, DataInfo):
         datainfo = DataInfo.read_json(datainfo)
 
@@ -2050,7 +2048,7 @@ def read_dataset_from_datainfo_update(
 
 
 def deidentify_data(
-    df: pd.DataFrame, id_column: str = 'ID', date_columns: Optional[list[str]] = None
+    df: pd.DataFrame, id_column: str = 'ID', date_columns: list[str] | None = None
 ) -> pd.DataFrame:
     """Deidentify a dataset
 
@@ -2184,7 +2182,7 @@ def load_dataset(model: Model) -> Model:
 def set_dataset(
     model: Model,
     path_or_df: str | Path | pd.DataFrame,
-    format: Optional[str] = None,
+    format: str | None = None,
     datatype: Any = None,
 ) -> Model:
     """Load the dataset given datainfo
@@ -2386,7 +2384,7 @@ def _get_bin_edges_psn(data, n_bins):
 
 
 def binarize_dataset(
-    model: Model, columns: Optional[list[str]], keep: bool = False, all_levels: bool = False
+    model: Model, columns: list[str] | None, keep: bool = False, all_levels: bool = False
 ) -> Model:
     """Binarize dataset
 
@@ -2492,7 +2490,7 @@ def binarize_dataset(
     return model
 
 
-def get_column_name(model: Model, type: str) -> Optional[str]:
+def get_column_name(model: Model, type: str) -> str | None:
     """Retrieve the column with a certain type
 
     If multiple columns have the same type an exception will be raised.
@@ -2528,7 +2526,7 @@ def get_column_name(model: Model, type: str) -> Optional[str]:
 
 
 def calculate_summary_statistic(
-    model: Model, stat: str, expr: Optional[str], default: Optional[float] = None
+    model: Model, stat: str, expr: str | None, default: float | None = None
 ) -> float:
     """Calculate a summary statistic for an expression over the dataset
 

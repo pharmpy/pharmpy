@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, Self, overload
+from typing import Any, Self, overload
 
 from pharmpy import DEFAULT_SEED
 from pharmpy.basic import Expr
@@ -14,9 +14,9 @@ SUPPORTED_SOLVERS = frozenset(('CVODES', 'DGEAR', 'DVERK', 'IDA', 'LSODA', 'LSOD
 class ExecutionStep(Immutable):
     def __init__(
         self,
-        solver: Optional[str] = None,
-        solver_rtol: Optional[int] = None,
-        solver_atol: Optional[int] = None,
+        solver: str | None = None,
+        solver_rtol: int | None = None,
+        solver_atol: int | None = None,
         tool_options: frozenmapping[str, Any] = frozenmapping({}),
         variables: tuple[str, ...] = (),
     ):
@@ -42,7 +42,7 @@ class ExecutionStep(Immutable):
         return tool_options
 
     @property
-    def solver(self) -> Optional[str]:
+    def solver(self) -> str | None:
         """Numerical solver to use when numerically solving the ODE system
         Supported solvers and their corresponding NONMEM ADVAN
 
@@ -65,12 +65,12 @@ class ExecutionStep(Immutable):
         return self._solver
 
     @property
-    def solver_rtol(self) -> Optional[int]:
+    def solver_rtol(self) -> int | None:
         """Relative tolerance for numerical ODE system solver"""
         return self._solver_rtol
 
     @property
-    def solver_atol(self) -> Optional[int]:
+    def solver_atol(self) -> int | None:
         """Absolute tolerance for numerical ODE system solver"""
         return self._solver_atol
 
@@ -141,19 +141,19 @@ class EstimationStep(ExecutionStep):
         self,
         method: str,
         interaction: bool = False,
-        parameter_uncertainty_method: Optional[str] = None,
+        parameter_uncertainty_method: str | None = None,
         evaluation: bool = False,
-        maximum_evaluations: Optional[int] = None,
+        maximum_evaluations: int | None = None,
         laplace: bool = False,
-        isample: Optional[int] = None,
-        niter: Optional[int] = None,
-        auto: Optional[bool] = None,
-        keep_every_nth_iter: Optional[int] = None,
+        isample: int | None = None,
+        niter: int | None = None,
+        auto: bool | None = None,
+        keep_every_nth_iter: int | None = None,
         residuals: Sequence[str] = (),
         predictions: Sequence[str] = (),
-        solver: Optional[str] = None,
-        solver_rtol: Optional[int] = None,
-        solver_atol: Optional[int] = None,
+        solver: str | None = None,
+        solver_rtol: int | None = None,
+        solver_atol: int | None = None,
         tool_options: frozenmapping[str, Any] = frozenmapping({}),
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
@@ -186,19 +186,19 @@ class EstimationStep(ExecutionStep):
         cls,
         method: str,
         interaction: bool = False,
-        parameter_uncertainty_method: Optional[str] = None,
+        parameter_uncertainty_method: str | None = None,
         evaluation: bool = False,
-        maximum_evaluations: Optional[int] = None,
+        maximum_evaluations: int | None = None,
         laplace: bool = False,
-        isample: Optional[int] = None,
-        niter: Optional[int] = None,
-        auto: Optional[bool] = None,
-        keep_every_nth_iter: Optional[int] = None,
+        isample: int | None = None,
+        niter: int | None = None,
+        auto: bool | None = None,
+        keep_every_nth_iter: int | None = None,
         residuals: Sequence[str] = (),
         predictions: Sequence[str] = (),
-        solver: Optional[str] = None,
-        solver_rtol: Optional[int] = None,
-        solver_atol: Optional[int] = None,
+        solver: str | None = None,
+        solver_rtol: int | None = None,
+        solver_atol: int | None = None,
         tool_options: Mapping[str, Any] = frozenmapping({}),
         derivatives: Sequence[Sequence[Expr]] = (),
         individual_eta_samples: bool = False,
@@ -309,7 +309,7 @@ class EstimationStep(ExecutionStep):
         return self._method
 
     @property
-    def maximum_evaluations(self) -> Optional[int]:
+    def maximum_evaluations(self) -> int | None:
         """Maximum allowable number of evaluations of the objective function"""
         return self._maximum_evaluations
 
@@ -324,7 +324,7 @@ class EstimationStep(ExecutionStep):
         return self._evaluation
 
     @property
-    def parameter_uncertainty_method(self) -> Optional[str]:
+    def parameter_uncertainty_method(self) -> str | None:
         """Method to use when estimating parameter uncertainty.
         Supported methods and their corresponding NMTRAN code:
 
@@ -353,22 +353,22 @@ class EstimationStep(ExecutionStep):
         return self._laplace
 
     @property
-    def isample(self) -> Optional[int]:
+    def isample(self) -> int | None:
         """Number of samples per subject (or similar) for EM methods"""
         return self._isample
 
     @property
-    def niter(self) -> Optional[int]:
+    def niter(self) -> int | None:
         """Number of iterations for EM methods"""
         return self._niter
 
     @property
-    def auto(self) -> Optional[bool]:
+    def auto(self) -> bool | None:
         """Let estimation tool automatically add settings"""
         return self._auto
 
     @property
-    def keep_every_nth_iter(self) -> Optional[int]:
+    def keep_every_nth_iter(self) -> int | None:
         """Keep results for every nth iteration"""
         return self._keep_every_nth_iter
 
@@ -488,9 +488,9 @@ class SimulationStep(ExecutionStep):
         self,
         n: int = 1,
         seed: int = DEFAULT_SEED,
-        solver: Optional[str] = None,
-        solver_rtol: Optional[int] = None,
-        solver_atol: Optional[int] = None,
+        solver: str | None = None,
+        solver_rtol: int | None = None,
+        solver_atol: int | None = None,
         tool_options: frozenmapping[str, Any] = frozenmapping({}),
         variables: tuple[str, ...] = (),
     ):
@@ -509,9 +509,9 @@ class SimulationStep(ExecutionStep):
         cls,
         n: int = 1,
         seed: int = DEFAULT_SEED,
-        solver: Optional[str] = None,
-        solver_rtol: Optional[int] = None,
-        solver_atol: Optional[int] = None,
+        solver: str | None = None,
+        solver_rtol: int | None = None,
+        solver_atol: int | None = None,
         tool_options: Mapping[str, Any] = frozenmapping({}),
         variables: Sequence[str] = (),
     ) -> Self:
@@ -587,7 +587,7 @@ class ExecutionSteps(Sequence, Immutable):
 
     @classmethod
     def create(
-        cls, steps: Optional[Sequence[EstimationStep | SimulationStep]] = None
+        cls, steps: Sequence[EstimationStep | SimulationStep] | None = None
     ) -> ExecutionSteps:
         if steps is None:
             steps = ()

@@ -2,7 +2,6 @@ import warnings
 from collections import defaultdict
 from collections.abc import Container
 from itertools import product
-from typing import Optional
 
 from lark import Lark
 
@@ -458,7 +457,7 @@ class ModelFeatures:
             metabolite=self.metabolite.eval if self.metabolite else None,
         )
 
-    def mfl_statement_list(self, attribute_type: Optional[Container[str]] = ()):
+    def mfl_statement_list(self, attribute_type: Container[str] | None = ()):
         """Add the repspective MFL attributes to a list"""
 
         # NOTE : This function is needed to be able to convert the classes to functions
@@ -532,8 +531,8 @@ class ModelFeatures:
 
     def convert_to_funcs(
         self,
-        attribute_type: Optional[list[str]] = None,
-        model: Optional[Model] = None,
+        attribute_type: list[str] | None = None,
+        model: Model | None = None,
         subset_features=None,
     ):
         if subset_features == "pk":
@@ -559,7 +558,7 @@ class ModelFeatures:
                 model = Model()
             return all_funcs(model, self.mfl_statement_list(attribute_type))
 
-    def contain_subset(self, mfl, model: Optional[Model] = None, tool: Optional[str] = None):
+    def contain_subset(self, mfl, model: Model | None = None, tool: str | None = None):
         """See if class contain specified subset"""
         # FIXME: Handle PD and drug metabolite
         transits = self._subset_transits(mfl)

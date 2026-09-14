@@ -5,7 +5,7 @@ import warnings
 from collections.abc import Collection, Mapping
 from functools import partial
 from pathlib import Path
-from typing import Literal, Optional
+from typing import Literal
 
 import pharmpy.visualization
 from pharmpy.basic import Expr, RandomNumberGenerator, Seed
@@ -83,7 +83,7 @@ def plot_iofv_vs_iofv(iofv1: pd.Series, iofv2: pd.Series, name1: str, name2: str
 
 
 def plot_individual_predictions(
-    model: Model, predictions: pd.DataFrame, individuals: Optional[Collection[int]] = None
+    model: Model, predictions: pd.DataFrame, individuals: Collection[int] | None = None
 ):
     """Plot DV and predictions grouped on individuals
 
@@ -154,7 +154,7 @@ def plot_transformed_eta_distributions(
     parameter_estimates: pd.Series | Mapping[str, float],
     individual_estimates: pd.DataFrame,
     parameter_estimates_untransformed: pd.Series | Mapping[str, float],
-    seed: Optional[RandomNumberGenerator | Seed | float | int] = None,
+    seed: RandomNumberGenerator | Seed | float | int | None = None,
 ):
     """Plot transformed eta distributions for all transformed etas
 
@@ -324,7 +324,7 @@ def plot_eta_distributions(
 def plot_dv_vs_pred(
     model: Model,
     predictions: pd.DataFrame,
-    stratify_on: Optional[str] = None,
+    stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
     """Plot DV vs PRED
@@ -379,7 +379,7 @@ def plot_dv_vs_pred(
 def plot_dv_vs_ipred(
     model: Model,
     predictions: pd.DataFrame,
-    stratify_on: Optional[str] = None,
+    stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
     """Plot DV vs IPRED
@@ -437,7 +437,7 @@ def plot_abs_cwres_vs_ipred(
     model: Model,
     predictions: pd.DataFrame,
     residuals: pd.DataFrame,
-    stratify_on: Optional[str] = None,
+    stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
     r"""Plot \|CWRES\| vs IPRED
@@ -585,7 +585,7 @@ def _dv_vs_anypred(model, predictions, predcol_name, predcol_descr, stratify_on,
 def plot_cwres_vs_idv(
     model: Model,
     residuals: pd.DataFrame,
-    stratify_on: Optional[str] = None,
+    stratify_on: str | None = None,
     bins: int = 8,
 ) -> alt.TopLevelMixin:
     """Plot CWRES vs idv
@@ -992,7 +992,7 @@ def plot_vpc(
     nbins: int = 8,
     qi: float = 0.95,
     ci: float = 0.95,
-    stratify_on: Optional[str] = None,
+    stratify_on: str | None = None,
 ):
     """Creates a VPC plot for a model
 

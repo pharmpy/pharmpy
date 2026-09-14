@@ -1,6 +1,5 @@
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
 
 import pharmpy.model
 from pharmpy.internals.code_generator import CodeGenerator
@@ -277,8 +276,8 @@ def add_evid(model: pharmpy.model.Model) -> pharmpy.model.Model:
 
 @dataclass(frozen=True)
 class NLMIXRModelInternals(ModelInternals):
-    src: Optional[str] = None
-    path: Optional[Path] = None
+    src: str | None = None
+    path: Path | None = None
 
 
 class Model(pharmpy.model.Model):

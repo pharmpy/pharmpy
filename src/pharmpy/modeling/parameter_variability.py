@@ -11,7 +11,7 @@ from collections.abc import Sequence
 from functools import reduce
 from itertools import chain, combinations
 from operator import add, mul
-from typing import Literal, Optional, Self
+from typing import Literal, Self
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -47,7 +47,7 @@ def add_iiv(
     expression: list[str] | str,
     operation: str = '*',
     initial_estimate: float = 0.09,
-    eta_names: Optional[list[str]] = None,
+    eta_names: list[str] | None = None,
 ) -> Model:
     r"""Adds IIVs to :class:`pharmpy.model`.
 
@@ -181,8 +181,8 @@ def add_iiv(
 def add_iov(
     model: Model,
     occ: str,
-    list_of_parameters: Optional[list[str] | str] = None,
-    eta_names: Optional[list[str] | str] = None,
+    list_of_parameters: list[str] | str | None = None,
+    eta_names: list[str] | str | None = None,
     distribution: Literal['disjoint', 'joint', 'explicit', 'same-as-iiv'] = 'disjoint',
 ) -> Model:
     """Adds IOVs to :class:`pharmpy.model`.
@@ -633,7 +633,7 @@ class EtaAddition:
         return cls(template)
 
 
-def remove_iiv(model: Model, to_remove: Optional[list[str] | str] = None) -> Model:
+def remove_iiv(model: Model, to_remove: list[str] | str | None = None) -> Model:
     """
     Removes all IIV etas given a list with eta names and/or parameter names.
 
@@ -711,7 +711,7 @@ def remove_iiv(model: Model, to_remove: Optional[list[str] | str] = None) -> Mod
     return model
 
 
-def remove_iov(model: Model, to_remove: Optional[list[str] | str] = None) -> Model:
+def remove_iov(model: Model, to_remove: list[str] | str | None = None) -> Model:
     """Removes all IOV etas given a list with eta names.
 
     Parameters
@@ -785,7 +785,7 @@ def _get_iov_groups(model: Model):
     return same.values()
 
 
-def transform_etas_boxcox(model: Model, list_of_etas: Optional[list[str] | str] = None) -> Model:
+def transform_etas_boxcox(model: Model, list_of_etas: list[str] | str | None = None) -> Model:
     """Applies a boxcox transformation to selected etas
 
     Initial estimate for lambda is 0.1 with bounds (-3, 3).
@@ -823,7 +823,7 @@ def transform_etas_boxcox(model: Model, list_of_etas: Optional[list[str] | str] 
     return model.update_source()
 
 
-def transform_etas_tdist(model: Model, list_of_etas: Optional[list[str] | str] = None) -> Model:
+def transform_etas_tdist(model: Model, list_of_etas: list[str] | str | None = None) -> Model:
     """Applies a t-distribution transformation to selected etas
 
     Initial estimate for degrees of freedom is 80 with bounds (3, 100).
@@ -861,9 +861,7 @@ def transform_etas_tdist(model: Model, list_of_etas: Optional[list[str] | str] =
     return model.update_source()
 
 
-def transform_etas_john_draper(
-    model: Model, list_of_etas: Optional[list[str] | str] = None
-) -> Model:
+def transform_etas_john_draper(model: Model, list_of_etas: list[str] | str | None = None) -> Model:
     """Applies a John Draper transformation to selected etas
 
     See [1]_ for more information.
@@ -1028,8 +1026,8 @@ class EtaTransformation:
 
 def create_joint_distribution(
     model: Model,
-    rvs: Optional[Sequence[str]] = None,
-    individual_estimates: Optional[pd.DataFrame] = None,
+    rvs: Sequence[str] | None = None,
+    individual_estimates: pd.DataFrame | None = None,
 ) -> Model:
     """
     Combines some or all etas into a joint distribution.
@@ -1110,7 +1108,7 @@ def create_joint_distribution(
     return model
 
 
-def split_joint_distribution(model: Model, rvs: Optional[Sequence[str] | str] = None) -> Model:
+def split_joint_distribution(model: Model, rvs: Sequence[str] | str | None = None) -> Model:
     """
     Splits etas following a joint distribution into separate distributions.
 

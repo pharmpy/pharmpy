@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import Expr
 from pharmpy.model import (
@@ -31,9 +31,8 @@ DV_TYPES = ('drug', 'drug_tot', 'target', 'target_tot', 'complex')
 def set_tmdd(
     model: Model,
     type: Literal['full', 'ib', 'cr', 'crib', 'qss', 'wagner', 'mmapp'],
-    dv_types: Optional[
-        dict[Literal['drug', 'drug_tot', 'target', 'target_tot', 'complex'], int]
-    ] = None,
+    dv_types: dict[Literal['drug', 'drug_tot', 'target', 'target_tot', 'complex'], int]
+    | None = None,
 ) -> Model:
     """Sets target mediated drug disposition
 

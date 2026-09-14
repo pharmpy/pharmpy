@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -13,11 +13,11 @@ from pharmpy.workflows import ModelfitResults, Results
 
 @dataclass(frozen=True)
 class LinearizeResults(Results):
-    ofv: Optional[pd.Series] = None
-    iofv: Optional[Any] = None
-    iofv_plot: Optional[Any] = None
-    final_model: Optional[Model] = None
-    final_model_results: Optional[ModelfitResults] = None
+    ofv: pd.Series | None = None
+    iofv: Any | None = None
+    iofv_plot: Any | None = None
+    final_model: Model | None = None
+    final_model_results: ModelfitResults | None = None
 
 
 def calculate_results(

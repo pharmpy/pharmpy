@@ -1,6 +1,5 @@
 import math
 from itertools import count
-from typing import Optional
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import sympy
@@ -111,7 +110,7 @@ def is_symmetric(A):
     return (A == A.T).all().all()
 
 
-def is_positive_semidefinite(A, is_hermitian: Optional[bool] = None):
+def is_positive_semidefinite(A, is_hermitian: bool | None = None):
     """Checks whether a matrix is positive semi-definite"""
     if is_hermitian or (is_hermitian is None and is_symmetric(A)):
         eigvals = np.linalg.eigvalsh

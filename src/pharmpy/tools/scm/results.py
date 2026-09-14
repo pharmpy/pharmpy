@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass
 from io import StringIO
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -22,9 +22,9 @@ from pharmpy.workflows.results import ModelfitResults, Results
 class SCMResults(Results):
     """SCM Results class"""
 
-    steps: Optional[Any] = None
-    ofv_summary: Optional[Any] = None
-    candidate_summary: Optional[Any] = None
+    steps: Any | None = None
+    ofv_summary: Any | None = None
+    candidate_summary: Any | None = None
 
 
 def candidate_summary_dataframe(steps):

@@ -2,7 +2,7 @@ import warnings
 from dataclasses import dataclass, replace
 from itertools import product
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.basic import Expr
 from pharmpy.deps import altair as alt
@@ -167,20 +167,20 @@ class FREMResults(Results):
 
     """
 
-    coefficients: Optional[Any] = None
-    parameter_variability: Optional[Any] = None
-    covariate_effects: Optional[Any] = None
-    individual_effects: Optional[Any] = None
-    unexplained_variability: Optional[Any] = None
-    covariate_statistics: Optional[Any] = None
-    covariate_effects_plot: Optional[Any] = None
-    individual_effects_plot: Optional[Any] = None
-    unexplained_variability_plot: Optional[Any] = None
-    covariate_baselines: Optional[Any] = None
-    parameter_inits_and_estimates: Optional[Any] = None
-    base_parameter_change: Optional[Any] = None
-    estimated_covariates: Optional[Any] = None
-    ofv: Optional[Any] = None
+    coefficients: Any | None = None
+    parameter_variability: Any | None = None
+    covariate_effects: Any | None = None
+    individual_effects: Any | None = None
+    unexplained_variability: Any | None = None
+    covariate_statistics: Any | None = None
+    covariate_effects_plot: Any | None = None
+    individual_effects_plot: Any | None = None
+    unexplained_variability_plot: Any | None = None
+    covariate_baselines: Any | None = None
+    parameter_inits_and_estimates: Any | None = None
+    base_parameter_change: Any | None = None
+    estimated_covariates: Any | None = None
+    ofv: Any | None = None
 
 
 def plot_covariate_effects(res):

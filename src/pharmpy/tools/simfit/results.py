@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.model import Model
 from pharmpy.tools.external.nonmem.results import simfit_results
@@ -10,7 +10,7 @@ from pharmpy.workflows import Results
 class SimfitResults(Results):
     """Simfit results class"""
 
-    modelfit_results: Optional[Any] = None
+    modelfit_results: Any | None = None
 
 
 def calculate_results(modelfit_results):

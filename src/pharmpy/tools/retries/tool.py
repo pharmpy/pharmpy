@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
@@ -43,9 +43,9 @@ def create_workflow(
     fraction: float = 0.1,
     use_initial_estimates: bool = False,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
-    scale: Optional[Literal[tuple(SCALES)]] = "UCP",
-    prefix_name: Optional[str] = "",  # FIXME : Remove once new database has been implemented
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    scale: Literal[tuple(SCALES)] | None = "UCP",
+    prefix_name: str | None = "",  # FIXME : Remove once new database has been implemented
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """
     Run retries tool.

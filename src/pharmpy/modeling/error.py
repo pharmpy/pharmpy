@@ -5,7 +5,6 @@
 from __future__ import annotations
 
 import warnings
-from typing import Optional
 
 from pharmpy.basic import BooleanExpr, Expr, TExpr
 from pharmpy.deps import sympy
@@ -82,7 +81,7 @@ def remove_error_model(model: Model) -> Model:
 def set_additive_error_model(
     model: Model,
     dv: Expr | str | int | None = None,
-    data_trans: Optional[TExpr] = None,
+    data_trans: TExpr | None = None,
     series_terms: int = 2,
 ) -> Model:
     r"""Set an additive error model. Initial estimate for new sigma is :math:`(min(DV)/2)²`.
@@ -227,7 +226,7 @@ def _get_prop_init(model: Model, dv: str | Expr) -> float:
 def set_proportional_error_model(
     model: Model,
     dv: Expr | str | int | None = None,
-    data_trans: Optional[TExpr] = None,
+    data_trans: TExpr | None = None,
     zero_protection: bool = True,
 ) -> Model:
     r"""Set a proportional error model. Initial estimate for new sigma is 0.09.
@@ -384,7 +383,7 @@ def _get_blq_sd_expr(model, expr, eps_new, blq_symb):
 def set_combined_error_model(
     model: Model,
     dv: Expr | str | int | None = None,
-    data_trans: Optional[TExpr] = None,
+    data_trans: TExpr | None = None,
 ) -> Model:
     r"""Set a combined error model. Initial estimates for new sigmas are :math:`(min(DV)/2)²` for
     proportional and 0.09 for additive.
@@ -965,10 +964,10 @@ def set_time_varying_error_model(
 
 def set_power_on_ruv(
     model: Model,
-    list_of_eps: Optional[str | list] = None,
+    list_of_eps: str | list | None = None,
     dv: Expr | int | None = None,
-    lower_limit: Optional[float] = 0.01,
-    ipred: Optional[str | Expr] = None,
+    lower_limit: float | None = 0.01,
+    ipred: str | Expr | None = None,
     zero_protection: bool = False,
 ) -> Model:
     """Applies a power effect to provided epsilons. If a dependent variable
@@ -1166,9 +1165,9 @@ def get_ipred(model, dv=None):
 def set_iiv_on_ruv(
     model: Model,
     dv: Expr | int | None = None,
-    list_of_eps: Optional[list[str] | str] = None,
+    list_of_eps: list[str] | str | None = None,
     same_eta: bool = True,
-    eta_names: Optional[list[str] | str] = None,
+    eta_names: list[str] | str | None = None,
 ) -> Model:
     """
     Multiplies epsilons with exponential (new) etas.

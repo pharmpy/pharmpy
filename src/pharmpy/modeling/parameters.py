@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Mapping
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -677,8 +677,8 @@ def add_population_parameter(
     model: Model,
     name: str,
     init: float,
-    lower: Optional[float] = None,
-    upper: Optional[float] = None,
+    lower: float | None = None,
+    upper: float | None = None,
     fix: bool = False,
 ) -> Model:
     """Add a new population parameter to the model

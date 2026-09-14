@@ -3,7 +3,7 @@ import warnings
 from collections.abc import Container, Iterable
 from itertools import chain
 from pathlib import Path
-from typing import Any, Optional, TextIO, cast
+from typing import Any, TextIO, cast
 
 from pharmpy import conf
 from pharmpy.deps import pandas as pd
@@ -128,13 +128,13 @@ def read_nonmem_dataset(
 def filter_and_convert_nonmem_dataset_in_place(
     df: pd.DataFrame,
     raw: bool = False,
-    drop: Optional[list[bool]] = None,
+    drop: list[bool] | None = None,
     null_value: str = '0',
-    parse_columns: Optional[Iterable[str]] = None,
-    ignore: Optional[list[str]] = None,
-    accept: Optional[list[str]] = None,
-    dtype: Optional[dict[str, Any]] = None,
-    missing_data_token: Optional[str] = None,
+    parse_columns: Iterable[str] | None = None,
+    ignore: list[str] | None = None,
+    accept: list[str] | None = None,
+    dtype: dict[str, Any] | None = None,
+    missing_data_token: str | None = None,
 ):
     columns = df.columns
     idcol = get_idcol(columns)

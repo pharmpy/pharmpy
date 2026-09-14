@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import warnings
 from collections.abc import Mapping
-from typing import Optional
 
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -259,11 +258,11 @@ def resample_data(
     dataset_or_model: pd.DataFrame | Model,
     group: str,
     resamples: int = 1,
-    stratify: Optional[str] = None,
-    sample_size: Optional[int] = None,
+    stratify: str | None = None,
+    sample_size: int | None = None,
     replace: bool = False,
     name_pattern: str = 'resample_{}',
-    name: Optional[str] = None,
+    name: str | None = None,
 ):
     """Iterate over resamples of a dataset.
 

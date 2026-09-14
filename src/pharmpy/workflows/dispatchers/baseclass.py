@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import signal
 from abc import ABC, abstractmethod
-from typing import NoReturn, Optional, TypeVar
+from typing import NoReturn, TypeVar
 
 from ..workflow import Workflow
 from .slurm_helpers import is_running_on_slurm
@@ -19,7 +19,7 @@ class AbortWorkflowException(Exception):
 
 class Dispatcher(ABC):
     @staticmethod
-    def canonicalize_dispatcher_name(name: Optional[str]) -> str:
+    def canonicalize_dispatcher_name(name: str | None) -> str:
         if name is None:
             from pharmpy import conf
 
@@ -30,7 +30,7 @@ class Dispatcher(ABC):
             raise ValueError(f"Unknown dispatcher {name}")
         return canon_name
 
-    def canonicalize_ncores(self, ncores: Optional[int]) -> int:
+    def canonicalize_ncores(self, ncores: int | None) -> int:
         if ncores and ncores > 1 and is_running_on_slurm():
             raise ValueError(
                 f'Invalid `ncores`: must be 1 or None when running on slurm, got {ncores}'
@@ -41,7 +41,7 @@ class Dispatcher(ABC):
         return ncores
 
     @staticmethod
-    def select_dispatcher(name: Optional[str]) -> Dispatcher:
+    def select_dispatcher(name: str | None) -> Dispatcher:
         """Create a new dispatcher given a dispatcher name"""
         dispatcher_name = Dispatcher.canonicalize_dispatcher_name(name)
 
@@ -56,7 +56,7 @@ class Dispatcher(ABC):
         return dispatcher
 
     @abstractmethod
-    def run(self, workflow: Workflow[T], context) -> Optional[T]:
+    def run(self, workflow: Workflow[T], context) -> T | None:
         pass
 
     @abstractmethod

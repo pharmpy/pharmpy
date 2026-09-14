@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Literal, Optional, Self
+from typing import Literal, Self
 
 from pharmpy.deps import pint
 
@@ -48,7 +48,7 @@ class Unit:
     def unitless(cls) -> Unit:
         return cls("1")
 
-    def is_compatible_with(self, other: Unit, molar_mass: Optional[float] = None) -> bool:
+    def is_compatible_with(self, other: Unit, molar_mass: float | None = None) -> bool:
         """Check if this unit is compatible with (i.e. convertible to) another unit"""
         if molar_mass:
             unit1 = Unit(str(ureg.Quantity(1.0, self._units).to_base_units().units))
@@ -144,7 +144,7 @@ class Quantity:
     def unit(self) -> Unit:
         return self._unit
 
-    def convert_to(self, unit: Unit, molar_mass: Optional[Quantity] = None) -> Quantity:
+    def convert_to(self, unit: Unit, molar_mass: Quantity | None = None) -> Quantity:
         quant = ureg.Quantity(self._value, self._unit._units)
         if molar_mass:
             mw = ureg.Quantity(molar_mass._value, molar_mass._unit._units)

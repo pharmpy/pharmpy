@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
@@ -39,18 +39,18 @@ def create_workflow(
     model: Model,
     results: ModelfitResults,
     type: Literal[tuple(TYPES)],
-    search_space: Optional[str | ModelFeatures] = None,
-    b_init: Optional[int | float] = None,
-    emax_init: Optional[int | float] = None,
-    ec50_init: Optional[int | float] = None,
-    met_init: Optional[int | float] = None,
-    extra_model: Optional[Model] = None,
+    search_space: str | ModelFeatures | None = None,
+    b_init: int | float | None = None,
+    emax_init: int | float | None = None,
+    ec50_init: int | float | None = None,
+    met_init: int | float | None = None,
+    extra_model: Model | None = None,
     rank_type: Literal[tuple(RANK_TYPES)] = 'bic',
-    cutoff: Optional[float | int] = None,
-    strictness: Optional[str] = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
-    extra_model_results: Optional[ModelfitResults] = None,
-    dv_types: Optional[dict[Literal[DV_TYPES], int]] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    cutoff: float | int | None = None,
+    strictness: str | None = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
+    extra_model_results: ModelfitResults | None = None,
+    dv_types: dict[Literal[DV_TYPES], int] | None = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
 

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Mapping, Sequence
 from collections.abc import Sequence as CollectionsSequence
-from typing import Any, Optional, Self, overload
+from typing import Any, Self, overload
 
 from pharmpy.basic import Expr
 from pharmpy.deps import numpy as np
@@ -56,8 +56,8 @@ class Parameter(Immutable):
         cls,
         name: str,
         init: float | Expr,
-        lower: Optional[float | Expr] = None,
-        upper: Optional[float | Expr] = None,
+        lower: float | Expr | None = None,
+        upper: float | Expr | None = None,
         fix: bool = False,
     ) -> Self:
         """Alternative constructor for Parameter with error checking"""
@@ -194,7 +194,7 @@ class Parameters(CollectionsSequence, Immutable):
         self._params = parameters
 
     @classmethod
-    def create(cls, parameters: Optional[Parameters | Sequence[Parameter]] = None) -> Parameters:
+    def create(cls, parameters: Parameters | Sequence[Parameter] | None = None) -> Parameters:
         if isinstance(parameters, Parameters):
             return parameters
         elif parameters is None:

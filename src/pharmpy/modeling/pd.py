@@ -4,7 +4,7 @@
 
 from __future__ import annotations
 
-from typing import Literal, Optional
+from typing import Literal
 
 from pharmpy.basic import Expr
 from pharmpy.basic.expr import remove_variable_impact
@@ -109,7 +109,7 @@ def add_effect_compartment(model: Model, expr: PDTypes) -> Model:
     return model.update_source()
 
 
-def set_direct_effect(model: Model, expr: PDTypes, variable: Optional[str] = None) -> Model:
+def set_direct_effect(model: Model, expr: PDTypes, variable: str | None = None) -> Model:
     r"""Add an effect to a model.
 
     Effects are by default using concentratrion, but any user specified
@@ -343,7 +343,7 @@ def add_indirect_effect(
     model: Model,
     expr: Literal['linear', 'emax', 'sigmoid'],
     prod: bool = True,
-    variable: Optional[str] = None,
+    variable: str | None = None,
 ) -> Model:
     r"""Add indirect (turnover) effect
 

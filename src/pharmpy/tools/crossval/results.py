@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from dataclasses import dataclass
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.deps import pandas as pd
 from pharmpy.tools import read_modelfit_results
@@ -13,8 +13,8 @@ from pharmpy.workflows import Results
 class CrossvalResults(Results):
     """Crossval results class"""
 
-    runs: Optional[Any] = None
-    prediction_ofv_sum: Optional[Any] = None
+    runs: Any | None = None
+    prediction_ofv_sum: Any | None = None
 
 
 def calculate_results(estimation_results, prediction_results):

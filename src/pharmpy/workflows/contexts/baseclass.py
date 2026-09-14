@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from datetime import datetime
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pharmpy.basic import RandomNumberGenerator
 from pharmpy.deps import pandas as pd
@@ -36,7 +36,7 @@ class Context(ABC):
     def __init__(
         self,
         name: str,
-        ref: Optional[str] = None,
+        ref: str | None = None,
     ):
         # If the context already exists it will be opened
         # otherwise a new top level context will be created
@@ -48,9 +48,7 @@ class Context(ABC):
         self._ref = ref
 
     @staticmethod
-    def select_context(
-        name: Optional[str], ctxname: str, ref: Optional[str] = None, **kwargs
-    ) -> Context:
+    def select_context(name: str | None, ctxname: str, ref: str | None = None, **kwargs) -> Context:
         if name is not None and name.lower() != "local_directory":
             raise ValueError(f"Unknow context type {name}. The only supported is local_directory.")
         from pharmpy.workflows.contexts import LocalDirectoryContext
@@ -58,7 +56,7 @@ class Context(ABC):
         return LocalDirectoryContext(ctxname, ref, **kwargs)
 
     @staticmethod
-    def default_exists(name: str, ref: Optional[str] = None) -> bool:
+    def default_exists(name: str, ref: str | None = None) -> bool:
         from pharmpy.workflows.contexts import LocalDirectoryContext
 
         return LocalDirectoryContext.exists(name, ref)
@@ -123,7 +121,7 @@ class Context(ABC):
 
     @staticmethod
     @abstractmethod
-    def exists(name: str, ref: Optional[str] = None) -> bool:
+    def exists(name: str, ref: str | None = None) -> bool:
         pass
 
     @abstractmethod
@@ -200,7 +198,7 @@ class Context(ABC):
         self,
         severity: Literal["critical", "error", "warning", "info", "trace"],
         message: str,
-        model: Optional[Model] = None,
+        model: Model | None = None,
     ) -> None:
         """Add a message to the log"""
         date = datetime.now().astimezone()
@@ -211,18 +209,18 @@ class Context(ABC):
         self.store_message(severity, ctxpath, date, message)
         self.broadcaster.broadcast_message(severity, ctxpath, date, message)
 
-    def log_info(self, message: str, model: Optional[Model] = None) -> None:
+    def log_info(self, message: str, model: Model | None = None) -> None:
         """Add an info message to the log
 
         Currently with echo to stdout. In the future this could be changed or be configurable.
         """
         self.log_message(severity="info", message=message, model=model)
 
-    def log_error(self, message: str, model: Optional[Model] = None) -> None:
+    def log_error(self, message: str, model: Model | None = None) -> None:
         """Add an error message to the log"""
         self.log_message(severity="error", message=message, model=model)
 
-    def log_warning(self, message: str, model: Optional[Model] = None) -> None:
+    def log_warning(self, message: str, model: Model | None = None) -> None:
         """Add a warning message to the log"""
         self.log_message(severity="warning", message=message, model=model)
 

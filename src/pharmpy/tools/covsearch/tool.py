@@ -2,7 +2,7 @@ from collections import Counter, defaultdict
 from collections.abc import Callable, Iterable
 from dataclasses import astuple, dataclass
 from itertools import count
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -137,13 +137,13 @@ def create_workflow(
     max_eval: bool = False,
     adaptive_scope_reduction: bool = False,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
-    naming_index_offset: Optional[int] = 0,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
+    naming_index_offset: int | None = 0,
     nsamples: int = 10,
-    _samba_max_covariates: Optional[int] = 3,
+    _samba_max_covariates: int | None = 3,
     _samba_selection_criterion: Literal['bic', 'lrt'] = 'bic',
     _samba_linreg_method: Literal['ols', 'wls', 'lme'] = 'ols',
-    _samba_stepwise_lcs: Optional[bool] = None,
+    _samba_stepwise_lcs: bool | None = None,
 ):
     """Run COVsearch tool. For more details, see :ref:`covsearch`.
 
@@ -415,7 +415,7 @@ def task_greedy_forward_search(
     max_steps: int,
     naming_index_offset: int,
     strictness: str,
-    parameter_uncertainty_method: Optional[str],
+    parameter_uncertainty_method: str | None,
     adaptive_scope_reduction: bool,
     state_and_effect: tuple[SearchState, dict],
 ) -> SearchState:
@@ -463,7 +463,7 @@ def task_greedy_backward_search(
     max_steps: int,
     naming_index_offset,
     strictness: str,
-    parameter_uncertainty_method: Optional[str],
+    parameter_uncertainty_method: str | None,
     state: SearchState,
 ) -> SearchState:
     context.log_info('Starting backward search')

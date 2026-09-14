@@ -5,7 +5,7 @@ from collections.abc import Iterable, Sequence
 from dataclasses import dataclass, field
 from io import StringIO
 from itertools import pairwise
-from typing import Any, Optional, overload
+from typing import Any, overload
 
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.rich import box
@@ -59,9 +59,9 @@ class Observations(Activity):
 
     def replace(
         self,
-        variable: Optional[DataVariable] = None,
-        start_time: Optional[float] = None,
-        time_points: Optional[Sequence[float]] = None,
+        variable: DataVariable | None = None,
+        start_time: float | None = None,
+        time_points: Sequence[float] | None = None,
     ) -> Observations:
         if variable is None:
             variable = self._variable
@@ -130,10 +130,10 @@ class Administration(Activity):
 
     def replace(
         self,
-        variable: Optional[DataVariable] = None,
-        dose: Optional[Dose] = None,
-        start_time: Optional[float] = None,
-        time_points: Optional[Sequence[float]] = None,
+        variable: DataVariable | None = None,
+        dose: Dose | None = None,
+        start_time: float | None = None,
+        time_points: Sequence[float] | None = None,
     ) -> Administration:
         if variable is None:
             variable = self._variable
@@ -218,9 +218,9 @@ class Arm(Sequence, Immutable):
 
     def replace(
         self,
-        name: Optional[str] = None,
-        size: Optional[int] = None,
-        activities: Optional[Sequence[Activity]] = None,
+        name: str | None = None,
+        size: int | None = None,
+        activities: Sequence[Activity] | None = None,
     ) -> Arm:
         if name is None:
             name = self._name
@@ -350,9 +350,7 @@ class TrialDesign(Sequence, Immutable):
         self._independent_variable = independent_variable
 
     @classmethod
-    def create(
-        cls, arms: Sequence[Arm], independent_variable: Optional[DataVariable]
-    ) -> TrialDesign:
+    def create(cls, arms: Sequence[Arm], independent_variable: DataVariable | None) -> TrialDesign:
         seen_names = set()
         for arm in arms:
             if not isinstance(arm, Arm):
@@ -367,8 +365,8 @@ class TrialDesign(Sequence, Immutable):
 
     def replace(
         self,
-        arms: Optional[Sequence[Arm]] = None,
-        independent_variable: Optional[DataVariable] = None,
+        arms: Sequence[Arm] | None = None,
+        independent_variable: DataVariable | None = None,
     ) -> TrialDesign:
         if arms is None:
             arms = self._arms

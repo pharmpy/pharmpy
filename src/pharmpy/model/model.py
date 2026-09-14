@@ -18,7 +18,7 @@ import json
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional, Self
+from typing import Any, Self
 
 import pharmpy
 from pharmpy.basic import Expr, TExpr, TSymbol
@@ -69,15 +69,15 @@ class Model(Immutable):
         parameters: Parameters = Parameters(),
         random_variables: RandomVariables = RandomVariables.create(()),
         statements: Statements = Statements(),
-        dataset: Optional[pd.DataFrame] = None,
+        dataset: pd.DataFrame | None = None,
         datainfo: DataInfo = DataInfo(),
         dependent_variables: frozenmapping[Expr, int] = frozenmapping({Expr.symbol('y'): 1}),
-        observation_transformation: Optional[frozenmapping[Expr, Expr]] = None,
+        observation_transformation: frozenmapping[Expr, Expr] | None = None,
         execution_steps: ExecutionSteps = ExecutionSteps(),
-        initial_individual_estimates: Optional[pd.DataFrame] = None,
+        initial_individual_estimates: pd.DataFrame | None = None,
         value_type: str | Expr = 'PREDICTION',
         description: str = '',
-        internals: Optional[ModelInternals] = None,
+        internals: ModelInternals | None = None,
     ):
         self._name = name
         self._datainfo = datainfo
@@ -99,18 +99,18 @@ class Model(Immutable):
     def create(
         cls,
         name: str,
-        parameters: Optional[Parameters] = None,
-        random_variables: Optional[RandomVariables] = None,
-        statements: Optional[Statements] = None,
-        dataset: Optional[pd.DataFrame] = None,
+        parameters: Parameters | None = None,
+        random_variables: RandomVariables | None = None,
+        statements: Statements | None = None,
+        dataset: pd.DataFrame | None = None,
         datainfo: DataInfo = DataInfo(),
-        dependent_variables: Optional[Mapping[TSymbol, int]] = None,
-        observation_transformation: Optional[Mapping[TSymbol, TExpr]] = None,
-        execution_steps: Optional[ExecutionSteps] = None,
-        initial_individual_estimates: Optional[pd.DataFrame] = None,
+        dependent_variables: Mapping[TSymbol, int] | None = None,
+        observation_transformation: Mapping[TSymbol, TExpr] | None = None,
+        execution_steps: ExecutionSteps | None = None,
+        initial_individual_estimates: pd.DataFrame | None = None,
         value_type: str | Expr = 'PREDICTION',
         description: str = '',
-        internals: Optional[ModelInternals] = None,
+        internals: ModelInternals | None = None,
     ) -> Self:
         Model._canonicalize_name(name)
         random_variables = Model._canonicalize_random_variables(random_variables)
@@ -183,7 +183,7 @@ class Model(Immutable):
         return Parameters.create(thetas + omegas + sigmas)
 
     @staticmethod
-    def _canonicalize_random_variables(rvs: Optional[RandomVariables]) -> RandomVariables:
+    def _canonicalize_random_variables(rvs: RandomVariables | None) -> RandomVariables:
         if isinstance(rvs, RandomVariables):
             return rvs
         elif rvs is None:
@@ -240,7 +240,7 @@ class Model(Immutable):
 
     @staticmethod
     def _canonicalize_dependent_variables(
-        dvs: Optional[Mapping[TSymbol, int]], statements: Statements
+        dvs: Mapping[TSymbol, int] | None, statements: Statements
     ) -> frozenmapping[Expr, int]:
         if dvs is None:
             if len(statements) > 0:
@@ -261,7 +261,7 @@ class Model(Immutable):
 
     @staticmethod
     def _canonicalize_observation_transformation(
-        obs: Optional[Mapping[TSymbol, TExpr]],
+        obs: Mapping[TSymbol, TExpr] | None,
         dvs: frozenmapping[Expr, int],
     ) -> frozenmapping[Expr, Expr]:
         if obs is None:
@@ -272,7 +272,7 @@ class Model(Immutable):
         return frozenmapping(obs)
 
     @staticmethod
-    def _canonicalize_parameters(params: Optional[Parameters]) -> Parameters:
+    def _canonicalize_parameters(params: Parameters | None) -> Parameters:
         if params is None:
             return Parameters()
         else:
@@ -281,7 +281,7 @@ class Model(Immutable):
             return params
 
     @staticmethod
-    def _canonicalize_execution_steps(steps: Optional[ExecutionSteps]) -> ExecutionSteps:
+    def _canonicalize_execution_steps(steps: ExecutionSteps | None) -> ExecutionSteps:
         if steps is None:
             return ExecutionSteps()
         else:
@@ -642,17 +642,17 @@ class Model(Immutable):
         return self._datainfo
 
     @property
-    def dataset(self) -> Optional[pd.DataFrame]:
+    def dataset(self) -> pd.DataFrame | None:
         """Dataset connected to model"""
         return self._dataset
 
     @property
-    def initial_individual_estimates(self) -> Optional[pd.DataFrame]:
+    def initial_individual_estimates(self) -> pd.DataFrame | None:
         """Initial estimates for individual parameters"""
         return self._initial_individual_estimates
 
     @property
-    def internals(self) -> Optional[ModelInternals]:
+    def internals(self) -> ModelInternals | None:
         """Internal data for tool specific part of model"""
         return self._internals
 
@@ -692,7 +692,7 @@ class Model(Immutable):
         return self._description
 
     @staticmethod
-    def parse_model(path: Path | str, missing_data_token: Optional[str] = None):
+    def parse_model(path: Path | str, missing_data_token: str | None = None):
         """Create a model object by parsing a model file of any supported type
 
         Parameters
@@ -738,7 +738,7 @@ class Model(Immutable):
         NONMEM model with an updated dataset) they will be replaced with DUMMYPATH"""
         return self
 
-    def write_files(self, path: Optional[Path | str] = None, force: bool = False) -> Model:
+    def write_files(self, path: Path | str | None = None, force: bool = False) -> Model:
         """Write all extra files needed for a specific external format."""
         return self
 

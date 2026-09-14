@@ -4,7 +4,7 @@ import re
 from collections.abc import Collection, Iterable, Sequence
 from dataclasses import dataclass
 from itertools import filterfalse
-from typing import Literal, Optional, TypeVar
+from typing import Literal, TypeVar
 
 from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
@@ -418,7 +418,7 @@ def has_mu_reference(model: Model) -> bool:
     return True
 
 
-def get_mu_connected_to_parameter(model: Model, parameter: str) -> Optional[str]:
+def get_mu_connected_to_parameter(model: Model, parameter: str) -> str | None:
     """Return Mu name connected to parameter
 
     If the given parameter is not dependent on any Mu, None is returned
@@ -1478,8 +1478,8 @@ def _remove_covariate_effect_from_statements_recursive(
     symbol: Expr,
     expression: Expr,
     covariate: Expr,
-    parent: Optional[Expr],
-    current_theta_expression: Optional[Expr] = None,
+    parent: Expr | None,
+    current_theta_expression: Expr | None = None,
 ) -> ExpressionTreeNode:
     if expression.free_symbols.intersection(thetas):
         current_theta_expression = expression
@@ -1988,7 +1988,7 @@ def _dependency_graph(assignments: Sequence[Assignment]):
     return dependencies
 
 
-def is_real(model: Model, expr: TExpr) -> Optional[bool]:
+def is_real(model: Model, expr: TExpr) -> bool | None:
     """Determine if an expression is real valued given constraints of a model
 
     Parameters
@@ -2178,7 +2178,7 @@ def _create_inits(model: Model, dist: JointNormalDistribution) -> Matrix:
     return Matrix(A)
 
 
-def cholesky_decompose(model: Model, rvs: Optional[Collection[str]] = None) -> Model:
+def cholesky_decompose(model: Model, rvs: Collection[str] | None = None) -> Model:
     """Cholesky decomposition of joint normally distributed random variables
 
     Parameters

@@ -1,5 +1,3 @@
-from typing import Optional
-
 from pharmpy.basic import Matrix
 from pharmpy.model import Model
 from pharmpy.modeling import (
@@ -15,7 +13,7 @@ from pharmpy.modeling import (
 
 
 def delinearize_model(
-    linearized_model: Model, base_model: Model, param_mapping: Optional[dict] = None
+    linearized_model: Model, base_model: Model, param_mapping: dict | None = None
 ):
     """
     Delinearize a model given a base_model to linearize to. If param_mapping is

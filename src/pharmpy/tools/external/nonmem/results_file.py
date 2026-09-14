@@ -1,7 +1,7 @@
 import re
 from collections.abc import Callable, Generator, Iterable, Iterator
 from dataclasses import asdict, dataclass, fields, replace
-from typing import Any, Optional
+from typing import Any
 
 from packaging import version
 
@@ -34,23 +34,23 @@ def _decode_lst(line: bytes):
 
 @dataclass(frozen=True)
 class TermInfo:
-    minimization_successful: Optional[bool] = None
-    estimate_near_boundary: Optional[bool] = None
-    rounding_errors: Optional[bool] = None
-    maxevals_exceeded: Optional[bool] = None
+    minimization_successful: bool | None = None
+    estimate_near_boundary: bool | None = None
+    rounding_errors: bool | None = None
+    maxevals_exceeded: bool | None = None
     significant_digits: float = np.nan
     function_evaluations: float = np.nan
-    ofv_with_constant: Optional[float] = None
-    warning: Optional[bool] = None
-    eta_shrinkage: Optional[pd.DataFrame] = None
-    ebv_shrinkage: Optional[pd.DataFrame] = None
-    eps_shrinkage: Optional[pd.DataFrame] = None
+    ofv_with_constant: float | None = None
+    warning: bool | None = None
+    eta_shrinkage: pd.DataFrame | None = None
+    ebv_shrinkage: pd.DataFrame | None = None
+    eps_shrinkage: pd.DataFrame | None = None
 
 
 @dataclass(frozen=True)
 class TereInfo:
-    covariance_step_ok: Optional[bool] = None
-    estimation_runtime: Optional[float] = None
+    covariance_step_ok: bool | None = None
+    estimation_runtime: float | None = None
 
 
 @dataclass(frozen=True)
@@ -121,7 +121,7 @@ class NONMEMResultsFile:
         self.log = log
         self.table = {}
         self.nonmem_version = None
-        self.runtime_total: Optional[float] = None
+        self.runtime_total: float | None = None
         if path is not None:
             for name, content in self.table_blocks(path):
                 if name == 'INIT':

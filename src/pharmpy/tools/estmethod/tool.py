@@ -1,6 +1,6 @@
 import warnings
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -24,14 +24,14 @@ ALGORITHMS = frozenset(['exhaustive', 'exhaustive_with_update', 'exhaustive_only
 
 def create_workflow(
     algorithm: Literal[tuple(ALGORITHMS)],
-    methods: Optional[list[Literal[METHODS]] | Literal['all']] = None,
-    solvers: Optional[list[Literal[SOLVERS]] | Literal[SOLVERS]] = None,
-    parameter_uncertainty_methods: Optional[
-        list[Literal[PARAMETER_UNCERTAINTY_METHODS]] | Literal[PARAMETER_UNCERTAINTY_METHODS]
-    ] = None,
+    methods: list[Literal[METHODS]] | Literal['all'] | None = None,
+    solvers: list[Literal[SOLVERS]] | Literal[SOLVERS] | None = None,
+    parameter_uncertainty_methods: list[Literal[PARAMETER_UNCERTAINTY_METHODS]]
+    | Literal[PARAMETER_UNCERTAINTY_METHODS]
+    | None = None,
     compare_ofv: bool = True,
-    results: Optional[ModelfitResults] = None,
-    model: Optional[Model] = None,
+    results: ModelfitResults | None = None,
+    model: Model | None = None,
 ):
     """Run estmethod tool.
 
@@ -150,7 +150,7 @@ def post_process(*model_entries):
 
 @dataclass(frozen=True)
 class EstMethodResults(ToolResults):
-    summary_settings: Optional[Any] = None
+    summary_settings: Any | None = None
 
 
 def summarize_tool(model_entries):

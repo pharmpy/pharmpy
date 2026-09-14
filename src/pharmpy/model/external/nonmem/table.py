@@ -6,7 +6,7 @@ from collections.abc import Iterable, Iterator
 from io import StringIO
 from itertools import chain
 from pathlib import Path
-from typing import Literal, Optional, Protocol
+from typing import Literal, Protocol
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -93,8 +93,8 @@ class NONMEMTableFile:
 
     def __init__(
         self,
-        path: Optional[str | Path] = None,
-        tables: Optional[list[NONMEMTable]] = None,
+        path: str | Path | None = None,
+        tables: list[NONMEMTable] | None = None,
         notitle: bool = False,
         nolabel: bool = False,
         format: str = DEFAULT_NONMEM_TABLE_FILE_FORMAT,
@@ -127,7 +127,7 @@ class NONMEMTableFile:
     def _parse_table(
         self,
         content: Iterable[str],
-        suffix: Optional[str] = None,
+        suffix: str | None = None,
         notitle: bool = False,
         nolabel: bool = False,
         format: str = DEFAULT_NONMEM_TABLE_FILE_FORMAT,
@@ -223,22 +223,22 @@ class Readable(Protocol):
 class NONMEMTable:
     """A NONMEM output table."""
 
-    number: Optional[int] = None
-    is_evaluation: Optional[bool] = None
-    method: Optional[str] = None
-    design_optimality: Optional[str] = None
-    goal_function: Optional[str] = None
-    problem: Optional[int] = None
-    subproblem: Optional[int] = None
-    superproblem1: Optional[int] = None
-    iteration1: Optional[int] = None
-    superproblem2: Optional[int] = None
-    iteration2: Optional[int] = None
+    number: int | None = None
+    is_evaluation: bool | None = None
+    method: str | None = None
+    design_optimality: str | None = None
+    goal_function: str | None = None
+    problem: int | None = None
+    subproblem: int | None = None
+    superproblem1: int | None = None
+    iteration1: int | None = None
+    superproblem2: int | None = None
+    iteration2: int | None = None
 
     def __init__(
         self,
-        content: Optional[Readable] = None,
-        df: Optional[pd.DataFrame] = None,
+        content: Readable | None = None,
+        df: pd.DataFrame | None = None,
         format=DEFAULT_NONMEM_TABLE_FILE_FORMAT,
     ):
         if content is not None:

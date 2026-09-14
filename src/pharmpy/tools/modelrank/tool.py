@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Any, Literal, Optional
+from typing import Any, Literal
 
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -46,10 +46,10 @@ def create_workflow(
     ref_model: Model,
     strictness: str = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     rank_type: Literal[tuple(RANK_TYPES)] = 'ofv',
-    alpha: Optional[float] = 0.05,
-    search_space: Optional[str | ModelFeatures] = None,
-    E: Optional[float | str | tuple[float | str, float | str]] = None,
-    parameter_uncertainty_method: Optional[Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM']] = None,
+    alpha: float | None = 0.05,
+    search_space: str | ModelFeatures | None = None,
+    E: float | str | tuple[float | str, float | str] | None = None,
+    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     exclude_reference_model: bool = False,
 ):
     """Run ModelRank tool.
@@ -116,10 +116,10 @@ def start(
     ref_model: Model,
     strictness: str,
     rank_type: str,
-    alpha: Optional[float],
-    search_space: Optional[str],
+    alpha: float | None,
+    search_space: str | None,
     E: float | tuple[float],
-    parameter_uncertainty_method: Optional[str],
+    parameter_uncertainty_method: str | None,
     exclude_reference_model: bool = False,
 ):
     context.log_info("Starting tool modelrank")
@@ -192,8 +192,8 @@ def rank_models(
     mes_cand: list[ModelEntry],
     strictness: str,
     rank_type: str,
-    alpha: Optional[float],
-    search_space: Optional[str],
+    alpha: float | None,
+    search_space: str | None,
     E: float | tuple[float],
     exclude_reference_model: bool = False,
 ):
@@ -291,10 +291,10 @@ def rank_models_with_uncertainty(
     mes_cand: list[ModelEntry],
     strictness: str,
     rank_type: str,
-    alpha: Optional[float],
-    search_space: Optional[str],
+    alpha: float | None,
+    search_space: str | None,
     E: float | tuple[float],
-    parameter_uncertainty_method: Optional[str],
+    parameter_uncertainty_method: str | None,
     exclude_reference_model: bool = False,
 ):
     expr = get_strictness_expr(strictness)
@@ -519,9 +519,9 @@ def validate_input(
 
 @dataclass(frozen=True)
 class ModelRankResults(Results):
-    summary_tool: Optional[Any] = None
-    summary_strictness: Optional[Any] = None
-    summary_selection_criteria: Optional[Any] = None
-    summary_models: Optional[Any] = None
-    final_model: Optional[Model] = None
-    final_results: Optional[ModelfitResults] = None
+    summary_tool: Any | None = None
+    summary_strictness: Any | None = None
+    summary_selection_criteria: Any | None = None
+    summary_models: Any | None = None
+    final_model: Model | None = None
+    final_results: ModelfitResults | None = None

@@ -1,5 +1,5 @@
 from collections.abc import Mapping
-from typing import Any, Optional
+from typing import Any
 
 from pharmpy.workflows.broadcasters import Broadcaster
 from pharmpy.workflows.dispatchers import Dispatcher
@@ -14,7 +14,7 @@ class InputValidationError(Exception):
 
 def split_common_options(
     d,
-) -> tuple[Mapping[str, Any], Mapping[str, Any], Optional[int], Mapping[str, Any]]:
+) -> tuple[Mapping[str, Any], Mapping[str, Any], int | None, Mapping[str, Any]]:
     """Split the dict into dispatching options, common options, seed and tool options
 
     Dispatching options will be handled before the tool is run to setup the context and dispatching

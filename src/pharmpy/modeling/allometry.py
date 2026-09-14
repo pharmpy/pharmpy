@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Optional
-
 from pharmpy.basic import Expr, TExpr, TSymbol
 from pharmpy.model import Assignment, Model, Parameter, Parameters
 
@@ -11,12 +9,12 @@ from .odes import find_clearance_parameters, find_volume_parameters
 
 def add_allometry(
     model: Model,
-    allometric_variable: Optional[TSymbol] = None,
+    allometric_variable: TSymbol | None = None,
     reference_value: TExpr = 70,
-    parameters: Optional[list[TExpr]] = None,
-    initials: Optional[list[int | float]] = None,
-    lower_bounds: Optional[list[int | float]] = None,
-    upper_bounds: Optional[list[int | float]] = None,
+    parameters: list[TExpr] | None = None,
+    initials: list[int | float] | None = None,
+    lower_bounds: list[int | float] | None = None,
+    upper_bounds: list[int | float] | None = None,
     fixed: bool = True,
 ) -> Model:
     """Add allometric scaling of parameters

@@ -3,7 +3,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from typing import Any, Optional, Self, overload
+from typing import Any, Self, overload
 
 from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
@@ -242,7 +242,7 @@ output = Output()
 class CompartmentalSystemBuilder:
     """Builder for CompartmentalSystem"""
 
-    def __init__(self, cs: Optional[CompartmentalSystem] = None):
+    def __init__(self, cs: CompartmentalSystem | None = None):
         if cs:
             self._g = cs._g.copy()
         else:
@@ -343,7 +343,7 @@ class CompartmentalSystemBuilder:
         self,
         source: Compartment,
         destination: Compartment,
-        admid: Optional[int] = None,
+        admid: int | None = None,
     ) -> tuple[Compartment, Compartment]:
         """Move a dose input from one compartment to another
 
@@ -383,7 +383,7 @@ class CompartmentalSystemBuilder:
     def set_dose(
         self,
         compartment: Compartment,
-        dose: Optional[Dose | tuple[Dose, ...]],
+        dose: Dose | tuple[Dose, ...] | None,
     ) -> Compartment:
         """Set dose of compartment, replacing the previous.
 
@@ -438,7 +438,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
-    def remove_dose(self, compartment: Compartment, admid: Optional[int] = None):
+    def remove_dose(self, compartment: Compartment, admid: int | None = None):
         """Remove dose of compartment.
 
         Removes dose(s) of compartment. If admid is specified, only doses of that
@@ -531,7 +531,7 @@ class CompartmentalSystemBuilder:
         nx.relabel_nodes(self._g, mapping, copy=False)
         return new_comp
 
-    def find_compartment(self, name: str) -> Optional[Compartment]:
+    def find_compartment(self, name: str) -> Compartment | None:
         for comp in self._g.nodes:
             if not isinstance(comp, Output) and comp.name == name:
                 return comp
@@ -697,7 +697,7 @@ class CompartmentalSystem(Statement):
     def create(
         cls,
         builder: CompartmentalSystemBuilder,
-        t: Optional[Expr | str] = Expr.symbol('t'),
+        t: Expr | str | None = Expr.symbol('t'),
     ) -> Self:
         if builder is None:
             raise TypeError('Argument `builder` cannot be None`')
@@ -846,9 +846,7 @@ class CompartmentalSystem(Statement):
 
         return cls(cb, t=Expr.deserialize(d['t']))
 
-    def get_flow(
-        self, source: Optional[CompartmentBase], destination: Optional[CompartmentBase]
-    ) -> Expr:
+    def get_flow(self, source: CompartmentBase | None, destination: CompartmentBase | None) -> Expr:
         """Get the rate of flow between two compartments
 
         Parameters
@@ -977,7 +975,7 @@ class CompartmentalSystem(Statement):
                 comps.append(node)
         return comps
 
-    def find_compartment(self, name: str) -> Optional[Compartment]:
+    def find_compartment(self, name: str) -> Compartment | None:
         """Find a compartment using its name
 
         Parameters
@@ -1110,7 +1108,7 @@ class CompartmentalSystem(Statement):
             raise ValueError('Cannot find central compartment')
         return central
 
-    def find_peripheral_compartments(self, name: Optional[str] = None) -> list[Compartment]:
+    def find_peripheral_compartments(self, name: str | None = None) -> list[Compartment]:
         """Find perihperal compartments
 
         A peripheral compartment is defined as having one flow to the central compartment and
@@ -1198,7 +1196,7 @@ class CompartmentalSystem(Statement):
         else:
             return transits
 
-    def find_depot(self, statements: Statements) -> Optional[Compartment]:
+    def find_depot(self, statements: Statements) -> Compartment | None:
         """Find the depot compartment
 
         The depot compartment is defined to be the compartment that only has out flow to the
@@ -1631,8 +1629,8 @@ class Infusion(Dose, Immutable):
         self,
         amount: Expr,
         admid: int = 1,
-        rate: Optional[Expr] = None,
-        duration: Optional[Expr] = None,
+        rate: Expr | None = None,
+        duration: Expr | None = None,
     ):
         super().__init__(amount, admid)
         self._rate = rate
@@ -1643,8 +1641,8 @@ class Infusion(Dose, Immutable):
         cls,
         amount: TExpr,
         admid: int = 1,
-        rate: Optional[TExpr] = None,
-        duration: Optional[TExpr] = None,
+        rate: TExpr | None = None,
+        duration: TExpr | None = None,
     ) -> Self:
         if rate is None and duration is None:
             raise ValueError('Need rate or duration for Infusion')
@@ -1664,7 +1662,7 @@ class Infusion(Dose, Immutable):
         return Infusion.create(amount=amount, admid=admid, rate=rate, duration=duration)
 
     @property
-    def rate(self) -> Optional[Expr]:
+    def rate(self) -> Expr | None:
         """Symbolic rate
 
         Mutually exclusive with duration.
@@ -1672,7 +1670,7 @@ class Infusion(Dose, Immutable):
         return self._rate
 
     @property
-    def duration(self) -> Optional[Expr]:
+    def duration(self) -> Expr | None:
         """Symbolc duration
 
         Mutually exclusive with rate.
@@ -1812,7 +1810,7 @@ class Compartment(CompartmentBase):
     def create(
         cls,
         name: str,
-        amount: Optional[TExpr] = None,
+        amount: TExpr | None = None,
         doses: Sequence[Dose] = (),
         input: TExpr = Expr.integer(0),
         lag_time: TExpr = Expr.integer(0),
@@ -2032,7 +2030,7 @@ class Statements(Sequence, Immutable):
         self._statements = statements
 
     @classmethod
-    def create(cls, statements: Optional[Statements | Iterable[Statement]] = None) -> Self:
+    def create(cls, statements: Statements | Iterable[Statement] | None = None) -> Self:
         if isinstance(statements, Statements):
             pass
         elif statements is None:
@@ -2142,7 +2140,7 @@ class Statements(Sequence, Immutable):
         )
 
     @property
-    def ode_system(self) -> Optional[CompartmentalSystem]:
+    def ode_system(self) -> CompartmentalSystem | None:
         """Returns the ODE system of the model or None if the model doesn't have an ODE system
 
         Examples
@@ -2251,9 +2249,7 @@ class Statements(Sequence, Immutable):
         """
         return Statements(s.subs(substitutions) for s in self)
 
-    def _lookup_last_assignment(
-        self, symbol: TSymbol
-    ) -> tuple[Optional[int], Optional[Assignment]]:
+    def _lookup_last_assignment(self, symbol: TSymbol) -> tuple[int | None, Assignment | None]:
         if isinstance(symbol, str):
             symbol = Expr.symbol(symbol)
 
@@ -2265,7 +2261,7 @@ class Statements(Sequence, Immutable):
 
         return None, None
 
-    def find_assignment(self, symbol: TSymbol) -> Optional[Assignment]:
+    def find_assignment(self, symbol: TSymbol) -> Assignment | None:
         """Returns last assignment of symbol
 
         Parameters
@@ -2348,7 +2344,7 @@ class Statements(Sequence, Immutable):
             raise ValueError(f"Assignment of {symbol} not found")
         return ind
 
-    def find_assignment_index(self, symbol: TSymbol) -> Optional[int]:
+    def find_assignment_index(self, symbol: TSymbol) -> int | None:
         """Returns index of last assignment of symbol
 
         Parameters

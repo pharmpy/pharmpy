@@ -8,7 +8,6 @@ import warnings
 from itertools import repeat
 from pathlib import Path
 from tempfile import mkdtemp
-from typing import Optional
 
 from pharmpy import config
 from pharmpy.model.external.nonmem import convert_model
@@ -237,7 +236,7 @@ def nmfe(*args):
     ]
 
 
-def create_parafile_and_option(context, path: Path, tmp_path: Optional[Path]) -> str:
+def create_parafile_and_option(context, path: Path, tmp_path: Path | None) -> str:
     ncores = context.get_ncores_for_execution()
     if ncores > 1:
         nodedict = context.dispatcher.get_hosts()

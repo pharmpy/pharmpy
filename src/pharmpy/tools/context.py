@@ -1,6 +1,5 @@
 import os
 from pathlib import Path
-from typing import Optional
 
 from pharmpy.internals.fs.path import normalize_user_given_path
 from pharmpy.model import Model
@@ -64,7 +63,7 @@ def print_log(context: Context) -> None:
     broadcast_log(context, "terminal")
 
 
-def broadcast_log(context: Context, broadcaster: Optional[str] = None) -> None:
+def broadcast_log(context: Context, broadcaster: str | None = None) -> None:
     """Broadcast the log of a context
 
     Default is to use the same broadcaster, but optionally another broadcaster could

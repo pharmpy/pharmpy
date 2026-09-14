@@ -3,7 +3,7 @@ from __future__ import annotations
 import builtins
 from abc import abstractmethod
 from collections.abc import Iterable, Mapping, Sequence
-from typing import TYPE_CHECKING, Any, Optional, Self
+from typing import TYPE_CHECKING, Any, Self
 
 from pharmpy.internals.immutable import Immutable
 
@@ -36,7 +36,7 @@ class ModelFeature(Immutable):
         return Ref not in arg_types
 
     @staticmethod
-    def _canonicalize_type(type: str, types: Iterable[str], name: Optional[str] = None) -> str:
+    def _canonicalize_type(type: str, types: Iterable[str], name: str | None = None) -> str:
         if not name:
             name = 'type'
         if not isinstance(type, str):
