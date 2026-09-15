@@ -130,8 +130,6 @@ class Model(Immutable):
         )
         Model._check_symbol_names(datainfo, statements)
         dvs = Model._canonicalize_dependent_variables(dependent_variables, statements)
-        print(observation_transformation)
-        print(dvs)
         obs_transformation = Model._canonicalize_observation_transformation(
             observation_transformation, dvs
         )
