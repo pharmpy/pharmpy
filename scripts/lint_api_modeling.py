@@ -1,6 +1,9 @@
 from pathlib import Path
 import re
 
+# This script will check that all functions in modeling have been placed in the API documentation,
+# since modeling functions are split into categories and must be added manually.
+
 parent_dir = Path(__file__).parent.parent
 docs_path = parent_dir / 'docs' / 'api_modeling.rst'
 modeling_path = parent_dir / 'src' / 'pharmpy' / 'modeling' / '__init__.py'
