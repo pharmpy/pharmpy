@@ -44,10 +44,6 @@ context might look like this:
     │   │   ├── model.ctl
     │   │   ├── model.ext
     │   │   └── ...
-    │   └── modelsearch_run3
-    │   │   ├── model.ctl
-    │   │   ├── model.ext
-    │   │   └── ...
     │   └── ...
     ├── results.csv
     ├── results.html
