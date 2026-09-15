@@ -237,14 +237,14 @@ def test_multiple_dvs(load_model_for_test, pheno_path, testdata):
     model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno.dta')
     model = _add_random_dvids(model)
     model1 = set_tmdd(model, 'qss', {'complex': 2, 'target_tot': 3})
-    ass1 = Assignment.create(S("IPRED"), S("LAFREEF") / S("VC"))
-    assert model1.statements.find_assignment("IPRED") == ass1
+    ass1 = Assignment.create(S("CONC"), S("LAFREEF") / S("VC"))
+    assert model1.statements.find_assignment("CONC") == ass1
     assert S("Y_COMPLEX") in model1.statements.free_symbols
     assert S("Y_TOTTARGET") in model1.statements.free_symbols
 
     model2 = set_tmdd(model, 'qss', {'drug_tot': 1, 'complex': 2, 'target_tot': 3})
-    ass2 = Assignment.create(S("IPRED"), central_amount / S("VC"))
-    assert model2.statements.find_assignment("IPRED") == ass2
+    ass2 = Assignment.create(S("CONC"), central_amount / S("VC"))
+    assert model2.statements.find_assignment("CONC") == ass2
     assert S("Y_COMPLEX") in model2.statements.free_symbols
     assert S("Y_TOTTARGET") in model2.statements.free_symbols
 

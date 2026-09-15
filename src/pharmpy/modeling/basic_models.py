@@ -122,10 +122,10 @@ def create_basic_pk_model(
     cb.add_compartment(central)
     cb.add_flow(central, output, CL / VC)
 
-    ipred = Assignment(Expr.symbol('IPRED'), central.amount / VC)
-    y_ass = Assignment(Expr.symbol('Y'), ipred.symbol)
+    conc = Assignment(Expr.symbol('CONC'), central.amount / VC)
+    y_ass = Assignment(Expr.symbol('Y'), conc.symbol)
 
-    stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), ipred, y_ass])
+    stats = Statements([cl_ass, vc_ass, CompartmentalSystem(cb), conc, y_ass])
 
     est = EstimationStep.create(
         "FOCE",

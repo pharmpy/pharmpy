@@ -7,6 +7,11 @@ New features
 * Add :code:`modeling.plot_iteration_trace`
 * Add :code:`modeling.get_derived_covariates`
 
+Changes
+=======
+
+* Rename IPRED to CONC in :code:`create_basic_pk_model`
+
 .. _2.2.0:
 
 2.2.0 (2026-08-26)
