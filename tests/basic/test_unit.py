@@ -32,7 +32,7 @@ def test_serialize():
 
 @pytest.mark.parametrize(
     'expr, unicode_ref',
-    [('g', 'g'), ('g*h', 'g⋅h'), ('h^-1', '1/h'), ('ml', 'mL'), ('ug', 'µg'), ('µl', 'µL')],
+    [('g', 'g'), ('g*h', 'g⋅h'), ('h^-1', '1/h'), ('ml', 'mL'), ('ug', 'μg'), ('µl', 'μL')],
 )
 def test_unicode(expr, unicode_ref):
     assert Unit(expr).unicode() == unicode_ref

@@ -78,7 +78,7 @@ class Unit:
                 new_unit *= unit**multiplicity
             else:
                 new_unit *= element**multiplicity
-        return Unit(new_unit)
+        return Unit(new_unit)  # pyright: ignore [reportArgumentType]
 
     def replace_unit_of_dimension(self, replacement: Unit) -> Unit:
         """Replace the unit for one dimension"""
@@ -87,7 +87,7 @@ class Unit:
         )
 
     def __mul__(self, other: Unit) -> Unit:
-        return Unit(self._units * other._units)
+        return Unit(self._units * other._units)  # pyright: ignore [reportArgumentType]
 
     def __truediv__(self, other: Unit) -> Unit:
         return Unit(self._units / other._units)  # pyright: ignore [reportArgumentType]
