@@ -10,9 +10,11 @@ from pharmpy.basic import Expr
 from pharmpy.basic.expr import remove_variable_impact
 from pharmpy.model import (
     Assignment,
+    ColumnInfo,
     Compartment,
     CompartmentalSystem,
     CompartmentalSystemBuilder,
+    DataVariable,
     Model,
     Statements,
     get_and_check_odes,
@@ -324,6 +326,25 @@ def _add_dependent_variable(model: Model, expr: str):
         else:
             y = Assignment.create(y_2, Expr.symbol("E"))
         dvs = model.dependent_variables.replace(y_2, 2)
+        dvcol = model.datainfo.dv_column
+        if len(dvcol) == 1 and model.dataset is None:
+            # Adds new DV and DVID if needed into datainfo only if have no dataset
+            # (cannot create a DVID column in data)
+            di = model.datainfo
+            pkvar = dvcol.variable_mapping
+            pdvar = DataVariable.create("PD", type="dv")
+            new_map = {1: pkvar, 2: pdvar}
+            try:
+                di.typeix['dvid']
+            except IndexError:
+                dvid_var = DataVariable.create("DVID", type="dvid")
+                dvid_col = ColumnInfo.create("DVID", variable_mapping=dvid_var)
+                di = di + dvid_col
+
+            new_col = dvcol.replace(variable_mapping=new_map, variable_id="DVID")
+            di = di.set_column(new_col)
+            model = model.replace(datainfo=di)
+
         model = model.replace(statements=model.statements + y, dependent_variables=dvs)
 
         # Add error model
