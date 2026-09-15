@@ -383,7 +383,7 @@ def convert_unit(
         raise ValueError("Cannot find the original unit of {variable}")
     original_unit = Unit(original_unit)
 
-    molar_mass = column.variable.properties.get("molar_mass", None)
+    molar_mass = datavar.properties.get("molar_mass", None)
 
     if not original_unit.is_compatible_with(unit, molar_mass=molar_mass):
         raise ValueError(f"Unable to convert from {original_unit} to {unit}: different dimensions.")

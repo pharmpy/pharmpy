@@ -11,6 +11,7 @@ from pharmpy.modeling import (
     create_joint_distribution,
     get_unit_of,
     remove_iiv,
+    set_direct_effect,
     set_property,
 )
 
@@ -105,3 +106,17 @@ def test_convert_unit_in_dataset(
         assert m2.datainfo.typeix['dose'][0].variable.properties['unit'] == Unit(amt_unit)
     assert m2.dataset[variable].iloc[0] == values[0]
     assert m2.dataset[variable].iloc[1] == values[1]
+
+
+def test_convert_unit_multiple_dvs():
+    pk_model = create_basic_pk_model(administration="iv")
+    model = set_direct_effect(pk_model, "linear")
+    model = annotate_unit(model, "AMT", "mg")
+    model = annotate_unit(model, "DV:1", "mg/L")
+    model = annotate_unit(model, "DV:2", "mm")
+
+    m2 = convert_unit(model, "DV:1", "µg/L")
+    assert m2
+
+    m3 = convert_unit(model, "DV:2", "m")
+    assert m3
