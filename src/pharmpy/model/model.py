@@ -130,6 +130,8 @@ class Model(Immutable):
         )
         Model._check_symbol_names(datainfo, statements)
         dvs = Model._canonicalize_dependent_variables(dependent_variables, statements)
+        print(observation_transformation)
+        print(dvs)
         obs_transformation = Model._canonicalize_observation_transformation(
             observation_transformation, dvs
         )
@@ -266,10 +268,12 @@ class Model(Immutable):
     ) -> frozenmapping[Expr, Expr]:
         if obs is None:
             obs = {dv: dv for dv in dvs}
+        obs_new = {}
         for key, value in obs.items():
             key = Expr(key)
             value = Expr(value)
-        return frozenmapping(obs)
+            obs_new[key] = value
+        return frozenmapping(obs_new)
 
     @staticmethod
     def _canonicalize_parameters(params: Parameters | None) -> Parameters:

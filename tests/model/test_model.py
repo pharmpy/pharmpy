@@ -383,3 +383,11 @@ def test_get_and_check_dataset(load_example_model_for_test):
     m = pheno.replace(dataset=None)
     with pytest.raises(ValueError):
         get_and_check_dataset(m)
+
+
+def test_observation_transformation(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    assert model.observation_transformation == {Expr.symbol('Y'): Expr.symbol('Y')}
+
+    model = model.replace(observation_transformation={'Y': 'Y*2'})
+    assert model.observation_transformation == {Expr.symbol('Y'): Expr.symbol('Y') * 2}
