@@ -335,6 +335,7 @@ class CovariateInterpreter(MFLInterpreter):
 
         effects = []
         for param, cov, fp, op in itertools.product(params, covs, fps, ops):
+            assert isinstance(fp, str) and isinstance(op, str)
             effect = Covariate.create(
                 parameter=param, covariate=cov, fp=fp, op=op, optional=is_optional
             )
@@ -380,6 +381,7 @@ class VariabilityInterpreter(MFLInterpreter):
 
         effects = []
         for param, fp in itertools.product(params, fps):
+            assert isinstance(fp, str)
             effect = func(parameter=param, fp=fp, optional=is_optional)
             effects.append(effect)
 
@@ -424,6 +426,7 @@ class CovarianceInterpreter(MFLInterpreter):
 
         covariances = []
         for type, parameters in itertools.product(types, param_pairs):
+            assert isinstance(type, str)
             effect = Covariance.create(type=type, parameters=parameters, optional=is_optional)
             covariances.append(effect)
 
