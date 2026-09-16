@@ -1405,15 +1405,15 @@ def _theta_symbols(model: Model) -> set[sympy.Symbol]:
 
 
 def _depends_on_any(symbols: set[sympy.Symbol], expr: sympy.Expr) -> bool:
-    return any(map(lambda s: s in symbols, expr.free_symbols))
+    return any(s in symbols for s in expr.free_symbols)
 
 
 def _is_constant(thetas: set[sympy.Symbol], expr: sympy.Expr) -> bool:
-    return all(map(lambda s: s in thetas, expr.free_symbols))
+    return all(s in thetas for s in expr.free_symbols)
 
 
 def _is_univariate(thetas: set[sympy.Symbol], expr: sympy.Expr, variable: sympy.Symbol) -> bool:
-    return all(map(lambda s: s in thetas, expr.free_symbols - {variable}))
+    return all(s in thetas for s in expr.free_symbols - {variable})
 
 
 def simplify_model(

@@ -153,7 +153,7 @@ class NONMEMResultsFile:
     def covariance_status(self, table_number):
         result = TereInfo()
         if self._supported_nonmem_version:
-            _fields = set(map(lambda x: x.name, fields(TereInfo)))
+            _fields = {x.name for x in fields(TereInfo)}
             table = self.table.get(table_number)
             if table is not None:
                 result = replace(

@@ -22,7 +22,7 @@ def _df_hash_values(df: pd.DataFrame) -> Iterator[pd.Series]:
 
 
 def hash_df_runtime(df: pd.DataFrame) -> int:
-    return hash(tuple(map(lambda series: tuple(series.values), _df_hash_values(df))))
+    return hash(tuple(tuple(series.values) for series in _df_hash_values(df)))
 
 
 def hash_df_fs(df: pd.DataFrame) -> str:

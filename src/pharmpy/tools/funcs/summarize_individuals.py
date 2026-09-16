@@ -51,10 +51,7 @@ def summarize_individuals(mes: Sequence[ModelEntry]) -> pd.DataFrame:
     resDict = {model.name: res for model, res in zip(models, models_res)}
 
     df = pd.concat(
-        map(
-            lambda me: groupedByIDAddColumnsOneModel(resDict, me),
-            mes,
-        ),
+        (groupedByIDAddColumnsOneModel(resDict, me) for me in mes),
         keys=[model.name for model in models],
         names=['model'],
         axis=0,
