@@ -21,9 +21,7 @@ class Grid:
             for row in range(self.nrows):
                 e = self._grid[row][col]
                 if e:
-                    length = e.minimum_width
-                    if length > maxlen:
-                        maxlen = length
+                    maxlen = max(maxlen, e.minimum_width)
             widths.append(maxlen)
         return widths
 
@@ -32,9 +30,7 @@ class Grid:
         for col in range(self.ncols):
             e = self._grid[row][col]
             if e:
-                n = e.minimum_height
-                if n > maxheight:
-                    maxheight = n
+                maxheight = max(maxheight, e.minimum_height)
         return maxheight
 
     @staticmethod

@@ -376,8 +376,7 @@ class Opts:
         for opt in self.options:
             if isinstance(opt, WildOpt):
                 continue
-            if len(opt.name) > longest:
-                longest = len(opt.name)
+            longest = max(longest, len(opt.name))
 
         curlength = longest
         while True:
