@@ -38,7 +38,7 @@ def candidate_summary_dataframe(steps):
         )
         return df.droplevel('step')
     else:
-        scmplus = True if 'stashed' in steps.columns else False
+        scmplus = 'stashed' in steps.columns
         backstep_removed = {
             f'{row.Index[1]}{row.Index[2]}-{row.Index[3]}': row.Index[0]
             for row in steps.itertuples()
@@ -197,7 +197,7 @@ def parse_runtable_block(block, parcov_dictionary=None, included_relations=None)
         table['goal_ofv_drop'] = rawtable.goal.multiply(-1.0) if is_backward else rawtable.goal
 
     significant = np.array([False if np.isnan(s) else s for s in rawtable.signif])
-    table['is_backward'] = True if is_backward else False
+    table['is_backward'] = bool(is_backward)
     table['extended_significant'] = ~significant if is_backward else significant
     return table
 

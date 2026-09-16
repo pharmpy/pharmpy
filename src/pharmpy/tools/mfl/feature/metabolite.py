@@ -19,5 +19,5 @@ def features(model: Model, statements: Iterable[Statement]) -> Iterable[Feature]
             for mode in modes:
                 yield (
                     ('METABOLITE', mode.name),
-                    partial(add_metabolite, presystemic=True if mode.name == "PSC" else False),
+                    partial(add_metabolite, presystemic=(mode.name == "PSC")),
                 )

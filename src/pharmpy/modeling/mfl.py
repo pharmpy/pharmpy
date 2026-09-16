@@ -383,7 +383,7 @@ def _get_pd_func(feature: DirectEffect | IndirectEffect | EffectComp):
 
 
 def _get_metabolite_func(feature: Metabolite):
-    presystemic = True if feature.type == 'PSC' else False
+    presystemic = feature.type == 'PSC'
     func = partial(add_metabolite, presystemic=presystemic)
     return [func]
 

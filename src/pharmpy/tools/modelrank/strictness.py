@@ -76,7 +76,7 @@ def evaluate_strictness(expr: BooleanExpr, predicates: dict[str, bool | None]) -
             return predicates[str(expr_subs)]
         return None
     else:
-        return True if expr_subs.is_true() else False
+        return bool(expr_subs.is_true())
 
 
 def get_strictness_predicates(
@@ -104,7 +104,7 @@ def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str,
                 else:
                     sub_expr = sub_expr.subs({symb: predicates[symb]})
                     if not sub_expr.is_indeterminate():
-                        sub_expr = True if sub_expr.is_true() else False
+                        sub_expr = bool(sub_expr.is_true())
                     predicates[expr_key] = sub_expr
             else:
                 predicates[expr_key] = None
@@ -116,7 +116,7 @@ def get_strictness_predicates_me(me: ModelEntry, expr: BooleanExpr) -> dict[str,
         strictness_fulfilled = evaluate_strictness(expr, predicates)
         predicates['strictness_fulfilled'] = strictness_fulfilled
     else:
-        predicates['strictness_fulfilled'] = True if expr.is_true() else False
+        predicates['strictness_fulfilled'] = bool(expr.is_true())
 
     return predicates
 

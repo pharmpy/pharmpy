@@ -186,7 +186,7 @@ def _create_candidate_model(
     est_settings = None
     eval_settings = None
 
-    laplace = True if method == 'LAPLACE' else False
+    laplace = method == 'LAPLACE'
 
     if only_evaluation:
         eval_settings = _create_eval_settings(method, laplace, parameter_uncertainty_method)

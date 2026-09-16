@@ -165,7 +165,7 @@ class PeripheralsInterpreter(CountInterpreter):
 
         peripherals = []
         for number, type in itertools.product(numbers, types):
-            metabolite = True if type.upper() == 'MET' else False
+            metabolite = type.upper() == 'MET'
             p = Peripherals.create(number=number, metabolite=metabolite)
             peripherals.append(p)
         return sorted(peripherals)
@@ -188,7 +188,7 @@ class TransitsInterpreter(CountInterpreter):
 
         transits = []
         for number, depot in itertools.product(numbers, depot_settings):
-            depot = True if depot.upper() == 'DEPOT' else False
+            depot = depot.upper() == 'DEPOT'
             t = Transits.create(number=number, depot=depot)
             transits.append(t)
         return sorted(transits)
@@ -206,7 +206,7 @@ class LagTimeInterpreter(MFLInterpreter):
         assert len(children) == 1
 
         validate_values(children[0], ['ON', 'OFF'], 'LAGTIME')
-        on_off = [True if val.upper() == 'ON' else False for val in children[0]]
+        on_off = [val.upper() == 'ON' for val in children[0]]
 
         lagtimes = [LagTime.create(on=type) for type in on_off]
         return sorted(lagtimes)
@@ -254,7 +254,7 @@ class IndirectEffectInterpreter(MFLInterpreter):
 
         indirect_effects = []
         for type, production_type in itertools.product(types, production_types):
-            production = True if production_type.upper() == 'PRODUCTION' else False
+            production = production_type.upper() == 'PRODUCTION'
             indirect_effects.append(IndirectEffect.create(type=type, production=production))
         return sorted(indirect_effects)
 
