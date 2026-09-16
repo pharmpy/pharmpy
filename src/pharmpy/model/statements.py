@@ -214,7 +214,7 @@ class Output(CompartmentBase):
     def __new__(cls):
         # Singleton class
         if not hasattr(cls, 'instance'):
-            cls.instance = super(Output, cls).__new__(cls)
+            cls.instance = super().__new__(cls)
         return cls.instance
 
     def __repr__(self):

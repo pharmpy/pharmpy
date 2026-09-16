@@ -17,7 +17,7 @@ class LazyImport(ModuleType):
         self._parent_module_globals = parent_module_globals
         self._attr = attr
 
-        super(LazyImport, self).__init__(name)
+        super().__init__(name)
 
     def _load(self):
         # Import the target module and insert it into the parent's namespace
