@@ -251,8 +251,8 @@ def create_parafile_and_option(context, path: Path, tmp_path: Path | None) -> st
 def validate_dataset(model, path: Path):
     try:
         fcon_model = read_model(path / 'FCON')
-    except Exception:
-        raise ValueError('Could not parse FCON model to compare datasets')
+    except Exception as e:
+        raise ValueError('Could not parse FCON model to compare datasets') from e
     to_drop = [ci.name for ci in model.datainfo if ci.drop]
     dataset = model.dataset.drop(to_drop, axis=1, inplace=False)
     fdata = fcon_model.dataset

@@ -2106,11 +2106,11 @@ def get_dv_symbol(model: Model, dv: Expr | str | int | None = None) -> Expr:
     else:
         try:
             dv = Expr(dv)
-        except Exception:
+        except Exception as e:
             raise TypeError(
                 f"dv is of type {type(dv)} has to be one of Symbol or str representing "
                 "a dv or int representing a dvid"
-            )
+            ) from e
     if dv not in model.dependent_variables:
         raise ValueError(f"DV {dv} not defined in model")
     return dv

@@ -272,7 +272,7 @@ def execute_cells(kernel_name, cells, execute_kwargs):
     try:
         executenb(notebook, **execute_kwargs)
     except Exception as e:
-        raise ExtensionError("Notebook execution failed", orig_exc=e)
+        raise ExtensionError("Notebook execution failed", orig_exc=e) from e
 
     return notebook
 

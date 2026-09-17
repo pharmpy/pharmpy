@@ -506,8 +506,8 @@ def transform_into_search_space(
     for func in transformations:
         try:
             model_transformed = func(model_transformed)
-        except Exception:
-            raise ValueError(f'Could not transform model: {func}')
+        except Exception as e:
+            raise ValueError(f'Could not transform model: {func}') from e
     return model_transformed
 
 

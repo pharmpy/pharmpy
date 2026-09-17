@@ -226,7 +226,7 @@ def run_tool_with_name(
         try:
             validate_input(*args, **tool_options)
         except Exception as err:
-            raise InputValidationError(str(err))
+            raise InputValidationError(str(err)) from err
 
     dispatcher = Dispatcher.select_dispatcher(dispatching_options['dispatcher'])
     ctx = get_context(dispatching_options, tool_name)

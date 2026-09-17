@@ -241,8 +241,8 @@ def verification(
                 nonmem_res = fit(nonmem_model)
             else:
                 nonmem_res = modelfit_results
-    except Exception:
-        raise Exception("Nonmem model could not be fitted")
+    except Exception as e:
+        raise RuntimeError("Nonmem model could not be fitted") from e
 
     # Set a tool option to fix theta values when running nlmixr
     if fix_eta:
@@ -260,8 +260,8 @@ def verification(
         nlmixr_model = convert_model(
             set_initial_estimates(nonmem_model, nonmem_res.parameter_estimates)
         )
-    except Exception:
-        raise Exception("Could not convert model to nlmixr2")
+    except Exception as e:
+        raise RuntimeError("Could not convert model to nlmixr2") from e
 
     # Execute the nlmixr model
     db = Context.select_context(None, "comparison")

@@ -205,7 +205,7 @@ def html_visit_altair_plot(self, node):
                 node["rst_source"], node["rst_lineno"], e.__class__.__name__, str(e)
             )
         )
-        raise nodes.SkipNode
+        raise nodes.SkipNode from e
 
     chart_name = node["chart-var-name"]
     if chart_name is not None:

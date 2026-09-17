@@ -1021,9 +1021,7 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
         raise ValueError('Model 4 has no results')
     cov_model_results = None
     if method == 'cov_sampling':
-        try:
-            model_4_results.covariance_matrix
-        except Exception:
+        if model_4_results.covariance_matrix is None:
             model_4b_path = path / 'final_models' / 'model_4b.mod'
             try:
                 model_4b = Model.parse_model(model_4b_path, missing_data_token=missing_data_token)

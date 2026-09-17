@@ -37,7 +37,7 @@ def compute_cook_scores(base_estimate, cdd_estimates, covariance_matrix):
         delta_matrix = cdd_estimates - base_estimate
         x = linalg.solve_triangular(chol, delta_matrix.transpose(), lower=bool(islow), trans=1)
         return list(map(np.linalg.norm, x.transpose()))
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -76,7 +76,7 @@ def compute_covariance_ratios(cdd_model_results, covariance_matrix):
             )
             for res in cdd_model_results
         ]
-    except Exception:
+    except Exception:  # noqa: BLE001
         return None
 
 
@@ -146,14 +146,12 @@ def calculate_results(
                 base_model_results.predictions[['PRED', 'CIPREDI']],
                 individuals=infl_list,
             )
-        except Exception:
+        except Exception:  # noqa: BLE001
             iplot = None
     else:
         iplot = None
 
-    try:
-        covmatrix = base_model_results.covariance_matrix
-    except Exception:
+    if (covmatrix := base_model_results.covariance_matrix) is None:
         covratios = np.nan
     else:
         covratios = compute_covariance_ratios(cdd_model_results, covmatrix)
