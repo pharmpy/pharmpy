@@ -670,7 +670,7 @@ def test_full_expression(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
     expr = model.statements.before_odes.full_expression("CL")
     assert expr == Expr.symbol("PTVCL") * Expr.symbol("WGT") * (Expr.symbol("ETA_1").exp())
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         model.statements.full_expression("Y")
 
 

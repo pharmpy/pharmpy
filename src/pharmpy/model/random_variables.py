@@ -103,7 +103,7 @@ class VariabilityHierarchy(Immutable):
             found_ref = False
             for level in levels:
                 if not isinstance(level, VariabilityLevel):
-                    raise ValueError("Can only add VariabilityLevel to VariabilityHierarchy")
+                    raise TypeError("Can only add VariabilityLevel to VariabilityHierarchy")
                 if level.reference:
                     if found_ref:
                         raise ValueError("A VariabilityHierarchy can only have one reference level")
@@ -174,7 +174,7 @@ class VariabilityHierarchy(Immutable):
         if isinstance(other, VariabilityLevel):
             levels = (other,)
         else:
-            raise ValueError(f"Cannot add {other} to VariabilityHierarchy")
+            raise TypeError(f"Cannot add {other} to VariabilityHierarchy")
         new = VariabilityHierarchy.create(self._levels + levels)
         return new
 
@@ -182,7 +182,7 @@ class VariabilityHierarchy(Immutable):
         if isinstance(other, VariabilityLevel):
             return VariabilityHierarchy.create((other,) + self._levels)
         else:
-            raise ValueError(f"Cannot add {other} to VariabilityLevel")
+            raise TypeError(f"Cannot add {other} to VariabilityLevel")
 
     @property
     @cache_method_no_args

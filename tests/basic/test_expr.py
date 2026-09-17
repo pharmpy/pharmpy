@@ -18,7 +18,7 @@ def test_symbol():
     expr = Expr.symbol("CL")
     assert expr.name == "CL"
     expr = Expr.integer(1)
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         expr.name
     expr = Expr.function("f", "t")
     assert expr.name == "f"
@@ -40,7 +40,7 @@ def test_piecewise():
     assert expr.piecewise_args[1][0] == Expr.integer(2)
 
     expr = Expr.symbol("x")
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         expr.piecewise_args
 
 

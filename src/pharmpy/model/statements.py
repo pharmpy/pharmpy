@@ -2563,7 +2563,7 @@ class Statements(Sequence, Immutable):
         expression = Expr(expression)
         for statement in reversed(self):
             if isinstance(statement, CompartmentalSystem):
-                raise ValueError(
+                raise TypeError(
                     "CompartmentalSystem not supported by full_expression. Use the properties before_odes "
                     "or after_odes."
                 )

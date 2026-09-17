@@ -45,7 +45,7 @@ def test_initialization(name, init, lower, upper, fix):
     ],
 )
 def test_illegal_initialization(name, init, lower, upper, fix):
-    with pytest.raises(ValueError):
+    with pytest.raises((ValueError, TypeError)):
         Parameter.create(name, init, lower, upper, fix)
 
 
@@ -80,7 +80,7 @@ def test_add():
     assert len(pset6) == 3
     assert pset6['z'].init == 4
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         pset + 23
 
 
@@ -100,7 +100,7 @@ def test_pset_radd():
     assert cat['W'].init == 1
     assert cat['Y'].init == 9
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         23 + pset1
 
 
@@ -122,10 +122,10 @@ def test_sub():
     assert pset2 - pset1 == aftersub2
     assert [q1, q2, q3] - pset1 == aftersub2
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         pset1 - 23
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         23 - pset1
 
     aftersub3 = Parameters((p2, p3))
@@ -145,7 +145,7 @@ def test_pset_init():
     with pytest.raises(ValueError):
         Parameters.create((p, p2))
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         Parameters.create([23])
 
     pset3 = Parameters.create()

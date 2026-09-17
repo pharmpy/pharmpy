@@ -860,10 +860,10 @@ def test_levels():
     assert rvs.eta_levels.levels == {'IIV': 0, 'IOV': 1}
     assert rvs.epsilon_levels.levels == {'RUV': 0}
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         rvs.eta_levels + 23
 
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         23 + rvs.eta_levels
 
     assert len(rvs.eta_levels[['IIV', 'IOV']]) == 2
@@ -888,7 +888,7 @@ def test_levels():
     lev3 = VariabilityLevel('other', reference=True, group='OTHER')
     with pytest.raises(ValueError):
         VariabilityHierarchy.create([lev1, lev3])
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         VariabilityHierarchy.create([23])
     with pytest.raises(KeyError):
         rvs.eta_levels[None]

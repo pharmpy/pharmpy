@@ -48,7 +48,7 @@ class Expr:
             except AttributeError:
                 return str(self._expr).partition("(")[0]
         else:
-            raise ValueError("Expression has no name")
+            raise TypeError("Expression has no name")
 
     @property
     def args(self) -> tuple[Expr | BooleanExpr, ...]:
@@ -77,7 +77,7 @@ class Expr:
             x = self._expr.args
             args = tuple((Expr(x[i]), BooleanExpr(x[i + 1])) for i in range(0, len(x), 2))
         else:
-            raise ValueError("Expression is not a piecewise")
+            raise TypeError("Expression is not a piecewise")
         return args
 
     def make_args(self, expr):

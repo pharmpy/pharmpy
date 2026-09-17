@@ -62,7 +62,7 @@ class Parameter(Immutable):
     ) -> Self:
         """Alternative constructor for Parameter with error checking"""
         if not isinstance(name, str):
-            raise ValueError("Name of parameter must be of type string")
+            raise TypeError("Name of parameter must be of type string")
         init = float(init)
         if np.isnan(init) or np.isinf(init):
             raise ValueError('Initial estimate cannot be NaN or +/- infinity')
@@ -204,7 +204,7 @@ class Parameters(CollectionsSequence, Immutable):
         names = set()
         for p in parameters:
             if not isinstance(p, Parameter):
-                raise ValueError(f'Can not add variable of type {type(p)} to Parameters')
+                raise TypeError(f'Can not add variable of type {type(p)} to Parameters')
             if p.name in names:
                 raise ValueError(
                     f'Parameter names must be unique. Parameter "{p.name}" '
@@ -389,7 +389,7 @@ class Parameters(CollectionsSequence, Immutable):
         elif isinstance(other, Sequence):
             return Parameters.create(self._params + tuple(other))
         else:
-            raise ValueError(f"Cannot add {other} to Parameters")
+            raise TypeError(f"Cannot add {other} to Parameters")
 
     def __radd__(self, other: Parameter | Sequence[Parameter]) -> Parameters:
         if isinstance(other, Parameter):
@@ -397,7 +397,7 @@ class Parameters(CollectionsSequence, Immutable):
         elif isinstance(other, Sequence):
             return Parameters.create(tuple(other) + self._params)
         else:
-            raise ValueError(f"Cannot add {other} to Parameters")
+            raise TypeError(f"Cannot add {other} to Parameters")
 
     def __sub__(self, other: Parameter | Parameters | Sequence[Parameter]) -> Parameters:
         if isinstance(other, Parameter):
@@ -406,7 +406,7 @@ class Parameters(CollectionsSequence, Immutable):
             names = [p.name for p in other]
             return Parameters(tuple(p for p in self._params if p.name not in names))
         else:
-            raise ValueError(f"Cannot remove {other} from Parameters")
+            raise TypeError(f"Cannot remove {other} from Parameters")
 
     def __rsub__(self, other: Parameter | Sequence[Parameter]) -> Parameters:
         if isinstance(other, Parameter):
@@ -414,7 +414,7 @@ class Parameters(CollectionsSequence, Immutable):
         elif isinstance(other, Sequence):
             return Parameters(tuple(p for p in other if p.name not in self.names))
         else:
-            raise ValueError(f"Cannot remove Parameters from {other}")
+            raise TypeError(f"Cannot remove Parameters from {other}")
 
     def __eq__(self, other: object):
         if self is other:
