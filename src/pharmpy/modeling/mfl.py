@@ -558,7 +558,7 @@ def _get_feature_diffs(search_space, model_features, type):
             # Handle multiple types of fps for IIVs, e.g. exp cannot be combined with add
             if any(f in model_features for f in other_features):
                 continue
-            min_feature = sorted(other_features, reverse=True)[0]
+            min_feature = max(other_features)
             if feature != min_feature:
                 continue
         if feature not in model_features:
