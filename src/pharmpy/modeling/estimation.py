@@ -62,8 +62,8 @@ def calculate_ucp_scale(model: Model) -> UCPScale:
     for p in model.parameters:
         if not p.fix:
             if p.symbol not in model.random_variables.free_symbols:
-                upper = p.upper if p.upper < 1000000 else 1000000
-                lower = p.lower if p.lower > -1000000 else -1000000
+                upper = min(1000000, p.upper)
+                lower = max(-1000000, p.lower)
                 if p.init < lower:
                     init = lower + 1
                 elif p.init > upper:

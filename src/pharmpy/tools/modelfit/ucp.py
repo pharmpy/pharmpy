@@ -108,8 +108,8 @@ def scale_thetas(parameters):
             range_ul_vec.append(None)
         else:
             # Bounded in both or one direction
-            upper = p.upper if p.upper < 1000000 else 1000000
-            lower = p.lower if p.lower > -1000000 else -1000000
+            upper = min(1000000, p.upper)
+            lower = max(-1000000, p.lower)
             range_ul = upper - lower
             range_prop = (p.init - lower) / range_ul
             scaled = 0.1 - math.log(range_prop / (1.0 - range_prop))
