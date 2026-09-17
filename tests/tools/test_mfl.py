@@ -578,7 +578,9 @@ def test_funcs_ivoral(source, expected):
     ),
 )
 def test_illegal_mfl(code):
-    with pytest.raises(Exception):
+    from lark.exceptions import UnexpectedToken
+
+    with pytest.raises((UnexpectedToken, ValueError)):
         parse(code)
 
 

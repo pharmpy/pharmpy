@@ -8,7 +8,7 @@ from pharmpy.tools.simulation.tool import validate_input
 def test_validate_input_raises(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         validate_input(model)
 
     simmodel = set_simulation(model)
@@ -16,5 +16,5 @@ def test_validate_input_raises(load_example_model_for_test):
 
     nostepmodel = model.replace(execution_steps=ExecutionSteps())
 
-    with pytest.raises(Exception):
+    with pytest.raises(ValueError):
         validate_input(nostepmodel)
