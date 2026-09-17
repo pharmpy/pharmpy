@@ -694,7 +694,7 @@ class Model(Immutable):
         return self._description
 
     @staticmethod
-    def parse_model(path: Path | str, missing_data_token: str | None = None):
+    def parse_model(path: Path | str, missing_data_token: str | None = None) -> Model:
         """Create a model object by parsing a model file of any supported type
 
         Parameters

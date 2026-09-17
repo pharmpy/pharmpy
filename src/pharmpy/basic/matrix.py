@@ -122,7 +122,7 @@ class Matrix:
         return Matrix(other._m @ self._m)
 
     @staticmethod
-    def _convert_input(m):
+    def _convert_input[T](m: T) -> Matrix | T:
         if isinstance(m, Matrix):
             return m
         elif isinstance(m, Sequence) and isinstance(m[0], Sequence):

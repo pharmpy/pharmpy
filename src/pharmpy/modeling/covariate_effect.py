@@ -9,7 +9,7 @@ import re
 import warnings
 from collections import defaultdict
 from operator import add, mul
-from typing import Literal, Self
+from typing import Any, Literal, Self
 
 from pharmpy.basic.expr import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
@@ -767,7 +767,7 @@ class CovariateEffect:
         return statement_new
 
     @staticmethod
-    def _get_operation(operation_str):
+    def _get_operation(operation_str) -> Any:
         """Gets sympy operation based on string"""
         if operation_str == '*':
             return mul

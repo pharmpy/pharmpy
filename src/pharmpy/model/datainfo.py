@@ -1605,7 +1605,7 @@ class DataInfo(Sequence, Immutable):
                 json.dump(d, fp)
 
     @staticmethod
-    def _populate_dict_with_defaults(d: dict[str, Any]):
+    def _populate_dict_with_defaults(d: dict[str, Any]) -> None:
         def _defaults_in_data_variable(variable):
             if 'type' not in variable:
                 variable['type'] = 'unknown'
