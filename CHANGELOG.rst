@@ -6,11 +6,19 @@ New features
 
 * Add :code:`modeling.plot_iteration_trace`
 * Add :code:`modeling.get_derived_covariates`
+* Add option :code:`seed` to :code:`modeling.resample_data`
+* Support :code:`seed` in :code:`run_bootstrap`
 
 Changes
 =======
 
 * Rename IPRED to CONC in :code:`create_basic_pk_model`
+* :code:`RandomNumberGenerator` no longer use context path when generated in :code:`Context`
+
+Bugfixes
+========
+
+* Input :code:`seed` to QA in AMD
 
 .. _2.2.0:
 
