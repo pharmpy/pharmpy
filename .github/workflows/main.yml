@@ -109,7 +109,9 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
       - name: Lint MANIFEST and Python files
-        run: tox -e lint
+        run: |
+          tox -e lint
+          tox -e package-check
 
 
   type-check:
