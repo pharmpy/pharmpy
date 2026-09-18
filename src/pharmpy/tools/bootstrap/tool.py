@@ -57,7 +57,7 @@ def create_workflow(
     start_task = Task('start', start, model, results)
 
     for i in range(samples):
-        task_resample = Task('resample', resample_model, f'bs_{i + 1}', results)
+        task_resample = Task('resample', resample_model, i, results)
         wb.add_task(task_resample, predecessors=start_task)
         task_execute = Task('run_model', run_model)
         wb.add_task(task_execute, predecessors=task_resample)
@@ -78,9 +78,17 @@ def start(context, input_model, results):
     return input_model
 
 
-def resample_model(name, input_results, input_model):
+def resample_model(context, index, input_results, input_model):
+    name = f'bs_{index + 1}'
+    rng = context.create_rng(index)
+
     resample = resample_data(
-        input_model, input_model.datainfo.id_column.name, resamples=1, replace=True, name=name
+        input_model,
+        input_model.datainfo.id_column.name,
+        resamples=1,
+        replace=True,
+        name=name,
+        seed=rng,
     )
     model, groups = next(resample)
     assert isinstance(model, Model)
