@@ -332,6 +332,5 @@ class Context(ABC):
         Creating the generator will be using the seed common option, the index and
         the context path to get a unique sequence.
         """
-        ctxpath_bytes = bytes(self.context_path, encoding="utf-8")
-        rng = RandomNumberGenerator([index, *ctxpath_bytes, self.seed])
+        rng = RandomNumberGenerator([index, self.seed])
         return rng
