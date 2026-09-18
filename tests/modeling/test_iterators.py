@@ -1,4 +1,3 @@
-import numpy as np
 import pandas.testing
 import pytest
 
@@ -52,13 +51,12 @@ def test_omit_with_model(load_model_for_test, pheno_path):
 
 
 def test_resampler_default(df):
-    np.random.seed(28)
-    resampler = iters.Resample(df, 'ID')
+    resampler = iters.Resample(df, 'ID', seed=12345)
     new_df, ids = next(resampler)
-    assert ids == [1, 4, 2]
+    assert ids == [2, 1, 4]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3]
-    assert list(new_df['DV']) == [5, 6, 0, 9, 3, 4]
-    assert list(new_df['STRAT']) == [1, 1, 2, 2, 2, 2]
+    assert list(new_df['DV']) == [3, 4, 5, 6, 0, 9]
+    assert list(new_df['STRAT']) == [2, 2, 1, 1, 2, 2]
     assert new_df.name == 'resample_1'
     with pytest.raises(StopIteration):  # Test the default one iteration
         next(resampler)
@@ -70,51 +68,67 @@ def test_resampler_too_big_sample_size(df):
 
 
 def test_resampler_noreplace(df):
-    np.random.seed(28)
-    resampler = iters.Resample(df, 'ID', replace=False, sample_size=3)
+    resampler = iters.Resample(df, 'ID', replace=False, sample_size=3, seed=12345)
     next(resampler)
 
-    resampler = iters.Resample(df, 'ID', stratify='STRAT')
+    resampler = iters.Resample(df, 'ID', stratify='STRAT', seed=12345)
     new_df, ids = next(resampler)
-    assert ids == [1, 2, 4]
+    assert ids == [1, 4, 2]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3]
-    assert list(new_df['DV']) == [5, 6, 3, 4, 0, 9]
+    assert list(new_df['DV']) == [5, 6, 0, 9, 3, 4]
 
-    resampler = iters.Resample(df, 'ID', replace=False, sample_size=2)
+    resampler = iters.Resample(df, 'ID', replace=False, sample_size=2, seed=12345)
     new_df, ids = next(resampler)
     assert list(ids) == [2, 1]
     assert list(new_df['ID']) == [1, 1, 2, 2]
 
 
 def test_stratification(df):
-    np.random.seed(28)
     resampler = iters.Resample(
-        df, 'ID', resamples=1, stratify='STRAT', sample_size={1: 2, 2: 3}, replace=True
+        df,
+        'ID',
+        resamples=1,
+        stratify='STRAT',
+        sample_size={1: 2, 2: 3},
+        replace=True,
+        seed=12345,
     )
     new_df, ids = next(resampler)
-    assert ids == [1, 1, 4, 4, 4]
+    assert ids == [1, 1, 4, 2, 4]
     assert list(new_df['ID']) == [1, 1, 2, 2, 3, 3, 4, 4, 5, 5]
-    assert list(new_df['DV']) == [5, 6, 5, 6, 0, 9, 0, 9, 0, 9]
+    assert list(new_df['DV']) == [5, 6, 5, 6, 0, 9, 3, 4, 0, 9]
 
     resampler = iters.Resample(
-        df, 'ID', resamples=1, stratify='STRAT', sample_size={1: 2}, replace=True
+        df,
+        'ID',
+        resamples=1,
+        stratify='STRAT',
+        sample_size={1: 2},
+        replace=True,
+        seed=12345,
     )
     new_df, ids = next(resampler)
     assert ids == [1, 1]
 
-    resampler = iters.Resample(df, 'ID', resamples=3, stratify='STRAT', replace=True)
-    new_df, ids = next(resampler)
-    assert ids == [1, 2, 2]
-    new_df, ids = next(resampler)
-    assert ids == [1, 2, 4]
+    resampler = iters.Resample(
+        df,
+        'ID',
+        resamples=3,
+        stratify='STRAT',
+        replace=True,
+        seed=12345,
+    )
     new_df, ids = next(resampler)
     assert ids == [1, 4, 2]
+    new_df, ids = next(resampler)
+    assert ids == [1, 4, 2]
+    new_df, ids = next(resampler)
+    assert ids == [1, 2, 4]
 
 
 def test_resampler_anonymization(testdata):
-    np.random.seed(28)
     df = pd.read_csv(testdata / 'pheno_data.csv')
-    resampler = iters.Resample(df, group='ID')
+    resampler = iters.Resample(df, group='ID', seed=12345)
     new_df, ids = next(resampler)
     assert all(e in ids for e in range(1, 60))
     assert len(ids) == 59
@@ -129,8 +143,7 @@ def test_resampler_anonymization(testdata):
 
 def test_resampler_with_model(load_model_for_test, pheno_path):
     model = load_model_for_test(pheno_path)
-    np.random.seed(28)
-    resampler = iters.Resample(model, 'ID', resamples=2)
+    resampler = iters.Resample(model, 'ID', resamples=2, seed=12345)
     new_model, ids = next(resampler)
     assert set(ids).issubset(model.dataset.index)
     assert new_model.datainfo.provenance == Provenance()

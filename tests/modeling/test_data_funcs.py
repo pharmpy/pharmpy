@@ -586,8 +586,6 @@ def test_expand_additional_doses(load_model_for_test, testdata):
 
 
 def test_deidentify_data():
-    np.random.seed(23)
-
     example = pd.DataFrame(
         {'ID': [1, 1, 2, 2], 'DATE': ["2012-05-25", "2013-04-02", "2011-12-23", "2005-02-28"]}
     )
@@ -608,12 +606,12 @@ def test_deidentify_data():
     df = deidentify_data(example, date_columns=['DATE', 'BIRTH'])
     correct_date = reset_index(
         pd.to_datetime(
-            pd.Series(["1959-12-23", "1953-02-28", "1960-05-25", "1961-04-02"], name='DATE')
+            pd.Series(["1960-05-25", "1961-04-02", "1959-12-23", "1953-02-28"], name='DATE')
         )
     )
     correct_birth = reset_index(
         pd.to_datetime(
-            pd.Series(["1904-10-12", "1904-10-12", "1928-07-07", "1928-07-07"], name='BIRTH')
+            pd.Series(["1928-07-07", "1928-07-07", "1904-10-12", "1904-10-12"], name='BIRTH')
         )
     )
     pd.testing.assert_series_equal(df['DATE'], correct_date)

@@ -14,12 +14,13 @@ from __future__ import annotations
 import warnings
 from collections.abc import Mapping
 
-from pharmpy.basic import BooleanExpr, Expr
-from pharmpy.deps import numpy as np
+from pharmpy.basic import BooleanExpr, Expr, RandomNumberGenerator, Seed
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.df import reset_index
 from pharmpy.internals.math import round_and_keep_sum
 from pharmpy.model import Ignore, Model, Provenance
+
+from .parameter_sampling import create_rng
 
 
 class DatasetIterator:
@@ -170,6 +171,7 @@ class Resample(DatasetIterator):
         replace=False,
         name_pattern='resample_{}',
         name=None,
+        seed=None,
     ):
         df = self._retrieve_dataset(dataset_or_model)
         unique_groups = df[group].unique()
@@ -218,6 +220,8 @@ class Resample(DatasetIterator):
         self._replace = replace
         self._stratas = stratas
         self._sample_size_dict = sample_size_dict
+        self._rng = create_rng(seed)
+
         if resamples > 1 and name:
             warnings.warn(
                 f'One name was provided despite having multiple resamples, falling back to '
@@ -231,9 +235,10 @@ class Resample(DatasetIterator):
     def __next__(self):
         self._check_exhausted()
 
+        rng = self._rng.to_numpy()
         random_groups = []
         for strata in self._sample_size_dict:
-            random_groups += np.random.choice(
+            random_groups += rng.choice(
                 self._stratas[strata],
                 size=self._sample_size_dict[strata],
                 replace=self._replace,
@@ -263,6 +268,7 @@ def resample_data(
     replace: bool = False,
     name_pattern: str = 'resample_{}',
     name: str | None = None,
+    seed: RandomNumberGenerator | float | int | Seed | None = None,
 ):
     """Iterate over resamples of a dataset.
 
@@ -296,6 +302,9 @@ def resample_data(
         be put in the placeholder.
     name : str
         Option to name pattern in case of only one resample
+    seed : int or rng
+        Seed for the random number generator or None (default) for a randomized seed. If seed
+        is a generator it will be passed through.
 
     Returns
     -------
@@ -311,4 +320,5 @@ def resample_data(
         replace=replace,
         name_pattern=name_pattern,
         name=name,
+        seed=seed,
     )

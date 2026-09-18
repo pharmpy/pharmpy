@@ -6,6 +6,7 @@ from collections.abc import Collection, Container
 from pathlib import Path
 from typing import Any, Literal, overload
 
+from pharmpy import DEFAULT_SEED
 from pharmpy.basic import BooleanExpr, Expr
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
@@ -2078,7 +2079,7 @@ def deidentify_data(
     """
     df = df.copy()
     df[id_column] = pd.to_numeric(df[id_column])
-    resampler = resample_data(df, id_column)
+    resampler = resample_data(df, id_column, seed=DEFAULT_SEED)
     df, _ = next(resampler)
 
     if date_columns is None:
