@@ -687,7 +687,11 @@ def _categorize_parameters(model):
     randpars = omegas.intersection(all_pop_params)
     fixedpars = set()
     for indpar in indpars:
-        expr = model.statements.before_odes.full_expression(indpar)
+        if model.statements.ode_system is not None:
+            expr = model.statements.after_odes.full_expression(indpar)
+        else:
+            expr = Expr.symbol(indpar)
+        expr = model.statements.before_odes.full_expression(expr)
         symbols = expr.free_symbols
         param_symbols = symbols.intersection(all_pop_params)
         if symbols.isdisjoint(etas):
