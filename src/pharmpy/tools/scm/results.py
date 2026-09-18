@@ -514,7 +514,7 @@ def split_merged_base_and_new_ofv(rawtable):
         # in second part after string split.
         if not all(pd.isna(rawtable.iloc[:, -1])):
             # Expect all values in last column to be NaN if ofv columns are merged
-            raise Exception
+            raise ValueError
         # Save names and then drop last column. Names are unique so this drops 1 col
         column_names = list(rawtable.columns)
         rawtable.drop(columns=column_names[-1], inplace=True)
@@ -526,7 +526,7 @@ def split_merged_base_and_new_ofv(rawtable):
         subdf.replace('FAILED', np.nan, inplace=True)
         if len(subdf.base.unique()) > 1:
             # All base values should be identical now
-            raise Exception
+            raise ValueError
         # Replace base column and insert newfixed
         rawtable.base = subdf.base
         rawtable.insert(3, 'newfixed', subdf.newfixed)
