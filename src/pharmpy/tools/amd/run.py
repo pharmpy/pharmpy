@@ -588,7 +588,7 @@ def run_amd_task(
     sim_res = _run_simulation(sim_model, context)
     simulation_data = sim_res.table
 
-    _run_qa(final_model, final_results, context)
+    _run_qa(final_model, final_results, rng.spawn_seed(), context)
 
     plots = create_plots(final_model, final_results)
 
@@ -935,9 +935,16 @@ def _run_simulation(model, ctx):
     return res
 
 
-def _run_qa(model, results, ctx):
+def _run_qa(model, results, seed, ctx):
     res = run_subtool(
-        'qa', ctx, name='qa', model=model, results=results, linearize=False, skip=['fullblock']
+        'qa',
+        ctx,
+        name='qa',
+        model=model,
+        results=results,
+        linearize=False,
+        skip=['fullblock'],
+        seed=seed,
     )
     return res
 
