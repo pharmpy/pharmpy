@@ -339,6 +339,12 @@ class Expr:
     def __gt__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Gt(self._expr, other))
 
+    def __ge__(self, other) -> BooleanExpr:
+        return BooleanExpr(symengine.Ge(self._expr, other))
+
+    def __lt__(self, other) -> BooleanExpr:
+        return BooleanExpr(symengine.Lt(self._expr, other))
+
     def __le__(self, other) -> BooleanExpr:
         return BooleanExpr(symengine.Le(self._expr, other))
 

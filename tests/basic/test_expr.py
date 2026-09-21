@@ -111,6 +111,8 @@ def test_init_boolean_expr():
     'expr,alternative',
     [
         (Expr.symbol("CL") <= 1, BooleanExpr('CL <= 1')),
+        (Expr.symbol("CL") >= 1, BooleanExpr('1 <= CL')),
+        (Expr.symbol("CL") < 1, BooleanExpr('CL < 1')),
         (
             (Expr.symbol("TIME") <= 0) & (Expr.symbol("TRT") <= 0),
             BooleanExpr('(TIME <= 0) & (TRT <= 0)'),
