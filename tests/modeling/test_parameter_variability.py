@@ -62,8 +62,10 @@ def S(x):
             're_log',
             '+',
             None,
-            'V=TVV*EXP(ETA(2))\nPHI_V = LOG(V/(1 - V))'
-            '\nS1 = EXP(ETA_S1*PHI_V)/(EXP(ETA_S1*PHI_V) + 1)',
+            (
+                'V=TVV*EXP(ETA(2))\nPHI_V = LOG(V/(1 - V))'
+                '\nS1 = EXP(ETA_S1*PHI_V)/(EXP(ETA_S1*PHI_V) + 1)'
+            ),
             2,
         ),
         (
@@ -168,10 +170,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['ETA_1'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
@@ -181,10 +185,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             'ETA_1',
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
@@ -194,10 +200,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             'ETA_1',
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
@@ -207,10 +215,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['CL', 'ETA_1'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
@@ -220,10 +230,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['ETA_1', 'CL'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
@@ -233,10 +245,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             [['CL', 'ETA_1']],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'explicit',
@@ -246,10 +260,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             [['ETA_1', 'CL']],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'explicit',
@@ -259,21 +275,25 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             None,
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'IOV_2 = 0\n'
+                'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+                'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+                'ETAI2 = IOV_2 + ETA(2)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.0031128 ; OMEGA_IOV_2\n'
-            '$OMEGA  BLOCK(1) SAME\n',
+            (
+                '$OMEGA  BLOCK(1)\n'
+                '0.00309626 ; OMEGA_IOV_1\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+                '$OMEGA  BLOCK(1)\n'
+                '0.0031128 ; OMEGA_IOV_2\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+            ),
             'disjoint',
         ),
         (
@@ -281,20 +301,24 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             None,
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'IOV_2 = 0\n'
+                'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+                'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+                'ETAI2 = IOV_2 + ETA(2)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
-            '$OMEGA BLOCK(2)\n'
-            '0.00309626\t; OMEGA_IOV_1\n'
-            '0.001\t; OMEGA_IOV_1_2\n'
-            '0.0031128\t; OMEGA_IOV_2\n'
-            '$OMEGA BLOCK(2) SAME\n',
+            (
+                '$OMEGA BLOCK(2)\n'
+                '0.00309626\t; OMEGA_IOV_1\n'
+                '0.001\t; OMEGA_IOV_1_2\n'
+                '0.0031128\t; OMEGA_IOV_2\n'
+                '$OMEGA BLOCK(2) SAME\n'
+            ),
             'joint',
         ),
         (
@@ -302,21 +326,25 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             None,
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'IOV_2 = 0\n'
+                'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+                'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+                'ETAI2 = IOV_2 + ETA(2)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.0031128 ; OMEGA_IOV_2\n'
-            '$OMEGA  BLOCK(1) SAME\n',
+            (
+                '$OMEGA  BLOCK(1)\n'
+                '0.00309626 ; OMEGA_IOV_1\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+                '$OMEGA  BLOCK(1)\n'
+                '0.0031128 ; OMEGA_IOV_2\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+            ),
             'same-as-iiv',
         ),
         (
@@ -324,10 +352,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['ETA_2'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(2)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(2)\n'
+            ),
             'CL=TVCL*EXP(ETA(1))\nV = TVV*EXP(ETAI1)\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.0031128 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'same-as-iiv',
@@ -337,10 +367,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['CL'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
@@ -350,21 +382,25 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['CL', 'ETA_2'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'IOV_2 = 0\n'
+                'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+                'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+                'ETAI2 = IOV_2 + ETA(2)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.0031128 ; OMEGA_IOV_2\n'
-            '$OMEGA  BLOCK(1) SAME\n',
+            (
+                '$OMEGA  BLOCK(1)\n'
+                '0.00309626 ; OMEGA_IOV_1\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+                '$OMEGA  BLOCK(1)\n'
+                '0.0031128 ; OMEGA_IOV_2\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+            ),
             'disjoint',
         ),
         (
@@ -372,20 +408,24 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['CL', 'ETA_2'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
-            'ETAI1 = IOV_1 + ETA(1)\n'
-            'ETAI2 = IOV_2 + ETA(2)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'IOV_2 = 0\n'
+                'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+                'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+                'ETAI2 = IOV_2 + ETA(2)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV = TVV*EXP(ETAI2)\nS1=V\n',
-            '$OMEGA BLOCK(2)\n'
-            '0.00309626\t; OMEGA_IOV_1\n'
-            '0.001\t; OMEGA_IOV_1_2\n'
-            '0.0031128\t; OMEGA_IOV_2\n'
-            '$OMEGA BLOCK(2) SAME\n',
+            (
+                '$OMEGA BLOCK(2)\n'
+                '0.00309626\t; OMEGA_IOV_1\n'
+                '0.001\t; OMEGA_IOV_1_2\n'
+                '0.0031128\t; OMEGA_IOV_2\n'
+                '$OMEGA BLOCK(2) SAME\n'
+            ),
             'joint',
         ),
         (
@@ -393,10 +433,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['ETA_1'],
             ['ETA_3', 'ETA_4'],
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
@@ -406,10 +448,12 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['ETA_1'],
             ['ETA_3', 'ETA_4'],
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
-            'ETAI1 = IOV_1 + ETA(1)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA(3)\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA(4)\n'
+                'ETAI1 = IOV_1 + ETA(1)\n'
+            ),
             'CL = TVCL*EXP(ETAI1)\nV=TVV*EXP(ETA(2))\nS1=V\n',
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'joint',
@@ -419,15 +463,19 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             ['ETA_CL'],
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'ETAI1 = IOV_1 + ETA_CL\n',
-            'CL = THETA(1)*EXP(ETAI1)\n'
-            'V=THETA(2)*EXP(ETA_V)\n'
-            'S1=V+ETA_S1\n'
-            'MAT=THETA(3)*EXP(ETA_MAT)\n'
-            'Q=THETA(4)*EXP(ETA_Q)\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'ETAI1 = IOV_1 + ETA_CL\n'
+            ),
+            (
+                'CL = THETA(1)*EXP(ETAI1)\n'
+                'V=THETA(2)*EXP(ETA_V)\n'
+                'S1=V+ETA_S1\n'
+                'MAT=THETA(3)*EXP(ETA_MAT)\n'
+                'Q=THETA(4)*EXP(ETA_Q)\n'
+            ),
             '$OMEGA  BLOCK(1)\n0.00309626 ; OMEGA_IOV_1\n$OMEGA  BLOCK(1) SAME\n',
             'disjoint',
         ),
@@ -436,45 +484,51 @@ def test_add_pd_iiv(load_model_for_test, testdata):
             'FA1',
             None,
             None,
-            'IOV_1 = 0\n'
-            'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
-            'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
-            'IOV_2 = 0\n'
-            'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
-            'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
-            'IOV_3 = 0\n'
-            'IF (FA1.EQ.0) IOV_3 = ETA_IOV_3_1\n'
-            'IF (FA1.EQ.1) IOV_3 = ETA_IOV_3_2\n'
-            'IOV_4 = 0\n'
-            'IF (FA1.EQ.0) IOV_4 = ETA_IOV_4_1\n'
-            'IF (FA1.EQ.1) IOV_4 = ETA_IOV_4_2\n'
-            'IOV_5 = 0\n'
-            'IF (FA1.EQ.0) IOV_5 = ETA_IOV_5_1\n'
-            'IF (FA1.EQ.1) IOV_5 = ETA_IOV_5_2\n'
-            'ETAI1 = IOV_1 + ETA_CL\n'
-            'ETAI2 = IOV_2 + ETA_V\n'
-            'ETAI3 = IOV_3 + ETA_S1\n'
-            'ETAI4 = IOV_4 + ETA_MAT\n'
-            'ETAI5 = IOV_5 + ETA_Q\n',
-            'CL = THETA(1)*EXP(ETAI1)\n'
-            'V = THETA(2)*EXP(ETAI2)\n'
-            'S1 = ETAI3 + V\n'
-            'MAT = THETA(3)*EXP(ETAI4)\n'
-            'Q = THETA(4)*EXP(ETAI5)\n',
-            '$OMEGA  BLOCK(1)\n'
-            '0.00309626 ; OMEGA_IOV_1\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.0031128 ; OMEGA_IOV_2\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA  BLOCK(1)\n'
-            '0.010000000000000002 ; OMEGA_IOV_3\n'
-            '$OMEGA  BLOCK(1) SAME\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.00309626\t; OMEGA_IOV_4\n'
-            '5E-05\t; OMEGA_IOV_4_5\n'
-            '0.0031128\t; OMEGA_IOV_5\n'
-            '$OMEGA BLOCK(2) SAME\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (FA1.EQ.0) IOV_1 = ETA_IOV_1_1\n'
+                'IF (FA1.EQ.1) IOV_1 = ETA_IOV_1_2\n'
+                'IOV_2 = 0\n'
+                'IF (FA1.EQ.0) IOV_2 = ETA_IOV_2_1\n'
+                'IF (FA1.EQ.1) IOV_2 = ETA_IOV_2_2\n'
+                'IOV_3 = 0\n'
+                'IF (FA1.EQ.0) IOV_3 = ETA_IOV_3_1\n'
+                'IF (FA1.EQ.1) IOV_3 = ETA_IOV_3_2\n'
+                'IOV_4 = 0\n'
+                'IF (FA1.EQ.0) IOV_4 = ETA_IOV_4_1\n'
+                'IF (FA1.EQ.1) IOV_4 = ETA_IOV_4_2\n'
+                'IOV_5 = 0\n'
+                'IF (FA1.EQ.0) IOV_5 = ETA_IOV_5_1\n'
+                'IF (FA1.EQ.1) IOV_5 = ETA_IOV_5_2\n'
+                'ETAI1 = IOV_1 + ETA_CL\n'
+                'ETAI2 = IOV_2 + ETA_V\n'
+                'ETAI3 = IOV_3 + ETA_S1\n'
+                'ETAI4 = IOV_4 + ETA_MAT\n'
+                'ETAI5 = IOV_5 + ETA_Q\n'
+            ),
+            (
+                'CL = THETA(1)*EXP(ETAI1)\n'
+                'V = THETA(2)*EXP(ETAI2)\n'
+                'S1 = ETAI3 + V\n'
+                'MAT = THETA(3)*EXP(ETAI4)\n'
+                'Q = THETA(4)*EXP(ETAI5)\n'
+            ),
+            (
+                '$OMEGA  BLOCK(1)\n'
+                '0.00309626 ; OMEGA_IOV_1\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+                '$OMEGA  BLOCK(1)\n'
+                '0.0031128 ; OMEGA_IOV_2\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+                '$OMEGA  BLOCK(1)\n'
+                '0.010000000000000002 ; OMEGA_IOV_3\n'
+                '$OMEGA  BLOCK(1) SAME\n'
+                '$OMEGA BLOCK(2)\n'
+                '0.00309626\t; OMEGA_IOV_4\n'
+                '5E-05\t; OMEGA_IOV_4_5\n'
+                '0.0031128\t; OMEGA_IOV_5\n'
+                '$OMEGA BLOCK(2) SAME\n'
+            ),
             'same-as-iiv',
         ),
     ],
@@ -758,73 +812,87 @@ def test_add_pk_iiv_nested_params(load_model_for_test, pheno_path):
     [
         (
             ['ETA_CL'],
-            '$PK\n'
-            'CL = THETA(1)\n'
-            'V=THETA(2)*EXP(ETA_V)\n'
-            'S1=V+ETA_S1\n'
-            'MAT=THETA(3)*EXP(ETA_MAT)\n'
-            'Q=THETA(4)*EXP(ETA_Q)\n\n',
+            (
+                '$PK\n'
+                'CL = THETA(1)\n'
+                'V=THETA(2)*EXP(ETA_V)\n'
+                'S1=V+ETA_S1\n'
+                'MAT=THETA(3)*EXP(ETA_MAT)\n'
+                'Q=THETA(4)*EXP(ETA_Q)\n\n'
+            ),
             '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             ['ETA_CL', 'ETA_V'],
-            '$PK\n'
-            'CL = THETA(1)\n'
-            'V = THETA(2)\n'
-            'S1=V+ETA_S1\n'
-            'MAT=THETA(3)*EXP(ETA_MAT)\n'
-            'Q=THETA(4)*EXP(ETA_Q)\n\n',
+            (
+                '$PK\n'
+                'CL = THETA(1)\n'
+                'V = THETA(2)\n'
+                'S1=V+ETA_S1\n'
+                'MAT=THETA(3)*EXP(ETA_MAT)\n'
+                'Q=THETA(4)*EXP(ETA_Q)\n\n'
+            ),
             '$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             ['ETA_CL', 'ETA_MAT'],
-            '$PK\n'
-            'CL = THETA(1)\n'
-            'V=THETA(2)*EXP(ETA_V)\n'
-            'S1=V+ETA_S1\n'
-            'MAT = THETA(3)\n'
-            'Q=THETA(4)*EXP(ETA_Q)\n\n',
+            (
+                '$PK\n'
+                'CL = THETA(1)\n'
+                'V=THETA(2)*EXP(ETA_V)\n'
+                'S1=V+ETA_S1\n'
+                'MAT = THETA(3)\n'
+                'Q=THETA(4)*EXP(ETA_Q)\n\n'
+            ),
             '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA  0.031128 ; OMEGA_5_5\n',
         ),
         (
             ['ETA_MAT', 'ETA_Q'],
-            '$PK\n'
-            'CL=THETA(1)*EXP(ETA_CL)\n'
-            'V=THETA(2)*EXP(ETA_V)\n'
-            'S1=V+ETA_S1\n'
-            'MAT = THETA(3)\n'
-            'Q = THETA(4)\n\n',
+            (
+                '$PK\n'
+                'CL=THETA(1)*EXP(ETA_CL)\n'
+                'V=THETA(2)*EXP(ETA_V)\n'
+                'S1=V+ETA_S1\n'
+                'MAT = THETA(3)\n'
+                'Q = THETA(4)\n\n'
+            ),
             '$OMEGA DIAGONAL(2)\n0.0309626  ; IVCL\n0.031128  ; IVV\n$OMEGA 0.1\n',
         ),
         (
             None,
-            '$PK\n'
-            'DUMMYETA = ETA(1)\n'
-            'CL = THETA(1)\n'
-            'V = THETA(2)\n'
-            'S1 = V\n'
-            'MAT = THETA(3)\n'
-            'Q = THETA(4)\n\n',
+            (
+                '$PK\n'
+                'DUMMYETA = ETA(1)\n'
+                'CL = THETA(1)\n'
+                'V = THETA(2)\n'
+                'S1 = V\n'
+                'MAT = THETA(3)\n'
+                'Q = THETA(4)\n\n'
+            ),
             '$OMEGA  0 FIX ; DUMMYOMEGA\n',
         ),
         (
             ['CL'],
-            '$PK\n'
-            'CL = THETA(1)\n'
-            'V=THETA(2)*EXP(ETA_V)\n'
-            'S1=V+ETA_S1\n'
-            'MAT=THETA(3)*EXP(ETA_MAT)\n'
-            'Q=THETA(4)*EXP(ETA_Q)\n\n',
+            (
+                '$PK\n'
+                'CL = THETA(1)\n'
+                'V=THETA(2)*EXP(ETA_V)\n'
+                'S1=V+ETA_S1\n'
+                'MAT=THETA(3)*EXP(ETA_MAT)\n'
+                'Q=THETA(4)*EXP(ETA_Q)\n\n'
+            ),
             '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
         (
             'ETA_CL',
-            '$PK\n'
-            'CL = THETA(1)\n'
-            'V=THETA(2)*EXP(ETA_V)\n'
-            'S1=V+ETA_S1\n'
-            'MAT=THETA(3)*EXP(ETA_MAT)\n'
-            'Q=THETA(4)*EXP(ETA_Q)\n\n',
+            (
+                '$PK\n'
+                'CL = THETA(1)\n'
+                'V=THETA(2)*EXP(ETA_V)\n'
+                'S1=V+ETA_S1\n'
+                'MAT=THETA(3)*EXP(ETA_MAT)\n'
+                'Q=THETA(4)*EXP(ETA_Q)\n\n'
+            ),
             '$OMEGA 0.031128  ; IVV\n$OMEGA 0.1\n$OMEGA BLOCK(2)\n0.0309626\n0.0005 0.031128\n',
         ),
     ],
@@ -1014,12 +1082,14 @@ $OMEGA 0.1'''
             'disjoint',
             'VISI',
             None,
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n'
+            ),
             (),
             '',
         ),
@@ -1027,12 +1097,14 @@ $OMEGA 0.1'''
             'joint',
             'VISI',
             None,
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_3 = 0\n'
+            ),
             (),
             '',
         ),
@@ -1040,85 +1112,103 @@ $OMEGA 0.1'''
             'disjoint',
             'VISI',
             'ETA_IOV_1_1',
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+                'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+                'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n'
+            ),
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
-            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
-            '$ABBR REPLACE ETA_IOV_2_2=ETA(5)\n'
-            '$ABBR REPLACE ETA_IOV_3_1=ETA(6)\n'
-            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
+            (
+                '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+                '$ABBR REPLACE ETA_IOV_2_2=ETA(5)\n'
+                '$ABBR REPLACE ETA_IOV_3_1=ETA(6)\n'
+                '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n'
+            ),
         ),
         (
             'joint',
             'VISI',
             'ETA_IOV_1_1',
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+                'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+                'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n'
+            ),
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
-            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
-            '$ABBR REPLACE ETA_IOV_3_1=ETA(5)\n'
-            '$ABBR REPLACE ETA_IOV_2_2=ETA(6)\n'
-            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
+            (
+                '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+                '$ABBR REPLACE ETA_IOV_3_1=ETA(5)\n'
+                '$ABBR REPLACE ETA_IOV_2_2=ETA(6)\n'
+                '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n'
+            ),
         ),
         (
             'disjoint',
             'VISI',
             ['ETA_IOV_1_1', 'ETA_IOV_1_2'],
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+                'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+                'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n'
+            ),
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
-            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
-            '$ABBR REPLACE ETA_IOV_2_2=ETA(5)\n'
-            '$ABBR REPLACE ETA_IOV_3_1=ETA(6)\n'
-            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
+            (
+                '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+                '$ABBR REPLACE ETA_IOV_2_2=ETA(5)\n'
+                '$ABBR REPLACE ETA_IOV_3_1=ETA(6)\n'
+                '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n'
+            ),
         ),
         (
             'joint',
             'VISI',
             ['ETA_IOV_1_1', 'ETA_IOV_1_2'],
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
-            'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3) IOV_2 = ETA_IOV_2_1\n'
+                'IF (VISI.EQ.8) IOV_2 = ETA_IOV_2_2\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+                'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n'
+            ),
             ('ETA_IOV_2_1', 'ETA_IOV_2_2', 'ETA_IOV_3_1', 'ETA_IOV_3_2'),
-            '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
-            '$ABBR REPLACE ETA_IOV_3_1=ETA(5)\n'
-            '$ABBR REPLACE ETA_IOV_2_2=ETA(6)\n'
-            '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n',
+            (
+                '$ABBR REPLACE ETA_IOV_2_1=ETA(4)\n'
+                '$ABBR REPLACE ETA_IOV_3_1=ETA(5)\n'
+                '$ABBR REPLACE ETA_IOV_2_2=ETA(6)\n'
+                '$ABBR REPLACE ETA_IOV_3_2=ETA(7)\n'
+            ),
         ),
         (
             'disjoint',
             'VISI',
             ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'],
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+                'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n'
+            ),
             ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
             '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
         ),
@@ -1126,13 +1216,15 @@ $OMEGA 0.1'''
             'joint',
             'VISI',
             ['ETA_IOV_1_1', 'ETA_IOV_1_2', 'ETA_IOV_2_1'],
-            'IOV_1 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
-            'IOV_2 = 0\n'
-            'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
-            'IOV_3 = 0\n'
-            'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
-            'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n',
+            (
+                'IOV_1 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_1 = 0\n'
+                'IOV_2 = 0\n'
+                'IF (VISI.EQ.3.OR.VISI.EQ.8) IOV_2 = 0\n'
+                'IOV_3 = 0\n'
+                'IF (VISI.EQ.3) IOV_3 = ETA_IOV_3_1\n'
+                'IF (VISI.EQ.8) IOV_3 = ETA_IOV_3_2\n'
+            ),
             ('ETA_IOV_3_1', 'ETA_IOV_3_2'),
             '$ABBR REPLACE ETA_IOV_3_1=ETA(4)\n$ABBR REPLACE ETA_IOV_3_2=ETA(5)\n',
         ),
@@ -1176,14 +1268,18 @@ def test_remove_iov_with_options(
         ),
         (
             ['ETA_1', 'ETA_2'],
-            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
-            'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
+            (
+                'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
+                'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)'
+            ),
             'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)',
         ),
         (
             None,
-            'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
-            'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)',
+            (
+                'ETAB1 = (EXP(ETA(1))**THETA(4) - 1)/THETA(4)\n'
+                'ETAB2 = (EXP(ETA(2))**THETA(5) - 1)/THETA(5)'
+            ),
             'CL = TVCL*EXP(ETAB1)\nV = TVV*EXP(ETAB2)',
         ),
         (
@@ -1361,143 +1457,175 @@ def test_custom_eta_transformation(load_model_for_test, pheno_path):
     [
         (
             ['ETA_CL', 'ETA_V'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_IIV_V\n'
-            '0.031128\t; IVV\n'
-            '$OMEGA 0.1\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0031045\t; IIV_CL_IIV_V\n'
+                '0.031128\t; IVV\n'
+                '$OMEGA 0.1\n'
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\n'
+                '0.0005 0.031128\n'
+            ),
         ),
         (
             ['ETA_CL', 'ETA_S1'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_S1=ETA(2)\n'
-            '$ABBR REPLACE ETA_V=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0055644\t; IIV_CL_IIV_S1\n'
-            '0.1\t; OMEGA_3_3\n'
-            '$OMEGA 0.031128  ; IVV\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_S1=ETA(2)\n'
+                '$ABBR REPLACE ETA_V=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0055644\t; IIV_CL_IIV_S1\n'
+                '0.1\t; OMEGA_3_3\n'
+                '$OMEGA 0.031128  ; IVV\n'
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\n'
+                '0.0005 0.031128\n'
+            ),
         ),
         (
             ['ETA_V', 'ETA_S1'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA 0.0309626  ; IVCL\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.031128\t; IVV\n'
-            '0.0055792\t; IIV_V_IIV_S1\n'
-            '0.1\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA 0.0309626  ; IVCL\n'
+                '$OMEGA BLOCK(2)\n'
+                '0.031128\t; IVV\n'
+                '0.0055792\t; IIV_V_IIV_S1\n'
+                '0.1\n'
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\n'
+                '0.0005 0.031128\n'
+            ),
         ),
         (
             ['ETA_CL', 'ETA_V', 'ETA_MAT'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(3)\n'
-            '$ABBR REPLACE ETA_S1=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(3)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_IIV_V\n'
-            '0.031128\t; IVV\n'
-            '0.0030963\t; IIV_CL_IIV_MAT\n'
-            '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0309626\t; OMEGA_4_4\n'
-            '$OMEGA 0.1\n'
-            '$OMEGA  0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(3)\n'
+                '$ABBR REPLACE ETA_S1=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(3)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0031045\t; IIV_CL_IIV_V\n'
+                '0.031128\t; IVV\n'
+                '0.0030963\t; IIV_CL_IIV_MAT\n'
+                '0.0031045\t; IIV_V_IIV_MAT\n'
+                '0.0309626\t; OMEGA_4_4\n'
+                '$OMEGA 0.1\n'
+                '$OMEGA  0.031128\n'
+            ),
         ),
         (
             ['ETA_V', 'ETA_S1', 'ETA_MAT'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA 0.0309626  ; IVCL\n'
-            '$OMEGA BLOCK(3)\n'
-            '0.031128\t; IVV\n'
-            '0.0055792\t; IIV_V_IIV_S1\n'
-            '0.1\n'
-            '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '$OMEGA  0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA 0.0309626  ; IVCL\n'
+                '$OMEGA BLOCK(3)\n'
+                '0.031128\t; IVV\n'
+                '0.0055792\t; IIV_V_IIV_S1\n'
+                '0.1\n'
+                '0.0031045\t; IIV_V_IIV_MAT\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '$OMEGA  0.031128\n'
+            ),
         ),
         (
             ['ETA_S1', 'ETA_MAT', 'ETA_Q'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA DIAGONAL(2)\n'
-            '0.0309626  ; IVCL\n'
-            '0.031128  ; IVV\n'
-            '$OMEGA BLOCK(3)\n'
-            '0.1\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA DIAGONAL(2)\n'
+                '0.0309626  ; IVCL\n'
+                '0.031128  ; IVV\n'
+                '$OMEGA BLOCK(3)\n'
+                '0.1\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
         (
             None,
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(5)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_IIV_V\n'
-            '0.031128\t; IVV\n'
-            '0.0055644\t; IIV_CL_IIV_S1\n'
-            '0.0055792\t; IIV_V_IIV_S1\n'
-            '0.1\n'
-            '0.0030963\t; IIV_CL_IIV_MAT\n'
-            '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0031045\t; IIV_CL_IIV_Q\n'
-            '0.0031128\t; IIV_V_IIV_Q\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(5)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0031045\t; IIV_CL_IIV_V\n'
+                '0.031128\t; IVV\n'
+                '0.0055644\t; IIV_CL_IIV_S1\n'
+                '0.0055792\t; IIV_V_IIV_S1\n'
+                '0.1\n'
+                '0.0030963\t; IIV_CL_IIV_MAT\n'
+                '0.0031045\t; IIV_V_IIV_MAT\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0031045\t; IIV_CL_IIV_Q\n'
+                '0.0031128\t; IIV_V_IIV_Q\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
         (
             ['CL', 'V'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_IIV_V\n'
-            '0.031128\t; IVV\n'
-            '$OMEGA 0.1\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0031045\t; IIV_CL_IIV_V\n'
+                '0.031128\t; IVV\n'
+                '$OMEGA 0.1\n'
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\n'
+                '0.0005 0.031128\n'
+            ),
         ),
     ],
 )
@@ -1524,62 +1652,74 @@ def test_create_joint_distribution_plain(load_model_for_test, testdata, etas, ab
     [
         (
             (['ETA_CL', 'ETA_V'], ['ETA_CL', 'ETA_S1']),
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_S1=ETA(2)\n'
-            '$ABBR REPLACE ETA_V=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0055644\t; IIV_CL_IIV_S1\n'
-            '0.1\t; OMEGA_3_3\n'
-            '$OMEGA  0.031128 ; IVV\n'
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\n'
-            '0.0005 0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_S1=ETA(2)\n'
+                '$ABBR REPLACE ETA_V=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0055644\t; IIV_CL_IIV_S1\n'
+                '0.1\t; OMEGA_3_3\n'
+                '$OMEGA  0.031128 ; IVV\n'
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\n'
+                '0.0005 0.031128\n'
+            ),
         ),
         (
             (None, ['ETA_CL', 'ETA_V']),
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(2)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_IIV_V\n'
-            '0.031128\t; IVV\n'
-            '$OMEGA BLOCK(3)\n'
-            '0.1\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(2)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0031045\t; IIV_CL_IIV_V\n'
+                '0.031128\t; IVV\n'
+                '$OMEGA BLOCK(3)\n'
+                '0.1\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
         (
             (['ETA_CL', 'ETA_V'], None),
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA BLOCK(5)\n'
-            '0.0309626\t; IVCL\n'
-            '0.0031045\t; IIV_CL_IIV_V\n'
-            '0.031128\t; IVV\n'
-            '0.0055644\t; IIV_CL_IIV_S1\n'
-            '0.0055792\t; IIV_V_IIV_S1\n'
-            '0.1\n'
-            '0.0030963\t; IIV_CL_IIV_MAT\n'
-            '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0031045\t; IIV_CL_IIV_Q\n'
-            '0.0031128\t; IIV_V_IIV_Q\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA BLOCK(5)\n'
+                '0.0309626\t; IVCL\n'
+                '0.0031045\t; IIV_CL_IIV_V\n'
+                '0.031128\t; IVV\n'
+                '0.0055644\t; IIV_CL_IIV_S1\n'
+                '0.0055792\t; IIV_V_IIV_S1\n'
+                '0.1\n'
+                '0.0030963\t; IIV_CL_IIV_MAT\n'
+                '0.0031045\t; IIV_V_IIV_MAT\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0031045\t; IIV_CL_IIV_Q\n'
+                '0.0031128\t; IIV_V_IIV_Q\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
     ],
 )
@@ -1620,107 +1760,131 @@ def test_create_joint_distribution_fixed_params(load_example_model_for_test):
     [
         (
             ['ETA_CL'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA  0.0309626 ; IVCL\n'
-            '$OMEGA BLOCK(4)\n'
-            '0.031128\t; IVV\n'
-            '0.0055792\t; IIV_V_IIV_S1\n'
-            '0.1\n'
-            '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0031128\t; IIV_V_IIV_Q\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA  0.0309626 ; IVCL\n'
+                '$OMEGA BLOCK(4)\n'
+                '0.031128\t; IVV\n'
+                '0.0055792\t; IIV_V_IIV_S1\n'
+                '0.1\n'
+                '0.0031045\t; IIV_V_IIV_MAT\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0031128\t; IIV_V_IIV_Q\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
         (
             ['ETA_CL', 'ETA_V'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA  0.0309626 ; IVCL\n'
-            '$OMEGA  0.031128 ; IVV\n'
-            '$OMEGA BLOCK(3)\n'
-            '0.1\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA  0.0309626 ; IVCL\n'
+                '$OMEGA  0.031128 ; IVV\n'
+                '$OMEGA BLOCK(3)\n'
+                '0.1\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
         (
             ['ETA_CL', 'ETA_S1'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_S1=ETA(2)\n'
-            '$ABBR REPLACE ETA_V=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA  0.0309626 ; IVCL\n'
-            '$OMEGA  0.1 ; OMEGA_3_3\n'
-            '$OMEGA BLOCK(3)\n'
-            '0.031128\t; IVV\n'
-            '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0031128\t; IIV_V_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_S1=ETA(2)\n'
+                '$ABBR REPLACE ETA_V=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA  0.0309626 ; IVCL\n'
+                '$OMEGA  0.1 ; OMEGA_3_3\n'
+                '$OMEGA BLOCK(3)\n'
+                '0.031128\t; IVV\n'
+                '0.0031045\t; IIV_V_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0031128\t; IIV_V_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
         (
             None,
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA  0.0309626 ; IVCL\n'
-            '$OMEGA  0.031128 ; IVV\n'
-            '$OMEGA  0.1\n'
-            '$OMEGA  0.0309626\n'
-            '$OMEGA  0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA  0.0309626 ; IVCL\n'
+                '$OMEGA  0.031128 ; IVV\n'
+                '$OMEGA  0.1\n'
+                '$OMEGA  0.0309626\n'
+                '$OMEGA  0.031128\n'
+            ),
         ),
         (
             'ETA_CL',
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA  0.0309626 ; IVCL\n'
-            '$OMEGA BLOCK(4)\n'
-            '0.031128\t; IVV\n'
-            '0.0055792\t; IIV_V_IIV_S1\n'
-            '0.1\n'
-            '0.0031045\t; IIV_V_IIV_MAT\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0031128\t; IIV_V_IIV_Q\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA  0.0309626 ; IVCL\n'
+                '$OMEGA BLOCK(4)\n'
+                '0.031128\t; IVV\n'
+                '0.0055792\t; IIV_V_IIV_S1\n'
+                '0.1\n'
+                '0.0031045\t; IIV_V_IIV_MAT\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0031128\t; IIV_V_IIV_Q\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
         (
             ['CL', 'V'],
-            '$ABBR REPLACE ETA_CL=ETA(1)\n'
-            '$ABBR REPLACE ETA_V=ETA(2)\n'
-            '$ABBR REPLACE ETA_S1=ETA(3)\n'
-            '$ABBR REPLACE ETA_MAT=ETA(4)\n'
-            '$ABBR REPLACE ETA_Q=ETA(5)\n',
-            '$OMEGA  0.0309626 ; IVCL\n'
-            '$OMEGA  0.031128 ; IVV\n'
-            '$OMEGA BLOCK(3)\n'
-            '0.1\n'
-            '0.0055644\t; IIV_S1_IIV_MAT\n'
-            '0.0309626\n'
-            '0.0055792\t; IIV_S1_IIV_Q\n'
-            '0.0005\n'
-            '0.031128\n',
+            (
+                '$ABBR REPLACE ETA_CL=ETA(1)\n'
+                '$ABBR REPLACE ETA_V=ETA(2)\n'
+                '$ABBR REPLACE ETA_S1=ETA(3)\n'
+                '$ABBR REPLACE ETA_MAT=ETA(4)\n'
+                '$ABBR REPLACE ETA_Q=ETA(5)\n'
+            ),
+            (
+                '$OMEGA  0.0309626 ; IVCL\n'
+                '$OMEGA  0.031128 ; IVV\n'
+                '$OMEGA BLOCK(3)\n'
+                '0.1\n'
+                '0.0055644\t; IIV_S1_IIV_MAT\n'
+                '0.0309626\n'
+                '0.0055792\t; IIV_S1_IIV_Q\n'
+                '0.0005\n'
+                '0.031128\n'
+            ),
         ),
     ],
 )

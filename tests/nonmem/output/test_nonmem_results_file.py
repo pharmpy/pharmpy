@@ -631,8 +631,10 @@ def test_errors(testdata, file_name, ref_start, no_of_rows, idx, no_of_errors):
     [
         (
             'no_header_error.lst',
-            'THE NUMBER OF PARAMETERS TO BE ESTIMATED\n'
-            'EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA.',
+            (
+                'THE NUMBER OF PARAMETERS TO BE ESTIMATED\n'
+                'EXCEEDS THE NUMBER OF INDIVIDUALS WITH DATA.'
+            ),
             0,
         ),
         (

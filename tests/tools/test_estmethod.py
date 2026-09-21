@@ -76,8 +76,10 @@ def test_create_base_model(
         (
             'LAPLACE',
             '$ESTIMATION METHOD=COND LAPLACE INTER MAXEVAL=9999 AUTO=1 PRINT=10',
-            '$ESTIMATION METHOD=IMP LAPLACE INTER EONLY=1 MAXEVAL=9999 ISAMPLE=10000 '
-            'NITER=10 PRINT=10',
+            (
+                '$ESTIMATION METHOD=IMP LAPLACE INTER EONLY=1 MAXEVAL=9999 ISAMPLE=10000 '
+                'NITER=10 PRINT=10'
+            ),
         ),
     ],
 )

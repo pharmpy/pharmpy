@@ -44,8 +44,10 @@ INF = float("inf")
             [(None, 1, -INF, INF, False)],
         ),
         (
-            '$THETA\n ;; Model characteristics\n  (0, 0.15, 0.6) ; Proportional error (Drug123)\n'
-            '  (0, 1, 10)     ; Additive error (Drug123)\n',
+            (
+                '$THETA\n ;; Model characteristics\n  (0, 0.15, 0.6) ; Proportional error (Drug123)\n'
+                '  (0, 1, 10)     ; Additive error (Drug123)\n'
+            ),
             [('Proportional', 0.15, 0, 0.6, False), ('Additive', 1, 0, 10, False)],
         ),
         ('$THETA  (FIX FIX 0.4) ; CL', [('CL', 0.4, -INF, INF, True)]),

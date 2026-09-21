@@ -62,9 +62,11 @@ from pharmpy.modeling.mfl import (
         ),
         (
             [],
-            'COVARIATE([CL,MAT,VC],@CONTINUOUS,EXP)\n'
-            'COVARIATE([CL,MAT,VC],@CATEGORICAL,CAT2,+)\n'
-            'COVARIATE([CL,MAT,VC],@CATEGORICAL,CAT,+)',
+            (
+                'COVARIATE([CL,MAT,VC],@CONTINUOUS,EXP)\n'
+                'COVARIATE([CL,MAT,VC],@CATEGORICAL,CAT2,+)\n'
+                'COVARIATE([CL,MAT,VC],@CATEGORICAL,CAT,+)'
+            ),
             'COVARIATE([CL,MAT,VC],[AGE,CLCR,WT],EXP,*);COVARIATE([CL,MAT,VC],SEX,[CAT,CAT2],+)',
         ),
         (
@@ -197,8 +199,10 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
         (
             [partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp')],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);'
-            'COVARIATE(CL,WT,EXP,*);IIV([CL,MAT,VC],EXP)',
+            (
+                'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);'
+                'COVARIATE(CL,WT,EXP,*);IIV([CL,MAT,VC],EXP)'
+            ),
         ),
         (
             [
@@ -206,8 +210,10 @@ def test_expand_model_features_raises(load_model_for_test, testdata):
                 partial(add_covariate_effect, parameter='VC', covariate='WT', effect='exp'),
             ],
             None,
-            'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);'
-            'COVARIATE([CL,VC],WT,EXP,*);IIV([CL,MAT,VC],EXP)',
+            (
+                'ABSORPTION(FO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(0);'
+                'COVARIATE([CL,VC],WT,EXP,*);IIV([CL,MAT,VC],EXP)'
+            ),
         ),
         (
             [
@@ -433,8 +439,10 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
         ),
         (
             [],
-            'ABSORPTION([ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
-            'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(1)',
+            (
+                'ABSORPTION([ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
+                'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(1)'
+            ),
             'pk',
             'ABSORPTION(ZO);TRANSITS(0);LAGTIME(OFF);ELIMINATION(FO);PERIPHERALS(1)',
         ),
@@ -565,15 +573,19 @@ def test_transform_into_search_space_raises(load_model_for_test, testdata):
         ([set_zero_order_absorption], 'ABSORPTION(FO)', 'pk', False),
         (
             [],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
-            'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(0..1)',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
+                'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(0..1)'
+            ),
             'pk',
             True,
         ),
         (
             [],
-            'ABSORPTION([ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
-            'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(1)',
+            (
+                'ABSORPTION([ZO,SEQ-ZO-FO]);TRANSITS([0,1,3,10],[DEPOT,NODEPOT]);'
+                'LAGTIME([OFF,ON]);ELIMINATION(FO);PERIPHERALS(1)'
+            ),
             'pk',
             False,
         ),

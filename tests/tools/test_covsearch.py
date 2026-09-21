@@ -152,9 +152,11 @@ def test_extract_nonsignificant_effects(
     [
         ('COVARIATE?([CL,VC],WT,EXP)', 1),
         (
-            'LET(CONTINUOUS,[AGE,WT]);LET(CATEGORICAL,SEX)\n'
-            'COVARIATE?([CL,VC],@CONTINUOUS,exp,*)\n'
-            'COVARIATE?([CL,VC],@CATEGORICAL,cat,*)',
+            (
+                'LET(CONTINUOUS,[AGE,WT]);LET(CATEGORICAL,SEX)\n'
+                'COVARIATE?([CL,VC],@CONTINUOUS,exp,*)\n'
+                'COVARIATE?([CL,VC],@CATEGORICAL,cat,*)'
+            ),
             2,
         ),
     ],

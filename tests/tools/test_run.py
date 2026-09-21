@@ -599,22 +599,26 @@ def test_strictness_parameters(testdata, load_model_for_test):
         ),
         (
             [],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS([0,1])'
+            ),
             {},
             [add_peripheral_compartment, set_zero_order_absorption],
             [3.58, 3.58],
         ),
         (
             [],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS([0,1])'
+            ),
             {},
             [add_peripheral_compartment, set_seq_zo_fo_absorption],
             [3.58, 7.17],
@@ -662,22 +666,26 @@ def test_strictness_parameters(testdata, load_model_for_test):
         ),
         (
             [],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS([0,1])'
+            ),
             {'E_p': 3},
             [add_peripheral_compartment, set_zero_order_absorption],
             [1.39, 1.39],
         ),
         (
             [],
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS([0,1])'
+            ),
             {'E_p': '50%'},
             [add_peripheral_compartment, set_zero_order_absorption],
             [1.39, 1.39],
@@ -783,11 +791,13 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
         ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(1);ABSORPTION(ZO)', 2, 1, 0, 0),
         ('PERIPHERALS(0..2);ABSORPTION([FO,ZO])', 'PERIPHERALS(2);ABSORPTION(ZO)', 2, 2, 0, 0),
         (
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS([0,1])'
+            ),
             'PERIPHERALS(1);ABSORPTION(FO)',
             6,
             1,
@@ -795,11 +805,13 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
             0,
         ),
         (
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS([0,1])'
+            ),
             'PERIPHERALS(1);ABSORPTION(ZO)',
             6,
             1,
@@ -807,11 +819,13 @@ def test_mbic_penalty_raises(testdata, kwargs, error):
             0,
         ),
         (
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS([0,1])',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS([0,1])'
+            ),
             'PERIPHERALS(1);ABSORPTION(SEQ-ZO-FO)',
             6,
             2,

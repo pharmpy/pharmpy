@@ -229,9 +229,11 @@ from pharmpy.tools.mfl.stringify import stringify
         ('TRANSITS(N)', (('TRANSITS', 'N', 'NODEPOT'),)),
         ('LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)', []),
         (
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT2, +)\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT2, +)\n'
+                'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '+', 'ADD'),
                 ('COVARIATE', 'CL', 'APGR', 'cat2', '+', 'ADD'),
@@ -245,9 +247,11 @@ from pharmpy.tools.mfl.stringify import stringify
             ),
         ),
         (
-            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
@@ -270,9 +274,11 @@ from pharmpy.tools.mfl.stringify import stringify
             ),
         ),
         (
-            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
+                'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
@@ -286,9 +292,11 @@ from pharmpy.tools.mfl.stringify import stringify
             ),
         ),
         (
-            'LET(CONTINUOUS, AGE); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE?([CL], @CONTINUOUS, *)\n'
-            'COVARIATE([VC], @CATEGORICAL, CAT, +)',
+            (
+                'LET(CONTINUOUS, AGE); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL], @CONTINUOUS, *)\n'
+                'COVARIATE([VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'AGE', 'lin', '*', 'ADD'),
@@ -356,9 +364,11 @@ from pharmpy.tools.mfl.stringify import stringify
             ),
         ),
         (
-            'COVARIATE(@ABSORPTION, APGR, CAT);'
-            'COVARIATE(@DISTRIBUTION, WGT, EXP);'
-            'COVARIATE(@ELIMINATION, SEX, CAT)',
+            (
+                'COVARIATE(@ABSORPTION, APGR, CAT);'
+                'COVARIATE(@DISTRIBUTION, WGT, EXP);'
+                'COVARIATE(@ELIMINATION, SEX, CAT)'
+            ),
             (
                 ('COVARIATE', 'CL', 'SEX', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),
@@ -595,11 +605,13 @@ def test_illegal_mfl(code):
                 Transits((1, 3, 10), Wildcard()),
                 Peripherals((1,)),
             ),
-            'ABSORPTION([ZO,SEQ-ZO-FO]);'
-            'ELIMINATION([MM,MIX-FO-MM]);'
-            'LAGTIME(ON);'
-            'TRANSITS([1,3,10],*);'
-            'PERIPHERALS(1)',
+            (
+                'ABSORPTION([ZO,SEQ-ZO-FO]);'
+                'ELIMINATION([MM,MIX-FO-MM]);'
+                'LAGTIME(ON);'
+                'TRANSITS([1,3,10],*);'
+                'PERIPHERALS(1)'
+            ),
         ),
         (
             (
@@ -1095,8 +1107,10 @@ def test_get_model_features(load_model_for_test, pheno_path):
         ),
         ('LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)', []),
         (
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'APGR', 'cat', '+', 'ADD'),
                 ('COVARIATE', 'CL', 'WGT', 'exp', '*', 'ADD'),
@@ -1107,9 +1121,11 @@ def test_get_model_features(load_model_for_test, pheno_path):
             ),
         ),
         (
-            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
@@ -1132,9 +1148,11 @@ def test_get_model_features(load_model_for_test, pheno_path):
             ),
         ),
         (
-            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE([CL, MAT, VC], @CONTINUOUS, [EXP])\n'
+                'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'SEX', 'cat', '+', 'ADD'),
@@ -1148,9 +1166,11 @@ def test_get_model_features(load_model_for_test, pheno_path):
             ),
         ),
         (
-            'LET(CONTINUOUS, AGE); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE?([CL], @CONTINUOUS, *)\n'
-            'COVARIATE([VC], @CATEGORICAL, CAT, +)',
+            (
+                'LET(CONTINUOUS, AGE); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL], @CONTINUOUS, *)\n'
+                'COVARIATE([VC], @CATEGORICAL, CAT, +)'
+            ),
             (
                 ('COVARIATE', 'CL', 'AGE', 'exp', '*', 'ADD'),
                 ('COVARIATE', 'CL', 'AGE', 'lin', '*', 'ADD'),
@@ -1218,9 +1238,11 @@ def test_get_model_features(load_model_for_test, pheno_path):
             ),
         ),
         (
-            'COVARIATE(@ABSORPTION, APGR, CAT);'
-            'COVARIATE(@DISTRIBUTION, WGT, EXP);'
-            'COVARIATE(@ELIMINATION, SEX, CAT)',
+            (
+                'COVARIATE(@ABSORPTION, APGR, CAT);'
+                'COVARIATE(@DISTRIBUTION, WGT, EXP);'
+                'COVARIATE(@ELIMINATION, SEX, CAT)'
+            ),
             (
                 ('COVARIATE', 'CL', 'SEX', 'cat', '*', 'ADD'),
                 ('COVARIATE', 'V', 'WGT', 'exp', '*', 'ADD'),

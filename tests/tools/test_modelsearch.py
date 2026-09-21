@@ -110,8 +110,10 @@ def test_exhaustive_algorithm():
             3,
         ),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
-            'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
+            (
+                'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
+                'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])'
+            ),
             'no_add',
             246,
         ),
@@ -139,8 +141,10 @@ def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models
         ),
         ('ABSORPTION([ZO,SEQ-ZO-FO]);ELIMINATION(MM)', 7),
         (
-            'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
-            'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])',
+            (
+                'ABSORPTION([ZO,SEQ-ZO-FO]);LAGTIME(ON);TRANSITS([1,3,10],*);'
+                'PERIPHERALS(1);ELIMINATION([MM,MIX-FO-MM])'
+            ),
             143,
         ),
     ],

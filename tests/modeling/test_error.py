@@ -917,36 +917,44 @@ $ESTIMATION METHOD=1 INTERACTION
             ['EPS_1', 'EPS_2'],
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
-            'IRES=DV-IPRED+EPS(3)\n',
+            (
+                'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
+                'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
+                'IRES=DV-IPRED+EPS(3)\n'
+            ),
             '$OMEGA  0.09 ; IIV_RUV1\n$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             ['EPS_1', 'EPS_3'],
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED=F+EPS(2)\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV2)\n',
+            (
+                'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
+                'IPRED=F+EPS(2)\n'
+                'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV2)\n'
+            ),
             '$OMEGA  0.09 ; IIV_RUV1\n$OMEGA  0.09 ; IIV_RUV2',
         ),
         (
             None,
             False,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV3)\n',
+            (
+                'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
+                'IPRED = F + EPS(2)*EXP(ETA_RV2)\n'
+                'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV3)\n'
+            ),
             '$OMEGA  0.09 ; IIV_RUV1\n$OMEGA  0.09 ; IIV_RUV2\n$OMEGA  0.09 ; IIV_RUV3',
         ),
         (
             None,
             True,
             None,
-            'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
-            'IPRED = F + EPS(2)*EXP(ETA_RV1)\n'
-            'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV1)\n',
+            (
+                'Y = F + EPS(1)*W*EXP(ETA_RV1)\n'
+                'IPRED = F + EPS(2)*EXP(ETA_RV1)\n'
+                'IRES = DV - IPRED + EPS(3)*EXP(ETA_RV1)\n'
+            ),
             '$OMEGA  0.09 ; IIV_RUV1',
         ),
         (
@@ -1067,34 +1075,42 @@ IF (DVID.EQ.2) Y = Y_2
     [
         (
             ['EPS_1'],
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED=F+EPS(2)\n'
-            'IRES=DV-IPRED+EPS(3)',
+            (
+                'IF (F.EQ.0) F = 2.22500000000000E-307\n'
+                'Y = F + EPS(1)*F**THETA(4)\n'
+                'IPRED=F+EPS(2)\n'
+                'IRES=DV-IPRED+EPS(3)'
+            ),
             '$THETA  (0.01,1) ; power1',
         ),
         (
             ['EPS_1', 'EPS_2'],
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED = F + EPS(2)*F**THETA(5)\n'
-            'IRES=DV-IPRED+EPS(3)',
+            (
+                'IF (F.EQ.0) F = 2.22500000000000E-307\n'
+                'Y = F + EPS(1)*F**THETA(4)\n'
+                'IPRED = F + EPS(2)*F**THETA(5)\n'
+                'IRES=DV-IPRED+EPS(3)'
+            ),
             '$THETA  (0.01,1) ; power1\n$THETA  (0.01,1) ; power2',
         ),
         (
             ['EPS_1', 'EPS_3'],
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED=F+EPS(2)\n'
-            'IRES = DV - IPRED + EPS(3)*F**THETA(5)',
+            (
+                'IF (F.EQ.0) F = 2.22500000000000E-307\n'
+                'Y = F + EPS(1)*F**THETA(4)\n'
+                'IPRED=F+EPS(2)\n'
+                'IRES = DV - IPRED + EPS(3)*F**THETA(5)'
+            ),
             '$THETA  (0.01,1) ; power1\n$THETA  (0.01,1) ; power2',
         ),
         (
             None,
-            'IF (F.EQ.0) F = 2.22500000000000E-307\n'
-            'Y = F + EPS(1)*F**THETA(4)\n'
-            'IPRED = F + EPS(2)*F**THETA(5)\n'
-            'IRES = DV - IPRED + EPS(3)*F**THETA(6)',
+            (
+                'IF (F.EQ.0) F = 2.22500000000000E-307\n'
+                'Y = F + EPS(1)*F**THETA(4)\n'
+                'IPRED = F + EPS(2)*F**THETA(5)\n'
+                'IRES = DV - IPRED + EPS(3)*F**THETA(6)'
+            ),
             '$THETA  (0.01,1) ; power1\n$THETA  (0.01,1) ; power2\n$THETA  (0.01,1) ; power3',
         ),
     ],

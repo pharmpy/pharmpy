@@ -81,9 +81,11 @@ from pharmpy.model import ModelSyntaxError, Parameter, Parameters
             ],
         ),
         (
-            '$OMEGA  0.0258583  ;      V2\n'
-            ';$OMEGA BLOCK(1) 0.0075 FIX    ;.02 ; IOC\n'
-            ';$OMEGA BLOCK(1) SAME\n',
+            (
+                '$OMEGA  0.0258583  ;      V2\n'
+                ';$OMEGA BLOCK(1) 0.0075 FIX    ;.02 ; IOC\n'
+                ';$OMEGA BLOCK(1) SAME\n'
+            ),
             [
                 (['V2'], [0.0258583], False, False),
             ],

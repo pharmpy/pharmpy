@@ -606,15 +606,19 @@ def test_get_search_space_iivsearch(
         ('DIRECTEFFECT([LINEAR,EMAX])', 'DIRECTEFFECT([LINEAR,EMAX])'),
         (
             'COVARIATE?(CL,WT,exp)',
-            'DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);'
-            'EFFECTCOMP([LINEAR,EMAX,SIGMOID]);'
-            'INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],*)',
+            (
+                'DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);'
+                'EFFECTCOMP([LINEAR,EMAX,SIGMOID]);'
+                'INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],*)'
+            ),
         ),
         (
             None,
-            'DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);'
-            'EFFECTCOMP([LINEAR,EMAX,SIGMOID]);'
-            'INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],*)',
+            (
+                'DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);'
+                'EFFECTCOMP([LINEAR,EMAX,SIGMOID]);'
+                'INDIRECTEFFECT([LINEAR,EMAX,SIGMOID],*)'
+            ),
         ),
     ],
 )
@@ -698,61 +702,73 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
             None,
             'basic_pk',
             'oral',
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS(0..1)',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS(0..1)'
+            ),
         ),
         (
             None,
             'drug_metabolite',
             'oral',
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS(0..1)',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS(0..1)'
+            ),
         ),
         (
             None,
             'basic_pk',
             'ivoral',
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS(0..2)',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS(0..2)'
+            ),
         ),
         (
             None,
             'drug_metabolite',
             'ivoral',
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION(FO);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS(0..2)',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION(FO);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS(0..2)'
+            ),
         ),
         (
             None,
             'tmdd',
             'oral',
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION([MM,MIX-FO-MM]);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS(0..1)',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION([MM,MIX-FO-MM]);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS(0..1)'
+            ),
         ),
         (
             None,
             'tmdd',
             'ivoral',
-            'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
-            'ELIMINATION([MM,MIX-FO-MM]);'
-            'LAGTIME([OFF,ON]);'
-            'TRANSITS([0,1,3,10],*);'
-            'PERIPHERALS(0..2)',
+            (
+                'ABSORPTION([FO,ZO,SEQ-ZO-FO]);'
+                'ELIMINATION([MM,MIX-FO-MM]);'
+                'LAGTIME([OFF,ON]);'
+                'TRANSITS([0,1,3,10],*);'
+                'PERIPHERALS(0..2)'
+            ),
         ),
     ],
 )
@@ -803,9 +819,11 @@ def test_get_search_space_modelsearch(mfl, modeltype, administration, expected):
             None,
             'basic_pk',
             'ivoral',
-            'COVARIATE?(@IIV,@CONTINUOUS,EXP);'
-            'COVARIATE?(@IIV,@CATEGORICAL,CAT);'
-            'COVARIATE?(RUV,ADMID,CAT)',
+            (
+                'COVARIATE?(@IIV,@CONTINUOUS,EXP);'
+                'COVARIATE?(@IIV,@CATEGORICAL,CAT);'
+                'COVARIATE?(RUV,ADMID,CAT)'
+            ),
         ),
     ],
 )

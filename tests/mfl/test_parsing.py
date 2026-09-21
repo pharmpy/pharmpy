@@ -275,8 +275,10 @@ from pharmpy.mfl.parsing import parse
         ),
         ('LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)', Covariate, []),
         (
-            'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'COVARIATE([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'COVARIATE([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             Covariate,
             [
                 ('CL', Ref('CONTINUOUS'), 'EXP', '*', False),
@@ -288,9 +290,11 @@ from pharmpy.mfl.parsing import parse
             ],
         ),
         (
-            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             Covariate,
             [
                 ('CL', 'AGE', 'EXP', '*', True),
@@ -305,9 +309,11 @@ from pharmpy.mfl.parsing import parse
             ],
         ),
         (
-            'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
-            'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
-            'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)',
+            (
+                'COVARIATE?([CL, MAT, VC], @CONTINUOUS, EXP, *)\n'
+                'LET(CONTINUOUS, [AGE, WT]); LET(CATEGORICAL, SEX)\n'
+                'COVARIATE?([CL, MAT, VC], @CATEGORICAL, CAT, +)'
+            ),
             Covariate,
             [
                 ('CL', 'AGE', 'EXP', '*', True),

@@ -98,8 +98,10 @@ def S(x):
             ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
-                'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
-                'KA*A_DEPOT(t) + (-K - K23)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
+                    'KA*A_DEPOT(t) + (-K - K23)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL(t), t), K23*A_CENTRAL(t) - K32*A_PERIPHERAL(t))',
             ],
             {
@@ -134,8 +136,10 @@ def S(x):
                 Expr.function('A_PERIPHERAL2', 't'),
             ],
             [
-                'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL1(t) + K31*A_PERIPHERAL2(t) + '
-                '(-K - K12 - K13)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL1(t) + K31*A_PERIPHERAL2(t) + '
+                    '(-K - K12 - K13)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL1(t), t), K12*A_CENTRAL(t) - K21*A_PERIPHERAL1(t))',
                 'Eq(Derivative(A_PERIPHERAL2(t), t), K13*A_CENTRAL(t) - K31*A_PERIPHERAL2(t))',
             ],
@@ -162,8 +166,10 @@ def S(x):
             ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
-                'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
-                'K42*A_PERIPHERAL2(t) + KA*A_DEPOT(t) + (-K - K23 - K24)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
+                    'K42*A_PERIPHERAL2(t) + KA*A_DEPOT(t) + (-K - K23 - K24)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL1(t), t), K23*A_CENTRAL(t) - K32*A_PERIPHERAL1(t))',
                 'Eq(Derivative(A_PERIPHERAL2(t), t), K24*A_CENTRAL(t) - K42*A_PERIPHERAL2(t))',
             ],
@@ -321,8 +327,10 @@ $SIGMA  0.273617  ;   RUV_PROP
             ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
-                'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
-                'KA*A_DEPOT(t) + (-K - K23)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
+                    'KA*A_DEPOT(t) + (-K - K23)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL(t), t), K23*A_CENTRAL(t) - K32*A_PERIPHERAL(t))',
             ],
             {
@@ -348,8 +356,10 @@ $SIGMA  0.273617  ;   RUV_PROP
             ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
-                'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
-                'K42*A_PERIPHERAL2(t) + KA*A_DEPOT(t) + (-K - K23 - K24)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
+                    'K42*A_PERIPHERAL2(t) + KA*A_DEPOT(t) + (-K - K23 - K24)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL1(t), t), K23*A_CENTRAL(t) - K32*A_PERIPHERAL1(t))',
                 'Eq(Derivative(A_PERIPHERAL2(t), t), K24*A_CENTRAL(t) - K42*A_PERIPHERAL2(t))',
             ],
@@ -484,8 +494,10 @@ def test_multiple_doses_different_compartments(
             ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
-                'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
-                'KA*A_DEPOT(t) + (-K - K23)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL(t) + '
+                    'KA*A_DEPOT(t) + (-K - K23)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL(t), t), K23*A_CENTRAL(t) - K32*A_PERIPHERAL(t))',
             ],
             {
@@ -520,8 +532,10 @@ def test_multiple_doses_different_compartments(
                 Expr.function('A_PERIPHERAL2', 't'),
             ],
             [
-                'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL1(t) + K31*A_PERIPHERAL2(t) + '
-                '(-K - K12 - K13)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K21*A_PERIPHERAL1(t) + K31*A_PERIPHERAL2(t) + '
+                    '(-K - K12 - K13)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL1(t), t), K12*A_CENTRAL(t) - K21*A_PERIPHERAL1(t))',
                 'Eq(Derivative(A_PERIPHERAL2(t), t), K13*A_CENTRAL(t) - K31*A_PERIPHERAL2(t))',
             ],
@@ -548,8 +562,10 @@ def test_multiple_doses_different_compartments(
             ],
             [
                 'Eq(Derivative(A_DEPOT(t), t), -KA*A_DEPOT(t))',
-                'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
-                'K42*A_PERIPHERAL2(t) + KA*A_DEPOT(t) + (-K - K23 - K24)*A_CENTRAL(t))',
+                (
+                    'Eq(Derivative(A_CENTRAL(t), t), K32*A_PERIPHERAL1(t) + '
+                    'K42*A_PERIPHERAL2(t) + KA*A_DEPOT(t) + (-K - K23 - K24)*A_CENTRAL(t))'
+                ),
                 'Eq(Derivative(A_PERIPHERAL1(t), t), K23*A_CENTRAL(t) - K32*A_PERIPHERAL1(t))',
                 'Eq(Derivative(A_PERIPHERAL2(t), t), K24*A_CENTRAL(t) - K42*A_PERIPHERAL2(t))',
             ],

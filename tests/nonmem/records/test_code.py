@@ -315,16 +315,20 @@ def test_single_assignments(parser, buf, sym, expression):
             [(S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True)))],
         ),
         (
-            '$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nKA = THETA(2)\n  ELSE  \nCL = 23\nKA=82\n'
-            'END IF',
+            (
+                '$PRED IF (B0.LT.3) THEN\nCL = THETA(1)\nKA = THETA(2)\n  ELSE  \nCL = 23\nKA=82\n'
+                'END IF'
+            ),
             [
                 (S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True))),
                 (S('KA'), sympy.Piecewise((S('THETA(2)'), S('B0') < 3), (82, True))),
             ],
         ),
         (
-            '$PRED    IF (A>=.5) THEN   \n  VAR=1+2 \nELSE IF (B.EQ.23) THEN ; C\nVAR=9.25\n'
-            'END IF  \n',
+            (
+                '$PRED    IF (A>=.5) THEN   \n  VAR=1+2 \nELSE IF (B.EQ.23) THEN ; C\nVAR=9.25\n'
+                'END IF  \n'
+            ),
             [
                 (
                     S('VAR'),
@@ -333,8 +337,10 @@ def test_single_assignments(parser, buf, sym, expression):
             ],
         ),
         (
-            '$PRED    if (a>=0.5) then   \n  var=1+2 \nELSE if (b.eq.23) then ; C\nvar=9.25\n'
-            'END IF  \n',
+            (
+                '$PRED    if (a>=0.5) then   \n  var=1+2 \nELSE if (b.eq.23) then ; C\nvar=9.25\n'
+                'END IF  \n'
+            ),
             [
                 (
                     S('var'),
@@ -343,8 +349,10 @@ def test_single_assignments(parser, buf, sym, expression):
             ],
         ),
         (
-            '$PRED   IF (A>=0.5) THEN   \n  VAR1=1+2 \nELSE IF  (B.EQ.23)  THEN \nVAR2=9.25\n'
-            'END IF  \n',
+            (
+                '$PRED   IF (A>=0.5) THEN   \n  VAR1=1+2 \nELSE IF  (B.EQ.23)  THEN \nVAR2=9.25\n'
+                'END IF  \n'
+            ),
             [
                 (S('VAR1'), sympy.Piecewise((3, S('A') >= 0.5))),
                 (S('VAR2'), sympy.Piecewise((9.25, sympy.Eq(S('B'), 23)))),
@@ -395,8 +403,10 @@ def test_single_assignments(parser, buf, sym, expression):
             [(S('CL'), sympy.Piecewise((S('THETA(1)'), S('B0') < 3), (23, True)))],
         ),
         (
-            '$PRED\nIF(MIXNUM.EQ.3) THEN\n    TVCL=THETA(1)       ; CL in population 1\nELSE\n    '
-            'TVCL=THETA(2)       ; CL in population 2\nENDIF\n',
+            (
+                '$PRED\nIF(MIXNUM.EQ.3) THEN\n    TVCL=THETA(1)       ; CL in population 1\nELSE\n    '
+                'TVCL=THETA(2)       ; CL in population 2\nENDIF\n'
+            ),
             [
                 (
                     S('TVCL'),
