@@ -62,6 +62,15 @@ def test_integer():
     assert 23 == expr
 
 
+def test_rational():
+    expr = Expr.rational(1, 2)
+    assert expr * 2 == 1
+    expr = Expr.rational("0.001")
+    assert expr * 1000 == 1
+    expr = Expr.rational(0.001)
+    assert expr * 1000 == 1
+
+
 @pytest.mark.parametrize(
     'expr,alternative',
     [

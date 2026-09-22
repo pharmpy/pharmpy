@@ -1,6 +1,6 @@
 import pytest
 
-from pharmpy.basic import Unit
+from pharmpy.basic import Expr, Unit
 from pharmpy.model import AddColumn, Assignment, Drop
 from pharmpy.modeling import (
     add_iiv,
@@ -117,6 +117,8 @@ def test_convert_unit_multiple_dvs():
 
     m2 = convert_unit(model, "DV:1", "µg/L")
     assert m2
+    assert m2.statements.get_assignment("CONC").expression.args[0] == Expr.integer(1) / 1000
 
     m3 = convert_unit(model, "DV:2", "m")
     assert m3
+    assert m3.statements.get_assignment("R").expression.args[0] == 1000
