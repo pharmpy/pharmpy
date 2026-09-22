@@ -19,6 +19,7 @@ from pharmpy.model import (
 )
 
 from .compartments import get_bioavailability, get_lag_times
+from .expressions import get_dv_symbol
 from .odes import get_initial_conditions, get_zero_order_inputs
 
 
@@ -404,7 +405,6 @@ def convert_unit(
         if column.type in {'dose', 'dv'}:
             odes = get_and_check_odes(model)
             _raise_if_rate(odes)
-            amounts = set(odes.amounts)
             if column.type == 'dose':
                 dosing_cmts = odes.dosing_compartments
                 cb = CompartmentalSystemBuilder(odes)
@@ -434,17 +434,17 @@ def convert_unit(
                         + model.statements.after_odes
                     )
             else:
-                after_odes = []
-                for s in model.statements.after_odes:
-                    if not s.rhs_symbols.isdisjoint(amounts):
-                        conversion_factor = update_factor(s.expression, conversion_factor)
-                        if conversion_factor is None:
-                            return model  # FIXME: Could be more!
-                        new_s = Assignment.create(s.symbol, s.expression / conversion_factor)
-                        after_odes.append(new_s)
-                    else:
-                        after_odes.append(s)
-                new_statements = model.statements.before_odes + odes + after_odes
+                ipred = _find_ipred(model, column, datavar)
+                ipred_assignment = model.statements.get_assignment(ipred)
+                conversion_factor = update_factor(ipred_assignment.expression, conversion_factor)
+                if conversion_factor is None:
+                    return model  # FIXME: Could be more!
+                else:
+                    conversion_factor = float(conversion_factor)
+                new_statements = model.statements.reassign(
+                    ipred, ipred_assignment.expression / Expr.rational(conversion_factor)
+                )
+                print(new_statements)
         else:
             original_symbol = Expr.symbol(variable)
             scaled_symbol = Expr.symbol(f"SCALED_{variable}")
@@ -462,6 +462,29 @@ def convert_unit(
         model = model.replace(dataset=df, datainfo=di)
     model = model.update_source()
     return model
+
+
+def _find_ipred(model, column, datavar):
+    dv = _find_dv_symbol(model, column, datavar)
+    y_assignment = model.statements.get_assignment(dv)
+    assigned_symbols = model.statements.lhs_symbols.intersection(
+        y_assignment.expression.free_symbols
+    )
+    # FIXME: Ugly heuristic ahead
+    assigned_symbols.discard(Expr.symbol("IPREDADJ"))
+    if len(assigned_symbols) == 1:
+        (symbol,) = assigned_symbols
+        return symbol
+    else:
+        raise ValueError("Could not find IPRED")
+
+
+def _find_dv_symbol(model, column, datavar):
+    if isinstance(column.variable_mapping, DataVariable):
+        return get_dv_symbol(model)
+    else:
+        dvid = next(key for key, value in column.variable_mapping.items() if value == datavar)
+        return get_dv_symbol(model, dvid)
 
 
 def _raise_if_rate(odes):

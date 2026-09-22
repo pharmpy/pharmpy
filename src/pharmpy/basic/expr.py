@@ -285,6 +285,14 @@ class Expr:
         return cls(n)
 
     @classmethod
+    def rational(cls, p: int | str | float, q: int | None = None) -> Expr:
+        if q is None:
+            return cls(sympy.Rational(str(p)))
+        else:
+            r = symengine.Rational(int(p), q)
+            return cls(r)
+
+    @classmethod
     def float(cls, value: float) -> Expr:
         x = symengine.RealDouble(value)
         return cls(x)
