@@ -251,6 +251,7 @@ class Resample(DatasetIterator):
             sub[self._group] = new_grp
             new_df = pd.concat([new_df, sub])
         new_df = reset_index(new_df)
+        new_df = new_df.astype(self._df.dtypes)
         if self._name:
             new_df.name = self._name
         else:
