@@ -1,7 +1,7 @@
 import pytest
 import sympy
 
-from pharmpy.basic import BooleanExpr
+from pharmpy.basic import BooleanExpr, equals
 from pharmpy.basic.expr import Expr, ExprPrinter, remove_variable_impact, solve
 
 
@@ -120,7 +120,7 @@ def test_init_boolean_expr():
     'expr,alternative',
     [
         (Expr.symbol("CL") <= 1, BooleanExpr('CL <= 1')),
-        (Expr.symbol("CL") >= 1, BooleanExpr('1 <= CL')),
+        (Expr.symbol("CL") >= 1, BooleanExpr('CL >= 1')),
         (Expr.symbol("CL") < 1, BooleanExpr('CL < 1')),
         (
             (Expr.symbol("TIME") <= 0) & (Expr.symbol("TRT") <= 0),
@@ -361,3 +361,24 @@ def test_solve():
 def test_remove_variable_impact(expr, x, ref):
     new = remove_variable_impact(expr, x)
     assert new == ref
+
+
+@pytest.mark.parametrize(
+    'expr1, expr2, assumptions, correct',
+    [
+        (Expr('x'), Expr('y'), (), False),
+        (Expr('x'), Expr('x'), (), True),
+        (Expr.integer(1), Expr.integer(1), (), True),
+        (abs(Expr.symbol('x')), Expr('x'), (Expr.symbol('x') > 0,), True),
+        (abs(Expr.symbol('x')), Expr('x'), (Expr.symbol('x') >= 0,), True),
+        (abs(Expr.symbol('x')), Expr('x'), (Expr.symbol('x') < 0,), False),
+        (abs(Expr.symbol('x')), Expr('x'), (Expr.symbol('x') <= 0,), False),
+    ],
+)
+def test_equals(expr1, expr2, assumptions, correct):
+    assert equals(expr1, expr2, assumptions) is correct
+
+
+def test_bad_equals():
+    with pytest.raises(ValueError):
+        equals(Expr.symbol("x"), Expr.symbol("x"), (BooleanExpr.true(),))

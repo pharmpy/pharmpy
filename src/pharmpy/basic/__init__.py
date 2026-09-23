@@ -1,4 +1,4 @@
-from .expr import BooleanExpr, Expr, TExpr, TSymbol
+from .expr import BooleanExpr, Expr, TExpr, TSymbol, equals
 from .matrix import Matrix
 from .rng import RandomNumberGenerator, Seed
 from .unit import Quantity, TUnit, Unit
@@ -14,4 +14,5 @@ __all__ = [
     'TSymbol',
     'TUnit',
     'Unit',
+    'equals',
 ]

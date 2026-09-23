@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from collections.abc import Iterable, Mapping
+from collections.abc import Collection, Iterable, Mapping
 from typing import Self
 
 from pharmpy.deps import symengine, sympy
 from pharmpy.deps.sympy_printing import pretty
 from pharmpy.internals.expr.assumptions import assume_all
 from pharmpy.internals.expr.leaves import free_images_and_symbols
+from pharmpy.internals.expr.subs import subs
 
 
 class ExprPrinter(pretty.PrettyPrinter):
@@ -345,16 +346,16 @@ class Expr:
         return cls.function("count_if", (condition, group))
 
     def __gt__(self, other) -> BooleanExpr:
-        return BooleanExpr(symengine.Gt(self._expr, other))
+        return BooleanExpr(sympy.StrictGreaterThan(self._expr, other))
 
     def __ge__(self, other) -> BooleanExpr:
-        return BooleanExpr(symengine.Ge(self._expr, other))
+        return BooleanExpr(sympy.Ge(self._expr, other))
 
     def __lt__(self, other) -> BooleanExpr:
-        return BooleanExpr(symengine.Lt(self._expr, other))
+        return BooleanExpr(sympy.StrictLessThan(self._expr, other))
 
     def __le__(self, other) -> BooleanExpr:
-        return BooleanExpr(symengine.Le(self._expr, other))
+        return BooleanExpr(sympy.Le(self._expr, other))
 
 
 class BooleanExpr:
@@ -551,3 +552,30 @@ def remove_variable_impact(expr: Expr, x: Expr) -> Expr:
         return Expr.integer(0)
     else:
         return expr
+
+
+def equals(expr1: Expr, expr2: Expr, assumptions: Collection[BooleanExpr] = ()) -> bool | None:
+    # Checks if two expressions are equal
+    # Will assume assumptions and that all symbols are real
+    d = {}
+    for a in assumptions:
+        if a.is_lt():  # Assuming 0 here for now
+            s = sympy.Symbol(a.lhs.name, real=True, negative=True)
+        elif a.is_le():
+            s = sympy.Symbol(a.lhs.name, real=True, nonpositive=True)
+        elif a.is_gt():
+            s = sympy.Symbol(a.lhs.name, real=True, positive=True)
+        elif a.is_ge():
+            s = sympy.Symbol(a.lhs.name, real=True, nonnegative=True)
+        else:
+            raise ValueError(f"Unknown assumption {a}")
+        d[a.lhs] = s
+    # Remaining symbols should be real
+    for s in expr1.free_symbols | expr2.free_symbols:
+        if s not in d:
+            new = sympy.Symbol(s.name, real=True)
+            d[s] = new
+
+    sympy_e1 = subs(expr1._sympy_(), d)
+    sympy_e2 = subs(expr2._sympy_(), d)
+    return sympy_e1.equals(sympy_e2)
