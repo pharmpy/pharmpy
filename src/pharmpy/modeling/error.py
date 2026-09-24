@@ -44,13 +44,15 @@ def _canonicalize_data_transformation(model, value, dv):
     return value
 
 
-def remove_error_model(model: Model) -> Model:
+def remove_error_model(model: Model, dv: Expr | str | int | None = None) -> Model:
     """Remove error model.
 
     Parameters
     ----------
     model : Model
         Pharmpy model
+    dv : Union[Expr, str, int, None]
+        Name or DVID of dependent variable. None for the default (first or only)
 
     Return
     ------
@@ -72,7 +74,8 @@ def remove_error_model(model: Model) -> Model:
     Removing the error model will make the model unrunable for some tools.
 
     """
-    stats, y, f = _preparations(model)
+    dv = get_dv_symbol(model, dv)
+    stats, y, f = _preparations(model, dv)
     model = model.replace(statements=stats.reassign(y, f))
     model = remove_unused_parameters_and_rvs(model)
     return model.update_source()
@@ -148,7 +151,7 @@ def set_additive_error_model(
 
     # Starting with a clean error model.
     # If not create_symbol can create mangled sigma name
-    model = remove_error_model(model)
+    model = remove_error_model(model, dv)
 
     stats, y, f = _preparations(model, dv)
 

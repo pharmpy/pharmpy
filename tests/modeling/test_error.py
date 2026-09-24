@@ -22,12 +22,21 @@ from pharmpy.modeling import (
     use_thetas_for_error_stdev,
 )
 from pharmpy.modeling.error import _get_prop_init, set_time_varying_error_model
+from pharmpy.tools.structsearch.pkpd import create_baseline_pd_model
 
 
 def test_remove_error_model(testdata, load_model_for_test):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno.mod')
     model = remove_error_model(model)
     assert model.code.split('\n')[11] == 'Y = F'
+
+
+def test_remove_error_model_multiple_dv(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    model = create_baseline_pd_model(model, ests=model.parameters.inits)
+    model = remove_error_model(model, dv=2)
+    assert model.code.split('\n')[14] == 'Y = CONC + CONC*EPS(1)'
+    assert model.code.split('\n')[16] == 'Y_2 = E'
 
 
 def test_set_additive_error_model(testdata, load_model_for_test):
@@ -268,6 +277,18 @@ $SIGMA  11.2225 ; sigma
 $ESTIMATION METHOD=1 INTERACTION
 """
     assert model.code == correct
+
+
+def test_additive_error_pkpd(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+
+    model_pd = create_baseline_pd_model(model, ests=model.parameters.inits)
+    assert has_proportional_error_model(model_pd, dv=1)
+    assert has_proportional_error_model(model_pd, dv=2)
+
+    model_pd = set_additive_error_model(model_pd, dv=2)
+    assert has_proportional_error_model(model_pd, dv=1)
+    assert has_additive_error_model(model_pd, dv=2)
 
 
 def test_get_prop_init(testdata, load_model_for_test):
