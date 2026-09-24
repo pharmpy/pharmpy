@@ -101,14 +101,13 @@ version of pharmr you have installed and installs the correct version.
 Using pharmr
 ~~~~~~~~~~~~
 
-In pharmr, you can pipe different Pharmpy functions together with the magrittr-package:
+In pharmr, you can pipe different Pharmpy functions together:
 
 .. code-block:: r
 
     library(pharmr)
-    library(magrittr)
-    model <- read_model('path/to/model') %>%
-      set_zero_order_absorption() %>%
+    model <- read_model('path/to/model') |>
+      set_zero_order_absorption() |>
       fit()
 
 Gotchas
