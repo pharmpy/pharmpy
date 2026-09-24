@@ -356,12 +356,7 @@ def set_proportional_error_model(
 
 def _get_blq_statements(model, f, error_expr, f_dummy, epsilons):
     blq_symb, _ = get_blq_symb_and_type(model)
-    try:
-        above_lloq_arg = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
-    except ValueError:
-        print(model.code)
-        print(f)
-        raise
+    above_lloq_arg = _get_blq_arg_above_lloq(f.piecewise_args, blq_symb)
     below_lloq_arg = arg if (arg := f.piecewise_args[0]) != above_lloq_arg else f.piecewise_args[1]
     above_lloq_expr, lloq_cond = above_lloq_arg[0], above_lloq_arg[1]
     error_expr = error_expr.subs({f_dummy: above_lloq_expr})
