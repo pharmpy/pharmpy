@@ -411,11 +411,11 @@ def run_pkpd(
     return res
 
 
-def set_error_model(model, dvid_to_error_model):
+def set_error_model(model, dvid_to_error_model, skip=(1,)):
     if not dvid_to_error_model:
         return model
     for dvid, error_type in dvid_to_error_model.items():
-        if dvid == 1:
+        if dvid in skip or dvid not in model.dependent_variables.values():
             continue
         if error_type == 'proportional':
             continue
@@ -673,24 +673,26 @@ def validate_input(
             raise ValueError('Invalid argument "dv_types" for drug metabolite models.')
 
     if dvid_to_error_model:
-        if type == 'drug_metabolite':
-            raise ValueError('Option `dvid_to_error_model` not supported for `drug_metabolite`')
-        if any(dvid < 1 for dvid in dvid_to_error_model):
-            raise ValueError('Invalid argument `dvid_to_error_model`: DVIDs cannot be less than 1')
-        if type == 'pkpd':
-            if any(dvid > 2 for dvid in dvid_to_error_model):
-                raise ValueError(
-                    'Invalid argument `dvid_to_error_model` for `pkpd`: DVIDs cannot be more than 2'
-                )
-        else:  # type is tmdd
-            if dv_types and set(dvid_to_error_model.values()).difference(dv_types.values()):
-                raise ValueError(
-                    'Invalid argument `dvid_to_error_model` for `tmdd`: DVIDs must be in `dv_types`'
-                )
-        if diff := set(dvid_to_error_model.values()).difference(ERROR_MODELS):
+        validate_dvid_to_error_model(type, dv_types, dvid_to_error_model)
+
+
+def validate_dvid_to_error_model(type, dv_types, dvid_to_error_model):
+    if any(dvid < 1 for dvid in dvid_to_error_model):
+        raise ValueError('Invalid argument `dvid_to_error_model`: DVIDs cannot be less than 1')
+    if type == 'pkpd':
+        if any(dvid > 2 for dvid in dvid_to_error_model):
             raise ValueError(
-                f'Invalid argument `dvid_to_error_model`: {sorted(diff)} (must be in {sorted(ERROR_MODELS)})'
+                'Invalid argument `dvid_to_error_model` for `pkpd`: DVIDs cannot be more than 2'
             )
+    else:  # type is tmdd
+        if dv_types and set(dvid_to_error_model.values()).difference(dv_types.values()):
+            raise ValueError(
+                'Invalid argument `dvid_to_error_model` for `tmdd`: DVIDs must be in `dv_types`'
+            )
+    if diff := set(dvid_to_error_model.values()).difference(ERROR_MODELS):
+        raise ValueError(
+            f'Invalid argument `dvid_to_error_model`: {sorted(diff)} (must be in {sorted(ERROR_MODELS)})'
+        )
 
 
 def store_input_model(context, model, results):

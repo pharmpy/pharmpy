@@ -466,15 +466,6 @@ def test_set_error_model_tmdd(
         ),
         (
             {
-                'type': 'drug_metabolite',
-                'search_space': "METABOLITE(BASIC)",
-                'dvid_to_error_model': {1: 'additive'},
-            },
-            ValueError,
-            'Option `dvid_to_error_model` not supported',
-        ),
-        (
-            {
                 'type': 'pkpd',
                 "search_space": 'DIRECTEFFECT(LINEAR)',
                 'b_init': 1.0,

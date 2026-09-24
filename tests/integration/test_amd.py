@@ -189,7 +189,11 @@ def test_amd_dummy(tmp_path, testdata, model_kwargs, run_kwargs, search_space, s
         assert set(subnames) == subtools
 
 
-def test_amd_dummy_pkpd(testdata, tmp_path):
+@pytest.mark.parametrize(
+    'dvid_to_error_model',
+    [None, {2: 'additive'}],
+)
+def test_amd_dummy_pkpd(testdata, tmp_path, dvid_to_error_model):
     with chdir(tmp_path):
         pk_model = create_basic_pk_model('iv', testdata / 'nonmem' / 'pheno_pd.csv')
         pk_model = convert_model(pk_model, to_format='nonmem')
@@ -205,6 +209,7 @@ def test_amd_dummy_pkpd(testdata, tmp_path):
             met_init=0.1,
             strategy='default',
             retries_strategy='skip',
+            dvid_to_error_model=dvid_to_error_model,
             esttool='dummy',
         )
 
