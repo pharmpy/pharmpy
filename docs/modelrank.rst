@@ -192,7 +192,7 @@ Consider a ModelSearch run:
             algorithm='exhaustive_stepwise',
             rank_type='bic')
 
-This will run the ModelRank tool, if we read in that result object we can exlpore in more detail how the models were
+This will run the ModelRank tool, if we read in that result object we can explore in more detail how the models were
 ranked.
 
 The ``summary_tool`` table contains information such as which feature each model candidate has, the difference to the

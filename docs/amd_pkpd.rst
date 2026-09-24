@@ -6,7 +6,7 @@ AMD - PKPD
 
 Will develop the best PKPD model based on a PK model.
 
-The principle behind the PKPD model developement follows PPP&D, which initially will fixate the PK part of the model and only develope the PD part.
+The principle behind the PKPD model building follows PPP&D, which initially will fix the PK part of the model and only develop the PD part.
 
 A complete PKPD workflow is hence currently only possible by first filtering the model dataset for PK information and running AMD for a 'basic_pk'
 model type. Then, given the resulting model from that workflow, the original dataset can be attached and another AMD run with model type 'PKPD' can 

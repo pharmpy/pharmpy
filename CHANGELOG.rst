@@ -704,7 +704,7 @@ New features
 Changes
 =======
 
-* Deafault to keeping eta on CL in iivsearch
+* Default to keeping eta on CL in iivsearch
 
 Bugfixes
 ========
@@ -712,7 +712,7 @@ Bugfixes
 * Handle cases with covariates on MU when parsing phi-file with PHI columns
 * Fix issues with allometry and structural covariates for PKPD models in amd
 * Fix broken conversion to RxODE for models without ODE system
-* Fix handling of datasets with multiple DVIDs in ruvsearch and sructsearch for TMDD models
+* Fix handling of datasets with multiple DVIDs in ruvsearch and structsearch for TMDD models
 
 
 0.108.0 (2024-03-18)
@@ -1343,7 +1343,7 @@ Changes
 * evaluate_epsilon_gradient will not take parameter estimates from modelfit_results
 * evaluate_weighted_residuals will not take parameter estimates from modelfit_results
 * sample_parameters_from_covariance_matrix will need parameter_estimates and covariance_matrix as explicit arguments
-* sample_parameters_uniformly will need parameter_esimtates as explicit arguments
+* sample_parameters_uniformly will need parameter_estimates as explicit arguments
 * sample_individual_estimates will need individual_estimates and individual_estimates_covariance as explicit arguments
 * calculate_individual_parameter_statistics and calculate_pk_parameters_statistics will need parameter estimates and covariance matrix
 * update_inits need explicit estimates as argument and does not use modelfit_results
@@ -1900,7 +1900,7 @@ Changes
 
 * | modeling.calculate_bic can Calculate three different versions of the BIC
   | default has switched to be a mixed effects version
-* Remove etas instead of setting to 0 fix in iiv-tool
+* Remove etas instead of setting to 0 fix in IIV-tool
 * Parse more errors and warnings in .lst-file
 * Rename add_eta -> add_iivs, etas_as_fullblock -> iiv_as_fullblock, add_mdt_eta -> add_mdt_iiv in modelsearch
 

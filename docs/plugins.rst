@@ -12,7 +12,7 @@ Plugins are used to support reading and writing external model file formats, rea
 Overview of a plugin
 ====================
 
-A plugin is a Python module that exports certain functions. These functions will cover the tasks of detection, parsing, code generation and writing of models. All functions are not strictly necessesary and some functionality can be left out. A plugin could for example only support code generation and not parsing of a model file format. The functions are the following
+A plugin is a Python module that exports certain functions. These functions will cover the tasks of detection, parsing, code generation and writing of models. All functions are not strictly necessary and some functionality can be left out. A plugin could for example only support code generation and not parsing of a model file format. The functions are the following
 
 +--------------+---------------------------------------------------+----------------+
 | Name         | Operation                                         | Needed for     |

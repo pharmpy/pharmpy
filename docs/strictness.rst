@@ -40,19 +40,19 @@ Implemented strictness criteria are:
 +----------------------------------+-------------+--------------------------------------------------+
 | ``final_zero_gradient``          | Boolean     | True if at least one parameter has               |
 |                                  |             | a final zero gradient or if final                |
-|                                  |             | gradient is nan                                  |
+|                                  |             | gradient is NaN                                  |
 +----------------------------------+-------------+--------------------------------------------------+
 | ``final_zero_gradient_theta``    | Boolean     | True if at least one theta parameter has         |
 |                                  |             | a final zero gradient or if final                |
-|                                  |             | gradient is nan                                  |
+|                                  |             | gradient is NaN                                  |
 +----------------------------------+-------------+--------------------------------------------------+
 | ``final_zero_gradient_omega``    | Boolean     | True if at least one omega parameter has         |
 |                                  |             | a final zero gradient or if final                |
-|                                  |             | gradient is nan                                  |
+|                                  |             | gradient is NaN                                  |
 +----------------------------------+-------------+--------------------------------------------------+
 | ``final_zero_gradient_sigma``    | Boolean     | True if at least one sigma parameter has         |
 |                                  |             | a final zero gradient or if final                |
-|                                  |             | gradient is nan                                  |
+|                                  |             | gradient is NaN                                  |
 +----------------------------------+-------------+--------------------------------------------------+
 | ``estimate_near_boundary``       | Boolean     | True if at least one parameter                   |
 |                                  |             | estimate is near its boundary                    |
