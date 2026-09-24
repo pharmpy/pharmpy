@@ -352,111 +352,51 @@ def set_tmdd(
     if dv_types is not None:
         if uptype in ('FULL', 'IB'):
             if 'drug_tot' in dv_types:
-                new_y = (central.amount + complex_comp.amount) / vc
-                after = model.statements.after_odes
-                after = after.reassign(y_symbol, new_y)
-                model = model.replace(
-                    statements=model.statements.before_odes + get_and_check_odes(model) + after
-                )
+                y_expr = (central.amount + complex_comp.amount) / vc
+                model = _add_y_statements_drug_tot(model, y_symbol, y_expr)
             if 'target' in dv_types:
-                y_target = Expr.symbol("Y_TARGET")
-                ytarget = Assignment.create(y_target, target_comp.amount / vc)
-                dvs = model.dependent_variables.replace(y_target, dv_types['target'])
-                model = model.replace(
-                    statements=model.statements + ytarget, dependent_variables=dvs
-                )
+                y_expr = target_comp.amount / vc
+                model = _add_y_statements(model, 'target', dv_types['target'], y_expr)
             if 'complex' in dv_types:
-                y_complex = Expr.symbol("Y_COMPLEX")
-                ycomplex = Assignment.create(y_complex, complex_comp.amount / vc)
-                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
-                model = model.replace(
-                    statements=model.statements + ycomplex, dependent_variables=dvs
-                )
+                y_expr = complex_comp.amount / vc
+                model = _add_y_statements(model, 'complex', dv_types['complex'], y_expr)
             if 'target_tot' in dv_types:
-                y_target_tot = Expr.symbol("Y_TOTTARGET")
-                ytargettot = Assignment.create(
-                    y_target_tot, (target_comp.amount + complex_comp.amount) / vc
-                )
-                dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
-                model = model.replace(
-                    statements=model.statements + ytargettot, dependent_variables=dvs
-                )
+                y_expr = (target_comp.amount + complex_comp.amount) / vc
+                model = _add_y_statements(model, 'tottarget', dv_types['target_tot'], y_expr)
         elif uptype == 'QSS':
             if 'drug_tot' in dv_types:
-                new_y = central.amount / vc
-                after = model.statements.after_odes
-                after = after.reassign(y_symbol, new_y)
-                model = model.replace(
-                    statements=model.statements.before_odes + get_and_check_odes(model) + after
-                )
+                y_expr = central.amount / vc
+                model = _add_y_statements_drug_tot(model, y_symbol, y_expr)
             if 'target' in dv_types:
-                y_target = Expr.symbol("Y_TARGET")
-                ytarget = Assignment.create(
-                    y_target, (target_comp.amount - central.amount + lafreef) / vc
-                )
-                dvs = model.dependent_variables.replace(y_target, dv_types['target'])
-                model = model.replace(
-                    statements=model.statements + ytarget, dependent_variables=dvs
-                )
+                y_expr = (target_comp.amount - central.amount + lafreef) / vc
+                model = _add_y_statements(model, 'target', dv_types['target'], y_expr)
             if 'complex' in dv_types:
-                y_complex = Expr.symbol("Y_COMPLEX")
-                ycomplex = Assignment.create(y_complex, (central.amount - lafreef) / vc)
-                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
-                model = model.replace(
-                    statements=model.statements + ycomplex, dependent_variables=dvs
-                )
+                y_expr = (central.amount - lafreef) / vc
+                model = _add_y_statements(model, 'complex', dv_types['complex'], y_expr)
             if 'target_tot' in dv_types:
-                y_target_tot = Expr.symbol("Y_TOTTARGET")
-                ytargettot = Assignment.create(y_target_tot, target_comp.amount / vc)
-                dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
-                model = model.replace(
-                    statements=model.statements + ytargettot, dependent_variables=dvs
-                )
+                y_expr = target_comp.amount / vc
+                model = _add_y_statements(model, 'tottarget', dv_types['target_tot'], y_expr)
         elif uptype == 'MMAPP':
             if 'target' in dv_types:
-                y_target = Expr.symbol("Y_TARGET")
-                ytarget = Assignment.create(y_target, target_comp.amount / vc)
-                dvs = model.dependent_variables.replace(y_target, dv_types['target'])
-                model = model.replace(
-                    statements=model.statements + ytarget, dependent_variables=dvs
-                )
+                y_expr = target_comp.amount / vc
+                model = _add_y_statements(model, 'target', dv_types['target'], y_expr)
             if 'target_tot' in dv_types:
-                y_target_tot = Expr.symbol("Y_TOTTARGET")
-                ytargettot = Assignment.create(y_target_tot, target_comp.amount / vc)
-                dvs = model.dependent_variables.replace(y_target_tot, dv_types['target_tot'])
-                model = model.replace(
-                    statements=model.statements + ytargettot, dependent_variables=dvs
-                )
+                y_expr = target_comp.amount / vc
+                model = _add_y_statements(model, 'tottarget', dv_types['target_tot'], y_expr)
         elif uptype in ('CR', 'CRIB'):
             if 'drug_tot' in dv_types:
-                new_y = (central.amount + complex_comp.amount) / vc
-                after = model.statements.after_odes
-                after = after.reassign(y_symbol, new_y)
-                model = model.replace(
-                    statements=model.statements.before_odes + get_and_check_odes(model) + after
-                )
+                y_expr = (central.amount + complex_comp.amount) / vc
+                model = _add_y_statements_drug_tot(model, y_symbol, y_expr)
             if 'complex' in dv_types:
-                y_complex = Expr.symbol("Y_COMPLEX")
-                ycomplex = Assignment.create(y_complex, complex_comp.amount / vc)
-                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
-                model = model.replace(
-                    statements=model.statements + ycomplex, dependent_variables=dvs
-                )
+                y_expr = complex_comp.amount / vc
+                model = _add_y_statements(model, 'complex', dv_types['complex'], y_expr)
         elif uptype == 'WAGNER':
             if 'drug_tot' in dv_types:
-                new_y = central.amount / vc
-                after = model.statements.after_odes
-                after = after.reassign(y_symbol, new_y)
-                model = model.replace(
-                    statements=model.statements.before_odes + get_and_check_odes(model) + after
-                )
+                y_expr = central.amount / vc
+                model = _add_y_statements_drug_tot(model, y_symbol, y_expr)
             if 'complex' in dv_types:
-                y_complex = Expr.symbol("Y_COMPLEX")
-                ycomplex = Assignment.create(y_complex, (central.amount - lafreef) / vc)
-                dvs = model.dependent_variables.replace(y_complex, dv_types['complex'])
-                model = model.replace(
-                    statements=model.statements + ycomplex, dependent_variables=dvs
-                )
+                y_expr = (central.amount - lafreef) / vc
+                model = _add_y_statements(model, 'complex', dv_types['complex'], y_expr)
 
         # Add proportional error model
         if Expr.symbol('Y_TARGET') in list(model.dependent_variables):
@@ -477,6 +417,24 @@ def set_tmdd(
             di = model.datainfo.replace(provenance=model.datainfo.provenance + prov_new)
             model = model.replace(dataset=df, datainfo=di)
     return model.update_source()
+
+
+def _add_y_statements_drug_tot(model, y_symbol, y_expr):
+    after = model.statements.after_odes
+    after = after.reassign(y_symbol, y_expr)
+    model = model.replace(
+        statements=model.statements.before_odes + get_and_check_odes(model) + after
+    )
+    return model
+
+
+def _add_y_statements(model, dv_type, dvid, y_expr):
+    conc = Assignment.create(Expr.symbol(f"CONC_{dv_type.upper()}"), y_expr)
+    y_symbol = Expr.symbol(f"Y_{dv_type.upper()}")
+    y = Assignment.create(y_symbol, conc.symbol)
+    dvs = model.dependent_variables.replace(y_symbol, dvid)
+    model = model.replace(statements=model.statements + conc + y, dependent_variables=dvs)
+    return model
 
 
 def _create_parameters(model, names):
