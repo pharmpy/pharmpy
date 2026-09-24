@@ -1,3 +1,4 @@
+import re
 from functools import partial
 
 import pytest
@@ -8,13 +9,18 @@ from pharmpy.deps import pandas as pd
 from pharmpy.modeling import (
     add_metabolite,
     add_peripheral_compartment,
+    create_datainfo,
     create_rng,
+    has_additive_error_model,
+    has_combined_error_model,
+    has_proportional_error_model,
     set_description,
     set_name,
+    set_tmdd,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
 from pharmpy.tools.structsearch.drugmetabolite import create_drug_metabolite_models
-from pharmpy.tools.structsearch.pkpd import create_pkpd_models
+from pharmpy.tools.structsearch.pkpd import create_baseline_pd_model, create_pkpd_models
 from pharmpy.tools.structsearch.tmdd import (
     create_cr_models,
     create_crib_models,
@@ -29,6 +35,7 @@ from pharmpy.tools.structsearch.tool import (
     categorize_drug_metabolite_model_entries,
     create_result_tables,
     create_workflow,
+    set_error_model,
     validate_input,
 )
 from pharmpy.workflows import ModelEntry, ModelfitResults, Workflow
@@ -47,14 +54,14 @@ ests = pd.Series(
 
 def test_create_qss_models(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
-    models = create_qss_models(model, ests, None)
+    models = create_qss_models(model, ests, None, None)
     assert len(models) == 8
 
 
 def test_create_qss_models_multiple_dvs(load_example_model_for_test):
     model = load_example_model_for_test("pheno")
     model = _add_random_dvids(model)
-    models = create_qss_models(model, ests, {'target': 3, 'complex': 2})
+    models = create_qss_models(model, ests, {'target': 3, 'complex': 2}, None)
     assert len(models) == 8
     assert models[0].dependent_variables == {
         Expr.symbol('Y'): 1,
@@ -252,7 +259,7 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'pheno.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
-    qss_models = create_qss_models(model_start, res_start.parameter_estimates, None)
+    qss_models = create_qss_models(model_start, res_start.parameter_estimates, None, None)
     qss_entries = model_entry_factory(qss_models)
     qss_best = min(qss_entries, key=lambda me: me.modelfit_results.ofv)
 
@@ -268,6 +275,104 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     assert len(summary_models) == len(model_entries)
     steps = list(summary_models.index.get_level_values('step'))
     assert set(steps) == {0, 1, 2}
+
+
+@pytest.mark.parametrize(
+    'dvid_to_error_model, check_pk_error, check_pd_error',
+    [
+        (None, has_proportional_error_model, has_proportional_error_model),
+        (
+            {},
+            has_proportional_error_model,
+            has_proportional_error_model,
+        ),
+        (
+            {1: 'proportional', 2: 'proportional'},
+            has_proportional_error_model,
+            has_proportional_error_model,
+        ),
+        (
+            {1: 'proportional', 2: 'additive'},
+            has_proportional_error_model,
+            has_additive_error_model,
+        ),
+        (
+            {1: 'proportional', 2: 'combined'},
+            has_proportional_error_model,
+            has_combined_error_model,
+        ),
+        (
+            {1: 'additive', 2: 'proportional'},
+            has_proportional_error_model,
+            has_proportional_error_model,
+        ),
+    ],
+)
+def test_set_error_model_pd(
+    load_model_for_test, testdata, dvid_to_error_model, check_pk_error, check_pd_error
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    model_pd = create_baseline_pd_model(model, ests=model.parameters.inits)
+    model_pd = set_error_model(model_pd, dvid_to_error_model)
+    assert check_pk_error(model_pd, dv=1)
+    assert check_pd_error(model_pd, dv=2)
+
+
+@pytest.fixture
+def tmdd_model(load_model_for_test, pheno_path):
+    model = load_model_for_test(pheno_path)
+    df = model.dataset.copy()
+    df['DVID'] = np.random.randint(1, 6, size=len(df))
+    di = create_datainfo(df)
+    model = model.replace(dataset=df, datainfo=di)
+    return model
+
+
+@pytest.mark.parametrize(
+    'dvid_to_error_model, check_drug_error, check_target_error, check_complex_error',
+    [
+        (
+            None,
+            has_proportional_error_model,
+            has_proportional_error_model,
+            has_proportional_error_model,
+        ),
+        (
+            {},
+            has_proportional_error_model,
+            has_proportional_error_model,
+            has_proportional_error_model,
+        ),
+        (
+            {1: 'proportional', 2: 'additive', 3: 'additive'},
+            has_proportional_error_model,
+            has_additive_error_model,
+            has_additive_error_model,
+        ),
+        (
+            {1: 'proportional', 2: 'additive', 3: 'combined'},
+            has_proportional_error_model,
+            has_additive_error_model,
+            has_combined_error_model,
+        ),
+        (
+            {1: 'additive', 2: 'additive', 3: 'additive'},
+            has_proportional_error_model,
+            has_additive_error_model,
+            has_additive_error_model,
+        ),
+    ],
+)
+def test_set_error_model_tmdd(
+    tmdd_model, dvid_to_error_model, check_drug_error, check_target_error, check_complex_error
+):
+    dv_types = {'drug': 1, 'target': 2, 'complex': 3}
+    tmdd_model = set_tmdd(tmdd_model, type='QSS', dv_types=dv_types)
+    tmdd_model = set_error_model(tmdd_model, dvid_to_error_model)
+    print(tmdd_model.code)
+    assert check_drug_error(tmdd_model, dv=1)
+    assert check_target_error(tmdd_model, dv=2)
+    assert check_complex_error(tmdd_model, dv=3)
 
 
 @pytest.mark.parametrize(
@@ -359,17 +464,74 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
             ValueError,
             'Only drug can have DVID = 1. Please choose another DVID.',
         ),
+        (
+            {
+                'type': 'drug_metabolite',
+                'search_space': "METABOLITE(BASIC)",
+                'dvid_to_error_model': {1: 'additive'},
+            },
+            ValueError,
+            'Option `dvid_to_error_model` not supported',
+        ),
+        (
+            {
+                'type': 'pkpd',
+                "search_space": 'DIRECTEFFECT(LINEAR)',
+                'b_init': 1.0,
+                'emax_init': 1.0,
+                'ec50_init': 1.0,
+                'met_init': 1.0,
+                'dvid_to_error_model': {-1: 'additive'},
+            },
+            ValueError,
+            'Invalid argument `dvid_to_error_model`: DVIDs cannot be less than 1',
+        ),
+        (
+            {
+                'type': 'pkpd',
+                "search_space": 'DIRECTEFFECT(LINEAR)',
+                'b_init': 1.0,
+                'emax_init': 1.0,
+                'ec50_init': 1.0,
+                'met_init': 1.0,
+                'dvid_to_error_model': {3: 'additive'},
+            },
+            ValueError,
+            'Invalid argument `dvid_to_error_model` for `pkpd`: DVIDs cannot be more than 2',
+        ),
+        (
+            {
+                'type': "tmdd",
+                'dv_types': {'drug_tot': 1, 'target_tot': 2, 'complex': 3},
+                'dvid_to_error_model': {4: 'additive'},
+            },
+            ValueError,
+            'Invalid argument `dvid_to_error_model` for `tmdd`: DVIDs must be in `dv_types`',
+        ),
+        (
+            {
+                'type': 'pkpd',
+                "search_space": 'DIRECTEFFECT(LINEAR)',
+                'b_init': 1.0,
+                'emax_init': 1.0,
+                'ec50_init': 1.0,
+                'met_init': 1.0,
+                'dvid_to_error_model': {2: 'x'},
+            },
+            ValueError,
+            re.escape("Invalid argument `dvid_to_error_model`: ['x']"),
+        ),
     ],
 )
 def test_validation(tmp_path, load_model_for_test, testdata, arguments, exception, match):
     kwargs = {**arguments}
     kwargs['results'] = ModelfitResults()
-    model = load_model_for_test(testdata / "nonmem" / "pheno.mod")
+    model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     kwargs['model'] = model
     if "extra_model" in kwargs:
         kwargs["extra_model"] = model
     if "extra_model_results" in kwargs:
-        res = parse_modelfit_results(model, testdata / "nonmem" / "pheno.mod")
+        res = parse_modelfit_results(model, testdata / "nonmem" / "pheno_pd.mod")
         kwargs["extra_model_results"] = res
 
     if exception is not None:

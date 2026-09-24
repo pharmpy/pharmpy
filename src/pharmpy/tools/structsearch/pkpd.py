@@ -45,6 +45,7 @@ def create_pkpd_models(
     emax_init: int | float | None = None,
     ec50_init: int | float | None = None,
     met_init: int | float | None = None,
+    dvid_to_error_model: dict[int, str] | None = None,
 ):
     """Create pkpd models
 
@@ -115,6 +116,9 @@ def create_pkpd_models(
         except ValueError:
             pass
 
+        from .tool import set_error_model
+
+        pkpd_model = set_error_model(pkpd_model, dvid_to_error_model)
         models.append(pkpd_model)
 
     return models

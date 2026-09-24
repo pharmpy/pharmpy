@@ -5,7 +5,12 @@ import pytest
 
 from pharmpy.internals.fs.cwd import chdir
 from pharmpy.mfl import ModelFeatures
-from pharmpy.modeling import convert_model, create_basic_pk_model, filter_dataset
+from pharmpy.modeling import (
+    convert_model,
+    create_basic_pk_model,
+    filter_dataset,
+    has_additive_error_model,
+)
 from pharmpy.tools import fit, run_structsearch
 
 
@@ -37,6 +42,28 @@ def test_pkpd(tmp_path, load_model_for_test, testdata):
         assert (rundir / 'results.json').exists()
         assert (rundir / 'results.csv').exists()
         assert (rundir / 'metadata.json').exists()
+
+
+def test_pkpd_additive(tmp_path, load_model_for_test, testdata):
+    with chdir(tmp_path):
+        model = create_basic_pk_model('iv', dataset_path=testdata / "nonmem" / "pheno_pd.csv")
+        model = convert_model(model, 'nonmem')
+        pk_model = filter_dataset(model, "DVID != 2")
+        pk_res = fit(pk_model, esttool='dummy')
+        res = run_structsearch(
+            type='pkpd',
+            search_space="DIRECTEFFECT([EMAX,LINEAR,SIGMOID])",
+            results=pk_res,
+            model=model,
+            b_init=0.1,
+            emax_init=0.1,
+            ec50_init=0.1,
+            met_init=0.1,
+            dvid_to_error_model={1: 'proportional', 2: 'additive'},
+            esttool='dummy',
+        )
+
+        assert has_additive_error_model(res.final_model, dv=2)
 
 
 @pytest.mark.filterwarnings("ignore::UserWarning")
