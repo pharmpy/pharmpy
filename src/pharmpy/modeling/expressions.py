@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from itertools import filterfalse
 from typing import Literal, TypeVar
 
-from pharmpy.basic import Expr, Matrix, TExpr, TSymbol
+from pharmpy.basic import BooleanExpr, Expr, Matrix, TExpr, TSymbol
 from pharmpy.deps import networkx as nx
 from pharmpy.deps import sympy
 from pharmpy.internals.expr.subs import subs
@@ -441,6 +441,51 @@ def get_mu_connected_to_parameter(model: Model, parameter: str) -> str | None:
         if match := re.match(mu_regex, str(p)):
             return match[0]
     return None
+
+
+def get_symbolic_constraints(model: Model) -> list[BooleanExpr]:
+    """Create symbolic constraints on parameters for a model
+
+        The output of this function can be used for further inference or manipulation
+        of expressions. For example in the :func:`pharmpy.basic.equals` function.
+
+        Constraints for data variables might be added in the future.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model
+
+    Returns
+    -------
+    list[BooleanExpr]
+        A list of expressions constraining the parameters
+
+    Example
+    -------
+    >>> from pharmpy.modeling import load_example_model, get_symbolic_constraints
+    >>> model = load_example_model("pheno")
+    >>> get_symbolic_constraints(model)
+    [POP_CL >= 0, POP_VC >= 0, IIV_CL >= 0, IIV_VC >= 0, SIGMA >= 0]
+    """
+
+    constraints = []
+    for p in model.parameters:
+        if p.fix:
+            continue
+        elif p.upper < 0:
+            constraint = p.symbol < 0
+        elif p.upper <= 0:
+            constraint = p.symbol <= 0
+        elif p.lower > 0:
+            constraint = p.symbol > 0
+        elif p.lower >= 0:
+            constraint = p.symbol >= 0
+        else:
+            constraint = None
+        if constraint is not None:
+            constraints.append(constraint)
+    return constraints
 
 
 def simplify_expression(model: Model, expr: str | TExpr) -> Expr:

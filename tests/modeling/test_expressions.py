@@ -38,6 +38,7 @@ from pharmpy.modeling import (
     get_pk_parameters,
     get_population_prediction_expression,
     get_rv_parameters,
+    get_symbolic_constraints,
     greekify_model,
     has_mu_reference,
     has_random_effect,
@@ -349,6 +350,18 @@ def test_has_mu_reference(testdata, load_model_for_test):
     assert not has_mu_reference(model)
     model = mu_reference_model(model)
     assert has_mu_reference(model)
+
+
+def test_get_symbolic_constraints(testdata, load_model_for_test):
+    model = load_model_for_test(testdata / 'nonmem' / 'pheno_real.mod')
+    constr = get_symbolic_constraints(model)
+    assert constr == [
+        s('PTVCL') >= 0,
+        s('PTVV') >= 0,
+        s('IVCL') >= 0,
+        s('IVV') >= 0,
+        s('SIGMA_1_1') >= 0,
+    ]
 
 
 def test_simplify_expression():

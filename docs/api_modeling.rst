@@ -351,6 +351,7 @@ Expressions
     get_pk_parameters
     get_population_prediction_expression
     get_rv_parameters
+    get_symbolic_constraints
     greekify_model
     has_mu_reference
     has_random_effect

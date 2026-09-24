@@ -6,6 +6,7 @@ New features
 
 * Add :code:`modeling.plot_iteration_trace`
 * Add :code:`modeling.get_derived_covariates`
+* Add :code:`modeling.get_symbolic_constraints`
 * Add option :code:`seed` to :code:`modeling.resample_data`
 * Support :code:`seed` in :code:`run_bootstrap`
 
