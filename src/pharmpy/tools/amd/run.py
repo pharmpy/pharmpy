@@ -1,10 +1,11 @@
 import re
-from collections.abc import Callable, Mapping, Sequence
+from collections.abc import Callable, Mapping
 from pathlib import Path
 from typing import Literal
 
 from pharmpy.basic import TSymbol
 from pharmpy.deps import pandas as pd
+from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import check_list, with_runtime_arguments_type_check
 from pharmpy.internals.fs.path import path_absolute
 from pharmpy.internals.immutable import frozenmapping
@@ -1626,32 +1627,34 @@ def _results(context, res):
 
 
 @with_runtime_arguments_type_check
+@with_same_arguments_as(create_workflow)
 def validate_input(
-    input: Model | Path | str | pd.DataFrame,
-    results: ModelfitResults | None = None,
-    modeltype: str = 'basic_pk',
-    administration: str = 'oral',
-    strategy: str = "default",
-    cl_init: float | None = None,
-    vc_init: float | None = None,
-    mat_init: float | None = None,
-    b_init: float | None = None,
-    emax_init: float | None = None,
-    ec50_init: float | None = None,
-    met_init: float | None = None,
-    search_space: str | None = None,
-    lloq_method: str | None = None,
-    lloq_limit: float | None = None,
-    allometric_variable: TSymbol | None = None,
-    occasion: str | None = None,
-    strictness: str | None = "minimization_successful or (rounding_errors and sigdigs>=0.1)",
-    dv_types: dict[Literal[DV_TYPES], int] | None = None,
-    mechanistic_covariates: list[str | tuple] | None = None,
-    retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
-    parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
-    ignore_datainfo_fallback: bool = False,
-    initial_error_models: dict[int, str] | None = None,
-    _E: dict[str, float | str | Sequence[float | str]] | None = None,
+    input,
+    results,
+    modeltype,
+    administration,
+    strategy,
+    cl_init,
+    vc_init,
+    mat_init,
+    b_init,
+    emax_init,
+    ec50_init,
+    met_init,
+    search_space,
+    lloq_method,
+    lloq_limit,
+    allometric_variable,
+    occasion,
+    strictness,
+    dv_types,
+    mechanistic_covariates,
+    retries_strategy,
+    parameter_uncertainty_method,
+    units,
+    ignore_datainfo_fallback,
+    initial_error_models,
+    _E,
 ):
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
 

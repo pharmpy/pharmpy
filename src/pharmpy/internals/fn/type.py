@@ -1,4 +1,4 @@
-from collections.abc import Collection, Container, Iterable, Iterator, Sequence, Sized
+from collections.abc import Collection, Container, Iterable, Iterator, Mapping, Sequence, Sized
 from inspect import signature
 from types import UnionType
 from typing import Any, Literal, Optional, Union, get_args, get_origin, get_type_hints
@@ -177,7 +177,7 @@ def _match(typing, value):
             )
         )
 
-    if origin is dict:
+    if origin is dict or origin is Mapping:
         args = get_args(typing)
         if value is not None:
             return _match_sequence_items((args[0],), value.keys()) & _match_sequence_items(
