@@ -278,7 +278,7 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
 
 
 @pytest.mark.parametrize(
-    'dvid_to_error_model, check_pk_error, check_pd_error',
+    'initial_error_models, check_pk_error, check_pd_error',
     [
         (None, has_proportional_error_model, has_proportional_error_model),
         (
@@ -309,11 +309,11 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     ],
 )
 def test_set_error_model_pd(
-    load_model_for_test, testdata, dvid_to_error_model, check_pk_error, check_pd_error
+    load_model_for_test, testdata, initial_error_models, check_pk_error, check_pd_error
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
     model_pd = create_baseline_pd_model(model, ests=model.parameters.inits)
-    model_pd = set_error_model(model_pd, dvid_to_error_model)
+    model_pd = set_error_model(model_pd, initial_error_models)
     assert check_pk_error(model_pd, dv=1)
     assert check_pd_error(model_pd, dv=2)
 
@@ -329,7 +329,7 @@ def tmdd_model(load_model_for_test, pheno_path):
 
 
 @pytest.mark.parametrize(
-    'dvid_to_error_model, check_drug_error, check_target_error, check_complex_error',
+    'initial_error_models, check_drug_error, check_target_error, check_complex_error',
     [
         (
             None,
@@ -364,11 +364,11 @@ def tmdd_model(load_model_for_test, pheno_path):
     ],
 )
 def test_set_error_model_tmdd(
-    tmdd_model, dvid_to_error_model, check_drug_error, check_target_error, check_complex_error
+    tmdd_model, initial_error_models, check_drug_error, check_target_error, check_complex_error
 ):
     dv_types = {'drug': 1, 'target': 2, 'complex': 3}
     tmdd_model = set_tmdd(tmdd_model, type='QSS', dv_types=dv_types)
-    tmdd_model = set_error_model(tmdd_model, dvid_to_error_model)
+    tmdd_model = set_error_model(tmdd_model, initial_error_models)
     print(tmdd_model.code)
     assert check_drug_error(tmdd_model, dv=1)
     assert check_target_error(tmdd_model, dv=2)
@@ -472,10 +472,10 @@ def test_set_error_model_tmdd(
                 'emax_init': 1.0,
                 'ec50_init': 1.0,
                 'met_init': 1.0,
-                'dvid_to_error_model': {-1: 'additive'},
+                'initial_error_models': {-1: 'additive'},
             },
             ValueError,
-            'Invalid argument `dvid_to_error_model`: DVIDs cannot be less than 1',
+            'Invalid argument `initial_error_models`: DVIDs cannot be less than 1',
         ),
         (
             {
@@ -485,19 +485,19 @@ def test_set_error_model_tmdd(
                 'emax_init': 1.0,
                 'ec50_init': 1.0,
                 'met_init': 1.0,
-                'dvid_to_error_model': {3: 'additive'},
+                'initial_error_models': {3: 'additive'},
             },
             ValueError,
-            'Invalid argument `dvid_to_error_model` for `pkpd`: DVIDs cannot be more than 2',
+            'Invalid argument `initial_error_models` for `pkpd`: DVIDs cannot be more than 2',
         ),
         (
             {
                 'type': "tmdd",
                 'dv_types': {'drug_tot': 1, 'target_tot': 2, 'complex': 3},
-                'dvid_to_error_model': {4: 'additive'},
+                'initial_error_models': {4: 'additive'},
             },
             ValueError,
-            'Invalid argument `dvid_to_error_model` for `tmdd`: DVIDs must be in `dv_types`',
+            'Invalid argument `initial_error_models` for `tmdd`: DVIDs must be in `dv_types`',
         ),
         (
             {
@@ -507,10 +507,10 @@ def test_set_error_model_tmdd(
                 'emax_init': 1.0,
                 'ec50_init': 1.0,
                 'met_init': 1.0,
-                'dvid_to_error_model': {2: 'x'},
+                'initial_error_models': {2: 'x'},
             },
             ValueError,
-            re.escape("Invalid argument `dvid_to_error_model`: ['x']"),
+            re.escape("Invalid argument `initial_error_models`: ['x']"),
         ),
     ],
 )

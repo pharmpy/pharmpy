@@ -16,13 +16,13 @@ def product_dict(**kwargs):
         yield dict(zip(keys, instance))
 
 
-def create_qss_models(model, ests, dv_types, dvid_to_error_model, index=1):
+def create_qss_models(model, ests, dv_types, initial_error_models, index=1):
     # Create qss models with different initial estimates from basic pk model
     qss_base_model = set_tmdd(model, type="QSS", dv_types=dv_types)
 
     from .tool import set_error_model
 
-    qss_base_model = set_error_model(qss_base_model, dvid_to_error_model)
+    qss_base_model = set_error_model(qss_base_model, initial_error_models)
 
     # FIXME: assumes PK is the first dependent variable, use datainfo annotation when implemented
     dv = get_dv_symbol(model, dv=None).name

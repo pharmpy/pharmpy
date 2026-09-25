@@ -51,7 +51,7 @@ def create_workflow(
     strictness: str | None = "minimization_successful or (rounding_errors and sigdigs >= 0.1)",
     extra_model_results: ModelfitResults | None = None,
     dv_types: dict[Literal[DV_TYPES], int] | None = None,
-    dvid_to_error_model: dict[int, str] | None = None,
+    initial_error_models: dict[int, str] | None = None,
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
 ):
     """Run the structsearch tool. For more details, see :ref:`structsearch`.
@@ -87,7 +87,7 @@ def create_workflow(
         Strictness criteria
     dv_types : dict
         Dictionary of DV types for TMDD models with multiple DVs
-    dvid_to_error_model : dict or None
+    initial_error_models : dict or None
         Dictionary of DVID to error model. Supported error models are 'proportional',
         'additive' and 'combined'. If None or if any DVID is not specified, 'proportional'
         will be used
@@ -123,7 +123,7 @@ def create_workflow(
             strictness,
             parameter_uncertainty_method,
             dv_types,
-            dvid_to_error_model,
+            initial_error_models,
         )
     elif type == 'pkpd':
         start_task = Task(
@@ -140,7 +140,7 @@ def create_workflow(
             cutoff,
             strictness,
             parameter_uncertainty_method,
-            dvid_to_error_model,
+            initial_error_models,
         )
     elif type == 'drug_metabolite':
         start_task = Task(
@@ -169,7 +169,7 @@ def run_tmdd(
     strictness,
     parameter_uncertainty_method,
     dv_types,
-    dvid_to_error_model,
+    initial_error_models,
 ):
     context.log_info("Starting tool structsearch")
     model = store_input_model(context, model, results)
@@ -178,7 +178,7 @@ def run_tmdd(
     model_entry = ModelEntry.create(model, modelfit_results=results)
 
     qss_candidate_models = create_qss_models(
-        model, results.parameter_estimates, dv_types, dvid_to_error_model
+        model, results.parameter_estimates, dv_types, initial_error_models
     )
     qss_candidate_entries = [
         ModelEntry.create(m, modelfit_results=None, parent=model) for m in qss_candidate_models
@@ -335,14 +335,14 @@ def run_pkpd(
     cutoff,
     strictness,
     parameter_uncertainty_method,
-    dvid_to_error_model,
+    initial_error_models,
 ):
     context.log_info("Starting tool structsearch")
     input_model = store_input_model(context, input_model, results)
 
     model_entry = ModelEntry.create(input_model, modelfit_results=results)
     baseline_pd_model = create_baseline_pd_model(input_model, results.parameter_estimates, b_init)
-    baseline_pd_model = set_error_model(baseline_pd_model, dvid_to_error_model)
+    baseline_pd_model = set_error_model(baseline_pd_model, initial_error_models)
     baseline_pd_model_entry = ModelEntry.create(baseline_pd_model, modelfit_results=None)
 
     wf = create_fit_workflow(baseline_pd_model_entry)
@@ -359,7 +359,7 @@ def run_pkpd(
         emax_init,
         ec50_init,
         met_init,
-        dvid_to_error_model,
+        initial_error_models,
     )
     pkpd_model_entries = [
         ModelEntry.create(model, modelfit_results=None, parent=baseline_pd_model)
@@ -411,10 +411,10 @@ def run_pkpd(
     return res
 
 
-def set_error_model(model, dvid_to_error_model, skip=(1,)):
-    if not dvid_to_error_model:
+def set_error_model(model, initial_error_models, skip=(1,)):
+    if not initial_error_models:
         return model
-    for dvid, error_type in dvid_to_error_model.items():
+    for dvid, error_type in initial_error_models.items():
         if dvid in skip or dvid not in model.dependent_variables.values():
             continue
         if error_type == 'proportional':
@@ -583,7 +583,7 @@ def validate_input(
     strictness,
     extra_model_results,
     dv_types,
-    dvid_to_error_model,
+    initial_error_models,
     parameter_uncertainty_method,
 ):
     if (
@@ -672,26 +672,26 @@ def validate_input(
         if dv_types is not None:
             raise ValueError('Invalid argument "dv_types" for drug metabolite models.')
 
-    if dvid_to_error_model:
-        validate_dvid_to_error_model(type, dv_types, dvid_to_error_model)
+    if initial_error_models:
+        validate_initial_error_models(type, dv_types, initial_error_models)
 
 
-def validate_dvid_to_error_model(type, dv_types, dvid_to_error_model):
-    if any(dvid < 1 for dvid in dvid_to_error_model):
-        raise ValueError('Invalid argument `dvid_to_error_model`: DVIDs cannot be less than 1')
+def validate_initial_error_models(type, dv_types, initial_error_models):
+    if any(dvid < 1 for dvid in initial_error_models):
+        raise ValueError('Invalid argument `initial_error_models`: DVIDs cannot be less than 1')
     if type == 'pkpd':
-        if any(dvid > 2 for dvid in dvid_to_error_model):
+        if any(dvid > 2 for dvid in initial_error_models):
             raise ValueError(
-                'Invalid argument `dvid_to_error_model` for `pkpd`: DVIDs cannot be more than 2'
+                'Invalid argument `initial_error_models` for `pkpd`: DVIDs cannot be more than 2'
             )
     else:  # type is tmdd
-        if dv_types and set(dvid_to_error_model.values()).difference(dv_types.values()):
+        if dv_types and set(initial_error_models.values()).difference(dv_types.values()):
             raise ValueError(
-                'Invalid argument `dvid_to_error_model` for `tmdd`: DVIDs must be in `dv_types`'
+                'Invalid argument `initial_error_models` for `tmdd`: DVIDs must be in `dv_types`'
             )
-    if diff := set(dvid_to_error_model.values()).difference(ERROR_MODELS):
+    if diff := set(initial_error_models.values()).difference(ERROR_MODELS):
         raise ValueError(
-            f'Invalid argument `dvid_to_error_model`: {sorted(diff)} (must be in {sorted(ERROR_MODELS)})'
+            f'Invalid argument `initial_error_models`: {sorted(diff)} (must be in {sorted(ERROR_MODELS)})'
         )
 
 

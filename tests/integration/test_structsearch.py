@@ -59,7 +59,7 @@ def test_pkpd_additive(tmp_path, load_model_for_test, testdata):
             emax_init=0.1,
             ec50_init=0.1,
             met_init=0.1,
-            dvid_to_error_model={1: 'proportional', 2: 'additive'},
+            initial_error_models={1: 'proportional', 2: 'additive'},
             esttool='dummy',
         )
 

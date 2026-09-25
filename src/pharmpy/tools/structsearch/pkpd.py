@@ -45,7 +45,7 @@ def create_pkpd_models(
     emax_init: int | float | None = None,
     ec50_init: int | float | None = None,
     met_init: int | float | None = None,
-    dvid_to_error_model: dict[int, str] | None = None,
+    initial_error_models: dict[int, str] | None = None,
 ):
     """Create pkpd models
 
@@ -65,6 +65,8 @@ def create_pkpd_models(
         Initial estimate for EC_50
     met_init : float
         Initial estimate for MET (mean equilibration time)
+    initial_error_models : dict or None
+        Dictionary of DVID to error model
 
     Returns
     -------
@@ -118,7 +120,7 @@ def create_pkpd_models(
 
         from .tool import set_error_model
 
-        pkpd_model = set_error_model(pkpd_model, dvid_to_error_model)
+        pkpd_model = set_error_model(pkpd_model, initial_error_models)
         models.append(pkpd_model)
 
     return models

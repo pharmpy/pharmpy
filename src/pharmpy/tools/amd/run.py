@@ -53,7 +53,7 @@ from pharmpy.tools.mfl.statement.statement import Statement
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.pdsearch.tool import create_base_model as pdsearch_create_base_model
 from pharmpy.tools.run import is_strictness_fulfilled, run_subtool, summarize_errors_from_entries
-from pharmpy.tools.structsearch.tool import set_error_model, validate_dvid_to_error_model
+from pharmpy.tools.structsearch.tool import set_error_model, validate_initial_error_models
 from pharmpy.workflows import Context, ModelEntry, Results, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.model_database.local_directory import get_modelfit_results
 from pharmpy.workflows.results import ModelfitResults
@@ -92,7 +92,7 @@ def create_workflow(
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
-    dvid_to_error_model: dict[int, str] | None = None,
+    initial_error_models: dict[int, str] | None = None,
     _E: dict[str, float | str] | None = None,
 ):
     """Run Automatic Model Development (AMD) tool
@@ -151,7 +151,7 @@ def create_workflow(
         Specify units to use for DV or AMT. For example {'DV': 'mg/L'}
     ignore_datainfo_fallback : bool
         Ignore using datainfo to get information not given by the user. Default is False
-    dvid_to_error_model : dict or None
+    initial_error_models : dict or None
         Dictionary of DVID to error model. Supported error models are 'proportional',
         'additive' and 'combined'. If None or if any DVID is not specified, 'proportional'
         will be used. The error model will be applied for the start model for DVID == 1,
@@ -222,7 +222,7 @@ def run_amd_task(
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     units: Mapping[str, str] = frozenmapping({}),
     ignore_datainfo_fallback: bool = False,
-    dvid_to_error_model: dict[int, str] | None = None,
+    initial_error_models: dict[int, str] | None = None,
     _E: dict[str, float | str] | None = None,
 ):
     context.log_info("Starting tool amd")
@@ -274,8 +274,8 @@ def run_amd_task(
         except DatasetError as e:
             context.abort_workflow(f'Could not parse dataset: {e}')
 
-        if dvid_to_error_model:
-            model = set_error_model(model, dvid_to_error_model, skip=())
+        if initial_error_models:
+            model = set_error_model(model, initial_error_models, skip=())
 
     # FIXME : Handle validation differently?
     # AMD start model (dataset) is required before validation
@@ -356,7 +356,7 @@ def run_amd_task(
                     emax_init=emax_init,
                     ec50_init=ec50_init,
                     met_init=met_init,
-                    dvid_to_error_model=dvid_to_error_model,
+                    initial_error_models=initial_error_models,
                     strictness=strictness,
                     parameter_uncertainty_method=parameter_uncertainty_method,
                     ctx=context,
@@ -1650,7 +1650,7 @@ def validate_input(
     retries_strategy: Literal["final", "all_final", "skip"] = "all_final",
     parameter_uncertainty_method: Literal['SANDWICH', 'SMAT', 'RMAT', 'EFIM'] | None = None,
     ignore_datainfo_fallback: bool = False,
-    dvid_to_error_model: dict[int, str] | None = None,
+    initial_error_models: dict[int, str] | None = None,
     _E: dict[str, float | str | Sequence[float | str]] | None = None,
 ):
     check_list("modeltype", modeltype, ALLOWED_MODELTYPE)
@@ -1734,8 +1734,8 @@ def validate_input(
     if modeltype in ['pkpd', 'drug_metabolite', 'tmdd'] and lloq_method is not None:
         raise ValueError(f'Option `lloq_method` is not supported for `modeltype`: {modeltype}')
 
-    if dvid_to_error_model:
-        validate_dvid_to_error_model(modeltype, dv_types, dvid_to_error_model)
+    if initial_error_models:
+        validate_initial_error_models(modeltype, dv_types, initial_error_models)
 
 
 def later_input_validation(
