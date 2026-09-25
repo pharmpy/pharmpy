@@ -149,19 +149,15 @@ def _match(typing, value):
 
     if origin is Container:
         # NOTE: Cannot check value type because we do not know any candidate key
-        return hasattr(value, '__contains__')
+        return isinstance(value, Container)
 
     if origin is Iterator:
         # NOTE: Cannot check value type because we do not know any candidate key
-        return hasattr(value, '__next__') and hasattr(value, '__iter__')
+        return isinstance(value, Iterator)
 
     if origin is Iterable:
         # NOTE: Cannot check value type because of risk of side-effect
-        try:
-            iter(value)
-            return True
-        except TypeError:
-            return False
+        return isinstance(value, Iterable)
 
     if origin is Collection:
         t = get_args(typing)
