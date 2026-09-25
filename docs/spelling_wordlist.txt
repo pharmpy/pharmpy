@@ -15,5 +15,6 @@ PsN
 NaN
 covariate
 covariates
+covariances
 linearize
 IIV

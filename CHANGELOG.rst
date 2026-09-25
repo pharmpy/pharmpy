@@ -819,7 +819,7 @@ New features
 Changes
 =======
 
-* Always keep an iiv eta on clearence in amd
+* Always keep an iiv eta on clearance in amd
 
 0.104.0 (2023-11-06)
 --------------------
@@ -1310,9 +1310,9 @@ New features
 * Add allow_nested flag to add_covariate_effect (#1004)
 * Add has_covariate_effect and remove_covariate_effect (#1004)
 * Generalize get_rv_parameters (#1181)
-* 9fd701521 Store input models in tool database
+* Store input models in tool database
 * Replace best_model with final_model_name and retrieve_final_model
-* a7fbcbfe2 Handle results and databases as input to retrieve_models
+* Handle results and databases as input to retrieve_models
 * Add modeling.update_initial_individual_estimates function
 
 Changes
@@ -1361,8 +1361,8 @@ Changes
 Bug fixes
 =========
 
-* 297a64041 Handle individual_ofv is None in dofv (fixes #1101)
-* 57fc4fee8 Fix adding categorical covariate effects (#1004)
+* Handle individual_ofv is None in dofv (fixes #1101)
+* Fix adding categorical covariate effects (#1004)
 
 0.78.0 (2022-09-20)
 -------------------
@@ -1370,20 +1370,20 @@ Bug fixes
 Changes
 =======
 
-* fd417aaf Always return a new model in convert_model
-* d5458e36 Raise KeyError in LocalModelDirectory#retrieve_model (instead of FileNotFoundError)
-* 1193bd39 Remove unused pharmpy.symbols submodule
+* Always return a new model in convert_model
+* Raise KeyError in LocalModelDirectory#retrieve_model (instead of FileNotFoundError)
+* Remove unused pharmpy.symbols submodule
 
 Bugfixes
 ========
 
-* bb96a13c Fix update_parameters when parameters are added
-* 0ca786c5 Fix backward search of covsearch
-* dd056da3 Fix for models with bioavailability parameters
-* 915bc9c7 Fix get_config_path output when config file is disabled
-* 82b32278 Remove some unwanted debug printing
-* 1131a610 Fix issue in PsN SCM results parsing
-* ebfafb45 Assign ODE as compartmental system to variable (#1173)
+* Fix update_parameters when parameters are added
+* Fix backward search of covsearch
+* Fix for models with bioavailability parameters
+* Fix get_config_path output when config file is disabled
+* Remove some unwanted debug printing
+* Fix issue in PsN SCM results parsing
+* Assign ODE as compartmental system to variable (#1173)
 
 0.77.0 (2022-09-08)
 -------------------
@@ -1391,7 +1391,7 @@ Bugfixes
 Changes
 ========
 
-* fb070ee1 Return input model if allometry model fails (#1049)
+* Return input model if allometry model fails (#1049)
 
 0.76.1 (2022-09-06)
 -------------------

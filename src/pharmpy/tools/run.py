@@ -1342,7 +1342,7 @@ def summarize_modelfit_results(
     Return
     ------
     pd.DataFrame
-        A DataFrame of modelfit results with model name and estmation step as index.
+        A DataFrame of modelfit results with model name and estimation step as index.
 
     """
 
