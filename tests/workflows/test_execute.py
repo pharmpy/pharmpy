@@ -142,7 +142,7 @@ def test_execute_workflow_fit_mock(load_model_for_test, testdata, tmp_path):
         res = ModelfitResults(ofv=ofv)
         return res
 
-    init = map(lambda i: Task(f'init_{i}', lambda x: x, models[i]), indices)
+    init = [Task(f'init_{i}', lambda x: x, models[i]) for i in indices]
     process = [Task(f'fit{i}', fit, ofvs[i]) for i in indices]
     wb = WorkflowBuilder(tasks=init, name='test-workflow')
     wb.insert_workflow(WorkflowBuilder(tasks=process))

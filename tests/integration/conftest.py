@@ -38,11 +38,9 @@ def _run_est(testdata, esttool):
 def model_count():
     def _model_count(rundir: Path, model_dir_name: str | None = None):
         dir_path = rundir / 'models' if model_dir_name is None else rundir / model_dir_name
-        return sum(
-            map(
-                lambda path: 0 if path.name in ['.lock', '.datasets', 'input_model'] else 1,
-                (dir_path.iterdir()),
-            )
-        )
+        skip_count = ['.lock', '.datasets', 'input_model']
+        dir_count = [0 if path.name in skip_count else 1 for path in dir_path.iterdir()]
+
+        return sum(dir_count)
 
     return _model_count

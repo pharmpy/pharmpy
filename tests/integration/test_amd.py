@@ -1,6 +1,5 @@
 import os
 import shutil
-from pathlib import Path
 
 import pytest
 
@@ -8,15 +7,6 @@ from pharmpy.internals.fs.cwd import chdir
 from pharmpy.modeling import convert_model, create_basic_pk_model
 from pharmpy.tools import fit, run_amd
 from pharmpy.tools.context import open_context
-
-
-def _model_count(rundir: Path):
-    return sum(
-        map(
-            lambda path: 0 if path.name in ['.lock', '.datasets'] else 1,
-            ((rundir / 'subcontexts' / 'models').iterdir()),
-        )
-    )
 
 
 @pytest.mark.parametrize(
