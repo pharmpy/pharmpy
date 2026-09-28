@@ -369,6 +369,7 @@ class DataVariable(Immutable):
         'admid',
         'lloq',
         'blq',
+        'arm',
     }
     _all_scales = ('nominal', 'ordinal', 'interval', 'ratio')
     _all_descriptors = {
@@ -543,6 +544,7 @@ class DataVariable(Immutable):
         compartment   Compartment information (not yet exactly specified)
         lloq          Lower limit of quantification
         blq           Below limit of quantification indicator
+        arm           Trial design arm indicator
         unknown       Unkown type. This will be the default for columns that hasn't been
                       assigned a type
         ============  =============
