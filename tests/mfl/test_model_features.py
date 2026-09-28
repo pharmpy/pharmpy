@@ -355,6 +355,12 @@ def test_create_from_mfl(mfl, expected):
     assert mf.features == tuple(expected)
 
 
+def test_create_from_iter():
+    features = [Absorption.create('FO'), Absorption.create('ZO')]
+    mfl = ModelFeatures.create(f for f in features)
+    assert repr(mfl) == 'ABSORPTION([FO,ZO])'
+
+
 def test_create_raises():
     with pytest.raises(TypeError):
         ModelFeatures.create(features=1)

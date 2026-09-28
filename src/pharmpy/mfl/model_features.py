@@ -43,7 +43,9 @@ class ModelFeatures(Immutable):
             if features == '':
                 return ModelFeatures(())
             features = parse(features)
-        if not isinstance(features, Iterable):
+        if isinstance(features, Iterable):
+            features = list(features)
+        else:
             raise TypeError(f'Type of `feature` must be an iterable: got {type(features)}')
         other_types = {str(type(f)) for f in features if not isinstance(f, ModelFeature)}
         if other_types:
