@@ -873,6 +873,9 @@ def create_nonmem_datainfo(control_stream, resolved_dataset_path):
         elif colname == 'DVID':
             var = DataVariable.create(colname, type='dvid')
             info = ColumnInfo.create(colname, var, datatype='int32')
+        elif colname == 'ARM':
+            var = DataVariable.create(colname, type='arm')
+            info = ColumnInfo.create(colname, var, datatype='int32')
         else:
             info = ColumnInfo.create(colname, drop=coldrop)
         column_info.append(info)

@@ -97,6 +97,9 @@ def create_datainfo(path_or_df: str | Path | pd.DataFrame) -> DataInfo:
         elif colname == 'DVID':
             var = DataVariable.create(colname, type='dvid', scale='nominal')
             info = ColumnInfo.create(colname, var, datatype='int32')
+        elif colname == 'ARM':
+            var = DataVariable.create(colname, type='arm', scale='nominal')
+            info = ColumnInfo.create(colname, var, datatype='int32')
         elif colname == 'SS':
             var = DataVariable.create(colname, type='ss', scale='nominal')
             info = ColumnInfo.create(colname, var, datatype='int32')
