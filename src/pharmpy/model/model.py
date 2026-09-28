@@ -802,3 +802,25 @@ def get_and_check_dataset(model: Model) -> pd.DataFrame:
     if dataset is None:
         raise ValueError(f"Model {model.name} has no dataset")
     return dataset
+
+
+def is_defined(model: Model, symbol: str | Expr) -> bool:
+    """Check if a symbol is defined in a model
+
+    Will allow the symbol to be defined in the datainfo or in the statements.
+
+    Parameters
+    ----------
+    model : Model
+        Pharmpy model object
+
+    Returns
+    -------
+    bool
+        True if the symbol is defined
+    """
+
+    if isinstance(symbol, str):
+        symbol = Expr.symbol(symbol)
+
+    return symbol in model.datainfo.symbols or symbol in model.statements.lhs_symbols

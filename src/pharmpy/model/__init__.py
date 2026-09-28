@@ -24,6 +24,7 @@ from .model import (
     ModelSyntaxError,
     get_and_check_dataset,
     get_and_check_odes,
+    is_defined,
 )
 from .parameters import Parameter, Parameters
 from .random_variables import RandomVariables, VariabilityHierarchy, VariabilityLevel
@@ -84,6 +85,7 @@ __all__ = (
     'VariabilityLevel',
     'get_and_check_dataset',
     'get_and_check_odes',
+    'is_defined',
     'output',
     'to_compartmental_system',
 )

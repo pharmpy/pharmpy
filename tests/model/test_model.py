@@ -16,6 +16,7 @@ from pharmpy.model import (
     Statements,
     get_and_check_dataset,
     get_and_check_odes,
+    is_defined,
 )
 from pharmpy.model.external.nonmem.dataset import read_nonmem_dataset
 from pharmpy.model.model import ModelInternals
@@ -391,3 +392,10 @@ def test_observation_transformation(load_example_model_for_test):
 
     model = model.replace(observation_transformation={'Y': 'Y*2'})
     assert model.observation_transformation == {Expr.symbol('Y'): Expr.symbol('Y') * 2}
+
+
+def test_is_defined(load_example_model_for_test):
+    model = load_example_model_for_test('pheno')
+    assert is_defined(model, "WGT")
+    assert is_defined(model, Expr.symbol("CL"))
+    assert not is_defined(model, "CLCR")
