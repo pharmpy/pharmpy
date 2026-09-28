@@ -45,9 +45,7 @@ def _sympify_new(new) -> sympy.Expr:
 
 
 def _mapping_is_not_recursive(mapping: dict[sympy.Expr, sympy.Expr]):
-    return set(mapping.keys()).isdisjoint(
-        set().union(*map(lambda e: e.free_symbols, mapping.values()))
-    )
+    return set(mapping.keys()).isdisjoint(set().union(*(e.free_symbols for e in mapping.values())))
 
 
 def _old_does_not_need_generic_subs(expr: sympy.Expr):

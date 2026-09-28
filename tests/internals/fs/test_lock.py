@@ -291,9 +291,7 @@ def test_many_exclusive_threads_and_processes_rw(tmp_path):
         m = 10
         n = m**2
         items = list(range(n))
-        partition = [
-            list(map(lambda t: t[1], g[1])) for g in groupby(enumerate(items), lambda t: t[0] // m)
-        ]
+        partition = [[t[1] for t in g[1]] for g in groupby(enumerate(items), lambda t: t[0] // m)]
 
         assert len(partition) == m
         assert sorted(chain(*partition)) == items

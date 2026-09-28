@@ -249,7 +249,7 @@ def add_iov(
 
     if list_of_parameters is None:
         if distribution == 'disjoint':
-            etas = list(map(lambda x: [x], _get_etas(model, None, include_symbols=True)))
+            etas = [[x] for x in _get_etas(model, None, include_symbols=True)]
         else:
             etas = [_get_etas(model, None, include_symbols=True)]
     else:
@@ -260,12 +260,7 @@ def add_iov(
         else:
             params = list_of_parameters
 
-        if not all(
-            map(
-                lambda x: isinstance(x, list) and all(isinstance(y, str) for y in x),
-                params,
-            )
-        ):
+        if not all(isinstance(x, list) and all(isinstance(y, str) for y in x) for x in params):
             raise ValueError('not all parameters are strings')
 
         etas = [_get_etas(model, grp, include_symbols=True) for grp in params]
@@ -424,7 +419,7 @@ def _add_iov_etas_joint(rvs, pset, etas, indices, categories, omega_iov_name, et
     sigma = [[Expr.symbol(omega_iov_name(min(i, j), max(i, j))) for i in indices] for j in indices]
 
     for k in range(1, len(categories) + 1):
-        names = list(map(lambda i: eta_name(i, k), indices))
+        names = [eta_name(i, k) for i in indices]
         yield JointNormalDistribution.create(names, 'iov', mu, sigma)
 
 

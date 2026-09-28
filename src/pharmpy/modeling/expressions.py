@@ -1352,12 +1352,7 @@ def get_parameter_rv(
 
     natural_assignments = _get_natural_assignments(model.statements.before_odes)
 
-    rv = list(
-        map(
-            lambda rv_string: Expr.symbol(rv_string),
-            getattr(model.random_variables, var_type).names,
-        )
-    )
+    rv = [Expr.symbol(rv_string) for rv_string in getattr(model.random_variables, var_type).names]
 
     dependency_graph = graph_inverse(_dependency_graph(natural_assignments))
     return sorted(map(str, _filter_symbols(dependency_graph, rv, {Expr.symbol(parameter)})))
@@ -1598,30 +1593,25 @@ def _remove_covariate_effect_from_statements_recursive(
                     'Cannot handle multivariate Piecewise where condition depends on covariate.'
                 )
 
-    children = list(
-        map(
-            lambda expr: _remove_covariate_effect_from_statements_recursive(
-                thetas,
-                fixed_thetas,
-                assignments,
-                statements,
-                symbol,
-                expr,
-                covariate,
-                expression,
-                current_theta_expression,
-            ),
-            expression.args,
+    children = [
+        _remove_covariate_effect_from_statements_recursive(
+            thetas,
+            fixed_thetas,
+            assignments,
+            statements,
+            symbol,
+            expr,
+            covariate,
+            expression,
+            current_theta_expression,
         )
-    )
+        for expr in expression.args
+    ]
 
     # TODO: Take THETA limits into account. Currently we assume any
     # offset/factor can be compensated but this is not true in general.
     can_be_scaled_or_offset = any(
-        map(
-            lambda n: (not n.changed or not n.constant) and n.contains_theta,
-            children,
-        )
+        (not n.changed or not n.constant) and n.contains_theta for n in children
     )
 
     changed = any(n.changed for n in children)
@@ -1634,7 +1624,7 @@ def _remove_covariate_effect_from_statements_recursive(
     # FIXME: second part of check is not general
     if not can_be_scaled_or_offset or isinstance(expression, sympy.Piecewise):
         return ExpressionTreeNode(
-            expression.func(*map(lambda n: n.expression, children)),
+            expression.func(*(n.expression for n in children)),
             True,
             is_constant,
             contains_theta,
@@ -1642,13 +1632,13 @@ def _remove_covariate_effect_from_statements_recursive(
 
     return ExpressionTreeNode(
         expression.func(
-            *map(
-                lambda n: (
+            *(
+                (
                     _neutral(expression)
                     if n.changed and n.constant and n.expression != symbol
                     else n.expression
-                ),
-                children,
+                )
+                for n in children
             )
         ),
         True,

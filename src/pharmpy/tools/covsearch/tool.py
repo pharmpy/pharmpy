@@ -1161,8 +1161,8 @@ def validate_input(
 
         effect_spec = spec(model, statements)
 
-        candidate_effects = map(
-            lambda x: Effect(*x[:-1]), sorted(set(parse_spec(effect_spec)))
+        candidate_effects = (
+            Effect(*x[:-1]) for x in sorted(set(parse_spec(effect_spec)))
         )  # Ignore OPTIONAL attribute
 
         allowed_covariates = get_covariates_allowed_in_covariate_effect(model)

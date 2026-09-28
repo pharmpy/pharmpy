@@ -7,4 +7,4 @@ class ModelFeature:
 
 
 def feature(feature_cls: Callable[..., ModelFeature], children: list[Any]) -> ModelFeature:
-    return feature_cls(*map(lambda x: tuple(x) if isinstance(x, list) else x, children))
+    return feature_cls(*(tuple(x) if isinstance(x, list) else x for x in children))

@@ -292,7 +292,7 @@ def calculate_individual_parameter_statistics(
     input_parameter_estimates = parameter_estimates
     parameter_estimates = xreplace_dict(parameter_estimates)
 
-    all_free_symbols = set().union(*map(lambda e: e[1].free_symbols, full_exprs))
+    all_free_symbols = set().union(*(e[1].free_symbols for e in full_exprs))
 
     all_covariate_free_symbols = all_free_symbols.intersection(
         map(sympy.Symbol, model.datainfo.names)

@@ -822,7 +822,7 @@ def _parse_tree(tree: AttrTree):
                                 pairs.append((expr, logic))
 
                     if pairs[-1][1] is not True:
-                        else_val = symbol if any(map(lambda x: x.symbol == symbol, s)) else None
+                        else_val = symbol if any(x.symbol == symbol for x in s) else None
                         if else_val is not None:
                             pairs.append((else_val, True))
 

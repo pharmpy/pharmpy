@@ -101,7 +101,7 @@ class LocalDaskDispatcher(Dispatcher):
                                     res: T | None = client.get(
                                         dsk_optimized,
                                         'results',
-                                    )  # pyright: ignore [reportAssignmentType]
+                                    )
                                 except (
                                     dask.distributed.client.FutureCancelledError,
                                     AbortWorkflowException,
@@ -204,11 +204,11 @@ def _scatter_computation(Future, client, computation):
         else:
             return (
                 computation[0],
-                *map(lambda c: _scatter_computation(Future, client, c), computation[1:]),
+                *(_scatter_computation(Future, client, c) for c in computation[1:]),
             )
 
     if isinstance(computation, list):
-        return list(map(lambda c: _scatter_computation(Future, client, c), computation))
+        return [_scatter_computation(Future, client, c) for c in computation]
 
     return _scatter_value(Future, client, computation)
 

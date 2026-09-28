@@ -29,7 +29,7 @@ def with_runtime_arguments_type_check(fn):
             # in combination with `from __future__ import annotations`.
             # See https://peps.python.org/pep-0563/#introducing-a-new-dictionary-for-the-string-literal-form-instead
             expected_types = _annotation_to_types(type_hints[name])
-            if not any(map(lambda expected_type: _match(expected_type, value), expected_types)):
+            if not any(_match(expected_type, value) for expected_type in expected_types):
                 if len(expected_types) == 1 and get_origin(expected_types[0]) == Literal:
                     allowed_values = list(get_args(expected_types[0]))
                     raise ValueError(
@@ -94,7 +94,7 @@ def _match_sequence_items(args, value):
     if args:
         assert len(args) == 1
         t = args[0]
-        return all(map(lambda v: _match(t, v), value))
+        return all(_match(t, v) for v in value)
     else:
         return True
 
