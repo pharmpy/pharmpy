@@ -2,7 +2,7 @@ from functools import partial
 
 import pytest
 
-from pharmpy.mfl import ModelFeatures
+from pharmpy.mfl import Covariate, ModelFeatures
 from pharmpy.modeling import (
     add_allometry,
     add_bioavailability,
@@ -311,6 +311,11 @@ def test_get_model_features(load_model_for_test, testdata, funcs, type, expected
     assert mf.is_single_model()
 
 
+def test_get_model_features_custom_covariate(load_model_for_test, pheno):
+    features = get_model_features(pheno)
+    assert Covariate.create('CL', 'WGT', 'CUSTOM', '*') in features
+
+
 def test_get_model_features_raises(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
@@ -420,6 +425,11 @@ def test_generate_transformations_metabolite(load_model_for_test, testdata):
     model_start = add_metabolite(model_start)
     for func in transformations:
         func(model_start)
+
+
+def test_generate_transformations_custom_covariate(load_model_for_test, testdata):
+    with pytest.raises(ValueError):
+        generate_transformations([Covariate.create('CL', 'WT', 'CUSTOM', '*')])
 
 
 @pytest.mark.parametrize(

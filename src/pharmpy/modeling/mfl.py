@@ -390,6 +390,8 @@ def _get_metabolite_func(feature: Metabolite):
 
 def _get_covariate_func(feature: Covariate, include_add: bool, include_remove: bool):
     funcs = []
+    if feature.fp == 'CUSTOM':
+        raise ValueError('Could not generate function for CUSTOM covariate effect')
     if include_add:
         kwargs_add = {
             'parameter': feature.parameter,
