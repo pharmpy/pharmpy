@@ -271,5 +271,5 @@ jobs:
         uses: actions/upload-artifact@v6
         if: ${{ failure() }}
         with:
-            name: integration-tests-ubuntu
-            path: ${{ runner.temp }}\pytest-of-*
+            name: integration-tests-windows
+            path: ${{ runner.temp }}/pytest-of-*
