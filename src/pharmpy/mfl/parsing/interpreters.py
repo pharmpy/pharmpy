@@ -328,7 +328,8 @@ class CovariateInterpreter(MFLInterpreter):
         is_optional = children[0]
         params = self.expand(children[1], wildcard=[Ref('pop_params')])
         covs = self.expand(children[2], wildcard=[Ref('covariates')])
-        fps = self.expand(children[3], wildcard=sorted(COVARIATE_FP_TYPES))
+        valid_fp_types = set(COVARIATE_FP_TYPES) - {'CUSTOM'}
+        fps = self.expand(children[3], wildcard=sorted(valid_fp_types))
         validate_values(fps, COVARIATE_FP_TYPES, 'COVARIATE')
         ops = children[4]
         validate_values(ops, COVARIATE_OP_TYPES, 'COVARIATE')

@@ -12,7 +12,7 @@ if TYPE_CHECKING:
     from ..model_features import ModelFeatures
 
 
-COVARIATE_FP_TYPES = frozenset(('LIN', 'PIECE_LIN', 'EXP', 'POW', 'CAT', 'CAT2'))
+COVARIATE_FP_TYPES = frozenset(('LIN', 'PIECE_LIN', 'EXP', 'POW', 'CAT', 'CAT2', 'CUSTOM'))
 COVARIATE_OP_TYPES = frozenset(('+', '*'))
 
 
