@@ -3,7 +3,14 @@ from typing import Literal
 
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.mfl import LagTime, ModelFeatures, Peripherals, Transits
 from pharmpy.model import Model
+from pharmpy.modeling.mfl import (
+    generate_transformations,
+    get_model_features,
+    is_in_search_space,
+    transform_into_search_space,
+)
 from pharmpy.tools.common import (
     RANK_TYPES,
     ToolResults,
@@ -12,8 +19,6 @@ from pharmpy.tools.common import (
     table_final_eta_shrinkage,
     update_initial_estimates,
 )
-from pharmpy.tools.mfl.least_number_of_transformations import least_number_of_transformations
-from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.modelsearch import algorithms
 from pharmpy.tools.run import (
@@ -24,9 +29,7 @@ from pharmpy.tools.run import (
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
-from ..mfl.parse import parse as mfl_parse
 from .algorithms import _add_allometry
-from .filter import mfl_filtering
 
 
 def create_workflow(
@@ -131,20 +134,17 @@ def start(
     algorithm_func = getattr(algorithms, algorithm)
 
     if isinstance(search_space, str):
-        mfl_statements = mfl_parse(search_space, mfl_class=True)
+        mfl_statements = ModelFeatures.create(search_space)
     else:
         mfl_statements = search_space
 
-    if mfl_statements.allometry is not None:
+    if mfl_statements.allometry:
         mfl_allometry = mfl_statements.allometry
-        mfl_statements = mfl_statements.replace(allometry=None)
+        mfl_statements -= mfl_allometry
     else:
         mfl_allometry = None
 
-    # Add base model task
-    model_mfl = get_model_features(model, supress_warnings=True)
-    model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
-    if not mfl_statements.contain_subset(model_mfl, tool="modelsearch") or mfl_allometry:
+    if not is_in_search_space(model, mfl_statements, type='pk') or mfl_allometry:
         context.log_info("Creating base model")
         base_task = Task("create_base_model", create_base_model, mfl_statements, mfl_allometry)
         wb.add_task(base_task, predecessors=start_task)
@@ -169,9 +169,10 @@ def start(
     )
 
     # Filter the mfl_statements from base model attributes
-    mfl_funcs = filter_mfl_statements(
+    mfl_filtered = filter_mfl_statements(
         mfl_statements, create_base_model(mfl_statements, mfl_allometry, model)
     )
+    mfl_funcs = get_mfl_funcs(mfl_filtered)
 
     # TODO : Implement task for filtering the search space instead
     wf_search, candidate_model_tasks = algorithm_func(
@@ -229,11 +230,31 @@ def clear_description(model_entry):
 
 def filter_mfl_statements(mfl_statements: ModelFeatures, model_entry: ModelEntry):
     model = model_entry.model
-    ss_funcs = mfl_statements.convert_to_funcs()
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
-    model_funcs = model_mfl.convert_to_funcs()
-    res = {k: ss_funcs[k] for k in set(ss_funcs) - set(model_funcs)}
+    model_mfl = get_model_features(model, type='pk')
+    mfl_statements -= model_mfl
+    if (t := Transits.create(0, depot=False)) in mfl_statements:
+        mfl_statements -= t
+    return mfl_statements
+
+
+def get_mfl_funcs(mfl: ModelFeatures):
+    ss_funcs = generate_transformations(mfl)
+    assert len(ss_funcs) == len(mfl)
+    keys = [(type(f).__name__.upper(),) + _get_args(f) for f in mfl]
+    res = {key: func for key, func in zip(keys, ss_funcs)}
     return {k: v for k, v in sorted(res.items(), key=lambda x: (x[0][0], str(x[0][1])))}
+
+
+def _get_args(feature):
+    if isinstance(feature, Peripherals):
+        return (feature.number,)
+    elif isinstance(feature, LagTime):
+        return ('ON',) if feature.on else ('OFF',)
+    elif isinstance(feature, Transits):
+        depot_arg = 'DEPOT' if feature.depot else 'NODEPOT'
+        return feature.number, depot_arg
+    else:
+        return feature.args
 
 
 def create_base_model(ss, allometry, model_or_model_entry):
@@ -245,15 +266,9 @@ def create_base_model(ss, allometry, model_or_model_entry):
         res = None
 
     base = update_initial_estimates(model, res) if res else model
-
-    model_mfl = get_model_features(model, supress_warnings=True)
-    model_mfl = ModelFeatures.create_from_mfl_string(model_mfl)
-    added_features = ""
-    lnt = least_number_of_transformations(model_mfl, ss, tool="modelsearch")
-    for name, func in lnt.items():
-        base = func(base)
-        added_features += f';{name[0]}({name[1]})'
-    base = base.replace(name="base", description=added_features[1:])
+    base = transform_into_search_space(base, ss, type='pk')
+    added_features = ss - get_model_features(model, type='pk')
+    base = base.replace(name="base", description=repr(added_features)).update_source()
     base = _add_allometry(base, allometry)
 
     return ModelEntry.create(base, modelfit_results=None, parent=model)
@@ -349,24 +364,24 @@ def validate_input(
 ):
     if isinstance(search_space, str):
         try:
-            statements = mfl_parse(search_space)
+            search_space = ModelFeatures.create(search_space)
         except:  # noqa E722
-            raise ValueError(f'Invalid `search_space`, could not be parsed: "{search_space}"')
-    else:
-        statements = search_space.filter("pk").mfl_statement_list()
+            raise ValueError(f'Invalid `search_space`: could not be parsed: "{search_space}"')
+    statements = search_space.filter("pk") + search_space.allometry
+    if not statements:
+        raise ValueError(f'Invalid `search_space`: no features of type pk found {search_space}.')
 
-    modelsearch_statements = mfl_filtering(statements, 'modelsearch')
-    bad_statements = list(
-        filter(lambda statement: statement not in modelsearch_statements, statements)
-    )
+    bad_statements = search_space - statements
 
     if bad_statements:
         raise ValueError(
             f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
         )
 
-    allometry = ModelFeatures.create_from_mfl_statement_list(statements).allometry
+    allometry = statements.allometry
     if allometry:
+        assert len(allometry) == 1
+        allometry = allometry[0]
         covariate = allometry.covariate
         if covariate not in list(model.dataset.columns):
             raise ValueError(

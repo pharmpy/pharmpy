@@ -1,3 +1,6 @@
+from collections import defaultdict
+from collections.abc import Callable, Iterable
+from itertools import product
 from typing import Any
 
 from pharmpy.modeling import (
@@ -11,10 +14,33 @@ from pharmpy.tools.common import update_initial_estimates
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.workflows import ModelEntry, Task, Workflow, WorkflowBuilder
 
-from ..mfl.helpers import all_combinations, get_funcs_same_type, key_to_str
-
 ALGORITHMS = frozenset(('exhaustive', 'exhaustive_stepwise', 'reduced_stepwise'))
 IIV_STRATEGIES = frozenset(('no_add', 'add_diagonal', 'fullblock', 'absorption_delay'))
+
+
+def _group_incompatible_features(funcs):
+    grouped = defaultdict(list)
+    for key in funcs:
+        grouped[key[0]].append(key)
+    return grouped.values()
+
+
+def all_combinations(fns: dict[tuple[str | int, ...], Callable]) -> Iterable[tuple[str | int, ...]]:
+    grouped = _group_incompatible_features(fns)
+    feats = ((None, *group) for group in grouped)
+    for t in product(*feats):
+        a = tuple(elt for elt in t if elt is not None)
+        if a:
+            yield a
+
+
+def key_to_str(key: tuple[str | int, ...]) -> str:
+    name, *args = key
+    return f'{name}({", ".join(map(str, args))})'
+
+
+def get_funcs_same_type(funcs, feat):
+    return [value for key, value in funcs.items() if key[0] == feat[0]]
 
 
 def exhaustive(mfl_funcs, iiv_strategy: str, allometry=None):
@@ -229,6 +255,8 @@ def create_candidate_stepwise(model_name, feat, func, iiv_strategy, allometry, m
 def _add_allometry(model, allometry):
     if allometry is None:
         return model
+    assert len(allometry) == 1
+    allometry = allometry[0]
     model = add_allometry(model, allometry.covariate, allometry.reference)
     return model
 

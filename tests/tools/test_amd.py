@@ -468,18 +468,18 @@ def test_parse_search_space_new(mfl, expected_search_space, expected_iiv):
     [
         (
             'ABSORPTION(ZO);ALLOMETRY(WGT,70)',
-            'ABSORPTION(ZO);ELIMINATION(FO);TRANSITS(0);PERIPHERALS(0);LAGTIME(OFF)',
+            'ABSORPTION(ZO)',
             'ALLOMETRY(WGT,70)',
         ),
     ],
 )
 def test_modify_search_space_allometry(mfl, expected_search_space, expected_allometry):
-    ss_mfl = mfl_parse(mfl, mfl_class=True)
+    ss_mfl = ModelFeaturesNew.create(mfl)
     assert ss_mfl.allometry
     ss_mfl, mfl_allometry = modify_search_space_allometry(ss_mfl)
     assert not ss_mfl.allometry
     assert repr(ss_mfl) == expected_search_space
-    assert mfl_allometry == mfl_parse(expected_allometry, mfl_class=True).allometry
+    assert mfl_allometry == ModelFeaturesNew.create(expected_allometry).allometry
 
 
 @pytest.mark.parametrize(
@@ -774,11 +774,11 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
 )
 def test_get_search_space_modelsearch(mfl, modeltype, administration, expected):
     if mfl is None:
-        search_space = ModelFeatures()
+        search_space = ModelFeaturesNew.create([])
     else:
-        search_space = mfl_parse(mfl, mfl_class=True)
+        search_space = ModelFeaturesNew.create(mfl)
     search_space_modelsearch = get_search_space_modelsearch(search_space, modeltype, administration)
-    expected = mfl_parse(expected, mfl_class=True)
+    expected = ModelFeaturesNew.create(expected)
     assert search_space_modelsearch == expected
 
 

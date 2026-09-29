@@ -1,6 +1,5 @@
-from collections import defaultdict
 from collections.abc import Callable, Iterable
-from itertools import chain, product
+from itertools import chain
 
 from pharmpy.model import Model
 
@@ -53,28 +52,3 @@ def funcs(
     features = chain.from_iterable(features(model, statements_list) for features in generators)
 
     return dict(features)
-
-
-def _group_incompatible_features(funcs):
-    grouped = defaultdict(list)
-    for key in funcs:
-        grouped[key[0]].append(key)
-    return grouped.values()
-
-
-def all_combinations(fns: dict[FeatureKey, FeatureFn]) -> Iterable[tuple[FeatureKey]]:
-    grouped = _group_incompatible_features(fns)
-    feats = ((None, *group) for group in grouped)
-    for t in product(*feats):
-        a = tuple(elt for elt in t if elt is not None)
-        if a:
-            yield a
-
-
-def key_to_str(key: FeatureKey) -> str:
-    name, *args = key
-    return f'{name}({", ".join(map(str, args))})'
-
-
-def get_funcs_same_type(funcs, feat):
-    return [value for key, value in funcs.items() if key[0] == feat[0]]

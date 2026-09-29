@@ -341,7 +341,7 @@ def run_amd_task(
 
     modelsearch_features = get_search_space_modelsearch(ss_mfl, modeltype, administration)
     if mfl_allometry is not None:
-        modelsearch_features = modelsearch_features.replace(allometry=mfl_allometry)
+        modelsearch_features += mfl_allometry
 
     covsearch_features = get_search_space_covsearch(ss_mfl, modeltype, administration)
 
@@ -660,7 +660,7 @@ def parse_search_space(search_space):
 def modify_search_space_allometry(ss_mfl):
     # Take it out and put back later
     mfl_allometry = ss_mfl.allometry
-    ss_mfl = ss_mfl.replace(allometry=None)
+    ss_mfl -= mfl_allometry
     return ss_mfl, mfl_allometry
 
 
@@ -777,8 +777,8 @@ def get_search_space_drug_metabolite(mfl, administration):
 
 
 def get_search_space_modelsearch(ss_mfl, modeltype, administration):
-    modelsearch_features = ss_mfl.filter("pk")
-    if len(modelsearch_features.mfl_statement_list()) == 0:
+    modelsearch_features = ModelFeaturesNew.create(repr(ss_mfl)).filter('pk')
+    if len(modelsearch_features) == 0:
         if modeltype in ('basic_pk', 'drug_metabolite'):
             if administration == 'oral':
                 mfl = (
@@ -819,7 +819,7 @@ def get_search_space_modelsearch(ss_mfl, modeltype, administration):
                 mfl = "ELIMINATION(FO);PERIPHERALS(0..2)"
         else:
             mfl = "ELIMINATION(FO);PERIPHERALS(0..2)"
-        modelsearch_features = mfl_parse(mfl, mfl_class=True)
+        modelsearch_features = ModelFeaturesNew.create(mfl)
     return modelsearch_features
 
 
@@ -999,7 +999,7 @@ def _subfunc_modelsearch(
             name='modelsearch',
             model=model,
             results=modelfit_results,
-            search_space=search_space,
+            search_space=repr(search_space),
             algorithm='reduced_stepwise',
             strictness=strictness,
             rank_type=rank_type,
@@ -1052,7 +1052,7 @@ def _subfunc_structsearch_tmdd(
             name='modelsearch',
             model=model,
             results=modelfit_results,
-            search_space=search_space,
+            search_space=repr(search_space),
             algorithm='reduced_stepwise',
             strictness=strictness,
             rank_type='bic',

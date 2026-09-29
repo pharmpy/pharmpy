@@ -2,7 +2,7 @@ import functools
 
 import pytest
 
-from pharmpy.model import Model
+from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
     add_lag_time,
     add_peripheral_compartment,
@@ -16,9 +16,6 @@ from pharmpy.modeling import (
     set_zero_order_elimination,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
-from pharmpy.tools.mfl.helpers import funcs, modelsearch_features
-from pharmpy.tools.mfl.parse import parse
-from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.modelsearch.algorithms import (
     _add_iiv_to_func,
     _is_allowed,
@@ -36,19 +33,19 @@ from pharmpy.tools.modelsearch.tool import (
     create_result_tables,
     create_workflow,
     filter_mfl_statements,
+    get_mfl_funcs,
     validate_input,
 )
 from pharmpy.workflows import ModelEntry, Workflow
 
-MINIMAL_INVALID_MFL_STRING = ''
+MINIMAL_INVALID_MFL_STRING = 'x'
 MINIMAL_VALID_MFL_STRING = 'LAGTIME(ON)'
 
 
 def test_exhaustive_algorithm():
-    mfl = 'ABSORPTION(ZO);PERIPHERALS(1)'
-    search_space = mfl_parse(mfl)
-    search_space = funcs(Model(), search_space, modelsearch_features)
-    wf, _ = exhaustive(search_space, iiv_strategy='no_add')
+    mfl = ModelFeatures.create('ABSORPTION(ZO);PERIPHERALS(1)')
+    funcs = get_mfl_funcs(mfl)
+    wf, _ = exhaustive(funcs, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == 3
@@ -120,9 +117,9 @@ def test_exhaustive_algorithm():
     ],
 )
 def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models: int):
-    search_space = mfl_parse(mfl)
-    search_space = funcs(Model(), search_space, modelsearch_features)
-    wf, _ = exhaustive_stepwise(search_space, iiv_strategy=iiv_strategy)
+    mfl = ModelFeatures.create(mfl)
+    funcs = get_mfl_funcs(mfl)
+    wf, _ = exhaustive_stepwise(funcs, iiv_strategy=iiv_strategy)
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -150,9 +147,9 @@ def test_exhaustive_stepwise_algorithm(mfl: str, iiv_strategy: str, no_of_models
     ],
 )
 def test_reduced_stepwise_algorithm(mfl: str, no_of_models: int):
-    search_space = mfl_parse(mfl)
-    search_space = funcs(Model(), search_space, modelsearch_features)
-    wf, _ = reduced_stepwise(search_space, iiv_strategy='no_add')
+    mfl = ModelFeatures.create(mfl)
+    funcs = get_mfl_funcs(mfl)
+    wf, _ = reduced_stepwise(funcs, iiv_strategy='no_add')
     fit_tasks = [task.name for task in wf.tasks if task.name.startswith('run')]
 
     assert len(fit_tasks) == no_of_models
@@ -194,15 +191,15 @@ $ESTIMATION METHOD=1 INTERACTION
 
 
 def test_is_allowed():
-    features = parse('ABSORPTION(ZO);PERIPHERALS(1)')
-    features = funcs(Model(), features, modelsearch_features)
+    mfl = ModelFeatures.create('ABSORPTION(ZO);PERIPHERALS(1)')
+    features = get_mfl_funcs(mfl)
     feat_previous = []
     feat_current, func_current = 'ABSORPTION(ZO)', set_zero_order_absorption
     assert _is_allowed(feat_current, func_current, feat_previous, features)
     assert _is_allowed(feat_current, func_current, feat_current, features) is False
 
-    features = parse('ABSORPTION([ZO,SEQ-ZO-FO])')
-    features = funcs(Model(), features, modelsearch_features)
+    mfl = ModelFeatures.create('ABSORPTION([ZO,SEQ-ZO-FO])')
+    features = get_mfl_funcs(mfl)
     feat_previous = [
         (
             'ABSORPTION',
@@ -212,8 +209,8 @@ def test_is_allowed():
     feat_current, func_current = ('ABSORPTION', 'ZO'), set_zero_order_absorption
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
-    features = parse('PERIPHERALS([1,2])')
-    features = funcs(Model(), features, modelsearch_features)
+    mfl = ModelFeatures.create('PERIPHERALS([1,2])')
+    features = get_mfl_funcs(mfl)
     feat_previous = []
     feat_current, func_current = (
         ('PERIPHERALS', 1),
@@ -227,8 +224,8 @@ def test_is_allowed():
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features)
 
-    features = parse('PERIPHERALS([1,2])')
-    features = funcs(Model(), features, modelsearch_features)
+    mfl = ModelFeatures.create('PERIPHERALS([1,2])')
+    features = get_mfl_funcs(mfl)
     feat_previous = [('PERIPHERALS', 1)]
     feat_current, func_current = (
         ('PERIPHERALS', 1),
@@ -236,8 +233,8 @@ def test_is_allowed():
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
-    features = parse('PERIPHERALS([1,2])')
-    features = funcs(Model(), features, modelsearch_features)
+    mfl = ModelFeatures.create('PERIPHERALS([1,2])')
+    features = get_mfl_funcs(mfl)
     feat_previous = []
     feat_current, func_current = (
         ('PERIPHERALS', 2),
@@ -245,8 +242,8 @@ def test_is_allowed():
     )
     assert _is_allowed(feat_current, func_current, feat_previous, features) is False
 
-    features = parse('PERIPHERALS(2)')
-    features = funcs(Model(), features, modelsearch_features)
+    mfl = ModelFeatures.create('PERIPHERALS(2)')
+    features = get_mfl_funcs(mfl)
     feat_previous = []
     feat_current, func_current = (
         ('PERIPHERALS', 2),
@@ -308,14 +305,14 @@ def test_create_base_model(load_model_for_test, testdata):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
-    search_space = mfl_parse('ABSORPTION([SEQ-ZO-FO])', mfl_class=True)
+    search_space = ModelFeatures.create('ABSORPTION([SEQ-ZO-FO])')
     assert has_first_order_absorption(model_start)
     model_base = create_base_model(search_space, None, me_start).model
     assert has_seq_zo_fo_absorption(model_base)
     assert model_base.description == 'ABSORPTION(SEQ-ZO-FO)'
 
-    search_space = mfl_parse('ABSORPTION([FO]);PERIPHERALS(1)', mfl_class=True)
-    mfl_allometry = mfl_parse('ALLOMETRY(WT, 70)', mfl_class=True).allometry
+    search_space = ModelFeatures.create('ABSORPTION([FO]);PERIPHERALS(1)')
+    mfl_allometry = ModelFeatures.create('ALLOMETRY(WT, 70)').allometry
     model_base = create_base_model(search_space, mfl_allometry, me_start).model
     assert len([p for p in model_base.parameters if p.name.startswith('ALLO')]) == 4
     assert model_base.description == 'PERIPHERALS(1)'
@@ -348,12 +345,12 @@ def test_create_candidate(load_model_for_test, testdata, iiv_strategy, allometry
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
 
     search_space_exhaustive = 'ABSORPTION(ZO);PERIPHERALS(1)'
-    mfl = mfl_parse(search_space_exhaustive, mfl_class=True)
-    mfl_funcs = mfl.convert_to_funcs()
+    mfl = ModelFeatures.create(search_space_exhaustive)
+    mfl_funcs = get_mfl_funcs(mfl)
     feats, funcs = mfl_funcs.keys(), mfl_funcs.values()
 
     if allometry:
-        allometry = mfl_parse('ALLOMETRY(WT, 70)', mfl_class=True).allometry
+        allometry = ModelFeatures.create('ALLOMETRY(WT, 70)').allometry
 
     me_cand_exhaustive = create_candidate_exhaustive(
         'cand', feats, funcs, iiv_strategy, allometry, me_start
@@ -378,7 +375,7 @@ def test_create_candidate(load_model_for_test, testdata, iiv_strategy, allometry
 
 
 @pytest.mark.parametrize(
-    ('funcs', 'search_space', 'mfl_funcs'),
+    ('funcs', 'search_space', 'mfl_keys'),
     [
         (
             [],
@@ -395,16 +392,29 @@ def test_create_candidate(load_model_for_test, testdata, iiv_strategy, allometry
             'ABSORPTION([FO,ZO,SEQ-ZO-FO]);PERIPHERALS(1..2)',
             {('ABSORPTION', 'FO'), ('ABSORPTION', 'SEQ-ZO-FO'), ('PERIPHERALS', 2)},
         ),
+        (
+            [],
+            'ABSORPTION([FO,ZO]);ELIMINATION([FO,ZO]);LAGTIME([OFF,ON]);TRANSITS([0,3],*)',
+            {
+                ('ABSORPTION', 'ZO'),
+                ('ELIMINATION', 'ZO'),
+                ('LAGTIME', 'ON'),
+                ('TRANSITS', 3, 'DEPOT'),
+                ('TRANSITS', 3, 'NODEPOT'),
+            },
+        ),
     ],
 )
-def test_filter_mfl_statements(load_model_for_test, testdata, funcs, search_space, mfl_funcs):
+def test_get_mfl_funcs(load_model_for_test, testdata, funcs, search_space, mfl_keys):
     model_start = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     res_start = parse_modelfit_results(model_start, testdata / 'nonmem' / 'models' / 'mox2.mod')
     for func in funcs:
         model_start = func(model_start)
     me_start = ModelEntry.create(model_start, modelfit_results=res_start)
-    search_space = mfl_parse(search_space, mfl_class=True)
-    assert set(filter_mfl_statements(search_space, me_start).keys()) == mfl_funcs
+    search_space = ModelFeatures.create(search_space)
+    mfl_filtered = filter_mfl_statements(search_space, me_start)
+    mfl_funcs = get_mfl_funcs(mfl_filtered)
+    assert set(mfl_funcs.keys()) == mfl_keys
 
 
 def test_categorize_model_entries(load_model_for_test, testdata, model_entry_factory):
@@ -481,19 +491,25 @@ def test_validate_input_with_model(load_model_for_test, testdata):
             None,
             {'search_space': MINIMAL_INVALID_MFL_STRING},
             ValueError,
-            'Invalid `search_space`',
+            'Invalid `search_space`: could not be parsed',
         ),
         (
             None,
-            {'search_space': 'LET(x, 0)'},
+            {'search_space': ''},
             ValueError,
-            'Invalid `search_space`',
+            'Invalid `search_space`: no features of type pk',
+        ),
+        (
+            None,
+            {'search_space': 'ABSORPTION(FO);IIV(CL,EXP)'},
+            ValueError,
+            'Invalid `search_space`: found unknown statement',
         ),
         (
             None,
             {'search_space': 'ABSORPTION(FO);ALLOMETRY(X,70)'},
             ValueError,
-            'Invalid `search_space`',
+            'Invalid `search_space`: allometric variable',
         ),
         (
             None,
