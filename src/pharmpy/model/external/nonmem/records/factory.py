@@ -17,7 +17,6 @@ from .parsers import (
     OmegaRecordParser,
     OptionRecordParser,
     ProblemRecordParser,
-    SimulationRecordParser,
     ThetaRecordParser,
 )
 from .problem_record import ProblemRecord
@@ -44,7 +43,7 @@ known_records = {
     'PRED': (CodeRecord, CodeRecordParser),
     'PROBLEM': (ProblemRecord, ProblemRecordParser),
     'SIGMA': (OmegaRecord, OmegaRecordParser),
-    'SIMULATION': (SimulationRecord, SimulationRecordParser),
+    'SIMULATION': (SimulationRecord, OptionRecordParser),
     'SIZES': (SizesRecord, OptionRecordParser),
     'SUBROUTINES': (SubroutineRecord, OptionRecordParser),
     'TABLE': (TableRecord, OptionRecordParser),
