@@ -549,8 +549,8 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
     >>> from pharmpy.modeling import *
     >>> model = load_example_model("pheno")
     >>> model = set_baseline_effect(model, expr='const')
-    >>> model.statements.find_assignment("E")
-    E = B
+    >>> model.statements.find_assignment("R")
+    R = B
     """
     B = Expr.symbol("B")
     model = add_individual_parameter(model, B.name)
