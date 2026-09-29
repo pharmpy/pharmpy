@@ -18,6 +18,7 @@ from pharmpy.modeling import (
     get_observations,
     get_sigmas,
     is_binary,
+    set_baseline_effect,
     set_description,
     set_initial_estimates,
     set_name,
@@ -36,7 +37,7 @@ from .results import PDSearchResults
 
 def create_workflow(
     input: Path | str | Model,
-    type: Literal['pd', 'kpd'],
+    type: Literal['pkpd', 'pd', 'kpd'],
     treatment_variable: str | None = None,
     kpd_driver: Literal['ir', 'amount'] = 'ir',
     algorithm: Literal['stepwise', 'exhaustive_stepwise'] = 'stepwise',
@@ -51,7 +52,7 @@ def create_workflow(
     Parameters
     ----------
     input : Union[Path, str, Model]
-        A PD/KPD dataset or PD/KPD model
+        A PD/KPD dataset or a PK, PD or KPD model
     type : str
         Type of PD model to build ('pd' or 'kpd')
     treatment_variable : str
@@ -86,7 +87,7 @@ def create_workflow(
     start_task = Task('start_pdsearch', start_pdsearch, input, type, kpd_driver, results)
     wb.add_task(start_task)
 
-    if isinstance(input, Model):
+    if isinstance(input, Model) and type != "pkpd":
         base_output = [start_task]
     else:
         fitbase = create_fit_workflow(n=1)
@@ -153,19 +154,24 @@ def _calc_pd_inits_from_data(model):
     return theta_init, omega_init
 
 
-def start_pdsearch(context, input, type, kpd_driver, results):
+def start_pdsearch(context, input, type, kpd_driver, results) -> ModelEntry:
     context.log_info("Starting pdsearch")
     if isinstance(input, Model):
-        me = ModelEntry.create(input, modelfit_results=results)
-        context.store_input_model_entry(me)
-        return me
+        if type == 'pkpd':
+            input_me = ModelEntry.create(input, modelfit_results=results)
+            context.store_input_model_entry(input_me)
+            model = set_baseline_effect(input)
+            me = ModelEntry.create(model=model)
+        else:
+            me = ModelEntry.create(input, modelfit_results=results)
+            context.store_input_model_entry(me)
     else:
         try:
             model = create_base_model(type, input, kpd_driver)
         except DatasetError as e:
             context.abort_workflow(f'Could not parse dataset: {e}')
         me = ModelEntry.create(model=model)
-        return me
+    return me
 
 
 def create_base_model(type, dataset, kpd_driver):
@@ -282,6 +288,7 @@ def create_and_run_drug_effect_models(context, treatment_variable: str, data_str
                 f'create_drug_effect_{feature.args[0].lower()}',
                 create_drug_effect_model,
                 treatment_variable,
+                type,
                 feature,
                 baseme,
             )
@@ -371,8 +378,8 @@ def create_placebo_model(expr, op, baseme):
     return me
 
 
-def create_drug_effect_model(treatment_variable, feature, baseme):
-    if not treatment_variable:
+def create_drug_effect_model(treatment_variable, type, feature, baseme):
+    if not treatment_variable and type == 'kpd':
         treatment_variable = 'KPD'
     base_model = baseme.model
     model = update_initial_estimates(base_model, baseme.modelfit_results, max_theta=True)
@@ -446,3 +453,6 @@ def validate_input(
 ):
     if type == 'pd' and treatment_variable is None:
         raise ValueError('Invalid `treatment_variable`: must be specified when type is `pd`')
+
+    if type == 'pkpd' and not isinstance(input, Model):
+        raise TypeError("Input must be a model to build a pkpd model")
