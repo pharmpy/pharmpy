@@ -27,7 +27,7 @@ class ExecutionStep(Immutable):
         self._variables = variables
 
     @staticmethod
-    def _canonicalize_solver(solver) -> str | None:
+    def _canonicalize_solver(solver: str | None) -> str | None:
         if solver is not None:
             solver = solver.upper()
         if not (solver is None or solver in SUPPORTED_SOLVERS):
@@ -37,7 +37,7 @@ class ExecutionStep(Immutable):
         return solver
 
     @staticmethod
-    def _canonicalize_tool_options(tool_options) -> frozenmapping:
+    def _canonicalize_tool_options(tool_options: Mapping[str, Any]) -> frozenmapping:
         tool_options = frozenmapping(tool_options)
         return tool_options
 

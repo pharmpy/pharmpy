@@ -258,7 +258,7 @@ def _add_drug_effect(model: Model, expr: str, conc, zero_handled=True):
     return model
 
 
-def _add_E(model, effect):
+def _add_E(model: Model, effect: Expr) -> Model:
     E = Assignment(Expr.symbol("E"), effect)
     e_index = model.statements.find_assignment_index("E")
     if e_index is None:

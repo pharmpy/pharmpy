@@ -17,6 +17,7 @@ from pharmpy.model import (
     CompartmentalSystem,
     CompartmentalSystemBuilder,
     Model,
+    Parameter,
     get_and_check_dataset,
     output,
 )
@@ -798,7 +799,12 @@ def check_parameters_near_bounds(
     return ser
 
 
-def _is_close_to_bound(param, value=None, zero_limit=0.01, significant_digits=2):
+def _is_close_to_bound(
+    param: Parameter,
+    value: float | None = None,
+    zero_limit: float = 0.01,
+    significant_digits: int = 2,
+):
     if value is None:
         value = param.init
     return (
