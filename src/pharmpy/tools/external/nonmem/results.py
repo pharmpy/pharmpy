@@ -130,7 +130,7 @@ class ModelfitResultsProxy:
 
         for table in ext_tables:
             try:
-                table.data_frame
+                _ = table.data_frame
             except ValueError:
                 if self.log is not None:
                     self.log = self.log.log_error(
@@ -447,7 +447,7 @@ def _parse_modelfit_results(
     )
 
     try:
-        proxy.iterations
+        _ = proxy.iterations
     except FileNotFoundError:
         if strict:
             raise

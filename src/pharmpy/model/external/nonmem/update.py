@@ -390,7 +390,7 @@ def update_ode_system(model: Model, old: CompartmentalSystem | None, new: Compar
         old = CompartmentalSystem(CompartmentalSystemBuilder())
 
     try:
-        new.dosing_compartments
+        _ = new.dosing_compartments
     except ValueError:
         have_dosing = False
     else:
@@ -2359,7 +2359,7 @@ def get_needed_ISAMPLEMAX(model: Model) -> int:
 def add_dummy_dv(model: Model) -> Model:
     """Add a dummy column if DV not present"""
     try:
-        model.datainfo.dv_column
+        _ = model.datainfo.dv_column
     except IndexError:
         if model.dataset is not None and 'DV' not in model.dataset.columns:
             df = model.dataset.copy()
