@@ -2,6 +2,7 @@ from functools import partial
 
 import pytest
 
+from pharmpy.mfl import ModelFeatures
 from pharmpy.modeling import (
     add_allometry,
     add_covariate_effect,
@@ -10,6 +11,7 @@ from pharmpy.modeling import (
     remove_covariate_effect,
     set_name,
 )
+from pharmpy.modeling.mfl import get_model_features
 from pharmpy.tools.covsearch.tool import (
     Candidate,
     Effect,
@@ -27,11 +29,10 @@ from pharmpy.tools.covsearch.tool import (
     validate_input,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
-from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.workflows import ModelEntry, Workflow
 
 MINIMAL_INVALID_MFL_STRING = ''
-MINIMAL_VALID_MFL_STRING = 'LET(x, 0)'
+MINIMAL_VALID_MFL_STRING = 'COVARIATE?(CL,@CONTINUOUS,EXP)'
 LARGE_VALID_MFL_STRING = 'COVARIATE?(@IIV, @CONTINUOUS, *);COVARIATE?(@IIV, @CATEGORICAL, CAT)'
 
 
@@ -83,13 +84,10 @@ def test_is_model_in_search_space(
     for func in funcs:
         model = func(model)
 
-    ss_mfl = ModelFeatures.create_from_mfl_string(search_space)
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
-    model_mfl = ModelFeatures.create_from_mfl_statement_list(
-        model_mfl.mfl_statement_list(["covariate"])
-    )
+    ss_mfl = ModelFeatures.create(search_space)
+    model_mfl = get_model_features(model, type='covariates')
 
-    assert is_model_in_search_space(model, model_mfl, ss_mfl) == is_in_search_space
+    assert is_model_in_search_space(model_mfl, ss_mfl) == is_in_search_space
 
 
 @pytest.mark.parametrize(
@@ -100,13 +98,14 @@ def test_is_model_in_search_space(
     ],
 )
 def test_get_exploratory_covariates(search_space, no_of_exploratory_covs):
-    search_space = ModelFeatures.create_from_mfl_string(search_space)
-    assert len(get_exploratory_covariates(search_space)) == no_of_exploratory_covs
+    search_space = ModelFeatures.create(search_space)
+    exploratory_cov_funcs = get_exploratory_covariates(search_space)
+    assert len(exploratory_cov_funcs) == no_of_exploratory_covs
 
 
 def test_filter_effects():
     search_space = 'COVARIATE?([CL,VC],[WT,AGE],EXP)'
-    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    mfl = ModelFeatures.create(search_space)
     effect_funcs = get_exploratory_covariates(mfl)
     assert len(effect_funcs) == 4
     effect_args_1 = ('CL', 'WT', 'exp', '*')
@@ -134,7 +133,7 @@ def test_extract_nonsignificant_effects(
     parent_modelentry = ModelEntry(model, modelfit_results=modelres)
 
     search_space = 'COVARIATE?([CL,VC],[WT, AGE],EXP)'
-    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    mfl = ModelFeatures.create(search_space)
     effect_funcs = get_exploratory_covariates(mfl)
     models = [func(model) for func in effect_funcs.values()]
     model_entries = model_entry_factory(models, ref_val=modelres.ofv)
@@ -150,22 +149,22 @@ def test_extract_nonsignificant_effects(
 @pytest.mark.parametrize(
     'search_space, no_of_covariates',
     [
-        ('COVARIATE?([CL,VC],WT,EXP)', 1),
+        ('COVARIATE?([CL,VC],WT,EXP)', 2),
         (
             (
                 'LET(CONTINUOUS,[AGE,WT]);LET(CATEGORICAL,SEX)\n'
                 'COVARIATE?([CL,VC],@CONTINUOUS,exp,*)\n'
                 'COVARIATE?([CL,VC],@CATEGORICAL,cat,*)'
             ),
-            2,
+            6,
         ),
     ],
 )
 def test_prepare_mfls(load_model_for_test, testdata, search_space, no_of_covariates):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
     ss_mfl, model_mfl = prepare_mfls(model, search_space)
-    assert model_mfl.absorption is None
-    assert len(ss_mfl.covariate) == no_of_covariates
+    assert not model_mfl.absorption
+    assert len(ss_mfl.covariates) == no_of_covariates
     assert prepare_mfls(model, ss_mfl)[0] == ss_mfl
 
 
@@ -460,7 +459,7 @@ def test_get_best_candidate(load_model_for_test, testdata, model_entry_factory):
     parent_cand = Candidate(parent_model_entry, steps=())
 
     search_space = 'COVARIATE?([CL,VC,MAT],WT,EXP)'
-    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    mfl = ModelFeatures.create(search_space)
     effect_funcs = get_exploratory_covariates(mfl)
 
     p_value = 0.01
@@ -494,7 +493,7 @@ def test_create_result_tables(load_model_for_test, testdata, model_entry_factory
     parent_cand = Candidate(parent_model_entry, steps=())
 
     search_space = 'COVARIATE?([CL,VC],[WT,AGE],EXP)'
-    mfl = ModelFeatures.create_from_mfl_string(search_space)
+    mfl = ModelFeatures.create(search_space)
     effect_funcs = get_exploratory_covariates(mfl)
 
     p_value = 0.01

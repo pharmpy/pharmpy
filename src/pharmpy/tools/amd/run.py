@@ -724,7 +724,7 @@ def run_model_with_structural_covariates(input_model_entry, search_space, ctx):
 
 
 def create_structural_covariates_model(search_space, model_entry):
-    _, model = get_effect_funcs_and_base_model(search_space, model_entry.model)
+    _, model = get_effect_funcs_and_base_model(repr(search_space), model_entry.model)
     model = update_initial_estimates(model, model_entry.modelfit_results)
     model = model.replace(name='base_with_structural_cov')
     return model
@@ -1372,7 +1372,8 @@ def _subfunc_mechanistic_exploratory_covariates(
             mechanistic_searchspace, filtered_searchspace = _mechanistic_cov_extraction(
                 search_space, model, mechanistic_covariates
             )
-            if not get_exploratory_covariates(mechanistic_searchspace):
+            mfl_new = ModelFeaturesNew.create(repr(mechanistic_searchspace))
+            if not get_exploratory_covariates(mfl_new):
                 ctx.log_warning(
                     'Skipping COVsearch for mechanistic covariates, no covariates to test'
                 )
@@ -1391,7 +1392,7 @@ def _subfunc_mechanistic_exploratory_covariates(
                     name='covsearch_mechanistic',
                     model=model,
                     results=modelfit_results,
-                    search_space=mechanistic_searchspace,
+                    search_space=mfl_new,
                     strictness=strictness,
                     parameter_uncertainty_method=parameter_uncertainty_method,
                 )
@@ -1421,7 +1422,8 @@ def _subfunc_mechanistic_exploratory_covariates(
         else:
             filtered_searchspace = search_space
 
-        if not get_exploratory_covariates(filtered_searchspace.expand(model)):
+        mfl_new = ModelFeaturesNew.create(repr(filtered_searchspace.expand(model)))
+        if not get_exploratory_covariates(mfl_new):
             ctx.log_warning('Skipping COVsearch for exploratory covariates, no covariates to test')
             return None
 
@@ -1431,7 +1433,7 @@ def _subfunc_mechanistic_exploratory_covariates(
             name='covsearch_exploratory',
             model=model,
             results=modelfit_results,
-            search_space=filtered_searchspace,
+            search_space=mfl_new,
             strictness=strictness,
             naming_index_offset=index_offset,
             parameter_uncertainty_method=parameter_uncertainty_method,

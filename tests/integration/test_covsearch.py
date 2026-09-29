@@ -186,3 +186,14 @@ def test_adaptive_scope_reduction(tmp_path, model_count, start_modelres):
 
         rundir = tmp_path / 'covsearch1'
         assert model_count(rundir) == 33 + 2
+
+
+def test_samba(tmp_path, start_modelres_dummy):
+    with chdir(tmp_path):
+        search_space = 'COVARIATE?([CL,VC],[AGE,WT],exp,*)'
+        run_covsearch(
+            model=start_modelres_dummy[0],
+            results=start_modelres_dummy[1],
+            search_space=search_space,
+            algorithm='samba',
+        )

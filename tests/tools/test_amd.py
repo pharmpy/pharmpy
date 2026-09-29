@@ -529,7 +529,7 @@ def test_create_structural_covariates_model(load_model_for_test, pheno_path):
     model_entry = ModelEntry.create(model, modelfit_results=res)
 
     search_space = 'COVARIATE(CL,WGT,exp);COVARIATE(V,APGR,cat)'
-    mfl = mfl_parse(search_space, mfl_class=True)
+    mfl = ModelFeaturesNew.create(search_space)
 
     model_with_struct = create_structural_covariates_model(mfl, model_entry)
 

@@ -8,11 +8,17 @@ from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.internals.fn.signature import with_same_arguments_as
 from pharmpy.internals.fn.type import with_runtime_arguments_type_check
+from pharmpy.mfl import Covariate, ModelFeatures, Ref
 from pharmpy.model import Model
 from pharmpy.modeling import remove_covariate_effect, set_estimation_step
-from pharmpy.modeling.covariate_effect import get_covariates_allowed_in_covariate_effect
+from pharmpy.modeling.covariate_effect import (
+    EffectType,
+    OperationType,
+    get_covariates_allowed_in_covariate_effect,
+)
 from pharmpy.modeling.lrt import p_value as lrt_p_value
 from pharmpy.modeling.lrt import test as lrt_test
+from pharmpy.modeling.mfl import expand_model_features, generate_transformations, get_model_features
 from pharmpy.tools.common import (
     add_parent_column,
     concat_summaries,
@@ -21,13 +27,6 @@ from pharmpy.tools.common import (
     update_initial_estimates,
 )
 from pharmpy.tools.covsearch.samba import samba_workflow
-from pharmpy.tools.mfl.feature.covariate import EffectLiteral, parse_spec, spec
-from pharmpy.tools.mfl.feature.covariate import features as covariate_features
-from pharmpy.tools.mfl.helpers import all_funcs
-from pharmpy.tools.mfl.parse import parse as mfl_parse
-from pharmpy.tools.mfl.statement.definition import Let
-from pharmpy.tools.mfl.statement.feature.covariate import Covariate
-from pharmpy.tools.mfl.statement.feature.symbols import Option, Wildcard
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import (
     run_subtool,
@@ -38,14 +37,10 @@ from pharmpy.tools.scm.results import candidate_summary_dataframe, ofv_summary_d
 from pharmpy.workflows import Context, ModelEntry, Task, Workflow, WorkflowBuilder
 from pharmpy.workflows.results import ModelfitResults
 
-from ..mfl.parse import ModelFeatures, get_model_features
 from ..modelrank import ModelRankResults
 from .results import COVSearchResults
 
-COVSEARCH_STATEMENT_TYPES = (
-    Let,
-    Covariate,
-)
+EffectLiteral = tuple[str, str, EffectType, OperationType]
 
 NAME_WF = 'covsearch'
 
@@ -323,88 +318,84 @@ def _init_search_state(
 def get_effect_funcs_and_base_model(search_space, model):
     ss_mfl, model_mfl = prepare_mfls(model, search_space)
     exploratory_cov_funcs = get_exploratory_covariates(ss_mfl)
-
-    if is_model_in_search_space(model, model_mfl, ss_mfl):
+    if is_model_in_search_space(model_mfl, ss_mfl):
         return exploratory_cov_funcs, model
 
     filtered_model = model.replace(name="filtered_input_model")
     # covariate effects not in search space, should be kept as it is
-    covariate_to_keep = model_mfl - ss_mfl
+    ss_mfl_no_custom = _filter_custom_effects(ss_mfl)
+    covariate_to_keep = model_mfl - ss_mfl_no_custom
     # covariate effects in both model and search space, should be removed for exploration in future searching steps
-    covariate_to_remove = model_mfl - covariate_to_keep
-    covariate_to_remove = covariate_to_remove.mfl_statement_list(["covariate"])
+    covariate_to_remove = ss_mfl_no_custom.filter('optional').force_optional() - covariate_to_keep
+
+    def _create_description_base(cov):
+        return f'({cov.parameter}-{cov.covariate}-{cov.fp})'
+
     description = []
     if len(covariate_to_remove) != 0:
         description.append("REMOVED")
-        for cov_effect in parse_spec(spec(filtered_model, covariate_to_remove)):
-            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+        for cov in covariate_to_remove:
+            filtered_model = remove_covariate_effect(filtered_model, cov.parameter, cov.covariate)
+            description.append(_create_description_base(cov))
     # Remove all custom effects
-    covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
-    for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
-        if cov_effect[2].lower() == "custom":
-            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+    for cov in covariate_to_keep:
+        if cov.fp == "CUSTOM":
+            filtered_model = remove_covariate_effect(filtered_model, cov.parameter, cov.covariate)
+            description.append(_create_description_base(cov))
 
     filtered_model = filtered_model.replace(description=';'.join(description))
 
     # Add structural covariates in search space if any
-    structural_cov = tuple([c for c in ss_mfl.covariate if not c.optional.option])
-    structural_cov_funcs = all_funcs(Model(), structural_cov)
+    structural_cov = ss_mfl.filter(filter_on='forced') - model_mfl
+    structural_cov_funcs = generate_transformations(structural_cov, include_remove=False)
     if len(structural_cov_funcs) != 0:
         description.append("ADDED")
-        for cov_effect, cov_func in structural_cov_funcs.items():
+        for cov, cov_func in zip(structural_cov, structural_cov_funcs):
             filtered_model = cov_func(filtered_model)
-            description.append(f'({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
+            description.append(_create_description_base(cov))
+
         filtered_model = filtered_model.replace(description=";".join(description))
 
-    return (exploratory_cov_funcs, filtered_model)
+    return exploratory_cov_funcs, filtered_model
+
+
+def _filter_custom_effects(mfl):
+    return ModelFeatures.create([f for f in mfl if f.fp != 'CUSTOM'])
 
 
 def prepare_mfls(model, search_space):
     if isinstance(search_space, str):
-        search_space = ModelFeatures.create_from_mfl_string(search_space)
-    ss_mfl = search_space.expand(model)  # Expand to remove LET/REF
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
-
-    ss_mfl = ModelFeatures.create_from_mfl_statement_list(ss_mfl.mfl_statement_list(["covariate"]))
-    model_mfl = ModelFeatures.create_from_mfl_statement_list(
-        model_mfl.mfl_statement_list(["covariate"])
-    )
-
+        search_space = ModelFeatures.create(search_space)
+    ss_mfl = expand_model_features(model, search_space).covariates
+    model_mfl = get_model_features(model).covariates
     return ss_mfl, model_mfl
 
 
 def get_exploratory_covariates(ss_mfl):
-    exploratory_cov = tuple(c for c in ss_mfl.covariate if c.optional.option)
-    cov_funcs = all_funcs(Model(), exploratory_cov)
+    exploratory_cov = ss_mfl.covariates.filter(filter_on='optional')
+    cov_funcs = generate_transformations(exploratory_cov, include_remove=False)
     exploratory_cov_funcs = {}
-    for cov_effect, cov_func in cov_funcs.items():
-        if cov_effect[-1] == "ADD":
-            effect = cov_effect[1:-1]  # Everything except "ADD", e.g. ('CL', 'WT', 'exp', '*')
-            exploratory_cov_funcs[effect] = cov_func
+    for cov_effect, cov_func in zip(exploratory_cov, cov_funcs):
+        key = (cov_effect.parameter, cov_effect.covariate, cov_effect.fp.lower(), cov_effect.op)
+        exploratory_cov_funcs[key] = cov_func
     # Sort by effect
     exploratory_cov_funcs = dict(sorted(exploratory_cov_funcs.items()))
     return exploratory_cov_funcs
 
 
-def is_model_in_search_space(model, model_mfl, cov_mfl):
-    def _is_optional(cov):
-        return cov.optional == Option(True)
-
-    cov_struct = [cov for cov in cov_mfl.covariate if not _is_optional(cov)]
-    cov_struct_mfl = ModelFeatures.create_from_mfl_statement_list(cov_struct)
+def is_model_in_search_space(model_mfl, cov_mfl):
+    cov_struct_mfl = cov_mfl.covariates.filter(filter_on='forced')
 
     # Check if all obligatory covariates are in model
-    if not model_mfl.contain_subset(cov_struct_mfl, model=model):
+    if any(cov not in model_mfl for cov in cov_struct_mfl):
         return False
-    elif model_mfl.covariate:
+    elif model_mfl.covariates:
         # Check if all covariates in model are in original search space
-        if not cov_mfl.contain_subset(model_mfl, model=model):
+        if any(cov not in cov_mfl for cov in model_mfl.covariates):
             return False
         # FIXME: workaround, check if model is simplest model in search space
         cov_exploratory = cov_mfl - cov_struct_mfl
-        if cov_exploratory.contain_subset(model_mfl, model=model):
+        if any(cov in model_mfl for cov in cov_exploratory.force_optional()):
             return False
     return True
 
@@ -471,7 +462,7 @@ def task_greedy_backward_search(
     def handle_effects(
         step: int,
         parent: Candidate,
-        candidate_effect_funcs: list[EffectLiteral],
+        candidate_effect_funcs: dict[EffectLiteral, Callable],
         index_offset: int,
     ):
         index_offset = index_offset + naming_index_offset
@@ -486,28 +477,15 @@ def task_greedy_backward_search(
     # TODO : When only backwards search is supported, use get_model_features to extract removeable effects.
     optional_effects = list(map(astuple, _added_effects(state.best_candidate_so_far.steps)))
 
-    def _extract_sublist(lst, n, iterable=False):
-        if iterable:
-            return [(item[n],) for item in lst]
-        else:
-            return [item[n] for item in lst]
-
-    candidate_effect_funcs = dict(
-        covariate_features(
-            state.best_candidate_so_far.modelentry.model,
-            tuple(
-                map(
-                    Covariate,
-                    _extract_sublist(optional_effects, 0, True),
-                    _extract_sublist(optional_effects, 1, True),
-                    _extract_sublist(optional_effects, 2, True),
-                    _extract_sublist(optional_effects, 3),
-                )
-            ),
-            remove=True,
-        )
+    covariates = ModelFeatures.create(
+        Covariate.create(p, c, fp, op, optional=True) for p, c, fp, op in optional_effects
     )
-    candidate_effect_funcs = {k[1:-1]: v for k, v in candidate_effect_funcs.items()}
+
+    funcs = generate_transformations(covariates, include_add=False)
+    candidate_effect_funcs = {
+        (cov.parameter, cov.covariate, cov.fp.lower(), cov.op): func
+        for cov, func in zip(covariates, funcs)
+    }
 
     n_removable_effects = max(0, len(state.best_candidate_so_far.steps) - 1)
 
@@ -1130,68 +1108,61 @@ def validate_input(
     if model is not None:
         if isinstance(search_space, str):
             try:
-                statements = mfl_parse(search_space)
+                statements = ModelFeatures.create(search_space)
             except:  # noqa E722
                 raise ValueError(f'Invalid `search_space`, could not be parsed: `{search_space}`')
         else:
-            if not search_space.covariate:
-                raise ValueError(
-                    f'Invalid `search_space`, no covariate effect could be found in: `{search_space}`'
-                )
-            statements = search_space.covariate
+            statements = search_space
 
-        bad_statements = list(
-            filter(
-                lambda statement: not isinstance(statement, COVSEARCH_STATEMENT_TYPES),
-                statements,
+        if not statements.covariates:
+            raise ValueError(
+                f'Invalid `search_space`, no covariate effect could be found in: `{search_space}`'
             )
-        )
+
+        bad_statements = statements - statements.covariates
         if bad_statements:
             raise ValueError(
                 f'Invalid `search_space`: found unknown statement of type {type(bad_statements[0]).__name__}.'
             )
 
-        for s in statements:
-            if isinstance(s, Covariate) and isinstance(s.fp, Wildcard) and not s.optional.option:
+        previous_effects = set()
+        for s in statements.covariates.filter('forced'):
+            current_effect = (s.parameter, s.covariate)
+            if current_effect in previous_effects:
                 raise ValueError(
                     f'Invalid `search_space` due to non-optional covariate'
                     f' defined with WILDCARD as effect in {s}'
                     f' Only single effect allowed for mandatory covariates'
                 )
-
-        effect_spec = spec(model, statements)
-
-        candidate_effects = (
-            Effect(*x[:-1]) for x in sorted(set(parse_spec(effect_spec)))
-        )  # Ignore OPTIONAL attribute
+            previous_effects.update(current_effect)
 
         allowed_covariates = get_covariates_allowed_in_covariate_effect(model)
         allowed_parameters = {str(statement.symbol) for statement in model.statements.before_odes}
 
         allowed_ops = {'*', '+'}
 
-        for effect in candidate_effects:
-            if effect.covariate not in allowed_covariates:
+        for effect in statements.covariates:
+            if not isinstance(effect.covariate, Ref) and effect.covariate not in allowed_covariates:
                 raise ValueError(
                     f'Invalid `search_space` because of invalid covariate found in'
                     f' search_space: got `{effect.covariate}`,'
                     f' must be in {sorted(allowed_covariates)}.'
                 )
-            if effect.parameter not in allowed_parameters:
+            if not isinstance(effect.parameter, Ref) and effect.parameter not in allowed_parameters:
                 raise ValueError(
                     f'Invalid `search_space` because of invalid parameter found in'
                     f' search_space: got `{effect.parameter}`,'
                     f' must be in {sorted(allowed_parameters)}.'
                 )
-            if effect.fp == "custom":
+            if effect.fp == "CUSTOM":
                 raise ValueError(
                     f'Invalid `search_space` because of invalid effect function found in'
                     f' search_space: `{effect.fp}` is not a supported type.'
                 )
-            if effect.operation not in allowed_ops:
+            if effect.op not in allowed_ops:
                 raise ValueError(
                     f'Invalid `search_space` because of invalid effect operation found in'
-                    f' search_space: got `{effect.operation}`,'
+                    f' search_space: got `{effect.op}`,'
                     f' must be in {sorted(allowed_ops)}.'
                 )
 

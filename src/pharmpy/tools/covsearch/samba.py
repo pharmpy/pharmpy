@@ -10,13 +10,13 @@ import pharmpy.tools.covsearch.tool as scm_tool
 from pharmpy.deps import numpy as np
 from pharmpy.deps import pandas as pd
 from pharmpy.deps.scipy import stats
+from pharmpy.mfl import ModelFeatures
 from pharmpy.model import Model
 from pharmpy.modeling import (
     add_estimation_step,
     calculate_bic,
     get_parameter_rv,
     mu_reference_model,
-    remove_covariate_effect,
     remove_estimation_step,
 )
 from pharmpy.modeling.expressions import depends_on
@@ -35,9 +35,6 @@ from pharmpy.tools.covsearch.util import (
     StateAndEffect,
     store_input_model,
 )
-from pharmpy.tools.mfl.feature.covariate import parse_spec, spec
-from pharmpy.tools.mfl.helpers import all_funcs
-from pharmpy.tools.mfl.parse import ModelFeatures, get_model_features
 from pharmpy.tools.modelfit import create_fit_workflow
 from pharmpy.tools.run import summarize_errors_from_entries, summarize_modelfit_results_from_entries
 from pharmpy.tools.scm.results import ofv_summary_dataframe
@@ -222,86 +219,13 @@ def samba_forward(
 # limited by unable to set $SIZES ISAMPLEMAX=250 automatically with pharmpy
 def samba_init_search_state(context, search_space, nsamples, algorithm, input_modelentry):
     model = input_modelentry.model
-    effect_funcs, filtered_model = samba_effect_funcs_and_start_model(search_space, model)
+    from .tool import get_effect_funcs_and_base_model
+
+    effect_funcs, filtered_model = get_effect_funcs_and_base_model(search_space, model)
     search_state = samba_init_nonlinear_search_state(
         context, input_modelentry, filtered_model, nsamples, algorithm
     )
     return StateAndEffect(search_state=search_state, effect_funcs=effect_funcs)
-
-
-def samba_effect_funcs_and_start_model(search_space, model):
-    model_mfl, ss_mfl = _prepare_mfls(model, search_space)
-    exploratory_cov_funcs = _get_covariate_funcs(ss_mfl, exploratory_covariate=True)
-    structural_cov_funcs = _get_covariate_funcs(ss_mfl, exploratory_covariate=False)
-
-    filtered_model = model.replace(name="start_model", description="start")
-    description = []
-
-    covariate_to_keep = model_mfl - ss_mfl
-    covariate_to_remove = parse_spec(
-        spec(filtered_model, (model_mfl - covariate_to_keep).covariate)
-    )
-    if covariate_to_remove:
-        for cov_effect in covariate_to_remove:
-            if not _is_structural_covaraite(cov_effect, structural_cov_funcs.keys()):
-                filtered_model = remove_covariate_effect(
-                    filtered_model, cov_effect[0], cov_effect[1]
-                )
-                description.append(f'rm({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
-
-    covariate_to_keep = covariate_to_keep.mfl_statement_list(["covariate"])
-    for cov_effect in parse_spec(spec(filtered_model, covariate_to_keep)):
-        if cov_effect[2].lower == "custom":
-            filtered_model = remove_covariate_effect(filtered_model, cov_effect[0], cov_effect[1])
-            description.append(f'rm({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
-
-    if structural_cov_funcs:
-        for cov_effect, cov_func in structural_cov_funcs.items():
-            filtered_model = cov_func(filtered_model)
-            description.append(f'str({cov_effect[0]}-{cov_effect[1]}-{cov_effect[2]})')
-    if description:
-        filtered_model = filtered_model.replace(description="start;" + ";".join(description))
-
-    return (exploratory_cov_funcs, filtered_model)
-
-
-def _prepare_mfls(model, search_space):
-    if isinstance(search_space, str):
-        search_space = ModelFeatures.create_from_mfl_string(search_space)
-    ss_mfl = search_space.expand(model)
-    model_mfl = ModelFeatures.create_from_mfl_string(get_model_features(model))
-
-    ss_mfl = ModelFeatures.create_from_mfl_statement_list(ss_mfl.mfl_statement_list(['covariate']))
-    model_mfl = ModelFeatures.create_from_mfl_statement_list(
-        model_mfl.mfl_statement_list(['covariate'])
-    )
-    return model_mfl, ss_mfl
-
-
-def _get_covariate_funcs(ss_mfl, exploratory_covariate=False):
-    if exploratory_covariate:
-        covariates = tuple(cov for cov in ss_mfl.covariate if cov.optional.option)
-    else:
-        covariates = tuple(cov for cov in ss_mfl.covariate if not cov.optional.option)
-
-    covariate_funcs = all_funcs(Model(), covariates)
-    covariate_funcs = {
-        cov_effect[1:-1]: cov_func
-        for cov_effect, cov_func in covariate_funcs.items()
-        if cov_effect[-1] == "ADD"
-    }
-
-    covariate_funcs = dict(sorted(covariate_funcs.items()))
-    return covariate_funcs
-
-
-def _is_structural_covaraite(cov_effect, structural_covs):
-    return any(
-        strcov_effect[0] == cov_effect[0]
-        and strcov_effect[1] == cov_effect[1]
-        and strcov_effect[2] == cov_effect[2]
-        for strcov_effect in structural_covs
-    )
 
 
 def samba_init_nonlinear_search_state(
