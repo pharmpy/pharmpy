@@ -581,8 +581,6 @@ def is_in_search_space(
 
     if model_features == search_space:
         return True
-    if model_features not in search_space:
-        return False
 
     features_to_add, features_to_remove = _get_feature_diffs(search_space, model_features, type)
 
