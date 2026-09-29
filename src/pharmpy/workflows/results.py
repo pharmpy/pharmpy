@@ -5,7 +5,7 @@ import json
 import lzma
 import re
 import warnings
-from contextlib import closing
+from contextlib import ExitStack, closing
 from dataclasses import dataclass
 from io import StringIO
 from lzma import open as lzma_open
@@ -239,19 +239,19 @@ def _is_likely_to_be_json(source: str):
 
 
 def read_results(path_or_str: str | Path, model_deserialization_func=None):
-    if isinstance(path_or_str, str) and _is_likely_to_be_json(path_or_str):
-        manager = closing(StringIO(path_or_str))
-    else:
-        path = Path(path_or_str)
-        if path.is_dir():
-            path /= 'results.json'
-
-        if path.name.endswith('.xz'):
-            manager = lzma.open(path, 'r', encoding='utf-8')
+    with ExitStack() as stack:
+        if isinstance(path_or_str, str) and _is_likely_to_be_json(path_or_str):
+            readable = stack.enter_context(closing(StringIO(path_or_str)))
         else:
-            manager = open(path, 'r')
+            path = Path(path_or_str)
+            if path.is_dir():
+                path /= 'results.json'
 
-    with manager as readable:
+            if path.name.endswith('.xz'):
+                readable = stack.enter_context(lzma.open(path, 'r', encoding='utf-8'))
+            else:
+                readable = stack.enter_context(open(path, 'r'))
+
         return json.load(
             readable, cls=ResultsJSONDecoder, model_deserialization_func=model_deserialization_func
         )
