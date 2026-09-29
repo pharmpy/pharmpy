@@ -26,8 +26,8 @@ CharSet = namedtuple('CharSet', ['fork', 'horiz', 'vert', 'inline', 'lfork', 'en
 @dataclass(frozen=True)
 class NodeStyle:
     branch: BranchStyle = BranchStyle['SIMPLE']
-    indent: Indent = Indent(header=0, node=1, fork=1)
-    char: CharSet = CharSet(fork='├', horiz='│', vert='─', inline='┌', lfork='└', end=' ')
+    indent: Indent = Indent(header=0, node=1, fork=1)  # noqa: RUF009
+    char: CharSet = CharSet(fork='├', horiz='│', vert='─', inline='┌', lfork='└', end=' ')  # noqa: RUF009
 
     def __post_init__(self):
         for x in self.char:

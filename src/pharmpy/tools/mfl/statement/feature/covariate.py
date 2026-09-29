@@ -17,7 +17,7 @@ class Covariate(ModelFeature):
     covariate: Symbol | tuple[str, ...]
     fp: tuple[str, ...]
     op: Literal['*', '+'] = '*'
-    optional: Option = Option(False)
+    optional: Option = Option(False)  # noqa: RUF009
 
     def eval(self, model: Model | None = None, explicit_covariates: set | None = None):
         # Circular import issue
