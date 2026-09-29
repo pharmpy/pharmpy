@@ -979,9 +979,8 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     elif has_weibull_absorption(model):
         absorption = "WEIBULL"
 
-    if not supress_warnings:
-        if absorption is None:
-            warnings.warn("Could not determine absorption of model.")
+    if not supress_warnings and absorption is None:
+        warnings.warn("Could not determine absorption of model.")
 
     # ElIMINATION
     elimination = None
@@ -994,9 +993,8 @@ def get_model_features(model: Model, supress_warnings: bool = False) -> str:
     elif has_michaelis_menten_elimination(model):
         elimination = "MM"
 
-    if not supress_warnings:
-        if elimination is None:
-            warnings.warn("Could not determine elimination of model.")
+    if not supress_warnings and elimination is None:
+        warnings.warn("Could not determine elimination of model.")
 
     # ABSORPTION DELAY (TRANSIT AND LAGTIME)
     # TRANSITS

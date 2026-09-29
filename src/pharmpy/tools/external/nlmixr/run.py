@@ -35,9 +35,8 @@ def execute_model(model_entry, context, evaluate=False, path=None):
     assert isinstance(model_entry, ModelEntry)
     model = model_entry.model
 
-    if evaluate:
-        if next(s.evaluation for s in model.execution_steps._steps) is False:
-            model = set_evaluation_step(model)
+    if evaluate and next(s.evaluation for s in model.execution_steps._steps) is False:
+        model = set_evaluation_step(model)
 
     if path is None:  # Only used in verification
         path = Path.cwd() / f'nlmixr_run_{model.name}-{uuid.uuid1()}'

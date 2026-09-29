@@ -55,12 +55,11 @@ def _stringify_attribute(attribute: Stringifiable) -> str:
     elif isinstance(attribute, tuple):
         if len(attribute) == 1:
             return _stringify_attribute(attribute[0])
-        elif len(attribute) >= 2:
-            if type(i := attribute[0]) == type(j := attribute[-1]) == int:
-                assert isinstance(i, int)
-                assert isinstance(j, int)
-                if tuple(range(i, j + 1)) == attribute:
-                    return f'{i}..{j}'
+        elif len(attribute) >= 2 and type(i := attribute[0]) == type(j := attribute[-1]) == int:
+            assert isinstance(i, int)
+            assert isinstance(j, int)
+            if tuple(range(i, j + 1)) == attribute:
+                return f'{i}..{j}'
 
         return f'[{",".join(map(_stringify_attribute, attribute))}]'
     else:

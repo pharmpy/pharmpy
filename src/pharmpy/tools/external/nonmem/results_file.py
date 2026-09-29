@@ -165,9 +165,8 @@ class NONMEMResultsFile:
 
     def ofv(self, table_number):
         ofv = None
-        if self._supported_nonmem_version:
-            if table_number in self.table:
-                ofv = self.table[table_number].get('OBJV')
+        if self._supported_nonmem_version and table_number in self.table:
+            ofv = self.table[table_number].get('OBJV')
         if ofv is not None:
             ofv = float(ofv)
         else:

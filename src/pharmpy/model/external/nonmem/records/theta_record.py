@@ -192,20 +192,19 @@ class ThetaRecord(Record):
                 elif child.rule == 'RPAR':
                     inparens = False
                 elif child.rule == 'FIX':
-                    if inparens:
-                        if lowtok is not None:
-                            message = (
-                                "FIX inside parentheses of $THETA requires all bounds to be"
-                                " the same as the initial value. "
-                            )
-                            if uptok is not None:
-                                if not (lowtok == uptok == init):
-                                    raise ModelSyntaxError(
-                                        f"{message}init={init}, lower={lowtok}, upper={uptok}"
-                                    )
-                            else:
-                                if not (lowtok == init):
-                                    raise ModelSyntaxError(f"{message}init={init}, lower={lowtok}")
+                    if inparens and lowtok is not None:
+                        message = (
+                            "FIX inside parentheses of $THETA requires all bounds to be"
+                            " the same as the initial value. "
+                        )
+                        if uptok is not None:
+                            if not (lowtok == uptok == init):
+                                raise ModelSyntaxError(
+                                    f"{message}init={init}, lower={lowtok}, upper={uptok}"
+                                )
+                        else:
+                            if not (lowtok == init):
+                                raise ModelSyntaxError(f"{message}init={init}, lower={lowtok}")
                     fix = True
                     break
 

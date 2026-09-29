@@ -1020,16 +1020,15 @@ def psn_frem_results(path, force_posdef_covmatrix=False, force_posdef_samples=50
     if model_4_results is None:
         raise ValueError('Model 4 has no results')
     cov_model_results = None
-    if method == 'cov_sampling':
-        if model_4_results.covariance_matrix is None:
-            model_4b_path = path / 'final_models' / 'model_4b.mod'
-            try:
-                model_4b = Model.parse_model(model_4b_path, missing_data_token=missing_data_token)
-                model_4b_results = parse_modelfit_results(model_4b, model_4b_path)
-            except FileNotFoundError:
-                pass
-            else:
-                cov_model_results = model_4b_results
+    if method == 'cov_sampling' and model_4_results.covariance_matrix is None:
+        model_4b_path = path / 'final_models' / 'model_4b.mod'
+        try:
+            model_4b = Model.parse_model(model_4b_path, missing_data_token=missing_data_token)
+            model_4b_results = parse_modelfit_results(model_4b, model_4b_path)
+        except FileNotFoundError:
+            pass
+        else:
+            cov_model_results = model_4b_results
 
     with open(path / 'covariates_summary.csv') as covsum:
         covsum.readline()

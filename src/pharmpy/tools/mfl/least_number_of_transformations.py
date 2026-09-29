@@ -102,11 +102,10 @@ def _lnt_peripherals(self, other, lnt, subset):
             if key == "DRUG":
                 if rhs[key]:
                     lnt[("PERIPHERALS", min(rhs[key]))] = func_dict[("PERIPHERALS", min(rhs[key]))]
-            elif key == "MET":
-                if rhs[key]:
-                    lnt[("PERIPHERALS", min(rhs[key]), "METABOLITE")] = func_dict[
-                        ("PERIPHERALS", min(rhs[key]), "METABOLITE")
-                    ]
+            elif key == "MET" and rhs[key]:
+                lnt[("PERIPHERALS", min(rhs[key]), "METABOLITE")] = func_dict[
+                    ("PERIPHERALS", min(rhs[key]), "METABOLITE")
+                ]
     return lnt
 
 

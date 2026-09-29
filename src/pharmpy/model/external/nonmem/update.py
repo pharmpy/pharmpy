@@ -659,9 +659,10 @@ def from_des(model, advan):
 
             if all(_is_symb_quotient(rate) for rate in rates):
                 trans = 'TRANS4'
-            elif advan == 'ADVAN3':
-                if all(_is_symb_quotient(rate) or _is_symb_expr_quotient(rate) for rate in rates):
-                    trans = 'TRANS3'
+            elif advan == 'ADVAN3' and all(
+                _is_symb_quotient(rate) or _is_symb_expr_quotient(rate) for rate in rates
+            ):
+                trans = 'TRANS3'
 
     if trans is not None:
         newrec = newrec.remove_option_startswith('TRANS')

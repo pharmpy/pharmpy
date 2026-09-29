@@ -1218,11 +1218,12 @@ def update_iiv_search_space(model, search_space: ModelFeaturesNew):
     for f in search_space:
         if isinstance(f, IIV) and f.parameter in params_not_in_model:
             continue
-        if isinstance(f, Covariance):
-            if not isinstance(f.parameters, Ref) and set(f.parameters).issubset(
-                params_not_in_model
-            ):
-                continue
+        if (
+            isinstance(f, Covariance)
+            and not isinstance(f.parameters, Ref)
+            and set(f.parameters).issubset(params_not_in_model)
+        ):
+            continue
         features_new.append(f)
 
     return ModelFeaturesNew.create(features_new)
@@ -1732,9 +1733,8 @@ def validate_input(
                 'relative standard errors.'
             )
 
-    if _E:
-        if any(value in (0.0, '0%') for value in _E.values()):
-            raise ValueError('E-values in `_E` cannot be 0')
+    if _E and any(value in (0.0, '0%') for value in _E.values()):
+        raise ValueError('E-values in `_E` cannot be 0')
 
     if modeltype in ['pkpd', 'drug_metabolite', 'tmdd'] and lloq_method is not None:
         raise ValueError(f'Option `lloq_method` is not supported for `modeltype`: {modeltype}')
