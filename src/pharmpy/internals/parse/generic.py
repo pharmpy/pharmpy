@@ -15,6 +15,8 @@ from itertools import chain
 from lark import Lark, Transformer, Tree, Visitor
 from lark.lexer import Token
 
+from pharmpy.internals.immutable import frozenmapping
+
 from . import prettyprint
 from .tree import Leaf as ImmutableLeaf
 from .tree import Tree as ImmutableTree
@@ -365,15 +367,17 @@ class GenericParser(ABC):
     AttrTree = AttrTree
 
     lark: Lark
-    lark_options = {
-        'start': 'root',
-        'parser': 'lalr',
-        'keep_all_tokens': True,
-        'propagate_positions': False,
-        'maybe_placeholders': False,
-        'debug': False,
-        'cache': False,
-    }
+    lark_options = frozenmapping(
+        {
+            'start': 'root',
+            'parser': 'lalr',
+            'keep_all_tokens': True,
+            'propagate_positions': False,
+            'maybe_placeholders': False,
+            'debug': False,
+            'cache': False,
+        }
+    )
     post_process: tuple[Visitor | Transformer | Callable[[str, Tree], Tree], ...] = ()
 
     def __init__(self, buf=None):

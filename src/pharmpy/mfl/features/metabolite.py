@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from pharmpy.internals.immutable import frozenmapping
+
 from .mutex_feature import MutexFeature
 
 METABOLITE_TYPES = frozenset(('PSC', 'BASIC'))
 
 
 class Metabolite(MutexFeature):
-    _COMPLEXITY_ORDER = {'PSC': 0, 'BASIC': 1}
+    _COMPLEXITY_ORDER = frozenmapping({'PSC': 0, 'BASIC': 1})
 
     @classmethod
     def create(cls, type: str) -> Metabolite:

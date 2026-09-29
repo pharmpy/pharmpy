@@ -351,43 +351,47 @@ class DataVariable(Immutable):
 
     """
 
-    _all_types = {
-        'id',
-        'dv',
-        'dvid',
-        'idv',
-        'unknown',
-        'dose',
-        'rate',
-        'additional',
-        'ii',
-        'ss',
-        'event',
-        'covariate',
-        'mdv',
-        'compartment',
-        'admid',
-        'lloq',
-        'blq',
-        'arm',
-    }
+    _all_types = frozenset(
+        {
+            'id',
+            'dv',
+            'dvid',
+            'idv',
+            'unknown',
+            'dose',
+            'rate',
+            'additional',
+            'ii',
+            'ss',
+            'event',
+            'covariate',
+            'mdv',
+            'compartment',
+            'admid',
+            'lloq',
+            'blq',
+            'arm',
+        }
+    )
     _all_scales = ('nominal', 'ordinal', 'interval', 'ratio')
-    _all_descriptors = {
-        None,
-        'age',
-        'body height',
-        'body weight',
-        'body surface area',
-        'lean body mass',
-        'fat free mass',
-        'time after dose',
-        'plasma concentration',
-        'subject identifier',
-        'observation identifier',
-        'pk measurement',
-        'pd measurement',
-    }
-    _all_properties = {'unit', 'categories', 'descriptor', 'molar_mass'}
+    _all_descriptors = frozenset(
+        {
+            None,
+            'age',
+            'body height',
+            'body weight',
+            'body surface area',
+            'lean body mass',
+            'fat free mass',
+            'time after dose',
+            'plasma concentration',
+            'subject identifier',
+            'observation identifier',
+            'pk measurement',
+            'pd measurement',
+        }
+    )
+    _all_properties = frozenset({'unit', 'categories', 'descriptor', 'molar_mass'})
 
     def __init__(
         self,

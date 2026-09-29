@@ -1,12 +1,16 @@
 from __future__ import annotations
 
+from pharmpy.internals.immutable import frozenmapping
+
 from .mutex_feature import MutexFeature
 
 EFFECT_COMP_TYPES = frozenset(('LINEAR', 'EMAX', 'SIGMOID', 'STEP', 'LOGLIN'))
 
 
 class EffectComp(MutexFeature):
-    _COMPLEXITY_ORDER = {'LINEAR': 0, 'EMAX': 1, 'SIGMOID': 2, 'STEP': 3, 'LOGLIN': 4}
+    _COMPLEXITY_ORDER = frozenmapping(
+        {'LINEAR': 0, 'EMAX': 1, 'SIGMOID': 2, 'STEP': 3, 'LOGLIN': 4}
+    )
 
     @classmethod
     def create(cls, type: str) -> EffectComp:

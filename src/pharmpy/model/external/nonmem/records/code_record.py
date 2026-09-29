@@ -27,6 +27,7 @@ from pharmpy.internals.expr.funcs import (
     PSQRT,
     PZR,
 )
+from pharmpy.internals.immutable import frozenmapping
 from pharmpy.internals.parse import AttrTree, NoSuchRuleException
 from pharmpy.internals.parse.tree import Interpreter
 from pharmpy.internals.sequence.lcs import diff
@@ -37,9 +38,11 @@ from .record import Record
 
 
 class NMTranPrinter(sympy_printing.str.StrPrinter):
-    _operators = {
-        'not': '.NOT. ',
-    }
+    _operators = frozenmapping(
+        {
+            'not': '.NOT. ',
+        }
+    )
 
     def __init__(self, rvs=None, trans=None, **kwargs):
         self.rvs = rvs

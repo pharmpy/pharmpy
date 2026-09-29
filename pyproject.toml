@@ -98,6 +98,8 @@ quote-style = "preserve"
 "src/pharmpy/tools/mfl/*" = ["ANN"]
 "src/pharmpy/tools/external/*" = ["ANN"]
 "src/pharmpy/tools/**/?[!o]*" = ["ANN"]
+"src/pharmpy/reporting/jupyter_sphinx/*" = ["RUF012"]
+"src/pharmpy/reporting/altairplot.py" = ["RUF012"]
 
 [tool.ruff.lint.flake8-bugbear]
 extend-immutable-calls = [

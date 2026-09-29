@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from pharmpy.internals.immutable import frozenmapping
+
 from .mutex_feature import MutexFeature
 
 ELIMINATION_TYPES = frozenset(('FO', 'ZO', 'MM', 'MIX-FO-MM'))
 
 
 class Elimination(MutexFeature):
-    _COMPLEXITY_ORDER = {'FO': 0, 'ZO': 1, 'MM': 2, 'MIX-FO-MM': 3}
+    _COMPLEXITY_ORDER = frozenmapping({'FO': 0, 'ZO': 1, 'MM': 2, 'MIX-FO-MM': 3})
 
     @classmethod
     def create(cls, type: str) -> Elimination:

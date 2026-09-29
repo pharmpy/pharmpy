@@ -1,12 +1,14 @@
 from __future__ import annotations
 
+from pharmpy.internals.immutable import frozenmapping
+
 from .mutex_feature import MutexFeature
 
 ABSORPTION_TYPES = frozenset(('FO', 'ZO', 'SEQ-ZO-FO', 'WEIBULL'))
 
 
 class Absorption(MutexFeature):
-    _COMPLEXITY_ORDER = {'FO': 0, 'ZO': 1, 'SEQ-ZO-FO': 2, 'WEIBULL': 3}
+    _COMPLEXITY_ORDER = frozenmapping({'FO': 0, 'ZO': 1, 'SEQ-ZO-FO': 2, 'WEIBULL': 3})
 
     @classmethod
     def create(cls, type: str) -> Absorption:
