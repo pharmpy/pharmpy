@@ -36,7 +36,7 @@ def test_remove_error_model_multiple_dv(testdata, load_model_for_test):
     model = create_baseline_pd_model(model, ests=model.parameters.inits)
     model = remove_error_model(model, dv=2)
     assert model.code.split('\n')[14] == 'Y = CONC + CONC*EPS(1)'
-    assert model.code.split('\n')[16] == 'Y_2 = E'
+    assert model.code.split('\n')[16] == 'Y_2 = R'
 
 
 def test_set_additive_error_model(testdata, load_model_for_test):

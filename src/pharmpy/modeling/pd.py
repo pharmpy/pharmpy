@@ -528,16 +528,16 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
 
     Currently implemented baseline effects are:
 
-    Constant baseline effect (const):
+    Constant baseline response (const):
 
-        .. math:: E = B
+        .. math:: R = B
 
     Parameters
     ----------
     model : Model
         Pharmpy model
     expr : str
-        Name of baseline effect function.
+        Name of baseline function.
 
     Return
     ------
@@ -552,16 +552,16 @@ def set_baseline_effect(model: Model, expr: str = 'const') -> Model:
     >>> model.statements.find_assignment("E")
     E = B
     """
-    e0 = Expr.symbol("B")
-    model = add_individual_parameter(model, e0.name)
+    B = Expr.symbol("B")
+    model = add_individual_parameter(model, B.name)
 
-    E = Assignment(Expr.symbol('E'), e0)
+    R = Assignment(Expr.symbol('R'), B)
 
     # Add dependent variable Y_2
     y_2 = Expr.symbol('Y_2')
-    y = Assignment.create(y_2, E.symbol)
+    y = Assignment.create(y_2, R.symbol)
     dvs = model.dependent_variables.replace(y_2, 2)
-    model = model.replace(statements=model.statements + E + y, dependent_variables=dvs)
+    model = model.replace(statements=model.statements + R + y, dependent_variables=dvs)
 
     # Add error model
     model = set_proportional_error_model(model, dv=2, zero_protection=False)

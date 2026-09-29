@@ -187,7 +187,7 @@ def test_set_baseline_effect(load_model_for_test, testdata):
     model = load_model_for_test(testdata / "nonmem" / "pheno_pd.mod")
     baseline = set_baseline_effect(model)
 
-    e, e0 = S('E'), S('B')
+    e, e0 = S('R'), S('B')
     assert baseline.statements[0] == Assignment.create(e0, S("POP_B"))
     assert baseline.statements.after_odes[-2] == Assignment.create(e, e0)
     assert baseline.statements.after_odes[-1] == Assignment.create(S("Y_2"), e + e * S("epsilon_p"))
