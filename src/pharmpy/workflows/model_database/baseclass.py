@@ -24,7 +24,7 @@ class ModelTransaction(ABC):
             self.model_entry = None
             self.key = obj
         else:
-            raise ValueError(
+            raise TypeError(
                 f'Invalid type `model_or_model_entry`: got {type(obj)}, expected Model or ModelEntry'
             )
 
@@ -356,7 +356,7 @@ class DummyTransaction(ModelTransaction):
         elif isinstance(obj, Model):
             self.model_entry = ModelEntry.create(obj)
         else:
-            raise ValueError(
+            raise TypeError(
                 f'Invalid type `obj`: got {type(obj)}, expected Model, ModelEntry or ModelHash'
             )
 

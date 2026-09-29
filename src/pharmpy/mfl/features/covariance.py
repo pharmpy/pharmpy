@@ -67,7 +67,7 @@ class Covariance(ModelFeature):
     @property
     def expanded_parameters(self) -> tuple[str, str]:
         if isinstance(self._parameters, Ref):
-            raise ValueError("Must be expanded")
+            raise ValueError("Must be expanded")  # noqa: TRY004
         return self._parameters
 
     @property

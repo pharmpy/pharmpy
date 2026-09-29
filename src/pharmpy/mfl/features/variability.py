@@ -52,7 +52,7 @@ class Variability(ModelFeature):
     @property
     def expanded_parameter(self) -> str:
         if isinstance(self._parameter, Ref):
-            raise ValueError("Feature must be expanded")
+            raise ValueError("Feature must be expanded")  # noqa: TRY004
         return self._parameter
 
     @property

@@ -1018,7 +1018,7 @@ class ColumnInfo(Immutable):
     def variable(self) -> DataVariable:
         """If the column represent a single DataVariable return it else raise"""
         if not isinstance(self._variable_mapping, DataVariable):
-            raise ValueError("This ColumnInfo represents more than one DataVariable. Use indexing")
+            raise ValueError("This ColumnInfo represents more than one DataVariable. Use indexing")  # noqa: TRY004
         return self._variable_mapping
 
     @property

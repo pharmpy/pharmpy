@@ -780,7 +780,7 @@ def get_and_check_odes(model: Model) -> CompartmentalSystem:
 
     odes = model.statements.ode_system
     if not isinstance(odes, CompartmentalSystem):
-        raise ValueError(f'Model {model.name} has no ODE system')
+        raise ValueError(f'Model {model.name} has no ODE system')  # noqa: TRY004
     return odes
 
 

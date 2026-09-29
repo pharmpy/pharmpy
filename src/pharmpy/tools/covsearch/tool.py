@@ -95,7 +95,7 @@ def _added_effects(steps: tuple[Step, ...]) -> Iterable[Effect]:
         elif isinstance(step, AdaptiveStep):
             pass
         else:
-            raise ValueError(f"Unknown step ({step}) added")
+            raise TypeError(f"Unknown step ({step}) added")
 
     pos = {effect: set(indices) for effect, indices in added_effects.items()}
 
@@ -784,7 +784,7 @@ def _create_description(effect_new: dict, steps_prev: tuple[Step, ...], forward:
         elif isinstance(effect, Effect):
             param, cov, fp, op = effect.parameter, effect.covariate, effect.fp, effect.operation
         else:
-            raise ValueError('Effect must be a tuple or Effect dataclass')
+            raise TypeError('Effect must be a tuple or Effect dataclass')
         effect_base = f'{param}-{cov}-{fp}'
         if op == '+':
             effect_base += f'-{op}'

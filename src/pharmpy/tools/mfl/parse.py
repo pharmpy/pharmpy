@@ -157,12 +157,12 @@ class ModelFeatures:
             raise ValueError(f"Elimination : {elimination} is not supported")
 
         if not isinstance(transits, tuple):
-            raise ValueError("Transits need to be given within a tuple")
+            raise TypeError("Transits need to be given within a tuple")
         if not all(isinstance(t, Transits) for t in transits):
             raise ValueError("All given elements of transits must be of type Transits")
 
         if not isinstance(peripherals, tuple):
-            raise ValueError("Peripherals need to be given within a tuple")
+            raise TypeError("Peripherals need to be given within a tuple")
         if not all(isinstance(p, Peripherals) for p in peripherals):
             raise ValueError(f"Peripherals : {peripherals} is not supported")
 
@@ -170,7 +170,7 @@ class ModelFeatures:
             raise ValueError(f"Lagtime : {lagtime} is not supported")
 
         if not isinstance(covariate, tuple):
-            raise ValueError("Covariates need to be given within a tuple")
+            raise TypeError("Covariates need to be given within a tuple")
         if not all(isinstance(c, Covariate) for c in covariate):
             raise ValueError(f"Covariate : {covariate} is not supported")
 
@@ -181,7 +181,7 @@ class ModelFeatures:
             raise ValueError(f"EffectComp : {effect_comp} is not supported")
 
         if not isinstance(indirect_effect, tuple):
-            raise ValueError("IndirectEffect(s) need to be given within a tuple")
+            raise TypeError("IndirectEffect(s) need to be given within a tuple")
         if not all(isinstance(i, IndirectEffect) for i in indirect_effect):
             raise ValueError("All given elements of indirect_effect must be of type IndirectEffect")
 
@@ -256,7 +256,7 @@ class ModelFeatures:
             elif isinstance(statement, Allometry):
                 allometry = statement
             else:
-                raise ValueError(f'Unknown ({type(statement)} statement ({statement}) given.')
+                raise TypeError(f'Unknown ({type(statement)} statement ({statement}) given.')
 
         # Substitute all Let statements (if any)
         if len(let) != 0:

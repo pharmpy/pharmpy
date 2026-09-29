@@ -209,7 +209,7 @@ def task_results(context, strictness, parameter_uncertainty_method, retries):
         elif isinstance(r, Retry):
             retry_runs.append(r)
         else:
-            raise ValueError(f'Unknown type ({type(r)}) found when summarizing results.')
+            raise TypeError(f'Unknown type ({type(r)}) found when summarizing results.')
     results_to_summarize = [input_model_entry] + [r.modelentry for r in retry_runs]
     rank_type = "ofv"
     cutoff = None
@@ -317,17 +317,17 @@ def validate_input(
     parameter_uncertainty_method,
 ):
     if not isinstance(model, Model):
-        raise ValueError(
+        raise TypeError(
             f'Invalid `model` type: got `{type(model)}`, must be one of pharmpy Model object.'
         )
 
     if not isinstance(results, ModelfitResults):
-        raise ValueError(
+        raise TypeError(
             f'Invalid `results` type: got `{type(results)}`, must be one of pharmpy ModelfitResults object.'
         )
 
     if not isinstance(number_of_candidates, int):
-        raise ValueError(
+        raise TypeError(
             f'Invalid `number_of_candidates` type: got `{type(number_of_candidates)}`, must be an integer.'
         )
     elif number_of_candidates <= 0:
@@ -336,7 +336,7 @@ def validate_input(
         )
 
     if not isinstance(fraction, float):
-        raise ValueError(
+        raise TypeError(
             f'Invalid `fraction` type: got `{type(fraction)}`, must be an number (float).'
         )
 
