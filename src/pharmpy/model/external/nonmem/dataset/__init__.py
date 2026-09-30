@@ -189,16 +189,17 @@ def filter_and_convert_nonmem_dataset_in_place(
         if not raw:
             df = safe_convert_column_to_int32(df, idcol)
 
-    if not raw:
+    if (
+        not raw
+        and 'TIME' in columns
+        and not any(item in columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3'])
+    ):
         # Parse TIME if possible
-        if 'TIME' in columns and not any(
-            item in columns for item in ['DATE', 'DAT1', 'DAT2', 'DAT3']
-        ):
-            try:
-                convert_in_place(df, ["TIME"], str(null_value), missing_data_token)
-            except DatasetError:
-                if dtype and 'TIME' in dtype:
-                    dtype['TIME'] = 'str'
+        try:
+            convert_in_place(df, ["TIME"], str(null_value), missing_data_token)
+        except DatasetError:
+            if dtype and 'TIME' in dtype:
+                dtype['TIME'] = 'str'
 
     if dtype:
         _columns = set(columns)

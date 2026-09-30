@@ -109,13 +109,12 @@ def _get_covariate_effect(model: Model, symbol, covariate):
             check_covariate = True
             expression = arg
 
-        if check_covariate and expression is not None:
-            if covariate in free_symbols:
-                cov_expression = expression
-                # Need at least one theta to perform matching
-                cov_effect = "CUSTOM"
-                if any(theta in free_symbols for theta in thetas):
-                    perform_matching = True
+        if check_covariate and expression is not None and covariate in free_symbols:
+            cov_expression = expression
+            # Need at least one theta to perform matching
+            cov_effect = "CUSTOM"
+            if any(theta in free_symbols for theta in thetas):
+                perform_matching = True
     if perform_matching:
         for effect in ['lin', 'cat', 'cat2', 'piece_lin', 'exp', 'pow']:
             template = _create_template(effect, model, str(covariate))
@@ -140,9 +139,8 @@ def _get_covariate_effect(model: Model, symbol, covariate):
 
             cov_expression = sympy.sympify(cov_expression)
             match = cov_expression.match(template)
-            if match:
-                if _assert_cov_effect_match(wild_dict, match, model, str(covariate), effect):
-                    return effect, op
+            if match and _assert_cov_effect_match(wild_dict, match, model, str(covariate), effect):
+                return effect, op
 
     if cov_expression:
         return cov_effect, op
@@ -151,16 +149,16 @@ def _get_covariate_effect(model: Model, symbol, covariate):
 
 
 def _assert_cov_effect_match(symbols, match, model, covariate, effect):
-    if effect == "pow":
-        if (
-            sympy.Wild("cov") in match
-            and match[sympy.Wild("cov")].is_number
-            and sympy.Wild("median") in match
-            and match[sympy.Wild("median")].is_Pow
-        ):
-            temp = match[sympy.Wild("cov")]
-            match[sympy.Wild("cov")] = match[sympy.Wild("median")]
-            match[sympy.Wild("median")] = temp
+    if (
+        effect == "pow"
+        and sympy.Wild("cov") in match
+        and match[sympy.Wild("cov")].is_number
+        and sympy.Wild("median") in match
+        and match[sympy.Wild("median")].is_Pow
+    ):
+        temp = match[sympy.Wild("cov")]
+        match[sympy.Wild("cov")] = match[sympy.Wild("median")]
+        match[sympy.Wild("median")] = temp
 
     for key, values in symbols.items():
         # match keys will always be generated from cov effect template (e.g.
@@ -176,9 +174,8 @@ def _assert_cov_effect_match(symbols, match, model, covariate, effect):
                 match[value] not in [covariate, sympy.Integer(1) / covariate] for value in values
             ):
                 return False
-        if key == "median":
-            if not all(match[value].is_number for value in values):
-                return False
+        if key == "median" and not all(match[value].is_number for value in values):
+            return False
     return True
 
 

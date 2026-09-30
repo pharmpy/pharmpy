@@ -141,11 +141,14 @@ def add_statements(
                         if only_piecewise is False:
                             cg.add(f'{s.symbol.name} <- {value}')
 
-                            if s.symbol in dependencies:
-                                if not value.is_number() and not isinstance(value, sympy.Symbol):
-                                    add, prop = extract_add_prop(value, res_alias, model)
-                                    cg.add(f'add_error <- {add}')
-                                    cg.add(f'prop_error <- {prop}')
+                            if (
+                                s.symbol in dependencies
+                                and not value.is_number()
+                                and not isinstance(value, sympy.Symbol)
+                            ):
+                                add, prop = extract_add_prop(value, res_alias, model)
+                                cg.add(f'add_error <- {add}')
+                                cg.add(f'prop_error <- {prop}')
                         elif s.symbol == dv:
                             if value != dv:
                                 t = res_error_term(model, value)
@@ -232,14 +235,13 @@ def extract_add_prop(s, res_alias: set[sympy.Symbol], model: pharmpy.model.Model
     prop_found = False
     for term in terms:
         for symbol in term.free_symbols:
-            if symbol in res_alias:
-                if prop_found is False:
-                    term = term.subs(symbol, 1)
-                    if w:
-                        prop = sympy.sqrt(term)
-                    else:
-                        prop += term  # pyright: ignore [reportOperatorIssue]
-                    prop_found = True
+            if symbol in res_alias and prop_found is False:
+                term = term.subs(symbol, 1)
+                if w:
+                    prop = sympy.sqrt(term)
+                else:
+                    prop += term  # pyright: ignore [reportOperatorIssue]
+                prop_found = True
         if prop_found is False:
             if w:
                 add = sympy.sqrt(term)

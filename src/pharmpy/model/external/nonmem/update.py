@@ -810,14 +810,13 @@ def update_statements(model: Model, old: Statements, new: Statements, trans):
         if new_odes != old_odes:
             model, updated_dataset = update_ode_system(model, old_odes, new_odes)
         else:
-            if new_solver:
-                if new_solver != old_solver:
-                    advan = solver_to_advan(new_solver)
-                    subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
-                    newsubs = subs.set_advan(advan)
-                    newcs = model.internals.control_stream.replace_records([subs], [newsubs])
-                    model = model.replace(internals=model.internals.replace(control_stream=newcs))
-                    model = update_model_record(model, advan)
+            if new_solver and new_solver != old_solver:
+                advan = solver_to_advan(new_solver)
+                subs = model.internals.control_stream.get_records('SUBROUTINES')[0]
+                newsubs = subs.set_advan(advan)
+                newcs = model.internals.control_stream.replace_records([subs], [newsubs])
+                model = model.replace(internals=model.internals.replace(control_stream=newcs))
+                model = update_model_record(model, advan)
 
     main_statements = model.statements.before_odes
     main_statements = update_ics(main_statements, new_odes)
@@ -1076,13 +1075,11 @@ def pk_param_conversion(model: Model, advan, trans):
             else:  # TRANS1
                 d[Expr.symbol('K12')] = Expr.symbol('K23')
                 d[Expr.symbol('K21')] = Expr.symbol('K32')
-        elif advan == 'ADVAN11':
-            if trans == 'TRANS4':
-                d.update({Expr.symbol('Q'): Expr.symbol('Q2')})
+        elif advan == 'ADVAN11' and trans == 'TRANS4':
+            d.update({Expr.symbol('Q'): Expr.symbol('Q2')})
     elif from_advan == 'ADVAN4':
-        if advan == 'ADVAN2':
-            if trans == 'TRANS2':
-                d[Expr.symbol('V2')] = Expr.symbol('V')
+        if advan == 'ADVAN2' and trans == 'TRANS2':
+            d[Expr.symbol('V2')] = Expr.symbol('V')
         if advan == 'ADVAN3':
             if trans == 'TRANS4':
                 d.update(
@@ -1097,9 +1094,8 @@ def pk_param_conversion(model: Model, advan, trans):
                         Expr.symbol('K32'): Expr.symbol('K21'),
                     }
                 )
-        elif advan == 'ADVAN12':
-            if trans == 'TRANS4':
-                d.update({Expr.symbol('Q'): Expr.symbol('Q3')})
+        elif advan == 'ADVAN12' and trans == 'TRANS4':
+            d.update({Expr.symbol('Q'): Expr.symbol('Q3')})
     elif from_advan == 'ADVAN11':
         if advan == 'ADVAN1':
             if trans == 'TRANS2':
@@ -1440,23 +1436,27 @@ def update_needed_pk_parameters(model: Model, advan, trans):
     """Add missing pk parameters that NONMEM needs"""
     statements = model.statements
     odes = get_odes(model)
-    if advan == 'ADVAN2' or advan == 'ADVAN4' or advan == 'ADVAN12':
-        if not statements.find_assignment('KA'):
-            depot = odes.find_depot(statements)
-            assert depot is not None
-            comp, rate = odes.get_compartment_outflows(depot)[0]
-            ass = Assignment.create(Expr.symbol('KA'), rate)
-            if rate != ass.symbol:
-                cb = CompartmentalSystemBuilder(odes)
-                cb.add_flow(depot, comp, ass.symbol)
-                model = model.replace(
-                    statements=statements.before_odes
-                    + ass
-                    + CompartmentalSystem(cb)
-                    + statements.after_odes
-                )
-                statements = model.statements
-                odes = get_odes(model)
+    if (
+        advan == 'ADVAN2'
+        or advan == 'ADVAN4'
+        or advan == 'ADVAN12'
+        and not statements.find_assignment('KA')
+    ):
+        depot = odes.find_depot(statements)
+        assert depot is not None
+        comp, rate = odes.get_compartment_outflows(depot)[0]
+        ass = Assignment.create(Expr.symbol('KA'), rate)
+        if rate != ass.symbol:
+            cb = CompartmentalSystemBuilder(odes)
+            cb.add_flow(depot, comp, ass.symbol)
+            model = model.replace(
+                statements=statements.before_odes
+                + ass
+                + CompartmentalSystem(cb)
+                + statements.after_odes
+            )
+            statements = model.statements
+            odes = get_odes(model)
     if advan in ['ADVAN1', 'ADVAN2']:
         if trans == 'TRANS1':
             central = odes.central_compartment
@@ -1516,13 +1516,12 @@ def update_needed_pk_parameters(model: Model, advan, trans):
                     sn = newmap[source]
                     dn = newmap[dest]
                     t = ''
-                    if len(str(sn)) > 1 or len(str(dn)) > 1:
+                    if (len(str(sn)) > 1 or len(str(dn)) > 1) and dest_comp != output:
                         # This is needed if there are 8 compartments
                         # (including central) and another is added
                         # since the output compartment is included
                         # in dn
-                        if dest_comp != output:
-                            t = 'T'
+                        t = 'T'
                     names = [f'K{sn}{dn}', f'K{sn}T{dn}']
                     if dn == len(newmap):
                         names += [f'K{sn}0', f'K{sn}T0']

@@ -587,7 +587,7 @@ def to_compartmental_system(names, eqs: Sequence[sympy.Eq]) -> CompartmentalSyst
                     if _is_positive(term):
                         for second_comp in concentrations.intersection(free_images(term)):
                             for eq_2 in eqs:
-                                if (
+                                if (  # noqa: SIM102
                                     eq_2.lhs.args[0].name  # pyright: ignore [reportAttributeAccessIssue]
                                     == second_comp.name
                                 ):
@@ -2255,9 +2255,8 @@ class Statements(Sequence, Immutable):
 
         for i in reversed(range(len(self))):
             statement = self[i]
-            if isinstance(statement, Assignment):
-                if statement.symbol == symbol:
-                    return i, statement
+            if isinstance(statement, Assignment) and statement.symbol == symbol:
+                return i, statement
 
         return None, None
 

@@ -1561,37 +1561,38 @@ def _remove_covariate_effect_from_statements_recursive(
             expression, False, _is_constant(thetas, expression), _depends_on_any(thetas, expression)
         )
 
-    if isinstance(expression, sympy.Piecewise):
-        if any(covariate in t[1].free_symbols for t in expression.args):
-            # NOTE: At least one condition depends on the covariate
-            if all(
-                _is_univariate(thetas, _full_expression(assignments, t[1]), covariate)
-                for t in expression.args
-            ):
-                # NOTE: If expression is piecewise univariate and condition depends on
-                # covariate, return simplest expression from cases
-                expr = min(
-                    (t[0] for t in expression.args),
-                    key=sympy.count_ops,
-                )
-                tree_node = _remove_covariate_effect_from_statements_recursive(
-                    thetas,
-                    fixed_thetas,
-                    assignments,
-                    statements,
-                    symbol,
-                    expr,
-                    covariate,
-                    parent,
-                    current_theta_expression,
-                )
-                return ExpressionTreeNode(
-                    tree_node.expression, True, tree_node.constant, tree_node.contains_theta
-                )
-            else:
-                raise NotImplementedError(
-                    'Cannot handle multivariate Piecewise where condition depends on covariate.'
-                )
+    if isinstance(expression, sympy.Piecewise) and any(
+        covariate in t[1].free_symbols for t in expression.args
+    ):
+        # NOTE: At least one condition depends on the covariate
+        if all(
+            _is_univariate(thetas, _full_expression(assignments, t[1]), covariate)
+            for t in expression.args
+        ):
+            # NOTE: If expression is piecewise univariate and condition depends on
+            # covariate, return simplest expression from cases
+            expr = min(
+                (t[0] for t in expression.args),
+                key=sympy.count_ops,
+            )
+            tree_node = _remove_covariate_effect_from_statements_recursive(
+                thetas,
+                fixed_thetas,
+                assignments,
+                statements,
+                symbol,
+                expr,
+                covariate,
+                parent,
+                current_theta_expression,
+            )
+            return ExpressionTreeNode(
+                tree_node.expression, True, tree_node.constant, tree_node.contains_theta
+            )
+        else:
+            raise NotImplementedError(
+                'Cannot handle multivariate Piecewise where condition depends on covariate.'
+            )
 
     children = [
         _remove_covariate_effect_from_statements_recursive(
@@ -1889,16 +1890,15 @@ def _get_component_free_symbols(
         # NOTE: These must not necessarily be outgoing edges
         assert u in vertices or v in vertices
 
-        if u not in vertices or v not in vertices:
+        if (u not in vertices or v not in vertices) and len(rate.free_symbols) == 2:
             # NOTE: This handles splitting the rate K = CL / V
-            if len(rate.free_symbols) == 2:
-                a, b = rate.free_symbols
-                if rate == a / b:
-                    yield a if v in vertices else b
-                    continue
-                elif rate == b / a:
-                    yield b if v in vertices else a
-                    continue
+            a, b = rate.free_symbols
+            if rate == a / b:
+                yield a if v in vertices else b
+                continue
+            elif rate == b / a:
+                yield b if v in vertices else a
+                continue
 
         if (u in vertices and v in vertices) or not is_central:
             # NOTE: This handles all internal edges, and in/out rates (KA, CL/V)

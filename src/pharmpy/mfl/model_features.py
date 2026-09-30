@@ -218,11 +218,10 @@ class ModelFeatures(Immutable):
             elif isinstance(feature, (Covariate, IIV, IOV, Covariance)):
                 if feature.optional:
                     return False
-                if isinstance(feature, (IIV, IOV)):
-                    if any(
-                        f.parameter == feature.parameter and f.fp != feature.fp for f in features
-                    ):
-                        return False
+                if isinstance(feature, (IIV, IOV)) and any(
+                    f.parameter == feature.parameter and f.fp != feature.fp for f in features
+                ):
+                    return False
             else:
                 raise NotImplementedError
             feature_map[type(feature)].append(feature)
@@ -327,9 +326,10 @@ class ModelFeatures(Immutable):
         elif isinstance(item, ModelFeatures):
             if all(self._contains(feature) for feature in item):
                 return True
-        elif isinstance(item, Iterable):
-            if all(isinstance(x, ModelFeature) and self._contains(x) for x in item):
-                return True
+        elif isinstance(item, Iterable) and all(
+            isinstance(x, ModelFeature) and self._contains(x) for x in item
+        ):
+            return True
         return False
 
     def __getitem__(self, item: int) -> ModelFeature:

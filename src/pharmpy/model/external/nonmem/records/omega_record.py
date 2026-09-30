@@ -125,10 +125,12 @@ class OmegaRecord(Record):
                     yield (pending, name)
                     pending = None
 
-                if isinstance(node, AttrTree):
-                    if (name := _find_first_name(node.tree_walk())) is not None:
-                        yield (pending, name)
-                        pending = None
+                if (
+                    isinstance(node, AttrTree)
+                    and (name := _find_first_name(node.tree_walk())) is not None
+                ):
+                    yield (pending, name)
+                    pending = None
 
     def _block_flags(self):
         """Get a tuple of all interesting flags for block"""

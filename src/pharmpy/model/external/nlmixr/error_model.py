@@ -60,9 +60,11 @@ class res_error_term:
                 for symbol in all_symbols:
                     if str(symbol) in self.model.random_variables.epsilons.names:
                         sigma = convert_eps_to_sigma(symbol, self.model)
-                        if self.model.parameters[str(sigma)].init == 1.0:
-                            if self.model.parameters[str(sigma)].fix:
-                                term = term.subs(factor._sympy_(), 1)
+                        if (
+                            self.model.parameters[str(sigma)].init == 1.0
+                            and self.model.parameters[str(sigma)].fix
+                        ):
+                            term = term.subs(factor._sympy_(), 1)
                         if factor != symbol:
                             sigma_alias = factor
 
@@ -127,10 +129,9 @@ class res_error_term:
     def is_only_piecewise(self):
         dv = next(iter(self.model.dependent_variables.keys()))
         for s in reversed(self.model.statements.after_odes):
-            if s.symbol == dv:
-                if not s.expression.is_piecewise():
-                    self.only_piecewise = False
-                    break
+            if s.symbol == dv and not s.expression.is_piecewise():
+                self.only_piecewise = False
+                break
 
         if self.only_piecewise is None:
             self.only_piecewise = True
@@ -161,10 +162,10 @@ class error:
 
     def is_sigma_fix(self):
         if self.model is not None:
-            if self.model.parameters[str(self.sigma)].init == 1.0:
-                if self.model.parameters[str(self.sigma)].fix:
-                    return True
-            return False
+            return (
+                self.model.parameters[str(self.sigma)].init == 1.0
+                and self.model.parameters[str(self.sigma)].fix
+            )
 
     def check_dependecies(self):
         if (
@@ -220,9 +221,8 @@ def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
         aliases.add(symbol)
     for expr in model.statements.after_odes:
         # If RES = ALI
-        if symbol == expr.symbol and expr.expression.is_symbol():
-            if expr.expression not in aliases:
-                aliases.union(find_aliases(expr.expression, model, aliases))
+        if symbol == expr.symbol and expr.expression.is_symbol() and expr.expression not in aliases:
+            aliases.union(find_aliases(expr.expression, model, aliases))
 
         # If RES = PIECEWISE or PIECEWISE = RES
         if expr.expression.is_piecewise():
@@ -230,14 +230,12 @@ def find_aliases(symbol: Expr, model: Model, aliases=None) -> set:
                 if symbol == expr.symbol and e.is_symbol():
                     if e not in aliases:
                         aliases.union(find_aliases(e, model, aliases))
-                elif symbol == e:
-                    if expr.symbol not in aliases:
-                        aliases.union(find_aliases(expr.symbol, model, aliases))
+                elif symbol == e and expr.symbol not in aliases:
+                    aliases.union(find_aliases(expr.symbol, model, aliases))
 
         # If ALI = RES
-        if symbol == expr.expression:
-            if expr.symbol not in aliases:
-                aliases.union(find_aliases(expr.symbol, model, aliases))
+        if symbol == expr.expression and expr.symbol not in aliases:
+            aliases.union(find_aliases(expr.symbol, model, aliases))
     return aliases
 
 

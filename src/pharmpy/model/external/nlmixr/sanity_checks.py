@@ -60,9 +60,8 @@ def check_model(
             model = add_time(model)
 
     # Checks regarding error model
-    if not skip_error_model_check:
-        if not known_error_model(model):
-            print_warning("Format of error model cannot be determined.")
+    if not skip_error_model_check and not known_error_model(model):
+        print_warning("Format of error model cannot be determined.")
 
     # Checks regarding random variables
     if rvs_same(model, sigma=True):
@@ -154,25 +153,25 @@ def same_time(model: pharmpy.model.Model) -> bool:
 
     for index, row in dataset.iterrows():
         assert isinstance(index, int)
-        if index != 0:
-            if row["ID"] == dataset.loc[index - 1]["ID"]:
-                if row["TIME"] == dataset.loc[index - 1]["TIME"]:
-                    ID = row["ID"]
-                    TIME = row["TIME"]
-                    subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
-                    assert subset is not None
-                    unique_evid = subset["EVID"].unique()  # pyright: ignore [reportAttributeAccessIssue]
-                    if any(x not in evid_ignore for x in unique_evid) and any(
-                        x in evid_ignore for x in unique_evid
-                    ):
-                        if rate:
-                            unique_rate = subset["RATE"].unique()  # pyright: ignore[reportAttributeAccessIssue]
-                            if any(x != 0 for x in unique_rate) and any(
-                                x == 0 for x in unique_rate
-                            ):
-                                return True
-                        else:
-                            return True
+        if (
+            index != 0
+            and row["ID"] == dataset.loc[index - 1]["ID"]
+            and row["TIME"] == dataset.loc[index - 1]["TIME"]
+        ):
+            ID = row["ID"]
+            TIME = row["TIME"]
+            subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
+            assert subset is not None
+            unique_evid = subset["EVID"].unique()  # pyright: ignore [reportAttributeAccessIssue]
+            if any(x not in evid_ignore for x in unique_evid) and any(
+                x in evid_ignore for x in unique_evid
+            ):
+                if rate:
+                    unique_rate = subset["RATE"].unique()  # pyright: ignore[reportAttributeAccessIssue]
+                    if any(x != 0 for x in unique_rate) and any(x == 0 for x in unique_rate):
+                        return True
+                else:
+                    return True
 
     return False
 
@@ -209,32 +208,34 @@ def change_same_time(model: pharmpy.model.Model) -> pharmpy.model.Model:
 
     for index, row in dataset.iterrows():
         assert isinstance(index, int)
-        if index != 0:
-            if row["ID"] == dataset.loc[index - 1]["ID"]:
-                if row["TIME"] == dataset.loc[index - 1]["TIME"]:
-                    ID = row["ID"]
-                    TIME = row["TIME"]
-                    subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
-                    assert subset is not None
-                    unique_evid = subset["EVID"].unique()  # pyright: ignore [reportAttributeAccessIssue]
-                    if any(x not in evid_ignore for x in unique_evid) and any(
-                        x in evid_ignore for x in unique_evid
-                    ):
-                        if rate:
-                            dataset.loc[
-                                (dataset["ID"] == ID)
-                                & (dataset["TIME"] == TIME)
-                                & (dataset["RATE"] == 0)
-                                & (~dataset["EVID"].isin(evid_ignore)),
-                                "TIME",
-                            ] += 0.000001
-                        else:
-                            dataset.loc[
-                                (dataset["ID"] == ID)
-                                & (dataset["TIME"] == TIME)
-                                & (~dataset["EVID"].isin(evid_ignore)),
-                                "TIME",
-                            ] += 0.000001
+        if (
+            index != 0
+            and row["ID"] == dataset.loc[index - 1]["ID"]
+            and row["TIME"] == dataset.loc[index - 1]["TIME"]
+        ):
+            ID = row["ID"]
+            TIME = row["TIME"]
+            subset = dataset[(dataset["ID"] == ID) & (dataset["TIME"] == TIME)]
+            assert subset is not None
+            unique_evid = subset["EVID"].unique()  # pyright: ignore [reportAttributeAccessIssue]
+            if any(x not in evid_ignore for x in unique_evid) and any(
+                x in evid_ignore for x in unique_evid
+            ):
+                if rate:
+                    dataset.loc[
+                        (dataset["ID"] == ID)
+                        & (dataset["TIME"] == TIME)
+                        & (dataset["RATE"] == 0)
+                        & (~dataset["EVID"].isin(evid_ignore)),
+                        "TIME",
+                    ] += 0.000001
+                else:
+                    dataset.loc[
+                        (dataset["ID"] == ID)
+                        & (dataset["TIME"] == TIME)
+                        & (~dataset["EVID"].isin(evid_ignore)),
+                        "TIME",
+                    ] += 0.000001
 
     model = model.replace(dataset=reset_index(dataset))
     return model

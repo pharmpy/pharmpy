@@ -983,9 +983,8 @@ def get_admid(model: Model) -> pd.Series:
         if current_subject == subject:
             if event == 1:
                 current_admin = admin
-            if event != 1:
-                if current_admin is not None:
-                    adm[i] = current_admin
+            if event != 1 and current_admin is not None:
+                adm[i] = current_admin
         else:
             current_subject = subject
             current_admin = admin
@@ -2611,9 +2610,8 @@ def is_binary(model: Model, expr: str) -> bool:
     """
 
     odes = model.statements.ode_system
-    if odes is not None:
-        if odes.t in _get_all_statement_deps(model, Expr(expr)):
-            return False
+    if odes is not None and odes.t in _get_all_statement_deps(model, Expr(expr)):
+        return False
 
     vec = evaluate_expression(model, expr)
     unique = set(vec.unique())

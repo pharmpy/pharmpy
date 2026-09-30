@@ -629,9 +629,12 @@ def _check_and_get_zero_protect(error_sset, y_symbs):
             ipredadj_cand = s
         else:
             f_cand = s
-    if ipredadj_cand is not None and f_cand is not None:
-        if ipredadj_cand.expression.free_symbols == {f_cand.symbol}:
-            return ipredadj_cand.symbol, f_cand.symbol
+    if (
+        ipredadj_cand is not None
+        and f_cand is not None
+        and ipredadj_cand.expression.free_symbols == {f_cand.symbol}
+    ):
+        return ipredadj_cand.symbol, f_cand.symbol
     return None, None
 
 

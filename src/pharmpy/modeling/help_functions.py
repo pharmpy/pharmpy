@@ -98,7 +98,6 @@ def _format_options(list_of_options, no_of_variables):
 def _as_integer(n):
     if isinstance(n, int):
         return n
-    elif isinstance(n, float):
-        if int(n) == n:
-            return int(n)
+    elif isinstance(n, float) and int(n) == n:
+        return int(n)
     raise TypeError

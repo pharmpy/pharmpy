@@ -60,22 +60,21 @@ def calculate_ucp_scale(model: Model) -> UCPScale:
     lb = []
     range_ul_vec = []
     for p in model.parameters:
-        if not p.fix:
-            if p.symbol not in model.random_variables.free_symbols:
-                upper = min(1000000, p.upper)
-                lower = max(-1000000, p.lower)
-                if p.init < lower:
-                    init = lower + 1
-                elif p.init > upper:
-                    init = upper - 1
-                else:
-                    init = p.init
-                range_ul = upper - lower
-                range_prop = (init - lower) / range_ul
-                scaled = 0.1 - math.log(range_prop / (1.0 - range_prop))
-                theta.append(scaled)
-                lb.append(lower)
-                range_ul_vec.append(range_ul)
+        if not p.fix and p.symbol not in model.random_variables.free_symbols:
+            upper = min(1000000, p.upper)
+            lower = max(-1000000, p.lower)
+            if p.init < lower:
+                init = lower + 1
+            elif p.init > upper:
+                init = upper - 1
+            else:
+                init = p.init
+            range_ul = upper - lower
+            range_prop = (init - lower) / range_ul
+            scaled = 0.1 - math.log(range_prop / (1.0 - range_prop))
+            theta.append(scaled)
+            lb.append(lower)
+            range_ul_vec.append(range_ul)
 
     return UCPScale(np.array(theta), scale_omega, scale_sigma, np.array(lb), np.array(range_ul_vec))
 
@@ -162,9 +161,8 @@ def calculate_parameters_from_ucp(
 
     theta = []
     for p in model.parameters:
-        if not p.fix:
-            if p.symbol not in model.random_variables.free_symbols:
-                theta.append(ucps[p.name])
+        if not p.fix and p.symbol not in model.random_variables.free_symbols:
+            theta.append(ucps[p.name])
     theta = np.array(theta)
 
     diff_scale = theta - scale.theta

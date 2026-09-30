@@ -766,9 +766,8 @@ def _rename_parameter(model: Model, old_name, new_name):
             diag = cov[ind, ind]
             d[diag] = f'IIV_{new_name}'
             for p in pars:
-                if p != diag:
-                    if p.name.startswith('IIV'):
-                        d[p] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
+                if p != diag and p.name.startswith('IIV'):
+                    d[p] = p.name.replace(f'IIV_{old_name}', f'IIV_{new_name}')
             rvs = rvs.subs(d)
             break
     new = []
@@ -2272,28 +2271,27 @@ def add_peripheral_compartment(model: Model, name: str | None = None) -> Model:
             pop_vc_init = model.parameters[pop_vc].init
             qp_init = pop_cl_init
             vp_init = pop_vc_init * 0.05
-    elif n == 2:
-        if vc != 1:
-            per1 = per[0]
-            from_rate = odes.get_flow(per1, central)
-            assert from_rate is not None
-            qp1, vp1 = from_rate.as_numer_denom()
-            if qp1.is_symbol() and vc == 1:
-                # If K = CL / V
-                s = statements.find_assignment(qp1.name)
-                assert s is not None
-                qp1, vp1 = s.expression.as_numer_denom()
-            full_qp1 = statements.before_odes.full_expression(qp1)
-            full_vp1 = statements.before_odes.full_expression(vp1)
-            if full_vp1 == 1:
-                full_qp1, full_vp1 = full_qp1.as_numer_denom()
-            pop_qp1 = _find_noncov_theta(model, full_qp1, full=True)
-            pop_vp1 = _find_noncov_theta(model, full_vp1, full=True)
-            pop_qp1_init = model.parameters[pop_qp1].init
-            pop_vp1_init = model.parameters[pop_vp1].init
-            model = set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
-            qp_init = pop_qp1_init * 0.90
-            vp_init = pop_vp1_init
+    elif n == 2 and vc != 1:
+        per1 = per[0]
+        from_rate = odes.get_flow(per1, central)
+        assert from_rate is not None
+        qp1, vp1 = from_rate.as_numer_denom()
+        if qp1.is_symbol() and vc == 1:
+            # If K = CL / V
+            s = statements.find_assignment(qp1.name)
+            assert s is not None
+            qp1, vp1 = s.expression.as_numer_denom()
+        full_qp1 = statements.before_odes.full_expression(qp1)
+        full_vp1 = statements.before_odes.full_expression(vp1)
+        if full_vp1 == 1:
+            full_qp1, full_vp1 = full_qp1.as_numer_denom()
+        pop_qp1 = _find_noncov_theta(model, full_qp1, full=True)
+        pop_vp1 = _find_noncov_theta(model, full_vp1, full=True)
+        pop_qp1_init = model.parameters[pop_qp1].init
+        pop_vp1_init = model.parameters[pop_vp1].init
+        model = set_initial_estimates(model, {pop_qp1.name: pop_qp1_init * 0.10})
+        qp_init = pop_qp1_init * 0.90
+        vp_init = pop_vp1_init
 
     if vc != 1:
         model, qp = _add_parameter(model, f'QP{n}', init=qp_init)
