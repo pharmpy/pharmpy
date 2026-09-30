@@ -1,12 +1,13 @@
+from functools import partial
 from pathlib import Path
 
 import pytest
 
 from pharmpy.deps import numpy as np
-from pharmpy.mfl import IIV
-from pharmpy.mfl import ModelFeatures as ModelFeaturesNew
+from pharmpy.mfl import IIV, ModelFeatures
 from pharmpy.model import Ignore
 from pharmpy.modeling import (
+    add_covariate_effect,
     create_basic_pk_model,
     create_joint_distribution,
     has_covariate_effect,
@@ -15,6 +16,8 @@ from pharmpy.modeling import (
     remove_parameter_uncertainty_step,
     set_michaelis_menten_elimination,
     set_mixed_mm_fo_elimination,
+    set_peripheral_compartments,
+    set_zero_order_absorption,
 )
 from pharmpy.tools import read_results
 from pharmpy.tools.amd.run import (
@@ -24,6 +27,7 @@ from pharmpy.tools.amd.run import (
     create_plots,
     create_start_model,
     create_structural_covariates_model,
+    determine_extra_tmdd_model,
     filter_drug_metabolite_dataset,
     filter_tmdd_dataset,
     get_dvid_name,
@@ -36,14 +40,12 @@ from pharmpy.tools.amd.run import (
     later_input_validation,
     modify_search_space_allometry,
     parse_search_space,
-    parse_search_space_new,
+    remove_added_covariates_from_search_space,
     split_structural_search_space,
     update_iiv_search_space,
     validate_input,
 )
 from pharmpy.tools.external.results import parse_modelfit_results
-from pharmpy.tools.mfl.parse import ModelFeatures
-from pharmpy.tools.mfl.parse import parse as mfl_parse
 from pharmpy.tools.run import read_modelfit_results
 from pharmpy.workflows import ModelEntry, ModelfitResults
 from pharmpy.workflows.contexts import NullContext
@@ -66,8 +68,8 @@ def test_create_model_summary(testdata):
             'Invalid `search_space`, could not be parsed:',
         ),
         (
-            'ELIMINATION(ZO)',  # ABSORPTION(INST) automatically added
-            'The given search space have instantaneous absorption',
+            'ELIMINATION(ZO)',
+            'The given search space does not have absorption',
         ),
     ],
 )
@@ -389,16 +391,16 @@ def test_mechanistic_covariate_extraction(
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
-    search_space = mfl_parse('COVARIATE?(CL, [WT,CLCR], POW)', True)
+    search_space = ModelFeatures.create('COVARIATE?(CL, [WT,CLCR], POW)')
     mechanistic_ss, filtered_ss = _mechanistic_cov_extraction(
         search_space, model, mechanistic_covariates
     )
 
-    assert mechanistic_ss == mfl_parse(expected_mechanistic_ss, True)
+    assert mechanistic_ss == ModelFeatures.create(expected_mechanistic_ss)
     if expected_filtered_ss:
-        assert filtered_ss == mfl_parse(expected_filtered_ss, True)
+        assert filtered_ss == ModelFeatures.create(expected_filtered_ss)
     else:
-        assert not filtered_ss.covariate
+        assert not filtered_ss.covariates
 
 
 @pytest.mark.parametrize(
@@ -415,14 +417,14 @@ def test_split_structural_search_space(
 ):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
 
-    ss_mfl = mfl_parse(search_space, True)
-    covsearch_features = ModelFeatures.create(covariate=ss_mfl.covariate)
+    covsearch_features = ModelFeatures.create(search_space).covariates
 
     skipped, structural = split_structural_search_space(model, covsearch_features)
 
     assert skipped == skipped_expected
     if parameters_expected is not None:
-        assert set(structural.covariate[0].parameter) == parameters_expected
+        parameters = {cov.parameter for cov in structural}
+        assert parameters == parameters_expected
     else:
         assert structural is None
 
@@ -432,10 +434,10 @@ def test_split_structural_search_space(
     [
         (
             'ABSORPTION(ZO)',
-            'ABSORPTION(ZO);ELIMINATION(FO);TRANSITS(0);PERIPHERALS(0);LAGTIME(OFF)',
+            'ABSORPTION(ZO)',
         ),
-        (None, ModelFeatures()),
-        ('', ModelFeatures()),
+        (None, ModelFeatures.create([])),
+        ('', ModelFeatures.create([])),
     ],
 )
 def test_parse_search_space(mfl, expected):
@@ -443,24 +445,6 @@ def test_parse_search_space(mfl, expected):
         assert repr(parse_search_space(mfl)) == expected
     else:
         assert parse_search_space(mfl) == expected
-
-
-@pytest.mark.parametrize(
-    'mfl, expected_search_space, expected_iiv',
-    [
-        ('ABSORPTION(ZO);IIV(CL,EXP)', 'ABSORPTION(ZO)', 'IIV(CL,EXP)'),
-        (
-            'ABSORPTION(ZO);IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])',
-            'ABSORPTION(ZO)',
-            'IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])',
-        ),
-        ('IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])', '', 'IIV(CL,EXP);COVARIANCE(IIV,[CL,VC])'),
-    ],
-)
-def test_parse_search_space_new(mfl, expected_search_space, expected_iiv):
-    search_space, iiv_features = parse_search_space_new(mfl)
-    assert search_space == expected_search_space
-    assert repr(iiv_features) == expected_iiv
 
 
 @pytest.mark.parametrize(
@@ -474,12 +458,12 @@ def test_parse_search_space_new(mfl, expected_search_space, expected_iiv):
     ],
 )
 def test_modify_search_space_allometry(mfl, expected_search_space, expected_allometry):
-    ss_mfl = ModelFeaturesNew.create(mfl)
+    ss_mfl = ModelFeatures.create(mfl)
     assert ss_mfl.allometry
     ss_mfl, mfl_allometry = modify_search_space_allometry(ss_mfl)
     assert not ss_mfl.allometry
     assert repr(ss_mfl) == expected_search_space
-    assert mfl_allometry == ModelFeaturesNew.create(expected_allometry).allometry
+    assert mfl_allometry == ModelFeatures.create(expected_allometry).allometry
 
 
 @pytest.mark.parametrize(
@@ -529,7 +513,7 @@ def test_create_structural_covariates_model(load_model_for_test, pheno_path):
     model_entry = ModelEntry.create(model, modelfit_results=res)
 
     search_space = 'COVARIATE(CL,WGT,exp);COVARIATE(V,APGR,cat)'
-    mfl = ModelFeaturesNew.create(search_space)
+    mfl = ModelFeatures.create(search_space)
 
     model_with_struct = create_structural_covariates_model(mfl, model_entry)
 
@@ -613,7 +597,7 @@ def test_get_search_space_iivsearch(
             ),
         ),
         (
-            None,
+            '',
             (
                 'DIRECTEFFECT([LINEAR,EMAX,SIGMOID]);'
                 'EFFECTCOMP([LINEAR,EMAX,SIGMOID]);'
@@ -623,12 +607,9 @@ def test_get_search_space_iivsearch(
     ],
 )
 def test_get_search_space_pkpd(mfl, expected):
-    if mfl is None:
-        search_space = ModelFeaturesNew.create('')
-    else:
-        search_space = ModelFeaturesNew.create(mfl)
+    search_space = ModelFeatures.create(mfl)
     search_space_pkpd = get_search_space_pkpd(search_space)
-    expected = ModelFeaturesNew.create(expected)
+    expected = ModelFeatures.create(expected)
     assert search_space_pkpd == expected
 
 
@@ -661,19 +642,16 @@ def test_get_search_space_pkpd(mfl, expected):
             'METABOLITE(BASIC);PERIPHERALS([0,1],MET)',
         ),
         (
-            None,
+            '',
             'oral',
             'METABOLITE([PSC,BASIC]);PERIPHERALS([0,1],MET)',
         ),
     ],
 )
 def test_get_search_space_drug_metabolite(mfl, administration, expected):
-    if mfl is None:
-        search_space = ModelFeaturesNew.create('')
-    else:
-        search_space = ModelFeaturesNew.create(mfl)
+    search_space = ModelFeatures.create(mfl)
     search_space_met = get_search_space_drug_metabolite(search_space, administration)
-    expected = ModelFeaturesNew.create(expected)
+    expected = ModelFeatures.create(expected)
     assert search_space_met == expected
 
 
@@ -699,7 +677,7 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
             'ELIMINATION(FO);PERIPHERALS(0..2)',
         ),
         (
-            None,
+            '',
             'basic_pk',
             'oral',
             (
@@ -711,7 +689,7 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
             ),
         ),
         (
-            None,
+            '',
             'drug_metabolite',
             'oral',
             (
@@ -723,7 +701,7 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
             ),
         ),
         (
-            None,
+            '',
             'basic_pk',
             'ivoral',
             (
@@ -735,7 +713,7 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
             ),
         ),
         (
-            None,
+            '',
             'drug_metabolite',
             'ivoral',
             (
@@ -747,7 +725,7 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
             ),
         ),
         (
-            None,
+            '',
             'tmdd',
             'oral',
             (
@@ -759,7 +737,7 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
             ),
         ),
         (
-            None,
+            '',
             'tmdd',
             'ivoral',
             (
@@ -773,12 +751,9 @@ def test_get_search_space_drug_metabolite(mfl, administration, expected):
     ],
 )
 def test_get_search_space_modelsearch(mfl, modeltype, administration, expected):
-    if mfl is None:
-        search_space = ModelFeaturesNew.create([])
-    else:
-        search_space = ModelFeaturesNew.create(mfl)
+    search_space = ModelFeatures.create(mfl)
     search_space_modelsearch = get_search_space_modelsearch(search_space, modeltype, administration)
-    expected = ModelFeaturesNew.create(expected)
+    expected = ModelFeatures.create(expected)
     assert search_space_modelsearch == expected
 
 
@@ -804,19 +779,19 @@ def test_get_search_space_modelsearch(mfl, modeltype, administration, expected):
             'COVARIATE?(@IIV,@CONTINUOUS,EXP);COVARIATE?(@IIV,@CATEGORICAL,CAT)',
         ),
         (
-            None,
+            '',
             'basic_pk',
             'iv',
             'COVARIATE?(@IIV,@CONTINUOUS,EXP);COVARIATE?(@IIV,@CATEGORICAL,CAT)',
         ),
         (
-            None,
+            '',
             'pkpd',
             'iv',
             'COVARIATE?(@PD_IIV,@CONTINUOUS,EXP);COVARIATE?(@PD_IIV,@CATEGORICAL,CAT)',
         ),
         (
-            None,
+            '',
             'basic_pk',
             'ivoral',
             (
@@ -828,12 +803,9 @@ def test_get_search_space_modelsearch(mfl, modeltype, administration, expected):
     ],
 )
 def test_get_search_space_covsearch(mfl, modeltype, administration, expected):
-    if mfl is None:
-        search_space = ModelFeatures()
-    else:
-        search_space = mfl_parse(mfl, mfl_class=True)
+    search_space = ModelFeatures.create(mfl)
     search_space_covsearch = get_search_space_covsearch(search_space, modeltype, administration)
-    expected = mfl_parse(expected, mfl_class=True)
+    expected = ModelFeatures.create(expected)
     assert str(search_space_covsearch) == str(expected)
 
 
@@ -873,7 +845,7 @@ def test_create_plots(load_model_for_test, pheno_path, results_to_remove, expect
 
 def test_update_iiv_search_space(load_model_for_test, testdata):
     model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
-    search_space = ModelFeaturesNew.create('IIV(CL,EXP);IIV?(@PK,EXP);COVARIANCE(IIV,@IIV)')
+    search_space = ModelFeatures.create('IIV(CL,EXP);IIV?(@PK,EXP);COVARIANCE(IIV,@IIV)')
     assert update_iiv_search_space(model, search_space) == search_space
     model_mm = set_michaelis_menten_elimination(model)
     search_space_mm = update_iiv_search_space(model_mm, search_space)
@@ -883,6 +855,48 @@ def test_update_iiv_search_space(load_model_for_test, testdata):
     model_mixed = set_mixed_mm_fo_elimination(model)
     search_space_mixed = update_iiv_search_space(model_mixed, search_space)
     assert IIV.create('CL', 'EXP') in search_space_mixed
+
+
+def test_determine_extra_tmdd_model(load_model_for_test, testdata):
+    model1 = load_model_for_test(testdata / 'nonmem' / 'pheno_pd.mod')
+    model2 = set_zero_order_absorption(model1).replace(name='cand1')
+    model3 = set_peripheral_compartments(model2, 1).replace(name='cand2')
+    model4 = set_peripheral_compartments(model3, 2).replace(name='cand3')
+
+    models = [model1, model2, model3, model4]
+    extra_models = determine_extra_tmdd_model(model4, models)
+    assert extra_models == [model3.name]
+
+    extra_models = determine_extra_tmdd_model(model3, models)
+    assert extra_models == [model2.name]
+
+    extra_models = determine_extra_tmdd_model(model2, models)
+    assert extra_models == []
+
+
+@pytest.mark.parametrize(
+    'search_space, func, expected',
+    [
+        (
+            'COVARIATE?([CL,VC],WT,EXP)',
+            None,
+            'COVARIATE?([CL,VC],WT,EXP,*)',
+        ),
+        (
+            'COVARIATE?([CL,VC],WT,EXP)',
+            partial(add_covariate_effect, parameter='CL', covariate='WT', effect='exp'),
+            'COVARIATE(CL,WT,EXP,*);COVARIATE?(VC,WT,EXP,*)',
+        ),
+    ],
+)
+def test_remove_added_covariates_from_search_space(
+    load_model_for_test, testdata, search_space, func, expected
+):
+    model = load_model_for_test(testdata / 'nonmem' / 'models' / 'mox2.mod')
+    if func:
+        model = func(model)
+    mfl = ModelFeatures.create(search_space).covariates
+    assert repr(remove_added_covariates_from_search_space(model, mfl)) == expected
 
 
 @pytest.mark.parametrize(
